@@ -2906,11 +2906,18 @@
      * При успешном пробитии чека на кассе или постановке в буфер отправляется асинхронный запрос `/api/billing/payments` с `Idempotency-Key` (`compositeIdempotencyKey`), привязывающий платеж к карте пациента без повторного ввода.
   4. **Авто-выравнивание остатка сплита (Мандат 8e, 8k)**:
      * Кнопка `execute-fast-checkout-btn` не блокируется (`disabled={false}`); при неполном распределении суммы клик автоматически относит остаток на активный метод оплаты и выводит мягкий тост.
+  5. **Полная векторная гигиена кассовых форм (Мандат 8d, Грех 7, коммит `3658680bc`)**:
+     * В `FastCheckoutModal.tsx` и `CashRegisterModal.tsx` ликвидированы все текстовые юникод-дингбаты (`✓`, `★`, `✕`) в пользу чистых SVG Lucide (`ShieldCheck`, `Check`, `X`);
+     * Бейдж `inn-physical-not-required-badge` («54-ФЗ: ИНН с физлиц НЕ требуется») переведен на `ShieldCheck` (size 14);
+     * Кнопки «100% Гарантия» и «Скидка сотруднику» переведены на чистый `ShieldCheck` без текстовых звездочек;
+     * Кнопка сброса скидки `btn-discount-none` оформлена через `<X size={14} /> <span>Сброс (0%)</span>`;
+     * Индикатор точной суммы без сдачи `cash-change-exact` переведен на `<Check size={20} /> <span>БЕЗ СДАЧИ (РОВНО)</span>`;
+     * Сохранен фоллбэк имени кассира на лечащего врача для соло-практики и серверная запись оплат по 54-ФЗ.
 - **Файлы**:
   - `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`
   - `apps/web/src/components/finance/CashRegisterModal.tsx`
 - **Тесты**:
-  - `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (8/8 pass, коммит `7e55b34a6`)
+  - `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (8/8 pass, коммиты `7e55b34a6`, `3658680bc`)
   - `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (pass)
 
 ---
@@ -3040,6 +3047,12 @@
   6. **Клавиатурная доступность шторки записи и коллизии**:
      * В `AppointmentDrawer.tsx` добавлен слушатель клавиши `Escape` для мгновенного закрытия шторки без потери фокуса;
      * В `scheduleCollisionUtils.ts` и `checkAppointmentResourceCollision.ts` экспортирован и расширен тип `ResourceCollisionOptions`.
+  7. **Ликвидация вложенных модалок и аутентичные ID (Закон Анти-Матрёшки / Грех 6, коммит `c9b682c0f`)**:
+     * В `ChairRosterModal.tsx` модальное окно добавления врача заменено на встроенную инлайн-панель `chair-quick-add-doctor-panel` прямо в заголовке модалки с глубиной строго 1;
+     * Ликвидированы синтетические псевдослучайные ID (`Math.random()`) при генерации нового врача в пользу криптографического `crypto.randomUUID()` и последовательных табельных номеров вида `Т-001`, `Т-002`...;
+     * Полная клавиатурная доступность: закрытие инлайн-панели по нажатию клавиши `Escape`;
+     * Кнопки управления сменами (`chair-copy-next-week-btn`, `chair-copy-month-btn`, `chair-clear-week-btn`, `chair-global-rotate-shifts-btn`, `chair-date-range-trigger-btn`, `chair-submit-new-doctor-btn`) приведены к минимальной высоте `min-height: 44px` по Apple HIG (Мандат 8d);
+     * Стили вынесены в `doctorShiftRoster.css` (`roster-nav-strip`, `roster-actions-group`, `roster-btn-icon`).
 - **Файлы**:
   - `apps/web/src/components/schedule/ChairScheduleView.tsx`
   - `apps/web/src/components/schedule/ChairRosterModal.tsx`
@@ -3047,12 +3060,14 @@
   - `apps/web/src/ScheduleView.tsx`
   - `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`
   - `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`
+  - `apps/web/src/components/schedule/roster/doctorShiftRoster.css`
   - `apps/web/src/components/schedule/AppointmentDrawer.tsx`
   - `apps/web/src/utils/scheduleCollisionUtils.ts`
   - `apps/web/src/components/schedule/checkAppointmentResourceCollision.ts`
 - **Тесты**:
-  - `apps/web/src/components/schedule/__tests__/chairDoctorRosterStomXParity.test.tsx` (pass, коммит `f8e4f3fdf`)
+  - `apps/web/src/components/schedule/__tests__/chairDoctorRosterStomXParity.test.tsx` (pass, коммиты `f8e4f3fdf`, `c9b682c0f`)
   - `apps/web/src/components/schedule/__tests__/appointmentDrawerAutonomy.test.tsx` (11/11 pass, коммит `a8b6f30d9`)
+  - `apps/web/src/components/schedule/__tests__/quickAddDoctorAndChairBindingAutonomyWave57.test.tsx` (pass, коммит `c9b682c0f`)
 
 ---
 
@@ -3074,7 +3089,7 @@
        - Пульпит -> `A16.07.030.001` (Эндодонтическое лечение пульпита, K04.0);
        - Периодонтит -> `A16.07.030.002` (Эндодонтическое лечение периодонтита, K04.5);
        - Коронка / Имплант -> этапы ортопедии и хирургии;
-       - Отсутствующий зуб -> `A16.07.006` (Имплантация);
+       - Отсутствующий зуб -> `A16.07.054.001` (Внутрикостная дентальная имплантация, взамен ошибочного удаления уже отсутствующего зуба);
      * Авто-распределение по клиническим этапам: 1 — Терапия / неотложка, 2 — Хирургия / пародонтология, 3 — Ортопедия;
      * 1-клик исключение позиций (`handleToggleExclude`), печать предварительной сметы А4 (`btn-print-estimate`), создание черновика плана (`btn-create-treatment-plan`) без обязательных блокировок.
   6. **Детальная карточка зуба (`ToothCardModal.tsx`)**:
@@ -3082,6 +3097,12 @@
      * Пародонтологический профиль зуба: степень подвижности (0, I, II, III), атрофия кости (0, I, II, III), класс вовлечения фуркации (0, I, II, III);
      * Быстрый переход в «Историю зуба» и «Журнал каналов (Эндо)»;
      * Кнопка отмены применения нормы `btn-043-undo-norm` в активном черновике амбулаторной карты 043/у (`DentalMedicalCard043uForm.tsx`).
+  7. **Устранение клинических дефектов, 0-норма, имплантация на Missing, свобода скидок врача и мобильный скролл 390px (коммит `9b981fa47`)**:
+     * *Сброс пародонтологических индексов в норму (0)*: в `ToothCardModal.tsx` устранены некорректные барьеры `if (mobility > 0)`, `if (boneLoss > 0)`, `if (furcation > 0)`, что восстановило возможность возврата подвижности, резорбции кости и фуркации в норму (0) для вылеченного зуба;
+     * *Клиническая корректность имплантации*: в `calculateLiveInvoiceItems` для зуба со статусом `Missing` генерация удаления зуба (`A16.07.001`) заменена на регламентную дентальную имплантацию (`A16.07.054.001` «Внутрикостная дентальная имплантация (установка имплантата)»), исключая абсурдное «удаление» уже отсутствующего зуба;
+     * *Свобода скидок врача 0–100% (Мандат 8e п. 7)*: в `TreatmentPlanWizard.tsx` внедрен блок скидки врача (`wizard-doctor-discount-input`) с быстрыми пресетами 0% (Сброс), 10%, 20%, 50%, 100% («100% Гарантия / Корпоративное лечение», `wizard-discount-100-btn`), позволяющими лечащему врачу утверждать гарантийные переделки и лечение персонала с нулевой стоимостью без ввода мастер-паролей администратора;
+     * *Мобильная адаптивность сметы*: таблицы плана лечения обернуты в контейнер с горизонтальным скроллом `overflow-x-auto min-w-[540px]`, исключающий обрезание столбцов этапов на мобильных экранах шириной 390px;
+     * *Векторная гигиена*: в `OdontogramStudioStandalone.tsx` ликвидирован текстовый дингбат `✕` в пользу векторной иконки Lucide `X`.
 - **Файлы**:
   - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
   - `apps/web/src/components/odontogram/TreatmentPlanWizard.tsx`
@@ -3092,7 +3113,7 @@
   - `apps/web/src/pages/OdontogramStudioStandalone.tsx`
   - `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`
 - **Тесты**:
-  - `apps/web/src/components/odontogram/__tests__/odontogramDeepClinicalParity.test.tsx` (pass, коммит `aecb73012`)
+  - `apps/web/src/components/odontogram/__tests__/odontogramDeepClinicalParity.test.tsx` (pass, коммиты `aecb73012`, `9b981fa47`)
   - `apps/web/src/components/documents/__tests__/outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 pass, коммит `a8b6f30d9`)
 
 ---
