@@ -1190,12 +1190,16 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				slot.startsAt ||
 				(slot.startTime && dateKey ? `${dateKey}T${slot.startTime}:00` : undefined);
 
+			const chairObj =
+				chairs.find((c) => c.id === slotChairId) ||
+				(slotChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
 			const duty = resolveChairDutyDoctor(
 				slotChairId,
 				targetStartsAt,
 				chairDoctorAssignments,
 				dateKey,
 				slot.doctorUserId,
+				(chairObj as any)?.defaultDoctorId || (doctors.length === 1 ? doctors[0]?.id : null),
 			);
 
 			const finalDoctorId = slot.doctorUserId || duty.doctorId || selectedDoctorId || null;

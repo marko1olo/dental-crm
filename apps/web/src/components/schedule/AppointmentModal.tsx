@@ -186,14 +186,40 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		return base;
 	}, [activePatients, createdPatients]);
 
+	const safeToDateTimeLocalValue = useCallback(
+		(iso: string | null | undefined, tz?: string | null) => {
+			if (!iso) return "";
+			if (typeof toDateTimeLocalValue === "function") {
+				return toDateTimeLocalValue(iso, tz);
+			}
+			return iso.length >= 16 ? iso.slice(0, 16) : iso;
+		},
+		[toDateTimeLocalValue],
+	);
+
+	const safeFromDateTimeLocalValue = useCallback(
+		(val: string | null | undefined, tz?: string | null) => {
+			if (!val) return "";
+			if (typeof fromDateTimeLocalValue === "function") {
+				return fromDateTimeLocalValue(val, tz);
+			}
+			return val.includes("T") && val.length === 16 ? `${val}:00.000Z` : val;
+		},
+		[fromDateTimeLocalValue],
+	);
+
 	const [doctorUserId, setDoctorUserId] = useState(() => appointment?.doctorUserId ?? "");
 	const [assistantUserId, setAssistantUserId] = useState<string | null>(() => appointment?.assistantUserId ?? null);
 	const [chairId, setChairId] = useState(() => appointment?.chairId ?? "");
 	const [startsAtLocal, setStartsAtLocal] = useState(() =>
-		appointment?.startsAt ? toDateTimeLocalValue(appointment.startsAt, timezone) : "",
+		appointment?.startsAt
+			? (typeof toDateTimeLocalValue === "function" ? toDateTimeLocalValue(appointment.startsAt, timezone) : appointment.startsAt.slice(0, 16))
+			: "",
 	);
 	const [endsAtLocal, setEndsAtLocal] = useState(() =>
-		appointment?.endsAt ? toDateTimeLocalValue(appointment.endsAt, timezone) : "",
+		appointment?.endsAt
+			? (typeof toDateTimeLocalValue === "function" ? toDateTimeLocalValue(appointment.endsAt, timezone) : appointment.endsAt.slice(0, 16))
+			: "",
 	);
 	const [status, setStatus] = useState<Appointment["status"]>(() => appointment?.status ?? "planned");
 	const [reason, setReason] = useState(() => appointment?.reason ?? "");
@@ -335,11 +361,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 		// Auto-populate duty doctor from chairDoctorAssignments if doctor not explicitly assigned
 		if (!defaultDoc && defaultChair) {
+			const chairObj =
+				chairs.find((c) => c.id === defaultChair) ||
+				(defaultChair === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
 			const duty = resolveChairDutyDoctor(
 				defaultChair,
 				appointment.startsAt,
 				chairDoctorAssignments,
 				appointment.startsAt ? appointment.startsAt.slice(0, 10) : undefined,
+				null,
+				(chairObj as any)?.defaultDoctorId || (chairs.length <= 1 && doctors.length === 1 ? doctors[0]?.id : null),
 			);
 			if (duty.doctorId) {
 				defaultDoc = duty.doctorId;
@@ -363,8 +394,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setDoctorUserId(defaultDoc);
 		setAssistantUserId(appointment.assistantUserId ?? null);
 		setChairId(defaultChair);
-		setStartsAtLocal(toDateTimeLocalValue(appointment.startsAt, timezone));
-		setEndsAtLocal(toDateTimeLocalValue(appointment.endsAt, timezone));
+		setStartsAtLocal(safeToDateTimeLocalValue(appointment.startsAt, timezone));
+		setEndsAtLocal(safeToDateTimeLocalValue(appointment.endsAt, timezone));
 		setStatus(appointment.status || "planned");
 		setReason(appointment.reason ?? "");
 		setComment(appointment.comment ?? "");
@@ -378,19 +409,27 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		);
 		setError(null);
 		setIsSaving(false);
-	}, [appointment, isOpen, toDateTimeLocalValue, timezone, doctors, chairs, chairDoctorAssignments]);
+	}, [appointment, isOpen, safeToDateTimeLocalValue, timezone, doctors, chairs, chairDoctorAssignments]);
+
+	const currentChair = useMemo(() => {
+		return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+	}, [chairs, chairId]);
 
 	const dutyDoctorInfo = useMemo(() => {
 		const effChair = chairId || appointment?.chairId;
-		const effStartsAt = startsAtLocal || (appointment?.startsAt ? toDateTimeLocalValue(appointment.startsAt, timezone) : "");
+		const effStartsAt = startsAtLocal || (appointment?.startsAt ? safeToDateTimeLocalValue(appointment.startsAt, timezone) : "");
+		const effChairObj =
+			(effChair === chairId ? currentChair : chairs.find((c) => c.id === effChair)) ||
+			(effChair === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
 		return resolveChairDutyDoctor(
 			effChair,
 			effStartsAt,
 			chairDoctorAssignments,
 			effStartsAt ? effStartsAt.slice(0, 10) : undefined,
-			appointment?.chairId === effChair ? appointment?.doctorUserId : null,
+			null,
+			(effChairObj as any)?.defaultDoctorId || (chairs.length <= 1 && doctors.length === 1 ? doctors[0]?.id : null),
 		);
-	}, [chairId, startsAtLocal, chairDoctorAssignments, appointment, toDateTimeLocalValue, timezone]);
+	}, [chairId, startsAtLocal, chairDoctorAssignments, appointment, safeToDateTimeLocalValue, timezone, currentChair, chairs, doctors]);
 
 	const dutyDoctorId = dutyDoctorInfo.doctorId;
 	const dutyDocHours = dutyDoctorInfo.shiftHours;
@@ -399,10 +438,6 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		if (!dutyDoctorId) return null;
 		return doctors.find((d) => d.id === dutyDoctorId) || null;
 	}, [dutyDoctorId, doctors]);
-
-	const currentChair = useMemo(() => {
-		return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
-	}, [chairs, chairId]);
 
 	// Track active lab orders for the patient to align appointment slots with due dates
 	const [activeLabOrders, setActiveLabOrders] = useState<any[]>([]);
@@ -466,8 +501,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		);
 		return checkAppointmentResourceCollision(
 			{
-				startsAt: fromDateTimeLocalValue(startsAtLocal, timezone),
-				endsAt: fromDateTimeLocalValue(endsAtLocal, timezone),
+				startsAt: safeFromDateTimeLocalValue(startsAtLocal, timezone),
+				endsAt: safeFromDateTimeLocalValue(endsAtLocal, timezone),
 				doctorUserId: doctorUserId || null,
 				chairId: chairId || null,
 				assistantUserId: assistantUserId || null,
@@ -481,7 +516,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 				staff: dashboard?.clinicSettings?.staff,
 				chairs: dashboard?.clinicSettings?.chairs,
 				patients: dashboard?.patients,
-				formatTimeFn: (iso) => toDateTimeLocalValue(iso, timezone).slice(11, 16),
+				formatTimeFn: (iso) => safeToDateTimeLocalValue(iso, timezone).slice(11, 16),
 				isCito: effectiveIsCito,
 				allowCitoOverbooking: effectiveIsCito,
 			},
@@ -515,14 +550,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	const currentDurationMinutes = useMemo(() => {
 		if (!startsAtLocal || !endsAtLocal) return 0;
 		try {
-			const startMs = Date.parse(fromDateTimeLocalValue(startsAtLocal, timezone));
-			const endMs = Date.parse(fromDateTimeLocalValue(endsAtLocal, timezone));
+			const startMs = Date.parse(safeFromDateTimeLocalValue(startsAtLocal, timezone));
+			const endMs = Date.parse(safeFromDateTimeLocalValue(endsAtLocal, timezone));
 			if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) return 0;
 			return Math.round((endMs - startMs) / (60 * 1000));
 		} catch {
 			return 0;
 		}
-	}, [startsAtLocal, endsAtLocal, fromDateTimeLocalValue, timezone]);
+	}, [startsAtLocal, endsAtLocal, safeFromDateTimeLocalValue, timezone]);
 
 	const applyDuration = useCallback(
 		(minutes: number) => {
@@ -530,20 +565,20 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			if (!startVal) {
 				const now = new Date();
 				now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
-				startVal = toDateTimeLocalValue(now.toISOString(), timezone);
+				startVal = safeToDateTimeLocalValue(now.toISOString(), timezone);
 				setStartsAtLocal(startVal);
 			}
 			try {
-				const startDate = new Date(fromDateTimeLocalValue(startVal, timezone));
+				const startDate = new Date(safeFromDateTimeLocalValue(startVal, timezone));
 				if (!isNaN(startDate.getTime())) {
 					const endDate = new Date(startDate.getTime() + minutes * 60 * 1000);
-					setEndsAtLocal(toDateTimeLocalValue(endDate.toISOString(), timezone));
+					setEndsAtLocal(safeToDateTimeLocalValue(endDate.toISOString(), timezone));
 				}
 			} catch {
 				// ignore parse error
 			}
 		},
-		[startsAtLocal, fromDateTimeLocalValue, toDateTimeLocalValue, timezone],
+		[startsAtLocal, safeFromDateTimeLocalValue, safeToDateTimeLocalValue, timezone],
 	);
 
 	const handleApplyReasonPreset = useCallback(
@@ -621,11 +656,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 		// 1-Click Autonomy (Mandates 8e, 8n): если указано время начала, но не указан конец — авто-расчет +30 мин
 		if (effectiveStartsAt && !effectiveEndsAt) {
-			const startIso = fromDateTimeLocalValue(effectiveStartsAt, timezone);
+			const startIso = safeFromDateTimeLocalValue(effectiveStartsAt, timezone);
 			const startMs = Date.parse(startIso);
 			if (!Number.isNaN(startMs)) {
 				const defaultEndIso = new Date(startMs + 30 * 60_000).toISOString();
-				effectiveEndsAt = toDateTimeLocalValue(defaultEndIso, timezone);
+				effectiveEndsAt = safeToDateTimeLocalValue(defaultEndIso, timezone);
 				setEndsAtLocal(effectiveEndsAt);
 			}
 		}
@@ -650,14 +685,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			return;
 		}
 
-		const startsAtIso = fromDateTimeLocalValue(effectiveStartsAt, timezone);
-		let endsAtIso = fromDateTimeLocalValue(effectiveEndsAt, timezone);
+		const startsAtIso = safeFromDateTimeLocalValue(effectiveStartsAt, timezone);
+		let endsAtIso = safeFromDateTimeLocalValue(effectiveEndsAt, timezone);
 
 		if (Date.parse(endsAtIso) <= Date.parse(startsAtIso)) {
 			const startMs = Date.parse(startsAtIso);
 			const fixedEndIso = new Date(startMs + 30 * 60_000).toISOString();
 			endsAtIso = fixedEndIso;
-			setEndsAtLocal(toDateTimeLocalValue(fixedEndIso, timezone));
+			setEndsAtLocal(safeToDateTimeLocalValue(fixedEndIso, timezone));
 		}
 
 		setIsSaving(true);
@@ -685,7 +720,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 	if (!isOpen || !appointment) return null;
 
-	const currentPatientName = patientName(dashboard.patients, patientId);
+	const currentPatientName =
+		typeof patientName === "function"
+			? patientName(dashboard.patients, patientId)
+			: dashboard.patients?.find((p) => p.id === patientId)?.fullName || "Пациент";
 	const isNewAppointment = Boolean(appointment?.id?.startsWith("new"));
 
 	const modalContent = (
@@ -1306,17 +1344,19 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									const newChairId = e.target.value;
 									setChairId(newChairId);
 									if (newChairId) {
+										const newChair =
+											chairs.find((c) => c.id === newChairId) ||
+											(newChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
 										const newDuty = resolveChairDutyDoctor(
 											newChairId,
 											startsAtLocal,
 											chairDoctorAssignments,
 											startsAtLocal ? startsAtLocal.slice(0, 10) : undefined,
+											null,
+											(newChair as any)?.defaultDoctorId || (chairs.length <= 1 && doctors.length === 1 ? doctors[0]?.id : null),
 										);
 										if (newDuty.doctorId) {
 											setDoctorUserId(newDuty.doctorId);
-											const newChair =
-												chairs.find((c) => c.id === newChairId) ||
-												(newChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
 											const newDoc = doctors.find((d) => d.id === newDuty.doctorId);
 											if (newDoc) {
 												showToast(

@@ -83,9 +83,10 @@ export function resolveChairDutyDoctor(
 	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined,
 	dateKeyFallback?: string | undefined,
 	initialSlotDoctorId?: string | null | undefined,
+	defaultDoctorIdFallback?: string | null | undefined,
 ): { doctorId: string | null; shiftHours: string } {
 	if (!chairId) {
-		return { doctorId: initialSlotDoctorId || null, shiftHours: "08:00–20:00" };
+		return { doctorId: initialSlotDoctorId || defaultDoctorIdFallback || null, shiftHours: "08:00–20:00" };
 	}
 
 	// 1. Check passed chairDoctorAssignments
@@ -96,9 +97,15 @@ export function resolveChairDutyDoctor(
 		startsAtIsoOrLocal && startsAtIsoOrLocal.length >= 10
 			? startsAtIsoOrLocal.slice(0, 10)
 			: (dateKeyFallback || "");
-	if (!assignment && typeof window !== "undefined" && targetDateKey) {
+	const hasStorage =
+		typeof window !== "undefined"
+			? window.localStorage
+			: typeof localStorage !== "undefined"
+				? localStorage
+				: null;
+	if (!assignment && hasStorage && targetDateKey) {
 		try {
-			const raw = localStorage.getItem(`dente_chair_doctor_assignments_${targetDateKey}`);
+			const raw = hasStorage.getItem(`dente_chair_doctor_assignments_${targetDateKey}`);
 			if (raw) {
 				const parsed = JSON.parse(raw);
 				if (parsed?.[chairId]) {
@@ -229,6 +236,23 @@ export function resolveChairDutyDoctor(
 	// 3. Fallback: if slot was explicitly booked for this chair with a doctor
 	if (initialSlotDoctorId) {
 		return { doctorId: initialSlotDoctorId, shiftHours: "08:00–20:00" };
+	}
+
+	// 4. Fallback: explicit defaultDoctorIdFallback (e.g. from chair.defaultDoctorId or solo doctor)
+	if (defaultDoctorIdFallback) {
+		return { doctorId: defaultDoctorIdFallback, shiftHours: "08:00–20:00" };
+	}
+
+	// 5. Fallback: check stored default doctor for chair in localStorage
+	if (chairId && hasStorage) {
+		try {
+			const storedChairDef = JSON.parse(
+				hasStorage.getItem("dente_chair_default_doctors") || "{}",
+			);
+			if (storedChairDef?.[chairId]) {
+				return { doctorId: storedChairDef[chairId], shiftHours: "08:00–20:00" };
+			}
+		} catch {}
 	}
 
 	return { doctorId: null, shiftHours: "08:00–20:00" };
@@ -380,11 +404,17 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				(initialSlot?.dateKey && initialSlot?.startTime
 					? `${initialSlot.dateKey}T${initialSlot.startTime}`
 					: undefined);
+			const chs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
+			const targetChairObj = chs.find((c) => c.id === targetChairId);
+			const st = dashboard?.clinicSettings?.staff ?? [];
+			const docs = st.filter((m) => m.active && (m.role === "doctor" || m.role === "owner"));
 			const duty = resolveChairDutyDoctor(
 				targetChairId,
 				targetTime,
 				chairDoctorAssignments,
 				initialSlot?.dateKey,
+				null,
+				(targetChairObj as any)?.defaultDoctorId || (docs.length === 1 && docs[0] ? docs[0].id : null),
 			);
 			if (duty.doctorId) {
 				return duty.doctorId;
@@ -517,15 +547,21 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		),
 	);
 
+	const currentChair = useMemo(() => {
+		return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+	}, [chairs, chairId]);
+
 	const dutyDoctorInfo = useMemo(() => {
+		const chairObj = currentChair || chairs.find((c) => c.id === chairId);
 		return resolveChairDutyDoctor(
 			chairId,
 			startsAtLocal,
 			chairDoctorAssignments,
 			initialSlot?.dateKey || (startsAtLocal ? startsAtLocal.slice(0, 10) : undefined),
 			initialSlot?.chairId === chairId ? initialSlot?.doctorUserId : null,
+			(chairObj as any)?.defaultDoctorId || (isSoloDoctor && doctors[0] ? doctors[0].id : null),
 		);
-	}, [chairId, startsAtLocal, chairDoctorAssignments, initialSlot]);
+	}, [chairId, startsAtLocal, chairDoctorAssignments, initialSlot, currentChair, chairs, isSoloDoctor, doctors]);
 
 	const dutyDoctorId = dutyDoctorInfo.doctorId;
 	const dutyDocHours = dutyDoctorInfo.shiftHours;
@@ -534,10 +570,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		if (!dutyDoctorId) return null;
 		return doctors.find((d) => d.id === dutyDoctorId) || null;
 	}, [dutyDoctorId, doctors]);
-
-	const currentChair = useMemo(() => {
-		return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
-	}, [chairs, chairId]);
 
 	// Initialize fields on open
 	useEffect(() => {
@@ -2332,17 +2364,19 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									const newChairId = e.target.value;
 									setChairId(newChairId);
 									if (newChairId) {
+										const newChair =
+											chairs.find((c) => c.id === newChairId) ||
+											(newChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
 										const newDuty = resolveChairDutyDoctor(
 											newChairId,
 											startsAtLocal,
 											chairDoctorAssignments,
 											initialSlot?.dateKey || (startsAtLocal ? startsAtLocal.slice(0, 10) : undefined),
+											null,
+											(newChair as any)?.defaultDoctorId || (isSoloDoctor && doctors[0] ? doctors[0].id : null),
 										);
 										if (newDuty.doctorId) {
 											setDoctorUserId(newDuty.doctorId);
-											const newChair =
-												chairs.find((c) => c.id === newChairId) ||
-												(newChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
 											const newDoc = doctors.find((d) => d.id === newDuty.doctorId);
 											if (newDoc) {
 												showToast(
