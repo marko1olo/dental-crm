@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { FileEdit, ShieldCheck, Printer } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
+import { printBlankMedicalContract } from "../../patient/blankContractPrint";
 import { showToast } from "../../GlobalToast";
 import { money } from "../../../utils/financeUtils";
 import { appendChipToText } from "../documentChipText";
@@ -288,16 +289,13 @@ export const PaidServiceContractForm = React.memo(
 						<button
 							type="button"
 							onClick={() => {
-								printPrimaryIntakePackage({
-									patient: {
+								void printBlankMedicalContract(
+									{
 										fullName: documentPatientFullName || "",
 									},
-									doctorFullName: activeDoctorFullName || "",
-								});
-								showToast(
-									"Бланк договора со строками «________» отправлен на печать",
-									"info",
-									3000,
+									{
+										doctorName: activeDoctorFullName || "",
+									},
 								);
 							}}
 							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--border,#cbd5e1)] shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
@@ -305,7 +303,7 @@ export const PaidServiceContractForm = React.memo(
 							title="Печать пустого бланка договора со строками ________ для ручного заполнения пациентом до приёма (без 403-ошибок)"
 						>
 							<Printer size={16} />
-							<span>Бланк со строками «________»</span>
+							<span>Печать договора (бланк со строками _______)</span>
 						</button>
 						<button
 							type="button"
@@ -322,6 +320,20 @@ export const PaidServiceContractForm = React.memo(
 				<PaidContractRequiredFieldsPanel
 					review={review}
 					fieldsBlockTitle={PAID_CONTRACT_FIELDS_BLOCK_TITLE}
+					onPrintBlankContract={() => {
+						void printBlankMedicalContract(
+							{
+								fullName: documentPatientFullName || "",
+							},
+							{
+								doctorName: activeDoctorFullName || "",
+							},
+						);
+					}}
+					patient={{
+						fullName: documentPatientFullName || "",
+					}}
+					doctorName={activeDoctorFullName}
 				/>
 				<details className="document-manual-override">
 					<summary className="inline-flex items-center gap-1.5 cursor-pointer">

@@ -36,6 +36,7 @@ import {
 	verifySmsSignOtp,
 } from "./paidContractEngine";
 import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
+import { printBlankMedicalContract } from "../patient/blankContractPrint";
 import "./paidMedicalContract.css";
 
 export interface PaidMedicalContractModalProps {
@@ -1035,6 +1036,39 @@ export function PaidMedicalContractModal({
 												<Printer size={15} aria-hidden="true" />
 												<span>Печать 2 экз. на принтере</span>
 											</button>
+											<button
+												type="button"
+												className="paid-contract-btn secondary"
+												onClick={() => {
+													void printBlankMedicalContract(
+														contractData.patient ? {
+															fullName: contractData.patient.fullName,
+															phone: contractData.patient.phone,
+															birthDate: contractData.patient.birthDate,
+															administrativeProfile: {
+																identityDocument: [
+																	contractData.patient.passportSeries,
+																	contractData.patient.passportNumber,
+																].filter(Boolean).join(" ") || undefined,
+																registrationAddress: contractData.patient.registrationAddress,
+																snils: contractData.patient.snils,
+															},
+														} : null,
+														{
+															doctorName: contractData.doctorFullName,
+															clinicName: contractData.clinic.shortName || contractData.clinic.fullName,
+															clinicAddress: contractData.clinic.legalAddress || contractData.clinic.actualAddress,
+															clinicInn: contractData.clinic.inn,
+															clinicOgrn: contractData.clinic.ogrn,
+														}
+													);
+												}}
+												data-testid="print-blank-paper-contract-btn"
+												title="Распечатать пустой бланк договора со строками _______ для ручного заполнения пациентом до приёма (без 403-ошибок)"
+											>
+												<Printer size={15} aria-hidden="true" />
+												<span>Печать бланка (со строками _______)</span>
+											</button>
 										</div>
 
 										{contractData.signedAt && contractData.signMethod === "paper" && (
@@ -1387,40 +1421,34 @@ export function PaidMedicalContractModal({
 							type="button"
 							className="paid-contract-btn secondary"
 							onClick={() => {
-								printPrimaryIntakePackage({
-									patient: contractData.patient ? {
-										fullName: contractData.patient.fullName || "",
-										birthDate: contractData.patient.birthDate,
+								void printBlankMedicalContract(
+									contractData.patient ? {
+										fullName: contractData.patient.fullName,
 										phone: contractData.patient.phone,
-										address: contractData.patient.registrationAddress || contractData.patient.actualAddress,
-										passportSeries: contractData.patient.passportSeries,
-										passportNumber: contractData.patient.passportNumber,
-										passportIssuedBy: contractData.patient.passportIssuedBy,
-										passportIssuedDate: contractData.patient.passportIssuedDate,
-										passportDepartmentCode: contractData.patient.passportDepartmentCode,
-										snils: contractData.patient.snils,
+										birthDate: contractData.patient.birthDate,
+										administrativeProfile: {
+											identityDocument: [
+												contractData.patient.passportSeries,
+												contractData.patient.passportNumber,
+											].filter(Boolean).join(" ") || undefined,
+											registrationAddress: contractData.patient.registrationAddress,
+											snils: contractData.patient.snils,
+										},
 									} : null,
-									clinic: contractData.clinic ? {
+									{
+										doctorName: contractData.doctorFullName,
 										clinicName: contractData.clinic.shortName || contractData.clinic.fullName,
-										legalName: contractData.clinic.fullName,
-										fullName: contractData.clinic.fullName,
-										inn: contractData.clinic.inn,
-										kpp: contractData.clinic.kpp,
-										ogrn: contractData.clinic.ogrn,
-										licenseNumber: contractData.clinic.licenseNumber,
-										licenseDate: contractData.clinic.licenseDate,
-										address: contractData.clinic.legalAddress || contractData.clinic.actualAddress,
-										phone: contractData.clinic.phone,
-										directorFullName: contractData.clinic.directorFullName,
-									} : undefined,
-									doctorFullName: contractData.doctorFullName || "",
-								});
+										clinicAddress: contractData.clinic.legalAddress || contractData.clinic.actualAddress,
+										clinicInn: contractData.clinic.inn,
+										clinicOgrn: contractData.clinic.ogrn,
+									}
+								);
 							}}
 							data-testid="print-blank-contract-btn"
-							title="Печать чистого бланка договора со строками «________» для ручного заполнения пациентом до приёма"
+							title="Печать чистого бланка договора со строками _______ для ручного заполнения пациентом до приёма (без 403-ошибок)"
 						>
 							<Printer size={15} aria-hidden="true" />
-							<span>Бланк («________»)</span>
+							<span>Бланк (_______)</span>
 						</button>
 						<button
 							type="button"

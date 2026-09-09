@@ -4448,11 +4448,15 @@ export function patientCoreDraftFromPatient(
 export function buildPatientCorePayload(
 	draft: PatientCoreDraft,
 ): UpdatePatientInput {
+	const rawEmail = nullablePatientDraftValue(draft.email);
+	// МАНДАТ 8e: если e-mail указан не по формату, санируем в null чтобы не блокировать сохранение телефона, ФИО и заметок
+	const email =
+		rawEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) ? rawEmail : null;
 	return {
 		fullName: draft.fullName.trim(),
 		birthDate: nullablePatientDraftValue(draft.birthDate),
 		phone: nullablePatientDraftValue(draft.phone),
-		email: nullablePatientDraftValue(draft.email),
+		email,
 		notes: nullablePatientDraftValue(draft.notes),
 	};
 }

@@ -1,5 +1,10 @@
 import React from "react";
+import { Printer } from "lucide-react";
 import type { PaidContractRequiredFieldsReview } from "./paidContractRequiredFields";
+import {
+	printBlankMedicalContract,
+	type BlankContractPatientInfo,
+} from "../patient/blankContractPrint";
 
 /**
  * «Чего не хватает договору» — весь перечень до нажатия «Создать».
@@ -29,11 +34,18 @@ export interface PaidContractRequiredFieldsPanelProps {
 	review: PaidContractRequiredFieldsReview;
 	/** Подпись свёрнутого блока с полями: куда идти заполнять. */
 	fieldsBlockTitle: string;
+	/** Обработчик печати чистого бланка договора со строками _______ (Мандат 8e) */
+	onPrintBlankContract?: (() => void) | undefined;
+	patient?: BlankContractPatientInfo | null | undefined;
+	doctorName?: string | null | undefined;
 }
 
 export function PaidContractRequiredFieldsPanel({
 	review,
 	fieldsBlockTitle,
+	onPrintBlankContract,
+	patient,
+	doctorName,
 }: PaidContractRequiredFieldsPanelProps) {
 	const { requiredCount, missing } = review;
 
@@ -76,6 +88,50 @@ export function PaidContractRequiredFieldsPanel({
 				))}
 			</ul>
 			<small>Все эти поля в блоке «{fieldsBlockTitle}» ниже.</small>
+			<div
+				style={{
+					marginTop: "12px",
+					display: "flex",
+					alignItems: "center",
+					gap: "10px",
+					flexWrap: "wrap",
+				}}
+			>
+				<button
+					type="button"
+					data-testid="btn-missing-fields-print-blank-contract"
+					className="btn-missing-fields-print-blank-contract"
+					onClick={() => {
+						if (onPrintBlankContract) {
+							onPrintBlankContract();
+						} else {
+							void printBlankMedicalContract(patient, { doctorName });
+						}
+					}}
+					style={{
+						minHeight: "44px",
+						minWidth: "44px",
+						padding: "8px 16px",
+						background: "var(--teal, #0d9488)",
+						color: "#fff",
+						borderRadius: "8px",
+						border: "none",
+						fontWeight: 600,
+						fontSize: "13px",
+						cursor: "pointer",
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "8px",
+					}}
+					title="Распечатать пустой бланк договора со строками _______ для ручного заполнения пациентом на стойке (без 403-ошибок)"
+				>
+					<Printer size={16} aria-hidden="true" />
+					<span>Печать договора (бланк со строками _______)</span>
+				</button>
+				<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
+					0 ₽ · Ручная подпись до приёма врача (Мандат 8e, без 403)
+				</span>
+			</div>
 		</div>
 	);
 }

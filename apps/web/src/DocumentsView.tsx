@@ -48,6 +48,7 @@ import {
 import { DocumentQuickRoleScenarios } from "./components/documents/DocumentQuickRoleScenarios";
 import { PrimaryIntakePackageModal } from "./components/documents/PrimaryIntakePackageModal";
 import { printPrimaryIntakePackage } from "./components/documents/primaryIntakePackagePrintEngine";
+import { printBlankMedicalContract } from "./components/patient/blankContractPrint";
 import { SurgicalPackageModal } from "./components/documents/SurgicalPackageModal";
 import { ClinicalVisitPackageModal } from "./components/documents/ClinicalVisitPackageModal";
 import { TaxAccountingPackageModal } from "./components/documents/TaxAccountingPackageModal";
@@ -1594,8 +1595,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				</div>
 			</div>
 
-			{/* 1.1 БЫСТРАЯ 1-КЛИК ПЕЧАТЬ ПАКЕТА ПЕРВИЧНОГО ПРИЁМА */}
-			<div className="document-intake-quick-action-bar">
+			{/* 1.1 БЫСТРАЯ 1-КЛИК ПЕЧАТЬ ПАКЕТА ПЕРВИЧНОГО ПРИЁМА И БЛАНКА ДОГОВОРА */}
+			<div className="document-intake-quick-action-bar flex flex-col gap-2">
 				<button
 					type="button"
 					className="document-intake-quick-print-btn"
@@ -1612,6 +1613,43 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					</div>
 					<span className="document-intake-quick-badge">
 						Со строками «________» для ручной подписи
+					</span>
+				</button>
+				<button
+					type="button"
+					className="document-intake-quick-print-btn"
+					onClick={() => {
+						void printBlankMedicalContract(
+							activePatient
+								? {
+										id: activePatient.id,
+										fullName: activePatient.fullName,
+										phone: activePatient.phone,
+										birthDate: activePatient.birthDate,
+										administrativeProfile: (activePatient as any)?.administrativeProfile,
+									}
+								: null,
+							{
+								doctorName: activeDoctor?.fullName || "",
+								clinicName: clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName,
+								clinicAddress: clinicProfileDraft?.address,
+								clinicInn: clinicProfileDraft?.inn,
+								clinicOgrn: clinicProfileDraft?.ogrn,
+							},
+						);
+					}}
+					data-testid="btn-documents-print-blank-contract"
+					title="Распечатать чистый бланк договора со строками _______ для ручного заполнения пациентом до приёма (Мандат 8e, без 403-ошибок)"
+				>
+					<div className="flex items-center gap-2.5">
+						<Printer size={18} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)] flex items-center gap-1.5">
+							<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							Печать договора (бланк со строками _______)
+						</span>
+					</div>
+					<span className="document-intake-quick-badge">
+						0 ₽ · До приёма врача · Без 403
 					</span>
 				</button>
 			</div>

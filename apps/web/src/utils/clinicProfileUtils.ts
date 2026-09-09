@@ -295,6 +295,31 @@ export function buildPatientAdministrativeProfilePayload(
 	const taxpayerInn =
 		rawInn && /^\d{10}$|^\d{12}$/.test(rawInn) ? rawInn : null;
 
+	const repFullName = nullablePatientDraftValue(draft.legalRepresentativeFullName);
+	const repRel = nullablePatientDraftValue(draft.legalRepresentativeRelationship);
+	// МАНДАТЫ 8e, 8n: Если представитель заполнен лишь частично (например, нажат чип родства без ФИО),
+	// санируем в null чтобы бэкенд не возвращал 400 и не блокировал сохранение паспорта и СНИЛС пациента.
+	const hasCompleteRepresentative = Boolean(repFullName && repRel);
+	const legalRepresentativeFullName = hasCompleteRepresentative ? repFullName : null;
+	const legalRepresentativeRelationship = hasCompleteRepresentative ? repRel : null;
+	const legalRepresentativeIdentityDocument = hasCompleteRepresentative
+		? nullablePatientDraftValue(draft.legalRepresentativeIdentityDocument)
+		: null;
+	const legalRepresentativePhone = hasCompleteRepresentative
+		? nullablePatientDraftValue(draft.legalRepresentativePhone)
+		: null;
+
+	let preferredDocumentRecipient = nullablePatientDraftValue(
+		draft.preferredDocumentRecipient,
+	);
+	if (
+		!hasCompleteRepresentative &&
+		preferredDocumentRecipient &&
+		/представител|опекун|родител|довер/i.test(preferredDocumentRecipient)
+	) {
+		preferredDocumentRecipient = null;
+	}
+
 	return {
 		identityDocument: nullablePatientDraftValue(draft.identityDocument),
 		taxpayerInn,
@@ -304,21 +329,11 @@ export function buildPatientAdministrativeProfilePayload(
 			draft.insurancePolicyNumber,
 		),
 		snils: nullablePatientDraftValue(draft.snils),
-		legalRepresentativeFullName: nullablePatientDraftValue(
-			draft.legalRepresentativeFullName,
-		),
-		legalRepresentativeRelationship: nullablePatientDraftValue(
-			draft.legalRepresentativeRelationship,
-		),
-		legalRepresentativeIdentityDocument: nullablePatientDraftValue(
-			draft.legalRepresentativeIdentityDocument,
-		),
-		legalRepresentativePhone: nullablePatientDraftValue(
-			draft.legalRepresentativePhone,
-		),
-		preferredDocumentRecipient: nullablePatientDraftValue(
-			draft.preferredDocumentRecipient,
-		),
+		legalRepresentativeFullName,
+		legalRepresentativeRelationship,
+		legalRepresentativeIdentityDocument,
+		legalRepresentativePhone,
+		preferredDocumentRecipient,
 		preferredAppointmentWeekdays: draft.preferredAppointmentWeekdays,
 		preferredAppointmentStart,
 		preferredAppointmentEnd,
@@ -348,12 +363,8 @@ export function patientAdministrativeProfileDraftSignature(
 export function patientAdministrativeProfileDraftIssue(
 	draft: PatientAdministrativeProfileDraft,
 ): string | null {
-	const inn = draft.taxpayerInn.trim();
-	if (inn && !/^\d{10}$|^\d{12}$/.test(inn)) {
-		return "ИНН можно сохранить только в формате 10 или 12 цифр. Пока это локальный черновик.";
-	}
-	// МАНДАТ 8e, 8n: Замечания по времени приема вынесены в soft warning (patientAdministrativeProfileTimeWarning)
-	// и автоматически санируются в null в payload, не блокируя сохранение реквизитов пациента.
+	// МАНДАТ 8e, 8n: Валидация формата ИНН и окон приема не должна блокировать сохранение паспорта и СНИЛС.
+	// Они санируются в null в payload автоматически, обеспечивая полную автономию сохранения данных пациента.
 	return null;
 }
 

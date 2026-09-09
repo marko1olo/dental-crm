@@ -5,7 +5,7 @@
  * без 403-ошибок.»
  */
 
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 
 export interface BlankContractPatientInfo {
@@ -16,8 +16,10 @@ export interface BlankContractPatientInfo {
 	administrativeProfile?: {
 		identityDocument?: string | null | undefined;
 		registrationAddress?: string | null | undefined;
+		residentialAddress?: string | null | undefined;
 		taxpayerInn?: string | null | undefined;
 		snils?: string | null | undefined;
+		insurancePolicyNumber?: string | null | undefined;
 	} | null | undefined;
 }
 
@@ -43,13 +45,21 @@ export function generateBlankContractFallbackHtml(
 	const clinicOgrn = options?.clinicOgrn || "1027700123456";
 
 	const customerName = patient?.fullName?.trim() || "________________________________________________";
+	const customerBirthDate = patient?.birthDate?.trim() || "«_____» _________________ _______ г.";
 	const customerPhone = patient?.phone?.trim() || "________________________";
 	const customerPassport =
 		patient?.administrativeProfile?.identityDocument?.trim() ||
 		"серия _______ № ______________, выдан ________________________________________________";
 	const customerAddress =
 		patient?.administrativeProfile?.registrationAddress?.trim() ||
+		patient?.administrativeProfile?.residentialAddress?.trim() ||
 		"____________________________________________________________________";
+	const customerSnils =
+		patient?.administrativeProfile?.snils?.trim() ||
+		"_______-_______-_______ ___";
+	const customerInn =
+		patient?.administrativeProfile?.taxpayerInn?.trim() ||
+		"____________";
 	const doctorName = options?.doctorName?.trim() || "________________________";
 
 	return `<!DOCTYPE html>
@@ -144,7 +154,10 @@ export function generateBlankContractFallbackHtml(
 	</p>
 	<p>
 		<strong>Пациент (Потребитель / Заказчик):</strong> <span class="blank-line">${customerName}</span>,
+		дата рождения: <span class="blank-line">${customerBirthDate}</span>,
 		паспорт: <span class="blank-line">${customerPassport}</span>,
+		СНИЛС: <span class="blank-line">${customerSnils}</span>,
+		ИНН: <span class="blank-line">${customerInn}</span>,
 		адрес регистрации: <span class="blank-line">${customerAddress}</span>,
 		телефон: <span class="blank-line">${customerPhone}</span>, с другой стороны,
 		заключили настоящий Договор о нижеследующем:
@@ -161,7 +174,7 @@ export function generateBlankContractFallbackHtml(
 
 	<div class="section-title">2. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</div>
 	<p>
-		2.1. Предварительная стоимость услуг до осмотра врача: <strong>_______ руб. ___ коп.</strong>
+		2.1. Предварительная стоимость услуг до осмотра врача: <strong>0 руб. 00 коп. (прочерк: _______ руб. ___ коп.)</strong>
 	</p>
 	<p>
 		2.2. Сумма прописью: __________________________________________________________________________________ руб.
@@ -186,7 +199,10 @@ export function generateBlankContractFallbackHtml(
 			<td>
 				<strong>ПАЦИЕНТ / ЗАКАЗЧИК:</strong><br />
 				ФИО: ${customerName}<br />
+				Дата рожд.: ${customerBirthDate}<br />
 				Паспорт: ${customerPassport}<br />
+				СНИЛС: ${customerSnils}<br />
+				ИНН: ${customerInn}<br />
 				Адрес: ${customerAddress}<br />
 				Телефон: ${customerPhone}<br /><br />
 				<div class="signature-area">
@@ -215,6 +231,10 @@ export async function printBlankMedicalContract(
 	patient?: BlankContractPatientInfo | null,
 	options?: BlankContractOptions,
 ): Promise<void> {
+	if (typeof window === "undefined") {
+		return;
+	}
+
 	showToast("Подготовка бланка договора со строками _______...", "info", 2000);
 
 	try {

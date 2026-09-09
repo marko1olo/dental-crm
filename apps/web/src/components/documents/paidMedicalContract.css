@@ -603,7 +603,8 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	height: 36px;
+	min-height: 44px;
+	height: auto;
 	padding: 0 16px;
 	border-radius: 8px;
 	font-size: 12px;

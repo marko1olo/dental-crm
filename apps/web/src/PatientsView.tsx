@@ -472,8 +472,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const patientAdministrativeProfileReadyToSave =
 		Boolean(selectedPatient) &&
 		patientAdministrativeProfileDirty &&
-		patientAdministrativeProfileSaveState !== "saving" &&
-		!patientAdministrativeProfileValidationMessage;
+		patientAdministrativeProfileSaveState !== "saving";
 
 	const savePatientCore = () =>
 		executePatientCoreSaveAutonomy({
@@ -1362,7 +1361,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									aria-busy={patientAdministrativeProfileSaveState === "saving" || undefined}
 									aria-describedby={patientAdministrativeSaveGuidance ? patientAdministrativeSaveGuidanceId : undefined}
 									disabled={patientAdministrativeProfileSaveState === "saving"}
-									style={{ minHeight: "36px" }}
+									style={{ minHeight: "44px" }}
 									data-testid="patient-admin-save-btn"
 								>
 									<ShieldCheck size={16} aria-hidden="true" /> Сохранить реквизиты
