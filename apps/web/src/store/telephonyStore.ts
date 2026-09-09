@@ -173,7 +173,6 @@ export interface TelephonyStore {
 	isHeld: boolean;
 	line1: TelephonyLineSession;
 	line2: TelephonyLineSession;
-	isSimulatorOpen: boolean;
 	isCallHistoryModalOpen: boolean;
 	isMuted: boolean;
 	volumeLevel: number; // 0.0 to 1.0 (default 0.8)
@@ -201,8 +200,6 @@ export interface TelephonyStore {
 	startCallTransfer: (targetExtension: string, transferType?: CallTransferType) => void;
 	completeCallTransfer: () => void;
 	cancelCallTransfer: () => void;
-	openSimulator: () => void;
-	closeSimulator: () => void;
 	openCallHistoryModal: () => void;
 	closeCallHistoryModal: () => void;
 	toggleMute: () => void;
@@ -1246,7 +1243,6 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	isHeld: false,
 	line1: initialLine1,
 	line2: initialLine2,
-	isSimulatorOpen: false,
 	isCallHistoryModalOpen: false,
 	isMuted: false,
 	volumeLevel: 0.8,
@@ -1499,8 +1495,6 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		});
 	},
 
-	openSimulator: () => set({ isSimulatorOpen: true }),
-	closeSimulator: () => set({ isSimulatorOpen: false }),
 	openCallHistoryModal: () => set({ isCallHistoryModalOpen: true }),
 	closeCallHistoryModal: () => set({ isCallHistoryModalOpen: false }),
 	toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),

@@ -20,7 +20,6 @@ import {
 	RefreshCw,
 	Server,
 	ShieldCheck,
-	Sliders,
 	Sparkles,
 	Sun,
 	Volume2,
@@ -82,8 +81,6 @@ export function ClinicControlPill({
 	const switchLine = useTelephonyStore((s) => s.switchLine);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
-	const openSimulator = useTelephonyStore((s) => s.openSimulator);
-	const isDev = Boolean(typeof import.meta !== "undefined" && import.meta.env?.DEV);
 
 	const clinicMode = useSettingsStore((s) => s.clinicMode);
 	const themeMode = useThemeStore((s) => s.themeMode);
@@ -428,33 +425,18 @@ export function ClinicControlPill({
 								</button>
 							</div>
 
-							{isDev ? (
-								<button
-									type="button"
-									onClick={() => {
-										setIsOpen(false);
-										openSimulator();
-									}}
-									className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] text-xs"
-									title="Тестовый вызов АТС (режим отладки)"
-								>
-									<Sliders size={14} className="text-[var(--teal,#0d9488)]" />
-									<span>Тест АТС</span>
-								</button>
-							) : (
-								<button
-									type="button"
-									onClick={() => {
-										setIsOpen(false);
-										showToast("Телефония Mango PBX активна и готова к приему вызовов", "info");
-									}}
-									className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] text-xs"
-									title="Телефония: Mango PBX подключена"
-								>
-									<PhoneCall size={14} className="text-emerald-500 shrink-0" />
-									<span>Вызовы</span>
-								</button>
-							)}
+							<button
+								type="button"
+								onClick={() => {
+									setIsOpen(false);
+									showToast("Телефония Mango PBX активна и готова к приему вызовов", "info");
+								}}
+								className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] text-xs"
+								title="Телефония: Mango PBX подключена"
+							>
+								<PhoneCall size={14} className="text-emerald-500 shrink-0" />
+								<span>Вызовы</span>
+							</button>
 						</div>
 					</div>
 

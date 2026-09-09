@@ -30,7 +30,9 @@ export type SoundEffectType =
 	| "mic_stop"
 	| "speech_captured"
 	| "action_success"
-	| "warning_alert";
+	| "warning_alert"
+	| "online_booking_chime"
+	| "slot_end_warning_chime";
 
 export interface SoundFeedbackConfig {
 	enabled: boolean;
@@ -461,6 +463,104 @@ export class SoundFeedbackService {
 	}
 
 	/**
+	 * 6. playOnlineBookingChime(): двойной восходящий аккорд (440Hz -> 660Hz, sine)
+	 * Уведомление администратора о новой онлайн-записи.
+	 */
+	public async playOnlineBookingChime(): Promise<void> {
+		if (!this.enabled || this.volume <= 0) return;
+		this.triggerHaptic([30, 20, 40]);
+
+		const ctx = await this.ensureContextActive();
+		if (!ctx) return;
+
+		try {
+			const now = ctx.currentTime;
+			const masterGain = ctx.createGain();
+			const peak = this.volume * 0.35;
+			masterGain.connect(ctx.destination);
+
+			// Тон 1: 440 Гц, 180мс
+			const osc1 = ctx.createOscillator();
+			const gain1 = ctx.createGain();
+			osc1.type = "sine";
+			osc1.frequency.setValueAtTime(440, now);
+			gain1.gain.setValueAtTime(0.0001, now);
+			gain1.gain.linearRampToValueAtTime(peak, now + 0.01);
+			gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+			osc1.connect(gain1);
+			gain1.connect(masterGain);
+			osc1.start(now);
+			osc1.stop(now + 0.2);
+
+			// Тон 2: 660 Гц, 280мс, старт через 200мс
+			const osc2 = ctx.createOscillator();
+			const gain2 = ctx.createGain();
+			osc2.type = "sine";
+			osc2.frequency.setValueAtTime(660, now + 0.2);
+			gain2.gain.setValueAtTime(0.0001, now + 0.2);
+			gain2.gain.linearRampToValueAtTime(peak, now + 0.21);
+			gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+			osc2.connect(gain2);
+			gain2.connect(masterGain);
+			osc2.start(now + 0.2);
+			osc2.stop(now + 0.5);
+		} catch (err) {
+			console.warn("[SoundFeedbackService] playOnlineBookingChime error:", err);
+		} finally {
+			this.scheduleIdleSuspend();
+		}
+	}
+
+	/**
+	 * 7. playSlotEndWarningChime(): одиночный мягкий нисходящий сигнал (880Hz -> 660Hz)
+	 * Уведомление врача за 5 минут до конца слота приёма.
+	 */
+	public async playSlotEndWarningChime(): Promise<void> {
+		if (!this.enabled || this.volume <= 0) return;
+		this.triggerHaptic([40, 30]);
+
+		const ctx = await this.ensureContextActive();
+		if (!ctx) return;
+
+		try {
+			const now = ctx.currentTime;
+			const masterGain = ctx.createGain();
+			const peak = this.volume * 0.3;
+			masterGain.connect(ctx.destination);
+
+			// Тон 1: 880 Гц, 150мс
+			const osc1 = ctx.createOscillator();
+			const gain1 = ctx.createGain();
+			osc1.type = "sine";
+			osc1.frequency.setValueAtTime(880, now);
+			gain1.gain.setValueAtTime(0.0001, now);
+			gain1.gain.linearRampToValueAtTime(peak, now + 0.01);
+			gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+			osc1.connect(gain1);
+			gain1.connect(masterGain);
+			osc1.start(now);
+			osc1.stop(now + 0.17);
+
+			// Тон 2: 660 Гц, 350мс, старт через 170мс
+			const osc2 = ctx.createOscillator();
+			const gain2 = ctx.createGain();
+			osc2.type = "sine";
+			osc2.frequency.setValueAtTime(660, now + 0.17);
+			gain2.gain.setValueAtTime(0.0001, now + 0.17);
+			gain2.gain.linearRampToValueAtTime(peak, now + 0.18);
+			gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.52);
+			osc2.connect(gain2);
+			gain2.connect(masterGain);
+			osc2.start(now + 0.17);
+			osc2.stop(now + 0.55);
+		} catch (err) {
+			console.warn("[SoundFeedbackService] playSlotEndWarningChime error:", err);
+		} finally {
+			this.scheduleIdleSuspend();
+		}
+	}
+
+	/**
 	 * Универсальный вызов звука по его типу
 	 */
 	public async playSound(type: SoundEffectType): Promise<void> {
@@ -475,6 +575,10 @@ export class SoundFeedbackService {
 				return this.playActionSuccess();
 			case "warning_alert":
 				return this.playWarningAlert();
+			case "online_booking_chime":
+				return this.playOnlineBookingChime();
+			case "slot_end_warning_chime":
+				return this.playSlotEndWarningChime();
 		}
 	}
 

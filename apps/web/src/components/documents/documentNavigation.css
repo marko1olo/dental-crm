@@ -461,7 +461,7 @@
 	border-radius: 8px;
 	font-size: 11px;
 	font-weight: 700;
-	background: var(--teal-10, rgba(13, 148, 136, 0.1));
+	background: var(--teal-soft);
 	color: var(--teal, #0d9488);
 	border: 1px solid var(--teal, #0d9488);
 }

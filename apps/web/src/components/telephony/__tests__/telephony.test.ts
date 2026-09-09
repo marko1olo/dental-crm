@@ -317,7 +317,6 @@ describe("4. Last Visit & Attending Doctor Resolution", () => {
 describe("5. Telephony Store Lifecycle & State Transitions", () => {
 	test("store initializes with default state", () => {
 		const state = useTelephonyStore.getState();
-		assert.equal(state.isSimulatorOpen, false);
 		assert.equal(state.playbackSpeed, 1);
 		assert.equal(state.volumeLevel, 0.8);
 	});
@@ -418,12 +417,12 @@ describe("5. Telephony Store Lifecycle & State Transitions", () => {
 		assert.equal(useTelephonyStore.getState().isMuted, initialMute);
 	});
 
-	test("openSimulator and closeSimulator control modal visibility", () => {
-		useTelephonyStore.getState().openSimulator();
-		assert.equal(useTelephonyStore.getState().isSimulatorOpen, true);
+	test("openCallHistoryModal and closeCallHistoryModal control modal visibility", () => {
+		useTelephonyStore.getState().openCallHistoryModal();
+		assert.equal(useTelephonyStore.getState().isCallHistoryModalOpen, true);
 
-		useTelephonyStore.getState().closeSimulator();
-		assert.equal(useTelephonyStore.getState().isSimulatorOpen, false);
+		useTelephonyStore.getState().closeCallHistoryModal();
+		assert.equal(useTelephonyStore.getState().isCallHistoryModalOpen, false);
 	});
 
 	test("clearHistory empties the call history list", () => {

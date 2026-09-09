@@ -2424,17 +2424,17 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 33b. Patient Webapp Mobile PWA Simulator Trigger */}
+					{/* 33b. Patient Webapp Mobile PWA Modal Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
 								<Phone className="w-5 h-5" />
 								<span className="font-bold text-sm text-[var(--ink)]">
-									Мобильный веб-кабинет PWA (Симулятор смартфона)
+									Мобильный веб-кабинет PWA (Портал пациента)
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Симулятор экрана смартфона (390x844): шторка До/После, динамический СБП QR с диплинками банков и 63-ФЗ ПЭП.
+								Адаптивный мобильный веб-портал: фотопротокол До/После со шторкой, динамический СБП QR с диплинками банков и 63-ФЗ ПЭП.
 							</p>
 						</div>
 						<button

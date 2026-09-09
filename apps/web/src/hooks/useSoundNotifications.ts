@@ -5,19 +5,16 @@
  * 1. Администратор: новая онлайн-запись с виджета → двойной восходящий сигнал.
  * 2. Врач: за 5 минут до конца своего приёма → одиночный нисходящий сигнал.
  *
- * РЕАЛИЗАЦИЯ БЕЗ АУДИО-ФАЙЛОВ. Web Audio API + OscillatorNode даёт надёжный
- * кросс-браузерный звук без зависимостей. MP3/WAV требовали бы хостинга файлов
- * и CORS-заголовков — лишняя точка отказа.
- *
- * ПОЛИТИКА БРАУЗЕРА. autoplay policy запрещает аудио до первого жеста
- * пользователя. AudioContext создаётся отложенно: при первом звуке. Если
- * контекст заблокирован — ошибка проглатывается тихо (нет смысла ронять UI).
+ * ЦЕНТРАЛИЗОВАННОЕ ВОСПРОИЗВЕДЕНИЕ. Звуковые сигналы синтезируются через единый синглтон
+ * SoundFeedbackService (Web Audio API: OscillatorNode + GainNode + Haptics) без создания
+ * дублирующих AudioContext и без риска утечек памяти при размонтировании.
  *
  * ИДЕМПОТЕНТНОСТЬ. Каждый тип уведомления кулдаунится на COOLDOWN_MS: даже
  * при пачке событий за секунду звук играет не чаще раза.
  */
 
 import { useCallback, useEffect, useRef } from "react";
+import { SoundFeedbackService } from "../services/audio/SoundFeedbackService";
 import { useWebsocket } from "./useWebsocket";
 
 // Минимальный интервал между одинаковыми звуками (мс).
@@ -29,71 +26,7 @@ const SLOT_END_WARNING_MS = 5 * 60 * 1_000;
 // Как часто проверять приём (мс). 30 секунд достаточно.
 const SLOT_CHECK_INTERVAL_MS = 30_000;
 
-type AudioCtxRef = AudioContext | null;
-
-function getOrCreateCtx(ref: React.MutableRefObject<AudioCtxRef>): AudioContext | null {
-	if (ref.current) return ref.current;
-	try {
-		ref.current = new AudioContext();
-		return ref.current;
-	} catch {
-		return null;
-	}
-}
-
-/**
- * Проигрывает последовательность тонов.
- * @param tones - массив { freq, duration } в миллисекундах
- */
-function playTones(
-	ctx: AudioContext,
-	tones: { freq: number; durationMs: number; startMs?: number }[],
-): void {
-	const now = ctx.currentTime;
-	let cursor = now;
-	for (const tone of tones) {
-		const start = tone.startMs !== undefined ? now + tone.startMs / 1000 : cursor;
-		const osc = ctx.createOscillator();
-		const gain = ctx.createGain();
-		osc.connect(gain);
-		gain.connect(ctx.destination);
-
-		osc.type = "sine";
-		osc.frequency.setValueAtTime(tone.freq, start);
-
-		gain.gain.setValueAtTime(0, start);
-		gain.gain.linearRampToValueAtTime(0.25, start + 0.01);
-		gain.gain.exponentialRampToValueAtTime(0.001, start + tone.durationMs / 1000);
-
-		osc.start(start);
-		osc.stop(start + tone.durationMs / 1000 + 0.05);
-		cursor = start + tone.durationMs / 1000;
-	}
-}
-
-/**
- * Звук «новая онлайн-запись» для администратора.
- * Двойной восходящий аккорд — 440 Гц → 660 Гц, два тона подряд.
- */
-function playOnlineBookingChime(ctx: AudioContext): void {
-	playTones(ctx, [
-		{ freq: 440, durationMs: 180, startMs: 0 },
-		{ freq: 660, durationMs: 280, startMs: 200 },
-	]);
-}
-
-/**
- * Звук «5 минут до конца слота» для врача.
- * Одиночный нисходящий сигнал — 880 Гц → 660 Гц, мягкий.
- */
-function playSlotEndWarningChime(ctx: AudioContext): void {
-	playTones(ctx, [
-		{ freq: 880, durationMs: 150, startMs: 0 },
-		{ freq: 660, durationMs: 350, startMs: 170 },
-	]);
-}
-
-type UseSoundNotificationsOptions = {
+export type UseSoundNotificationsOptions = {
 	/** ID текущего врача. Если задан — включаем таймер 5 минут до конца слота. */
 	currentDoctorUserId?: string | null;
 	/**
@@ -110,47 +43,10 @@ export function useSoundNotifications({
 	doctorTodaySlots,
 	muted = false,
 }: UseSoundNotificationsOptions = {}) {
-	const audioCtxRef = useRef<AudioCtxRef>(null);
-	const idleSuspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const lastOnlineChimeAt = useRef(0);
 	const lastSlotWarningAt = useRef(0);
 	// Множество endsAt (ISO-строка) приёмов, по которым сигнал уже прозвучал.
 	const warnedSlots = useRef<Set<string>>(new Set());
-
-	const scheduleIdleSuspend = useCallback((ctx: AudioContext) => {
-		if (idleSuspendTimerRef.current) {
-			clearTimeout(idleSuspendTimerRef.current);
-		}
-		idleSuspendTimerRef.current = setTimeout(() => {
-			if (ctx.state === "running") {
-				ctx.suspend().catch(() => undefined);
-			}
-			idleSuspendTimerRef.current = null;
-		}, 5000);
-	}, []);
-
-	const playSoundWithIdleSuspend = useCallback(
-		(playFn: (ctx: AudioContext) => void) => {
-			const ctx = getOrCreateCtx(audioCtxRef);
-			if (!ctx) return;
-			if (idleSuspendTimerRef.current) {
-				clearTimeout(idleSuspendTimerRef.current);
-				idleSuspendTimerRef.current = null;
-			}
-			if (ctx.state === "suspended") {
-				ctx.resume()
-					.then(() => {
-						playFn(ctx);
-						scheduleIdleSuspend(ctx);
-					})
-					.catch(() => undefined);
-			} else {
-				playFn(ctx);
-				scheduleIdleSuspend(ctx);
-			}
-		},
-		[scheduleIdleSuspend],
-	);
 
 	// WS-соединение расписания — то же, что у useScheduleRealtime.
 	const wsUrl = (() => {
@@ -172,8 +68,8 @@ export function useSoundNotifications({
 		if (now - lastOnlineChimeAt.current < COOLDOWN_MS) return;
 		lastOnlineChimeAt.current = now;
 
-		playSoundWithIdleSuspend(playOnlineBookingChime);
-	}, [lastMessage, muted, playSoundWithIdleSuspend]);
+		void SoundFeedbackService.getInstance().playOnlineBookingChime();
+	}, [lastMessage, muted]);
 
 	// Таймер «5 минут до конца слота» для врача.
 	const checkSlotEnd = useCallback(() => {
@@ -195,11 +91,11 @@ export function useSoundNotifications({
 			if (diff > 0 && diff <= SLOT_END_WARNING_MS && diff > SLOT_END_WARNING_MS - SLOT_CHECK_INTERVAL_MS) {
 				warnedSlots.current.add(key);
 				lastSlotWarningAt.current = now;
-				playSoundWithIdleSuspend(playSlotEndWarningChime);
+				void SoundFeedbackService.getInstance().playSlotEndWarningChime();
 				break;
 			}
 		}
-	}, [currentDoctorUserId, doctorTodaySlots, muted, playSoundWithIdleSuspend]);
+	}, [currentDoctorUserId, doctorTodaySlots, muted]);
 
 	useEffect(() => {
 		if (!currentDoctorUserId || !doctorTodaySlots?.length) return;
@@ -208,30 +104,16 @@ export function useSoundNotifications({
 		return () => clearInterval(timer);
 	}, [currentDoctorUserId, doctorTodaySlots, checkSlotEnd]);
 
-	// Очищаем AudioContext и таймеры при размонтировании.
-	useEffect(() => {
-		return () => {
-			if (idleSuspendTimerRef.current) {
-				clearTimeout(idleSuspendTimerRef.current);
-				idleSuspendTimerRef.current = null;
-			}
-			if (audioCtxRef.current) {
-				audioCtxRef.current.close().catch(() => undefined);
-				audioCtxRef.current = null;
-			}
-		};
-	}, []);
-
 	/**
 	 * Тестовая функция для ручной проверки звука в настройках.
 	 */
 	const testOnlineBookingSound = useCallback(() => {
-		playSoundWithIdleSuspend(playOnlineBookingChime);
-	}, [playSoundWithIdleSuspend]);
+		void SoundFeedbackService.getInstance().playOnlineBookingChime();
+	}, []);
 
 	const testSlotEndSound = useCallback(() => {
-		playSoundWithIdleSuspend(playSlotEndWarningChime);
-	}, [playSoundWithIdleSuspend]);
+		void SoundFeedbackService.getInstance().playSlotEndWarningChime();
+	}, []);
 
 	return { testOnlineBookingSound, testSlotEndSound };
 }
