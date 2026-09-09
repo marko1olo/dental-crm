@@ -2434,6 +2434,28 @@
 - **Файлы**: `apps/web/src/ImagingView.tsx`, `apps/web/src/components/imaging/VisiographAnalyzer.tsx`, `apps/web/src/components/visiograph/Cornerstone3DViewer.tsx`, `apps/web/src/components/visiograph/VisiographExportService.ts`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/AppointmentCard.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/schedule/AppointmentCreationModal.tsx`, `apps/web/src/components/schedule/ScheduleToolbar.tsx`, `apps/web/src/utils/math/mprMath.ts`, `apps/web/src/mprWorker.ts`, `apps/web/src/components/dicom/PanoramicRendererWindow.tsx`.
 - **Тесты**: 178/178 тестов томографии, визиографа и MPR PASS, 313/313 тестов расписания PASS, `panelsAreMounted.test.ts` PASS, `check:encoding` 5136 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
 
+#### 2.10.226. Ликвидация остаточной фейк-дозиметрии, снос холостого 60 FPS аудио-цикла, устранение обрезаний текста и очистка пресетов автоклава (Wave 82)
+- **Назначение**: Полная зачистка остаточной синтетической дозиметрии в панорамной реконструкции и 3D КТ-просмотрщике (PanoramicRendererWindow, CbctMprWorkspace), обнуление моковых исследований пациентов в журналах радиационного контроля (RadiationDoseSheetForm, RadiationDoseSheetModal), вырезка встроенного AudioContext из геометрического ядра имплантации (implantSafetyEngine), остановка холостого 60 FPS цикла requestAnimationFrame в компоненте аудиоволны (CanvasWaveform), снос мертвого стационарного синтезатора реанимационных тревог (SoundFeedbackService), добавление обязательных подсказок title на все элементы с truncate в расписании (AppointmentCard, AppointmentModal) и очистка пресетов автоклава от хардкод-медсестер и CSS-датчиков (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8o).
+- **Архитектурные механизмы**:
+  1. *Зачистка остаточной радиационной фальсификации и моковых исследований (коммит `4bf941180`)*:
+     - В `PanoramicRendererWindow.tsx` (строки 358–364) удалены захардкоженные параметры экспозиции (`kVp: 72, mAs: 100, exposureTimeSec: 12.5`), заменены на `undefined` при отсутствии реальных метаданных датчика;
+     - В `CbctMprWorkspace.tsx` (строки 715–721) удалены захардкоженные параметры экспозиции (`kVp: 90, mAs: 120, exposureTimeSec: 14.0`), заменены на `undefined`;
+     - В `RadiationDoseSheetForm.tsx` (строки 26–51) удалены синтетические моковые исследования («Зуб 26», «Иванов И.И.», «Петрова С.А.»), начальный стейт строго пустой массив `[]`;
+     - В `RadiationDoseSheetModal.tsx` (строки 93–128) удалены фиктивные образцы исследований («KaVo 3D eXam Vision», «sample-cbct-01», «Др. Смирнов А.В.»), дефолт строго `[]`;
+     - В `implantSafetyEngine.ts` (строки 940–1035) вырезан встроенный `AudioContext`, таймеры и синтезаторы частот (660/440/520 Гц) из математического ядра расчетов, звуковое предупреждение чисто делегировано в сервис `soundFeedback`.
+  2. *Энергосбережение аудио и ликвидация стационарных реанимационных тревог (коммит `e6384d3de`)*:
+     - В `CanvasWaveform.tsx` остановлен холостой 60 FPS `requestAnimationFrame` цикл при отсутствии активной записи `!isRecording`, предотвращая лишнюю нагрузку на CPU/GPU;
+     - В `SoundFeedbackService.ts` вырезаны неиспользуемые синтезаторы тревог общего стационара (`emergency_alarm` для анафилаксии/остановки сердца и `metronome_click` для СЛР — 0 вызовов в амбулаторной стоматологии);
+     - В `TelephonyFloatingWidget.tsx` очищен аудио-код и неиспользуемые импорты.
+  3. *Устранение 7 смертных грехов UI в расписании и очистка автоклава (коммит `082cbdcbe`)*:
+     - В `AppointmentCard.tsx` добавлены нативные всплывающие подсказки `title` на все `truncate` элементы (строки 911, 1034, 2138) для гарантированного просмотра полных ФИО пациентов и врачей (Грех 1 чек-листа 7 смертных грехов);
+     - В `AppointmentModal.tsx` добавлен атрибут `title` на `truncate` диапазон времени визита (строка 720);
+     - В `AutoclaveCycleModal.tsx` заменена захардкоженная медсестра («Смирнова О.И.») на нейтральный дефолт «Дежурная медицинская сестра»;
+     - В `autoclave.css` удалены orphaned CSS-классы датчиков и циферблатов (`.autoclave-gauges-container`, `.gauge-panel`, `.gauge-dial`, `.gauge-val-display`).
+- **Файлы**: `apps/web/src/components/dicom/PanoramicRendererWindow.tsx`, `apps/web/src/components/dicom/mpr/CbctMprWorkspace.tsx`, `apps/web/src/components/radiation/RadiationDoseSheetForm.tsx`, `apps/web/src/components/radiation/RadiationDoseSheetModal.tsx`, `packages/shared/src/implant/implantSafetyEngine.ts`, `apps/web/src/components/audio/CanvasWaveform.tsx`, `apps/web/src/services/sound/SoundFeedbackService.ts`, `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx`, `apps/web/src/components/schedule/AppointmentCard.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/sanpin/autoclave/AutoclaveCycleModal.tsx`, `apps/web/src/components/sanpin/autoclave/autoclave.css`.
+- **Тесты**: `telephonyHub.test.ts` (38/38 PASS), `scheduleGridStomxInquisition.test.tsx` + `scheduleStomxDoctorChairRosterParity.test.tsx` (19/19 PASS), `check:encoding` 5136 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+
+
 
 
 
