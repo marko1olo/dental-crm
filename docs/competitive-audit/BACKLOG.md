@@ -3404,6 +3404,24 @@
     * *PatientWebappPortalModal.tsx*, *patientWebapp.css*: зафиксирован статус чистого адаптивного PWA без диорам.
 * **Верификация**: `settingsRbacAndCommissions.test.ts` (6/6 PASS), `emergencyAnaphylaxisProtocol.test.ts` (12/12 PASS), `anesthesiaSafetyEngine.test.ts` (21/21 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `check:encoding` 5137 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
+### Wave 86: Паритет расписания со StomX/DentalPRO по закреплению кресел за врачами и сменности, ликвидация генератора фейковых пациентов, игрушечного симулятора утилизации кресел и образцов ДМС
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `b65a6abe2`, `ec8f5f0d5`
+* **Результаты**:
+  - **Паритет расписания StomX / DentalPRO по управлению креслами и сменности (Мандаты 8e, 8n / Автономия врача / Solo Doctor Sovereignty)**:
+    * *scheduleChairBinding.ts*: внедрен 5-уровневый каскад определения дежурного врача кресла `resolveChairDutyDoctor` (1. явное назначение на дату и смену утро/вечер; 2. локальный оверрайд смены в localStorage; 3. дефолтный закрепленный врач кресла `chair.defaultDoctorId`; 4. системный фолбэк `defaultDoctorIdFallback`; 5. соло-врач при 0 заведенных креслах).
+    * *ChairScheduleView.tsx*, *ScheduleGrid.tsx*: в шапках колонок кресел отображается бейдж дежурного врача смены (`dutyDoctorBadge`) с динамической подсветкой смены «Утро (до 14:00)» / «Вечер (после 14:00)».
+    * *QuickBookingDrawer.tsx*, *AppointmentModal.tsx*: автоматическая подстановка дежурного врача при клике на свободный слот кресла; неблокирующий выбор любого другого врача с информационным бейджем оверрайда (Мандат 8e); переключение кресла динамически обновляет врача с toast-уведомлением.
+    * *chairDoctorDutyAssignmentWave60.test.tsx*: 10/10 PASS (всего по расписанию 70/70 PASS).
+  - **Ликвидация генератора фейковых пациентов и игрушечного симулятора утилизации кресел в LostPatientsPanel (Мандаты 8k, Core Rule 7, Zero Mocks)**:
+    * *LostPatientsPanel.tsx*: полностью удален генератор вымышленных пациентов в catch-блоке (`realisticNames = ["Барабаш С. В.", "Ковалев Д. П."...]` и фейковые телефоны), подменявший реальные данные; вывод переведен исключительно на реальных потерянных пациентов из локального кэша и бэкенда либо честный пустой список.
+    * *LostPatientsPanel.tsx*: удален 130-строчный игрушечный калькулятор утилизации кресел (`activeTab === "chair_calc"`, `calculateCapacityYieldKopecks`, `calculateChairUtilizationPercent`, ползунки выручки), захламлявший аналитику; режим вкладок сокращен до чистого `risk_list` и `recall_cohorts`. Мертвый 0% KPI-блок заменен на реальный расчет «Потенциал возврата» (`estimatedRecallRevenueKopecks`).
+  - **Ликвидация зашитых образцов ДМС в DmsRegistryExportModal и мертвого импорта в PatientWorkspaceView (Мандаты 8e, 8k, Core Rule 7)**:
+    * *DmsRegistryExportModal.tsx*: удален 148-строчный массив зашитых демонстрационных услуг ДМС `DEFAULT_SAMPLE_RECORDS` (7 синтетических пациентов с фиктивными полисами), выводившийся по умолчанию в рабочей карточке реального пациента. Параметр `records` переведен на дефолт `[]` с честным пустым состоянием: «Нет оказанных услуг по ДМС за выбранный период».
+    * *PatientWorkspaceView.tsx*: удален неиспользуемый импорт монолита `DmsInsuranceManagerModal`.
+    * *StaffCommissionsPanel.tsx*, *emergencyAnaphylaxisProtocol.css*, *EmergencyAnaphylaxisProtocolModal.tsx*, *anesthesia.css*: дочищены неиспользуемые импорты и мертвые CSS-правила ликвидированных секундомеров и метрономов.
+* **Верификация**: `analyticsWidgetData.test.ts` (19/19 PASS), `chairDoctorDutyAssignmentWave60.test.tsx` (10/10 PASS), `settingsRbacAndCommissions.test.ts` (6/6 PASS), `emergencyAnaphylaxisProtocol.test.ts` (19/19 PASS), `anesthesiaSafetyEngine.test.ts` (21/21 PASS), `insuranceMath.test.ts` (11/11 PASS), `check:encoding` 5138 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+
 
 
 
