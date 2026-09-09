@@ -12,13 +12,19 @@ import {
 	ClipboardList,
 	CreditCard,
 	Database,
+	Droplets,
+	Eye,
 	FileCheck2,
 	FileText,
+	Flame,
+	Flower2,
 	Image as ImageIcon,
+	Laptop,
 	LayoutDashboard,
 	Lock,
 	Megaphone,
 	MessageSquare,
+	Moon,
 	Package,
 	PackageSearch,
 	Plus,
@@ -26,9 +32,13 @@ import {
 	ScanLine,
 	Sparkles,
 	Stethoscope,
+	Sun,
+	Trees,
 	TrendingUp,
 	UserPlus,
 	Users,
+	Waves,
+	Zap,
 } from "lucide-react";
 import { ClinicControlPill } from "./components/Header";
 import {
@@ -448,20 +458,20 @@ function ThemeSwitcher() {
 		mode: ThemeMode;
 		label: string;
 		hint: string;
-		icon: string;
+		Icon: LucideIcon;
 		dot: string;
 	}> = [
-		{ mode: "auto", label: "Авто", hint: "Следовать системной теме устройства", icon: "⚙️", dot: "#94a3b8" },
-		{ mode: "light", label: "День", hint: "Клиническая светлая тема", icon: "☀️", dot: "#0d9488" },
-		{ mode: "dark", label: "Тьма", hint: "Хирургическая тёмная (Slate)", icon: "🌙", dot: "#2dd4bf" },
-		{ mode: "night", label: "OLED", hint: "Истинный глубокий чёрный для OLED", icon: "🌌", dot: "#ffffff" },
-		{ mode: "calm_teal", label: "Морская", hint: "Мягкая мятная успокаивающая тема", icon: "🌊", dot: "#14b8a6" },
-		{ mode: "sakura", label: "Сакура", hint: "Нежная розовая сакура для детской и эстетики", icon: "🌸", dot: "#f43f5e" },
-		{ mode: "ocean", label: "Океан", hint: "Глубокий сапфировый ультрамарин", icon: "💎", dot: "#38bdf8" },
-		{ mode: "emerald", label: "Изумруд", hint: "Хвойно-изумрудная свежесть", icon: "🌲", dot: "#34d399" },
-		{ mode: "cyber_xray", label: "Рентген", hint: "Неоновый кибер-КТ визиограф", icon: "⚡", dot: "#00f0ff" },
-		{ mode: "warm_sand", label: "Песок", hint: "Тёплый уют шамотной керамики", icon: "🏜️", dot: "#d97706" },
-		{ mode: "contrast", label: "Контраст", hint: "Высокий контраст WCAG AAA (7:1)", icon: "👓", dot: "#000000" },
+		{ mode: "auto", label: "Авто", hint: "Следовать системной теме устройства", Icon: Laptop, dot: "#94a3b8" },
+		{ mode: "light", label: "День", hint: "Клиническая светлая тема", Icon: Sun, dot: "#0d9488" },
+		{ mode: "dark", label: "Тьма", hint: "Хирургическая тёмная (Slate)", Icon: Moon, dot: "#2dd4bf" },
+		{ mode: "night", label: "OLED", hint: "Истинный глубокий чёрный для OLED", Icon: Sparkles, dot: "#ffffff" },
+		{ mode: "calm_teal", label: "Морская", hint: "Мягкая мятная успокаивающая тема", Icon: Waves, dot: "#14b8a6" },
+		{ mode: "sakura", label: "Сакура", hint: "Нежная розовая сакура для детской и эстетики", Icon: Flower2, dot: "#f43f5e" },
+		{ mode: "ocean", label: "Океан", hint: "Глубокий сапфировый ультрамарин", Icon: Droplets, dot: "#38bdf8" },
+		{ mode: "emerald", label: "Изумруд", hint: "Хвойно-изумрудная свежесть", Icon: Trees, dot: "#34d399" },
+		{ mode: "cyber_xray", label: "Рентген", hint: "Неоновый кибер-КТ визиограф", Icon: Zap, dot: "#00f0ff" },
+		{ mode: "warm_sand", label: "Песок", hint: "Тёплый уют шамотной керамики", Icon: Flame, dot: "#d97706" },
+		{ mode: "contrast", label: "Контраст", hint: "Высокий контраст WCAG AAA (7:1)", Icon: Eye, dot: "#000000" },
 	];
 
 	const currentOption = options.find((opt) => opt.mode === themeMode) ?? options[0]!;
@@ -470,7 +480,8 @@ function ThemeSwitcher() {
 		<details className="workspace-role-switcher workspace-theme-switcher" aria-label="Тема оформления">
 			<summary title={currentOption.hint}>
 				<span className="theme-dot" style={{ backgroundColor: currentOption.dot }} />
-				<strong>{currentOption.icon} {currentOption.label}</strong>
+				<currentOption.Icon size={13} className="shrink-0 opacity-80" aria-hidden="true" />
+				<strong>{currentOption.label}</strong>
 			</summary>
 			<div className="role-switcher-options theme-switcher-grid">
 				{options.map((option) => (
@@ -486,7 +497,8 @@ function ThemeSwitcher() {
 						}}
 					>
 						<span className="theme-dot" style={{ backgroundColor: option.dot }} />
-						<span>{option.icon} {option.label}</span>
+						<option.Icon size={13} className="shrink-0 opacity-80" aria-hidden="true" />
+						<span>{option.label}</span>
 					</button>
 				))}
 			</div>

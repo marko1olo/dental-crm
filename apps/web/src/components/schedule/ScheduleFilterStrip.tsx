@@ -439,7 +439,7 @@ export function ScheduleFilterStrip({
 							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "timeline"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Лента приемов по дням"
 							aria-label="Лента по дням"
@@ -455,7 +455,7 @@ export function ScheduleFilterStrip({
 							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "grid"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Сетка по кабинетам и креслам"
 							aria-label="Сетка по кабинетам"
@@ -471,7 +471,7 @@ export function ScheduleFilterStrip({
 							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "chairs"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Режим расписания по креслам (StomX паритет)"
 							aria-label="По креслам"

@@ -875,11 +875,13 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	align-items: center;
 	justify-content: space-between;
 	gap: 16px;
-	padding: 10px 24px;
+	padding: 8px 24px;
 	background: var(--paper);
 	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
-	min-height: 60px;
+	min-height: 52px;
+	height: 52px;
+	max-height: 56px;
 	box-sizing: border-box;
 	position: sticky;
 	top: 0;
@@ -1041,6 +1043,9 @@ html.dark .topbar .eyebrow,
 	align-items: center;
 	gap: 6px;
 	padding: 4px 10px;
+	min-height: 36px;
+	height: 36px;
+	box-sizing: border-box;
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	background: var(--paper-soft);
@@ -1996,7 +2001,8 @@ details summary:hover {
 	display: flex;
 	align-items: center;
 	gap: 14px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	min-width: 0;
 }
 
 .topbar-clinic h1 {

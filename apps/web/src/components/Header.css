@@ -149,7 +149,7 @@
 	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	color: var(--muted, #64748b);
+	color: var(--muted, #475569);
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -212,10 +212,41 @@
 
 /* Multi-theme support for Control Center */
 [data-theme="dark"] .dnt-clinic-control-pill,
-[data-theme="dark"] .dnt-control-center-popover {
+[data-theme="dark"] .dnt-control-center-popover,
+.dark .dnt-clinic-control-pill,
+.dark .dnt-control-center-popover {
 	background: var(--paper-strong, #0f172a);
 	border-color: var(--line-strong, #334155);
 	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .dnt-cc-section,
+.dark .dnt-cc-section {
+	background: var(--paper-subtle, var(--paper-soft, #1e293b));
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dnt-cc-btn--secondary,
+.dark .dnt-cc-btn--secondary {
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dnt-cc-btn--secondary:hover,
+.dark .dnt-cc-btn--secondary:hover {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line-strong, #475569);
+}
+
+[data-theme="dark"] .dnt-pill-divider,
+.dark .dnt-pill-divider {
+	background: var(--line, #334155);
+}
+
+[data-theme="dark"] .dnt-cc-section-title,
+.dark .dnt-cc-section-title {
+	color: var(--ink-muted, #94a3b8);
 }
 
 [data-theme="night"] .dnt-clinic-control-pill,
@@ -225,9 +256,48 @@
 	color: var(--ink, #f5efe6);
 }
 
+[data-theme="night"] .dnt-cc-section {
+	background: var(--paper-subtle, var(--paper-soft, #201b17));
+	border-color: var(--line, #2d261e);
+}
+
+[data-theme="night"] .dnt-cc-btn--secondary {
+	background: var(--paper-strong, #181512);
+	color: var(--ink, #f5efe6);
+	border-color: var(--line, #2d261e);
+}
+
+[data-theme="night"] .dnt-cc-btn--secondary:hover {
+	background: var(--paper-soft, #201b17);
+	border-color: var(--line-strong, #3d342a);
+}
+
+[data-theme="night"] .dnt-pill-divider {
+	background: var(--line, #2d261e);
+}
+
+[data-theme="night"] .dnt-cc-section-title {
+	color: var(--ink-muted, #a1a1aa);
+}
+
 [data-theme="contrast"] .dnt-clinic-control-pill,
 [data-theme="contrast"] .dnt-control-center-popover {
 	background: #000000;
 	border: 2px solid #ffffff;
+	color: #ffffff;
+}
+
+[data-theme="contrast"] .dnt-cc-section {
+	background: #000000;
+	border: 1px solid #ffffff;
+}
+
+[data-theme="contrast"] .dnt-cc-btn--secondary {
+	background: #000000;
+	color: #ffffff;
+	border: 1px solid #ffffff;
+}
+
+[data-theme="contrast"] .dnt-cc-section-title {
 	color: #ffffff;
 }

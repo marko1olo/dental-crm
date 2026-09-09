@@ -279,7 +279,7 @@ export function ClinicControlPill({
 								<h3 className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] truncate">
 									Пульт Клиники
 								</h3>
-								<p className="text-[10px] text-[var(--muted,#64748b)] truncate">
+								<p className="text-[10px] text-[var(--muted,#475569)] truncate">
 									{dashboard?.clinicName || "Клиника DENTE"} · {dashboard?.role ? String(dashboard.role) : "Администратор"}
 								</p>
 							</div>
@@ -287,7 +287,7 @@ export function ClinicControlPill({
 						<button
 							type="button"
 							onClick={() => setIsOpen(false)}
-							className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
+							className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#475569)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
 							aria-label="Закрыть пульт"
 						>
 							<X size={16} />
@@ -308,11 +308,11 @@ export function ClinicControlPill({
 
 						<div className="grid grid-cols-2 gap-2 text-xs mb-3">
 							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
-								<span className="text-[10px] text-[var(--muted,#64748b)] block">Смена №</span>
+								<span className="text-[10px] text-[var(--muted,#475569)] block">Смена №</span>
 								<strong className="text-[var(--ink,#0f172a)] font-mono text-sm">№ 14</strong>
 							</div>
 							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
-								<span className="text-[10px] text-[var(--muted,#64748b)] block">ККТ 54-ФЗ / ОФД</span>
+								<span className="text-[10px] text-[var(--muted,#475569)] block">ККТ 54-ФЗ / ОФД</span>
 								<strong className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1">
 									<ShieldCheck size={12} /> ККТ АТОЛ Онлайн (ФФД 1.2)
 								</strong>
@@ -360,7 +360,7 @@ export function ClinicControlPill({
 								<Headphones size={13} className="text-[var(--teal)]" />
 								<span>SIP Телефония (АТС)</span>
 							</span>
-							<span className="text-[10px] font-mono text-[var(--muted,#64748b)]">
+							<span className="text-[10px] font-mono text-[var(--muted,#475569)]">
 								Mango PBX · Л{activeLineId}
 							</span>
 						</div>
@@ -381,7 +381,7 @@ export function ClinicControlPill({
 									className={`min-h-[44px] py-1.5 px-2 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
 										agentState === st.id
 											? `${st.color} shadow-xs`
-											: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)] hover:text-[var(--ink,#0f172a)]"
+											: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#475569)] border-[var(--line,#e2e8f0)] hover:text-[var(--ink,#0f172a)]"
 									}`}
 								>
 									<span
@@ -460,7 +460,7 @@ export function ClinicControlPill({
 							</span>
 						</div>
 
-						<div className="text-[11px] text-[var(--muted,#64748b)] space-y-1 mb-2.5">
+						<div className="text-[11px] text-[var(--muted,#475569)] space-y-1 mb-2.5">
 							<div className="flex items-center justify-between">
 								<span>PostgreSQL 18.4 (127.0.0.1:5432):</span>
 								<strong className="text-[var(--ink,#0f172a)] font-mono">Подключено</strong>
@@ -545,7 +545,7 @@ export function Header({
 		>
 			<div className="flex items-center gap-3 min-w-0">
 				<div className="topbar-clinic min-w-0">
-					<p className="eyebrow text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+					<p className="eyebrow text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#475569)]">
 						{new Date().toLocaleDateString("ru-RU", {
 							weekday: "short",
 							day: "numeric",
