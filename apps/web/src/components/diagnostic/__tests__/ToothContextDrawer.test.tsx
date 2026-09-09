@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { ToothContextDrawer } from "../ToothContextDrawer.js";
+import { ToothContextDrawer, TOOTH_EXPRESS_ANESTHESIA_OPTIONS } from "../ToothContextDrawer.js";
 import { ToothSurfacesAndEndoMatrix, BLACK_MACROS } from "../ToothSurfacesAndEndoMatrix.js";
 import { ToothAnesthesiaCalculator, WEIGHT_PRESETS } from "../ToothAnesthesiaCalculator.js";
 import { ToothSanpinKraftBinding } from "../ToothSanpinKraftBinding.js";
@@ -167,4 +167,26 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("Резорбция"), "Resorption section should be present");
 		assert.ok(html.includes("Печать памятки для родителей"), "Parent memo button should be available");
 	});
+
+	it("ToothContextDrawer renders 1-click express anesthesia presets without weight sliders", () => {
+		assert.equal(TOOTH_EXPRESS_ANESTHESIA_OPTIONS.length, 5);
+		const ids = TOOTH_EXPRESS_ANESTHESIA_OPTIONS.map((o) => o.id);
+		assert.ok(ids.includes("articaine_1_100k"));
+		assert.ok(ids.includes("ultracain_1_200k"));
+		assert.ok(ids.includes("scandonest_cardio"));
+		assert.ok(ids.includes("septanest_1_100k"));
+		assert.ok(ids.includes("topical_application"));
+
+		const html = renderToString(
+			<ToothContextDrawer
+				isOpen={true}
+				onClose={() => {}}
+				toothNumber={16}
+			/>,
+		);
+
+		assert.ok(html.includes("2. Экспресс-анестезия (1 клик)"), "1-click express title should be present");
+		assert.ok(html.includes("Артикаин • Ультракаин • Скандонест • Септанест"), "Preset drugs summary should be present");
+	});
 });
+

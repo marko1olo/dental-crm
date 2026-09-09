@@ -35,7 +35,6 @@ import {
 	TechniqueCategory,
 	calculateAnestheticVolumeMg,
 	getNeedleSpecification,
-	getRecommendedWaitTimeSeconds,
 	getTechniqueSpecification,
 	validateNeedleForTechnique,
 } from './anesthesiaTechniqueMath';
@@ -54,7 +53,6 @@ import {
 	createExpressAspirationAttempt,
 } from './anesthesiaExpressPresets';
 import { AspirationTestCockpit } from './AspirationTestCockpit';
-import { AnesthesiaOnsetTimerWidget } from './AnesthesiaOnsetTimerWidget';
 import { AnesthesiaAnatomyMapWidget } from './AnesthesiaAnatomyMapWidget';
 import { showToast } from '../../GlobalToast';
 import { soundFeedback } from '../../../services/audio/SoundFeedbackService';
@@ -117,14 +115,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 	// 4. Express Presets Active State (Mandates 8e, 8k, 8n)
 	const [activePresetId, setActivePresetId] = useState<ExpressAnesthesiaPresetId | null>(null);
 
-	// 5. Onset Countdown Timer State
-	const [timerSecondsLeft, setTimerSecondsLeft] = useState<number>(() =>
-		getRecommendedWaitTimeSeconds(initialTechniqueId),
-	);
-	const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
-	const [timerCompleted, setTimerCompleted] = useState<boolean>(false);
-	const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-
 	// Sync on props change
 	useEffect(() => {
 		if (isOpen) {
@@ -135,10 +125,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 			setSide(initialSide);
 			setToothNumber(String(initialToothNumber || ''));
 			setPatientFullName(initialPatientFullName);
-			const defaultSec = getRecommendedWaitTimeSeconds(initialTechniqueId);
-			setTimerSecondsLeft(defaultSec);
-			setIsTimerRunning(false);
-			setTimerCompleted(false);
 			setAspirationStatus('not_performed');
 			setAttempts([]);
 			setPositiveEmergencyOpen(false);
@@ -156,17 +142,13 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		initialPatientFullName,
 	]);
 
-	// Auto-adjust default needle & timer when technique changes
+	// Auto-adjust default needle when technique changes
 	const handleTechniqueChange = (newTechId: ConductionTechniqueId) => {
 		setActivePresetId(null);
 		setTechniqueId(newTechId);
 		const techSpec = getTechniqueSpecification(newTechId);
 		setNeedleId(techSpec.recommendedNeedle);
 		setVolumeMl(techSpec.typicalVolumeMl);
-		const waitSec = techSpec.onsetMinutes.defaultWaitTimeSec;
-		setTimerSecondsLeft(waitSec);
-		setIsTimerRunning(false);
-		setTimerCompleted(false);
 	};
 
 	// 1-Click Express Preset Handler (Mandates 8e, 8k, 8n)
@@ -185,12 +167,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		const attempt: AspirationAttemptRecord = createExpressAspirationAttempt(preset, 1);
 		setAttempts([attempt]);
 		setPositiveEmergencyOpen(false);
-
-		// Stop running timer and mark completed since chairside protocol is instantly confirmed
-		setIsTimerRunning(false);
-		setTimerCompleted(true);
-		setTimerSecondsLeft(0);
-
 		setNotesRu(preset.notesRu);
 
 		// Ensure category filter doesn't hide the selected technique
@@ -201,41 +177,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		soundFeedback.playActionSuccess();
 		showToast(`Экспресс-протокол: ${preset.title} применен! Аспирация (-).`, 'success');
 	};
-
-	// Audio chime on timer completion
-	const playCompletionSound = useCallback(() => {
-		if (!soundEnabled) return;
-		try {
-			void soundFeedback.playActionSuccess();
-		} catch {
-			// Silent fallback for restricted environments
-		}
-	}, [soundEnabled]);
-
-	// Timer interval loop
-	useEffect(() => {
-		let intervalId: NodeJS.Timeout | null = null;
-		if (isTimerRunning && timerSecondsLeft > 0) {
-			intervalId = setInterval(() => {
-				setTimerSecondsLeft((prev) => {
-					if (prev <= 1) {
-						setIsTimerRunning(false);
-						setTimerCompleted(true);
-						playCompletionSound();
-						showToast(
-							`Анестезия готова! Онемение ${getTechniqueSpecification(techniqueId).shortNameRu} наступило.`,
-							'success',
-						);
-						return 0;
-					}
-					return prev - 1;
-				});
-			}, 1000);
-		}
-		return () => {
-			if (intervalId) clearInterval(intervalId);
-		};
-	}, [isTimerRunning, timerSecondsLeft, techniqueId, playCompletionSound]);
 
 	// Vascular risk assessment
 	const vascularAssessment = useMemo(() => {
@@ -282,7 +223,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 			isTwoPlaneConfirmed,
 			attempts,
 			onsetDurationMinutesActual:
-				Math.round((currentTechnique.onsetMinutes.defaultWaitTimeSec - timerSecondsLeft) / 60) ||
+				Math.round(currentTechnique.onsetMinutes.defaultWaitTimeSec / 60) ||
 				currentTechnique.onsetMinutes.min,
 			notesRu: notesRu.trim() || undefined,
 		};
@@ -301,7 +242,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		isTwoPlaneConfirmed,
 		attempts,
 		currentTechnique,
-		timerSecondsLeft,
 		notesRu,
 	]);
 
@@ -328,10 +268,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		setAspirationStatus(attempts.length > 0 ? 'repositioned_and_retested' : 'negative_safe');
 		setPositiveEmergencyOpen(false);
 
-		if (!isTimerRunning && !timerCompleted) {
-			setIsTimerRunning(true);
-		}
-
 		showToast('Аспирация ОТРИЦАТЕЛЬНАЯ (Чисто). Разрешено медленное введение!', 'success');
 	};
 
@@ -352,7 +288,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		setAttempts((prev) => [...prev, newAttempt]);
 		setAspirationStatus('positive_burst');
 		setPositiveEmergencyOpen(true);
-		setIsTimerRunning(false);
 
 		showToast('КРОВЬ В КАРПУЛЕ! Инъекция немедленно остановлена!', 'error', 4000);
 	};
@@ -392,9 +327,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		};
 		setAttempts([defaultAttempt]);
 		setPositiveEmergencyOpen(false);
-		setIsTimerRunning(false);
-		setTimerCompleted(true);
-		setTimerSecondsLeft(0);
 		setNotesRu('Анестезия наступила по клиническим признакам, глубина достаточная, аллергических реакций нет.');
 		soundFeedback.playActionSuccess();
 		showToast('Норма анестезии применена: Артикаин 1:100 000 (1.7 мл), аспирация (-), норма!', 'success');
@@ -420,9 +352,6 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		};
 		setAttempts([defaultAttempt]);
 		setPositiveEmergencyOpen(false);
-		setIsTimerRunning(false);
-		setTimerCompleted(true);
-		setTimerSecondsLeft(0);
 		setNotesRu(
 			'Анестезия наступила по клиническим признакам, глубина достаточная, аллергических реакций нет. Онемение подтверждено.',
 		);
@@ -940,31 +869,8 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 						/>
 					</div>
 
-					{/* ══ COLUMN 3: ANATOMICAL NUMBNESS MAP & ONSET COUNTDOWN TIMER (4 Cols) ══ */}
+					{/* ══ COLUMN 3: ANATOMICAL NUMBNESS MAP (4 Cols) ══ */}
 					<div className="lg:col-span-4 flex flex-col gap-4">
-						<AnesthesiaOnsetTimerWidget
-							currentTechnique={currentTechnique}
-							timerSecondsLeft={timerSecondsLeft}
-							isTimerRunning={isTimerRunning}
-							timerCompleted={timerCompleted}
-							soundEnabled={soundEnabled}
-							onToggleSound={() => setSoundEnabled(!soundEnabled)}
-							onToggleTimer={() => setIsTimerRunning(!isTimerRunning)}
-							onAddMinute={() => setTimerSecondsLeft((prev) => prev + 60)}
-							onResetTimer={() => {
-								setIsTimerRunning(false);
-								setTimerCompleted(false);
-								setTimerSecondsLeft(currentTechnique.onsetMinutes.defaultWaitTimeSec);
-							}}
-							onCompleteNow={() => {
-								setIsTimerRunning(false);
-								setTimerCompleted(true);
-								setTimerSecondsLeft(0);
-								soundFeedback.playActionSuccess();
-								showToast('Онемение зафиксировано по клиническим признакам! Можно препарировать.', 'success');
-							}}
-						/>
-
 						<AnesthesiaAnatomyMapWidget currentTechnique={currentTechnique} />
 
 						{/* Doctor's Notes field */}

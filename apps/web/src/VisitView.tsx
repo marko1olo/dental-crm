@@ -241,7 +241,6 @@ import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { ClinicalRulePanel as DefaultClinicalRulePanel } from "./ClinicalRulePanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
-import { AnesthesiaDosageCalculatorModal } from "./components/anesthesia/AnesthesiaDosageCalculatorModal";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
 import { StagePaymentPlanModal } from "./components/treatment-plans/stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
@@ -565,8 +564,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
 	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
-	const [isAnesthesiaModalOpen, setIsAnesthesiaModalOpen] = React.useState(false);
-	const [anesthesiaModalToothNumber, setAnesthesiaModalToothNumber] = React.useState<number | string | null>(null);
 
 	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
 		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
@@ -3719,19 +3716,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											>
 												<span className="flex-1 text-left">Анестезия зуба {code} (1 карп.)</span> <Syringe className="w-4 h-4 text-sky-500 shrink-0" />
 											</button>
-											<button
-												type="button"
-												className="min-h-[44px] px-3 py-1.5 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]/40 rounded-lg transition-colors text-left inline-flex items-center gap-1.5 cursor-pointer"
-												onClick={() => {
-													setAnesthesiaModalToothNumber(code);
-													setIsAnesthesiaModalOpen(true);
-													closeClinicalModal();
-												}}
-												title="Расчет максимальной безопасной дозы и выбор препарата по весу"
-											>
-												<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-												<span>Калькулятор доз и МДД...</span>
-											</button>
+
 											<button
 												type="button"
 												className="_ccm-btn"
@@ -3942,33 +3927,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				}}
 			/>
 
-			{/* Anesthesia Dosage Calculator & Safety Modal (МРД) — открывается строго по клику врача */}
-			<AnesthesiaDosageCalculatorModal
-				isOpen={isAnesthesiaModalOpen}
-				onClose={() => {
-					setIsAnesthesiaModalOpen(false);
-					setAnesthesiaModalToothNumber(null);
-				}}
-				initialToothNumber={anesthesiaModalToothNumber ?? selectedToothForMenu?.code ?? 16}
-				initialPatientWeightKg={activePatient?.weightKg ?? 70}
-				initialPatientAgeYears={activePatient?.ageYears ?? 35}
-				initialHasCardioRisk={activePatient?.hasCardioRisk ?? false}
-				initialPatientId={
-					activePatient?.id ||
-					(typeof (dashboard as any)?.activeVisit?.patientId === "string"
-						? (dashboard as any).activeVisit.patientId
-						: undefined)
-				}
-				initialVisitId={
-					activeAppointment?.id ||
-					(typeof (dashboard as any)?.activeVisit?.id === "string"
-						? (dashboard as any).activeVisit.id
-						: undefined)
-				}
-				onApplied={(result) => {
-					appendToEMKField("treatmentPlan", result.diaryEntryRu);
-				}}
-			/>
 
 			{/* ─── HOT PATH TIER 1 FLOATING CHAIRSIDE VOICE HUD ─── */}
 			<aside

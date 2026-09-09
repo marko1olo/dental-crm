@@ -22,12 +22,11 @@ import {
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { ToothSurfacesAndEndoMatrix } from "./ToothSurfacesAndEndoMatrix";
-import { ToothAnesthesiaCalculator } from "./ToothAnesthesiaCalculator";
 import { ToothSanpinKraftBinding } from "./ToothSanpinKraftBinding";
 import { ToothRvgThumbnail } from "./ToothRvgThumbnail";
 import { ToothFamilyLoyaltyAccordion } from "./ToothFamilyLoyaltyAccordion";
 import { ToothPediatricContext } from "./ToothPediatricContext";
-import type { AnesthesiaCalculationResult } from "../anesthesia/anesthesiaEngine";
+import { calculateAnesthesiaSafety, type AnesthesiaCalculationResult } from "../anesthesia/anesthesiaEngine";
 import type { KraftPackageRecord } from "../sanpin/kraft/kraftPackageEngine";
 import { showToast } from "../GlobalToast";
 import "./ToothContextDrawer.css";
@@ -64,6 +63,63 @@ export type WarmAccordionSection =
 	| "rvg_xray"
 	| "family_loyalty"
 	| "pediatric";
+
+export interface ToothExpressAnesthesiaOption {
+	readonly id: string;
+	readonly title: string;
+	readonly subtitle: string;
+	readonly tag: string;
+	readonly badgeClass: string;
+	readonly buildDiaryText: (toothNumber: number) => string;
+}
+
+export const TOOTH_EXPRESS_ANESTHESIA_OPTIONS: readonly ToothExpressAnesthesiaOption[] = [
+	{
+		id: "articaine_1_100k",
+		title: "Артикаин 1:100 000 (1 карп. 1.7 мл)",
+		subtitle: "Инфильтрация/проводниковая, эпинефрин 1:100 000, аспирация (-)",
+		tag: "Стандарт",
+		badgeClass: "text-blue-500 bg-blue-500/10 border-blue-500/30",
+		buildDiaryText: (tooth) =>
+			`Анестезия зуба ${tooth}: инфильтрационная/проводниковая Sol. Articaini 4% с эпинефрином 1:100 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.`,
+	},
+	{
+		id: "ultracain_1_200k",
+		title: "Ультракаин Д-С 1:200 000 (1 карп.)",
+		subtitle: "Sol. Ultracaini D-S, мягкий эпинефрин 1:200 000, аспирация (-)",
+		tag: "Терапия",
+		badgeClass: "text-teal-500 bg-teal-500/10 border-teal-500/30",
+		buildDiaryText: (tooth) =>
+			`Анестезия зуба ${tooth}: инфильтрационная Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.`,
+	},
+	{
+		id: "scandonest_cardio",
+		title: "Скандонест 3% для кардио (1 карп.)",
+		subtitle: "Мепивакаин 3% БЕЗ адреналина (кардио-риск, гипертония, пожилые)",
+		tag: "Кардио",
+		badgeClass: "text-amber-500 bg-amber-500/10 border-amber-500/30",
+		buildDiaryText: (tooth) =>
+			`Анестезия зуба ${tooth}: Sol. Scandonest 3% (Мепивакаин без вазоконстриктора) — 1.7 мл (1 карпула). Кардио-протокол. Аспирационная проба отрицательная. Гемодинамика стабильна.`,
+	},
+	{
+		id: "septanest_1_100k",
+		title: "Септанест 1.7 мл",
+		subtitle: "Sol. Septanest 1:100 000 (Артикаин 4% с адреналином), аспирация (-)",
+		tag: "Хирургия",
+		badgeClass: "text-purple-500 bg-purple-500/10 border-purple-500/30",
+		buildDiaryText: (tooth) =>
+			`Анестезия зуба ${tooth}: инфильтрационная Sol. Septanest 1:100 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.`,
+	},
+	{
+		id: "topical_application",
+		title: "Аппликационная анестезия (гель)",
+		subtitle: "Лидоксор / Дисилан 20% гель на десну, экспозиция 2 мин",
+		tag: "Поверхностная",
+		badgeClass: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
+		buildDiaryText: (tooth) =>
+			`Анестезия зуба ${tooth}: аппликационная анестезия переходной складки гелем (Лидоксор / Дисилан 20%), экспозиция 2 мин. Обезболивание места вкола иглы достигнуто.`,
+	},
+];
 
 export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	isOpen,
@@ -249,7 +305,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						)}
 					</section>
 
-					{/* ACCORDION 2: EXPRESS LOCAL ANESTHESIA CALCULATOR */}
+					{/* ACCORDION 2: 1-CLICK EXPRESS LOCAL ANESTHESIA PRESETS */}
 					<section className="dente-accordion-item">
 						<button
 							type="button"
@@ -258,29 +314,72 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						>
 							<div className="trigger-left">
 								<Syringe size={16} color="var(--brand-primary, var(--teal))" />
-								<span className="trigger-title">2. Экспресс-анестезия по весу пациента (МДД)</span>
+								<span className="trigger-title">2. Экспресс-анестезия (1 клик)</span>
 							</div>
 							<div className="trigger-right">
 								<span className="trigger-summary">
-									Вес: {patient?.weightKg ?? 70} кг • Артикаин / Скандонест
+									Артикаин • Ультракаин • Скандонест • Септанест
 								</span>
 								{activeSection === "anesthesia" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 							</div>
 						</button>
 
 						{activeSection === "anesthesia" && (
-							<div className="dente-accordion-content animate-in">
-								<ToothAnesthesiaCalculator
-									toothNumber={toothNumber}
-									initialWeightKg={patient?.weightKg ?? 70}
-									initialAgeYears={patient?.ageYears ?? 35}
-									hasCardioRisk={patient?.hasCardioRisk}
-									hasSulfiteAllergy={patient?.hasSulfiteAllergy}
-									hasAsthma={patient?.hasAsthma}
-									isPregnant={patient?.isPregnant}
-									onApplyAnesthesia={onApplyAnesthesia}
-									onInsertToProtocol={onInsertToProtocol}
-								/>
+							<div className="dente-accordion-content animate-in p-3 flex flex-col gap-2">
+								<div className="flex items-center justify-between text-xs text-[var(--muted)] px-0.5">
+									<span>Быстрый выбор анестетика в 1 клик (без ввода веса и калькуляторов):</span>
+									<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">1 клик • норма</span>
+								</div>
+								<div className="flex flex-col gap-1.5" data-testid="tooth-express-anesthesia-list">
+									{TOOTH_EXPRESS_ANESTHESIA_OPTIONS.map((preset) => (
+										<button
+											key={preset.id}
+											type="button"
+											onClick={() => {
+												const diaryText = preset.buildDiaryText(toothNumber);
+												onInsertToProtocol?.(diaryText);
+												if (onApplyAnesthesia) {
+													const calc = calculateAnesthesiaSafety({
+														drugId: preset.id === "scandonest_cardio" ? "mepivacaine_plain" : "articaine_1_100k",
+														carpulesCount: 1,
+														patientWeightKg: patient?.weightKg ?? 70,
+														patientAgeYears: patient?.ageYears ?? 35,
+														asaStatus: Boolean(patient?.hasCardioRisk) ? "asa_3" : "asa_1",
+														hasCardiovascularRisk: Boolean(patient?.hasCardioRisk),
+														hasSulfiteAllergy: Boolean(patient?.hasSulfiteAllergy),
+														isPregnantOrLactating: Boolean(patient?.isPregnant),
+														hasBronchialAsthma: Boolean(patient?.hasAsthma),
+														techniqueId: "infiltration",
+														needleType: "g30_short_21mm",
+														aspirationNegativeConfirmed: true,
+														targetToothNumberFdi: toothNumber,
+													});
+													onApplyAnesthesia(diaryText, calc);
+												}
+												showToast(`Анестезия (${preset.title}) внесена в протокол`, "success", 2500);
+											}}
+											className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--line)]/20 transition-all flex items-center justify-between gap-3 min-h-[48px] cursor-pointer group"
+											data-testid={`btn-tooth-anes-${preset.id}`}
+										>
+											<div className="flex items-center gap-2.5 min-w-0">
+												<div className={`p-1.5 rounded-lg shrink-0 border ${preset.badgeClass}`}>
+													<Syringe className="w-4 h-4" />
+												</div>
+												<div className="min-w-0">
+													<div className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)] transition-colors truncate">
+														{preset.title}
+													</div>
+													<div className="text-[11px] text-[var(--muted)] truncate mt-0.5">
+														{preset.subtitle}
+													</div>
+												</div>
+											</div>
+											<span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wide uppercase shrink-0 bg-[var(--line)]/50 text-[var(--muted)] group-hover:bg-[var(--teal-surface)] group-hover:text-[var(--teal)] transition-colors">
+												{preset.tag}
+											</span>
+										</button>
+									))}
+								</div>
 							</div>
 						)}
 					</section>

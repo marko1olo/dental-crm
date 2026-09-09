@@ -89,7 +89,6 @@ import {
 	ENDO_OBTURATION_METHOD_OPTIONS,
 } from "../../lib/clinicalProtocols043";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
-import { AnesthesiaProtocolModal } from "../anesthesia/AnesthesiaProtocolModal";
 import {
 	EndoCanalLogModal,
 	getDefaultCanalsForTooth,
@@ -349,7 +348,6 @@ export function VisitEmkTab() {
 	const [isConfirmSwitchModalOpen, setIsConfirmSwitchModalOpen] = React.useState<boolean>(false);
 	const [isPatientMemoModalOpen, setIsPatientMemoModalOpen] = React.useState<boolean>(false);
 	const [selectedMemoIdForPrint, setSelectedMemoIdForPrint] = React.useState<PostOpMemoId>("surgery_extraction");
-	const [isAnesthesiaProtocolModalOpen, setIsAnesthesiaProtocolModalOpen] = React.useState<boolean>(false);
 	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>("ultracain_ds_forte");
 	const [selectedCarpulesCount, setSelectedCarpulesCount] = React.useState<number>(1.0);
 
@@ -2171,18 +2169,6 @@ export function VisitEmkTab() {
 												<span>Скандонест 3% (без адреналина)</span>
 											</button>
 										</div>
-
-										{/* Скрытая кнопка для сложного клинического расчета — открывается ТОЛЬКО если врач сам кликнет */}
-										<button
-											type="button"
-											onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
-											className="text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors inline-flex items-center gap-1 cursor-pointer"
-											data-testid="btn-open-anesthesia-protocol-modal"
-											title="Открыть расширенный расчет доз и МДД по весу (только при необходимости)"
-										>
-											<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-											<span>Калькулятор доз...</span>
-										</button>
 									</div>
 
 											{/* Предупреждение о кардиоваскулярном риске */}
@@ -3019,20 +3005,6 @@ export function VisitEmkTab() {
 					}}
 				/>
 
-				{/* Модальное окно расширенного протокола анестезии СтАР */}
-				<AnesthesiaProtocolModal
-					isOpen={isAnesthesiaProtocolModalOpen}
-					onClose={() => setIsAnesthesiaProtocolModalOpen(false)}
-					initialToothNumber={typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46 : 46}
-					initialPatientWeightKg={patientWeightKg}
-					initialHasCardioRisk={anesthesiaRisk.hasHypertensionRisk}
-					onApplyToDiary={(diaryText) => {
-						if (!updateVisitNoteField) return;
-						const curr = visitNoteForm.treatmentPlan || "";
-						updateVisitNoteField("treatmentPlan", appendClinicalText(curr, diaryText, "\n\n"));
-						showToast("Протокол анестезии СтАР внесён в карту 043/у", "success", 3500);
-					}}
-				/>
 
 				{/* Модальное окно эндодонтического протокола корневых каналов */}
 				<EndoCanalLogModal

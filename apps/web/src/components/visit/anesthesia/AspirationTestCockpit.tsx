@@ -120,7 +120,7 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 					}`}
 				>
 					<CheckCircle2 className="w-6 h-6 shrink-0" />
-					<span className="truncate">АСПИРАЦИОННАЯ ПРОБА: ОТРИЦАТЕЛЬНАЯ (1 КЛИК — ЧИСТО)</span>
+					<span className="truncate">Отрицательная аспирационная проба (норма)</span>
 				</button>
 
 				{/* POSITIVE ASPIRATION BUTTON */}
