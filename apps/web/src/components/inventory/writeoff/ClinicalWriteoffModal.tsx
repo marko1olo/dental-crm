@@ -487,31 +487,31 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						<button
 							type="button"
 							onClick={handleQuickCarpuleWriteoff}
-							className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/40 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+							className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-teal-500/40 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 							data-testid="btn-quick-carpule-writeoff"
 							title="Списать 1 использованную карпулу анестетика (Артикаин) без комиссии"
 						>
-							<PackageCheck size={13} className="text-teal-600" />
+							<PackageCheck size={16} className="text-teal-600 shrink-0" />
 							<span>Карпула анестетика (1 шт.)</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleQuickTherapyWriteoff}
-							className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/40 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+							className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-blue-500/40 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 							data-testid="btn-quick-therapy-writeoff"
 							title="Пакетное списание расходников терапии (анестезия + композит + расходники)"
 						>
-							<Layers size={13} className="text-blue-600" />
+							<Layers size={16} className="text-blue-600 shrink-0" />
 							<span>Пакет «Терапия»</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleQuickSurgeryWriteoff}
-							className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/40 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+							className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-purple-500/40 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 							data-testid="btn-quick-surgery-writeoff"
 							title="Пакетное списание расходников хирургии (анестезия + скальпель + шовный материал)"
 						>
-							<Sparkles size={13} className="text-purple-600" />
+							<Sparkles size={16} className="text-purple-600 shrink-0" />
 							<span>Пакет «Хирургия»</span>
 						</button>
 					</div>

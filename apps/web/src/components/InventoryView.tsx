@@ -858,90 +858,102 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 											<Sparkles size={16} className="text-teal-600 shrink-0" />
 											<span>Списать визит: Хирургия (1 клик)</span>
 										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-shift-therapy-btn"
+											onClick={() => {
+												handleQuickWriteoffShiftBundle("therapy");
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+												minHeight: "44px",
+											}}
+											title="1-клик списание расхода смены (Терапия)"
+											role="menuitem"
+										>
+											<Sparkles size={16} className="text-teal-600 shrink-0" />
+											<span>Списать смену: Терапия</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-shift-ortho-btn"
+											onClick={() => {
+												handleQuickWriteoffShiftBundle("orthopedics");
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+												minHeight: "44px",
+											}}
+											title="1-клик списание расхода смены (Ортопедия)"
+											role="menuitem"
+										>
+											<PackageCheck size={16} className="text-teal-600 shrink-0" />
+											<span>Списать смену: Ортопедия</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-shift-surgery-btn"
+											onClick={() => {
+												handleQuickWriteoffShiftBundle("surgery");
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+												minHeight: "44px",
+											}}
+											title="1-клик списание расхода смены (Хирургия)"
+											role="menuitem"
+										>
+											<ShieldCheck size={16} className="text-teal-600 shrink-0" />
+											<span>Списать смену: Хирургия</span>
+										</button>
 									</div>
 								)}
 							</div>
-
-							{/* 1-Клик типовой визит (Мандат 8e п. 10: терапия / хирургия) */}
-							<div style={{ display: "inline-flex", borderRadius: 8, overflow: "hidden", border: "1px solid var(--teal, #0d9488)" }}>
-								<button
-									type="button"
-									className="secondary-button"
-									data-testid="nurse-quick-visit-therapy-btn"
-									disabled={isWritingOffVisitBundle}
-									onClick={() => handleQuickWriteoffVisitBundle("therapy")}
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 6,
-										padding: "8px 12px",
-										minHeight: "44px",
-										fontWeight: 700,
-										fontSize: 13,
-										whiteSpace: "nowrap",
-										cursor: "pointer",
-										border: "none",
-										background: "var(--teal-soft, #ccfbf1)",
-										color: "var(--teal-dark, #0f766e)",
-									}}
-									title="1-клик списание набора визита «Терапия»: карпула анестетика + игла + перчатки + слюноотсос + валики + нагрудник"
-								>
-									<Sparkles size={16} />
-									<span>{isWritingOffVisitBundle ? "Списание..." : "Визит: Терапия"}</span>
-								</button>
-								<button
-									type="button"
-									data-testid="nurse-quick-visit-surgery-btn"
-									disabled={isWritingOffVisitBundle}
-									onClick={() => handleQuickWriteoffVisitBundle("surgery")}
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 6,
-										padding: "8px 12px",
-										minHeight: "44px",
-										fontWeight: 700,
-										fontSize: 12,
-										whiteSpace: "nowrap",
-										cursor: "pointer",
-										border: "none",
-										borderLeft: "1px solid var(--teal, #0d9488)",
-										background: "var(--teal-soft, #ccfbf1)",
-										color: "var(--teal-dark, #0f766e)",
-									}}
-									title="1-клик списание набора визита «Хирургия»: карпула анестетика + игла + скальпель + шовный материал + губка"
-								>
-									<ShieldCheck size={15} />
-									<span>Визит: Хирургия</span>
-								</button>
-							</div>
-
-							<button
-								type="button"
-								className="secondary-button"
-								data-testid="nurse-quick-standard-kit-btn"
-								disabled={isWritingOffStandardKit}
-								onClick={() => handleQuickWriteoffStandardKit()}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 14px",
-									minHeight: "44px",
-									borderRadius: 8,
-									fontWeight: 700,
-									fontSize: 13,
-									whiteSpace: "nowrap",
-									background: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
-									borderColor: "var(--teal, #0d9488)",
-									color: "var(--teal, #0d9488)",
-									cursor: "pointer",
-								}}
-								title="Списать базовый набор приёма в 1 клик (перчатки 2 пары, маска 2 шт., слюноотсос 1 шт., нагрудник 1 шт., валики 6 шт.)"
-							>
-								<PackageCheck size={16} />
-								<span>{isWritingOffStandardKit ? "Списание..." : "Базовый набор"}</span>
-							</button>
 
 							<button
 								type="button"
@@ -966,72 +978,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								<Syringe size={16} />
 								<span>{isWritingOffCarpules ? "Списание..." : "Списать карпулу"}</span>
 							</button>
-
-							<div style={{ display: "inline-flex", borderRadius: 8, overflow: "hidden", border: "1px solid var(--teal, #0d9488)" }}>
-								<button
-									type="button"
-									className="secondary-button"
-									data-testid="nurse-quick-shift-bundle-btn"
-									disabled={isWritingOffShiftBundle}
-									onClick={() => handleQuickWriteoffShiftBundle("therapy")}
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 6,
-										padding: "8px 12px",
-										minHeight: "44px",
-										fontWeight: 700,
-										fontSize: 13,
-										whiteSpace: "nowrap",
-										cursor: "pointer",
-										border: "none",
-										background: "var(--teal-soft, #ccfbf1)",
-										color: "var(--teal-dark, #0f766e)",
-									}}
-									title="1-Клик списание расхода смены (Терапия): перчатки, маски, салфетки, слюноотсосы, стаканчики, валики, микробраши, артикаин"
-								>
-									<Sparkles size={16} />
-									<span>{isWritingOffShiftBundle ? "Списание..." : "Смена: Терапия"}</span>
-								</button>
-								<button
-									type="button"
-									disabled={isWritingOffShiftBundle}
-									onClick={() => handleQuickWriteoffShiftBundle("orthopedics")}
-									style={{
-										padding: "8px 10px",
-										minHeight: "44px",
-										fontWeight: 600,
-										fontSize: 12,
-										cursor: "pointer",
-										border: "none",
-										borderLeft: "1px solid var(--teal, #0d9488)",
-										background: "var(--teal-soft, #ccfbf1)",
-										color: "var(--teal-dark, #0f766e)",
-									}}
-									title="1-Клик списание расхода смены (Ортопедия): слепочные массы, ложки, ретракционные нити, анестетики"
-								>
-									Ортопедия
-								</button>
-								<button
-									type="button"
-									disabled={isWritingOffShiftBundle}
-									onClick={() => handleQuickWriteoffShiftBundle("surgery")}
-									style={{
-										padding: "8px 10px",
-										minHeight: "44px",
-										fontWeight: 600,
-										fontSize: 12,
-										cursor: "pointer",
-										border: "none",
-										borderLeft: "1px solid var(--teal, #0d9488)",
-										background: "var(--teal-soft, #ccfbf1)",
-										color: "var(--teal-dark, #0f766e)",
-									}}
-									title="1-Клик списание расхода смены (Хирургия): шовный материал, лезвия скальпеля, гемостатические губки, анестетики"
-								>
-									Хирургия
-								</button>
-							</div>
 
 							<button
 								type="button"
@@ -1352,9 +1298,11 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														}}
 													>
 														{isLowStock && (
-															<AlertTriangle size={15} color="var(--tomato)" />
+															<AlertTriangle size={15} color="var(--tomato)" className="shrink-0" />
 														)}
-														{item.name}
+														<span className="truncate max-w-[280px]" title={item.name}>
+															{item.name}
+														</span>
 													</div>
 												</td>
 												<td style={{ padding: "14px 20px" }}>
