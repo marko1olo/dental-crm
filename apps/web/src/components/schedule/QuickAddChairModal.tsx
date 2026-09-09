@@ -43,6 +43,13 @@ export const CHAIR_SPECIALTY_PRESETS: readonly ChairSpecialtyPreset[] = [
 	{ id: "general", label: "Общее" },
 ];
 
+export const CHAIR_NAME_SUGGESTIONS: readonly string[] = [
+	"Кресло 1",
+	"Кресло 2 (Хирургия)",
+	"Кресло 3 (Терапия)",
+	"Кабинет 1",
+];
+
 export interface ChairArchetypePreset {
 	id: string;
 	label: string;
@@ -427,12 +434,28 @@ export function QuickAddChairModal({
 
 					{/* Field: Chair Name */}
 					<div className="space-y-1.5">
-						<label
-							htmlFor="quick-add-chair-name-input"
-							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
-						>
-							Название кресла
-						</label>
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<label
+								htmlFor="quick-add-chair-name-input"
+								className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
+							>
+								Название кресла
+							</label>
+							<div className="flex items-center gap-1 flex-wrap">
+								{CHAIR_NAME_SUGGESTIONS.map((sugg, idx) => (
+									<button
+										key={sugg}
+										type="button"
+										data-testid={`quick-add-chair-name-suggestion-${idx}`}
+										onClick={() => setChairName(sugg)}
+										className="min-h-[28px] px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--teal-soft,#f0fdfa)] text-[var(--muted,#64748b)] hover:text-[var(--teal,#0d9488)] border border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] transition-all cursor-pointer"
+										title={`Подставить «${sugg}»`}
+									>
+										{sugg}
+									</button>
+								))}
+							</div>
+						</div>
 						<input
 							id="quick-add-chair-name-input"
 							type="text"

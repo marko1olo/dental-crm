@@ -27,6 +27,8 @@ import {
 	copyWeekShiftsToTargetWeek,
 	copyWeekShiftsToMonth,
 	applyDoctorChairWeeklyTemplate,
+	applyDoctorChairDateRange,
+	type DateRangeShiftPreset,
 } from "./roster/DoctorShiftRosterModal";
 import {
 	ScheduleGrid,
@@ -223,7 +225,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	onOpenRosterModal,
 	onSelectChair,
 }) => {
-	const chairs = dashboard?.clinicSettings?.chairs ?? [];
+	const rawChairs = dashboard?.clinicSettings?.chairs ?? [];
+	const chairs = rawChairs.length > 0 ? rawChairs : [DEFAULT_SOLO_CHAIR as any];
 	const isSoloDoctor = chairs.length <= 1;
 
 	const doctors = useMemo(() => {
@@ -242,8 +245,21 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	const [popoverSelectedDocId, setPopoverSelectedDocId] = useState<Record<string, string>>({});
 	const [isSubstituteOpen, setIsSubstituteOpen] = useState<Record<string, boolean>>({});
 	const [isShiftsMenuOpen, setIsShiftsMenuOpen] = useState(false);
+	const [isDateRangeModalOpen, setIsDateRangeModalOpen] = useState(false);
+	const [rangeDoctorId, setRangeDoctorId] = useState<string>("");
+	const [rangeChairId, setRangeChairId] = useState<string>("");
+	const [rangeStartDate, setRangeStartDate] = useState<string>(dateKey);
+	const [rangeEndDate, setRangeEndDate] = useState<string>(addDaysToDateIso(dateKey, 6));
+	const [rangePreset, setRangePreset] = useState<DateRangeShiftPreset>("morning");
 	const popoverRef = useRef<HTMLDivElement | null>(null);
 	const shiftsMenuRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (dateKey) {
+			setRangeStartDate(dateKey);
+			setRangeEndDate(addDaysToDateIso(dateKey, 6));
+		}
+	}, [dateKey]);
 
 	React.useEffect(() => {
 		if (selectedChairId !== undefined) {
@@ -434,7 +450,17 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	);
 
 	const handleAssignShift = useCallback(
-		(chair: ScheduleChair, preset: "morning" | "evening" | "full" | "2x2" | "even_odd") => {
+		(
+			chair: ScheduleChair,
+			preset:
+				| "morning"
+				| "morning_9"
+				| "evening"
+				| "evening_15"
+				| "full"
+				| "2x2"
+				| "even_odd",
+		) => {
 			const targetDocId =
 				popoverSelectedDocId[chair.id] ||
 				chairDoctorAssignments?.[chair.id]?.doctorId ||
@@ -471,20 +497,31 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 			let endHour = 14;
 			let subShifts: ChairDoctorSubShift[] | undefined;
 
+			const isMorn = preset === "morning" || preset === "morning_9";
+			const isEve = preset === "evening" || preset === "evening_15";
+			const startH =
+				preset === "morning_9" ? 9 : preset === "evening_15" ? 15 : isEve ? 14 : 8;
+			const endH =
+				preset === "morning_9" ? 15 : preset === "evening_15" ? 21 : isEve ? 20 : 14;
+			const sHours = `${String(startH).padStart(2, "0")}:00–${String(endH).padStart(2, "0")}:00`;
+
 			const targetSubShift: ChairDoctorSubShift = {
 				doctorId: targetDoc.id,
 				doctorName: targetDoc.fullName,
 				doctorSpecialty: (targetDoc as any).specialty ? String((targetDoc as any).specialty) : undefined,
-				startHour: preset === "evening" ? 14 : 8,
-				endHour: preset === "evening" ? 20 : 14,
-				shiftHours: preset === "evening" ? "14:00–20:00" : "08:00–14:00",
+				startHour: startH,
+				endHour: endH,
+				shiftHours: sHours,
 			};
 
-			if (preset === "morning") {
+			if (isMorn) {
 				let existingEvening: ChairDoctorSubShift | null = null;
 				if (existingAssignment?.subShifts && existingAssignment.subShifts.length > 0) {
 					const found = existingAssignment.subShifts.find(
-						(s) => (s.startHour !== undefined && s.startHour >= 14) || s.shiftHours?.includes("14:00"),
+						(s) =>
+							(s.startHour !== undefined && s.startHour >= 14) ||
+							s.shiftHours?.includes("14:00") ||
+							s.shiftHours?.includes("15:00"),
 					);
 					if (found) existingEvening = found;
 				} else if (
@@ -506,22 +543,25 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					shiftPreset = "two_shifts";
 					shiftLabel = "2 смены (Утро + Вечер)";
 					shiftHours = "08:00–20:00";
-					startHour = 8;
-					endHour = 20;
+					startHour = startH;
+					endHour = existingEvening.endHour || 20;
 					subShifts = [targetSubShift, existingEvening];
 				} else {
 					shiftPreset = "morning";
-					shiftLabel = "Утро 08-14";
-					shiftHours = "08:00–14:00";
-					startHour = 8;
-					endHour = 14;
+					shiftLabel = preset === "morning_9" ? "1 см. 09-15" : "Утро 08-14";
+					shiftHours = sHours;
+					startHour = startH;
+					endHour = endH;
 					subShifts = [targetSubShift];
 				}
-			} else if (preset === "evening") {
+			} else if (isEve) {
 				let existingMorning: ChairDoctorSubShift | null = null;
 				if (existingAssignment?.subShifts && existingAssignment.subShifts.length > 0) {
 					const found = existingAssignment.subShifts.find(
-						(s) => (s.startHour !== undefined && s.startHour < 14) || s.shiftHours?.includes("08:00"),
+						(s) =>
+							(s.startHour !== undefined && s.startHour < 14) ||
+							s.shiftHours?.includes("08:00") ||
+							s.shiftHours?.includes("09:00"),
 					);
 					if (found) existingMorning = found;
 				} else if (
@@ -543,15 +583,15 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					shiftPreset = "two_shifts";
 					shiftLabel = "2 смены (Утро + Вечер)";
 					shiftHours = "08:00–20:00";
-					startHour = 8;
-					endHour = 20;
+					startHour = existingMorning.startHour || 8;
+					endHour = endH;
 					subShifts = [existingMorning, targetSubShift];
 				} else {
 					shiftPreset = "evening";
-					shiftLabel = "Вечер 14-20";
-					shiftHours = "14:00–20:00";
-					startHour = 14;
-					endHour = 20;
+					shiftLabel = preset === "evening_15" ? "2 см. 15-21" : "Вечер 14-20";
+					shiftHours = sHours;
+					startHour = startH;
+					endHour = endH;
 					subShifts = [targetSubShift];
 				}
 			} else if (preset === "full") {
@@ -648,6 +688,99 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 			popoverSelectedDocId,
 		],
 	);
+
+	const handleApplyDateRange = useCallback(() => {
+		const targetDocId = rangeDoctorId || doctors[0]?.id;
+		const targetChairId = rangeChairId || chairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
+		if (!rangeStartDate || !rangeEndDate || !targetDocId || !targetChairId) {
+			showToast("Укажите диапазон дат, врача и кресло", "warning");
+			return;
+		}
+		const doc =
+			doctors.find((d) => d.id === targetDocId) ||
+			(dashboard?.clinicSettings?.staff ?? []).find((s) => s.id === targetDocId);
+		const chairObj = chairs.find((c) => c.id === targetChairId) || DEFAULT_SOLO_CHAIR;
+
+		if (typeof window !== "undefined") {
+			try {
+				const rawShifts = localStorage.getItem("dente_doctor_shifts");
+				const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
+				const updatedShifts = applyDoctorChairDateRange(currentShifts, {
+					startDateIso: rangeStartDate,
+					endDateIso: rangeEndDate,
+					doctorId: targetDocId,
+					chairId: targetChairId,
+					shiftPreset: rangePreset,
+					staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+				});
+				localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
+			} catch {}
+
+			if (dateKey && dateKey >= rangeStartDate && dateKey <= rangeEndDate) {
+				const isMorn = rangePreset === "morning" || rangePreset === "morning_9";
+				const isEve = rangePreset === "evening" || rangePreset === "evening_15";
+				const startH =
+					rangePreset === "morning_9" ? 9 : rangePreset === "evening_15" ? 15 : isEve ? 14 : 8;
+				const endH =
+					rangePreset === "morning_9" ? 15 : rangePreset === "evening_15" ? 21 : isEve ? 20 : 14;
+				const sHours = `${String(startH).padStart(2, "0")}:00–${String(endH).padStart(2, "0")}:00`;
+				const sLabel =
+					rangePreset === "morning_9"
+						? "1 см. 09-15"
+						: rangePreset === "evening_15"
+							? "2 см. 15-21"
+							: isEve
+								? "Вечер 14-20"
+								: isMorn
+									? "Утро 08-14"
+									: "Весь день";
+
+				const assignment: ChairDoctorShiftAssignment = {
+					chairId: targetChairId,
+					chairName: chairObj.name,
+					doctorId: targetDocId,
+					doctorName: doc?.fullName || "Врач",
+					doctorSpecialty:
+						doc && (doc as any).specialty ? String((doc as any).specialty) : undefined,
+					shiftPreset: isMorn ? "morning" : isEve ? "evening" : "full",
+					shiftLabel: sLabel,
+					shiftHours: sHours,
+					startHour: startH,
+					endHour: endH,
+				};
+
+				try {
+					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+					const existing = JSON.parse(localStorage.getItem(storageKey) || "{}");
+					existing[targetChairId] = assignment;
+					localStorage.setItem(storageKey, JSON.stringify(existing));
+					syncShiftsWithServer(dateKey, existing, chairs).catch(() => {});
+				} catch {}
+
+				if (onAssignChairDoctor) {
+					onAssignChairDoctor(targetChairId, assignment);
+				}
+			}
+		}
+
+		showToast(
+			`График врача ${doc?.fullName ? formatDoctorShortName(doc.fullName) : ""} применен на кресло «${chairObj.name}» (${rangeStartDate} — ${rangeEndDate})`,
+			"success",
+			3500,
+		);
+		setIsDateRangeModalOpen(false);
+	}, [
+		rangeDoctorId,
+		rangeChairId,
+		rangeStartDate,
+		rangeEndDate,
+		rangePreset,
+		doctors,
+		chairs,
+		dashboard?.clinicSettings?.staff,
+		dateKey,
+		onAssignChairDoctor,
+	]);
 
 	const handleCopyWeekShiftsToNextWeek = useCallback(() => {
 		const mondayIso = getMondayOfWeekIso(dateKey);
@@ -1355,12 +1488,30 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 												</button>
 												<button
 													type="button"
+													onClick={() => handleAssignShift(chair, "morning_9")}
+													className="px-2 py-1.5 rounded-lg border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer"
+													data-testid={`chair-view-shift-morning-9-${chair.id}`}
+												>
+													<Sun size={12} className="text-amber-500 shrink-0" />
+													<span>1 см. 09-15</span>
+												</button>
+												<button
+													type="button"
 													onClick={() => handleAssignShift(chair, "evening")}
 													className="px-2 py-1.5 rounded-lg border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer"
 													data-testid={`chair-view-shift-evening-${chair.id}`}
 												>
 													<Moon size={12} className="text-indigo-400 shrink-0" />
 													<span>Вечер 14-20</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => handleAssignShift(chair, "evening_15")}
+													className="px-2 py-1.5 rounded-lg border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer"
+													data-testid={`chair-view-shift-evening-15-${chair.id}`}
+												>
+													<Moon size={12} className="text-indigo-400 shrink-0" />
+													<span>2 см. 15-21</span>
 												</button>
 												<button
 													type="button"
@@ -1601,6 +1752,21 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 								<span>На след. неделю</span>
 							</button>
 
+							<button
+								type="button"
+								onClick={() => {
+									setIsDateRangeModalOpen(true);
+									setIsShiftsMenuOpen(false);
+								}}
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								title="Назначить смену на диапазон дат в 1 клик (StomX / DentalPRO parity)"
+								data-testid="btn-assign-date-range"
+								role="menuitem"
+							>
+								<CalendarRange size={14} className="text-[var(--teal)] shrink-0" />
+								<span>На диапазон дат...</span>
+							</button>
+
 							<div className="border-t border-[var(--line)] my-1" />
 
 							<button
@@ -1751,6 +1917,190 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					setIsAddDoctorOpen(false);
 				}}
 			/>
+
+			{/* Date Range Shift Assignment Modal (StomX / DentalPRO parity, Mandates 8d, 8e, 8k, 8n) */}
+			{isDateRangeModalOpen && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+					data-testid="chair-schedule-date-range-modal"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="chair-date-range-modal-title"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) {
+							setIsDateRangeModalOpen(false);
+						}
+					}}
+				>
+					<div
+						className="w-full max-w-lg rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl p-4 sm:p-5 flex flex-col gap-4 text-[var(--ink,#0f172a)] animate-in zoom-in-95 duration-150"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-3">
+							<div className="flex items-center gap-2">
+								<CalendarRange className="w-5 h-5 text-[var(--teal,#0d9488)]" aria-hidden="true" />
+								<div>
+									<h2
+										id="chair-date-range-modal-title"
+										className="text-base font-bold text-[var(--ink,#0f172a)] leading-tight"
+									>
+										Назначить смену на диапазон дат
+									</h2>
+									<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
+										Закрепление врача за установкой (StomX / DentalPRO)
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsDateRangeModalOpen(false)}
+								className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-all cursor-pointer shrink-0"
+								aria-label="Закрыть окно"
+								data-testid="chair-range-modal-close-btn"
+								style={{ minHeight: "44px", minWidth: "44px" }}
+							>
+								<X className="w-5 h-5" aria-hidden="true" />
+							</button>
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<div>
+								<label
+									htmlFor="chair-range-modal-doctor-select"
+									className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1"
+								>
+									Врач
+								</label>
+								<select
+									id="chair-range-modal-doctor-select"
+									data-testid="chair-range-modal-doctor-select"
+									value={rangeDoctorId || doctors[0]?.id || ""}
+									onChange={(e) => setRangeDoctorId(e.target.value)}
+									className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] text-xs font-semibold focus:ring-2 focus:ring-[var(--teal)] focus:outline-hidden"
+									style={{ minHeight: "44px" }}
+								>
+									{doctors.map((d) => (
+										<option key={d.id} value={d.id}>
+											{d.fullName} {(d as any).specialty ? `(${String((d as any).specialty)})` : ""}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-range-modal-chair-select"
+									className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1"
+								>
+									Кресло
+								</label>
+								<select
+									id="chair-range-modal-chair-select"
+									data-testid="chair-range-modal-chair-select"
+									value={rangeChairId || chairs[0]?.id || ""}
+									onChange={(e) => setRangeChairId(e.target.value)}
+									className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] text-xs font-semibold focus:ring-2 focus:ring-[var(--teal)] focus:outline-hidden"
+									style={{ minHeight: "44px" }}
+								>
+									{chairs.map((ch) => (
+										<option key={ch.id} value={ch.id}>
+											{ch.name} {(ch as any).roomNumber ? `(Каб. ${(ch as any).roomNumber})` : ""}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-range-modal-start-date"
+									className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1"
+								>
+									С даты
+								</label>
+								<input
+									id="chair-range-modal-start-date"
+									data-testid="chair-range-modal-start-date"
+									type="date"
+									value={rangeStartDate}
+									onChange={(e) => setRangeStartDate(e.target.value)}
+									className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] text-xs font-semibold focus:ring-2 focus:ring-[var(--teal)] focus:outline-hidden"
+									style={{ minHeight: "44px" }}
+								/>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-range-modal-end-date"
+									className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1"
+								>
+									По дату
+								</label>
+								<input
+									id="chair-range-modal-end-date"
+									data-testid="chair-range-modal-end-date"
+									type="date"
+									value={rangeEndDate}
+									onChange={(e) => setRangeEndDate(e.target.value)}
+									className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] text-xs font-semibold focus:ring-2 focus:ring-[var(--teal)] focus:outline-hidden"
+									style={{ minHeight: "44px" }}
+								/>
+							</div>
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]">
+								Смена / график:
+							</span>
+							<div className="flex flex-wrap gap-1.5">
+								{[
+									{ id: "morning", label: "1 см. 08-14" },
+									{ id: "morning_9", label: "1 см. 09-15" },
+									{ id: "evening", label: "2 см. 14-20" },
+									{ id: "evening_15", label: "2 см. 15-21" },
+									{ id: "full", label: "Весь день (08-20)" },
+									{ id: "two_two", label: "2/2 (08-20)" },
+									{ id: "five_day", label: "Пятидневка Пн–Пт" },
+								].map((preset) => (
+									<button
+										key={preset.id}
+										type="button"
+										data-testid={`chair-range-modal-preset-${preset.id}`}
+										onClick={() => setRangePreset(preset.id as DateRangeShiftPreset)}
+										className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+											rangePreset === preset.id
+												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
+												: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal)]"
+										}`}
+									>
+										{preset.label}
+									</button>
+								))}
+							</div>
+						</div>
+
+						<div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
+							<button
+								type="button"
+								onClick={() => setIsDateRangeModalOpen(false)}
+								className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
+								style={{ minHeight: "44px" }}
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								data-testid="chair-range-modal-apply-btn"
+								onClick={handleApplyDateRange}
+								className="min-h-[44px] px-5 rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+								style={{ minHeight: "44px" }}
+							>
+								<CalendarRange size={15} />
+								<span>Назначить график</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

@@ -46,6 +46,9 @@ import {
 	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
+	applyDoctorChairDateRange,
+	type DateRangeShiftPreset,
+	type DateRangeShiftBindingParams,
 } from "./roster/DoctorShiftRosterModal";
 import {
 	DEFAULT_CLINIC_STAFF,
@@ -138,6 +141,28 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 	const [selectedDoctorByChair, setSelectedDoctorByChair] = useState<
 		Record<string, string>
 	>({});
+
+	// State for multi-day date range shift binding (StomX / DentalPRO parity)
+	const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
+	const [rangeDoctorId, setRangeDoctorId] = useState<string>("");
+	const [rangeChairId, setRangeChairId] = useState<string>("");
+	const [rangeStartDate, setRangeStartDate] = useState<string>(weekStartDateIso);
+	const [rangeEndDate, setRangeEndDate] = useState<string>(addDaysToDateIso(weekStartDateIso, 6));
+	const [rangePreset, setRangePreset] = useState<DateRangeShiftPreset>("morning");
+
+	useEffect(() => {
+		if (!rangeDoctorId && (doctors[0]?.id || fallbackDoctor.id)) {
+			setRangeDoctorId(doctors[0]?.id || fallbackDoctor.id);
+		}
+		if (!rangeChairId && cabinets[0]?.chairs[0]?.id) {
+			setRangeChairId(cabinets[0].chairs[0].id);
+		}
+	}, [doctors, fallbackDoctor, cabinets, rangeDoctorId, rangeChairId]);
+
+	useEffect(() => {
+		setRangeStartDate(weekStartDateIso);
+		setRangeEndDate(addDaysToDateIso(weekStartDateIso, 6));
+	}, [weekStartDateIso]);
 
 	const getActiveDoctorForChair = (chairId: string): StaffMember => {
 		const docId = selectedDoctorByChair[chairId];
@@ -261,7 +286,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 		dateIso: string,
 		cabinetId: string,
 		chairId: string,
-		presetType: "morning" | "evening" | "full_day" | "clear",
+		presetType: "morning" | "morning_9" | "evening" | "evening_15" | "full_day" | "clear",
 	) => {
 		const activeDoc = getActiveDoctorForChair(chairId);
 		const nextShifts = applyCellShiftPreset(shifts, {
@@ -276,8 +301,10 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 		setShifts(nextShifts);
 
 		const presetLabels: Record<string, string> = {
-			morning: `Утро 08:00–14:00 (${activeDoc.shortName})`,
-			evening: `Вечер 14:00–20:00 (${activeDoc.shortName})`,
+			morning: `1 смена 08:00–14:00 (${activeDoc.shortName})`,
+			morning_9: `1 смена 09:00–15:00 (${activeDoc.shortName})`,
+			evening: `2 смена 14:00–20:00 (${activeDoc.shortName})`,
+			evening_15: `2 смена 15:00–21:00 (${activeDoc.shortName})`,
 			full_day: `Весь день 08:00–20:00 (${activeDoc.shortName})`,
 			clear: "Выходной (смена очищена)",
 		};
@@ -287,6 +314,41 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 			message: presetLabels[presetType] || "Смена обновлена",
 		});
 		setTimeout(() => setNotification(null), 3000);
+	};
+
+	// 1-Click Fast Date Range Assignment (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	const handleApplyDateRange = () => {
+		const targetDocId = rangeDoctorId || doctors[0]?.id || fallbackDoctor.id;
+		const targetChairId = rangeChairId || cabinets[0]?.chairs[0]?.id || "chair-1a";
+		if (!rangeStartDate || !rangeEndDate || !targetDocId || !targetChairId) {
+			setNotification({
+				type: "error",
+				message: "Укажите даты, врача и кресло для назначения",
+			});
+			return;
+		}
+		const doc = localStaffList.find((s) => s.id === targetDocId) || fallbackDoctor;
+		const targetChairObj = cabinets.flatMap((c) => c.chairs).find((ch) => ch.id === targetChairId);
+		const targetCabObj = cabinets.find((c) => c.chairs.some((ch) => ch.id === targetChairId));
+
+		const nextShifts = applyDoctorChairDateRange(shifts, {
+			startDateIso: rangeStartDate,
+			endDateIso: rangeEndDate,
+			doctorId: targetDocId,
+			chairId: targetChairId,
+			cabinetId: targetCabObj?.id,
+			shiftPreset: rangePreset,
+			staffList: localStaffList,
+			cabinets,
+		});
+		setShifts(nextShifts);
+		setIsDateRangeOpen(false);
+
+		setNotification({
+			type: "success",
+			message: `Врач ${doc.shortName} назначен на кресло «${targetChairObj?.name || targetChairId}» (${rangeStartDate} — ${rangeEndDate})`,
+		});
+		setTimeout(() => setNotification(null), 4000);
 	};
 
 	// 1-Click Chair Weekly Template (StomX / DentalPRO parity)
@@ -485,6 +547,17 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 						<div className="roster-actions-group">
 							<button
 								type="button"
+								data-testid="chair-date-range-trigger-btn"
+								className={`roster-btn ${isDateRangeOpen ? "roster-btn-primary" : "roster-btn-secondary"}`}
+								onClick={() => setIsDateRangeOpen((prev) => !prev)}
+								style={{ minHeight: "44px" }}
+								title="Быстрое назначение врача на кресло по диапазону дат (StomX / DentalPRO Parity)"
+							>
+								<CalendarRange size={16} />
+								<span>Диапазон дат...</span>
+							</button>
+							<button
+								type="button"
 								data-testid="chair-copy-next-week-btn"
 								className="roster-btn roster-btn-secondary"
 								onClick={handleCopyWeekToNextWeek}
@@ -530,6 +603,212 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 						</div>
 					</div>
 				</div>
+
+				{/* Collapsible Date Range Shift Assignment Panel (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n) */}
+				{isDateRangeOpen && (
+					<div
+						data-testid="chair-date-range-panel"
+						style={{
+							background: "var(--paper-soft, #f8fafc)",
+							borderBottom: "1px solid var(--line, #e2e8f0)",
+							padding: "1rem 1.5rem",
+							display: "flex",
+							flexDirection: "column",
+							gap: "0.75rem",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<CalendarRange size={18} color="var(--teal, #0d9488)" />
+								<span style={{ fontWeight: 800, fontSize: "0.9375rem" }}>
+									Назначение врача на кресло по диапазону дат (StomX Parity)
+								</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsDateRangeOpen(false)}
+								className="roster-btn roster-btn-secondary"
+								style={{ minHeight: "36px", padding: "0 0.5rem" }}
+							>
+								<X size={14} />
+								<span>Свернуть</span>
+							</button>
+						</div>
+
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+								gap: "0.75rem",
+								alignItems: "flex-end",
+							}}
+						>
+							<div>
+								<label
+									htmlFor="chair-range-doctor-select"
+									style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.25rem" }}
+								>
+									Врач
+								</label>
+								<select
+									id="chair-range-doctor-select"
+									data-testid="chair-range-doctor-select"
+									value={rangeDoctorId}
+									onChange={(e) => setRangeDoctorId(e.target.value)}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.375rem 0.5rem",
+										borderRadius: "8px",
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										color: "var(--ink, #0f172a)",
+										fontWeight: 600,
+										fontSize: "0.8125rem",
+									}}
+								>
+									{doctors.map((d) => (
+										<option key={d.id} value={d.id}>
+											{d.fullName} ({d.shortName})
+										</option>
+									))}
+								</select>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-range-chair-select"
+									style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.25rem" }}
+								>
+									Кресло
+								</label>
+								<select
+									id="chair-range-chair-select"
+									data-testid="chair-range-chair-select"
+									value={rangeChairId}
+									onChange={(e) => setRangeChairId(e.target.value)}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.375rem 0.5rem",
+										borderRadius: "8px",
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										color: "var(--ink, #0f172a)",
+										fontWeight: 600,
+										fontSize: "0.8125rem",
+									}}
+								>
+									{cabinets.flatMap((cab) =>
+										cab.chairs.map((ch) => (
+											<option key={ch.id} value={ch.id}>
+												{cab.name} — {ch.name}
+											</option>
+										)),
+									)}
+								</select>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-range-start-date"
+									style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.25rem" }}
+								>
+									Начальная дата
+								</label>
+								<input
+									id="chair-range-start-date"
+									data-testid="chair-range-start-date"
+									type="date"
+									value={rangeStartDate}
+									onChange={(e) => setRangeStartDate(e.target.value)}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.375rem 0.5rem",
+										borderRadius: "8px",
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										color: "var(--ink, #0f172a)",
+										fontWeight: 600,
+										fontSize: "0.8125rem",
+									}}
+								/>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-range-end-date"
+									style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.25rem" }}
+								>
+									Конечная дата
+								</label>
+								<input
+									id="chair-range-end-date"
+									data-testid="chair-range-end-date"
+									type="date"
+									value={rangeEndDate}
+									onChange={(e) => setRangeEndDate(e.target.value)}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.375rem 0.5rem",
+										borderRadius: "8px",
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										color: "var(--ink, #0f172a)",
+										fontWeight: 600,
+										fontSize: "0.8125rem",
+									}}
+								/>
+							</div>
+						</div>
+
+						{/* Shift Preset Selector Chips */}
+						<div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)" }}>
+								Смена / График:
+							</span>
+							<div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
+								{[
+									{ id: "morning", label: "1 смена (08:00–14:00)", testId: "chair-range-preset-morning" },
+									{ id: "morning_9", label: "1 смена (09:00–15:00)", testId: "chair-range-preset-morning-9" },
+									{ id: "evening", label: "2 смена (14:00–20:00)", testId: "chair-range-preset-evening" },
+									{ id: "evening_15", label: "2 смена (15:00–21:00)", testId: "chair-range-preset-evening-15" },
+									{ id: "full", label: "Весь день (08:00–20:00)", testId: "chair-range-preset-full" },
+									{ id: "two_two", label: "2 через 2 (08–20)", testId: "chair-range-preset-two-two" },
+									{ id: "five_day", label: "Пятидневка Пн–Пт", testId: "chair-range-preset-five-day" },
+								].map((preset) => (
+									<button
+										key={preset.id}
+										type="button"
+										data-testid={preset.testId}
+										onClick={() => setRangePreset(preset.id as DateRangeShiftPreset)}
+										className={`roster-btn ${rangePreset === preset.id ? "roster-btn-primary" : "roster-btn-secondary"}`}
+										style={{ minHeight: "44px", fontSize: "0.75rem" }}
+									>
+										{preset.label}
+									</button>
+								))}
+							</div>
+						</div>
+
+						{/* Action Apply Button */}
+						<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.25rem" }}>
+							<button
+								type="button"
+								data-testid="chair-apply-date-range-btn"
+								className="roster-btn roster-btn-primary"
+								onClick={handleApplyDateRange}
+								style={{ minHeight: "44px" }}
+								title="Заполнить смены на выбранный диапазон дат в 1 клик (StomX Parity)"
+							>
+								<Check size={16} />
+								<span>Применить график на диапазон</span>
+							</button>
+						</div>
+					</div>
+				)}
 
 				{/* Compact Chair Matrix Body */}
 				<div
@@ -964,6 +1243,35 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															</button>
 															<button
 																type="button"
+																data-testid={`chair-btn-morning-9-${chair.id}-${day.dateIso}`}
+																onClick={() =>
+																	handleCellPreset(
+																		day.dateIso,
+																		cab.id,
+																		chair.id,
+																		"morning_9",
+																	)
+																}
+																style={{
+																	minHeight: "36px",
+																	padding: "0 0.25rem",
+																	fontSize: "0.75rem",
+																	fontWeight: 600,
+																	borderRadius: "6px",
+																	border: "1px solid var(--line)",
+																	background: "var(--paper-soft)",
+																	color: "var(--ink)",
+																	cursor: "pointer",
+																	display: "inline-flex",
+																	alignItems: "center",
+																	justifyContent: "center",
+																}}
+																title="Назначить смену 09:00–15:00"
+															>
+																09–15
+															</button>
+															<button
+																type="button"
 																data-testid={`chair-btn-evening-${chair.id}-${day.dateIso}`}
 																onClick={() =>
 																	handleCellPreset(
@@ -990,6 +1298,35 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																title="Назначить вечернюю смену (14:00–20:00)"
 															>
 																Вечер
+															</button>
+															<button
+																type="button"
+																data-testid={`chair-btn-evening-15-${chair.id}-${day.dateIso}`}
+																onClick={() =>
+																	handleCellPreset(
+																		day.dateIso,
+																		cab.id,
+																		chair.id,
+																		"evening_15",
+																	)
+																}
+																style={{
+																	minHeight: "36px",
+																	padding: "0 0.25rem",
+																	fontSize: "0.75rem",
+																	fontWeight: 600,
+																	borderRadius: "6px",
+																	border: "1px solid var(--line)",
+																	background: "var(--paper-soft)",
+																	color: "var(--ink)",
+																	cursor: "pointer",
+																	display: "inline-flex",
+																	alignItems: "center",
+																	justifyContent: "center",
+																}}
+																title="Назначить смену 15:00–21:00"
+															>
+																15–21
 															</button>
 															<button
 																type="button"
@@ -1174,6 +1511,7 @@ export {
 	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
+	applyDoctorChairDateRange,
 };
 export type {
 	DoctorShiftRosterModalProps,
@@ -1183,6 +1521,8 @@ export type {
 	ShiftArchetypeId,
 	DoctorChairRosterTemplateId,
 	DoctorChairRosterTemplate,
+	DateRangeShiftPreset,
+	DateRangeShiftBindingParams,
 };
 
 export default ChairRosterModal;

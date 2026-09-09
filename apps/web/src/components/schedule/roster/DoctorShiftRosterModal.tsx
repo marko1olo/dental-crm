@@ -44,6 +44,9 @@ import {
 	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
+	applyDoctorChairDateRange,
+	type DateRangeShiftPreset,
+	type DateRangeShiftBindingParams,
 } from "./doctorWeeklyScheduleGenerator";
 import "./doctorShiftRoster.css";
 
@@ -59,6 +62,9 @@ export {
 	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
+	applyDoctorChairDateRange,
+	type DateRangeShiftPreset,
+	type DateRangeShiftBindingParams,
 } from "./doctorWeeklyScheduleGenerator";
 export { DOCTOR_CHAIR_ROSTER_TEMPLATES } from "./doctorShiftRosterPresets";
 export type {
@@ -141,7 +147,7 @@ export function applyCellShiftPreset(
 		dateIso: string;
 		cabinetId: string;
 		chairId: string;
-		presetType: "morning" | "evening" | "full_day" | "clear";
+		presetType: "morning" | "morning_9" | "evening" | "evening_15" | "full_day" | "clear";
 		doctorId?: string | undefined;
 		assistantId?: string | null | undefined;
 		staffList?: StaffMember[] | undefined;
@@ -164,17 +170,33 @@ export function applyCellShiftPreset(
 			(s) =>
 				!(
 					s.dateIso === dateIso &&
-					s.chairId === chairId &&
+					(chairId ? s.chairId === chairId : true) &&
 					(!doctorId || s.doctorId === doctorId)
 				),
 		);
 	}
 
+	const foundDoc = doctorId
+		? staffList.find((s) => s.id === doctorId) ||
+			DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId)
+		: null;
 	const doc =
-		(doctorId ? staffList.find((s) => s.id === doctorId) : null) ||
-		staffList.find((s) => s.isDoctor) ||
-		staffList[0] ||
-		DEFAULT_CLINIC_STAFF[0]!;
+		foundDoc ||
+		(doctorId
+			? {
+					id: doctorId,
+					fullName: `Врач ${doctorId}`,
+					shortName: `Врач ${doctorId}`,
+					role: "therapist" as MedicalStaffRole,
+					tabNumber: "001",
+					isDoctor: true,
+					isAssistant: false,
+					weeklyHourLimit: 33,
+					avatarColor: "#2563eb",
+				}
+			: staffList.find((s) => s.isDoctor) ||
+				staffList[0] ||
+				DEFAULT_CLINIC_STAFF[0]!);
 
 	const asst =
 		assistantId !== undefined
@@ -198,21 +220,35 @@ export function applyCellShiftPreset(
 		durationHours = 6.0;
 		archetypeId = "morning_shift";
 		breakMinutes = 0;
-		customNotes = "Утро 08:00–14:00";
+		customNotes = "1 смена (08:00–14:00)";
+	} else if (presetType === "morning_9") {
+		startTime = "09:00";
+		endTime = "15:00";
+		durationHours = 6.0;
+		archetypeId = "morning_shift";
+		breakMinutes = 0;
+		customNotes = "1 смена (09:00–15:00)";
 	} else if (presetType === "evening") {
 		startTime = "14:00";
 		endTime = "20:00";
 		durationHours = 6.0;
 		archetypeId = "evening_shift";
 		breakMinutes = 0;
-		customNotes = "Вечер 14:00–20:00";
+		customNotes = "2 смена (14:00–20:00)";
+	} else if (presetType === "evening_15") {
+		startTime = "15:00";
+		endTime = "21:00";
+		durationHours = 6.0;
+		archetypeId = "evening_shift";
+		breakMinutes = 0;
+		customNotes = "2 смена (15:00–21:00)";
 	} else if (presetType === "full_day") {
 		startTime = "08:00";
 		endTime = "20:00";
 		durationHours = 11.0;
 		archetypeId = "morning_shift";
 		breakMinutes = 60;
-		customNotes = "Весь день 08:00–20:00";
+		customNotes = "Весь день (08:00–20:00)";
 	}
 
 	const targetCab =
@@ -221,11 +257,13 @@ export function applyCellShiftPreset(
 		CLINIC_CABINETS_CATALOG[0]!;
 	const targetChair =
 		targetCab.chairs.find((ch) => ch.id === chairId) ||
-		targetCab.chairs[0] || {
-			id: chairId || "chair-1a",
-			name: "Кресло 1А",
-			equipment: "",
-		};
+		(chairId
+			? { id: chairId, name: `Кресло ${chairId}`, equipment: "" }
+			: targetCab.chairs[0] || {
+					id: "chair-1a",
+					name: "Кресло 1А",
+					equipment: "",
+				});
 
 	const newShift: DoctorShift = {
 		id: `shift-${dateIso}-${targetChair.id}-${doc.id}-${presetType}-${Date.now()}`,
@@ -258,14 +296,16 @@ export function applyCellShiftPreset(
 		if (s.doctorId === doc.id) {
 			return false;
 		}
+		const isMorningPreset = presetType === "morning" || presetType === "morning_9";
+		const isEveningPreset = presetType === "evening" || presetType === "evening_15";
 		if (
-			presetType === "morning" &&
+			isMorningPreset &&
 			(s.startTime < "14:00" || s.archetypeId === "morning_shift")
 		) {
 			return false;
 		}
 		if (
-			presetType === "evening" &&
+			isEveningPreset &&
 			(s.startTime >= "14:00" || s.archetypeId === "evening_shift")
 		) {
 			return false;

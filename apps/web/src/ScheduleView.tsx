@@ -46,6 +46,7 @@ import {
 	QuickAddChairModal,
 	type QuickAddChairData,
 } from "./components/schedule/QuickAddChairModal";
+import type { QuickAddDoctorData } from "./components/schedule/QuickAddDoctorModal";
 import { ScheduleTimeline } from "./components/schedule/ScheduleTimeline";
 import {
 	type DayGroupingAppointment,
@@ -848,6 +849,73 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				);
 			} finally {
 				setEditingChairData(null);
+			}
+		},
+		[props.loadDashboard, props.setDashboard],
+	);
+
+	const handleAddDoctorFromSchedule = useCallback(
+		async (doctorData: QuickAddDoctorData) => {
+			const applyLocalOptimisticDoctor = () => {
+				if (typeof props.setDashboard === "function") {
+					props.setDashboard((prev: any) => {
+						if (!prev?.clinicSettings) return prev;
+						const newStaff = {
+							id: doctorData.id || `doc-local-${Date.now()}`,
+							organizationId:
+								prev.clinicSettings?.profile?.organizationId ||
+								"00000000-0000-4000-8000-000000000001",
+							fullName: doctorData.fullName,
+							role: "doctor",
+							specialties: [doctorData.specialty],
+							phone: doctorData.phone || null,
+							email: null,
+							active: true,
+							canSignMedicalRecords: true,
+							canManageMoney: false,
+							canManageImports: false,
+							color: doctorData.color,
+							preferredChairId: doctorData.preferredChairId || null,
+							createdAt: new Date().toISOString(),
+							updatedAt: new Date().toISOString(),
+						};
+						return {
+							...prev,
+							clinicSettings: {
+								...prev.clinicSettings,
+								staff: [...(prev.clinicSettings.staff ?? []), newStaff],
+							},
+						};
+					});
+				}
+			};
+
+			try {
+				const res = await fetch("/api/settings/staff", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						fullName: doctorData.fullName,
+						role: "doctor",
+						specialties: [doctorData.specialty],
+						phone: doctorData.phone || null,
+						color: doctorData.color,
+						preferredChairId: doctorData.preferredChairId || null,
+					}),
+				});
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+				if (typeof props.loadDashboard === "function") {
+					await props.loadDashboard();
+				}
+				showToast(`Врач «${doctorData.fullName}» успешно добавлен в расписание`, "success", 3500);
+			} catch (err) {
+				console.warn("Failed to add doctor via QuickAddDoctorModal:", err);
+				applyLocalOptimisticDoctor();
+				showToast(`Врач «${doctorData.fullName}» добавлен локально`, "info", 3000);
 			}
 		},
 		[props.loadDashboard, props.setDashboard],
@@ -2138,6 +2206,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					}
 					onAssignChairDoctor={handleAssignChairDoctor}
 					onAddChair={handleAddChairFromSchedule}
+					onAddDoctor={handleAddDoctorFromSchedule}
 					onOpenRosterModal={() => setIsRosterModalOpen(true)}
 					onSelectChair={(chairId) => setScheduleChairFilterId(chairId)}
 					onSlotClick={(slot) => {
