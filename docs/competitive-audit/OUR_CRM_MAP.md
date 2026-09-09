@@ -2548,6 +2548,25 @@
 - **Файлы**: `apps/web/src/components/anesthesia/EmergencyAnaphylaxisProtocolModal.tsx`, `apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx`, `apps/web/src/components/emergency/EmergencyRescueModal.tsx`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
 - **Тесты**: `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/web).
 
+#### 2.10.232. Паритет серверных контрактов API: получение счетов по UUID и orderId, POS-эквайринг Сбербанк со слип-чеком, потоковое скачивание снимков визиографа и статус оплат портала (Wave 87)
+- **Назначение**: Полная гармонизация серверных роутов Fastify с клиентскими сервисами веб-приложения и мобильного веб-кабинета пациента PWA (Wave 87, коммит `5311d64e9`): сквозное получение счетов и актов по первичному ключу и внешнему номеру эквайринга, обработка подтверждений от физических POS-терминалов Сбербанка с генерацией банковского слипа, статус оплат в портале пациента, безопасная отдача файлов радиовизиографа/КТ с соблюдением 152-ФЗ / 323-ФЗ ст. 13 и исправление офлайн-синхронизации PWA.
+- **Архитектурные механизмы**:
+  1. *Получение счетов и актов `GET /api/invoices/:id` (Мандаты 8b, 8e)*:
+     - В `apps/api/src/routes/invoices.ts` реализован роут получения счета по ID с двухфакторным поиском: прямой поиск по UUID счета в таблице `patientInvoices` либо по внешнему `orderId` в таблице транзакций `sberbankTransactions`.
+     - Роут выполняет сборку позиций счета из `invoiceItems` с кодами услуг Номенклатуры 804н, копеечно точными суммами, номерами зубов и скидками, безопасный парсинг JSON-метаданных и возврат плательщика и статуса оплаты.
+  2. *Обработка терминального эквайринга Сбербанка `POST /api/payments/sberbank/pos/transaction` (Мандаты 8b, 8n / 54-ФЗ)*:
+     - В `apps/api/src/routes/payments/sberPosWebhookRoute.ts` реализован вебхук для приема подтверждений успешных транзакций с POS-терминалов Сбербанка.
+     - Проверяет терминальный ID и параметры операции, формирует текстовый образ банковского слип-чека через `formatSberBankSlip` (с RRN, кодом авторизации, маскированной картой и суммой), обновляет статус счета на оплаченный и регистрирует транзакцию в журнале оплат.
+  3. *Проверка статуса оплаты в портале пациента `GET /payments/status` (Мандаты 8b, 8e)*:
+     - В `apps/api/src/routes/portal.ts` добавлен эндпоинт проверки статуса оплаты для веб-кабинета пациента, возвращающий актуальный статус (`PAID`, `PENDING`, `FAILED`), таймстемп подтверждения и сумму транзакции.
+  4. *Защищенная отдача снимков визиографа и КТ `GET /api/xray/scans/:id/file` (152-ФЗ и 323-ФЗ ст. 13)*:
+     - В `apps/api/src/routes/xray.ts` реализован потоковый эндпоинт выгрузки исходных файлов рентген-снимков, ортопантомограмм и срезов КТ (`application/dicom`, `image/png`, `image/jpeg`).
+     - Обеспечена изоляция данных организации (`organizationId`), предотвращение несанкционированного доступа к чужим снимкам и автоматическая запись события врачебной тайны в журнал аудита `VIEW_XRAY_SCAN_FILE`.
+  5. *Синхронизация офлайн-бронирования PWA*:
+     - В `apps/web/src/pwa/patientOfflineStorage.ts` скорректирован URL отправки накопленных в офлайне заявок на бронирование с несуществующего пути на канонический серверный маршрут `/api/public/booking/:orgId/book`.
+- **Файлы**: `apps/api/src/routes/invoices.ts`, `apps/api/src/routes/payments/sberPosWebhookRoute.ts`, `apps/api/src/routes/portal.ts`, `apps/api/src/routes/xray.ts`, `apps/web/src/pwa/patientOfflineStorage.ts`.
+- **Тесты**: `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+
 
 
 

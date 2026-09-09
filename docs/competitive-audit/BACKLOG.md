@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-09 / WAVE 82): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 200 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 263 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 200 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-09 / WAVE 87): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 200 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 263 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 200 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -3422,9 +3422,9 @@
     * *StaffCommissionsPanel.tsx*, *emergencyAnaphylaxisProtocol.css*, *EmergencyAnaphylaxisProtocolModal.tsx*, *anesthesia.css*: дочищены неиспользуемые импорты и мертвые CSS-правила ликвидированных секундомеров и метрономов.
 * **Верификация**: `analyticsWidgetData.test.ts` (19/19 PASS), `chairDoctorDutyAssignmentWave60.test.tsx` (10/10 PASS), `settingsRbacAndCommissions.test.ts` (6/6 PASS), `emergencyAnaphylaxisProtocol.test.ts` (19/19 PASS), `anesthesiaSafetyEngine.test.ts` (21/21 PASS), `insuranceMath.test.ts` (11/11 PASS), `check:encoding` 5138 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
-### Wave 87: Ликвидация секундомера-симулятора анафилаксии, звуковых сирен и синтетических клоун-дефолтов в ДМС и Emergency HUD
+### Wave 87: Ликвидация секундомера-симулятора анафилаксии, эргономика расписания (StomX/IDENT Parity) и синхронизация серверных контрактов API
 * **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
-* **Коммиты**: `tbd`
+* **Коммиты**: `26c063b92`, `0fd258232`, `5311d64e9`, `871532079`
 * **Результаты**:
   - **Ликвидация секундомера-симулятора и сирен в EmergencyAnaphylaxisProtocolModal (Мандаты 8k, 8e, Core Rule 7)**:
     * *EmergencyAnaphylaxisProtocolModal.tsx*: удален принудительный звуковой сигнал тревоги (`soundFeedback.playWarningAlert()`) при монтировании модального окна, создававший нежелательный шумовой стресс в кабинете.
@@ -3436,22 +3436,17 @@
     * Внедрена безопасная обработка опционального пациента (`effectivePatientId`, `effectivePatientFullName`, `effectivePolicyNumberDefault`, `effectiveInsurerName`, `effectivePhone`) во всех формах, шапке, подвале и функции быстрого прикрепления полиса.
   - **Очистка клоун-дефолтов в EmergencyRescueModal (Мандаты 8e, 11, Core Rule 7)**:
     * *EmergencyRescueModal.tsx*: заменены синтетические дефолты ФИО пациента (`Иванов Иван Иванович`), врача, медсестры и вымышленного номера карты (`043/у-2026/894`) на клинически нейтральные фолбэки (`initialPatientName = 'Пациент'`, `doctorFullName = 'Лечащий врач-стоматолог'`, `assistantFullName = 'Ассистент / медсестра'`, `medCardNumber = '043/у'`).
-* **Верификация**: `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/web).
-
-
-### Wave 85: Эргономика расписания, автономия закрытия без модальной матрёшки и мгновенная привязка врачей к креслам (StomX / IDENT Parity)
-* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
-* **Коммиты**: `feat(schedule): ...`
-* **Результаты**:
-  - **QuickBookingDrawer (Анти-Матрёшка & Автосохранение черновика, Мандаты 8d п. 6, 8e п. 6, 8k, 8n)**:
-    * *Ликвидация блокирующей модалки подтверждения `showDirtyConfirm`*: При закрытии шторки (`handleRequestClose`, Esc, клик по оверлею или кнопка «Отмена (Esc)») при наличии несохраненных правок данные мгновенно и прозрачно сохраняются в `localStorage.setItem("dente_quick_booking_draft", ...)` с информационным тостом. Пользователь больше не блокируется всплывающим alertdialog `quick-booking-dirty-confirm-dialog` («Сохранить черновик записи? Да/Сбросить»).
-    * *1-клик сброс в футере*: В футер добавлена кнопка прямого действия «Сбросить» (`quick-booking-discard-draft-btn`), позволяющая сбросить черновик и закрыть шторку в 1 клик без всплывающих диалогов.
-    * *Глубина модалок СТРОГО 1*: Шторка быстрой записи открывается как портал на верхнем уровне, устраняя вложенные диалоги поверх шторки.
-  - **ChairScheduleView (StomX / IDENT Parity — 1-клик назначение врача и индикатор незанятых установок)**:
-    * *Индикатор незанятых установок `+ Врач`*: Для активных кресел, не имеющих назначенного дежурного врача на выбранный день, в палитре кресел добавлен компактный бейдж `+ Врач` (`chair-view-unstaffed-badge-${chair.id}`), открывающий назначение смены в 1 клик.
-    * *Мгновенная привязка врача в 1 клик*: При выборе врача в поповере смены на незанятом кресле врач немедленно назначается на кресло с дефолтной сменой («Весь день 08:00–20:00») без необходимости дополнительно искать и нажимать кнопку пресета.
-    * *Корректное сохранение двухсменных графиков*: Пресеты «Утро» и «Вечер» объединяются в `two_shifts` только для двух разных врачей; переключение смены у одного и того же врача чисто переназначает его время.
-* **Верификация**: `quickBookingAutonomyWave50.test.tsx` (8/8 PASS), `scheduleWave43StomxParity.test.tsx` (10/10 PASS), полный прогон расписания (478/478 PASS, 0 ошибок), `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+  - **Эргономика расписания: мгновенная привязка врачей к креслам и автосохранение черновиков (StomX / IDENT Parity, Мандаты 8d п. 6, 8e п. 6, 8e п. 8, 8k, 8n)**:
+    * *QuickBookingDrawer.tsx*: ликвидирована блокирующая модалка подтверждения `showDirtyConfirm` («Сохранить черновик записи? Да/Сбросить»). При закрытии шторки (Esc, клик по оверлею или кнопка «Отмена») данные мгновенно и прозрачно сохраняются в `localStorage.setItem("dente_quick_booking_draft", ...)` с информационным тостом. В футер добавлена 1-клик кнопка «Сбросить» (`quick-booking-discard-draft-btn`) для явной очистки черновика без модального спама. Глубина модалок СТРОГО 1.
+    * *ChairScheduleView.tsx*: для активных установок без дежурного врача на выбранный день добавлен контрастный бейдж `+ Врач` (`chair-view-unstaffed-badge-${chair.id}`), открывающий назначение смены в 1 клик.
+    * *Мгновенная привязка врача в 1 клик*: при выборе врача в поповере незанятого кресла врач немедленно закрепляется за установкой со сменой «Весь день 08:00–20:00» без обязательного перехода по вложенным кнопкам пресетов. Сохранена корректная поддержка смен «Утро» и «Вечер» для разных врачей.
+  - **Паритет серверных контрактов API: получение счетов, POS-эквайринг Сбербанк со слип-чеком, скачивание снимков визиографа и статус оплат портала (Мандаты 8b, 8e, 8n, StomX/DentalPRO Parity, 152-ФЗ / 323-ФЗ ст. 13)**:
+    * *apps/api/src/routes/invoices.ts*: реализован эндпоинт `GET /api/invoices/:id` с поддержкой поиска как по прямому UUID счета (`patientInvoices`), так и по `orderId` банковской транзакции (`sberbankTransactions`), сборкой строк счета и безопасным парсингом метаданных.
+    * *apps/api/src/routes/payments/sberPosWebhookRoute.ts*: реализован маршрут `POST /api/payments/sberbank/pos/transaction` для обработки физического терминального эквайринга Сбербанка с генерацией банковского чека/слипа (`formatSberBankSlip`), обновлением статуса счета и регистрацией платежа.
+    * *apps/api/src/routes/portal.ts*: реализован эндпоинт `GET /payments/status` для проверки статуса онлайн-оплаты в веб-кабинете пациента PWA.
+    * *apps/api/src/routes/xray.ts*: реализован защищенный эндпоинт `GET /api/xray/scans/:id/file` для выгрузки и потокового просмотра исходных файлов визиографа/КТ с валидацией принадлежности организации, соблюдением врачебной тайны и записью события аудита `VIEW_XRAY_SCAN_FILE` (152-ФЗ и 323-ФЗ ст. 13).
+    * *apps/web/src/pwa/patientOfflineStorage.ts*: синхронизирован маршрут фоновой синхронизации бронирований на канонический `/api/public/booking/:orgId/book`.
+* **Верификация**: `quickBookingAutonomyWave50.test.tsx` (8/8 PASS), `scheduleWave43StomxParity.test.tsx` (10/10 PASS), полный цикл расписания (478/478 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
 
 
