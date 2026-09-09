@@ -630,6 +630,85 @@ describe("Wave 43 StomX Parity: Chair Roster, Duty Doctor Forwarding & Zero-Bloc
 
 			assert.equal(assignedShift, null, "Unassigning doctor must pass null to onAssignChairDoctor");
 		});
+
+		it("displays + Врач badge on unstaffed chair and opens shift popover in 1 click", async () => {
+			const container = document.createElement("div") as unknown as MockDomNode;
+			const root: Root = createRoot(container as unknown as HTMLElement);
+
+			const dashboardWithUnstaffedChair = {
+				...mockDashboard,
+				clinicSettings: {
+					...mockDashboard.clinicSettings,
+					chairs: [
+						{
+							id: "chair-unstaffed",
+							name: "Кресло 3 (Без врача)",
+							roomNumber: "3",
+							active: true,
+						},
+					],
+				},
+			};
+
+			await act(async () => {
+				root.render(
+					<ChairScheduleView
+						dashboard={dashboardWithUnstaffedChair}
+						dateKey="2026-09-08"
+						appointments={[]}
+						chairDoctorAssignments={{}}
+						onSlotClick={() => {}}
+						onAppointmentClick={() => {}}
+					/>,
+				);
+			});
+
+			const unstaffedBadge = findNodeByTestId(container, "chair-view-unstaffed-badge-chair-unstaffed");
+			assert.ok(unstaffedBadge, "+ Врач badge must be displayed on unstaffed active chair");
+			assert.ok(unstaffedBadge.textContent.includes("+ Врач"));
+
+			await clickNode(unstaffedBadge);
+
+			const popover = findNodeByTestId(container, "chair-view-shift-popover-chair-unstaffed");
+			assert.ok(popover, "Clicking + Врач badge must open the shift popover immediately");
+		});
+
+		it("assigns doctor full-day in 1 click when selecting doctor on unassigned chair", async () => {
+			const container = document.createElement("div") as unknown as MockDomNode;
+			const root: Root = createRoot(container as unknown as HTMLElement);
+
+			let assignedShift: any = null;
+
+			await act(async () => {
+				root.render(
+					<ChairScheduleView
+						dashboard={mockDashboard}
+						dateKey="2026-09-08"
+						appointments={[]}
+						chairDoctorAssignments={{}}
+						onSlotClick={() => {}}
+						onAppointmentClick={() => {}}
+						onAssignChairDoctor={(_chairId, assignment) => {
+							assignedShift = assignment;
+						}}
+					/>,
+				);
+			});
+
+			const triggerBtn = findNodeByTestId(container, "chair-view-assign-doctor-chair-1");
+			await clickNode(triggerBtn);
+
+			const doc2Option = findNodeByTestId(container, "chair-view-doc-option-chair-1-doc-2");
+			assert.ok(doc2Option, "Doc 2 option must exist in popover");
+			await clickNode(doc2Option);
+
+			assert.ok(assignedShift, "Clicking doctor on unassigned chair must immediately assign doctor");
+			assert.equal(assignedShift.doctorId, "doc-2");
+			assert.equal(assignedShift.shiftPreset, "full");
+			assert.equal(assignedShift.shiftHours, "08:00–20:00");
+			assert.equal(assignedShift.startHour, 8);
+			assert.equal(assignedShift.endHour, 20);
+		});
 	});
 
 	describe("2. ChairScheduleView: Slot Click Forwarding with resolveChairDutyDoctor", () => {

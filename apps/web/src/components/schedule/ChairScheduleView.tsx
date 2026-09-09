@@ -519,13 +519,16 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				if (existingAssignment?.subShifts && existingAssignment.subShifts.length > 0) {
 					const found = existingAssignment.subShifts.find(
 						(s) =>
-							(s.startHour !== undefined && s.startHour >= 14) ||
-							s.shiftHours?.includes("14:00") ||
-							s.shiftHours?.includes("15:00"),
+							s.doctorId !== targetDoc.id &&
+							((s.startHour !== undefined && s.startHour >= 14) ||
+								s.shiftHours?.includes("14:00") ||
+								s.shiftHours?.includes("15:00")),
 					);
 					if (found) existingEvening = found;
 				} else if (
 					existingAssignment &&
+					existingAssignment.doctorId !== targetDoc.id &&
+					existingAssignment.shiftPreset !== "full" &&
 					((existingAssignment.startHour !== undefined && existingAssignment.startHour >= 14) ||
 						existingAssignment.shiftPreset === "evening")
 				) {
@@ -559,13 +562,16 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				if (existingAssignment?.subShifts && existingAssignment.subShifts.length > 0) {
 					const found = existingAssignment.subShifts.find(
 						(s) =>
-							(s.startHour !== undefined && s.startHour < 14) ||
-							s.shiftHours?.includes("08:00") ||
-							s.shiftHours?.includes("09:00"),
+							s.doctorId !== targetDoc.id &&
+							((s.startHour !== undefined && s.startHour < 14) ||
+								s.shiftHours?.includes("08:00") ||
+								s.shiftHours?.includes("09:00")),
 					);
 					if (found) existingMorning = found;
 				} else if (
 					existingAssignment &&
+					existingAssignment.doctorId !== targetDoc.id &&
+					existingAssignment.shiftPreset !== "full" &&
 					((existingAssignment.startHour !== undefined && existingAssignment.startHour < 14) ||
 						existingAssignment.shiftPreset === "morning")
 				) {
@@ -1352,6 +1358,20 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 											: `(${assignedDocName}${assignedShiftLabel ? ` • ${assignedShiftLabel}` : ""})`}
 									</span>
 								)}
+								{!assignedDocName && !hasTwoSubShifts && chair.active !== false && (
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
+										}}
+										className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0 cursor-pointer hover:bg-amber-500/20 transition-colors"
+										title="Кресло свободно (врач не назначен). Нажмите для назначения смены в 1 клик"
+										data-testid={`chair-view-unstaffed-badge-${chair.id}`}
+									>
+										+ Врач
+									</button>
+								)}
 								{chair.active === false && (
 									<span className="text-xs text-[var(--muted)] font-normal">
 										(архив)
@@ -1463,6 +1483,44 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 																}
 																showToast(
 																	`Дежурный врач кресла «${chair.name}» переключен на: ${formatDoctorShortName(doc.fullName)}`,
+																	"success",
+																);
+															} else {
+																const initialAssignment: ChairDoctorShiftAssignment = {
+																	chairId: chair.id,
+																	chairName: chair.name,
+																	doctorId: doc.id,
+																	doctorName: doc.fullName,
+																	doctorSpecialty: (doc as any).specialty ? String((doc as any).specialty) : undefined,
+																	shiftPreset: "full",
+																	shiftLabel: "Весь день (08:00–20:00)",
+																	shiftHours: "08:00–20:00",
+																	startHour: 8,
+																	endHour: 20,
+																	subShifts: [
+																		{
+																			doctorId: doc.id,
+																			doctorName: doc.fullName,
+																			doctorSpecialty: (doc as any).specialty ? String((doc as any).specialty) : undefined,
+																			startHour: 8,
+																			endHour: 20,
+																			shiftHours: "08:00–20:00",
+																		},
+																	],
+																};
+																if (typeof window !== "undefined" && dateKey) {
+																	try {
+																		const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+																		const existing = JSON.parse(localStorage.getItem(storageKey) || "{}");
+																		existing[chair.id] = initialAssignment;
+																		localStorage.setItem(storageKey, JSON.stringify(existing));
+																	} catch {}
+																}
+																if (onAssignChairDoctor) {
+																	onAssignChairDoctor(chair.id, initialAssignment);
+																}
+																showToast(
+																	`Врач ${formatDoctorShortName(doc.fullName)} назначен на кресло «${chair.name}» (Весь день 08-20)`,
 																	"success",
 																);
 															}
