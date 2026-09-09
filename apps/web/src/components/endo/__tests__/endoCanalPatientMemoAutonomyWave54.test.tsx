@@ -157,10 +157,15 @@ describe("Wave 54 / Feature 243: Endo Patient Memo and A4 Worksheet Print", () =
 		});
 
 		it("PediatricParentMemoModal has ZERO cartoon emojis in print button (Mandate 8d pt 7)", () => {
-			const pediatricModalFilePath = path.resolve(
+			const rootCandidate = path.resolve(
 				process.cwd(),
 				"apps/web/src/components/pediatric/PediatricParentMemoModal.tsx",
 			);
+			const localCandidate = path.resolve(
+				process.cwd(),
+				"src/components/pediatric/PediatricParentMemoModal.tsx",
+			);
+			const pediatricModalFilePath = fs.existsSync(rootCandidate) ? rootCandidate : localCandidate;
 			const code = fs.readFileSync(pediatricModalFilePath, "utf8");
 			assert.equal(code.includes("⚡"), false, "PediatricParentMemoModal must not contain ⚡ emoji");
 		});

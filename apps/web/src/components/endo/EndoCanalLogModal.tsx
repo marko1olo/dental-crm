@@ -982,16 +982,16 @@ export function EndoCanalLogModal({
 														</button>
 													</div>
 													{/* Quick Length Chips (1-tap fast input) */}
-													<div className="flex items-center gap-1 flex-wrap">
+													<div className="flex items-center gap-1.5 flex-wrap">
 														{QUICK_LENGTH_PRESETS.map((presetLen) => (
 															<button
 																key={presetLen}
 																type="button"
 																onClick={() => handleSetCanalLength(c.id, presetLen)}
-																className={`min-h-[28px] px-2 py-0.5 rounded-lg text-[11px] font-mono font-bold transition-all cursor-pointer ${
+																className={`min-h-[44px] min-w-[40px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 																	Number(c.workingLengthMm) === presetLen
 																		? "bg-rose-600 text-white shadow-xs"
-																		: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+																		: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
 																}`}
 																title={`Установить длину ${presetLen} мм`}
 															>
