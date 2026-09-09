@@ -760,7 +760,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 												</div>
 												{selectedRecord.cardData.visitDiaries[0]?.isSignedWithUkep && (
 													<span style={{ fontSize: "11px", color: "var(--ok-fg)", fontWeight: 700 }}>
-														✓ ПОДПИСАНО УКЭП
+														<ShieldCheck size={13} className="inline mr-1" /> ПОДПИСАНО УКЭП
 													</span>
 												)}
 											</div>
@@ -801,9 +801,13 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 																<div key={doc.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", padding: "6px 10px", background: "var(--paper)", borderRadius: "6px" }}>
 																	<span>{doc.title}</span>
 																	{doc.isSigned && doc.signedByPatient ? (
-																		<span style={{ color: "var(--ok-fg)", fontWeight: 700 }}>✓ Подписано пациентом</span>
+																		<span style={{ color: "var(--ok-fg)", fontWeight: 700 }}>
+																			<CheckCircle2 size={13} className="inline mr-1" /> Подписано пациентом
+																		</span>
 																	) : (
-																		<span style={{ color: "var(--bad-fg)", fontWeight: 700 }}>✗ Нет подписи</span>
+																		<span style={{ color: "var(--bad-fg)", fontWeight: 700 }}>
+																			<X size={13} className="inline mr-1" /> Нет подписи
+																		</span>
 																	)}
 																</div>
 															))}

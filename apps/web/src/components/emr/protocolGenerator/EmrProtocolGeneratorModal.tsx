@@ -805,19 +805,31 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										<div className="grid grid-cols-2 gap-2">
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">МКБ-10 классификатор</div>
-												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ Валидный код ({synthesizedDiary.assessmentIcd10Code})</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium flex items-center">
+													<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
+													<span>Валидный код ({synthesizedDiary.assessmentIcd10Code})</span>
+												</div>
 											</div>
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">Зубная формула FDI</div>
-												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ Валидный номер ({synthesizedDiary.toothNumber})</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium flex items-center">
+													<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
+													<span>Валидный номер ({synthesizedDiary.toothNumber})</span>
+												</div>
 											</div>
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">Дозировка анестетика</div>
-												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ Безопасная терапевтическая доза</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium flex items-center">
+													<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
+													<span>Безопасная терапевтическая доза</span>
+												</div>
 											</div>
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">Подпись и реквизиты</div>
-												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ {synthesizedDiary.doctorFullName}</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium flex items-center">
+													<ShieldCheck size={13} className="inline mr-1 shrink-0" />
+													<span>{synthesizedDiary.doctorFullName}</span>
+												</div>
 											</div>
 										</div>
 									</div>

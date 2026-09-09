@@ -31,6 +31,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	UserCheck,
+	Check,
 	X,
 } from "lucide-react";
 import {
@@ -485,16 +486,16 @@ export const ClinicalAuditBoard: React.FC<ClinicalAuditBoardProps> = ({
 													{/* Statutory Checklist Pills */}
 													<div className="cmo-emr-check-pills">
 														<span className={`cmo-check-pill ${icdPass ? "ok" : "bad"}`}>
-															{icdPass ? "✓" : "✗"} МКБ-10
+															{icdPass ? <Check size={12} className="inline mr-1" /> : <X size={12} className="inline mr-1" />} МКБ-10
 														</span>
 														<span className={`cmo-check-pill ${idsPass ? "ok" : "bad"}`}>
-															{idsPass ? "✓" : "✗"} ИДС 323-ФЗ
+															{idsPass ? <Check size={12} className="inline mr-1" /> : <X size={12} className="inline mr-1" />} ИДС 323-ФЗ
 														</span>
 														<span className={`cmo-check-pill ${soapPass ? "ok" : "bad"}`}>
-															{soapPass ? "✓" : "✗"} SOAP Дневник
+															{soapPass ? <Check size={12} className="inline mr-1" /> : <X size={12} className="inline mr-1" />} SOAP Дневник
 														</span>
 														<span className={`cmo-check-pill ${anesPass ? "ok" : "bad"}`}>
-															{anesPass ? "✓" : "✗"} Анестезия
+															{anesPass ? <Check size={12} className="inline mr-1" /> : <X size={12} className="inline mr-1" />} Анестезия
 														</span>
 													</div>
 

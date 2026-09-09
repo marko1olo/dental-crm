@@ -458,7 +458,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
           </table>
           <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:5px; padding-top:3px; border-top:0.5pt dashed #cbd5e1; font-size:7pt; color:#64748b;">
             <div>
-              ${d.isSignedWithUkep ? `<span style="color:#059669; font-weight:bold;">✓ Подписано УКЭП (ГОСТ Р 34.10)</span> • Хэш: ${escapeHtml((d.digitalSignatureHash || "").slice(0, 18))}…` : "Подпись не заверена УКЭП"}
+              ${d.isSignedWithUkep ? `<span style="color:#059669; font-weight:bold;">[УКЭП] Подписано УКЭП (ГОСТ Р 34.10)</span> • Хэш: ${escapeHtml((d.digitalSignatureHash || "").slice(0, 18))}…` : "Подпись не заверена УКЭП"}
             </div>
             <div>
               Подпись лечащего врача: ___________________ / ${escapeHtml(d.doctorFullName)} /
@@ -871,7 +871,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
   ${cfg.includeUkepStamp ? `
     <div class="ukep-stamp-card">
       <div style="font-weight:800; text-transform:uppercase; letter-spacing:0.02em; margin-bottom:2px;">
-        ✓ ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (УКЭП)
+        ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (УКЭП)
       </div>
       <div>Сертификат: <strong>00E103503B8F2026DENTE043U834N</strong> | Владелец: <strong>${escapeHtml(passport.attendingDoctorFullName)}</strong></div>
       <div>Действителен: с 01.01.2026 по 01.01.2027 | Аккредитованный УЦ: АО «ИнфоТеКС» / Федеральное казначейство РФ</div>

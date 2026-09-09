@@ -299,7 +299,7 @@ describe("Form 043/u Document Generators", () => {
 		assert.ok(html.includes("Индекс КПУ(з)"), "Contains DMFT index");
 		assert.ok(html.includes("Ceram.x Spectra ST"), "Contains protocol materials");
 		assert.ok(html.includes("@media print"), "Contains print media styles");
-		assert.ok(html.includes("✓ ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ"), "Contains UKEP stamp");
+		assert.ok(html.includes("ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ"), "Contains UKEP stamp");
 	});
 
 	it("generates valid HL7 CDA R2 XML for EGISZ", () => {
