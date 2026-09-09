@@ -1521,7 +1521,25 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						isOpen={isInternalAddChairModalOpen}
 						onClose={() => setIsInternalAddChairModalOpen(false)}
 						existingChairsCount={0}
-						{...(props.onAddChair ? { onAddChair: props.onAddChair } : {})}
+						doctors={doctors}
+						onAddChair={props.onAddChair || (async (chairData) => {
+							const newChair = {
+								id: chairData.id || `chair-${Date.now()}`,
+								name: chairData.name,
+								room: chairData.room || chairData.roomNumber || "",
+								color: chairData.color || "#0d9488",
+								specialization: chairData.specialization,
+								active: chairData.isActive ?? true,
+								branchId: chairData.branchId,
+							};
+							if (dashboard?.clinicSettings?.chairs) {
+								dashboard.clinicSettings.chairs.push(newChair as any);
+							}
+							if (chairData.defaultDoctorId) {
+								handleConfirmAssignDoctor(newChair.id, chairData.defaultDoctorId, "full");
+							}
+							setIsInternalAddChairModalOpen(false);
+						})}
 					/>
 				)}
 			</div>
@@ -1726,7 +1744,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							return (
 								<div
 									key={chair.id}
-									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0 relative overflow-hidden"
+									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0 relative"
 									style={{ borderTop: `3px solid ${chair.color || "var(--teal, #0d9488)"}` }}
 									data-testid={`chair-header-${chair.id}`}
 								>
@@ -2463,6 +2481,54 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														)}
 														<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
 													</button>
+													{/* StomX / IDENT Shift Coverage Strip (Morning / Evening breakdown) */}
+													<div
+														className="grid grid-cols-2 gap-1 w-full text-[10px] font-medium"
+														data-testid={`chair-shift-strip-${chair.id}`}
+													>
+														<div
+															className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
+																assignment!.shiftPreset === "morning" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8)
+																	? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))]"
+																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-80"
+															}`}
+															data-testid={`chair-status-morning-${chair.id}`}
+															title={
+																assignment!.shiftPreset === "morning" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8)
+																	? `Утренняя смена (08:00–14:00): ${assignment!.doctorName}`
+																	: "Утренняя смена свободна"
+															}
+														>
+															<Sun size={10} className="text-amber-500 shrink-0" aria-hidden="true" />
+															<span className="truncate">
+																<span className="font-bold">Утро: </span>
+																{assignment!.shiftPreset === "morning" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8)
+																	? formatDoctorShortName(assignment!.doctorName)
+																	: "Свободно"}
+															</span>
+														</div>
+														<div
+															className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
+																assignment!.shiftPreset === "evening" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sEnd >= 20)
+																	? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))]"
+																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-80"
+															}`}
+															data-testid={`chair-status-evening-${chair.id}`}
+															title={
+																assignment!.shiftPreset === "evening" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sEnd >= 20)
+																	? `Вечерняя смена (14:00–20:00): ${assignment!.doctorName}`
+																	: "Вечерняя смена свободна"
+															}
+														>
+															<Moon size={10} className="text-indigo-400 shrink-0" aria-hidden="true" />
+															<span className="truncate">
+																<span className="font-bold">Вечер: </span>
+																{assignment!.shiftPreset === "evening" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sEnd >= 20)
+																	? formatDoctorShortName(assignment!.doctorName)
+																	: "Свободно"}
+															</span>
+														</div>
+													</div>
 													{/* 1-Click Shift Segmented Control (StomX / DentalPRO parity) */}
 													<div
 														className="flex items-center justify-between p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] w-full gap-0.5"
@@ -2564,6 +2630,28 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										})()
 									) : (
 										<div className="w-full flex flex-col gap-1">
+											{/* StomX / IDENT Shift Coverage Strip (Both shifts unassigned/free) */}
+											<div
+												className="grid grid-cols-2 gap-1 w-full text-[10px] font-medium text-[var(--muted)]"
+												data-testid={`chair-shift-strip-${chair.id}`}
+											>
+												<div
+													className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] flex items-center gap-1 min-w-0 opacity-80"
+													data-testid={`chair-status-morning-${chair.id}`}
+													title="Утренняя смена (08:00–14:00): Свободно"
+												>
+													<Sun size={10} className="text-amber-500 shrink-0" aria-hidden="true" />
+													<span className="truncate"><span className="font-bold">Утро: </span>Свободно</span>
+												</div>
+												<div
+													className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] flex items-center gap-1 min-w-0 opacity-80"
+													data-testid={`chair-status-evening-${chair.id}`}
+													title="Вечерняя смена (14:00–20:00): Свободно"
+												>
+													<Moon size={10} className="text-indigo-400 shrink-0" aria-hidden="true" />
+													<span className="truncate"><span className="font-bold">Вечер: </span>Свободно</span>
+												</div>
+											</div>
 											<button
 												type="button"
 												onClick={() => openAssignModal(chair.id)}
@@ -4168,7 +4256,25 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			isOpen={isInternalAddChairModalOpen}
 			onClose={() => setIsInternalAddChairModalOpen(false)}
 			existingChairsCount={effectiveChairs.length}
-			{...(props.onAddChair ? { onAddChair: props.onAddChair } : {})}
+			doctors={doctors}
+			onAddChair={props.onAddChair || (async (chairData) => {
+				const newChair = {
+					id: chairData.id || `chair-${Date.now()}`,
+					name: chairData.name,
+					room: chairData.room || chairData.roomNumber || "",
+					color: chairData.color || "#0d9488",
+					specialization: chairData.specialization,
+					active: chairData.isActive ?? true,
+					branchId: chairData.branchId,
+				};
+				if (dashboard?.clinicSettings?.chairs) {
+					dashboard.clinicSettings.chairs.push(newChair as any);
+				}
+				if (chairData.defaultDoctorId) {
+					handleConfirmAssignDoctor(newChair.id, chairData.defaultDoctorId, "full");
+				}
+				setIsInternalAddChairModalOpen(false);
+			})}
 		/>
 	)}
 

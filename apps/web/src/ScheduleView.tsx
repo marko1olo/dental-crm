@@ -608,6 +608,27 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	}, [dashboard?.clinicSettings?.staff]);
 
 	/**
+	 * Список активных врачей клиники для быстрого назначения и создания кресел (Мандаты 8e, 8n)
+	 */
+	const scheduleDoctors = useMemo(() => {
+		return (dashboard?.clinicSettings?.staff ?? [])
+			.filter(
+				(s) =>
+					s.active !== false &&
+					(s.role === "doctor" ||
+						s.role === "owner" ||
+						(Array.isArray(s.specialties) && s.specialties.length > 0 && s.role !== "assistant")),
+			)
+			.map((s) => ({
+				id: s.id,
+				fullName: s.fullName,
+				role: s.role,
+				specialties: s.specialties,
+				active: s.active !== false,
+			}));
+	}, [dashboard?.clinicSettings?.staff]);
+
+	/**
 	 * Сопоставление реальных кресел и кабинетов клиники (Мандаты 8e, 8n)
 	 */
 	const rosterCabinets: RosterCabinetDefinition[] = useMemo(() => {
@@ -2293,6 +2314,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					}}
 					onAddChair={handleAddChairFromSchedule}
 					onEditChair={handleEditChairFromSchedule}
+					onAddDoctor={handleAddDoctorFromSchedule}
 				/>
 			) : (
 				<ScheduleTimeline
@@ -2596,6 +2618,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				onUpdateChair={handleAddChairFromSchedule}
 				existingChairsCount={dashboard?.clinicSettings?.chairs?.length || 0}
 				branches={dashboard?.clinicSettings?.branches}
+				doctors={scheduleDoctors}
 			/>
 			<DoctorCalendarSyncModal
 				isOpen={isCalendarSyncModalOpen}
