@@ -147,51 +147,50 @@ export function NdflCalculatorModal({
 				</button>
 
 				{result && (
-					<div className="mt-4">
-						{result.isBlocked ? (
-							<div className="p-4 rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 text-xs space-y-1.5 shadow-sm">
-								<div className="flex items-center gap-2 font-bold text-sm text-rose-900 dark:text-rose-200">
-									<AlertTriangle size={18} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									Формирование заблокировано
+					<div className="mt-4 space-y-3">
+						{result.debtRub > 0 && (
+							<div className="p-3.5 rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs space-y-1 shadow-sm">
+								<div className="flex items-center gap-2 font-bold text-xs text-amber-900 dark:text-amber-200">
+									<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									Внимание: текущая задолженность пациента
 								</div>
-								<div className="leading-relaxed">
-									У пациента есть непогашенный долг:{" "}
-									<strong className="font-bold">{formatKopecksRu(parseKopecks(result.debtRub))}</strong>. Для получения справки
-									НДФЛ по ст. 219 НК РФ необходимо полностью закрыть задолженность.
-								</div>
-							</div>
-						) : (
-							<div className="p-4 rounded-2xl border border-[var(--ok-fg,#059669)]/30 bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] text-xs space-y-3 shadow-sm">
-								<div className="flex items-center justify-between pb-1.5 border-b border-[var(--ok-fg,#059669)]/20">
-									<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ok-fg,#059669)] m-0">
-										Суммы расходов (Приказ ФНС ЕА-7-11/824@):
-									</h3>
-									<span className="text-[10px] font-bold text-[var(--ok-fg,#059669)] bg-[var(--paper,#ffffff)] px-2 py-0.5 rounded">
-										13% возврат
-									</span>
-								</div>
-
-								<div className="flex justify-between items-center py-1 border-b border-[var(--ok-fg,#059669)]/20">
-									<div>
-										<div className="font-semibold text-slate-800 dark:text-slate-200">Код 1 (Обычное лечение):</div>
-										<div className="text-[10px] text-slate-500 dark:text-slate-400">Лимит базы вычета: 150 000 ₽ / год</div>
-									</div>
-									<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
-										{formatKopecksRu(parseKopecks(result.code1TotalRub))}
-									</strong>
-								</div>
-
-								<div className="flex justify-between items-center py-1">
-									<div>
-										<div className="font-semibold text-slate-800 dark:text-slate-200">Код 2 (Дорогостоящее лечение):</div>
-										<div className="text-[10px] text-slate-500 dark:text-slate-400">Имплантация, костная пластика (без лимита)</div>
-									</div>
-									<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
-										{formatKopecksRu(parseKopecks(result.code2TotalRub))}
-									</strong>
+								<div className="leading-relaxed text-[11px]">
+									У пациента числится задолженность:{" "}
+									<strong className="font-bold">{formatKopecksRu(parseKopecks(result.debtRub))}</strong>. Справка формируется на фактически оплаченные фискальные суммы по ст. 219 НК РФ.
 								</div>
 							</div>
 						)}
+
+						<div className="p-4 rounded-2xl border border-[var(--ok-fg,#059669)]/30 bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] text-xs space-y-3 shadow-sm">
+							<div className="flex items-center justify-between pb-1.5 border-b border-[var(--ok-fg,#059669)]/20">
+								<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ok-fg,#059669)] m-0">
+									Суммы расходов (Приказ ФНС ЕА-7-11/824@):
+								</h3>
+								<span className="text-[10px] font-bold text-[var(--ok-fg,#059669)] bg-[var(--paper,#ffffff)] px-2 py-0.5 rounded">
+									13% возврат
+								</span>
+							</div>
+
+							<div className="flex justify-between items-center py-1 border-b border-[var(--ok-fg,#059669)]/20">
+								<div>
+									<div className="font-semibold text-slate-800 dark:text-slate-200">Код 1 (Обычное лечение):</div>
+									<div className="text-[10px] text-slate-500 dark:text-slate-400">Лимит базы вычета: 150 000 ₽ / год</div>
+								</div>
+								<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
+									{formatKopecksRu(parseKopecks(result.code1TotalRub))}
+								</strong>
+							</div>
+
+							<div className="flex justify-between items-center py-1">
+								<div>
+									<div className="font-semibold text-slate-800 dark:text-slate-200">Код 2 (Дорогостоящее лечение):</div>
+									<div className="text-[10px] text-slate-500 dark:text-slate-400">Имплантация, костная пластика (без лимита)</div>
+								</div>
+								<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
+									{formatKopecksRu(parseKopecks(result.code2TotalRub))}
+								</strong>
+							</div>
+						</div>
 					</div>
 				)}
 

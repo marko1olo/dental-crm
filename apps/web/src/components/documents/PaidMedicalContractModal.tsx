@@ -390,7 +390,10 @@ export function PaidMedicalContractModal({
 									{isContractSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК (БЛАНК)"}
 								</span>
 							</div>
-							<p className="paid-contract-subtitle">
+							<p
+								className="paid-contract-subtitle"
+								title={`${contractData.patient.fullName} · Договор № ${contractData.contractNumber} от ${contractData.contractDate} · Сумма: ${moneyDetails.formatted}`}
+							>
 								{contractData.patient.fullName} · Договор № {contractData.contractNumber} от{" "}
 								{contractData.contractDate} · Сумма: {moneyDetails.formatted}
 							</p>
@@ -1178,7 +1181,18 @@ export function PaidMedicalContractModal({
 													) : (
 														<button
 															type="button"
-															style={{ background: "none", border: "none", color: "var(--teal)", cursor: "pointer", padding: 0 }}
+															style={{
+																background: "none",
+																border: "none",
+																color: "var(--teal)",
+																cursor: "pointer",
+																padding: "8px 12px",
+																minHeight: "44px",
+																minWidth: "44px",
+																display: "inline-flex",
+																alignItems: "center",
+																justifyContent: "center",
+															}}
 															onClick={handleSendSmsCode}
 														>
 															Отправить повторно

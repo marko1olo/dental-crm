@@ -1065,6 +1065,8 @@ export interface ConsentPrintParams {
 	aftercare?: string;
 	date?: string;
 	isBlank?: boolean;
+	isSigned?: boolean;
+	watermarkText?: string;
 }
 
 /**
@@ -1088,6 +1090,8 @@ export interface MinorConsentPrintParams {
 	alternatives?: string;
 	date?: string;
 	isBlank?: boolean;
+	isSigned?: boolean;
+	watermarkText?: string;
 }
 
 /**
@@ -1193,6 +1197,8 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
 	const aftercare = isBlank ? "____________________________________________________________________________________" : (params.aftercare?.trim() || "Не принимать пищу до окончания действия анестезии (2-3 часа); соблюдать щадящий режим гигиены полости рта");
 
 	const today = params.date || new Date().toLocaleDateString("ru-RU");
+	const effectiveWatermark = params.watermarkText || (params.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -1216,7 +1222,33 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
       margin: 0;
       padding: 0;
     }
+    .watermark-draft {
+      position: fixed;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 52pt;
+      font-weight: 900;
+      color: rgba(0, 0, 0, 0.04);
+      text-transform: uppercase;
+      letter-spacing: 4pt;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
+    .watermark-stamp {
+      display: inline-block;
+      border: 1.5pt solid ${stampColor};
+      color: ${stampColor};
+      padding: 1.5pt 5pt;
+      border-radius: 2.5pt;
+      font-size: 7pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     .print-sheet {
+      position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1318,6 +1350,7 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
 </head>
 <body>
   <div class="print-sheet">
+    <div class="watermark-draft" aria-hidden="true">${effectiveWatermark}</div>
     <div>
       <div class="sheet-header">
         <div class="clinic-top-row">
@@ -1326,6 +1359,9 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
             Адрес: ${clinicAddress} · Тел.: ${clinicPhone}
           </div>
           <div style="text-align: right;">
+            <div style="margin-bottom: 2pt;">
+              <span class="watermark-stamp" aria-hidden="true">${effectiveWatermark}</span>
+            </div>
             <span class="statutory-badge">Приказ МЗ РФ № 1051н • 323-ФЗ ст. 20</span><br>
             В медицинскую карту 043/у<br>
             Дата: ${today}
@@ -1405,6 +1441,8 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 	const alternatives = isBlank ? "____________________________________________________________________________________" : (params.alternatives?.trim() || "Лечение под седацией/наркозом; отказ от лечения с риском одонтогенного воспаления");
 
 	const today = params.date || new Date().toLocaleDateString("ru-RU");
+	const effectiveWatermark = params.watermarkText || (params.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -1428,7 +1466,33 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
       margin: 0;
       padding: 0;
     }
+    .watermark-draft {
+      position: fixed;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 52pt;
+      font-weight: 900;
+      color: rgba(0, 0, 0, 0.04);
+      text-transform: uppercase;
+      letter-spacing: 4pt;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
+    .watermark-stamp {
+      display: inline-block;
+      border: 1.5pt solid ${stampColor};
+      color: ${stampColor};
+      padding: 1.5pt 5pt;
+      border-radius: 2.5pt;
+      font-size: 7pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     .print-sheet {
+      position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1530,6 +1594,7 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 </head>
 <body>
   <div class="print-sheet">
+    <div class="watermark-draft" aria-hidden="true">${effectiveWatermark}</div>
     <div>
       <div class="sheet-header">
         <div class="clinic-top-row">
@@ -1538,6 +1603,9 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
             Адрес: ${clinicAddress} · Тел.: ${clinicPhone}
           </div>
           <div style="text-align: right;">
+            <div style="margin-bottom: 2pt;">
+              <span class="watermark-stamp" aria-hidden="true">${effectiveWatermark}</span>
+            </div>
             <span class="statutory-badge">Педиатрия • Приказ МЗ РФ № 1051н • 323-ФЗ ст. 20</span><br>
             В медицинскую карту 043/у<br>
             Дата: ${today}
@@ -1590,6 +1658,8 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 export interface ConsentPackagePrintOptions {
 	mode?: "blank" | "filled";
 	isBlank?: boolean;
+	isSigned?: boolean;
+	watermarkText?: string;
 	context?: ConsentSubstitutionContext;
 	clinicDefaults?: Partial<ConsentSubstitutionContext>;
 }
@@ -1613,6 +1683,8 @@ export function generateConsentPackagePrintHtml(
 	const clinicLicense = baseContext.licenseNumber || "ЛО41-01137-77/00368421";
 	const clinicAddress = baseContext.clinicAddress || "г. Москва, ул. Большая Стоматологическая, д. 12";
 	const today = baseContext.date || new Date().toLocaleDateString("ru-RU");
+	const effectiveWatermark = options.watermarkText || (options.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	// Рендерим все документы пакета последовательно
 	const renderedSheets = pkg.templateKeys.map((tplKey, index) => {
@@ -1628,6 +1700,7 @@ export function generateConsentPackagePrintHtml(
 
 		return `
     <div class="package-doc-sheet">
+      <div class="watermark-draft" aria-hidden="true">${effectiveWatermark}</div>
       <div class="package-header-banner">
         <div class="package-banner-title">
           <span>${pkg.title.toUpperCase()}</span>
@@ -1642,6 +1715,9 @@ export function generateConsentPackagePrintHtml(
             Адрес: ${clinicAddress}
           </div>
           <div style="text-align: right;">
+            <div style="margin-bottom: 2pt;">
+              <span class="watermark-stamp" aria-hidden="true">${effectiveWatermark}</span>
+            </div>
             <span class="statutory-badge">${tpl.statutoryBasis.split(",")[0] || "323-ФЗ ст. 20"}</span><br>
             В медицинскую карту 043/у<br>
             Дата: ${today}
@@ -1724,7 +1800,33 @@ export function generateConsentPackagePrintHtml(
       margin: 0;
       padding: 0;
     }
+    .watermark-draft {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 48pt;
+      font-weight: 900;
+      color: rgba(0, 0, 0, 0.04);
+      text-transform: uppercase;
+      letter-spacing: 4pt;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
+    .watermark-stamp {
+      display: inline-block;
+      border: 1.5pt solid ${stampColor};
+      color: ${stampColor};
+      padding: 1.5pt 5pt;
+      border-radius: 2.5pt;
+      font-size: 7pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     .package-doc-sheet {
+      position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;

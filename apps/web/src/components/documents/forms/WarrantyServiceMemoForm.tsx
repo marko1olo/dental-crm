@@ -135,7 +135,7 @@ export const WarrantyServiceMemoForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ fontSize: "12px", minHeight: "44px", padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 							onClick={() => applyWarrantyPreset("light_cured_fillings")}
 						>
 							Композитные пломбы (12&nbsp;мес)
@@ -143,7 +143,7 @@ export const WarrantyServiceMemoForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ fontSize: "12px", minHeight: "44px", padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 							onClick={() => applyWarrantyPreset("zirconia_emax_crowns")}
 						>
 							Цирконий / E-max (24–36&nbsp;мес)
@@ -151,7 +151,7 @@ export const WarrantyServiceMemoForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ fontSize: "12px", minHeight: "44px", padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 							onClick={() => applyWarrantyPreset("metal_ceramic_crowns")}
 						>
 							Металлокерамика (12&nbsp;мес)
@@ -159,7 +159,7 @@ export const WarrantyServiceMemoForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ fontSize: "12px", minHeight: "44px", padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 							onClick={() => applyWarrantyPreset("dental_implants")}
 						>
 							Имплантаты (24&nbsp;мес / пожизненно)
@@ -167,7 +167,7 @@ export const WarrantyServiceMemoForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ fontSize: "12px", minHeight: "44px", padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 							onClick={() => applyWarrantyPreset("clasp_dentures")}
 						>
 							Бюгельные протезы (12&nbsp;мес)

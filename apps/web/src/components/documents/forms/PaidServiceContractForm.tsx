@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { FileEdit, ShieldCheck, Printer } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
-import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 import { printBlankMedicalContract } from "../../patient/blankContractPrint";
 import { showToast } from "../../GlobalToast";
 import { money } from "../../../utils/financeUtils";
