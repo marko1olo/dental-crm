@@ -134,7 +134,7 @@
 - **Возможности**:
   - Проведение платежей (наличные, карта, аванс, семейный кошелек).
   - 1-клик комбинированная оплата в `PaymentModal.tsx` («Зачесть аванс N ₽ + остаток картой») без отключения кнопок при недостатке депозита (коммит `388b1ac24`).
-  - Касса 54-ФЗ без палок в колёса (Мандат 8e п. 9, 8n): отмена обязательного требования ИНН с физических лиц (ИНН требуется строго для ЮЛ и ИП), моментальные 1-клик пресеты комбинированной оплаты («Без сдачи», «100% карта», «Аванс + карта») без рассинхрона копеек, автономия скидок врача — 100% скидки на гарантийные переделки и лечение персонала закрывают приём в 1 клик (0 ₽) без ввода мастер-паролей (`PaymentModal.tsx`, `PaymentProcessingModal.tsx`, `cashboxOperations.ts`, коммит `ba8c60802`).
+  - Касса 54-ФЗ без палок в колёса (Мандат 8e п. 9, 8n): отмена обязательного требования ИНН с физических лиц (ИНН требуется строго для ЮЛ и ИП), моментальные 1-клик пресеты комбинированной оплаты («Без сдачи», «100% карта», «Аванс + карта») без рассинхрона копеек, автономия скидок врача — 100% скидки на гарантийные переделки и лечение персонала закрывают приём в 1 клик (0 ₽) без ввода мастер-паролей (`PaymentModal.tsx`, `FastCheckoutModal.tsx`, `cashboxOperations.ts`, коммит `ba8c60802`).
   - 1-клик пресет «⚡ Депозит + Карта + Нал» (`preset-three-way`) со списанием личного аванса/семейного депозита и симметричным разделением остатка на карту и наличные с копеечной точностью; аддитивное сложение семейного баланса и личного депозита в FastCheckoutModal (`CashRegisterModal.tsx`, `FastCheckoutModal.tsx`, Мандаты 8b, 8e, 8n, Фича #181, коммит `db824fb3c`).
   - Обход фискализации 0 ₽ при 100% гарантии/скидке (`targetBillKop === 0`), предотвращающий аппаратный сбой ККТ, с закрытием визита за 300 мс со штампом «Гарантия 100%» и аддитивным сложением семейного счета и личного депозита (`FastCheckoutModal.tsx`, `CashRegisterModal.tsx`, Мандаты 8b, 8e, 8n, Фича #173, коммит `d3e52a957`).
   - 1-клик автозаполнение реквизитов плательщика из карточки пациента (`btn-fill-payer-from-patient`) с тост-руководством и строгой валидацией ИНН без пассивных блокировок (`PaymentCapture.tsx`, Мандаты 8e, 8n, Фича #175, коммиты `ae19c510a`, `cb78c9998`).
@@ -2413,6 +2413,27 @@
      - В `PaymentModal.tsx` добавлена прямая обработка `isWarranty100` и `totalDueRub <= 0` в `handleCashSubmit` и `handleSplitSubmit`, исключающая падение кассы с HTTP 400 («Сумма оплаты должна быть строго больше нуля») при гарантийных переделках.
 - **Файлы**: `apps/web/src/VisitView.tsx`, `apps/web/src/components/odontogram/ToothRadialMenu.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx`, `apps/web/src/components/consents/InformedConsentModal.tsx`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/inventory/transfers/WarehouseTransferModal.tsx`, `apps/web/src/components/insurance/InsurancePreAuthModal.tsx`, `apps/web/src/components/insurance/dmsManager/DmsInsuranceManagerModal.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts`.
 - **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12/12 pass), `apps/web/src/components/diagnostic/__tests__/ToothContextDrawer.test.tsx` (10/10 pass), `npm run check:encoding` (5138 файлов, 0 ошибок), monorepo `typecheck` Exit Code 0.
+
+#### 2.10.225. Де-блоатинг бэкофиса, эргономика расписания 1-клика и ликвидация оверинжиниринга томографии (TTS, фейк-дозиметрия) (Wave 81)
+- **Назначение**: Полная ликвидация сирот в модуле зуботехнической лаборатории (LabTrackingView, DentalLabPricingTab), удаление несмонтированной зомби-модалки процессинга платежей, искоренение трения при создании визита (опциональный ассистент соло-врача по Мандату 8e п. 8 и 8n), наведение порядка по Законам Хика (1 строка тулбара) и Миллера ($\le 2$ кнопок на карточке), снос роботизированного Web Speech TTS синтезатора речи в визиографе, устранение захардкоженной фальшивой дозиметрии КТ (`kVp: 90, mAs: 56`) и объединение дублирующего математического ядра MPR (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8o).
+- **Архитектурные механизмы**:
+  1. *Ликвидация мертвого кода бэкофиса и финансов (коммит `6dc69ae83`)*:
+     - Физически удалены несмонтированные модули-сироты ЗТЛ `apps/web/src/components/lab/LabTrackingView.tsx` (328 строк) и `apps/web/src/components/lab/DentalLabPricingTab.tsx` (171 строка);
+     - Физически удалена 1077-строчная зомби-модалка `apps/web/src/components/finance/PaymentProcessingModal.tsx`, не имевшая ни одного маунта в UI;
+     - Очищен фасад `apps/web/src/components/finance/index.ts`.
+  2. *Эргономика расписания 1-клика и автономия создания записи (коммит `0896ceb15`)*:
+     - В `AppointmentModal.tsx` выбор ассистента сделан строго опциональным (Мандат 8e п. 8, Мандат 8n для соло-практики 1–3 кресел), внедрена авто-подгонка длительности (+30 мин) без блокирующих валидаций и мгновенное прикрепление пациента в 1 клик;
+     - В `AppointmentCard.tsx` число кнопок прямого действия сокращено до $\le 2$ (Закон Миллера), все вторичные операции перенесены в меню `...`, добавлен интерактивный Hover HUD;
+     - В `ScheduleFilterStrip.tsx` тулбар приведен к строгой 1 строке 32–36px (Закон Хика), тач-таргеты $\ge 44$px по Apple HIG;
+     - Введены типобезопасные интерфейсные фасады `AppointmentCreationModal.tsx` и `ScheduleToolbar.tsx`.
+  3. *Клиническая томография, визиограф и снос процедурных симуляторов (коммит `2aa4335a6`)*:
+     - В `VisiographAnalyzer.tsx` полностью вырезан Web Speech TTS (`handleSpeak`, `synthRef`, кнопки озвучивания `Volume2`/`VolumeX`), отвлекавший врача у кресла;
+     - В `Cornerstone3DViewer.tsx` и `VisiographExportService.ts` вырезаны захардкоженные фиктивные параметры экспозиции (`kVp: 90, mAs: 56, exposureTimeSec: 8.9`), заменены на `undefined` при отсутствии реальных метаданных DICOM с датчика;
+     - В `ImagingView.tsx` удален пустой неработающий маунт `<BoneQualityPanel />` без пропсов;
+     - Физически удален дублирующий верхнеуровневый файл `apps/web/src/mprMath.ts` (553 строки), все 7 потребителей переведены на канонический `src/utils/math/mprMath.ts` с калибровкой шкалы Misch (D1 >1250 HU, D2 850–1250 HU, D3 350–849 HU, D4 <350 HU).
+- **Файлы**: `apps/web/src/ImagingView.tsx`, `apps/web/src/components/imaging/VisiographAnalyzer.tsx`, `apps/web/src/components/visiograph/Cornerstone3DViewer.tsx`, `apps/web/src/components/visiograph/VisiographExportService.ts`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/AppointmentCard.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/schedule/AppointmentCreationModal.tsx`, `apps/web/src/components/schedule/ScheduleToolbar.tsx`, `apps/web/src/utils/math/mprMath.ts`, `apps/web/src/mprWorker.ts`, `apps/web/src/components/dicom/PanoramicRendererWindow.tsx`.
+- **Тесты**: 178/178 тестов томографии, визиографа и MPR PASS, 313/313 тестов расписания PASS, `panelsAreMounted.test.ts` PASS, `check:encoding` 5136 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+
 
 
 
