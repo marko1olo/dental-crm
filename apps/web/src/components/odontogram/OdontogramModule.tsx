@@ -96,7 +96,7 @@ export { ALL_ADULT_TEETH_NUMBERS, createDefaultAdultTeethData };
  * восьми, и «Пломба» с «Имплантат в плане» выставить было нельзя,
  * хотя сервер их принимал и одонтограмма их рисовала.
  */
-const TOOTH_STATE_ACTIONS: ReadonlyArray<{
+export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 	state: ToothState;
 	label: string;
 	className: string;
@@ -105,19 +105,19 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Caries",
 		label: "Кариес (C)",
 		className:
-			"bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20",
+			"bg-red-500/10 text-rose-600 dark:text-rose-400 border-red-500/20 hover:bg-red-500/20",
 	},
 	{
 		state: "Pulpitis",
 		label: "Пульпит (P)",
 		className:
-			"bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
+			"bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
 	},
 	{
 		state: "Periodontitis",
 		label: "Периодонтит (Pt)",
 		className:
-			"bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20",
+			"bg-orange-500/10 text-amber-600 dark:text-amber-400 border-orange-500/20 hover:bg-orange-500/20",
 	},
 	{
 		state: "Filled",
@@ -129,13 +129,13 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Crown",
 		label: "Коронка (Cr)",
 		className:
-			"bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
 	},
 	{
 		state: "Implant",
 		label: "Имплант (Imp)",
 		className:
-			"bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
 		state: "Planned_Implant",
@@ -153,7 +153,7 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Healthy",
 		label: "Здоров (0)",
 		className:
-			"bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
 	},
 ];
 
@@ -267,15 +267,19 @@ export const OdontogramModule = ({
 		return age !== null && age < 12;
 	}, [activePatient]);
 
-	const [isPediatricMode, setIsPediatricMode] = useState(
-		pediatricMode ?? (isPatientChild || perspective === "pediatric"),
+	const [dentitionMode, setDentitionMode] = useState<"adult" | "pediatric" | "mixed">(
+		pediatricMode ? "pediatric" : isPatientChild || perspective === "pediatric" ? "pediatric" : "adult",
 	);
+	const isPediatricMode = dentitionMode === "pediatric";
+	const setIsPediatricMode = useCallback((val: boolean) => {
+		setDentitionMode(val ? "pediatric" : "adult");
+	}, []);
 
 	useEffect(() => {
 		if (pediatricMode !== undefined) {
-			setIsPediatricMode(pediatricMode);
+			setDentitionMode(pediatricMode ? "pediatric" : "adult");
 		} else if (isPatientChild) {
-			setIsPediatricMode(true);
+			setDentitionMode("pediatric");
 		}
 	}, [pediatricMode, isPatientChild]);
 	const [isPediatricModalOpen, setIsPediatricModalOpen] = useState(false);
@@ -1003,7 +1007,7 @@ export const OdontogramModule = ({
 			const isUpperJaw =
 				toothNumber < 30 || (toothNumber >= 51 && toothNumber <= 65);
 			const menuW = 254;
-			const menuH = 224;
+			const menuH = 380;
 			const gap = 12;
 			const vw = window.innerWidth;
 			const vh = window.innerHeight;
@@ -1023,7 +1027,7 @@ export const OdontogramModule = ({
 			} else {
 				y = rect.top - menuH - gap - 10;
 			}
-			y = Math.max(8, Math.min(y, vh - menuH - 8));
+			y = Math.max(10, Math.min(window.innerHeight - 400, y));
 
 			// Show menu for the group, anchored to the clicked tooth
 			setMenuConfig({
@@ -1114,58 +1118,14 @@ export const OdontogramModule = ({
 					</div>
 				)}
 
-				{/* ── БАБУШКО-УСТОЙЧИВАЯ ШАПКА: ТУМБЛЕР ПРИКУСА + АВТОСОХРАНЕНИЕ + НАРОДНАЯ ПОДСКАЗКА ── */}
-				<div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs">
-					{/* Гигантский 1-клик тумблер прикуса (≥48px) */}
+				{/* ── ШАПКА ОДОНТОГРАММЫ: ДЕЙСТВИЯ + КОМПАКТНЫЙ ФИНАНСОВЫЙ БЕЙДЖ + АВТОСОХРАНЕНИЕ (TIER 1) ── */}
+				<div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 p-2.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs">
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-						<button
-							type="button"
-							onClick={() => setIsPediatricMode(false)}
-							className={`flex-1 sm:flex-initial min-h-[48px] px-4 py-2.5 rounded-xl text-sm sm:text-base font-black transition-all cursor-pointer flex items-center justify-center gap-2 border ${
-								!isPediatricMode
-									? "bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-500/30 scale-[1.02]"
-									: "bg-[var(--paper,#ffffff)] dark:bg-zinc-800 text-[var(--ink-muted,#64748b)] border-[var(--line,#e2e8f0)] dark:border-zinc-700 hover:text-[var(--ink,#0f172a)]"
-							}`}
-							title="Постоянный прикус взрослого человека: зубы 11–48 (32 зуба)"
-							data-testid="switch-adult-dentition-btn"
-						>
-							<CircleDot size={18} />
-							<span>Взрослый прикус (11–48)</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setIsPediatricMode(true)}
-							className={`flex-1 sm:flex-initial min-h-[48px] px-4 py-2.5 rounded-xl text-sm sm:text-base font-black transition-all cursor-pointer flex items-center justify-center gap-2 border ${
-								isPediatricMode
-									? "bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-400/40 scale-[1.02]"
-									: "bg-[var(--paper,#ffffff)] dark:bg-zinc-800 text-[var(--ink-muted,#64748b)] border-[var(--line,#e2e8f0)] dark:border-zinc-700 hover:text-[var(--ink,#0f172a)]"
-							}`}
-							title="Детский сменный / молочный прикус: зубы 51–85 (20 зубов)"
-							data-testid="switch-pediatric-dentition-btn"
-						>
-							<Sparkles size={18} />
-							<span>Детский прикус (51–85)</span>
-						</button>
-					</div>
-
-					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-						{/* 1-клик санация всей зубной формулы (Все здоровы) */}
-						<button
-							type="button"
-							onClick={handleMarkAllHealthy}
-							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
-							title="Санация: отметить всю зубную формулу здоровой в 1 клик"
-							data-testid="btn-hotpath-all-healthy"
-						>
-							<Check size={16} className="shrink-0" />
-							<span>Санация (Все здоровы)</span>
-						</button>
-
 						{/* 1-клик перенос клинического статуса зубной формулы в Дневник 043/у */}
 						<button
 							type="button"
 							onClick={handleSyncAllToDiary}
-							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
 							title="Перенести клинический статус зубной формулы в Дневник 043/у в 1 клик"
 							data-testid="btn-hotpath-sync-all-to-diary"
 						>
@@ -1177,7 +1137,7 @@ export const OdontogramModule = ({
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 dark:bg-zinc-100 hover:bg-slate-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 dark:bg-zinc-100 hover:bg-slate-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
 							title="Распечатать графическую одонтограмму со всеми патологиями на лист A4 для вклейки в амбулаторную карту"
 							data-testid="print-odontogram-a4-btn"
 						>
@@ -1185,111 +1145,40 @@ export const OdontogramModule = ({
 							<span>Печать зубной формулы (А4)</span>
 						</button>
 
-						{/* Крупный понятный бейдж автосохранения на диск */}
+						{/* Компактный финансовый бейдж приема (Tier 1, 32-34px, 1-Click FastCheckout Modal) */}
 						<div
-							className="flex items-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs sm:text-sm font-bold shrink-0 self-start md:self-auto shadow-2xs"
-							title="Все отметки и диагнозы непрерывно сохраняются в локальное хранилище и базу данных клиники"
+							className="flex items-center gap-2 px-3 py-1 min-h-[34px] h-[34px] rounded-xl bg-teal-500/10 dark:bg-teal-950/40 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs font-bold shrink-0 shadow-2xs"
+							data-testid="odontogram-compact-bill-badge"
 						>
-							<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-							<span>Сохранено на диск ({lastSavedAt}) — данные в полной безопасности</span>
-						</div>
-					</div>
-				</div>
-
-				{/* ── ТАКТИЛЬНАЯ ЭКСПРЕСС-КАССА И СУММА К ОПЛАТЕ В 1 КЛИК (TIER 1) ── */}
-				<div
-					className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 dark:from-teal-950/40 dark:via-emerald-950/40 dark:to-teal-950/40 border border-teal-500/30 shadow-xs"
-					data-testid="odontogram-fast-checkout-ribbon"
-				>
-					<div className="flex items-center gap-3 min-w-0">
-						<div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-							<Coins className="w-5 h-5" />
-						</div>
-						<div className="min-w-0">
-							<div className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
-								Итоговая сумма приема (по одонтограмме):
-							</div>
-							<div className="text-lg sm:text-xl font-black font-mono text-teal-800 dark:text-teal-200 flex items-center gap-2">
-								<span>{liveGrossTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
-								{liveInvoiceItems.length > 0 ? (
-									<span className="text-xs font-bold font-sans px-2 py-0.5 rounded-full bg-teal-600 text-white">
-										{liveInvoiceItems.length} {countLabel(liveInvoiceItems.length, "услуга", "услуги", "услуг")}
-									</span>
-								) : (
-									<span className="text-xs font-bold font-sans text-emerald-600">
-										(санация / интактно)
-									</span>
-								)}
-							</div>
+							<Coins className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>
+								Итого к оплате:{" "}
+								<strong className="font-mono font-black text-sm text-teal-800 dark:text-teal-200">
+									{liveGrossTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+								</strong>
+							</span>
+							<button
+								type="button"
+								onClick={() => {
+									setFastCheckoutMethod("sbp_qr");
+									setIsFastCheckoutOpen(true);
+								}}
+								className="ml-1 min-h-[26px] h-[26px] px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+								title="Открыть быструю кассу приема (54-ФЗ)"
+								data-testid="btn-open-fast-checkout"
+							>
+								<span>Оплатить</span>
+							</button>
 						</div>
 					</div>
 
-					{/* 1-Click Immediate Payment Tender Triggers (>= 48px touch targets) */}
-					<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-						<button
-							type="button"
-							onClick={() => {
-								setFastCheckoutMethod("sbp_qr");
-								setIsFastCheckoutOpen(true);
-								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
-								}
-							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
-							title="1-клик оплата по QR-коду СБП (0% комиссии)"
-							data-testid="cockpit-pay-sbp-btn"
-						>
-							<QrCode className="w-4 h-4 shrink-0" />
-							<span>СБП QR</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setFastCheckoutMethod("bank_card");
-								setIsFastCheckoutOpen(true);
-								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
-								}
-							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
-							title="1-клик оплата банковской картой (эквайринг)"
-							data-testid="cockpit-pay-card-btn"
-						>
-							<CreditCard className="w-4 h-4 shrink-0" />
-							<span>Карта</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setFastCheckoutMethod("cash");
-								setIsFastCheckoutOpen(true);
-								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
-								}
-							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
-							title="1-клик оплата наличными с расчетом сдачи"
-							data-testid="cockpit-pay-cash-btn"
-						>
-							<Banknote className="w-4 h-4 shrink-0" />
-							<span>Наличные</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setFastCheckoutMethod("patient_deposit");
-								setIsFastCheckoutOpen(true);
-								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
-								}
-							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
-							title="1-клик списание с семейного лицевого счета / депозита"
-							data-testid="cockpit-pay-deposit-btn"
-						>
-							<Coins className="w-4 h-4 shrink-0" />
-							<span>Депозит</span>
-						</button>
+					{/* Крупный понятный бейдж автосохранения на диск */}
+					<div
+						className="flex items-center gap-2 px-3 py-1.5 min-h-[34px] h-[34px] rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs font-bold shrink-0 shadow-2xs"
+						title="Все отметки и диагнозы непрерывно сохраняются в локальное хранилище и базу данных клиники"
+					>
+						<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span>Сохранено ({lastSavedAt})</span>
 					</div>
 				</div>
 
@@ -1421,6 +1310,8 @@ export const OdontogramModule = ({
 				<OdontogramViewContainer
 					teethData={teethData}
 					pediatricMode={isPediatricMode}
+					dentitionMode={dentitionMode}
+					onDentitionModeChange={setDentitionMode}
 					selectedTeeth={selectedTeeth}
 					onToothClick={handleToothClick}
 					onMarkIntactDentition={handleMarkAllHealthy}
@@ -1578,45 +1469,47 @@ export const OdontogramModule = ({
 									)}
 								</div>
 
-								{/* Quick Surface Chips in 1 Tap */}
+								{/* Quick Surface Chips in 1 Compact Neat Row (Miller Law, CLIN-03) */}
 								<div className="col-span-2 flex flex-col gap-1 mb-2 p-2 rounded-xl bg-[var(--odontogram-surface,#f1f5f9)] dark:bg-zinc-800/60 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700/50">
 									<div className="flex items-center justify-between px-1">
 										<span className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)]">
-											Поверхности в 1 клик:
+											Поверхности (1 клик):
 										</span>
 										<span className="text-[11px] font-mono font-bold text-[var(--teal,#0d9488)]">
 											{activeSurfaces.length > 0 ? `[${activeSurfaces.join("")}]` : "вся коронка"}
 										</span>
 									</div>
-									<div className="flex flex-wrap items-center gap-1.5">
+									<div className="flex items-center justify-between gap-1 flex-nowrap overflow-x-auto py-0.5">
 										{[
-											{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
-											{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
-											{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
 											{ label: "O", surfs: ["O"], title: "Окклюзионная (O/Жевательная)" },
+											{ label: "M", surfs: ["M"], title: "Медиальная (M)" },
+											{ label: "D", surfs: ["D"], title: "Дистальная (D)" },
 											{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
-											{ label: "L/P", surfs: ["L"], title: "Язычная / Нёбная (L/P)" },
-											{ label: "B", surfs: ["B"], title: "Буккальная / Щёчная (B)" },
+											{ label: "L", surfs: ["L"], title: "Язычная / Нёбная (L)" },
+											{ label: "К", surfs: ["K"], title: "Контактная / Коронковая (К)" },
+											{ label: "А", surfs: ["A"], title: "Апикальная (А)" },
 										].map((chip) => {
-											const isMatch =
-												chip.surfs.length === activeSurfaces.length &&
-												chip.surfs.every((s) => activeSurfaces.includes(s));
+											const isSelected = chip.surfs.some((s) => activeSurfaces.includes(s));
 											return (
 												<button
 													key={chip.label}
 													type="button"
 													onClick={() => {
-														setActiveSurfaces(isMatch ? [] : [...chip.surfs]);
+														setActiveSurfaces((prev) =>
+															isSelected
+																? prev.filter((s) => !chip.surfs.includes(s))
+																: [...prev, ...chip.surfs],
+														);
 													}}
-													className={`min-h-[38px] px-2.5 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
-														isMatch
+													className={`flex-1 min-h-[32px] h-[32px] px-1.5 py-0.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+														isSelected
 															? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
 															: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)]"
 													}`}
 													title={chip.title}
-													data-testid={`odontogram-module-surf-${chip.label.replace("/", "-")}`}
+													data-testid={`odontogram-module-surf-${chip.label}`}
 												>
-													[{chip.label}]
+													{chip.label}
 												</button>
 											);
 										})}
@@ -2142,7 +2035,7 @@ export const OdontogramModule = ({
 				<FastCheckoutModal
 					isOpen={isFastCheckoutOpen}
 					onClose={() => setIsFastCheckoutOpen(false)}
-					totalBillKop={Math.max(100, Math.round(liveGrossTotalRub * 100))}
+					totalBillKop={Math.round(liveGrossTotalRub * 100)}
 					initialPaymentMethod={fastCheckoutMethod}
 					patientName={activePatient?.fullName || "Пациент"}
 					patientPhone={activePatient?.phone || "+7 (999) 000-00-00"}

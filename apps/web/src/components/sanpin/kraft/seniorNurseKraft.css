@@ -397,6 +397,8 @@ html.dark .snk-close-btn {
 	background: var(--paper, #1e293b);
 	border-color: var(--line, #334155);
 	color: var(--muted, #94a3b8);
+}
+
 /* ─── Web Camera Live Viewfinder & Scanner Overlay ─── */
 .snk-camera-section {
 	display: flex;

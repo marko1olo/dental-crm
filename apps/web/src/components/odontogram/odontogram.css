@@ -1244,7 +1244,8 @@
 	justify-content: center;
 	flex-wrap: nowrap;
 	gap: 6px;
-	width: 100%;
+	width: max-content;
+	margin: 0 auto;
 }
 
 .teeth-row.top-row {

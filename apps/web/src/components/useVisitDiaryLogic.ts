@@ -346,6 +346,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const authRef = useRef(auth);
 	authRef.current = auth;
 
+	const diaryRef = useRef(diary);
+	diaryRef.current = diary;
+	const trayBarcodeRef = useRef(trayBarcode);
+	trayBarcodeRef.current = trayBarcode;
+
 	const autosaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const doSaveRef = useRef<
@@ -1147,7 +1152,15 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const { soap, finding, mode = "smart_append", immediate = false } = customEvt.detail;
 
 			if (isLocked && !isRevising) {
-				return;
+				setIsRevising(true);
+				setReviseSnapshot({ ...diaryRef.current });
+				setReviseTraySnapshot(trayBarcodeRef.current);
+				setRevisionReason("Исправленному верить (синхронизация одонтограммы)");
+				showToast(
+					"Дневник визита открыт для внесения исправлений (протокол одонтограммы применён)",
+					"warning",
+					4000,
+				);
 			}
 
 			const targetSoap = soap || (finding ? generateSoapFromOdontogramFinding(finding) : undefined);

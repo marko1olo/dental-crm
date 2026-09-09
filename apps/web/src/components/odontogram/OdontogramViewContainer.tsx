@@ -464,6 +464,55 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							})}
 						</div>
 
+						{/* Dentition Formula 1-Click Toggle */}
+						{onDentitionModeChange && (
+							<div
+								className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0"
+								role="group"
+								aria-label="Тип прикуса"
+							>
+								<button
+									type="button"
+									onClick={() => onDentitionModeChange("adult")}
+									className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "adult"
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
+											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
+									}`}
+									title="Постоянный прикус взрослых (11–48, 32 зуба)"
+									data-testid="toolbar-dentition-adult"
+								>
+									11–48
+								</button>
+								<button
+									type="button"
+									onClick={() => onDentitionModeChange("pediatric")}
+									className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "pediatric"
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
+											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
+									}`}
+									title="Детский молочный прикус (51–85, 20 зубов)"
+									data-testid="toolbar-dentition-pediatric"
+								>
+									51–85
+								</button>
+								<button
+									type="button"
+									onClick={() => onDentitionModeChange("mixed")}
+									className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "mixed"
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
+											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
+									}`}
+									title="Сменный прикус: 20 молочных + 4 первых постоянных моляра (24 зуба)"
+									data-testid="toolbar-dentition-mixed"
+								>
+									Сменный
+								</button>
+							</div>
+						)}
+
 						{/* 1-Click Total Sanitation & Wisdom Absence Action Triggers */}
 						{onQuickStateChange && (
 							<div className="flex items-center gap-1 shrink-0">

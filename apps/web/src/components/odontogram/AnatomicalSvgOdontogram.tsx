@@ -1299,7 +1299,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 				{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active */}
 				{!activeStamp && onQuickStateChange && (
 					<div
-						className={`tooth-hover-quick-hud absolute ${hudAlignClass} opacity-0 group-hover:opacity-100 group-hover/badge:opacity-100 transition-all duration-200 z-40 flex items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
+						className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-200 z-40 items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
 							isTop ? "bottom-full mb-2" : "top-full mt-2"
 						}`}
 						onClick={(e) => e.stopPropagation()}
@@ -1598,7 +1598,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 }, areToothWrapperPropsEqual);
 
 function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] } {
-	if (teeth.length <= 1) return { left: teeth, right: [] };
+	if (!teeth || !Array.isArray(teeth) || teeth.length <= 1) return { left: Array.isArray(teeth) ? teeth : [], right: [] };
 	let splitIndex = teeth.findIndex((num, i) => {
 		if (i === 0) return false;
 		const prev = teeth[i - 1];
@@ -1714,29 +1714,37 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			if (!element) return;
 			// 24px safety buffer so outer molars (18, 28, 48, 38) are never clipped by container boundaries
 			const available = Math.max(0, element.clientWidth - 24);
-			const row = element.querySelector<HTMLElement>(".teeth-row");
-			if (!available || !row) return;
-
-			const applied = appliedArchScaleRef.current;
-			const naturalWidth = row.scrollWidth / applied;
-			if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return;
+			if (!available) return;
 
 			const isQuadrantView = currentQuadrant !== "all";
-			const minScale = isQuadrantView ? 0.95 : MIN_ARCH_SCALE;
-			const next = Math.min(
-				2.2,
-				Math.max(minScale, (available / naturalWidth) * (isQuadrantView ? 1.25 : 0.96)),
+			const activeTeeth = isQuadrantView
+				? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, pediatricMode)
+				: topTeethList;
+
+			// Exact intrinsic base width at scale 1.0 based on anatomical tooth geometries + spacing
+			const baseNaturalWidth = activeTeeth.reduce((acc, num) => {
+				const geom = getAnatomicalToothGeometry(num);
+				return acc + Math.round(geom.standardWidthPx * 1.3) + 6;
+			}, isQuadrantView ? 0 : 28);
+
+			if (baseNaturalWidth <= 0) return;
+
+			const minScale = isQuadrantView ? 0.95 : 0.65;
+			const targetScale = Math.min(
+				1.8,
+				Math.max(minScale, (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96)),
 			);
-			if (Math.abs(applied - next) < 0.005) return;
-			appliedArchScaleRef.current = next;
-			setArchScale(next);
+
+			if (Math.abs(appliedArchScaleRef.current - targetScale) < 0.005) return;
+			appliedArchScaleRef.current = targetScale;
+			setArchScale(targetScale);
 		};
 
 		recalculate();
 		const observer = new ResizeObserver(recalculate);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, [currentQuadrant]);
+	}, [currentQuadrant, topTeethList, bottomTeethList, pediatricMode]);
 
 	// High-speed keyboard triggers: instant 1-key assigning without opening sub-menus
 	useEffect(() => {

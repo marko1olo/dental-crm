@@ -6,7 +6,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { createHash } from "node:crypto";
+import { sha256Hex, sha256Bytes } from "../sync/hashing.js";
 import { z } from "zod";
 import { EGISZ_OIDS } from "../cda/oids.js";
 
@@ -341,13 +341,15 @@ export function computeGostSigningDigestSha256(canonicalText: string): {
 		.replace(/^\uFEFF/, "")
 		.replace(/\r\n/g, "\n")
 		.trim();
-	const sha256Hex = createHash("sha256")
-		.update(normalized, "utf8")
-		.digest("hex");
-	const base64Payload = Buffer.from(normalized, "utf8").toString("base64");
+	const sha256HexVal = sha256Hex(normalized);
+	const toBase64 = (str: string) =>
+		typeof Buffer !== "undefined"
+			? Buffer.from(str, "utf8").toString("base64")
+			: btoa(unescape(encodeURIComponent(str)));
+	const base64Payload = toBase64(normalized);
 	return {
 		canonicalText: normalized,
-		sha256Hex,
+		sha256Hex: sha256HexVal,
 		base64Payload,
 	};
 }
@@ -359,9 +361,10 @@ export function computeBinaryDocumentSha256(buffer: Buffer | Uint8Array): {
 	sha256Hex: string;
 	sizeBytes: number;
 } {
-	const sha256Hex = createHash("sha256").update(buffer).digest("hex");
+	const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+	const hashHex = sha256Hex(uint8);
 	return {
-		sha256Hex,
+		sha256Hex: hashHex,
 		sizeBytes: buffer.byteLength,
 	};
 }
@@ -543,14 +546,16 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 
 	// 4. SignerInfo SEQUENCE
 	const digestOctets = Buffer.from(params.documentHashSha256Hex, "hex");
-	const signatureRawBytes = createHash("sha256")
-		.update(
-			Buffer.concat([
-				digestOctets,
-				Buffer.from(canonicalSerialHex),
-			]),
-		)
-		.digest();
+	const signatureRawBytes = Buffer.from(
+		sha256Bytes(
+			new Uint8Array(
+				Buffer.concat([
+					digestOctets,
+					Buffer.from(canonicalSerialHex),
+				]),
+			),
+		),
+	);
 	// GOST signature value: 64 octets
 	const gostSignature64Bytes = Buffer.concat([
 		signatureRawBytes,
@@ -807,14 +812,16 @@ export function validateGostCmsPkcs7Signature(
 		meta.certificateSerialNumber
 	) {
 		const sigBytes = buf.subarray(lastSigIdx + 2, lastSigIdx + 2 + 64);
-		const expectedRaw = createHash("sha256")
-			.update(
-				Buffer.concat([
-					embeddedDigest,
-					Buffer.from(meta.certificateSerialNumber),
-				]),
-			)
-			.digest();
+		const expectedRaw = Buffer.from(
+			sha256Bytes(
+				new Uint8Array(
+					Buffer.concat([
+						embeddedDigest,
+						Buffer.from(meta.certificateSerialNumber),
+					]),
+				),
+			),
+		);
 		const expectedSig = Buffer.concat([expectedRaw, Buffer.alloc(32, 0x77)]);
 		if (!sigBytes.equals(expectedSig)) {
 			return {
@@ -1070,9 +1077,7 @@ export function createDemonstrationGostCmsSignature(params: {
 
 	const serialHex =
 		"00E4A28B" +
-		createHash("sha256")
-			.update(`${params.doctorFullName}:${params.documentId}`)
-			.digest("hex")
+		sha256Hex(`${params.doctorFullName}:${params.documentId}`)
 			.slice(0, 16)
 			.toUpperCase();
 

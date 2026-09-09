@@ -1741,7 +1741,7 @@ const ToothSVG = ({
 				{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active */}
 				{!activeStamp && onQuickStateChange && (
 					<div
-						className={`tooth-hover-quick-hud absolute ${hudAlignClass} opacity-0 group-hover:opacity-100 group-hover/badge:opacity-100 transition-all duration-200 z-40 flex items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
+						className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-200 z-40 items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
 							isTop ? "bottom-full mb-2" : "top-full mt-2"
 						}`}
 						onClick={(e) => e.stopPropagation()}
@@ -2399,7 +2399,7 @@ export const SurfaceSelector = ({
  * Splits teeth row into left & right halves at midline for quadrant alignment.
  */
 function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] } {
-	if (teeth.length <= 1) return { left: teeth, right: [] };
+	if (!teeth || !Array.isArray(teeth) || teeth.length <= 1) return { left: Array.isArray(teeth) ? teeth : [], right: [] };
 	let splitIndex = teeth.findIndex((num, i) => {
 		if (i === 0) return false;
 		const prev = teeth[i - 1];
@@ -2460,7 +2460,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	hideHeader = false,
 	hideLegend = false,
 	hideQuadrantSwitcher = false,
-	hideDentitionSwitcher = false,
+	hideDentitionSwitcher = true,
 	showPulpAndCanals = false,
 	showPeriapicalHalos = true,
 	showPeriodontalBoneLoss = true,
@@ -2727,29 +2727,37 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			if (!element) return;
 			// 16px safety buffer for container inner padding so outer molars (18, 28, 48, 38) are never clipped
 			const available = Math.max(0, element.clientWidth - 16);
-			const row = element.querySelector<HTMLElement>(".teeth-row");
-			if (!available || !row) return;
-
-			const applied = appliedArchScaleRef.current;
-			const naturalWidth = row.scrollWidth / applied;
-			if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return;
+			if (!available) return;
 
 			const isQuadrantView = currentQuadrant !== "all";
-			const minScale = isQuadrantView ? 0.75 : MIN_ARCH_SCALE;
-			const next = Math.min(
-				2.2,
-				Math.max(minScale, (available / naturalWidth) * (isQuadrantView ? 1.2 : 0.96)),
+			const activeTeeth = isQuadrantView
+				? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, pediatricMode)
+				: topTeethList;
+
+			const baseNaturalWidth = activeTeeth.reduce((acc, num) => {
+				const cfg = getToothConfig(num);
+				const w = Number.parseFloat(cfg.width) || 75;
+				return acc + w + 6;
+			}, isQuadrantView ? 0 : 28);
+
+			if (baseNaturalWidth <= 0) return;
+
+			const minScale = isQuadrantView ? 0.85 : 0.65;
+			const targetScale = Math.min(
+				1.8,
+				Math.max(minScale, (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96)),
 			);
-			if (Math.abs(applied - next) < 0.005) return;
-			appliedArchScaleRef.current = next;
-			setArchScale(next);
+
+			if (Math.abs(appliedArchScaleRef.current - targetScale) < 0.005) return;
+			appliedArchScaleRef.current = targetScale;
+			setArchScale(targetScale);
 		};
 
 		recalculate();
 		const observer = new ResizeObserver(recalculate);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, [currentQuadrant]);
+	}, [currentQuadrant, topTeethList, bottomTeethList, pediatricMode]);
 
 	const digitBufferRef = useRef<{ buffer: string; timer: any }>({
 		buffer: "",
@@ -2999,79 +3007,6 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<Zap size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Интактный фронт (13–23, 33–43)</span>
 					</button>
-				</div>
-			)}
-
-			{/* Responsive Dentition Formula Switcher (Adult 11–48 / Pediatric 51–85 / Mixed 24) */}
-			{!hideDentitionSwitcher && (
-				<div
-					className="odontogram-dentition-switcher mb-2.5 select-none"
-					data-testid="odontogram-dentition-switcher"
-				>
-					<div className="flex items-center justify-between gap-1 p-1 rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] shadow-xs">
-						<div
-							className="flex items-center gap-1 w-full"
-							role="tablist"
-							aria-label="Переключение зубной формулы"
-						>
-							<button
-								type="button"
-								role="tab"
-								aria-selected={effectiveDentitionMode === "adult"}
-								onClick={() => handleSelectDentitionMode("adult")}
-								className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
-									effectiveDentitionMode === "adult"
-										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-md border border-[var(--teal-dark,var(--teal))] font-black"
-										: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border border-transparent"
-								}`}
-								data-testid="dentition-mode-adult-btn"
-								title="Постоянный прикус взрослых (11–48, 32 зуба)"
-							>
-								<span>Постоянный 11–48</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/15 font-mono font-black">
-									32
-								</span>
-							</button>
-
-							<button
-								type="button"
-								role="tab"
-								aria-selected={effectiveDentitionMode === "pediatric"}
-								onClick={() => handleSelectDentitionMode("pediatric")}
-								className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
-									effectiveDentitionMode === "pediatric"
-										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-md border border-[var(--teal-dark,var(--teal))] font-black"
-										: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border border-transparent"
-								}`}
-								data-testid="dentition-mode-pediatric-btn"
-								title="Детский молочный прикус (51–85, 20 зубов)"
-							>
-								<span>Молочный 51–85</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/15 font-mono font-black">
-									20
-								</span>
-							</button>
-
-							<button
-								type="button"
-								role="tab"
-								aria-selected={effectiveDentitionMode === "mixed"}
-								onClick={() => handleSelectDentitionMode("mixed")}
-								className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
-									effectiveDentitionMode === "mixed"
-										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-md border border-[var(--teal-dark,var(--teal))] font-black"
-										: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border border-transparent"
-								}`}
-								data-testid="dentition-mode-mixed-btn"
-								title="Сменный прикус: молочные зубы + первые постоянные моляры (16, 26, 36, 46)"
-							>
-								<span>Сменный прикус</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/15 font-mono font-black">
-									24
-								</span>
-							</button>
-						</div>
-					</div>
 				</div>
 			)}
 
