@@ -3464,6 +3464,25 @@
     * 7 смертных грехов интерфейса устранены, вердикт: **`[ПРОВЕРЕНО: ЧИСТО]`**.
 * **Верификация**: `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `quickBookingAutonomyWave50.test.tsx` (8/8 PASS), `scheduleWave43StomxParity.test.tsx` (10/10 PASS), полный цикл расписания (478/478 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
 
+- **Wave 88 (2026-09-10): Автономия врача у кресла, печать 043/у и смет в любой момент, автосохранение периодонтограммы и 54-ФЗ без барьеров (Мандаты 8e, 8n, 8k, коммит `7b922f771`)**:
+  - *Клинический контур и печать в любой момент (Мандат 8e п. 5)*:
+    * В `DoctorDesktopHeader.tsx` и `DoctorShiftCockpitModal.tsx` ликвидированы фиктивные заглушки печати (`showToast("Печать...")`). Интегрированы 1-клик кнопки вызова печати Карты ф. 043/у (`header-btn-print-043`, `cockpit-btn-print-043`) и Сметы плана лечения (`header-btn-print-estimate`, `cockpit-btn-print-estimate`).
+    * В `Form043PrintModal.tsx`, `emr043Math.ts` и `emr043Types.ts` реализован гарантированный дуальный режим штампов и водяных знаков: если прием открыт/черновик — на всех листах печатается водяной знак и бейдж «ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)»; если прием закрыт и подписан — выводится «ПОДПИСАНО ВРАЧОМ» (или «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)» при наличии ревизий) по ГОСТ Р 7.0.97-2016.
+  - *Защита от потери данных и автосохранение перио-карты (Мандат 8e п. 6, Мандат 8k)*:
+    * В `PeriodontalChartingModal.tsx` внедрен debounced автосейв изменений зондирования Florida Probe (`onSave(teeth, summary)` через 800мс). При закрытии модального окна крестиком (`perio-modal-close-btn`) или смене вкладки несохраненные замеры карманов, BOP и рецессий автоматически фиксируются без потери данных и без блокирующих алертов.
+  - *Касса 54-ФЗ и скидки врача до 100% без мастер-паролей (Мандат 8e п. 7, 9, Мандат 8n)*:
+    * В `PaymentCapture.tsx` подтверждена работа пресетов скидок врача до 100% (гарантийная переделка, скидка персоналу) без ввода мастер-пароля администратора. Для физических лиц исключено обязательное требование ИНН (по 54-ФЗ ИНН обязателен только юрлицам/ИП). При клике на оплату с незаполненной суммой при наличии долга по смете в 1 клик выставляется точная сумма долга без барьеров.
+  - *Тесты и верификация*:
+    * `apps/web/src/tests/paymentCaptureAutonomy.test.tsx` (9/9 PASS)
+    * `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx` (5/5 PASS)
+    * `apps/web/src/components/doctor/__tests__/doctorShiftCockpit.test.tsx` (19/19 PASS)
+    * `apps/web/src/components/doctor/__tests__/doctorShiftCockpitAutonomy.test.tsx` (3/3 PASS)
+    * `apps/web/src/tests/periodontalCharting.test.tsx` (8/8 PASS)
+    * `apps/web/src/components/clinical/__tests__/doctorAutonomyWave46.test.tsx` (23/23 PASS)
+    * `apps/web/src/components/patient/__tests__/outpatientAutonomyWave42.test.tsx` (17/17 PASS)
+    * `apps/web/src/components/odontogram/__tests__/periodontalExportAutonomyWave51.test.tsx` (9/9 PASS)
+    * Суммарно: 93 теста, 100% PASS, `check:encoding` 0 ошибок, `typecheck` Exit Code 0.
+
 
 
 

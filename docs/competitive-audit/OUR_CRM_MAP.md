@@ -2588,6 +2588,19 @@
 - **Файлы**: `apps/web/src/workspaceShell.tsx`, `apps/web/src/components/Header.tsx`, `apps/web/src/components/schedule/useSchedule.ts`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/components/visit/tabs/VisitEmkTab.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/SettingsView.tsx`, `apps/web/src/components/settings/SettingsClinicTab.tsx`, `apps/web/src/styles/dente-redesign.css`, `apps/web/src/components/workspaceActions/workspaceActions.css`, `apps/web/src/components/schedule/__tests__/scheduleChairsAndShiftsParity.test.tsx`, `docs/screenshots/audit_7sins/`.
 - **Тесты**: `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
+#### 2.10.234. Автономия врача у кресла, печать 043/у и смет в любой момент, автосохранение периодонтограммы и 54-ФЗ без барьеров (Wave 88, Мандаты 8e, 8n, 8k)
+- **Назначение**: Реализация полного пакета автономности врача-стоматолога у кресла и соло-практики по Мандату 8e и 8n: мгновенная печать Формы 043/у и смет плана лечения в любой момент с дуальным статусом («ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)» / «ПОДПИСАНО ВРАЧОМ»), debounced автосохранение замеров периодонтальной карты Florida Probe, свобода скидок врача до 100% без паролей и касса 54-ФЗ без требования ИНН с физлиц (коммиты `7b922f771`).
+- **Архитектурные механизмы**:
+  1. *Печать Карты 043/у и Сметы в 1 клик в любой момент (Мандат 8e п. 5)*:
+     - В `DoctorDesktopHeader.tsx` и `DoctorShiftCockpitModal.tsx` фиктивные всплывающие тосты заменены на реальные 1-клик вызовы печати Формы 043/у (`header-btn-print-043`, `cockpit-btn-print-043`) и Сметы лечения (`header-btn-print-estimate`, `cockpit-btn-print-estimate`).
+     - В `Form043PrintModal.tsx`, `emr043Math.ts` и `emr043Types.ts` расчет статуса черновика объединен: при незакрытом приеме на всех листах А4 по ГОСТ Р 7.0.97-2016 печатается водяной знак и бейдж «ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)», при закрытом и подписанном приеме выводится «ПОДПИСАНО ВРАЧОМ» (или «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»).
+  2. *Защита от потери данных в перио-карте (Мандат 8e п. 6, Мандат 8k)*:
+     - В `PeriodontalChartingModal.tsx` интегрирован фоновый debounced autosave (`onSave(teeth, summary)` через 800мс). При закрытии модального окна через крестик (`perio-modal-close-btn`) или смене вкладок несохраненные данные зондирования карманов, кровоточивости BOP и рецессий автоматически сохраняются в карту пациента.
+  3. *Касса 54-ФЗ и свобода скидок врача (Мандат 8e п. 7, 9, Мандат 8n)*:
+     - В `PaymentCapture.tsx` пресеты скидок врача до 100% (гарантийная переделка, скидка коллегам/персоналу) применяются мгновенно без запроса пароля администратора. Для физических лиц исключено обязательное требование ИНН. При пустой сумме и наличии долга клик на оплату в 1 клик устанавливает точную сумму долга без блокировки.
+- **Файлы**: `apps/web/src/components/doctor/DoctorDesktopHeader.tsx`, `apps/web/src/components/doctor/DoctorShiftCockpitModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/emr/emr043Math.ts`, `apps/web/src/components/emr/emr043Types.ts`, `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `apps/web/src/PaymentCapture.tsx`.
+- **Тесты**: `paymentCaptureAutonomy.test.tsx` (9/9 PASS), `paymentCaptureTaxAutonomy.test.tsx` (5/5 PASS), `doctorShiftCockpit.test.tsx` (19/19 PASS), `doctorShiftCockpitAutonomy.test.tsx` (3/3 PASS), `periodontalCharting.test.tsx` (8/8 PASS), `doctorAutonomyWave46.test.tsx` (23/23 PASS), `outpatientAutonomyWave42.test.tsx` (17/17 PASS), `periodontalExportAutonomyWave51.test.tsx` (9/9 PASS), `check:encoding` 5143 файлов 0 ошибок, `typecheck` Exit Code 0.
+
 
 
 
