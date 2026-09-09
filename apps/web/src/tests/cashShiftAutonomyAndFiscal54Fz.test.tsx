@@ -60,9 +60,9 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 		assert.ok(html.includes("Без сдачи (Нал 100%)"), "Cash preset must be labeled 'Без сдачи'");
 		assert.ok(html.includes('data-testid="btn-checkout-100-card"'), "Must have 100% card button");
 		assert.ok(html.includes('data-testid="btn-checkout-split-three-way"'), "Must have 3-way combined payment button");
-		assert.ok(html.includes("⚡ Нал + Карта + Аванс"), "Must have 3-way combined payment label");
+		assert.ok(html.includes("Нал + Карта + Аванс"), "Must have 3-way combined payment label");
 		assert.ok(html.includes('data-testid="btn-checkout-warranty-100"'), "Must have 100% warranty preset button");
-		assert.ok(html.includes("⚡ 100% Гарантия (0 ₽)"), "Must have 100% warranty preset label");
+		assert.ok(html.includes("100% Гарантия (0 ₽)"), "Must have 100% warranty preset label");
 
 		// Verify dynamic family deposit display and additive total (5000 + 10000 = 15000)
 		assert.ok(html.includes("Кузнецов В. П."), "Must display family payer name dynamically without hardcode");
@@ -72,7 +72,7 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 		);
 
 		// 54-FZ physical persons never blocked by INN
-		assert.ok(html.includes("✓ 54-ФЗ: ИНН с физлиц НЕ требуется"));
+		assert.ok(html.includes("54-ФЗ: ИНН с физлиц НЕ требуется"));
 	});
 
 	it("renders 100% warranty button when total due is 0 ₽", () => {
@@ -120,7 +120,7 @@ describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
 		assert.ok(html.includes('data-testid="preset-three-way"'));
 		assert.ok(html.includes('data-testid="preset-warranty-100"'));
 		assert.ok(html.includes('data-testid="btn-discount-warranty"'));
-		assert.ok(html.includes("★ 100% Гарантия (Переделка)"));
+		assert.ok(html.includes("100% Гарантия (Переделка)"));
 	});
 
 	it("verifies transparent re-export at apps/web/src/components/cash/CashRegisterModal.tsx", () => {
