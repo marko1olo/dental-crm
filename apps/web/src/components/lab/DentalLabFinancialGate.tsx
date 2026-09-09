@@ -133,8 +133,9 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							Внесено {gateResult.paidPercent}% от стоимости этапа. Врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Мандат 8e).
 						</p>
 						{gateResult.isPlanExpiredNotice && (
-							<p className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-0.5">
-								✓ {gateResult.isPlanExpiredNotice}
+							<p className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-0.5 flex items-center gap-1">
+								<CheckCircle2 size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
+								<span>{gateResult.isPlanExpiredNotice}</span>
 							</p>
 						)}
 					</div>
@@ -301,8 +302,9 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}). Врач вправе отправить заказ в лабораторию прямо сейчас в 1 клик по клиническим показаниям.
 						</p>
 						{gateResult.isPlanExpiredNotice && (
-							<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--teal-dark,var(--teal))] text-[11px] font-semibold leading-relaxed">
-								✓ {gateResult.isPlanExpiredNotice}
+							<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--teal-dark,var(--teal))] text-[11px] font-semibold leading-relaxed flex items-center gap-1.5">
+								<ShieldCheck size={14} className="text-teal-600 shrink-0" />
+								<span>{gateResult.isPlanExpiredNotice}</span>
 							</div>
 						)}
 						<div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-500/20 flex items-center justify-between font-mono">
