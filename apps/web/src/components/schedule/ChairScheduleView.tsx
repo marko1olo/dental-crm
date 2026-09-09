@@ -1319,7 +1319,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									style={{ backgroundColor: chairColor }}
 									aria-hidden="true"
 								/>
-								<span className="font-bold text-xs shrink-0">{chair.name}</span>
+								<span
+									className="font-bold text-xs truncate max-w-[140px]"
+									title={chair.name}
+								>
+									{chair.name}
+								</span>
 								{roomLabel && (
 									<span
 										className="text-xs text-[var(--muted)] font-normal shrink-0"
@@ -1330,7 +1335,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 								)}
 								{(assignedDocName || hasTwoSubShifts) && (
 									<span
-										className="text-xs text-[var(--muted)] font-normal whitespace-nowrap hidden md:inline shrink-0"
+										className="text-xs text-[var(--muted)] font-normal truncate max-w-[180px] hidden md:inline shrink-0"
+										title={
+											hasTwoSubShifts && morningSub && eveningSub
+												? `У: ${morningSub.doctorName} / В: ${eveningSub.doctorName}`
+												: `${assignedDocName}${assignedShiftLabel ? ` • ${assignedShiftLabel}` : ""}`
+										}
 										data-testid={`chair-view-doc-${chair.id}`}
 									>
 										{hasTwoSubShifts && morningSub && eveningSub

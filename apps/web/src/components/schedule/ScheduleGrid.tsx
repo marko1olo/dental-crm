@@ -3968,13 +3968,18 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 					{/* Doctor & Assistant */}
 					<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5 text-xs text-[var(--ink)]">
-						<div className="flex items-center justify-between">
-							<span className="text-[var(--muted)]">Врач:</span>
-							<span className="font-bold">{mDocObj?.fullName || "Не назначен"}</span>
+						<div className="flex items-center justify-between gap-2 min-w-0">
+							<span className="text-[var(--muted)] shrink-0">Врач:</span>
+							<span className="font-bold truncate" title={mDocObj?.fullName || "Не назначен"}>{mDocObj?.fullName || "Не назначен"}</span>
 						</div>
-						<div className="flex items-center justify-between">
-							<span className="text-[var(--muted)]">Ассистент:</span>
-							<span>
+						<div className="flex items-center justify-between gap-2 min-w-0">
+							<span className="text-[var(--muted)] shrink-0">Ассистент:</span>
+							<span className="truncate" title={(() => {
+								const asst = selectedMobileAppt.assistantUserId
+									? dashboard.clinicSettings?.staff?.find((s) => s.id === selectedMobileAppt.assistantUserId)
+									: null;
+								return asst?.fullName || "Не назначен";
+							})()}>
 								{(() => {
 									const asst = selectedMobileAppt.assistantUserId
 										? dashboard.clinicSettings?.staff?.find((s) => s.id === selectedMobileAppt.assistantUserId)
@@ -4197,8 +4202,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						createdAt: new Date().toISOString(),
 						updatedAt: new Date().toISOString(),
 					};
-					if (dashboard?.clinicSettings?.staff) {
-						dashboard.clinicSettings.staff.push(newStaffMember);
+					if (dashboard?.clinicSettings) {
+						dashboard.clinicSettings.staff = [...(dashboard.clinicSettings.staff || []), newStaffMember];
 					}
 					if (docData.preferredChairId) {
 						handleBindDoctorToChair(docData.preferredChairId, newStaffMember.id);

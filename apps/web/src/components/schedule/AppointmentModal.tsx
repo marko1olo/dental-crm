@@ -674,21 +674,24 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 			<div className="relative w-full max-w-2xl bg-[var(--paper)] border border-[var(--line-strong)] rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
 				{/* Header */}
-				<div className="p-5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between">
-					<div className="flex items-center gap-3">
-						<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20">
+				<div className="p-4 sm:p-5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+					<div className="flex items-center gap-3 min-w-0 flex-1">
+						<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
 							<Calendar size={20} />
 						</div>
-						<div>
-							<h3 className="text-base font-bold text-[var(--ink)] m-0">
+						<div className="min-w-0 flex-1">
+							<h3
+								className="text-base font-bold text-[var(--ink)] m-0 truncate"
+								title={isNewAppointment ? `Запись на следующий этап: ${currentPatientName}` : `Детали записи: ${currentPatientName}`}
+							>
 								{isNewAppointment ? `Запись на следующий этап: ${currentPatientName}` : `Детали записи: ${currentPatientName}`}
 							</h3>
-							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
+							<p className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate">
 								{startsAtLocal ? `${startsAtLocal.slice(0, 10)} ${startsAtLocal.slice(11, 16)} - ${endsAtLocal.slice(11, 16)}` : ""}
 							</p>
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
 						{!isCito ? (
 							<button
 								type="button"
@@ -698,7 +701,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								data-testid="convert-to-cito-btn"
 							>
 								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
-								<span>Перевести в CITO (Острая боль)</span>
+								<span className="hidden sm:inline">Перевести в CITO (Острая боль)</span>
+								<span className="sm:hidden">CITO</span>
 							</button>
 						) : (
 							<div
@@ -706,7 +710,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								data-testid="appointment-cito-active-badge"
 							>
 								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
-								<span>CITO! Острая боль</span>
+								<span className="hidden sm:inline">CITO! Острая боль</span>
+								<span className="sm:hidden">CITO</span>
 							</div>
 						)}
 						{repeatAppointment && !isNewAppointment && (
@@ -750,6 +755,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						>
 							<FileText size={15} className="text-amber-600 dark:text-amber-400" />
 							<span className="hidden sm:inline">Бланк договора (_______)</span>
+							<span className="sm:hidden">Договор</span>
 						</button>
 						<button
 							type="button"

@@ -1439,8 +1439,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															borderRadius: "8px",
 															padding: "0.5rem",
 															background: day.isWeekend
-																? "var(--paper-soft, #fef2f2)"
-																: "var(--paper, #ffffff)",
+																? "var(--paper-soft, rgba(239, 68, 68, 0.05))"
+																: "var(--paper, transparent)",
 															display: "flex",
 															flexDirection: "column",
 															gap: "0.375rem",

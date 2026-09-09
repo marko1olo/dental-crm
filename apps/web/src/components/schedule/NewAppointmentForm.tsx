@@ -851,7 +851,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					</div>
 				) : null}
 				<div className="flex justify-between items-center flex-wrap gap-2 pt-1">
-					<div className="flex gap-3 items-center">
+					<div className="flex gap-2 sm:gap-3 items-center flex-wrap">
 						{/*
               data-schedule-create-toggle и aria-expanded — не украшение.
               «Записать на приём» из листа ожидания раскрывает эту форму, находя
@@ -870,9 +870,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							className="secondary-button focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
 							style={{ minHeight: "44px", padding: "0 12px", fontSize: "12px" }}
 						>
-							{showCreateForm
-								? "Скрыть ручной ввод"
-								: "Показать все поля / Ручной ввод"}
+							<span className="hidden sm:inline">
+								{showCreateForm
+									? "Скрыть ручной ввод"
+									: "Показать все поля / Ручной ввод"}
+							</span>
+							<span className="sm:hidden">
+								{showCreateForm ? "Скрыть поля" : "Все поля"}
+							</span>
 						</button>
 						<button
 							type="button"
@@ -898,7 +903,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							data-testid="new-appointment-print-blank-contract-btn"
 						>
 							<FileText size={14} className="text-amber-600 dark:text-amber-400" />
-							<span>Бланк договора (_______)</span>
+							<span className="hidden sm:inline">Бланк договора (_______)</span>
+							<span className="sm:hidden">Бланк договора</span>
 						</button>
 						<button
 							type="button"
@@ -914,7 +920,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							data-testid="header-cito-emergency-btn"
 						>
 							<Zap size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
-							<span>CITO! Острая боль (30 мин)</span>
+							<span className="hidden sm:inline">CITO! Острая боль (30 мин)</span>
+							<span className="sm:hidden">CITO (30м)</span>
 						</button>
 						{showCreateForm && (
 							<label className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer">
