@@ -2567,6 +2567,27 @@
 - **Файлы**: `apps/api/src/routes/invoices.ts`, `apps/api/src/routes/payments/sberPosWebhookRoute.ts`, `apps/api/src/routes/portal.ts`, `apps/api/src/routes/xray.ts`, `apps/web/src/pwa/patientOfflineStorage.ts`.
 - **Тесты**: `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
+#### 2.10.233. Ликвидация визуальных дефектов Red Team, централизация useSchedule и паритет кресел/смен StomX/IDENT (Wave 87)
+- **Назначение**: Комплексное устранение 6 визуальных и эргономических дефектов интерфейса по чек-листу 7 смертных грехов (Мандат 8d) и закону «Слона в комнате» (Мандат 8p), внедрение централизованного хука расписания `useSchedule.ts` с поддержкой соло-врача и 1-кликовых смен установок, снос немотивированных блокировок `disabled` по Мандату 8e и подтверждение чистоты интерфейса независимым Red Team аудитом 10 скриншотов (коммиты `2c7bc0002`, `fa68e1883`, `6741f61c2`, `139d30912`).
+- **Архитектурные механизмы**:
+  1. *Ликвидация 6 визуальных дефектов из Red Team аудита (Мандаты 8d, 8e, 8p)*:
+     - В `workspaceShell.tsx`, `Header.tsx`, `RecentPatientHistoryWidget.tsx`, `dente-redesign.css` и `workspaceActions.css`: устранено перекрытие и наезд элементов действий на `ClinicControlPill` и кнопку AI-ассистента; текстовые метки кнопок переключателей роли, режима и недавних пациентов скрываются на компактных десктопах (`hidden 2xl:inline`), гарантируя сохранение тач-таргетов $\ge 44$px и бюджет служебной высоты $\le 160$px.
+     - В `VisitView.tsx` и `VisitEmkTab.tsx`: ликвидирован дубликат соматической карточки аллергий и стоп-факторов; для соматически здоровых пациентов баннер скрывается (`hideWhenClean`), возвращая полезную высоту рабочей области одонтограммы и дневника 043/у.
+     - В `PatientsView.tsx`: вычищен клоунский копирайтинг `+ Денег не считает`, заменен на профессиональный медицинский маркер `+ Высокий средний чек`.
+     - В `SettingsView.tsx` и `SettingsClinicTab.tsx`: удалены метки и бейджи разработчиков («TODO», отладочные плашки) из прод-UI.
+     - В `ScheduleGrid.tsx`: кнопки смен кресел перенесены из открытого частокола в компактный 28px `<details>` выпадающий список; добавлены наглядные индикаторы «Утро (08:00–14:00)» и «Вечер (14:00–20:00)» в шапках колонок установок, освобождая 50–70px полезного пространства сетке приёмов.
+  2. *Централизованный хук расписания useSchedule.ts (StomX / IDENT Parity, Мандаты 8e, 8n)*:
+     - Архитектурно консолидировано состояние сетки расписания и установок в едином хуке `apps/web/src/components/schedule/useSchedule.ts`.
+     - Реализована устойчивость соло-врача (`DEFAULT_SOLO_CHAIR`), быстрое замещение врача на установке (`quickSubstituteDoctor`), клонирование установок (`duplicateChair`), мгновенные пресеты смен («Утро», «Вечер», «Весь день», «2 через 2», «Чет/Нечет»), перенос визитов и отсутствие обязательного выбора ассистента при создании записи.
+     - Покрыто 12 целевыми юнит-тестами `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS).
+  3. *Снос барьеров disabled по Мандату 8e*:
+     - Сняты искусственные блокировки в модалках договоров, счетов, оплат, семейного кошелька, лаборатории, чатов WhatsApp и настроек телефонии. Все второстепенные проверки переведены в предупреждающие тосты без блокировки клинического и кассового контура.
+  4. *Инструментальный Red Team аудит и проверка мультимодальным зрением (Мандаты 8d, 8f, 8p, 8q)*:
+     - Захвачено 10 PNG-скриншотов 1440x900 в PC Light и PC Dark режимах с живых серверов.
+     - Все 10 файлов проверены через `view_file` мультимодальным зрением: 0 наездов текста, 0 частоколов кнопок, 0 слепящих пятен в тёмной теме, 0 эмодзи в медицинских документах. Вердикт: **`[ПРОВЕРЕНО: ЧИСТО]`**.
+- **Файлы**: `apps/web/src/workspaceShell.tsx`, `apps/web/src/components/Header.tsx`, `apps/web/src/components/schedule/useSchedule.ts`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/components/visit/tabs/VisitEmkTab.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/SettingsView.tsx`, `apps/web/src/components/settings/SettingsClinicTab.tsx`, `apps/web/src/styles/dente-redesign.css`, `apps/web/src/components/workspaceActions/workspaceActions.css`, `apps/web/src/components/schedule/__tests__/scheduleChairsAndShiftsParity.test.tsx`, `docs/screenshots/audit_7sins/`.
+- **Тесты**: `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+
 
 
 

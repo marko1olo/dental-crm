@@ -3446,7 +3446,23 @@
     * *apps/api/src/routes/portal.ts*: реализован эндпоинт `GET /payments/status` для проверки статуса онлайн-оплаты в веб-кабинете пациента PWA.
     * *apps/api/src/routes/xray.ts*: реализован защищенный эндпоинт `GET /api/xray/scans/:id/file` для выгрузки и потокового просмотра исходных файлов визиографа/КТ с валидацией принадлежности организации, соблюдением врачебной тайны и записью события аудита `VIEW_XRAY_SCAN_FILE` (152-ФЗ и 323-ФЗ ст. 13).
     * *apps/web/src/pwa/patientOfflineStorage.ts*: синхронизирован маршрут фоновой синхронизации бронирований на канонический `/api/public/booking/:orgId/book`.
-* **Верификация**: `quickBookingAutonomyWave50.test.tsx` (8/8 PASS), `scheduleWave43StomxParity.test.tsx` (10/10 PASS), полный цикл расписания (478/478 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+  - **Ликвидация 6 визуальных дефектов из Red Team аудита и соблюдение Мандатов 8d, 8e, 8p (коммиты `2c7bc0002`, `139d30912`)**:
+    * *Топбар и рабочая высота*: высота служебной области сжата до канонических $\le 160\text{px}$. Устранены наезды элементов действий на `ClinicControlPill` и кнопку AI-ассистента через адаптивное скрытие текстовых меток (`hidden 2xl:inline`) и `nowrap` в `workspaceShell.tsx`, `Header.tsx`, `RecentPatientHistoryWidget.tsx`.
+    * *Карта визита*: ликвидирован дубликат соматической карточки в `VisitView.tsx` и `VisitEmkTab.tsx` (Мандат 8p, клон-синдром). Для соматически здоровых пациентов баннер скрывается (`hideWhenClean`), освобождая полезное пространство экрана врача.
+    * *Картотека пациентов*: удален клоунский копирайтинг `+ Денег не считает` в `PatientsView.tsx`, заменен на профессиональный медицинский маркер `+ Высокий средний чек`.
+    * *Настройки клиники*: вычищены метки разработки («TODO», технические бейджи) из клиентского интерфейса `SettingsView.tsx` и `SettingsClinicTab.tsx`.
+    * *Сетка расписания*: кнопки смен кресел перенесены из постоянного частокола в компактный 28px `<details>` поповер; добавлены эргономичные плашки смен «Утро (08:00–14:00)» и «Вечер (14:00–20:00)» в шапках установок (`ScheduleGrid.tsx`), возвращая 50–70px полезной высоты сетке приёмов.
+  - **Централизованный хук расписания и паритет кресел/смен StomX/IDENT (коммит `fa68e1883`)**:
+    * *apps/web/src/components/schedule/useSchedule.ts*: архитектурный хук управления расписанием с дефолтной установкой `DEFAULT_SOLO_CHAIR` для соло-врача, быстрым замещением врача (`quickSubstituteDoctor`), дублированием кресла (`duplicateChair`), пресетами смен («Утро», «Вечер», «Весь день», «2 через 2», «Чет/Нечет»), перетаскиванием визитов и отсутствием обязательного выбора ассистента при создании бронирования (Мандаты 8e, 8n).
+    * *Тесты*: `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), регрессионный сьют расписания (23/23 PASS).
+  - **Ликвидация немотивированных disabled-кнопок по Мандату 8e (коммиты `6b29e0c07`, `6741f61c2`)**:
+    * Сняты блокирующие `disabled` барьеры в `PaidMedicalContractModal.tsx`, `DocumentUkepSignButton.tsx`, `PaymentModal.tsx`, `FamilyWalletModal.tsx`, `FamilyWalletPanel.tsx`, `RefundServiceModal.tsx`, `OfflineFiscalBatchModal.tsx`, `LabTrackingDrawer.tsx`, `PatientWhatsAppConversationWidget.tsx`, `WhatsAppKapsoSettingsDrawer.tsx`.
+    * Все второстепенные валидации переведены в информативные тосты и предупреждающие бейджи с автосохранением черновиков без запрета сохранения.
+  - **Инструментальный Red Team аудит живого UI (Мандаты 8d, 8f, 8p, 8q, коммит `139d30912`)**:
+    * Скриптом `scripts/capture-audit-7sins.mjs` выполнен захват 10 PNG-скриншотов с живых серверов (Web 5173, API 4100) в PC Light и PC Dark режимах (`01_schedule`, `02_visit`, `03_cashbox_finance`, `04_settings`, `05_patient_card`).
+    * Все 10 MD5-хешей строго уникальны, размеры файлов 185–261 KB, каждый скриншот лично изучен через мультимодальное зрение.
+    * 7 смертных грехов интерфейса устранены, вердикт: **`[ПРОВЕРЕНО: ЧИСТО]`**.
+* **Верификация**: `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `quickBookingAutonomyWave50.test.tsx` (8/8 PASS), `scheduleWave43StomxParity.test.tsx` (10/10 PASS), полный цикл расписания (478/478 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
 
 
 
