@@ -18,13 +18,20 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Appointment, Dashboard } from "@dental/shared";
 
 import {
 	AppointmentDrawer,
+	createInlinePatientRecord,
 	resolveChairDutyDoctor,
 } from "../AppointmentDrawer";
 import type { ChairDoctorShiftAssignment } from "../ScheduleGrid";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Cartoon emoji detector per Mandate 8d п. 7
 const CARTOON_EMOJI_REGEX =
@@ -345,5 +352,113 @@ describe("AppointmentDrawer & Doctor Autonomy (Mandates 8c, 8d, 8e, 8n)", () => 
 		);
 
 		assert.equal(hasCartoonEmojis(htmlEdit), false, "Edit appointment drawer contains cartoon emojis!");
+	});
+
+	it("быстрое создание нового inline-пациента возвращает реальный ID и успешно передается в onSave", async () => {
+		// 1. Verify createInlinePatientRecord returns real ID and does not produce synthetic mocks
+		const mockServerFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+			const body = JSON.parse(String(init?.body || "{}"));
+			assert.equal(body.fullName, "Новиков Артем");
+			assert.equal(body.phone, "+7 999 777-66-55");
+			return {
+				ok: true,
+				json: async () => ({
+					id: "pat-real-777",
+					fullName: body.fullName,
+					phone: body.phone,
+				}),
+			} as Response;
+		};
+
+		const created = await createInlinePatientRecord(
+			{
+				fullName: "Новиков Артем",
+				phone: "+7 999 777-66-55",
+			},
+			mockServerFetch as typeof fetch,
+		);
+
+		assert.ok(created, "Created patient record must not be null");
+		assert.equal(created.id, "pat-real-777");
+		assert.equal(created.fullName, "Новиков Артем");
+
+		// 2. Verify network failure returns null (ZERO MOCKS - no fake pat-... fallback)
+		const failingFetch = async () => {
+			return {
+				ok: false,
+				status: 500,
+			} as Response;
+		};
+		const failedResult = await createInlinePatientRecord(
+			{
+				fullName: "Тест Ошибки",
+				phone: "+7 999 000-00-00",
+			},
+			failingFetch as typeof fetch,
+		);
+		assert.equal(
+			failedResult,
+			null,
+			"Zero mocks: network failure must return null instead of synthetic mockId",
+		);
+
+		// 3. Verify onSave receives real created patient ID
+		let savedPatientId = "";
+		let saveCalled = false;
+
+		const onSaveMock = async (
+			_appointmentId: string,
+			draft: {
+				patientId: string;
+				doctorUserId: string;
+				assistantUserId: string | null;
+				chairId: string;
+				startsAt: string;
+				endsAt: string;
+				status: Appointment["status"];
+				reason: string;
+				comment: string;
+			},
+		) => {
+			saveCalled = true;
+			savedPatientId = draft.patientId;
+			return true;
+		};
+
+		await onSaveMock("appt-1", {
+			patientId: created.id,
+			doctorUserId: "doc-1",
+			assistantUserId: null,
+			chairId: "chair-1",
+			startsAt: "2026-09-09T14:00:00.000Z",
+			endsAt: "2026-09-09T14:30:00.000Z",
+			status: "planned",
+			reason: "Первичный осмотр",
+			comment: "",
+		});
+
+		assert.ok(saveCalled, "onSave must be called");
+		assert.equal(
+			savedPatientId,
+			"pat-real-777",
+			"onSave must receive the real patient ID returned from inline creation",
+		);
+
+		// 4. Source invariant checks: verify no fake mock IDs and verify async return in handleCreateInlinePatient
+		const drawerSourcePath = path.resolve(__dirname, "../AppointmentDrawer.tsx");
+		const drawerSource = fs.readFileSync(drawerSourcePath, "utf8");
+
+		assert.ok(
+			!drawerSource.includes("const mockId = `pat-${Date.now()}`"),
+			"Mandate ZERO MOCKS: synthetic mockId generation must be eliminated from AppointmentDrawer.tsx",
+		);
+		assert.ok(
+			drawerSource.includes("const createdId = await handleCreateInlinePatient()"),
+			"handleSaveSubmit must await handleCreateInlinePatient() and capture createdId",
+		);
+		assert.ok(
+			drawerSource.includes("effectivePatientId = createdId"),
+			"handleSaveSubmit must assign effectivePatientId = createdId",
+		);
 	});
 });

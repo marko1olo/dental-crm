@@ -52,6 +52,44 @@ import {
 
 export { QuickBookingDrawer, resolveChairDutyDoctor };
 export type { QuickBookingDrawerProps, QuickBookingSlotInfo };
+export async function createInlinePatientRecord(
+	params: {
+		fullName: string;
+		phone?: string | null;
+	},
+	customFetch: typeof fetch = fetch,
+): Promise<{ id: string; fullName: string } | null> {
+	const name = params.fullName.trim();
+	const phone = (params.phone || "").trim();
+	if (!name && !phone) {
+		return null;
+	}
+	const effectiveName = name || (phone ? `Пациент (${phone})` : "Новый пациент");
+	try {
+		const res = await customFetch("/api/patients", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+			}),
+			body: JSON.stringify({
+				fullName: effectiveName,
+				phone: phone || null,
+			}),
+		});
+		if (res.ok) {
+			const created = await res.json();
+			if (created?.id) {
+				return {
+					id: String(created.id),
+					fullName: String(created.fullName || effectiveName),
+				};
+			}
+		}
+		return null;
+	} catch {
+		return null;
+	}
+}
 
 export type AppointmentDrawerStatus =
 	| "planned"
@@ -128,8 +166,11 @@ export interface AppointmentDrawerProps {
 	readonly initialSlot?: QuickBookingSlotInfo | null | undefined;
 	readonly appointment?: Appointment | null | undefined;
 	readonly dashboard?: Dashboard | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: generic auth contract
-	readonly auth?: any;
+	readonly auth?: {
+		token?: string | null;
+		user?: { id?: string; fullName?: string; role?: string } | null;
+		scheduleMutationHeaders?: (headers?: HeadersInit) => HeadersInit;
+	} | null;
 	readonly onAppointmentCreated?: ((appointment: Appointment) => void) | undefined;
 	readonly onSave?:
 		| ((
@@ -313,7 +354,10 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 	});
 	const [isCito, setIsCito] = useState(() => {
 		return Boolean(
-			(appointment as any)?.isCito ||
+			Boolean(
+				"isCito" in (appointment || {}) &&
+					(appointment as Record<string, unknown>).isCito,
+			) ||
 				appointment?.reason?.includes("CITO") ||
 				appointment?.reason?.includes("Острая боль") ||
 				initialSlot?.isCitoEmergency,
@@ -348,7 +392,10 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 			setComment(appointment.comment ?? "");
 			setIsCito(
 				Boolean(
-					(appointment as any)?.isCito ||
+					Boolean(
+						"isCito" in (appointment || {}) &&
+							(appointment as Record<string, unknown>).isCito,
+					) ||
 						appointment.reason?.includes("CITO") ||
 						appointment.reason?.includes("Острая боль"),
 				),
@@ -479,23 +526,24 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 		}
 		return checkAppointmentResourceCollision(
 			{
-				id: appointment?.id,
 				startsAt: fromLocal(startsAtLocal),
 				endsAt: fromLocal(endsAtLocal),
 				doctorUserId: doctorUserId || null,
 				chairId: chairId || null,
 				assistantUserId: assistantUserId || null,
 				patientId: patientId || null,
-				status,
+				isCito,
 				reason,
-				comment,
-			} as any,
+			},
 			dashboard?.appointments,
 			{
+				excludeAppointmentId: appointment?.id ?? null,
 				staff,
 				chairs,
 				patients,
 				formatTimeFn: (iso) => toLocal(iso).slice(11, 16),
+				allowCitoOverbooking: isCito,
+				isCito,
 			},
 		);
 	}, [
@@ -506,9 +554,8 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 		chairId,
 		assistantUserId,
 		patientId,
-		status,
+		isCito,
 		reason,
-		comment,
 		fromLocal,
 		toLocal,
 		dashboard?.appointments,
@@ -536,51 +583,44 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 		[appointment, onStatusChange, appointmentLabels],
 	);
 
-	// Quick patient inline creation
-	const handleCreateInlinePatient = async (e: React.FormEvent) => {
-		e.preventDefault();
+	// Quick patient inline creation (Mandate 8e: zero mocks, return real created patient ID)
+	const handleCreateInlinePatient = async (
+		e?: React.FormEvent,
+	): Promise<string | null> => {
+		if (e) e.preventDefault();
 		const name = newPatientName.trim();
 		const phone = newPatientPhone.trim();
 		if (!name && !phone) {
 			showToast("Укажите имя или телефон пациента", "warning");
-			return;
+			return null;
 		}
 		const effectiveName = name || (phone ? `Пациент (${phone})` : "Новый пациент");
 		setIsSubmitting(true);
 		try {
-			const res = await fetch("/api/patients", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					fullName: effectiveName,
-					phone: phone || null,
-				}),
+			const created = await createInlinePatientRecord({
+				fullName: effectiveName,
+				phone: phone || null,
 			});
-			if (res.ok) {
-				const created = await res.json();
-				if (created?.id) {
-					setPatientId(created.id);
-					setSearchQuery(created.fullName || effectiveName);
-					setShowNewPatientInline(false);
-					setNewPatientName("");
-					setNewPatientPhone("");
-					showToast(`Пациент «${created.fullName}» создан и прикреплен`, "success");
-					return;
-				}
+			if (created?.id) {
+				setPatientId(created.id);
+				setSearchQuery(created.fullName || effectiveName);
+				setShowNewPatientInline(false);
+				setNewPatientName("");
+				setNewPatientPhone("");
+				showToast(`Пациент «${created.fullName}» создан и прикреплен`, "success");
+				return created.id;
 			}
-			// Optimistic fallback (Mandate 8e)
-			const mockId = `pat-${Date.now()}`;
-			setPatientId(mockId);
-			setSearchQuery(effectiveName);
-			setShowNewPatientInline(false);
-			showToast(`Пациент «${effectiveName}» прикреплен`, "success");
+			showToast(
+				"Не удалось сохранить карту пациента на сервере. Проверьте сеть",
+				"error",
+			);
+			return null;
 		} catch {
-			const mockId = `pat-${Date.now()}`;
-			setPatientId(mockId);
-			setSearchQuery(effectiveName);
-			setShowNewPatientInline(false);
+			showToast(
+				"Не удалось сохранить карту пациента на сервере. Проверьте сеть",
+				"error",
+			);
+			return null;
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -593,7 +633,10 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 
 		let effectivePatientId = patientId;
 		if (!effectivePatientId && (newPatientName.trim() || newPatientPhone.trim())) {
-			await handleCreateInlinePatient(e as any);
+			const createdId = await handleCreateInlinePatient();
+			if (createdId) {
+				effectivePatientId = createdId;
+			}
 		}
 
 		if (!effectivePatientId) {
@@ -651,7 +694,34 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 					reason,
 					comment,
 				});
-				if (ok) {
+				if (ok !== false) {
+					showToast("Запись сохранена", "success");
+					onClose();
+				}
+			} catch {
+				setError("Ошибка сохранения записи");
+				showToast("Не удалось сохранить запись", "error");
+			} finally {
+				setIsSubmitting(false);
+			}
+			return;
+		}
+
+		// Creating new appointment with onSave hook fallback
+		if (!appointment && onSave) {
+			try {
+				const ok = await onSave("", {
+					patientId: effectivePatientId,
+					doctorUserId: effectiveDoctorId,
+					assistantUserId: isSoloDoctor ? null : (assistantUserId?.trim() || null),
+					chairId: effectiveChairId,
+					startsAt: startsAtIso,
+					endsAt: endsAtIso,
+					status,
+					reason: reason.trim() || (isCito ? "CITO! Острая боль" : "Первичный осмотр"),
+					comment: comment.trim(),
+				});
+				if (ok !== false) {
 					showToast("Запись сохранена", "success");
 					onClose();
 				}

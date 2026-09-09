@@ -234,7 +234,36 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 		const effectiveDisabled = Boolean(disabled && !isRevising);
 
 		const handleApplyGlobalNorm = useCallback(() => {
-			if (effectiveDisabled) {
+			const hasExistingData =
+				Boolean(allergologicalHistory.trim()) ||
+				Boolean(concomitantDiseases.trim()) ||
+				Boolean(chiefComplaint.trim()) ||
+				Boolean(historyOfPresentIllness.trim()) ||
+				Boolean(currentMedications.trim()) ||
+				Object.values(odontogram).some(
+					(t) => t.statusCode !== "healthy" || (t.surfaces && t.surfaces.length > 0),
+				);
+
+			if (hasExistingData && !reviseSnapshot) {
+				setReviseSnapshot({
+					odontogram: { ...odontogram },
+					cpitn: { ...cpitn },
+					hygieneIndexOhiS,
+					chiefComplaint,
+					historyOfPresentIllness,
+					allergologicalHistory,
+					concomitantDiseases,
+					currentMedications,
+					pregnancyLactationStatus,
+					pastDentalInterventions,
+					biteType,
+					biteDescription,
+					oralMucosa: { ...oralMucosa },
+					xrayFindingsDescription,
+					generalTreatmentPlan,
+				});
+				setIsRevising(true);
+			} else if (effectiveDisabled) {
 				setIsRevising(true);
 			}
 			const intactOdonto = createIntactOdontogramRecords();
@@ -271,7 +300,25 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 				"success",
 				4000,
 			);
-		}, [effectiveDisabled]);
+		}, [
+			effectiveDisabled,
+			allergologicalHistory,
+			concomitantDiseases,
+			chiefComplaint,
+			historyOfPresentIllness,
+			currentMedications,
+			odontogram,
+			reviseSnapshot,
+			cpitn,
+			hygieneIndexOhiS,
+			pregnancyLactationStatus,
+			pastDentalInterventions,
+			biteType,
+			biteDescription,
+			oralMucosa,
+			xrayFindingsDescription,
+			generalTreatmentPlan,
+		]);
 
 		const handleBeginRevise = useCallback(() => {
 			setReviseSnapshot({
