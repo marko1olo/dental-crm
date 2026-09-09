@@ -116,7 +116,6 @@ function imagingDescriptionTemplate(
 import { useMemo, useRef, useState } from "react";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
-import { BoneQualityPanel } from "./components/dicom/BoneQualityPanel";
 import { Cornerstone3DViewer } from "./components/visiograph/Cornerstone3DViewer";
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { EmptyState } from "./components/EmptyState";
@@ -1533,11 +1532,6 @@ export function ImagingView(props: ImagingViewProps) {
 										toothUpdates={selectedStudyToothUpdates as any}
 										studyTitle={selectedImagingStudy.title}
 									/>
-								</div>
-							)}
-							{selectedImagingStudy.kind === "cbct" && (
-								<div className="px-4">
-									<BoneQualityPanel />
 								</div>
 							)}
 						</>

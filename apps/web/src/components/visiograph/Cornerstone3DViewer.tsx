@@ -33,11 +33,10 @@ import {
 	mat3ToMat4Direction,
 	type Point2D,
 	toTransferableScalarData,
-} from "../../mprMath";
+} from "../../utils/math/mprMath";
 import {
 	classifyMisch,
 	extractHUZones,
-	generateDrillProtocol,
 	mischDescription,
 	type MischClass,
 } from "../../utils/dicom/boneQualityEngine";
@@ -1219,13 +1218,6 @@ export function Cornerstone3DViewer({
 					viewKind: "mpr_axial",
 					preset: VISIOGRAPH_WINDOW_PRESETS[activePresetId],
 					capturedAt,
-					exposureTimeSec: 8.9,
-					exposureParameters: {
-						exposureTimeSec: 8.9,
-						kVp: 90,
-						mAs: 56,
-						sensorType: "CBCT Flat Panel Detector (FPD)",
-					},
 					...(lastImplant?.fdiCode
 						? {
 								fdiToothCode: String(lastImplant.fdiCode),

@@ -3,7 +3,7 @@ import {
 	generatePanoramicImage,
 	type PanoramicWorkerRequest,
 	type PanoramicWorkerResponse,
-} from "./mprMath";
+} from "./utils/math/mprMath";
 
 // Scope the worker global explicitly instead of casting `postMessage as any` or
 // re-declaring an ambient `postMessage`. `DedicatedWorkerGlobalScope.postMessage`

@@ -17,7 +17,7 @@ import type {
 	PanoramicWorkerRequest,
 	PanoramicWorkerResponse,
 	Point2D,
-} from "../../mprMath";
+} from "../../utils/math/mprMath";
 import { showToast } from "../GlobalToast";
 import {
 	captureHighDpiCanvas,

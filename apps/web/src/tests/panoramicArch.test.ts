@@ -27,7 +27,7 @@ import {
 	vec3Dot,
 	vec3Length,
 } from "../components/dicom/panoramicArch.js";
-import type { Point2D } from "../mprMath.js";
+import type { Point2D } from "../utils/math/mprMath.js";
 
 /** The literal that used to be substituted for the dentist's trace. */
 const OLD_FAKE_SPLINE: Point2D[] = [

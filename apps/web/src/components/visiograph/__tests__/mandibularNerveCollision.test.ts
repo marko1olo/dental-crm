@@ -4,7 +4,7 @@ import { vec3 } from "gl-matrix";
 import {
 	distancePointToLineSegment,
 	distancePointToSpline,
-} from "../../../mprMath";
+} from "../../../utils/math/mprMath.js";
 import {
 	calculateImplantClearance,
 	checkImplantCollision,

@@ -5,7 +5,7 @@ import {
 	buildPanoramicArch,
 	polylineLengthMm,
 } from "../components/dicom/panoramicArch.js";
-import type { Point2D } from "../mprMath.js";
+import type { Point2D } from "../utils/math/mprMath.js";
 
 /**
  * What the panorama costs, measured against the curve cornerstone ACTUALLY

@@ -351,7 +351,9 @@ export function buildForm043ProtocolText(
 		if (exp?.kVp !== undefined) expParts.push(`Анодное напряжение: ${exp.kVp} кВ`);
 		if (exp?.mAs !== undefined) expParts.push(`Ток/время: ${exp.mAs} мАс`);
 		if (exp?.sensorType) expParts.push(`Датчик: ${exp.sensorType}`);
-		lines.push(`Параметры экспозиции: ${expParts.join(", ")}`);
+		if (expParts.length > 0) {
+			lines.push(`Параметры экспозиции: ${expParts.join(", ")}`);
+		}
 	}
 
 	const preset = payload.preset ?? (payload.viewKind?.startsWith("mpr") ? VISIOGRAPH_WINDOW_PRESETS.bone : undefined);

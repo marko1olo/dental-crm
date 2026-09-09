@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { trilinearInterpolate } from "../../../mprMath";
+import { trilinearInterpolate } from "../../../utils/math/mprMath.js";
 
 describe("Trilinear Interpolation Numerical Accuracy", () => {
 	test("exact reproduction of 3D linear field f(x,y,z) = 100 + 10x + 20y + 30z", () => {

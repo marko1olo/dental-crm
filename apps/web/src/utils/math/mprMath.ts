@@ -389,6 +389,88 @@ export type Point2D = { x: number; y: number };
 export type Point3D = { x: number; y: number; z: number };
 
 /**
+ * Serializable request sent from the UI thread to the panoramic MPR worker.
+ *
+ * `scalarData` MUST be a copy the UI thread no longer needs: the worker takes
+ * ownership of its ArrayBuffer via the postMessage transfer list, which detaches
+ * it on the sender side. Never pass the cornerstone volume's own scalar array
+ * here — transferring it would corrupt the volume cache.
+ *
+ * `direction` is a flattened 4x4 (16-element) matrix laid out for `mat4` index
+ * access (basis rows at indices 0..2 / 4..6 / 8..10). The cornerstone volume
+ * exposes a 3x3 `Mat3`; the caller is responsible for expanding it (see
+ * `mat3ToMat4Direction`).
+ */
+export interface PanoramicWorkerRequest {
+	scalarData: Float32Array | Uint16Array;
+	dimensions: [number, number, number];
+	origin: [number, number, number];
+	direction: Float32Array; // 16 elements, mat4 layout
+	spacing: [number, number, number];
+	splinePoints: Point2D[];
+	zStartWorld: number;
+	zEndWorld: number;
+	zStepWorld: number;
+	thickness: number;
+	blendMode: "mip" | "average";
+}
+
+export type PanoramicWorkerResponse =
+	| { success: true; width: number; height: number; pixels: Float32Array }
+	| { success: false; error: string };
+
+/**
+ * Expand a cornerstone 3x3 column/row-major `Mat3` (9 elements) into the
+ * 16-element `mat4`-indexed layout that `generatePanoramicImage` reads. This is
+ * a pure structural bridge — the 3x3 rotation/scale basis is copied into the
+ * upper-left of a 4x4 identity. No data is invented and no cast is used.
+ */
+export function mat3ToMat4Direction(m3: ArrayLike<number>): Float32Array {
+	const m4 = new Float32Array(16);
+	// row 0
+	m4[0] = m3[0] ?? 0;
+	m4[1] = m3[1] ?? 0;
+	m4[2] = m3[2] ?? 0;
+	m4[3] = 0;
+	// row 1
+	m4[4] = m3[3] ?? 0;
+	m4[5] = m3[4] ?? 0;
+	m4[6] = m3[5] ?? 0;
+	m4[7] = 0;
+	// row 2
+	m4[8] = m3[6] ?? 0;
+	m4[9] = m3[7] ?? 0;
+	m4[10] = m3[8] ?? 0;
+	m4[11] = 0;
+	// row 3
+	m4[12] = 0;
+	m4[13] = 0;
+	m4[14] = 0;
+	m4[15] = 1;
+	return m4;
+}
+
+/**
+ * Copy an arbitrary cornerstone pixel array (Int16Array for CBCT Hounsfield
+ * units, Uint16Array, etc.) into a `Float32Array | Uint16Array` the MPR kernel
+ * accepts. Returns a NEW buffer the caller owns and may transfer to the worker.
+ *
+ * Int16 (signed HU) and other non-Uint16 integer/float types are widened to
+ * Float32 to preserve sign and magnitude; a genuine Uint16Array is passed
+ * through by copy so its buffer is detachable without touching the source.
+ */
+export function toTransferableScalarData(
+	src: ArrayLike<number> & { BYTES_PER_ELEMENT?: number },
+): Float32Array | Uint16Array {
+	if (src instanceof Uint16Array) {
+		return src.slice();
+	}
+	const out = new Float32Array(src.length);
+	for (let i = 0; i < src.length; i++) out[i] = src[i] ?? 0;
+	return out;
+}
+
+/**
  * Calculates Catmull-Rom spline points interpolated at equidistant steps.
  */
 export function interpolateSpline(
@@ -463,8 +545,20 @@ export function trilinearInterpolate(
 	x: number,
 	y: number,
 	z: number,
+	outOfBoundsValue: number = 0,
 ): number {
 	const [width, height, depth] = dimensions;
+
+	if (
+		x < 0 ||
+		x > width - 1 ||
+		y < 0 ||
+		y > height - 1 ||
+		z < 0 ||
+		z > depth - 1
+	) {
+		return outOfBoundsValue;
+	}
 
 	const x0 = Math.floor(x);
 	const x1 = Math.min(x0 + 1, width - 1);
@@ -480,14 +574,14 @@ export function trilinearInterpolate(
 	const sliceSize = width * height;
 
 	// 8 corners
-	const c000 = scalarData[x0 + y0 * width + z0 * sliceSize] ?? 0;
-	const c100 = scalarData[x1 + y0 * width + z0 * sliceSize] ?? 0;
-	const c010 = scalarData[x0 + y1 * width + z0 * sliceSize] ?? 0;
-	const c110 = scalarData[x1 + y1 * width + z0 * sliceSize] ?? 0;
-	const c001 = scalarData[x0 + y0 * width + z1 * sliceSize] ?? 0;
-	const c101 = scalarData[x1 + y0 * width + z1 * sliceSize] ?? 0;
-	const c011 = scalarData[x0 + y1 * width + z1 * sliceSize] ?? 0;
-	const c111 = scalarData[x1 + y1 * width + z1 * sliceSize] ?? 0;
+	const c000 = scalarData[x0 + y0 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c100 = scalarData[x1 + y0 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c010 = scalarData[x0 + y1 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c110 = scalarData[x1 + y1 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c001 = scalarData[x0 + y0 * width + z1 * sliceSize] ?? outOfBoundsValue;
+	const c101 = scalarData[x1 + y0 * width + z1 * sliceSize] ?? outOfBoundsValue;
+	const c011 = scalarData[x0 + y1 * width + z1 * sliceSize] ?? outOfBoundsValue;
+	const c111 = scalarData[x1 + y1 * width + z1 * sliceSize] ?? outOfBoundsValue;
 
 	// Interpolate along X
 	const c00 = c000 * (1 - xd) + c100 * xd;
@@ -675,9 +769,9 @@ export function distancePointToSpline(p: vec3, spline: vec3[]): number {
  * Classifies Bone Density (HU) into D1-D4 scale (Misch bone density classification).
  */
 export function classifyBoneDensity(hu: number): "D1" | "D2" | "D3" | "D4" {
-	if (hu >= 850) return "D1";
-	if (hu >= 500) return "D2";
-	if (hu >= 225) return "D3";
+	if (hu > 1250) return "D1";
+	if (hu >= 850) return "D2";
+	if (hu >= 350) return "D3";
 	return "D4";
 }
 

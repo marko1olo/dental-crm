@@ -16,8 +16,6 @@ import {
 	Sparkles,
 	Trash2,
 	UploadCloud,
-	Volume2,
-	VolumeX,
 	Wrench,
 	X,
 	ZoomIn,
@@ -235,7 +233,6 @@ export function VisiographAnalyzer({
 }: VisiographAnalyzerProps = {}) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dropRef = useRef<HTMLDivElement>(null);
-	const synthRef = useRef<SpeechSynthesis | null>(null);
 	// Признак «анализ идёт» именно в ref: значение из useState попадает в замыкание
 	// useCallback и устаревает, поэтому два быстрых перетаскивания подряд оба
 	// прошли бы проверку и запустили два платных вызова ИИ.
@@ -371,8 +368,6 @@ export function VisiographAnalyzer({
 	 */
 	const [isHistoryView, setIsHistoryView] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [isSpeaking, setIsSpeaking] = useState(false);
-	const [voicesReady, setVoicesReady] = useState(false);
 	const [activeSection, setActiveSection] = useState<number | null>(null);
 	const [historyExpanded, setHistoryExpanded] = useState(false);
 	/*
@@ -396,22 +391,6 @@ export function VisiographAnalyzer({
 	const [quickPreset, setQuickPreset] = useState<"standard" | "invert" | "endo" | "bone" | "enamel">("standard");
 	const [initialStudioTool, setInitialStudioTool] = useState<"pointer" | "root_canal">("pointer");
 	const [isNormaApplied, setIsNormaApplied] = useState(false);
-
-	// ── Voice init ──────────────────────────────────────────────────────────
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		const synth = window.speechSynthesis;
-		synthRef.current = synth;
-		const setReady = () => setVoicesReady(true);
-		if (synth.getVoices().length > 0) setReady();
-		else synth.addEventListener("voiceschanged", setReady, { once: true });
-		// Слушатель с { once: true } не снимается, если событие так и не произошло:
-		// при размонтировании он остаётся висеть на глобальном speechSynthesis.
-		return () => {
-			synth.removeEventListener("voiceschanged", setReady);
-			synth.cancel();
-		};
-	}, []);
 
 	/**
 	 * Чтение архива снимков пациента.
@@ -1065,8 +1044,6 @@ export function VisiographAnalyzer({
 				setSaveFailure(null);
 				setFormulaFailure(null);
 				setError(null);
-				if (synthRef.current) synthRef.current.cancel();
-				setIsSpeaking(false);
 			}
 		} catch (err) {
 			showToast(
@@ -1084,44 +1061,6 @@ export function VisiographAnalyzer({
 			setDeletingScanId(null);
 		}
 	};
-
-	// ── Voice ───────────────────────────────────────────────────────────────
-	const handleSpeak = useCallback(() => {
-		const synth =
-			synthRef.current ||
-			(typeof window !== "undefined" ? window.speechSynthesis : null);
-		if (!synth || !currentScan?.aiReport) return;
-		if (isSpeaking) {
-			synth.cancel();
-			setIsSpeaking(false);
-			return;
-		}
-		if (!voicesReady && synth.getVoices().length === 0) {
-			showToast("Инициализация голосового движка...", "info", 2000);
-		}
-		const cleanText = (currentScan.aiReport || "")
-			.replace(/[*#_`~[\]]/g, "")
-			.replace(/\n{2,}/g, ". ");
-		const utterance = new SpeechSynthesisUtterance(cleanText);
-		utterance.lang = "ru-RU";
-		utterance.rate = 0.9;
-		const voices = synth.getVoices();
-		const ruVoice =
-			voices.find((v) => v.lang === "ru-RU") ??
-			voices.find((v) => v.lang.startsWith("ru")) ??
-			null;
-		if (ruVoice) utterance.voice = ruVoice;
-		utterance.onend = () => setIsSpeaking(false);
-		utterance.onerror = () => setIsSpeaking(false);
-		synth.cancel();
-		try {
-			synth.speak(utterance);
-			setIsSpeaking(true);
-		} catch (err) {
-			logger.warn("[VisiographAnalyzer] speech synthesis error", err);
-			setIsSpeaking(false);
-		}
-	}, [currentScan, isSpeaking, voicesReady]);
 
 	// ── Print ───────────────────────────────────────────────────────────────
 	const handlePrint = () => {
@@ -1159,8 +1098,6 @@ export function VisiographAnalyzer({
 		setApplyNotice(null);
 		setIsHistoryView(false);
 		setIsNormaApplied(false);
-		if (synthRef.current) synthRef.current.cancel();
-		setIsSpeaking(false);
 	};
 
 	// ── Report sections ────────────────────────────────────────────────────
@@ -1314,40 +1251,6 @@ export function VisiographAnalyzer({
 					<div style={{ display: "flex", gap: "6px" }}>
 						{currentScan?.aiReport && (
 							<>
-								<button
-									type="button"
-									onClick={handleSpeak}
-									data-testid="visiograph-speak-button"
-									title={
-										isSpeaking
-											? "Стоп"
-											: voicesReady
-												? "Озвучить"
-												: "Инициализация голосового движка..."
-									}
-									style={{
-										// Пока идёт озвучивание, кнопка залита --teal. Белая иконка
-										// на нём в тёмной теме (#2dd4bf) давала контраст 1.86 —
-										// ровно та же поломка, что уже описана выше у счётчика
-										// снимков. --on-teal подобран под эту заливку в каждой теме.
-										background: isSpeaking ? "var(--teal)" : "transparent",
-										color: isSpeaking ? "var(--on-teal)" : "var(--muted)",
-										border: "1px solid var(--line)",
-										borderRadius: "8px",
-										padding: "8px 12px",
-										minHeight: "44px",
-										minWidth: "44px",
-										cursor: "pointer",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										gap: "4px",
-										fontSize: "0.8rem",
-										transition: "all 0.2s",
-									}}
-								>
-									{isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
-								</button>
 								<button
 									type="button"
 									onClick={handlePrint}
