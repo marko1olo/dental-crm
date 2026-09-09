@@ -137,7 +137,11 @@ export function Billing1CExportModal({
 							const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
 							const unitPriceKop = Math.round(it.priceRub * 100);
 							const discKop = Math.round((it.discountRub || 0) * 100);
-							const totalKop = Math.max(0, unitPriceKop * qty - discKop);
+							const grossKop = unitPriceKop * qty;
+							const discountPercent = grossKop > 0 && discKop > 0
+								? Math.min(100, Math.max(0, Math.round((discKop / grossKop) * 100)))
+								: 0;
+							const totalKop = Math.max(0, grossKop - discKop);
 							return {
 								id: it.id || `item-${idx + 1}`,
 								code804n: it.code804n || null,
@@ -145,9 +149,7 @@ export function Billing1CExportModal({
 								toothNumber: it.toothNumber ? Number(it.toothNumber) : null,
 								quantity: qty,
 								priceKopecks: unitPriceKop,
-								discountPercent: it.discountRub
-									? Math.round((it.discountRub / (it.priceRub * qty)) * 100)
-									: 0,
+								discountPercent,
 								totalKopecks: totalKop,
 								vatRate: "Без НДС",
 								vatAmountKopecks: 0,
@@ -227,7 +229,7 @@ export function Billing1CExportModal({
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-2 flex-wrap">
-								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
+								<h3 className="text-lg font-bold text-[var(--ink,#0f172a)] break-words m-0 leading-tight">
 									1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ
 								</h3>
 								<div className="flex items-center gap-1.5 shrink-0">
@@ -270,8 +272,8 @@ export function Billing1CExportModal({
 							onClick={() => setActiveSubTab("items")}
 							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "items"
-									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
-									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-medium"
 							}`}
 						>
 							<Receipt size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -282,11 +284,11 @@ export function Billing1CExportModal({
 							onClick={() => setActiveSubTab("xml")}
 							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "xml"
-									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
-									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-medium"
 							}`}
 						>
-							<Code2 size={14} className="text-slate-600 dark:text-slate-400 shrink-0" />
+							<Code2 size={14} className="text-[var(--muted,#64748b)] shrink-0" />
 							<span><span className="hidden sm:inline">XML CommerceML</span><span className="sm:hidden">XML</span></span>
 						</button>
 						<button
@@ -294,11 +296,11 @@ export function Billing1CExportModal({
 							onClick={() => setActiveSubTab("requisites")}
 							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "requisites"
-									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
-									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-medium"
 							}`}
 						>
-							<FileText size={14} className="text-slate-600 dark:text-slate-400 shrink-0" />
+							<FileText size={14} className="text-[var(--muted,#64748b)] shrink-0" />
 							<span><span className="hidden sm:inline">Реквизиты документа</span><span className="sm:hidden">Реквизиты</span></span>
 						</button>
 					</div>
@@ -442,7 +444,7 @@ export function Billing1CExportModal({
 															{it.name}
 														</span>
 													</td>
-													<td className="py-2.5 px-3 text-center font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+													<td className="py-2.5 px-3 text-center font-mono font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 														{it.toothNumber || "—"}
 													</td>
 													<td className="py-2.5 px-3 text-center font-mono whitespace-nowrap">
@@ -458,7 +460,7 @@ export function Billing1CExportModal({
 														{formatMoney(total)}
 													</td>
 													<td className="py-2.5 px-3 text-center whitespace-nowrap">
-														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)]">
 															Без НДС
 														</span>
 													</td>
@@ -610,12 +612,12 @@ export function Billing1CExportModal({
 				</div>
 
 				{/* Modal Footer: Fixed Sticky Bar — Fitts's Law (44px Touch Targets) */}
-				<div className="sticky bottom-0 z-50 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 shadow-lg">
+				<div className="sticky bottom-0 z-50 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-[var(--paper,#ffffff)] border-t border-[var(--line,#e2e8f0)] shrink-0 shadow-lg">
 					<div className="contents sm:flex sm:items-center sm:gap-2">
 						<button
 							type="button"
 							onClick={handleCopyAccountantSummary}
-							className="min-h-[44px] px-2.5 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0 touch-manipulation"
+							className="min-h-[44px] px-2.5 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0 touch-manipulation"
 							title="Сводка для бухгалтерии"
 						>
 							<FileText size={14} className="shrink-0" />
@@ -624,7 +626,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={handleCopyXml}
-							className="min-h-[44px] px-2.5 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0 touch-manipulation"
+							className="min-h-[44px] px-2.5 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0 touch-manipulation"
 							title="Скопировать XML CommerceML"
 						>
 							<Copy size={14} className="shrink-0" />
@@ -636,7 +638,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors flex items-center justify-center text-center whitespace-nowrap touch-manipulation"
+							className="min-h-[44px] px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] cursor-pointer transition-colors flex items-center justify-center text-center whitespace-nowrap touch-manipulation"
 						>
 							Закрыть
 						</button>

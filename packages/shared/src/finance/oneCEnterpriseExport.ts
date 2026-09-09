@@ -35,7 +35,11 @@ export const oneCLineItemSchema = z.object({
 	unitName: z.string().default("шт"),
 	quantity: z.number().positive().default(1),
 	priceKopecks: z.number().int().nonnegative(),
-	discountPercent: z.number().min(0).max(100).default(0),
+	discountPercent: z
+		.preprocess(
+			(val) => (typeof val === "number" && Number.isFinite(val) ? val : 0),
+			z.number().min(0).max(100).default(0),
+		),
 	totalKopecks: z.number().int().nonnegative(),
 	vatRate: z.string().default("Без НДС"),
 	vatAmountKopecks: z.number().int().default(0),
@@ -125,6 +129,10 @@ export function resolveOneCOperationName(docType: OneCDocumentType): string {
  * Formats a single 1C Line Item XML fragment.
  */
 function renderOneCItemXml(item: OneCLineItem): string {
+	const safePercent =
+		typeof item.discountPercent === "number" && Number.isFinite(item.discountPercent)
+			? Math.min(100, Math.max(0, Math.round(item.discountPercent)))
+			: 0;
 	const priceRub = kopecksToRub(item.priceKopecks).toFixed(2);
 	const totalRub = kopecksToRub(item.totalKopecks).toFixed(2);
 	const vatRub = kopecksToRub(item.vatAmountKopecks ?? 0).toFixed(2);
@@ -148,7 +156,7 @@ function renderOneCItemXml(item: OneCLineItem): string {
 \t\t\t\t\t<СуммаНДС>${vatRub}</СуммаНДС>
 \t\t\t\t\t<Скидки>
 \t\t\t\t\t\t<Скидка>
-\t\t\t\t\t\t\t<Процент>${item.discountPercent}</Процент>
+\t\t\t\t\t\t\t<Процент>${safePercent}</Процент>
 \t\t\t\t\t\t\t<УчтеноВСумме>true</УчтеноВСумме>
 \t\t\t\t\t\t</Скидка>
 \t\t\t\t\t</Скидки>

@@ -125,7 +125,11 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
               const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
               const unitPriceKop = Math.round(it.priceRub * 100);
               const discKop = Math.round((it.discountRub || 0) * 100);
-              const totalKop = Math.max(0, unitPriceKop * qty - discKop);
+              const grossKop = unitPriceKop * qty;
+              const discountPercent = grossKop > 0 && discKop > 0
+                ? Math.min(100, Math.max(0, Math.round((discKop / grossKop) * 100)))
+                : 0;
+              const totalKop = Math.max(0, grossKop - discKop);
               return {
                 id: it.id || `item-${idx + 1}`,
                 code804n: it.code804n || null,
@@ -133,7 +137,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
                 toothNumber: it.toothNumber ? Number(it.toothNumber) : null,
                 quantity: qty,
                 priceKopecks: unitPriceKop,
-                discountPercent: it.discountRub ? Math.round((it.discountRub / (it.priceRub * qty)) * 100) : 0,
+                discountPercent,
                 totalKopecks: totalKop,
                 vatRate: 'Без НДС',
                 vatAmountKopecks: 0,
