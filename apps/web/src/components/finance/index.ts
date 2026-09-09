@@ -25,6 +25,5 @@ export * from "./SberbankTerminalPaymentModal";
 export * from "./InvoiceGenerationModal";
 export * from "./invoiceEngine";
 export * from "./cashboxOperations";
-export * from "./PaymentProcessingModal";
 export * from "./ExpressFiscalReceiptModal";
 export * from "./RefundReceiptModal";
