@@ -26,6 +26,7 @@ import {
 	Users,
 	Sparkles,
 	Zap,
+	Percent,
 } from "lucide-react";
 import {
 	type SberPosTransactionResponse,
@@ -60,6 +61,10 @@ export interface PaymentModalProps {
 	readonly cashierName?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
+	readonly initialDiscountPercent?: number | undefined;
+	readonly initialCustomDiscountRub?: number | undefined;
+	readonly initialDiscountReason?: string | undefined;
+	readonly initialWarranty100?: boolean | undefined;
 	readonly onPrintInvoice?: (() => void) | undefined;
 	readonly onPrintAct?: (() => void) | undefined;
 	readonly onClose: () => void;
@@ -68,7 +73,226 @@ export interface PaymentModalProps {
 		amountKopecks: number;
 		rrn?: string | undefined;
 		authCode?: string | undefined;
+		discountRub?: number | undefined;
+		discountPercent?: number | undefined;
+		rawTotalRub?: number | undefined;
+		discountReason?: string | undefined;
+		[key: string]: unknown;
 	}) => void) | undefined;
+}
+
+export interface PaymentDiscountCalculation {
+	readonly rawTotalDueRub: number;
+	readonly discountRub: number;
+	readonly discountKopecks: number;
+	readonly totalDueRub: number;
+	readonly totalDueKopecks: number;
+	readonly effectiveDiscountPercent: number;
+	readonly discountPercent: number;
+	readonly isWarranty100: boolean;
+}
+
+/**
+ * Wave 66 (Feature 255): Doctor Autonomy & Multi-Tier Discounts calculation (Mandates 8b, 8e п. 7, 8k, 8n).
+ * Guarantees penny-exact integer kopeck calculations without IEEE-754 float drift.
+ */
+export function calculatePaymentDiscount(
+	rawTotalDueRub: number,
+	options: {
+		isWarranty100?: boolean;
+		customDiscountRub?: number;
+		discountPercent?: number;
+	} = {},
+): PaymentDiscountCalculation {
+	const rawKop = rubToKopecks(rawTotalDueRub);
+	if (options.isWarranty100) {
+		return {
+			rawTotalDueRub,
+			discountRub: rawTotalDueRub,
+			discountKopecks: rawKop,
+			totalDueRub: 0,
+			totalDueKopecks: 0,
+			effectiveDiscountPercent: 100,
+			discountPercent: 100,
+			isWarranty100: true,
+		};
+	}
+	if (options.customDiscountRub !== undefined && options.customDiscountRub > 0) {
+		const customKop = rubToKopecks(options.customDiscountRub);
+		const cappedDiscountKop = Math.min(rawKop, customKop);
+		const dueKop = Math.max(0, rawKop - cappedDiscountKop);
+		const effPercent = rawKop > 0 ? Number(((cappedDiscountKop / rawKop) * 100).toFixed(2)) : 0;
+		return {
+			rawTotalDueRub,
+			discountRub: kopecksToRub(cappedDiscountKop),
+			discountKopecks: cappedDiscountKop,
+			totalDueRub: kopecksToRub(dueKop),
+			totalDueKopecks: dueKop,
+			effectiveDiscountPercent: effPercent,
+			discountPercent: effPercent,
+			isWarranty100: false,
+		};
+	}
+	if (options.discountPercent !== undefined && options.discountPercent > 0) {
+		const discountKop = Math.round((rawKop * options.discountPercent) / 100);
+		const cappedDiscountKop = Math.min(rawKop, discountKop);
+		const dueKop = Math.max(0, rawKop - cappedDiscountKop);
+		return {
+			rawTotalDueRub,
+			discountRub: kopecksToRub(cappedDiscountKop),
+			discountKopecks: cappedDiscountKop,
+			totalDueRub: kopecksToRub(dueKop),
+			totalDueKopecks: dueKop,
+			effectiveDiscountPercent: options.discountPercent,
+			discountPercent: options.discountPercent,
+			isWarranty100: false,
+		};
+	}
+	return {
+		rawTotalDueRub,
+		discountRub: 0,
+		discountKopecks: 0,
+		totalDueRub: rawTotalDueRub,
+		totalDueKopecks: rawKop,
+		effectiveDiscountPercent: 0,
+		discountPercent: 0,
+		isWarranty100: false,
+	};
+}
+
+export function generateInvoicePrintHtml(params: {
+	invoiceNumber: string;
+	clinicLegalName: string;
+	patientName: string;
+	effectiveCashier: string;
+	rawTotalDueRub: number;
+	discountRub: number;
+	effectiveDiscountPercent: number;
+	discountReason: string;
+	totalDueRub: number;
+	isWarranty100?: boolean;
+	dateStr?: string;
+}): string {
+	const discountInfoHtml =
+		params.discountRub > 0
+			? `<div class="discount-block" style="margin: 16px 0; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+  <div>Сумма без скидки: <strong>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</strong></div>
+  <div style="color: #b45309; font-weight: 600; margin-top: 4px;">Скидка: ${params.discountRub.toLocaleString("ru-RU")} ₽ (${params.effectiveDiscountPercent}%${params.discountReason ? ` — ${params.discountReason}` : ""})</div>
+</div>`
+			: "";
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Счёт на оплату ${params.invoiceNumber}</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
+.header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
+h1 { margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
+.clinic { font-size: 13px; color: #475569; }
+.patient { margin: 16px 0; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+th { background: #f8fafc; font-weight: 700; }
+.total { text-align: right; font-size: 16px; font-weight: 800; margin-top: 20px; }
+.footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>СЧЁТ НА ОПЛАТУ № ${params.invoiceNumber}</h1>
+  <div class="clinic">${params.clinicLegalName} • Стоматологические услуги • Без НДС (пп. 2 п. 2 ст. 149 НК РФ)</div>
+</div>
+<div class="patient">
+  <div><strong>Плательщик:</strong> ${params.patientName}</div>
+  <div><strong>Врач / Кассир:</strong> ${params.effectiveCashier}</div>
+  <div><strong>Дата:</strong> ${params.dateStr || new Date().toLocaleDateString("ru-RU")}</div>
+</div>
+<table>
+  <thead>
+    <tr><th>№</th><th>Наименование медицинской услуги</th><th>Кол-во</th><th>Сумма</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Стоматологическое лечение по наряду-заказу</td><td>1</td><td>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
+  </tbody>
+</table>
+${discountInfoHtml}
+<div class="total">Итого к оплате: ${params.isWarranty100 ? "0 ₽ (Скидка 100% — Гарантия)" : `${params.totalDueRub.toLocaleString("ru-RU")} ₽`}</div>
+<div class="footer">
+  <div>Врач-стоматолог: ________________ / ${params.effectiveCashier} /</div>
+  <div>М.П.</div>
+</div>
+</body>
+</html>`;
+}
+
+export function generateActPrintHtml(params: {
+	actNumber: string;
+	clinicLegalName: string;
+	patientName: string;
+	effectiveCashier: string;
+	rawTotalDueRub: number;
+	discountRub: number;
+	effectiveDiscountPercent: number;
+	discountReason: string;
+	totalDueRub: number;
+	isWarranty100?: boolean;
+	dateStr?: string;
+}): string {
+	const discountInfoHtml =
+		params.discountRub > 0
+			? `<div class="discount-block" style="margin: 16px 0; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+  <div>Сумма без скидки: <strong>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</strong></div>
+  <div style="color: #b45309; font-weight: 600; margin-top: 4px;">Скидка: ${params.discountRub.toLocaleString("ru-RU")} ₽ (${params.effectiveDiscountPercent}%${params.discountReason ? ` — ${params.discountReason}` : ""})</div>
+</div>`
+			: "";
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Акт выполненных работ ${params.actNumber}</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
+.header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
+h1 { margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
+.clinic { font-size: 13px; color: #475569; }
+.patient { margin: 16px 0; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+th { background: #f8fafc; font-weight: 700; }
+.total { text-align: right; font-size: 16px; font-weight: 800; margin-top: 20px; }
+.footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>АКТ СДАЧИ-ПРИЕМКИ ВЫПОЛНЕННЫХ СТОМАТОЛОГИЧЕСКИХ РАБОТ № ${params.actNumber}</h1>
+  <div class="clinic">${params.clinicLegalName} • Приказ Минздрава РФ № 804н • Закон РФ № 2300-1</div>
+</div>
+<div class="patient">
+  <div><strong>Пациент (Заказчик):</strong> ${params.patientName}</div>
+  <div><strong>Лечащий врач (Исполнитель):</strong> ${params.effectiveCashier}</div>
+  <div><strong>Дата:</strong> ${params.dateStr || new Date().toLocaleDateString("ru-RU")}</div>
+</div>
+<table>
+  <thead>
+    <tr><th>№</th><th>Код услуги (804н)</th><th>Наименование услуги</th><th>Кол-во</th><th>Сумма</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>A16.07.002</td><td>Стоматологический прием и лечение</td><td>1</td><td>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
+  </tbody>
+</table>
+${discountInfoHtml}
+<div class="total">Всего оказано услуг на сумму: ${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</div>
+<div class="total" style="margin-top: 6px; font-size: 16px;">Итого к оплате: ${params.isWarranty100 ? "0 ₽ (Скидка 100% — Гарантия)" : `${params.totalDueRub.toLocaleString("ru-RU")} ₽`}</div>
+<div class="footer">
+  <div>Заказчик: ________________ / ${params.patientName} /</div>
+  <div>Исполнитель: ________________ / ${params.effectiveCashier} /</div>
+</div>
+</body>
+</html>`;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -87,6 +311,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	cashierName,
 	doctorName,
 	clinicLegalName = "ООО «ДЕНТЕ»",
+	initialDiscountPercent = 0,
+	initialCustomDiscountRub = 0,
+	initialDiscountReason = "",
+	initialWarranty100 = false,
 	onPrintInvoice,
 	onPrintAct,
 	onClose,
@@ -100,9 +328,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	// Solo Doctor & Cashier Autonomy: fallback to doctor name or default solo clinic (Mandates 8e & 8n)
 	const effectiveCashier = (cashierName || "").trim() || (doctorName || "").trim() || "Врач-стоматолог";
 
-	// 100% Warranty discount toggle (Doctor Autonomy Mandate 8e Item 7)
-	const [isWarranty100, setIsWarranty100] = useState<boolean>(false);
-
 	// Multi-tender split payment state
 	const rawTotalDueRub =
 		propAmountRub !== undefined
@@ -110,7 +335,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			: amountKopecks !== undefined
 				? Number((amountKopecks / 100).toFixed(2))
 				: 0;
-	const totalDueRub = isWarranty100 ? 0 : rawTotalDueRub;
+
+	// Doctor Autonomy Discounts (Mandate 8e Item 7)
+	const [isWarranty100, setIsWarranty100] = useState<boolean>(initialWarranty100);
+	const [discountPercent, setDiscountPercent] = useState<number>(initialDiscountPercent || (initialWarranty100 ? 100 : 0));
+	const [customDiscountRub, setCustomDiscountRub] = useState<number>(initialCustomDiscountRub);
+	const [discountReason, setDiscountReason] = useState<string>(
+		initialDiscountReason || (initialWarranty100 ? "Гарантийная переделка" : "")
+	);
+
+	const discountCalc = useMemo(() => {
+		return calculatePaymentDiscount(rawTotalDueRub, {
+			isWarranty100,
+			customDiscountRub,
+			discountPercent,
+		});
+	}, [rawTotalDueRub, isWarranty100, customDiscountRub, discountPercent]);
+
+	const { discountRub, totalDueRub, effectiveDiscountPercent } = discountCalc;
 
 	const [splitCardRub, setSplitCardRub] = useState<number>(totalDueRub);
 	const [splitCashRub, setSplitCashRub] = useState<number>(0);
@@ -129,6 +371,94 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		return calculateCashChange(totalDueRub, receivedCashRub);
 	}, [receivedCashRub, totalDueRub]);
 
+	const syncSplitAndCashToTotal = (newTotalRub: number) => {
+		setReceivedCashRub(newTotalRub);
+		if (newTotalRub === 0) {
+			setSplitCardRub(0);
+			setSplitCashRub(0);
+			setSplitDepositRub(0);
+			setSplitSbpRub(0);
+			setSplitCertificateRub(0);
+			setSplitBonusRub(0);
+			return;
+		}
+		if (splitCashRub > 0 && splitCardRub === 0) {
+			const other = splitDepositRub + splitSbpRub + splitCertificateRub + splitBonusRub;
+			const cashRemainder = Math.max(0, Number((newTotalRub - other).toFixed(2)));
+			setSplitCashRub(cashRemainder);
+		} else {
+			const other = splitCashRub + splitDepositRub + splitSbpRub + splitCertificateRub + splitBonusRub;
+			const cardRemainder = Math.max(0, Number((newTotalRub - other).toFixed(2)));
+			setSplitCardRub(cardRemainder);
+		}
+	};
+
+	const applyDiscountPreset = (percent: number, reason: string) => {
+		const newPercent = Math.max(0, Math.min(100, percent));
+		const isWarranty = newPercent === 100 && (reason.includes("Гарант") || isWarranty100);
+		setIsWarranty100(isWarranty);
+		setDiscountPercent(newPercent);
+		setCustomDiscountRub(0);
+		setDiscountReason(reason);
+
+		const calc = calculatePaymentDiscount(rawTotalDueRub, {
+			isWarranty100: isWarranty,
+			customDiscountRub: 0,
+			discountPercent: newPercent,
+		});
+		syncSplitAndCashToTotal(calc.totalDueRub);
+
+		if (newPercent === 0) {
+			showToast("Скидка сброшена (Без скидки 0%)", "info", 1500);
+		} else {
+			showToast(
+				`Применена скидка ${newPercent}% (${reason}): к оплате ${calc.totalDueRub.toLocaleString("ru-RU")} ₽`,
+				"info",
+				2500,
+			);
+		}
+	};
+
+	const applyWarranty100Preset = () => {
+		setIsWarranty100(true);
+		setDiscountPercent(100);
+		setCustomDiscountRub(0);
+		setDiscountReason("Гарантийная переделка");
+		syncSplitAndCashToTotal(0);
+		showToast("Применена скидка 100% (Гарантийная переделка • 0 ₽)", "info", 2500);
+	};
+
+	const handleCustomPercentChange = (val: number) => {
+		const clamped = Math.max(0, Math.min(100, val));
+		const isWarranty = clamped === 100;
+		setIsWarranty100(isWarranty);
+		setDiscountPercent(clamped);
+		setCustomDiscountRub(0);
+		setDiscountReason(clamped > 0 ? "Индивидуальная скидка врача" : "");
+
+		const calc = calculatePaymentDiscount(rawTotalDueRub, {
+			isWarranty100: isWarranty,
+			customDiscountRub: 0,
+			discountPercent: clamped,
+		});
+		syncSplitAndCashToTotal(calc.totalDueRub);
+	};
+
+	const handleCustomDiscountRubChange = (val: number) => {
+		const clamped = Math.max(0, val);
+		setIsWarranty100(false);
+		setDiscountPercent(0);
+		setCustomDiscountRub(clamped);
+		setDiscountReason(clamped > 0 ? "Индивидуальная скидка врача (в рублях)" : "");
+
+		const calc = calculatePaymentDiscount(rawTotalDueRub, {
+			isWarranty100: false,
+			customDiscountRub: clamped,
+			discountPercent: 0,
+		});
+		syncSplitAndCashToTotal(calc.totalDueRub);
+	};
+
 	const handleInnChange = (value: string) => {
 		const cleaned = value.replace(/\D/g, "").slice(0, 12);
 		setBuyerInn(cleaned);
@@ -145,16 +475,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	};
 
 	const applyExactCashPreset = () => {
-		setIsWarranty100(false);
+		if (isWarranty100) {
+			setIsWarranty100(false);
+			setDiscountPercent(0);
+			setDiscountReason("");
+		}
 		setActiveMethod("cash");
-		setReceivedCashRub(rawTotalDueRub);
-		setSplitCashRub(rawTotalDueRub);
+		const effectiveTotal = isWarranty100 ? rawTotalDueRub : totalDueRub;
+		setReceivedCashRub(effectiveTotal);
+		setSplitCashRub(effectiveTotal);
 		setSplitCardRub(0);
 		setSplitDepositRub(0);
 		setSplitSbpRub(0);
 		setSplitCertificateRub(0);
 		setSplitBonusRub(0);
-		showToast(`Применен пресет: Без сдачи (Ровно сумма счёта: ${rawTotalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
+		showToast(`Применен пресет: Без сдачи (Ровно сумма счёта: ${effectiveTotal.toLocaleString("ru-RU")} ₽)`, "info", 2000);
 	};
 
 	const applySpendAllDepositBonusPreset = () => {
@@ -227,21 +562,30 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	};
 
 	const applyFullCardPreset = () => {
-		setIsWarranty100(false);
+		if (isWarranty100) {
+			setIsWarranty100(false);
+			setDiscountPercent(0);
+			setDiscountReason("");
+		}
 		setActiveMethod("card_terminal");
-		setSplitCardRub(rawTotalDueRub);
+		const effectiveTotal = isWarranty100 ? rawTotalDueRub : totalDueRub;
+		setSplitCardRub(effectiveTotal);
 		setSplitCashRub(0);
 		setSplitDepositRub(0);
 		setSplitSbpRub(0);
 		setSplitCertificateRub(0);
 		setSplitBonusRub(0);
-		showToast(`Применен пресет: Оплата картой 100% (${rawTotalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
+		showToast(`Применен пресет: Оплата картой 100% (${effectiveTotal.toLocaleString("ru-RU")} ₽)`, "info", 2000);
 	};
 
 	const applyDepositPlusCardPreset = () => {
-		setIsWarranty100(false);
-		const available = Math.min(rawTotalDueRub, Math.max(0, patientDepositRub));
-		const remainder = Number((rawTotalDueRub - available).toFixed(2));
+		if (isWarranty100) {
+			setIsWarranty100(false);
+			setDiscountPercent(0);
+			setDiscountReason("");
+		}
+		const available = Math.min(totalDueRub, Math.max(0, patientDepositRub));
+		const remainder = Number((totalDueRub - available).toFixed(2));
 		setSplitDepositRub(available);
 		setSplitCardRub(remainder);
 		setSplitCashRub(0);
@@ -257,7 +601,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	};
 
 	const applyThreeWayCashCardAdvancePreset = () => {
-		setIsWarranty100(false);
+		if (isWarranty100) {
+			setIsWarranty100(false);
+			setDiscountPercent(0);
+			setDiscountReason("");
+		}
 		const totalKop = rubToKopecks(totalDueRub);
 		const availDepositRub = patientDepositRub > 0 ? patientDepositRub : 0;
 		const availFamilyRub = patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : 0;
@@ -284,66 +632,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		);
 	};
 
-	const applyWarranty100Preset = () => {
-		setIsWarranty100(true);
-		setSplitCardRub(0);
-		setSplitCashRub(0);
-		setSplitDepositRub(0);
-		setSplitSbpRub(0);
-		setSplitCertificateRub(0);
-		setSplitBonusRub(0);
-		showToast("Применена скидка 100% (Гарантийная переделка • 0 ₽)", "info", 2500);
-	};
-
 	const handleQuickPrintInvoice = () => {
 		if (onPrintInvoice) {
 			onPrintInvoice();
 			return;
 		}
 		const invoiceNumber = invoiceId ? `СЧ-${invoiceId.slice(0, 8).toUpperCase()}` : `СЧ-${Date.now().toString().slice(-6)}`;
-		const invoiceHtml = `<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<title>Счет на оплату ${invoiceNumber}</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
-.header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
-h1 { margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
-.clinic { font-size: 13px; color: #475569; }
-.patient { margin: 16px 0; font-size: 14px; }
-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
-th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-th { background: #f8fafc; font-weight: 700; }
-.total { text-align: right; font-size: 16px; font-weight: 800; margin-top: 20px; }
-.footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; }
-</style>
-</head>
-<body>
-<div class="header">
-  <h1>СЧЕТ НА ОПЛАТУ № ${invoiceNumber}</h1>
-  <div class="clinic">${clinicLegalName} • Стоматологические услуги • Без НДС (пп. 2 п. 2 ст. 149 НК РФ)</div>
-</div>
-<div class="patient">
-  <div><strong>Плательщик:</strong> ${patientName}</div>
-  <div><strong>Врач / Кассир:</strong> ${effectiveCashier}</div>
-  <div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div>
-</div>
-<table>
-  <thead>
-    <tr><th>№</th><th>Наименование медицинской услуги</th><th>Кол-во</th><th>Сумма</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>1</td><td>Стоматологическое лечение по наряду-заказу</td><td>1</td><td>${rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
-  </tbody>
-</table>
-<div class="total">Итого к оплате: ${isWarranty100 ? "0 ₽ (Скидка 100% — Гарантия)" : `${rawTotalDueRub.toLocaleString("ru-RU")} ₽`}</div>
-<div class="footer">
-  <div>Врач-стоматолог: ________________ / ${effectiveCashier} /</div>
-  <div>М.П.</div>
-</div>
-</body>
-</html>`;
+		const invoiceHtml = generateInvoicePrintHtml({
+			invoiceNumber,
+			clinicLegalName,
+			patientName,
+			effectiveCashier,
+			rawTotalDueRub,
+			discountRub,
+			effectiveDiscountPercent,
+			discountReason,
+			totalDueRub,
+			isWarranty100,
+		});
 		void hardwarePrinter.printHtmlWithPopupFallback(invoiceHtml, {
 			title: `Счет № ${invoiceNumber}`,
 			downloadFilename: `Schet_${invoiceNumber}.html`,
@@ -360,49 +666,18 @@ th { background: #f8fafc; font-weight: 700; }
 			return;
 		}
 		const actNumber = invoiceId ? `АКТ-${invoiceId.slice(0, 8).toUpperCase()}` : `АКТ-${Date.now().toString().slice(-6)}`;
-		const actHtml = `<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<title>Акт выполненных работ ${actNumber}</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
-.header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
-h1 { margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
-.clinic { font-size: 13px; color: #475569; }
-.patient { margin: 16px 0; font-size: 14px; }
-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
-th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-th { background: #f8fafc; font-weight: 700; }
-.total { text-align: right; font-size: 16px; font-weight: 800; margin-top: 20px; }
-.footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; }
-</style>
-</head>
-<body>
-<div class="header">
-  <h1>АКТ СДАЧИ-ПРИЕМКИ ВЫПОЛНЕННЫХ СТОМАТОЛОГИЧЕСКИХ РАБОТ № ${actNumber}</h1>
-  <div class="clinic">${clinicLegalName} • Приказ Минздрава РФ № 804н • Закон РФ № 2300-1</div>
-</div>
-<div class="patient">
-  <div><strong>Пациент (Заказчик):</strong> ${patientName}</div>
-  <div><strong>Лечащий врач (Исполнитель):</strong> ${effectiveCashier}</div>
-  <div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div>
-</div>
-<table>
-  <thead>
-    <tr><th>№</th><th>Код услуги (804н)</th><th>Наименование услуги</th><th>Кол-во</th><th>Сумма</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>1</td><td>A16.07.002</td><td>Стоматологический прием и лечение</td><td>1</td><td>${rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
-  </tbody>
-</table>
-<div class="total">Всего оказано услуг на сумму: ${isWarranty100 ? "0 ₽ (Скидка 100% — Гарантия)" : `${rawTotalDueRub.toLocaleString("ru-RU")} ₽`}</div>
-<div class="footer">
-  <div>Заказчик: ________________ / ${patientName} /</div>
-  <div>Исполнитель: ________________ / ${effectiveCashier} /</div>
-</div>
-</body>
-</html>`;
+		const actHtml = generateActPrintHtml({
+			actNumber,
+			clinicLegalName,
+			patientName,
+			effectiveCashier,
+			rawTotalDueRub,
+			discountRub,
+			effectiveDiscountPercent,
+			discountReason,
+			totalDueRub,
+			isWarranty100,
+		});
 		void hardwarePrinter.printHtmlWithPopupFallback(actHtml, {
 			title: `Акт № ${actNumber}`,
 			downloadFilename: `Akt_${actNumber}.html`,
@@ -474,6 +749,10 @@ th { background: #f8fafc; font-weight: 700; }
 			onSuccess({
 				method: "cash",
 				amountKopecks: isWarranty100 ? 0 : rubToKopecks(effectiveAmountRub),
+				discountRub,
+				discountPercent: effectiveDiscountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || undefined,
 				...paymentData,
 			});
 			onClose();
@@ -556,7 +835,7 @@ th { background: #f8fafc; font-weight: 700; }
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${innNote}`,
+					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}`,
 				}),
 			});
 
@@ -573,7 +852,11 @@ th { background: #f8fafc; font-weight: 700; }
 			showToast(`Комбинированная оплата ${totalDueRub} ₽ успешно принята (${effectiveCashier})`, "success");
 			onSuccess({
 				method: "split",
-				amountKopecks: isWarranty100 ? 0 : (amountKopecks ?? Math.round(totalDueRub * 100)),
+				amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
+				discountRub,
+				discountPercent: effectiveDiscountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || undefined,
 				...paymentData,
 			});
 			onClose();
@@ -594,7 +877,7 @@ th { background: #f8fafc; font-weight: 700; }
 				"Idempotency-Key": clientMutationId,
 			});
 
-			const amountRubNumber = Number((effectiveAmountKopecks / 100).toFixed(2));
+			const amountRubNumber = totalDueRub;
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
 				headers,
@@ -606,8 +889,8 @@ th { background: #f8fafc; font-weight: 700; }
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
 					note: source === "family"
-						? `Оплата с семейного баланса (${amountRub} ₽)`
-						: `Оплата с лицевого счета / аванса (${amountRub} ₽)`,
+						? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}`
+						: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}`,
 				}),
 			});
 
@@ -623,13 +906,17 @@ th { background: #f8fafc; font-weight: 700; }
 			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
 			showToast(
 				source === "family"
-					? `Оплата ${amountRub} ₽ с семейного баланса успешно списана`
-					: `Оплата ${amountRub} ₽ с аванса/депозита успешно списана`,
+					? `Оплата ${totalDueRub} ₽ с семейного баланса успешно списана`
+					: `Оплата ${totalDueRub} ₽ с аванса/депозита успешно списана`,
 				"success",
 			);
 			onSuccess({
 				method: source,
-				amountKopecks: amountKopecks ?? Math.round(totalDueRub * 100),
+				amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
+				discountRub,
+				discountPercent: effectiveDiscountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || undefined,
 				...paymentData,
 			});
 			onClose();
@@ -675,6 +962,10 @@ th { background: #f8fafc; font-weight: 700; }
 			amountKopecks: posRes.amountKop,
 			rrn: posRes.rrn,
 			authCode: posRes.authCode,
+			discountRub,
+			discountPercent: effectiveDiscountPercent,
+			rawTotalRub: rawTotalDueRub,
+			discountReason: discountReason || undefined,
 		});
 		setTimeout(() => {
 			onClose();
@@ -692,9 +983,17 @@ th { background: #f8fafc; font-weight: 700; }
 				{/* Modal Header */}
 				<div className="p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
 					<div>
-						<h2 id="payment-modal-title" className="text-base sm:text-lg font-bold m-0 flex items-center gap-2">
+						<h2 id="payment-modal-title" className="text-base sm:text-lg font-bold m-0 flex items-center gap-2 flex-wrap">
 							<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
-							<span>Прием оплаты • {amountRub} ₽</span>
+							<span>Прием оплаты • {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+							{discountRub > 0 && (
+								<span
+									className="text-xs font-normal line-through text-[var(--muted,#64748b)]"
+									data-testid="text-payment-original-total"
+								>
+									{rawTotalDueRub.toLocaleString("ru-RU")} ₽
+								</span>
+							)}
 							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 inline-flex items-center gap-1">
 								<CheckCircle2 size={12} />
 								<span>54-ФЗ</span>
@@ -739,17 +1038,140 @@ th { background: #f8fafc; font-weight: 700; }
 					</div>
 				</div>
 
-				{/* 1-Click Fast Presets Bar (Mandates 8e & 8n: Frictionless checkout) */}
-				<div className="p-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
-					<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--muted,#64748b)]">
-						<Zap size={14} className="text-amber-500 shrink-0" />
-						<span>1-клик пресеты:</span>
+				{/* 1-Click Fast Presets & Doctor Discounts Bar (Mandates 8c, 8d, 8e п. 7, 8k, 8n: Frictionless checkout & doctor autonomy discounts) */}
+				<div className="p-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] space-y-2">
+					{/* Doctor Discounts Row */}
+					<div className="flex items-center justify-between gap-2 flex-wrap">
+						<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
+							<Percent size={14} className="text-amber-500 shrink-0" />
+							<span>Скидки врача:</span>
+							{discountRub > 0 && (
+								<span
+									className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+									data-testid="badge-discount-active"
+								>
+									-{effectiveDiscountPercent}% ({discountRub.toLocaleString("ru-RU")} ₽)
+									{discountReason ? ` • ${discountReason}` : ""}
+								</span>
+							)}
+						</div>
+						<div className="flex items-center gap-1.5">
+							<label htmlFor="input-discount-custom-percent" className="text-[11px] font-medium text-[var(--muted,#64748b)]">
+								Своя скидка, %:
+							</label>
+							<div className="relative">
+								<input
+									id="input-discount-custom-percent"
+									type="number"
+									min={0}
+									max={100}
+									step="1"
+									value={discountPercent || ""}
+									onChange={(e) => handleCustomPercentChange(parseFloat(e.target.value) || 0)}
+									placeholder="0%"
+									data-testid="input-discount-custom-percent"
+									className="h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-amber-500"
+								/>
+								<span className="absolute right-2 top-2 text-[10px] text-[var(--muted,#64748b)] pointer-events-none">%</span>
+							</div>
+						</div>
 					</div>
+
+					{/* 1-Click Discount Preset Buttons */}
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<button
 							type="button"
+							onClick={() => applyDiscountPreset(0, "")}
+							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+								effectiveDiscountPercent === 0 && !isWarranty100
+									? "bg-slate-700 text-white border-slate-700 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-slate-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-discount-0"
+							title="Без скидки 0%"
+						>
+							<span>Без скидки 0%</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => applyDiscountPreset(5, "Пенсионная / Утренняя")}
+							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+								effectiveDiscountPercent === 5 && !isWarranty100
+									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-discount-5"
+							title="Скидка 5% (Пенсионная / Утренняя)"
+						>
+							<Percent size={12} className={effectiveDiscountPercent === 5 && !isWarranty100 ? "text-white" : "text-amber-600"} />
+							<span>-5% Пенс/Утро</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => applyDiscountPreset(10, "Постоянный пациент / Семейная скидка")}
+							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+								effectiveDiscountPercent === 10 && !isWarranty100
+									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-discount-10"
+							title="Скидка 10% (Постоянный пациент / Семейная скидка)"
+						>
+							<Percent size={12} className={effectiveDiscountPercent === 10 && !isWarranty100 ? "text-white" : "text-amber-600"} />
+							<span>-10% Постоянный</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => applyDiscountPreset(15, "Комплексный план лечения")}
+							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+								effectiveDiscountPercent === 15 && !isWarranty100
+									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-discount-15"
+							title="Скидка 15% (Комплексный план лечения)"
+						>
+							<Percent size={12} className={effectiveDiscountPercent === 15 && !isWarranty100 ? "text-white" : "text-amber-600"} />
+							<span>-15% Комплекс</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => applyDiscountPreset(20, "Сотрудники клиники / Партнёры")}
+							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+								effectiveDiscountPercent === 20 && !isWarranty100
+									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-discount-20"
+							title="Скидка 20% (Сотрудники клиники / Партнёры)"
+						>
+							<Percent size={12} className={effectiveDiscountPercent === 20 && !isWarranty100 ? "text-white" : "text-amber-600"} />
+							<span>-20% Партнёр</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => applyDiscountPreset(50, "Персонал клиники / Близкие родственники")}
+							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+								effectiveDiscountPercent === 50 && !isWarranty100
+									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-discount-50"
+							title="Скидка 50% (Персонал клиники / Близкие родственники)"
+						>
+							<Percent size={12} className={effectiveDiscountPercent === 50 && !isWarranty100 ? "text-white" : "text-amber-600"} />
+							<span>-50% Персонал</span>
+						</button>
+
+						<button
+							type="button"
 							onClick={applyWarranty100Preset}
-							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 								isWarranty100
 									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
 									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
@@ -760,89 +1182,99 @@ th { background: #f8fafc; font-weight: 700; }
 							<ShieldCheck size={14} className={isWarranty100 ? "text-white" : "text-amber-600"} />
 							<span>Гарантия 100% (0 ₽)</span>
 						</button>
-						<button
-							type="button"
-							onClick={applyExactCashPreset}
-							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-								activeMethod === "cash" && cashChange.isExact
-									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-exact-cash"
-						>
-							<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
-							<span>Без сдачи (Ровно сумма счёта: {totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-						</button>
-						<button
-							type="button"
-							onClick={applySpendAllDepositBonusPreset}
-							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-								(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
-									? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-spend-all-deposit-bonus"
-							title="Списать весь доступный аванс или бонусы"
-						>
-							<Wallet size={14} className={(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0))) ? "text-white" : "text-purple-600"} />
-							<span>Списать весь аванс/бонусы</span>
-						</button>
-						<button
-							type="button"
-							onClick={apply5050CashCardPreset}
-							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-								activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
-									? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-50-50-cash-card"
-							title="50% суммы наличными в кассу + 50% картой через терминал"
-						>
-							<Coins size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 ? "text-white" : "text-indigo-600"} />
-							<span>50/50 Нал + Карта</span>
-						</button>
-						<button
-							type="button"
-							onClick={applyThreeWayCashCardAdvancePreset}
-							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-								activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
-									? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-three-way-split"
-							title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
-						>
-							<Users size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0 ? "text-white" : "text-teal-600"} />
-							<span>Нал + Карта + Аванс</span>
-						</button>
-						<button
-							type="button"
-							onClick={applyFullCardPreset}
-							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-								activeMethod === "card_terminal"
-									? "bg-blue-600 text-white border-blue-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-full-card"
-						>
-							<CreditCard size={14} className={activeMethod === "card_terminal" ? "text-white" : "text-blue-600"} />
-							<span>Картой 100% ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-						</button>
-						{patientDepositRub > 0 && (
+					</div>
+
+					{/* 1-Click Tender Presets Row */}
+					<div className="pt-1.5 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
+						<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--muted,#64748b)]">
+							<Zap size={14} className="text-amber-500 shrink-0" />
+							<span>1-клик оплата:</span>
+						</div>
+						<div className="flex items-center gap-1.5 flex-wrap">
 							<button
 								type="button"
-								onClick={applyDepositPlusCardPreset}
+								onClick={applyExactCashPreset}
 								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-									activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
+									activeMethod === "cash" && cashChange.isExact
+										? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-exact-cash"
+							>
+								<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
+								<span>Без сдачи (Ровно сумма счёта: {totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+							<button
+								type="button"
+								onClick={applySpendAllDepositBonusPreset}
+								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
 										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
 								}`}
-								data-testid="preset-deposit-plus-card"
+								data-testid="preset-spend-all-deposit-bonus"
+								title="Списать весь доступный аванс или бонусы"
 							>
-								<Wallet size={14} className={activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0 ? "text-white" : "text-purple-600"} />
-								<span>Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
+								<Wallet size={14} className={(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0))) ? "text-white" : "text-purple-600"} />
+								<span>Списать весь аванс/бонусы</span>
 							</button>
-						)}
+							<button
+								type="button"
+								onClick={apply5050CashCardPreset}
+								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
+										? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-50-50-cash-card"
+								title="50% суммы наличными в кассу + 50% картой через терминал"
+							>
+								<Coins size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 ? "text-white" : "text-indigo-600"} />
+								<span>50/50 Нал + Карта</span>
+							</button>
+							<button
+								type="button"
+								onClick={applyThreeWayCashCardAdvancePreset}
+								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-three-way-split"
+								title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
+							>
+								<Users size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0 ? "text-white" : "text-teal-600"} />
+								<span>Нал + Карта + Аванс</span>
+							</button>
+							<button
+								type="button"
+								onClick={applyFullCardPreset}
+								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									activeMethod === "card_terminal"
+										? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-full-card"
+							>
+								<CreditCard size={14} className={activeMethod === "card_terminal" ? "text-white" : "text-blue-600"} />
+								<span>Картой 100% ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+							{patientDepositRub > 0 && (
+								<button
+									type="button"
+									onClick={applyDepositPlusCardPreset}
+									className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+										activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
+											? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+											: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+									}`}
+									data-testid="preset-deposit-plus-card"
+								>
+									<Wallet size={14} className={activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0 ? "text-white" : "text-purple-600"} />
+									<span>Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
+								</button>
+							)}
+						</div>
 					</div>
 				</div>
 
@@ -1064,6 +1496,10 @@ th { background: #f8fafc; font-weight: 700; }
 									onSuccess({
 										method: "warranty_discount_100",
 										amountKopecks: 0,
+										discountRub: discountCalc.discountRub,
+										discountPercent: discountCalc.discountPercent,
+										rawTotalRub: rawTotalDueRub,
+										discountReason: discountReason || "Гарантийная переделка / скидка 100%",
 									});
 									onClose();
 								}}
@@ -1080,7 +1516,7 @@ th { background: #f8fafc; font-weight: 700; }
 						<SberPayIntegration
 							patientId={patientId}
 							patientName={patientName}
-							amountKopecks={amountKopecks ?? Math.round(totalDueRub * 100)}
+							amountKopecks={discountCalc.totalDueKopecks}
 							invoiceId={invoiceId}
 							visitId={visitId}
 							documentId={documentId}
