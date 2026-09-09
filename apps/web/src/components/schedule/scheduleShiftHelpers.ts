@@ -17,6 +17,7 @@ export type ShiftPresetType =
 	| "evening"
 	| "evening_15"
 	| "full"
+	| "full_9_21"
 	| "two_shifts"
 	| "2x2"
 	| "even_odd";
@@ -155,6 +156,13 @@ export function computeShiftAssignment(
 		shiftHours = "08:00–20:00";
 		startHour = 8;
 		endHour = 20;
+		subShifts = undefined;
+	} else if (preset === "full_9_21") {
+		shiftPreset = "full";
+		shiftLabel = "Весь день (09:00–21:00)";
+		shiftHours = "09:00–21:00";
+		startHour = 9;
+		endHour = 21;
 		subShifts = undefined;
 	} else if (preset === "2x2") {
 		shiftPreset = "two_shifts";

@@ -2623,6 +2623,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						type="button"
 						onClick={() => void handleSubmitBooking()}
 						disabled={isSubmitting}
+						data-testid="quick-drawer-save-btn"
 						className={`flex-1 min-h-[44px] px-5 font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
 							collision.hasCollision
 								? "bg-amber-600 hover:bg-amber-700 text-white"

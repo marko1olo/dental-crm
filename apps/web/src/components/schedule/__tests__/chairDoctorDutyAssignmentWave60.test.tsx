@@ -10,7 +10,9 @@ import { renderToString } from "react-dom/server";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { resolveChairDutyDoctor, QuickBookingDrawer } from "../QuickBookingDrawer";
 import { AppointmentModal } from "../AppointmentModal";
-import { DEFAULT_SOLO_CHAIR, type ChairDoctorShiftAssignment } from "../ScheduleGrid";
+import { DEFAULT_SOLO_CHAIR, type ChairDoctorShiftAssignment, ScheduleGrid } from "../ScheduleGrid";
+import { computeShiftAssignment } from "../scheduleShiftHelpers";
+import { applyCellShiftPreset } from "../chairRosterMath";
 
 // Setup storage mock for Node environment
 const storage: Record<string, string> = {};
@@ -401,6 +403,131 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 					`Found forbidden emoji "${emoji}" in QuickBookingDrawer output`,
 				);
 			}
+		});
+	});
+
+	describe("6. StomX / IDENT Shift Presets Coverage & Calculation", () => {
+		it("6.1. computeShiftAssignment calculates 'full_9_21' preset as 09:00–21:00", () => {
+			const res = computeShiftAssignment({
+				chair: mockChairs[0] as any,
+				preset: "full_9_21",
+				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович", specialty: "Терапевт" },
+				dateKey: "2026-09-10",
+			});
+			expect(res.startHour).toBe(9);
+			expect(res.endHour).toBe(21);
+			expect(res.shiftHours).toBe("09:00–21:00");
+			expect(res.shiftLabel).toBe("Весь день (09:00–21:00)");
+			expect(res.shiftPreset).toBe("full");
+		});
+
+		it("6.2. applyCellShiftPreset correctly generates 09:00–21:00 for full_9_21", () => {
+			const shifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-10",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "full_9_21",
+				doctorId: "doc-1",
+				staffList: mockDoctors as any,
+			});
+			expect(shifts.length).toBe(1);
+			expect(shifts[0]!.startTime).toBe("09:00");
+			expect(shifts[0]!.endTime).toBe("21:00");
+			expect(shifts[0]!.durationHours).toBe(12.0);
+		});
+
+		it("6.3. computeShiftAssignment correctly handles morning, evening, 2x2 and even_odd", () => {
+			const morn = computeShiftAssignment({
+				chair: mockChairs[0] as any,
+				preset: "morning",
+				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
+				dateKey: "2026-09-10",
+			});
+			expect(morn.shiftHours).toBe("08:00–14:00");
+			expect(morn.startHour).toBe(8);
+			expect(morn.endHour).toBe(14);
+
+			const eve = computeShiftAssignment({
+				chair: mockChairs[0] as any,
+				preset: "evening",
+				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
+				dateKey: "2026-09-10",
+			});
+			expect(eve.shiftHours).toBe("14:00–20:00");
+			expect(eve.startHour).toBe(14);
+			expect(eve.endHour).toBe(20);
+
+			const twoByTwo = computeShiftAssignment({
+				chair: mockChairs[0] as any,
+				preset: "2x2",
+				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
+				dateKey: "2026-09-10",
+			});
+			expect(twoByTwo.shiftLabel).toBe("2 через 2");
+			expect(twoByTwo.shiftHours).toBe("08:00–20:00");
+
+			const even = computeShiftAssignment({
+				chair: mockChairs[0] as any,
+				preset: "even_odd",
+				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
+				dateKey: "2026-09-10", // 10 is even -> morning
+			});
+			expect(even.shiftPreset).toBe("morning");
+			expect(even.shiftHours).toBe("08:00–14:00");
+		});
+	});
+
+	describe("7. Chair Column Header & Instant Reassignment Without Modal Hell", () => {
+		it("7.1. Renders chair header with testids and doctor duty badge", () => {
+			const html = renderToString(
+				React.createElement(ScheduleGrid, {
+					dashboard: mockDashboard,
+					dateKey: "2026-09-10",
+					appointments: [],
+					onSlotClick: () => {},
+					onAppointmentClick: () => {},
+					patientName: (_p: any, id: string | null) => (id ? "Пациент" : "—"),
+					formatTime: (iso: string) => iso.slice(11, 16),
+					toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+					appointmentLabels: mockAppointmentLabels,
+					chairDoctorAssignments: {
+						"chair-1": {
+							chairId: "chair-1",
+							chairName: "Кабинет 1 (Терапия)",
+							doctorId: "doc-1",
+							doctorName: "Иванов Иван Иванович",
+							shiftPreset: "full",
+							shiftHours: "08:00–20:00",
+							startHour: 8,
+							endHour: 20,
+						},
+					},
+				}),
+			);
+
+			expect(html).toContain('data-testid="chair-header-chair-1"');
+			expect(html).toContain('data-testid="chair-doctor-badge-chair-1"');
+			expect(html).toContain("Иванов И.И.");
+		});
+
+		it("7.2. 5-Second Booking: Assistant field is non-mandatory and allows save without assistant (Mandate 8e)", () => {
+			const html = renderToString(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: () => {},
+					dashboard: mockDashboard,
+					initialSlot: {
+						chairId: "chair-1",
+						doctorUserId: "doc-1",
+						dateKey: "2026-09-10",
+						startTime: "10:00",
+					},
+				}),
+			);
+
+			// Assistant is not forced or mandatory
+			assert.ok(!html.includes("Ассистент обязателен"));
+			expect(html).toContain("quick-drawer-save-btn");
 		});
 	});
 });

@@ -59,6 +59,7 @@ export { resolveChairDutyDoctor };
 export { useSchedule } from "./useSchedule";
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
+import "./chairSchedule.css";
 
 export interface ChairScheduleViewProps {
 	dashboard: Dashboard;
@@ -520,6 +521,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				| "evening"
 				| "evening_15"
 				| "full"
+				| "full_9_21"
 				| "2x2"
 				| "even_odd",
 		) => {
@@ -668,6 +670,13 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				shiftHours = "08:00–20:00";
 				startHour = 8;
 				endHour = 20;
+				subShifts = undefined;
+			} else if (preset === "full_9_21") {
+				shiftPreset = "full";
+				shiftLabel = "Весь день (09:00–21:00)";
+				shiftHours = "09:00–21:00";
+				startHour = 9;
+				endHour = 21;
 				subShifts = undefined;
 			} else if (preset === "2x2") {
 				shiftPreset = "two_shifts";
@@ -1654,7 +1663,16 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 													data-testid={`chair-view-shift-full-${chair.id}`}
 												>
 													<Clock size={12} className="text-[var(--teal)] shrink-0" />
-													<span>Весь день</span>
+													<span>Весь день 08-20</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => handleAssignShift(chair, "full_9_21")}
+													className="px-2 py-1.5 rounded-lg border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer"
+													data-testid={`chair-view-shift-full-9-21-${chair.id}`}
+												>
+													<Clock size={12} className="text-[var(--teal)] shrink-0" />
+													<span>Весь день 09-21</span>
 												</button>
 												<button
 													type="button"

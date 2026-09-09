@@ -69,6 +69,7 @@ import {
 	copyWeekShiftsToMonth,
 	applyDoctorChairWeeklyTemplate,
 } from "./roster/DoctorShiftRosterModal";
+import "./chairSchedule.css";
 
 export interface ChairDoctorSubShift {
 	doctorId: string;
@@ -85,7 +86,7 @@ export interface ChairDoctorShiftAssignment {
 	doctorId: string;
 	doctorName: string;
 	doctorSpecialty?: string | undefined;
-	shiftPreset?: "morning" | "evening" | "full" | "two_shifts" | "custom" | undefined;
+	shiftPreset?: "morning" | "morning_9" | "evening" | "evening_15" | "full" | "full_9_21" | "two_shifts" | "custom" | undefined;
 	shiftLabel?: string | undefined;
 	shiftHours: string;
 	startHour?: number | undefined;
@@ -117,6 +118,14 @@ export const CHAIR_SHIFT_PRESETS = [
 		name: "Весь день 08:00–20:00",
 		startHour: 8,
 		endHour: 20,
+	},
+	{
+		id: "full_9_21" as const,
+		label: "Весь день (09:00–21:00)",
+		hours: "09:00–21:00",
+		name: "Весь день 09:00–21:00",
+		startHour: 9,
+		endHour: 21,
 	},
 	{
 		id: "two_shifts" as const,
@@ -540,6 +549,60 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		[onQuickStatusChange, onAppointmentMove],
 	);
 
+	const handleReassignAppointmentChair = useCallback(
+		(appt: Appointment, targetChairId: string | null) => {
+			const pName = patientName ? patientName(dashboard?.patients ?? [], appt.patientId) : "Пациент";
+			const chairName = targetChairId
+				? dashboard?.clinicSettings?.chairs?.find((c) => c.id === targetChairId)?.name || (targetChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR.name : "Кресло")
+				: "Без кресла";
+
+			if (typeof onAppointmentMove === "function") {
+				void Promise.resolve(
+					onAppointmentMove(appt.id, {
+						chairId: targetChairId,
+						allowOverbooking: true,
+					}),
+				).then((result) => {
+					if (result !== false) {
+						showToast(`Прием ${pName} перенесен на ${chairName}`, "success", 3000);
+					}
+				});
+			} else {
+				showToast(`Прием ${pName} перенесен на ${chairName}`, "success", 3000);
+			}
+
+			setSelectedMobileAppt((prev) => (prev && prev.id === appt.id ? { ...prev, chairId: targetChairId } : prev));
+			setActiveMenuApptId(null);
+		},
+		[dashboard, onAppointmentMove, patientName],
+	);
+
+	const handleReassignAppointmentDoctor = useCallback(
+		(appt: Appointment, targetDoctorUserId: string) => {
+			const pName = patientName ? patientName(dashboard?.patients ?? [], appt.patientId) : "Пациент";
+			const docName = dashboard?.clinicSettings?.staff?.find((s) => s.id === targetDoctorUserId)?.fullName || "Врач";
+
+			if (typeof onAppointmentMove === "function") {
+				void Promise.resolve(
+					onAppointmentMove(appt.id, {
+						doctorUserId: targetDoctorUserId,
+						allowOverbooking: true,
+					}),
+				).then((result) => {
+					if (result !== false) {
+						showToast(`Врач приема ${pName} изменен на ${formatDoctorShortName(docName)}`, "success", 3000);
+					}
+				});
+			} else {
+				showToast(`Врач приема ${pName} изменен на ${formatDoctorShortName(docName)}`, "success", 3000);
+			}
+
+			setSelectedMobileAppt((prev) => (prev && prev.id === appt.id ? { ...prev, doctorUserId: targetDoctorUserId } : prev));
+			setActiveMenuApptId(null);
+		},
+		[dashboard, onAppointmentMove, patientName],
+	);
+
 	const staff = dashboard?.clinicSettings?.staff ?? [];
 	const doctors = useMemo(() => {
 		return staff.filter(
@@ -794,7 +857,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		(
 			chairId: string,
 			docId: string,
-			shiftPreset: "morning" | "evening" | "full" | "two_shifts",
+			shiftPreset: "morning" | "evening" | "full" | "full_9_21" | "two_shifts",
 			eveningDocId?: string,
 		) => {
 			const doc = doctors.find((d) => d.id === docId);
@@ -2038,6 +2101,24 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														onClick={() => {
 															const targetDocId = assignment?.doctorId || suggestedDoctor?.id || (doctors[0]?.id ?? "");
 															if (targetDocId) {
+																handleConfirmAssignDoctor(chair.id, targetDocId, "full_9_21");
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] flex items-center justify-start gap-1.5 cursor-pointer transition-all active:scale-98"
+														style={{ minHeight: "44px" }}
+														title="Весь день 09:00–21:00 (1 клик)"
+														aria-label={`Назначить смену на весь день 09:00–21:00 на кресло ${chair.name}`}
+														data-testid={`chair-popover-shift-full-9-21-${chair.id}`}
+													>
+														<Building2 size={15} className="text-[var(--teal)] shrink-0" aria-hidden="true" />
+														<span className="truncate">Весь день 09:00–21:00</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															const targetDocId = assignment?.doctorId || suggestedDoctor?.id || (doctors[0]?.id ?? "");
+															if (targetDocId) {
 																handleAssignDoctorWeek(chair.id, targetDocId);
 															}
 															setActiveHeaderDoctorPopoverChairId(null);
@@ -2498,7 +2579,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															</span>
 														</div>
 														{isSingleOnDuty && (
-															<span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+															<span
+																className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30"
+																data-testid={`chair-duty-badge-${chair.id}`}
+															>
 																<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
 																<span>● На смене</span>
 															</span>
@@ -3640,6 +3724,90 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																			</button>
 																		</div>
 
+																		{/* Сменить кресло (1 клик без модального ада) */}
+																		{effectiveChairs.length > 1 && (
+																			<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
+																				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+																					Сменить кресло (1 клик)
+																				</div>
+																				<div className="flex items-center gap-1 px-1 flex-wrap">
+																					{effectiveChairs.map((ch) => {
+																						const isCurrent = a.chairId === ch.id;
+																						return (
+																							<button
+																								key={ch.id}
+																								type="button"
+																								data-testid={`menu-reassign-chair-${a.id}-${ch.id}`}
+																								onClick={() => handleReassignAppointmentChair(a, ch.id)}
+																								className={`min-h-[36px] px-2 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer truncate max-w-[140px] flex items-center gap-1 ${
+																									isCurrent
+																										? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-2xs"
+																										: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+																								}`}
+																								title={`Переместить прием на кресло «${ch.name}»`}
+																							>
+																								<span
+																									className="w-2 h-2 rounded-full shrink-0"
+																									style={{ backgroundColor: ch.color || "var(--teal, #0d9488)" }}
+																								/>
+																								<span className="truncate">{ch.name}</span>
+																							</button>
+																						);
+																					})}
+																				</div>
+																			</div>
+																		)}
+
+																		{/* Сменить врача (1 клик без модального ада) */}
+																		{doctors.length > 1 && (
+																			<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
+																				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+																					Сменить врача (1 клик)
+																				</div>
+																				<div className="flex items-center gap-1 px-1 flex-wrap">
+																					{doctors.slice(0, 4).map((doc) => {
+																						const isCurrent = a.doctorUserId === doc.id;
+																						return (
+																							<button
+																								key={doc.id}
+																								type="button"
+																								data-testid={`menu-reassign-doctor-${a.id}-${doc.id}`}
+																								onClick={() => handleReassignAppointmentDoctor(a, doc.id)}
+																								className={`min-h-[36px] px-2 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer truncate max-w-[140px] flex items-center gap-1 ${
+																									isCurrent
+																										? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-2xs"
+																										: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+																								}`}
+																								title={`Передать прием врачу ${doc.fullName}`}
+																							>
+																								<span className="truncate">{formatDoctorShortName(doc.fullName)}</span>
+																							</button>
+																						);
+																					})}
+																					{doctors.length > 4 && (
+																						<select
+																							value={a.doctorUserId || ""}
+																							onChange={(e) => {
+																								if (e.target.value) {
+																									handleReassignAppointmentDoctor(a, e.target.value);
+																								}
+																							}}
+																							className="min-h-[36px] text-xs font-semibold border border-[var(--line)] rounded-lg px-2 bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer max-w-[130px] truncate"
+																							title="Выбрать другого врача"
+																							data-testid={`menu-reassign-doctor-select-${a.id}`}
+																						>
+																							<option value="" disabled>Все врачи...</option>
+																							{doctors.map((d) => (
+																								<option key={d.id} value={d.id}>
+																									{formatDoctorShortName(d.fullName)}
+																								</option>
+																							))}
+																						</select>
+																					)}
+																				</div>
+																			</div>
+																		)}
+
 																		{/* Освободить слот -> в лист ожидания */}
 																		<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
 																			<button
@@ -4243,6 +4411,88 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							</button>
 						</div>
 					</div>
+
+					{/* Mobile: 1-Click Reassign Chair without modal */}
+					{effectiveChairs.length > 1 && (
+						<div className="space-y-1.5 pt-2 border-t border-[var(--line)]">
+							<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
+								Сменить кресло (1 клик):
+							</div>
+							<div className="flex items-center gap-1.5 flex-wrap">
+								{effectiveChairs.map((ch) => {
+									const isCurrent = selectedMobileAppt.chairId === ch.id;
+									return (
+										<button
+											key={ch.id}
+											type="button"
+											data-testid={`mobile-reassign-chair-${selectedMobileAppt.id}-${ch.id}`}
+											onClick={() => handleReassignAppointmentChair(selectedMobileAppt, ch.id)}
+											className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+												isCurrent
+													? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-2xs"
+													: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+											}`}
+										>
+											<span
+												className="w-2 h-2 rounded-full shrink-0"
+												style={{ backgroundColor: ch.color || "var(--teal, #0d9488)" }}
+											/>
+											<span>{ch.name}</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
+
+					{/* Mobile: 1-Click Reassign Doctor without modal */}
+					{doctors.length > 1 && (
+						<div className="space-y-1.5 pt-2 border-t border-[var(--line)]">
+							<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
+								Сменить врача (1 клик):
+							</div>
+							<div className="flex items-center gap-1.5 flex-wrap">
+								{doctors.slice(0, 4).map((doc) => {
+									const isCurrent = selectedMobileAppt.doctorUserId === doc.id;
+									return (
+										<button
+											key={doc.id}
+											type="button"
+											data-testid={`mobile-reassign-doctor-${selectedMobileAppt.id}-${doc.id}`}
+											onClick={() => handleReassignAppointmentDoctor(selectedMobileAppt, doc.id)}
+											className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+												isCurrent
+													? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-2xs"
+													: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+											}`}
+										>
+											<span>{formatDoctorShortName(doc.fullName)}</span>
+										</button>
+									);
+								})}
+								{doctors.length > 4 && (
+									<select
+										value={selectedMobileAppt.doctorUserId || ""}
+										onChange={(e) => {
+											if (e.target.value) {
+												handleReassignAppointmentDoctor(selectedMobileAppt, e.target.value);
+											}
+										}}
+										className="min-h-[44px] text-xs font-semibold border border-[var(--line)] rounded-xl px-2.5 bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
+										title="Выбрать другого врача"
+										data-testid={`mobile-reassign-doctor-select-${selectedMobileAppt.id}`}
+									>
+										<option value="" disabled>Все врачи...</option>
+										{doctors.map((d) => (
+											<option key={d.id} value={d.id}>
+												{d.fullName}
+											</option>
+										))}
+									</select>
+								)}
+							</div>
+						</div>
+					)}
 
 					{/* Primary Action Button */}
 					<div className="pt-2">
