@@ -2398,8 +2398,10 @@ export const SurfaceSelector = ({
 /**
  * Splits teeth row into left & right halves at midline for quadrant alignment.
  */
-function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] } {
-	if (!teeth || !Array.isArray(teeth) || teeth.length <= 1) return { left: Array.isArray(teeth) ? teeth : [], right: [] };
+function splitArchAtMidline(teeth: number[] | null | undefined): { left: number[]; right: number[] } {
+	if (!teeth || !Array.isArray(teeth) || typeof (teeth as any).findIndex !== "function" || teeth.length <= 1) {
+		return { left: Array.isArray(teeth) ? [...teeth] : [], right: [] };
+	}
 	let splitIndex = teeth.findIndex((num, i) => {
 		if (i === 0) return false;
 		const prev = teeth[i - 1];
@@ -2419,27 +2421,42 @@ function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] 
 
 export function getQuadrantTeeth(
 	quadrant: OdontogramQuadrantId,
-	topTeeth: number[],
-	bottomTeeth: number[],
+	topTeeth?: number[] | null,
+	bottomTeeth?: number[] | null,
 	pediatricMode?: boolean,
 ): number[] {
-	const topSplit = splitArchAtMidline(topTeeth);
-	const bottomSplit = splitArchAtMidline(bottomTeeth);
+	const safeTopTeeth = Array.isArray(topTeeth) && topTeeth.length > 0
+		? topTeeth
+		: (pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH);
+	const safeBottomTeeth = Array.isArray(bottomTeeth) && bottomTeeth.length > 0
+		? bottomTeeth
+		: (pediatricMode ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH);
+
+	const topSplit = splitArchAtMidline(safeTopTeeth);
+	const bottomSplit = splitArchAtMidline(safeBottomTeeth);
 	switch (quadrant) {
 		case "Q1":
 		case "Q5":
-			return topSplit.left;
+			return topSplit.left.length > 0
+				? topSplit.left
+				: (quadrant === "Q5" ? [55, 54, 53, 52, 51] : [18, 17, 16, 15, 14, 13, 12, 11]);
 		case "Q2":
 		case "Q6":
-			return topSplit.right;
+			return topSplit.right.length > 0
+				? topSplit.right
+				: (quadrant === "Q6" ? [61, 62, 63, 64, 65] : [21, 22, 23, 24, 25, 26, 27, 28]);
 		case "Q4":
 		case "Q8":
-			return bottomSplit.left;
+			return bottomSplit.left.length > 0
+				? bottomSplit.left
+				: (quadrant === "Q8" ? [85, 84, 83, 82, 81] : [48, 47, 46, 45, 44, 43, 42, 41]);
 		case "Q3":
 		case "Q7":
-			return bottomSplit.right;
+			return bottomSplit.right.length > 0
+				? bottomSplit.right
+				: (quadrant === "Q7" ? [71, 72, 73, 74, 75] : [31, 32, 33, 34, 35, 36, 37, 38]);
 		default:
-			return [...topTeeth, ...bottomTeeth];
+			return [...safeTopTeeth, ...safeBottomTeeth];
 	}
 }
 
@@ -2700,20 +2717,25 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		return () => unsub();
 	}, [isPediatricEffective, onQuickStateChange]);
 
+	const defaultTopTeeth = isMixedEffective
+		? MIXED_TOP_TEETH
+		: isPediatricEffective
+			? PEDIATRIC_TOP_TEETH
+			: TOP_TEETH;
+	const defaultBottomTeeth = isMixedEffective
+		? MIXED_BOTTOM_TEETH
+		: isPediatricEffective
+			? PEDIATRIC_BOTTOM_TEETH
+			: BOTTOM_TEETH;
+
 	const topTeethList =
-		customTopTeeth ??
-		(isMixedEffective
-			? MIXED_TOP_TEETH
-			: isPediatricEffective
-				? PEDIATRIC_TOP_TEETH
-				: TOP_TEETH);
+		Array.isArray(customTopTeeth) && customTopTeeth.length > 0
+			? customTopTeeth
+			: defaultTopTeeth;
 	const bottomTeethList =
-		customBottomTeeth ??
-		(isMixedEffective
-			? MIXED_BOTTOM_TEETH
-			: isPediatricEffective
-				? PEDIATRIC_BOTTOM_TEETH
-				: BOTTOM_TEETH);
+		Array.isArray(customBottomTeeth) && customBottomTeeth.length > 0
+			? customBottomTeeth
+			: defaultBottomTeeth;
 
 	/**
 	 * Подгоняет дугу под фактическую ширину контейнера.
@@ -2734,7 +2756,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, pediatricMode)
 				: topTeethList;
 
-			const baseNaturalWidth = activeTeeth.reduce((acc, num) => {
+			const baseNaturalWidth = (Array.isArray(activeTeeth) ? activeTeeth : []).reduce((acc, num) => {
 				const cfg = getToothConfig(num);
 				const w = Number.parseFloat(cfg.width) || 75;
 				return acc + w + 6;
@@ -3178,7 +3200,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 
 						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row`}>
 							<div className="tooth-quadrant-group focused-quadrant-group">
-								{activeQuadrantTeeth.map((num) => {
+								{(Array.isArray(activeQuadrantTeeth) ? activeQuadrantTeeth : []).map((num) => {
 									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
 									return (
 										<ToothSVG

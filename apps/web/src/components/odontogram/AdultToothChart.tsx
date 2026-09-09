@@ -50,8 +50,14 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 	archScale = 1,
 	className = "",
 }) => {
-	const topTeethList = customTopTeeth ?? TOP_TEETH;
-	const bottomTeethList = customBottomTeeth ?? BOTTOM_TEETH;
+	const topTeethList =
+		Array.isArray(customTopTeeth) && customTopTeeth.length > 0
+			? customTopTeeth
+			: TOP_TEETH;
+	const bottomTeethList =
+		Array.isArray(customBottomTeeth) && customBottomTeeth.length > 0
+			? customBottomTeeth
+			: BOTTOM_TEETH;
 
 	const handleToothClick = (
 		e: React.MouseEvent,
@@ -114,7 +120,7 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 
 					<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row`}>
 						<div className="tooth-quadrant-group focused-quadrant-group">
-							{activeQuadrantTeeth.map((num) => {
+							{(Array.isArray(activeQuadrantTeeth) ? activeQuadrantTeeth : []).map((num) => {
 								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
 								return (
 									<ToothSVG

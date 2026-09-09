@@ -89,20 +89,19 @@ export const OdontogramStudioStandalone: React.FC = () => {
 	const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [focusedTooth, setFocusedTooth] = useState<number>(18);
-	const [currentTheme, setCurrentTheme] = useState<string>("dark");
+	const [currentTheme, setCurrentTheme] = useState<string>(() => {
+		if (typeof window !== "undefined") {
+			const stored = localStorage.getItem("dente_theme");
+			if (stored === "light" || stored === "dark") return stored;
+			const attr = document.documentElement.getAttribute("data-theme");
+			if (attr === "light" || attr === "dark") return attr;
+		}
+		return "dark";
+	});
 
-	// Radial menu state with anchor rect
-	const [radialMenu, setRadialMenu] = useState<{
-		toothNumber: number;
-		rect: { x: number; y: number; width: number; height: number };
-	} | null>(null);
-
-	// Theme toggle
-	const toggleTheme = useCallback(() => {
-		const next = currentTheme === "dark" ? "light" : "dark";
-		setCurrentTheme(next);
-		document.documentElement.setAttribute("data-theme", next);
-		if (next === "light") {
+	useEffect(() => {
+		document.documentElement.setAttribute("data-theme", currentTheme);
+		if (currentTheme === "light") {
 			document.documentElement.classList.remove("dark");
 			document.documentElement.classList.add("light");
 			document.body.className = "light";
@@ -112,6 +111,23 @@ export const OdontogramStudioStandalone: React.FC = () => {
 			document.body.className = "dark";
 		}
 	}, [currentTheme]);
+
+	// Radial menu state with anchor rect
+	const [radialMenu, setRadialMenu] = useState<{
+		toothNumber: number;
+		rect: { x: number; y: number; width: number; height: number };
+	} | null>(null);
+
+	// Theme toggle
+	const toggleTheme = useCallback(() => {
+		setCurrentTheme((prev) => {
+			const next = prev === "dark" ? "light" : "dark";
+			if (typeof window !== "undefined") {
+				localStorage.setItem("dente_theme", next);
+			}
+			return next;
+		});
+	}, []);
 
 	// Update single or multiple teeth
 	const updateToothState = useCallback(

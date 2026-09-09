@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
-import { CheckCircle2, Printer, Sparkles } from "lucide-react";
+import React, { useState, useMemo, useCallback } from "react";
+import { CheckCircle2, FileEdit, Printer, ShieldCheck, Sparkles, Undo2 } from "lucide-react";
+import { showToast } from "../../GlobalToast";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
 	calculateDmftFromOdontogram,
@@ -24,7 +25,12 @@ import {
 } from "../../../lib/clinicalProtocols043";
 
 export interface DentalMedicalCard043uFormProps {
-	initialPayload?: Partial<FullForm043uPayload> & { isSigned?: boolean; isDraft?: boolean };
+	initialPayload?: Partial<FullForm043uPayload> & {
+		isSigned?: boolean;
+		isDraft?: boolean;
+		revisionCount?: number;
+		revisionReason?: string;
+	};
 	onChange?: (payload: FullForm043uPayload) => void;
 	disabled?: boolean;
 }
@@ -199,6 +205,146 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 				"1. Профессиональная гигиена полости рта;\n2. Санация кариозных полостей;\n3. Контрольный осмотр через 6 месяцев.",
 		);
 
+		// Clinical Autonomy & Revision State (Мандат 8e п. 4)
+		const [isRevising, setIsRevising] = useState<boolean>(false);
+		const [revisionCount, setRevisionCount] = useState<number>(
+			() => (initialPayload as any)?.revisionCount ?? 0,
+		);
+		const [revisionReason, setRevisionReason] = useState<string>(
+			() => (initialPayload as any)?.revisionReason ?? "Исправленному верить",
+		);
+		const [reviseSnapshot, setReviseSnapshot] = useState<{
+			odontogram: Record<number, FdiToothRecord>;
+			cpitn: CpitnIndex;
+			hygieneIndexOhiS: string;
+			chiefComplaint: string;
+			historyOfPresentIllness: string;
+			allergologicalHistory: string;
+			concomitantDiseases: string;
+			currentMedications: string;
+			pregnancyLactationStatus: string;
+			pastDentalInterventions: string;
+			biteType: DentalBiteType;
+			biteDescription: string;
+			oralMucosa: OralMucosaStatus;
+			xrayFindingsDescription: string;
+			generalTreatmentPlan: string;
+		} | null>(null);
+
+		const effectiveDisabled = Boolean(disabled && !isRevising);
+
+		const handleApplyGlobalNorm = useCallback(() => {
+			if (effectiveDisabled) {
+				setIsRevising(true);
+			}
+			const intactOdonto = createIntactOdontogramRecords();
+			setOdontogram(intactOdonto);
+
+			const cleanCpitn: CpitnIndex = {
+				sextant18_14: "0_healthy",
+				sextant13_23: "0_healthy",
+				sextant24_28: "0_healthy",
+				sextant48_44: "0_healthy",
+				sextant43_33: "0_healthy",
+				sextant34_38: "0_healthy",
+				treatmentNeedCategory: "0_none",
+			};
+			setCpitn(cleanCpitn);
+			setHygieneIndexOhiS("OHI-S = 0.0 (Отличная гигиена полости рта)");
+
+			const norm = createForm043PhysiologicalNorm();
+			setChiefComplaint(norm.chiefComplaint);
+			setHistoryOfPresentIllness(norm.historyOfPresentIllness);
+			setAllergologicalHistory(norm.allergologicalHistory);
+			setConcomitantDiseases(norm.concomitantDiseases);
+			setCurrentMedications(norm.currentMedications);
+			setPregnancyLactationStatus(norm.pregnancyLactationStatus);
+			setPastDentalInterventions(norm.pastDentalInterventions);
+			setBiteType(norm.biteType);
+			setBiteDescription(norm.biteDescription);
+			setOralMucosa(norm.oralMucosaStatus);
+			setXrayFindingsDescription(norm.xrayFindingsDescription);
+			setGeneralTreatmentPlan(norm.generalTreatmentPlan);
+
+			showToast(
+				"Вся Форма 043/у заполнена физиологической нормой (1 клик). Врач правит только патологию!",
+				"success",
+				4000,
+			);
+		}, [effectiveDisabled]);
+
+		const handleBeginRevise = useCallback(() => {
+			setReviseSnapshot({
+				odontogram: { ...odontogram },
+				cpitn: { ...cpitn },
+				hygieneIndexOhiS,
+				chiefComplaint,
+				historyOfPresentIllness,
+				allergologicalHistory,
+				concomitantDiseases,
+				currentMedications,
+				pregnancyLactationStatus,
+				pastDentalInterventions,
+				biteType,
+				biteDescription,
+				oralMucosa: { ...oralMucosa },
+				xrayFindingsDescription,
+				generalTreatmentPlan,
+			});
+			setIsRevising(true);
+			showToast(
+				"Режим внесения правок («Исправленному верить»). История изменений сохраняется в журнале ревизий.",
+				"info",
+				4000,
+			);
+		}, [
+			odontogram,
+			cpitn,
+			hygieneIndexOhiS,
+			chiefComplaint,
+			historyOfPresentIllness,
+			allergologicalHistory,
+			concomitantDiseases,
+			currentMedications,
+			pregnancyLactationStatus,
+			pastDentalInterventions,
+			biteType,
+			biteDescription,
+			oralMucosa,
+			xrayFindingsDescription,
+			generalTreatmentPlan,
+		]);
+
+		const handleCancelRevise = useCallback(() => {
+			if (reviseSnapshot) {
+				setOdontogram(reviseSnapshot.odontogram);
+				setCpitn(reviseSnapshot.cpitn);
+				setHygieneIndexOhiS(reviseSnapshot.hygieneIndexOhiS);
+				setChiefComplaint(reviseSnapshot.chiefComplaint);
+				setHistoryOfPresentIllness(reviseSnapshot.historyOfPresentIllness);
+				setAllergologicalHistory(reviseSnapshot.allergologicalHistory);
+				setConcomitantDiseases(reviseSnapshot.concomitantDiseases);
+				setCurrentMedications(reviseSnapshot.currentMedications);
+				setPregnancyLactationStatus(reviseSnapshot.pregnancyLactationStatus);
+				setPastDentalInterventions(reviseSnapshot.pastDentalInterventions);
+				setBiteType(reviseSnapshot.biteType);
+				setBiteDescription(reviseSnapshot.biteDescription);
+				setOralMucosa(reviseSnapshot.oralMucosa);
+				setXrayFindingsDescription(reviseSnapshot.xrayFindingsDescription);
+				setGeneralTreatmentPlan(reviseSnapshot.generalTreatmentPlan);
+			}
+			setIsRevising(false);
+			setReviseSnapshot(null);
+			showToast("Режим ревизии отменен, исходные данные восстановлены", "info", 3000);
+		}, [reviseSnapshot]);
+
+		const handleSaveRevision = useCallback(() => {
+			setRevisionCount((c) => c + 1);
+			setIsRevising(false);
+			setReviseSnapshot(null);
+			showToast("Исправление зафиксировано («Исправленному верить»). Ревизия 043/у сохранена.", "success", 4000);
+		}, []);
+
 		const currentToothRecord: FdiToothRecord = odontogram[selectedTooth] ?? {
 			toothNumber: selectedTooth,
 			statusCode: "healthy" as ToothClinicalStatusCode,
@@ -208,7 +354,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 		};
 
 		const handleSurfaceToggle = (toothNumber: number, surf: ToothSurface) => {
-			if (disabled) return;
+			if (effectiveDisabled) return;
 			setOdontogram((prev) => {
 				const existing: FdiToothRecord = prev[toothNumber] ?? {
 					toothNumber,
@@ -234,7 +380,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 		};
 
 		const handleToothStatusSet = (toothNumber: number, statusCode: ToothClinicalStatusCode) => {
-			if (disabled) return;
+			if (effectiveDisabled) return;
 			setOdontogram((prev) => {
 				const existing: FdiToothRecord = prev[toothNumber] ?? {
 					toothNumber,
@@ -258,7 +404,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 		const form043DraftKey = `dente_form043_draft_${initialPayload?.medicalCardNumber || "local_current"}`;
 
 		React.useEffect(() => {
-			if (disabled) return;
+			if (effectiveDisabled) return;
 
 			const flushDraft = () => {
 				const payloadToSave: FullForm043uPayload = {
@@ -289,6 +435,12 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 					xrayFindingsDescription,
 					generalTreatmentPlan,
 					soapDiaries: initialPayload?.soapDiaries || [],
+					...(revisionCount > 0 || isRevising
+						? {
+								revisionCount: revisionCount + (isRevising ? 1 : 0),
+								revisionReason: revisionReason.trim() || "Исправленному верить",
+							}
+						: {}),
 				};
 
 				try {
@@ -324,14 +476,17 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			oralMucosa,
 			xrayFindingsDescription,
 			generalTreatmentPlan,
-			disabled,
+			effectiveDisabled,
+			isRevising,
+			revisionCount,
+			revisionReason,
 			form043DraftKey,
 			initialPayload,
 			onChange,
 		]);
 
 		React.useEffect(() => {
-			if (disabled) return;
+			if (effectiveDisabled) return;
 
 			const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 				const hasModifiedTeeth = Object.values(odontogram).some(
@@ -351,7 +506,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 
 			window.addEventListener("beforeunload", handleBeforeUnload);
 			return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-		}, [odontogram, disabled, form043DraftKey]);
+		}, [odontogram, effectiveDisabled, form043DraftKey]);
 
 		return (
 			<div className="document-form-container form-043u-wrapper">
@@ -394,9 +549,45 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 							</button>
 						</div>
 						<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+							<button
+								type="button"
+								data-testid="btn-043-global-norm-1click"
+								className="btn btn-sm btn-success"
+								onClick={handleApplyGlobalNorm}
+								title="1-клик: Заполнить всю Форму 043/у физиологической нормой (зубная формула, CPITN, СОПР, анамнез). Врач правит только патологию!"
+								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+							>
+								<ShieldCheck style={{ width: "16px", height: "16px" }} />
+								Норма 043/у (1-клик)
+							</button>
+							{(disabled || initialPayload?.isSigned) && (
+								<button
+									type="button"
+									data-testid="btn-043-revise"
+									className={`btn btn-sm ${isRevising ? "btn-warning" : "btn-outline-warning"}`}
+									onClick={() => {
+										if (isRevising) {
+											handleCancelRevise();
+										} else {
+											handleBeginRevise();
+										}
+									}}
+									title="Внести исправление в закрытую карту 043/у («Исправленному верить») без согласований начмедов (Мандат 8e)"
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+								>
+									<FileEdit style={{ width: "16px", height: "16px" }} />
+									{isRevising ? "Отменить ревизию" : "Внести исправление («Исправленному верить»)"}
+								</button>
+							)}
 							<span
 								data-testid="form043-stamp-badge"
-								className={`badge ${initialPayload?.isSigned ? "badge-success" : "badge-secondary"}`}
+								className={`badge ${
+									isRevising || revisionCount > 0
+										? "badge-warning"
+										: initialPayload?.isSigned
+											? "badge-success"
+											: "badge-secondary"
+								}`}
 								style={{
 									padding: "4px 8px",
 									borderRadius: "4px",
@@ -404,12 +595,32 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									fontWeight: 700,
 									letterSpacing: "0.05em",
 									textTransform: "uppercase",
-									background: initialPayload?.isSigned ? "rgba(16, 185, 129, 0.15)" : "rgba(100, 116, 139, 0.15)",
-									color: initialPayload?.isSigned ? "#059669" : "#64748b",
-									border: `1px solid ${initialPayload?.isSigned ? "rgba(16, 185, 129, 0.4)" : "rgba(100, 116, 139, 0.3)"}`,
+									background:
+										isRevising || revisionCount > 0
+											? "rgba(245, 158, 11, 0.15)"
+											: initialPayload?.isSigned
+												? "rgba(16, 185, 129, 0.15)"
+												: "rgba(100, 116, 139, 0.15)",
+									color:
+										isRevising || revisionCount > 0
+											? "#b45309"
+											: initialPayload?.isSigned
+												? "#059669"
+												: "#64748b",
+									border: `1px solid ${
+										isRevising || revisionCount > 0
+											? "rgba(245, 158, 11, 0.4)"
+											: initialPayload?.isSigned
+												? "rgba(16, 185, 129, 0.4)"
+												: "rgba(100, 116, 139, 0.3)"
+									}`,
 								}}
 							>
-								{initialPayload?.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
+								{isRevising || revisionCount > 0
+									? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount + (isRevising ? 1 : 0)})`
+									: initialPayload?.isSigned
+										? "ПОДПИСАНО ВРАЧОМ"
+										: "ЧЕРНОВИК"}
 							</span>
 							<button
 								type="button"
@@ -453,7 +664,54 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								type="button"
 								data-testid="btn-043-fast-print"
 								className="btn btn-sm btn-outline-primary"
-								onClick={() => window.print()}
+								onClick={() => {
+									if (typeof window !== "undefined") {
+										const isSigned = Boolean(initialPayload?.isSigned);
+										const effectiveWatermark =
+											isRevising || revisionCount > 0
+												? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount + (isRevising ? 1 : 0)})`
+												: isSigned
+													? "ПОДПИСАНО ВРАЧОМ"
+													: "ЧЕРНОВИК";
+										const printHtml = renderForm043uHtml({
+											...initialPayload,
+											medicalCardNumber: initialPayload?.medicalCardNumber || "__________",
+											cardOpenedDate: initialPayload?.cardOpenedDate || new Date().toISOString().slice(0, 10),
+											patientFullName: initialPayload?.patientFullName || "Пациент",
+											patientBirthDate: initialPayload?.patientBirthDate || "—",
+											patientSex: initialPayload?.patientSex || "male",
+											attendingDoctorFullName: initialPayload?.attendingDoctorFullName || "Врач-стоматолог",
+											attendingDoctorSpecialty: initialPayload?.attendingDoctorSpecialty || "Врач-стоматолог-терапевт",
+											chiefComplaint,
+											historyOfPresentIllness,
+											allergologicalHistory,
+											concomitantDiseases,
+											currentMedications,
+											pregnancyLactationStatus,
+											pastDentalInterventions,
+											biteType,
+											biteDescription,
+											oralMucosaStatus: oralMucosa,
+											xrayFindingsDescription,
+											generalTreatmentPlan,
+											odontogramTeeth: Object.values(odontogram),
+											dmftIndex: dmftResult,
+											cpitnIndex: cpitn,
+											hygieneIndexOhiS,
+											isClosed: isSigned,
+											watermarkText: effectiveWatermark,
+										});
+										const printWindow = window.open("", "_blank");
+										if (printWindow) {
+											printWindow.document.write(printHtml);
+											printWindow.document.close();
+											printWindow.focus();
+											printWindow.print();
+										} else {
+											window.print();
+										}
+									}
+								}}
 								title="Печать карты 043/у в любой момент (Мандат 8e)"
 								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 							>
@@ -462,6 +720,62 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 							</button>
 						</div>
 					</div>
+
+					{isRevising && (
+						<div
+							data-testid="form043-revision-banner"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								gap: "12px",
+								padding: "10px 14px",
+								marginBottom: "14px",
+								background: "rgba(245, 158, 11, 0.12)",
+								border: "1px solid rgba(245, 158, 11, 0.35)",
+								borderRadius: "8px",
+								flexWrap: "wrap",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<FileEdit style={{ width: "18px", height: "18px", color: "#d97706" }} />
+								<div>
+									<strong style={{ color: "#b45309", fontSize: "13px" }}>
+										Режим ревизии («Исправленному верить»):
+									</strong>
+									<span style={{ fontSize: "12px", marginLeft: "6px", color: "var(--ink)" }}>
+										Правки вносятся лечащим врачом без бюрократических замков и согласований начмедов (Мандат 8e).
+									</span>
+								</div>
+							</div>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+								<input
+									type="text"
+									data-testid="input-043-revision-reason"
+									value={revisionReason}
+									onChange={(e) => setRevisionReason(e.target.value)}
+									placeholder="Причина правки (по умолчанию: Исправленному верить)"
+									style={{ minWidth: "220px", padding: "4px 8px", fontSize: "12px" }}
+								/>
+								<button
+									type="button"
+									data-testid="btn-043-save-revision"
+									className="btn btn-sm btn-primary"
+									onClick={handleSaveRevision}
+								>
+									Зафиксировать ревизию
+								</button>
+								<button
+									type="button"
+									data-testid="btn-043-cancel-revision"
+									className="btn btn-sm btn-outline-secondary"
+									onClick={handleCancelRevise}
+								>
+									Отменить правку
+								</button>
+							</div>
+						</div>
+					)}
 
 					{activeTab === "formula" && (
 						<div className="form-043u-formula-tab">
@@ -498,7 +812,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									onClick={() => {
 										setOdontogram(createIntactOdontogramRecords());
 									}}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									title="Все зубы здоровы / интактны (Норма) — КПУ = 0"
 									style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
 								>
@@ -512,7 +826,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									onClick={() => {
 										setOdontogram(createSanitizedOdontogramRecords());
 									}}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									title="Санирован (моляры удовлетворительно пломбированы)"
 								>
 									Санирован
@@ -524,7 +838,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									onClick={() => {
 										setOdontogram(createWisdomExtractedOdontogramRecords());
 									}}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									title="Зубы мудрости (18, 28, 38, 48) отсутствуют / удалены"
 								>
 									Без зубов мудрости (8-ки)
@@ -624,7 +938,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 											type="button"
 											className="btn btn-sm btn-outline-primary"
 											onClick={() => handleToothStatusSet(selectedTooth, activeStatus)}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											Применить статус ({toothStatusCodeShortMap[activeStatus]})
 										</button>
@@ -632,7 +946,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 											type="button"
 											className="btn btn-sm btn-outline-danger"
 											onClick={() => handleToothStatusSet(selectedTooth, "extracted_absent")}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											Удален (A)
 										</button>
@@ -640,7 +954,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 											type="button"
 											className="btn btn-sm btn-outline-success"
 											onClick={() => handleToothStatusSet(selectedTooth, "healthy")}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											Здоров (Norm)
 										</button>
@@ -660,7 +974,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 														type="button"
 														className={`btn btn-sm ${active ? "btn-warning" : "btn-outline-secondary"}`}
 														onClick={() => handleSurfaceToggle(selectedTooth, s.key)}
-														disabled={disabled}
+														disabled={effectiveDisabled}
 													>
 														{s.label}
 													</button>
@@ -693,7 +1007,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										});
 										setHygieneIndexOhiS("OHI-S = 0.0 (Отличная гигиена полости рта)");
 									}}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									title="Установить норму пародонта (CPITN 0 / TN 0) и гигиены (OHI-S 0.0) в 1 клик"
 								>
 									1 клик: Все секстанты здоровы (Код 0 / TN 0, OHI-S = 0.0)
@@ -712,7 +1026,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										<select
 											value={cpitn.sextant18_14}
 											onChange={(e) => setCpitn((prev) => ({ ...prev, sextant18_14: e.target.value as CpitnSextantCode }))}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											{CPITN_SEXTANT_OPTIONS.map((opt) => (
 												<option key={opt.value} value={opt.value} title={opt.hint}>
@@ -726,7 +1040,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										<select
 											value={cpitn.sextant13_23}
 											onChange={(e) => setCpitn((prev) => ({ ...prev, sextant13_23: e.target.value as CpitnSextantCode }))}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											{CPITN_SEXTANT_OPTIONS.map((opt) => (
 												<option key={opt.value} value={opt.value} title={opt.hint}>
@@ -740,7 +1054,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										<select
 											value={cpitn.sextant24_28}
 											onChange={(e) => setCpitn((prev) => ({ ...prev, sextant24_28: e.target.value as CpitnSextantCode }))}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											{CPITN_SEXTANT_OPTIONS.map((opt) => (
 												<option key={opt.value} value={opt.value} title={opt.hint}>
@@ -758,7 +1072,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										<select
 											value={cpitn.sextant48_44}
 											onChange={(e) => setCpitn((prev) => ({ ...prev, sextant48_44: e.target.value as CpitnSextantCode }))}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											{CPITN_SEXTANT_OPTIONS.map((opt) => (
 												<option key={opt.value} value={opt.value} title={opt.hint}>
@@ -772,7 +1086,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										<select
 											value={cpitn.sextant43_33}
 											onChange={(e) => setCpitn((prev) => ({ ...prev, sextant43_33: e.target.value as CpitnSextantCode }))}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											{CPITN_SEXTANT_OPTIONS.map((opt) => (
 												<option key={opt.value} value={opt.value} title={opt.hint}>
@@ -786,7 +1100,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										<select
 											value={cpitn.sextant34_38}
 											onChange={(e) => setCpitn((prev) => ({ ...prev, sextant34_38: e.target.value as CpitnSextantCode }))}
-											disabled={disabled}
+											disabled={effectiveDisabled}
 										>
 											{CPITN_SEXTANT_OPTIONS.map((opt) => (
 												<option key={opt.value} value={opt.value} title={opt.hint}>
@@ -805,7 +1119,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								<select
 									value={cpitn.treatmentNeedCategory}
 									onChange={(e) => setCpitn((prev) => ({ ...prev, treatmentNeedCategory: e.target.value as CpitnIndex["treatmentNeedCategory"] }))}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									style={{ width: "100%" }}
 								>
 									{CPITN_TN_OPTIONS.map((opt) => (
@@ -825,7 +1139,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									value={hygieneIndexOhiS}
 									onChange={(e) => setHygieneIndexOhiS(e.target.value)}
 									placeholder="например, OHI-S = 0.8 (Хорошая гигиена)"
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									style={{ width: "100%" }}
 								/>
 							</div>
@@ -875,7 +1189,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										setXrayFindingsDescription(norm.xrayFindingsDescription);
 										setGeneralTreatmentPlan(norm.generalTreatmentPlan);
 									}}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									title="Заполнить анамнез, СОПР, прикус и план физиологической нормой"
 									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 								>
@@ -892,7 +1206,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									onChange={(e) => setChiefComplaint(e.target.value)}
 									placeholder="Жалобы на боли, эстетический дефект, кровоточивость десен..."
 									rows={2}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									style={{ width: "100%" }}
 								/>
 							</div>
@@ -904,7 +1218,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									onChange={(e) => setHistoryOfPresentIllness(e.target.value)}
 									placeholder="Когда началось заболевание, динамика, проводимое ранее лечение..."
 									rows={2}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									style={{ width: "100%" }}
 								/>
 							</div>
@@ -920,7 +1234,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										value={allergologicalHistory}
 										onChange={(e) => setAllergologicalHistory(e.target.value)}
 										placeholder="Аллергии на лекарства, анестетики, латекс..."
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 								<label>
@@ -930,7 +1244,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										value={concomitantDiseases}
 										onChange={(e) => setConcomitantDiseases(e.target.value)}
 										placeholder="Гипертония, СД, ИБС, гепатиты, отрицает..."
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 							</div>
@@ -943,7 +1257,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										value={currentMedications}
 										onChange={(e) => setCurrentMedications(e.target.value)}
 										placeholder="Антикоагулянты, гипотензивные..."
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 								<label>
@@ -953,7 +1267,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										value={pregnancyLactationStatus}
 										onChange={(e) => setPregnancyLactationStatus(e.target.value)}
 										placeholder="Нет / Срок в неделях"
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 								<label>
@@ -963,7 +1277,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										value={pastDentalInterventions}
 										onChange={(e) => setPastDentalInterventions(e.target.value)}
 										placeholder="Лечение кариеса, удаление..."
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 							</div>
@@ -977,7 +1291,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									<select
 										value={biteType}
 										onChange={(e) => setBiteType(e.target.value as DentalBiteType)}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									>
 										{Object.entries(dentalBiteTypeLabels).map(([k, label]) => (
 											<option key={k} value={k}>
@@ -993,7 +1307,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										value={biteDescription}
 										onChange={(e) => setBiteDescription(e.target.value)}
 										placeholder="Смыкание моляров по I классу, перекрытие на 1/3..."
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 							</div>
@@ -1007,7 +1321,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									<select
 										value={oralMucosa.color}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, color: e.target.value as OralMucosaStatus["color"] }))}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									>
 										{ORAL_MUCOSA_COLORS.map((opt) => (
 											<option key={opt.value} value={opt.value}>
@@ -1021,7 +1335,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									<select
 										value={oralMucosa.moisture}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, moisture: e.target.value as OralMucosaStatus["moisture"] }))}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									>
 										{ORAL_MUCOSA_MOISTURE.map((opt) => (
 											<option key={opt.value} value={opt.value}>
@@ -1038,7 +1352,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									<select
 										value={oralMucosa.gingivalPapillae}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, gingivalPapillae: e.target.value as OralMucosaStatus["gingivalPapillae"] }))}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									>
 										{GINGIVAL_PAPILLAE_OPTIONS.map((opt) => (
 											<option key={opt.value} value={opt.value}>
@@ -1052,7 +1366,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									<select
 										value={oralMucosa.bleedingPBI}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, bleedingPBI: e.target.value as OralMucosaStatus["bleedingPBI"] }))}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									>
 										{BLEEDING_PBI_OPTIONS.map((opt) => (
 											<option key={opt.value} value={opt.value}>
@@ -1070,7 +1384,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										type="text"
 										value={oralMucosa.tongueStatus}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, tongueStatus: e.target.value }))}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 								<label>
@@ -1080,7 +1394,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										value={oralMucosa.pathologicalElements ?? ""}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, pathologicalElements: e.target.value || null }))}
 										placeholder="Отсутствуют / Афты на слизистой щеки..."
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 							</div>
@@ -1092,7 +1406,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										type="text"
 										value={oralMucosa.regionalLymphNodes}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, regionalLymphNodes: e.target.value }))}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 								<label>
@@ -1101,7 +1415,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										type="text"
 										value={oralMucosa.tmjFunction}
 										onChange={(e) => setOralMucosa((prev) => ({ ...prev, tmjFunction: e.target.value }))}
-										disabled={disabled}
+										disabled={effectiveDisabled}
 									/>
 								</label>
 							</div>
@@ -1115,7 +1429,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									value={xrayFindingsDescription}
 									onChange={(e) => setXrayFindingsDescription(e.target.value)}
 									rows={2}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									style={{ width: "100%" }}
 								/>
 							</div>
@@ -1125,7 +1439,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									value={generalTreatmentPlan}
 									onChange={(e) => setGeneralTreatmentPlan(e.target.value)}
 									rows={3}
-									disabled={disabled}
+									disabled={effectiveDisabled}
 									style={{ width: "100%" }}
 								/>
 							</div>

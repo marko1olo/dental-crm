@@ -324,7 +324,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * основной медицинской записи, а сохранение и подписание при этом
 	 * запрещены (см. doSave/doLock). Подписание отвечало 403 и на своём
 	 * запросе: приём было НЕЧЕМ ЗАКРЫТЬ, дневник оставался несданным
-	 * документом. Ревизии молчали, и пометка «⚠ Ревизий: N» в форме 043/у
+	 * документом. Ревизии молчали, и пометка «[!] Ревизий: N» в форме 043/у
 	 * пропадала.
 	 *
 	 * ТОЛЬКО ИЗ КОНТЕКСТА. Одноимённый `auth` экспортирует ещё и
@@ -494,7 +494,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					// Ревизии — отдельный запрос, и его отказ не отменяет того, что
 					// сам дневник прочитан. Проверка ok здесь нужна, потому что
 					// тело ошибки тоже разбирается, а `rd.revisions` в нём нет:
-					// ревизий становилось «0», и пометка «⚠ Ревизий: N» в форме
+					// ревизий становилось «0», и пометка «[!] Ревизий: N» в форме
 					// 043/у пропадала у дневника, который правили после подписи.
 					try {
 						const revisionsResponse = await fetch(
@@ -1393,6 +1393,32 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setRevisionReason("");
 	}, [reviseSnapshot, reviseTraySnapshot]);
 
+	/**
+	 * 1-клик заполнение физиологической нормой по умолчанию (Мандат 8e п. 3).
+	 * Врач правит только патологию!
+	 * Если дневник закрыт, автоматически активирует режим ревизии («Исправленному верить»).
+	 */
+	const applySomaticNorm = useCallback(() => {
+		if (isLocked && !isRevising) {
+			beginRevise();
+		}
+		setDiary((prev) => ({
+			...prev,
+			anamnesis: prev.anamnesis?.trim()
+				? `${prev.anamnesis}\nСоматически здоров. Аллергический статус не отягощен. Физиологическая норма.`
+				: "Соматически здоров. Хронические заболевания, сердечно-сосудистые патологии и аллергологический статус со слов пациента отрицает. Физиологическая норма.",
+			statusLocalis: prev.statusLocalis?.trim()
+				? prev.statusLocalis
+				: "Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны, прикус физиологический. Регионарные лимфоузлы не увеличены.",
+		}));
+		scheduleDebouncedSave();
+		showToast(
+			"Физиологическая норма соматического статуса и осмотра внесена в дневник (1 клик)",
+			"success",
+			4000,
+		);
+	}, [isLocked, isRevising, beginRevise, scheduleDebouncedSave]);
+
 	const doRevise = useCallback(async () => {
 		if (!diaryId) {
 			showToast(
@@ -2224,5 +2250,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		populateFromOdontogram,
 		applyAnesthesiaPreset,
 		applyClinicalPreset,
+		applySomaticNorm,
 	};
 }

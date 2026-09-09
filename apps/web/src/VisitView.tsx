@@ -788,7 +788,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			activeAppointment?.status === "closed" ||
 			visitNoteForm?.status === "completed" ||
 			visitNoteForm?.status === "signed";
-		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
+		const revisionCount = Number(
+			(visitNoteForm as { revisionCount?: number })?.revisionCount ??
+				(activeAppointment as { revisionCount?: number })?.revisionCount ??
+				0,
+		);
+		const watermarkText =
+			revisionCount > 0
+				? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount})`
+				: isClosed
+					? "ПОДПИСАНО ВРАЧОМ"
+					: "ЧЕРНОВИК";
 
 		const cardHtml = renderForm043uHtml({
 			medicalCardNumber:
@@ -881,7 +891,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		}
 
 		showToast(
-			`Форма 043/у отправлена на печать (${isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"})`,
+			`Форма 043/у отправлена на печать (${watermarkText})`,
 			"success",
 			6000,
 		);

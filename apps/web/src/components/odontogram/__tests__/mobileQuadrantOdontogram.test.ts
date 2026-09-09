@@ -8,6 +8,7 @@ import {
 	isQuadrantTop,
 	getQuadrantTitle,
 	getQuadrantTeeth,
+	splitArchAtMidline,
 	TOP_TEETH,
 	BOTTOM_TEETH,
 	PEDIATRIC_TOP_TEETH,
@@ -146,5 +147,37 @@ describe('Responsive Mobile Quadrant Odontogram Adapter', () => {
 		const pBottom = PEDIATRIC_BOTTOM_TEETH;
 		const q5Teeth = getQuadrantTeeth('Q5', pTop, pBottom, true);
 		assert.deepEqual(q5Teeth, [55, 54, 53, 52, 51]);
+	});
+
+	it('should handle splitArchAtMidline safely with null, undefined, empty, single, or non-array inputs', () => {
+		assert.deepEqual(splitArchAtMidline(null as any), { left: [], right: [] });
+		assert.deepEqual(splitArchAtMidline(undefined as any), { left: [], right: [] });
+		assert.deepEqual(splitArchAtMidline({} as any), { left: [], right: [] });
+		assert.deepEqual(splitArchAtMidline([] as any), { left: [], right: [] });
+		assert.deepEqual(splitArchAtMidline([18] as any), { left: [18], right: [] });
+		assert.deepEqual(splitArchAtMidline("invalid" as any), { left: [], right: [] });
+		assert.deepEqual(splitArchAtMidline(123 as any), { left: [], right: [] });
+
+		const valid = splitArchAtMidline([18, 17, 16, 11, 21, 26, 27, 28]);
+		assert.deepEqual(valid.left, [18, 17, 16, 11]);
+		assert.deepEqual(valid.right, [21, 26, 27, 28]);
+	});
+
+	it('should gracefully fallback in getQuadrantTeeth when non-array or empty teeth lists are passed', () => {
+		const q1 = getQuadrantTeeth('Q1', null as any, null as any);
+		assert.deepEqual(q1, [18, 17, 16, 15, 14, 13, 12, 11]);
+
+		const q2 = getQuadrantTeeth('Q2', {} as any, undefined as any);
+		assert.deepEqual(q2, [21, 22, 23, 24, 25, 26, 27, 28]);
+
+		const q4 = getQuadrantTeeth('Q4', [] as any, [] as any);
+		assert.deepEqual(q4, [48, 47, 46, 45, 44, 43, 42, 41]);
+
+		const q5 = getQuadrantTeeth('Q5', null as any, null as any, true);
+		assert.deepEqual(q5, [55, 54, 53, 52, 51]);
+
+		const all = getQuadrantTeeth('all', null as any, null as any);
+		assert.equal(all.length, 32);
+		assert.equal(all[0], 18);
 	});
 });

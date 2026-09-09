@@ -1597,8 +1597,10 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 	);
 }, areToothWrapperPropsEqual);
 
-function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] } {
-	if (!teeth || !Array.isArray(teeth) || teeth.length <= 1) return { left: Array.isArray(teeth) ? teeth : [], right: [] };
+function splitArchAtMidline(teeth: number[] | null | undefined): { left: number[]; right: number[] } {
+	if (!teeth || !Array.isArray(teeth) || typeof (teeth as any).findIndex !== "function" || teeth.length <= 1) {
+		return { left: Array.isArray(teeth) ? [...teeth] : [], right: [] };
+	}
 	let splitIndex = teeth.findIndex((num, i) => {
 		if (i === 0) return false;
 		const prev = teeth[i - 1];
@@ -1686,24 +1688,33 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		}
 	}, [controlledQuadrant]);
 
+	const defaultTopTeeth = mixedDentition
+		? MIXED_TOP_TEETH
+		: pediatricMode
+			? PEDIATRIC_TOP_TEETH
+			: TOP_TEETH;
+	const defaultBottomTeeth = mixedDentition
+		? MIXED_BOTTOM_TEETH
+		: pediatricMode
+			? PEDIATRIC_BOTTOM_TEETH
+			: BOTTOM_TEETH;
+
 	const rawTopTeethList =
-		customTopTeeth ??
-		(mixedDentition
-			? MIXED_TOP_TEETH
-			: pediatricMode
-				? PEDIATRIC_TOP_TEETH
-				: TOP_TEETH);
+		Array.isArray(customTopTeeth) && customTopTeeth.length > 0
+			? customTopTeeth
+			: defaultTopTeeth;
 	const rawBottomTeethList =
-		customBottomTeeth ??
-		(mixedDentition
-			? MIXED_BOTTOM_TEETH
-			: pediatricMode
-				? PEDIATRIC_BOTTOM_TEETH
-				: BOTTOM_TEETH);
+		Array.isArray(customBottomTeeth) && customBottomTeeth.length > 0
+			? customBottomTeeth
+			: defaultBottomTeeth;
 
 	const isWisdom = (n: number) => n === 18 || n === 28 || n === 38 || n === 48;
-	const topTeethList = showWisdomTeeth ? rawTopTeethList : rawTopTeethList.filter((n) => !isWisdom(n));
-	const bottomTeethList = showWisdomTeeth ? rawBottomTeethList : rawBottomTeethList.filter((n) => !isWisdom(n));
+	const topTeethList = Array.isArray(rawTopTeethList)
+		? (showWisdomTeeth ? rawTopTeethList : rawTopTeethList.filter((n) => !isWisdom(n)))
+		: defaultTopTeeth;
+	const bottomTeethList = Array.isArray(rawBottomTeethList)
+		? (showWisdomTeeth ? rawBottomTeethList : rawBottomTeethList.filter((n) => !isWisdom(n)))
+		: defaultBottomTeeth;
 
 	useEffect(() => {
 		const element = archContainerRef.current;
@@ -1722,7 +1733,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 				: topTeethList;
 
 			// Exact intrinsic base width at scale 1.0 based on anatomical tooth geometries + spacing
-			const baseNaturalWidth = activeTeeth.reduce((acc, num) => {
+			const baseNaturalWidth = (Array.isArray(activeTeeth) ? activeTeeth : []).reduce((acc, num) => {
 				const geom = getAnatomicalToothGeometry(num);
 				return acc + Math.round(geom.standardWidthPx * 1.3) + 6;
 			}, isQuadrantView ? 0 : 28);
@@ -2070,7 +2081,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row`}>
 							<div className="tooth-quadrant-group focused-quadrant-group">
-								{activeQuadrantTeeth.map((num) => {
+								{(Array.isArray(activeQuadrantTeeth) ? activeQuadrantTeeth : []).map((num) => {
 									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
 										toothNumber: num,
 										state: "Healthy",

@@ -937,7 +937,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							{/* 1-Click Physiological Norm Button (Zero Bloat, Instant Standard 043/u Fill) */}
 							<button
 								type="button"
-								onClick={handleApplyFullPhysiologicalNorm}
+								onClick={() => {
+									if (isLocked && !isRevising) {
+										beginRevise();
+									}
+									handleApplyFullPhysiologicalNorm();
+								}}
 								className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-[44px] sm:min-h-[38px] sm:h-[38px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0 shrink-0 border border-[var(--ok-border,transparent)]"
 								title="Заполнить дневник физиологической нормой в 1 клик (соматически здоров, патологий не выявлено)"
 								data-testid="diary-norm-043-btn"

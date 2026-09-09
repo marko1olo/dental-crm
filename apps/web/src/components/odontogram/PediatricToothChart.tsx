@@ -55,10 +55,17 @@ export const PediatricToothChart: React.FC<PediatricToothChartProps> = ({
 	archScale = 1,
 	className = "",
 }) => {
+	const defaultTopTeeth = mixedDentition ? MIXED_TOP_TEETH : PEDIATRIC_TOP_TEETH;
+	const defaultBottomTeeth = mixedDentition ? MIXED_BOTTOM_TEETH : PEDIATRIC_BOTTOM_TEETH;
+
 	const topTeethList =
-		customTopTeeth ?? (mixedDentition ? MIXED_TOP_TEETH : PEDIATRIC_TOP_TEETH);
+		Array.isArray(customTopTeeth) && customTopTeeth.length > 0
+			? customTopTeeth
+			: defaultTopTeeth;
 	const bottomTeethList =
-		customBottomTeeth ?? (mixedDentition ? MIXED_BOTTOM_TEETH : PEDIATRIC_BOTTOM_TEETH);
+		Array.isArray(customBottomTeeth) && customBottomTeeth.length > 0
+			? customBottomTeeth
+			: defaultBottomTeeth;
 
 	const handleToothClick = (
 		e: React.MouseEvent,
@@ -124,7 +131,7 @@ export const PediatricToothChart: React.FC<PediatricToothChartProps> = ({
 
 					<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row`}>
 						<div className="tooth-quadrant-group focused-quadrant-group">
-							{activeQuadrantTeeth.map((num) => {
+							{(Array.isArray(activeQuadrantTeeth) ? activeQuadrantTeeth : []).map((num) => {
 								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
 								return (
 									<ToothSVG
