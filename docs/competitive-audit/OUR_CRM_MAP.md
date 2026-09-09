@@ -407,9 +407,9 @@
   - `apps/web/src/components/surgery/__tests__/surgeryProtocols.test.ts` (106 строк тестов, 100% passing), `surgeryCockpitModal.test.tsx`
 
 #### 2.10.35. Наряды ЗТЛ в 1 клик и безусловное снятие 30-дневного блока плана лечения (Мандаты 8e, 8k / Ортопедия и ЗТЛ)
-- **Суть и домен**: 1-клик экспресс-пресеты ортопедических конструкций в `labMath.ts`, `DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`, `labWorkOrderPresets.ts`: (1) Диоксид циркония ZrO2 Prettau / Katana ML (24 000 ₽ / 7 500 ₽, 5 дней), (2) Временная фрезерованная коронка PMMA CAD/CAM (3 500 ₽ / 1 200 ₽, 2 дня), (3) Металлокерамика Co-Cr Duceram Plus (15 000 ₽ / 5 000 ₽, 7 дней), (4) Винтовая коронка на имплантате Ti-Base / Multi-unit + ZrO2 (38 000 ₽ / 13 000 ₽, 7 дней). Ликвидация бюрократического блока по истечению 30 дней предварительного плана лечения в `dentalLabFinancialGateEngine.ts` и `LabWorkOrderModal.tsx` — срок давности плана выводится мягким зеленым бейджем соответствия Мандату 8e и НИКОГДА не блокирует отправку наряда в ЗТЛ, оказание услуг или оплату.
+- **Суть и домен**: 1-клик экспресс-пресеты ортопедических конструкций в `labMath.ts`, `DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`, `labWorkOrderPresets.ts`: (1) Диоксид циркония ZrO2 Prettau / Katana ML (24 000 ₽ / 7 500 ₽, 5 дней), (2) Временная фрезерованная коронка PMMA CAD/CAM (3 500 ₽ / 1 200 ₽, 2 дня), (3) Металлокерамика Co-Cr Duceram Plus (15 000 ₽ / 5 000 ₽, 7 дней), (4) Винтовая коронка на имплантате Ti-Base / Multi-unit + ZrO2 (38 000 ₽ / 13 000 ₽, 7 дней). Ликвидация бюрократического блока по истечению 30 дней предварительного плана лечения в `dentalLabFinancialGateEngine.ts`, `DentalLabFinancialGate.tsx` и `LabWorkOrderModal.tsx` — срок давности плана выводится мягким бирюзовым бейджем с векторной иконкой Lucide `ShieldCheck` / `CheckCircle2` (Мандат 8d п. 7, коммит `302d17653`) соответствия Мандату 8e и НИКОГДА не блокирует отправку наряда в ЗТЛ, оказание услуг или оплату.
 - **Фронтенд и Shared**:
-  - `apps/web/src/components/lab/labMath.ts`, `DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `dentalLabFinancialGateEngine.ts`, `orders/LabWorkOrderModal.tsx`, `orders/labWorkOrderPresets.ts` (коммиты `96dc7246c`, `97af039fc`).
+  - `apps/web/src/components/lab/labMath.ts`, `DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `dentalLabFinancialGateEngine.ts`, `DentalLabFinancialGate.tsx`, `orders/LabWorkOrderModal.tsx`, `orders/labWorkOrderPresets.ts` (коммиты `96dc7246c`, `97af039fc`, `302d17653`).
   - **Ликвидация академического блоата (Мандаты 8i, 8k, 8e)**: Избыточный компонент `DentalLabOcclusionTab.tsx` (концепции окклюзии Доусона, микроны зазора фрезера ЗТЛ, перикиматы) официально снесён и удален из репозитория. В `DentalLabOrderModal.tsx` оставлено ровно 5 чистых вкладок (1. Зубы и Конструкция, 2. Расцветка VITA, 3. Этапы и Сроки, 4. Себестоимость, 5. Бланк ГОСТ).
 - **Тесты**:
   - `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (31 сценарий тестов 1-клик пресетов и снятия 30-дневного блока, 100% passing)
@@ -1920,9 +1920,11 @@
      - Дедлайн сдачи работы (Due date), даты примерок каркаса и керамики (при наличии);
      - Особые клинические указания и телефон клиники для связи;
   3. *Универсальная печать наряда*: прямой вызов `handlePrint` из любого таба без необходимости переходить на вкладку 4 («Печать и QR») и листать вниз;
-  4. *Интерфейс DentalLabOrderModalProps*: поддержка `clinicPhone` и `clinicName` с клиническими дефолтами.
-- **Фронтенд**: `apps/web/src/components/lab/DentalLabOrderModal.tsx`.
-- **Тесты**: `apps/web/src/components/lab/__tests__/dentalLabAutonomyWave52.test.tsx` (5/5 pass) — коммит `73e12e2dc`.
+  4. *Интерфейс DentalLabOrderModalProps*: поддержка `clinicPhone` и `clinicName` с клиническими дефолтами;
+  5. *Векторная гигиена уведомлений срока плана лечения (Мандат 8d п. 7, коммит `302d17653`)*:
+     - В `DentalLabFinancialGate.tsx` и `orders/LabWorkOrderModal.tsx` текстовые юникод-дингбаты `✓` заменены на чистые векторные SVG Lucide (`ShieldCheck`, `CheckCircle2`), подтверждающие неблокирующий статус наряда ЗТЛ при плане старше 30 дней.
+- **Фронтенд**: `apps/web/src/components/lab/DentalLabOrderModal.tsx`, `apps/web/src/components/lab/DentalLabFinancialGate.tsx`, `apps/web/src/components/lab/orders/LabWorkOrderModal.tsx`.
+- **Тесты**: `apps/web/src/components/lab/__tests__/dentalLabAutonomyWave52.test.tsx` (5/5 pass) — коммиты `73e12e2dc`, `302d17653`.
 
 #### 2.10.199. Ортодонтия и элайнеры: 1-клик копирование памятки по ношению эластиков и уходу за брекетами/элайнерами для пациента (Фича #240)
 - **Суть и домен**: Ортодонтия, приверженность лечению (compliance) и автономия пациента у кресла по Мандатам 8c, 8d п. 2, 8d п. 7, 8e п. 1, 8e п. 2, 8i, 8k, 8n:
@@ -2255,9 +2257,14 @@
      - Кнопки «100% Гарантия» и «Скидка сотруднику» переведены на чистый `ShieldCheck` без текстовых звездочек;
      - Кнопка сброса скидки `btn-discount-none` оформлена через `<X size={14} /> <span>Сброс (0%)</span>`;
      - Индикатор точной суммы без сдачи `cash-change-exact` переведен на `<Check size={20} /> <span>БЕЗ СДАЧИ (РОВНО)</span>`;
-     - Полное сохранение 54-ФЗ бейджа необязательности ИНН физлиц и фоллбэка соло-врача.
-- **Файлы**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`.
-- **Тесты**: `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (8/8 pass), `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (pass) — коммиты `7e55b34a6`, `3658680bc`.
+     - Полное сохранение 54-ФЗ бейджа необязательности ИНН физлиц и фоллбэка соло-врача;
+  6. *Векторная гигиена фискального чека 54-ФЗ и биллинга (Мандат 8d, Грех 7, коммит `302d17653`)*:
+     - В `FiscalReceipt54FzModal.tsx` и `PatientBillingModal.tsx` зачищены все текстовые дингбаты (`✓`, `★`, `✕`) в пользу векторных SVG Lucide (`ShieldCheck`, `Sparkles`, `X`);
+     - В экспресс-оплате и блоке плательщика бейдж «54-ФЗ: ИНН с физлиц НЕ требуется» переведен на SVG `<ShieldCheck />` без юникод-галочки;
+     - С кнопок «100% Гарантия» и плашек гарантии/персонала удалены звездочки `★`, из плашки округления до сотен удалена галочка `✓` (сохранены векторные иконки `ShieldCheck` и `Sparkles`);
+     - Кнопка сброса скидки `btn-discount-reset` переведена на `<X size={13} /> <span>Сброс</span>`.
+- **Файлы**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`, `apps/web/src/components/finance/PatientBillingModal.tsx`.
+- **Тесты**: `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (8/8 pass), `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (pass) — коммиты `7e55b34a6`, `3658680bc`, `302d17653`.
 
 #### 2.10.217. 1-клик норма пародонта CPITN 0, протокол эндодонтии (NaOCl/гуттаперча), печать А4 и WCAG AAA (Wave 69 / Feature 258)
 - **Назначение**: Снижение трения врача в специализированных протоколах пародонтологии и эндодонтии, устранение симуляторов ручного ввода, обеспечение полиграфической печати А4 (Мандаты 8c, 8d, 8e, 8k, 8n).

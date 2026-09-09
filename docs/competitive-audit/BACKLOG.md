@@ -461,9 +461,9 @@
     5. *Каппа от бруксизма / прикусной сплинт (3 дня)*, *индивидуальный абатмент Ti-Base (7 дней)*, *съемный нейлоновый / Acry-Free протез (8 дней)*.
   - **Снятие 30-дневного блока плана лечения (Мандат 8e пункт 7)**:
     - По Конституции клиники (Раздел VII THE HAMMER): «Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату».
-    - Вместо блокировки кнопки создания/отправки наряда ЗТЛ система выводит мягкий бирюзовый бейдж: `✓ План составлен >30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e) · Без согласований начмеда`.
+    - Вместо блокировки кнопки создания/отправки наряда ЗТЛ система выводит мягкий бирюзовый бейдж с векторной иконкой Lucide `ShieldCheck` / `CheckCircle2` (Мандат 8d п. 7, коммит `302d17653`): «План составлен >30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e) · Без согласований начмеда».
 - **Статус**: 
-  - Фронтенд / Расчеты: `apps/web/src/components/lab/labMath.ts`, `DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `dentalLabFinancialGateEngine.ts`, `orders/LabWorkOrderModal.tsx`, `orders/labWorkOrderPresets.ts` (коммиты `96dc7246c`, `97af039fc`).
+  - Фронтенд / Расчеты: `apps/web/src/components/lab/labMath.ts`, `DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `dentalLabFinancialGateEngine.ts`, `DentalLabFinancialGate.tsx`, `orders/LabWorkOrderModal.tsx`, `orders/labWorkOrderPresets.ts` (коммиты `96dc7246c`, `97af039fc`, `302d17653`).
   - **Ликвидация академического блоата (Мандаты 8i, 8k, 8e)**: Избыточный компонент `DentalLabOcclusionTab.tsx` (концепции окклюзии Доусона, микроны фрезера ЗТЛ, перикиматы) официально снесён и удален из кодовой базы. В `DentalLabOrderModal.tsx` оставлено ровно 5 чистых вкладок (1. Зубы и Конструкция, 2. Расцветка VITA, 3. Этапы и Сроки, 4. Себестоимость, 5. Бланк ГОСТ).
   - Тесты: `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (31 сценарий тестов 1-клик пресетов и снятия 30-дневного блока, 100% passing).
 
@@ -2502,9 +2502,11 @@
      - Дедлайн сдачи работы (Due date), даты примерок каркаса и керамики (при наличии);
      - Особые клинические указания и телефон клиники для связи;
   3. *Универсальная печать наряда*: прямой вызов `handlePrint` из любого таба без необходимости переходить на вкладку 4 («Печать и QR») и листать вниз;
-  4. *Интерфейс DentalLabOrderModalProps*: поддержка `clinicPhone` и `clinicName` с клиническими дефолтами.
-- **Файлы**: `apps/web/src/components/lab/DentalLabOrderModal.tsx`, `apps/web/src/components/lab/__tests__/dentalLabAutonomyWave52.test.tsx`.
-- **Тесты**: `apps/web/src/components/lab/__tests__/dentalLabAutonomyWave52.test.tsx` (5/5 pass), `apps/web/src/components/lab/__tests__/*.test.*` (51/51 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `73e12e2dc`.
+  4. *Интерфейс DentalLabOrderModalProps*: поддержка `clinicPhone` и `clinicName` с клиническими дефолтами;
+  5. *Векторная гигиена уведомлений срока плана лечения (Мандат 8d п. 7, коммит `302d17653`)*:
+     - В `DentalLabFinancialGate.tsx` и `orders/LabWorkOrderModal.tsx` текстовые юникод-дингбаты `✓` заменены на чистые векторные SVG Lucide (`ShieldCheck`, `CheckCircle2`), подтверждающие неблокирующий статус наряда ЗТЛ при плане старше 30 дней.
+- **Файлы**: `apps/web/src/components/lab/DentalLabOrderModal.tsx`, `apps/web/src/components/lab/DentalLabFinancialGate.tsx`, `apps/web/src/components/lab/orders/LabWorkOrderModal.tsx`, `apps/web/src/components/lab/__tests__/dentalLabAutonomyWave52.test.tsx`.
+- **Тесты**: `apps/web/src/components/lab/__tests__/dentalLabAutonomyWave52.test.tsx` (5/5 pass), `apps/web/src/components/lab/__tests__/*.test.*` (51/51 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммиты `73e12e2dc`, `302d17653`.
 
 ## 4.111. `ортодонтия_мессенджеры::1_клик_копирование_памятки_по_ношению_эластиков_и_уходу_за_брекетами_элайнерами_для_пациента` [РЕАЛИЗОВАНО] (Wave 53)
 - **Идея**: 1-клик копирование структурированной памятки по ношению межчелюстных эластиков, смене капп-элайнеров и гигиене брекет-системы для пациента в WhatsApp и Telegram с контактами клиники (Мандаты 8c, 8d п. 2, 8d п. 7, 8e п. 1, 8e п. 2, 8i, 8k, 8n).
@@ -2913,12 +2915,19 @@
      * Кнопка сброса скидки `btn-discount-none` оформлена через `<X size={14} /> <span>Сброс (0%)</span>`;
      * Индикатор точной суммы без сдачи `cash-change-exact` переведен на `<Check size={20} /> <span>БЕЗ СДАЧИ (РОВНО)</span>`;
      * Сохранен фоллбэк имени кассира на лечащего врача для соло-практики и серверная запись оплат по 54-ФЗ.
+  6. **Векторная гигиена фискального чека 54-ФЗ и биллинга (Мандат 8d, Грех 7, коммит `302d17653`)**:
+     * В `FiscalReceipt54FzModal.tsx` и `PatientBillingModal.tsx` ликвидированы текстовые дингбаты (`✓`, `★`, `✕`) в пользу чистых SVG Lucide (`ShieldCheck`, `Sparkles`, `X`);
+     * В экспресс-оплате и блоке типа плательщика бейдж «54-ФЗ: ИНН с физлиц НЕ требуется» переведен на векторный `<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />` без текстовой галочки;
+     * С кнопок «100% Гарантия» и плашек гарантийных переделок/персонала удалены звездочки `★`, из плашки округления до сотен удалена галочка `✓` (сохранены векторные иконки `ShieldCheck` и `Sparkles`);
+     * Кнопка сброса скидки `btn-discount-reset` в `PatientBillingModal.tsx` переведена на `<X size={13} className="shrink-0" /> <span>Сброс</span>`.
 - **Файлы**:
   - `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`
   - `apps/web/src/components/finance/CashRegisterModal.tsx`
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`
+  - `apps/web/src/components/finance/PatientBillingModal.tsx`
 - **Тесты**:
   - `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (8/8 pass, коммиты `7e55b34a6`, `3658680bc`)
-  - `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (pass)
+  - `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (pass, коммит `302d17653`)
 
 ---
 
