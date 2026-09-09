@@ -2208,6 +2208,109 @@
 - **Файлы**: `apps/web/src/components/patient/blankContractPrint.ts`, `apps/web/src/components/documents/PaidContractRequiredFieldsPanel.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/documents/forms/PaidServiceContractForm.tsx`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/utils/clinicProfileUtils.ts`, `apps/web/src/utils/commonHelpers/visitDraftHelpers.ts`, `apps/web/src/AppHelpers.tsx`, `apps/web/src/PatientsView.tsx`.
 - **Тесты**: `apps/web/src/components/documents/__tests__/patientBlankContractAndProfileAutonomyWave65.test.tsx` (10/10 pass) — коммит `c184885bb`.
 
+#### 2.10.214. 1-клик быстрые скидки врача (5–100%) и мульти-тендерный сплит оплат в PaymentModal (Wave 66 / Feature 255)
+- **Назначение**: Обеспечение безусловной автономии лечащего врача по применению скидок (включая 100% на гарантийные переделки и лечение сотрудников) без необходимости ввода паролей администратора, а также поддержка точного мульти-тендерного сплита по 7 каналам оплаты (Мандаты 8b, 8e п. 7, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Движок скидок `calculatePaymentDiscount`*:
+     - В `PaymentModal.tsx` чистая функция вычисляет размер скидки в рублях и копейках на основе целочисленной математики (`Math.round`), защищая баланс от отрицательных значений и овердрафта;
+     - Кнопки быстрых пресетов `btn-discount-5`, `btn-discount-10`, `btn-discount-20`, `btn-discount-50`, `btn-discount-100` («100% Гарантия / Персонал»);
+  2. *Мульти-тендерный сплит*:
+     - Автоматический расчет нераспределенной суммы остатка и кнопка мгновенного распределения на активный канал;
+  3. *Печать счетов и актов*:
+     - Динамическая подстановка детализации скидок в печатный бланк документа;
+  4. *HIG*:
+     - Тач-таргеты $\ge 44\times 44\text{px}$, 0 disabled кнопок, 0 мультяшных эмодзи.
+- **Файлы**: `apps/web/src/components/finance/PaymentModal.tsx`.
+- **Тесты**: `apps/web/src/components/finance/__tests__/paymentModalDiscountsAndDoctorAutonomyWave66.test.tsx` (11/11 pass) — коммит `5cb65d877`.
+
+#### 2.10.215. Предотвращение NaN и Infinity в CommerceML XML для 1С при гарантийных работах (0 ₽) (Wave 67 / Feature 256)
+- **Назначение**: Гарантия математической чистоты бухгалтерской выгрузки в 1С:Предприятие 8.3 при 100% гарантийных скидках и нулевых позициях (0.00 ₽), гармонизация тем оформления по дизайн-токенам (Мандаты 8b, 8d, 8e, 8n).
+- **Архитектурные механизмы**:
+  1. *Санитаризация схемы CommerceML XML*:
+     - В `packages/shared/src/finance/oneCEnterpriseExport.ts` функция `renderOneCItemXml` и препроцессинг Zod защищают `discountPercent` от деления на 0: `safePercent = Math.min(100, Math.max(0, Math.round(item.discountPercent)))`;
+     - Исключено появление некорректных тегов `<Процент>NaN</Процент>` и `<Процент>Infinity</Процент>`;
+  2. *Дизайн-токены в `Billing1CExportModal.tsx`*:
+     - Ликвидация жестко зашитых классов Tailwind `bg-white dark:bg-slate-800`, переход на CSS-переменные `var(--paper)`, `var(--paper-soft)`, `var(--line)`, `var(--ink)`;
+  3. *HIG*:
+     - Строго 0 эмодзи в выгрузках и кнопках, тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `packages/shared/src/finance/oneCEnterpriseExport.ts`, `apps/web/src/components/finance/Billing1CExportModal.tsx`, `apps/web/src/components/finance/OneCExportButton.tsx`.
+- **Тесты**: `apps/web/src/components/finance/__tests__/oneCZeroPriceAndThemeAutonomy.test.tsx` (5/5 pass) — коммит `376903567`.
+
+#### 2.10.216. Автоматический фоллбэк кассира на лечащего врача, адаптивная сетка кнопок и синхронизация оплат 54-ФЗ (Wave 68 / Feature 257)
+- **Назначение**: Обеспечение прозрачности фискализации для соло-практики (авто-подстановка ФИО врача вместо анонимного «Кассир»), устранение сплющивания кнопок быстрой оплаты и серверная фиксация оплат в CRM (Мандаты 8d, 8e, 8n).
+- **Архитектурные механизмы**:
+  1. *Фоллбэк кассира в `FastCheckoutModal.tsx` и `CashRegisterModal.tsx`*:
+     - `effectiveCashierFullName = cashierFullName || attendingDoctorName || "Врач"`;
+  2. *Эргономика сетки пресетов*:
+     - Замена сжатой `lg:grid-cols-8` на устойчивую сетку `grid-cols-2 sm:grid-cols-4 gap-2`, гарантирующую читаемость надписей и тач-таргеты $\ge 44\text{px}$;
+  3. *Синхронизация с CRM*:
+     - Автоматическая отправка `POST /api/billing/payments` с `Idempotency-Key` при фискализации чека;
+  4. *Авто-выравнивание сплита*:
+     - Разблокировка кнопки подтверждения (`disabled={false}`) с авто-отнесением нераспределенного остатка на активный способ оплаты.
+- **Файлы**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`.
+- **Тесты**: `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (8/8 pass), `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (pass) — коммит `7e55b34a6`.
+
+#### 2.10.217. 1-клик норма пародонта CPITN 0, протокол эндодонтии (NaOCl/гуттаперча), печать А4 и WCAG AAA (Wave 69 / Feature 258)
+- **Назначение**: Снижение трения врача в специализированных протоколах пародонтологии и эндодонтии, устранение симуляторов ручного ввода, обеспечение полиграфической печати А4 (Мандаты 8c, 8d, 8e, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *1-клик пресет нормы пародонта*:
+     - В `PeriodontalChartingModal.tsx` пресет CPITN 0 / PSR 0 (карманы $\le 2\text{ мм}$, кровоточивость BOP 0) без прокликивания 192 точек;
+  2. *Клинический протокол эндодонтии*:
+     - В `EndoCanalMeasurementDrawer.tsx` протокол ирригации NaOCl 3.25%, обтурация гуттаперчей с силером AH Plus, ротационные системы и апекслокатор;
+  3. *Печать А4*:
+     - В `periodontalCharting.css` директивы `@media print` скрывают сервисный тулбар и сохраняют четкую сетку индексов на белом фоне;
+  4. *Контрастность тем*:
+     - Акцентный цвет `var(--teal)` с белым текстом `#ffffff` для высокой различимости по WCAG AAA.
+- **Файлы**: `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx`, `apps/web/src/components/odontogram/periodontalCharting.css` — коммит `46ce86761`.
+
+#### 2.10.218. Устранение мобильного краша одонтограммы 390x844, квадрантная навигация и чистый ноль рублей (Wave 69 / Feature 259)
+- **Назначение**: Доминирующий масштаб зубной дуги на холсте (Tier 1), 100% стабильность на мобильных экранах смартфонов (iPhone 390x844), навигация по квадрантам и ликвидация искусственного пола в 100 коп (Мандаты 8b, 8c, 8d, 8e, 8n).
+- **Архитектурные механизмы**:
+  1. *Защита мобильного рендера*:
+     - Передача полного кортежа аргументов в `getQuadrantTeeth`, защитные гарды в `splitArchAtMidline` для пустых и граничных массивов зубов;
+  2. *Квадрантная навигация*:
+     - Поддержка 4 квадрантов для взрослых и 4 квадрантов для детей в `AdultToothChart.tsx`, `PediatricToothChart.tsx`, `ToothChart.tsx`, `AnatomicalSvgOdontogram.tsx`;
+  3. *Ликвидация 100-копеечного пола (CLIN-01)*:
+     - При `liveGrossTotalRub === 0` сумма счета строго равна `0` копеек;
+  4. *Масштаб холста (CLIN-03)*:
+     - Устранение затухающего цикла обратной связи, высота челюсти достигает 369px;
+  5. *Ликвидация утечки `node:crypto`*:
+     - Внедрение чистого TS `sha256` в `cadespluginFacade.ts`, устраняющее сбой загрузки браузера.
+- **Файлы**: `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx`, `apps/web/src/components/odontogram/OdontogramModule.tsx`, `apps/web/src/components/odontogram/ToothChart.tsx`, `apps/web/src/components/odontogram/AdultToothChart.tsx`, `apps/web/src/components/odontogram/PediatricToothChart.tsx`, `packages/shared/src/crypto/cadespluginFacade.ts`.
+- **Тесты**: `mobileQuadrantOdontogram.test.ts` (11/11 pass), `odontogramZeroBillAndRevisionAutonomy.test.tsx` (12/12 pass), `odontogramOverhaulAndVisualErgonomics.test.tsx` (12/12 pass) — коммиты `1bc6b25da`, `53c69ae61`.
+
+#### 2.10.219. 1-клик глобальная норма 043/у, соматическая норма, авто-режим ревизии («Исправленному верить») и штампы печати (Wave 69 / Feature 260)
+- **Назначение**: Полная клиническая автономия врача при ведении амбулаторной карты Формы 043/у Минздрава РФ, мгновенное заполнение нормы в 1 клик, неблокирующее редактирование закрытых приемов и печать в любой момент (Мандаты 8d, 8e пп. 3, 4, 5, 8n).
+- **Архитектурные механизмы**:
+  1. *Глобальная норма в 1 клик*:
+     - Кнопка `btn-043-global-norm-1click` в `DentalMedicalCard043uForm.tsx` заполняет все разделы объективного статуса физиологической нормой;
+  2. *Соматическая норма в карточке пациента*:
+     - Кнопка `btn-somatic-healthy-norm` («Соматически здоров / норма») в `PatientCardModal.tsx` и `PatientGeneralInfoTab.tsx`;
+  3. *Автономный режим ревизии (Мандат 8e п. 4)*:
+     - В `useVisitDiaryLogic.ts` и `VisitDiarySection.tsx` синхронизация протокола закрытого визита автоматически переводит в режим ревизии `isRevisionMode = true` с аудитом «Исправленному верить»;
+  4. *Штампы печати в любой момент (Мандат 8e п. 5)*:
+     - Кнопка `btn-visit-fast-print-043u` в `VisitView.tsx`: для открытого визита штамп «ЧЕРНОВИК», для закрытого — «ПОДПИСАНО ВРАЧОМ», для ревизии — «ИСПРАВЛЕННОМУ ВЕРИТЬ».
+- **Файлы**: `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`, `apps/web/src/components/patient/PatientCardModal.tsx`, `apps/web/src/components/patient/tabs/PatientGeneralInfoTab.tsx`, `apps/web/src/components/useVisitDiaryLogic.ts`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/VisitView.tsx`.
+- **Тесты**: `apps/web/src/components/documents/__tests__/outpatientForm043AndPatientCardAutonomy.test.tsx` (11/11 pass) — коммиты `1bc6b25da`, `53c69ae61`.
+
+#### 2.10.220. Шторка записи визита AppointmentDrawer, автономия врача (опциональный ассистент) и 1-клик статусы $\ge 44\text{px}$ (Wave 70 / Feature 261)
+- **Назначение**: Создание эргономичной боковой шторки визита (Slide-over drawer) взамен модального перекрытия, полная свобода соло-врача без обязательного ассистента и 1-клик быстрые статусы визита (Мандаты 8c, 8d, 8e п. 8, 8n).
+- **Архитектурные механизмы**:
+  1. *Шторка записи `AppointmentDrawer.tsx`*:
+     - Slide-over компонент с плавным выдвижением справа без блокировки обзора сетки расписания;
+  2. *Опциональный ассистент и режим соло-врача (Мандат 8e п. 8, 8n)*:
+     - Поле `assistantUserId` строго nullable, выбор «-- Без ассистента --», в соло-режиме отображается бейдж «Соло-врач (автономия)» с авто-байпасом;
+     - Кнопка «Сохранить запись» активна всегда (`disabled={false}`);
+  3. *1-клик быстрые статусы визита*:
+     - 6 клинических статусов («Запланирован», «Подтвержден», «Пришел», «В кресле», «Завершен», «Отменен») с тач-таргетами $\ge 44\times 44\text{px}$ по Apple HIG (Мандат 8d);
+  4. *Автоподстановка дежурного врача*:
+     - Функция `resolveChairDutyDoctor` автоматически назначает врача кресла на смену;
+  5. *Инлайн-создание пациента*:
+     - Заведение нового пациента прямо в шторке с генерацией реального UUID без перехода в картотеку.
+- **Файлы**: `apps/web/src/components/schedule/AppointmentDrawer.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/appointmentDrawerAutonomy.test.tsx` (10/10 pass) — коммит `e1078cdfc`.
+
+
 
 
 
