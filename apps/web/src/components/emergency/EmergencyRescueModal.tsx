@@ -99,7 +99,7 @@ export function EmergencyRescueModal({
 	isOpen,
 	onClose,
 	onApplyToDiary,
-	initialPatientName = 'Иванов Иван Иванович',
+	initialPatientName = 'Пациент',
 	initialPatientAgeYears = 42,
 	initialPatientWeightKg = 75,
 	initialPatientGender = 'male',
@@ -107,9 +107,9 @@ export function EmergencyRescueModal({
 	clinicAddress = 'г. Москва, ул. Клиническая, д. 10, стр. 2',
 	clinicPhone = '+7 (495) 123-45-67',
 	cabinetNumber = '1',
-	doctorFullName = 'Д-р Смирнов А. В.',
-	assistantFullName = 'Медсестра Петрова Е. С.',
-	medCardNumber = '043/у-2026/894',
+	doctorFullName = 'Лечащий врач-стоматолог',
+	assistantFullName = 'Ассистент / медсестра',
+	medCardNumber = '043/у',
 	defaultScenarioId = 'anaphylactic_shock'
 }: EmergencyRescueModalProps) {
 	// Active scenario selection

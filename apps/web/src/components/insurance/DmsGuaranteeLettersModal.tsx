@@ -205,20 +205,19 @@ export const DEFAULT_BILL_ITEMS_TO_SPLIT: readonly BillItemToSplit[] = [
 export function DmsGuaranteeLettersModal({
 	isOpen,
 	onClose,
-	patient = {
-		id: "pat-101",
-		fullName: "Иванов Сергей Алексеевич",
-		birthDate: "14.06.1988",
-		policyNumber: "СГЗ-77-991283",
-		insuranceCompany: "АО «СОГАЗ»",
-		phone: "+7 (926) 880-12-34",
-	},
+	patient,
 	initialLetters = [],
-	initialBillItems = DEFAULT_BILL_ITEMS_TO_SPLIT,
+	initialBillItems = [],
 	onSaveLetter,
 	onSelectLetterForVisit,
 	onApplySplitCalculation,
 }: DmsGuaranteeLettersModalProps) {
+	const effectivePatientId = patient?.id || "";
+	const effectivePatientFullName = patient?.fullName || "Пациент";
+	const effectivePatientBirthDate = patient?.birthDate || "";
+	const effectivePolicyNumberDefault = patient?.policyNumber || "";
+	const effectiveInsurerName = patient?.insuranceCompany || "ДМС РФ";
+	const effectivePhone = patient?.phone || "—";
 	const insurerSelectId = useId();
 	const policyNumberInputId = useId();
 	const letterNumberInputId = useId();
@@ -283,7 +282,7 @@ export function DmsGuaranteeLettersModal({
 	const [newInsurerKey, setNewInsurerKey] = useState<string>(
 		RUSSIAN_DMS_INSURERS[0]?.key || "sogaz",
 	);
-	const [newPolicyNumber, setNewPolicyNumber] = useState<string>(patient.policyNumber || "");
+	const [newPolicyNumber, setNewPolicyNumber] = useState<string>(effectivePolicyNumberDefault);
 	const [newLetterNumber, setNewLetterNumber] = useState<string>(
 		`ГП-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
 	);
@@ -310,14 +309,14 @@ export function DmsGuaranteeLettersModal({
 
 	// Режим «Острая боль / Экстренное лечение» (Мандат 8e: отсутствие ГП не блокирует прием)
 	const [isEmergencyCare, setIsEmergencyCare] = useState<boolean>(false);
-	const [quickPolicyNumber, setQuickPolicyNumber] = useState<string>(patient.policyNumber || "");
+	const [quickPolicyNumber, setQuickPolicyNumber] = useState<string>(effectivePolicyNumberDefault);
 
 	// Состояние сплит-калькулятора визита
 	const [billItems, setBillItems] = useState<readonly BillItemToSplit[]>(initialBillItems);
 
 	// 1-клик прикрепление номера полиса ДМС и страховой компании без 20 полей бюрократии
 	const handleQuickAttachPolicy = async (insurerKey: string, customPolicyNumber?: string) => {
-		const polNum = (customPolicyNumber || quickPolicyNumber || newPolicyNumber || patient.policyNumber || "").trim() || `ПОЛИС-ДМС-${Date.now().toString().slice(-6)}`;
+		const polNum = (customPolicyNumber || quickPolicyNumber || newPolicyNumber || effectivePolicyNumberDefault).trim() || `ПОЛИС-ДМС-${Date.now().toString().slice(-6)}`;
 
 		setIsSaving(true);
 		try {
@@ -328,9 +327,9 @@ export function DmsGuaranteeLettersModal({
 					...denteAdminSecretRequestHeaders(),
 				},
 				body: JSON.stringify({
-					patientId: patient.id,
-					patientFullName: patient.fullName,
-					patientBirthDate: patient.birthDate,
+					patientId: effectivePatientId,
+					patientFullName: effectivePatientFullName,
+					patientBirthDate: effectivePatientBirthDate || null,
 					insurerKey,
 					policyNumber: polNum,
 					isEmergency: isEmergencyCare,
@@ -392,16 +391,16 @@ export function DmsGuaranteeLettersModal({
 	// Сохранение нового гарантийного письма в PostgreSQL через API
 	const handleSaveNewLetter = async () => {
 		const effectiveLetterNumber = newLetterNumber.trim() || `ГП-${isEmergencyCare ? "ЭКСТРЕННО" : "ДМС"}-${Date.now().toString().slice(-6)}`;
-		const effectivePolicyNumber = newPolicyNumber.trim() || (patient.policyNumber || `ПОЛИС-ДМС-${Date.now().toString().slice(-6)}`);
+		const effectivePolicyNumber = newPolicyNumber.trim() || (effectivePolicyNumberDefault || `ПОЛИС-ДМС-${Date.now().toString().slice(-6)}`);
 		const effectiveMaxCoverageRub = newMaxCoverageRub > 0 ? newMaxCoverageRub : 50000;
 
 		const insurer = RUSSIAN_DMS_INSURERS.find((i) => i.key === newInsurerKey);
 		const insurerDisplayName = insurer?.shortName || "Страховая компания ДМС";
 
 		const payload = {
-			patientId: patient.id,
-			patientFullName: patient.fullName,
-			patientBirthDate: patient.birthDate || null,
+			patientId: effectivePatientId,
+			patientFullName: effectivePatientFullName,
+			patientBirthDate: effectivePatientBirthDate || null,
 			policyNumber: effectivePolicyNumber,
 			insurerKey: newInsurerKey,
 			insurerName: insurerDisplayName,
@@ -709,10 +708,10 @@ export function DmsGuaranteeLettersModal({
 						</div>
 						<div>
 							<h2 className="dms-hub-title">
-								Гарантийные письма ДМС: {patient.fullName}
+								Гарантийные письма ДМС: {effectivePatientFullName}
 							</h2>
 							<div className="dms-hub-subtitle">
-								Полис: <strong>{patient.policyNumber || "Не указан"}</strong> • Страховщик: {patient.insuranceCompany || "ДМС РФ"} • Тел: {patient.phone || "—"}
+								Полис: <strong>{effectivePolicyNumberDefault || "Не указан"}</strong> • Страховщик: {effectiveInsurerName} • Тел: {effectivePhone}
 							</div>
 						</div>
 					</div>
@@ -1468,32 +1467,40 @@ export function DmsGuaranteeLettersModal({
 										</tr>
 									</thead>
 									<tbody>
-										{splitCalculationResults.lineResults.map((r, idx) => (
-											<tr key={r.item.id}>
-												<td style={{ textAlign: "center" }}>{idx + 1}</td>
-												<td style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--teal, #0d9488)" }}>
-													{r.item.serviceCode804n}
-												</td>
-												<td>
-													<div style={{ fontWeight: 500 }}>{r.item.serviceName}</div>
-													{r.item.toothNumber && (
-														<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Зуб {r.item.toothNumber}</span>
-													)}
-												</td>
-												<td style={{ textAlign: "center" }}>{r.item.quantity}</td>
-												<td style={{ textAlign: "right" }}>{formatRubKopecks(r.item.unitPriceKopecks / 100)}</td>
-												<td style={{ textAlign: "right", fontWeight: 600 }}>{formatRubKopecks(r.lineTotalKopecks / 100)}</td>
-												<td style={{ textAlign: "right", fontWeight: 700, color: "var(--teal, #0d9488)" }}>
-													{formatRubKopecks(r.dmsCoveredKopecks / 100)}
-												</td>
-												<td style={{ textAlign: "right", fontWeight: 700, color: r.patientCoPayKopecks > 0 ? "var(--warn-fg, #d97706)" : "var(--muted, #64748b)" }}>
-													{formatRubKopecks(r.patientCoPayKopecks / 100)}
-												</td>
-												<td style={{ fontSize: "0.75rem", color: r.isApproved ? "var(--ok-fg, #059669)" : "var(--warn-fg, #d97706)" }}>
-													{r.reason}
+										{splitCalculationResults.lineResults.length === 0 ? (
+											<tr>
+												<td colSpan={9} style={{ textAlign: "center", padding: "24px", color: "var(--muted, #64748b)" }}>
+													Нет услуг для сплит-расчета в текущем визите
 												</td>
 											</tr>
-										))}
+										) : (
+											splitCalculationResults.lineResults.map((r, idx) => (
+												<tr key={r.item.id}>
+													<td style={{ textAlign: "center" }}>{idx + 1}</td>
+													<td style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--teal, #0d9488)" }}>
+														{r.item.serviceCode804n}
+													</td>
+													<td>
+														<div style={{ fontWeight: 500 }}>{r.item.serviceName}</div>
+														{r.item.toothNumber && (
+															<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Зуб {r.item.toothNumber}</span>
+														)}
+													</td>
+													<td style={{ textAlign: "center" }}>{r.item.quantity}</td>
+													<td style={{ textAlign: "right" }}>{formatRubKopecks(r.item.unitPriceKopecks / 100)}</td>
+													<td style={{ textAlign: "right", fontWeight: 600 }}>{formatRubKopecks(r.lineTotalKopecks / 100)}</td>
+													<td style={{ textAlign: "right", fontWeight: 700, color: "var(--teal, #0d9488)" }}>
+														{formatRubKopecks(r.dmsCoveredKopecks / 100)}
+													</td>
+													<td style={{ textAlign: "right", fontWeight: 700, color: r.patientCoPayKopecks > 0 ? "var(--warn-fg, #d97706)" : "var(--muted, #64748b)" }}>
+														{formatRubKopecks(r.patientCoPayKopecks / 100)}
+													</td>
+													<td style={{ fontSize: "0.75rem", color: r.isApproved ? "var(--ok-fg, #059669)" : "var(--warn-fg, #d97706)" }}>
+														{r.reason}
+													</td>
+												</tr>
+											))
+										)}
 									</tbody>
 									<tfoot>
 										<tr className="dms-registry-table-totals">
@@ -1530,7 +1537,7 @@ export function DmsGuaranteeLettersModal({
 				{/* 4. Footer */}
 				<div className="dms-hub-footer">
 					<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
-						Пациент: <strong>{patient.fullName}</strong> • Доступно писем: <strong>{letters.length}</strong>
+						Пациент: <strong>{effectivePatientFullName}</strong> • Доступно писем: <strong>{letters.length}</strong>
 					</div>
 
 					<div style={{ display: "flex", gap: "10px" }}>

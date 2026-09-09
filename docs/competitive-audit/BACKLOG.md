@@ -3422,6 +3422,38 @@
     * *StaffCommissionsPanel.tsx*, *emergencyAnaphylaxisProtocol.css*, *EmergencyAnaphylaxisProtocolModal.tsx*, *anesthesia.css*: дочищены неиспользуемые импорты и мертвые CSS-правила ликвидированных секундомеров и метрономов.
 * **Верификация**: `analyticsWidgetData.test.ts` (19/19 PASS), `chairDoctorDutyAssignmentWave60.test.tsx` (10/10 PASS), `settingsRbacAndCommissions.test.ts` (6/6 PASS), `emergencyAnaphylaxisProtocol.test.ts` (19/19 PASS), `anesthesiaSafetyEngine.test.ts` (21/21 PASS), `insuranceMath.test.ts` (11/11 PASS), `check:encoding` 5138 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
+### Wave 87: Ликвидация секундомера-симулятора анафилаксии, звуковых сирен и синтетических клоун-дефолтов в ДМС и Emergency HUD
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `tbd`
+* **Результаты**:
+  - **Ликвидация секундомера-симулятора и сирен в EmergencyAnaphylaxisProtocolModal (Мандаты 8k, 8e, Core Rule 7)**:
+    * *EmergencyAnaphylaxisProtocolModal.tsx*: удален принудительный звуковой сигнал тревоги (`soundFeedback.playWarningAlert()`) при монтировании модального окна, создававший нежелательный шумовой стресс в кабинете.
+    * *EmergencyAnaphylaxisProtocolModal.tsx*: ликвидирован непрерывно тикающий таймер с интервалом раз в секунду (`setInterval`, `isTimerRunning`, `stopwatchSeconds`, кнопки старт/пауза `timer-toggle-btn`); панель переведена на честную фиксацию астрономического времени инцидента (`incidentStartTime`) с кнопками сброса шагов (`timer-reset-btn`) и отметки времени контрольной точки витальных функций (`timer-lap-btn`).
+    * Введение препаратов и выполнение шагов реанимации фиксируются с реальным астрономическим временем (`toLocaleTimeString("ru-RU")`), полностью отвечая требованиям стандартов оформления медицинской карты Формы 043/у и Приказа МЗ РФ № 786н.
+  - **Ликвидация клоун-дефолтов и фейковых услуг в DmsGuaranteeLettersModal (Мандаты 8k, 11, Zero Mocks)**:
+    * *DmsGuaranteeLettersModal.tsx*: удален жестко зашитый объект фиктивного пациента по умолчанию (`patient = { id: "pat-101", fullName: "Иванов Сергей Алексеевич", ... }`) и дефолтный список услуг с отбеливанием Zoom 4 (`initialBillItems = DEFAULT_BILL_ITEMS_TO_SPLIT`). Дефолт `initialBillItems` переведен на честный пустой массив `[]`.
+    * Таблица сплит-расчета ДМС дополнена чистым пустым состоянием («Нет услуг для сплит-расчета в текущем визите») при отсутствии счетов в визите.
+    * Внедрена безопасная обработка опционального пациента (`effectivePatientId`, `effectivePatientFullName`, `effectivePolicyNumberDefault`, `effectiveInsurerName`, `effectivePhone`) во всех формах, шапке, подвале и функции быстрого прикрепления полиса.
+  - **Очистка клоун-дефолтов в EmergencyRescueModal (Мандаты 8e, 11, Core Rule 7)**:
+    * *EmergencyRescueModal.tsx*: заменены синтетические дефолты ФИО пациента (`Иванов Иван Иванович`), врача, медсестры и вымышленного номера карты (`043/у-2026/894`) на клинически нейтральные фолбэки (`initialPatientName = 'Пациент'`, `doctorFullName = 'Лечащий врач-стоматолог'`, `assistantFullName = 'Ассистент / медсестра'`, `medCardNumber = '043/у'`).
+* **Верификация**: `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/web).
+
+
+### Wave 85: Эргономика расписания, автономия закрытия без модальной матрёшки и мгновенная привязка врачей к креслам (StomX / IDENT Parity)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `feat(schedule): ...`
+* **Результаты**:
+  - **QuickBookingDrawer (Анти-Матрёшка & Автосохранение черновика, Мандаты 8d п. 6, 8e п. 6, 8k, 8n)**:
+    * *Ликвидация блокирующей модалки подтверждения `showDirtyConfirm`*: При закрытии шторки (`handleRequestClose`, Esc, клик по оверлею или кнопка «Отмена (Esc)») при наличии несохраненных правок данные мгновенно и прозрачно сохраняются в `localStorage.setItem("dente_quick_booking_draft", ...)` с информационным тостом. Пользователь больше не блокируется всплывающим alertdialog `quick-booking-dirty-confirm-dialog` («Сохранить черновик записи? Да/Сбросить»).
+    * *1-клик сброс в футере*: В футер добавлена кнопка прямого действия «Сбросить» (`quick-booking-discard-draft-btn`), позволяющая сбросить черновик и закрыть шторку в 1 клик без всплывающих диалогов.
+    * *Глубина модалок СТРОГО 1*: Шторка быстрой записи открывается как портал на верхнем уровне, устраняя вложенные диалоги поверх шторки.
+  - **ChairScheduleView (StomX / IDENT Parity — 1-клик назначение врача и индикатор незанятых установок)**:
+    * *Индикатор незанятых установок `+ Врач`*: Для активных кресел, не имеющих назначенного дежурного врача на выбранный день, в палитре кресел добавлен компактный бейдж `+ Врач` (`chair-view-unstaffed-badge-${chair.id}`), открывающий назначение смены в 1 клик.
+    * *Мгновенная привязка врача в 1 клик*: При выборе врача в поповере смены на незанятом кресле врач немедленно назначается на кресло с дефолтной сменой («Весь день 08:00–20:00») без необходимости дополнительно искать и нажимать кнопку пресета.
+    * *Корректное сохранение двухсменных графиков*: Пресеты «Утро» и «Вечер» объединяются в `two_shifts` только для двух разных врачей; переключение смены у одного и того же врача чисто переназначает его время.
+* **Верификация**: `quickBookingAutonomyWave50.test.tsx` (8/8 PASS), `scheduleWave43StomxParity.test.tsx` (10/10 PASS), полный прогон расписания (478/478 PASS, 0 ошибок), `check:encoding` 5140 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+
+
 
 
 

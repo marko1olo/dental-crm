@@ -10,36 +10,24 @@
  * - ASRA (American Society of Regional Anesthesia) Lipid Rescue Protocol
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
-	AlertCircle,
 	AlertOctagon,
 	AlertTriangle,
-	ArrowRight,
-	Bell,
-	BellOff,
 	Check,
 	CheckCircle2,
-	ChevronRight,
 	Clock,
 	Copy,
-	FileDown,
 	FileText,
 	HeartPulse,
 	Layers,
 	LifeBuoy,
-	Maximize2,
 	Phone,
 	PhoneCall,
-	Play,
 	Plus,
 	Printer,
-	RefreshCw,
 	RotateCcw,
 	ShieldAlert,
-	Sparkles,
-	Volume2,
-	VolumeX,
 	X,
 	Zap,
 } from "lucide-react";
@@ -49,7 +37,6 @@ import {
 	type EmergencyProtocolDefinition,
 	type ExecutedEmergencyStepLog,
 	calculateAllEmergencyDosagesForWeight,
-	formatEmergencyStopwatchTime,
 	generateEmergencyForm043Act,
 	generateEmergency112DispatchScript,
 } from "./emergencyProtocols";
@@ -90,9 +77,10 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 	const [weightKg, setWeightKg] = useState<number>(patientWeightKg);
 	const [patientAgeYears, setPatientAgeYears] = useState<number>(patientAge);
 
-	// 2. Stopwatch State
-	const [stopwatchSeconds, setStopwatchSeconds] = useState<number>(0);
-	const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+	// 2. Incident Start Time State (Real wall-clock timestamp - Mandates 8k, 8e)
+	const [incidentStartTime, setIncidentStartTime] = useState<string>(() =>
+		new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+	);
 
 	// 3. Checklist & Event Log State
 	const [completedChecklistItems, setCompletedChecklistItems] = useState<Record<string, boolean>>({});
@@ -108,26 +96,11 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 			setActiveScenarioId(initialScenario);
 			setWeightKg(patientWeightKg);
 			setPatientAgeYears(patientAge);
-			// Auto start stopwatch for immediate tracking of golden hour
-			setIsTimerRunning(true);
-			soundFeedback.playWarningAlert();
-		} else {
-			setIsTimerRunning(false);
+			setIncidentStartTime(
+				new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+			);
 		}
 	}, [isOpen, initialScenario, patientWeightKg, patientAge]);
-
-	// Stopwatch Interval
-	useEffect(() => {
-		let timer: ReturnType<typeof setInterval> | null = null;
-		if (isOpen && isTimerRunning) {
-			timer = setInterval(() => {
-				setStopwatchSeconds((prev) => prev + 1);
-			}, 1000);
-		}
-		return () => {
-			if (timer) clearInterval(timer);
-		};
-	}, [isOpen, isTimerRunning]);
 
 	// Current Protocol Definition
 	const currentProtocol: EmergencyProtocolDefinition = useMemo(() => {
@@ -150,7 +123,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 			clinicAddress,
 			doctorName,
 			injectedAnestheticInfo,
-			stopwatchSeconds,
 			administeredDrugs: administeredDrugs.map((d) => `${d.name} (${d.dose})`),
 		});
 	}, [
@@ -162,24 +134,24 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 		clinicAddress,
 		doctorName,
 		injectedAnestheticInfo,
-		stopwatchSeconds,
 		administeredDrugs,
 	]);
 
-	// Log Action Helper
+	// Log Action Helper (Real timestamp - Mandates 8k, 8e)
 	const logResuscitationEvent = useCallback(
 		(actionTitle: string, note?: string) => {
-			const timeFormatted = formatEmergencyStopwatchTime(stopwatchSeconds);
+			const now = new Date();
+			const timeFormatted = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 			const newLog: ExecutedEmergencyStepLog = {
 				stepNumber: eventLogs.length + 1,
 				titleRu: actionTitle,
-				timestampSeconds: stopwatchSeconds,
+				timestampSeconds: Math.floor(now.getTime() / 1000),
 				timeFormatted,
 				actionNotes: note,
 			};
 			setEventLogs((prev) => [newLog, ...prev]);
 		},
-		[stopwatchSeconds, eventLogs.length],
+		[eventLogs.length],
 	);
 
 	// Toggle Checklist Item
@@ -200,8 +172,9 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 	// Quick Drug Administration
 	const handleAdministerDrug = useCallback(
 		(drugName: string, doseText: string, routeText: string) => {
-			const timeFormatted = formatEmergencyStopwatchTime(stopwatchSeconds);
-			const nowIso = new Date().toISOString();
+			const now = new Date();
+			const timeFormatted = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+			const nowIso = now.toISOString();
 
 			setAdministeredDrugs((prev) => [
 				...prev,
@@ -210,15 +183,16 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 
 			soundFeedback.playActionSuccess();
 			logResuscitationEvent(`ВВЕДЕНИЕ ПРЕПАРАТА: ${drugName} ${doseText} (${routeText})`);
-			showToast(`Зафиксировано введение: ${drugName} ${doseText} на ${timeFormatted}`, "success");
+			showToast(`Зафиксировано введение: ${drugName} ${doseText} в ${timeFormatted}`, "success");
 		},
-		[stopwatchSeconds, logResuscitationEvent],
+		[logResuscitationEvent],
 	);
 
 	// 1-Click Anaphylaxis Emergency Combo (Mandates 8e, 8k: Адреналин 0.5 мг в/м + Преднизолон 90 мг в/в)
 	const handleApplyAnaphylaxisCombo = useCallback(() => {
-		const timeFormatted = formatEmergencyStopwatchTime(stopwatchSeconds);
-		const nowIso = new Date().toISOString();
+		const now = new Date();
+		const timeFormatted = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+		const nowIso = now.toISOString();
 		const epiDose = calculatedDosages.epinephrine?.volumeText || "0.5 мл (0.5 мг)";
 		const predDose = calculatedDosages.prednisolone?.doseText || "90 – 120 мг";
 
@@ -245,7 +219,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 			"success",
 		);
 	}, [
-		stopwatchSeconds,
 		calculatedDosages,
 		activeScenarioId,
 		logResuscitationEvent,
@@ -260,7 +233,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 			patientWeightKg: weightKg,
 			doctorName,
 			injectedAnestheticInfo,
-			stopwatchTotalSeconds: stopwatchSeconds,
 			executedSteps: eventLogs,
 			administeredDrugs,
 		});
@@ -293,7 +265,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 		weightKg,
 		doctorName,
 		injectedAnestheticInfo,
-		stopwatchSeconds,
 		eventLogs,
 		administeredDrugs,
 		onInsertToVisitNote,
@@ -308,7 +279,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 			patientWeightKg: weightKg,
 			doctorName,
 			injectedAnestheticInfo,
-			stopwatchTotalSeconds: stopwatchSeconds,
 			executedSteps: eventLogs,
 			administeredDrugs,
 		});
@@ -353,7 +323,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 		clinicAddress,
 		doctorName,
 		injectedAnestheticInfo,
-		stopwatchSeconds,
 		eventLogs,
 		administeredDrugs,
 	]);
@@ -775,46 +744,36 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 
 					{/* RIGHT COLUMN: TIMER, CALL 112, QUICK ADMIN, RESUSCITATION LOG */}
 					<aside className="emergency-sidebar">
-						{/* 1. Resuscitation Stopwatch Panel */}
+						{/* 1. Incident Timestamp & Resuscitation Controls (Mandates 8k, 8e: Static incident timestamp instead of toy simulator) */}
 						<div className="emergency-stopwatch-panel" data-testid="stopwatch-panel">
 							<div className="text-[11px] font-black tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
 								<Clock size={14} className="text-red-400" />
-								<span>ТАЙМЕР РЕАНИМАЦИИ</span>
+								<span>ВРЕМЯ НАЧАЛА ИНЦИДЕНТА</span>
 							</div>
 
 							<div
-								className={`emergency-stopwatch-digits ${isTimerRunning ? "running" : ""}`}
+								className="emergency-stopwatch-digits"
 								data-testid="stopwatch-digits"
 							>
-								{formatEmergencyStopwatchTime(stopwatchSeconds)}
+								{incidentStartTime}
 							</div>
 
-							<div className="emergency-timer-btns">
+							<div className="emergency-timer-btns" style={{ gridTemplateColumns: "1fr 1fr" }}>
 								<button
 									type="button"
 									onClick={() => {
-										setIsTimerRunning((prev) => !prev);
+										setCompletedChecklistItems({});
+										setEventLogs([]);
+										setAdministeredDrugs([]);
 										soundFeedback.playSpeechCaptured();
-									}}
-									className={`emergency-timer-btn ${isTimerRunning ? "pause" : "start"}`}
-									data-testid="timer-toggle-btn"
-								>
-									{isTimerRunning ? <RotateCcw size={14} /> : <Play size={14} />}
-									<span>{isTimerRunning ? "Пауза" : "Старт"}</span>
-								</button>
-
-								<button
-									type="button"
-									onClick={() => {
-										setStopwatchSeconds(0);
-										soundFeedback.playSpeechCaptured();
-										logResuscitationEvent("Сброс таймера реанимации");
+										logResuscitationEvent("Сброс протокола реанимации");
 									}}
 									className="emergency-timer-btn reset"
 									data-testid="timer-reset-btn"
+									title="Сбросить шаги и журнал"
 								>
 									<RotateCcw size={14} />
-									<span>Сброс</span>
+									<span>Сброс шагов</span>
 								</button>
 
 								<button
@@ -826,6 +785,7 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 									}}
 									className="emergency-timer-btn start"
 									data-testid="timer-lap-btn"
+									title="Зафиксировать текущее время в журнале"
 								>
 									<CheckCircle2 size={14} />
 									<span>Метка</span>
