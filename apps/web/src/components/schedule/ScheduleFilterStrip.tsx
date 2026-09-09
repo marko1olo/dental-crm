@@ -296,8 +296,10 @@ export function ScheduleFilterStrip({
 	return (
 		<>
 			<section
-				className="schedule-filter-strip min-h-[44px] flex items-center justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
+				className="schedule-filter-strip min-h-[44px] sm:min-h-[36px] sm:h-9 flex items-center justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
 				aria-label="Сохраненные фильтры расписания"
+				data-testid="schedule-toolbar"
+				role="toolbar"
 			>
 			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px touch targets */}
 			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
@@ -487,10 +489,11 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-						className="min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-7.5 px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
 						title="Дополнительные режимы и списки расписания"
 						aria-label="Опции расписания"
 						aria-expanded={isOptionsMenuOpen}
+						data-testid="schedule-toolbar-options-btn"
 					>
 						<MoreVertical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<span className="hidden sm:inline">Опции</span>
@@ -843,9 +846,10 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={onQuickBooking}
-						className="secondary-button min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 sm:h-7.5 px-2 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] active:scale-95 text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 transition-all cursor-pointer select-none"
+						className="secondary-button min-h-[38px] min-w-[38px] sm:min-h-[30px] sm:min-w-0 sm:h-7.5 px-2 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] active:scale-95 text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 transition-all cursor-pointer select-none"
 						title="Новая запись пациента на прием (горячая клавиша N)"
 						aria-label="Добавить запись"
+						data-testid="schedule-toolbar-quick-booking-btn"
 					>
 						<Sparkles size={13} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
 						<span className="hidden sm:inline whitespace-nowrap font-bold">Быстрая запись</span>

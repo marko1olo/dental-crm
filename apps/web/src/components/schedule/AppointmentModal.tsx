@@ -616,17 +616,48 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			effectiveChairId = chairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 		}
 
-		if (!effectivePatientId || !effectiveDoctorUserId || !effectiveChairId || !startsAtLocal || !endsAtLocal) {
-			setError("Заполните все обязательные поля");
+		let effectiveStartsAt = startsAtLocal;
+		let effectiveEndsAt = endsAtLocal;
+
+		// 1-Click Autonomy (Mandates 8e, 8n): если указано время начала, но не указан конец — авто-расчет +30 мин
+		if (effectiveStartsAt && !effectiveEndsAt) {
+			const startIso = fromDateTimeLocalValue(effectiveStartsAt, timezone);
+			const startMs = Date.parse(startIso);
+			if (!Number.isNaN(startMs)) {
+				const defaultEndIso = new Date(startMs + 30 * 60_000).toISOString();
+				effectiveEndsAt = toDateTimeLocalValue(defaultEndIso, timezone);
+				setEndsAtLocal(effectiveEndsAt);
+			}
+		}
+
+		if (!effectivePatientId) {
+			setError("Укажите пациента: выберите из списка или создайте во вкладке «+ Новый пациент»");
 			return;
 		}
 
-		const startsAtIso = fromDateTimeLocalValue(startsAtLocal, timezone);
-		const endsAtIso = fromDateTimeLocalValue(endsAtLocal, timezone);
+		if (!effectiveDoctorUserId) {
+			setError("В клинике не выбран врач");
+			return;
+		}
+
+		if (!effectiveChairId) {
+			setError("В клинике не выбрано кресло");
+			return;
+		}
+
+		if (!effectiveStartsAt || !effectiveEndsAt) {
+			setError("Укажите дату и время приёма");
+			return;
+		}
+
+		const startsAtIso = fromDateTimeLocalValue(effectiveStartsAt, timezone);
+		let endsAtIso = fromDateTimeLocalValue(effectiveEndsAt, timezone);
 
 		if (Date.parse(endsAtIso) <= Date.parse(startsAtIso)) {
-			setError("Время окончания должно быть позже времени начала");
-			return;
+			const startMs = Date.parse(startsAtIso);
+			const fixedEndIso = new Date(startMs + 30 * 60_000).toISOString();
+			endsAtIso = fixedEndIso;
+			setEndsAtLocal(toDateTimeLocalValue(fixedEndIso, timezone));
 		}
 
 		setIsSaving(true);

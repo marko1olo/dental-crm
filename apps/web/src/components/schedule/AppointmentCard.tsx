@@ -776,6 +776,74 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			);
 		}
 
+		if (displayStatus === "cancelled") {
+			return (
+				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleQuickStatusChange("confirmed");
+						}}
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						title="Восстановить отменённую запись"
+						data-testid="appointment-action-restore-btn"
+					>
+						<RotateCcw size={13} />
+						<span>Восстановить</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							repeatAppointment(appointment);
+						}}
+						className="min-h-[44px] sm:min-h-[36px] px-2 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						title="Записать на другое время (Клавиша R)"
+						data-testid="appointment-action-repeat-btn"
+					>
+						<CalendarCheck size={13} />
+						<span>Перезаписать</span>
+					</button>
+				</div>
+			);
+		}
+
+		if (displayStatus === "no_show") {
+			return (
+				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleQuickStatusChange("arrived");
+						}}
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--good,#16a34a)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						title="Отметить пациента прибывшим"
+						data-testid="appointment-action-arrived-btn"
+					>
+						<UserCheck size={13} />
+						<span>Прибыл</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							openAppointmentEditor(appointment);
+						}}
+						className="min-h-[44px] sm:min-h-[36px] px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						title="Перенести или изменить время записи"
+						data-testid="appointment-action-reschedule-btn"
+					>
+						<Clock size={13} />
+						<span>Перенести</span>
+					</button>
+				</div>
+			);
+		}
+
 		return null;
 	};
 
