@@ -3354,6 +3354,20 @@
     * *autoclave.css*: удалены orphaned CSS-классы датчиков и циферблатов (`.autoclave-gauges-container`, `.gauge-panel`, `.gauge-dial`, `.gauge-val-display`).
 * **Верификация**: `check:encoding` 5136 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), `telephonyHub.test.ts` (38/38 PASS), `scheduleGridStomxInquisition.test.tsx` + `scheduleStomxDoctorChairRosterParity.test.tsx` (19/19 PASS).
 
+### Wave 83: Ликвидация процедурного симулятора ПИН-кода и CRT-развертки POS-терминала, снос диорамы iPhone в кабинете пациента, централизация звука стерилизации
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `5a12e249c`
+* **Результаты**:
+  - **POS-терминал Сбербанк (Мандат 8k / CRM != Reality Simulator, PCI-DSS)**:
+    * *SberPosTerminalModal.tsx*: удален виртуальный стейт ввода ПИН-кода `pinBuffer` и его сбросы — CRM никогда не буферизует ПИН (это нарушение требований безопасности PCI-DSS и процедурный симулятор); заменена ретро-зеленая фосфорная верстка с имитацией ЭЛТ-экрана на современную карточку статуса эквайринга в медицинских дизайн-токенах DENTE (`var(--paper-soft)`, `var(--ink)`, `var(--line)`, `var(--ok-fg)`). Сохранен и гарантирован протокол Pilot-NT (команды 01, 03, 07, SberPay QR).
+    * *sberPos.css*: ликвидирован псевдоэлемент `.sber-pos-lcd-screen::before` с процедурной CRT-разверткой (`repeating-linear-gradient`); класс `.sber-pos-lcd-screen` переведен на семантические токены `var(--paper-soft)`, `var(--ink)`, `var(--line)`.
+  - **Мобильный кабинет пациента (Core Rule 7 / Снос игрушечных диорам смартфонов)**:
+    * *PatientWebappPortalModal.tsx*: удалена разметка Dynamic Island и Status Bar (бутафорские часы 09:41, фейковый 5G и иконка батареи); кнопка переключения режима переименована в «Компактный» / «Широкий экран» вместо симулятора смартфона 390px; сохранены все 100% реальных клинических модулей: этапы плана 804н, фотопротокол «До/После» с интерактивной шторкой, оплата СБП и подписание ИДС по 63-ФЗ.
+    * *patientWebapp.css*: полностью вырезаны классы бутафорского смартфона (`.pwa-dynamic-island`, `.pwa-island-camera`, `.pwa-island-sensor`, `.pwa-status-bar`); селектор `.pwa-device-frame` переведен с 44px пластиковой рамки мобильника на элегантный медицинский модальный контейнер (`border-radius: 1.25rem`, `border: 1px solid var(--line)`, `background: var(--paper)`).
+  - **СанПиН аудио-сигнализация (Централизация звуков / Энергосбережение)**:
+    * *seniorNurseKraftAudio.ts*: полностью устранены дублирующий неконтролируемый `AudioContext`, фоновые таймеры `idleSuspendTimer` и кастомные генераторы осцилляторов; функции `playSterileSuccessTone` и `playExpiredErrorTone` чисто делегируют воспроизведение в единый синглтон `SoundFeedbackService.getInstance().playActionSuccess()` и `.playWarningAlert()`; функция `disposeSeniorNurseKraftAudio()` сохранена как безопасный no-op.
+* **Верификация**: `sberPosAutonomy.test.tsx` (4/4 PASS), `sberPos.test.ts` (19/19 PASS), `patientWebappEngine.test.ts` (20/20 PASS), `foolproofNurseWorkflows.test.ts` (17/17 PASS), `check:encoding` 5136 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+
 
 
 
