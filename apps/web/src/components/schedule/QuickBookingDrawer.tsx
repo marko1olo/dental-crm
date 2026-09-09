@@ -3,12 +3,15 @@ import {
 	AlertCircle,
 	AlertTriangle,
 	Calendar,
+	CalendarCheck,
 	Check,
+	CheckCircle2,
 	Clock,
 	Copy,
 	CreditCard,
 	FileText,
 	Flame,
+	PhoneCall,
 	Plus,
 	RotateCw,
 	Search,
@@ -18,6 +21,7 @@ import {
 	User,
 	UserCheck,
 	UserPlus,
+	UserX,
 	X,
 	Zap,
 } from "lucide-react";
@@ -2388,6 +2392,93 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								</select>
 							</div>
 						)}
+					</div>
+
+					{/* Status Selection: 1-Click Status Choice (Mandates 8e, 8n) */}
+					<div className="space-y-1.5" data-testid="quick-booking-status-selector">
+						<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block">
+							Статус визита (1 клик):
+						</label>
+						<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+							<button
+								type="button"
+								onClick={() => setStatus("planned")}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									status === "planned"
+										? "bg-[var(--teal-dark,var(--teal))] text-white font-bold border-[var(--teal-dark,var(--teal))]"
+										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+								}`}
+								data-testid="quick-status-btn-planned"
+							>
+								<Calendar size={14} className="shrink-0" />
+								<span className="whitespace-nowrap leading-none">Запланирован</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStatus("confirmed")}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									status === "confirmed"
+										? "bg-violet-600 text-white font-bold border-violet-600"
+										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+								}`}
+								data-testid="quick-status-btn-confirmed"
+							>
+								<PhoneCall size={14} className="shrink-0" />
+								<span className="whitespace-nowrap leading-none">Подтвержден</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStatus("arrived")}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									status === "arrived"
+										? "bg-emerald-600 text-white font-bold border-emerald-600"
+										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+								}`}
+								data-testid="quick-status-btn-arrived"
+							>
+								<UserCheck size={14} className="shrink-0" />
+								<span className="whitespace-nowrap leading-none">Пациент пришел</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStatus("in_treatment")}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									status === "in_treatment"
+										? "bg-cyan-600 text-white font-bold border-cyan-600"
+										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+								}`}
+								data-testid="quick-status-btn-in_treatment"
+							>
+								<CalendarCheck size={14} className="shrink-0" />
+								<span className="whitespace-nowrap leading-none">В кресле</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStatus("completed")}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									status === "completed"
+										? "bg-slate-700 text-white font-bold border-slate-700"
+										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+								}`}
+								data-testid="quick-status-btn-completed"
+							>
+								<CheckCircle2 size={14} className="shrink-0" />
+								<span className="whitespace-nowrap leading-none">Прием завершен</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStatus("no_show")}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									status === "no_show"
+										? "bg-rose-600 text-white font-bold border-rose-600"
+										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+								}`}
+								data-testid="quick-status-btn-no_show"
+							>
+								<UserX size={14} className="shrink-0" />
+								<span className="whitespace-nowrap leading-none">Неявка</span>
+							</button>
+						</div>
 					</div>
 
 					{/* 4. Reason & Comment */}

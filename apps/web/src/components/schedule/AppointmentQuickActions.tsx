@@ -302,7 +302,7 @@ export function AppointmentQuickActions({
 								e.stopPropagation();
 								void handleAction(action.targetStatus, action.noteAppend);
 							}}
-							className={`quick-action-pill min-h-[44px] sm:min-h-0 sm:h-7.5 min-w-[44px] sm:min-w-0 px-2.5 py-1 sm:py-0.5 rounded-md border text-xs font-medium flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none ${
+							className={`quick-action-pill min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-md border text-xs font-medium flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none ${
 								isCurrent
 									? action.activeClass
 									: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-soft)]"

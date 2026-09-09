@@ -3237,7 +3237,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																<a
 																	href={`tel:${patObj.phone}`}
 																	onClick={(e) => e.stopPropagation()}
-																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+																	className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																	title={`Позвонить ${pName}: ${patObj.phone}`}
 																	aria-label={`Позвонить ${pName}`}
 																>
@@ -3251,7 +3251,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																		e.stopPropagation();
 																		onAppointmentClick(a);
 																	}}
-																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+																	className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																	title={`Открыть прием ${pName}`}
 																	aria-label={`Открыть прием ${pName}`}
 																>
@@ -3266,7 +3266,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	e.stopPropagation();
 																	onAppointmentClick(a);
 																}}
-																className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+																className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																title={`Открыть профиль ${pName}`}
 																aria-label={`Открыть профиль ${pName}`}
 															>
@@ -3282,7 +3282,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																		e.stopPropagation();
 																		setActiveMenuApptId((prev) => (prev === a.id ? null : a.id));
 																	}}
-																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
+																	className="min-h-[44px] min-w-[44px] p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
 																	title="Все действия и статусы визита"
 																	aria-label="Дополнительные действия визита"
 																	aria-expanded={activeMenuApptId === a.id}
@@ -3307,7 +3307,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						onQuickStatusChange(a.id, "confirmed");
 																						setActiveMenuApptId(null);
 																					}}
-																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																					className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
 																						a.status === "confirmed"
 																							? "bg-violet-500 text-white font-bold"
 																							: "hover:bg-[var(--paper-soft)] text-violet-700 dark:text-violet-300"
@@ -3323,7 +3323,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						onQuickStatusChange(a.id, "arrived");
 																						setActiveMenuApptId(null);
 																					}}
-																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																					className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
 																						a.status === "arrived"
 																							? "bg-emerald-500 text-white font-bold"
 																							: "hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300"
@@ -3339,7 +3339,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						onQuickStatusChange(a.id, "in_treatment");
 																						setActiveMenuApptId(null);
 																					}}
-																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																					className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
 																						a.status === "in_treatment"
 																							? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
 																							: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
@@ -3355,7 +3355,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						onQuickStatusChange(a.id, "completed");
 																						setActiveMenuApptId(null);
 																					}}
-																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																					className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
 																						a.status === "completed"
 																							? "bg-slate-600 text-white font-bold"
 																							: "hover:bg-[var(--paper-soft)] text-slate-700 dark:text-slate-300"
@@ -3371,7 +3371,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						onQuickStatusChange(a.id, "no_show");
 																						setActiveMenuApptId(null);
 																					}}
-																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																					className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
 																						a.status === "no_show"
 																							? "bg-rose-500 text-white font-bold"
 																							: "hover:bg-[var(--paper-soft)] text-rose-700 dark:text-rose-300"
@@ -3450,7 +3450,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						handleAdjustAppointmentDuration(a, 15);
 																						setActiveMenuApptId(null);
 																					}}
-																					className="min-h-[44px] sm:min-h-[36px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																					className="min-h-[44px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
 																					title="+15 минут"
 																				>
 																					<Clock size={12} className="text-[var(--teal)] shrink-0" />
@@ -3463,7 +3463,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						handleAdjustAppointmentDuration(a, 30);
 																						setActiveMenuApptId(null);
 																					}}
-																					className="min-h-[44px] sm:min-h-[36px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																					className="min-h-[44px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
 																					title="+30 минут"
 																				>
 																					<Clock size={12} className="text-[var(--teal)] shrink-0" />
@@ -3476,7 +3476,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						handleAdjustAppointmentDuration(a, -15);
 																						setActiveMenuApptId(null);
 																					}}
-																					className="min-h-[44px] sm:min-h-[36px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																					className="min-h-[44px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
 																					title="-15 минут"
 																				>
 																					<Clock size={12} className="text-[var(--teal)] shrink-0" />
@@ -3497,7 +3497,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																					handleShiftAppointmentLateness(a, 15);
 																					setActiveMenuApptId(null);
 																				}}
-																				className="w-full text-left min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 font-bold transition-colors cursor-pointer"
+																				className="w-full text-left min-h-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 font-bold transition-colors cursor-pointer"
 																				title="Сдвинуть на +15 мин (опоздание)"
 																			>
 																				<FastForward size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
@@ -3513,7 +3513,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																				onClick={() => {
 																					handleFreeSlotToWaitlist(a);
 																				}}
-																				className="w-full text-left min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15 font-bold transition-colors cursor-pointer"
+																				className="w-full text-left min-h-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15 font-bold transition-colors cursor-pointer"
 																				title="Освободить слот -> в лист ожидания"
 																			>
 																				<UserMinus size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />

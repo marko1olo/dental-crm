@@ -7,17 +7,21 @@ import {
 	AlertCircle,
 	AlertTriangle,
 	Calendar,
+	CalendarCheck,
 	Check,
+	CheckCircle2,
 	Clock,
 	Copy,
 	FileText,
 	FlaskConical,
 	Globe,
+	PhoneCall,
 	Printer,
 	Repeat,
 	User,
 	UserCheck,
 	UserPlus,
+	UserX,
 	X,
 	Zap,
 } from "lucide-react";
@@ -1322,10 +1326,93 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						)}
 
 						{/* Status */}
-						<div className={isSoloDoctor || assistants.length === 0 ? "sm:col-span-2" : ""}>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
-								Статус приема
+						<div className={isSoloDoctor || assistants.length === 0 ? "sm:col-span-2 space-y-2" : "space-y-2"}>
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+								Статус приема (1 клик):
 							</label>
+
+							{/* 1-Click Status Quick Chips (Mandates 8e, 8n) */}
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5" data-testid="appointment-modal-status-chips">
+								<button
+									type="button"
+									onClick={() => setStatus("planned")}
+									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+										status === "planned"
+											? "bg-[var(--teal-dark,var(--teal))] text-white font-bold border-[var(--teal-dark,var(--teal))]"
+											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+									}`}
+									data-testid="modal-status-btn-planned"
+								>
+									<Calendar size={13} className="shrink-0" />
+									<span className="whitespace-nowrap leading-none">Запланирован</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setStatus("confirmed")}
+									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+										status === "confirmed"
+											? "bg-violet-600 text-white font-bold border-violet-600"
+											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+									}`}
+									data-testid="modal-status-btn-confirmed"
+								>
+									<PhoneCall size={13} className="shrink-0" />
+									<span className="whitespace-nowrap leading-none">Подтвержден</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setStatus("arrived")}
+									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+										status === "arrived"
+											? "bg-emerald-600 text-white font-bold border-emerald-600"
+											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+									}`}
+									data-testid="modal-status-btn-arrived"
+								>
+									<UserCheck size={13} className="shrink-0" />
+									<span className="whitespace-nowrap leading-none">Пришел</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setStatus("in_treatment")}
+									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+										status === "in_treatment"
+											? "bg-cyan-600 text-white font-bold border-cyan-600"
+											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+									}`}
+									data-testid="modal-status-btn-in_treatment"
+								>
+									<CalendarCheck size={13} className="shrink-0" />
+									<span className="whitespace-nowrap leading-none">В кресле</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setStatus("completed")}
+									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+										status === "completed"
+											? "bg-slate-700 text-white font-bold border-slate-700"
+											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+									}`}
+									data-testid="modal-status-btn-completed"
+								>
+									<CheckCircle2 size={13} className="shrink-0" />
+									<span className="whitespace-nowrap leading-none">Завершен</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setStatus("no_show")}
+									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+										status === "no_show"
+											? "bg-rose-600 text-white font-bold border-rose-600"
+											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+									}`}
+									data-testid="modal-status-btn-no_show"
+								>
+									<UserX size={13} className="shrink-0" />
+									<span className="whitespace-nowrap leading-none">Неявка</span>
+								</button>
+							</div>
+
 							<select
 								value={status}
 								onChange={(e) => {
@@ -1339,7 +1426,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										);
 									}
 								}}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1"
 								data-testid="select-appointment-status"
 							>
 								{(Object.keys(appointmentLabels) as Appointment["status"][]).map(
