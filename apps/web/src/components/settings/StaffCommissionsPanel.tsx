@@ -14,7 +14,7 @@
  * начислений врачей ведется в реальном модуле выплат (DoctorPayoutDashboard).
  */
 
-import { Check, ChevronDown, ChevronUp, Percent, RefreshCw, X } from "lucide-react";
+import { Percent } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";

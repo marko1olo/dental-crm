@@ -773,7 +773,7 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 						</section>
 					</div>
 
-					{/* RIGHT COLUMN: TIMER, CPR METRONOME, QUICK ADMIN, RESUSCITATION LOG */}
+					{/* RIGHT COLUMN: TIMER, CALL 112, QUICK ADMIN, RESUSCITATION LOG */}
 					<aside className="emergency-sidebar">
 						{/* 1. Resuscitation Stopwatch Panel */}
 						<div className="emergency-stopwatch-panel" data-testid="stopwatch-panel">

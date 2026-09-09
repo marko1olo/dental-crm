@@ -421,34 +421,6 @@
 	color: #ffffff;
 }
 
-/* Metronome Bar */
-.emergency-cpr-metronome {
-	min-height: 48px;
-	width: 100%;
-	border-radius: 8px;
-	border: 1px solid #334155;
-	background: #1e293b;
-	color: #f8fafc;
-	font-weight: 800;
-	font-size: 13px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	cursor: pointer;
-}
-
-.emergency-cpr-metronome.active {
-	background: #dc2626;
-	border-color: #ef4444;
-	box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
-	animation: cprPulse 0.545s infinite ease-in-out; /* 110 bpm */
-}
-
-@keyframes cprPulse {
-	0%, 100% { transform: scale(1); }
-	50% { transform: scale(1.03); }
-}
 
 /* Call 112 Section */
 .emergency-call-btn {
@@ -634,7 +606,6 @@
 	.emergency-weight-chip,
 	.emergency-check-item,
 	.emergency-timer-btn,
-	.emergency-cpr-metronome,
 	.emergency-call-btn,
 	.emergency-quick-drug-btn,
 	.emergency-action-btn {

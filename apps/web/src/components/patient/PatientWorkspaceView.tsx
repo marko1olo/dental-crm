@@ -8,7 +8,6 @@ import { money } from "../../utils/financeUtils";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
 import type { DmsGuaranteeLetter } from "../insurance/insuranceMath";
-import { DmsInsuranceManagerModal } from "../insurance/dmsManager/DmsInsuranceManagerModal";
 import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
 

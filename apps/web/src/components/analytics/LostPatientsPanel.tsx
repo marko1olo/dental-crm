@@ -16,12 +16,10 @@
  */
 
 import {
-	Activity,
 	AlertTriangle,
 	Archive,
 	Calendar,
 	Check,
-	Clock,
 	Copy,
 	HeartHandshake,
 	MessageSquare,
@@ -45,14 +43,9 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
 import { showToast } from "../GlobalToast";
 import {
-	calculateCapacityYieldKopecks,
-	calculateChairUtilizationPercent,
-	calculateHourlyRevenueKopecks,
 	calculateRecallRates,
-	type ChairHourMetrics,
 	classifyChurnRisk,
 	type CohortTreatmentCategory,
-	formatKopecksPerHour,
 	formatKopecksToRub,
 	generatePersonalizedOffer,
 	type PersonalizedOfferResult,
@@ -71,7 +64,7 @@ export interface LostPatientRow {
 	lastDoctorName?: string;
 }
 
-type TabMode = "risk_list" | "recall_cohorts" | "chair_calc";
+type TabMode = "risk_list" | "recall_cohorts";
 
 export interface ChairConfig {
 	chairId: string;
@@ -108,10 +101,6 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 		useState<PersonalizedOfferResult | null>(null);
 	const [copiedText, setCopiedText] = useState<boolean>(false);
 	const [openMenuPatientId, setOpenMenuPatientId] = useState<string | null>(null);
-
-	// Параметры калькулятора утилизации кресел
-	const [shiftHours, setShiftHours] = useState<number>(12);
-	const [workingDays, setWorkingDays] = useState<number>(30);
 
 	const fetchLostPatients = useCallback(async () => {
 		setLoading(true);
@@ -151,59 +140,54 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 				? dashboard.appointments
 				: [];
 			const now = Date.now();
-			const realisticNames = [
-				"Барабаш С. В.",
-				"Ковалев Д. П.",
-				"Морозова Е. И.",
-				"Смирнов А. В.",
-				"Васильева Т. Н.",
-			];
-			const derived: LostPatientRow[] = localPatients.map((p, idx) => {
-				const pId = typeof p.id === "string" ? p.id : `pat-${idx}`;
-				const rawName =
+
+			const derived: LostPatientRow[] = [];
+			for (const p of localPatients) {
+				const pId = typeof p.id === "string" ? p.id : "";
+				if (!pId) continue;
+				const pName =
 					typeof p.fullName === "string" && p.fullName.trim() && p.fullName !== "Пациент"
 						? p.fullName
 						: typeof (p as { name?: string }).name === "string" &&
 								(p as { name?: string }).name!.trim() &&
 								(p as { name?: string }).name !== "Пациент"
 							? (p as { name?: string }).name!
-							: null;
-				const pName = rawName || realisticNames[idx % realisticNames.length]!;
-				const pPhone =
-					typeof p.phone === "string" && p.phone.trim()
-						? p.phone
-						: `+7 (999) ${120 + idx * 15}-${30 + idx * 5}-${40 + idx * 2}`;
-				const patientAppts = localAppointments.filter(
-					(a) => a.patientId === pId,
-				);
+							: "";
+				if (!pName) continue;
+
+				const patientAppts = localAppointments
+					.filter((a) => a.patientId === pId)
+					.sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
+
 				const futureAppt = patientAppts.some(
 					(a) => new Date(a.startsAt).getTime() > now,
 				);
-				const daysSince = 180 + idx * 45;
-				const cat: CohortTreatmentCategory =
-					idx % 3 === 0
-						? "sanitation"
-						: idx % 3 === 1
-							? "implantation"
-							: "general_therapy";
-				return {
+				const lastAppt = patientAppts.find(
+					(a) => new Date(a.startsAt).getTime() <= now,
+				);
+
+				if (!lastAppt) continue;
+				const daysSince = Math.floor((now - new Date(lastAppt.startsAt).getTime()) / (1000 * 60 * 60 * 24));
+				if (daysSince < 90) continue;
+
+				derived.push({
 					id: pId,
 					organizationId:
 						typeof p.organizationId === "string"
 							? p.organizationId
 							: "org-1",
 					patientName: pName,
-					phone: pPhone,
+					phone: typeof p.phone === "string" ? p.phone : "",
 					daysSinceLastVisit: daysSince,
 					hasFutureAppointment: futureAppt,
 					createdAt:
 						typeof p.createdAt === "string"
 							? p.createdAt
 							: new Date().toISOString(),
-					lastTreatmentCategory: cat,
-					lastDoctorName: "Смирнов А.П.",
-				};
-			});
+					lastTreatmentCategory: "general_therapy",
+					lastDoctorName: typeof lastAppt.doctorName === "string" ? lastAppt.doctorName : undefined,
+				});
+			}
 			setPatients(derived);
 			setError(null);
 		} finally {
@@ -271,7 +255,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 		});
 	}, [patients, searchQuery, categoryFilter, riskBandFilter]);
 
-	// Расчет сводных KPI удержания и кресел
+	// Расчет сводных KPI удержания
 	const kpis = useMemo(() => {
 		const totalRiskPatients = (patients ?? []).length;
 		const due6mCount = (patients ?? []).filter(
@@ -316,32 +300,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 				? Math.round((totalImplReturned12m / totalImplPatients) * 1000) / 10
 				: 0;
 
-		const availableMinutesPerChair = workingDays * shiftHours * 60;
-		const totalAvailableMinutes =
-			availableMinutesPerChair * (chairConfigs ?? []).length;
-		const totalOccupiedMinutes = (chairConfigs ?? []).reduce(
-			(s, c) => s + c.occupiedMinutes,
-			0,
-		);
-		const totalRevenueKopecks = (chairConfigs ?? []).reduce(
-			(s, c) => s + c.revenueKopecks,
-			0,
-		);
-
-		const overallUtilization =
-			totalAvailableMinutes > 0
-				? calculateChairUtilizationPercent(
-						totalOccupiedMinutes,
-						totalAvailableMinutes,
-					)
-				: 0;
-		const avgHourlyRevenueKopecks =
-			totalOccupiedMinutes > 0
-				? calculateHourlyRevenueKopecks(
-						totalRevenueKopecks,
-						totalOccupiedMinutes,
-					)
-				: 0;
+		const estimatedRecallRevenueKopecks = totalRiskPatients * 450_000;
 
 		return {
 			totalRiskPatients,
@@ -350,40 +309,9 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 			critical24mCount,
 			sanRecall6m,
 			implRecall12m,
-			overallUtilization,
-			avgHourlyRevenueKopecks,
-			totalRevenueKopecks,
+			estimatedRecallRevenueKopecks,
 		};
-	}, [patients, recallCohorts, chairConfigs, shiftHours, workingDays]);
-
-	// Таблица утилизации по каждому креслу
-	const chairMetricsList: ChairHourMetrics[] = useMemo(() => {
-		const availablePerChair = workingDays * shiftHours * 60;
-		return (chairConfigs ?? []).map((chair) => {
-			const utilRate = calculateChairUtilizationPercent(
-				chair.occupiedMinutes,
-				availablePerChair,
-			);
-			const hourlyKop = calculateHourlyRevenueKopecks(
-				chair.revenueKopecks,
-				chair.occupiedMinutes,
-			);
-			const capacityKop = calculateCapacityYieldKopecks(
-				chair.revenueKopecks,
-				availablePerChair,
-			);
-			return {
-				chairId: chair.chairId,
-				chairName: chair.chairName,
-				occupiedMinutes: chair.occupiedMinutes,
-				availableMinutes: availablePerChair,
-				utilizationRatePercent: utilRate,
-				revenueKopecks: chair.revenueKopecks,
-				revenuePerHourKopecks: hourlyKop,
-				capacityYieldPerHourKopecks: capacityKop,
-			};
-		});
-	}, [chairConfigs, shiftHours, workingDays]);
+	}, [patients, recallCohorts]);
 
 	return (
 		<div
@@ -398,14 +326,13 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 					</div>
 					<div>
 						<h3 style={{ color: "var(--ink)" }} className="font-bold text-base leading-tight flex items-center gap-2">
-							<span style={{ color: "var(--ink)" }}>Удержание пациентов и утилизация кресел</span>
+							<span style={{ color: "var(--ink)" }}>Удержание пациентов и профилактика оттока</span>
 							<span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
 								{patients.length}
 							</span>
 						</h3>
 						<p className="text-xs text-[var(--muted)]">
-							Когортный анализ возвращаемости (Recall 6/12м), риск оттока и
-							производительность кресло-часа
+							Когортный анализ возвращаемости (Recall 6/12м), выявление зоны риска и 1-кликовая реактивация
 						</p>
 					</div>
 				</div>
@@ -442,19 +369,6 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							}`}
 						>
 							Когорты Recall 6/12м
-						</button>
-						<button
-							type="button"
-							role="tab"
-							aria-selected={activeTab === "chair_calc"}
-							onClick={() => setActiveTab("chair_calc")}
-							className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-								activeTab === "chair_calc"
-									? "bg-[var(--paper)] text-[var(--ink)] shadow-sm border border-[var(--line)] font-semibold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
-						>
-							Утилизация кресел
 						</button>
 					</div>
 
@@ -555,15 +469,15 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 				<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center justify-between text-xs text-[var(--muted)] mb-1">
 						<span className="flex items-center gap-1.5">
-							<Activity className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Загрузка кресел
+							<TrendingUp className="w-3.5 h-3.5 text-[var(--teal)]" />
+							Потенциал возврата
 						</span>
-						<span className="font-semibold text-[var(--teal)]">
-							{kpis.overallUtilization}%
+						<span className="font-semibold text-[var(--ok-fg)]">
+							{kpis.totalRiskPatients} визитов
 						</span>
 					</div>
 					<div className="text-base font-bold text-[var(--ink)]">
-						{formatKopecksPerHour(kpis.avgHourlyRevenueKopecks)}
+						{formatKopecksToRub(kpis.estimatedRecallRevenueKopecks, false)}
 					</div>
 				</div>
 			</div>
@@ -957,139 +871,6 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 				</div>
 			)}
 
-			{/* ========================================================================= */}
-			{/* ВКЛАДКА 3: КАЛЬКУЛЯТОР УТИЛИЗАЦИИ КРЕСЕЛ И ВЫРУЧКИ НА КРЕСЛО-ЧАС            */}
-			{/* ========================================================================= */}
-			{activeTab === "chair_calc" && (
-				<div>
-					{/* Интерактивные параметры калькулятора */}
-					<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] mb-4">
-						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-							<div className="flex items-center gap-4 flex-wrap">
-								<div className="flex items-center gap-2">
-									<Clock className="w-4 h-4 text-[var(--teal)]" />
-									<span className="font-semibold text-[var(--ink)]">
-										Длительность смены:
-									</span>
-									<div className="inline-flex rounded border border-[var(--line)] bg-[var(--paper)]">
-										{[8, 10, 12].map((h) => (
-											<button
-												key={h}
-												type="button"
-												onClick={() => setShiftHours(h)}
-												className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
-													shiftHours === h
-														? "bg-[var(--teal)] text-white font-bold"
-														: "text-[var(--muted)] hover:text-[var(--ink)]"
-												}`}
-											>
-												{h}ч
-											</button>
-										))}
-									</div>
-								</div>
-
-								<div className="flex items-center gap-2">
-									<Calendar className="w-4 h-4 text-[var(--teal)]" />
-									<span className="font-semibold text-[var(--ink)]">
-										Рабочих дней:
-									</span>
-									<div className="inline-flex rounded border border-[var(--line)] bg-[var(--paper)]">
-										{[22, 26, 30].map((d) => (
-											<button
-												key={d}
-												type="button"
-												onClick={() => setWorkingDays(d)}
-												className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
-													workingDays === d
-														? "bg-[var(--teal)] text-white font-bold"
-														: "text-[var(--muted)] hover:text-[var(--ink)]"
-												}`}
-											>
-												{d}дн
-											</button>
-										))}
-									</div>
-								</div>
-							</div>
-
-							<div className="text-right text-[var(--muted)]">
-								<span>
-									Доступно мощности на кресло:{" "}
-									<strong className="text-[var(--ink)]">
-										{shiftHours * workingDays} часов
-									</strong>
-								</span>
-							</div>
-						</div>
-					</div>
-
-					{/* Детализация по каждому креслу клиники */}
-					{(chairConfigs ?? []).length === 0 ? (
-						<div className="py-8 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-lg border border-dashed border-[var(--line)]">
-							Данные по загрузке кресел отсутствуют. Настройте рабочие места и расписание приёмов в модуле клиники.
-						</div>
-					) : (
-						<div className="overflow-x-auto whitespace-nowrap border border-[var(--line)] rounded-lg">
-							<table className="w-full min-w-[700px] text-xs text-left border-collapse whitespace-nowrap">
-								<thead>
-									<tr className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[var(--muted)] font-semibold">
-										<th className="p-2.5">Кресло / Специализация</th>
-										<th className="p-2.5 text-right">Доступно часов</th>
-										<th className="p-2.5 text-right">Занято часов</th>
-										<th className="p-2.5 text-right">Загрузка %</th>
-										<th className="p-2.5 text-right">Выручка кресла</th>
-										<th className="p-2.5 text-right">Выручка / кресло-час</th>
-										<th className="p-2.5 text-right">Yield (на мощность)</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-[var(--line)]">
-									{chairMetricsList.map((chair) => (
-										<tr
-											key={chair.chairId}
-											className="hover:bg-[var(--paper-soft)] transition-colors"
-										>
-											<td className="p-2.5 font-semibold text-[var(--ink)]">
-												{chair.chairName}
-											</td>
-											<td className="p-2.5 text-right text-[var(--muted)]">
-												{Math.round(chair.availableMinutes / 60)}ч
-											</td>
-											<td className="p-2.5 text-right font-medium text-[var(--ink)]">
-												{Math.round((chair.occupiedMinutes / 60) * 10) / 10}ч
-											</td>
-											<td className="p-2.5 text-right">
-												<div className="inline-flex items-center gap-1.5">
-													<span className="font-bold text-[var(--ink)]">
-														{chair.utilizationRatePercent}%
-													</span>
-													<div className="w-12 h-1.5 rounded-full bg-[var(--line)] overflow-hidden">
-														<div
-															className="h-full bg-[var(--teal)]"
-															style={{
-																width: `${Math.min(100, Math.max(0, chair.utilizationRatePercent))}%`,
-															}}
-														/>
-													</div>
-												</div>
-											</td>
-											<td className="p-2.5 text-right font-bold text-[var(--ok-fg)]">
-												{formatKopecksToRub(chair.revenueKopecks, false)}
-											</td>
-											<td className="p-2.5 text-right font-bold text-[var(--teal)]">
-												{formatKopecksPerHour(chair.revenuePerHourKopecks)}
-											</td>
-											<td className="p-2.5 text-right font-medium text-[var(--muted)]">
-												{formatKopecksPerHour(chair.capacityYieldPerHourKopecks)}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					)}
-				</div>
-			)}
 
 			{/* ========================================================================= */}
 			{/* МОДАЛЬНОЕ ОКНО 1-КЛИКОВОГО ПЕРСОНАЛИЗИРОВАННОГО ПРЕДЛОЖЕНИЯ               */}

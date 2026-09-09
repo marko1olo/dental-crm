@@ -50,160 +50,10 @@ export interface DmsRegistryExportModalProps {
 	};
 }
 
-/** Демонстрационный набор оказанных услуг по ДМС для клиники */
-const DEFAULT_SAMPLE_RECORDS: readonly DmsRegistryServiceRecord[] = [
-	{
-		id: "rec-1",
-		visitId: "vis-101",
-		visitDate: "2026-08-05",
-		patientId: "pat-1",
-		patientFullName: "Иванов Сергей Алексеевич",
-		policyNumber: "7701-982341",
-		letterNumber: "ГП-44821",
-		insurerName: "АО «СОГАЗ»",
-		serviceCode804n: "A16.07.002.001",
-		serviceName: "Восстановление зуба пломбой световой (I класс)",
-		diagnosisCodeMkb10: "K02.1",
-		toothNumber: 16,
-		quantity: 1,
-		unitPriceRub: 4500,
-		totalPriceRub: 4500,
-		dmsCoveredRub: 4500,
-		patientPaidRub: 0,
-		doctorFullName: "Петров А.В.",
-		isExcluded: false,
-	},
-	{
-		id: "rec-2",
-		visitId: "vis-101",
-		visitDate: "2026-08-05",
-		patientId: "pat-1",
-		patientFullName: "Иванов Сергей Алексеевич",
-		policyNumber: "7701-982341",
-		letterNumber: "ГП-44821",
-		insurerName: "АО «СОГАЗ»",
-		serviceCode804n: "B01.003.004.001",
-		serviceName: "Местная анестезия инфильтрационная",
-		diagnosisCodeMkb10: "K02.1",
-		toothNumber: 16,
-		quantity: 1,
-		unitPriceRub: 900,
-		totalPriceRub: 900,
-		dmsCoveredRub: 900,
-		patientPaidRub: 0,
-		doctorFullName: "Петров А.В.",
-		isExcluded: false,
-	},
-	{
-		id: "rec-3",
-		visitId: "vis-102",
-		visitDate: "2026-08-08",
-		patientId: "pat-2",
-		patientFullName: "Смирнова Елена Викторовна",
-		policyNumber: "ИНГ-9921448",
-		letterNumber: "ГП-88319",
-		insurerName: "СПАО «Ингосстрах»",
-		serviceCode804n: "A16.07.030.002",
-		serviceName: "Инструментальная и медикаментозная обработка 2 каналов",
-		diagnosisCodeMkb10: "K04.0",
-		toothNumber: 24,
-		quantity: 1,
-		unitPriceRub: 5800,
-		totalPriceRub: 5800,
-		dmsCoveredRub: 4640,
-		patientPaidRub: 1160, // Франшиза 20%
-		doctorFullName: "Кузнецова М.И.",
-		isExcluded: false,
-	},
-	{
-		id: "rec-4",
-		visitId: "vis-102",
-		visitDate: "2026-08-08",
-		patientId: "pat-2",
-		patientFullName: "Смирнова Елена Викторовна",
-		policyNumber: "ИНГ-9921448",
-		letterNumber: "ГП-88319",
-		insurerName: "СПАО «Ингосстрах»",
-		serviceCode804n: "A16.07.008.002",
-		serviceName: "Пломбирование 2 корневых каналов гуттаперчей",
-		diagnosisCodeMkb10: "K04.0",
-		toothNumber: 24,
-		quantity: 1,
-		unitPriceRub: 6700,
-		totalPriceRub: 6700,
-		dmsCoveredRub: 5360,
-		patientPaidRub: 1340, // Франшиза 20%
-		doctorFullName: "Кузнецова М.И.",
-		isExcluded: false,
-	},
-	{
-		id: "rec-5",
-		visitId: "vis-103",
-		visitDate: "2026-08-12",
-		patientId: "pat-3",
-		patientFullName: "Васильев Дмитрий Олегович",
-		policyNumber: "РЕСО-772910",
-		letterNumber: "ГП-12004",
-		insurerName: "СПАО «РЕСО-Гарантия»",
-		serviceCode804n: "A16.07.051",
-		serviceName: "Профессиональная гигиена полости рта (комплекс AirFlow)",
-		diagnosisCodeMkb10: "K05.1",
-		quantity: 1,
-		unitPriceRub: 6500,
-		totalPriceRub: 6500,
-		dmsCoveredRub: 6500,
-		patientPaidRub: 0,
-		doctorFullName: "Петров А.В.",
-		isExcluded: false,
-	},
-	{
-		id: "rec-6",
-		visitId: "vis-104",
-		visitDate: "2026-08-15",
-		patientId: "pat-4",
-		patientFullName: "Ковалева Анна Сергеевна",
-		policyNumber: "АЛЬФА-551029",
-		letterNumber: "ГП-33190",
-		insurerName: "АО «АльфаСтрахование»",
-		serviceCode804n: "A16.07.001.002",
-		serviceName: "Сложное удаление зуба с разъединением корней",
-		diagnosisCodeMkb10: "K04.5",
-		toothNumber: 38,
-		quantity: 1,
-		unitPriceRub: 5900,
-		totalPriceRub: 5900,
-		dmsCoveredRub: 5900,
-		patientPaidRub: 0,
-		doctorFullName: "Соколов В.Д.",
-		isExcluded: false,
-	},
-	{
-		id: "rec-7",
-		visitId: "vis-105",
-		visitDate: "2026-08-18",
-		patientId: "pat-5",
-		patientFullName: "Николаев Роман Павлович",
-		policyNumber: "ВСК-8812903",
-		insurerName: "САО «ВСК»",
-		serviceCode804n: "A16.07.004",
-		serviceName: "Коронка металлокерамическая (протезирование)",
-		diagnosisCodeMkb10: "K08.1",
-		toothNumber: 46,
-		quantity: 1,
-		unitPriceRub: 18500,
-		totalPriceRub: 18500,
-		dmsCoveredRub: 0,
-		patientPaidRub: 18500,
-		doctorFullName: "Михайлов К.Е.",
-		isExcluded: true,
-		exclusionReason: "Ортопедическое протезирование исключено из программы ДМС",
-	},
-];
-
 export function DmsRegistryExportModal({
 	isOpen,
 	onClose,
-	records = DEFAULT_SAMPLE_RECORDS,
+	records = [],
 	clinicInfo = {
 		name: 'ООО «Стоматологический Центр «ДЕНТЕ»',
 		inn: "7701984210",
@@ -477,7 +327,14 @@ export function DmsRegistryExportModal({
 								</tr>
 							</thead>
 							<tbody>
-								{filteredRecords.map((r, i) => (
+								{filteredRecords.length === 0 ? (
+									<tr>
+										<td colSpan={11} style={{ textAlign: "center", padding: "2rem", color: "var(--muted, #64748b)" }}>
+											Нет оказанных услуг по ДМС за выбранный период
+										</td>
+									</tr>
+								) : (
+									filteredRecords.map((r, i) => (
 									<tr key={r.id}>
 										<td>{i + 1}</td>
 										<td style={{ whiteSpace: "nowrap" }}>{r.visitDate}</td>
@@ -519,7 +376,8 @@ export function DmsRegistryExportModal({
 											)}
 										</td>
 									</tr>
-								))}
+								))
+							)}
 							</tbody>
 							<tfoot>
 								<tr className="dms-table-totals">

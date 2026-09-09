@@ -1052,61 +1052,6 @@
 	flex-wrap: wrap;
 }
 
-.emergency-stopwatch-box {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	padding: 0.375rem 0.625rem;
-	border-radius: 8px;
-	background: var(--surface, #f1f5f9);
-	border: 1px solid var(--line, #e2e8f0);
-}
-
-.stopwatch-label {
-	font-size: 0.6875rem;
-	font-weight: 600;
-	color: var(--muted, #64748b);
-}
-
-.stopwatch-display {
-	display: flex;
-	align-items: center;
-	gap: 0.25rem;
-	font-size: 1rem;
-	font-weight: 800;
-	color: var(--bad, #ef4444);
-	font-variant-numeric: tabular-nums;
-}
-
-.stopwatch-controls {
-	display: flex;
-	gap: 0.25rem;
-}
-
-.timer-ctrl-btn {
-	width: 26px;
-	height: 26px;
-	border-radius: 6px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border: 1px solid var(--line, #e2e8f0);
-	background: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
-	cursor: pointer;
-}
-
-.timer-ctrl-btn.play {
-	background: var(--ok-fg);
-	color: #ffffff;
-	border-color: var(--ok-fg);
-}
-
-.timer-ctrl-btn.pause {
-	background: var(--warn, #f59e0b);
-	color: #ffffff;
-	border-color: var(--warn, #f59e0b);
-}
 
 .hub-btn-sos-112 {
 	display: inline-flex;
