@@ -204,12 +204,12 @@ export function validateTransferDraft(
 			errors.push(`Срок годности товара «${item.nameRu}» истек (${item.expiryDate}). Перемещение просроченных ТМЦ запрещено!`);
 		}
 
-		// Проверка доступности остатка на складе-отправителе
+		// Проверка доступности остатка на складе-отправителе (Мандаты 8e, 8n: мягкий овердрафт вместо блокировки операции)
 		if (stockByBranch && stockByBranch[sourceBranchId]) {
 			const currentStock = stockByBranch[sourceBranchId]?.[item.itemId] ?? 0;
 			const requiredQty = item.dispatchedQuantity > 0 ? item.dispatchedQuantity : item.requestedQuantity;
 			if (requiredQty > currentStock) {
-				errors.push(`Недостаточно остатка товара «${item.nameRu}» на складе ${getWarehouseBranch(sourceBranchId).nameRu}: требуется ${requiredQty}, доступно ${currentStock}.`);
+				warnings.push(`Внимание: перемещение в овердрафт товара «${item.nameRu}» на складе ${getWarehouseBranch(sourceBranchId).nameRu}: требуется ${requiredQty}, в наличии ${currentStock}. Будет списано при поступлении накладной.`);
 			}
 		}
 	}

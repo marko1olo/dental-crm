@@ -255,6 +255,128 @@ export const SeniorNurseDisposalActModal: React.FC<
 
 	if (!isOpen) return null;
 
+	if (showPoModal && generatedPurchaseOrder) {
+		const poContent = (
+			<div
+				className="mdlp-modal-overlay"
+				onClick={() => setShowPoModal(false)}
+				role="dialog"
+				aria-modal="true"
+				data-testid="senior-nurse-po-modal"
+			>
+				<div
+					className="mdlp-modal-container"
+					style={{ maxWidth: "800px" }}
+					onClick={(e) => e.stopPropagation()}
+				>
+					<header className="mdlp-modal-header">
+						<div className="mdlp-modal-title">
+							<ShoppingCart size={22} className="text-teal-600" />
+							<div>
+								<div className="font-bold text-base">
+									Заказ поставщику {generatedPurchaseOrder.orderNumber}
+								</div>
+								<div className="text-xs text-muted">
+									Автоматическое пополнение неснижаемого остатка (СанПиН 3.3686-21)
+								</div>
+							</div>
+						</div>
+						<button
+							type="button"
+							className="mdlp-btn mdlp-btn-ghost p-1.5"
+							onClick={() => setShowPoModal(false)}
+							aria-label="Назад к акту списания"
+						>
+							<X size={18} />
+						</button>
+					</header>
+
+					<div className="mdlp-modal-body">
+						<table
+							style={{
+								width: "100%",
+								borderCollapse: "collapse",
+								fontSize: 12,
+							}}
+						>
+							<thead>
+								<tr style={{ background: "var(--paper-soft)", borderBottom: "1px solid var(--line)" }}>
+									<th style={{ padding: "6px 8px", textAlign: "left" }}>Материал</th>
+									<th style={{ padding: "6px 8px", textAlign: "center" }}>Ед.</th>
+									<th style={{ padding: "6px 8px", textAlign: "right" }}>Остаток</th>
+									<th style={{ padding: "6px 8px", textAlign: "right" }}>К заказу</th>
+									<th style={{ padding: "6px 8px", textAlign: "right" }}>Сумма</th>
+								</tr>
+							</thead>
+							<tbody>
+								{generatedPurchaseOrder.items.map((item) => (
+									<tr key={item.sku} style={{ borderBottom: "1px solid var(--line)" }}>
+										<td style={{ padding: "6px 8px", fontWeight: 600 }}>{item.materialName}</td>
+										<td style={{ padding: "6px 8px", textAlign: "center" }}>{item.unit}</td>
+										<td style={{ padding: "6px 8px", textAlign: "right" }}>{item.currentStock}</td>
+										<td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: "var(--teal-dark, #0f766e)" }}>
+											{item.suggestedOrderQuantity}
+										</td>
+										<td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>
+											{item.totalCostFormatted}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+
+						<div
+							style={{
+								marginTop: 16,
+								display: "flex",
+								justifyContent: "flex-end",
+								gap: 20,
+								fontSize: 14,
+								fontWeight: 700,
+							}}
+						>
+							<div>Позиций: {generatedPurchaseOrder.totalItemsCount}</div>
+							<div style={{ color: "var(--teal-dark, #0f766e)" }}>
+								Итого: {generatedPurchaseOrder.totalCostFormatted}
+							</div>
+						</div>
+					</div>
+
+					<footer className="mdlp-modal-footer">
+						<div className="flex gap-2">
+							<button
+								type="button"
+								className="mdlp-btn mdlp-btn-secondary"
+								onClick={handleCopyPoText}
+							>
+								{copiedPo ? <Check size={16} /> : <Copy size={16} />}
+								{copiedPo ? "Скопировано" : "Копировать"}
+							</button>
+							<button
+								type="button"
+								className="mdlp-btn mdlp-btn-secondary"
+								onClick={handlePrintPo}
+							>
+								<Printer size={16} /> Печать
+							</button>
+						</div>
+						<button
+							type="button"
+							className="mdlp-btn mdlp-btn-primary"
+							onClick={() => setShowPoModal(false)}
+						>
+							← Назад к акту
+						</button>
+					</footer>
+				</div>
+			</div>
+		);
+
+		return typeof document !== "undefined" && document.body
+			? createPortal(poContent, document.body)
+			: poContent;
+	}
+
 	const modalContent = (
 		<div
 			className="mdlp-modal-overlay"
@@ -611,120 +733,6 @@ export const SeniorNurseDisposalActModal: React.FC<
 						</button>
 					</div>
 				</footer>
-
-				{/* 1-Click Заказ поставщику Sub-Modal */}
-				{showPoModal && generatedPurchaseOrder && (
-					<div
-						className="mdlp-modal-overlay"
-						style={{ zIndex: 1100 }}
-						onClick={() => setShowPoModal(false)}
-					>
-						<div
-							className="mdlp-modal-container"
-							style={{ maxWidth: "800px" }}
-							onClick={(e) => e.stopPropagation()}
-						>
-							<header className="mdlp-modal-header">
-								<div className="mdlp-modal-title">
-									<ShoppingCart size={22} className="text-teal-600" />
-									<div>
-										<div className="font-bold text-base">
-											Заказ поставщику {generatedPurchaseOrder.orderNumber}
-										</div>
-										<div className="text-xs text-muted">
-											Автоматическое пополнение неснижаемого остатка (СанПиН 3.3686-21)
-										</div>
-									</div>
-								</div>
-								<button
-									type="button"
-									className="mdlp-btn mdlp-btn-ghost p-1.5"
-									onClick={() => setShowPoModal(false)}
-								>
-									<X size={18} />
-								</button>
-							</header>
-
-							<div className="mdlp-modal-body">
-								<table
-									style={{
-										width: "100%",
-										borderCollapse: "collapse",
-										fontSize: 12,
-									}}
-								>
-									<thead>
-										<tr style={{ background: "var(--paper-soft)", borderBottom: "1px solid var(--line)" }}>
-											<th style={{ padding: "6px 8px", textAlign: "left" }}>Материал</th>
-											<th style={{ padding: "6px 8px", textAlign: "center" }}>Ед.</th>
-											<th style={{ padding: "6px 8px", textAlign: "right" }}>Остаток</th>
-											<th style={{ padding: "6px 8px", textAlign: "right" }}>К заказу</th>
-											<th style={{ padding: "6px 8px", textAlign: "right" }}>Сумма</th>
-										</tr>
-									</thead>
-									<tbody>
-										{generatedPurchaseOrder.items.map((item) => (
-											<tr key={item.sku} style={{ borderBottom: "1px solid var(--line)" }}>
-												<td style={{ padding: "6px 8px", fontWeight: 600 }}>{item.materialName}</td>
-												<td style={{ padding: "6px 8px", textAlign: "center" }}>{item.unit}</td>
-												<td style={{ padding: "6px 8px", textAlign: "right" }}>{item.currentStock}</td>
-												<td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: "var(--teal-dark, #0f766e)" }}>
-													{item.suggestedOrderQuantity}
-												</td>
-												<td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>
-													{item.totalCostFormatted}
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-
-								<div
-									style={{
-										marginTop: 16,
-										display: "flex",
-										justifyContent: "flex-end",
-										gap: 20,
-										fontSize: 14,
-										fontWeight: 700,
-									}}
-								>
-									<div>Позиций: {generatedPurchaseOrder.totalItemsCount}</div>
-									<div style={{ color: "var(--teal-dark, #0f766e)" }}>
-										Итого: {generatedPurchaseOrder.totalCostFormatted}
-									</div>
-								</div>
-							</div>
-
-							<footer className="mdlp-modal-footer">
-								<div className="flex gap-2">
-									<button
-										type="button"
-										className="mdlp-btn mdlp-btn-secondary"
-										onClick={handleCopyPoText}
-									>
-										{copiedPo ? <Check size={16} /> : <Copy size={16} />}
-										{copiedPo ? "Скопировано" : "Копировать"}
-									</button>
-									<button
-										type="button"
-										className="mdlp-btn mdlp-btn-secondary"
-										onClick={handlePrintPo}
-									>
-										<Printer size={16} /> Печать
-									</button>
-								</div>
-								<button
-									type="button"
-									className="mdlp-btn mdlp-btn-primary"
-									onClick={() => setShowPoModal(false)}
-								>
-									Закрыть
-								</button>
-							</footer>
-						</div>
-					</div>
-				)}
 			</div>
 		</div>
 	);

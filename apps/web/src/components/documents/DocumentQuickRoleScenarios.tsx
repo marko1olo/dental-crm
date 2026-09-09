@@ -24,10 +24,17 @@ export function DocumentQuickRoleScenarios({
 			aria-label="Быстрые ролевые сценарии в 1 клик"
 		>
 			{/* 1. ЭКСПРЕСС-ПАКЕТ ПЕРВИЧНОГО ПАЦИЕНТА */}
-			<button
-				type="button"
-				className="document-scenario-card"
+			<div
+				role="button"
+				tabIndex={0}
+				className="document-scenario-card cursor-pointer"
 				onClick={onOpenPrimaryIntake}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						onOpenPrimaryIntake();
+					}
+				}}
 				data-testid="scenario-primary-intake-btn"
 			>
 				<div className="document-scenario-card-header">
@@ -61,7 +68,7 @@ export function DocumentQuickRoleScenarios({
 					</div>
 					<ArrowRight size={14} aria-hidden="true" />
 				</div>
-			</button>
+			</div>
 
 			{/* 2. ХИРУРГИЧЕСКИЙ ПАКЕТ ПРИЁМА И ОПЕРАЦИЙ */}
 			{onOpenSurgicalPackage && (

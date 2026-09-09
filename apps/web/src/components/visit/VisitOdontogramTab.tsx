@@ -43,6 +43,41 @@ export interface VisitOdontogramTabProps {
 	readonly dashboard?: VisitOdontogramTabDashboard | null | undefined;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function resolveValidVisitUuid(
+	openVisitId: string | null,
+	appointmentId: string | null,
+	patientId: string | null | undefined,
+): string | null {
+	if (openVisitId && UUID_REGEX.test(openVisitId)) {
+		return openVisitId;
+	}
+	if (appointmentId && UUID_REGEX.test(appointmentId)) {
+		return appointmentId;
+	}
+	if (!patientId) return null;
+	const cacheKey = `dente_draft_visit_uuid_${patientId}`;
+	try {
+		const cached = typeof localStorage !== "undefined" ? localStorage.getItem(cacheKey) : null;
+		if (cached && UUID_REGEX.test(cached)) {
+			return cached;
+		}
+		const generated =
+			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: "00000000-0000-4000-8000-000000000001";
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem(cacheKey, generated);
+		}
+		return generated;
+	} catch {
+		return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: "00000000-0000-4000-8000-000000000001";
+	}
+}
+
 export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 	const ctx = useAppLogicContext();
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
@@ -75,11 +110,10 @@ export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 			: null,
 	);
 	const appointmentId = realVisitFieldId(activeAppointment?.id);
+
 	// Mandate 8e: Doctor autonomy — diary is never blocked for active patient
-	const diaryVisitId =
-		openVisitId ??
-		(appointmentId ? `visit-${appointmentId}` : null) ??
-		(activePatient?.id ? `draft-visit-${activePatient.id}` : null);
+	// Fastify API requires a valid UUID (z.string().uuid()). Never prepend pseudo-prefixes like `visit-` or `draft-visit-`.
+	const diaryVisitId = resolveValidVisitUuid(openVisitId, appointmentId, activePatient?.id);
 	const diaryPatientId =
 		realVisitFieldId(
 			activeVisit && typeof activeVisit === "object"

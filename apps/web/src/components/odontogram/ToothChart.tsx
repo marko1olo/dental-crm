@@ -2492,6 +2492,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			setLocalDentitionMode("mixed");
 		} else if (pediatricMode) {
 			setLocalDentitionMode("pediatric");
+		} else {
+			setLocalDentitionMode("adult");
 		}
 	}, [dentitionMode, mixedDentition, pediatricMode]);
 

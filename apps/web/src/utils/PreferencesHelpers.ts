@@ -167,8 +167,7 @@ import {
 } from "../workspaceUiLabels";
 import { money, moneyUnknownLabel } from "./financeUtils";
 import { countLabel } from "../lib/russianPlural.js";
-import { logger } from "./logger";
-import { defaultUiLanguageOption, isRecordKey } from "./CommonHelpers";
+import { isRecordKey } from "./typeGuards";
 
 export const uiPreferencesServerPath = "/api/settings/preferences";
 
@@ -180,6 +179,13 @@ export type UiLanguageOption = {
 	value: UiLanguage;
 	label: string;
 	detail: string;
+};
+
+export const defaultUiLanguageOption: UiLanguageOption = {
+	value: "ru",
+	label: uiLanguageLabels.ru,
+	detail:
+		"Русский интерфейс включен сейчас. Выбор сохраняется автоматически и остается до смены языка.",
 };
 
 export const uiLanguageOptions: UiLanguageOption[] = [defaultUiLanguageOption];

@@ -278,7 +278,7 @@ export function PatientAdministrativeForm({
 									event.preventDefault();
 									handleSelectRelationship(opt.value, opt.recipient);
 								}}
-								className={`min-h-[36px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
+								className={`min-h-[44px] px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
 									isSelected
 										? "bg-teal-500/15 text-[var(--teal)] border-[var(--teal)] shadow-xs font-bold"
 										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-hover)]"
@@ -441,10 +441,8 @@ export function PatientAdministrativeForm({
 				/>
 			</label>
 			<p className="field-note form-span-2">
-				Удобное окно указывается парой: и начало, и конец. Пока заполнено одно
-				поле, реквизиты не сохраняются — заполните второе или очистите первое.
-				По этому окну расписание предупреждает, что запись стоит в неудобное для
-				пациента время.
+				Удобное окно приёма пациента (начало и конец). Не блокирует сохранение реквизитов.
+				По этому окну расписание подсказывает подходящее для пациента время визита.
 			</p>
 			<label className="form-span-2">
 				Комментарий к записи

@@ -129,6 +129,7 @@ import {
 	organizationScopedLocalStorageKey,
 } from "../localStorageHelpers";
 import {
+	defaultUiLanguageOption,
 	isUiLanguage,
 	pickUiPreference,
 	type UiLanguageOption,
@@ -380,12 +381,7 @@ export function localQueueOrganizationMatches(
 	);
 }
 
-export const defaultUiLanguageOption: UiLanguageOption = {
-	value: "ru",
-	label: uiLanguageLabels.ru,
-	detail:
-		"Русский интерфейс включен сейчас. Выбор сохраняется автоматически и остается до смены языка.",
-};
+export { defaultUiLanguageOption };
 
 export function normalizeTelegramPublicHttpsUrlDraft(
 	fieldLabel: string,

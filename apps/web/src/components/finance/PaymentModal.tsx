@@ -1616,8 +1616,8 @@ th { background: #f8fafc; font-weight: 700; }
 						</div>
 					) : (
 						<div className="space-y-4" data-testid="payment-family-deposit-view">
-							<div className="p-4 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-3">
-								<div className="flex items-center justify-between">
+							<div className="space-y-3">
+								<div className="flex items-center justify-between pb-1">
 									<div className="flex items-center gap-2">
 										<Wallet className="w-5 h-5 text-pink-600" />
 										<h3 className="font-extrabold text-sm sm:text-base m-0 text-[var(--ink,#0f172a)]">
