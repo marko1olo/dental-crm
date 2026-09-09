@@ -840,8 +840,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<span className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${validation.isValid ? "bg-emerald-600" : "bg-amber-500"} text-white text-[10px]`}>3</span>
 							<span>Шаг 3: Пробить чек 54-ФЗ</span>
 						</div>
-						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-							✓ 54-ФЗ: ИНН с физлиц НЕ требуется
+						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center">
+							<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
+							54-ФЗ: ИНН с физлиц НЕ требуется
 						</span>
 						<button
 							type="button"
@@ -1030,7 +1031,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="100% гарантийная переделка (к оплате 0 ₽, без блокировок)"
 							>
 								<ShieldCheck size={14} className="shrink-0" />
-								<span>★ 100% Гарантия</span>
+								<span>100% Гарантия</span>
 							</button>
 							<button
 								type="button"
@@ -1064,11 +1065,12 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										setDiscountPreset("none");
 										setCustomDiscountPercent(0);
 									}}
-									className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] cursor-pointer transition-all active:scale-95"
+									className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] cursor-pointer transition-all active:scale-95 flex items-center gap-1"
 									data-testid="btn-discount-none"
 									title="Сбросить скидку"
 								>
-									✕ Сброс (0%)
+									<X size={14} className="inline mr-1 shrink-0" />
+									<span>Сброс (0%)</span>
 								</button>
 							)}
 						</div>
@@ -1078,7 +1080,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-amber-950 dark:text-amber-100">
 								<div className="flex items-center gap-2 font-bold">
 									<Sparkles size={14} className="text-amber-600 shrink-0" />
-									<span>✓ Округление до сотен: копейки списаны в пользу пациента. К оплате: {(discountCalc.netKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+									<span>Округление до сотен: копейки списаны в пользу пациента. К оплате: {(discountCalc.netKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
 								</div>
 								<span className="text-[11px] font-mono text-amber-700 dark:text-amber-300">54-ФЗ / Точность до копейки</span>
 							</div>
@@ -1087,7 +1089,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-blue-950 dark:text-blue-100">
 								<div className="flex items-center gap-2 font-bold">
 									<ShieldCheck size={14} className="text-blue-600 shrink-0" />
-									<span>★ 100% Гарантийная переделка (Мандат 8e): стоимость списана в 0 ₽ без блокировок</span>
+									<span>100% Гарантийная переделка (Мандат 8e): стоимость списана в 0 ₽ без блокировок</span>
 								</div>
 								<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">Чек 0 ₽ / Гарантия</span>
 							</div>
@@ -1096,7 +1098,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-purple-950 dark:text-purple-100">
 								<div className="flex items-center gap-2 font-bold">
 									<ShieldCheck size={14} className="text-purple-600 shrink-0" />
-									<span>★ 100% Скидка сотруднику (Мандат 8e): лечение персонала без мастер-паролей</span>
+									<span>100% Скидка сотруднику (Мандат 8e): лечение персонала без мастер-паролей</span>
 								</div>
 								<span className="text-[11px] font-mono text-purple-700 dark:text-purple-300">Чек 0 ₽ / Персонал</span>
 							</div>
@@ -1237,10 +1239,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							</span>
 							{clientType === "physical_person" && (
 								<span
-									className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700"
+									className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center"
 									data-testid="inn-physical-not-required-badge"
 								>
-									✓ ИНН не требуется для физлиц (54-ФЗ)
+									<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
+									ИНН не требуется для физлиц (54-ФЗ)
 								</span>
 							)}
 						</div>
@@ -1684,8 +1687,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											</span>
 										</>
 									) : !cashChange.isUnderpaid && cashChange.changeDueKop === 0 ? (
-										<span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400" data-testid="cash-change-exact">
-											✓ БЕЗ СДАЧИ (РОВНО)
+										<span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5" data-testid="cash-change-exact">
+											<Check size={20} className="inline mr-1 shrink-0 text-emerald-500" />
+											<span>БЕЗ СДАЧИ (РОВНО)</span>
 										</span>
 									) : (
 										<>
