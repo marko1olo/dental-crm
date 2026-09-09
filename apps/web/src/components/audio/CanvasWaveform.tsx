@@ -218,6 +218,8 @@ export function CanvasWaveform({
 					ctx.lineJoin = "round";
 					ctx.stroke();
 				}
+				ctx.restore();
+				animationFrameRef.current = requestAnimationFrame(render);
 			} else {
 				// === СОСТОЯНИЕ ПОКОЯ (FLAT REST BASELINE) ===
 				const midY = displayHeight / 2;
@@ -228,10 +230,9 @@ export function CanvasWaveform({
 				ctx.strokeStyle = lineSubtleColor;
 				ctx.lineCap = "round";
 				ctx.stroke();
+				ctx.restore();
+				// Idle state: do not schedule next RAF loop
 			}
-
-			ctx.restore();
-			animationFrameRef.current = requestAnimationFrame(render);
 		};
 
 		animationFrameRef.current = requestAnimationFrame(render);

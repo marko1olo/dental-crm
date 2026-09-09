@@ -264,8 +264,6 @@ export function TelephonyFloatingWidget({
 			audioDuration,
 		);
 	}, [activeCall?.callId, activeCall?.phone, audioDuration]);
-
-	// Escape key to collapse expanded softphone
 	useEffect(() => {
 		if (!isExpanded) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
