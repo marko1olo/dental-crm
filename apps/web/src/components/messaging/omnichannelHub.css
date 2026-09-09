@@ -1816,3 +1816,15 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* Встроенная панель оплаты СБП без модального оверлея (Анти-Матрёшка, Мандат 8c/8d) */
+.sbp-embedded-drawer {
+	position: absolute;
+	inset: 0;
+	z-index: 50;
+	background: var(--paper);
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	border-radius: 12px;
+}

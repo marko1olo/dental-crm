@@ -228,7 +228,7 @@ export function BoneQualityPanel({
 									}}
 								>
 									<div
-										className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0"
+										className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold shrink-0"
 										style={{ color: "var(--ink)" }}
 									>
 										{step.step}
@@ -236,6 +236,7 @@ export function BoneQualityPanel({
 									<div className="flex-1 min-w-0">
 										<div
 											className="text-xs font-medium truncate"
+											title={`${step.drillType} • Ø${step.diameterMm}мм × ${step.depthMm}мм`}
 											style={{ color: "var(--ink)" }}
 										>
 											{step.drillType} • Ø{step.diameterMm}мм × {step.depthMm}мм
@@ -315,7 +316,7 @@ function ZoneCard({ label, hu }: { label: string; hu: number }) {
 			className="p-2 rounded-lg text-center"
 			style={{ background: "var(--paper-soft)" }}
 		>
-			<div className="text-[10px] truncate" style={{ color: "var(--muted)" }}>
+			<div className="text-xs truncate" title={label} style={{ color: "var(--muted)" }}>
 				{label}
 			</div>
 			<div className="text-xs font-bold" style={{ color }}>

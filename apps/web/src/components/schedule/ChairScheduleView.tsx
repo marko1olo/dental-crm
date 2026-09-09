@@ -1322,7 +1322,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 								<span className="font-bold text-xs shrink-0">{chair.name}</span>
 								{roomLabel && (
 									<span
-										className="text-[10px] text-[var(--muted)] font-normal shrink-0"
+										className="text-xs text-[var(--muted)] font-normal shrink-0"
 										data-testid={`chair-view-room-${chair.id}`}
 									>
 										(Каб. {roomLabel})
@@ -1330,7 +1330,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 								)}
 								{(assignedDocName || hasTwoSubShifts) && (
 									<span
-										className="text-[10px] text-[var(--muted)] font-normal whitespace-nowrap hidden md:inline shrink-0"
+										className="text-xs text-[var(--muted)] font-normal whitespace-nowrap hidden md:inline shrink-0"
 										data-testid={`chair-view-doc-${chair.id}`}
 									>
 										{hasTwoSubShifts && morningSub && eveningSub
@@ -1339,13 +1339,13 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									</span>
 								)}
 								{chair.active === false && (
-									<span className="text-[9px] text-[var(--muted)] font-normal">
+									<span className="text-xs text-[var(--muted)] font-normal">
 										(архив)
 									</span>
 								)}
 								{isSelected && (
 									<span
-										className="px-1 py-0.5 rounded text-[8px] font-extrabold bg-[var(--teal)] text-white uppercase tracking-wider"
+										className="px-1.5 py-0.5 rounded text-[11px] font-extrabold bg-[var(--teal)] text-white uppercase tracking-wider"
 										data-testid={`chair-view-badge-selected-${chair.id}`}
 									>
 										Выбрано
@@ -1359,13 +1359,13 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										e.stopPropagation();
 										setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
 									}}
-									className="p-1 rounded text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+									className="p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-md text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 									title="Назначить врача и смену в 1 клик (StomX / IDENT)"
 									data-testid={`chair-view-assign-doctor-${chair.id}`}
 									aria-label={`Назначить врача на кресло ${chair.name}`}
 								>
 									<UserCheck
-										size={12}
+										size={14}
 										className={assignedDocName ? "text-[var(--teal)]" : ""}
 									/>
 								</button>
@@ -1377,12 +1377,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										e.stopPropagation();
 										handleEditChair(chair as any);
 									}}
-									className="p-1 rounded text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+									className="p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-md text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 									title={`Настройки кресла «${chair.name}» (смена врача / кабинета)`}
 									data-testid={`chair-view-settings-${chair.id}`}
 									aria-label={`Настройки кресла ${chair.name}`}
 								>
-									<Settings2 size={12} />
+									<Settings2 size={14} />
 								</button>
 
 								{/* 1-Click Shift Popover */}
@@ -1460,9 +1460,9 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 														}`}
 														data-testid={`chair-view-doc-option-${chair.id}-${doc.id}`}
 													>
-														<span className="truncate">{doc.fullName}</span>
+														<span className="truncate" title={doc.fullName}>{doc.fullName}</span>
 														{(doc as any).specialty && (
-															<span className="text-[10px] text-[var(--muted)] truncate ml-1 font-normal">
+															<span className="text-xs text-[var(--muted)] truncate ml-1 font-normal" title={String((doc as any).specialty)}>
 																{String((doc as any).specialty)}
 															</span>
 														)}
@@ -1905,7 +1905,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 							updatedAt: new Date().toISOString(),
 						};
 						if (dashboard?.clinicSettings?.staff) {
-							dashboard.clinicSettings.staff.push(newStaffMember);
+							dashboard.clinicSettings.staff = [...dashboard.clinicSettings.staff, newStaffMember];
 						}
 						if (docData.preferredChairId && onAssignChairDoctor) {
 							const targetCh = chairs.find((c) => c.id === docData.preferredChairId);

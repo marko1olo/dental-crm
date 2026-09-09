@@ -12,6 +12,7 @@ import {
 	Eye,
 	FileText,
 	FileUp,
+	Info,
 	Layers,
 	Loader2,
 	RotateCcw,
@@ -893,9 +894,15 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 										borderRadius: "8px",
 										padding: "10px",
 										lineHeight: "1.4",
+										display: "flex",
+										alignItems: "flex-start",
+										gap: "8px",
 									}}
 								>
-									ℹ️ Предварительный анализ. Данные <strong>не перезаписывают</strong> зубную формулу автоматически. Врач проверяет снимок и подтверждает внесение.
+									<Info size={16} className="text-teal-400 shrink-0 mt-0.5" />
+									<span>
+										Предварительный анализ. Данные <strong>не перезаписывают</strong> зубную формулу автоматически. Врач проверяет снимок и подтверждает внесение.
+									</span>
 								</div>
 
 								{plan && plan.groups.length > 0 ? (

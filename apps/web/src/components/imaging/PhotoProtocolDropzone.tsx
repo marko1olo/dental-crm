@@ -242,7 +242,7 @@ export const PhotoProtocolDropzone: React.FC<PhotoProtocolDropzoneProps> = ({
 						onChange={(e) =>
 							setSelectedSlot(e.target.value as DentalPhotoSlotType)
 						}
-						className="min-h-[40px] px-2.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-blue-500"
 					>
 						{DENTAL_PHOTO_SLOT_TYPES.map((st) => (
 							<option key={st} value={st}>
@@ -379,16 +379,16 @@ export const PhotoProtocolDropzone: React.FC<PhotoProtocolDropzoneProps> = ({
 
 									<div className="flex flex-col min-w-0">
 										<div className="flex items-center gap-1.5">
-											<span className="font-semibold truncate text-[var(--ink,#0f172a)]">
+											<span className="font-semibold truncate text-[var(--ink,#0f172a)]" title={item.name}>
 												{item.name}
 											</span>
 											{item.isHeic && (
-												<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+												<span className="px-1.5 py-0.5 rounded text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
 													HEIC P3
 												</span>
 											)}
 										</div>
-										<div className="text-[11px] text-[var(--muted,#64748b)]">
+										<div className="text-xs text-[var(--muted,#64748b)]">
 											{DENTAL_PHOTO_SLOT_LABELS_RU[item.targetSlot]} • {(item.sizeBytes / (1024 * 1024)).toFixed(1)} МБ
 										</div>
 									</div>
@@ -397,27 +397,27 @@ export const PhotoProtocolDropzone: React.FC<PhotoProtocolDropzoneProps> = ({
 								{/* Status Badge & Actions */}
 								<div className="flex items-center gap-2 shrink-0">
 									{item.status === "ready" && (
-										<span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+										<span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
 											<CheckCircle2 className="w-4 h-4" />
 											Готово
 										</span>
 									)}
 
 									{item.status === "decoding" && (
-										<span className="text-[11px] font-semibold text-blue-600">
+										<span className="text-xs font-semibold text-blue-600">
 											Декодирование... {item.progressPercent}%
 										</span>
 									)}
 
 									{item.status === "calibrating" && (
-										<span className="text-[11px] font-semibold text-purple-600 flex items-center gap-1">
+										<span className="text-xs font-semibold text-purple-600 flex items-center gap-1">
 											<Sparkles className="w-3.5 h-3.5" />
 											Display P3...
 										</span>
 									)}
 
 									{item.status === "failed" && (
-										<span className="text-[11px] font-semibold text-red-600">
+										<span className="text-xs font-semibold text-red-600">
 											Ошибка
 										</span>
 									)}
@@ -425,8 +425,9 @@ export const PhotoProtocolDropzone: React.FC<PhotoProtocolDropzoneProps> = ({
 									<button
 										type="button"
 										onClick={() => removeItem(item.id)}
-										className="p-1 rounded-md text-[var(--muted,#64748b)] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+										className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 rounded-md text-[var(--muted,#64748b)] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
 										title="Удалить"
+										aria-label={`Удалить фото ${item.name}`}
 									>
 										<X className="w-4 h-4" />
 									</button>

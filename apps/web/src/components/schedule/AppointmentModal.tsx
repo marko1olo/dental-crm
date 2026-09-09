@@ -942,11 +942,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<User size={14} className="text-[var(--teal)]" />
 									<span>Пациент *</span>
 								</label>
-								<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
+								<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
 									<button
 										type="button"
 										onClick={() => setIsInlineNewPatient(false)}
-										className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer ${
+										className={`min-h-[36px] px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
 											!isInlineNewPatient
 												? "bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm"
 												: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -958,14 +958,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<button
 										type="button"
 										onClick={() => setIsInlineNewPatient(true)}
-										className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+										className={`min-h-[36px] px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
 											isInlineNewPatient
 												? "bg-[var(--teal)] text-white font-bold shadow-sm"
 												: "text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
 										data-testid="appointment-patient-mode-create"
 									>
-										<UserPlus size={12} />
+										<UserPlus size={14} />
 										<span>+ Новый пациент</span>
 									</button>
 								</div>

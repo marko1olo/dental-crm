@@ -303,7 +303,7 @@ export function ScheduleFilterStrip({
 			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-prev min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(-1)}
 					aria-label="Показать предыдущий день"
 					title="День назад"
@@ -317,11 +317,11 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[38px] sm:min-h-[44px] px-0.5 sm:px-1.5 text-[10.5px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] sm:w-[115px] text-center tracking-tight"
+					className="schedule-date-input min-h-[44px] px-1 sm:px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[96px] sm:w-[115px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-next min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(1)}
 					aria-label="Показать следующий день"
 					title="День вперёд"

@@ -7,6 +7,7 @@ import {
 	ExternalLink,
 	Filter,
 	MessageSquare,
+	MoreVertical,
 	Phone,
 	Plus,
 	RefreshCw,
@@ -62,6 +63,7 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 	const [activeFilter, setActiveFilter] = useState<string>("all");
 	const [loading, setLoading] = useState(false);
 	const [actioningId, setActioningId] = useState<string | null>(null);
+	const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
 	const fetchRecalls = useCallback(async () => {
 		setLoading(true);
@@ -333,7 +335,7 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 					filteredRecalls.map((recall) => (
 						<div
 							key={recall.id}
-							className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-[var(--glass-border)] bg-[var(--paper-strong)] p-4 shadow-sm hover:border-[var(--accent)]/40 transition-colors"
+							className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-[var(--glass-border)] bg-[var(--paper-strong)] p-4 shadow-sm hover:border-[var(--accent)]/40 transition-colors"
 						>
 							<div className="flex items-start gap-3">
 								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--glass-panel)] text-[var(--accent)] border border-[var(--glass-border)]">
@@ -364,42 +366,27 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 								</div>
 							</div>
 
-							{/* Actions */}
-							<div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--glass-border)]">
-								{recall.patientPhone ? (
-									<>
-										<a
-											href={`tel:+${recall.patientPhone.replace(/\D/g, "").replace(/^8/, "7")}`}
-											className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] hover:text-teal-600 transition-colors"
-											title={`Позвонить ${recall.patientPhone}`}
-										>
-											<Phone className="h-3.5 w-3.5 text-teal-600" />
-											<span className="hidden sm:inline">Звонок</span>
-										</a>
-
-										<a
-											href={`https://t.me/+${recall.patientPhone.replace(/\D/g, "").replace(/^8/, "7")}`}
-											target="_blank"
-											rel="noreferrer"
-											className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] hover:text-sky-600 transition-colors"
-											title="Написать в Telegram"
-										>
-											<span className="text-sky-600 font-semibold text-[11px]">TG</span>
-											<ExternalLink className="h-3 w-3 opacity-60" />
-										</a>
-									</>
-								) : null}
-
+							{/* Actions (Consolidated to <= 2 primary + ... dropdown per Miller's Law, Mandate 8c >= 44px) */}
+							<div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--glass-border)]">
 								{onOpenScheduleModal ? (
 									<button
 										type="button"
 										onClick={() => onOpenScheduleModal(recall.patientId, recall.patientName)}
-										className="min-h-[36px] inline-flex items-center gap-1 rounded-xl bg-[var(--accent)] px-2.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-all shadow-sm"
+										className="min-h-[44px] inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-white hover:opacity-90 transition-all shadow-sm"
 										title="Записать пациента в расписание"
 									>
-										<Calendar className="h-3.5 w-3.5" />
+										<Calendar className="h-4 w-4" />
 										<span>Записать</span>
 									</button>
+								) : recall.patientPhone ? (
+									<a
+										href={`tel:+${recall.patientPhone.replace(/\D/g, "").replace(/^8/, "7")}`}
+										className="min-h-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-3.5 py-2 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] hover:text-teal-600 transition-colors"
+										title={`Позвонить ${recall.patientPhone}`}
+									>
+										<Phone className="h-4 w-4 text-teal-600" />
+										<span>Звонок</span>
+									</a>
 								) : null}
 
 								<button
@@ -412,26 +399,72 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 										}
 									}}
 									disabled={actioningId === recall.id}
-									className="min-h-[36px] inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
+									className="min-h-[44px] inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
 									title="Отправить напоминание или открыть диалог в WhatsApp"
 								>
 									{actioningId === recall.id ? (
-										<RefreshCw className="h-3.5 w-3.5 animate-spin" />
+										<RefreshCw className="h-4 w-4 animate-spin" />
 									) : (
-										<MessageSquare className="h-3.5 w-3.5" />
+										<MessageSquare className="h-4 w-4" />
 									)}
 									<span>WhatsApp</span>
 								</button>
 
-								<button
-									type="button"
-									onClick={() => handleSnoozeRecall(recall.id, 1)}
-									className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
-									title="Отложить вызов на 1 месяц"
-								>
-									<Clock className="h-3.5 w-3.5 text-[var(--muted)]" />
-									<span>+1 мес</span>
-								</button>
+								{/* Context Menu Trigger (...) */}
+								<div className="relative">
+									<button
+										type="button"
+										onClick={() => setActiveMenuId((prev) => (prev === recall.id ? null : recall.id))}
+										className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-2 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
+										title="Дополнительные действия"
+										aria-label="Дополнительные действия"
+									>
+										<MoreVertical className="h-4 w-4" />
+									</button>
+
+									{activeMenuId === recall.id && (
+										<div className="absolute right-0 top-full mt-1.5 z-30 w-52 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-1.5 shadow-xl flex flex-col gap-1 text-xs animate-in fade-in zoom-in-95">
+											{recall.patientPhone && onOpenScheduleModal && (
+												<a
+													href={`tel:+${recall.patientPhone.replace(/\D/g, "").replace(/^8/, "7")}`}
+													onClick={() => setActiveMenuId(null)}
+													className="min-h-[44px] px-3 py-2 inline-flex items-center gap-2 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors"
+													title={`Позвонить ${recall.patientPhone}`}
+												>
+													<Phone className="h-4 w-4 text-teal-600 shrink-0" />
+													<span>Позвонить</span>
+												</a>
+											)}
+
+											{recall.patientPhone && (
+												<a
+													href={`https://t.me/+${recall.patientPhone.replace(/\D/g, "").replace(/^8/, "7")}`}
+													target="_blank"
+													rel="noreferrer"
+													onClick={() => setActiveMenuId(null)}
+													className="min-h-[44px] px-3 py-2 inline-flex items-center gap-2 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors"
+													title="Написать в Telegram"
+												>
+													<ExternalLink className="h-4 w-4 text-sky-600 shrink-0" />
+													<span>Написать в Telegram</span>
+												</a>
+											)}
+
+											<button
+												type="button"
+												onClick={() => {
+													setActiveMenuId(null);
+													handleSnoozeRecall(recall.id, 1);
+												}}
+												className="min-h-[44px] px-3 py-2 inline-flex items-center gap-2 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left w-full transition-colors"
+												title="Отложить вызов на 1 месяц"
+											>
+												<Clock className="h-4 w-4 text-[var(--muted)] shrink-0" />
+												<span>Отложить на 1 мес</span>
+											</button>
+										</div>
+									)}
+								</div>
 							</div>
 						</div>
 					))

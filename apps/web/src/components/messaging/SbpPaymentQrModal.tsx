@@ -28,6 +28,7 @@ import {
 	Send,
 	ShieldCheck,
 	X,
+	Zap,
 } from "lucide-react";
 import {
 	formatCurrencyRu,
@@ -53,6 +54,7 @@ export interface SbpPaymentQrModalProps {
 		| ((orderId: string) => Promise<{ paid: boolean; fiscalReceiptId?: string }>)
 		| undefined;
 	readonly defaultTtlMinutes?: number | undefined;
+	readonly embedded?: boolean | undefined;
 }
 
 export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
@@ -63,6 +65,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 	onSendToChat,
 	onCheckStatus,
 	defaultTtlMinutes = 15,
+	embedded = false,
 }) => {
 	const modalTitleId = useId();
 	const [status, setStatus] = useState<SbpPaymentStatus>("awaiting_scan");
@@ -297,40 +300,35 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 		window.print();
 	};
 
-	return (
-		<div
-			className="omnichannel-modal-overlay"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby={modalTitleId}
-		>
-			<div className="omnichannel-modal-container sbp-modal-container">
-				{/* Заголовок модального окна */}
-				<header className="omnichannel-modal-header sbp-header">
-					<div className="sbp-header-brand">
-						<div className="sbp-emblem-badge" aria-hidden="true">
-							<span className="sbp-icon-tri">⚡</span>
-							<span className="sbp-brand-text">СБП</span>
-						</div>
-						<div>
-							<h2 id={modalTitleId} className="omnichannel-modal-title">
-								Оплата по динамическому QR-коду СБП
-							</h2>
-							<p className="sbp-header-sub">
-								НСПК Банка России • Заказ #{invoice.orderId} • {invoice.patientName}
-							</p>
-						</div>
+	const modalContent = (
+		<div className="omnichannel-modal-container sbp-modal-container">
+			{/* Заголовок модального окна */}
+			<header className="omnichannel-modal-header sbp-header">
+				<div className="sbp-header-brand">
+					<div className="sbp-emblem-badge" aria-hidden="true">
+						<Zap size={14} className="sbp-icon-tri text-sky-400 inline mr-1" />
+						<span className="sbp-brand-text">СБП</span>
 					</div>
+					<div>
+						<h2 id={modalTitleId} className="omnichannel-modal-title">
+							Оплата по динамическому QR-коду СБП
+						</h2>
+						<p className="sbp-header-sub">
+							НСПК Банка России • Заказ #{invoice.orderId} • {invoice.patientName}
+						</p>
+					</div>
+				</div>
 
-					<button
-						type="button"
-						className="omnichannel-modal-close"
-						onClick={onClose}
-						aria-label="Закрыть окно оплаты"
-					>
-						<X size={18} />
-					</button>
-				</header>
+				<button
+					type="button"
+					className="omnichannel-modal-close min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
+					style={{ minHeight: "44px", minWidth: "44px" }}
+					onClick={onClose}
+					aria-label="Закрыть окно оплаты"
+				>
+					<X size={18} />
+				</button>
+			</header>
 
 				{/* Основное тело */}
 				<div className="sbp-modal-body">
@@ -577,10 +575,11 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 											disabled={isCheckingStatus}
 											title="Опросить эквайринговый шлюз НСПК на предмет зачисления"
 											style={{
+												minHeight: "44px",
 												display: "inline-flex",
 												alignItems: "center",
-												gap: "5px",
-												padding: "4px 9px",
+												gap: "6px",
+												padding: "8px 12px",
 												fontSize: "0.74rem",
 												fontWeight: 600,
 												borderRadius: "6px",
@@ -632,12 +631,13 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 											onClick={() => setIsManualConfirmPending(true)}
 											title="Подтвердить зачисление по мобильному банку клиники или СМС"
 											style={{
+												minHeight: "44px",
 												display: "flex",
 												alignItems: "center",
 												justifyContent: "center",
 												gap: "6px",
 												width: "100%",
-												padding: "7px 10px",
+												padding: "10px 14px",
 												fontSize: "0.76rem",
 												fontWeight: 600,
 												borderRadius: "6px",
@@ -684,12 +684,13 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 													type="button"
 													onClick={handleConfirmManualReconciliation}
 													style={{
+														minHeight: "44px",
 														flex: 1,
 														display: "inline-flex",
 														alignItems: "center",
 														justifyContent: "center",
 														gap: "4px",
-														padding: "5px 8px",
+														padding: "10px 14px",
 														fontSize: "0.74rem",
 														fontWeight: 700,
 														borderRadius: "4px",
@@ -705,7 +706,11 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 													type="button"
 													onClick={() => setIsManualConfirmPending(false)}
 													style={{
-														padding: "5px 10px",
+														minHeight: "44px",
+														display: "inline-flex",
+														alignItems: "center",
+														justifyContent: "center",
+														padding: "10px 14px",
 														fontSize: "0.74rem",
 														fontWeight: 600,
 														borderRadius: "4px",
@@ -737,13 +742,36 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 
 					<button
 						type="button"
-						className="omnichannel-btn-secondary"
+						className="omnichannel-btn-secondary min-h-[44px] px-4"
+						style={{ minHeight: "44px" }}
 						onClick={onClose}
 					>
 						{status === "paid_success" ? "Готово" : "Закрыть"}
 					</button>
 				</footer>
 			</div>
+	);
+
+	if (embedded) {
+		return (
+			<div
+				className="sbp-embedded-drawer"
+				role="region"
+				aria-labelledby={modalTitleId}
+			>
+				{modalContent}
+			</div>
+		);
+	}
+
+	return (
+		<div
+			className="omnichannel-modal-overlay"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby={modalTitleId}
+		>
+			{modalContent}
 		</div>
 	);
 };

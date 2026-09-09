@@ -1383,13 +1383,13 @@ export function VisiographStudioCanvas({
 										type="button"
 										onClick={() => handleApplySensorPreset(preset)}
 										style={{
-											minHeight: "36px",
+											minHeight: "44px",
 											background: isSelected ? "var(--primary, #1f6feb)" : "var(--paper, #21262d)",
 											color: isSelected ? "#ffffff" : "var(--ink, #c9d1d9)",
 											border: `1px solid ${isSelected ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
-											borderRadius: "4px",
-											padding: "4px 8px",
-											fontSize: "0.73rem",
+											borderRadius: "6px",
+											padding: "8px 12px",
+											fontSize: "0.78rem",
 											cursor: "pointer",
 											display: "flex",
 											alignItems: "center",
@@ -1399,7 +1399,7 @@ export function VisiographStudioCanvas({
 										title={preset.description}
 									>
 										<span>{preset.label}</span>
-										{isSelected && <CheckCircle2 size={13} />}
+										{isSelected && <CheckCircle2 size={14} />}
 									</button>
 								);
 							})}
@@ -1412,13 +1412,13 @@ export function VisiographStudioCanvas({
 									setDrawingPoints([]);
 								}}
 								style={{
-									minHeight: "36px",
+									minHeight: "44px",
 									background: activeTool === "calibrate" ? "var(--primary, #1f6feb)" : "var(--paper, #21262d)",
 									color: activeTool === "calibrate" ? "#ffffff" : "var(--ink, #c9d1d9)",
 									border: `1px solid ${activeTool === "calibrate" ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
-									borderRadius: "4px",
-									padding: "4px 8px",
-									fontSize: "0.73rem",
+									borderRadius: "6px",
+									padding: "8px 12px",
+									fontSize: "0.78rem",
 									cursor: "pointer",
 									display: "flex",
 									alignItems: "center",
@@ -1427,7 +1427,7 @@ export function VisiographStudioCanvas({
 								title="Ручная калибровка по 2 точкам (шарик 5.0 мм или шаг резьбы)"
 							>
 								<span>Ручная калибровка (шарик / резьба)</span>
-								<Scale size={13} />
+								<Scale size={14} />
 							</button>
 						</div>
 					</div>
@@ -1545,17 +1545,17 @@ export function VisiographStudioCanvas({
 				)}
 			</div>
 
-			{/* Export & Legal Fixation Modal */}
+			{/* Export & Legal Fixation Sheet (Anti-Matryoshka constrained within canvas workspace) */}
 			{showExportModal && (
 				<div
 					style={{
-						position: "fixed",
+						position: "absolute",
 						inset: 0,
 						background: "rgba(0, 0, 0, 0.75)",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
-						zIndex: 9999,
+						zIndex: 50,
 					}}
 				>
 					<div

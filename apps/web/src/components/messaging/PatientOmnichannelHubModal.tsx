@@ -11,12 +11,14 @@
 
 import React, { useId, useMemo, useRef, useState } from "react";
 import {
+	Activity,
 	AlertTriangle,
 	ArrowUpRight,
 	Bot,
 	Calendar,
 	Check,
 	CheckCheck,
+	CheckCircle2,
 	ChevronRight,
 	Clock,
 	CreditCard,
@@ -46,6 +48,7 @@ import {
 	UserCheck,
 	Users,
 	X,
+	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { SbpPaymentQrModal } from "./SbpPaymentQrModal.js";
@@ -271,7 +274,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 			senderName: "DENTE Фискальный Шлюз",
 			senderType: "automated_bot",
 			timestamp: new Date().toISOString(),
-			body: `✅ Поступила оплата заказа №${res.orderId} на сумму ${formatCurrencyRu(res.sumRub)} через СБП.\nЭлектронный фискальный чек 54-ФЗ: #${res.fiscalReceiptId}`,
+			body: `Поступила оплата заказа №${res.orderId} на сумму ${formatCurrencyRu(res.sumRub)} через СБП.\nЭлектронный фискальный чек 54-ФЗ: #${res.fiscalReceiptId}`,
 			status: "delivered",
 			templateCategory: "sbp_payment",
 		};
@@ -470,8 +473,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 													</span>
 												)}
 												{selectedContact.activeTreatmentPlan && (
-													<span className="hub-detail-chip highlight">
-														🦷 План: {formatCurrencyRu(selectedContact.activeTreatmentPlan.totalRub)}
+													<span className="hub-detail-chip highlight inline-flex items-center gap-1">
+														<Activity size={12} className="text-teal" /> План: {formatCurrencyRu(selectedContact.activeTreatmentPlan.totalRub)}
 													</span>
 												)}
 											</div>
@@ -714,12 +717,24 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 									<div key={tpl.id} className="hub-template-card">
 										<div className="hub-tpl-card-top">
 											<div className="hub-tpl-badge-category">
-												{tpl.category === "visit_reminder" && "📅 Напоминание"}
-												{tpl.category === "appointment_confirmation" && "✅ Подтверждение"}
-												{tpl.category === "treatment_plan" && "🦷 План лечения"}
-												{tpl.category === "nps_survey" && "⭐ Опрос NPS"}
-												{tpl.category === "sbp_payment" && "⚡ Оплата СБП"}
-												{tpl.category === "custom" && "📝 Шаблон"}
+												{tpl.category === "visit_reminder" && (
+													<span className="inline-flex items-center gap-1"><Calendar size={13} /> Напоминание</span>
+												)}
+												{tpl.category === "appointment_confirmation" && (
+													<span className="inline-flex items-center gap-1"><CheckCircle2 size={13} /> Подтверждение</span>
+												)}
+												{tpl.category === "treatment_plan" && (
+													<span className="inline-flex items-center gap-1"><Activity size={13} /> План лечения</span>
+												)}
+												{tpl.category === "nps_survey" && (
+													<span className="inline-flex items-center gap-1"><Star size={13} /> Опрос NPS</span>
+												)}
+												{tpl.category === "sbp_payment" && (
+													<span className="inline-flex items-center gap-1"><Zap size={13} /> Оплата СБП</span>
+												)}
+												{tpl.category === "custom" && (
+													<span className="inline-flex items-center gap-1"><FileText size={13} /> Шаблон</span>
+												)}
 											</div>
 											<span className="hub-tpl-channel-tag">{tpl.channel.toUpperCase()}</span>
 										</div>
@@ -814,8 +829,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 									</div>
 									<p className="metric-hint">
 										{npsMetrics.criticalPendingCount > 0 ? (
-											<span className="text-bad font-semibold">
-												⚠️ {npsMetrics.criticalPendingCount} требуют звонка главврача!
+											<span className="text-bad font-semibold inline-flex items-center gap-1">
+												<AlertTriangle size={13} className="text-bad" /> {npsMetrics.criticalPendingCount} требуют звонка главврача!
 											</span>
 										) : (
 											"Критических инцидентов нет"
@@ -840,10 +855,10 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 												onChange={(e) => setNpsFilterUrgency(e.target.value)}
 											>
 												<option value="all">Все отзывы ({npsReviews.length})</option>
-												<option value="critical">🚨 Критические (≤4)</option>
-												<option value="detractor">👎 Все детракторы (0-6)</option>
-												<option value="neutral">😐 Нейтралы (7-8)</option>
-												<option value="promoter">⭐ Промоутеры (9-10)</option>
+												<option value="critical">Критические (≤4)</option>
+												<option value="detractor">Все детракторы (0-6)</option>
+												<option value="neutral">Нейтралы (7-8)</option>
+												<option value="promoter">Промоутеры (9-10)</option>
 											</select>
 										</div>
 
@@ -896,8 +911,9 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 															<span className="patient-phone">{formatRussianPhone(rev.phone)}</span>
 														</td>
 														<td className="cell-score">
-															<span className={`nps-score-badge score-${rev.score}`}>
-																⭐ {rev.score}
+															<span className={`nps-score-badge score-${rev.score} inline-flex items-center gap-1`}>
+																<Star size={11} className="text-amber-500 fill-amber-500 inline" />
+																<span>{rev.score}</span>
 															</span>
 														</td>
 														<td className="cell-urgency">
@@ -968,23 +984,24 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 						Закрыть
 					</button>
 				</footer>
-			</div>
 
-			{/* Вложенное модальное окно оплаты СБП при вызове */}
-			{isSbpModalOpen && currentSbpInvoice && (
-				<SbpPaymentQrModal
-					isOpen={isSbpModalOpen}
-					onClose={() => setIsSbpModalOpen(false)}
-					invoice={currentSbpInvoice}
-					onPaymentSuccess={handleSbpPaymentSuccess}
-					onSendToChat={(channel, text) => {
-						setMessageText(text);
-						setInputChannel(channel);
-						setIsSbpModalOpen(false);
-						setActiveTab("chat");
-					}}
-				/>
-			)}
+				{/* Встроенная панель оплаты СБП без модального оверлея (Анти-Матрёшка) */}
+				{isSbpModalOpen && currentSbpInvoice && (
+					<SbpPaymentQrModal
+						isOpen={isSbpModalOpen}
+						embedded={true}
+						onClose={() => setIsSbpModalOpen(false)}
+						invoice={currentSbpInvoice}
+						onPaymentSuccess={handleSbpPaymentSuccess}
+						onSendToChat={(channel, text) => {
+							setMessageText(text);
+							setInputChannel(channel);
+							setIsSbpModalOpen(false);
+							setActiveTab("chat");
+						}}
+					/>
+				)}
+			</div>
 		</div>
 	);
 };

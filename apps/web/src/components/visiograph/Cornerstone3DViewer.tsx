@@ -3,6 +3,7 @@ import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as cornerstoneTools from "@cornerstonejs/tools";
 import { vec3 } from "gl-matrix";
 import {
+	Activity,
 	AlertTriangle,
 	Camera,
 	CheckCircle2,
@@ -2218,7 +2219,7 @@ export function Cornerstone3DViewer({
 								}}
 							>
 								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-									<Sparkles className="w-4 h-4 text-amber-400" />
+									<Activity className="w-4 h-4 text-teal-400" />
 									<span>Протокол имплантации (Зуб №{latestImplant?.fdiCode})</span>
 								</div>
 								<span

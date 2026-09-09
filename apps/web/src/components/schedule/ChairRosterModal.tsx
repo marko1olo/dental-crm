@@ -1573,7 +1573,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "44px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1602,7 +1602,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "44px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1631,7 +1631,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "44px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1660,7 +1660,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "44px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1689,7 +1689,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "44px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1731,12 +1731,12 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "44px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
 																	borderRadius: "6px",
-																	border: "1px solid var(--bad-fg)30",
+																	border: "1px solid var(--bad-fg)",
 																	background: "var(--bad-bg, rgba(239, 68, 68, 0.08))",
 																	color: "var(--bad-fg)",
 																	cursor: "pointer",

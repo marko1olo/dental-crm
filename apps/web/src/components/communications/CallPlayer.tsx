@@ -86,14 +86,14 @@ export const CallPlayer: React.FC<{
 	};
 
 	return (
-		<div className="flex flex-wrap items-center gap-2 mt-2 p-2 bg-slate-100 dark:bg-slate-900/50 rounded-md border border-slate-200 dark:border-slate-800">
+		<div className="flex flex-wrap items-center gap-2 mt-2 p-2 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 			<audio ref={audioRef} src={recordingUrl} preload="metadata">
 				<track kind="captions" src="" label="" default />
 			</audio>
 			<button
 				type="button"
 				onClick={togglePlayPause}
-				className="flex items-center justify-center min-h-[44px] min-w-[44px] w-11 h-11 rounded-full bg-sky-500 hover:bg-sky-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+				className="flex items-center justify-center min-h-[44px] min-w-[44px] w-11 h-11 rounded-full bg-[var(--teal)] hover:opacity-90 text-white focus:outline-none focus:ring-2 focus:ring-[var(--teal)] focus:ring-offset-1"
 				aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
 			>
 				{isPlaying ? (
@@ -102,7 +102,7 @@ export const CallPlayer: React.FC<{
 					<Play className="w-4 h-4 ml-0.5" aria-hidden="true" />
 				)}
 			</button>
-			<span className="text-xs font-mono text-slate-600 dark:text-slate-400 min-w-[2.5rem] text-right">
+			<span className="text-xs font-mono text-[var(--muted)] min-w-[2.5rem] text-right">
 				{formatTime(progress)}
 			</span>
 			<input
@@ -112,16 +112,16 @@ export const CallPlayer: React.FC<{
 				step="0.1"
 				value={progress}
 				onChange={handleProgressChange}
-				className="flex-1 min-w-[100px] h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 accent-sky-500"
+				className="flex-1 min-w-[100px] h-1.5 bg-[var(--line)] rounded-lg appearance-none cursor-pointer accent-[var(--teal)]"
 				aria-label="Прогресс воспроизведения"
 			/>
-			<span className="text-xs font-mono text-slate-600 dark:text-slate-400 min-w-[2.5rem]">
+			<span className="text-xs font-mono text-[var(--muted)] min-w-[2.5rem]">
 				{formatTime(duration)}
 			</span>
 			<button
 				type="button"
 				onClick={handleRateChange}
-				className="px-2.5 py-1.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs font-medium rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+				className="px-2.5 py-1.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs font-medium rounded-lg bg-[var(--paper-strong)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] transition-colors"
 				title="Скорость воспроизведения"
 			>
 				{playbackRate}x

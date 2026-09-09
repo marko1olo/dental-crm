@@ -1334,10 +1334,13 @@ export function VisiographAnalyzer({
 										color: isSpeaking ? "var(--on-teal)" : "var(--muted)",
 										border: "1px solid var(--line)",
 										borderRadius: "8px",
-										padding: "5px 8px",
+										padding: "8px 12px",
+										minHeight: "44px",
+										minWidth: "44px",
 										cursor: "pointer",
 										display: "flex",
 										alignItems: "center",
+										justifyContent: "center",
 										gap: "4px",
 										fontSize: "0.8rem",
 										transition: "all 0.2s",
@@ -1349,15 +1352,19 @@ export function VisiographAnalyzer({
 									type="button"
 									onClick={handlePrint}
 									title="Печать"
+									aria-label="Печать отчёта снимка"
 									style={{
 										background: "transparent",
 										color: "var(--muted)",
 										border: "1px solid var(--line)",
 										borderRadius: "8px",
-										padding: "5px 8px",
+										padding: "8px 12px",
+										minHeight: "44px",
+										minWidth: "44px",
 										cursor: "pointer",
 										display: "flex",
 										alignItems: "center",
+										justifyContent: "center",
 										fontSize: "0.8rem",
 										transition: "all 0.2s",
 									}}
@@ -2629,7 +2636,7 @@ export function VisiographAnalyzer({
 															: 0}{" "}
 														зубов
 														{scan.aiSummary && (
-															<span> · {scan.aiSummary.substring(0, 60)}…</span>
+															<span title={scan.aiSummary}> · {scan.aiSummary.substring(0, 60)}…</span>
 														)}
 													</div>
 												</div>
@@ -2650,7 +2657,8 @@ export function VisiographAnalyzer({
 													void deleteScan(scan);
 												}}
 												style={{
-													width: "40px",
+													width: "44px",
+													minHeight: "44px",
 													flexShrink: 0,
 													borderRadius: "8px",
 													border: "1px solid var(--line)",
@@ -2693,9 +2701,9 @@ export function VisiographAnalyzer({
 const STATE_LABELS: Record<string, string> = {
 	treatment: "лечение",
 	planned: "план",
-	watch: "наблюд.",
+	watch: "наблюдение",
 	done: "вылечен",
-	missing: "отсутст.",
+	missing: "отсутствует",
 };
 
 function extractSummary(report: string): string | null {

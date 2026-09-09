@@ -695,7 +695,7 @@ export function TelephonyFloatingWidget({
 									key={st.id}
 									type="button"
 									onClick={() => setAgentState(st.id)}
-									className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all h-6 inline-flex items-center ${
+									className={`min-h-[36px] px-2.5 py-1.5 rounded-md text-xs font-bold border transition-all inline-flex items-center justify-center ${
 										agentState === st.id
 											? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--teal)] border-[var(--line,#cbd5e1)] shadow-xs"
 											: "text-[var(--muted,#64748b)] border-transparent hover:text-[var(--ink,#0f172a)]"
@@ -710,7 +710,7 @@ export function TelephonyFloatingWidget({
 							<button
 								type="button"
 								onClick={() => switchLine(1)}
-								className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all h-6 inline-flex items-center ${
+								className={`min-h-[36px] px-2.5 py-1.5 rounded text-xs font-mono font-bold transition-all inline-flex items-center justify-center ${
 									activeLineId === 1
 										? "bg-[var(--teal)] text-white shadow-xs"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -721,7 +721,7 @@ export function TelephonyFloatingWidget({
 							<button
 								type="button"
 								onClick={() => switchLine(2)}
-								className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all h-6 inline-flex items-center ${
+								className={`min-h-[36px] px-2.5 py-1.5 rounded text-xs font-mono font-bold transition-all inline-flex items-center justify-center ${
 									activeLineId === 2
 										? "bg-[var(--teal)] text-white shadow-xs"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -733,7 +733,7 @@ export function TelephonyFloatingWidget({
 								<button
 									type="button"
 									onClick={toggleHold}
-									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-all h-6 inline-flex items-center ${
+									className={`min-h-[36px] px-2.5 py-1.5 rounded text-xs font-bold border transition-all inline-flex items-center justify-center ${
 										isHeld
 											? "bg-amber-500 text-slate-950 border-amber-400 shadow-xs"
 											: "text-amber-500 border-transparent hover:bg-amber-500/10"
