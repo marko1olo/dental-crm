@@ -1561,9 +1561,10 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										<button
 											type="button"
 											onClick={() => handleDuplicateChair(chair)}
-											className="mt-1 px-2 py-1 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] border border-[var(--line)] flex items-center justify-center gap-1 transition-colors cursor-pointer min-h-[36px]"
+											className="mt-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] border border-[var(--line)] flex items-center justify-center gap-1 transition-colors cursor-pointer min-h-[44px]"
 											data-testid={`chair-view-duplicate-${chair.id}`}
 											title={`Клонировать параметры кресла «${chair.name}»`}
+											style={{ minHeight: "44px" }}
 										>
 											<Copy size={12} className="text-[var(--teal)] shrink-0" />
 											<span>Клонировать кресло</span>
@@ -1668,7 +1669,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									handleCopyTodayShiftsToCurrentWeek(false);
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Скопировать график смен кресел на текущую неделю (Пн–Вс, 7 дней) в 1 клик (StomX Parity)"
 								data-testid="btn-copy-chair-week-current"
 								role="menuitem"
@@ -1683,7 +1685,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									handleCopyTodayShiftsToCurrentWeek(true);
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Скопировать график смен кресел на будни (Пн–Пт, 5 дней) в 1 клик (StomX Parity)"
 								data-testid="btn-copy-chair-week-workdays"
 								role="menuitem"
@@ -1698,7 +1701,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									handleCopyTodayShiftsToMonth();
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Скопировать график смен кресел на весь текущий месяц в 1 клик (StomX Parity)"
 								data-testid="btn-copy-chair-month"
 								role="menuitem"
@@ -1713,7 +1717,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									handleRotateChairShifts();
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Циклическая ротация смен между креслами в 1 клик"
 								data-testid="btn-rotate-chair-shifts"
 								role="menuitem"
@@ -1728,7 +1733,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									handleApplyDoctorPreferredChairs();
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Назначить закрепленных врачей на все кресла дня в 1 клик (StomX Parity)"
 								data-testid="btn-apply-preferred-chairs"
 								role="menuitem"
@@ -1743,7 +1749,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									handleCopyWeekShiftsToNextWeek();
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
 								data-testid="btn-copy-chair-week-next"
 								role="menuitem"
@@ -1758,7 +1765,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									setIsDateRangeModalOpen(true);
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Назначить смену на диапазон дат в 1 клик (StomX / DentalPRO parity)"
 								data-testid="btn-assign-date-range"
 								role="menuitem"
@@ -1775,7 +1783,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									handleClearAllDayShifts();
 									setIsShiftsMenuOpen(false);
 								}}
-								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer text-left min-h-[36px]"
+								className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer text-left min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								title="Очистить все смены кресел на текущий день в 1 клик"
 								data-testid="btn-clear-day-shifts"
 								role="menuitem"
@@ -2066,11 +2075,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										type="button"
 										data-testid={`chair-range-modal-preset-${preset.id}`}
 										onClick={() => setRangePreset(preset.id as DateRangeShiftPreset)}
-										className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+										className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${
 											rangePreset === preset.id
 												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
 												: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal)]"
 										}`}
+										style={{ minHeight: "44px" }}
 									>
 										{preset.label}
 									</button>

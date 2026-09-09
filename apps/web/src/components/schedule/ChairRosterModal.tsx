@@ -769,7 +769,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 								data-testid="chair-cancel-add-doctor-btn"
 								onClick={() => setIsQuickAddDoctorOpen(false)}
 								className="roster-btn roster-btn-secondary"
-								style={{ minHeight: "36px", padding: "0 0.5rem" }}
+								style={{ minHeight: "44px", padding: "0 0.75rem" }}
 								title="Закрыть панель (Esc)"
 							>
 								<X size={14} />
@@ -977,7 +977,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 								type="button"
 								onClick={() => setIsDateRangeOpen(false)}
 								className="roster-btn roster-btn-secondary"
-								style={{ minHeight: "36px", padding: "0 0.5rem" }}
+								style={{ minHeight: "44px", padding: "0 0.75rem" }}
 							>
 								<X size={14} />
 								<span>Свернуть</span>
@@ -1272,7 +1272,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 														color: "var(--ink, #0f172a)",
 														fontSize: "0.8125rem",
 														fontWeight: 600,
-														minHeight: "36px",
+														minHeight: "44px",
 													}}
 												>
 													{doctors.map((d) => (
@@ -1303,8 +1303,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															)
 														}
 														style={{
-															minHeight: "36px",
-															height: "36px",
+															minHeight: "44px",
+															height: "44px",
 															padding: "0 0.5rem",
 															fontSize: "0.75rem",
 														}}
@@ -1324,8 +1324,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															)
 														}
 														style={{
-															minHeight: "36px",
-															height: "36px",
+															minHeight: "44px",
+															height: "44px",
 															padding: "0 0.5rem",
 															fontSize: "0.75rem",
 														}}
@@ -1345,8 +1345,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															)
 														}
 														style={{
-															minHeight: "36px",
-															height: "36px",
+															minHeight: "44px",
+															height: "44px",
 															padding: "0 0.5rem",
 															fontSize: "0.75rem",
 														}}
@@ -1366,8 +1366,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															)
 														}
 														style={{
-															minHeight: "36px",
-															height: "36px",
+															minHeight: "44px",
+															height: "44px",
 															padding: "0 0.5rem",
 															fontSize: "0.75rem",
 														}}
@@ -1387,8 +1387,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															)
 														}
 														style={{
-															minHeight: "36px",
-															height: "36px",
+															minHeight: "44px",
+															height: "44px",
 															padding: "0 0.5rem",
 															fontSize: "0.75rem",
 														}}
@@ -1402,8 +1402,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 														className="roster-btn roster-btn-secondary"
 														onClick={() => handleRotateChairShifts(chair.id)}
 														style={{
-															minHeight: "36px",
-															height: "36px",
+															minHeight: "44px",
+															height: "44px",
 															padding: "0 0.5rem",
 															fontSize: "0.75rem",
 														}}
@@ -1573,7 +1573,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "36px",
+																	minHeight: "44px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1602,7 +1602,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "36px",
+																	minHeight: "44px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1631,7 +1631,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "36px",
+																	minHeight: "44px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1660,7 +1660,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "36px",
+																	minHeight: "44px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1689,7 +1689,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "36px",
+																	minHeight: "44px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
@@ -1731,7 +1731,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "36px",
+																	minHeight: "44px",
 																	padding: "0 0.25rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,

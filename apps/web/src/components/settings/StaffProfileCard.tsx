@@ -400,22 +400,22 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="staff-touch-target-button staff-btn-secondary p-2 min-w-[36px] min-h-[36px]"
+						className="staff-touch-target-button staff-btn-secondary p-2 min-w-[44px] min-h-[44px] w-11 h-11 inline-flex items-center justify-center cursor-pointer"
 						aria-label="Закрыть"
 					>
 						<X className="w-5 h-5" />
 					</button>
 				</header>
 
-				{/* Mobile Segmented Control */}
-				<div className="md:hidden flex border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1">
+				{/* Mobile Segmented Control (Mandate 8c: >= 44x44px touch targets) */}
+				<div className="md:hidden flex border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1 gap-1">
 					<button
 						type="button"
 						onClick={() => setActiveTabMobile("requisites")}
-						className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
+						className={`flex-1 min-h-[44px] px-2 py-2 text-xs font-semibold rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer ${
 							activeTabMobile === "requisites"
 								? "bg-white dark:bg-slate-800 text-teal-600 shadow-sm"
-								: "text-slate-500"
+								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
 						}`}
 					>
 						1. Реквизиты
@@ -423,10 +423,10 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveTabMobile("payroll")}
-						className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
+						className={`flex-1 min-h-[44px] px-2 py-2 text-xs font-semibold rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer ${
 							activeTabMobile === "payroll"
 								? "bg-white dark:bg-slate-800 text-teal-600 shadow-sm"
-								: "text-slate-500"
+								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
 						}`}
 					>
 						2. Ставки и филиалы
@@ -434,10 +434,10 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveTabMobile("security")}
-						className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
+						className={`flex-1 min-h-[44px] px-2 py-2 text-xs font-semibold rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer ${
 							activeTabMobile === "security"
 								? "bg-white dark:bg-slate-800 text-teal-600 shadow-sm"
-								: "text-slate-500"
+								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
 						}`}
 					>
 						3. Безопасность
@@ -738,9 +738,9 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 													key={spec.id}
 													type="button"
 													onClick={() => handleSpecialtyToggle(spec.id)}
-													className={`text-xs px-2.5 py-1 rounded-md border transition-all ${
+													className={`text-xs px-3 py-1.5 min-h-[44px] rounded-lg border transition-all inline-flex items-center justify-center cursor-pointer ${
 														isSelected
-															? "bg-teal-600 text-white border-teal-600 font-medium"
+															? "bg-teal-600 text-white border-teal-600 font-semibold shadow-xs"
 															: "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-teal-500"
 													}`}
 												>
