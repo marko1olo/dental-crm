@@ -1,27 +1,16 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
 	Activity,
-	AlertTriangle,
 	Check,
-	Coins,
-	FileText,
 	History,
-	Layers,
-	ShieldCheck,
-	Sparkles,
 	X,
 } from "lucide-react";
 import {
 	type ToothData,
 	type ToothState,
-	TOOTH_STATE_LABELS,
 } from "./ToothChart";
 import { type FurcationGrade } from "./anatomicalToothGeometries";
-import {
-	getToothFolkAndAnatomicalNameRu,
-	getToothAnatomicalNameRu,
-} from "../../lib/clinicalProtocols043";
-import { ORDER_804N_PROCEDURES } from "./OdontogramLiveInvoice";
+import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 
@@ -100,11 +89,11 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 		if (onUpdateTooth) {
 			const updates: Partial<ToothData> = {
 				state: currentState,
+				surfaces: selectedSurfaces,
+				mobility: mobility as 0 | 1 | 2 | 3,
+				boneLossLevel: boneLoss,
+				furcationGrade: furcation,
 			};
-			if (selectedSurfaces.length > 0) updates.surfaces = selectedSurfaces;
-			if (mobility > 0) updates.mobility = mobility as 0 | 1 | 2 | 3;
-			if (boneLoss > 0) updates.boneLossLevel = boneLoss;
-			if (furcation > 0) updates.furcationGrade = furcation;
 			onUpdateTooth(toothNumber, updates);
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();

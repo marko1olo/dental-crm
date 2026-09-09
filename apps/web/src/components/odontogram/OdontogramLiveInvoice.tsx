@@ -171,9 +171,9 @@ export const ORDER_804N_PROCEDURES: Record<
 		category: "Хирургия",
 	},
 	Missing: {
-		code: "A16.07.001.001",
-		title: "Атравматичное удаление зуба с консервацией лунки",
-		price: 3500,
+		code: "A16.07.054.001",
+		title: "Дентальная имплантация (восстановление отсутствующего зуба)",
+		price: 35000,
 		category: "Хирургия",
 	},
 	Root: {
@@ -515,10 +515,13 @@ export function calculateLiveInvoiceItems(
 
 		// 2. Детская стоматология (Временные зубы 51..85)
 		if (isDeciduous) {
+			if (state === "Missing") {
+				continue;
+			}
 			let pedPr = ORDER_804N_PROCEDURES.PediatricCaries!;
 			if (state === "Pulpitis") {
 				pedPr = ORDER_804N_PROCEDURES.PediatricPulpitis!;
-			} else if (state === "Missing" || state === "Periodontitis") {
+			} else if (state === "Periodontitis") {
 				pedPr = ORDER_804N_PROCEDURES.PediatricExtraction!;
 			} else if (state === "Crown") {
 				pedPr = ORDER_804N_PROCEDURES.PediatricCrown!;

@@ -21,6 +21,7 @@ import {
 	Trash2,
 	User,
 	Wrench,
+	X,
 	Zap,
 } from "lucide-react";
 import type { OdontogramViewMode } from "@dental/shared";
@@ -759,10 +760,11 @@ export const OdontogramStudioStandalone: React.FC = () => {
 							<button
 								type="button"
 								onClick={() => setActiveStamp(null)}
-								className="px-2.5 py-0.5 rounded-full bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/40 text-[11px] cursor-pointer min-h-[28px] whitespace-nowrap"
+								className="px-2.5 py-0.5 rounded-full bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/40 text-[11px] cursor-pointer min-h-[28px] whitespace-nowrap flex items-center"
 								title="Снять активную кисть и вернуться к Радиальному меню (Esc)"
 							>
-								✕ Снять кисть (Esc)
+								<X size={12} className="inline mr-1 shrink-0" />
+								<span>Снять кисть (Esc)</span>
 							</button>
 						)}
 					</div>

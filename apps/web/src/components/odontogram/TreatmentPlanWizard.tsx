@@ -31,6 +31,7 @@ export interface TreatmentPlanWizardProps {
 	patientId?: string | undefined;
 	patientName?: string | undefined;
 	onPlanCreated?: ((planId: string, totalRub: number) => void) | undefined;
+	initialDiscountPercent?: number | undefined;
 	className?: string | undefined;
 }
 
@@ -50,11 +51,13 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 	patientId,
 	patientName,
 	onPlanCreated,
+	initialDiscountPercent = 0,
 	className = "",
 }) => {
 	const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [planTitle, setPlanTitle] = useState("План санации полости рта (из одонтограммы)");
+	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(initialDiscountPercent);
 
 	// Extract all live invoice items from pathologies
 	const rawItems = useMemo(() => {
@@ -89,7 +92,11 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 		}
 
 		const calcStageTotalKopecks = (items: LiveInvoiceItem[]) =>
-			items.reduce((acc, it) => acc + Math.round(it.price * it.quantity * 100), 0);
+			items.reduce((acc, it) => {
+				const grossKop = Math.round(it.price * it.quantity * 100);
+				const discKop = Math.round((grossKop * doctorDiscountPercent) / 100);
+				return acc + Math.max(0, grossKop - discKop);
+			}, 0);
 
 		const g1Kop = calcStageTotalKopecks(therapyItems);
 		const g2Kop = calcStageTotalKopecks(surgeryItems);
@@ -121,15 +128,16 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 				totalRub: Math.round(g3Kop / 100),
 			},
 		];
-	}, [activeItems]);
+	}, [activeItems, doctorDiscountPercent]);
 
 	// Calculate total price in whole kopecks (Mandate 8b)
 	const totalKopecks = useMemo(() => {
-		return activeItems.reduce(
-			(acc, it) => acc + Math.round(it.price * it.quantity * 100),
-			0,
-		);
-	}, [activeItems]);
+		return activeItems.reduce((acc, it) => {
+			const grossKop = Math.round(it.price * it.quantity * 100);
+			const discKop = Math.round((grossKop * doctorDiscountPercent) / 100);
+			return acc + Math.max(0, grossKop - discKop);
+		}, 0);
+	}, [activeItems, doctorDiscountPercent]);
 
 	const totalRub = Math.round(totalKopecks / 100);
 
@@ -150,25 +158,29 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 
 		setIsSubmitting(true);
 		try {
-			const planItemsForApi = activeItems.map((item, idx) => ({
-				id: `auto_${item.toothNumber}_${item.code}_${idx}`,
-				toothNumber: item.toothNumber,
-				priceId: item.code,
-				name: item.title,
-				quantity: item.quantity,
-				price: item.price,
-				discount: 0,
-				phase:
-					item.category.toLowerCase().includes("ортопед") || item.code.startsWith("A16.07.004")
-						? 3
-						: item.category.toLowerCase().includes("хирург") ||
-							  item.category.toLowerCase().includes("имплант") ||
-							  item.code.startsWith("A16.07.001") ||
-							  item.code.startsWith("A16.07.006")
-							? 2
-							: 1,
-				isAuto: true,
-			}));
+			const planItemsForApi = activeItems.map((item, idx) => {
+				const lineGrossRub = item.price * item.quantity;
+				const lineDiscRub = Math.round((lineGrossRub * doctorDiscountPercent) / 100);
+				return {
+					id: `auto_${item.toothNumber}_${item.code}_${idx}`,
+					toothNumber: item.toothNumber,
+					priceId: item.code,
+					name: item.title,
+					quantity: item.quantity,
+					price: item.price,
+					discount: lineDiscRub,
+					phase:
+						item.category.toLowerCase().includes("ортопед") || item.code.startsWith("A16.07.004")
+							? 3
+							: item.category.toLowerCase().includes("хирург") ||
+								  item.category.toLowerCase().includes("имплант") ||
+								  item.code.startsWith("A16.07.001") ||
+								  item.code.startsWith("A16.07.006")
+								? 2
+								: 1,
+					isAuto: true,
+				};
+			});
 
 			if (patientId) {
 				const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
@@ -218,7 +230,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [activeItems, patientId, planTitle, totalRub, onPlanCreated, onClose]);
+	}, [activeItems, doctorDiscountPercent, patientId, planTitle, totalRub, onPlanCreated, onClose]);
 
 	const handlePrintEstimate = () => {
 		if (typeof window !== "undefined") {
@@ -306,18 +318,53 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 					</div>
 				</div>
 
-				{/* Plan Title Customizer */}
-				<div className="px-5 py-2.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex items-center gap-3">
-					<span className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] shrink-0">
-						Название плана:
-					</span>
-					<input
-						type="text"
-						value={planTitle}
-						onChange={(e) => setPlanTitle(e.target.value)}
-						className="flex-1 min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-zinc-800 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
-						placeholder="Название плана лечения..."
-					/>
+				{/* Plan Title & Doctor Discount Bar (Mandate 8e: Doctor Autonomy) */}
+				<div className="px-5 py-2.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+					<div className="flex-1 flex items-center gap-2 min-w-[240px]">
+						<span className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] shrink-0">
+							Название плана:
+						</span>
+						<input
+							type="text"
+							value={planTitle}
+							onChange={(e) => setPlanTitle(e.target.value)}
+							className="flex-1 min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-zinc-800 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
+							placeholder="Название плана лечения..."
+						/>
+					</div>
+
+					<div className="flex items-center gap-2 shrink-0">
+						<label htmlFor="wizard-doctor-discount" className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] shrink-0 flex items-center gap-1">
+							<Coins size={14} className="text-amber-500" />
+							<span>Скидка врача:</span>
+						</label>
+						<div className="flex items-center gap-1">
+							<input
+								id="wizard-doctor-discount"
+								type="number"
+								min={0}
+								max={100}
+								value={doctorDiscountPercent === 0 ? "" : doctorDiscountPercent}
+								onChange={(e) => {
+									const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+									setDoctorDiscountPercent(val);
+								}}
+								placeholder="0"
+								className="w-16 min-h-[36px] px-2 py-1 text-center font-mono font-black text-xs rounded-lg bg-[var(--paper,#ffffff)] dark:bg-zinc-800 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 focus:ring-2 focus:ring-indigo-500/50 outline-none"
+								data-testid="wizard-doctor-discount-input"
+							/>
+							<span className="text-xs font-bold text-zinc-500">%</span>
+							<button
+								type="button"
+								onClick={() => setDoctorDiscountPercent(100)}
+								className="min-h-[32px] px-2 py-1 text-[10px] font-black rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
+								title="Гарантийная переделка 100% (Мандат 8e)"
+								data-testid="wizard-discount-100-btn"
+							>
+								100% (Гарантия)
+							</button>
+						</div>
+					</div>
 				</div>
 
 				{/* Body Content: Staged Breakdown Tables */}
@@ -354,62 +401,71 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 										</span>
 									</div>
 
-									{/* Table of Items */}
-									<table className="w-full text-left text-xs border-collapse">
-										<thead>
-											<tr className="border-b border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 bg-[var(--paper,#ffffff)] dark:bg-zinc-900 text-[10px] uppercase font-bold text-[var(--odontogram-ink-muted,#64748b)]">
-												<th className="py-2 px-3 w-14">Зуб</th>
-												<th className="py-2 px-3 w-28">Код 804н</th>
-												<th className="py-2 px-3">Наименование услуги</th>
-												<th className="py-2 px-3 w-16 text-center">Кол-во</th>
-												<th className="py-2 px-3 w-24 text-right">Цена</th>
-												<th className="py-2 px-3 w-28 text-right">Сумма</th>
-												<th className="py-2 px-2 w-10 text-center"></th>
-											</tr>
-										</thead>
-										<tbody className="divide-y divide-[var(--odontogram-border-subtle,#e2e8f0)] dark:divide-zinc-800">
-											{group.items.map((item, idx) => {
-												const itemKey = `${item.toothNumber}-${item.code}`;
-												const lineTotalRub = item.price * item.quantity;
-												return (
-													<tr
-														key={`${itemKey}-${idx}`}
-														className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
-													>
-														<td className="py-2 px-3 font-mono font-black text-indigo-700 dark:text-indigo-400">
-															#{item.toothNumber}
-														</td>
-														<td className="py-2 px-3 font-mono text-[11px] text-[var(--odontogram-ink-muted,#64748b)]">
-															{item.code}
-														</td>
-														<td className="py-2 px-3 font-semibold text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200">
-															{item.title}
-														</td>
-														<td className="py-2 px-3 text-center font-mono font-bold">
-															{item.quantity}
-														</td>
-														<td className="py-2 px-3 text-right font-mono text-[var(--odontogram-ink-muted,#64748b)]">
-															{item.price.toLocaleString("ru-RU")} ₽
-														</td>
-														<td className="py-2 px-3 text-right font-mono font-black text-emerald-700 dark:text-emerald-400">
-															{lineTotalRub.toLocaleString("ru-RU")} ₽
-														</td>
-														<td className="py-2 px-2 text-center">
-															<button
-																type="button"
-																onClick={() => handleToggleExclude(itemKey)}
-																className="w-7 h-7 inline-flex items-center justify-center rounded-md hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
-																title="Исключить строку из плана"
-																data-testid={`exclude-item-${item.toothNumber}`}
-															>
-																<Trash2 size={13} />
-															</button>
-														</td>
-													</tr>
-												);
-											})}
-										</tbody>
-									</table>
+									{/* Table of Items wrapped in overflow-x-auto for mobile responsiveness (390px) */}
+									<div className="w-full overflow-x-auto">
+										<table className="w-full text-left text-xs border-collapse min-w-[540px]">
+											<thead>
+												<tr className="border-b border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 bg-[var(--paper,#ffffff)] dark:bg-zinc-900 text-[10px] uppercase font-bold text-[var(--odontogram-ink-muted,#64748b)]">
+													<th className="py-2 px-3 w-14">Зуб</th>
+													<th className="py-2 px-3 w-28">Код 804н</th>
+													<th className="py-2 px-3">Наименование услуги</th>
+													<th className="py-2 px-3 w-16 text-center">Кол-во</th>
+													<th className="py-2 px-3 w-24 text-right">Цена</th>
+													<th className="py-2 px-3 w-28 text-right">Сумма</th>
+													<th className="py-2 px-2 w-10 text-center"></th>
+												</tr>
+											</thead>
+											<tbody className="divide-y divide-[var(--odontogram-border-subtle,#e2e8f0)] dark:divide-zinc-800">
+												{group.items.map((item, idx) => {
+													const itemKey = `${item.toothNumber}-${item.code}`;
+													const lineGrossRub = item.price * item.quantity;
+													const lineDiscRub = Math.round((lineGrossRub * doctorDiscountPercent) / 100);
+													const lineTotalRub = Math.max(0, lineGrossRub - lineDiscRub);
+													return (
+														<tr
+															key={`${itemKey}-${idx}`}
+															className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+														>
+															<td className="py-2 px-3 font-mono font-black text-indigo-700 dark:text-indigo-400">
+																#{item.toothNumber}
+															</td>
+															<td className="py-2 px-3 font-mono text-[11px] text-[var(--odontogram-ink-muted,#64748b)]">
+																{item.code}
+															</td>
+															<td className="py-2 px-3 font-semibold text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200">
+																{item.title}
+															</td>
+															<td className="py-2 px-3 text-center font-mono font-bold">
+																{item.quantity}
+															</td>
+															<td className="py-2 px-3 text-right font-mono text-[var(--odontogram-ink-muted,#64748b)]">
+																{item.price.toLocaleString("ru-RU")} ₽
+															</td>
+															<td className="py-2 px-3 text-right font-mono font-black text-emerald-700 dark:text-emerald-400">
+																{lineTotalRub.toLocaleString("ru-RU")} ₽
+																{doctorDiscountPercent > 0 && (
+																	<span className="block text-[10px] text-zinc-400 line-through font-normal">
+																		{lineGrossRub.toLocaleString("ru-RU")} ₽
+																	</span>
+																)}
+															</td>
+															<td className="py-2 px-2 text-center">
+																<button
+																	type="button"
+																	onClick={() => handleToggleExclude(itemKey)}
+																	className="w-7 h-7 inline-flex items-center justify-center rounded-md hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+																	title="Исключить строку из плана"
+																	data-testid={`exclude-item-${item.toothNumber}`}
+																>
+																	<Trash2 size={13} />
+																</button>
+															</td>
+														</tr>
+													);
+												})}
+											</tbody>
+										</table>
+									</div>
 								</div>
 							))
 					)}

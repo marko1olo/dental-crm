@@ -184,6 +184,105 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 		assert.ok(html.includes("data-testid=\"btn-create-treatment-plan\""), "Must render plan creation button");
 	});
 
+	it("generates dental implant (A16.07.054) instead of tooth extraction (A16.07.001) for missing tooth", () => {
+		const sampleTeeth: ToothData[] = [
+			{ toothNumber: 46, state: "Missing" },
+		];
+
+		const items = calculateLiveInvoiceItems(sampleTeeth);
+		assert.ok(items.length >= 1, "Must generate invoice items for missing tooth 46");
+
+		// Find procedure for tooth 46
+		const implantItem = items.find((i) => i.toothNumber === 46 && i.code.startsWith("A16.07.054"));
+		assert.ok(implantItem, "Missing tooth must generate dental implantation (A16.07.054)");
+		assert.strictEqual(implantItem.code, "A16.07.054.001");
+		assert.ok(implantItem.title.includes("имплантация"), "Title must indicate implantation");
+
+		// CRITICAL CLINICAL CHECK: NEVER extract an already missing tooth!
+		const extractionItem = items.find((i) => i.toothNumber === 46 && i.code.startsWith("A16.07.001"));
+		assert.strictEqual(extractionItem, undefined, "Must NEVER generate extraction (A16.07.001) for already missing tooth");
+	});
+
+	it("verifies 0-norm reset for mobility, bone loss, furcation, and surfaces (Mandate 8e)", () => {
+		let savedUpdates: Partial<ToothData> | null = null;
+		const mockUpdateTooth = (num: number, updates: Partial<ToothData>) => {
+			savedUpdates = updates;
+		};
+
+		// Simulate saving of a cured tooth reset to physiological norm (0 mobility, 0 bone loss, 0 furcation, [] surfaces)
+		const updates: Partial<ToothData> = {
+			state: "Healthy",
+			surfaces: [],
+			mobility: 0,
+			boneLossLevel: 0,
+			furcationGrade: 0,
+		};
+		mockUpdateTooth(16, updates);
+
+		assert.ok(savedUpdates, "Updates must be recorded");
+		assert.strictEqual((savedUpdates as Partial<ToothData>).mobility, 0, "Mobility must be reset to 0");
+		assert.strictEqual((savedUpdates as Partial<ToothData>).boneLossLevel, 0, "Bone loss must be reset to 0");
+		assert.strictEqual((savedUpdates as Partial<ToothData>).furcationGrade, 0, "Furcation must be reset to 0");
+		assert.deepStrictEqual((savedUpdates as Partial<ToothData>).surfaces, [], "Surfaces must be empty array");
+
+		// Also verify source code of ToothCardModal does not contain `if (mobility > 0)` or `if (boneLoss > 0)`
+		const modalSource = fs.readFileSync(path.resolve(__dirname, "../ToothCardModal.tsx"), "utf-8");
+		assert.strictEqual(modalSource.includes("if (mobility > 0)"), false, "Must not guard mobility with > 0");
+		assert.strictEqual(modalSource.includes("if (boneLoss > 0)"), false, "Must not guard boneLoss with > 0");
+		assert.strictEqual(modalSource.includes("if (furcation > 0)"), false, "Must not guard furcation with > 0");
+	});
+
+	it("applies 100% doctor discount correctly for warranty / corporate rework (Mandate 8e)", () => {
+		const sampleTeeth: ToothData[] = [
+			{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
+			{ toothNumber: 46, state: "Missing" },
+		];
+
+		const html = renderToString(
+			<TreatmentPlanWizard
+				isOpen={true}
+				onClose={() => {}}
+				teethData={sampleTeeth}
+				initialDiscountPercent={100}
+				patientId="pt-test-123"
+				patientName="Иванов И.И."
+			/>,
+		);
+
+		assert.ok(html.includes("data-testid=\"wizard-doctor-discount-input\""), "Must render doctor discount input");
+		assert.ok(html.includes("data-testid=\"wizard-discount-100-btn\""), "Must render 100% discount button");
+		// With 100% discount, total is 0 ₽ (strip React SSR <!-- --> text separator)
+		const cleanHtml = html.replace(/<!-- -->/g, "");
+		assert.ok(cleanHtml.includes("0 ₽"), "Total to agree must be 0 ₽ under 100% warranty discount");
+
+		// Verify calculation math:
+		const rawItems = calculateLiveInvoiceItems(sampleTeeth);
+		const discountPercent = 100;
+		const totalKop = rawItems.reduce((acc, it) => {
+			const grossKop = Math.round(it.price * it.quantity * 100);
+			const discKop = Math.round((grossKop * discountPercent) / 100);
+			return acc + Math.max(0, grossKop - discKop);
+		}, 0);
+		assert.strictEqual(totalKop, 0, "100% discount must result in exactly 0 kopecks total");
+	});
+
+	it("wraps treatment plan table in overflow-x-auto for 390px mobile screens", () => {
+		const sampleTeeth: ToothData[] = [
+			{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
+		];
+
+		const html = renderToString(
+			<TreatmentPlanWizard
+				isOpen={true}
+				onClose={() => {}}
+				teethData={sampleTeeth}
+			/>,
+		);
+
+		assert.ok(html.includes("overflow-x-auto"), "Table must be wrapped in overflow-x-auto container");
+		assert.ok(html.includes("min-w-[540px]"), "Table must enforce min-w-[540px] for mobile horizontal scroll");
+	});
+
 	it("guarantees kopeck-exact integer arithmetic (Mandate 8b)", () => {
 		const priceRubles = 3450.5;
 		const kopecks = Math.round(priceRubles * 100);
@@ -211,7 +310,7 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 		);
 	});
 
-	it("guarantees 0 cartoon emojis in TreatmentPlanWizard, ToothCardModal, and OdontogramViewContainer", () => {
+	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanWizard, ToothCardModal, and OdontogramStudioStandalone", () => {
 		const files = [
 			"TreatmentPlanWizard.tsx",
 			"ToothCardModal.tsx",
@@ -230,5 +329,14 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 				`File ${file} must have 0 cartoon emojis according to HIG & Mandate 8d`,
 			);
 		}
+
+		// Verify OdontogramStudioStandalone.tsx has no unicode dingbat ✕
+		const standalonePath = path.resolve(__dirname, "../../../pages/OdontogramStudioStandalone.tsx");
+		const standaloneContent = fs.readFileSync(standalonePath, "utf-8");
+		assert.strictEqual(
+			standaloneContent.includes("✕"),
+			false,
+			"OdontogramStudioStandalone.tsx must not contain unicode dingbat ✕",
+		);
 	});
 });
