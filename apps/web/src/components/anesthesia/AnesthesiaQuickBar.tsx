@@ -11,6 +11,7 @@ import {
 	Activity,
 	Trash2,
 	Zap,
+	MoreHorizontal,
 } from "lucide-react";
 import {
 	type AnestheticDrugId,
@@ -108,6 +109,7 @@ export function AnesthesiaQuickBar({
 	});
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(null);
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 	const [safetyWarning, setSafetyWarning] = useState<{
 		title: string;
 		text: string;
@@ -356,7 +358,7 @@ export function AnesthesiaQuickBar({
 						<button
 							type="button"
 							onClick={onOpenEmergencyProtocol}
-							className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
+							className="px-3 py-2 min-h-[48px] rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
 							title="Экстренная помощь: Анафилаксия, LAST (липиды 20%), шок (112)"
 							data-testid="btn-anesthesia-quick-emergency"
 						>
@@ -368,7 +370,7 @@ export function AnesthesiaQuickBar({
 						<button
 							type="button"
 							onClick={onOpenAspirationJournal}
-							className="px-2.5 py-1 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1 transition-colors cursor-pointer"
+							className="px-3 py-2 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1 transition-colors cursor-pointer"
 							title="Открыть подробный журнал проводниковой анестезии и аспирационной пробы"
 							data-testid="btn-anesthesia-quick-journal"
 						>
@@ -433,69 +435,20 @@ export function AnesthesiaQuickBar({
 						Ввести дозу (1 клик):
 					</span>
 
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={() => {
-							setSelectedDrugId("articaine_1_100k");
-							handleApplyCarpules(1.0, false, "articaine_1_100k");
-						}}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/50 text-xs sm:text-sm font-black text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="1 клик: 1 карпула Артикаина 1:100 000 (1.7 мл) в протокол дневника без модалок"
-						data-testid="anesthesia-dose-1carp-articaine-100k"
-					>
-						<Zap size={14} className="text-emerald-500 shrink-0" />
-						<span>1 карпула Артикаина 1:100 000 (1.7 мл)</span>
-					</button>
-
+					{/* Primary 1: Норма 1.7 мл */}
 					<button
 						type="button"
 						disabled={disabled}
 						onClick={handleApplyStandardNormPreset}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/50 text-xs sm:text-sm font-black text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/50 text-xs sm:text-sm font-black text-blue-700 dark:text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="1 клик норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
 						data-testid="anesthesia-dose-norm-preset"
 					>
-						<Zap size={14} className="text-amber-300 shrink-0" />
+						<Zap size={14} className="text-amber-500 dark:text-amber-300 shrink-0" />
 						<span>Норма: Артикаин 1:100k (1.7 мл)</span>
 					</button>
 
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={() => handleApplyCarpules(1.0)}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Ввести 1 карпулу (1.7 мл) в протокол дневника"
-						data-testid="anesthesia-dose-1carp"
-					>
-						<Plus size={14} className="text-[var(--teal)] shrink-0" />
-						<span>1 карпула (1.7 мл)</span>
-					</button>
-
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={() => handleApplyCarpules(2.0)}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Ввести 2 карпулы (3.4 мл) — для проводниковых анестезий"
-						data-testid="anesthesia-dose-2carp"
-					>
-						<Plus size={14} className="text-[var(--teal)] shrink-0" />
-						<span>2 карпулы (3.4 мл)</span>
-					</button>
-
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={() => handleApplyCarpules(0.5)}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Ввести 0.5 карпулы (0.85 мл) — для интралигаментарной или нёбной анестезии"
-						data-testid="anesthesia-dose-halfcarp"
-					>
-						<Plus size={14} className="text-[var(--teal)] shrink-0" />
-						<span>½ карп. (0.85 мл)</span>
-					</button>
-
+					{/* Primary 2: Мандибулярная 1.7 мл */}
 					<button
 						type="button"
 						disabled={disabled}
@@ -505,21 +458,44 @@ export function AnesthesiaQuickBar({
 						data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"
 					>
 						<Zap size={14} className="text-teal-500 shrink-0" />
-						<span>Мандибулярная + инфильтр. 1.7 мл (Ультракаин Форте)</span>
+						<span>Мандибулярная + инфильтр. 1.7 мл</span>
 					</button>
 
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={handleApplySeptanestInfiltration}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-cyan-600/15 hover:bg-cyan-600/25 border border-cyan-500/50 text-xs sm:text-sm font-black text-cyan-700 dark:text-cyan-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="1 клик: Инфильтрационная 1.7 мл Септанест (аспирация отр.)"
-						data-testid="anesthesia-preset-infiltration-septanest"
-					>
-						<Zap size={14} className="text-cyan-500 shrink-0" />
-						<span>Инфильтрация 1.7 мл (Септанест)</span>
-					</button>
+					{/* Segmented Dose Switch */}
+					<div className="inline-flex items-center rounded-lg p-0.5 bg-[var(--paper)] border border-[var(--line)] shadow-xs" role="group" aria-label="Выбор дозы карпул">
+						<button
+							type="button"
+							disabled={disabled}
+							onClick={() => handleApplyCarpules(0.5)}
+							className="inline-flex items-center justify-center px-2.5 py-1.5 min-h-[44px] rounded-md hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer active:scale-95"
+							title="Ввести 0.5 карпулы (0.85 мл)"
+							data-testid="anesthesia-dose-halfcarp"
+						>
+							½ карп. (0.85 мл)
+						</button>
+						<button
+							type="button"
+							disabled={disabled}
+							onClick={() => handleApplyCarpules(1.0)}
+							className="inline-flex items-center justify-center px-2.5 py-1.5 min-h-[44px] rounded-md hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer active:scale-95 border-x border-[var(--line)]"
+							title="Ввести 1 карпулу (1.7 мл)"
+							data-testid="anesthesia-dose-1carp"
+						>
+							1 карпула (1.7 мл)
+						</button>
+						<button
+							type="button"
+							disabled={disabled}
+							onClick={() => handleApplyCarpules(2.0)}
+							className="inline-flex items-center justify-center px-2.5 py-1.5 min-h-[44px] rounded-md hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer active:scale-95"
+							title="Ввести 2 карпулы (3.4 мл)"
+							data-testid="anesthesia-dose-2carp"
+						>
+							2 карпулы (3.4 мл)
+						</button>
+					</div>
 
+					{/* Primary 3: Списать карпулу 1 клик */}
 					<button
 						type="button"
 						disabled={disabled}
@@ -529,33 +505,80 @@ export function AnesthesiaQuickBar({
 						data-testid="nurse-quick-carpule-disposal"
 					>
 						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>Списать карпулу (1 клик)</span>
+						<span>Списать карпулу</span>
 					</button>
 
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={handleNurseSeptanestDisposal}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Списать 1 карпулу Септанест 1:100 000 медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии)"
-						data-testid="nurse-quick-septanest-disposal"
-					>
-						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>Списать Септанест (1 клик)</span>
-					</button>
-
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={handleNursePacketDisposal}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Списать 1 карпулу Артикаин 1:100 000 + иглу 30G пакетом в 1 клик (СанПиН 3.3686-21, Мандат 8e п. 10, без комиссии, мягкий овердрафт)"
-						data-testid="nurse-quick-packet-disposal"
-					>
-						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>Пакет: 1 карп. + игла 30G</span>
-					</button>
-
+					{/* More Actions Dropdown (...) */}
+					<div className="relative">
+						<button
+							type="button"
+							disabled={disabled}
+							onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+							className="inline-flex items-center justify-center w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+							title="Дополнительные пресеты и списания"
+							aria-label="Дополнительные пресеты"
+							aria-expanded={isMoreMenuOpen}
+						>
+							<MoreHorizontal size={18} />
+						</button>
+						{isMoreMenuOpen && (
+							<div className="absolute left-0 bottom-full mb-1.5 w-72 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xl p-1.5 z-30 flex flex-col gap-1">
+								<button
+									type="button"
+									disabled={disabled}
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										setSelectedDrugId("articaine_1_100k");
+										handleApplyCarpules(1.0, false, "articaine_1_100k");
+									}}
+									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-colors cursor-pointer"
+									data-testid="anesthesia-dose-1carp-articaine-100k"
+								>
+									<Zap size={14} className="text-emerald-500 shrink-0" />
+									<span>1 карп. Артикаин 1:100k (1.7 мл)</span>
+								</button>
+								<button
+									type="button"
+									disabled={disabled}
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										handleApplySeptanestInfiltration();
+									}}
+									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-colors cursor-pointer"
+									data-testid="anesthesia-preset-infiltration-septanest"
+								>
+									<Zap size={14} className="text-cyan-500 shrink-0" />
+									<span>Инфильтрация 1.7 мл (Септанест)</span>
+								</button>
+								<button
+									type="button"
+									disabled={disabled}
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										handleNurseSeptanestDisposal();
+									}}
+									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+									data-testid="nurse-quick-septanest-disposal"
+								>
+									<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Списать Септанест (1 клик)</span>
+								</button>
+								<button
+									type="button"
+									disabled={disabled}
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										handleNursePacketDisposal();
+									}}
+									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+									data-testid="nurse-quick-packet-disposal"
+								>
+									<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Пакет: 1 карп. + игла 30G</span>
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 
 				{/* Maximum Safe Carpules Badge & Live MRD Safety Badge */}
@@ -618,7 +641,7 @@ export function AnesthesiaQuickBar({
 						</button>
 						<button
 							type="button"
-							className="px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+							className="px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors cursor-pointer"
 							onClick={() => {
 								const count = safetyWarning.carpulesCount ?? 1.0;
 								setSafetyWarning(null);

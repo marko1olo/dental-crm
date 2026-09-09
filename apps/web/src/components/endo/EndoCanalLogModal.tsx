@@ -1156,7 +1156,7 @@ export function EndoCanalLogModal({
 
 						<pre
 							data-testid="endo-protocol-preview-text"
-							className="text-xs text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap leading-relaxed m-0 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 max-h-48 overflow-y-auto select-text"
+							className="text-xs text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap leading-relaxed m-0 p-3 bg-[var(--paper,#ffffff)] rounded-xl border border-[var(--line,#e2e8f0)] max-h-48 overflow-y-auto select-text"
 						>
 							{generatedProtocolText}
 						</pre>

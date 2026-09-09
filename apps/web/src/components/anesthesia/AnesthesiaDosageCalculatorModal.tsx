@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
 	Activity,
 	AlertTriangle,
@@ -453,7 +454,7 @@ export function AnesthesiaDosageCalculatorModal({
 		calcResult.isEpinephrineOverdose ||
 		calcResult.contraindicationsTriggered.length > 0;
 
-	return (
+	const modalContent = (
 		<div className="anesthesia-modal-backdrop" role="dialog" aria-modal="true">
 			<div className="anesthesia-modal-container" style={{ maxWidth: "840px" }}>
 				{/* Modal Header */}
@@ -538,7 +539,7 @@ export function AnesthesiaDosageCalculatorModal({
 									background:
 										selectedDrugId === "articaine_1_200k" && techniqueId === "infiltration"
 											? "var(--teal-surface, rgba(13, 148, 136, 0.12))"
-											: "var(--paper, #fff)",
+											: "var(--paper)",
 									cursor: "pointer",
 								}}
 								data-testid="btn-anesthesia-preset-ultracain-ds"
@@ -571,7 +572,7 @@ export function AnesthesiaDosageCalculatorModal({
 									background:
 										selectedDrugId === "articaine_1_100k" && techniqueId === "mandibular_torus"
 											? "var(--teal-surface, rgba(13, 148, 136, 0.12))"
-											: "var(--paper, #fff)",
+											: "var(--paper)",
 									cursor: "pointer",
 								}}
 								data-testid="btn-anesthesia-preset-articaine-mandibular"
@@ -604,7 +605,7 @@ export function AnesthesiaDosageCalculatorModal({
 									background:
 										selectedDrugId === "mepivacaine_plain"
 											? "var(--teal-surface, rgba(13, 148, 136, 0.12))"
-											: "var(--paper, #fff)",
+											: "var(--paper)",
 									cursor: "pointer",
 								}}
 								data-testid="btn-anesthesia-preset-mepivacaine-plain"
@@ -834,7 +835,7 @@ export function AnesthesiaDosageCalculatorModal({
 											patientWeightKg === w
 												? "var(--teal)"
 												: "var(--paper)",
-										color: patientWeightKg === w ? "var(--on-teal, #fff)" : "inherit",
+										color: patientWeightKg === w ? "var(--on-teal)" : "inherit",
 										cursor: "pointer",
 										display: "inline-flex",
 										alignItems: "center",
@@ -957,7 +958,7 @@ export function AnesthesiaDosageCalculatorModal({
 								htmlFor="carpules-stepper"
 								style={{ fontSize: "0.8125rem", fontWeight: 700 }}
 							>
-								Количество вводимых карпул (1.8 мл):
+								Количество вводимых карпул (1.7 мл):
 							</label>
 							<div
 								id="carpules-stepper"
@@ -984,7 +985,7 @@ export function AnesthesiaDosageCalculatorModal({
 												carpulesCount === c
 													? "var(--teal)"
 													: "var(--paper)",
-											color: carpulesCount === c ? "var(--on-teal, #fff)" : "inherit",
+											color: carpulesCount === c ? "var(--on-teal)" : "inherit",
 											cursor: "pointer",
 											display: "inline-flex",
 											alignItems: "center",
@@ -1480,7 +1481,7 @@ export function AnesthesiaDosageCalculatorModal({
 					{/* Form 043/u Preview Box */}
 					<div
 						style={{
-							background: "var(--paper, #fff)",
+							background: "var(--paper)",
 							padding: "0.75rem",
 							borderRadius: "8px",
 							border: "1px solid var(--line, #e2e8f0)",
@@ -1664,7 +1665,7 @@ export function AnesthesiaDosageCalculatorModal({
 							alignItems: "center",
 							gap: "0.5rem",
 							background: isBlocked ? "var(--warn-fg, #d97706)" : "var(--teal)",
-							color: "var(--on-teal, #fff)",
+							color: "var(--on-teal)",
 							border: "none",
 							cursor: "pointer",
 							opacity: 1.0,
@@ -1680,5 +1681,9 @@ export function AnesthesiaDosageCalculatorModal({
 			</div>
 		</div>
 	</div>
-);
+	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

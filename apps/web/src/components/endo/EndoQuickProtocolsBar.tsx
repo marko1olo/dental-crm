@@ -96,7 +96,7 @@ export const EndoQuickProtocolsBar: React.FC<EndoQuickProtocolsBarProps> = ({
 
 	return (
 		<div
-			className={`p-3 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-850 border border-[var(--line,#e2e8f0)] dark:border-slate-800 space-y-2 ${className}`}
+			className={`p-3 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 space-y-2 ${className}`}
 			data-testid="endo-quick-protocols-bar"
 		>
 			<div className="flex items-center justify-between gap-2 flex-wrap">

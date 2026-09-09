@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
 	X,
 	Syringe,
@@ -228,7 +229,7 @@ export function AnesthesiaProtocolModal({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div className="anesthesia-modal-overlay">
 			<div className="anesthesia-modal-container" style={{ maxWidth: '820px' }}>
 				{/* Header */}
@@ -483,7 +484,7 @@ export function AnesthesiaProtocolModal({
 											setPatientWeightKg(Number.isFinite(parsed) && parsed > 0 ? parsed : 70);
 										}
 									}}
-									style={{ width: '60px', height: '26px', fontSize: '0.8125rem', fontWeight: 700, textAlign: 'center', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)' }}
+									style={{ width: '70px', minHeight: '44px', fontSize: '0.875rem', fontWeight: 700, textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
 								/>
 							</div>
 							<input
@@ -512,7 +513,7 @@ export function AnesthesiaProtocolModal({
 									max={110}
 									value={patientAgeYears}
 									onChange={e => setPatientAgeYears(Math.max(1, parseInt(e.target.value) || 35))}
-									style={{ width: '60px', height: '26px', fontSize: '0.8125rem', fontWeight: 700, textAlign: 'center', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)' }}
+									style={{ width: '70px', minHeight: '44px', fontSize: '0.875rem', fontWeight: 700, textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
 								/>
 							</div>
 							<input
@@ -536,7 +537,7 @@ export function AnesthesiaProtocolModal({
 									type="number"
 									value={bpSystolic}
 									onChange={e => setBpSystolic(parseInt(e.target.value) || 120)}
-									style={{ height: '32px', fontSize: '0.75rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
+									style={{ minHeight: '44px', fontSize: '0.875rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
 									placeholder="120"
 									title="Систолическое АД"
 								/>
@@ -544,7 +545,7 @@ export function AnesthesiaProtocolModal({
 									type="number"
 									value={bpDiastolic}
 									onChange={e => setBpDiastolic(parseInt(e.target.value) || 80)}
-									style={{ height: '32px', fontSize: '0.75rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
+									style={{ minHeight: '44px', fontSize: '0.875rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
 									placeholder="80"
 									title="Диастолическое АД"
 								/>
@@ -552,7 +553,7 @@ export function AnesthesiaProtocolModal({
 									type="number"
 									value={heartRateBpm}
 									onChange={e => setHeartRateBpm(parseInt(e.target.value) || 72)}
-									style={{ height: '32px', fontSize: '0.75rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
+									style={{ minHeight: '44px', fontSize: '0.875rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
 									placeholder="72"
 									title="ЧСС"
 								/>
@@ -568,7 +569,7 @@ export function AnesthesiaProtocolModal({
 								<select
 									value={asaStatus}
 									onChange={e => setAsaStatus(e.target.value as AsaPhysicalStatus)}
-									style={{ height: '32px', padding: '0.25rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.75rem' }}
+									style={{ minHeight: '44px', padding: '0.375rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
 								>
 									{Object.entries(ASA_CLASSIFICATIONS).map(([key, val]) => (
 										<option key={key} value={key}>
@@ -580,7 +581,7 @@ export function AnesthesiaProtocolModal({
 									type="text"
 									value={targetTooth}
 									onChange={e => setTargetTooth(e.target.value)}
-									style={{ height: '32px', padding: '0.25rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem', textAlign: 'center' }}
+									style={{ minHeight: '44px', padding: '0.375rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper)', color: 'var(--ink, #0f172a)', fontSize: '0.875rem', textAlign: 'center' }}
 									placeholder="46"
 								/>
 							</div>
@@ -595,7 +596,7 @@ export function AnesthesiaProtocolModal({
 								type="text"
 								value={seriesNumber}
 								onChange={e => setSeriesNumber(e.target.value)}
-								style={{ width: '100%', height: '30px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)', padding: '0.25rem' }}
+								style={{ width: '100%', minHeight: '44px', fontSize: '0.8125rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', padding: '0.375rem 0.5rem' }}
 								placeholder="ART-2026"
 							/>
 						</div>
@@ -605,7 +606,7 @@ export function AnesthesiaProtocolModal({
 								type="text"
 								value={batchNumber}
 								onChange={e => setBatchNumber(e.target.value)}
-								style={{ width: '100%', height: '30px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)', padding: '0.25rem' }}
+								style={{ width: '100%', minHeight: '44px', fontSize: '0.8125rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', padding: '0.375rem 0.5rem' }}
 								placeholder="84019"
 							/>
 						</div>
@@ -615,7 +616,7 @@ export function AnesthesiaProtocolModal({
 								type="text"
 								value={expirationDate}
 								onChange={e => setExpirationDate(e.target.value)}
-								style={{ width: '100%', height: '30px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)', padding: '0.25rem' }}
+								style={{ width: '100%', minHeight: '44px', fontSize: '0.8125rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', padding: '0.375rem 0.5rem' }}
 								placeholder="2027-06"
 							/>
 						</div>
@@ -625,7 +626,7 @@ export function AnesthesiaProtocolModal({
 								type="text"
 								value={assistantName}
 								onChange={e => setAssistantName(e.target.value)}
-								style={{ width: '100%', height: '30px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)', padding: '0.25rem' }}
+								style={{ width: '100%', minHeight: '44px', fontSize: '0.8125rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', padding: '0.375rem 0.5rem' }}
 								placeholder="ФИО медсестры"
 							/>
 						</div>
@@ -678,8 +679,9 @@ export function AnesthesiaProtocolModal({
 						</div>
 						<div className="anesthesia-drugs-grid">
 							{Object.values(DENTAL_ANESTHETICS).map(drug => (
-								<div
+								<button
 									key={drug.id}
+									type="button"
 									className={`anesthesia-drug-card ${selectedDrugId === drug.id ? 'selected' : ''}`}
 									onClick={() => setSelectedDrugId(drug.id)}
 								>
@@ -693,7 +695,7 @@ export function AnesthesiaProtocolModal({
 									<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)' }}>
 										Карпула: {drug.carpuleVolumeMl} мл • МРД: {drug.maxDoseMgPerKgAdult} мг/кг
 									</div>
-								</div>
+								</button>
 							))}
 						</div>
 					</div>
@@ -746,7 +748,7 @@ export function AnesthesiaProtocolModal({
 									step={0.5}
 									value={carpulesCount}
 									onChange={e => setCarpulesCount(Math.max(0.5, parseFloat(e.target.value) || 1.0))}
-									style={{ width: '54px', height: '24px', fontSize: '0.75rem', textAlign: 'center', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)' }}
+									style={{ width: '64px', minHeight: '44px', fontSize: '0.875rem', fontWeight: 700, textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}
 								/>
 							</div>
 							<input
@@ -901,4 +903,8 @@ export function AnesthesiaProtocolModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

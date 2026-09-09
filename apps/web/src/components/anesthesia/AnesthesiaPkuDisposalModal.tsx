@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
 	X,
 	FileText,
@@ -317,7 +318,7 @@ export function AnesthesiaPkuDisposalModal({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div className="anesthesia-modal-overlay">
 			<div className="anesthesia-modal-container pku-disposal-container" style={{ maxWidth: '840px' }}>
 				{/* Modal Header */}
@@ -329,7 +330,7 @@ export function AnesthesiaPkuDisposalModal({
 						<div>
 							<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 								<span className="hub-title-text">Журнал учета анестетиков и ПКУ (СанПиН 3.3686-21)</span>
-								<span className="anesthesia-header-badge" style={{ background: 'var(--teal)', color: 'var(--on-teal, #fff)' }}>Раздел X: Отходы Класса Б</span>
+								<span className="anesthesia-header-badge" style={{ background: 'var(--teal)', color: 'var(--on-teal)' }}>Раздел X: Отходы Класса Б</span>
 							</div>
 							<div className="hub-subtitle-text">
 								Предметно-количественный учет (ПКУ), списание карпул, контроль серии/партии и дезинфекция
@@ -348,7 +349,7 @@ export function AnesthesiaPkuDisposalModal({
 								fontSize: '0.75rem',
 								fontWeight: 700,
 								background: 'var(--teal, #0d9488)',
-								color: 'var(--on-teal, #fff)',
+								color: 'var(--on-teal)',
 								border: 'none',
 								borderRadius: '6px',
 								cursor: 'pointer',
@@ -359,7 +360,7 @@ export function AnesthesiaPkuDisposalModal({
 							data-testid="btn-pku-quick-batch-dispose"
 							title="Списать использованные карпулы за смену (1 клик, СанПиН 3.3686-21)"
 						>
-							<Zap size={14} color="#fff" />
+							<Zap size={14} color="var(--on-teal)" />
 							<span>Списать за смену (1 клик)</span>
 						</button>
 
@@ -440,7 +441,7 @@ export function AnesthesiaPkuDisposalModal({
 									padding: '0.625rem 0.75rem',
 									borderRadius: '8px',
 									border: selectedPreset === 'ultracain_ds_forte_1' ? '2px solid var(--teal, #0d9488)' : '1px solid var(--line, #e2e8f0)',
-									background: selectedPreset === 'ultracain_ds_forte_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper, #fff)',
+									background: selectedPreset === 'ultracain_ds_forte_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper)',
 									gap: '0.375rem',
 									transition: 'all 0.15s ease',
 								}}
@@ -465,7 +466,7 @@ export function AnesthesiaPkuDisposalModal({
 											fontSize: '0.75rem',
 											fontWeight: 700,
 											background: 'var(--teal, #0d9488)',
-											color: '#fff',
+											color: 'var(--on-teal)',
 											border: 'none',
 											borderRadius: '6px',
 											cursor: 'pointer',
@@ -509,7 +510,7 @@ export function AnesthesiaPkuDisposalModal({
 									padding: '0.625rem 0.75rem',
 									borderRadius: '8px',
 									border: selectedPreset === 'septanest_100_1' ? '2px solid var(--teal, #0d9488)' : '1px solid var(--line, #e2e8f0)',
-									background: selectedPreset === 'septanest_100_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper, #fff)',
+									background: selectedPreset === 'septanest_100_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper)',
 									gap: '0.375rem',
 									transition: 'all 0.15s ease',
 								}}
@@ -534,7 +535,7 @@ export function AnesthesiaPkuDisposalModal({
 											fontSize: '0.75rem',
 											fontWeight: 700,
 											background: 'var(--teal, #0d9488)',
-											color: '#fff',
+											color: 'var(--on-teal)',
 											border: 'none',
 											borderRadius: '6px',
 											cursor: 'pointer',
@@ -578,7 +579,7 @@ export function AnesthesiaPkuDisposalModal({
 									padding: '0.625rem 0.75rem',
 									borderRadius: '8px',
 									border: selectedPreset === 'scandonest_3_1' ? '2px solid var(--teal, #0d9488)' : '1px solid var(--line, #e2e8f0)',
-									background: selectedPreset === 'scandonest_3_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper, #fff)',
+									background: selectedPreset === 'scandonest_3_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper)',
 									gap: '0.375rem',
 									transition: 'all 0.15s ease',
 								}}
@@ -603,7 +604,7 @@ export function AnesthesiaPkuDisposalModal({
 											fontSize: '0.75rem',
 											fontWeight: 700,
 											background: 'var(--teal, #0d9488)',
-											color: '#fff',
+											color: 'var(--on-teal)',
 											border: 'none',
 											borderRadius: '6px',
 											cursor: 'pointer',
@@ -647,7 +648,7 @@ export function AnesthesiaPkuDisposalModal({
 									padding: '0.625rem 0.75rem',
 									borderRadius: '8px',
 									border: selectedPreset === 'damaged_broken_1' ? '2px solid var(--warn, #f59e0b)' : '1px solid var(--line, #e2e8f0)',
-									background: selectedPreset === 'damaged_broken_1' ? 'rgba(245, 158, 11, 0.08)' : 'var(--paper, #fff)',
+									background: selectedPreset === 'damaged_broken_1' ? 'rgba(245, 158, 11, 0.08)' : 'var(--paper)',
 									gap: '0.375rem',
 									transition: 'all 0.15s ease',
 								}}
@@ -664,6 +665,7 @@ export function AnesthesiaPkuDisposalModal({
 								<div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.25rem' }}>
 									<button
 										type="button"
+										className="text-white"
 										onClick={() => handleApplyPreset('damaged_broken_1')}
 										style={{
 											flex: 1,
@@ -672,7 +674,6 @@ export function AnesthesiaPkuDisposalModal({
 											fontSize: '0.75rem',
 											fontWeight: 700,
 											background: 'var(--warn, #f59e0b)',
-											color: '#fff',
 											border: 'none',
 											borderRadius: '6px',
 											cursor: 'pointer',
@@ -933,7 +934,7 @@ export function AnesthesiaPkuDisposalModal({
 							style={{
 								marginTop: '0.75rem',
 								padding: '0.625rem 0.875rem',
-								background: 'var(--paper, #fff)',
+								background: 'var(--paper)',
 								borderRadius: '8px',
 								border: '1px solid var(--line, #e2e8f0)',
 								display: 'flex',
@@ -1061,7 +1062,7 @@ export function AnesthesiaPkuDisposalModal({
 							type="button"
 							onClick={handleSaveAndClose}
 							className="anesthesia-btn anesthesia-btn-primary"
-							style={{ minHeight: '44px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
+							style={{ minHeight: '44px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal)' }}
 							data-testid="btn-save-pku-record"
 						>
 							<CheckCircle2 size={16} />
@@ -1072,4 +1073,8 @@ export function AnesthesiaPkuDisposalModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

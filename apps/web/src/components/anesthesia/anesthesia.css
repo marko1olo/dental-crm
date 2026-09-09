@@ -60,6 +60,30 @@
 	border: 1px solid var(--ok-bg, rgba(16, 185, 129, 0.3));
 }
 
+.anesthesia-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	width: 44px;
+	height: 44px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.anesthesia-close-btn:hover,
+.anesthesia-close-btn:focus-visible {
+	background: var(--paper-strong, #f1f5f9);
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--ink, #0f172a);
+	outline: none;
+}
+
 .anesthesia-modal-body {
 	padding: 1.25rem;
 	overflow-y: auto;
@@ -477,7 +501,7 @@
 
 .stopper-btn-switch {
 	padding: 0.375rem 0.75rem;
-	min-height: 36px;
+	min-height: 44px;
 	font-size: 0.75rem;
 	font-weight: 600;
 	border-radius: 6px;
@@ -489,7 +513,7 @@
 
 .stopper-btn-dismiss {
 	padding: 0.375rem 0.75rem;
-	min-height: 36px;
+	min-height: 44px;
 	font-size: 0.75rem;
 	font-weight: 500;
 	border-radius: 6px;
@@ -662,7 +686,7 @@
 
 .hub-select, .hub-text-input {
 	width: 100%;
-	min-height: 38px;
+	min-height: 44px;
 	padding: 0.375rem 0.5rem;
 	border-radius: 6px;
 	border: 1px solid var(--line, #e2e8f0);
@@ -805,6 +829,190 @@
 	color: #ffffff;
 	border: none;
 	cursor: pointer;
+}
+
+/* Drug Selection & Carpule Stepper Controls (AnesthesiaSafetyHubModal) */
+.drug-selection-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 0.75rem;
+	margin-top: 0.75rem;
+}
+
+.drug-tile-btn {
+	min-height: 44px;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 0.75rem;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+	transition: all 0.2s ease;
+}
+
+.drug-tile-btn:hover,
+.drug-tile-btn:focus-visible {
+	border-color: var(--brand-primary, var(--teal));
+	outline: none;
+}
+
+.drug-tile-btn.selected {
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
+}
+
+.drug-tile-btn.blocked {
+	opacity: 0.6;
+	border-color: var(--danger, #ef4444);
+	background: rgba(239, 68, 68, 0.05);
+}
+
+.drug-tile-name {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.drug-tile-substance {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.drug-tile-badge {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	padding: 0.125rem 0.375rem;
+	border-radius: 4px;
+}
+
+.drug-tile-badge.safe {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+	color: var(--ok-fg, #059669);
+	border: 1px solid var(--ok-bg, rgba(16, 185, 129, 0.3));
+}
+
+.drug-tile-badge.strong {
+	background: rgba(239, 68, 68, 0.12);
+	color: #dc2626;
+	border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.drug-tile-badge.standard {
+	background: rgba(59, 130, 246, 0.12);
+	color: #2563eb;
+	border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.drug-tile-details {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.6875rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.25rem;
+}
+
+.drug-tile-warning {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: #dc2626;
+	background: rgba(239, 68, 68, 0.1);
+	padding: 0.25rem 0.375rem;
+	border-radius: 4px;
+	margin-top: 0.25rem;
+}
+
+.carpules-selector-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 1rem;
+	padding: 0.75rem;
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+}
+
+.carpule-stepper-box {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 6px;
+	background: var(--paper, #ffffff);
+	padding: 0.125rem;
+}
+
+.stepper-btn {
+	min-width: 44px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.125rem;
+	font-weight: 700;
+	border: none;
+	background: transparent;
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	border-radius: 4px;
+	transition: background-color 0.15s ease;
+}
+
+.stepper-btn:hover,
+.stepper-btn:focus-visible {
+	background: var(--paper-strong, #f1f5f9);
+	color: var(--brand-primary, var(--teal));
+	outline: none;
+}
+
+.stepper-value {
+	min-width: 140px;
+	text-align: center;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	padding: 0 0.5rem;
+}
+
+.carpule-quick-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.carpule-chip {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5rem 0.75rem;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.carpule-chip:hover,
+.carpule-chip:focus-visible {
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--brand-primary, var(--teal));
+	outline: none;
+}
+
+.carpule-chip.active {
+	background: var(--brand-primary, var(--teal));
+	color: var(--on-teal, #ffffff);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 /* Emergency Timeline Styles */
