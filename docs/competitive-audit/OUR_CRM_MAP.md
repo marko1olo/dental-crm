@@ -2469,6 +2469,23 @@
 - **Файлы**: `apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx`, `apps/web/src/components/payments/sberPos/sberPos.css`, `apps/web/src/components/patient-portal/PatientWebappPortalModal.tsx`, `apps/web/src/components/patient-portal/patientWebapp.css`, `apps/web/src/components/sanpin/kraft/seniorNurseKraftAudio.ts`.
 - **Тесты**: `sberPosAutonomy.test.tsx` (4/4 PASS), `sberPos.test.ts` (19/19 PASS), `patientWebappEngine.test.ts` (20/20 PASS), `foolproofNurseWorkflows.test.ts` (17/17 PASS), `check:encoding` 5136 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
 
+#### 2.10.228. Централизация звуковых уведомлений расписания в SoundFeedbackService, снос мертвого симулятора телефонии и гармонизация дизайн-токенов (Wave 84)
+- **Назначение**: Полная ликвидация дублирующего экземпляра AudioContext в хуке звуковых оповещений расписания (useSoundNotifications.ts) с централизацией синтеза аккордов онлайн-записи и окончания слота врача в синглтон SoundFeedbackService, окончательное удаление рудиментов виртуального симулятора телефонии (Header.tsx, telephonyStore.ts, telephony.test.ts), искоренение формулировок «Симулятор смартфона» в каталоге модалок (ClinicalModalsStudioStandalone.tsx) и приведение дизайн-токенов документации (documentNavigation.css) к нулевому уровню долга (Мандаты 8c, 8d, 8e, 8k, 8n, Core Rule 7).
+- **Архитектурные механизмы**:
+  1. *Звуковые уведомления и централизация AudioContext (Мандат 8c)*:
+     - В `SoundFeedbackService.ts` добавлены нативные генераторы сигналов `playOnlineBookingChime()` (двойной восходящий аккорд 440→660 Гц) и `playSlotEndWarningChime()` (нисходящий мягкий сигнал 880→660 Гц за 5 минут до конца приёма), расширен тип `SoundEffectType`. Единый жизненный цикл Web Audio API с авто-suspend через 5 сек и тактильным откликом haptics.
+     - В `useSoundNotifications.ts` полностью вырезаны поля `audioCtxRef`, `idleSuspendTimerRef`, функция `getOrCreateCtx()` и локальный генератор `playTones()`; вызовы переведены на `SoundFeedbackService.getInstance()`. Устранен риск утечки контекстов и рассинхронизации громкости.
+     - В `soundFeedbackService.test.ts` реализован набор unit-тестов (4/4 PASS) с валидацией частот 440/660/880 Гц, headless-безопасности и настроек громкости.
+  2. *Ликвидация мертвого симулятора телефонии (Мандат 8k / CRM != Reality Simulator)*:
+     - В `Header.tsx` удален вызов `openSimulator` и иконка `Sliders`; устранено ветвление `isDev ? "Тест АТС" : "Вызовы"`, вызывавшее несуществующий симулятор; внедрена единая кнопка «Вызовы» с индикацией Mango PBX.
+     - В `telephonyStore.ts` удалены неиспользуемые рудименты `isSimulatorOpen`, `openSimulator()`, `closeSimulator()`.
+     - В `telephony.test.ts` тест переведен на проверку реального окна `openCallHistoryModal()` (25/25 PASS).
+  3. *Ликвидация псевдо-симуляторов и гигиена токенов (Core Rule 7, check:css-tokens)*:
+     - В `ClinicalModalsStudioStandalone.tsx` карточка 33b переименована из «Симулятор смартфона» в «Мобильный веб-кабинет PWA (Портал пациента)».
+     - В `documentNavigation.css` заменен необъявленный токен `var(--teal-10)` на канонический `var(--teal-soft)`.
+- **Файлы**: `apps/web/src/services/audio/SoundFeedbackService.ts`, `apps/web/src/services/audio/__tests__/soundFeedbackService.test.ts`, `apps/web/src/hooks/useSoundNotifications.ts`, `apps/web/src/components/Header.tsx`, `apps/web/src/store/telephonyStore.ts`, `apps/web/src/components/telephony/__tests__/telephony.test.ts`, `apps/web/src/pages/ClinicalModalsStudioStandalone.tsx`, `apps/web/src/components/documents/documentNavigation.css`.
+- **Тесты**: `soundFeedbackService.test.ts` (4/4 PASS), `telephony.test.ts` (25/25 PASS), `check:encoding` 5137 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+
 
 
 

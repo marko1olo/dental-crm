@@ -3368,6 +3368,23 @@
     * *seniorNurseKraftAudio.ts*: полностью устранены дублирующий неконтролируемый `AudioContext`, фоновые таймеры `idleSuspendTimer` и кастомные генераторы осцилляторов; функции `playSterileSuccessTone` и `playExpiredErrorTone` чисто делегируют воспроизведение в единый синглтон `SoundFeedbackService.getInstance().playActionSuccess()` и `.playWarningAlert()`; функция `disposeSeniorNurseKraftAudio()` сохранена как безопасный no-op.
 * **Верификация**: `sberPosAutonomy.test.tsx` (4/4 PASS), `sberPos.test.ts` (19/19 PASS), `patientWebappEngine.test.ts` (20/20 PASS), `foolproofNurseWorkflows.test.ts` (17/17 PASS), `check:encoding` 5136 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
+### Wave 84: Централизация звуковых уведомлений расписания в SoundFeedbackService, снос мертвого симулятора телефонии и гармонизация дизайн-токенов
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `1aa06705a`
+* **Результаты**:
+  - **Звуковые уведомления и ликвидация дублирующего AudioContext (Мандат 8c / Энергосбережение)**:
+    * *SoundFeedbackService.ts*: добавлены нативные генераторы сигналов `playOnlineBookingChime()` (двойной восходящий аккорд 440→660 Гц для оповещения администратора о новой онлайн-записи) и `playSlotEndWarningChime()` (мягкий нисходящий сигнал 880→660 Гц за 5 минут до конца приёма врача), расширен тип `SoundEffectType`. Единый жизненный цикл Web Audio API с автоматическим переходом в сон (suspend) через 5 сек и тактильной отдачей haptics.
+    * *useSoundNotifications.ts*: полностью ликвидирован второй нескоординированный экземпляр `AudioContext`, вырезаны `audioCtxRef`, `idleSuspendTimerRef`, функция `getOrCreateCtx()` и локальный генератор `playTones()`; вызовы переведены на вызов синглтона `SoundFeedbackService.getInstance()`. Устранен риск утечки дескрипторов аудио и рассогласования настроек громкости.
+    * *soundFeedbackService.test.ts*: написан автономный набор unit-тестов (4/4 PASS) с валидацией синтеза частот 440/660/880 Гц, изоляцией в headless Node и персистентностью громкости.
+  - **Ликвидация мертвого симулятора телефонии и фантомных кнопок (Мандат 8k / CRM != Reality Simulator)**:
+    * *Header.tsx*: удален стейт `openSimulator` и неиспользуемая иконка `Sliders`; ликвидировано искусственное ветвление `isDev ? "Тест АТС" : "Вызовы"`, в котором кнопка вызывала `openSimulator()`, не открывавший ни одного модального окна; оставлена единая лаконичная кнопка «Вызовы» со статусом готовности Mango PBX.
+    * *telephonyStore.ts*: вырезаны устаревшие рудименты ликвидированного ранее симулятора: флаг `isSimulatorOpen` и методы `openSimulator()`, `closeSimulator()`.
+    * *telephony.test.ts*: тест обновлен на проверку реального модального окна истории звонков `openCallHistoryModal()` (25/25 PASS).
+  - **Устранение остаточных симуляторов в студии и гигиена дизайн-токенов (Core Rule 7, check:css-tokens)**:
+    * *ClinicalModalsStudioStandalone.tsx*: карточка 33b переименована из «Симулятор смартфона (390x844)» в чистый «Мобильный веб-кабинет PWA (Портал пациента)».
+    * *documentNavigation.css*: заменен необъявленный токен `var(--teal-10, rgba(13, 148, 136, 0.1))` на канонический `var(--teal-soft)`, доведя проверку `check:css-tokens` до идеального результата (0 неразрешенных, 0 светлых fallbacks, 0 темных fallbacks).
+* **Верификация**: `soundFeedbackService.test.ts` (4/4 PASS), `telephony.test.ts` (25/25 PASS), `check:encoding` 5137 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+
 
 
 
