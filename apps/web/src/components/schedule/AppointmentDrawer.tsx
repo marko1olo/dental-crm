@@ -253,10 +253,9 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 		return (
 			mode === "solo_doctor" ||
 			mode === "one_chair" ||
-			(doctors.length <= 1 && chairs.length <= 1) ||
-			assistants.length === 0
+			(doctors.length <= 1 && chairs.length <= 1)
 		);
-	}, [dashboard?.clinicSettings?.profile?.mode, doctors.length, chairs.length, assistants.length]);
+	}, [dashboard?.clinicSettings?.profile?.mode, doctors.length, chairs.length]);
 
 	const toLocal = useCallback(
 		(iso: string) => {

@@ -60,6 +60,7 @@ import { countLabel } from "../../lib/russianPlural";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 import { QuickAddDoctorModal, type QuickAddDoctorData } from "./QuickAddDoctorModal";
+import { DoctorChairScheduleModal } from "./DoctorChairScheduleModal";
 import {
 	getMondayOfWeekIso,
 	addDaysToDateIso,
@@ -4123,306 +4124,38 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		);
 	})()}
 
-	{/* 1-Click Chair-to-Doctor Shift Allocation Modal (StomX / DentalPRO Parity) */}
-	{assigningChairId && (() => {
-		const targetChair = effectiveChairs.find((c) => c.id === assigningChairId) || { id: assigningChairId, name: "Кресло" };
-		const currentAssignment = effectiveChairAssignments[assigningChairId];
-		const hasActiveAssignment = Boolean(currentAssignment && currentAssignment.doctorId);
-
-		return (
-			<div
-				className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
-				onClick={() => setAssigningChairId(null)}
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="chair-doctor-modal-title"
-				data-testid="chair-doctor-assignment-modal"
-			>
-				<div
-					className="bg-[var(--paper-strong)] border-2 border-[var(--teal,var(--brand-primary))] rounded-3xl p-5 sm:p-6 shadow-2xl max-w-md w-full space-y-4 animate-in zoom-in-95 duration-150 text-[var(--ink)]"
-					onClick={(e) => e.stopPropagation()}
-				>
-					{/* Modal Header */}
-					<div className="flex items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
-						<div className="flex items-center gap-2.5">
-							<div className="w-10 h-10 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal)]/30 flex items-center justify-center text-[var(--teal)] shrink-0">
-								<Stethoscope size={20} />
-							</div>
-							<div className="min-w-0">
-								<h3 id="chair-doctor-modal-title" className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
-									Назначение врача на кресло
-								</h3>
-								<p className="text-xs text-[var(--muted)] truncate">
-									{targetChair.name} · {dateKey}
-								</p>
-							</div>
-						</div>
-						<button
-							type="button"
-							onClick={() => setAssigningChairId(null)}
-							className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer shrink-0"
-							aria-label="Закрыть окно назначения"
-							data-testid="btn-close-chair-doctor-modal"
-						>
-							<X size={18} />
-						</button>
-					</div>
-
-					{/* Modal Form */}
-					<div className="space-y-4">
-						{/* Shift presets */}
-						<div>
-							<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-								Режим смены *
-							</label>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-								{CHAIR_SHIFT_PRESETS.map((preset) => {
-									const isSelected = modalShiftPreset === preset.id;
-									return (
-										<button
-											key={preset.id}
-											type="button"
-											onClick={() => setModalShiftPreset(preset.id)}
-											className={`min-h-[44px] p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-												isSelected
-													? "border-[var(--teal)] bg-[var(--teal-dark)] text-white shadow-xs"
-													: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)]"
-											}`}
-											data-testid={`shift-preset-${preset.id}`}
-										>
-											<span className="text-xs font-bold">{preset.label}</span>
-											<span className={`text-[10px] ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}>
-												{preset.hours}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* Doctor select: if two_shifts -> Morning + Evening, else single */}
-						{modalShiftPreset === "two_shifts" ? (
-							<div className="space-y-3.5">
-								{/* Morning Doctor (08:00–14:00) */}
-								<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50 space-y-2">
-									<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-										Врач на утренней смене (08:00–14:00) *
-									</label>
-									<select
-										value={modalDoctorId}
-										onChange={(e) => setModalDoctorId(e.target.value)}
-										className="w-full min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
-										data-testid="select-chair-doctor"
-									>
-										<option value="">-- Выберите врача на утро --</option>
-										{doctors.map((d) => (
-											<option key={d.id} value={d.id}>
-												{d.fullName}
-												{d.specialties && d.specialties.length > 0
-													? ` (${d.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
-													: ""}
-											</option>
-										))}
-									</select>
-									{doctors.length > 1 && (
-										<div className="space-y-1">
-											<span className="text-[11px] font-semibold text-[var(--muted)] block">
-												Быстрый выбор (1 тап):
-											</span>
-											<div className="flex flex-wrap gap-1.5" data-testid="doctor-quick-switch-pills">
-												{doctors.map((d) => {
-													const isSelected = modalDoctorId === d.id;
-													const shortName = formatDoctorShortName(d.fullName);
-													return (
-														<button
-															key={d.id}
-															type="button"
-															onClick={() => setModalDoctorId(d.id)}
-															className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
-																isSelected
-																	? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
-																	: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-															}`}
-															data-testid={`btn-quick-select-doctor-${d.id}`}
-															style={{ minHeight: "44px" }}
-														>
-															<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
-															<span>{shortName}</span>
-														</button>
-													);
-												})}
-											</div>
-										</div>
-									)}
-								</div>
-
-								{/* Evening Doctor (14:00–20:00) */}
-								<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50 space-y-2">
-									<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-										Врач на вечерней смене (14:00–20:00) *
-									</label>
-									<select
-										value={modalEveningDoctorId}
-										onChange={(e) => setModalEveningDoctorId(e.target.value)}
-										className="w-full min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
-										data-testid="select-chair-evening-doctor"
-									>
-										<option value="">-- Выберите врача на вечер --</option>
-										{doctors.map((d) => (
-											<option key={d.id} value={d.id}>
-												{d.fullName}
-												{d.specialties && d.specialties.length > 0
-													? ` (${d.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
-													: ""}
-											</option>
-										))}
-									</select>
-									{doctors.length > 1 && (
-										<div className="space-y-1">
-											<span className="text-[11px] font-semibold text-[var(--muted)] block">
-												Быстрый выбор (1 тап):
-											</span>
-											<div className="flex flex-wrap gap-1.5" data-testid="evening-doctor-quick-switch-pills">
-												{doctors.map((d) => {
-													const isSelected = modalEveningDoctorId === d.id;
-													const shortName = formatDoctorShortName(d.fullName);
-													return (
-														<button
-															key={d.id}
-															type="button"
-															onClick={() => setModalEveningDoctorId(d.id)}
-															className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
-																isSelected
-																	? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
-																	: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-															}`}
-															data-testid={`btn-quick-select-evening-doctor-${d.id}`}
-															style={{ minHeight: "44px" }}
-														>
-															<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
-															<span>{shortName}</span>
-														</button>
-													);
-												})}
-											</div>
-										</div>
-									)}
-								</div>
-							</div>
-						) : (
-							<div>
-								<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-									Врач на смене *
-								</label>
-								<select
-									value={modalDoctorId}
-									onChange={(e) => setModalDoctorId(e.target.value)}
-									className="w-full min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
-									data-testid="select-chair-doctor"
-								>
-									<option value="">-- Выберите врача --</option>
-									{doctors.map((d) => (
-										<option key={d.id} value={d.id}>
-											{d.fullName}
-											{d.specialties && d.specialties.length > 0
-												? ` (${d.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
-												: ""}
-										</option>
-									))}
-								</select>
-
-								{/* 1-tap doctor quick-switch pills (StomX / DentalPRO parity) */}
-								{doctors.length > 1 && (
-									<div className="mt-2.5 space-y-1">
-										<span className="text-[11px] font-semibold text-[var(--muted)] block">
-											Быстрый выбор врача (1 тап):
-										</span>
-										<div className="flex flex-wrap gap-1.5" data-testid="doctor-quick-switch-pills">
-											{doctors.map((d) => {
-												const isSelected = modalDoctorId === d.id;
-												const shortName = formatDoctorShortName(d.fullName);
-												return (
-													<button
-														key={d.id}
-														type="button"
-														onClick={() => setModalDoctorId(d.id)}
-														className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
-															isSelected
-																? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
-																: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper)]"
-														}`}
-														data-testid={`btn-quick-select-doctor-${d.id}`}
-														style={{ minHeight: "44px" }}
-													>
-														<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
-														<span>{shortName}</span>
-													</button>
-												);
-											})}
-										</div>
-									</div>
-								)}
-							</div>
-						)}
-
-						{/* Actions */}
-						<div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
-							{hasActiveAssignment ? (
-								<button
-									type="button"
-									onClick={() => {
-										handleUnassignDoctor(targetChair.id);
-										setAssigningChairId(null);
-									}}
-									className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-colors cursor-pointer"
-									data-testid="btn-unassign-chair-doctor"
-									title="Снять назначение врача с кресла (Мандат 8e)"
-								>
-									Снять назначение
-								</button>
-							) : (
-								<div />
-							)}
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => setAssigningChairId(null)}
-									className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-bold transition-colors cursor-pointer"
-								>
-									Отмена
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										if (!modalDoctorId) {
-											showToast("Выберите врача для назначения", "error");
-											return;
-										}
-										if (modalShiftPreset === "two_shifts" && !modalEveningDoctorId) {
-											showToast("Выберите вечернего врача для 2 смен", "error");
-											return;
-										}
-										handleConfirmAssignDoctor(
-											targetChair.id,
-											modalDoctorId,
-											modalShiftPreset,
-											modalShiftPreset === "two_shifts" ? modalEveningDoctorId : undefined,
-										);
-										setAssigningChairId(null);
-									}}
-									className="primary-button min-h-[44px] px-4 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
-									data-testid="btn-confirm-chair-doctor"
-								>
-									<Check size={16} />
-									<span>Закрепить за креслом</span>
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		);
-	})()}
+	{/* 1-Click Chair-to-Doctor Shift Allocation Modal (StomX / DentalPRO Parity, Mandates 8d, 8e, 8n) */}
+	{assigningChairId && (
+		<DoctorChairScheduleModal
+			isOpen={Boolean(assigningChairId)}
+			onClose={() => setAssigningChairId(null)}
+			chair={
+				effectiveChairs.find((c) => c.id === assigningChairId) || {
+					id: assigningChairId,
+					name: "Кресло",
+				}
+			}
+			chairs={effectiveChairs}
+			doctors={doctors}
+			dateKey={dateKey}
+			currentAssignment={effectiveChairAssignments[assigningChairId]}
+			onAssign={(chairId, assignment) => {
+				if (assignment) {
+					handleConfirmAssignDoctor(
+						chairId,
+						assignment.doctorId,
+						(assignment.shiftPreset as any) || "morning",
+						assignment.subShifts?.[1]?.doctorId,
+					);
+				} else {
+					handleUnassignDoctor(chairId);
+				}
+				setAssigningChairId(null);
+			}}
+			onAddDoctor={props.onAddDoctor}
+			isSoloDoctor={isSoloDoctor}
+		/>
+	)}
 
 	{/* Quick Add Chair Modal for inline grid additions (only when not delegated to external onOpenAddChair) */}
 	{!props.onOpenAddChair && isInternalAddChairModalOpen && (
