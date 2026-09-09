@@ -9,7 +9,10 @@ import type {
 } from "@dental/shared";
 import {
 	CalendarDays,
+	ChevronDown,
+	Clock,
 	ExternalLink,
+	FileText,
 	KeyRound,
 	Plus,
 	Search,
@@ -856,13 +859,13 @@ export function SettingsClinicTab({
 				<details className="settings-advanced-block">
 					<summary className="settings-advanced-toggle">
 						<span className="settings-advanced-label">
-							<span className="settings-advanced-icon">📋</span>
+							<FileText size={16} className="settings-advanced-icon inline mr-1 text-[var(--teal)]" />
 							Для договоров и налоговых документов
 						</span>
 						<span className="settings-advanced-hint">
 							ИНН, лицензия, банк, подписант
 						</span>
-						<span className="settings-advanced-chevron">▼</span>
+						<ChevronDown size={14} className="settings-advanced-chevron shrink-0" />
 					</summary>
 					<div className="clinic-profile-form-grid settings-advanced-form">
 						<label>
@@ -1496,14 +1499,18 @@ export function SettingsClinicTab({
 												className="compact-button secondary-button"
 												style={{
 													fontSize: "11px",
-													padding: "2px 8px",
+													padding: "4px 10px",
+													minHeight: "44px",
+													display: "inline-flex",
+													alignItems: "center",
 													color: "var(--teal)",
 													fontWeight: 600,
 												}}
 												onClick={() => applyStaffHoursToAll(member.id)}
 												title="Скопировать часы С и ДО ко всем выбранным дням"
 											>
-												⚡ Часы ко всем дням
+												<Clock size={14} className="inline mr-1" />
+												Часы ко всем дням
 											</button>
 										</div>
 										<fieldset
@@ -1539,7 +1546,7 @@ export function SettingsClinicTab({
 												<span className="settings-advanced-label">
 													Индивидуальные часы по дням
 												</span>
-												<span className="settings-advanced-chevron">▼</span>
+												<ChevronDown size={14} className="settings-advanced-chevron shrink-0" />
 											</summary>
 											<section
 												className="staff-day-hours"
@@ -1873,14 +1880,18 @@ export function SettingsClinicTab({
 												className="compact-button secondary-button"
 												style={{
 													fontSize: "11px",
-													padding: "2px 8px",
+													padding: "4px 10px",
+													minHeight: "44px",
+													display: "inline-flex",
+													alignItems: "center",
 													color: "var(--teal)",
 													fontWeight: 600,
 												}}
 												onClick={() => applyChairHoursToAll(chair.id)}
 												title="Скопировать часы кресла ко всем выбранным дням"
 											>
-												⚡ Часы ко всем дням
+												<Clock size={14} className="inline mr-1" />
+												Часы ко всем дням
 											</button>
 										</div>
 										<fieldset
@@ -1910,7 +1921,7 @@ export function SettingsClinicTab({
 												<span className="settings-advanced-label">
 													Индивидуальные часы по дням
 												</span>
-												<span className="settings-advanced-chevron">▼</span>
+												<ChevronDown size={14} className="settings-advanced-chevron shrink-0" />
 											</summary>
 											<section
 												className="staff-day-hours"

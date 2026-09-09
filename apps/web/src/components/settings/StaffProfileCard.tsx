@@ -511,15 +511,23 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 										<span>СНИЛС (ЕГИСЗ / ФРМР)</span>
 										{snilsValidation && (
 											<span
-												className={`text-[11px] font-medium ${
+												className={`text-[11px] font-medium inline-flex items-center ${
 													snilsValidation.isValid
 														? "text-emerald-600 dark:text-emerald-400"
 														: "text-rose-600 dark:text-rose-400"
 												}`}
 											>
-												{snilsValidation.isValid
-													? "✓ Контрольное число совпадает"
-													: "✕ Ошибка"}
+												{snilsValidation.isValid ? (
+													<>
+														<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
+														<span>Контрольное число совпадает</span>
+													</>
+												) : (
+													<>
+														<X size={13} className="inline mr-1 shrink-0" />
+														<span>Ошибка</span>
+													</>
+												)}
 											</span>
 										)}
 									</label>
@@ -539,15 +547,23 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 										<span>ИНН (ФНС)</span>
 										{innValidation && (
 											<span
-												className={`text-[11px] font-medium ${
+												className={`text-[11px] font-medium inline-flex items-center ${
 													innValidation.isValid
 														? "text-emerald-600 dark:text-emerald-400"
 														: "text-rose-600 dark:text-rose-400"
 												}`}
 											>
-												{innValidation.isValid
-													? "✓ Валиден (ФНС)"
-													: "✕ Неверный ИНН"}
+												{innValidation.isValid ? (
+													<>
+														<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
+														<span>Валиден (ФНС)</span>
+													</>
+												) : (
+													<>
+														<X size={13} className="inline mr-1 shrink-0" />
+														<span>Неверный ИНН</span>
+													</>
+												)}
 											</span>
 										)}
 									</label>

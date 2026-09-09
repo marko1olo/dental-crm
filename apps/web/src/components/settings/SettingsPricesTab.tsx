@@ -942,9 +942,12 @@ export function SettingsPricesTab() {
 												color: "var(--success-color)",
 												fontWeight: 600,
 												fontSize: "14px",
+												display: "inline-flex",
+												alignItems: "center",
 											}}
 										>
-											✓ Успешно импортировано: {importResult.count} позиций.
+											<CheckCircle2 size={14} className="inline mr-1 shrink-0" />
+											Успешно импортировано: {importResult.count} позиций.
 											Обновление...
 										</span>
 									)}
@@ -954,9 +957,12 @@ export function SettingsPricesTab() {
 												color: "var(--danger-color)",
 												fontWeight: 600,
 												fontSize: "14px",
+												display: "inline-flex",
+												alignItems: "center",
 											}}
 										>
-											✕ Ошибка: {importResult.error}
+											<X size={14} className="inline mr-1 shrink-0" />
+											Ошибка: {importResult.error}
 										</span>
 									)}
 								</div>

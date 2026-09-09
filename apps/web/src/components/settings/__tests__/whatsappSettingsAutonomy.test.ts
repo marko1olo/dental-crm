@@ -15,9 +15,10 @@
  * 4. Clean save action triggers friendly toast/badge and allows re-saving draft cleanly.
  */
 
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, it, expect } from "vitest";
 
 import type {
 	WhatsappConnectionStatus,
@@ -99,7 +100,11 @@ describe("Mandate 8e Non-Blocking WhatsApp Save Autonomy — Truth Table & Predi
 		const saveState = "idle";
 		const disabled = isWhatsappSettingsSaveDisabled(canSave, saveState);
 
-		expect(disabled).toBe(false);
+		assert.equal(
+			disabled,
+			false,
+			"Under Mandate 8e, clean settings (!dirty) must NEVER disable the Save button",
+		);
 	});
 
 	it("Save button is NOT disabled when settings are dirty and canSave is true", () => {
@@ -107,7 +112,7 @@ describe("Mandate 8e Non-Blocking WhatsApp Save Autonomy — Truth Table & Predi
 		const saveState = "idle";
 		const disabled = isWhatsappSettingsSaveDisabled(canSave, saveState);
 
-		expect(disabled).toBe(false);
+		assert.equal(disabled, false, "Dirty settings must have Save button enabled");
 	});
 
 	it("Save button is disabled when saveState === 'saving' to prevent concurrent in-flight requests", () => {
@@ -115,7 +120,7 @@ describe("Mandate 8e Non-Blocking WhatsApp Save Autonomy — Truth Table & Predi
 		const saveState = "saving";
 		const disabled = isWhatsappSettingsSaveDisabled(canSave, saveState);
 
-		expect(disabled).toBe(true);
+		assert.equal(disabled, true, "Button must be disabled during active save request");
 	});
 
 	it("Save button is disabled when canSave is false (drafts not yet seeded from server)", () => {
@@ -123,12 +128,16 @@ describe("Mandate 8e Non-Blocking WhatsApp Save Autonomy — Truth Table & Predi
 		const saveState = "idle";
 		const disabled = isWhatsappSettingsSaveDisabled(canSave, saveState);
 
-		expect(disabled).toBe(true);
+		assert.equal(
+			disabled,
+			true,
+			"Button must be disabled when drafts are not seeded to prevent overwriting live config",
+		);
 	});
 
 	it("Save button is NOT disabled when saveState is 'saved' or 'error' (allows immediate re-save / retry)", () => {
-		expect(isWhatsappSettingsSaveDisabled(true, "saved")).toBe(false);
-		expect(isWhatsappSettingsSaveDisabled(true, "error")).toBe(false);
+		assert.equal(isWhatsappSettingsSaveDisabled(true, "saved"), false);
+		assert.equal(isWhatsappSettingsSaveDisabled(true, "error"), false);
 	});
 });
 
@@ -153,7 +162,7 @@ describe("Mandate 8e WhatsApp Dirty Calculation Autonomy — computeWhatsappSett
 			accessTokenDraft: "   ",
 		});
 
-		expect(dirty).toBe(false);
+		assert.equal(dirty, false);
 	});
 
 	it("Returns true when phoneNumberIdDraft is changed", () => {
@@ -171,7 +180,7 @@ describe("Mandate 8e WhatsApp Dirty Calculation Autonomy — computeWhatsappSett
 			accessTokenDraft: "",
 		});
 
-		expect(dirty).toBe(true);
+		assert.equal(dirty, true);
 	});
 
 	it("Returns true when webhookVerifyTokenDraft is changed", () => {
@@ -189,7 +198,7 @@ describe("Mandate 8e WhatsApp Dirty Calculation Autonomy — computeWhatsappSett
 			accessTokenDraft: "",
 		});
 
-		expect(dirty).toBe(true);
+		assert.equal(dirty, true);
 	});
 
 	it("Returns true when isActiveDraft is changed", () => {
@@ -207,7 +216,7 @@ describe("Mandate 8e WhatsApp Dirty Calculation Autonomy — computeWhatsappSett
 			accessTokenDraft: "",
 		});
 
-		expect(dirty).toBe(true);
+		assert.equal(dirty, true);
 	});
 
 	it("Returns true when enabledFeaturesDraft is changed", () => {
@@ -225,7 +234,7 @@ describe("Mandate 8e WhatsApp Dirty Calculation Autonomy — computeWhatsappSett
 			accessTokenDraft: "",
 		});
 
-		expect(dirty).toBe(true);
+		assert.equal(dirty, true);
 	});
 
 	it("Returns true when staffRouting rules are modified", () => {
@@ -251,7 +260,7 @@ describe("Mandate 8e WhatsApp Dirty Calculation Autonomy — computeWhatsappSett
 			accessTokenDraft: "",
 		});
 
-		expect(dirty).toBe(true);
+		assert.equal(dirty, true);
 	});
 
 	it("Returns true when new accessToken is entered", () => {
@@ -269,7 +278,7 @@ describe("Mandate 8e WhatsApp Dirty Calculation Autonomy — computeWhatsappSett
 			accessTokenDraft: "EAAB_new_token_secret",
 		});
 
-		expect(dirty).toBe(true);
+		assert.equal(dirty, true);
 	});
 });
 
@@ -297,12 +306,26 @@ describe("WhatsappSettingsPanel Component Visual Audit & Autonomy Rendering", ()
 		);
 
 		// 1. Button must NOT have disabled attribute
-		expect(html).toMatch(/<button[^>]*class="btn-primary"[^>]*>[\s\S]*?Сохранить[\s\S]*?<\/button>/);
-		expect(html).not.toMatch(/<button[^>]*class="btn-primary"[^>]*disabled/);
+		assert.match(
+			html,
+			/<button[^>]*class="btn-primary"[^>]*>[\s\S]*?Сохранить[\s\S]*?<\/button>/,
+			"Save button must be rendered in DOM",
+		);
+		assert.doesNotMatch(
+			html,
+			/<button[^>]*class="btn-primary"[^>]*disabled/,
+			"Save button must NOT have disabled attribute in clean state (!dirty)",
+		);
 
 		// 2. Visual clean badge must be rendered
-		expect(html).toContain("Настройки актуальны");
-		expect(html).toContain('data-testid="clean-badge"');
+		assert.ok(
+			html.includes("Настройки актуальны"),
+			"Clean badge text must be rendered to reassure user",
+		);
+		assert.ok(
+			html.includes('data-testid="clean-badge"'),
+			"clean-badge test id must be present",
+		);
 	});
 
 	it("Renders enabled Save button and dirty badge with indicator dot in dirty state", () => {
@@ -323,12 +346,25 @@ describe("WhatsappSettingsPanel Component Visual Audit & Autonomy Rendering", ()
 		);
 
 		// 1. Save button must be enabled
-		expect(html).not.toMatch(/<button[^>]*class="btn-primary"[^>]*disabled/);
+		assert.doesNotMatch(
+			html,
+			/<button[^>]*class="btn-primary"[^>]*disabled/,
+			"Save button must be enabled when dirty",
+		);
 
 		// 2. Dirty badge and dot must be rendered
-		expect(html).toContain("Есть несохраненные изменения");
-		expect(html).toContain("dirty-dot");
-		expect(html).toContain('data-testid="dirty-badge"');
+		assert.ok(
+			html.includes("Есть несохраненные изменения"),
+			"Dirty badge must inform user of pending changes",
+		);
+		assert.ok(
+			html.includes("dirty-dot"),
+			"Visual indicator dot must be rendered",
+		);
+		assert.ok(
+			html.includes('data-testid="dirty-badge"'),
+			"dirty-badge test id must be present",
+		);
 	});
 
 	it("Renders disabled Save button during active saving state", () => {
@@ -345,8 +381,14 @@ describe("WhatsappSettingsPanel Component Visual Audit & Autonomy Rendering", ()
 			}),
 		);
 
-		expect(html).toContain('disabled=""');
-		expect(html).toContain("Сохранение...");
+		assert.ok(
+			html.includes('disabled=""') && html.includes("Сохранение..."),
+			"Save button must have disabled attribute during saving",
+		);
+		assert.ok(
+			html.includes("Сохранение..."),
+			"Save button must show in-progress label",
+		);
 	});
 
 	it("Renders 'Сохранено' feedback and enabled button when saveState === 'saved'", () => {
@@ -363,8 +405,15 @@ describe("WhatsappSettingsPanel Component Visual Audit & Autonomy Rendering", ()
 			}),
 		);
 
-		expect(html).toContain("Сохранено");
-		expect(html).not.toMatch(/<button[^>]*class="btn-primary"[^>]*disabled/);
+		assert.ok(
+			html.includes("Сохранено"),
+			"Must display saved confirmation text",
+		);
+		assert.doesNotMatch(
+			html,
+			/<button[^>]*class="btn-primary"[^>]*disabled/,
+			"Button must remain enabled to allow subsequent force-pushes",
+		);
 	});
 
 	it("Preserves error alert when saveError is present", () => {
@@ -383,8 +432,14 @@ describe("WhatsappSettingsPanel Component Visual Audit & Autonomy Rendering", ()
 			}),
 		);
 
-		expect(html).toContain(errorMessage);
-		expect(html).toContain('role="alert"');
+		assert.ok(
+			html.includes(errorMessage),
+			"Error message must be preserved in alert container",
+		);
+		assert.ok(
+			html.includes('role="alert"'),
+			"Alert role must be present for accessibility",
+		);
 	});
 
 	it("Dispatches 'Настройки актуальны (сохранено)' toast when clean settings are saved", () => {
@@ -404,8 +459,8 @@ describe("WhatsappSettingsPanel Component Visual Audit & Autonomy Rendering", ()
 
 		try {
 			showToast("Настройки актуальны (сохранено)", "info");
-			expect(toastReceivedText).toBe("Настройки актуальны (сохранено)");
-			expect(toastReceivedType).toBe("info");
+			assert.equal(toastReceivedText, "Настройки актуальны (сохранено)");
+			assert.equal(toastReceivedType, "info");
 		} finally {
 			(globalThis as unknown as { window: unknown }).window = originalWindow;
 		}
@@ -426,7 +481,14 @@ describe("WhatsappSettingsPanel Component Visual Audit & Autonomy Rendering", ()
 			}),
 		);
 
-		expect(html).toContain("var(--amber)");
-		expect(html).not.toMatch(/#[0-9a-fA-F]{3,6}/);
+		assert.ok(
+			html.includes("var(--amber)"),
+			"Dirty badge must use semantic token var(--amber)",
+		);
+		assert.doesNotMatch(
+			html,
+			/#[0-9a-fA-F]{3,6}/,
+			"Panel must not use hardcoded hex colors for badges",
+		);
 	});
 });

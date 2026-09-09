@@ -1,3 +1,4 @@
+import { AlertTriangle, Check, UploadCloud, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
@@ -609,7 +610,7 @@ export function MigrationWizard() {
 						className={`mw-step ${index === currentIndex ? "is-current" : ""} ${index < currentIndex ? "is-done" : ""}`}
 					>
 						<span className="mw-step-dot">
-							{index < currentIndex ? "✓" : index + 1}
+							{index < currentIndex ? <Check size={12} /> : index + 1}
 						</span>
 						<span className="mw-step-label">{item.label}</span>
 					</li>
@@ -626,7 +627,7 @@ export function MigrationWizard() {
 						onClick={resetError}
 						aria-label="Закрыть"
 					>
-						×
+						<X size={16} />
 					</button>
 				</div>
 			)}
@@ -723,7 +724,7 @@ function SourcePanel(props: {
 				}}
 			>
 				<div className="mw-drop-icon" aria-hidden="true">
-					⤓
+					<UploadCloud size={32} />
 				</div>
 				<p className="mw-drop-title">Перетащите файл выгрузки сюда</p>
 				<p className="mw-drop-hint">
@@ -1026,7 +1027,7 @@ function ReportPanel(props: {
 		<div className="mw-panel">
 			<div className={`mw-verdict ${report.balanced ? "is-ok" : "is-bad"}`}>
 				<span className="mw-verdict-mark" aria-hidden="true">
-					{report.balanced ? "✓" : "!"}
+					{report.balanced ? <Check size={18} /> : <AlertTriangle size={18} />}
 				</span>
 				<div>
 					<strong>
@@ -1097,7 +1098,7 @@ function ReportPanel(props: {
 						key={check.code}
 					>
 						<span className="mw-check-mark" aria-hidden="true">
-							{check.passed ? "✓" : "✕"}
+							{check.passed ? <Check size={12} /> : <X size={12} />}
 						</span>
 						<div className="mw-check-body">
 							<strong>{check.title}</strong>

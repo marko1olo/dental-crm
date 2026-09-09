@@ -162,6 +162,7 @@
 	justify-content: center;
 	gap: 6px;
 	padding: 9px 18px;
+	min-height: 44px;
 	border: 1px solid transparent;
 	border-radius: 9px;
 	font-size: 13.5px;
@@ -310,6 +311,11 @@
 	line-height: 1;
 	cursor: pointer;
 	opacity: 0.6;
+	min-width: 44px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .mw-alert-close:hover {

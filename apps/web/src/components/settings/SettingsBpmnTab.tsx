@@ -1,4 +1,4 @@
-import { GitMerge, Pause, Play, Plus, Sparkles, Trash2 } from "lucide-react";
+import { GitMerge, Pause, Play, Plus, Sparkles, Trash2, Zap } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -266,7 +266,7 @@ export function SettingsBpmnTab() {
 			}
 			showToast(
 				addedCount > 0
-					? `⚡ Подключено ${addedCount} стандартных сценариев клиники!`
+					? `Подключено ${addedCount} стандартных сценариев клиники!`
 					: "Все стандартные сценарии уже подключены",
 				"success",
 			);
@@ -341,18 +341,18 @@ export function SettingsBpmnTab() {
 								<button
 									type="button"
 									className="secondary-button"
-									style={{ display: "flex", alignItems: "center", gap: "6px" }}
+									style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 									onClick={handleSeedStandardWorkflows}
 									disabled={adding}
 									title="Подключить 4 стандартных сценария стоматологии в 1 клик"
 								>
-									<Sparkles size={15} style={{ color: "var(--teal)" }} />
-									<span>⚡ Стандартные сценарии (1 клик)</span>
+									<Zap size={14} className="inline mr-1" />
+									<span>Стандартные сценарии (1 клик)</span>
 								</button>
 								<button
 									type="button"
 									className="primary-button"
-									style={{ display: "flex", alignItems: "center", gap: "8px" }}
+									style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "44px" }}
 									onClick={() => setShowForm((v) => !v)}
 								>
 									<Plus size={16} /> Создать сценарий
@@ -537,6 +537,7 @@ export function SettingsBpmnTab() {
 											alignItems: "center",
 											gap: "6px",
 											padding: "6px 12px",
+											minHeight: "44px",
 											borderRadius: "20px",
 											border: "none",
 											cursor: "pointer",
@@ -559,7 +560,14 @@ export function SettingsBpmnTab() {
 										className="icon-button"
 										onClick={() => void handleDelete(wf)}
 										title="Удалить сценарий"
-										style={{ color: "var(--danger, #ef4444)" }}
+										style={{
+											color: "var(--danger, #ef4444)",
+											minWidth: "44px",
+											minHeight: "44px",
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+										}}
 									>
 										<Trash2 size={15} />
 									</button>

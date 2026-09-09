@@ -24,7 +24,7 @@ import {
 	normalizeStaffRole,
 	staffAuthorityFlagKeys,
 } from "@dental/shared";
-import { Lock, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Lock, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -521,8 +521,9 @@ export const StaffAuthorityPanel: React.FC = () => {
 																	</span>
 																) : null}
 																{byGrant && on ? (
-																	<span className="text-xs text-emerald-700 dark:text-emerald-300 block mt-1 font-medium">
-																		✓ Выдано персонально (надбавка к роли).
+																	<span className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1 mt-1 font-medium">
+																		<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
+																		<span>Выдано персонально (надбавка к роли).</span>
 																	</span>
 																) : null}
 															</div>

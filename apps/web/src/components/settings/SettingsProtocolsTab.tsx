@@ -294,7 +294,7 @@ export function SettingsProtocolsTab() {
 			}
 			showToast(
 				createdCount > 0
-					? `⚡ Добавлено ${createdCount} стандартных клинических протоколов!`
+					? `Добавлено ${createdCount} стандартных клинических протоколов!`
 					: "Протоколы уже загружены",
 				"success",
 			);
@@ -482,17 +482,18 @@ export function SettingsProtocolsTab() {
 					<button
 						type="button"
 						className="secondary-button"
-						style={{ display: "flex", alignItems: "center", gap: "6px" }}
+						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 						onClick={handleSeedStandardProtocols}
 						disabled={loading}
 						title="Подключить 4 стандартных протокола клиники в 1 клик"
 					>
 						<Sparkles size={15} style={{ color: "var(--teal)" }} />
-						<span>⚡ Базовые протоколы (1 клик)</span>
+						<span>Базовые протоколы (1 клик)</span>
 					</button>
 					<button
 						type="button"
 						className="primary-button"
+						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 						onClick={handleCreateNew}
 					>
 						<Plus size={16} /> Добавить шаблон
@@ -509,7 +510,7 @@ export function SettingsProtocolsTab() {
 
 				Ветка «загружаем» — защита, а не наблюдаемое состояние: сегодня
 				App.tsx:2333 не пускает в рабочую оболочку без загруженного dashboard,
-				но тип у него нullable, и вкладка не должна утверждать «шаблонов нет»,
+				но тип у него nullable, и вкладка не должна утверждать «шаблонов нет»,
 				если данных клиники у неё вообще нет.
 			*/}
 			{!dashboard ? (
@@ -541,14 +542,21 @@ export function SettingsProtocolsTab() {
 									display: "inline-flex",
 									alignItems: "center",
 									gap: "6px",
+									minHeight: "44px",
 								}}
 							>
-								<Sparkles size={16} /> ⚡ Подключить 4 базовых протокола клиники
+								<Sparkles size={16} /> Подключить 4 базовых протокола клиники
 							</button>
 							<button
 								className="secondary-button"
 								type="button"
 								onClick={handleCreateNew}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									minHeight: "44px",
+								}}
 							>
 								<Plus size={16} /> Добавить вручную
 							</button>
@@ -595,6 +603,13 @@ export function SettingsProtocolsTab() {
 								<button
 									className="secondary-button"
 									type="button"
+									style={{
+										minWidth: "44px",
+										minHeight: "44px",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
+									}}
 									onClick={() => handleEdit(template)}
 									title="Редактировать"
 									aria-label={`Редактировать шаблон «${template.title}»`}
@@ -626,6 +641,11 @@ export function SettingsProtocolsTab() {
 									style={{
 										backgroundColor: "var(--bad-bg)",
 										color: "var(--bad-fg)",
+										minWidth: "44px",
+										minHeight: "44px",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
 									}}
 									onClick={() => handleDelete(template.id)}
 									title="Удалить"
