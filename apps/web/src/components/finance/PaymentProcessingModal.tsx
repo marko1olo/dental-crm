@@ -373,8 +373,9 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 							<h2 id="payment-processing-title" className="text-base sm:text-lg font-extrabold m-0">
 								Оплата и Касса 54-ФЗ • {totalDueRub.toLocaleString("ru-RU")} ₽
 							</h2>
-							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-								✓ Без барьеров
+							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 inline-flex items-center gap-1">
+								<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+								<span>Без барьеров</span>
 							</span>
 						</div>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">

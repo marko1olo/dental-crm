@@ -767,7 +767,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								</div>
 							</div>
 
-							{/* ⚡ Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
+							{/* Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
 							<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
 								<div className="flex items-center justify-between flex-wrap gap-2">
 									<div className="flex items-center gap-2">

@@ -353,7 +353,8 @@ ${certs
 								{initialPayer.payerInn && <span>· ИНН: <strong className="font-mono">{initialPayer.payerInn}</strong></span>}
 								<span>· Доступный баланс семьи: <strong className="text-emerald-600">{availableFamilyWalletRub.toLocaleString("ru-RU")} ₽</strong></span>
 								<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-									✓ 54-ФЗ: ИНН с физлиц НЕ требуется
+									<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+									<span>54-ФЗ: ИНН с физлиц НЕ требуется</span>
 								</span>
 							</p>
 						</div>
