@@ -312,9 +312,9 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						{documentPatient?.fullName ?? "пациент не выбран"}
 					</p>
 				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+				<div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
 					<button
-						className="secondary-button"
+						className="secondary-button shrink-0"
 						type="button"
 						onClick={() => setIsInvoicesOpen(true)}
 						aria-label="Счета и акты (804н)"
@@ -324,7 +324,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						<Receipt size={15} /> Счета и акты (804н)
 					</button>
 					<button
-						className="secondary-button"
+						className="secondary-button shrink-0"
 						type="button"
 						onClick={() => setIsPnlOpen(true)}
 						aria-label="Управленческий P&L отчет"
@@ -333,7 +333,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						<TrendingUp size={15} /> Управленческий P&L
 					</button>
 					<button
-						className="text-button focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:opacity-80 rounded-md px-2 py-1"
+						className="text-button shrink-0 focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:opacity-80 rounded-md px-2 py-1"
 						type="button"
 						onClick={onGoToDocuments}
 						aria-label="Перейти к документам"

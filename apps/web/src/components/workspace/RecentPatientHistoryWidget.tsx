@@ -123,7 +123,7 @@ export const RecentPatientHistoryWidget: React.FC<{
 						aria-hidden="true"
 						style={{ color: "var(--teal)" }}
 					/>
-					<span>Недавние</span>
+					<span className="hidden xl:inline">Недавние</span>
 					<strong
 						className="status-pill status-confirmed"
 						style={{ fontSize: "11px", padding: "1px 7px" }}

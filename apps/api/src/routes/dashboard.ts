@@ -13,7 +13,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 		// подделать для любой клиники.
 		// СТАЛО: организация только из подписанного токена, иначе 401.
 		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 
 		try {
 			return await getDashboardFromDb(orgId);

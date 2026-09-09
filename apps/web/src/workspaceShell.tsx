@@ -522,7 +522,7 @@ export function PerspectiveSwitcher() {
 	return (
 		<details className="workspace-role-switcher workspace-perspective-switcher" aria-label="Клинический режим">
 			<summary title={perspectiveDescriptions[perspective]}>
-				<span>Режим</span>
+				<span className="hidden 2xl:inline">Режим</span>
 				<strong>{perspectiveLabels[perspective]}</strong>
 				<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
 			</summary>
@@ -695,7 +695,7 @@ export function WorkspaceTopbar({
 						aria-label={workspaceTopbarLabels.role.region}
 					>
 						<summary>
-							<span>{workspaceTopbarLabels.role.caption}</span>
+							<span className="hidden 2xl:inline">{workspaceTopbarLabels.role.caption}</span>
 							<strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
 							<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
 						</summary>
@@ -913,7 +913,7 @@ export function WorkspaceTopbar({
 					}}
 				>
 					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0 animate-pulse" aria-hidden="true" />
-					<span className="hidden xl:inline">{workspaceTopbarLabels.copilot.label}</span>
+					<span className="hidden 2xl:inline">{workspaceTopbarLabels.copilot.label}</span>
 				</button>
 
 				{/*

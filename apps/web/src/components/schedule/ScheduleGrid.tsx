@@ -1589,126 +1589,128 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				</div>
 			)}
 
-			{/* Daily Chair & Doctor Occupancy Summary Bar with Inline + Кресло */}
-			<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs">
-				<div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+			{/* Daily Chair & Doctor Occupancy Summary Bar with Inline + Кресло (1 neat 36px row) */}
+			<div className="px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs min-h-[36px] overflow-x-auto select-none">
+				<div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
 					{dailyTally.totalAppointmentsCount > 0 ? (
 						<>
 							<span className="font-bold text-[var(--ink)] flex items-center gap-1.5 whitespace-nowrap">
-								<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<CalendarCheck size={15} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								Загрузка клиники: {countLabel(dailyTally.totalAppointmentsCount, "визит", "визита", "визитов")} ({dailyTally.clinicOccupancyPercent}%)
 							</span>
-							<span className="text-[var(--muted)] hidden sm:inline">·</span>
-							<span className="text-[var(--muted)] whitespace-nowrap">
+							<span className="text-[var(--muted)] hidden 2xl:inline">·</span>
+							<span className="text-[var(--muted)] whitespace-nowrap hidden 2xl:inline">
 								Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)} ч {dailyTally.totalDurationMinutes % 60} мин
 							</span>
 						</>
 					) : (
 						<span className="text-[var(--muted)] flex items-center gap-1.5 whitespace-nowrap">
-							<Clock size={15} className="text-[var(--teal)] shrink-0" />
-							<span>{effectiveChairs.length} {countLabel(effectiveChairs.length, "кресло", "кресла", "кресел")} · Рабочий день 08:00–20:00</span>
+							<Clock size={14} className="text-[var(--teal)] shrink-0" />
+							<span>{effectiveChairs.length} {countLabel(effectiveChairs.length, "кресло", "кресла", "кресел")} · 08:00–20:00</span>
 						</span>
 					)}
 				</div>
-				<div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">
+				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 					{/* Grid Step Selector (15 / 30 / 60 min, Feature 192, StomX Parity) */}
 					<div
-						className="flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
+						className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
 						data-testid="schedule-grid-step-selector"
 						role="group"
 						aria-label="Шаг сетки расписания"
 					>
-						<span className="text-[11px] font-bold text-[var(--muted)] px-1.5 hidden sm:inline">Шаг:</span>
+						<span className="text-[11px] font-bold text-[var(--muted)] px-1 hidden sm:inline">Шаг:</span>
 						<button
 							type="button"
 							onClick={() => handleSetGridStep(15)}
-							className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[32px] sm:min-h-[28px] flex items-center justify-center ${
+							className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer min-h-[28px] flex items-center justify-center ${
 								gridStep === 15
 									? "bg-[var(--teal)] text-white shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid="btn-grid-step-15"
-							style={{ minHeight: "32px" }}
+							style={{ minHeight: "28px" }}
 						>
-							15 мин
+							15м
 						</button>
 						<button
 							type="button"
 							onClick={() => handleSetGridStep(30)}
-							className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[32px] sm:min-h-[28px] flex items-center justify-center ${
+							className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer min-h-[28px] flex items-center justify-center ${
 								gridStep === 30
 									? "bg-[var(--teal)] text-white shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid="btn-grid-step-30"
-							style={{ minHeight: "32px" }}
+							style={{ minHeight: "28px" }}
 						>
-							30 мин
+							30м
 						</button>
 						<button
 							type="button"
 							onClick={() => handleSetGridStep(60)}
-							className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[32px] sm:min-h-[28px] flex items-center justify-center ${
+							className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer min-h-[28px] flex items-center justify-center ${
 								gridStep === 60
 									? "bg-[var(--teal)] text-white shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid="btn-grid-step-60"
-							style={{ minHeight: "32px" }}
+							style={{ minHeight: "28px" }}
 						>
-							60 мин
+							60м
 						</button>
 					</div>
 
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
-						className="min-h-[44px] min-w-[44px] px-3.5 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
+						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
 						title="Добавить кресло в расписание (+ Кресло)"
 						aria-label="Добавить кресло"
 						data-testid="btn-grid-inline-add-chair"
 						style={{ minHeight: "44px", minWidth: "44px" }}
 					>
-						<Plus size={15} className="shrink-0 text-[var(--teal)]" />
+						<Plus size={14} className="shrink-0 text-[var(--teal)]" />
 						<span className="font-bold">+ Кресло</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsQuickAddDoctorOpen(true)}
-						className="min-h-[44px] min-w-[44px] px-3.5 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
+						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
 						title="Быстро добавить врача в расписание"
 						aria-label="Быстро добавить врача в расписание"
 						data-testid="btn-grid-quick-add-doctor"
 						style={{ minHeight: "44px", minWidth: "44px" }}
 					>
-						<UserPlus size={15} className="shrink-0 text-[var(--teal)]" />
+						<UserPlus size={14} className="shrink-0 text-[var(--teal)]" />
 						<span className="font-bold">+ Врач</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleCopyWeekShiftsToNextWeek}
-						className="min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+						className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
 						title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
 						aria-label="Скопировать график на следующую неделю"
 						data-testid="btn-grid-copy-next-week"
 						style={{ minHeight: "44px" }}
 					>
-						<Copy size={15} className="shrink-0 text-[var(--teal)]" />
-						<span className="font-bold">На след. неделю</span>
+						<Copy size={14} className="shrink-0 text-[var(--teal)]" />
+						<span className="hidden xl:inline font-bold">На след. неделю</span>
+						<span className="xl:hidden font-bold">+7 дн.</span>
 					</button>
 					{dailyTally.totalRevenueRub > 0 && (
 						<button
 							type="button"
 							onClick={handleToggleShowRevenue}
-							className="font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1.5 rounded-xl whitespace-nowrap shrink-0 flex items-center gap-1.5 text-xs cursor-pointer transition-all active:scale-95 shadow-2xs"
+							className="font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1.5 rounded-xl whitespace-nowrap shrink-0 flex items-center gap-1 text-xs cursor-pointer transition-all active:scale-95 shadow-2xs min-h-[44px]"
 							title={showRevenue ? "Скрыть сумму выручки дня от пациентов (Режим приватности)" : "Показать выручку дня"}
 							data-testid="btn-grid-toggle-revenue-privacy"
 							aria-label="Переключить приватность выручки дня"
+							style={{ minHeight: "44px" }}
 						>
 							{showRevenue ? <EyeOff size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" /> : <Eye size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />}
-							<span>Выручка: {showRevenue ? `${dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽` : "•••••• ₽"}</span>
+							<span>{showRevenue ? `${dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽` : "•••••• ₽"}</span>
 						</button>
 					)}
 				</div>
@@ -2503,54 +2505,56 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														)}
 														<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
 													</button>
-													{/* StomX / IDENT Shift Coverage Strip (Morning / Evening breakdown) */}
-													<div
-														className="grid grid-cols-2 gap-1 w-full text-[10px] font-medium"
-														data-testid={`chair-shift-strip-${chair.id}`}
-													>
+													{/* StomX / IDENT Shift Coverage Strip (Only show when not full day to eliminate duplicate chips) */}
+													{!(assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8 && sEnd >= 20)) && (
 														<div
-															className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
-																assignment!.shiftPreset === "morning" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8)
-																	? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))]"
-																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-80"
-															}`}
-															data-testid={`chair-status-morning-${chair.id}`}
-															title={
-																assignment!.shiftPreset === "morning" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8)
-																	? `Утренняя смена (08:00–14:00): ${assignment!.doctorName}`
-																	: "Утренняя смена свободна"
-															}
+															className="grid grid-cols-2 gap-1 w-full text-[10px] font-medium"
+															data-testid={`chair-shift-strip-${chair.id}`}
 														>
-															<Sun size={10} className="text-amber-500 shrink-0" aria-hidden="true" />
-															<span className="truncate">
-																<span className="font-bold">Утро: </span>
-																{assignment!.shiftPreset === "morning" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8)
-																	? formatDoctorShortName(assignment!.doctorName)
-																	: "Свободно"}
-															</span>
+															<div
+																className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
+																	assignment!.shiftPreset === "morning" || (!assignment!.shiftPreset && sStart <= 8)
+																		? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))]"
+																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-80"
+																}`}
+																data-testid={`chair-status-morning-${chair.id}`}
+																title={
+																	assignment!.shiftPreset === "morning" || (!assignment!.shiftPreset && sStart <= 8)
+																		? `Утренняя смена (08:00–14:00): ${assignment!.doctorName}`
+																		: "Утренняя смена свободна"
+																}
+															>
+																<Sun size={10} className="text-amber-500 shrink-0" aria-hidden="true" />
+																<span className="truncate">
+																	<span className="font-bold">Утро: </span>
+																	{assignment!.shiftPreset === "morning" || (!assignment!.shiftPreset && sStart <= 8)
+																		? formatDoctorShortName(assignment!.doctorName)
+																		: "Свободно"}
+																</span>
+															</div>
+															<div
+																className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
+																	assignment!.shiftPreset === "evening" || (!assignment!.shiftPreset && sEnd >= 20)
+																		? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))]"
+																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-80"
+																}`}
+																data-testid={`chair-status-evening-${chair.id}`}
+																title={
+																	assignment!.shiftPreset === "evening" || (!assignment!.shiftPreset && sEnd >= 20)
+																		? `Вечерняя смена (14:00–20:00): ${assignment!.doctorName}`
+																		: "Вечерняя смена свободна"
+																}
+															>
+																<Moon size={10} className="text-indigo-400 shrink-0" aria-hidden="true" />
+																<span className="truncate">
+																	<span className="font-bold">Вечер: </span>
+																	{assignment!.shiftPreset === "evening" || (!assignment!.shiftPreset && sEnd >= 20)
+																		? formatDoctorShortName(assignment!.doctorName)
+																		: "Свободно"}
+																</span>
+															</div>
 														</div>
-														<div
-															className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
-																assignment!.shiftPreset === "evening" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sEnd >= 20)
-																	? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))]"
-																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-80"
-															}`}
-															data-testid={`chair-status-evening-${chair.id}`}
-															title={
-																assignment!.shiftPreset === "evening" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sEnd >= 20)
-																	? `Вечерняя смена (14:00–20:00): ${assignment!.doctorName}`
-																	: "Вечерняя смена свободна"
-															}
-														>
-															<Moon size={10} className="text-indigo-400 shrink-0" aria-hidden="true" />
-															<span className="truncate">
-																<span className="font-bold">Вечер: </span>
-																{assignment!.shiftPreset === "evening" || assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sEnd >= 20)
-																	? formatDoctorShortName(assignment!.doctorName)
-																	: "Свободно"}
-															</span>
-														</div>
-													</div>
+													)}
 													{/* 1-Click Shift Segmented Control (StomX / DentalPRO parity) */}
 													<details className="w-full relative group text-xs">
 														<summary className="w-full h-7 min-h-[28px] px-2 py-0.5 flex items-center justify-between gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer select-none list-none transition-colors [&::-webkit-details-marker]:hidden">

@@ -218,7 +218,7 @@ export function ClinicControlPill({
 											: "dnt-pill-dot--pause"
 								}`}
 							/>
-							<span className="hidden md:inline text-[10px] opacity-90">{agentStateLabel}</span>
+							<span className="hidden 2xl:inline text-[10px] opacity-90">{agentStateLabel}</span>
 						</>
 					)}
 				</span>
@@ -233,7 +233,7 @@ export function ClinicControlPill({
 					<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
 					<span className="hidden sm:inline">54-ФЗ</span>
 					<span className="dnt-pill-dot dnt-pill-dot--online" />
-					<span className="font-mono text-[10px] opacity-90 hidden lg:inline">{formattedShiftTime}</span>
+					<span className="font-mono text-[10px] opacity-90 hidden 2xl:inline">{formattedShiftTime}</span>
 				</span>
 
 				<span className="dnt-pill-divider" />
@@ -252,7 +252,7 @@ export function ClinicControlPill({
 						className={`dnt-pill-dot ${isOnline ? "dnt-pill-dot--online" : "dnt-pill-dot--offline"}`}
 					/>
 					{isOnline && (
-						<span className="font-mono text-[10px] opacity-80 hidden xl:inline">{syncLatencyMs}ms</span>
+						<span className="font-mono text-[10px] opacity-80 hidden 2xl:inline">{syncLatencyMs}ms</span>
 					)}
 				</span>
 

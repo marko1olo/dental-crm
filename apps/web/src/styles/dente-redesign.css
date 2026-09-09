@@ -883,8 +883,8 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 16px;
-	padding: 8px 24px;
+	gap: 12px;
+	padding: 8px 16px;
 	background: var(--paper);
 	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
@@ -899,18 +899,22 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 .topbar-context {
 	display: flex;
 	align-items: center;
-	gap: 14px;
+	gap: 10px;
 	flex-wrap: nowrap;
 	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
 }
 .topbar-clinic {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	max-width: 145px;
+	flex-shrink: 0;
 }
 .topbar h1 {
 	margin: 0;
-	font-size: 16px;
+	font-size: 14px;
 	font-weight: 700;
 	color: var(--ink);
 	white-space: nowrap;
@@ -920,11 +924,13 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 }
 .topbar .eyebrow {
 	margin: 0 0 2px;
-	font-size: 10.5px;
+	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	color: var(--muted, #64748b);
 	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 [data-theme="dark"] .topbar .eyebrow,
@@ -945,8 +951,9 @@ html.dark .topbar .eyebrow,
 .top-actions {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	margin-left: auto;
+	flex-shrink: 0;
 }
 
 /* ---------- 6.1 РАБОЧЕЕ ПРОСТРАНСТВО & ГРИДЫ ---------- */
