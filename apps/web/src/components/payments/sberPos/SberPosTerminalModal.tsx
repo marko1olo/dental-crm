@@ -60,7 +60,6 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	const [config, setConfig] = useState<SberPosTerminalConfig>(DEFAULT_SBER_TERMINAL_CONFIG);
 	const [status, setStatus] = useState<SberPosTerminalStatus>("ready");
 	const [statusMessage, setStatusMessage] = useState<string>("Ожидание карты на терминале Сбербанк...");
-	const [pinBuffer, setPinBuffer] = useState<string>("");
 	const [timerSeconds, setTimerSeconds] = useState<number>(45);
 	const [lastResponse, setLastResponse] = useState<SberPosTransactionResponse | null>(null);
 	const [activeSlipTab, setActiveSlipTab] = useState<"customer" | "merchant">("customer");
@@ -84,7 +83,6 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 			setOperation(initialOperation);
 			setStatus("ready");
 			setStatusMessage("Ожидание карты на терминале Сбербанк...");
-			setPinBuffer("");
 			setTimerSeconds(config.timeoutMs ? Math.round(config.timeoutMs / 1000) : 45);
 			setLastResponse(null);
 			setIsSettingsOpen(false);
@@ -128,7 +126,6 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 		setStatus("connecting");
 		setStatusMessage(`Подключение к терминалу Сбербанк (${config.hostIp}:${config.hostPort}, ${config.protocol})...`);
 		setTimerSeconds(config.timeoutMs ? Math.round(config.timeoutMs / 1000) : 60);
-		setPinBuffer("");
 		setLastResponse(null);
 
 		try {
@@ -426,58 +423,51 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 						{/* POS Terminal Interface (Left side: 7 cols) */}
 						<div className="lg:col-span-7 flex flex-col gap-4">
-							<div className="sber-pos-lcd-screen p-5 min-h-[220px] flex flex-col justify-between">
+							<div className="sber-pos-lcd-screen p-5 min-h-[220px] flex flex-col justify-between" data-testid="sber-pos-status-panel">
 								{/* Terminal Status Header */}
-								<div className="flex items-center justify-between text-xs border-b border-emerald-500/30 pb-2.5">
-									<div className="flex items-center gap-1.5">
-										<Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-										<span className="font-bold uppercase tracking-wider">{activeProfile?.modelName ? activeProfile.modelName.split(" ")[0] : "SBER-POS"}</span>
+								<div className="flex items-center justify-between text-xs border-b border-[var(--line,#e2e8f0)] pb-2.5 text-[var(--muted,#64748b)]">
+									<div className="flex items-center gap-1.5 font-semibold">
+										<Radio className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+										<span className="font-bold uppercase tracking-wider text-[var(--ink,#0f172a)]">{activeProfile?.modelName ? activeProfile.modelName.split(" ")[0] : "SBER-POS"}</span>
 										<span>• TID {config.terminalId}</span>
 									</div>
 									<div className="flex items-center gap-2">
-										<span>Таймаут: {timerSeconds}с</span>
-										<Wifi className="w-3.5 h-3.5 text-emerald-400" />
+										<span>Таймаут: <strong className="text-[var(--ink,#0f172a)]">{timerSeconds}с</strong></span>
+										<Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
 									</div>
 								</div>
 
 								{/* Terminal Display Message / Interactive center */}
-								<div className="my-auto py-3 text-center flex flex-col items-center justify-center gap-2">
+								<div className="my-auto py-4 text-center flex flex-col items-center justify-center gap-2">
 									{status === "qr_displayed" ? (
 										<div className="flex flex-col items-center gap-2">
-											<div className="w-28 h-28 bg-white p-2 rounded-xl border-2 border-emerald-400 flex items-center justify-center shadow-lg">
-												<QrCode className="w-full h-full text-slate-950" />
+											<div className="w-28 h-28 bg-[var(--paper,#ffffff)] p-2 rounded-xl border-2 border-emerald-500 flex items-center justify-center shadow-lg">
+												<QrCode className="w-full h-full text-[var(--ink,#0f172a)]" />
 											</div>
-											<span className="text-xs font-bold text-emerald-300">ПЛАТИ QR / СБЕРБАНК ОНЛАЙН</span>
+											<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">ПЛАТИ QR / СБЕРБАНК ОНЛАЙН</span>
 										</div>
 									) : status === "biometry_scan" ? (
 										<div className="flex flex-col items-center gap-2">
-											<div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center sber-facepay-active-ring">
-												<Smile className="w-10 h-10 text-emerald-300" />
+											<div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center sber-facepay-active-ring">
+												<Smile className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
 											</div>
-											<span className="text-xs font-bold text-emerald-300">3D FacePay: Сканирование лица...</span>
+											<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">3D FacePay: Ожидание сканирования лица...</span>
 										</div>
 									) : (
-										<>
-											<p className="text-sm sm:text-base font-bold tracking-wide text-emerald-300 leading-snug">
-												{statusMessage}
-											</p>
-											{pinBuffer && (
-												<div className="text-2xl font-mono tracking-widest text-emerald-200 mt-1">
-													{pinBuffer}
-												</div>
-											)}
-										</>
+										<p className="text-sm sm:text-base font-bold tracking-wide text-[var(--ink,#0f172a)] leading-snug max-w-md">
+											{statusMessage}
+										</p>
 									)}
 
-									<p className="text-xs text-emerald-400/80 font-mono mt-1">
-										СУММА: {((totalBillKop || 1960000) / 100).toFixed(2)} РУБ.
+									<p className="text-sm sm:text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono mt-1">
+										СУММА: {((totalBillKop || 1960000) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</p>
 								</div>
 
 								{/* Protocol Command Info */}
-								<div className="text-[10px] text-emerald-400/60 font-mono pt-2 border-t border-emerald-500/30 flex items-center justify-between">
+								<div className="text-[10px] text-[var(--muted,#64748b)] font-mono pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between">
 									<span>Pilot-NT: CMD {getPilotNtCommandCode(operation)}</span>
-									<span className="truncate max-w-[200px]">{pilotCommandText}</span>
+									<span className="truncate max-w-[200px] text-[var(--ink,#0f172a)] font-medium">{pilotCommandText}</span>
 								</div>
 							</div>
 

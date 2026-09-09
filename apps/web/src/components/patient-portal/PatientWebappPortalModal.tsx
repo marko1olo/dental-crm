@@ -633,10 +633,10 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							type="button"
 							className={`pwa-mode-toggle-btn ${isFullscreen ? "active" : ""}`}
 							onClick={() => setIsFullscreen(!isFullscreen)}
-							title={isFullscreen ? "Режим смартфона (390px)" : "Полный экран"}
+							title={isFullscreen ? "Компактный вид" : "Широкий экран"}
 						>
 							{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-							<span>{isFullscreen ? "Смартфон" : "На весь экран"}</span>
+							<span>{isFullscreen ? "Компактный" : "Широкий экран"}</span>
 						</button>
 
 						<button
@@ -708,38 +708,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 					</div>
 				)}
 
-				{/* 2. Device Frame (Smartphone Mockup) */}
+				{/* 2. Patient Portal Container */}
 				<div className={`pwa-device-frame ${isFullscreen ? "fullscreen" : ""}`}>
-					{/* Dynamic Island on Top */}
-					{!isFullscreen && (
-						<div className="pwa-dynamic-island">
-							<div className="pwa-island-camera" />
-							<div className="pwa-island-sensor" />
-						</div>
-					)}
-
-					{/* Status Bar */}
-					<div className="pwa-status-bar">
-						<span>09:41</span>
-						<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-							<span style={{ fontSize: "10px", fontWeight: 700 }}>5G</span>
-							<Zap size={13} style={{ color: "var(--brand-500, #0d9488)" }} />
-							<div
-								style={{
-									width: "20px",
-									height: "10px",
-									borderRadius: "3px",
-									border: "1.5px solid currentColor",
-									padding: "1px",
-									display: "flex",
-									alignItems: "center",
-								}}
-							>
-								<div style={{ width: "80%", height: "100%", background: "currentColor", borderRadius: "1px" }} />
-							</div>
-						</div>
-					</div>
-
 					{/* App Viewport */}
 					<div className="pwa-app-viewport">
 						{/* App Header */}
