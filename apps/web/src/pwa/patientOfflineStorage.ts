@@ -396,11 +396,15 @@ export async function flushOfflinePatientBookings(
 				});
 
 				if (!response.ok && response.status === 404) {
-					response = await fetch("/api/public-booking/book", {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify(bookingPayload),
-					});
+					const bookingOrgId = booking.branchId || "default";
+					response = await fetch(
+						`/api/public/booking/${encodeURIComponent(bookingOrgId)}/book`,
+						{
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify(bookingPayload),
+						},
+					);
 				}
 
 				isSuccess = response.ok;

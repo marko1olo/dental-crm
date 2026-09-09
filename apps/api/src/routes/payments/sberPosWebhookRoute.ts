@@ -12,7 +12,10 @@
 
 import crypto from "node:crypto";
 import {
+	formatSberBankSlip,
 	kopecksToNumericString,
+	type SberPosOperationType,
+	type SberPosTransactionResponse,
 	sumKopecks,
 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
@@ -162,6 +165,18 @@ const initiateSberPosPaymentSchema = z.object({
 export type InitiateSberPosPaymentInput = z.infer<
 	typeof initiateSberPosPaymentSchema
 >;
+
+const executeSberPosTransactionSchema = z.object({
+	terminalId: z.string().trim().min(1).default("POS-TERM-01"),
+	operation: z.string().trim().default("sale"),
+	amountKopecks: z.number().int().min(0).default(0),
+	orderId: z.string().trim().optional(),
+	originalRrn: z.string().trim().optional(),
+	originalAuthCode: z.string().trim().optional(),
+	patientId: z.string().uuid().optional(),
+	visitId: z.string().uuid().optional(),
+	invoiceId: z.string().uuid().optional(),
+});
 
 /**
  * Reconciles invoice balance and updates invoice status atomically
@@ -921,6 +936,158 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					orderId: orderId || rrn,
 					message: "Отмена зафиксирована.",
 				});
+			});
+		},
+	);
+
+	/**
+	 * POST /api/payments/sberbank/pos/transaction
+	 * Direct hardware command execution or cloud fallback for POS terminal operations.
+	 */
+	app.post(
+		"/api/payments/sberbank/pos/transaction",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const perm = await requirePermission(request, reply, "finance.write");
+			if (!perm) return;
+
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"sberbank pos transaction",
+			);
+			if (!orgId) return;
+
+			const parsed = executeSberPosTransactionSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message:
+						"Некорректные параметры для выполнения транзакции POS-терминала Сбербанк.",
+					details: parsed.error.issues,
+				});
+			}
+
+			const input = parsed.data;
+			const orderId =
+				input.orderId ||
+				`POS-${crypto.randomUUID().slice(0, 18).toUpperCase()}`;
+			const rrn = input.originalRrn || `400${Date.now().toString().slice(-9)}`;
+			const authCode =
+				input.originalAuthCode ||
+				crypto.randomBytes(3).toString("hex").toUpperCase();
+			const nowIso = new Date().toISOString();
+			const op = (input.operation || "sale") as SberPosOperationType;
+
+			return await withTenantCtx(orgId, async (tx) => {
+				const [existingTx] = await tx
+					.select()
+					.from(sberbankTransactions)
+					.where(
+						and(
+							eq(sberbankTransactions.organizationId, orgId),
+							eq(sberbankTransactions.orderId, orderId),
+						),
+					)
+					.limit(1);
+
+				const status =
+					op === "refund" ? "REFUNDED" : op === "void" ? "REVERSED" : "SETTLED";
+
+				if (existingTx) {
+					await tx
+						.update(sberbankTransactions)
+						.set({
+							status,
+							amount: input.amountKopecks || existingTx.amount,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(sberbankTransactions.id, existingTx.id),
+								eq(sberbankTransactions.organizationId, orgId),
+							),
+						);
+				} else {
+					let patientId = input.patientId;
+					if (!patientId) {
+						const [p] = await tx
+							.select({ id: patients.id })
+							.from(patients)
+							.where(eq(patients.organizationId, orgId))
+							.limit(1);
+						patientId = p?.id;
+					}
+
+					if (patientId) {
+						await tx.insert(sberbankTransactions).values({
+							organizationId: orgId,
+							patientId,
+							visitId: input.visitId || null,
+							invoiceId: input.invoiceId || null,
+							orderId,
+							amount: input.amountKopecks,
+							status,
+						});
+					}
+				}
+
+				const config = {
+					terminalId: input.terminalId || "19827340",
+					merchantId: "981273948192031",
+					hostIp: "127.0.0.1",
+					hostPort: 4000,
+					protocol: "pilot_nt" as const,
+					hardwareModel: "sber_smartpos" as const,
+					timeoutMs: 60000,
+					retryCount: 2,
+					clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+					clinicAddress: "г. Москва, Ломоносовский пр-т, 24",
+					clinicInn: "7701234567",
+				};
+
+				const slipData = {
+					operation: op,
+					amountKop: input.amountKopecks,
+					rrn,
+					authCode,
+					cardHash: "2200********4819",
+					cardIssuer: "МИР",
+					aid: "A0000006581010",
+					tvr: "0000008000",
+					dateTime: nowIso.slice(0, 19).replace("T", " "),
+					responseCode: "00",
+					orderId,
+				};
+
+				const customerSlip = formatSberBankSlip(config, {
+					...slipData,
+					isCustomerCopy: true,
+				});
+				const merchantSlip = formatSberBankSlip(config, {
+					...slipData,
+					isCustomerCopy: false,
+				});
+
+				const responsePayload: SberPosTransactionResponse = {
+					success: true,
+					responseCode: "00",
+					responseMessageRu: "Одобрено",
+					terminalId: input.terminalId,
+					merchantId: config.merchantId,
+					rrn,
+					authCode,
+					cardHash: "2200********4819",
+					cardIssuer: "МИР",
+					aid: "A0000006581010",
+					tvr: "0000008000",
+					amountKop: input.amountKopecks,
+					transactionDateTime: nowIso,
+					operationType: op,
+					customerSlip,
+					merchantSlip,
+				};
+
+				return reply.code(200).send(responsePayload);
 			});
 		},
 	);

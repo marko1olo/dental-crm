@@ -2401,7 +2401,123 @@ export const portalRoutes: FastifyPluginAsync = async (
 		});
 	});
 
-	// 13. Get Patient X-Rays and Diagnostic Scans (Fast 2D Lightweight Access)
+	// 13. Get Payment / Invoice Status (Protected)
+	server.get<{
+		Querystring: {
+			invoiceNumber?: string;
+			invoiceId?: string;
+		};
+	}>("/payments/status", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const invoiceId = request.query?.invoiceId?.trim();
+		const invoiceNumber = request.query?.invoiceNumber?.trim();
+
+		return withTenantCtx(auth.organizationId, async () => {
+			let inv: typeof patientInvoices.$inferSelect | undefined;
+
+			if (invoiceId) {
+				const isUuid =
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+						invoiceId,
+					);
+				if (isUuid) {
+					const [found] = await db
+						.select()
+						.from(patientInvoices)
+						.where(
+							and(
+								eq(patientInvoices.id, invoiceId),
+								eq(patientInvoices.organizationId, auth.organizationId),
+								eq(patientInvoices.patientId, auth.patientId),
+							),
+						)
+						.limit(1);
+					inv = found;
+				}
+			}
+
+			if (!inv && invoiceNumber) {
+				const cleanId = invoiceNumber.replace(/^СЧ-/i, "").toLowerCase();
+				const allPatientInvoices = await db
+					.select()
+					.from(patientInvoices)
+					.where(
+						and(
+							eq(patientInvoices.organizationId, auth.organizationId),
+							eq(patientInvoices.patientId, auth.patientId),
+						),
+					);
+				inv = allPatientInvoices.find(
+					(i) =>
+						i.id.toLowerCase() === cleanId ||
+						i.id.toLowerCase().startsWith(cleanId) ||
+						`СЧ-${i.id.slice(0, 8).toUpperCase()}` === invoiceNumber,
+				);
+			}
+
+			if (!inv) {
+				// Also check sberbankTransactions if invoice was registered via SBP QR
+				const orderIdLookup = invoiceId || invoiceNumber;
+				if (orderIdLookup) {
+					const [txRow] = await db
+						.select()
+						.from(sberbankTransactions)
+						.where(
+							and(
+								eq(sberbankTransactions.organizationId, auth.organizationId),
+								eq(sberbankTransactions.patientId, auth.patientId),
+								eq(sberbankTransactions.orderId, orderIdLookup),
+							),
+						)
+						.limit(1);
+
+					if (txRow) {
+						const isSettled =
+							txRow.status === "SETTLED" ||
+							txRow.status === "success" ||
+							txRow.status === "paid";
+						return {
+							success: true,
+							status: isSettled ? "paid" : txRow.status.toLowerCase(),
+							isPaid: isSettled,
+							paidAmountRub: isSettled ? txRow.amount / 100 : 0,
+							paidAtIso: txRow.updatedAt?.toISOString() || null,
+							fiscalReceiptNumber: isSettled
+								? `FD-${txRow.orderId.slice(-6)}`
+								: undefined,
+						};
+					}
+				}
+
+				reply.status(404);
+				return {
+					error: "InvoiceNotFound",
+					message: "Счёт на оплату не найден.",
+				};
+			}
+
+			const isPaid = inv.status === "paid";
+			const totalAmountRub = Number(inv.totalAmountRub || inv.totalRub || 0);
+
+			return {
+				success: true,
+				status: inv.status,
+				isPaid,
+				paidAmountRub: isPaid ? totalAmountRub : 0,
+				paidAtIso: inv.paidAt?.toISOString() || null,
+				fiscalReceiptNumber: isPaid
+					? `FD-${inv.id.slice(0, 8).toUpperCase()}`
+					: undefined,
+			};
+		});
+	});
+
+	// 14. Get Patient X-Rays and Diagnostic Scans (Fast 2D Lightweight Access)
 	server.get("/imaging", async (request, reply) => {
 		const auth = extractPortalPatient(request);
 		if (!auth) {

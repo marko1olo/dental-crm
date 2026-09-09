@@ -35,6 +35,7 @@
  * 204 нет тела, и возврат значения его бы туда положил.
  */
 
+import { existsSync, promises as fs } from "node:fs";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -618,6 +619,85 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 		});
 
 		return scanToResponse(scan, true); // Include image
+	});
+
+	app.get("/api/xray/scans/:id/file", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "get xray scan file")))
+			return;
+
+		const organizationId = requireOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		// 152-ФЗ / 323-ФЗ: Рентгенологические снимки — врачебная тайна
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.xray.read",
+				role: staffRole,
+				message: `Отказ в доступе к файлу рентгенологического снимка (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
+		const { id } = request.params as { id: string };
+
+		const [scan] = await db
+			.select()
+			.from(xrayScans)
+			.where(
+				and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)),
+			)
+			.limit(1);
+
+		if (!scan) {
+			reply.code(404);
+			return { error: "XrayScanNotFound", message: "Снимок не найден." };
+		}
+
+		// 152-ФЗ: Юридически значимый аудит обращения к файлу снимка
+		await auditMedicalAccessFromRequest(request, {
+			organizationId,
+			patientId: scan.patientId,
+			action: "VIEW_XRAY_SCAN_FILE",
+			diagnosis: scan.aiReport ?? "Файл рентгенологического снимка",
+		});
+
+		if (scan.imageDataUri) {
+			const dataUri = scan.imageDataUri;
+			const commaIndex = dataUri.indexOf(",");
+			const base64Data =
+				commaIndex >= 0 ? dataUri.slice(commaIndex + 1) : dataUri;
+			const buffer = Buffer.from(base64Data, "base64");
+			reply.type(scan.mimeType || "image/jpeg");
+			reply.header("Content-Length", buffer.length);
+			return buffer;
+		}
+
+		if (scan.storagePath && existsSync(scan.storagePath)) {
+			try {
+				const buffer = await fs.readFile(scan.storagePath);
+				reply.type(scan.mimeType || "image/jpeg");
+				reply.header("Content-Length", buffer.length);
+				return buffer;
+			} catch (_err) {
+				reply.code(500);
+				return {
+					error: "FileReadError",
+					message: "Не удалось прочитать файл снимка с диска.",
+				};
+			}
+		}
+
+		reply.code(404);
+		return {
+			error: "FileNotFound",
+			message: "Файл изображения отсутствует в записи снимка.",
+		};
 	});
 
 	/*
