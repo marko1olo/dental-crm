@@ -3464,42 +3464,28 @@
     * 7 смертных грехов интерфейса устранены, вердикт: **`[ПРОВЕРЕНО: ЧИСТО]`**.
 * **Верификация**: `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `quickBookingAutonomyWave50.test.tsx` (8/8 PASS), `scheduleWave43StomxParity.test.tsx` (10/10 PASS), полный цикл расписания (478/478 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `emergencyAnaphylaxisProtocol.test.ts` (13/13 PASS), `dmsModalsAndRegistry.test.ts` (10/10 PASS), `emergencyRescue.test.ts` (25/25 PASS), `emergencyRescuePrintAutonomyWave53.test.tsx` (8/8 PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
 
-- **Wave 88 (2026-09-10): Автономия врача у кресла, печать 043/у и смет в любой момент, автосохранение периодонтограммы и 54-ФЗ без барьеров (Мандаты 8e, 8n, 8k, коммит `7b922f771`)**:
-  - *Клинический контур и печать в любой момент (Мандат 8e п. 5)*:
+### Wave 88: Ликвидация мультяшных эмодзи (Мандат 8d, Грех 7), печать 043/у и смет в 1 клик в любой момент, автосохранение периодонтограммы и 54-ФЗ без барьеров (Мандаты 8e, 8n, 8k)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `d5baac21a`, `7b922f771`
+* **Результаты**:
+  - **Ликвидация мультяшных эмодзи и замена на строгие векторные иконки Lucide (Мандат 8d, Грех 7 / Святость официальных бланков и документов, коммит `d5baac21a`)**:
+    * *ShiftView.tsx*: заменены эмодзи ракеты, галочки и предупреждения на векторные иконки `Rocket`, `CheckCircle2`, `AlertTriangle`.
+    * *EmergencyRescueModal.tsx*: заменен эмодзи шприца в заголовке экстренной панели на векторную иконку `Syringe`.
+    * *DmsGuaranteeLetterModal.tsx*: заменен эмодзи гарантийного письма в шапке на векторную иконку `FileText`.
+    * *OfflineConflictReviewDrawer.tsx*: заменен эмодзи предупреждающего треугольника на `AlertTriangle`.
+    * *PatientRecallManagerModal.tsx*: заменены эмодзи телефонной трубки, сообщения и календаря на строгие иконки Lucide `Phone`, `MessageSquare`, `Calendar`.
+    * *YandexCalendarSyncsWidget.tsx*: заменен эмодзи календаря в заголовке виджета на векторную иконку `Calendar`.
+    * *App.tsx*: заменен эмодзи телефонной трубки в бейдже звонка на иконку `Phone`.
+    * *MarketingView.tsx*: заменен эмодзи ракеты в маркетинговой воронке на иконку `Rocket`.
+    * *CopilotComposer.tsx*, *CopilotGenerativeCards.tsx*: заменены эмодзи микрофона и карточек на векторные иконки Lucide `Mic`, `CreditCard`.
+    * *PatientSentimentBadge.tsx*: заменены мультяшные эмодзи настроения и лояльности на векторные иконки `ThumbsUp`, `ThumbsDown`, `MinusCircle`, `HeartHandshake`. Синхронизирован юнит-тест `patientSentimentAndHeader.test.ts`.
+    * *Инструментальный ре-аудит 10 скриншотов*: обновлены все 10 PNG-скриншотов в `docs/screenshots/audit_7sins/` (Light/Dark 1440x900) со строгим подтверждением уникальности MD5-хешей (185–262 KB) и полным соответствием 7 смертным грехам UI: вердикт **`[ПРОВЕРЕНО: ЧИСТО]`**.
+  - **Клинический контур и печать Form 043/u и смет в любой момент (Мандат 8e п. 5, коммит `7b922f771`)**:
     * В `DoctorDesktopHeader.tsx` и `DoctorShiftCockpitModal.tsx` ликвидированы фиктивные заглушки печати (`showToast("Печать...")`). Интегрированы 1-клик кнопки вызова печати Карты ф. 043/у (`header-btn-print-043`, `cockpit-btn-print-043`) и Сметы плана лечения (`header-btn-print-estimate`, `cockpit-btn-print-estimate`).
-    * В `Form043PrintModal.tsx`, `emr043Math.ts` и `emr043Types.ts` реализован гарантированный дуальный режим штампов и водяных знаков: если прием открыт/черновик — на всех листах печатается водяной знак и бейдж «ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)»; если прием закрыт и подписан — выводится «ПОДПИСАНО ВРАЧОМ» (или «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)» при наличии ревизий) по ГОСТ Р 7.0.97-2016.
-  - *Защита от потери данных и автосохранение перио-карты (Мандат 8e п. 6, Мандат 8k)*:
+    * В `Form043PrintModal.tsx`, `emr043Math.ts` и `emr043Types.ts` реализован гарантированный дуальный режим штампов и водяных знаков: если приём открыт/черновик — на всех листах печатается водяной знак и бейдж «ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)»; если приём закрыт и подписан — выводится «ПОДПИСАНО ВРАЧОМ» (или «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)» при наличии ревизий) по ГОСТ Р 7.0.97-2016.
+  - **Защита от потери данных и автосохранение перио-карты (Мандат 8e п. 6, Мандат 8k, коммит `7b922f771`)**:
     * В `PeriodontalChartingModal.tsx` внедрен debounced автосейв изменений зондирования Florida Probe (`onSave(teeth, summary)` через 800мс). При закрытии модального окна крестиком (`perio-modal-close-btn`) или смене вкладки несохраненные замеры карманов, BOP и рецессий автоматически фиксируются без потери данных и без блокирующих алертов.
-  - *Касса 54-ФЗ и скидки врача до 100% без мастер-паролей (Мандат 8e п. 7, 9, Мандат 8n)*:
+  - **Касса 54-ФЗ и скидки врача до 100% без мастер-паролей (Мандат 8e п. 7, 9, Мандат 8n, коммит `7b922f771`)**:
     * В `PaymentCapture.tsx` подтверждена работа пресетов скидок врача до 100% (гарантийная переделка, скидка персоналу) без ввода мастер-пароля администратора. Для физических лиц исключено обязательное требование ИНН (по 54-ФЗ ИНН обязателен только юрлицам/ИП). При клике на оплату с незаполненной суммой при наличии долга по смете в 1 клик выставляется точная сумма долга без барьеров.
-  - *Тесты и верификация*:
-    * `apps/web/src/tests/paymentCaptureAutonomy.test.tsx` (9/9 PASS)
-    * `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx` (5/5 PASS)
-    * `apps/web/src/components/doctor/__tests__/doctorShiftCockpit.test.tsx` (19/19 PASS)
-    * `apps/web/src/components/doctor/__tests__/doctorShiftCockpitAutonomy.test.tsx` (3/3 PASS)
-    * `apps/web/src/tests/periodontalCharting.test.tsx` (8/8 PASS)
-    * `apps/web/src/components/clinical/__tests__/doctorAutonomyWave46.test.tsx` (23/23 PASS)
-    * `apps/web/src/components/patient/__tests__/outpatientAutonomyWave42.test.tsx` (17/17 PASS)
-    * `apps/web/src/components/odontogram/__tests__/periodontalExportAutonomyWave51.test.tsx` (9/9 PASS)
-    * Суммарно: 93 теста, 100% PASS, `check:encoding` 0 ошибок, `typecheck` Exit Code 0.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+* **Верификация**: `apps/web/src/tests/paymentCaptureAutonomy.test.tsx` (9/9 PASS), `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx` (5/5 PASS), `apps/web/src/components/doctor/__tests__/doctorShiftCockpit.test.tsx` (19/19 PASS), `apps/web/src/components/doctor/__tests__/doctorShiftCockpitAutonomy.test.tsx` (3/3 PASS), `apps/web/src/tests/periodontalCharting.test.tsx` (8/8 PASS), `apps/web/src/components/clinical/__tests__/doctorAutonomyWave46.test.tsx` (23/23 PASS), `apps/web/src/components/patient/__tests__/outpatientAutonomyWave42.test.tsx` (17/17 PASS), `apps/web/src/components/odontogram/__tests__/periodontalExportAutonomyWave51.test.tsx` (9/9 PASS), `apps/web/src/components/patient/__tests__/patientSentimentAndHeader.test.ts` (PASS), суммарно 93+ теста (100% PASS), `check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
 
