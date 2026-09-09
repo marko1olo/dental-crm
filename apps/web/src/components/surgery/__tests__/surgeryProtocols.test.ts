@@ -27,10 +27,11 @@ import {
 } from "../../visit/clinicalSoapPresets";
 
 describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
-	it("1. Dental Implantation 1-click norm matches canonical text and 35 N/cm torque", () => {
+	it("1. Dental Implantation 1-click norm matches canonical text and 35 N·см torque", () => {
 		assert.ok(
-			DENTAL_IMPLANTATION_NORM_TEXT.includes("первичная торк-стабильность 35 Н/см"),
-			"Must contain 35 N/cm torque specification",
+			DENTAL_IMPLANTATION_NORM_TEXT.includes("первичная торк-стабильность 35 Н·см") ||
+				DENTAL_IMPLANTATION_NORM_TEXT.includes("первичная торк-стабильность 35 Н/см"),
+			"Must contain 35 N*cm torque specification",
 		);
 		assert.ok(
 			DENTAL_IMPLANTATION_NORM_TEXT.includes("Инфильтрационная анестезия Артикаин 1:100 000 1.7 мл"),
@@ -194,7 +195,7 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 
 		assert.ok(diary.includes("Зуб FDI #46"));
 		assert.ok(diary.includes("Osstem TS III"));
-		assert.ok(diary.includes("35 Н/см"));
+		assert.ok(diary.includes("35 Н·см") || diary.includes("35 Н/см"));
 		assert.ok(diary.includes("LOT-88124"));
 		assert.ok(diary.includes("ХОД ОПЕРАЦИИ:"));
 		assert.ok(diary.includes("Холод 15 минут"));
@@ -242,7 +243,11 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		const implant = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_implant_standard");
 		assert.ok(implant, "surgery_implant_standard must exist");
 		assert.equal(implant.code804n, "A16.07.054");
-		assert.ok(implant.standardProtocolTextRu.includes("35 Н/см"), "Must mention 35 N/cm torque");
+		assert.ok(
+			implant.standardProtocolTextRu.includes("35 Н·см") ||
+				implant.standardProtocolTextRu.includes("35 Н/см"),
+			"Must mention 35 N*cm torque",
+		);
 		assert.ok(
 			implant.standardProtocolTextRu.includes("формирователь десны") ||
 			implant.standardProtocolTextRu.includes("винт-заглушка"),

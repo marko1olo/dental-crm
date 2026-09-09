@@ -56,7 +56,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	const [selectedBrand, setSelectedBrand] = useState<string>("Osstem");
 	const [diameterMm, setDiameterMm] = useState<number>(4.0);
 	const [lengthMm, setLengthMm] = useState<number>(10.0);
-	const [torqueNcm, setTorqueNcm] = useState<number>(35); // 35 Н/см по умолчанию
+	const [torqueNcm, setTorqueNcm] = useState<number>(35); // 35 Н·см по умолчанию
 	const [boneDensity, setBoneDensity] = useState<MischDensity>("D2");
 	const [capType, setCapType] = useState<ImplantCapType>("fdm");
 	const [catalogArticle, setCatalogArticle] = useState<string>("TS3S4010S");
@@ -129,7 +129,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		return (
 			`ПАСПОРТ ИМПЛАНТАТА (Зуб FDI #${toothFdi}):\n` +
 			`Установлен имплантат: ${assembledData.brand} ${assembledData.model} Ø ${assembledData.diameterMm} x ${assembledData.lengthMm} мм.\n` +
-			`Торк первичной стабильности: ${assembledData.torqueNcm} Н/см. Плотность кости: ${assembledData.boneDensity}.\n` +
+			`Торк первичной стабильности: ${assembledData.torqueNcm} Н·см. Плотность кости: ${assembledData.boneDensity}.\n` +
 			`${stabilityText}\n` +
 			`${capText}\n` +
 			`Аугментация: ${gbrText}\n` +
@@ -348,7 +348,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 											{isIsqEnabled ? "RFA магнитно-резонансная стабилометрия" : "Механический контроль торка ключом"}
 										</div>
 										<div className="text-xs text-[var(--muted)]">
-											Первичная стабильность: {torqueNcm} Н·см · {torqueNcm >= 35 ? "Высокая (оптимум 35 Н/см)" : "Стандартная"}
+											Первичная стабильность: {torqueNcm} Н·см · {torqueNcm >= 35 ? "Высокая (оптимум 35 Н·см)" : "Стандартная"}
 											{isIsqEnabled ? " · ISQ День 0: 72 (Остеоинтеграция стабильна)" : ""}
 										</div>
 									</div>
@@ -418,7 +418,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 										data-testid="preset-standard-implantation"
 									>
 										<span className="flex items-center gap-2">
-											<Zap size={16} className={!isGbrPerformed ? "text-amber-300" : "text-[var(--teal,#0d9488)]"} />
+											<Zap size={16} className={!isGbrPerformed ? "text-[var(--warn)]" : "text-[var(--teal,#0d9488)]"} />
 											<span>Стандартная имплантация (без НКР / Без костной пластики)</span>
 										</span>
 										{!isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
@@ -435,7 +435,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 										data-testid="preset-gbr-implantation"
 									>
 										<span className="flex items-center gap-2">
-											<Layers size={16} className={isGbrPerformed ? "text-sky-200" : "text-sky-500"} />
+											<Layers size={16} className={isGbrPerformed ? "text-[var(--teal,#0d9488)]" : "text-[var(--brand-primary,#0ea5e9)]"} />
 											<span>Имплантация с НКР (костная пластика)</span>
 										</span>
 										{isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
@@ -498,7 +498,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									data-testid="btn-stability-torque-only"
 								>
 									<Activity size={16} />
-									<span>Контроль стабильности по торку (35 Н/см ключом)</span>
+									<span>Контроль стабильности по торку (35 Н·см ключом)</span>
 									{!isIsqEnabled && <CheckCircle2 size={16} className="text-white shrink-0" />}
 								</button>
 
@@ -534,8 +534,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 												className={`implant-system-pill ${isSel ? "selected" : ""}`}
 												data-testid={`btn-system-${sys.brand} implant-preset-btn-${sys.brand}`}
 											>
-												<div className="truncate font-extrabold">{sys.brand}</div>
-												<div className="text-[10px] opacity-80 truncate">{sys.model}</div>
+												<div className="truncate font-extrabold" title={sys.brand}>{sys.brand}</div>
+												<div className="text-[10px] opacity-80 truncate" title={sys.model}>{sys.model}</div>
 											</button>
 										);
 									})}
@@ -566,8 +566,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 													<span className="font-black text-xs text-[var(--teal,#0d9488)]">{b}</span>
 													{isSel && <CheckCircle2 size={14} className="text-[var(--teal,#0d9488)] shrink-0" />}
 												</div>
-												<div className="text-[11px] font-bold text-[var(--ink)] truncate">{MISCH_DENSITY_NOTES[b].title}</div>
-												<div className="text-[10px] text-[var(--muted)] truncate">{MISCH_DENSITY_NOTES[b].hint}</div>
+												<div className="text-[11px] font-bold text-[var(--ink)] truncate" title={MISCH_DENSITY_NOTES[b].title}>{MISCH_DENSITY_NOTES[b].title}</div>
+												<div className="text-[10px] text-[var(--muted)] truncate" title={MISCH_DENSITY_NOTES[b].hint}>{MISCH_DENSITY_NOTES[b].hint}</div>
 											</button>
 										);
 									})}
@@ -666,7 +666,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									>
 										{QUICK_TORQUE_OPTIONS.map((t) => (
 											<option key={t} value={t}>
-												{t} Н/см {t === 35 ? "(Идеал)" : ""}
+												{t} Н·см {t === 35 ? "(Идеал)" : ""}
 											</option>
 										))}
 									</select>
@@ -751,8 +751,11 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 
 				{/* Footer */}
 				<footer className="implant-passport-actions">
-					<div className="text-xs text-[var(--muted)] truncate">
-						{selectedSystem.brand} Ø {diameterMm} × {lengthMm} мм · {torqueNcm} Н/см
+					<div
+						className="text-xs text-[var(--muted)] truncate"
+						title={`${selectedSystem.brand} Ø ${diameterMm} × ${lengthMm} мм · ${torqueNcm} Н·см`}
+					>
+						{selectedSystem.brand} Ø {diameterMm} × {lengthMm} мм · {torqueNcm} Н·см
 					</div>
 
 					<div className="flex items-center gap-2">

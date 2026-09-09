@@ -154,7 +154,7 @@ export function createDefaultPassportRecord(params: {
 						: "TS3S4010S"),
 		diameterMm: params.diameterMm ?? preset.defaultDiameterMm,
 		lengthMm: params.lengthMm ?? preset.defaultLengthMm,
-		torqueNcm: params.torqueNcm ?? 35, // 35 Н/см по умолчанию
+		torqueNcm: params.torqueNcm ?? 35, // 35 Н·см по умолчанию
 		lotNumber: `LOT-${new Date().getFullYear()}-${preset.brand.slice(0, 3).toUpperCase()}-${timestampSuffix}`,
 		serialNumber: `SN-${timestampSuffix}`,
 		boneDensity: tooth > 30 && tooth < 49 ? "D2" : "D3",

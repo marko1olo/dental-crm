@@ -33,7 +33,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			`Пациент: ${displayPatientName} (${data.patientId || "______"})\n` +
 			`Система: ${data.brand} ${data.model}\n` +
 			`Размер: Ø ${data.diameterMm} x ${data.lengthMm} мм\n` +
-			`Торк стабилизации: ${data.torqueNcm} Н/см\n` +
+			`Торк стабилизации: ${data.torqueNcm} Н·см\n` +
 			`ISQ: ${data.isqDay0 ?? 72} (RFA магнитно-резонансный анализ)\n` +
 			`Формирователь / Заглушка: ${capTypeRu}\n` +
 			`Плотность кости: ${data.boneDensity}\n` +
@@ -127,7 +127,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">Торк / Стабильность:</span>
 					<strong className="font-mono font-extrabold text-[var(--teal-dark,#0f766e)]">
-						{`${data.torqueNcm || 35} Н/см`}
+						{`${data.torqueNcm || 35} Н·см`}
 						{data.isqDay0 ? ` · ${data.isqDay0} ISQ` : ""}
 					</strong>
 				</div>

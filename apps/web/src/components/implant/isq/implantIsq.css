@@ -186,7 +186,7 @@
 }
 
 .isq-recommendation-banner.extended {
-	border-left-color: #8b5cf6;
+	border-left-color: var(--brand-primary, #0ea5e9);
 }
 
 /* Timeline Stages */
@@ -241,11 +241,11 @@
 }
 
 .isq-btn-primary {
-	background: var(--brand-500, #3b82f6);
-	color: #ffffff;
-	border-color: var(--brand-500, #3b82f6);
+	background: var(--teal, var(--brand-500, #0ea5e9));
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal, var(--brand-500, #0ea5e9));
 }
 
 .isq-btn-primary:hover {
-	background: #2563eb;
+	background: var(--teal-dark, #0f766e);
 }

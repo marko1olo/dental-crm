@@ -48,6 +48,8 @@ const COMMON_IMPLANT_SYSTEMS = [
 	'Astra Tech OsseoSpeed EV'
 ];
 
+const OTHER_SYSTEM_VALUE = '__other__';
+
 export function ImplantIsqProtocolModal({
 	isOpen,
 	onClose,
@@ -58,6 +60,12 @@ export function ImplantIsqProtocolModal({
 	initialLengthMm = 10.0,
 	surgeonName = 'Хирург-имплантолог'
 }: ImplantIsqProtocolModalProps) {
+	const [isCustomSystem, setIsCustomSystem] = useState<boolean>(() => {
+		return !COMMON_IMPLANT_SYSTEMS.includes(initialImplantSystem);
+	});
+	const [customSystemName, setCustomSystemName] = useState<string>(() => {
+		return !COMMON_IMPLANT_SYSTEMS.includes(initialImplantSystem) ? initialImplantSystem : '';
+	});
 	const [implantSystem, setImplantSystem] = useState<string>(initialImplantSystem);
 	const [toothNumber, setToothNumber] = useState<string | number>(initialToothNumber);
 	const [diameterMm, setDiameterMm] = useState<number>(initialDiameterMm);
@@ -140,7 +148,7 @@ export function ImplantIsqProtocolModal({
 				{/* Modal Header */}
 				<div className="isq-modal-header">
 					<div className="isq-header-title">
-						<Activity size={22} color="var(--brand-500, #3b82f6)" />
+						<Activity size={22} color="var(--teal, #0d9488)" />
 						<span>Дентальная имплантация: Торк & RFA ISQ Остеоинтеграция</span>
 						<span className="isq-header-badge">Osstell / Penguin RFA</span>
 					</div>
@@ -164,8 +172,17 @@ export function ImplantIsqProtocolModal({
 								Имплантационная система
 							</label>
 							<select
-								value={implantSystem}
-								onChange={e => setImplantSystem(e.target.value)}
+								value={isCustomSystem ? OTHER_SYSTEM_VALUE : implantSystem}
+								onChange={e => {
+									const val = e.target.value;
+									if (val === OTHER_SYSTEM_VALUE) {
+										setIsCustomSystem(true);
+										setImplantSystem(customSystemName || 'Другая система');
+									} else {
+										setIsCustomSystem(false);
+										setImplantSystem(val);
+									}
+								}}
 								style={{ width: '100%', minHeight: '44px', padding: '0.375rem 0.5rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
 							>
 								{COMMON_IMPLANT_SYSTEMS.map(sys => (
@@ -173,7 +190,31 @@ export function ImplantIsqProtocolModal({
 										{sys}
 									</option>
 								))}
+								<option value={OTHER_SYSTEM_VALUE}>Другая система...</option>
 							</select>
+							{isCustomSystem && (
+								<input
+									type="text"
+									placeholder="Введите систему (напр. Ankylos, Megagen AnyRidge...)"
+									value={customSystemName}
+									onChange={e => {
+										setCustomSystemName(e.target.value);
+										setImplantSystem(e.target.value || 'Другая система');
+									}}
+									data-testid="input-custom-implant-system"
+									style={{
+										width: '100%',
+										minHeight: '44px',
+										marginTop: '0.375rem',
+										padding: '0.375rem 0.5rem',
+										borderRadius: '6px',
+										border: '1px solid var(--line, #e2e8f0)',
+										background: 'var(--paper, #fff)',
+										color: 'var(--ink, #0f172a)',
+										fontSize: '0.8125rem'
+									}}
+								/>
+							)}
 						</div>
 
 						<div>
@@ -254,10 +295,10 @@ export function ImplantIsqProtocolModal({
 								minHeight: '44px',
 								fontWeight: 700,
 								fontSize: '0.8125rem',
-								background: !isIsqMode ? 'var(--brand-500, #3b82f6)' : 'var(--paper, #fff)',
-								color: !isIsqMode ? '#fff' : 'var(--ink, #0f172a)',
-								borderColor: !isIsqMode ? 'var(--brand-500, #3b82f6)' : 'var(--line, #e2e8f0)',
-								boxShadow: !isIsqMode ? '0 2px 8px rgba(59, 130, 246, 0.25)' : 'none',
+								background: !isIsqMode ? 'var(--teal, #0d9488)' : 'var(--paper, #fff)',
+								color: !isIsqMode ? 'var(--on-teal, #ffffff)' : 'var(--ink, #0f172a)',
+								borderColor: !isIsqMode ? 'var(--teal, #0d9488)' : 'var(--line, #e2e8f0)',
+								boxShadow: !isIsqMode ? '0 2px 8px var(--teal-glow, rgba(13, 148, 136, 0.25))' : 'none',
 								display: 'inline-flex',
 								alignItems: 'center',
 								gap: '0.5rem'
@@ -277,10 +318,10 @@ export function ImplantIsqProtocolModal({
 								minHeight: '44px',
 								fontWeight: 700,
 								fontSize: '0.8125rem',
-								background: isIsqMode ? '#8b5cf6' : 'var(--paper, #fff)',
-								color: isIsqMode ? '#fff' : 'var(--ink, #0f172a)',
-								borderColor: isIsqMode ? '#8b5cf6' : 'var(--line, #e2e8f0)',
-								boxShadow: isIsqMode ? '0 2px 8px rgba(139, 92, 246, 0.25)' : 'none',
+								background: isIsqMode ? 'var(--teal, #0d9488)' : 'var(--paper, #fff)',
+								color: isIsqMode ? 'var(--on-teal, #ffffff)' : 'var(--ink, #0f172a)',
+								borderColor: isIsqMode ? 'var(--teal, #0d9488)' : 'var(--line, #e2e8f0)',
+								boxShadow: isIsqMode ? '0 2px 8px var(--teal-glow, rgba(13, 148, 136, 0.25))' : 'none',
 								display: 'inline-flex',
 								alignItems: 'center',
 								gap: '0.5rem'
@@ -298,7 +339,7 @@ export function ImplantIsqProtocolModal({
 						{/* Panel 1: Insertion Torque Gauge */}
 						<div className="isq-sensor-card">
 							<div className="isq-card-title">
-								<Gauge size={18} color="var(--brand-500, #3b82f6)" />
+								<Gauge size={18} color="var(--teal, #0d9488)" />
 								Первичный торк введения (Н·см)
 							</div>
 
@@ -309,8 +350,8 @@ export function ImplantIsqProtocolModal({
 							<div
 								className="torque-band-badge"
 								style={{
-									background: assessment.torqueCategory === 'high_stability' ? 'rgba(16, 185, 129, 0.15)' : assessment.torqueCategory === 'standard_stability' ? 'rgba(59, 130, 246, 0.15)' : assessment.torqueCategory === 'excessive_torque_risk' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-									color: assessment.torqueCategory === 'high_stability' ? 'var(--ok, #10b981)' : assessment.torqueCategory === 'standard_stability' ? 'var(--brand-500, #3b82f6)' : assessment.torqueCategory === 'excessive_torque_risk' ? 'var(--bad, #ef4444)' : 'var(--warn, #f59e0b)'
+									background: assessment.torqueCategory === 'high_stability' ? 'var(--ok-soft, rgba(16, 185, 129, 0.15))' : assessment.torqueCategory === 'standard_stability' ? 'var(--teal-soft, rgba(59, 130, 246, 0.15))' : assessment.torqueCategory === 'excessive_torque_risk' ? 'var(--bad-soft, rgba(239, 68, 68, 0.15))' : 'var(--warn-soft, rgba(245, 158, 11, 0.15))',
+									color: assessment.torqueCategory === 'high_stability' ? 'var(--ok, #10b981)' : assessment.torqueCategory === 'standard_stability' ? 'var(--brand-primary, var(--brand-500, #3b82f6))' : assessment.torqueCategory === 'excessive_torque_risk' ? 'var(--bad, #ef4444)' : 'var(--warn, #f59e0b)'
 								}}
 							>
 								{assessment.torqueStatusRu}
@@ -336,14 +377,14 @@ export function ImplantIsqProtocolModal({
 										onClick={() => setInsertionTorqueNcm(tVal)}
 										className="isq-btn"
 										style={{
-											minHeight: '32px',
-											minWidth: '40px',
-											padding: '0.2rem 0.5rem',
+											minHeight: '44px',
+											minWidth: '44px',
+											padding: '0.25rem 0.5rem',
 											fontSize: '0.75rem',
 											fontWeight: insertionTorqueNcm === tVal ? 800 : 600,
-											background: insertionTorqueNcm === tVal ? 'var(--brand-500, #3b82f6)' : 'var(--paper, #fff)',
-											color: insertionTorqueNcm === tVal ? '#fff' : 'var(--muted, #64748b)',
-											borderColor: insertionTorqueNcm === tVal ? 'var(--brand-500, #3b82f6)' : 'var(--line, #e2e8f0)'
+											background: insertionTorqueNcm === tVal ? 'var(--teal, #0d9488)' : 'var(--paper, #fff)',
+											color: insertionTorqueNcm === tVal ? 'var(--on-teal, #ffffff)' : 'var(--muted, #64748b)',
+											borderColor: insertionTorqueNcm === tVal ? 'var(--teal, #0d9488)' : 'var(--line, #e2e8f0)'
 										}}
 									>
 										{tVal} Н·см
@@ -435,7 +476,7 @@ export function ImplantIsqProtocolModal({
 									Контроль стабильности по торку ключа
 								</div>
 
-								<div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+								<div style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--ok-soft, rgba(16, 185, 129, 0.08))', border: '1px solid var(--ok, rgba(16, 185, 129, 0.2))', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
 									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink, #0f172a)' }}>
 										✓ Аппарат ISQ не требуется
 									</div>
@@ -451,7 +492,7 @@ export function ImplantIsqProtocolModal({
 									type="button"
 									onClick={() => setIsIsqMode(true)}
 									className="isq-btn"
-									style={{ fontSize: '0.75rem', minHeight: '36px', padding: '0.375rem 0.75rem', alignSelf: 'flex-start' }}
+									style={{ fontSize: '0.75rem', minHeight: '44px', padding: '0.375rem 0.75rem', alignSelf: 'flex-start' }}
 								>
 									<Compass size={14} />
 									<span>Подключить замеры ISQ (при наличии датчиков SmartPeg)</span>
@@ -465,7 +506,7 @@ export function ImplantIsqProtocolModal({
 						className={`isq-recommendation-banner ${assessment.loadingRecommendation === 'immediate_loading_safe' ? 'immediate' : assessment.loadingRecommendation === 'extended_healing_gbr' ? 'extended' : 'delayed'}`}
 					>
 						<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.9375rem', color: 'var(--ink, #0f172a)' }}>
-							<ShieldCheck size={20} color={assessment.loadingRecommendation === 'immediate_loading_safe' ? 'var(--ok, #10b981)' : 'var(--brand-500, #3b82f6)'} />
+							<ShieldCheck size={20} color={assessment.loadingRecommendation === 'immediate_loading_safe' ? 'var(--ok, #10b981)' : 'var(--teal, #0d9488)'} />
 							{assessment.loadingRecommendationTitleRu}
 						</div>
 						<div style={{ fontSize: '0.8125rem', color: 'var(--ink, #0f172a)' }}>
@@ -475,7 +516,7 @@ export function ImplantIsqProtocolModal({
 
 					{/* Warnings */}
 					{assessment.warnings.length > 0 && (
-						<div style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', gap: '0.5rem', color: 'var(--warn, #f59e0b)', fontSize: '0.8125rem' }}>
+						<div style={{ background: 'var(--warn-soft, rgba(245, 158, 11, 0.12))', border: '1px solid var(--warn, rgba(245, 158, 11, 0.3))', borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', gap: '0.5rem', color: 'var(--warn, #f59e0b)', fontSize: '0.8125rem' }}>
 							<AlertTriangle size={18} />
 							<div>
 								{assessment.warnings.map((w, i) => (

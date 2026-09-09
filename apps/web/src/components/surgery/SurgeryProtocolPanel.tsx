@@ -11,6 +11,7 @@ import {
 	Receipt,
 	Printer,
 	FileCheck,
+	MoreVertical,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
@@ -65,6 +66,19 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 	const [isPassportOpen, setIsPassportOpen] = useState<boolean>(false);
 	const [selectedImplantBrand, setSelectedImplantBrand] = useState<string>("Dentium");
 	const [selectedCapType, setSelectedCapType] = useState<"fdm" | "plug">("fdm");
+	const [isMoreOpen, setIsMoreOpen] = useState<boolean>(false);
+	const moreMenuRef = React.useRef<HTMLDivElement>(null);
+
+	React.useEffect(() => {
+		if (!isMoreOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+				setIsMoreOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isMoreOpen]);
 
 	const activeNorm =
 		SURGICAL_OPERATION_NORMS.find((n) => n.id === activeNormId) ??
@@ -104,7 +118,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 			capType: cap,
 		});
 		setCustomProtocolText(text);
-		showToast(`Имплантация: ${brand} 35 Н/см, ISQ 72, ${cap === "plug" ? "Заглушка" : "ФДМ"}`, "success");
+		showToast(`Имплантация: ${brand} 35 Н·см, ISQ 72, ${cap === "plug" ? "Заглушка" : "ФДМ"}`, "success");
 	};
 
 	const handleAddToInvoice = () => {
@@ -270,8 +284,11 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 							}`}
 							data-testid={`btn-panel-norm-${norm.id}`}
 						>
-							<div className="truncate font-black">{norm.shortBadge}</div>
-							<div className="text-[10px] opacity-80 truncate">
+							<div className="truncate font-black" title={norm.shortBadge}>{norm.shortBadge}</div>
+							<div
+								className="text-[10px] opacity-80 truncate"
+								title={norm.code804n ? `${norm.code804n} · ${norm.icd10}` : norm.icd10}
+							>
 								{norm.code804n ? `${norm.code804n} · ` : ""}{norm.icd10}
 							</div>
 						</button>
@@ -279,7 +296,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 				})}
 			</div>
 
-			{/* 1-Клик Пресеты имплантации (топовые системы, торк 35 Н/см, ISQ 72, ФДМ/заглушка) */}
+			{/* 1-Клик Пресеты имплантации (топовые системы, торк 35 Н·см, ISQ 72, ФДМ/заглушка) */}
 			{activeNormId === "surgery_implant_standard" && (
 				<div
 					className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3"
@@ -289,12 +306,12 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 						<div className="flex items-center gap-2">
 							<Zap size={16} className="text-[var(--teal,#0d9488)]" />
 							<span className="text-xs font-black uppercase tracking-wider text-[var(--ink)]">
-								1-Клик Пресеты имплантации (Торк 35 Н/см · ISQ 72)
+								1-Клик Пресеты имплантации (Торк 35 Н·см · ISQ 72)
 							</span>
 						</div>
 						<div className="flex items-center gap-2 text-xs">
 							<span className="px-2.5 py-1 rounded-lg font-mono font-black bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
-								35 Н/см
+								35 Н·см
 							</span>
 							<span className="px-2.5 py-1 rounded-lg font-mono font-black bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
 								72 ISQ
@@ -393,30 +410,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 					</button>
 
 					<div className="flex items-center gap-2 flex-wrap">
-						{/* Печать комплекта ИДС (Мандат 8e) */}
-						<button
-							type="button"
-							onClick={handlePrintSurgicalIds}
-							className="min-h-[48px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
-							data-testid="btn-panel-print-ids"
-							title="Печать комплекта ИДС и памятки пациента (1 клик = 3 бланка)"
-						>
-							<FileCheck size={16} />
-							<span>ИДС</span>
-						</button>
-
-						{/* Печать протокола операции (Мандат 8e) */}
-						<button
-							type="button"
-							onClick={handlePrintProtocol}
-							className="min-h-[48px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
-							data-testid="btn-panel-print-protocol"
-							title="Печать протокола операции Формы 043/у"
-						>
-							<Printer size={16} />
-							<span>Печать</span>
-						</button>
-
+						{/* 1. Кнопка прямого действия: Начисление в чек */}
 						<button
 							type="button"
 							onClick={handleAddToInvoice}
@@ -428,19 +422,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 							<span>В чек: {totalServicesPrice.toLocaleString("ru-RU")} ₽ ({currentServices.length})</span>
 						</button>
 
-						<button
-							type="button"
-							onClick={() => {
-								navigator.clipboard?.writeText(customProtocolText);
-								showToast("Протокол скопирован", "success");
-							}}
-							className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
-							data-testid="btn-panel-copy"
-						>
-							<Copy size={16} />
-							<span>Скопировать</span>
-						</button>
-
+						{/* 2. Кнопка прямого действия: Внести в карту 043/у */}
 						<button
 							type="button"
 							onClick={handleApply}
@@ -450,6 +432,78 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 							<FileText size={16} />
 							<span>Внести в карту 043/у</span>
 						</button>
+
+						{/* Вторичные действия: выпадающее меню (Закон Хика / Закон Миллера <= 2 кнопок прямого действия) */}
+						<div className="relative" ref={moreMenuRef}>
+							<button
+								type="button"
+								onClick={() => setIsMoreOpen(!isMoreOpen)}
+								className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] flex items-center justify-center cursor-pointer touch-manipulation transition-all"
+								data-testid="btn-panel-more-actions"
+								title="Дополнительные действия (ИДС, печать, копирование)"
+								aria-label="Дополнительные действия"
+								aria-expanded={isMoreOpen}
+							>
+								<MoreVertical size={18} />
+							</button>
+
+							<div
+								className={`absolute right-0 bottom-full mb-1.5 w-52 p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,#ffffff)] shadow-xl z-30 flex flex-col gap-1 ${
+									isMoreOpen ? "block" : "hidden"
+								}`}
+								role="menu"
+								aria-label="Вторичные хирургические действия"
+							>
+								{/* Печать комплекта ИДС (Мандат 8e) */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreOpen(false);
+										handlePrintSurgicalIds();
+									}}
+									className="min-h-[48px] w-full px-3 py-2 rounded-lg text-xs font-bold text-left bg-transparent hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer touch-manipulation transition-colors"
+									data-testid="btn-panel-print-ids"
+									title="Печать комплекта ИДС и памятки пациента (1 клик = 3 бланка)"
+									role="menuitem"
+								>
+									<FileCheck size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<span>Комплект ИДС</span>
+								</button>
+
+								{/* Печать протокола операции (Мандат 8e) */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreOpen(false);
+										handlePrintProtocol();
+									}}
+									className="min-h-[48px] w-full px-3 py-2 rounded-lg text-xs font-bold text-left bg-transparent hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer touch-manipulation transition-colors"
+									data-testid="btn-panel-print-protocol"
+									title="Печать протокола операции Формы 043/у"
+									role="menuitem"
+								>
+									<Printer size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<span>Печать протокола</span>
+								</button>
+
+								{/* Скопировать текст протокола */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreOpen(false);
+										navigator.clipboard?.writeText(customProtocolText);
+										showToast("Протокол скопирован", "success");
+									}}
+									className="min-h-[48px] w-full px-3 py-2 rounded-lg text-xs font-bold text-left bg-transparent hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer touch-manipulation transition-colors"
+									data-testid="btn-panel-copy"
+									title="Скопировать текст протокола в буфер обмена"
+									role="menuitem"
+								>
+									<Copy size={16} className="text-[var(--muted)] shrink-0" />
+									<span>Скопировать протокол</span>
+								</button>
+							</div>
+						</div>
 					</div>
 
 				</div>

@@ -53,7 +53,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("Паспорт имплантата DENTE"));
 		assert.ok(html.includes("46"), "Must show FDI tooth number");
 		assert.ok(html.includes("Osstem"), "Must show brand");
-		assert.ok(html.includes("35 Н/см"), "Must show 35 N/cm torque");
+		assert.ok(html.includes("35 Н·см") || html.includes("35 Н/см"), "Must show 35 N*cm torque");
 		assert.ok(html.includes("Сидоров А. В."), "Must show patient name");
 		assert.ok(html.includes("btn-copy-passport-card"), "Must have copy button");
 	});

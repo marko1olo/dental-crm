@@ -120,7 +120,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 			capType: cap,
 		});
 		setProtocolText(text);
-		showToast(`Имплантация: ${brand} 35 Н/см, ISQ 72, ${cap === "plug" ? "Заглушка" : "ФДМ"}`, "success");
+		showToast(`Имплантация: ${brand} 35 Н·см, ISQ 72, ${cap === "plug" ? "Заглушка" : "ФДМ"}`, "success");
 	};
 
 	const handleCopyProtocol = () => {
@@ -418,12 +418,12 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 								<div className="flex items-center gap-2">
 									<Zap size={16} className="text-[var(--teal,#0d9488)]" />
 									<span className="text-xs font-black uppercase tracking-wider text-[var(--ink)]">
-										1-Клик Пресеты имплантации (Торк 35 Н/см · ISQ 72)
+										1-Клик Пресеты имплантации (Торк 35 Н·см · ISQ 72)
 									</span>
 								</div>
 								<div className="flex items-center gap-2 text-xs">
 									<span className="px-2.5 py-1 rounded-lg font-mono font-black bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
-										35 Н/см (канон)
+										35 Н·см (канон)
 									</span>
 									<span className="px-2.5 py-1 rounded-lg font-mono font-black bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
 										72 ISQ (RFA)
