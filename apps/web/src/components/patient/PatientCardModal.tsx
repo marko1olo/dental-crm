@@ -21,7 +21,7 @@ import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,
 } from "./tabs/PatientGeneralInfoTab";
-import { PatientAnamnesisModal } from "./PatientAnamnesisModal";
+import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;
@@ -207,16 +207,21 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							/>
 						) : (
 							<div className="flex flex-col gap-4">
-								<div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-900 dark:text-amber-200">
-									Детальный клинический опросник и аллергологические стоп-факторы. Врач правит только патологию.
+								<div className="p-3 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/50 rounded-xl text-xs text-teal-900 dark:text-teal-200">
+									Детальный клинический опросник и соматический статус (Мандат 8e п. 3). Врач правит только патологию.
 								</div>
-								<PatientGeneralInfoTab
-									patient={patientData}
-									safetyProfile={safetyProfile}
-									onUpdatePatient={handleUpdatePatientField}
-									onUpdateSafetyProfile={setSafetyProfile}
-									onApplySomaticNorm={handleApplyNorm}
-									disabled={disabled}
+								<SomaticAnamnesisCard
+									initialProfile={safetyProfile}
+									patientId={patientData?.id || undefined}
+									patientName={patientData?.fullName || undefined}
+									onApplyNorm={(normProfile) => {
+										setSafetyProfile(normProfile);
+										handleApplyNorm();
+									}}
+									onSave={(updatedProfile) => {
+										setSafetyProfile(updatedProfile);
+										showToast("Соматический анамнез сохранен", "success", 3000);
+									}}
 								/>
 							</div>
 						)}

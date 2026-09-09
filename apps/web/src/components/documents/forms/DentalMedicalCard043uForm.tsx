@@ -449,6 +449,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 
 		// ── Dual-Layer 5-Second Local Draft Protection & BeforeUnload (IndexedDB + LocalStorage)
 		const form043DraftKey = `dente_form043_draft_${initialPayload?.medicalCardNumber || "local_current"}`;
+		const latestPayloadRef = React.useRef<FullForm043uPayload | null>(null);
 
 		React.useEffect(() => {
 			if (effectiveDisabled) return;
@@ -490,6 +491,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 						: {}),
 				};
 
+				latestPayloadRef.current = payloadToSave;
 				try {
 					localStorage.setItem(form043DraftKey, JSON.stringify(payloadToSave));
 				} catch {
@@ -540,10 +542,12 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 					(t) => t.statusCode !== "healthy" || (t.surfaces && t.surfaces.length > 0),
 				);
 				if (hasModifiedTeeth) {
-					try {
-						localStorage.setItem(form043DraftKey, JSON.stringify(Object.values(odontogram)));
-					} catch {
-						// ignore
+					if (latestPayloadRef.current) {
+						try {
+							localStorage.setItem(form043DraftKey, JSON.stringify(latestPayloadRef.current));
+						} catch {
+							// ignore
+						}
 					}
 					e.preventDefault();
 					e.returnValue = "В карте 043/у есть несохраненные данные зубной формулы. Закрыть вкладку?";
