@@ -6,6 +6,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import type { MedicalCardForm043uData, VisitDiaryEntry043 } from "../emr/emr043Types";
 
 // ── VKK Control Levels per Order 785n ──
@@ -27,7 +28,10 @@ export type CmoDefectCategory =
 	| "CLINICAL_DIARY_SOAP"
 	| "UKEP_DIGITAL_SIGNATURE"
 	| "EPICRISIS_DISPENSARY"
-	| "XRAY_RADIATION_SAFETY";
+	| "XRAY_RADIATION_SAFETY"
+	| "ANAMNESIS_COMPLAINTS"
+	| "DENTAL_FORMULA_INDICES"
+	| "RECOMMENDATIONS_WARRANTY";
 
 // ── Audit Status ──
 export type CmoAuditStatus =
@@ -51,7 +55,7 @@ export interface CmoDefectPreset {
 	severity: CmoDefectSeverity;
 	penaltyScore: number;
 	recommendedAction: string;
-	targetSection: "ids" | "anesthesia" | "diagnosis" | "endodontics" | "isolation" | "diaries" | "signature" | "epicrisis" | "xray";
+	targetSection: "ids" | "anesthesia" | "diagnosis" | "endodontics" | "isolation" | "diaries" | "signature" | "epicrisis" | "xray" | "anamnesis" | "dental_status" | "warranty";
 }
 
 // ── Attached Document ──
@@ -442,6 +446,51 @@ export const CMO_STATUTORY_DEFECT_PRESETS: CmoDefectPreset[] = [
 		penaltyScore: 5,
 		recommendedAction: "Зафиксировать индивидуальную дозу облучения (например, 0.004 мЗв на снимок).",
 		targetSection: "xray",
+	},
+
+	// 10. Жалобы и анамнез заболевания (Форма 043/у)
+	{
+		id: "DEF-ANAM-01",
+		code: "КЭР-АНАМ-01",
+		category: "ANAMNESIS_COMPLAINTS",
+		categoryLabel: "Жалобы и анамнез (Форма 043/у)",
+		title: "Отсутствуют жалобы или анамнез заболевания в карте 043/у",
+		description: "В амбулаторной карте не зафиксированы жалобы пациента при обращении или анамнез развития стоматологического заболевания.",
+		statutoryReference: "Приказ Минздрава России от 15.12.2014 № 834н, Приказ № 203н п. 2.1",
+		severity: "major",
+		penaltyScore: 10,
+		recommendedAction: "Внести в карту анамнез заболевания со слов пациента и основные стоматологические жалобы.",
+		targetSection: "anamnesis",
+	},
+
+	// 11. Зубная формула и индексы (КПУ, гигиена OHI-S)
+	{
+		id: "DEF-DENT-01",
+		code: "КЭР-СТОМ-01",
+		category: "DENTAL_FORMULA_INDICES",
+		categoryLabel: "Зубная формула и индексы (КПУ, гигиена)",
+		title: "Не заполнена зубная формула или индексы интенсивности кариеса (КПУ) и гигиены",
+		description: "В стоматологическом статусе отсутствует первоначальное заполнение зубной формулы или расчет индексов КПУ и гигиены полости рта (OHI-S).",
+		statutoryReference: "Приказ Минздрава России № 834н (Форма 043/у), Клинические рекомендации СтАР",
+		severity: "major",
+		penaltyScore: 10,
+		recommendedAction: "Заполнить одонтопародонтограмму / зубную формулу и внести значения индексов КПУ и OHI-S.",
+		targetSection: "dental_status",
+	},
+
+	// 12. Рекомендации и гарантийные сроки
+	{
+		id: "DEF-WARR-01",
+		code: "КЭР-ГАРАНТ-01",
+		category: "RECOMMENDATIONS_WARRANTY",
+		categoryLabel: "Рекомендации и гарантийные сроки",
+		title: "Отсутствуют индивидуальные рекомендации пациенту и фиксация гарантийных сроков",
+		description: "В эпикризе завершенного лечения или акте не указаны рекомендации по индивидуальной гигиене и гарантийные обязательства клиники.",
+		statutoryReference: "Закон РФ «О защите прав потребителей» ст. 5, ст. 10, Приказ Минздрава России № 834н",
+		severity: "minor",
+		penaltyScore: 5,
+		recommendedAction: "Внести в эпикриз рекомендации по уходу за полостью рта и указать гарантийный срок и срок службы (например, 12 месяцев).",
+		targetSection: "warranty",
 	},
 ];
 
@@ -985,6 +1034,95 @@ export function runCmoQualityAudit(
 		deduction: xraySanpinPassed ? 0 : 5,
 	});
 
+	// ── CHECK 10: Наличие жалоб и анамнеза заболевания (Форма 043/у) ──
+	const hasChiefComplaint = Boolean(
+		(card.anamnesis?.chiefComplaint && card.anamnesis.chiefComplaint.trim().length >= 3) ||
+		card.visitDiaries.some((vd: VisitDiaryEntry043) => vd.subjectiveComplaints && vd.subjectiveComplaints.trim().length >= 3)
+	);
+	const hasHistoryOfIllness = Boolean(
+		(card.anamnesis?.historyOfPresentIllness && card.anamnesis.historyOfPresentIllness.trim().length >= 3) ||
+		(card.anamnesis?.medicalHistoryVitae && card.anamnesis.medicalHistoryVitae.trim().length >= 3) ||
+		card.visitDiaries.some((vd: VisitDiaryEntry043) => vd.objectiveStatusLocalis && vd.objectiveStatusLocalis.trim().length >= 6)
+	);
+
+	let anamnesisPassed = true;
+	let anamnesisDetails = "Жалобы и анамнез заболевания оформлены по стандарту Формы 043/у.";
+	let anamnesisDeduction = 0;
+
+	if (!hasChiefComplaint || !hasHistoryOfIllness) {
+		anamnesisPassed = false;
+		anamnesisDetails = !hasChiefComplaint
+			? "В амбулаторной карте 043/у отсутствуют жалобы пациента."
+			: "В амбулаторной карте 043/у отсутствует анамнез развития заболевания.";
+		anamnesisDeduction = 10;
+	}
+
+	results.push({
+		ruleId: "RULE-043-ANAMNESIS",
+		ruleCategory: "ANAMNESIS_COMPLAINTS",
+		title: "Жалобы и анамнез заболевания (Форма 043/у)",
+		passed: anamnesisPassed,
+		severity: "major",
+		details: anamnesisDetails,
+		statutoryRef: "Приказ Минздрава России от 15.12.2014 № 834н, Приказ № 203н п. 2.1",
+		deduction: anamnesisDeduction,
+	});
+
+	// ── CHECK 11: Заполнение зубной формулы и индексов (КПУ, гигиена OHI-S) ──
+	const hasDentalFormula = Boolean(card.dentalStatus?.odontogramTeeth && card.dentalStatus.odontogramTeeth.length > 0);
+	const hasDmft = Boolean(card.dentalStatus?.dmftIndex);
+	const hasHygiene = Boolean(card.dentalStatus?.hygieneIndexOhiS || card.dentalStatus?.cpitnIndex);
+	const hasBiteOrMucosa = Boolean(card.dentalStatus?.biteType || card.dentalStatus?.oralMucosaStatus);
+	const dentalStatusPassed = hasDentalFormula || hasDmft || hasHygiene || hasBiteOrMucosa;
+
+	let dentalStatusDetails = "Зубная формула и индексы интенсивности/гигиены (КПУ, OHI-S) зафиксированы.";
+	let dentalStatusDeduction = 0;
+
+	if (!dentalStatusPassed) {
+		dentalStatusDetails = "В стоматологическом статусе отсутствует заполненная зубная формула или расчет индексов КПУ и гигиены OHI-S.";
+		dentalStatusDeduction = 10;
+	}
+
+	results.push({
+		ruleId: "RULE-043-DENTAL-STATUS",
+		ruleCategory: "DENTAL_FORMULA_INDICES",
+		title: "Зубная формула и индексы (КПУ, гигиена OHI-S)",
+		passed: dentalStatusPassed,
+		severity: "major",
+		details: dentalStatusDetails,
+		statutoryRef: "Приказ Минздрава России № 834н (Форма 043/у), Клинические рекомендации СтАР",
+		deduction: dentalStatusDeduction,
+	});
+
+	// ── CHECK 12: Рекомендации и гарантийные сроки (Форма 043/у) ──
+	const hasRecommendations = Boolean(
+		(card.epicrisis?.preventivePlanRecommendations && card.epicrisis.preventivePlanRecommendations.trim().length >= 3) ||
+		(card.generalTreatmentPlan && card.generalTreatmentPlan.trim().length >= 3) ||
+		(card.epicrisis?.dispensaryGroup && card.epicrisis?.plannedRecallIntervalMonths) ||
+		record.attachedDocuments.some((d: AttachedDocument043) => d.type === "warranty_card" || d.title.toLowerCase().includes("гарант"))
+	);
+
+	let warrantyPassed = true;
+	let warrantyDetails = "Индивидуальные рекомендации пациенту и гарантийный регламент зафиксированы.";
+	let warrantyDeduction = 0;
+
+	if (!hasRecommendations) {
+		warrantyPassed = false;
+		warrantyDetails = "Отсутствуют индивидуальные рекомендации пациенту по уходу и гарантийные условия.";
+		warrantyDeduction = 5;
+	}
+
+	results.push({
+		ruleId: "RULE-043-RECOMMENDATIONS-WARRANTY",
+		ruleCategory: "RECOMMENDATIONS_WARRANTY",
+		title: "Рекомендации и гарантийные сроки (Форма 043/у)",
+		passed: warrantyPassed,
+		severity: "minor",
+		details: warrantyDetails,
+		statutoryRef: "Закон РФ «О защите прав потребителей» ст. 5, ст. 10, Приказ Минздрава России № 834н",
+		deduction: warrantyDeduction,
+	});
+
 	// ── Суммарный балл качества ──
 	let score = 100;
 	let passedCount = 0;
@@ -1076,16 +1214,49 @@ export function calculateFinalCmoQualityScore(
 	return { score, qualityCategory, qualityCategoryLabel };
 }
 
+let globalKerSeqNumber = 1;
+
+/**
+ * Сброс глобального счетчика последовательных номеров протоколов КЭР (для детерминированных тестов)
+ */
+export function resetKerSequenceCounter(initial = 1): void {
+	globalKerSeqNumber = initial;
+}
+
+/**
+ * Генерация детерминированного последовательного номера протокола КЭР
+ * Формат по Приказу Минздрава РФ № 785н: КЭР-${year}-${String(seqNumber).padStart(4, '0')}
+ */
+export function generateKerProtocolNumber(
+	seqNumber?: number,
+	year = new Date().getFullYear()
+): string {
+	const num = seqNumber !== undefined && seqNumber > 0 ? seqNumber : globalKerSeqNumber++;
+	return `КЭР-${year}-${String(num).padStart(4, "0")}`;
+}
+
+export interface CreateCmoAuditRecordOptions extends Partial<CmoQualityAuditRecord> {
+	cardData: MedicalCardForm043uData;
+	seqNumber?: number;
+}
+
 /** Создание новой записи аудита */
 export function createCmoAuditRecord(
-	initial: Partial<CmoQualityAuditRecord> & { cardData: MedicalCardForm043uData }
+	initial: CreateCmoAuditRecordOptions
 ): CmoQualityAuditRecord {
-	const id = initial.id ?? `cmo-audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+	const id = initial.id ?? `cmo-audit-${generateUuidV7()}`;
+	const visitYear = initial.visitDate
+		? new Date(initial.visitDate).getFullYear()
+		: new Date().getFullYear();
+	const year = isNaN(visitYear) ? new Date().getFullYear() : visitYear;
+	const recordNumber =
+		initial.recordNumber ?? generateKerProtocolNumber(initial.seqNumber, year);
+
 	const record: CmoQualityAuditRecord = {
 		id,
 		medicalCardId: initial.medicalCardId ?? initial.cardData.passport.medicalCardNumber ?? "СТ-001",
-		recordNumber: initial.recordNumber ?? `КЭР-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-		patientId: initial.patientId ?? `pat-${Date.now()}`,
+		recordNumber,
+		patientId: initial.patientId ?? `pat-${generateUuidV7()}`,
 		patientFullName: initial.patientFullName ?? initial.cardData.passport.patientFullName ?? "Пациент",
 		patientBirthDate: initial.patientBirthDate ?? initial.cardData.passport.patientBirthDate ?? "1990-01-01",
 		patientGender: initial.patientGender ?? initial.cardData.passport.patientSex ?? "male",
@@ -1129,7 +1300,7 @@ export function addCmoDefectRemark(
 ): CmoQualityAuditRecord {
 	const remark: CmoDefectRemark = {
 		...remarkInput,
-		id: `rem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+		id: `rem-${generateUuidV7()}`,
 		createdAt: new Date().toISOString(),
 		isResolved: false,
 	};

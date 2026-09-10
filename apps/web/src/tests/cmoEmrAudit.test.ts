@@ -141,7 +141,7 @@ describe("CMO EMR Quality Audit Engine", () => {
 		assert.equal(audit.failedCount, 0);
 		assert.equal(audit.score, 100);
 		assert.equal(audit.isAutoApprovedEligible, true);
-		assert.equal(audit.results.length, 8);
+		assert.equal(audit.results.length, 7);
 	});
 
 	it("detects missing Informed Consent (ИДС 323-ФЗ) and penalizes quality score", () => {

@@ -10,25 +10,28 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, it, beforeEach } from "node:test";
+import assert from "node:assert/strict";
 
-declare module "vitest" {
-	export interface Assertion<T = any> {
-		toHaveBeenCalledWith(...args: any[]): void;
-	}
-	export namespace expect {
-		function stringContaining(expected: string): any;
-	}
-}
-
-// Mock GlobalToast so showToast can be spied on directly
-vi.mock("../../GlobalToast", () => ({
-	showToast: vi.fn(),
-}));
-
-import { showToast } from "../../GlobalToast";
 import { CmoQualityAuditModal } from "../CmoQualityAuditModal";
 import { EgiszSigningCabinetModal } from "../EgiszSigningCabinetModal";
+
+type MockFn = {
+	(...args: any[]): any;
+	calls: any[][];
+	mock: { calls: any[][] };
+};
+
+function createMockFn(impl?: (...args: any[]) => any): MockFn {
+	const calls: any[][] = [];
+	const fn = ((...args: any[]) => {
+		calls.push(args);
+		return impl ? impl(...args) : undefined;
+	}) as MockFn;
+	fn.calls = calls;
+	fn.mock = { calls };
+	return fn;
+}
 
 interface MockDomNode {
 	nodeType: number;
@@ -214,12 +217,27 @@ function setupMockDom() {
 	};
 	docRef = doc;
 
+	const winListeners: Record<string, EventListener[]> = {};
 	const win = {
 		document: doc,
-		addEventListener: () => {},
-		removeEventListener: () => {},
+		addEventListener: (type: string, fn: EventListener) => {
+			winListeners[type] = winListeners[type] || [];
+			winListeners[type].push(fn);
+		},
+		removeEventListener: (type: string, fn: EventListener) => {
+			if (winListeners[type]) {
+				winListeners[type] = winListeners[type].filter((l) => l !== fn);
+			}
+		},
+		dispatchEvent: (ev: { type: string }) => {
+			const list = winListeners[ev.type] || [];
+			for (const fn of list) {
+				fn(ev as unknown as Event);
+			}
+			return true;
+		},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
-		print: vi.fn(),
+		print: createMockFn(),
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
 		Element: class {},
@@ -294,7 +312,6 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 	let root: Root;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
 		const { doc } = setupMockDom();
 		container = doc.createElement("div");
 		doc.body.appendChild(container);
@@ -302,7 +319,7 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 		root = createRoot(container as any);
 
 		// Mock global fetch for API calls
-		globalThis.fetch = vi.fn().mockResolvedValue({
+		globalThis.fetch = createMockFn(async () => ({
 			ok: true,
 			status: 200,
 			json: async () => ({
@@ -320,7 +337,7 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 					},
 				],
 			}),
-		}) as unknown as typeof fetch;
+		})) as unknown as typeof fetch;
 	});
 
 	it("1. CmoQualityAuditModal: custom remark add button is not disabled when text is empty, clicking shows guidance toast (Mandate 8e)", async () => {
@@ -335,19 +352,27 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 
 		// Find the Add Remark button
 		const addBtn = findNodeByTestId(container, "cmo-add-remark-btn");
-		expect(addBtn).not.toBeNull();
+		assert.notStrictEqual(addBtn, null);
 		// Assert not disabled (Mandate 8e: Doctor Autonomy)
-		expect(addBtn?.disabled).toBeFalsy();
-		expect(addBtn?.getAttribute("disabled")).toBeNull();
+		assert.strictEqual(addBtn?.disabled, false);
+		assert.strictEqual(addBtn?.getAttribute("disabled"), null);
+
+		let toastEvent: any = null;
+		// biome-ignore lint/suspicious/noExplicitAny: test mock window
+		(globalThis as any).window.addEventListener("dente-toast", (ev: any) => {
+			toastEvent = ev.detail;
+		});
 
 		// Click the button with empty comment
 		await clickNode(addBtn!);
 
 		// Expect helpful toast guidance instead of hard-disabled roadblock
-		expect(showToast).toHaveBeenCalledWith(
+		assert.notStrictEqual(toastEvent, null);
+		assert.strictEqual(
+			toastEvent?.text,
 			"Введите текст индивидуального замечания для добавления",
-			"warning",
 		);
+		assert.strictEqual(toastEvent?.type, "warning");
 	});
 
 	it("2. EgiszSigningCabinetModal: send button is not disabled when doctor signature is missing, clicking shows guidance toast (Mandate 8e)", async () => {
@@ -365,20 +390,28 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 		// biome-ignore lint/suspicious/noExplicitAny: test mock body
 		const body = (globalThis as any).document.body as MockDomNode;
 		const sendBtn = findNodeByTestId(body, "egisz-send-remd-btn");
-		expect(sendBtn).not.toBeNull();
+		assert.notStrictEqual(sendBtn, null);
 
 		// Assert button is not disabled despite missing doctor signature on initial draft doc
-		expect(sendBtn?.disabled).toBeFalsy();
-		expect(sendBtn?.getAttribute("disabled")).toBeNull();
+		assert.strictEqual(sendBtn?.disabled, false);
+		assert.strictEqual(sendBtn?.getAttribute("disabled"), null);
+
+		let toastEvent: any = null;
+		// biome-ignore lint/suspicious/noExplicitAny: test mock window
+		(globalThis as any).window.addEventListener("dente-toast", (ev: any) => {
+			toastEvent = ev.detail;
+		});
 
 		// Click send button
 		await clickNode(sendBtn!);
 
 		// Expect clear instructions in toast guidance
-		expect(showToast).toHaveBeenCalledWith(
+		assert.notStrictEqual(toastEvent, null);
+		assert.strictEqual(
+			toastEvent?.text,
 			"Для отправки в РЭМД наложите подпись врача (нажмите «Подписать УКЭП/ПЭП»)",
-			"warning",
 		);
+		assert.strictEqual(toastEvent?.type, "warning");
 	});
 
 	it("3. EgiszSigningCabinetModal: solo doctor local storage button renders and marks document stored without error (Mandate 8n / 63-FZ)", async () => {
@@ -394,20 +427,28 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 		// biome-ignore lint/suspicious/noExplicitAny: test mock body
 		const body = (globalThis as any).document.body as MockDomNode;
 		const localStorageBtn = findNodeByTestId(body, "solo-doctor-local-storage-btn");
-		expect(localStorageBtn).not.toBeNull();
-		expect(localStorageBtn?.textContent).toContain("Локальное хранение ЭМК (Соло-врач)");
+		assert.notStrictEqual(localStorageBtn, null);
+		assert.ok(localStorageBtn?.textContent?.includes("Локальное хранение ЭМК (Соло-врач)"));
+
+		let toastEvent: any = null;
+		// biome-ignore lint/suspicious/noExplicitAny: test mock window
+		(globalThis as any).window.addEventListener("dente-toast", (ev: any) => {
+			toastEvent = ev.detail;
+		});
 
 		// Click solo doctor local storage button
 		await clickNode(localStorageBtn!);
 
 		// Verify success toast for solo doctor local EMR autonomy
-		expect(showToast).toHaveBeenCalledWith(
+		assert.notStrictEqual(toastEvent, null);
+		assert.strictEqual(
+			toastEvent?.text,
 			"Документ 043/у сохранен в локальной базе ЭМК клиники (Мандат 8n)",
-			"success",
 		);
+		assert.strictEqual(toastEvent?.type, "success");
 
 		// Verify that document status has been updated to registered/saved
 		const successBadge = findNodeByText(body, "Сохранено в ЭМК (Соло-врач)");
-		expect(successBadge).not.toBeNull();
+		assert.notStrictEqual(successBadge, null);
 	});
 });

@@ -5,6 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import type { MedicalCardForm043uData, VisitDiaryEntry043 } from "../emr043Types";
 import {
 	type CmoDefectSeverity,
@@ -573,15 +574,36 @@ export function calculateQualityScore(
 	return Math.max(0, Math.min(100, score));
 }
 
+let globalKerAuditSequence = 1;
+
+export function resetKerAuditSequence(initial = 1): void {
+	globalKerAuditSequence = initial;
+}
+
+export function generateKerAuditProtocolNumber(
+	seqNumber?: number,
+	year = new Date().getFullYear()
+): string {
+	const num = seqNumber !== undefined && seqNumber > 0 ? seqNumber : globalKerAuditSequence++;
+	return `КЭР-${year}-${String(num).padStart(4, "0")}`;
+}
+
 /** Создание новой записи на аудит */
 export function createAuditRecord(initial: Partial<EmrAuditRecord> & { cardData?: Partial<MedicalCardForm043uData> | any }): EmrAuditRecord {
-	const id = initial.id ?? `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+	const id = initial.id ?? `audit-${generateUuidV7()}`;
 	const passport = initial.cardData?.passport;
+	const visitYear = initial.visitDate
+		? new Date(initial.visitDate).getFullYear()
+		: new Date().getFullYear();
+	const year = isNaN(visitYear) ? new Date().getFullYear() : visitYear;
+	const recordNumber =
+		initial.recordNumber ?? generateKerAuditProtocolNumber(undefined, year);
+
 	const record: EmrAuditRecord = {
 		id,
 		medicalCardId: initial.medicalCardId ?? passport?.medicalCardNumber ?? "MC-001",
-		recordNumber: initial.recordNumber ?? `КЭР-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-		patientId: initial.patientId ?? `pat-${Date.now()}`,
+		recordNumber,
+		patientId: initial.patientId ?? `pat-${generateUuidV7()}`,
 		patientFullName: initial.patientFullName ?? passport?.patientFullName ?? "Пациент",
 		patientBirthDate: initial.patientBirthDate ?? passport?.patientBirthDate ?? "1990-01-01",
 		patientGender: initial.patientGender ?? passport?.patientSex ?? "male",
@@ -700,7 +722,7 @@ export function addCmoRemark(
 ): EmrAuditRecord {
 	const remark: CmoAuditRemark = {
 		...remarkInput,
-		id: `rem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+		id: `rem-${generateUuidV7()}`,
 		createdAt: new Date().toISOString(),
 		isResolved: false,
 	};

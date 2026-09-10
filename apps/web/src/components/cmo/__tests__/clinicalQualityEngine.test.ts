@@ -29,6 +29,8 @@ import {
 	isCmoRuleMatch,
 	findCmoDefectPreset,
 	CMO_STATUTORY_DEFECT_PRESETS,
+	generateKerProtocolNumber,
+	resetKerSequenceCounter,
 	type CmoQualityAuditRecord,
 } from "../clinicalQualityEngine";
 import type { MedicalCardForm043uData } from "../../emr/emr043Types";
@@ -635,3 +637,162 @@ describe("8. Statutory Presets Integrity", () => {
 		assert.equal(isCmoRuleMatch("RULE-043-DIARY", "RULE-SOAP-DIARY"), true);
 	});
 });
+
+describe("9. Deterministic Sequential KER Protocol Numbers & UUIDv7 IDs (Mandates 8a-8q)", () => {
+	it("generates deterministic sequential KER protocol numbers", () => {
+		assert.equal(generateKerProtocolNumber(1, 2026), "КЭР-2026-0001");
+		assert.equal(generateKerProtocolNumber(42, 2026), "КЭР-2026-0042");
+		assert.equal(generateKerProtocolNumber(999, 2026), "КЭР-2026-0999");
+		assert.equal(generateKerProtocolNumber(1000, 2026), "КЭР-2026-1000");
+
+		resetKerSequenceCounter(1);
+		assert.equal(generateKerProtocolNumber(undefined, 2026), "КЭР-2026-0001");
+		assert.equal(generateKerProtocolNumber(undefined, 2026), "КЭР-2026-0002");
+		assert.equal(generateKerProtocolNumber(undefined, 2026), "КЭР-2026-0003");
+
+		resetKerSequenceCounter(1);
+	});
+
+	it("generates safe UUIDv7 IDs and sequential protocol numbers in createCmoAuditRecord", () => {
+		resetKerSequenceCounter(5);
+		const card = buildMockCard();
+		const rec1 = createCmoAuditRecord({ cardData: card, visitDate: "2026-09-10" });
+		const rec2 = createCmoAuditRecord({ cardData: card, visitDate: "2026-09-10" });
+
+		assert.equal(rec1.recordNumber, "КЭР-2026-0005");
+		assert.equal(rec2.recordNumber, "КЭР-2026-0006");
+
+		// Validates UUIDv7 in ID
+		assert.ok(rec1.id.startsWith("cmo-audit-"));
+		const rawUuid1 = rec1.id.replace("cmo-audit-", "");
+		const uuidV7Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+		assert.ok(uuidV7Regex.test(rawUuid1), `Expected UUIDv7 format for audit id, got: ${rawUuid1}`);
+
+		// Validates UUIDv7 in patientId
+		assert.ok(rec1.patientId.startsWith("pat-"));
+		const rawPatUuid = rec1.patientId.replace("pat-", "");
+		assert.ok(uuidV7Regex.test(rawPatUuid), `Expected UUIDv7 format for patientId, got: ${rawPatUuid}`);
+
+		resetKerSequenceCounter(1);
+	});
+
+	it("generates safe UUIDv7 IDs in addCmoDefectRemark", () => {
+		const card = buildMockCard();
+		let record = createCmoAuditRecord({ cardData: card });
+		record = addCmoDefectRemark(record, {
+			category: "ANESTHESIA_BATCH_AND_DOSAGE",
+			severity: "major",
+			title: "Тестовое замечание",
+			comment: "Комментарий",
+			statutoryRef: "Приказ 785н",
+			penaltyScore: 10,
+			affectedSection: "anesthesia",
+		});
+
+		const remark = record.cmoRemarks[0];
+		assert.ok(remark);
+		assert.ok(remark.id.startsWith("rem-"));
+		const rawRemUuid = remark.id.replace("rem-", "");
+		const uuidV7Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+		assert.ok(uuidV7Regex.test(rawRemUuid), `Expected UUIDv7 format for remark id, got: ${rawRemUuid}`);
+	});
+});
+
+describe("10. 7 Core Outpatient Dental Form 043/u Audit Criteria", () => {
+	it("deducts points when complaints and anamnesis are completely missing", () => {
+		const card = buildMockCard({
+			anamnesis: {
+				...buildMockCard().anamnesis,
+				chiefComplaint: "",
+				historyOfPresentIllness: "",
+				medicalHistoryVitae: "",
+			},
+			visitDiaries: [
+				{
+					...buildMockCard().visitDiaries[0]!,
+					subjectiveComplaints: "",
+					objectiveStatusLocalis: "",
+				},
+			],
+		});
+
+		const record = createCmoAuditRecord({
+			cardData: card,
+			attachedDocuments: [
+				{ id: "doc-1", type: "ids_1051n", title: "ИДС 1051н", isSigned: true, signedByPatient: true, signedByDoctorUkep: true, signedAt: "2026-08-20" },
+			],
+		});
+
+		const auditRes = runCmoQualityAudit(record);
+		const anamCheck = auditRes.results.find((r) => r.ruleId === "RULE-043-ANAMNESIS");
+		assert.ok(anamCheck);
+		assert.equal(anamCheck.passed, false);
+		assert.equal(anamCheck.deduction, 10);
+	});
+
+	it("deducts points when dental status, formula, and indices are completely empty", () => {
+		const card = buildMockCard({
+			dentalStatus: {
+				odontogramTeeth: [],
+				dmftIndex: undefined as any,
+				cpitnIndex: undefined as any,
+				hygieneIndexOhiS: undefined as any,
+				biteType: undefined as any,
+				biteDescription: undefined as any,
+				xrayFindingsDescription: undefined as any,
+				oralMucosaStatus: undefined as any,
+			},
+		});
+
+		const record = createCmoAuditRecord({
+			cardData: card,
+			attachedDocuments: [
+				{ id: "doc-1", type: "ids_1051n", title: "ИДС 1051н", isSigned: true, signedByPatient: true, signedByDoctorUkep: true, signedAt: "2026-08-20" },
+			],
+		});
+
+		const auditRes = runCmoQualityAudit(record);
+		const dentCheck = auditRes.results.find((r) => r.ruleId === "RULE-043-DENTAL-STATUS");
+		assert.ok(dentCheck);
+		assert.equal(dentCheck.passed, false);
+		assert.equal(dentCheck.deduction, 10);
+	});
+
+	it("deducts points when recommendations and warranty terms are missing", () => {
+		const card = buildMockCard({
+			epicrisis: {
+				...buildMockCard().epicrisis!,
+				preventivePlanRecommendations: "",
+				dispensaryGroup: undefined as any,
+				plannedRecallIntervalMonths: undefined as any,
+			},
+			generalTreatmentPlan: "",
+		});
+
+		const record = createCmoAuditRecord({
+			cardData: card,
+			attachedDocuments: [
+				{ id: "doc-1", type: "ids_1051n", title: "ИДС 1051н", isSigned: true, signedByPatient: true, signedByDoctorUkep: true, signedAt: "2026-08-20" },
+			],
+		});
+
+		const auditRes = runCmoQualityAudit(record);
+		const warrCheck = auditRes.results.find((r) => r.ruleId === "RULE-043-RECOMMENDATIONS-WARRANTY");
+		assert.ok(warrCheck);
+		assert.equal(warrCheck.passed, false);
+		assert.equal(warrCheck.deduction, 5);
+	});
+});
+
+describe("11. Hospital Bloat & Inpatient Invariant Verification (Mandate 8i)", () => {
+	it("verifies zero hospital inpatient terms and zero 100-point wipeout deductions in defect presets", () => {
+		for (const preset of CMO_STATUTORY_DEFECT_PRESETS) {
+			const text = `${preset.title} ${preset.description} ${preset.recommendedAction}`.toLowerCase();
+			assert.ok(!text.includes("койко-дни"), `Preset ${preset.id} must not contain inpatient bed-days`);
+			assert.ok(!text.includes("трансфузиолог"), `Preset ${preset.id} must not contain transfusion`);
+			assert.ok(!text.includes("стационар"), `Preset ${preset.id} must not contain inpatient hospital`);
+			assert.ok(preset.penaltyScore <= 25, `Preset ${preset.id} penalty (${preset.penaltyScore}) must be proportional and not exceed 25 points`);
+		}
+	});
+});
+
