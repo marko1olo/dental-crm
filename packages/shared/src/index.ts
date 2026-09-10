@@ -31,6 +31,7 @@ export * from "./communications/index.js";
 export * from "./schedule/index.js";
 export * from "./recalls/index.js";
 export * from "./tasks/index.js";
+export { INVERSE_RELATIONSHIP_MAP } from "./patients/index.js";
 export * from "./patients/index.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
