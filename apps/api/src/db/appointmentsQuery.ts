@@ -196,9 +196,18 @@ async function assertNoResourceOverlap(
 	// Порядок сообщений — от самого понятного администратору: пациент важнее
 	// врача, врач важнее ассистента, ассистент важнее кресла.
 	if (candidate.patientId && ov.patientId === candidate.patientId) {
-		throw new Error(`У пациента ${existingPatientName} уже есть запись в это время`);
+		throw new Error("У пациента уже есть запись в это время");
 	}
-	throw new Error(`Внимание: на это время уже записан пациент ${existingPatientName}`);
+	if (candidate.doctorUserId && ov.doctorUserId === candidate.doctorUserId) {
+		throw new Error("У врача уже есть запись в это время");
+	}
+	if (
+		candidate.assistantUserId &&
+		ov.assistantUserId === candidate.assistantUserId
+	) {
+		throw new Error("У ассистента уже есть запись в это время");
+	}
+	throw new Error("Кресло уже занято другой записью в это время");
 }
 
 /**

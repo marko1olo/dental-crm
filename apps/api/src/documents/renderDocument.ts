@@ -2987,6 +2987,23 @@ function procedureSpecificConsentPacket(document: GeneratedDocument) {
 			hygiene_whitening: "профессиональная гигиена или отбеливание",
 			periodontology: "пародонтология",
 			other: "другая процедура",
+			veneers: "виниры",
+			implantation: "дентальная имплантация",
+			sinus_lifting: "синус-лифтинг",
+			fixed_prosthetics: "несъемное протезирование",
+			removable_prosthetics: "съемное протезирование",
+			deep_caries: "глубокий кариес",
+			superficial_medium_caries: "поверхностный и средний кариес",
+			pulpitis_endodontics: "пульпит и эндодонтия",
+			professional_hygiene: "профессиональная гигиена",
+			teeth_whitening: "отбеливание зубов",
+			minor_general: "общее согласие для несовершеннолетних",
+			xray_cbct: "рентгенологическое исследование и КЛКТ",
+			photoprotocol: "фотопротокол",
+			egisz_refusal: "отказ от передачи данных в ЕГИСЗ",
+			medical_intervention_refusal: "отказ от медицинского вмешательства",
+			warranty_policy: "гарантийные обязательства",
+			xray_dose_load_sheet: "лист учета дозовых нагрузок при рентгене",
 		};
 		return `<h2>Процедурное информированное добровольное согласие: ${escapeHtml(procedureTypeLabels[payload.procedureType])}</h2>
     <div class="notice">

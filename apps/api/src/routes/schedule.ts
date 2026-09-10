@@ -1391,6 +1391,9 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 	});
 
 	app.post("/api/schedule/shifts", async (req, reply) => {
+		if (!(await requireScheduleMutationAccess(req, reply, "schedule shifts update"))) {
+			return;
+		}
 		const parsed = scheduleShiftsSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
