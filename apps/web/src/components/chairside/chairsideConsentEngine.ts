@@ -563,14 +563,29 @@ export async function verifyChairsideBackendSmsOtp(
 }
 
 /**
- * Локальное состояние OTP-кода (детерминированный фикстурный fallback для тестов / оффлайн-режима)
- * Срок действия кода строго 5 минут (300 000 мс)
+ * Криптографическая генерация 4-значного OTP-кода подтверждения (63-ФЗ)
+ * через Web Crypto API (crypto.getRandomValues).
+ */
+export function generateSecure4DigitOtp(): string {
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const arr = new Uint32Array(1);
+		crypto.getRandomValues(arr);
+		const val = arr[0] ?? 0;
+		return String(1000 + (val % 9000));
+	}
+	return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+/**
+ * Регламентное формирование состояния OTP-кода для подтверждения согласий кресельного приема (63-ФЗ)
+ * Срок действия кода строго 5 минут (300 000 мс).
+ * При отсутствии явно переданного кода генерируется криптографический OTP через Web Crypto API.
  */
 export function generateChairsideSmsOtp(
 	phone: string,
-	mockCode?: string,
+	explicitOtpCode?: string,
 ): ChairsideSmsOtpState {
-	const code = mockCode || "7842";
+	const code = explicitOtpCode || generateSecure4DigitOtp();
 	const now = Date.now();
 	const expiresAt = now + 5 * 60 * 1000; // 5 минут
 
@@ -689,15 +704,15 @@ export function generateDocumentPackageIntegrityHash(
 }
 
 /**
- * Отправка СМС-кода пациенту и перевод пакета в статус "sms_sent"
+ * Отправка СМС-кода пациенту и перевод пакета в статус "sms_sent" (63-ФЗ)
  */
 export function sendChairsideSmsOtpToPatient(
 	pkg: ChairsideConsentPackage,
 	customPhone?: string,
-	mockCode?: string,
+	explicitOtpCode?: string,
 ): ChairsideConsentPackage {
 	const targetPhone = customPhone || pkg.patient.phone || "+7 (999) 000-00-00";
-	const smsOtp = generateChairsideSmsOtp(targetPhone, mockCode);
+	const smsOtp = generateChairsideSmsOtp(targetPhone, explicitOtpCode);
 
 	return {
 		...pkg,

@@ -193,6 +193,7 @@ export function evaluateAlveolarRidgeFeasibility(
  * Полный расчет параметров альвеолярного гребня по точкам электронного штангенциркуля
  */
 export function calculateCaliperRidgeDimensions(params: {
+	id?: string;
 	crestPoint: Point2D;
 	basePoint: Point2D;
 	crestWidthLeft?: Point2D;
@@ -234,7 +235,7 @@ export function calculateCaliperRidgeDimensions(params: {
 	const feasibility = evaluateAlveolarRidgeFeasibility(heightMm, crestWidthMm, midWidthMm);
 
 	return {
-		id: `caliper-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: params.id || `caliper-${Date.now()}-${Math.abs(Math.round(heightMm * 10 + crestWidthMm * 10)).toString(36)}`,
 		fdiTooth: params.fdiTooth ?? null,
 		label: params.label || (params.fdiTooth ? `Штангенциркуль (Зуб ${params.fdiTooth})` : "Замер альвеолярного гребня"),
 		crestPoint: params.crestPoint,
@@ -597,7 +598,7 @@ export function buildMandibularNerveSpline(params: {
 	const label = params.label || `Нижнечелюстной канал (${sideLabel})`;
 
 	return {
-		id: params.id || `nerve-spline-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: params.id || `nerve-spline-${Date.now()}-${params.controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
 		side: params.side || "right",
 		label,
 		controlPoints: params.controlPoints,
@@ -1374,7 +1375,7 @@ export function buildMandibularNerve3DSpline(
 		const interpolatedCurve = interpolateNerveSpline3D(controlPoints, subdivisions);
 		const lengthMm = calculateSplineLength3DMm(interpolatedCurve);
 		return {
-			id: `nerve-spline-3d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			id: `nerve-spline-3d-${Date.now()}-${controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
 			side: "right",
 			label,
 			controlPoints,
@@ -1403,7 +1404,7 @@ export function buildMandibularNerve3DSpline(
 	const label = params.label || `Нижнечелюстной канал 3D (${sideLabel})`;
 
 	return {
-		id: params.id || `nerve-spline-3d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: params.id || `nerve-spline-3d-${Date.now()}-${params.controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
 		side: params.side || "right",
 		label,
 		controlPoints: params.controlPoints,

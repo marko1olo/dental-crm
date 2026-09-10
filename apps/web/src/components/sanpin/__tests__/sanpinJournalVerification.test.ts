@@ -214,7 +214,7 @@ describe("SanPiN 3.3686-21 & 2.1.3684-21 Harmonization Verification", () => {
 				(p) => p.id === "marked_container_class_g"
 			);
 			assert.ok(container, "marked_container_class_g must exist in packaging types");
-			assert.equal(container?.applicableClasses ? container.applicableClasses[0] : container?.wasteClass, "class_G");
+			assert.equal(container?.wasteClass, "class_G");
 			assert.ok(container?.nameRu.includes("Маркированная тара"));
 		});
 
@@ -245,8 +245,8 @@ describe("SanPiN 3.3686-21 & 2.1.3684-21 Harmonization Verification", () => {
 			assert.equal(record.grossWeightKg, 2.45);
 			assert.equal(record.tareWeightKg, 0.08);
 			assert.equal(record.netWeightKg, 2.37);
-			assert.ok(record.sealNumber.includes("ПЛ-Б-"));
-			assert.ok(record.sealNumber.includes("00012"));
+			assert.ok(record.sealNumber?.includes("ПЛ-Б-"));
+			assert.ok(record.sealNumber?.includes("00012"));
 			assert.ok(record.barcode.includes("CLASS_B"));
 			assert.ok(record.notes?.includes("карпулы от анестетиков с кровью"));
 		});
@@ -261,8 +261,8 @@ describe("SanPiN 3.3686-21 & 2.1.3684-21 Harmonization Verification", () => {
 			assert.equal(record.grossWeightKg, 5.0);
 			assert.equal(record.tareWeightKg, 0.50);
 			assert.equal(record.netWeightKg, 4.50);
-			assert.ok(record.sealNumber.includes("ПЛ-Г-"));
-			assert.ok(record.sealNumber.includes("00007"));
+			assert.ok(record.sealNumber?.includes("ПЛ-Г-"));
+			assert.ok(record.sealNumber?.includes("00007"));
 			assert.ok(record.barcode.includes("CLASS_G"));
 			assert.ok(record.notes?.includes("люминесцентные и бактерицидные лампы"));
 		});

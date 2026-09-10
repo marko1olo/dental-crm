@@ -388,7 +388,7 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 
 			await clickNode(waBtn!);
 
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
 				"warning",
 			);
@@ -409,7 +409,7 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 
 			await clickNode(tgBtn!);
 
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
 				"warning",
 			);
@@ -430,7 +430,7 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 
 			await clickNode(callBtn!);
 
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
 				"warning",
 			);
@@ -547,21 +547,21 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 
 			// Test WhatsApp click
 			await clickNode(waBtn!);
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
 				"warning",
 			);
 
 			// Test Telegram click
 			await clickNode(tgBtn!);
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
 				"warning",
 			);
 
 			// Test SMS click
 			await clickNode(smsBtn!);
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
 				"warning",
 			);

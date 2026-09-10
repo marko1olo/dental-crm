@@ -362,7 +362,7 @@ describe("Sber POS Terminal & Cashier Autonomy (Mandates 8d, 8e, 8n)", () => {
 
 		// Click copy button without lastResponse
 		await clickNode(copyBtn!);
-		expect(showToast).toHaveBeenCalledWith(
+		expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 			"Слип-чек будет доступен после авторизации платежа на терминале",
 			"info",
 		);
@@ -371,7 +371,7 @@ describe("Sber POS Terminal & Cashier Autonomy (Mandates 8d, 8e, 8n)", () => {
 
 		// Click print button without lastResponse
 		await clickNode(printBtn!);
-		expect(showToast).toHaveBeenCalledWith(
+		expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 			"Слип-чек будет доступен после авторизации платежа на терминале",
 			"info",
 		);

@@ -11,6 +11,8 @@ export interface BookingDoctorData {
 	avatarUrl?: string;
 	categoryIds: string[];
 	bio?: string;
+	workDays?: number[]; // 0 = Sun, 1 = Mon, ..., 6 = Sat
+	workHours?: { startHour: number; endHour: number };
 }
 
 export interface BookingDoctorCardProps {

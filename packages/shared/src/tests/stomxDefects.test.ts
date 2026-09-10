@@ -252,11 +252,11 @@ describe("StomX Tooth Defects, Position Anomalies & Dental Anatomy Catalog", () 
 		const perioInTree = STOMX_DEFECTS_TREE.find((d) => d.alias === "A");
 		assert.ok(perioInTree?.items);
 		assert.strictEqual(perioInTree.items.length, 3);
-		assert.strictEqual(perioInTree.items[0].alias, "AI");
+		assert.strictEqual(perioInTree.items[0]?.alias, "AI");
 
 		const recessionInTree = STOMX_DEFECTS_TREE.find((d) => d.alias === "Рд");
 		assert.ok(recessionInTree?.items);
 		assert.strictEqual(recessionInTree.items.length, 4);
-		assert.strictEqual(recessionInTree.items[3].alias, "Рд4");
+		assert.strictEqual(recessionInTree.items[3]?.alias, "Рд4");
 	});
 });

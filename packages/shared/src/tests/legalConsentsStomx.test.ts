@@ -59,49 +59,59 @@ test("STOMX_SPECIALIZED_CONSENT_PRESETS contains all 20 specialized procedures w
 test("Clinical specifics for key dental procedures match StomX standards and Russian statutory regulations", () => {
 	// 1. Veneers (StomX #58)
 	const veneers = STOMX_SPECIALIZED_CONSENT_PRESETS.veneers;
+	assert.ok(veneers);
 	assert.ok(veneers.procedureName.toLowerCase().includes("винир"));
 	assert.ok(veneers.procedureSpecificRisks.some((r) => r.toLowerCase().includes("дебондинг") || r.toLowerCase().includes("скол") || r.toLowerCase().includes("препарирован")));
 	assert.ok(veneers.aftercareAndLimits.some((l) => l.toLowerCase().includes("капп") || l.toLowerCase().includes("откусыва") || l.toLowerCase().includes("травм")));
 
 	// 2. Implantation (StomX #60)
 	const implant = STOMX_SPECIALIZED_CONSENT_PRESETS.implantation;
+	assert.ok(implant);
 	assert.ok(implant.procedureName.toLowerCase().includes("имплантат") || implant.procedureName.toLowerCase().includes("имплантация"));
 	assert.ok(implant.procedureSpecificRisks.some((r) => r.toLowerCase().includes("периимплантит") || r.toLowerCase().includes("остеоинтеграц") || r.toLowerCase().includes("отторжен")));
 	assert.ok(implant.aftercareAndLimits.some((l) => l.toLowerCase().includes("курение") || l.toLowerCase().includes("бани") || l.toLowerCase().includes("нагрузк")));
 
 	// 3. Sinus lifting (StomX #73)
 	const sinus = STOMX_SPECIALIZED_CONSENT_PRESETS.sinus_lifting;
+	assert.ok(sinus);
 	assert.ok(sinus.procedureName.toLowerCase().includes("синус-лифтинг"));
 	assert.ok(sinus.procedureSpecificRisks.some((r) => r.toLowerCase().includes("шнейдера") || r.toLowerCase().includes("перфорация") || r.toLowerCase().includes("гайморит")));
 	assert.ok(sinus.aftercareAndLimits.some((l) => l.toLowerCase().includes("чихать") || l.toLowerCase().includes("авиаперелет") || l.toLowerCase().includes("сморкаться")));
 
 	// 4. Sedation (StomX #72)
 	const sedation = STOMX_SPECIALIZED_CONSENT_PRESETS.sedation;
+	assert.ok(sedation);
 	assert.ok(sedation.procedureName.toLowerCase().includes("седация") || sedation.procedureName.toLowerCase().includes("закс"));
 	assert.ok(sedation.aftercareAndLimits.some((l) => l.toLowerCase().includes("транспортн") || l.toLowerCase().includes("сопровожден") || l.toLowerCase().includes("восстановлен")));
 
 	// 5. Tooth extraction (StomX #76)
 	const extraction = STOMX_SPECIALIZED_CONSENT_PRESETS.surgery_extraction;
+	assert.ok(extraction);
 	assert.ok(extraction.procedureSpecificRisks.some((r) => r.toLowerCase().includes("альвеолит") || r.toLowerCase().includes("сгуст") || r.toLowerCase().includes("парестезия")));
 
 	// 6. Endodontics (StomX #70, #79)
 	const endo = STOMX_SPECIALIZED_CONSENT_PRESETS.pulpitis_endodontics;
+	assert.ok(endo);
 	assert.ok(endo.procedureSpecificRisks.some((r) => r.toLowerCase().includes("облитерация") || r.toLowerCase().includes("отлом") || r.toLowerCase().includes("перфорация") || r.toLowerCase().includes("выведение")));
 
 	// 7. Minor patient (StomX #64)
 	const minor = STOMX_SPECIALIZED_CONSENT_PRESETS.minor_general;
+	assert.ok(minor);
 	assert.ok(minor.diagnosisOrIndication.toLowerCase().includes("представитель") || minor.diagnosisOrIndication.toLowerCase().includes("несовершеннолетн"));
 
 	// 8. EGISZ refusal (StomX #80)
 	const egisz = STOMX_SPECIALIZED_CONSENT_PRESETS.egisz_refusal;
+	assert.ok(egisz);
 	assert.ok(egisz.diagnosisOrIndication.includes("323-ФЗ") || egisz.diagnosisOrIndication.includes("ЕГИСЗ") || egisz.procedureName.includes("ЕГИСЗ"));
 
 	// 9. Medical intervention refusal (StomX #81)
 	const refusal = STOMX_SPECIALIZED_CONSENT_PRESETS.medical_intervention_refusal;
+	assert.ok(refusal);
 	assert.ok(refusal.procedureSpecificRisks.some((r) => r.toLowerCase().includes("прогрессирование") || r.toLowerCase().includes("осложнен") || r.toLowerCase().includes("сепсис") || r.toLowerCase().includes("потеря")));
 
 	// 10. Warranty policy (StomX #82)
 	const warranty = STOMX_SPECIALIZED_CONSENT_PRESETS.warranty_policy;
+	assert.ok(warranty);
 	assert.ok(warranty.procedureName.toLowerCase().includes("гаранти"));
 });
 
@@ -152,7 +162,7 @@ test("resolveStomxVariableToken handles StomX variable tokens with clean fallbac
 			name: "ООО Стоматология ДЕНТЕ",
 			inn: "7701234567",
 			ogrn: "1157746123456",
-			legalAddress: "г. Москва, ул. Тверская, д. 1",
+			actualAddress: "г. Москва, ул. Тверская, д. 1",
 			licenseNumber: "ЛО41-01137-77/00123456",
 			phone: "+7 (495) 123-45-67",
 		},
@@ -163,7 +173,6 @@ test("resolveStomxVariableToken handles StomX variable tokens with clean fallbac
 		visit: {
 			date: "10.09.2026",
 			time: "14:30",
-			cabinet: "Кабинет №2",
 		},
 		contract: {
 			number: "Д-2026/09-42",

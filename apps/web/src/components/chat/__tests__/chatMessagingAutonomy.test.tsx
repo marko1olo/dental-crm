@@ -477,7 +477,7 @@ describe("Chat & Omnichannel Messaging Autonomy Suite (Mandates 8e, 8d, 8k, 8n, 
 			}
 
 			// Verify showToast was triggered with required guidance message
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"Подставлен стандартный шаблон напоминания. Нажмите Enter или «Отправить»",
 				"info",
 			);
@@ -603,7 +603,7 @@ describe("Chat & Omnichannel Messaging Autonomy Suite (Mandates 8e, 8d, 8k, 8n, 
 			}
 
 			// Verify showToast was triggered with required guidance message
-			expect(showToast).toHaveBeenCalledWith(
+			expect(vi.mocked(showToast)).toHaveBeenCalledWith(
 				"Подставлен шаблон сообщения. Нажмите «Отправить»",
 				"info",
 			);

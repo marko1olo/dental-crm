@@ -13,6 +13,7 @@ declare module "vitest" {
 		toMatch(expected: string | RegExp): void;
 		toHaveBeenCalled(): void;
 		toHaveBeenCalledTimes(expected: number): void;
+		toHaveBeenCalledWith(...expectedArgs: any[]): void;
 		toBeGreaterThan(expected: number): void;
 		toBeGreaterThanOrEqual(expected: number): void;
 		toBeLessThan(expected: number): void;

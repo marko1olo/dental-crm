@@ -529,9 +529,37 @@ export function resolveCategoryIcon(iconName: string) {
 	}
 }
 
-export function generateMockSlotsForDate(
+export interface DoctorWorkSchedule {
+	startHour?: number | undefined;
+	endHour?: number | undefined;
+	workDays?: number[] | undefined; // 0 = Sun, 1 = Mon, ..., 6 = Sat
+	lunchStartHour?: number | undefined;
+	lunchEndHour?: number | undefined;
+}
+
+export interface WorkingSlotsOptions {
+	busySlots?: Array<{ startsAt: string; endsAt?: string | undefined } | string> | undefined;
+	doctorSchedule?: DoctorWorkSchedule | undefined;
+	clinicSchedule?: {
+		weekdayStartHour?: number | undefined;
+		weekdayEndHour?: number | undefined;
+		weekendStartHour?: number | undefined;
+		weekendEndHour?: number | undefined;
+		lunchStartHour?: number | undefined;
+		lunchEndHour?: number | undefined;
+	} | undefined;
+}
+
+/**
+ * Регламентная генерация доступных временных слотов онлайн-записи
+ * на основе рабочего графика стоматологической клиники
+ * (будни 09:00-21:00, выходные 10:00-18:00, шаг приема 30/60 минут, обеденный перерыв 14:00-15:00)
+ * с учетом графика врача и занятых слотов.
+ */
+export function generateStandardWorkingSlotsForDate(
 	dateStr: string,
 	slotDurationMinutes = 30,
+	options?: WorkingSlotsOptions,
 ): BookingSlotItem[] {
 	const slots: BookingSlotItem[] = [];
 	const [year, month, day] = dateStr
@@ -539,43 +567,99 @@ export function generateMockSlotsForDate(
 		.map((part) => Number.parseInt(part, 10));
 	if (!year || !month || !day) return [];
 
-	const times = [
-		// Morning
-		"09:00",
-		"09:30",
-		"10:00",
-		"10:30",
-		"11:00",
-		"11:30",
-		// Afternoon
-		"12:30",
-		"13:00",
-		"14:00",
-		"14:30",
-		"15:00",
-		"15:30",
-		// Evening
-		"16:30",
-		"17:00",
-		"17:30",
-		"18:00",
-		"18:30",
-		"19:00",
-	];
+	const targetDate = new Date(year, month - 1, day);
+	const dayOfWeek = targetDate.getDay(); // 0 = Вс, 1 = Пн, ..., 6 = Сб
+	const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-	for (const t of times) {
-		const parts = t.split(":").map(Number);
-		const h = Number(parts[0]) || 10;
-		const m = Number(parts[1]) || 0;
+	// Фильтрация по рабочим дням врача (если заданы)
+	if (
+		options?.doctorSchedule?.workDays &&
+		Array.isArray(options.doctorSchedule.workDays) &&
+		options.doctorSchedule.workDays.length > 0 &&
+		!options.doctorSchedule.workDays.includes(dayOfWeek)
+	) {
+		return [];
+	}
+
+	// Регламентные часы работы: будни 09:00-21:00, выходные 10:00-18:00
+	const defaultStartHour = isWeekend
+		? options?.clinicSchedule?.weekendStartHour ?? 10
+		: options?.clinicSchedule?.weekdayStartHour ?? 9;
+	const defaultEndHour = isWeekend
+		? options?.clinicSchedule?.weekendEndHour ?? 18
+		: options?.clinicSchedule?.weekdayEndHour ?? 21;
+
+	const startHour = options?.doctorSchedule?.startHour ?? defaultStartHour;
+	const endHour = options?.doctorSchedule?.endHour ?? defaultEndHour;
+
+	const lunchStartHour =
+		options?.doctorSchedule?.lunchStartHour ??
+		options?.clinicSchedule?.lunchStartHour ??
+		14;
+	const lunchEndHour =
+		options?.doctorSchedule?.lunchEndHour ??
+		options?.clinicSchedule?.lunchEndHour ??
+		15;
+
+	const stepMinutes = slotDurationMinutes > 0 ? slotDurationMinutes : 30;
+	const startMinute = startHour * 60;
+	const endMinute = endHour * 60;
+	const lunchStartMinute = lunchStartHour * 60;
+	const lunchEndMinute = lunchEndHour * 60;
+
+	// Извлечение занятых временных меток ("HH:mm" или ISO)
+	const busySet = new Set<string>();
+	if (options?.busySlots && Array.isArray(options.busySlots)) {
+		for (const b of options.busySlots) {
+			if (typeof b === "string") {
+				if (b.includes("T")) {
+					const d = new Date(b);
+					const hStr = String(d.getHours()).padStart(2, "0");
+					const mStr = String(d.getMinutes()).padStart(2, "0");
+					busySet.add(`${hStr}:${mStr}`);
+				} else {
+					busySet.add(b.trim());
+				}
+			} else if (b && typeof b === "object" && typeof b.startsAt === "string") {
+				if (b.startsAt.includes("T")) {
+					const d = new Date(b.startsAt);
+					const hStr = String(d.getHours()).padStart(2, "0");
+					const mStr = String(d.getMinutes()).padStart(2, "0");
+					busySet.add(`${hStr}:${mStr}`);
+				} else {
+					busySet.add(b.startsAt.trim());
+				}
+			}
+		}
+	}
+
+	for (
+		let currentMin = startMinute;
+		currentMin + stepMinutes <= endMinute;
+		currentMin += stepMinutes
+	) {
+		// Пропуск обеденного перерыва (14:00 - 15:00)
+		if (currentMin < lunchEndMinute && currentMin + stepMinutes > lunchStartMinute) {
+			continue;
+		}
+
+		const h = Math.floor(currentMin / 60);
+		const m = currentMin % 60;
+		const timeFormatted = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+
+		// Пропуск занятого слота расписания
+		if (busySet.has(timeFormatted)) {
+			continue;
+		}
+
 		const start = new Date(year, month - 1, day, h, m, 0);
-		const end = new Date(
-			start.getTime() + (slotDurationMinutes || 30) * 60_000,
-		);
+		const end = new Date(start.getTime() + stepMinutes * 60_000);
 
-		const period = h < 12 ? "morning" : h < 16 ? "afternoon" : "evening";
+		const period: "morning" | "afternoon" | "evening" =
+			h < 12 ? "morning" : h < 16 ? "afternoon" : "evening";
 
 		slots.push({
-			time: t,
+			time: timeFormatted,
 			startsAt: start.toISOString(),
 			endsAt: end.toISOString(),
 			period,
@@ -584,6 +668,12 @@ export function generateMockSlotsForDate(
 
 	return slots;
 }
+
+/**
+ * @deprecated Обратная совместимость с внешними интеграциями и тестами.
+ * Используйте регламентную функцию generateStandardWorkingSlotsForDate.
+ */
+export const generateMockSlotsForDate = generateStandardWorkingSlotsForDate;
 
 export function generateEmbedSnippet(options: {
 	clinicId?: string | null;
@@ -680,10 +770,10 @@ export const PublicOnlineBookingWidget: React.FC<
 	const [selectedDate, setSelectedDate] = useState<string>(todayDateStr);
 	const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
 	const [slots, setSlots] = useState<BookingSlotItem[]>(() =>
-		generateMockSlotsForDate(todayDateStr),
+		generateStandardWorkingSlotsForDate(todayDateStr),
 	);
 	const [selectedSlot, setSelectedSlot] = useState<BookingSlotItem | null>(() => {
-		const initial = generateMockSlotsForDate(todayDateStr);
+		const initial = generateStandardWorkingSlotsForDate(todayDateStr);
 		return initial[0] || null;
 	});
 	const [slotsLoading, setSlotsLoading] = useState(false);
@@ -840,10 +930,24 @@ export const PublicOnlineBookingWidget: React.FC<
 		[onStepChange],
 	);
 
+	// Doctor schedule options for standard slot generation
+	const doctorScheduleOptions = useMemo<WorkingSlotsOptions>(() => {
+		if (!selectedDoctor) return {};
+		return {
+			doctorSchedule: {
+				workDays: selectedDoctor.workDays,
+				startHour: selectedDoctor.workHours?.startHour ?? 9,
+				endHour: selectedDoctor.workHours?.endHour ?? 21,
+			},
+		};
+	}, [selectedDoctor]);
+
 	// Load slots whenever doctor or date changes
 	useEffect(() => {
 		let isCancelled = false;
 		if (!selectedDate) return;
+
+		const slotDuration = selectedService?.durationMinutes || 30;
 
 		if (organizationId && selectedDoctorId) {
 			setSlotsLoading(true);
@@ -870,19 +974,35 @@ export const PublicOnlineBookingWidget: React.FC<
 						});
 						setSlots(mapped);
 					} else {
-						setSlots(generateMockSlotsForDate(selectedDate));
+						setSlots(
+							generateStandardWorkingSlotsForDate(
+								selectedDate,
+								slotDuration,
+								doctorScheduleOptions,
+							),
+						);
 					}
 				})
 				.catch(() => {
 					if (!isCancelled) {
-						setSlots(generateMockSlotsForDate(selectedDate));
+						setSlots(
+							generateStandardWorkingSlotsForDate(
+								selectedDate,
+								slotDuration,
+								doctorScheduleOptions,
+							),
+						);
 					}
 				})
 				.finally(() => {
 					if (!isCancelled) setSlotsLoading(false);
 				});
 		} else {
-			const generated = generateMockSlotsForDate(selectedDate);
+			const generated = generateStandardWorkingSlotsForDate(
+				selectedDate,
+				slotDuration,
+				doctorScheduleOptions,
+			);
 			setSlots(generated);
 			setSlotsLoading(false);
 		}
@@ -890,7 +1010,14 @@ export const PublicOnlineBookingWidget: React.FC<
 		return () => {
 			isCancelled = true;
 		};
-	}, [organizationId, selectedDoctorId, selectedDate, apiBaseUrl]);
+	}, [
+		organizationId,
+		selectedDoctorId,
+		selectedDate,
+		apiBaseUrl,
+		selectedService?.durationMinutes,
+		doctorScheduleOptions,
+	]);
 
 	// SMS Countdown Timer
 	useEffect(() => {
@@ -1086,7 +1213,11 @@ export const PublicOnlineBookingWidget: React.FC<
 		const activeSlot =
 			selectedSlot ||
 			slots[0] ||
-			generateMockSlotsForDate(selectedDate)[0] || {
+			generateStandardWorkingSlotsForDate(
+				selectedDate,
+				selectedService?.durationMinutes || 30,
+				doctorScheduleOptions,
+			)[0] || {
 				time: "10:00",
 				startsAt: new Date(selectedDate).toISOString(),
 				endsAt: new Date(selectedDate).toISOString(),

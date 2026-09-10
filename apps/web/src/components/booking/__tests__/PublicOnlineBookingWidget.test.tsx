@@ -20,6 +20,7 @@ import {
 	generateGoogleCalendarUrl,
 	generateIcsCalendarContent,
 	generateMockSlotsForDate,
+	generateStandardWorkingSlotsForDate,
 	generateYandexCalendarUrl,
 	isValidRussianPhone,
 	localDateString,
@@ -496,7 +497,7 @@ describe("Sub-components: BookingDoctorCard & BookingSlotPicker", () => {
 		assert.ok(html.includes("dbw-slot-picker-root"));
 		assert.ok(html.includes("dbw-period-filter-chips"));
 		assert.ok(html.includes("09:00"));
-		assert.ok(html.includes("14:00"));
+		assert.ok(html.includes("13:00") || html.includes("15:00"));
 		assert.ok(html.includes("18:00"));
 	});
 });
@@ -679,5 +680,46 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 		assert.ok(resolveCategoryIcon("Smile"));
 		assert.ok(resolveCategoryIcon("Activity"));
 		assert.ok(resolveCategoryIcon("UnknownFallback"));
+	});
+
+	it("generateStandardWorkingSlotsForDate adheres to clinic schedule, lunch break, and doctor filtering", () => {
+		// Weekday: Tuesday 2026-08-18 (09:00 - 21:00, lunch 14:00 - 15:00)
+		const weekdaySlots = generateStandardWorkingSlotsForDate("2026-08-18", 30);
+		assert.ok(weekdaySlots.length > 15, "Generates full workday slot grid");
+		// First slot 09:00, last slot 20:30 (ends 21:00)
+		assert.equal(weekdaySlots[0]?.time, "09:00");
+		assert.equal(weekdaySlots[weekdaySlots.length - 1]?.time, "20:30");
+		// Lunch break 14:00 - 15:00 is excluded
+		assert.equal(
+			weekdaySlots.some((s) => s.time === "14:00" || s.time === "14:30"),
+			false,
+			"Lunch break is excluded",
+		);
+
+		// Weekend: Sunday 2026-08-23 (10:00 - 18:00, lunch 14:00 - 15:00)
+		const weekendSlots = generateStandardWorkingSlotsForDate("2026-08-23", 30);
+		assert.equal(weekendSlots[0]?.time, "10:00");
+		assert.equal(weekendSlots[weekendSlots.length - 1]?.time, "17:30");
+		assert.equal(
+			weekendSlots.some((s) => s.time === "14:00"),
+			false,
+			"Weekend lunch excluded",
+		);
+
+		// Busy slots filtering
+		const slotsWithBusy = generateStandardWorkingSlotsForDate("2026-08-18", 30, {
+			busySlots: ["09:00", "09:30"],
+		});
+		assert.equal(
+			slotsWithBusy.some((s) => s.time === "09:00" || s.time === "09:30"),
+			false,
+		);
+		assert.equal(slotsWithBusy[0]?.time, "10:00");
+
+		// Doctor schedule day-off filtering: doctor works Mon-Fri [1,2,3,4,5]
+		const doctorOffSlots = generateStandardWorkingSlotsForDate("2026-08-23", 30, {
+			doctorSchedule: { workDays: [1, 2, 3, 4, 5] },
+		});
+		assert.equal(doctorOffSlots.length, 0, "Doctor has day off on Sunday");
 	});
 });
