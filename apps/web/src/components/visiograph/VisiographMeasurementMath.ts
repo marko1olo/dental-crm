@@ -157,7 +157,7 @@ export function calculateRuler(
 	const lengthMm = lengthPx * scaleMmPerPixel;
 
 	return {
-		id: id ?? `ruler-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: id ?? `ruler-${Date.now()}-${Math.abs(Math.round(p1.x + p2.x + p1.y + p2.y)).toString(36)}`,
 		p1: { x: p1.x, y: p1.y },
 		p2: { x: p2.x, y: p2.y },
 		lengthPx,
@@ -204,7 +204,7 @@ export function calculateAngle3Points(
 	}
 
 	return {
-		id: id ?? `angle-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: id ?? `angle-${Date.now()}-${Math.abs(Math.round(vertex.x + arm1.x + arm2.x)).toString(36)}`,
 		vertex: { x: vertex.x, y: vertex.y },
 		arm1: { x: arm1.x, y: arm1.y },
 		arm2: { x: arm2.x, y: arm2.y },
@@ -318,7 +318,7 @@ export function calculatePeriapicalLesion(
 	const clinical = classifyPeriapicalLesionData(areaMm2, equivalentDiameterMm);
 
 	return {
-		id: id ?? `lesion-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: id ?? `lesion-${Date.now()}-${Math.abs(Math.round(areaPx)).toString(36)}`,
 		points: points.map((p) => ({ x: p.x, y: p.y })),
 		areaPx,
 		areaMm2,

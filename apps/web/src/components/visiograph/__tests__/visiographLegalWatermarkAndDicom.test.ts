@@ -1,6 +1,7 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import {
+	createDicomIntraoral16File,
 	createDicomSecondaryCaptureFile,
 	generateDicomUid,
 	transliterateCyrillicToLatin,
@@ -100,6 +101,142 @@ describe("Visiograph Legal Watermark, DICOM SC Export & Form 043/u Integration",
 		assert.ok(bufferStr.includes("1.2.840.10008.1.2.1")); // Explicit VR Little Endian
 		assert.ok(bufferStr.includes("Smirnov Aleksey")); // Transliterated name
 		assert.ok(bufferStr.includes("PAT-TEST-001"));
+	});
+
+	test("createDicomIntraoral16File generates valid Part 10 DICOM with DICM header, Group 0002/0008/0028/7FE0 tags and uncompressed 16-bit pixel words", () => {
+		const width = 16;
+		const height = 16;
+		const pixelData16 = new Uint16Array(width * height);
+		for (let i = 0; i < pixelData16.length; i++) {
+			pixelData16[i] = (i * 137) % 4096; // 12-bit sensor range [0..4095]
+		}
+
+		const dicomBytes = createDicomIntraoral16File({
+			width,
+			height,
+			pixelData16,
+			patientId: "PAT-IO-16-001",
+			patientFullName: "Воронова Елена Михайловна",
+			patientBirthDate: "19880512",
+			patientSex: "F",
+			toothCode: "21",
+			scaleMmPerPixel: 0.02,
+			clinicName: "DENTE CLINIC PREMIUM",
+			doctorFullName: "Д-р Семенов",
+			bitsAllocated: 16,
+			bitsStored: 12,
+			highBit: 11,
+			windowCenter: 2048,
+			windowWidth: 4096,
+		});
+
+		assert.ok(dicomBytes instanceof Uint8Array);
+		// 128 preamble + 4 magic + tags + 12 (OW header) + 512 (pixel data)
+		assert.ok(dicomBytes.length > 132 + width * height * 2);
+
+		// 1. 128-byte preamble must be zeroed
+		for (let i = 0; i < 128; i++) {
+			assert.strictEqual(dicomBytes[i], 0);
+		}
+
+		// 2. DICM magic prefix at bytes 128..131
+		const magic = String.fromCharCode(
+			dicomBytes[128] ?? 0,
+			dicomBytes[129] ?? 0,
+			dicomBytes[130] ?? 0,
+			dicomBytes[131] ?? 0,
+		);
+		assert.strictEqual(magic, "DICM");
+
+		// Helper to find exact tag (group, element) offset in buffer
+		const findTag = (group: number, element: number): number => {
+			for (let i = 132; i <= dicomBytes.length - 8; i++) {
+				if (
+					dicomBytes[i] === (group & 0xff) &&
+					dicomBytes[i + 1] === ((group >> 8) & 0xff) &&
+					dicomBytes[i + 2] === (element & 0xff) &&
+					dicomBytes[i + 3] === ((element >> 8) & 0xff)
+				) {
+					return i;
+				}
+			}
+			return -1;
+		};
+
+		// 3. Group 0002: File Meta Information tags
+		// (0002, 0000) FileMetaInformationGroupLength
+		const tag0002GroupLen = findTag(0x0002, 0x0000);
+		assert.ok(tag0002GroupLen >= 132, "Tag (0002,0000) must be present");
+
+		// (0002, 0002) MediaStorageSOPClassUID = 1.2.840.10008.5.1.4.1.1.1.3 (Digital Intra-Oral X-Ray Image Storage)
+		const tag0002SopClass = findTag(0x0002, 0x0002);
+		assert.ok(tag0002SopClass >= 132, "Tag (0002,0002) must be present");
+
+		// (0002, 0010) TransferSyntaxUID = 1.2.840.10008.1.2.1 (Explicit VR Little Endian)
+		const tag0002TransferSyntax = findTag(0x0002, 0x0010);
+		assert.ok(tag0002TransferSyntax >= 132, "Tag (0002,0010) must be present");
+
+		const bufferStr = new TextDecoder("latin1").decode(dicomBytes);
+		assert.ok(bufferStr.includes("1.2.840.10008.5.1.4.1.1.1.3"), "Must contain Intra-Oral SOP Class UID");
+		assert.ok(bufferStr.includes("1.2.840.10008.1.2.1"), "Must contain Explicit VR Little Endian UID");
+
+		// 4. Group 0008: General Study & Equipment tags
+		// (0008, 0016) SOPClassUID
+		const tag0008SopClass = findTag(0x0008, 0x0016);
+		assert.ok(tag0008SopClass >= 132, "Tag (0008,0016) must be present");
+
+		// (0008, 0060) Modality ("IO")
+		const tag0008Modality = findTag(0x0008, 0x0060);
+		assert.ok(tag0008Modality >= 132, "Tag (0008,0060) must be present");
+		const modalityVR = String.fromCharCode(dicomBytes[tag0008Modality + 4] ?? 0, dicomBytes[tag0008Modality + 5] ?? 0);
+		assert.strictEqual(modalityVR, "CS");
+
+		assert.ok(bufferStr.includes("Voronova Elena Mikhaylovna"), "Must contain transliterated patient name");
+		assert.ok(bufferStr.includes("PAT-IO-16-001"), "Must contain patient ID");
+		assert.ok(bufferStr.includes("ORIGINAL\\PRIMARY"), "Must contain ImageType ORIGINAL\\PRIMARY");
+
+		// 5. Group 0028: Image Pixel tags
+		// (0028, 0002) SamplesPerPixel = 1
+		const tag0028Samples = findTag(0x0028, 0x0002);
+		assert.ok(tag0028Samples >= 132, "Tag (0028,0002) must be present");
+
+		// (0028, 0004) PhotometricInterpretation = "MONOCHROME2"
+		const tag0028Photometric = findTag(0x0028, 0x0004);
+		assert.ok(tag0028Photometric >= 132, "Tag (0028,0004) must be present");
+		assert.ok(bufferStr.includes("MONOCHROME2"), "Must contain PhotometricInterpretation MONOCHROME2");
+
+		// (0028, 0010) Rows & (0028, 0011) Columns
+		const tag0028Rows = findTag(0x0028, 0x0010);
+		const tag0028Cols = findTag(0x0028, 0x0011);
+		assert.ok(tag0028Rows >= 132, "Tag (0028,0010) Rows must be present");
+		assert.ok(tag0028Cols >= 132, "Tag (0028,0011) Columns must be present");
+
+		// (0028, 0100) BitsAllocated = 16
+		const tag0028BitsAllocated = findTag(0x0028, 0x0100);
+		assert.ok(tag0028BitsAllocated >= 132, "Tag (0028,0100) BitsAllocated must be present");
+
+		// 6. Group 7FE0: Pixel Data (7FE0, 0010)
+		const tag7fe0PixelData = findTag(0x7fe0, 0x0010);
+		assert.ok(tag7fe0PixelData >= 132, "Tag (7FE0,0010) must be present");
+
+		// Verify VR is "OW"
+		const vr7fe0 = String.fromCharCode(
+			dicomBytes[tag7fe0PixelData + 4] ?? 0,
+			dicomBytes[tag7fe0PixelData + 5] ?? 0,
+		);
+		assert.strictEqual(vr7fe0, "OW", "Pixel Data VR must be OW for 16-bit sensor words");
+
+		// Verify 32-bit length of pixel data (offset + 8 in 12-byte extended VR header)
+		const view = new DataView(dicomBytes.buffer, dicomBytes.byteOffset, dicomBytes.byteLength);
+		const pixelDataByteLen = view.getUint32(tag7fe0PixelData + 8, true);
+		assert.strictEqual(pixelDataByteLen, width * height * 2, "PixelData byte length must be width * height * 2");
+
+		// Verify that raw 16-bit words match input byte-for-byte
+		const pixelDataOffset = tag7fe0PixelData + 12;
+		for (let i = 0; i < width * height; i++) {
+			const word = view.getUint16(pixelDataOffset + i * 2, true);
+			assert.strictEqual(word, pixelData16[i], `Pixel word at index ${i} must match input exactly`);
+		}
 	});
 
 	test("buildForm043ProtocolText includes calibration, rulers, angles, and lesion destruction details", () => {
