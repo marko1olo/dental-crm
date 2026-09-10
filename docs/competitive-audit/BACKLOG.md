@@ -3713,3 +3713,39 @@
   - **Автосписание расходников и предиктивные закупки (Мандаты 8e п. 10, 8n)**:
     * *treatmentConsumablesSchema.ts*, *treatmentConsumables.ts*, *reorderEngine.ts*: таблица `treatment_consumables`, автосписание с флагом `clamp_at_zero = true` (мягкий овердрафт без блокировки врача), предиктивная точка заказа Reorder Point на основе 90-дневного расхода.
 * **Верификация**: 98 юнит-тестов КЛКТ/радио/пародонтологии/склада/родства (100% PASS), `npm run check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+
+### Wave 94: Тотальная очистка от диорам и псевдо-стендов (>12 200 строк), компактизация десктопного расписания (<= 130px), ликвидация коллизии Ctrl+K и снятие блокировок врача (Мандаты 8d, 8e, 8i, 8p)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `fab4f04f2`, `dbf92ea39`, `49f1a4cd1`
+* **Результаты**:
+  - **Ликвидация скрытых диорам и псевдо-стендов в веб-клиенте (Мандаты 8d, 8i, Core Rule 7, коммит `fab4f04f2`)**:
+    * Физически удален монструозный полигон `apps/web/src/pages/ClinicalModalsStudioStandalone.tsx` (4 852 строки), созданный как формальная затычка тестов.
+    * Физически удалена изолированная песочница `apps/web/src/pages/OdontogramStudioStandalone.tsx` (922 строки) с зашитыми константами `DEMO_CLINICAL_STATES`.
+    * Физически удален лабораторный стенд распознавания речи `apps/web/src/pages/SttLaboratoryView.tsx` (897 строк) и его стили `SttLaboratoryView.css` (427 строк) с генерацией случайной фейковой телеметрии и фраз через `Math.random()`.
+    * Физически удалена оторванная страница `apps/web/src/pages/PublicEstimatePortalPage.tsx` (46 строк).
+    * В `apps/web/src/main.tsx` удалены все lazy-импорты и тайные URL-хеши (`#clinical-modals-studio`, `#odontogram-studio`, `#stt-lab`), предотвращая утечку мертвого балласта в боевой клиентский бандл.
+  - **Ликвидация чужеродного госпитального оверинжиниринга начмеда ВКК/КЭР (Мандат 8i — суверенитет амбулаторного стоматологического контекста, коммиты `fab4f04f2`, `dbf92ea39`)**:
+    * Физически удалены `apps/web/src/pages/CmoAuditPage.tsx` (146 строк), `ClinicalAuditBoard.tsx` (901 строка), `CmoComplianceHub.tsx` (1 195 строк), а также сопутствующие файлы стилей `clinicalAuditBoard.css` (633 строки) и `cmoComplianceHub.css` (845 строк).
+    * Полностью исключено заражение стоматологической CRM госпитальными сущностями стационарных врачебных комиссий, блокирующих амбулаторные карты 043/у.
+  - **Очистка серверного монорепозитория от лабораторных рудиментов (коммит `fab4f04f2`)**:
+    * Удалены `apps/api/src/routes/speechLaboratory.ts` (752 строки) и `speechLaboratory.test.ts` (171 строка). В `server.ts:108` удалена регистрация `/api/v1/speech/lab-*`.
+    * Тест атак `wave15WebSocketAndCommerceMlPrivacyAttack.test.ts` синхронизирован с реальным серверным сокетом.
+  - **Устранение коллизии шорткатов `Ctrl+K` (Закон Хика, Мандат 8d, коммит `fab4f04f2`)**:
+    * В `apps/web/src/App.tsx`: удален вызов дублирующего устаревшего компонента `<CommandPalette ... />`, вызывавшего одновременное открытие двух накладывающихся омнибоксов при нажатии `Ctrl+K`. Единым омнибоксом поиска и навигации закреплен `<Omnibar />`.
+    * Удалено мертвое монтирование `<OfflineConflictReviewDrawer isOpen={false} ... />`.
+  - **Компактизация десктопного расписания до $\le 130\text{px}$ (Мандат 8p — Закон «Слона в комнате», коммит `dbf92ea39`)**:
+    * В `ScheduleView.tsx`: удален многострочный баннер `schedule-shift-summary`, все предупреждения и активные отборы перенесены компактно в горизонтальную строку `ScheduleFilterStrip.tsx`.
+    * В `ScheduleGrid.tsx`: добавлен проп `hideToolbar`, скрывающий второй дублирующий тулбар занятости и шага при отображении внутри `ScheduleView`. Контейнерные отступы сжаты с `p-4 sm:p-6` до `p-1 sm:p-2`.
+    * В `ChairScheduleView.tsx`: удалена дублирующая полоса кресел `chair-schedule-palette-strip` (чипы кресел вынесены в `ScheduleFilterStrip`).
+    * Общая высота служебной области расписания десктопа уменьшена с 234–298px до **130px** (при нормативе $\le 160\text{--}180\text{px}$).
+  - **Компактизация панели плана лечения (Закон Миллера, Мандат 8d, коммит `dbf92ea39`)**:
+    * В `TreatmentPlanModule.tsx`: кнопки «Счет / Наряд» и «Чек 54-ФЗ» убраны из перегруженного горизонтального ряда в выпадающее меню «Опции» (`...`). Шапка модуля сжата со 140px до 44px.
+  - **Восстановление автономии врача (Мандат 8e, коммиты `fab4f04f2`, `dbf92ea39`)**:
+    * В `AppointmentCard.tsx:2097-2099`: снята блокировка `!appointmentReadyToSave` с кнопки «Сохранить запись».
+    * В `StomxDefectsPalette.tsx`: снята блокировка `disabled={!selectedToothNumber}` со статусов «Здоров (ok)» и патологий; при клике без активного зуба выводится информативный тост с подсказкой.
+    * В `ctPlanningArtifactPanel.tsx:52`: снято ограничение `disabled={item.status === "blocked"}`.
+  - **Гейты компиляции и строгая типизация (коммит `49f1a4cd1`)**:
+    * В `reorderEngine.ts`: применен `z.input<typeof reorderItemInputSchema>` для типа `ReorderItemInput`, исключая ложные ошибки тайпчека при вызове с дефолтными аргументами.
+    * В `cbctCropBox.test.ts` и `cbctScanMeshEngine.test.ts`: устранена неоднозначность индексации кортежей при строгих проверках `noUncheckedIndexedAccess`.
+* **Верификация**: `npm run build -w @dental/shared` Exit Code 0, `npm run typecheck` Exit Code 0 по всем пакетам (@dental/shared, @dental/api, @dental/web), `check:encoding` 6627 файлов 0 ошибок, `check:css-tokens` 173 файла 0 ошибок, `node --test src/tests/panelsAreMounted.test.ts` 10/10 PASS, `treatmentPlanPresenterAutonomyWave49.test.tsx` 7/7 PASS, `scheduleChairDoctorBinding.test.tsx` 23/23 PASS, `scheduleWave40StomxParity.test.tsx` 15/15 PASS.
+
