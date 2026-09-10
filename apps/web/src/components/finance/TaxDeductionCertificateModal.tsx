@@ -79,14 +79,14 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	patientInn = "",
 	payments = [],
 	selectedYear: propSelectedYear,
-	clinicName = "ООО «ДЕНТЕ КЛИНИКА»",
-	clinicInn = "7707083893",
-	clinicKpp = "770101001",
-	clinicOgrn = "1027700132195",
-	clinicLicenseNumber = "ЛО41-01137-77/00368421",
-	clinicLicenseDate = "12.10.2021",
-	clinicAddress = "г. Москва, ул. Стоматологическая, д. 10",
-	chiefDoctorName = "Иванов Иван Иванович",
+	clinicName = "ООО «Стоматологическая клиника»",
+	clinicInn = "",
+	clinicKpp = "",
+	clinicOgrn = "",
+	clinicLicenseNumber = "",
+	clinicLicenseDate = "",
+	clinicAddress = "",
+	chiefDoctorName = "Руководитель клиники",
 }) => {
 	const currentYear = new Date().getFullYear();
 	const [activeTab, setActiveTab] = useState<"form" | "checks" | "family" | "xml">("form");

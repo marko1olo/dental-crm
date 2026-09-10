@@ -80,19 +80,19 @@ export function AnesthesiaSafetyHubModal({
 	isOpen,
 	onClose,
 	onApplyToDiary,
-	initialPatientName = 'Иванов Иван Иванович',
-	initialMedicalCard043 = '043-2026/104',
+	initialPatientName = 'Пациент',
+	initialMedicalCard043 = '',
 	initialPatientWeightKg = 70,
 	initialPatientAgeYears = 35,
 	initialToothFdi = 46,
 	initialSelectedDrug = 'articaine_4_epi_100k',
 	initialTab = 'calculator',
 	initialEmergencyScenario = 'anaphylaxis',
-	clinicName = 'Стоматологическая клиника DENTE',
-	clinicAddress = 'г. Москва, ул. Усачёва, д. 29',
+	clinicName = 'Стоматологическая клиника',
+	clinicAddress = '',
 	cabinetNumber = '1',
-	doctorFullName = 'Д-р Волкова Е. С.',
-	nurseFullName = 'Смирнова А. В.'
+	doctorFullName = 'Лечащий врач',
+	nurseFullName = 'Ассистент / Медсестра'
 }: AnesthesiaSafetyHubModalProps) {
 	// Navigation State
 	const [activeTab, setActiveTab] = useState<'calculator' | 'emergency' | 'pku_disposal'>(initialTab);

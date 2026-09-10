@@ -18,6 +18,7 @@ import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
 	generatedDocuments,
+	organizations,
 	patientConsents,
 	patientInvoices,
 	patients,
@@ -248,24 +249,40 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 			const certificateNumber = `СПР-${targetYear}/${patientId.slice(0, 6).toUpperCase()}`;
 			const issueDateIso = new Date().toISOString();
 
+			const [org] = await db
+				.select()
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1);
+
+			const clinicLegalName = org?.name || "Стоматологическая клиника";
+			const clinicInn = org?.inn || "";
+			const clinicKpp = org?.kpp || "";
+			const clinicOgrn = org?.ogrn || "";
+			const clinicAddress = org?.legalAddress || "";
+			const clinicLicense = org?.medicalLicenseNumber
+				? `${org.medicalLicenseNumber}${org.medicalLicenseIssuedAt ? ` от ${org.medicalLicenseIssuedAt}` : ""}`
+				: "";
+			const signatory = org?.signatoryName || "Главный врач";
+
 			const certParams: TaxDeductionCertificateParams = {
 				certificateNumber,
 				taxYear: targetYear,
 				issueDateIso,
 				clinic: {
-					legalName: "ООО «Стоматологическая клиника ДЕНТЕ»",
-					inn: "7704123456",
-					kpp: "770401001",
-					ogrn: "1157746123456",
-					address: "г. Москва, ул. Арбат, д. 24",
+					legalName: clinicLegalName,
+					inn: clinicInn,
+					kpp: clinicKpp,
+					ogrn: clinicOgrn,
+					address: clinicAddress,
 				},
 				patient: {
 					fullName: patient.fullName,
-					birthDate: patient.birthDate || "1988-04-12",
+					birthDate: patient.birthDate || "",
 				},
 				payer: {
 					fullName: request.query.payerFullName || patient.fullName,
-					inn: request.query.payerInn || "770498765432",
+					inn: request.query.payerInn || "",
 					relationship: "patient",
 				},
 				payments: [
@@ -302,21 +319,21 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 					issueDateIso,
 					taxYear: targetYear,
 					clinic: {
-						name: "ООО «Стоматологическая клиника ДЕНТЕ»",
-						inn: "7704123456",
-						kpp: "770401001",
-						ogrn: "1157746123456",
-						license: "ЛО-77-01-012345 от 15.02.2021",
+						name: clinicLegalName,
+						inn: clinicInn,
+						kpp: clinicKpp,
+						ogrn: clinicOgrn,
+						license: clinicLicense,
 					},
 					patient: {
 						fullName: patient.fullName,
-						birthDate: patient.birthDate || "1988-04-12",
-						passport: "4508 123456",
-						snils: "123-456-789 00",
+						birthDate: patient.birthDate || "",
+						passport: "",
+						snils: (patient as any).snils || "",
 					},
 					payer: {
 						fullName: request.query.payerFullName || patient.fullName,
-						inn: request.query.payerInn || "770498765432",
+						inn: request.query.payerInn || "",
 						relationshipCode: request.query.relationship || "1",
 					},
 					financials: {
@@ -326,8 +343,8 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 					},
 					qrVerificationSvg: qrSvg,
 					electronicSignatureAudit: {
-						signedBy: "Главный врач Смирнов А.В.",
-						ukepCertThumbprint: "7A9B2C4D6E8F0123456789ABCDEF0123456789AB",
+						signedBy: signatory,
+						ukepCertThumbprint: null,
 						timestampIso: issueDateIso,
 					},
 				},
@@ -371,6 +388,27 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 				.from(visitDiaries)
 				.where(eq(visitDiaries.patientId, patientId));
 
+			const [org] = await db
+				.select()
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1);
+
+			const clinicLegalName = org?.name || "Стоматологическая клиника";
+			const clinicLicense = org?.medicalLicenseNumber
+				? `Лицензия ${org.medicalLicenseNumber}${org.medicalLicenseIssuedAt ? ` от ${org.medicalLicenseIssuedAt}` : ""}`
+				: "";
+			const clinicInfoStr = [clinicLegalName, clinicLicense].filter(Boolean).join(" • ");
+
+			const diagnoses = Array.from(
+				new Set(diaries.map((d) => d.diagnosisIcd10).filter(Boolean)),
+			).join(", ");
+			const clinicalInterventions = diaries
+				.map((d) => d.treatmentDescription || d.content)
+				.filter(Boolean)
+				.slice(0, 5)
+				.join("; ");
+
 			const html = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -390,27 +428,27 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 </head>
 <body>
   <div class="header">
-    <div class="clinic-info">ООО «Стоматологическая клиника ДЕНТЕ» • Лицензия ЛО-77-01-012345</div>
+    <div class="clinic-info">${clinicInfoStr}</div>
     <div class="doc-title">ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА № 043/у</div>
     <div style="font-size: 12px; color: #64748b;">(Приказ Минздрава СССР № 1030 / Приказ Минздрава РФ № 834н)</div>
   </div>
 
   <div class="section-title">1. Паспортная часть</div>
   <div class="data-row"><div class="data-label">ФИО пациента:</div><div class="data-val">${patient.fullName}</div></div>
-  <div class="data-row"><div class="data-label">Дата рождения:</div><div class="data-val">${patient.birthDate || "12.04.1988"}</div></div>
+  <div class="data-row"><div class="data-label">Дата рождения:</div><div class="data-val">${patient.birthDate || "Не указана"}</div></div>
   <div class="data-row"><div class="data-label">Телефон:</div><div class="data-val">${patient.phone}</div></div>
   <div class="data-row"><div class="data-label">Номер карты 043/у:</div><div class="data-val">№ К-${patient.id.slice(0, 6).toUpperCase()}</div></div>
 
   <div class="section-title">2. Клинический диагноз и проведенное лечение</div>
-  <div class="data-row"><div class="data-label">Основной диагноз (МКБ-10):</div><div class="data-val">K02.1 Кариес дентина, K04.0 Пульпит</div></div>
-  <div class="data-row"><div class="data-label">Количество посещений:</div><div class="data-val">${diaries.length || 3} визита</div></div>
-  <div class="data-row"><div class="data-label">Проведенные вмешательства:</div><div class="data-val">Санация полости рта, препарирование кариозных полостей, наложение пломб светового отверждения Filtek Ultimate, профессиональная гигиена.</div></div>
+  <div class="data-row"><div class="data-label">Основной диагноз (МКБ-10):</div><div class="data-val">${diagnoses || "Санация полости рта"}</div></div>
+  <div class="data-row"><div class="data-label">Количество посещений:</div><div class="data-val">${diaries.length} визит(ов)</div></div>
+  <div class="data-row"><div class="data-label">Проведенные вмешательства:</div><div class="data-val">${clinicalInterventions || "Санация полости рта, лечение согласно клиническому протоколу."}</div></div>
 
   <div class="section-title">3. Рекомендации и контрольный осмотр</div>
-  <div class="data-row"><div class="data-label">Назначения:</div><div class="data-val">Индивидуальная гигиена полости рта, ирригатор, паста с гидроксиапатитом. Контрольный профилактический осмотр через 6 месяцев.</div></div>
+  <div class="data-row"><div class="data-label">Назначения:</div><div class="data-val">Индивидуальная гигиена полости рта, ирригатор, профилактический осмотр через 6 месяцев.</div></div>
 
   <div class="stamp-box">
-    <div><strong>Лечащий врач:</strong> ___________________ / Д-р Смирнов А.В. /</div>
+    <div><strong>Лечащий врач:</strong> ___________________ / Лечащий врач-стоматолог /</div>
     <div><strong>М.П. Клиники</strong> • Подписано УКЭП</div>
   </div>
 </body>

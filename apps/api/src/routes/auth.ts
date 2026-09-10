@@ -1405,7 +1405,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 						user = {
 							id: "00000000-0000-0000-0000-000000000002",
 							organizationId: orgId,
-							fullName: "Доктор И.И. Иванов",
+							fullName: "Врач-стоматолог",
 							role: "doctor",
 							email: loginEmail,
 							passwordHash: null,

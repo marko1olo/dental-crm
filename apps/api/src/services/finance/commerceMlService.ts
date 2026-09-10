@@ -440,7 +440,7 @@ export class CommerceMlService {
 			totalRevenueKopecks: totalRevenueKop,
 			totalDiscountKopecks: totalItemsDiscountKop,
 			totalVatKopecks: 0,
-			cashierName: clinic.chiefAccountantName || "Смирнова Е.А.",
+			cashierName: clinic.chiefAccountantName || "Кассир",
 			comment: "Выгрузка кассовой смены и чеков 54-ФЗ в 1С:Бухгалтерия 8.3",
 		};
 		salesDoc.sha256Hash = computeCommerceMlSha256(salesDoc);
@@ -582,7 +582,7 @@ export class CommerceMlService {
 			recipientDepartmentName: "Лечебное отделение (ЦСО)",
 			items: writeoffItems,
 			totalCostKopecks: totalMaterialsCostKop,
-			responsiblePersonName: clinic.chiefAccountantName || "Смирнова Е.А.",
+			responsiblePersonName: clinic.chiefAccountantName || "Ответственное лицо",
 			reasonRu: "Автоматическое списание по нормам BOM и актам стерилизации ЦСО",
 		};
 		writeoffDoc.sha256Hash = computeCommerceMlSha256(writeoffDoc);
@@ -592,7 +592,7 @@ export class CommerceMlService {
 			{
 				id: "emp-001",
 				employeeTabNumber: "ВР-001",
-				employeeName: clinic.chiefDoctorName || "Барабаш С.В.",
+				employeeName: clinic.chiefDoctorName || "Главный врач",
 				positionTitleRu: "Врач стоматолог-терапевт",
 				specialtyRu: "Терапевтическая стоматология",
 				calculationTypeTitleRu: "Сдельная оплата труда (25% от выручки)",

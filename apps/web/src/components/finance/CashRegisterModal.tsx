@@ -113,18 +113,18 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	onClose,
 	items = [],
 	totalAmountRub,
-	patientId = "00000000-0000-0000-0000-000000000001",
-	patientName = "Иванов Иван Иванович",
-	patientPhone = "+7 (916) 123-45-67",
+	patientId = "",
+	patientName = "",
+	patientPhone = "",
 	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
 	cashierFullName: propCashierFullName,
 	doctorName,
 	attendingDoctorName,
 	currentUserName,
-	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "7701234567",
-	clinicLicense = "ЛО41-01137-77/00368421",
+	clinicName = "ООО «Стоматологическая клиника»",
+	clinicInn = "",
+	clinicLicense = "",
 	initialOperationType = "income",
 	defaultTender = "card",
 	onPaymentComplete,
@@ -586,7 +586,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			}
 
 			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
-			const effectivePatientId = isUuid ? patientId : "00000000-0000-0000-0000-000000000001";
+			const effectivePatientId = isUuid ? patientId : undefined;
 
 			const activeCategoryTitle =
 				operationType === "income"

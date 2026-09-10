@@ -29,6 +29,7 @@ export interface BlankContractOptions {
 	clinicAddress?: string | null | undefined;
 	clinicOgrn?: string | null | undefined;
 	clinicInn?: string | null | undefined;
+	clinicPhone?: string | null | undefined;
 }
 
 /**
@@ -39,10 +40,11 @@ export function generateBlankContractFallbackHtml(
 	patient?: BlankContractPatientInfo | null,
 	options?: BlankContractOptions,
 ): string {
-	const clinicName = options?.clinicName || "ООО «Стоматологическая Клиника ДЕНТЕ»";
-	const clinicAddress = options?.clinicAddress || "г. Москва, ул. Клиническая, д. 10";
-	const clinicInn = options?.clinicInn || "7701234567";
-	const clinicOgrn = options?.clinicOgrn || "1027700123456";
+	const clinicName = options?.clinicName || "ООО «Стоматологическая клиника»";
+	const clinicAddress = options?.clinicAddress || "________________________________________________";
+	const clinicInn = options?.clinicInn || "____________";
+	const clinicOgrn = options?.clinicOgrn || "_____________";
+	const clinicPhone = options?.clinicPhone || "________________________";
 
 	const customerName = patient?.fullName?.trim() || "________________________________________________";
 	const customerBirthDate = patient?.birthDate?.trim() || "«_____» _________________ _______ г.";
@@ -191,7 +193,7 @@ export function generateBlankContractFallbackHtml(
 				${clinicName}<br />
 				Адрес: ${clinicAddress}<br />
 				ИНН: ${clinicInn} / ОГРН: ${clinicOgrn}<br />
-				Тел.: +7 (495) 000-00-00<br /><br />
+				Тел.: ${clinicPhone}<br /><br />
 				<div class="signature-area">
 					М.П. ________________________ / Регистратор
 				</div>

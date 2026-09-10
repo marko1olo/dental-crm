@@ -713,7 +713,10 @@ export function generateFnsTaxDeductionXml(params: TaxDeductionCertificateParams
 	const taxOfficeCode = (params.taxOfficeCode || "7701").trim();
 	const now = new Date();
 	const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
-	const randomSuffix = Math.random().toString(36).slice(2, 10).toUpperCase();
+	const randomSuffix =
+		typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()
+			: String(Date.now() % 100000000).padStart(8, "0");
 
 	// Формат ИдФайл по Приказу 824@: VO_SPRRECH_КодНО_ИНН_ГГГГММДД_GUID
 	const safeTaxOffice = taxOfficeCode.replace(/[^A-Za-z0-9]/g, "");

@@ -112,14 +112,14 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	isOpen,
 	onClose,
 	patient,
-	doctorName = "Д-р Иванов Иван Иванович",
-	doctorSpecialty = "Врач-стоматолог ортопед / терапевт",
-	clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»",
-	clinicLegalName = "ООО «ДЕНТЕ КЛИНИК»",
-	clinicLicenseNumber = "ЛО41-01137-77/00368291",
-	clinicAddress = "г. Москва, ул. Стоматологическая, д. 24, корп. 1",
-	clinicPhone = "+7 (495) 789-01-23",
-	clinicWebsite = "https://dente-clinic.ru",
+	doctorName = "Лечащий врач",
+	doctorSpecialty = "Врач-стоматолог",
+	clinicName = "ООО «Стоматологическая клиника»",
+	clinicLegalName = "ООО «Стоматологическая клиника»",
+	clinicLicenseNumber = "Лицензия на медицинскую деятельность",
+	clinicAddress = "Адрес клиники",
+	clinicPhone = "Телефон клиники",
+	clinicWebsite = "",
 	initialCategory = "composite_restoration",
 	initialTeeth = [],
 	onCertificateIssued,
@@ -330,9 +330,11 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	// Полноценный объект гарантийного сертификата
 	const certificateData: WarrantyCertificateData = useMemo(() => {
 		const pName = patient?.fullName || "Пациент стоматологической клиники";
-		const pCard = patient?.cardNumber || "043-9824";
-		const dName = doctorName || "Д-р Иванов Иван Иванович";
-		const vUrl = `${clinicWebsite}/portal/warranty?cert=${certificateId}&card=${encodeURIComponent(pCard)}`;
+		const pCard = patient?.cardNumber || (patient?.id ? `043-${patient.id.slice(0, 6).toUpperCase()}` : "043/у");
+		const dName = doctorName || "Лечащий врач";
+		const vUrl = clinicWebsite
+			? `${clinicWebsite}/portal/warranty?cert=${certificateId}&card=${encodeURIComponent(pCard)}`
+			: `/portal/warranty?cert=${certificateId}&card=${encodeURIComponent(pCard)}`;
 		const qr = generateQrCodeSvg(vUrl, { size: 140 });
 
 		const rawContentForHash = `${certificateId}|${issueDate}|${pName}|${pCard}|${dName}|${items.map((i) => `${i.toothNumber}:${i.category}:${i.materialName}:${i.lotNumber || ""}:${i.serviceCode804n || ""}:${i.labOrderNumber || ""}:${i.vitaShade || ""}`).join(";")}|${calculation.adjustedWarrantyMonths}|${calculation.totalRiskMultiplier}`;
@@ -353,11 +355,11 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 				specialty: doctorSpecialty || "Врач-стоматолог",
 			},
 			clinic: {
-				name: clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-				legalName: clinicLegalName || "ООО «ДЕНТЕ КЛИНИК»",
-				licenseNumber: clinicLicenseNumber || "ЛО41-01137-77/00368291",
-				address: clinicAddress || "г. Москва",
-				phone: clinicPhone || "+7 (495) 789-01-23",
+				name: clinicName || "ООО «Стоматологическая клиника»",
+				legalName: clinicLegalName || "ООО «Стоматологическая клиника»",
+				licenseNumber: clinicLicenseNumber || "Лицензия на медицинскую деятельность",
+				address: clinicAddress || "Адрес клиники",
+				phone: clinicPhone || "Телефон клиники",
 				website: clinicWebsite || undefined,
 			},
 			items,

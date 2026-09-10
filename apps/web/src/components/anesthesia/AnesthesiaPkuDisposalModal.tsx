@@ -61,16 +61,16 @@ export function AnesthesiaPkuDisposalModal({
 	isOpen,
 	onClose,
 	onSaveRecord,
-	initialPatientName = 'Иванов Иван Иванович',
-	initialMedicalCard043 = '043-2026/104',
-	initialDoctorName = 'Д-р Волкова Е. С.',
-	initialNurseName = 'Смирнова А. В.',
+	initialPatientName = 'Пациент',
+	initialMedicalCard043 = '',
+	initialDoctorName = 'Лечащий врач',
+	initialNurseName = 'Ассистент / Медсестра',
 	initialDrugId = 'articaine_4_epi_100k',
 	initialCarpulesUsed = 1,
 	initialSeriesNumber = 'ART-2026',
 	initialBatchNumber = '84019',
 	initialExpirationDate = '2028-09',
-	clinicName = 'Стоматологическая клиника DENTE',
+	clinicName = 'Стоматологическая клиника',
 	cabinetNumber = '1'
 }: AnesthesiaPkuDisposalModalProps) {
 	const [patientName, setPatientName] = useState(initialPatientName);

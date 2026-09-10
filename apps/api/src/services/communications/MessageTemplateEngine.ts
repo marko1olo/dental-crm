@@ -514,18 +514,18 @@ export class MessageTemplateEngine {
 			}
 		}
 
-		// Fallback значения для предпросмотра
-		if (options.allowPreviewFallback ?? true) {
-			if (!mergedValues.patient_name) mergedValues.patient_name = "Иван Иванович И.";
-			if (!mergedValues.patient_first_name) mergedValues.patient_first_name = "Иван";
-			if (!mergedValues.doctor_name) mergedValues.doctor_name = "Смирнов Алексей Викторович";
-			if (!mergedValues.clinic_name) mergedValues.clinic_name = "Стоматология ДЕНТЕ";
-			if (!mergedValues.clinic_phone) mergedValues.clinic_phone = "+7 (495) 000-00-00";
-			if (!mergedValues.clinic_address) mergedValues.clinic_address = "ул. Ленина, д. 10";
-			if (!mergedValues.appointment_date) mergedValues.appointment_date = "15 мая";
-			if (!mergedValues.appointment_time) mergedValues.appointment_time = "14:30";
-			if (!mergedValues.chair_number) mergedValues.chair_number = "Кабинет №1, Кресло №1";
-			if (!mergedValues.total_amount_rub) mergedValues.total_amount_rub = "3 500 ₽";
+		// Fallback значения исключительно для безопасного предпросмотра шаблонов
+		if (options.allowPreviewFallback === true) {
+			if (!mergedValues.patient_name) mergedValues.patient_name = "Пациент";
+			if (!mergedValues.patient_first_name) mergedValues.patient_first_name = "Пациент";
+			if (!mergedValues.doctor_name) mergedValues.doctor_name = "Лечащий врач";
+			if (!mergedValues.clinic_name) mergedValues.clinic_name = "Стоматологическая клиника";
+			if (!mergedValues.clinic_phone) mergedValues.clinic_phone = "+7 (000) 000-00-00";
+			if (!mergedValues.clinic_address) mergedValues.clinic_address = "Адрес клиники";
+			if (!mergedValues.appointment_date) mergedValues.appointment_date = "Дата визита";
+			if (!mergedValues.appointment_time) mergedValues.appointment_time = "Время визита";
+			if (!mergedValues.chair_number) mergedValues.chair_number = "Кабинет №1";
+			if (!mergedValues.total_amount_rub) mergedValues.total_amount_rub = "0 ₽";
 			if (!mergedValues.portal_link) mergedValues.portal_link = "https://dente.clinic/portal";
 			if (!mergedValues.sbp_payment_link) mergedValues.sbp_payment_link = "https://sbp.nspk.ru/pay";
 		}

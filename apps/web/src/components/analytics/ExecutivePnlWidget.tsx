@@ -82,16 +82,15 @@ export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
 
 	return (
 		<div className="executive-dept-list" role="region" aria-label="План/факт выручки по отделениям клиники">
-			{/* Сводная строка итогов */}
+			{/* Сводная строка итогов (Плоская строка без вложенных рамок по Анти-Матрёшке) */}
 			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					padding: "0.875rem 1.25rem",
-					background: "var(--paper, #f1f5f9)",
-					border: "1px solid var(--line, #cbd5e1)",
-					borderRadius: "8px",
+					padding: "0.875rem 0.5rem",
+					background: "transparent",
+					borderBottom: "1px solid var(--line, #cbd5e1)",
 					fontWeight: 600,
 					fontSize: "0.875rem",
 					flexWrap: "wrap",

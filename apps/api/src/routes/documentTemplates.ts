@@ -566,9 +566,9 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 
 			// Данные активного врача
 			let doctorContextData: TemplateExecutionContext["doctor"] = {
-				fullName: "Васильев Иван Петрович",
-				position: "Врач-стоматолог терапевт",
-				specialty: "Стоматология терапевтическая",
+				fullName: "___________________",
+				position: "Лечащий врач-стоматолог",
+				specialty: "Стоматология",
 			};
 
 			if (body.doctorId && UUID_REGEX.test(body.doctorId)) {
