@@ -1,8 +1,8 @@
-# Главный Реестр Фич Конкурентов (IDENT & DentalPRO / iStom)
+# Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-10 / WAVE 90): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 200 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 263 ФИЧИ: 263/263 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-09-10 / WAVE 90 / STOMX NEW DROP AUDIT): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 200 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 263 ФИЧИ: 263/263 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ). АУДИТ STOMX (479 ЭНДПОИНТОВ, 456 МЕТОДОВ СЕРВИСОВ) ПОДТВЕРЖДАЕТ ПОЛНОЕ АРХИТЕКТУРНОЕ И КЛИНИЧЕСКОЕ ПОКРЫТИЕ В CLINIC MVP.**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |
