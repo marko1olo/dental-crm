@@ -980,18 +980,6 @@
 	color: var(--dbw-text-main);
 }
 
-.dbw-sms-sim-badge {
-	font-size: 0.8125rem;
-	font-weight: 600;
-	color: var(--dbw-primary);
-	background: rgba(13, 148, 136, 0.15);
-	padding: 6px 10px;
-	border-radius: 6px;
-	display: flex;
-	align-items: center;
-	gap: 4px;
-}
-
 .dbw-sms-verify-btn {
 	background: var(--dbw-primary);
 	color: #ffffff;

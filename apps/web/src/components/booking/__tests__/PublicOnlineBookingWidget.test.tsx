@@ -225,11 +225,10 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		);
 	});
 
-	it("renders Step 4: Patient Info Form with SMS Verification simulation when enableSmsSimulation is explicitly true", () => {
+	it("renders Step 4: Patient Info Form with respectful callback notice and 1-click booking without fake SMS simulation (Friction-Killer Law)", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
 				initialStep: 4,
-				enableSmsSimulation: true,
 			}),
 		);
 
@@ -250,17 +249,22 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 			"Contains patient comment textarea",
 		);
 
-		// SMS Verification Simulation Section
+		// Respectful callback notice instead of blocking SMS simulator (Mandates 8e, 8k, 8n)
 		assert.ok(
-			html.includes("Подтверждение номера телефона"),
-			"Contains SMS verification title",
+			html.includes("Администратор клиники перезвонит вам по номеру"),
+			"Contains respectful callback notice",
 		);
 		assert.ok(
-			html.includes("Получить СМС-код"),
-			"Contains SMS code request button",
+			html.includes("для согласования деталей визита"),
+			"Contains callback detail text",
 		);
 
-		// Privacy policy consent
+		// Absolute ban on fake simulation codes and dev badges
+		assert.equal(
+			html.includes("DEV / Отладка"),
+			false,
+			"Does NOT display dev debug badge",
+		);
 		assert.equal(
 			html.includes("Демо-СМС"),
 			false,
@@ -270,6 +274,11 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 			html.includes("Быстро вставить"),
 			false,
 			"Does not display 'Быстро вставить' cheat button",
+		);
+		assert.equal(
+			html.includes("Подтверждение номера телефона"),
+			false,
+			"Does NOT show SMS verification section by default",
 		);
 		assert.ok(
 			html.includes("privacy-checkbox"),
@@ -281,12 +290,11 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		);
 	});
 
-	it("renders Step 4: Patient Info Form with clinic SMS verification active but without demo mocks when requireSmsVerification is true", () => {
+	it("renders Step 4: Patient Info Form with clinic SMS verification active when requireSmsVerification is true", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
 				initialStep: 4,
 				requireSmsVerification: true,
-				enableSmsSimulation: false,
 			}),
 		);
 
@@ -299,7 +307,12 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 			"Contains SMS request button",
 		);
 
-		// Must NOT show demo badge or fast insert mock button
+		// Must NOT show demo badge, dev badge or fast insert mock button
+		assert.equal(
+			html.includes("DEV / Отладка"),
+			false,
+			"Does NOT display dev debug badge",
+		);
 		assert.equal(
 			html.includes("Демо-СМС"),
 			false,

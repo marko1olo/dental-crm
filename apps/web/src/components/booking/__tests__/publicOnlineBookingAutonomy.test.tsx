@@ -65,6 +65,12 @@ function expect(actual: unknown) {
 					`Expected "${actual}" NOT to match ${regex}`,
 				);
 			},
+			toContain: (expected: string) => {
+				assert.ok(
+					typeof actual === "string" && !actual.includes(expected),
+					`Expected "${actual}" NOT to contain "${expected}"`,
+				);
+			},
 		},
 		toBe: (expected: unknown) => {
 			assert.strictEqual(actual, expected);
@@ -135,6 +141,8 @@ function setupMockDom() {
 		const listeners: Record<string, EventListener[]> = {};
 		const attrs: Record<string, string> = {};
 
+		let rawTextContent = "";
+
 		const el: MockDomNode = {
 			nodeType: 1,
 			tagName: tag.toUpperCase(),
@@ -146,7 +154,17 @@ function setupMockDom() {
 			attributes: [],
 			ownerDocument: null,
 			parentNode: null,
-			textContent: "",
+			get textContent(): string {
+				if (children.length === 0) return rawTextContent;
+				let text = "";
+				for (const child of children) {
+					text += (child as MockDomNode).textContent || "";
+				}
+				return text;
+			},
+			set textContent(v: string) {
+				rawTextContent = v;
+			},
 			className: "",
 			appendChild: (child: MockDomNode) => {
 				children.push(child);
@@ -618,5 +636,46 @@ describe("PublicOnlineBookingWidget Autonomy & Active Validation Feedback (Manda
 			<PublicOnlineBookingWidget initialStep={4} />,
 		);
 		expect(html4).toContain("min-h-[44px]");
+	});
+
+	it("Step 4 allows 1-click booking without fake SMS simulation barriers, displays callback notice, and advances to confirmation", async () => {
+		const { doc } = setupMockDom();
+		const rootContainer = doc.createElement("div");
+		doc.body.appendChild(rootContainer);
+		const root: Root = createRoot(rootContainer as unknown as HTMLElement);
+
+		const stepChangeSpy = vi.fn();
+
+		await act(async () => {
+			root.render(
+				<PublicOnlineBookingWidget
+					initialStep={4}
+					onStepChange={stepChangeSpy}
+				/>,
+			);
+		});
+
+		// Verify callback notice is present and no fake dev SMS badge exists
+		const callbackNotice = findNodeByTestId(rootContainer, "patient-callback-notice");
+		expect(callbackNotice).not.toBeNull();
+		expect(rootContainer.textContent).toContain("Администратор клиники перезвонит вам по номеру");
+		expect(rootContainer.textContent).not.toContain("[DEV / Отладка");
+
+		// Fill patient name and valid phone
+		const nameInput = findNodeByTestId(rootContainer, "patient-name-input");
+		expect(nameInput).not.toBeNull();
+		await changeInputValue(nameInput!, "Смирнова Анна Сергеевна");
+
+		const phoneInput = findNodeByTestId(rootContainer, "patient-phone-input");
+		expect(phoneInput).not.toBeNull();
+		await changeInputValue(phoneInput!, "+7 (999) 123-45-67");
+
+		// Click confirm button (1-click frictionless submission!)
+		const confirmBtn = findNodeByTestId(rootContainer, "step4-confirm-btn");
+		expect(confirmBtn).not.toBeNull();
+		await clickNode(confirmBtn!);
+
+		// Verified: advances directly to confirmation step 5 without any blocking SMS simulator
+		expect(stepChangeSpy).toHaveBeenCalledWith(5);
 	});
 });

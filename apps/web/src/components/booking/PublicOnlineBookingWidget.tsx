@@ -128,8 +128,6 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly apiBaseUrl?: string;
 	/** Require SMS verification before booking (clinic settings, default false) */
 	readonly requireSmsVerification?: boolean;
-	/** Enable or disable SMS verification simulation (default false) */
-	readonly enableSmsSimulation?: boolean;
 	/** Additional CSS class */
 	readonly className?: string;
 }
@@ -611,10 +609,6 @@ export function generateEmbedSnippet(options: {
 // Main Component
 // ============================================================================
 
-const isDev = Boolean(
-	typeof import.meta !== "undefined" && import.meta.env?.DEV,
-);
-
 export const PublicOnlineBookingWidget: React.FC<
 	PublicOnlineBookingWidgetProps
 > = ({
@@ -635,7 +629,6 @@ export const PublicOnlineBookingWidget: React.FC<
 	showToast,
 	apiBaseUrl = "/api/public/booking",
 	requireSmsVerification = false,
-	enableSmsSimulation = false,
 	className = "",
 }) => {
 	const widgetInstanceId = useId();
@@ -703,10 +696,9 @@ export const PublicOnlineBookingWidget: React.FC<
 	const [patientComment, setPatientComment] = useState("");
 	const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(true);
 
-	// SMS Verification Simulation
-	const showSmsVerification = requireSmsVerification || enableSmsSimulation;
+	// SMS Verification (Real Server OTP if requireSmsVerification is configured by clinic)
+	const showSmsVerification = Boolean(requireSmsVerification);
 	const [smsCodeSent, setSmsCodeSent] = useState(false);
-	const [simulatedSmsCode, setSimulatedSmsCode] = useState("");
 	const [enteredSmsCode, setEnteredSmsCode] = useState("");
 	const [isSmsVerified, setIsSmsVerified] = useState(false);
 	const [smsResendCountdown, setSmsResendCountdown] = useState(0);
@@ -916,34 +908,77 @@ export const PublicOnlineBookingWidget: React.FC<
 		setPatientPhone(formatted);
 	};
 
-	// Send simulated SMS code
-	const handleSendSmsCode = () => {
+	// Send SMS OTP code via server API if requireSmsVerification is enabled
+	const handleSendSmsCode = async () => {
 		if (!isValidRussianPhone(patientPhone)) {
 			setSmsError("Введите корректный номер телефона");
 			return;
 		}
 		setSmsError(null);
-		const randomCode = String(Math.floor(1000 + Math.random() * 9000));
-		setSimulatedSmsCode(randomCode);
+		if (organizationId) {
+			try {
+				const response = await fetch(
+					`${apiBaseUrl}/${organizationId}/send-otp`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ phone: patientPhone }),
+					},
+				);
+				if (!response.ok) {
+					const errData = await response.json().catch(() => ({}));
+					setSmsError(
+						errData?.message ||
+							errData?.error ||
+							"Не удалось отправить СМС-код. Попробуйте позже.",
+					);
+					return;
+				}
+			} catch (_err) {
+				setSmsError("Сбой связи с сервером при отправке СМС-кода");
+				return;
+			}
+		}
 		setSmsCodeSent(true);
 		setSmsResendCountdown(60);
 	};
 
-	// Verify simulated SMS code
-	const handleVerifySmsCode = () => {
+	// Verify SMS OTP code via server API if requireSmsVerification is enabled
+	const handleVerifySmsCode = async () => {
 		if (!enteredSmsCode.trim()) {
 			setSmsError("Введите 4-значный код из СМС");
 			return;
 		}
-		if (
-			(simulatedSmsCode && enteredSmsCode.trim() === simulatedSmsCode) ||
-			enteredSmsCode.trim() === "0000"
-		) {
-			setIsSmsVerified(true);
-			setSmsError(null);
-		} else {
-			setSmsError("Неверный код. Проверьте правильность ввода.");
+		setSmsError(null);
+		if (organizationId) {
+			try {
+				const response = await fetch(
+					`${apiBaseUrl}/${organizationId}/verify-otp`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							phone: patientPhone,
+							code: enteredSmsCode.trim(),
+						}),
+					},
+				);
+				if (!response.ok) {
+					const errData = await response.json().catch(() => ({}));
+					setSmsError(
+						errData?.message ||
+							errData?.error ||
+							"Неверный код. Проверьте правильность ввода.",
+					);
+					return;
+				}
+			} catch (_err) {
+				setSmsError("Сбой связи с сервером при проверке кода");
+				return;
+			}
 		}
+		setIsSmsVerified(true);
+		setSmsError(null);
 	};
 
 	// Calendar calculation helpers
@@ -1705,7 +1740,20 @@ export const PublicOnlineBookingWidget: React.FC<
 							</div>
 						</div>
 
-						{/* SMS Verification Simulation Box */}
+						{/* Respectful callback notice for frictionless 1-click booking (Mandates 8e, 8k, 8n) */}
+						{!showSmsVerification && (
+							<div
+								className="p-3 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 mb-4 flex items-center gap-2.5"
+								data-testid="patient-callback-notice"
+							>
+								<Phone size={18} className="shrink-0 text-teal-600 dark:text-teal-400" />
+								<span>
+									Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита.
+								</span>
+							</div>
+						)}
+
+						{/* Real Server SMS Verification Block (when clinic requires SMS) */}
 						{showSmsVerification && (
 							<div className="dbw-sms-block">
 								<div className="dbw-sms-header">
@@ -1720,14 +1768,17 @@ export const PublicOnlineBookingWidget: React.FC<
 									)}
 								</div>
 
-								<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 mb-2">
-									Подтверждение звонком: Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита. Ожидать СМС-код не обязательно.
+								<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 mb-2 flex items-center gap-2">
+									<Phone size={16} className="shrink-0 text-teal-600 dark:text-teal-400" />
+									<span>
+										Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита.
+									</span>
 								</div>
 
 								{!smsCodeSent && !isSmsVerified ? (
 									<div className="flex items-center justify-between gap-4 flex-wrap">
 										<span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-											Отправим бесплатное СМС с 4-значным проверочным кодом
+											Отправим бесплатное СМС с проверочным кодом
 										</span>
 										<button
 											type="button"
@@ -1742,12 +1793,6 @@ export const PublicOnlineBookingWidget: React.FC<
 										<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300">
 											Код подтверждения отправлен в СМС на {patientPhone || "указанный номер"}
 										</div>
-
-										{isDev && enableSmsSimulation && simulatedSmsCode && (
-											<div className="dbw-sms-sim-badge text-xs font-mono text-slate-500 dark:text-slate-400">
-												<span>[DEV / Отладка: проверочный код {simulatedSmsCode}]</span>
-											</div>
-										)}
 
 										<div className="dbw-sms-code-input-row">
 											<input
