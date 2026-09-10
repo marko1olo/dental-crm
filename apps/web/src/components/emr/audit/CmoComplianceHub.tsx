@@ -37,7 +37,6 @@ import {
 	type CompliancePeriodType,
 	type BatchSignSessionState,
 	type BatchSignCardProgress,
-	SAMPLE_COMPLIANCE_VISITS,
 	filterComplianceVisits,
 	calculateComplianceMetrics,
 	validateVisitForEgisz,
@@ -64,8 +63,10 @@ interface CmoComplianceHubProps {
 	onExportSuccess?: (batchCount: number) => void;
 }
 
+const DEFAULT_EMPTY_VISITS: ClinicVisitComplianceItem[] = [];
+
 export function CmoComplianceHub({
-	initialVisits = SAMPLE_COMPLIANCE_VISITS,
+	initialVisits = DEFAULT_EMPTY_VISITS,
 	onOpenAuditModal,
 	onExportSuccess,
 }: CmoComplianceHubProps) {

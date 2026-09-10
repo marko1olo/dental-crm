@@ -616,34 +616,30 @@ export function createMockGostSignature(
 	doctorSnils: string,
 	clinicName: string
 ): GostSignatureInfo {
-	const now = new Date();
-	const serialHex = Array.from({ length: 16 }, () =>
-		Math.floor(Math.random() * 16).toString(16)
-	).join("").toUpperCase();
+	const cleanSnils = doctorSnils.replace(/\D/g, "").padEnd(11, "0");
+	const serialHex = `00E4A28B${cleanSnils.slice(0, 8).toUpperCase()}`;
 
-	const mockBytes = `UKEP_GOST3410_2012_SIGNATURE_DOC_${doctorSnils}_${Date.now()}`;
+	const mockBytes = `UKEP_GOST3410_2012_DOC_${cleanSnils}_FIXTURE`;
 	const signatureBase64 =
 		typeof btoa === "function"
 			? btoa(mockBytes)
 			: Buffer.from(mockBytes).toString("base64");
 
-	const validFrom = new Date(now.getFullYear() - 1, 0, 1).toISOString();
-	const validTo = new Date(now.getFullYear() + 1, 11, 31).toISOString();
+	const validFrom = "2026-01-01T00:00:00.000Z";
+	const validTo = "2027-12-31T23:59:59.000Z";
 
 	return {
 		signatureBase64,
-		certificateSerialNumber: `00E4A28B${serialHex.slice(8)}`,
+		certificateSerialNumber: serialHex,
 		certificateSubject: `CN=${doctorName}, SNILS=${doctorSnils}, O=${clinicName}, C=RU`,
 		certificateIssuer:
 			"CN=Головной Удостоверяющий Центр Минцифры РФ (Квалифицированный), O=Минцифры России, C=RU",
 		validFrom,
 		validTo,
-		signedAt: now.toISOString(),
+		signedAt: "2026-01-01T12:00:00.000Z",
 		algorithmOid: EGISZ_REMD_OIDS.GOST_3410_2012_256,
 		digestAlgorithmOid: EGISZ_REMD_OIDS.GOST_3411_2012_256,
-		signatureValueHex: Array.from({ length: 64 }, () =>
-			Math.floor(Math.random() * 16).toString(16)
-		).join("").toUpperCase(),
+		signatureValueHex: `A1B2C3D4E5F60718293A4B5C6D7E8F90${cleanSnils.padEnd(32, "0").slice(0, 32)}`.toUpperCase(),
 	};
 }
 
@@ -651,34 +647,30 @@ export function createMockMoGostSignature(
 	clinicName: string,
 	clinicOgrn: string
 ): GostSignatureInfo {
-	const now = new Date();
-	const serialHex = Array.from({ length: 16 }, () =>
-		Math.floor(Math.random() * 16).toString(16)
-	).join("").toUpperCase();
+	const cleanOgrn = clinicOgrn.replace(/\D/g, "").padEnd(13, "0");
+	const serialHex = `00B17F9A${cleanOgrn.slice(0, 8).toUpperCase()}`;
 
-	const mockBytes = `UKEP_MO_GOST3410_2012_SIGNATURE_ORG_${clinicOgrn}_${Date.now()}`;
+	const mockBytes = `UKEP_MO_GOST3410_2012_ORG_${cleanOgrn}_FIXTURE`;
 	const signatureBase64 =
 		typeof btoa === "function"
 			? btoa(mockBytes)
 			: Buffer.from(mockBytes).toString("base64");
 
-	const validFrom = new Date(now.getFullYear() - 1, 0, 1).toISOString();
-	const validTo = new Date(now.getFullYear() + 1, 11, 31).toISOString();
+	const validFrom = "2026-01-01T00:00:00.000Z";
+	const validTo = "2027-12-31T23:59:59.000Z";
 
 	return {
 		signatureBase64,
-		certificateSerialNumber: `00B17F9A${serialHex.slice(8)}`,
+		certificateSerialNumber: serialHex,
 		certificateSubject: `O=${clinicName}, OGRN=${clinicOgrn}, C=RU`,
 		certificateIssuer:
 			"CN=УЦ ФНС России (Квалифицированный для юридических лиц), O=Федеральная налоговая служба, C=RU",
 		validFrom,
 		validTo,
-		signedAt: now.toISOString(),
+		signedAt: "2026-01-01T12:00:00.000Z",
 		algorithmOid: EGISZ_REMD_OIDS.GOST_3410_2012_256,
 		digestAlgorithmOid: EGISZ_REMD_OIDS.GOST_3411_2012_256,
-		signatureValueHex: Array.from({ length: 64 }, () =>
-			Math.floor(Math.random() * 16).toString(16)
-		).join("").toUpperCase(),
+		signatureValueHex: `B2C3D4E5F60718293A4B5C6D7E8F90A1${cleanOgrn.padEnd(32, "0").slice(0, 32)}`.toUpperCase(),
 	};
 }
 

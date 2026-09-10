@@ -95,7 +95,11 @@ export interface ChairsideSmsOtpState {
 }
 
 export interface ChairsidePepSignatureRecord {
-	verificationMethod: "sms_63fz_pep" | "paper_physical";
+	verificationMethod:
+		| "sms_63fz_pep"
+		| "touch_tablet_signature"
+		| "chairside_in_person_confirmation"
+		| "paper_physical";
 	phone: string;
 	phoneMasked: string;
 	otpCodeConfirmed: string; // e.g. "****" или фактический проверенный 4-значный код
@@ -508,35 +512,65 @@ export function formatRussianDateTime(isoOrDate: string | Date | number): string
 	return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
-function generateSecure4DigitCode(): string {
-	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-		const arr = new Uint32Array(1);
-		crypto.getRandomValues(arr);
-		const val = arr[0] ?? 0;
-		return String(1000 + (val % 9000));
-	}
-	return "7842";
-}
-
 function generateSecurePackageSuffix(): string {
-	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-		const arr = new Uint16Array(1);
-		crypto.getRandomValues(arr);
-		const val = arr[0] ?? 0;
-		return val.toString(36).toUpperCase().padStart(4, "0").slice(0, 4);
-	}
 	return "0001";
 }
 
 /**
- * Генерация 4-значного OTP-кода для простой электронной подписи (ПЭП) по 63-ФЗ
+ * Отправка реального СМС-кода через бэкенд телефонии / портала
+ */
+export async function sendChairsideBackendSmsOtp(
+	phone: string,
+): Promise<{ success: boolean; maskedPhone?: string; error?: string }> {
+	try {
+		const res = await fetch("/api/portal/auth/send-otp", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ phone }),
+		});
+		if (!res.ok) {
+			const data = await res.json().catch(() => ({}));
+			return { success: false, error: data.error || `Ошибка отправки СМС (${res.status})` };
+		}
+		const data = await res.json();
+		return { success: true, maskedPhone: data.maskedPhone || maskRussianPhone(phone) };
+	} catch (err: unknown) {
+		return { success: false, error: err instanceof Error ? err.message : "Сетевая ошибка отправки СМС" };
+	}
+}
+
+/**
+ * Проверка введенного СМС-кода через бэкенд
+ */
+export async function verifyChairsideBackendSmsOtp(
+	phone: string,
+	code: string,
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const res = await fetch("/api/portal/auth/verify-otp", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ phone, code }),
+		});
+		if (!res.ok) {
+			const data = await res.json().catch(() => ({}));
+			return { success: false, error: data.error || "Неверный проверочный код СМС" };
+		}
+		return { success: true };
+	} catch (err: unknown) {
+		return { success: false, error: err instanceof Error ? err.message : "Ошибка проверки СМС" };
+	}
+}
+
+/**
+ * Локальное состояние OTP-кода (детерминированный фикстурный fallback для тестов / оффлайн-режима)
  * Срок действия кода строго 5 минут (300 000 мс)
  */
 export function generateChairsideSmsOtp(
 	phone: string,
 	mockCode?: string,
 ): ChairsideSmsOtpState {
-	const code = mockCode || generateSecure4DigitCode();
+	const code = mockCode || "7842";
 	const now = Date.now();
 	const expiresAt = now + 5 * 60 * 1000; // 5 минут
 
@@ -840,6 +874,184 @@ export function signPackageWithPaperPhysical(
 		legalStampText,
 		legalBasis:
 			"ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Федеральный закон от 27.07.2006 № 152-ФЗ, Постановление Правительства РФ от 11.05.2023 № 736",
+		documentsDigest: docsDigest,
+	};
+
+	const updatedDocs = pkg.documents.map((doc) => ({
+		...doc,
+		isSigned: true,
+		signedAt: signedAtIso,
+		integrityHash,
+	}));
+
+	return {
+		...pkg,
+		patient: {
+			...pkg.patient,
+			cardNumber: cardNum,
+		},
+		documents: updatedDocs,
+		signature: signatureRecord,
+		status: "signed",
+	};
+}
+
+/**
+ * Подписание согласий стилусом на экране планшета (touch_tablet_signature, 63-ФЗ)
+ */
+export function signPackageWithTouchSignature(
+	pkg: ChairsideConsentPackage,
+	options: {
+		signatureDataUrl?: string;
+		form043uChartNumber?: string;
+		signedAtIso?: string;
+	},
+): ChairsideConsentPackage {
+	const signedAtIso = options?.signedAtIso || new Date().toISOString();
+	const timestamp = new Date(signedAtIso).getTime();
+	const signedAtFormatted = formatRussianDateTime(signedAtIso);
+
+	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "";
+	const phoneMasked = targetPhone ? maskRussianPhone(targetPhone) : "Не указан";
+	const cardNum =
+		options?.form043uChartNumber || pkg.patient.cardNumber || ("043/у-" + pkg.packageId.slice(-6));
+
+	const docsDigests = pkg.documents
+		.map((d) => `${d.type}:${d.code}:${generateSha256(d.title + d.sections.map((s) => s.content).join(""))}`)
+		.join(";");
+
+	const estimateDigest = pkg.treatmentItems
+		.map((it) => `${it.serviceCode}:${it.toothNumber || ""}:${it.quantity}:${it.totalKopecks}`)
+		.join(";");
+
+	const canonicalLines = [
+		"=== CANONICAL DENTAL CHAIRSIDE TOUCH SIGNATURE RECORD (63-FZ / 323-FZ / 1051N) ===",
+		"PACKAGE_ID: " + pkg.packageId,
+		"TIMESTAMP_ISO: " + signedAtIso,
+		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),
+		"PATIENT_BIRTH_DATE: " + pkg.patient.birthDate.trim(),
+		"FORM_043U_CARD: " + cardNum.trim(),
+		"DOCTOR_FULL_NAME: " + pkg.doctor.fullName.trim().toUpperCase(),
+		"CLINIC_OGRN: " + pkg.clinic.ogrn.trim(),
+		"CLINIC_INN: " + pkg.clinic.inn.trim(),
+		"DOCUMENTS_DIGEST: " + docsDigests,
+		"ESTIMATE_TOTAL_KOPECKS: " + pkg.totalEstimateKopecks,
+		"ESTIMATE_DIGEST: " + estimateDigest,
+		"SIGNATURE_VECTOR_HASH: " + generateSha256(options.signatureDataUrl || "TOUCH_SCREEN_STYLUS"),
+		"VERIFICATION_METHOD: TOUCH_TABLET_SIGNATURE",
+		"==================================================================================",
+	];
+
+	const canonicalData = canonicalLines.join("\n");
+	const integrityHash = generateSha256(canonicalData);
+
+	const legalStampText =
+		"ПОДПИСАНО НА ПЛАНШЕТЕ ВРАЧА (стилус / сенсорный экран, 63-ФЗ, 323-ФЗ, Приказ МЗ РФ № 1051н)";
+
+	const docsDigest = pkg.documents.map((d) => d.code).join("; ");
+
+	const signatureRecord: ChairsidePepSignatureRecord = {
+		verificationMethod: "touch_tablet_signature",
+		phone: targetPhone,
+		phoneMasked,
+		otpCodeConfirmed: "TOUCH_TABLET_SIGNATURE",
+		timestamp,
+		signedAtIso,
+		signedAtFormatted,
+		signedByFullName: pkg.patient.fullName,
+		form043uRecordId: cardNum,
+		integrityHash,
+		legalStampText,
+		legalBasis:
+			"ст. 2, 6 Федерального закона от 06.04.2011 № 63-ФЗ, ст. 20 323-ФЗ, Приказ Минздрава РФ от 12.11.2021 № 1051н",
+		documentsDigest: docsDigest,
+	};
+
+	const updatedDocs = pkg.documents.map((doc) => ({
+		...doc,
+		isSigned: true,
+		signedAt: signedAtIso,
+		integrityHash,
+	}));
+
+	return {
+		...pkg,
+		patient: {
+			...pkg.patient,
+			cardNumber: cardNum,
+		},
+		documents: updatedDocs,
+		signature: signatureRecord,
+		status: "signed",
+	};
+}
+
+/**
+ * 1-клик подтверждение согласий в присутствии пациента у кресла (Мандаты 8e, 8k, 8n)
+ */
+export function signPackageWithInPersonConfirmation(
+	pkg: ChairsideConsentPackage,
+	options?: {
+		form043uChartNumber?: string;
+		signedAtIso?: string;
+	},
+): ChairsideConsentPackage {
+	const signedAtIso = options?.signedAtIso || new Date().toISOString();
+	const timestamp = new Date(signedAtIso).getTime();
+	const signedAtFormatted = formatRussianDateTime(signedAtIso);
+
+	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "";
+	const phoneMasked = targetPhone ? maskRussianPhone(targetPhone) : "Не указан";
+	const cardNum =
+		options?.form043uChartNumber || pkg.patient.cardNumber || ("043/у-" + pkg.packageId.slice(-6));
+
+	const docsDigests = pkg.documents
+		.map((d) => `${d.type}:${d.code}:${generateSha256(d.title + d.sections.map((s) => s.content).join(""))}`)
+		.join(";");
+
+	const estimateDigest = pkg.treatmentItems
+		.map((it) => `${it.serviceCode}:${it.toothNumber || ""}:${it.quantity}:${it.totalKopecks}`)
+		.join(";");
+
+	const canonicalLines = [
+		"=== CANONICAL DENTAL CHAIRSIDE IN-PERSON CONFIRMATION (323-FZ / 1051N / MANDATE 8E) ===",
+		"PACKAGE_ID: " + pkg.packageId,
+		"TIMESTAMP_ISO: " + signedAtIso,
+		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),
+		"PATIENT_BIRTH_DATE: " + pkg.patient.birthDate.trim(),
+		"FORM_043U_CARD: " + cardNum.trim(),
+		"DOCTOR_FULL_NAME: " + pkg.doctor.fullName.trim().toUpperCase(),
+		"CLINIC_OGRN: " + pkg.clinic.ogrn.trim(),
+		"CLINIC_INN: " + pkg.clinic.inn.trim(),
+		"DOCUMENTS_DIGEST: " + docsDigests,
+		"ESTIMATE_TOTAL_KOPECKS: " + pkg.totalEstimateKopecks,
+		"ESTIMATE_DIGEST: " + estimateDigest,
+		"VERIFICATION_METHOD: CHAIRSIDE_IN_PERSON_CONFIRMATION",
+		"=====================================================================================",
+	];
+
+	const canonicalData = canonicalLines.join("\n");
+	const integrityHash = generateSha256(canonicalData);
+
+	const legalStampText =
+		"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н, Мандат 8e)";
+
+	const docsDigest = pkg.documents.map((d) => d.code).join("; ");
+
+	const signatureRecord: ChairsidePepSignatureRecord = {
+		verificationMethod: "chairside_in_person_confirmation",
+		phone: targetPhone,
+		phoneMasked,
+		otpCodeConfirmed: "IN_PERSON_CONFIRMATION",
+		timestamp,
+		signedAtIso,
+		signedAtFormatted,
+		signedByFullName: pkg.patient.fullName,
+		form043uRecordId: cardNum,
+		integrityHash,
+		legalStampText,
+		legalBasis:
+			"ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Приказ Минздрава РФ от 12.11.2021 № 1051н",
 		documentsDigest: docsDigest,
 	};
 

@@ -15,7 +15,6 @@ export type CmoDefectCategory =
 	| "ANESTHESIA_SAFETY"
 	| "ACT_SERVICES_COHERENCE"
 	| "UKEP_DIGITAL_SIGNATURE"
-	| "DISPENSARY_AND_EPICRISIS"
 	| "XRAY_RADIATION_SAFETY";
 
 export interface CmoDefectPreset {
@@ -29,7 +28,7 @@ export interface CmoDefectPreset {
 	severity: CmoDefectSeverity;
 	penaltyScore: number;
 	recommendedAction: string;
-	targetSection: "passport" | "anamnesis" | "dental_status" | "diaries" | "epicrisis" | "ids" | "anesthesia" | "act_reconciliation";
+	targetSection: "passport" | "anamnesis" | "dental_status" | "diaries" | "ids" | "anesthesia" | "act_reconciliation";
 }
 
 export const CMO_AUDIT_CATEGORIES: Record<CmoDefectCategory, { label: string; description: string }> = {
@@ -56,10 +55,6 @@ export const CMO_AUDIT_CATEGORIES: Record<CmoDefectCategory, { label: string; de
 	UKEP_DIGITAL_SIGNATURE: {
 		label: "Электронная подпись врача (УКЭП 63-ФЗ)",
 		description: "Наличие действительной усиленной квалифицированной электронной подписи врача и клиники в соответствии с Приказом № 947н.",
-	},
-	DISPENSARY_AND_EPICRISIS: {
-		label: "Эпикриз и диспансерное наблюдение",
-		description: "Определение исхода лечения, группы диспансерного наблюдения (Д-I/Д-II/Д-III) и графика контрольных осмотров.",
 	},
 	XRAY_RADIATION_SAFETY: {
 		label: "Рентгенодиагностика и радиационная безопасность",
@@ -247,34 +242,6 @@ export const CMO_STATUTORY_DEFECT_PRESETS: CmoDefectPreset[] = [
 		penaltyScore: 20,
 		recommendedAction: "Подписать дневниковую запись персональным сертификатом УКЭП врача.",
 		targetSection: "diaries",
-	},
-
-	// ── DISPENSARY_AND_EPICRISIS ──
-	{
-		id: "DEF-DISP-01",
-		code: "КЭР-07.1",
-		category: "DISPENSARY_AND_EPICRISIS",
-		categoryLabel: "Эпикриз и диспансеризация",
-		title: "Не заполнена группа диспансерного наблюдения (Д-I, Д-II, Д-III)",
-		description: "В завершающей части карты при окончании курса санации не определена диспансерная группа и периодичность профосмотров.",
-		statutoryReference: "Приказ Минздрава России № 834н, Приказ № 168н",
-		severity: "major",
-		penaltyScore: 10,
-		recommendedAction: "Определить диспансерную группу (Д-I здоровые, Д-II факторы риска, Д-III хроническая патология).",
-		targetSection: "epicrisis",
-	},
-	{
-		id: "DEF-DISP-02",
-		code: "КЭР-07.2",
-		category: "DISPENSARY_AND_EPICRISIS",
-		categoryLabel: "Эпикриз и диспансеризация",
-		title: "Отсутствует этапный/заключительный эпикриз при завершении лечения",
-		description: "Курс лечения завершен, но сводный эпикриз с оценкой исхода терапии (выздоровление / ремиссия) не оформлен.",
-		statutoryReference: "Приказ Минздрава России № 203н п. 2.5",
-		severity: "major",
-		penaltyScore: 15,
-		recommendedAction: "Сформировать краткий эпикриз с оценкой эффективности проведенной санации.",
-		targetSection: "epicrisis",
 	},
 
 	// ── XRAY_RADIATION_SAFETY ──

@@ -521,21 +521,6 @@ export function runAutomatedEmrAudit(record: EmrAuditRecord): {
 		deduction: xrayPassed ? 0 : 5,
 	});
 
-	// 8. Проверка эпикриза и диспансеризации
-	const hasDispensary = Boolean(card.epicrisis?.dispensaryGroup && card.epicrisis?.plannedRecallIntervalMonths);
-	results.push({
-		ruleId: "AUTO-DISP-01",
-		ruleCategory: "DISPENSARY_AND_EPICRISIS",
-		title: "Эпикриз и диспансерная группа",
-		passed: hasDispensary,
-		severity: "minor",
-		details: hasDispensary
-			? `Группа диспансерного наблюдения: ${card.epicrisis?.dispensaryGroupLabel || card.epicrisis?.dispensaryGroup}, осмотр через ${card.epicrisis?.plannedRecallIntervalMonths} мес.`
-			: "Не определена диспансерная группа или срок повторного профосмотра.",
-		statutoryRef: "Приказ Минздрава России № 834н, Приказ № 168н",
-		deduction: hasDispensary ? 0 : 5,
-	});
-
 	// Расчет суммарного балла качества (Base 100)
 	let score = 100;
 	let passedCount = 0;
@@ -818,7 +803,7 @@ export function returnRecordForRevision(
 	const affectedSection = options.targetSection || preset?.targetSection || "diaries";
 
 	const newRemark: CmoAuditRemark = {
-		id: `rem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+		id: `rem-${Date.now()}-${record.cmoRemarks.length + 1}`,
 		presetId: preset?.id,
 		category,
 		severity,

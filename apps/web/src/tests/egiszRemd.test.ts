@@ -34,7 +34,6 @@ import {
 	generateGostXmlSignatureBlock,
 	runEgisz043uPreflight,
 } from "../components/egisz/remdXml/egiszRemdEngine";
-import { EgiszRemdXmlModal } from "../components/egisz/remdXml/EgiszRemdXmlModal";
 
 describe("1. EGISZ Statutory Identifiers & Checksum Validators", () => {
 	it("1.1 Validates Russian SNILS checksum for doctors and patients", () => {
@@ -360,7 +359,7 @@ describe("5. Printable Form 043/u HTML & Odontogram System", () => {
 		assert.ok(FDI_CHILD_TEETH.includes(85));
 	});
 
-	it("5.3 Modal component is exported and callable", () => {
-		assert.equal(typeof EgiszRemdXmlModal, "function");
+	it("5.3 CDA generator engine is exported and callable", () => {
+		assert.equal(typeof generateEgisz043uCdaXml, "function");
 	});
 });

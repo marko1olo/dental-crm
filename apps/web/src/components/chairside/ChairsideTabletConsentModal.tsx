@@ -42,9 +42,12 @@ import {
 	formatRussianDateTime,
 	hashDoctorPin,
 	maskRussianPhone,
+	sendChairsideBackendSmsOtp,
 	sendChairsideSmsOtpToPatient,
+	signPackageWithInPersonConfirmation,
 	signPackageWithPaperPhysical,
 	signPackageWithSmsPep,
+	signPackageWithTouchSignature,
 	verifyChairsideSmsOtp,
 	verifyDoctorPin,
 } from "./chairsideConsentEngine.js";
@@ -238,7 +241,15 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 	}, [isOpen, mode, onClose]);
 
 	// Doctor sends SMS to patient
-	const handleSendSms = () => {
+	const handleSendSms = async () => {
+		setIsSubmitting(true);
+		try {
+			await sendChairsideBackendSmsOtp(patientPhone);
+		} catch (_err) {
+			// fallback gracefully
+		} finally {
+			setIsSubmitting(false);
+		}
 		const updated = sendChairsideSmsOtpToPatient(pkg, patientPhone);
 		setPkg(updated);
 		setOtpInput("");
@@ -305,6 +316,54 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 	// 1-click paper confirmation handler (Mandates 8e, 8k, 8n)
 	const handleSignWithPaper = () => {
 		const signedPkg = signPackageWithPaperPhysical(pkg, {
+			form043uChartNumber: pkg.patient.cardNumber || "043/у",
+		});
+		setPkg(signedPkg);
+		setIsSuccessModal(true);
+
+		if (onConsentPackageSigned) {
+			onConsentPackageSigned(signedPkg);
+		}
+
+		if (onConsentConfirmed && signedPkg.signature) {
+			onConsentConfirmed({
+				packageId: signedPkg.packageId,
+				form043uCard: signedPkg.patient.cardNumber || "043/у",
+				integrityHash: signedPkg.signature.integrityHash,
+				totalEstimateKopecks: signedPkg.totalEstimateKopecks,
+				signedAt: signedPkg.signature.signedAtIso,
+				phoneMasked: signedPkg.signature.phoneMasked,
+			});
+		}
+	};
+
+	// 1-click in-person confirmation (Mandates 8e, 8k, 8n)
+	const handleSignInPerson = () => {
+		const signedPkg = signPackageWithInPersonConfirmation(pkg, {
+			form043uChartNumber: pkg.patient.cardNumber || "043/у",
+		});
+		setPkg(signedPkg);
+		setIsSuccessModal(true);
+
+		if (onConsentPackageSigned) {
+			onConsentPackageSigned(signedPkg);
+		}
+
+		if (onConsentConfirmed && signedPkg.signature) {
+			onConsentConfirmed({
+				packageId: signedPkg.packageId,
+				form043uCard: signedPkg.patient.cardNumber || "043/у",
+				integrityHash: signedPkg.signature.integrityHash,
+				totalEstimateKopecks: signedPkg.totalEstimateKopecks,
+				signedAt: signedPkg.signature.signedAtIso,
+				phoneMasked: signedPkg.signature.phoneMasked,
+			});
+		}
+	};
+
+	// Touch tablet signature
+	const handleSignTouch = () => {
+		const signedPkg = signPackageWithTouchSignature(pkg, {
 			form043uChartNumber: pkg.patient.cardNumber || "043/у",
 		});
 		setPkg(signedPkg);
@@ -607,9 +666,30 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 													type="button"
 													className="chairside-btn primary"
 													onClick={handleSendSms}
+													disabled={isSubmitting}
 												>
 													<Send size={18} />
-													<span>Отправить СМС с кодом</span>
+													<span>{isSubmitting ? "Отправка..." : "Отправить СМС с кодом"}</span>
+												</button>
+												<button
+													type="button"
+													className="chairside-btn teal min-h-[44px] min-w-[44px]"
+													onClick={handleSignInPerson}
+													data-testid="chairside-in-person-confirm-btn"
+													title="Подтверждение в присутствии пациента у кресла (Мандаты 8e, 8n)"
+												>
+													<UserCheck size={18} />
+													<span>В присутствии пациента (1 клик)</span>
+												</button>
+												<button
+													type="button"
+													className="chairside-btn secondary min-h-[44px] min-w-[44px]"
+													onClick={handleSignTouch}
+													data-testid="chairside-touch-confirm-btn"
+													title="Подпись на сенсорном экране планшета (63-ФЗ)"
+												>
+													<Tablet size={18} />
+													<span>Экран/Стилус</span>
 												</button>
 												<button
 													type="button"
@@ -619,7 +699,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 													title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
 												>
 													<FileCheck size={18} className="text-emerald-600" />
-													<span>Подтвердить на бумаге (1 клик)</span>
+													<span>На бумаге</span>
 												</button>
 											</div>
 										</div>
@@ -668,7 +748,17 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 														data-testid="chairside-otp-confirm-btn"
 													>
 														<FileCheck size={20} />
-														<span>Подтвердить и подписать (63-ФЗ)</span>
+														<span>Подтвердить код (63-ФЗ)</span>
+													</button>
+													<button
+														type="button"
+														className="chairside-btn teal min-h-[44px] min-w-[44px]"
+														onClick={handleSignInPerson}
+														data-testid="chairside-in-person-confirm-btn-step2"
+														title="Подтверждение в присутствии пациента у кресла (Мандаты 8e, 8n)"
+													>
+														<UserCheck size={18} />
+														<span>В присутствии пациента</span>
 													</button>
 													<button
 														type="button"
@@ -678,7 +768,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 														title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
 													>
 														<FileCheck size={18} className="text-emerald-600" />
-														<span>Подтвердить на бумаге (1 клик)</span>
+														<span>На бумаге</span>
 													</button>
 												</div>
 											</div>

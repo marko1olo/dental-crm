@@ -12,7 +12,6 @@ import {
 	formatPsrSextantsSummary,
 	FURCATION_GRADES,
 	generateComprehensivePerio043Text,
-	generateFullMouthProbingSequence,
 	getProbingDepthColor,
 	isFurcationEligibleTooth,
 	MOBILITY_GRADES,
@@ -178,24 +177,21 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 		assert.equal(summary.teethWithMobilityCount, 1);
 	});
 
-	it("7. Continuous anatomical full mouth probing sequence (Florida probe)", () => {
+	it("7. Targeted clinical site assessment without procedural 192-point treadmill (Mandates 8e, 8k)", () => {
 		const teeth: PerioToothRecord[] = ALL_PERIO_TEETH.map(createDefaultTooth);
 		// Mark tooth #12 as missing
 		const t12 = teeth.find((t) => t.toothNumber === 12);
 		if (t12) t12.isMissing = true;
 
-		const seq = generateFullMouthProbingSequence(teeth);
-		assert.ok(seq.length > 0);
+		// Periodontist directly documents pathology on tooth 16 distoBuccal
+		const t16 = teeth.find((t) => t.toothNumber === 16);
+		assert.ok(t16);
+		t16.distoBuccal.probingDepthMm = 6;
+		t16.distoBuccal.bleedingOnProbing = true;
 
-		// Missing tooth 12 must not appear in probing sequence
-		const has12 = seq.some((s) => s.toothNumber === 12);
-		assert.equal(has12, false);
-
-		// Sequence starts with upper right molar buccal
-		assert.equal(seq[0]!.toothNumber, 18);
-		assert.equal(seq[0]!.siteKey, "distoBuccal");
-		assert.equal(seq[0]!.arch, "upper");
-		assert.equal(seq[0]!.aspect, "buccal");
+		const summary = calculatePerioIndices(teeth);
+		assert.ok(summary.deepPocketsCount >= 1);
+		assert.ok(summary.fmbsPercent > 0);
 	});
 
 	it("8. AAP/EFP 2018 Staging & Grading: Health vs Gingivitis vs Stage I..IV", () => {

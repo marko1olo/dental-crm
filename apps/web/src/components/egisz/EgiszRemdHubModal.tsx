@@ -72,8 +72,6 @@ import {
 	SAMPLE_DENTAL_SEMD_105_PRESET,
 	SAMPLE_FNS_TAX_1151156_PRESET,
 	canonicalizeCdaXml,
-	createMockGostSignature,
-	createMockMoGostSignature,
 	escapeXml,
 	formatHl7DateTime,
 	formatKopecksToRubles,
@@ -234,22 +232,27 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [onClose]);
 
+	const [isCheckingCerts, setIsCheckingCerts] = useState<boolean>(false);
+
 	// Load available CryptoPro / Rutoken certificates
-	useEffect(() => {
-		let isMounted = true;
-		signatureService.getCertificates().then((certs) => {
-			if (!isMounted) return;
+	const refreshCerts = useCallback(async () => {
+		setIsCheckingCerts(true);
+		try {
+			const certs = await signatureService.getCertificates();
 			setAvailableCerts(certs);
 			if (certs.length > 0 && !selectedCert) {
 				setSelectedCert(certs[0] || null);
 			}
-		}).catch(() => {
-			// Handled gracefully in mock / non-hardware environments
-		});
-		return () => {
-			isMounted = false;
-		};
+		} catch (_e) {
+			setAvailableCerts([]);
+		} finally {
+			setIsCheckingCerts(false);
+		}
 	}, [selectedCert]);
+
+	useEffect(() => {
+		refreshCerts();
+	}, [refreshCerts]);
 
 	// Build Full CDA Payload
 	const semdPayload: EgiszDentalCdaPayload = useMemo(() => {
@@ -448,27 +451,79 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		);
 	};
 
+	// Detached signature (.sig / .p7s) file upload handler
+	const handleUploadDetachedSig = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			const buf = reader.result as ArrayBuffer;
+			const bytes = new Uint8Array(buf);
+			let binary = "";
+			for (let i = 0; i < bytes.byteLength; i++) {
+				binary += String.fromCharCode(bytes[i]!);
+			}
+			const base64 = btoa(binary);
+			const sigInfo: GostSignatureInfo = {
+				signatureBase64: base64,
+				certificateSerialNumber: `DETACHED-${file.name.slice(0, 16)}`,
+				certificateSubject: doctor.doctorFullName || "Врач (открепленная подпись)",
+				certificateIssuer: "Открепленная подпись (.sig / .p7s)",
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				signatureValueHex: file.name,
+			};
+			setDoctorSig(sigInfo);
+			showToast(`Открепленная УКЭП врача загружена: ${file.name}`, "success");
+		};
+		reader.readAsArrayBuffer(file);
+	};
+
 	// UKEP signing handler
 	const handleSignDocument = async () => {
+		if (!selectedCert && availableCerts.length === 0) {
+			showToast(
+				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Установите плагин или загрузите открепленный файл .sig / .p7s",
+				"error",
+			);
+			return;
+		}
+
+		const certToUse = selectedCert || availableCerts[0];
+		if (!certToUse) {
+			showToast("Сертификат для подписания не выбран", "error");
+			return;
+		}
+
 		setIsSigning(true);
 		try {
-			// In production, invoke CryptoPro CSP plugin via signatureService;
-			// In browser testing or without hardware token, synthesize statutory GOST R 34.10-2012 signature container immediately (<10ms) without artificial simulation delays
-			const newDocSig = createMockGostSignature(
-				doctor.doctorFullName,
-				doctor.doctorSnils,
-				clinic.clinicName
-			);
-			const newMoSig = createMockMoGostSignature(
-				clinic.clinicName,
-				clinic.clinicOgrn
+			const xmlToSign = canonicalizeCdaXml(generatedXml);
+			const { signatureBase64 } = await signatureService.signData(
+				certToUse.thumbprint,
+				xmlToSign,
+				undefined,
+				certToUse.deviceId,
 			);
 
+			const newDocSig: GostSignatureInfo = {
+				signatureBase64,
+				certificateSerialNumber: certToUse.thumbprint.slice(0, 16).toUpperCase(),
+				certificateSubject: certToUse.name,
+				certificateIssuer: certToUse.issuer,
+				validFrom: certToUse.validFrom,
+				validTo: certToUse.validTo,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				signatureValueHex: certToUse.thumbprint.toUpperCase(),
+			};
+
 			setDoctorSig(newDocSig);
-			setMoSig(newMoSig);
-			showToast("Документ успешно подписан УКЭП (ГОСТ Р 34.10-2012)", "success");
-		} catch (_err) {
-			showToast("Ошибка при наложении электронной подписи", "error");
+			showToast(`Документ успешно подписан УКЭП (${newDocSig.certificateSerialNumber})`, "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			showToast(`Ошибка при наложении электронной подписи: ${msg}`, "error");
 		} finally {
 			setIsSigning(false);
 		}
@@ -1449,29 +1504,139 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									Подписание отсоединенной подписью CAdES-BES (ГОСТ Р 34.10-2012 / ГОСТ Р 34.11-2012 / 63-ФЗ)
 								</div>
 
-								<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-									<button
-										type="button"
-										onClick={handleSignDocument}
-										disabled={isSigning}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.5rem",
-											padding: "0.6rem 1.25rem",
-											fontSize: "0.875rem",
-											fontWeight: 700,
-											borderRadius: "6px",
-											background: "#0056b3",
-											color: "#ffffff",
-											border: "none",
-											cursor: isSigning ? "wait" : "pointer",
-										}}
-									>
-										<Key size={18} />
-										{isSigning ? "Выполняется подписание..." : "Подписать документ УКЭП"}
-									</button>
-								</div>
+								{availableCerts.length === 0 ? (
+									<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.3)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "#d97706", fontSize: "0.875rem" }}>
+											<AlertTriangle size={18} />
+											Плагин КриптоПро CSP не установлен / Сертификат не выбран
+										</div>
+										<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", lineHeight: 1.5 }}>
+											Для наложения УКЭП установите расширение «КриптоПро ЭЦП Browser Plug-in» и подключите ключевой носитель (Рутокен/JaCarta), либо загрузите открепленный файл подписи (.sig / .p7s).
+										</p>
+										<div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", marginTop: "0.25rem" }}>
+											<button
+												type="button"
+												onClick={refreshCerts}
+												disabled={isCheckingCerts}
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.4rem",
+													padding: "0.5rem 1rem",
+													fontSize: "0.8125rem",
+													fontWeight: 600,
+													borderRadius: "6px",
+													border: "1px solid var(--line)",
+													background: "var(--paper)",
+													color: "var(--ink)",
+													cursor: isCheckingCerts ? "wait" : "pointer",
+												}}
+											>
+												<RefreshCcw size={14} className={isCheckingCerts ? "animate-spin" : ""} />
+												{isCheckingCerts ? "Проверка..." : "Проверить плагин КриптоПро"}
+											</button>
+											<label
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.4rem",
+													padding: "0.5rem 1rem",
+													fontSize: "0.8125rem",
+													fontWeight: 600,
+													borderRadius: "6px",
+													background: "var(--primary)",
+													color: "#ffffff",
+													cursor: "pointer",
+												}}
+											>
+												<FileCode2 size={14} />
+												Загрузить открепленный файл (.sig / .p7s)
+												<input
+													type="file"
+													accept=".sig,.p7s,.sgn,.bin"
+													style={{ display: "none" }}
+													onChange={handleUploadDetachedSig}
+												/>
+											</label>
+										</div>
+									</div>
+								) : (
+									<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+										<div>
+											<label style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block", marginBottom: "0.25rem" }}>
+												Выберите сертификат УКЭП (ГОСТ Р 34.10-2012):
+											</label>
+											<select
+												value={selectedCert?.thumbprint || ""}
+												onChange={(e) => {
+													const found = availableCerts.find((c) => c.thumbprint === e.target.value);
+													setSelectedCert(found || null);
+												}}
+												style={{
+													width: "100%",
+													maxWidth: "500px",
+													padding: "0.5rem",
+													borderRadius: "6px",
+													border: "1px solid var(--line)",
+													fontSize: "0.8125rem",
+												}}
+											>
+												{availableCerts.map((c) => (
+													<option key={c.thumbprint} value={c.thumbprint}>
+														{c.name} (до {c.validTo.slice(0, 10)})
+													</option>
+												))}
+											</select>
+										</div>
+										<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+											<button
+												type="button"
+												onClick={handleSignDocument}
+												disabled={isSigning}
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.5rem",
+													padding: "0.6rem 1.25rem",
+													fontSize: "0.875rem",
+													fontWeight: 700,
+													borderRadius: "6px",
+													background: "#0056b3",
+													color: "#ffffff",
+													border: "none",
+													cursor: isSigning ? "wait" : "pointer",
+												}}
+											>
+												<Key size={18} />
+												{isSigning ? "Выполняется подписание..." : "Подписать документ УКЭП"}
+											</button>
+											<label
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.4rem",
+													padding: "0.55rem 0.9rem",
+													fontSize: "0.8125rem",
+													fontWeight: 600,
+													borderRadius: "6px",
+													border: "1px solid var(--line)",
+													background: "var(--paper)",
+													color: "var(--ink)",
+													cursor: "pointer",
+												}}
+											>
+												<FileCode2 size={14} />
+												Загрузить .sig / .p7s
+												<input
+													type="file"
+													accept=".sig,.p7s,.sgn,.bin"
+													style={{ display: "none" }}
+													onChange={handleUploadDetachedSig}
+												/>
+											</label>
+										</div>
+									</div>
+								)}
 							</div>
 
 							{/* Stamp Visualization */}
