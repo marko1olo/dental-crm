@@ -286,6 +286,16 @@ export const POPULAR_STERILIZER_BRAND_PRESETS: readonly PopularSterilizerBrandPr
 		recommendedNameRu: "Автоклав наконечников DAC Universal S",
 	},
 	{
+		id: "dryheat_gp10",
+		brandModel: "ГП-10 СПУ",
+		manufacturerRu: "ОАО «Смоленское СКТБ СПУ» (Россия)",
+		deviceType: "dry_heat",
+		deviceClass: "dry_heat_air",
+		chamberVolumeLiters: 10,
+		descriptionRu: "Компактный воздушный сухожаровой стерилизатор 180°C (10 л) для боров и инструментов",
+		recommendedNameRu: "Сухожаровой шкаф ГП-10 СПУ",
+	},
+	{
 		id: "dryheat_gp20",
 		brandModel: "ГП-20 СПУ",
 		manufacturerRu: "ОАО «Смоленское СКТБ СПУ» (Россия)",
@@ -294,6 +304,16 @@ export const POPULAR_STERILIZER_BRAND_PRESETS: readonly PopularSterilizerBrandPr
 		chamberVolumeLiters: 20,
 		descriptionRu: "Воздушный сухожаровой стерилизатор 180°C (20 л) для боров и цельнометаллических инструментов",
 		recommendedNameRu: "Сухожаровой шкаф ГП-20 СПУ",
+	},
+	{
+		id: "dryheat_gp40",
+		brandModel: "ГП-40 СПУ",
+		manufacturerRu: "ОАО «Смоленское СКТБ СПУ» (Россия)",
+		deviceType: "dry_heat",
+		deviceClass: "dry_heat_air",
+		chamberVolumeLiters: 40,
+		descriptionRu: "Вместительный сухожаровой шкаф 180°C (40 л) для централизованной стерилизации лотков",
+		recommendedNameRu: "Сухожаровой шкаф ГП-40 СПУ",
 	},
 	{
 		id: "dgm_and_20",

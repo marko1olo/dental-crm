@@ -126,13 +126,14 @@ export function SterilizerFleetManager({
 		next6Months.setMonth(next6Months.getMonth() + 6);
 		const next6MonthsStr = next6Months.toISOString().slice(0, 10);
 
-		const autoSerial = `SN-${preset.brandModel.slice(0, 3).toUpperCase()}-${today.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+		const nextSeq = equipments.length + 1;
+		const autoSerial = `SN-${preset.brandModel.slice(0, 3).toUpperCase()}-${today.getFullYear()}-${nextSeq.toString().padStart(4, "0")}`;
 
 		const payload: CreateSterilizerEquipmentDto = {
 			name: preset.recommendedNameRu,
 			brandModel: preset.brandModel,
 			serialNumber: autoSerial,
-			inventoryNumber: `ИНВ-${Math.floor(100 + Math.random() * 900)}`,
+			inventoryNumber: `ИНВ-${nextSeq.toString().padStart(3, "0")}`,
 			deviceType: preset.deviceType,
 			deviceClass: preset.deviceClass,
 			chamberVolumeLiters: preset.chamberVolumeLiters,

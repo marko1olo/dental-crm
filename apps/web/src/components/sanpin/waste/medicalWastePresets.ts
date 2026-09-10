@@ -17,7 +17,8 @@ export type MedicalWastePackagingTypeId =
 	| "red_bag"
 	| "red_puncture_proof_container"
 	| "black_container_mercury"
-	| "black_bag_g";
+	| "black_bag_g"
+	| "marked_container_class_g";
 
 export type DecontaminationMethodType =
 	| "physical_autoclave_134"
@@ -128,11 +129,12 @@ export const SANPIN_MEDICAL_WASTE_CLASSES: readonly MedicalWasteClassDefinition[
 			"Отходы инфекционных отделений и бактериологических лабораторий",
 		],
 		dentalSpecificItemsRu: [
-			"Ватные валики, марлевые турунды и салфетки, пропитанные кровью и слюной",
-			"Использованные карпульные инъекционные иглы и лезвия скальпелей",
-			"Удаленные зубы и фрагменты костной ткани после резекций/экстракций",
-			"Одноразовые слюноотсосы, пылесосы и наконечники шприцев вода-воздух",
+			"Карпулы от анестетиков с кровью (использованные и разбитые)",
+			"Салфетки, марлевые турунды и ватные валики, пропитанные кровью и слюной",
 			"Использованные смотровые и хирургические латексные/нитриловые перчатки",
+			"Удаленные зубы и фрагменты костной ткани после резекций/экстракций",
+			"Использованные карпульные инъекционные иглы и лезвия скальпелей",
+			"Одноразовые слюноотсосы, пылесосы и наконечники шприцев вода-воздух",
 			"Использованные эндодонтические файлы и римеры однократного применения",
 		],
 		mandatoryPackaging: [
@@ -190,12 +192,13 @@ export const SANPIN_MEDICAL_WASTE_CLASSES: readonly MedicalWasteClassDefinition[
 			"Дезинфицирующие растворы с истекшим сроком годности",
 		],
 		dentalSpecificItemsRu: [
-			"Ртутные амальгамные остатки и капсулы после реставраций",
-			"Отработанные бактерицидные УФ-лампы рециркуляторов воздуха",
+			"Люминесцентные и бактерицидные лампы (отработанные ртутные и УФ-облучатели)",
+			"Отработанные дезинфектанты (растворы дезсредств с истекшим сроком годности)",
+			"Рентген-реактивы (отработанные растворы проявителя и фиксажа)",
 			"Просроченные карпулы анестетиков и медикаментозные препараты",
-			"Отработанные фиксажи и проявители фоторентгенпленки",
+			"Ртутные амальгамные остатки и капсулы после реставраций",
 		],
-		mandatoryPackaging: ["black_container_mercury", "black_bag_g"],
+		mandatoryPackaging: ["marked_container_class_g", "black_container_mercury", "black_bag_g"],
 		allowedDecontamination: ["centralized_licensed_incineration"],
 		sanpinNormRefRu: "СанПиН 2.1.3684-21 разд. X п. 176–181",
 	},
@@ -294,6 +297,16 @@ export const SANPIN_WASTE_PACKAGING_TYPES: readonly MedicalWastePackagingDefinit
 		defaultTareWeightKg: 0.08,
 		maxCapacityLiters: 30,
 		colorRu: "Черный",
+	},
+	{
+		id: "marked_container_class_g",
+		nameRu: "Маркированная тара для токсикологических отходов (Класс Г: лампы, дезинфектанты, реактивы)",
+		wasteClass: "class_G",
+		isPunctureProof: true,
+		isHermeticSealed: true,
+		defaultTareWeightKg: 0.5,
+		maxCapacityLiters: 15,
+		colorRu: "Маркированная тара (Класс Г)",
 	},
 ];
 

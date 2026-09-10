@@ -73,11 +73,18 @@ export interface AutoclaveCycleRecord {
 	readonly cycleNumber: number;
 	readonly autoclaveCode: string;
 	readonly autoclaveModel: string;
+	readonly programName?: string;
+	readonly sterilizerType?: "autoclave_class_b" | "dry_heat";
 	readonly temperatureC: number;
 	readonly pressureBar: number;
 	readonly exposureMinutes: number;
 	readonly preVacuum: string;
 	readonly indicatorPointsStatus: string;
+	readonly indicatorBrand?: "Медтест" | "DGM Steriguard" | "Винар";
+	readonly indicatorClass?: 4 | 5;
+	readonly indicatorVerdict?: string;
+	readonly kraftSize?: "75x150" | "100x200" | "150x250";
+	readonly shelfLifeDays?: number;
 	readonly bowieDickResult: "passed" | "not_performed" | "failed";
 	readonly bowieDickNote: string;
 	readonly loadDescription: string;
@@ -89,23 +96,295 @@ export interface AutoclaveCycleRecord {
 	readonly isQuickPreset?: boolean;
 }
 
-export const SANPIN_AUTOCLAVE_CLASS_B_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
+/**
+ * Программы стерилизации для автоклавов B-класса (Melag, Euronda, W&H):
+ * 1. «Универсальная 134°C / 2.1 бар / 5 мин (в упаковке)»
+ * 2. «Быстрая / Prion 134°C / 20 мин»
+ * 3. «Деликатная 121°C / 1.1 бар / 20 мин (для наконечников и пластика)»
+ */
+export const SANPIN_AUTOCLAVE_UNIVERSAL_134_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
+	programName: "Универсальная 134°C / 2.1 бар / 5 мин (в упаковке)",
 	autoclaveCode: "АК-01",
-	autoclaveModel: "MELAG Vacuklav 23 B+ (Class B)",
+	autoclaveModel: "MELAG Vacuklav 23 B+ / Euronda E9 Next / W&H Lisa (Class B)",
+	sterilizerType: "autoclave_class_b",
 	temperatureC: 134,
 	pressureBar: 2.1,
 	exposureMinutes: 5,
 	preVacuum: "3-кратное фракционированное предвакуумирование (EN 13060)",
-	indicatorPointsStatus: "Индикаторы 5 класса (интеграторы) — темные во всех 5 точках камеры (норма)",
+	indicatorPointsStatus: "Индикаторы 5 класса (ИнтеТЕСТ-В-134/5 Винар / DGM Steriguard 5) во всех 5 точках камеры: Цвет эталона достигнут / Стерильно",
+	indicatorBrand: "Винар",
+	indicatorClass: 5,
+	indicatorVerdict: "Цвет эталона достигнут / Стерильно",
 	bowieDickResult: "passed",
 	bowieDickNote: "Тест Бови-Дика пройден: равномерное изменение цвета тест-пакета по всему полю (норма вакуума и пара)",
 	loadDescription: "Смотровые лотки терапевта, хирургические наборы, наконечники в крафт-пакетах",
-	packageType: "Самоклеящиеся крафт-пакеты (ГОСТ Р ИСО 11607-1-2018)",
+	packageType: "Самоклеящиеся крафт-пакеты 100x200 мм (до 50 суток хранения)",
+	kraftSize: "100x200",
+	shelfLifeDays: 50,
 	batchVerdict: "ГОДНА",
 	operatorName: "Смирнова А.В. (медсестра ЦСО)",
-	sanpinClause: "СанПиН 3.3686-21 п. 3630, МУ 287-113",
+	sanpinClause: "СанПиН 3.3686-21 п. 3630, МУ 287-113, Таблица 3.12",
 	isQuickPreset: true,
 };
+
+export const SANPIN_AUTOCLAVE_PRION_134_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
+	programName: "Быстрая / Prion 134°C / 20 мин",
+	autoclaveCode: "АК-01",
+	autoclaveModel: "Euronda E9 Next / MELAG Vacuklav 23 B+ / W&H Lisa (Class B)",
+	sterilizerType: "autoclave_class_b",
+	temperatureC: 134,
+	pressureBar: 2.1,
+	exposureMinutes: 20,
+	preVacuum: "4-кратное фракционированное предвакуумирование (EN 13060)",
+	indicatorPointsStatus: "Индикаторы 5 класса (DGM Steriguard 5 Integrator / ИнтеТЕСТ-В-134/20) во всех 5 точках камеры: Цвет эталона достигнут / Стерильно",
+	indicatorBrand: "DGM Steriguard",
+	indicatorClass: 5,
+	indicatorVerdict: "Цвет эталона достигнут / Стерильно",
+	bowieDickResult: "passed",
+	bowieDickNote: "Утренний тест Бови-Дика пройден без отклонений",
+	loadDescription: "Хирургический и имплантологический инструментарий повышенного риска, костные распаторы, трепаны в крафт-пакетах 150x250 мм",
+	packageType: "Самоклеящиеся крафт-пакеты 150x250 мм (до 50 суток хранения)",
+	kraftSize: "150x250",
+	shelfLifeDays: 50,
+	batchVerdict: "ГОДНА",
+	operatorName: "Смирнова А.В. (медсестра ЦСО)",
+	sanpinClause: "СанПиН 3.3686-21 п. 3628 (Антиприонный режим ВОЗ)",
+	isQuickPreset: true,
+};
+
+export const SANPIN_AUTOCLAVE_DELICATE_121_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
+	programName: "Деликатная 121°C / 1.1 бар / 20 мин (для наконечников и пластика)",
+	autoclaveCode: "АК-02",
+	autoclaveModel: "W&H Lisa 500 / MELAG Vacuklav 23 B+ (Class B)",
+	sterilizerType: "autoclave_class_b",
+	temperatureC: 121,
+	pressureBar: 1.1,
+	exposureMinutes: 20,
+	preVacuum: "3-кратное фракционированное предвакуумирование",
+	indicatorPointsStatus: "Индикаторы 4 класса (СтериТЕСТ-В-121 Винар / Медтест) во всех 5 точках камеры: Цвет эталона достигнут / Стерильно",
+	indicatorBrand: "Винар",
+	indicatorClass: 4,
+	indicatorVerdict: "Цвет эталона достигнут / Стерильно",
+	bowieDickResult: "not_performed",
+	bowieDickNote: "Не требуется для деликатного цикла 121°C",
+	loadDescription: "Стоматологические наконечники, полимерные слепочные ложки, силиконовые изделия, световоды в крафт-пакетах 75x150 мм",
+	packageType: "Самоклеящиеся крафт-пакеты 75x150 мм (до 50 суток хранения)",
+	kraftSize: "75x150",
+	shelfLifeDays: 50,
+	batchVerdict: "ГОДНА",
+	operatorName: "Смирнова А.В. (медсестра ЦСО)",
+	sanpinClause: "СанПиН 3.3686-21 Таблица 3.12 (Стерилизация термолабильных изделий)",
+	isQuickPreset: true,
+};
+
+/**
+ * Программы для сухожаровых шкафов (ГП-10/20/40 СПУ):
+ * 1. 180°C / 60 минут
+ * 2. 160°C / 150 минут
+ */
+export const SANPIN_DRY_HEAT_180_60_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
+	programName: "Сухожаровой шкаф 180°C / 60 минут",
+	autoclaveCode: "СЖ-01",
+	autoclaveModel: "ГП-10 / ГП-20 / ГП-40 СПУ (Сухожаровой шкаф)",
+	sterilizerType: "dry_heat",
+	temperatureC: 180,
+	pressureBar: 0,
+	exposureMinutes: 60,
+	preVacuum: "Конвекционный прогрев сухожаровой камеры без вакуума",
+	indicatorPointsStatus: "Индикаторы 4 класса (МедИС-180 Медтест) во всех 5 точках камеры: Цвет эталона достигнут / Стерильно",
+	indicatorBrand: "Медтест",
+	indicatorClass: 4,
+	indicatorVerdict: "Цвет эталона достигнут / Стерильно",
+	bowieDickResult: "not_performed",
+	bowieDickNote: "Не применяется для воздушного метода",
+	loadDescription: "Цельнометаллические инструменты, боры, щипцы, элеваторы без полимеров и оптики",
+	packageType: "Крафт-пакеты самоклеящиеся 100x200 мм (до 50 суток хранения)",
+	kraftSize: "100x200",
+	shelfLifeDays: 50,
+	batchVerdict: "ГОДНА",
+	operatorName: "Смирнова А.В. (медсестра ЦСО)",
+	sanpinClause: "СанПиН 3.3686-21 Таблица 3.13 (Воздушный метод)",
+	isQuickPreset: true,
+};
+
+export const SANPIN_DRY_HEAT_160_150_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
+	programName: "Сухожаровой шкаф 160°C / 150 минут",
+	autoclaveCode: "СЖ-01",
+	autoclaveModel: "ГП-10 / ГП-20 / ГП-40 СПУ (Сухожаровой шкаф)",
+	sterilizerType: "dry_heat",
+	temperatureC: 160,
+	pressureBar: 0,
+	exposureMinutes: 150,
+	preVacuum: "Конвекционный прогрев сухожаровой камеры 160°C",
+	indicatorPointsStatus: "Индикаторы 4 класса (МедИС-160 Медтест / Винар) во всех 5 точках камеры: Цвет эталона достигнут / Стерильно",
+	indicatorBrand: "Медтест",
+	indicatorClass: 4,
+	indicatorVerdict: "Цвет эталона достигнут / Стерильно",
+	bowieDickResult: "not_performed",
+	bowieDickNote: "Не применяется для воздушного метода",
+	loadDescription: "Металлические инструменты с ограниченной термостойкостью до 170°C в крафт-пакетах 75x150 мм",
+	packageType: "Крафт-пакеты самоклеящиеся 75x150 мм (до 50 суток хранения)",
+	kraftSize: "75x150",
+	shelfLifeDays: 50,
+	batchVerdict: "ГОДНА",
+	operatorName: "Смирнова А.В. (медсестра ЦСО)",
+	sanpinClause: "СанПиН 3.3686-21 Таблица 3.13 (Щадящий воздушный режим)",
+	isQuickPreset: true,
+};
+
+// Базовый алиас для обратной совместимости
+export const SANPIN_AUTOCLAVE_CLASS_B_PRESET = SANPIN_AUTOCLAVE_UNIVERSAL_134_PRESET;
+
+/**
+ * Нормативные типоразмеры крафт-пакетов по СанПиН 3.3686-21 п. 3632:
+ * 75x150 мм, 100x200 мм, 150x250 мм. Срок сохранения стерильности до 50 суток.
+ */
+export interface KraftPackageSizeOption {
+	readonly id: "size_75x150" | "size_100x200" | "size_150x250";
+	readonly dimensionsMm: string;
+	readonly widthMm: number;
+	readonly heightMm: number;
+	readonly maxShelfLifeDays: number;
+	readonly indicatorTypeRu: string;
+	readonly typicalUsageRu: string;
+}
+
+export const STATUTORY_KRAFT_SIZES: readonly KraftPackageSizeOption[] = [
+	{
+		id: "size_75x150",
+		dimensionsMm: "75x150 мм",
+		widthMm: 75,
+		heightMm: 150,
+		maxShelfLifeDays: 50,
+		indicatorTypeRu: "Химический индикатор 4/5 класса (Винар / DGM / Медтест)",
+		typicalUsageRu: "Боры алмазные и твердосплавные, эндодонтические файлы, мелкий инструментарий",
+	},
+	{
+		id: "size_100x200",
+		dimensionsMm: "100x200 мм",
+		widthMm: 100,
+		heightMm: 200,
+		maxShelfLifeDays: 50,
+		indicatorTypeRu: "Химический интегратор 5 класса (ИнтеТЕСТ-В-134/5)",
+		typicalUsageRu: "Стандартный смотровой терапевтический лоток (зеркало, зонд, пинцет, гладилка)",
+	},
+	{
+		id: "size_150x250",
+		dimensionsMm: "150x250 мм",
+		widthMm: 150,
+		heightMm: 250,
+		maxShelfLifeDays: 50,
+		indicatorTypeRu: "Химический интегратор 5 класса (DGM Steriguard 5 / ИнтеТЕСТ-В-134/20)",
+		typicalUsageRu: "Хирургический экстракционный набор, кюреты Грейси, стоматологические наконечники",
+	},
+];
+
+/**
+ * Нормативные химические индикаторы 4-го и 5-го класса (Медтест, DGM Steriguard, Винар).
+ * Стандартный результат: «Цвет эталона достигнут / Стерильно».
+ */
+export interface ChemicalIndicatorOption {
+	readonly id: string;
+	readonly manufacturer: "Медтест" | "DGM Steriguard" | "Винар";
+	readonly tradeName: string;
+	readonly indicatorClass: 4 | 5;
+	readonly indicatorClassRu: string;
+	readonly methodType: "steam" | "dry_heat";
+	readonly targetRegimeRu: string;
+	readonly standardResultVerdict: "Цвет эталона достигнут / Стерильно";
+	readonly notesRu: string;
+}
+
+export const STATUTORY_CHEMICAL_INDICATOR_OPTIONS: readonly ChemicalIndicatorOption[] = [
+	{
+		id: "vinar_intetest_134_5",
+		manufacturer: "Винар",
+		tradeName: "ИнтеТЕСТ-В-134/5",
+		indicatorClass: 5,
+		indicatorClassRu: "5 класс (Химический интегратор пара)",
+		methodType: "steam",
+		targetRegimeRu: "134°C / 2.1 бар / 5 мин (в упаковке)",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Контроль критических параметров пара во всех 5 точках камеры автоклавов B-класса (Melag, Euronda, W&H)",
+	},
+	{
+		id: "vinar_steritest_134_4",
+		manufacturer: "Винар",
+		tradeName: "СтериТЕСТ-В-134",
+		indicatorClass: 4,
+		indicatorClassRu: "4 класс (Многопараметрический индикатор)",
+		methodType: "steam",
+		targetRegimeRu: "134°C / 2.1 бар / 5 мин",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Многопеременный индикатор температуры и времени выдержки",
+	},
+	{
+		id: "vinar_steritest_121_4",
+		manufacturer: "Винар",
+		tradeName: "СтериТЕСТ-В-121",
+		indicatorClass: 4,
+		indicatorClassRu: "4 класс (Многопараметрический индикатор)",
+		methodType: "steam",
+		targetRegimeRu: "121°C / 1.1 бар / 20 мин (для наконечников и пластика)",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Индикатор 4 класса для щадящего деликатного режима 121°C",
+	},
+	{
+		id: "dgm_steriguard_5_integrator",
+		manufacturer: "DGM Steriguard",
+		tradeName: "DGM Steriguard 5 Integrator",
+		indicatorClass: 5,
+		indicatorClassRu: "5 класс (Химический интегратор пара)",
+		methodType: "steam",
+		targetRegimeRu: "134°C / 2.1 бар / 5 мин или 20 мин (Prion)",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Интегратор 5 класса DGM Steriguard с четким переходом в зону ACCEPT",
+	},
+	{
+		id: "dgm_steriguard_4_multivariable",
+		manufacturer: "DGM Steriguard",
+		tradeName: "DGM Steriguard 4 Multivariable",
+		indicatorClass: 4,
+		indicatorClassRu: "4 класс (Многопеременный индикатор)",
+		methodType: "steam",
+		targetRegimeRu: "134°C / 2.1 бар / 5 мин (в упаковке)",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Многопараметрический химический индикатор 4 класса DGM Steriguard",
+	},
+	{
+		id: "medtest_medis_180",
+		manufacturer: "Медтест",
+		tradeName: "МедИС-180 (Медтест)",
+		indicatorClass: 4,
+		indicatorClassRu: "4 класс (Воздушная стерилизация)",
+		methodType: "dry_heat",
+		targetRegimeRu: "180°C / 60 минут",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Контроль воздушной стерилизации в 5 точках сухожаровых шкафов ГП-10, ГП-20, ГП-40",
+	},
+	{
+		id: "medtest_medis_160",
+		manufacturer: "Медтест",
+		tradeName: "МедИС-160 (Медтест)",
+		indicatorClass: 4,
+		indicatorClassRu: "4 класс (Воздушная стерилизация)",
+		methodType: "dry_heat",
+		targetRegimeRu: "160°C / 150 минут",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Контроль щадящего воздушного режима 160°C / 150 мин",
+	},
+	{
+		id: "medtest_integrator_134",
+		manufacturer: "Медтест",
+		tradeName: "Медтест-Интегратор-134",
+		indicatorClass: 5,
+		indicatorClassRu: "5 класс (Паровой интегратор)",
+		methodType: "steam",
+		targetRegimeRu: "134°C / 2.1 бар / 5 мин",
+		standardResultVerdict: "Цвет эталона достигнут / Стерильно",
+		notesRu: "Интегратор 5 класса Медтест для паровых стерилизаторов B-класса",
+	},
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. КОНТРОЛЬ КАЧЕСТВА ПСО (ФОРМА № 366/У: АЗОПИРАМ, ФЕНОЛФТАЛЕИН)
@@ -117,8 +396,12 @@ export interface PsoQualityRecord {
 	readonly instrumentName: string;
 	readonly batchItemCount: number;
 	readonly testedSampleCount: number;
+	readonly minSampleCountRequired?: number;
+	readonly samplingSatisfied?: boolean;
 	readonly azopyramResult: "negative" | "positive";
+	readonly azopyramResultDescriptionRu?: string;
 	readonly phenolphthaleinResult: "negative" | "positive";
+	readonly phenolphthaleinResultDescriptionRu?: string;
 	readonly detergentBrand: string;
 	readonly isApproved: boolean;
 	readonly operatorName: string;
@@ -127,18 +410,49 @@ export interface PsoQualityRecord {
 	readonly notes: string;
 }
 
+/**
+ * Фиксация результатов проб контроля качества ПСО по СанПиН 3.3686-21 п. 3584-3585:
+ * Азопирамовая проба: отрицательная (окрашивания нет), положительная (сине-фиолетовое окрашивание).
+ * Фенолфталеиновая проба: отрицательная (окрашивания нет), положительная (розовое окрашивание).
+ */
+export function formatPsoAzopyramResult(result: "negative" | "positive"): string {
+	return result === "negative"
+		? "Отрицательная — окрашивания нет"
+		: "Положительная — сине-фиолетовое окрашивание";
+}
+
+export function formatPsoPhenolphthaleinResult(result: "negative" | "positive"): string {
+	return result === "negative"
+		? "Отрицательная — окрашивания нет"
+		: "Положительная — розовое окрашивание";
+}
+
+/**
+ * Расчет объема выборки для ПСО: не менее 1% от обработанной партии (не менее 3-5 изделий)
+ */
+export function calculatePsoSamplingCount(batchItemCount: number, isSurgicalSet = false): number {
+	const count = Math.max(1, Math.floor(batchItemCount) || 1);
+	const minFloor = isSurgicalSet ? 5 : 3;
+	const onePercent = Math.ceil(count * 0.01);
+	return Math.max(minFloor, onePercent);
+}
+
 export const SANPIN_AZOPYRAM_TEST_PRESET: Omit<PsoQualityRecord, "id" | "timestamp"> = {
 	testType: "azopyram",
 	instrumentName: "Терапевтический и хирургический инструментарий (зеркала, зонды, пинцеты, щипцы)",
 	batchItemCount: 120,
 	testedSampleCount: 5, // 1% от партии (не менее 3-5 изделий)
+	minSampleCountRequired: 3,
+	samplingSatisfied: true,
 	azopyramResult: "negative",
+	azopyramResultDescriptionRu: "Отрицательная — окрашивания нет",
 	phenolphthaleinResult: "negative",
+	phenolphthaleinResultDescriptionRu: "Отрицательная — окрашивания нет",
 	detergentBrand: "Оптимакс Про 1.5% + ферментный очиститель",
 	isApproved: true,
 	operatorName: "Смирнова А.В. (медсестра ЦСО)",
 	sanpinClause: "СанПиН 3.3686-21 п. 3584, форма № 366/у",
-	notes: "100% отрицательно. Фиолетового окрашивания нет в течение 1 мин, скрытая кровь и СМС отсутствуют. Партия допущена к стерилизации.",
+	notes: "Азопирамовая проба (1% обработанной партии): Отрицательная — окрашивания нет в течение 1 мин (скрытая кровь отсутствует). Партия допущена к стерилизации по СанПиН 3.3686-21.",
 };
 
 export const SANPIN_PHENOLPHTHALEIN_TEST_PRESET: Omit<PsoQualityRecord, "id" | "timestamp"> = {
@@ -146,13 +460,17 @@ export const SANPIN_PHENOLPHTHALEIN_TEST_PRESET: Omit<PsoQualityRecord, "id" | "
 	instrumentName: "Смотровые лотки и наконечники после проточной отмывки дистиллированной водой",
 	batchItemCount: 120,
 	testedSampleCount: 5,
+	minSampleCountRequired: 3,
+	samplingSatisfied: true,
 	azopyramResult: "negative",
+	azopyramResultDescriptionRu: "Отрицательная — окрашивания нет",
 	phenolphthaleinResult: "negative",
+	phenolphthaleinResultDescriptionRu: "Отрицательная — окрашивания нет",
 	detergentBrand: "Биолот 0.5%",
 	isApproved: true,
 	operatorName: "Смирнова А.В. (медсестра ЦСО)",
 	sanpinClause: "СанПиН 3.3686-21 п. 3585",
-	notes: "Отрицательно. Розового окрашивания нет, щелочные компоненты моющего средства полностью отмыты (pH нейтральный).",
+	notes: "Фенолфталеиновая проба (1% обработанной партии): Отрицательная — окрашивания нет (розовое окрашивание отсутствует, щелочные компоненты моющего средства полностью отмыты).",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,9 +482,74 @@ export function createQuickAutoclaveCycle(
 	operatorName = "Смирнова А.В. (медсестра ЦСО)"
 ): AutoclaveCycleRecord {
 	return {
-		id: `cycle-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `cycle-${Date.now()}-${cycleNumber}`,
 		cycleNumber,
 		...SANPIN_AUTOCLAVE_CLASS_B_PRESET,
+		operatorName,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+export function createQuickUniversalCycle(
+	cycleNumber: number,
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): AutoclaveCycleRecord {
+	return {
+		id: `cycle-univ-${Date.now()}-${cycleNumber}`,
+		cycleNumber,
+		...SANPIN_AUTOCLAVE_UNIVERSAL_134_PRESET,
+		operatorName,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+export function createQuickPrionCycle(
+	cycleNumber: number,
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): AutoclaveCycleRecord {
+	return {
+		id: `cycle-prion-${Date.now()}-${cycleNumber}`,
+		cycleNumber,
+		...SANPIN_AUTOCLAVE_PRION_134_PRESET,
+		operatorName,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+export function createQuickDelicateCycle(
+	cycleNumber: number,
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): AutoclaveCycleRecord {
+	return {
+		id: `cycle-delicate-${Date.now()}-${cycleNumber}`,
+		cycleNumber,
+		...SANPIN_AUTOCLAVE_DELICATE_121_PRESET,
+		operatorName,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+export function createQuickDryHeat180Cycle(
+	cycleNumber: number,
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): AutoclaveCycleRecord {
+	return {
+		id: `cycle-dry180-${Date.now()}-${cycleNumber}`,
+		cycleNumber,
+		...SANPIN_DRY_HEAT_180_60_PRESET,
+		operatorName,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+export function createQuickDryHeat160Cycle(
+	cycleNumber: number,
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): AutoclaveCycleRecord {
+	return {
+		id: `cycle-dry160-${Date.now()}-${cycleNumber}`,
+		cycleNumber,
+		...SANPIN_DRY_HEAT_160_150_PRESET,
 		operatorName,
 		timestamp: new Date().toISOString(),
 	};
@@ -176,7 +559,7 @@ export function createQuickAzopyramRecord(
 	operatorName = "Смирнова А.В. (медсестра ЦСО)"
 ): PsoQualityRecord {
 	return {
-		id: `pso-azo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `pso-azo-${Date.now()}`,
 		...SANPIN_AZOPYRAM_TEST_PRESET,
 		operatorName,
 		timestamp: new Date().toISOString(),
@@ -187,7 +570,7 @@ export function createQuickPhenolphthaleinRecord(
 	operatorName = "Смирнова А.В. (медсестра ЦСО)"
 ): PsoQualityRecord {
 	return {
-		id: `pso-ph-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `pso-ph-${Date.now()}`,
 		...SANPIN_PHENOLPHTHALEIN_TEST_PRESET,
 		operatorName,
 		timestamp: new Date().toISOString(),
@@ -375,7 +758,7 @@ export function createQuickCombinedPsoRecord(
 	instrumentName = "Терапевтический и хирургический инструментарий смены"
 ): PsoQualityRecord {
 	return {
-		id: `pso-both-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `pso-both-${Date.now()}`,
 		testType: "both",
 		instrumentName,
 		batchItemCount: 150,
@@ -460,5 +843,3 @@ export function createQuickDailyShiftPsoRecords(
 		},
 	];
 }
-
-
