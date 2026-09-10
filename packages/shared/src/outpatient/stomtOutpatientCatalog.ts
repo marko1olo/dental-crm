@@ -1,7 +1,5 @@
 import { STOMX_KEY_CLINICAL_PROTOCOLS } from "./stomtProtocolsData.js";
-import {
-	STOMX_ALL_448_TEMPLATES_INDEX,
-} from "./stomtTemplatesIndex.js";
+import { STOMX_ALL_448_TEMPLATES_INDEX } from "./stomtTemplatesIndex.js";
 
 /**
  * 5 базовых клинических специальностей стоматологического приема
@@ -30,7 +28,8 @@ export const STOMX_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
 		id: "therapy",
 		label: "Терапевтическая стоматология",
 		shortLabel: "Терапия",
-		description: "Лечение кариеса, пульпита, периодонтита, эстетические реставрации, отбеливание",
+		description:
+			"Лечение кариеса, пульпита, периодонтита, эстетические реставрации, отбеливание",
 		defaultMkbGroup: "K02, K04",
 		iconName: "Stethoscope",
 	},
@@ -38,7 +37,8 @@ export const STOMX_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
 		id: "orthopedics",
 		label: "Ортопедическая стоматология",
 		shortLabel: "Ортопедия",
-		description: "Вкладки, виниры Emax, коронки из диоксида циркония и металлокерамики, съемные протезы",
+		description:
+			"Вкладки, виниры Emax, коронки из диоксида циркония и металлокерамики, съемные протезы",
 		defaultMkbGroup: "K02, K08",
 		iconName: "Crown",
 	},
@@ -46,7 +46,8 @@ export const STOMX_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
 		id: "surgery",
 		label: "Хирургическая стоматология",
 		shortLabel: "Хирургия",
-		description: "Удаление зубов, альвеолит, перикоронит, периостит, абсцессы, резекция верхушек корней",
+		description:
+			"Удаление зубов, альвеолит, перикоронит, периостит, абсцессы, резекция верхушек корней",
 		defaultMkbGroup: "K01, K04.7, K10, K12",
 		iconName: "Scissors",
 	},
@@ -54,7 +55,8 @@ export const STOMX_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
 		id: "implantology",
 		label: "Дентальная имплантология",
 		shortLabel: "Имплантация",
-		description: "Установка имплантатов, открытый и закрытый синус-лифтинг, костная пластика, формирователи",
+		description:
+			"Установка имплантатов, открытый и закрытый синус-лифтинг, костная пластика, формирователи",
 		defaultMkbGroup: "K08.1, K08.8",
 		iconName: "Flame",
 	},
@@ -62,7 +64,8 @@ export const STOMX_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
 		id: "periodontics",
 		label: "Пародонтология и профилактика",
 		shortLabel: "Пародонтология",
-		description: "Гингивит, пародонтит, пародонтоз, закрытый и открытый кюретаж, гингивэктомия",
+		description:
+			"Гингивит, пародонтит, пародонтоз, закрытый и открытый кюретаж, гингивэктомия",
 		defaultMkbGroup: "K05",
 		iconName: "HeartPulse",
 	},
@@ -93,7 +96,7 @@ export interface OutpatientProtocolTemplate {
 /**
  * Метаданные шаблона из 448 позиций StomX
  */
-export interface StomxTemplateMetadata {
+export interface StomxOutpatientTemplateMetadata {
 	readonly id: number;
 	readonly categoryId: number;
 	readonly name: string;
@@ -102,6 +105,9 @@ export interface StomxTemplateMetadata {
 	readonly mkbCode: string;
 	readonly order: number;
 }
+
+/** Алиас для обратной совместимости */
+export type StomxTemplateMetadata = StomxOutpatientTemplateMetadata;
 
 /**
  * Узел дерева рубрик шаблонов StomX
@@ -152,10 +158,22 @@ export function populateOutpatientTemplateText(
 
 		// 2. Конструкции "из __ зуба", "области ___ зуба"
 		result = result.replace(/из\s+_{2,}\s+зуба/gi, `из ${toothStr} зуба`);
-		result = result.replace(/области\s+_{2,}\s+зуба/gi, `области ${toothStr} зуба`);
-		result = result.replace(/области\s+зуба\s+_{2,}/gi, `области зуба ${toothStr}`);
-		result = result.replace(/дефект\s+_{2,}\s*зуба/gi, `дефект ${toothStr} зуба`);
-		result = result.replace(/поверхности\s*_{2,}\s*зуба/gi, `поверхности ${toothStr} зуба`);
+		result = result.replace(
+			/области\s+_{2,}\s+зуба/gi,
+			`области ${toothStr} зуба`,
+		);
+		result = result.replace(
+			/области\s+зуба\s+_{2,}/gi,
+			`области зуба ${toothStr}`,
+		);
+		result = result.replace(
+			/дефект\s+_{2,}\s*зуба/gi,
+			`дефект ${toothStr} зуба`,
+		);
+		result = result.replace(
+			/поверхности\s*_{2,}\s*зуба/gi,
+			`поверхности ${toothStr} зуба`,
+		);
 
 		// 3. Прямое указание "Зуб __", "зуба __", "зубе __"
 		result = result.replace(/Зуб\s*_{2,}/g, `Зуб ${toothStr}`);
@@ -175,23 +193,50 @@ export function populateOutpatientTemplateText(
 	}
 
 	if (surfaceStr) {
-		result = result.replace(/на\s+_{2,}\s*поверхности/gi, `на ${surfaceStr} поверхности`);
-		result = result.replace(/_{2,}\s*поверхности/gi, `${surfaceStr} поверхности`);
+		result = result.replace(
+			/на\s+_{2,}\s*поверхности/gi,
+			`на ${surfaceStr} поверхности`,
+		);
+		result = result.replace(
+			/_{2,}\s*поверхности/gi,
+			`${surfaceStr} поверхности`,
+		);
 	}
 
 	// 5. Нормализация меток ${...} в канонические разделы медкарты
 	result = result.replace(/\$\{\s*Жалобы\s*\}/gi, "Жалобы:");
 	result = result.replace(/\$\{\s*Анамнез\s*\}/gi, "Анамнез:");
-	result = result.replace(/\$\{\s*Aнамнез(?:\s+заболевания)?\s*\}/gi, "Анамнез:");
-	result = result.replace(/\$\{\s*Объективное\s+исследование\s*\}/gi, "Объективное исследование:");
-	result = result.replace(/\$\{\s*Осмотр\s+полости\s+рта\s*\}/gi, "Осмотр полости рта:");
+	result = result.replace(
+		/\$\{\s*Aнамнез(?:\s+заболевания)?\s*\}/gi,
+		"Анамнез:",
+	);
+	result = result.replace(
+		/\$\{\s*Объективное\s+исследование\s*\}/gi,
+		"Объективное исследование:",
+	);
+	result = result.replace(
+		/\$\{\s*Осмотр\s+полости\s+рта\s*\}/gi,
+		"Осмотр полости рта:",
+	);
 	result = result.replace(/\$\{\s*Внешний\s+осмотр\s*\}/gi, "Внешний осмотр:");
-	result = result.replace(/\$\{\s*Протокол\s+[Лл]ечения\s*\}/gi, "Протокол лечения:");
-	result = result.replace(/\$\{\s*Клинический\s+диагноз\s*\}/gi, "Клинический диагноз:");
+	result = result.replace(
+		/\$\{\s*Протокол\s+[Лл]ечения\s*\}/gi,
+		"Протокол лечения:",
+	);
+	result = result.replace(
+		/\$\{\s*Клинический\s+диагноз\s*\}/gi,
+		"Клинический диагноз:",
+	);
 	result = result.replace(/\$\{\s*Рекомендации\s*\}/gi, "Рекомендации:");
 	result = result.replace(/\$\{\s*Прогноз\s*\}/gi, "Прогноз:");
-	result = result.replace(/\$\{\s*План\s+обследования\s*\}/gi, "План обследования:");
-	result = result.replace(/\$\{\s*Рентген\s+общи?е\s+описание\s*\}/gi, "Рентгенография:");
+	result = result.replace(
+		/\$\{\s*План\s+обследования\s*\}/gi,
+		"План обследования:",
+	);
+	result = result.replace(
+		/\$\{\s*Рентген\s+общи?е\s+описание\s*\}/gi,
+		"Рентгенография:",
+	);
 
 	return result;
 }
@@ -204,30 +249,48 @@ export function formatFullSoapFromProtocol(
 	params: PopulateTemplateParams = {},
 ): string {
 	const toothNumber = params.toothNumber ?? protocol.defaultTooth;
-	const populatedComplaint = populateOutpatientTemplateText(protocol.complaint, {
-		toothNumber,
-		surfaces: params.surfaces,
-	});
-	const populatedAnamnesis = populateOutpatientTemplateText(protocol.anamnesis, {
-		toothNumber,
-		surfaces: params.surfaces,
-	});
-	const populatedObjective = populateOutpatientTemplateText(protocol.objectiveStatus, {
-		toothNumber,
-		surfaces: params.surfaces,
-	});
-	const populatedDiagnosis = populateOutpatientTemplateText(protocol.diagnosis, {
-		toothNumber,
-		surfaces: params.surfaces,
-	});
-	const populatedTreatment = populateOutpatientTemplateText(protocol.treatmentProtocol, {
-		toothNumber,
-		surfaces: params.surfaces,
-	});
-	const populatedRecommendations = populateOutpatientTemplateText(protocol.recommendations, {
-		toothNumber,
-		surfaces: params.surfaces,
-	});
+	const populatedComplaint = populateOutpatientTemplateText(
+		protocol.complaint,
+		{
+			toothNumber,
+			surfaces: params.surfaces,
+		},
+	);
+	const populatedAnamnesis = populateOutpatientTemplateText(
+		protocol.anamnesis,
+		{
+			toothNumber,
+			surfaces: params.surfaces,
+		},
+	);
+	const populatedObjective = populateOutpatientTemplateText(
+		protocol.objectiveStatus,
+		{
+			toothNumber,
+			surfaces: params.surfaces,
+		},
+	);
+	const populatedDiagnosis = populateOutpatientTemplateText(
+		protocol.diagnosis,
+		{
+			toothNumber,
+			surfaces: params.surfaces,
+		},
+	);
+	const populatedTreatment = populateOutpatientTemplateText(
+		protocol.treatmentProtocol,
+		{
+			toothNumber,
+			surfaces: params.surfaces,
+		},
+	);
+	const populatedRecommendations = populateOutpatientTemplateText(
+		protocol.recommendations,
+		{
+			toothNumber,
+			surfaces: params.surfaces,
+		},
+	);
 
 	const toothHeader = toothNumber ? `[Зуб ${toothNumber}] ` : "";
 
@@ -268,7 +331,7 @@ export function searchOutpatientProtocols(
 			p.subcategory.toLowerCase().includes(normalized) ||
 			p.mkbCode.toLowerCase().includes(normalized) ||
 			p.mkbName.toLowerCase().includes(normalized) ||
-			(p.tags?.some((tag) => tag.toLowerCase().includes(normalized)))
+			p.tags?.some((tag) => tag.toLowerCase().includes(normalized))
 		);
 	});
 }
