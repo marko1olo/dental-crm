@@ -385,12 +385,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Вкладка составления поэтапного клинического плана лечения внутри амбулаторного визита пациента с интеграцией классификатора Номенклатуры услуг 804н.",
 	},
 	{
-		file: "components/Header.tsx",
-		name: "Header",
-		reason:
-			"Автономный фасад шапки приложения с капсулой ClinicControlPill для изолированного использования и модульных тестов вне монолитного контейнера WorkspaceShell (где шапка монтируется через WorkspaceTopbar).",
-	},
-	{
 		file: "components/lab/DentalLabWorkOrderModal.tsx",
 		name: "DentalLabWorkOrderModal",
 		reason:

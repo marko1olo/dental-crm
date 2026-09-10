@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createElement } from "react";
+import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { VisitSoapEditor } from "../VisitSoapEditor";
 import { VisitAnamnesisTab } from "../VisitAnamnesisTab";
@@ -88,5 +88,35 @@ describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
 
 		assert.ok(html.includes("btn-open-stomt-templates-anamnesis"), "Renders StomX templates button in header");
 		assert.ok(html.includes("Клинические шаблоны StomX (448)"), "Button contains descriptive text");
+	});
+
+	it("verifies Mandate 8e: VisitSoapEditor never blocks buttons with disabled when isLocked=true and renders revision button", () => {
+		const html = renderToStaticMarkup(
+			createElement(VisitSoapEditor, {
+				activeTooth: 16,
+				isLocked: true,
+				initialValues: {
+					complaint: "Зуб 16: кариес",
+					anamnesis: "Соматически здоров",
+					objectiveStatus: "Полость на жевательной",
+					diagnosis: "K02.1 Кариес дентина",
+					treatmentPlan: "Пломбирование световой композит",
+					recommendations: "Контроль",
+					icd10: "K02.1",
+				},
+			}),
+		);
+
+		// Must render correction button («Исправленному верить»)
+		assert.ok(html.includes("btn-soap-enable-correction"), "Renders correction button when isLocked");
+		assert.ok(html.includes("Исправленному верить"), "Contains «Исправленному верить» label");
+
+		// Must NOT have disabled attribute on template and norm buttons
+		assert.ok(!html.includes('data-testid="btn-open-stomt-templates" disabled'), "Templates button is NOT disabled");
+		assert.ok(!html.includes('data-testid="btn-soap-physio-norm" disabled'), "Physiological norm button is NOT disabled");
+
+		// Fields must NOT be disabled
+		assert.ok(!html.includes('id="soap-complaints" disabled'), "Complaints field is NOT disabled");
+		assert.ok(!html.includes('id="soap-treatment" disabled'), "Treatment plan field is NOT disabled");
 	});
 });

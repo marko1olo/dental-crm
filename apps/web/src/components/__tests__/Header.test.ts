@@ -93,3 +93,22 @@ test("ClinicControlPill - 3-Sensor Status Capsule & Settings State", () => {
 	assert.strictEqual(telStore.activeLineId, 1);
 });
 
+test("ClinicControlPill - renders 3-segment capsule without dead monolithic Header wrapper", async () => {
+	const React = await import("react");
+	const { renderToStaticMarkup } = await import("react-dom/server");
+	const { ClinicControlPill } = await import("../Header");
+
+	const html = renderToStaticMarkup(
+		React.createElement(ClinicControlPill, {
+			className: "test-clinic-pill",
+		}),
+	);
+
+	assert.ok(html.includes("dnt-clinic-control-wrapper"), "Contains capsule wrapper class");
+	assert.ok(html.includes("dnt-clinic-control-pill"), "Contains pill button class");
+	assert.ok(html.includes("АТС"), "Contains PBX/АТС indicator");
+	assert.ok(html.includes("54-ФЗ"), "Contains 54-FZ indicator");
+	assert.ok(html.includes("БД") || html.includes("Офлайн"), "Contains DB status indicator");
+	assert.ok(html.includes("clinic-control-center-wrapper"), "Contains data-testid for control center");
+});
+

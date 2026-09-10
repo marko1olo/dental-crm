@@ -1718,25 +1718,25 @@ export interface PatientSentimentBadgeViewProps {
 
 export const PatientSentimentBadgeView: React.FC<
 	PatientSentimentBadgeViewProps
-> = ({ sentiment, score, showIcon = true }) => {
-	let label = "Нейтрально";
+> = ({ sentiment, score: _score, showIcon = true }) => {
+	let label = "Соматически здоров / Норма";
 	let className = "sentiment-neutral";
 	let icon = <Activity size={12} />;
 
 	if (sentiment === "emergency") {
-		label = "Экстренно (10/10)";
+		label = "Экстренно (острая боль)";
 		className = "sentiment-emergency";
 		icon = <Flame size={12} />;
 	} else if (sentiment === "anxious") {
-		label = "Тревога / Боль";
+		label = "Дентофобия / Острая боль";
 		className = "sentiment-anxious";
 		icon = <AlertTriangle size={12} />;
 	} else if (sentiment === "negative") {
-		label = "Недовольство";
+		label = "Особое внимание";
 		className = "sentiment-negative";
 		icon = <AlertCircle size={12} />;
 	} else if (sentiment === "positive") {
-		label = "Позитивно";
+		label = "Лояльный профиль";
 		className = "sentiment-positive";
 		icon = <CheckCircle2 size={12} />;
 	}
@@ -1744,7 +1744,7 @@ export const PatientSentimentBadgeView: React.FC<
 	return (
 		<span
 			className={`copilot-sentiment-badge ${className}`}
-			title={score ? `Оценка тональности: ${(score * 100).toFixed(0)}%` : label}
+			title={label}
 		>
 			{showIcon && icon}
 			<span>{label}</span>

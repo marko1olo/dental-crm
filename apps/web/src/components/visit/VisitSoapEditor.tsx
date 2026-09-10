@@ -23,8 +23,7 @@ import {
 	Stethoscope,
 	X,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface VisitSoapNoteValues {
 	complaint?: string;
@@ -134,6 +133,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	const [copied, setCopied] = useState<boolean>(false);
 	const [previewProtocol, setPreviewProtocol] =
 		useState<OutpatientProtocolTemplate | null>(null);
+	const [isCorrectionMode, setIsCorrectionMode] = useState<boolean>(false);
 
 	// Синхронизация при внешних изменениях activeTooth
 	useEffect(() => {
@@ -189,12 +189,65 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		return () => clearTimeout(timer);
 	}, [values, saveStatus, onChange, onSave]);
 
+	// Мандат 8e: Автономия врача и версионный аудит («Исправленному верить»)
+	const handleEnableCorrection = useCallback(() => {
+		setIsCorrectionMode(true);
+		const dateStr = new Date().toLocaleDateString("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+		const stamp = `[Исправленному верить: ${dateStr}]`;
+		setValues((prev) => {
+			if (
+				prev.treatmentPlan?.includes("Исправленному верить") ||
+				prev.objectiveStatus?.includes("Исправленному верить")
+			) {
+				return prev;
+			}
+			const next: VisitSoapNoteValues = {
+				...prev,
+				treatmentPlan: prev.treatmentPlan
+					? `${prev.treatmentPlan}\n\n${stamp}`
+					: stamp,
+			};
+			setSaveStatus("saved");
+			onSave?.(next);
+			onChange?.(next);
+			return next;
+		});
+	}, [onSave, onChange]);
+
 	const handleFieldChange = useCallback(
 		(field: keyof VisitSoapNoteValues, val: string) => {
+			if (isLocked && !isCorrectionMode) {
+				setIsCorrectionMode(true);
+				const dateStr = new Date().toLocaleDateString("ru-RU", {
+					day: "2-digit",
+					month: "2-digit",
+					year: "numeric",
+					hour: "2-digit",
+					minute: "2-digit",
+				});
+				const stamp = `[Исправленному верить: ${dateStr}]`;
+				setSaveStatus("saving");
+				setValues((prev) => {
+					const next = { ...prev, [field]: val };
+					if (!next.treatmentPlan?.includes("Исправленному верить")) {
+						next.treatmentPlan = next.treatmentPlan
+							? `${next.treatmentPlan}\n\n${stamp}`
+							: stamp;
+					}
+					return next;
+				});
+				return;
+			}
 			setSaveStatus("saving");
 			setValues((prev) => ({ ...prev, [field]: val }));
 		},
-		[],
+		[isLocked, isCorrectionMode],
 	);
 
 	// Фильтрация протоколов StomX
@@ -209,6 +262,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			protocol: OutpatientProtocolTemplate,
 			mode: "replace" | "append" = "replace",
 		) => {
+			if (isLocked && !isCorrectionMode) {
+				setIsCorrectionMode(true);
+			}
 			const targetTooth = selectedTooth ?? protocol.defaultTooth ?? 16;
 			const params: PopulateTemplateParams = {
 				toothNumber: targetTooth,
@@ -241,6 +297,14 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			);
 
 			const formattedDiagnosis = `${protocol.mkbCode} ${popDiagnosis}`.trim();
+			const dateStr = new Date().toLocaleDateString("ru-RU", {
+				day: "2-digit",
+				month: "2-digit",
+				year: "numeric",
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+			const auditStamp = isLocked ? `\n\n[Исправленному верить: ${dateStr}]` : "";
 
 			if (mode === "replace") {
 				// Mandate 8e: preserve custom somatic/allergy notes if already entered by doctor
@@ -256,7 +320,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					anamnesis: preservedAnamnesis,
 					objectiveStatus: popObjective,
 					diagnosis: formattedDiagnosis,
-					treatmentPlan: popTreatment,
+					treatmentPlan: `${popTreatment}${auditStamp}`,
 					recommendations: popRecs,
 					icd10: protocol.mkbCode,
 				};
@@ -281,7 +345,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						diagnosis: prev.diagnosis
 							? `${prev.diagnosis}, ${formattedDiagnosis}`
 							: formattedDiagnosis,
-						treatmentPlan: appendText(prev.treatmentPlan, popTreatment, "\n\n"),
+						treatmentPlan: appendText(prev.treatmentPlan, `${popTreatment}${auditStamp}`, "\n\n"),
 						recommendations: appendText(prev.recommendations, popRecs, "\n"),
 						icd10: prev.icd10 || protocol.mkbCode,
 					};
@@ -295,12 +359,23 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			setIsTemplatesOpen(false);
 			setPreviewProtocol(null);
 		},
-		[selectedTooth, selectedSurfaces, values.anamnesis, onSave, onChange, onApplyFullDiary, setIsTemplatesOpen],
+		[selectedTooth, selectedSurfaces, values.anamnesis, isLocked, isCorrectionMode, onSave, onChange, onApplyFullDiary, setIsTemplatesOpen],
 	);
 
 	// 1-клик физиологическая норма (Мандат 8e)
 	const handleApplyNorm = useCallback(() => {
 		const targetTooth = selectedTooth ?? 16;
+		if (isLocked && !isCorrectionMode) {
+			setIsCorrectionMode(true);
+		}
+		const dateStr = new Date().toLocaleDateString("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+		const auditStamp = isLocked ? `\n\n[Исправленному верить: ${dateStr}]` : "";
 		const normValues: VisitSoapNoteValues = {
 			complaint:
 				"Жалоб на момент осмотра не предъявляет. Обратился с целью планового профилактического осмотра / санации.",
@@ -309,7 +384,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			objectiveStatus: `Прикус физиологический. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических элементов. Зуб ${targetTooth}: интактен, зондирование и перкуссия безболезненны, реакция на термопробу адекватная, подвижность отсутствует. Зубные отложения умеренные.`,
 			diagnosis: "Z01.2 Стоматологическое обследование (Здоров)",
 			treatmentPlan:
-				"Проведена профессиональная контролируемая гигиена полости рта, обучение технике чистки зубов, подбор индивидуальных средств гигиены.",
+				`Проведена профессиональная контролируемая гигиена полости рта, обучение технике чистки зубов, подбор индивидуальных средств гигиены.${auditStamp}`,
 			recommendations:
 				"Чистка зубов 2 раза в день выметающими движениями. Использование флосса и ирригатора. Плановый осмотр через 6 месяцев.",
 			icd10: "Z01.2",
@@ -318,7 +393,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		setSaveStatus("saved");
 		onSave?.(normValues);
 		onChange?.(normValues);
-	}, [selectedTooth, onSave, onChange]);
+	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange]);
 
 	// Копирование целостной записи 043/у в буфер
 	const handleCopyFullText = useCallback(() => {
@@ -365,7 +440,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								setSelectedTooth(t);
 								if (t) onSelectActiveTooth?.(t);
 							}}
-							disabled={isLocked}
 							className="h-7 px-2 text-xs font-bold bg-white dark:bg-slate-800 border border-[var(--line,#cbd5e1)] rounded-lg text-teal-700 dark:text-teal-300 focus:outline-none focus:ring-1 focus:ring-teal-500"
 						>
 							<option value="">Без зуба</option>
@@ -383,7 +457,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						value={selectedSurfaces}
 						onChange={(e) => setSelectedSurfaces(e.target.value)}
 						placeholder="Поверхности (MOD, вест...)"
-						disabled={isLocked}
 						aria-label="Поверхности зуба"
 						className="h-7 w-32 px-2 text-xs bg-white dark:bg-slate-800 border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] placeholder:text-slate-400 focus:outline-none"
 					/>
@@ -391,11 +464,35 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 				{/* Правый блок кнопок прямого действия */}
 				<div className="flex items-center gap-1.5">
-					{/* Кнопка "Шаблоны 043/у StomX" */}
+					{/* Индикатор закрытого визита и кнопка ревизии («Исправленному верить», Мандат 8e) */}
+					{isLocked && (
+						!isCorrectionMode ? (
+							<button
+								type="button"
+								onClick={handleEnableCorrection}
+								data-testid="btn-soap-enable-correction"
+								className="h-8 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-xs"
+								title="Приём закрыт. Нажмите для внесения правок с версионным аудитом (Мандат 8e: «Исправленному верить»)"
+							>
+								<Edit3 className="w-3.5 h-3.5" />
+								<span>Внести исправление («Исправленному верить»)</span>
+							</button>
+						) : (
+							<div
+								data-testid="badge-soap-correction-active"
+								className="h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+								title="Режим исправления закрытого дневника («Исправленному верить»)"
+							>
+								<Check className="w-3.5 h-3.5 text-emerald-600" />
+								<span className="hidden sm:inline">Исправленному верить</span>
+							</div>
+						)
+					)}
+
+					{/* Кнопка "Шаблоны 043/у StomX" (Мандат 8e: никогда не disabled!) */}
 					<button
 						type="button"
 						onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
-						disabled={isLocked}
 						data-testid="btn-open-stomt-templates"
 						className="h-8 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
 						title="Открыть каталог 448 клинических шаблонов 043/у из StomX"
@@ -404,11 +501,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<span>Шаблоны 043/у StomX</span>
 					</button>
 
-					{/* Физиологическая норма в 1 клик (Мандат 8e) */}
+					{/* Физиологическая норма в 1 клик (Мандат 8e: никогда не disabled!) */}
 					<button
 						type="button"
 						onClick={handleApplyNorm}
-						disabled={isLocked}
 						data-testid="btn-soap-physio-norm"
 						className="h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 transition-colors"
 						title="Заполнить физиологической нормой (здоров / жалоб нет)"
@@ -661,7 +757,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							rows={3}
 							value={values.complaint || ""}
 							onChange={(e) => handleFieldChange("complaint", e.target.value)}
-							disabled={isLocked}
 							placeholder="Боль при приеме пищи, ночные боли, выпадение пломбы..."
 							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
 						/>
@@ -683,7 +778,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							rows={3}
 							value={values.anamnesis || ""}
 							onChange={(e) => handleFieldChange("anamnesis", e.target.value)}
-							disabled={isLocked}
 							placeholder="Зуб ранее лечен, боли возникли 2 дня назад. Соматически здоров..."
 							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
 						/>
@@ -709,7 +803,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							onChange={(e) =>
 								handleFieldChange("objectiveStatus", e.target.value)
 							}
-							disabled={isLocked}
 							placeholder="Кариозная полость средней глубины на окклюзионной поверхности, зондирование слабо болезненно..."
 							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
 						/>
@@ -743,7 +836,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								type="text"
 								value={values.diagnosis || ""}
 								onChange={(e) => handleFieldChange("diagnosis", e.target.value)}
-								disabled={isLocked}
 								placeholder="Клинический диагноз: Кариес дентина зуба 16..."
 								className="flex-1 h-8 px-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
 							/>
@@ -770,7 +862,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							onChange={(e) =>
 								handleFieldChange("treatmentPlan", e.target.value)
 							}
-							disabled={isLocked}
 							placeholder="Анестезия sol. Articaini 1:200000 1.8 мл. Препарирование кариозной полости, коффердам..."
 							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y font-mono text-[11px]"
 						/>
@@ -791,7 +882,6 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							onChange={(e) =>
 								handleFieldChange("recommendations", e.target.value)
 							}
-							disabled={isLocked}
 							placeholder="Щадящая диета 2 часа, гигиена полости рта, НПВП при боли..."
 							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
 						/>

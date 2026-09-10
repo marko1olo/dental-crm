@@ -46,11 +46,11 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 		assert.ok(sentiment.riskFactors.length > 0);
 	});
 
-	it("3. Computes Strict IDS Required for conflict history or severe allergies", () => {
+	it("3. Computes Strict IDS Required for somatic stop-factors and severe allergies", () => {
 		const patientStrict = {
 			id: "pat-strict-1",
 			fullName: "Кузнецов Денис Олегович",
-			notes: "Была претензия по гарантии в 2024 году, требователен к документам",
+			notes: "Особое внимание: отягощенный аллергоанамнез",
 			allergies: "Отек Квинке на новокаин",
 		};
 
@@ -58,7 +58,7 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 		assert.equal(sentiment.type, "strict_ids_required");
 		assert.equal(sentiment.badgeEmoji, "");
 		assert.ok(sentiment.clinicalDirective.includes("1051н"));
-		assert.ok(sentiment.riskFactors.some((r) => r.includes("ИДС") || r.includes("претензи")));
+		assert.ok(sentiment.riskFactors.some((r) => r.includes("ИДС") || r.includes("аллерг") || r.includes("Аллерг")));
 	});
 
 	it("4. Formats patient birth date and Russian age correctly", () => {

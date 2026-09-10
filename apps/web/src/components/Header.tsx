@@ -2,9 +2,6 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Activity,
-	AlertCircle,
-	AlertTriangle,
-	Check,
 	ChevronDown,
 	Clock,
 	CreditCard,
@@ -15,12 +12,8 @@ import {
 	Moon,
 	Phone,
 	PhoneCall,
-	PhoneIncoming,
-	PhoneOutgoing,
 	RefreshCw,
-	Server,
 	ShieldCheck,
-	Sparkles,
 	Sun,
 	Volume2,
 	VolumeX,
@@ -31,20 +24,11 @@ import {
 } from "lucide-react";
 import { useOptionalAppLogicContext } from "../contexts/AppLogicContext";
 import { useAppStore } from "../store/appStore";
-import { usePerspectiveStore } from "../store/perspectiveStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useTelephonyStore } from "../store/telephonyStore";
 import { useThemeStore } from "../store/themeStore";
 import { showToast } from "./GlobalToast";
 import "./Header.css";
-
-function formatMoneyRu(amount: number): string {
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		maximumFractionDigits: 0,
-	}).format(amount);
-}
 
 export interface ClinicControlPillProps {
 	className?: string;
@@ -530,54 +514,5 @@ export function ClinicControlPill({
 				</div>
 			)}
 		</div>
-	);
-}
-
-export interface HeaderProps {
-	clinicName?: string | undefined;
-	onLockSession?: (() => void) | undefined;
-	onOpenShiftModal?: (() => void) | undefined;
-	className?: string | undefined;
-	children?: React.ReactNode | undefined;
-}
-
-/**
- * Header - macOS HIG unified Topbar Header with Clinic Control Center Capsule.
- */
-export function Header({
-	clinicName = "DENTE Стоматология",
-	onLockSession,
-	onOpenShiftModal,
-	className = "",
-	children,
-}: HeaderProps) {
-	return (
-		<header
-			className={`topbar flex items-center justify-between px-4 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-b border-[var(--line,#e2e8f0)] ${className}`}
-		>
-			<div className="flex items-center gap-3 min-w-0">
-				<div className="topbar-clinic min-w-0">
-					<p className="eyebrow text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#475569)]">
-						{new Date().toLocaleDateString("ru-RU", {
-							weekday: "short",
-							day: "numeric",
-							month: "short",
-						})}
-					</p>
-					<h1 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] truncate">
-						{clinicName}
-					</h1>
-				</div>
-
-				<ClinicControlPill
-					onLockSession={onLockSession}
-					onOpenShiftModal={onOpenShiftModal}
-				/>
-			</div>
-
-			<div className="top-actions flex items-center gap-2">
-				{children}
-			</div>
-		</header>
 	);
 }

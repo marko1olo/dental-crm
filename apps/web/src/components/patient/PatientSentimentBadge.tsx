@@ -111,41 +111,176 @@ export function computePatientSentiment(
 		""
 	).toLowerCase();
 
-	const notes = String(patient?.notes || "").toLowerCase();
+	const safety =
+		patient?.safetyProfile ||
+		patient?.clinicalSafetyProfile ||
+		patient?.anamnesis?.safetyProfile ||
+		patient;
+
 	const allergiesStr = String(
-		patient?.allergies || patient?.allergiesText || patient?.anamnesis?.allergies || "",
+		patient?.allergies ||
+			patient?.allergiesText ||
+			patient?.anamnesis?.allergies ||
+			safety?.customAllergyNotes ||
+			safety?.customAllergiesNotes ||
+			"",
 	).toLowerCase();
 
-	const hasCancelNotes = Boolean(
-		notes.includes("отмен") ||
-			notes.includes("неявк") ||
-			notes.includes("не пришел") ||
-			notes.includes("перенос") ||
-			notes.includes("опозда"),
-	);
+	const anamnesisStr = String(
+		patient?.anamnesisNotes ||
+			patient?.anamnesisText ||
+			patient?.anamnesis?.chronicDiseases ||
+			patient?.chronicDiseases ||
+			safety?.customChronicNotes ||
+			patient?.notes ||
+			"",
+	).toLowerCase();
 
-	const hasConflictHistory = Boolean(
-		patient?.hasLegalComplaints ||
-			patient?.isConflictProne ||
-			patient?.requiresStrictInformedConsent ||
-			patient?.tags?.includes("конфликт") ||
-			patient?.tags?.includes("претензия") ||
-			notes.includes("конфликт") ||
-			notes.includes("претензи") ||
-			notes.includes("юрист") ||
-			notes.includes("строг"),
-	);
+	// 3. Clinical Somatic Stop-Factors Evaluation (per СтАР / 804н / safetyMath.ts)
+	const somaticRiskFactors: string[] = [];
 
-	const hasHighAllergies = Boolean(
-		allergiesStr.includes("отек квинке") ||
+	// 3a. Pacemaker / ЭКС
+	const hasPacemaker = Boolean(
+		safety?.hasPacemakerExs ||
+			anamnesisStr.includes("кардиостимулятор") ||
+			anamnesisStr.includes("экс") ||
+			anamnesisStr.includes("икд") ||
+			anamnesisStr.includes("пейсмейкер") ||
+			anamnesisStr.includes("pacemaker") ||
+			anamnesisStr.includes("водитель ритма") ||
+			anamnesisStr.includes("z95.0"),
+	);
+	if (hasPacemaker) {
+		somaticRiskFactors.push(
+			"Имплантированный кардиостимулятор (ЭКС): УЗ-скейлинг и монополярная коагуляция противопоказаны",
+		);
+	}
+
+	// 3b. Severe Allergies
+	const hasSevereAllergies = Boolean(
+		safety?.hasLidocaineAllergy ||
+			safety?.hasArticaineAllergy ||
+			safety?.hasMepivacaineAllergy ||
+			safety?.hasEsterAnestheticsAllergy ||
+			safety?.hasSulfiteAllergy ||
+			safety?.hasSulfitesAllergy ||
+			safety?.hasAnestheticAllergy ||
+			safety?.hasAnaphylaxisHistory ||
+			safety?.hasSevereAllergies ||
+			safety?.hasLatexAllergy ||
+			safety?.hasPenicillinAllergy ||
+			allergiesStr.includes("отек квинке") ||
 			allergiesStr.includes("анафилак") ||
 			allergiesStr.includes("новокаин") ||
 			allergiesStr.includes("лидокаин") ||
+			allergiesStr.includes("артикаин") ||
+			allergiesStr.includes("ультракаин") ||
 			allergiesStr.includes("анестетик") ||
-			patient?.hasSevereAllergies ||
+			allergiesStr.includes("пенициллин") ||
+			allergiesStr.includes("латекс") ||
 			(Array.isArray(patient?.allergies) && patient.allergies.length > 0),
 	);
+	if (hasSevereAllergies) {
+		somaticRiskFactors.push(
+			"Отягощенный аллергоанамнез: подбор гипоаллергенной анестезии, обязательное ИДС по Приказу 1051н",
+		);
+	}
 
+	// 3c. Bisphosphonates / MRONJ
+	const hasBisphosphonates = Boolean(
+		safety?.takesBisphosphonates ||
+			safety?.hasBisphosphonateTherapy ||
+			anamnesisStr.includes("бисфосфонат") ||
+			anamnesisStr.includes("зомета") ||
+			anamnesisStr.includes("акласта") ||
+			anamnesisStr.includes("бонвива") ||
+			anamnesisStr.includes("пролиа") ||
+			anamnesisStr.includes("mronj") ||
+			anamnesisStr.includes("бонч"),
+	);
+	if (hasBisphosphonates) {
+		somaticRiskFactors.push(
+			"Бисфосфонатная терапия: риск остеонекроза челюсти (MRONJ), запрет травматичных вмешательств",
+		);
+	}
+
+	// 3d. Anticoagulants
+	const hasAnticoagulants = Boolean(
+		safety?.takesAnticoagulants ||
+			safety?.hasAnticoagulantTherapy ||
+			anamnesisStr.includes("варфарин") ||
+			anamnesisStr.includes("ксарелто") ||
+			anamnesisStr.includes("эликвис") ||
+			anamnesisStr.includes("прадакса") ||
+			anamnesisStr.includes("антикоагулянт") ||
+			anamnesisStr.includes("тромбо асс") ||
+			anamnesisStr.includes("плавикс"),
+	);
+	if (hasAnticoagulants) {
+		somaticRiskFactors.push(
+			"Антикоагулянтная терапия: повышенный риск кровотечения при хирургии, контроль гемостаза",
+		);
+	}
+
+	// 3e. Pregnancy & Lactation
+	const hasPregnancy = Boolean(
+		(safety?.pregnancyTrimester && safety.pregnancyTrimester !== "none") ||
+			patient?.isPregnant ||
+			anamnesisStr.includes("беременн") ||
+			anamnesisStr.includes("триместр") ||
+			anamnesisStr.includes("лактаци"),
+	);
+	if (hasPregnancy) {
+		somaticRiskFactors.push(
+			"Беременность / период лактации: щадящий режим, анестетики без адреналина, защита плода",
+		);
+	}
+
+	// 3f. Chronic Somatic
+	const hasDiabetes = Boolean(
+		safety?.hasDiabetesMellitus ||
+			safety?.hasDiabetes ||
+			anamnesisStr.includes("сахарный диабет") ||
+			anamnesisStr.includes("диабет") ||
+			anamnesisStr.includes("инсулин"),
+	);
+	if (hasDiabetes) {
+		somaticRiskFactors.push("Сахарный диабет: контроль гликемии, повышенный риск инфицирования раны");
+	}
+
+	const hasInfection = Boolean(
+		safety?.hasHepatitis ||
+			safety?.hasHiv ||
+			anamnesisStr.includes("гепатит") ||
+			anamnesisStr.includes("вич") ||
+			anamnesisStr.includes("hiv") ||
+			anamnesisStr.includes("hbsag") ||
+			anamnesisStr.includes("hcv"),
+	);
+	if (hasInfection) {
+		somaticRiskFactors.push("Инфекционный статус (гепатит / ВИЧ): санитарный режим и защита персонала");
+	}
+
+	const hasOtherChronic = Boolean(
+		safety?.hasBronchialAsthma ||
+			safety?.hasEpilepsy ||
+			safety?.hasCardiovascularDisease ||
+			safety?.hasSevereHypertensionStage3 ||
+			anamnesisStr.includes("эпилепси") ||
+			anamnesisStr.includes("астма") ||
+			anamnesisStr.includes("гипертони"),
+	);
+	if (hasOtherChronic) {
+		somaticRiskFactors.push("Хроническое соматическое заболевание: мониторинг витальных функций");
+	}
+
+	if (patient?.requiresStrictInformedConsent && somaticRiskFactors.length === 0) {
+		somaticRiskFactors.push("Оформление расширенного информированного добровольного согласия (ИДС 1051н)");
+	}
+
+	const hasSomaticStopFactor = somaticRiskFactors.length > 0 || Boolean(patient?.requiresStrictInformedConsent);
+
+	// 4. Schedule Reliability Metrics (actual no-show data, zero clown text matching)
 	const cancelRatio =
 		typeof patient?.cancellationRatio === "number"
 			? patient.cancellationRatio
@@ -153,115 +288,116 @@ export function computePatientSentiment(
 				? patient.noShowRate
 				: typeof patient?.noShowProbability === "number"
 					? patient.noShowProbability
-					: hasCancelNotes
-						? 0.4
-						: 0;
+					: 0;
 
-	let compliance =
+	const recentNoShows =
+		typeof patient?.recentNoShowsCount === "number"
+			? patient.recentNoShowsCount
+			: typeof patient?.noShowsCount === "number"
+				? patient.noShowsCount
+				: 0;
+
+	const hasHighCancelRisk = cancelRatio > 0.3 || recentNoShows >= 2;
+
+	const compliance =
 		overrides?.complianceScore ??
 		(typeof patient?.complianceScore === "number"
 			? patient.complianceScore
 			: typeof patient?.compliancePercent === "number"
 				? patient.compliancePercent
-				: hasCancelNotes || cancelRatio > 0.3
+				: hasHighCancelRisk
 					? 65
-					: tier === "platinum" || tier === "gold"
+					: tier === "platinum" || tier === "gold" || tier === "vip" || ltv >= 100000
 						? 95
-						: 90);
+						: 100);
 
-	if (hasCancelNotes && compliance > 70) {
-		compliance = 65;
-	}
-
-	const riskFactors: string[] = [];
-	if (cancelRatio > 0.25 || compliance < 75 || hasCancelNotes) {
-		riskFactors.push("Высокая вероятность срыва или переноса записи");
-	}
-	if (hasConflictHistory) {
-		riskFactors.push("В анамнезе претензионные обращения или особые юридические требования");
-	}
-	if (hasHighAllergies) {
-		riskFactors.push("Требуется строгое ИДС с подробным разъяснением рисков");
-	}
-
-	// 3. Classify
+	// 5. Classification
 	let resolvedType: PatientSentimentType = "standard";
 
 	if (forcedType) {
 		resolvedType = forcedType;
-	} else if (hasConflictHistory || hasHighAllergies) {
+	} else if (hasSomaticStopFactor) {
 		resolvedType = "strict_ids_required";
-	} else if (cancelRatio > 0.3 || compliance < 70 || (patient?.recentNoShowsCount ?? 0) >= 2 || hasCancelNotes) {
+	} else if (hasHighCancelRisk) {
 		resolvedType = "cancellation_risk";
 	} else if (
 		tier === "platinum" ||
 		tier === "gold" ||
 		tier === "vip" ||
-		ltv >= 100000 ||
-		compliance >= 95
+		ltv >= 100000
 	) {
 		resolvedType = "loyal_vip";
 	}
 
 	switch (resolvedType) {
+		case "strict_ids_required": {
+			let shortLabel = "Стоп-фактор";
+			if (hasPacemaker) shortLabel = "ЭКС / Кардиостимулятор";
+			else if (hasSevereAllergies) shortLabel = "Аллергоанамнез";
+			else if (hasBisphosphonates) shortLabel = "Бисфосфонаты";
+			else if (hasAnticoagulants) shortLabel = "Антикоагулянты";
+			else if (hasPregnancy) shortLabel = "Беременность";
+			else if (hasDiabetes) shortLabel = "Сахарный диабет";
+			else if (hasInfection) shortLabel = "Инфекционный статус";
+
+			return {
+				type: "strict_ids_required",
+				label: "Соматический стоп-фактор (ИДС)",
+				shortLabel,
+				badgeEmoji: "",
+				colorTheme: "rose",
+				description:
+					"В анамнезе выявлены критические соматические стоп-факторы, требующие специального клинического протокола и оформления ИДС.",
+				clinicalDirective:
+					"Оформление расширенного ИДС по приказу 1051н, протоколирование в амбулаторной карте 043/у и соблюдение мер безопасности.",
+				calculatedLtvRub: ltv,
+				complianceScorePercent: overrides?.complianceScore ?? 80,
+				riskFactors: somaticRiskFactors,
+			};
+		}
+		case "cancellation_risk":
+			return {
+				type: "cancellation_risk",
+				label: "Риск неявки (расписание)",
+				shortLabel: "Риск неявки",
+				badgeEmoji: "",
+				colorTheme: "amber",
+				description:
+					"Повышенная вероятность пропуска приёма по объективной статистике расписания.",
+				clinicalDirective:
+					"Контрольный звонок администратора за 24 ч + контрольное SMS-напоминание утром в день приёма.",
+				calculatedLtvRub: ltv,
+				complianceScorePercent: compliance,
+				riskFactors: ["Повышенная вероятность срыва записи по данным расписания"],
+			};
 		case "loyal_vip":
 			return {
 				type: "loyal_vip",
-				label: "VIP / Лояльный пациент",
+				label: "Лояльный профиль / VIP",
 				shortLabel: "VIP • Лояльный",
 				badgeEmoji: "",
 				colorTheme: "emerald",
 				description:
-					"Пациент с высоким LTV, высокой дисциплиной визитов и высоким доверием к комплексным планам.",
+					"Пациент с подтвержденной лояльностью и регулярной историей визитов.",
 				clinicalDirective:
 					"Приоритетная запись в удобное время, персональный менеджер куратора, презентация комплексных планов.",
 				calculatedLtvRub: ltv,
 				complianceScorePercent: compliance,
-				riskFactors,
-			};
-		case "cancellation_risk":
-			return {
-				type: "cancellation_risk",
-				label: "Риск отмены / Неявки",
-				shortLabel: "Риск отмены",
-				badgeEmoji: "",
-				colorTheme: "amber",
-				description:
-					"Повышенная вероятность срыва записи или спонтанного переноса приёма (комплаенс снижен).",
-				clinicalDirective:
-					"Обязательный звонок администратора за 24 ч + контрольное SMS-напоминание утром в день приёма, бронирование с предоплатой.",
-				calculatedLtvRub: ltv,
-				complianceScorePercent: compliance,
-				riskFactors,
-			};
-		case "strict_ids_required":
-			return {
-				type: "strict_ids_required",
-				label: "Требуется строгое ИДС",
-				shortLabel: "Строгое ИДС",
-				badgeEmoji: "",
-				colorTheme: "rose",
-				description:
-					"Пациент требует расширенного информирования, детализации альтернатив лечения и видеофиксации согласий.",
-				clinicalDirective:
-					"100% оформление расширенного ИДС по приказу 1051н, протоколирование этапов в ЭМК и фотопротокол.",
-				calculatedLtvRub: ltv,
-				complianceScorePercent: compliance,
-				riskFactors,
+				riskFactors: [],
 			};
 		default:
 			return {
 				type: "standard",
-				label: "Стандартный профиль",
-				shortLabel: "Стандарт",
+				label: "Соматически здоров / Норма",
+				shortLabel: "Норма (043/у)",
 				badgeEmoji: "",
 				colorTheme: "slate",
 				description:
-					"Пациент со стабильной историей посещений и стандартными условиями обслуживания.",
+					"Соматически сохранный профиль, стандартный протокол ведения амбулаторной карты 043/у.",
 				clinicalDirective: "Стандартный протокол приёма и оформления медицинской карты 043/у.",
 				calculatedLtvRub: ltv,
 				complianceScorePercent: compliance,
-				riskFactors,
+				riskFactors: [],
 			};
 	}
 }
@@ -397,7 +533,7 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 				className={`group inline-flex items-center justify-center gap-1.5 px-2.5 py-1 min-h-[32px] sm:min-h-[36px] min-w-[110px] rounded-xl text-xs font-bold border transition-all duration-150 select-none shrink-0 ${
 					interactive ? "cursor-pointer active:scale-98" : "cursor-default"
 				} ${themeStyles.badgeBg} ${themeStyles.badgeBorder} ${themeStyles.badgeText}`}
-				title={`${info.label} • LTV: ${formattedLtv} • Комплаенс: ${info.complianceScorePercent}%`}
+				title={`${info.label} • LTV: ${formattedLtv} • Статус: ${info.shortLabel}`}
 				data-testid={`sentiment-badge-${info.type}`}
 			>
 				<span className={`w-2 h-2 rounded-full shrink-0 ${themeStyles.dotBg}`} />
@@ -412,7 +548,15 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 
 				{showCompliance && (
 					<span className="text-xs font-semibold opacity-75 hidden sm:inline-flex items-center gap-0.5 shrink-0">
-						<span>{info.complianceScorePercent}%</span>
+						<span>
+							{info.type === "strict_ids_required"
+								? `Стоп (${info.riskFactors.length})`
+								: info.type === "cancellation_risk"
+									? "Риск"
+									: info.type === "loyal_vip"
+										? "VIP"
+										: "Норма"}
+						</span>
 					</span>
 				)}
 			</button>
@@ -453,7 +597,7 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 											<span>{info.label}</span>
 										</div>
 										<div className="text-xs text-[var(--muted,var(--ink-muted))]">
-											Клинический скоринг пациента
+											Клинический статус безопасности (043/у)
 										</div>
 									</div>
 								</div>
@@ -481,11 +625,13 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 
 								<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
 									<div className="text-xs font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
-										<Percent size={13} className="text-cyan-500" />
-										<span>Комплаенс</span>
+										<CheckCircle2 size={13} className={info.type === "strict_ids_required" ? "text-rose-500" : "text-cyan-500"} />
+										<span>Соматика (043/у)</span>
 									</div>
-									<div className="text-sm font-black font-mono mt-0.5 text-[var(--ink)]">
-										{info.complianceScorePercent}%
+									<div className="text-xs font-black mt-0.5 text-[var(--ink)] truncate">
+										{info.type === "strict_ids_required"
+											? `Стоп-факторы: ${info.riskFactors.length}`
+											: "Соматически здоров"}
 									</div>
 								</div>
 							</div>
@@ -506,7 +652,7 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 								<div className="space-y-1">
 									<div className="text-xs font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1">
 										<AlertTriangle size={13} />
-										<span>Факторы внимания:</span>
+										<span>Клинические стоп-факторы:</span>
 									</div>
 									<ul className="text-xs text-[var(--muted,var(--ink-muted))] space-y-0.5 pl-4 list-disc m-0">
 										{info.riskFactors.map((factor) => (
