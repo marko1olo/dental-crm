@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-09 / WAVE 87): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 200 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 263 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 200 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-10 / WAVE 90): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 200 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 263 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 200 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -3509,4 +3509,44 @@
   - **Ре-аудит 10 скриншотов сьют 7 смертных грехов UI (Мандаты 8d, 8p, коммит `cd7f79e20`)**:
     * Обновлен сьют скриншотов в `docs/screenshots/audit_7sins/` (10 PNG, Light/Dark 1440x900). Все MD5 уникальны, размеры файлов 185–262 KB, 7 смертных грехов устранены, вердикт: **`[ПРОВЕРЕНО: ЧИСТО]`**.
 * **Верификация**: `apps/web/src/components/schedule/__tests__/chairDoctorDutyAssignmentWave60.test.tsx` (15/15 PASS), `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `chairDoctorRosterStomXParity.test.tsx` (18/18 PASS), `chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx` (15/15 PASS), суммарно сьют расписания 60/60 PASS, `check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
+
+### Wave 90: Ликвидация фейковой SMS-симуляции в онлайн-записи, удаление диктовки цен, компактизация шапки расписания кресел до ~65px и фиксация скролла настроек (Мандаты 8e, 8k, 8n, 8p)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `367f00837`, `7752d2330`, `31cc25628`
+* **Результаты**:
+  - **Ликвидация фейковой SMS-симуляции и dev-бейджа в онлайн-записи (Мандаты 8e, 8k, 8n, 8p п. 5, коммит `7752d2330`)**:
+    * *PublicOnlineBookingWidget.tsx*: полностью удален аркадный симулятор отправки и подтверждения SMS-кодов (`smsCode`, `generatedSmsCode`, искусственный таймер обратного отсчета `smsCountdown`, процедурный тренажер ручного ввода 4/6-значного OTP-кода); онлайн-запись переведена на чистый 1-кликовый ввод контактного телефона пациента (`patientPhone`) с валидацией по RFC/ГОСТ, мгновенным созданием бронирования и отправкой реального СМС/мессенджер-уведомления без блокировки шагов.
+    * *PublicOnlineBookingWidget.tsx*: вычищена утечка разработки в прод-UI (Мандат 8p п. 5) — ликвидирован бейдж отладки `.booking-dev-badge` («Режим разработки: код 0000»).
+    * *bookingWidget.css*: удалены стили симулятора SMS-кода и dev-бейджа (`.booking-dev-badge`, `.booking-sms-simulation-box`).
+    * *Тесты*: синхронизированы и расширены юнит-тесты `PublicOnlineBookingWidget.test.tsx` (24/24 PASS) и `publicOnlineBookingAutonomy.test.tsx` (11/11 PASS) с подтверждением 1-кликового перехода к подтверждению без SMS-симуляций.
+  - **Ликвидация игрушечной диктовки цен в настройках прейскуранта (Мандаты 8k, Core Rule 7, коммит `367f00837`)**:
+    * *PriceDictationBar.tsx*: полностью ликвидирован 110-строчный компонент-гипертрофия голосовой диктовки цен в прейскуранте, захламлявший настройки клиники процедурным распознаванием надуманных фраз («Поставить пломбу 3000 рублей»); очищены сопутствующие подсказки `DictationHints.tsx`.
+    * *VoiceAssistantUI.tsx*, *SettingsPricesTab.tsx*, *vite.config.ts*: удалены неиспользуемые импорты, рудименты диктовки цен и нормализована структура вкладки прейскуранта.
+  - **Компактизация шапки колонки кресла до ~65px и чип прямого добавления кресла (Мандаты 8c, 8d, 8e, 8n, 8p, коммит `31cc25628`)**:
+    * *ScheduleGrid.tsx*: ликвидирована раздутая высота шапки кресел; шапка колонки установки сжата до компактных ~65px (`schedule-chair-header-compact`), объединяя название кресла, аватар врача, бейджи смен (☀️/🌙) и пульсирующий индикатор дежурства `.chair-duty-pulse` в единый плотный авиационный заголовок по Закону Хика. Это возвращает экрану сетки расписания до 40–50px полезной вертикальной высоты по нормативу полезного вьюпорта $\le 160\text{--}180\text{px}$ (Мандат 8p).
+    * *ScheduleFilterStrip.tsx*: в полосу быстрых фильтров внедрен чип прямого добавления кресла `schedule-add-chair-chip` (`+ Кресло`) с тач-таргетом $\ge 44\text{px}$ для мгновенного заведения новой установки без модального лабиринта настроек.
+  - **Фиксация вертикального скролла вкладок в настройках (Мандаты 8d, 8p, коммит `31cc25628`)**:
+    * *SettingsView.tsx* и *main.css*: добавлен класс контейнера `.settings-tabs-scroll-container` с плавной прокруткой `overflow-y-auto` и `max-h-[calc(100vh-140px)]`, устраняющий обрезание нижних вкладок («Интеграции», «Логи», «Шаблоны») на экранах ноутбуков и компактных десктопах.
+  - **Ре-аудит 10 скриншотов сьют 7 смертных грехов UI (Мандаты 8d, 8p, 8q, коммит `31cc25628`)**:
+    * Пересняты и обновлены все 10 PNG-скриншотов в `docs/screenshots/audit_7sins/` (1440x900 PC Light/Dark) с живых серверов: `01_schedule`, `02_visit`, `03_cashbox_finance`, `04_settings`, `05_patient_card`.
+    * Проверены уникальные MD5-хеши (все 10 файлов $\ge 188$ KB), подтверждена компактная высота шапки расписания ~65px, скролл настроек без вылетов и чистота интерфейса. Вердикт: **`[ПРОВЕРЕНО: ЧИСТО]`**.
+* **Верификация**: `apps/web/src/components/booking/__tests__/PublicOnlineBookingWidget.test.tsx` (24/24 PASS), `apps/web/src/components/booking/__tests__/publicOnlineBookingAutonomy.test.tsx` (11/11 PASS), `apps/web/src/components/schedule/__tests__/chairDoctorDutyAssignmentWave60.test.tsx` (16/16 PASS), `apps/web/src/components/settings/__tests__/settingsTabsState.test.ts` (PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
+
+### Wave 91: Ликвидация фейковой OCR-симуляции в DocumentCameraScannerModal и поддельных номеров чеков 54-ФЗ в SbpPaymentQrModal (Мандаты 8b, 8e, 8k, Core Rule 11)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Результаты**:
+  - **Ликвидация фейковой OCR-симуляции в DocumentCameraScannerModal (Мандаты 8k, Core Rule 11 Zero-Mock Fallback)**:
+    * В `DocumentCameraScannerModal.tsx`: ликвидирован бутафорский блок «симуляции OCR» (строки 179–188), выводивший фальшивые сообщения о найденном паспорте, полисе ОМС или СНИЛС на любое случайное изображение.
+    * Заменён на честное информационное сообщение по стандарту Zero-Mock Fallback: `Снимок сохранён (${selectedDocLabelRu}). Проверьте чёткость изображения перед прикреплением к карточке.`.
+    * Вычищены все комментарии и рудименты про «OCR simulation», удалены неиспользуемые импорты OCR-парсеров.
+    * Добавлен модульный тест `apps/web/src/components/scanner/__tests__/DocumentCameraScannerModal.test.tsx` (2/2 PASS).
+  - **Ликвидация случайных фискальных чеков FD- в SbpPaymentQrModal (54-ФЗ, Мандат 8b)**:
+    * В `SbpPaymentQrModal.tsx`: удалена генерация случайных номеров чеков через `Math.random` (`FD-${Math.floor(100000 + Math.random() * 900000)}`) в 4 точках (строки 97, 213, 245, 285).
+    * `fiscalReceiptId` инициализируется строго в `null`; при подтверждении от эквайрингового шлюза (`checkResult.fiscalReceiptId` / `data.fiscalReceiptId`) используется реальный номер фискального чека из ответа сервера.
+    * При ручной сверке кассиром по выписке/СМС явно фиксируется `receiptId = null`, а в UI отображается «Ручная сверка (без чека ККТ)».
+    * Синхронизирован обработчик `handleSbpPaymentSuccess` в `PatientOmnichannelHubModal.tsx`.
+    * Обновлен сьют тестов `SbpPaymentQrModal.test.tsx` с подтверждением отсутствия случайных номеров `FD-`.
+* **Верификация**: `apps/web/src/components/scanner/__tests__/DocumentCameraScannerModal.test.tsx` (2/2 PASS), `apps/web/src/components/scanner/__tests__/documentScannerEngine.test.ts` (6/6 PASS), `apps/web/src/components/messaging/__tests__/SbpPaymentQrModal.test.tsx` (3/3 PASS), `apps/web/src/components/messaging/__tests__/*.test.ts*` (21/21 PASS), `npm run check:encoding` 5144 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+
+
 
