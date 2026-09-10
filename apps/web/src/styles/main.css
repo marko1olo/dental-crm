@@ -15214,6 +15214,11 @@ textarea:focus {
 	gap: 6px;
 	position: sticky;
 	top: 100px;
+	max-height: calc(100vh - 140px);
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+	scrollbar-width: thin;
+	padding-bottom: 48px;
 }
 .settings-tabs button {
 	text-align: left;

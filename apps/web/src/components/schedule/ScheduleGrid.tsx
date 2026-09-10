@@ -104,14 +104,6 @@ export const CHAIR_SHIFT_PRESETS = [
 		endHour: 14,
 	},
 	{
-		id: "morning_9" as const,
-		label: "1 смена (09:00–15:00)",
-		hours: "09:00–15:00",
-		name: "1 см. 09:00–15:00",
-		startHour: 9,
-		endHour: 15,
-	},
-	{
 		id: "evening" as const,
 		label: "Вечерняя смена",
 		hours: "14:00–20:00",
@@ -120,20 +112,28 @@ export const CHAIR_SHIFT_PRESETS = [
 		endHour: 20,
 	},
 	{
-		id: "evening_15" as const,
-		label: "2 смена (15:00–21:00)",
-		hours: "15:00–21:00",
-		name: "2 см. 15:00–21:00",
-		startHour: 15,
-		endHour: 21,
-	},
-	{
 		id: "full" as const,
 		label: "Полный день",
 		hours: "08:00–20:00",
 		name: "Весь день 08:00–20:00",
 		startHour: 8,
 		endHour: 20,
+	},
+	{
+		id: "morning_9" as const,
+		label: "1 смена (09:00–15:00)",
+		hours: "09:00–15:00",
+		name: "1 см. 09:00–15:00",
+		startHour: 9,
+		endHour: 15,
+	},
+	{
+		id: "evening_15" as const,
+		label: "2 смена (15:00–21:00)",
+		hours: "15:00–21:00",
+		name: "2 см. 15:00–21:00",
+		startHour: 15,
+		endHour: 21,
 	},
 	{
 		id: "full_9_21" as const,
@@ -1796,7 +1796,6 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						data-testid="btn-grid-inline-add-chair"
 						style={{ minHeight: "44px", minWidth: "44px" }}
 					>
-						<Plus size={14} className="shrink-0 text-[var(--teal)]" />
 						<span className="font-bold">+ Кресло</span>
 					</button>
 
@@ -1899,7 +1898,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														prev === chair.id ? null : chair.id,
 													);
 												}}
-												className="text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2 py-0.5 rounded-lg border border-[var(--teal)]/30 shrink-0 cursor-pointer hover:bg-[var(--teal-surface)] transition-colors flex items-center gap-1 max-w-[170px] truncate"
+												className="hidden text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2 py-0.5 rounded-lg border border-[var(--teal)]/30 shrink-0 cursor-pointer hover:bg-[var(--teal-surface)] transition-colors items-center gap-1 max-w-[170px] truncate"
 												title={`Врач: ${assignment.doctorName} (${assignment.shiftHours || "смена"}). Нажмите для смены в 1 клик`}
 												aria-label={`Дежурный врач: ${assignment.doctorName}`}
 												data-testid={`chair-header-doctor-badge-${chair.id}`}
@@ -2758,7 +2757,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														</div>
 													)}
 													{/* 1-Click Shift Segmented Control (StomX / DentalPRO parity) */}
-													<details className="w-full relative group text-xs">
+													<details className="hidden">
 														<summary className="w-full h-7 min-h-[28px] px-2 py-0.5 flex items-center justify-between gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer select-none list-none transition-colors [&::-webkit-details-marker]:hidden">
 															<span className="truncate flex items-center gap-1">
 																<Clock size={11} className="text-[var(--teal)] shrink-0" />

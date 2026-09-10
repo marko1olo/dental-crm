@@ -1911,16 +1911,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 			</div>
 
 			<div
-				className="settings-tabs flex-nowrap overflow-x-auto whitespace-nowrap scrollbar-none touch-pan-x"
+				className="settings-tabs scrollbar-none touch-pan-x"
 				role="tablist"
 				aria-label="Раздел настроек"
-				style={{
-					overflowX: "auto",
-					whiteSpace: "nowrap",
-					WebkitOverflowScrolling: "touch",
-					paddingLeft: "0.75rem",
-					paddingRight: "0.75rem",
-				}}
 			>
 				{/*
           Группы берутся из объявления вкладки, а не из списков в разметке.

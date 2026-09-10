@@ -414,21 +414,20 @@ export function ScheduleFilterStrip({
 						</button>
 					);
 				})}
-
-				{/* 1-Click Inline "+ Кресло" addition button (StomX / DentalPRO parity, Mandates 8e, 8n) */}
-				<button
-					type="button"
-					onClick={handleOpenAddChair}
-					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
-					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
-					aria-label="Добавить кресло в расписание"
-					data-testid="schedule-add-chair-btn"
-					style={{ minHeight: "44px", minWidth: "44px" }}
-				>
-					<Plus size={14} className="shrink-0" aria-hidden="true" />
-					<span className="whitespace-nowrap font-bold">+ Кресло</span>
-				</button>
 			</div>
+
+			{/* 1-Click Inline "+ Кресло" addition button (StomX / DentalPRO parity, Mandates 8e, 8n) */}
+			<button
+				type="button"
+				onClick={handleOpenAddChair}
+				className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none mx-1"
+				title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
+				aria-label="Добавить кресло в расписание"
+				data-testid="schedule-add-chair-btn"
+				style={{ minHeight: "44px", minWidth: "44px" }}
+			>
+				<span className="whitespace-nowrap font-bold">+ Кресло</span>
+			</button>
 
 			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
 			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l border-[var(--line)]">
