@@ -1104,7 +1104,13 @@ export function generateForm107_1uPrescription(options: {
 	const calculatedItems = finalDrugKeys.map((id) => calculateDrugCourseDose({ drugId: id }));
 
 	const today = new Date().toISOString().slice(0, 10);
-	const seriesNum = `РЕЦ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	let rand4 = 1000 + (Date.now() % 9000);
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const ubuf = new Uint32Array(1);
+		crypto.getRandomValues(ubuf);
+		rand4 = 1000 + ((ubuf[0] ?? 0) % 9000);
+	}
+	const seriesNum = `РЕЦ-${new Date().getFullYear()}-${rand4}`;
 
 	return {
 		formNumber: "107-1/у",

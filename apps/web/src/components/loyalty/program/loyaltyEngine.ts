@@ -353,8 +353,19 @@ export function generateGiftCertificateSerial(randomSeed?: number): string {
 	const prefix = "7701";
 	let digits = prefix;
 
+	let cryptoBytes: Uint8Array | null = null;
+	if (randomSeed === undefined && typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		cryptoBytes = new Uint8Array(11);
+		crypto.getRandomValues(cryptoBytes);
+	}
+
 	for (let i = 0; i < 11; i++) {
-		const rand = randomSeed !== undefined ? (randomSeed * (i + 1) * 7) % 10 : Math.floor(Math.random() * 10);
+		const rand =
+			randomSeed !== undefined
+				? (randomSeed * (i + 1) * 7) % 10
+				: cryptoBytes
+				? cryptoBytes[i]! % 10
+				: Math.abs(((Date.now() + i * 17) ^ (i * 31)) % 10);
 		digits += rand.toString();
 	}
 

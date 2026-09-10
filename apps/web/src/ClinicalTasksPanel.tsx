@@ -221,7 +221,7 @@ export async function executeClinicalPresetTaskAutonomy(params: {
 		id:
 			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 				? crypto.randomUUID()
-				: `clinical-task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+				: `clinical-task-${Date.now()}-${(Date.now() % 100000).toString(36)}`,
 		organizationId: params.organizationId ?? "current-org",
 		patientId: params.patientId,
 		treatmentPlanId: params.treatmentPlanId ?? null,

@@ -154,7 +154,7 @@ export function createShiftCarpulesBatch(count = 10): readonly ChestnyZnakScanne
 	const batch: ChestnyZnakScannedItem[] = [];
 
 	for (let i = 1; i <= count; i++) {
-		const serial = `SN${String(i).padStart(4, "0")}${Math.floor(1000 + Math.random() * 9000)}`;
+		const serial = `SN${String(i).padStart(4, "0")}${1000 + i}`;
 		const rawCode = `010366479800001621${serial}\x1d17280531\x1d10${series}\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234`;
 		const item = createChestnyZnakScannedItem(rawCode, { costRub: 450 });
 		batch.push(item);

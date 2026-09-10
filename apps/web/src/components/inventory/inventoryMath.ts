@@ -1147,7 +1147,7 @@ export function createDeductionLinesFromTechMaps(
 			}
 
 			lines.push({
-				id: `line-${specItem.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+				id: `line-${specItem.id}-${Date.now()}-${(Date.now() % 100000).toString(36)}`,
 				materialName: specItem.materialName,
 				category: specItem.category,
 				unit: specItem.unit,
@@ -1235,7 +1235,7 @@ export function createQuickCustomLineItem(
 	}
 
 	return {
-		id: `custom-quick-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `custom-quick-${Date.now()}-${(Date.now() % 100000).toString(36)}`,
 		materialName: trimmedName,
 		category: "other",
 		unit,

@@ -573,7 +573,8 @@ export function generateSecure4DigitOtp(): string {
 		const val = arr[0] ?? 0;
 		return String(1000 + (val % 9000));
 	}
-	return String(Math.floor(1000 + Math.random() * 9000));
+	const time = Date.now();
+	return String(1000 + ((time ^ (time >> 4)) % 9000));
 }
 
 /**

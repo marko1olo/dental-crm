@@ -73,8 +73,14 @@ export function calculateBackoffDelay(
 ): number {
 	const exponential = Math.min(maxMs, baseMs * Math.pow(2, Math.max(0, attempt)));
 	if (!jitter) return Math.round(exponential);
-	// Full Jitter: множитель от 0.5 до 1.0 для исключения одновременного всплеска запросов
-	const factor = 0.5 + Math.random() * 0.5;
+	// Full Jitter: множитель от 0.5 до 1.0 для исключения одновременного всплеска запросов (без Math.random)
+	let rand = (Date.now() % 1000) / 1000;
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const u8 = new Uint8Array(1);
+		crypto.getRandomValues(u8);
+		rand = (u8[0] ?? 0) / 255;
+	}
+	const factor = 0.5 + rand * 0.5;
 	return Math.max(50, Math.round(exponential * factor));
 }
 

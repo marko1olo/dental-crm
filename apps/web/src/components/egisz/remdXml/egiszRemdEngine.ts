@@ -550,9 +550,11 @@ export function generateEgisz043uCdaXml(payload: Egisz043uPayload): string {
 			? "Женский"
 			: "Не указан";
 
-	const docUuid =
-		payload.documentUuid ||
-		`DOC-043-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+	const randomSuffix =
+		typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID().slice(0, 8)
+			: String(Date.now() % 10000000).padStart(7, "0");
+	const docUuid = payload.documentUuid || `DOC-043-${Date.now()}-${randomSuffix}`;
 	const clinicOid = payload.clinic.clinicOid || EGISZ_REMD_OIDS.FRMO_MO_ROOT;
 
 	// Split Patient FIO

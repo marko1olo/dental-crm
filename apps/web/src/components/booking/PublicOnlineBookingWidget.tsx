@@ -435,8 +435,13 @@ export function isValidRussianPhone(value: string): boolean {
 
 export function generateBookingReference(): string {
 	const currentYear = new Date().getFullYear();
-	const randomNum = Math.floor(1000 + Math.random() * 9000);
-	return `DNT-${currentYear}-${randomNum}`;
+	let rand4 = 1000 + (Date.now() % 9000);
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const ubuf = new Uint32Array(1);
+		crypto.getRandomValues(ubuf);
+		rand4 = 1000 + ((ubuf[0] ?? 0) % 9000);
+	}
+	return `DNT-${currentYear}-${rand4}`;
 }
 
 export function generateIcsCalendarContent(event: {

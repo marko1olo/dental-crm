@@ -3491,7 +3491,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				const vertex = activeAngle.vertexMm ?? pointMm;
 				const angleDeg = calculateAngleBetween3Points3D(activeAngle.startMm, vertex, pointMm);
 				const newAngle: CbctAngleMeasurement = {
-					id: `angle-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+					id: `angle-${Date.now()}-${(Date.now() % 100000).toString(36)}`,
 					plane,
 					startMm: activeAngle.startMm,
 					vertexMm: vertex,

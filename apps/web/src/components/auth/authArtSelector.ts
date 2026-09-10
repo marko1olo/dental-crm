@@ -44,9 +44,8 @@ export function selectAuthArt(
 		return null;
 	}
 
-	return (
-		eligibleItems[Math.floor(Math.random() * eligibleItems.length)] || null
-	);
+	const idx = Date.now() % eligibleItems.length;
+	return eligibleItems[idx] || null;
 }
 
 export function getCurrentTimeSlot(): string {

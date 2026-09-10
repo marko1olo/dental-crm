@@ -417,10 +417,10 @@ export function ClinicalRulePanel({
 
 	const evaluationCardsFinance = visibleEvaluations.length ? (
 		<div className="clinical-rule-grid">
-			{visibleEvaluations.map((evaluation) => (
+			{visibleEvaluations.map((evaluation, idx) => (
 				<article
 					className={`clinical-rule-card severity-${evaluation?.severity} ${evaluation?.resolved ? "resolved" : ""}`}
-					key={evaluation?.id ?? Math.random()}
+					key={evaluation?.id || `eval-${evaluation?.ruleId || idx}`}
 				>
 					<AlertTriangle aria-hidden="true" />
 					<div>
