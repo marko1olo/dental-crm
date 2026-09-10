@@ -552,7 +552,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 						}`}
 						data-testid="palette-stamp-pulpitis"
 					>
-						<span>Пульпит (Ф)</span>
+						<span>Пульпит (П)</span>
 					</button>
 
 					<button
