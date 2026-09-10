@@ -427,7 +427,7 @@ export function generate54FzStageFiscalReceipt(
 	paymentType: "advance" | "completion" | "full",
 	paymentMethod: "CASH" | "BANK_CARD" | "PATIENT_DEPOSIT" | "SBP_QR" = "BANK_CARD",
 	clinicInn = "7701234567",
-	patientName = "Иванов Иван Иванович",
+	patientName = "Пациент",
 	clinicName = "ООО 'ДЕНТЕ СТОМАТОЛОГИЯ'",
 ): StageFiscalReceipt54Fz {
 	const now = new Date();

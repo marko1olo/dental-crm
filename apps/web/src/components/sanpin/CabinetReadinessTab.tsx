@@ -39,7 +39,7 @@ import { showToast } from "../GlobalToast";
 export function CabinetReadinessTab() {
 	const [selectedCabinet, setSelectedCabinet] = useState("Кабинет № 1");
 	const [selectedProfile, setSelectedProfile] = useState<DentalAppointmentType>("therapy");
-	const [nurseName, setNurseName] = useState("Смирнова А.В.");
+	const [nurseName, setNurseName] = useState("Медсестра / Ассистент");
 	const [nursePosition, setNursePosition] = useState("Ассистент стоматолога");
 
 	// Checklist State
@@ -74,7 +74,7 @@ export function CabinetReadinessTab() {
 		createCabinetReadinessRecord({
 			cabinetNumber: "Кабинет № 1",
 			appointmentType: "therapy",
-			operatorStaffFullName: "Смирнова А.В.",
+			operatorStaffFullName: "Медсестра / Ассистент",
 			operatorStaffPosition: "Ассистент стоматолога",
 			surfaceDisinfection: {
 				isCompleted: true,

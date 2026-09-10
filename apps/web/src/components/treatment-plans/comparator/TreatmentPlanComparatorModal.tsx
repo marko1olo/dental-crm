@@ -60,9 +60,9 @@ export interface TreatmentPlanComparatorModalProps {
 export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModalProps> = ({
 	isOpen = true,
 	onClose,
-	patientName = "Иванов Иван Иванович",
-	doctorName = "Д-р Смирнов А. В. (Хирург-имплантолог, Ортопед)",
-	clinicName = "Стоматологическая клиника DENTE",
+	patientName = "Пациент",
+	doctorName = "Лечащий врач",
+	clinicName = "Стоматологическая клиника",
 	customVariants,
 	onPlanSelected,
 	onApproveAndSign,

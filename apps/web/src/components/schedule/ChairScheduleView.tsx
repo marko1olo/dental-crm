@@ -1466,13 +1466,13 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										e.stopPropagation();
 										setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
 									}}
-									className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+									className="h-6 w-6 inline-flex items-center justify-center rounded text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 									title="Назначить врача и смену в 1 клик (StomX / IDENT)"
 									data-testid={`chair-view-assign-doctor-${chair.id}`}
 									aria-label={`Назначить врача на кресло ${chair.name}`}
 								>
 									<UserCheck
-										size={16}
+										size={13}
 										className={assignedDocName ? "text-[var(--teal)]" : ""}
 									/>
 								</button>
@@ -1484,12 +1484,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										e.stopPropagation();
 										handleEditChair(chair as any);
 									}}
-									className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+									className="h-6 w-6 inline-flex items-center justify-center rounded text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 									title={`Настройки кресла «${chair.name}» (смена врача / кабинета)`}
 									data-testid={`chair-view-settings-${chair.id}`}
 									aria-label={`Настройки кресла ${chair.name}`}
 								>
-									<Settings2 size={16} />
+									<Settings2 size={13} />
 								</button>
 
 								{/* 1-Click Shift Popover */}
