@@ -438,6 +438,158 @@ export interface QuickCarpuleWriteoffParams {
 	readonly stockBatches?: readonly CabinetStockBatch[] | undefined;
 	readonly actDate?: string | undefined;
 	readonly statutoryFormType?: "0504230" | "M11" | "TORG16" | undefined;
+	readonly includePackage?: boolean | undefined;
+}
+
+export interface QuickAnesthesiaPackageWriteoffParams {
+	readonly carpuleCount?: number | undefined;
+	readonly carpuleMaterialId?: string | undefined;
+	readonly needleCount?: number | undefined;
+	readonly needleMaterialId?: string | undefined;
+	readonly antisepticCount?: number | undefined;
+	readonly antisepticMaterialId?: string | undefined;
+	readonly cabinetId?: string | undefined;
+	readonly cabinetNameRu?: string | undefined;
+	readonly actDate?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
+	readonly nurseFullName?: string | undefined;
+	readonly nurseRole?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly notes?: string | undefined;
+	readonly stockBatches?: readonly CabinetStockBatch[] | undefined;
+	readonly statutoryFormType?: "0504230" | "M11" | "TORG16" | undefined;
+}
+
+/**
+ * 1-клик списание стандартного пакета анестезии:
+ * (1 карпула 1.7 мл + карпульная игла + антисептик инъекционного поля).
+ * Врач или медсестра списывают в 1 клик без создания комиссий, накладных и согласований (Мандаты 8e, 8n).
+ */
+export function createQuickAnesthesiaPackageWriteoffDocument(
+	params: QuickAnesthesiaPackageWriteoffParams = {},
+): ClinicalWriteoffDocument {
+	const batches = params.stockBatches || DENTAL_CABINET_STOCK_PRESETS;
+	const cabinetId = params.cabinetId || "cab-01";
+	const cabinetNameRu = params.cabinetNameRu || "Кабинет терапевтической стоматологии №1";
+	const actDate = params.actDate || new Date().toISOString().slice(0, 10);
+	const practitionerName = params.nurseFullName || params.doctorFullName || "Смирнова Анна Викторовна";
+	const practitionerRole = params.nurseRole || params.doctorSpecialty || "Медицинская сестра";
+
+	const carpuleCount = Math.max(1, params.carpuleCount ?? 1);
+	const needleCount = Math.max(1, params.needleCount ?? 1);
+	const antisepticCount = Math.max(1, params.antisepticCount ?? 1);
+
+	const carpuleMat =
+		getClinicalMaterialById(params.carpuleMaterialId || "mat_articaine_ultracain") ||
+		CLINICAL_MATERIALS_CATALOG.find((m) => m.category === "anesthesia") ||
+		CLINICAL_MATERIALS_CATALOG[0]!;
+
+	const needleMat =
+		getClinicalMaterialById(params.needleMaterialId || "mat_dental_needle_30g") ||
+		CLINICAL_MATERIALS_CATALOG.find((m) => m.id === "mat_dental_needle_30g") ||
+		carpuleMat;
+
+	const antisepticMat =
+		getClinicalMaterialById(params.antisepticMaterialId || "mat_antiseptic_chlorhexidine") ||
+		getClinicalMaterialById("mat_topical_anesthesia_gel") ||
+		needleMat;
+
+	const itemsConfig = [
+		{
+			material: carpuleMat,
+			count: carpuleCount,
+			title: "Анестетик артикаиновый 4% (карпула 1.7 мл)",
+		},
+		{
+			material: needleMat,
+			count: needleCount,
+			title: "Игла карпульная стоматологическая 30G",
+		},
+		{
+			material: antisepticMat,
+			count: antisepticCount,
+			title: "Антисептическая обработка инъекционного поля",
+		},
+	];
+
+	const lines: ClinicalWriteoffLine[] = itemsConfig.map((item, idx) => {
+		const fefoResult = findBestBatchFefo(item.material.id, item.count, batches, cabinetId, actDate);
+		const unitCostKopecks = fefoResult.batch?.unitCostKopecks ?? item.material.defaultUnitCostKopecks;
+		const stockAvailable = fefoResult.batch?.quantityAvailable ?? 100;
+		const criticalThreshold = fefoResult.batch?.criticalThreshold ?? 10;
+		const stockStatus = evaluateStockAvailability(stockAvailable, item.count, criticalThreshold);
+
+		return {
+			id: `line_anes_pkg_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+			serviceCode: "A16.07.030.001",
+			serviceTitle: item.title,
+			toothNumber: undefined,
+			materialId: item.material.id,
+			sku: item.material.sku,
+			nameRu: item.material.nameRu,
+			category: item.material.category,
+			unit: item.material.unit,
+			okeiCode: item.material.okeiCode,
+			standardQuantity: item.count,
+			actualQuantity: item.count,
+			discrepancyQuantity: 0,
+			discrepancyReasonCode: "standard_consumption" as const,
+			discrepancyNotes: "Стандартный пакет анестезии: карпула 1.7 мл + игла + антисептик (1 клик без комиссии)",
+			batchId: fefoResult.batch?.batchId,
+			lotNumber: fefoResult.batch?.lotNumber || `LOT-ANES-PKG-${Date.now().toString().slice(-4)}`,
+			serialNumber: undefined,
+			expirationDate: fefoResult.batch?.expirationDate || "2028-12-31",
+			daysUntilExpiration: fefoResult.daysUntilExpiration,
+			isExpiringSoon: fefoResult.isExpiringSoon,
+			isExpired: false,
+			cabinetId,
+			cabinetNameRu,
+			stockAvailable,
+			criticalThreshold,
+			stockStatus,
+			unitCostKopecks,
+			totalCostKopecks: calculateLineCostKopecks(unitCostKopecks, item.count),
+			isMandatory: true,
+			requiresLotTracking: item.material.requiresLotTracking,
+			requiresSerialNumber: false,
+		};
+	});
+
+	const totals = calculateClinicalWriteoffTotals(lines, 1);
+	const actNumber = `АНЕСТ-${Date.now().toString().slice(-6)}`;
+
+	return {
+		id: `doc_anes_pkg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		actNumber,
+		actDate,
+		patientId: params.patientId,
+		patientName: params.patientName || "Стандартный пакет анестезии (кабинет)",
+		doctorFullName: practitionerName,
+		doctorSpecialty: practitionerRole,
+		assistantFullName: practitionerName,
+		cabinetId,
+		cabinetNameRu,
+		completedServices: [
+			{
+				serviceCode: "A16.07.030.001",
+				serviceTitle: "Стандартный пакет анестезии (1 карпула 1.7 мл + карпульная игла + антисептик)",
+				quantityMultiplier: carpuleCount,
+			},
+		],
+		lines,
+		totals,
+		statutoryFormType: params.statutoryFormType || "0504230",
+		status: "confirmed",
+		notes:
+			params.notes ||
+			"1-клик списание стандартного пакета анестезии (1 карпула 1.7 мл + карпульная игла + антисептик) без комиссии из 3 человек (Мандаты 8e, 8n)",
+		confirmedAt: new Date().toISOString(),
+		isQuickCarpuleWriteoff: true,
+		isSingleSigner: true,
+		writtenOffByRole: practitionerRole,
+	};
 }
 
 /**
@@ -447,6 +599,21 @@ export interface QuickCarpuleWriteoffParams {
 export function createQuickCarpuleWriteoffDocument(
 	params: QuickCarpuleWriteoffParams = {},
 ): ClinicalWriteoffDocument {
+	if (params.includePackage) {
+		return createQuickAnesthesiaPackageWriteoffDocument({
+			carpuleCount: params.count,
+			carpuleMaterialId: params.materialId,
+			cabinetId: params.cabinetId,
+			cabinetNameRu: params.cabinetNameRu,
+			actDate: params.actDate,
+			nurseFullName: params.nurseFullName,
+			nurseRole: params.nurseRole,
+			notes: params.notes,
+			stockBatches: params.stockBatches,
+			statutoryFormType: params.statutoryFormType,
+		});
+	}
+
 	const materialId = params.materialId || "mat_articaine_ultracain";
 	const material =
 		getClinicalMaterialById(materialId) ||

@@ -23,6 +23,7 @@ import {
 	kopecksToRubles,
 	updateLineActualQuantity,
 	validateWriteoffDocument,
+	createQuickAnesthesiaPackageWriteoffDocument,
 	createQuickCarpuleWriteoffDocument,
 	createQuickVisitWriteoffDocument,
 } from "../writeoff/clinicalWriteoffEngine.js";
@@ -451,5 +452,34 @@ describe("Single-Signatory Quick Carpule & Anesthetic Writeoff (Медсестр
 		const validation = validateWriteoffDocument(doc);
 		assert.ok(validation.isValid, `Валидация должна быть успешной: ${validation.errors.join(", ")}`);
 	});
+
+	it("createQuickAnesthesiaPackageWriteoffDocument формирует стандартный пакет: карпула 1.7 мл + игла 30G + антисептик без созыва комиссии (Мандаты 8e п. 10, 8n)", () => {
+		const doc = createQuickAnesthesiaPackageWriteoffDocument({
+			cabinetId: "cab_01_therapy",
+			doctorFullName: "Соло-Врач А.С.",
+			patientName: "Тестовый Пациент",
+		});
+
+		assert.ok(doc.actNumber.startsWith("АНЕСТ-"));
+		assert.equal(doc.lines.length, 3, "Пакет анестезии должен содержать ровно 3 позиции: карпула, игла, антисептик");
+		assert.ok(doc.isSingleSigner, "Должен быть включен режим единоличного списания без комиссии");
+		assert.ok(doc.isQuickCarpuleWriteoff, "Должен быть флаг экспресс-списания");
+
+		const materialIds = doc.lines.map((l) => l.materialId);
+		assert.ok(materialIds.includes("mat_articaine_ultracain"), "Должен содержать карпулу артикаина 1.7 мл");
+		assert.ok(materialIds.includes("mat_dental_needle_30g"), "Должен содержать карпульную иглу 30G");
+		assert.ok(materialIds.includes("mat_antiseptic_chlorhexidine"), "Должен содержать антисептическую обработку");
+
+		// Валидация проходит успешно
+		const validation = validateWriteoffDocument(doc);
+		assert.ok(validation.isValid, `Валидация должна быть успешной: ${validation.errors.join(", ")}`);
+		assert.equal(validation.errors.length, 0);
+
+		// Форма 0504230 без созыва комиссии
+		const html0504230 = generateAct0504230Html(doc);
+		assert.ok(html0504230.includes("СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО)"));
+		assert.ok(!html0504230.includes("ПРЕДСЕДАТЕЛЬ КОМИССИИ"), "Не должно быть созыва комиссии");
+	});
 });
+
 

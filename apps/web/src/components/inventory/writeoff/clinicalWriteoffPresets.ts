@@ -504,6 +504,19 @@ export const CLINICAL_MATERIALS_CATALOG: readonly ClinicalMaterialDefinition[] =
 		standardPackagingRu: "баночка 30 мл",
 		descriptionRu: "Обезболивание места укола карпульной иглы",
 	},
+	{
+		id: "mat_antiseptic_chlorhexidine",
+		sku: "DIS-CHLOR-005",
+		nameRu: "Антисептик инъекционного поля (Хлоргексидина биглюконат 0.05% / салфетка)",
+		category: "anesthesia",
+		unit: "шт",
+		okeiCode: "796",
+		defaultUnitCostKopecks: parseKopecks("15.00"),
+		requiresLotTracking: false,
+		requiresSerialNumber: false,
+		standardPackagingRu: "салфетка спиртовая / раствор",
+		descriptionRu: "Антисептическая обработка слизистой оболочки перед инъекцией анестетика",
+	},
 
 	// СИЗ и базовые расходники приема (СанПиН 3.3686-21)
 	{
@@ -1508,6 +1521,32 @@ export const DENTAL_CABINET_STOCK_PRESETS: readonly CabinetStockBatch[] = [
 		criticalThreshold: 5,
 		unitCostKopecks: parseKopecks("50.00"),
 		supplierNameRu: "Jen-Dental",
+	},
+	{
+		batchId: "bat_chlorhex_cab1",
+		materialId: "mat_antiseptic_chlorhexidine",
+		cabinetId: "cab_01_therapy",
+		cabinetNameRu: "Кабинет №1 (Терапия)",
+		lotNumber: "LOT-CHX-2026",
+		expirationDate: "2028-12-31",
+		manufactureDate: "2025-01-01",
+		quantityAvailable: 100,
+		criticalThreshold: 10,
+		unitCostKopecks: parseKopecks("15.00"),
+		supplierNameRu: "ОАО «Фармстандарт»",
+	},
+	{
+		batchId: "bat_chlorhex_cab2",
+		materialId: "mat_antiseptic_chlorhexidine",
+		cabinetId: "cab_02_surgery",
+		cabinetNameRu: "Кабинет №2 (Хирургия)",
+		lotNumber: "LOT-CHX-2026S",
+		expirationDate: "2028-12-31",
+		manufactureDate: "2025-01-01",
+		quantityAvailable: 100,
+		criticalThreshold: 10,
+		unitCostKopecks: parseKopecks("15.00"),
+		supplierNameRu: "ОАО «Фармстандарт»",
 	},
 
 	// Общие СИЗ
