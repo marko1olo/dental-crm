@@ -3489,3 +3489,24 @@
     * В `PaymentCapture.tsx` подтверждена работа пресетов скидок врача до 100% (гарантийная переделка, скидка персоналу) без ввода мастер-пароля администратора. Для физических лиц исключено обязательное требование ИНН (по 54-ФЗ ИНН обязателен только юрлицам/ИП). При клике на оплату с незаполненной суммой при наличии долга по смете в 1 клик выставляется точная сумма долга без барьеров.
 * **Верификация**: `apps/web/src/tests/paymentCaptureAutonomy.test.tsx` (9/9 PASS), `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx` (5/5 PASS), `apps/web/src/components/doctor/__tests__/doctorShiftCockpit.test.tsx` (19/19 PASS), `apps/web/src/components/doctor/__tests__/doctorShiftCockpitAutonomy.test.tsx` (3/3 PASS), `apps/web/src/tests/periodontalCharting.test.tsx` (8/8 PASS), `apps/web/src/components/clinical/__tests__/doctorAutonomyWave46.test.tsx` (23/23 PASS), `apps/web/src/components/patient/__tests__/outpatientAutonomyWave42.test.tsx` (17/17 PASS), `apps/web/src/components/odontogram/__tests__/periodontalExportAutonomyWave51.test.tsx` (9/9 PASS), `apps/web/src/components/patient/__tests__/patientSentimentAndHeader.test.ts` (PASS), суммарно 93+ теста (100% PASS), `check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
 
+### Wave 89: StomX Parity по расписанию и закреплению кресел, 1-клик смена дежурного врача, ликвидация 11 дефектов первого взгляда и утечек разработки (Мандаты 8c, 8d, 8e п. 8, 8n, 8p)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `cd11f6330`, `4d10950f8`, `cd7f79e20`
+* **Результаты**:
+  - **StomX Parity по расписанию и закреплению дежурных врачей за креслами (Мандаты 8c, 8d, 8e п. 8, 8n, StomX Parity, коммит `cd11f6330`)**:
+    * *Быстрый пресет смены 09:00–21:00 (`full_9_21`)*: в `scheduleShiftHelpers.ts` внедрен пресет полного 12-часового рабочего дня с 09:00 до 21:00 с поддержкой быстрого назначения и инлайн-переключения.
+    * *Инлайн-панель назначения дежурного врача на кресло в 1 клик (`schedule-quick-reassign-strip`)*: в `ScheduleGrid.tsx` добавлена компактная панель быстрой подмены и закрепления дежурного врача прямо в заголовке кресла без перехода в тяжелые модальные окна.
+    * *Анимированный пульсирующий статус «● На смене»*: в `chairSchedule.css` добавлен визуальный класс `.chair-duty-pulse` с мягкой пульсацией изумрудного индикатора активного дежурства врача на кресле.
+    * *Быстрое бронирование в 5 секунд с опциональным ассистентом*: в `QuickBookingDrawer.tsx` обеспечено создание записи за 5 секунд без требования обязательного ассистента для соло-врача и небольших клиник (Мандат 8e п. 8, 8n).
+    * *Автоподстановка дежурного врача*: при выборе слота или кресла лечащий врач автоматически подставляется из активной смены кресла.
+  - **Ликвидация 11 визуальных и эргономических дефектов первого взгляда и утечек разработки (Мандаты 8c, 8d, 8e, 8p, коммит `4d10950f8`)**:
+    * *Топбар и служебная высота экрана ($\le 160\text{px}$)*: в `workspaceShell.tsx` и `dente-redesign.css` высота служебной шапки оптимизирована до канонических $\le 160\text{px}$ (`calc(100vh - 150px)`), устранен риск наезда плашек и кнопок действий.
+    * *Карта визита (`VisitView.tsx`)*: ликвидирован дубликат соматической карточки (Мандат 8p), устранен наезд кнопок тулбара, исправлена грамматическая несогласованность бейджей статуса документов («документы не оформлены» vs «Документы оформлены»).
+    * *Быстрые клинические пресеты (`ClinicalQuickPresetsBar.tsx`)*: очищен клоунский копирайтинг и метафоры из клинических плашек; текст приведен к строгому медицинскому протоколу СтАР и 804н.
+    * *Голосовой пилот ЭМК (`EmkVoicePilot.tsx`)*: вычищены технические маркеры и подсказки разработки («Не показывать врачу», «TODO»).
+    * *Чек-лист закрытия визита (`visitCloseChecklist.ts`)*: ликвидирована утечка процентов готовности и внутренних меток отладки в прод-интерфейс врача.
+    * *Настройки (`SettingsView.tsx`)*: удалены 85 строк мертвого закомментированного кода и мусорных комментариев.
+  - **Ре-аудит 10 скриншотов сьют 7 смертных грехов UI (Мандаты 8d, 8p, коммит `cd7f79e20`)**:
+    * Обновлен сьют скриншотов в `docs/screenshots/audit_7sins/` (10 PNG, Light/Dark 1440x900). Все MD5 уникальны, размеры файлов 185–262 KB, 7 смертных грехов устранены, вердикт: **`[ПРОВЕРЕНО: ЧИСТО]`**.
+* **Верификация**: `apps/web/src/components/schedule/__tests__/chairDoctorDutyAssignmentWave60.test.tsx` (15/15 PASS), `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `chairDoctorRosterStomXParity.test.tsx` (18/18 PASS), `chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx` (15/15 PASS), суммарно сьют расписания 60/60 PASS, `check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
+
