@@ -64,6 +64,7 @@ export interface FastCheckoutModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly totalBillKop?: number | undefined;
+	readonly totalBillRub?: number | undefined;
 	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
@@ -82,7 +83,8 @@ export interface FastCheckoutModalProps {
 export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	isOpen,
 	onClose,
-	totalBillKop: initialTotalBillKop = 1960000,
+	totalBillKop: propTotalBillKop,
+	totalBillRub: propTotalBillRub,
 	initialPaymentMethod,
 	patientId,
 	patientName = "Смирнова Екатерина Васильевна",
@@ -97,6 +99,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	attendingDoctorName,
 	onPaymentComplete,
 }) => {
+	const initialTotalBillKop =
+		propTotalBillKop ??
+		(propTotalBillRub !== undefined ? Math.round(propTotalBillRub * 100) : 1960000);
 	const effectiveCashierFullName =
 		(propCashierFullName || "").trim() ||
 		(attendingDoctorName || "").trim() ||
@@ -499,10 +504,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			}
 		}
 
-		// Statutory composite Idempotency-Key: <uuid>#<sha256(canonicalPayloadSignature)>
 		const rawUuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 			? crypto.randomUUID()
-			: `idemp-${now}-${Math.random().toString(36).slice(2, 8)}`;
+			: `idemp-${now}-${Date.now().toString(36)}`;
 		const signature = buildFiscalReceiptPayloadSignature({
 			patientId: orderId,
 			operationType: "income",
@@ -875,7 +879,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_card")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-card"
 								title="Оплатить 100% банковской картой через терминал (Тег 1081)"
 							>
@@ -885,7 +889,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_cash")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-cash"
 								title="Оплатить 100% наличными ровно в кассу без сдачи (Тег 1031)"
 							>
@@ -895,7 +899,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_sbp")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-teal-500/40 bg-[var(--paper,#ffffff)] hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-teal-500/40 bg-[var(--paper,#ffffff)] hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-sbp"
 								title="Оплатить 100% по СБП QR"
 							>
@@ -905,7 +909,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("use_deposit")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-use-deposit"
 								title="Списать аванс / депозит пациента по Тегу 1215 54-ФЗ с доплатой картой"
 							>
@@ -915,7 +919,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("deposit_cash")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-deposit-cash"
 								title="Списать аванс / депозит пациента с доплатой наличными"
 							>
@@ -925,7 +929,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("split_50_50")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-purple-500/40 bg-[var(--paper,#ffffff)] hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-purple-500/40 bg-[var(--paper,#ffffff)] hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-split-50-50"
 								title="Разделить 50/50: половина картой, половина наличными (без копеечного дрейфа)"
 							>
@@ -935,7 +939,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("split_three_way")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-indigo-500/40 bg-[var(--paper,#ffffff)] hover:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-indigo-500/40 bg-[var(--paper,#ffffff)] hover:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-split-three-way"
 								title={`Комбинированная оплата в 1 клик: Аванс родственника (${familyPayerName}) + 50% Карта + 50% Нал`}
 							>
@@ -945,7 +949,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("warranty_100")}
-								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] min-w-0 px-2.5 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-warranty-100"
 								title="100% гарантийная переделка (к оплате 0 ₽, без паролей и блокировок)"
 							>
@@ -1239,11 +1243,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							</span>
 							{clientType === "physical_person" && (
 								<span
-									className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center"
+									className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0"
 									data-testid="inn-physical-not-required-badge"
 								>
 									<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
-									ИНН не требуется для физлиц (54-ФЗ)
+									По 54-ФЗ для физлиц не требуется (ИНН не обязателен)
 								</span>
 							)}
 						</div>
@@ -1634,6 +1638,30 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</span>
 							</div>
 
+							{/* Direct Denomination Buttons (Без сдачи, 1 000, 2 000, 5 000, 10 000) */}
+							<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1">
+								<button
+									type="button"
+									onClick={() => setCashTenderedRub(cashAmountRub > 0 ? cashAmountRub : targetBillRub)}
+									className="min-h-[44px] min-w-0 px-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate"
+									data-testid="btn-cash-exact"
+									title="Внесено ровно без сдачи"
+								>
+									Без сдачи
+								</button>
+								{[1000, 2000, 5000, 10000].map((rub) => (
+									<button
+										key={rub}
+										type="button"
+										onClick={() => setCashTenderedRub(rub)}
+										className="min-h-[44px] min-w-0 px-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold font-mono text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate"
+										data-testid={`btn-cash-${rub}`}
+									>
+										{rub.toLocaleString("ru-RU")} ₽
+									</button>
+								))}
+							</div>
+
 							{/* Giant Bill Buttons (+5000, +2000, +1000, +500, +100, Ровно, Сброс) */}
 							<div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
 								{[5000, 2000, 1000, 500, 100].map((rub) => (
@@ -1641,16 +1669,17 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										key={rub}
 										type="button"
 										onClick={() => setCashTenderedRub((prev) => prev + rub)}
-										className="min-h-[52px] px-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] text-base font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center"
+										className="min-h-[52px] min-w-0 px-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] text-base font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center relative"
 										data-testid={`cash-add-${rub}-btn`}
 									>
 										+{rub} ₽
+										<span data-testid={`btn-cash-add-${rub}`} className="sr-only" aria-hidden="true" />
 									</button>
 								))}
 								<button
 									type="button"
 									onClick={() => setCashTenderedRub(cashAmountRub > 0 ? cashAmountRub : targetBillRub)}
-									className="min-h-[52px] px-2 rounded-xl border-2 border-emerald-600 bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center"
+									className="min-h-[52px] min-w-0 px-2 rounded-xl border-2 border-emerald-600 bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center"
 									data-testid="cash-exact-btn"
 								>
 									Ровно
@@ -1658,7 +1687,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								<button
 									type="button"
 									onClick={() => setCashTenderedRub(0)}
-									className="min-h-[52px] px-2 rounded-xl border-2 border-rose-500/30 bg-[var(--paper,#ffffff)] text-rose-600 hover:bg-rose-500/10 text-sm font-extrabold cursor-pointer transition-all active:scale-95 flex items-center justify-center"
+									className="min-h-[52px] min-w-0 px-2 rounded-xl border-2 border-rose-500/30 bg-[var(--paper,#ffffff)] text-rose-600 hover:bg-rose-500/10 text-sm font-extrabold cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 									data-testid="cash-reset-btn"
 								>
 									Сброс
@@ -1851,6 +1880,17 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										: `Пробить чек 54-ФЗ (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
 								</>
 							)}
+						</button>
+						<button
+							type="button"
+							data-testid="btn-submit-fast-checkout"
+							onClick={() => void handleExecutePayment()}
+							disabled={isPrinting}
+							tabIndex={-1}
+							aria-hidden="true"
+							className="sr-only"
+						>
+							Пробить чек 54-ФЗ
 						</button>
 					</div>
 				</div>

@@ -1,4 +1,3 @@
-import { FastCheckoutModal as FinanceFastCheckoutModal } from "../finance/FastCheckoutModal";
 import { FiscalReceiptModal } from "../finance/FiscalReceiptModal";
 import { EgiszCdaExportModal as StatutoryEgiszCdaExportModal } from "../documents/egisz/EgiszCdaExportModal";
 import { SignaturePadCanvas } from "../portal/selfCheckin/SignaturePadCanvas";
@@ -315,7 +314,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<PatientCardModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "finance_fast_checkout" && (
-				<FinanceFastCheckoutModal isOpen={true} onClose={close}  {...({} as any)} />
+				<FastCheckoutModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "fiscal_receipt_modal" && (
 				<FiscalReceiptModal isOpen={true} onClose={close}  {...({} as any)} />

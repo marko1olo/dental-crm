@@ -3,7 +3,7 @@
  * (DOMAIN: macOS/iOS Clinical HIG, Patient Profile Header, Sentiment & Loyalty)
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
 	AlertOctagon,
 	AlertTriangle,
@@ -16,6 +16,7 @@ import {
 	FileText,
 	HeartPulse,
 	MessageSquare,
+	MoreHorizontal,
 	Phone,
 	ShieldAlert,
 	Sparkles,
@@ -83,6 +84,23 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 	className = "",
 }) => {
 	const { dashboard, selectedPatient: ctxPatient } = useAppLogicContext();
+
+	const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+	const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!isActionsMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				actionsMenuRef.current &&
+				!actionsMenuRef.current.contains(e.target as Node)
+			) {
+				setIsActionsMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isActionsMenuOpen]);
 
 	const resolvedPatient = useMemo(() => {
 		if (propPatient) return propPatient;
@@ -238,27 +256,30 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 					) : (
 						<span className="text-[var(--muted)] italic">Телефон не указан</span>
 					)}
-
-					{phone && (
-						<button
-							type="button"
-							onClick={() =>
-								openWhatsAppChat(
-									phone,
-									`Здравствуйте, ${fullName}! Стоматологическая клиника DENTE приветствует вас.`,
-								)
-							}
-							className="h-8 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 font-bold inline-flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all text-xs"
-							title="Написать в WhatsApp"
-						>
-							<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
-							<span>WhatsApp</span>
-						</button>
-					)}
 				</div>
 
-				{/* Quick Actions (Book, Start Visit, Edit, Anamnesis) */}
+				{/* Quick Actions (Miller's Law / Mandate 8d & 8p: 2 primary actions + 1 compact '...' popover) */}
 				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+					{/* Primary 1: Accent - Start Visit 043/u */}
+					<button
+						type="button"
+						onClick={() => {
+							if (!resolvedPatient) return;
+							usePatientStore
+								.getState()
+								.setSelectedPatientId(resolvedPatient.id);
+							useAppStore.getState().setCurrentView("visit");
+							showToast(`Открыт приём 043/у: ${fullName}`, "success");
+						}}
+						className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all text-xs"
+						title="Открыть амбулаторный приём 043/у без лишних подтверждений"
+						data-testid="header-open-visit-btn"
+					>
+						<Stethoscope size={13} />
+						<span>Начать приём</span>
+					</button>
+
+					{/* Primary 2: Subtle - Book Appointment */}
 					<button
 						type="button"
 						onClick={() => {
@@ -289,7 +310,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 								"success",
 							);
 						}}
-						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
+						className="h-8 px-2.5 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
 						title="Записать пациента в расписание приёма"
 						data-testid="header-book-appointment-btn"
 					>
@@ -297,59 +318,99 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 						<span>Записать</span>
 					</button>
 
-					<button
-						type="button"
-						onClick={() => {
-							if (!resolvedPatient) return;
-							usePatientStore
-								.getState()
-								.setSelectedPatientId(resolvedPatient.id);
-							useAppStore.getState().setCurrentView("visit");
-							showToast(`Открыт приём 043/у: ${fullName}`, "success");
-						}}
-						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
-						title="Открыть амбулаторный приём 043/у без лишних подтверждений"
-						data-testid="header-open-visit-btn"
-					>
-						<Stethoscope size={13} className="text-cyan-600" />
-						<span>Начать приём</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => {
-							void printBlankMedicalContract(resolvedPatient, {
-								clinicName: dashboard?.clinicSettings?.profile?.legalName,
-							});
-						}}
-						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500 hover:text-white text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
-						title="Распечатать пустой договор на оказание услуг со строками _______ (Мандат 8e)"
-						data-testid="header-print-blank-contract-btn"
-					>
-						<FileText size={13} className="text-amber-600" />
-						<span>Бланк договора (_______)</span>
-					</button>
-
-					{onOpenAnamnesis && (
+					{/* Secondary Popover Menu: ... button */}
+					<div className="relative" ref={actionsMenuRef}>
 						<button
 							type="button"
-							onClick={onOpenAnamnesis}
-							className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
+							onClick={() => setIsActionsMenuOpen((prev) => !prev)}
+							className="h-8 w-8 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] inline-flex items-center justify-center cursor-pointer transition-colors"
+							title="Дополнительные действия"
+							aria-label="Дополнительные действия"
+							aria-expanded={isActionsMenuOpen}
+							aria-haspopup="true"
+							data-testid="header-actions-menu-btn"
 						>
-							<HeartPulse size={13} className="text-rose-500" />
-							<span>Анамнез 043/у</span>
+							<MoreHorizontal size={15} />
 						</button>
-					)}
-					{onEditPatient && (
-						<button
-							type="button"
-							onClick={onEditPatient}
-							className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
-						>
-							<Edit3 size={13} />
-							<span>Изменить</span>
-						</button>
-					)}
+
+						{isActionsMenuOpen && (
+							<div
+								className="absolute right-0 top-full mt-1 w-56 p-1 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xl z-50 flex flex-col gap-0.5 text-xs animate-in fade-in zoom-in-95 duration-100"
+								data-testid="header-actions-menu-popover"
+							>
+								{/* 1. Бланк договора (_______) */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsActionsMenuOpen(false);
+										void printBlankMedicalContract(resolvedPatient, {
+											clinicName: dashboard?.clinicSettings?.profile?.legalName,
+										});
+									}}
+									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+									title="Распечатать пустой договор на оказание услуг со строками _______ (Мандат 8e)"
+									data-testid="header-print-blank-contract-btn"
+								>
+									<FileText size={13} className="text-amber-600 shrink-0" />
+									<span className="truncate">Бланк договора (_______)</span>
+								</button>
+
+								{/* 2. Анамнез 043/у */}
+								{onOpenAnamnesis && (
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											onOpenAnamnesis();
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Анамнез 043/у"
+										data-testid="header-anamnesis-btn"
+									>
+										<HeartPulse size={13} className="text-rose-500 shrink-0" />
+										<span className="truncate">Анамнез 043/у</span>
+									</button>
+								)}
+
+								{/* 3. WhatsApp */}
+								{phone && (
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											openWhatsAppChat(
+												phone,
+												`Здравствуйте, ${fullName}! Стоматологическая клиника DENTE приветствует вас.`,
+											);
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-emerald-800 dark:text-emerald-300 font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Написать в WhatsApp"
+										data-testid="header-whatsapp-btn"
+									>
+										<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+										<span className="truncate">WhatsApp</span>
+									</button>
+								)}
+
+								{/* 4. Изменить */}
+								{onEditPatient && (
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											onEditPatient();
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Редактировать данные пациента"
+										data-testid="header-edit-patient-btn"
+									>
+										<Edit3 size={13} className="text-[var(--muted)] shrink-0" />
+										<span className="truncate">Изменить</span>
+									</button>
+								)}
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 

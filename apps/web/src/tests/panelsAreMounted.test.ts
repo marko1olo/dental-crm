@@ -457,36 +457,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Модальный кабинет начмеда для пакетного подписания электронных медицинских документов УКЭП КриптоПро перед отправкой в ЕГИСЗ РЭМД (components/cmo/EgiszSigningCabinetModal.tsx:201).",
 	},
 	{
-		file: "components/copilot/CopilotGenerativeCards.tsx",
-		name: "PatientSentimentBadgeView",
-		reason:
-			"Генеративная карточка ИИ-копилота: оценка эмоционального тона и комплаентности пациента (components/copilot/CopilotGenerativeCards.tsx:1719). Предоставляется в наборе контекстных виджетов врача.",
-	},
-	{
-		file: "components/copilot/CopilotGenerativeCards.tsx",
-		name: "ZtlAlertCardView",
-		reason:
-			"Генеративная карточка ИИ-копилота: оперативное оповещение о статусе готовности и задержках наряда зуботехнической лаборатории (components/copilot/CopilotGenerativeCards.tsx:2047).",
-	},
-	{
-		file: "components/copilot/CopilotGenerativeCards.tsx",
-		name: "GapFillerCardView",
-		reason:
-			"Генеративная карточка ИИ-копилота: умное заполнение окон в расписании пациентами из листа ожидания (components/copilot/CopilotGenerativeCards.tsx:2145). Встраивается в интеллектуальную панель регистратуры.",
-	},
-	{
-		file: "components/copilot/CopilotGenerativeCards.tsx",
-		name: "RetentionSummaryCardView",
-		reason:
-			"Генеративная карточка ИИ-копилота: сводка рисков оттока пациентов и диспансерных интервалов (components/copilot/CopilotGenerativeCards.tsx:2218). Предоставляется для аналитического дашборда управляющего.",
-	},
-	{
-		file: "components/copilot/CopilotGenerativeCards.tsx",
-		name: "EmrDraftCardView",
-		reason:
-			"Генеративная карточка ИИ-копилота: контекстная подсказка для врача при заполнении дневника визита 043/у (components/copilot/CopilotGenerativeCards.tsx:2281). Вспомогательный модуль генеративного помощника.",
-	},
-	{
 		file: "components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx",
 		name: "PatientArchiveReasonsAndBlacklistsWidget",
 		reason:
