@@ -76,16 +76,14 @@ describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
 
 	it("renders VisitAnamnesisTab with StomX 448 header button and activeTooth support", () => {
 		const html = renderToStaticMarkup(
-			createElement(
-				AppLogicProvider,
-				{ value: {} as any },
-				createElement(VisitAnamnesisTab, {
-					activeTooth: 16,
-					onOpenStomxTemplates: () => {},
-					onAppendAnamnesis: () => {},
-					onAppendComorbidities: () => {},
-				}),
-			),
+			<AppLogicProvider value={{} as any}>
+				<VisitAnamnesisTab
+					activeTooth={16}
+					onOpenStomxTemplates={() => {}}
+					onAppendAnamnesis={() => {}}
+					onAppendComorbidities={() => {}}
+				/>
+			</AppLogicProvider>,
 		);
 
 		assert.ok(html.includes("btn-open-stomt-templates-anamnesis"), "Renders StomX templates button in header");
