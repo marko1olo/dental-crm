@@ -249,7 +249,9 @@ function buildLegalDocumentsChecklistItem(
 	return {
 		id: "legal-documents",
 		visitId: visit.id,
-		title: "Документы готовы",
+		title: missingDocumentKinds.length
+			? `Требуются документы (${missingDocumentKinds.length})`
+			: "Документы готовы",
 		detail: missingDocumentKinds.length
 			? `Не хватает документов: ${missingDocumentKinds.length}.`
 			: "Договор, согласие и акт привязаны к приему.",

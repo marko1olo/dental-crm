@@ -1865,7 +1865,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				border: "1px solid var(--line)",
 				color: "var(--ink)",
 				borderRadius: "14px",
-				padding: "20px",
+				padding: "20px 20px 100px 20px",
 				position: "relative",
 				overflowY: "auto",
 			}}
@@ -2405,90 +2405,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 					<EgiszBlankPermissionsWidget />
 					<YandexCalendarSyncsWidget />
 				</div>
-				<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+				<div className="h-36 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 			</div>
 		</motion.section>
 	);
-	/*
-      <img alt="Telegram QR" src={telegramQrSvgToDataUrl(telegramLinkCode.qrSvg)} loading="lazy" decoding="async" />
-      <img src={typedTelegramPreview.photoUrl} alt="Telegram card" loading="lazy" decoding="async" />
-      <img src={item.photoUrl} alt="outbox image" loading="lazy" decoding="async" />
-      clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (
-                    <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (
-                  <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      typedMigrationAutopilotClinicLookup.warnings.slice(0, 3).map((warning: string) => (
-                      <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      quick-create-guidance
-      disabled={!newStaffReadyToCreate}
-      disabled={!newChairReadyToCreate}
-      Доступ к Telegram
-      Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
-      Админ-доступ к Telegram активен до перезагрузки страницы.
-      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}
-      Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.
-      Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.
-      Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.
-      aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}
-      aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}
-      aria-label="Добавить сотрудника"
-      aria-label="Добавить кресло или кабинет"
-      aria-pressed={dashboard.clinicSettings.profile.mode === mode}
-      aria-pressed={newStaffRole === role}
-      aria-pressed={newStaffSpecialty === specialty}
-      aria-pressed={scheduleDraft.workingDays.includes(day.value)}
-      aria-pressed={newChairHasXraySensor}
-      aria-pressed={newChairHasMicroscope}
-      aria-pressed={newChairHasSurgeryKit}
-      telegramHumanMessage(item.blockedReason)
-      item.warnings.map((warning) => telegramHumanMessage(warning)).filter(Boolean)
-      telegram-inline-button-row
-      telegram-outbox-buttons
-      telegram-outbox-notes
-      telegram-preview-buttons
-      telegram-visual-card-indicator
-      telegram-visual-card-preview
-      "payment_reminder_notice"
-      "review_request"
-      "post_visit_checkup"
-      "recall_notice"
-      <span>Бот клиники</span>
-      Секрет бота хранится в серверных настройках и не показывается в приложении.
-      подключенном боте и защищенной серверной связке
-      Профиль бота клиники
-      защита входящих сообщений включена
-      нужно включить защиту входящих сообщений
-      Публичный HTTPS-адрес CRM, который Telegram сможет открыть для входящих сообщений.
-      disabled={link.status !== "active" || Boolean(telegramRevokingLinkId)}
-      telegram-link-ledger
-      telegram-link-ledger-row
-      telegram-link-ledger-codes
-      typedTelegramOutbox.totalCount
-      telegramOutboxRemainingCount > 0 || typedTelegramOutbox?.nextCursor
-      Нет активных сотрудников
-      telegram-outbox-panel
-      telegram-outbox-controls
-      telegram-outbox-summary-actions
-      telegram-outbox-actions
-      telegram-external-links
-      telegram-visual-card-fields
-      telegram-settings-form
-      telegram-feature-grid
-      getTypedTelegramInlineButtonRows(typedTelegramPreview.replyMarkup)
-      getTypedTelegramInlineButtonRows(item.replyMarkup)
-      disabled={!telegramLinkCode.code.trim()}
-      disabled={!telegramLinkCode.shareText.trim()}
-      telegram-link-actions
-      telegram-link-action-state
-      */
 }
 
-/*
-{settingsTab === "clinic" ? (
-          <section className="clinic-config"
-{settingsTab === "access" ? (
-          <section className="access-settings"
-{settingsTab === "telegram" ? (
-          <section className="telegram-settings"
-*/

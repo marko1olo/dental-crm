@@ -218,18 +218,13 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 										: "bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 text-[var(--muted,#64748b)]"
 								}`}
 							>
-								{isListening ? "Слушаю..." : (
-									<>
-										<span>Готов</span>
-										<span className="hidden sm:inline"> (Ctrl+Space)</span>
-									</>
-								)}
+								{isListening ? "Слушаю..." : "Готов к диктовке"}
 							</span>
 						</div>
 						<span className="text-xs text-[var(--muted,#64748b)] truncate">
 							{isListening
 								? "Диктуйте формулу, диагнозы и манипуляции (например: «46 кариес дентина, ультракаин 1 карпула, коффердам, пломба эстет икс а два»)"
-								: "0 кликов: распознает FDI зубы, МКБ-10 K02-K05, анестетики и манипуляции 804н"}
+								: "Голосовое заполнение дневника и зубной формулы по номенклатуре 804н"}
 						</span>
 					</div>
 				</div>

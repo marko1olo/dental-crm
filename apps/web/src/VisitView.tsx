@@ -1190,14 +1190,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									)
 								: "спокойно"}
 						</span>
-						<strong className="break-words leading-tight">{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
-						{/* Было «1 снимка · 0 документа»: счёт без склонения читается
-                    как ошибка программы. */}
+						<strong className="break-words leading-tight">
+							{primaryVisitWarning?.id === "legal-documents" || primaryVisitWarning?.title === "Документы готовы"
+								? safeUsableDocuments.length === 0
+									? "Требуется оформление документов"
+									: "Документы оформлены"
+								: (primaryVisitWarning?.title ?? "Можно вести прием")}
+						</strong>
 						<p className="break-words leading-tight">
-							{visitCloseChecklist
-								? `${visitCloseChecklist.score}% готовности`
-								: "статус закрытия не рассчитан"}{" "}
-							·{" "}
 							<span className={safeVisitWarnings.length ? "text-amber-400 font-bold" : "text-emerald-400"}>
 								{safeVisitWarnings.length ? "внимание к клиническим рискам" : "клинический статус в норме"}
 							</span>{" "}
@@ -1209,12 +1209,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								"снимков",
 							)}{" "}
 							·{" "}
-							{countLabel(
-								safeUsableDocuments.length,
-								"документ",
-								"документа",
-								"документов",
-							)}
+							{safeUsableDocuments.length > 0
+								? countLabel(
+										safeUsableDocuments.length,
+										"документ",
+										"документа",
+										"документов",
+									)
+								: "документы не оформлены"}
 						</p>
 					</div>
 					<div className="visit-focus-actions">

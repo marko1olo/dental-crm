@@ -697,8 +697,7 @@ export const ClinicalAiPersonalizePanel: React.FC<
 
 			<p className="ops-hint">
 				{contextHint} Текст собирается из плана пациента
-				{planCount > 0 ? ` (${planCount} поз.)` : ""} и полей приёма. Без
-				нейросети сработает клинический шаблон клиники DENTE.
+				{planCount > 0 ? ` (${planCount} поз.)` : ""} и клинических протоколов приёма.
 			</p>
 
 			<div

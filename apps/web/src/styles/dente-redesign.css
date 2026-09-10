@@ -909,7 +909,7 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
-	max-width: 145px;
+	max-width: 280px;
 	flex-shrink: 0;
 }
 .topbar h1 {

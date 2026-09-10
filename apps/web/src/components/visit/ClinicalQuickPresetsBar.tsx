@@ -114,13 +114,13 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 					</div>
 					<div>
 						<h4 className="text-sm font-extrabold text-[var(--ink)] flex items-center gap-2">
-							<span>1-Click Clinical Smart-Bundles (Протоколы СтАР)</span>
+							<span>Клинические протоколы СтАР</span>
 							<span className="text-xs px-2 py-0.5 rounded-md font-mono font-black bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
-								МКБ-10 + Одонтограмма + 804н
+								Стандарты Минздрава РФ
 							</span>
 						</h4>
 						<p className="text-xs text-[var(--muted)]">
-							1 клик: Окрашивание зуба на схеме • Чистый SOAP 043/у • Анестетик (с соматическим алертом) • Услуга 804н
+							Пакетное заполнение: статус зуба на схеме • протокол 043/у • анестезия • номенклатура 804н
 						</p>
 					</div>
 				</div>
