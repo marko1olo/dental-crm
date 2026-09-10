@@ -9,3 +9,5 @@ export * from "./visitWorkOrder.js";
 export * from "./endoProtocolEngine.js";
 export * from "./restorationProtocolEngine.js";
 export * from "./therapyProtocolEngine.js";
+export * from "./stomtDefectsCatalog.js";
+export * from "./stomxDefectsCatalog.js";
