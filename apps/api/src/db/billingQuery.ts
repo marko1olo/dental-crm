@@ -363,13 +363,9 @@ export async function createPaymentInDb(
 
 			const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
 			if (incomingPaymentKopecks !== verifiedAmountKopecks) {
-				// Не бросаем блокирующую ошибку "Попытка подмены прайса".
-				// Кассир вправе скорректировать сумму, предоставить скидку или округлить копейки.
-				// Разницу учитываем как кассовую корректировку / скидку.
-				const priceDiffKopecks = verifiedAmountKopecks - incomingPaymentKopecks;
-				if (priceDiffKopecks > 0) {
-					discountKopecks += priceDiffKopecks;
-				}
+				throw new Error(
+					`Попытка подмены прайса для услуги «${serviceItem.title}»: цена в каталоге составляет ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽.`,
+				);
 			}
 		} else {
 			// Случай внесения аванса / предоплаты БЕЗ указания конкретного serviceId:
@@ -531,24 +527,37 @@ export async function createPaymentInDb(
 				);
 
 				if (incomingPaymentKopecks > remainingVisitKopecks) {
-					// Не роняем кассу ошибкой BillingOverpaymentError!
-					// Если пациент вносит больше долга по визиту (дал 5000 вместо 4600),
-					// излишек автоматически зачисляем на авансовый депозит пациента
 					const overpaymentKopecks = incomingPaymentKopecks - remainingVisitKopecks;
-					const overpaymentRub = formatKopecksToRubles(overpaymentKopecks);
+					// При наличной оплате (cash) кассир вправе принять купюру большего номинала (например, 5000 ₽ при долге 4600 ₽),
+					// и сдача автоматически зачисляется на авансовый депозит пациента (до 5000 ₽ сдачи).
+					// При безналичной оплате (card, sbp) или неразумной переплате (> 5 000 ₽ сдачи)
+					// избыточный платеж мимо леджера приема блокируется кассой (BillingOverpaymentError).
+					if (input.method === "cash" && overpaymentKopecks <= 500000) {
+						const overpaymentRub = formatKopecksToRubles(overpaymentKopecks);
 
-					await tx.insert(schema.advanceDepositTaggings).values({
-						organizationId,
-						patientName: input.payerFullName || "Пациент",
-						depositAmountRub: overpaymentRub,
-						taggedTargetType: "patient_deposit",
-						taggedTargetName: `Авансовый депозит по приему ${input.visitId}`,
-						allocationStatus: "unallocated",
-					});
+						await tx.insert(schema.advanceDepositTaggings).values({
+							organizationId,
+							patientName: input.payerFullName || "Пациент",
+							depositAmountRub: overpaymentRub,
+							taggedTargetType: "patient_deposit",
+							taggedTargetName: `Авансовый депозит по приему ${input.visitId}`,
+							allocationStatus: "unallocated",
+						});
 
-					console.log(
-						`[Billing Overpayment]: Пациент внес ${formatKopecksToRubles(incomingPaymentKopecks)} ₽ при остатке по визиту ${formatKopecksToRubles(remainingVisitKopecks)} ₽. Излишек ${overpaymentRub} ₽ автоматически зачислен на авансовый депозит.`,
-					);
+						console.log(
+							`[Billing Overpayment]: Пациент внес ${formatKopecksToRubles(incomingPaymentKopecks)} ₽ при остатке по визиту ${formatKopecksToRubles(remainingVisitKopecks)} ₽. Излишек ${overpaymentRub} ₽ автоматически зачислен на авансовый депозит.`,
+						);
+					} else {
+						throw new BillingOverpaymentError({
+							targetKind: "visit",
+							targetId: input.visitId,
+							targetLabel: "приему",
+							incomingKopecks: incomingPaymentKopecks,
+							remainingKopecks: remainingVisitKopecks,
+							totalKopecks: chargedVisitKopecks,
+							paidKopecks: paidVisitKopecks,
+						});
+					}
 				}
 			}
 		}

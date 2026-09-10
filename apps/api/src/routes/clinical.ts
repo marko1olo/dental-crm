@@ -448,7 +448,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				(request as unknown as { user?: { role?: string | null } }).user?.role ??
 				null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			if (staffRole && !evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.tasks.read",

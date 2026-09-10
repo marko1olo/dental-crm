@@ -426,15 +426,21 @@ export async function acceptVisitDraftInDb(
 		 */
 
 		const signedVisit = projectVisitRow(signedRow);
+		const baseReceipt = buildVisitSaveReceipt(
+			input,
+			signedVisit,
+			previousRevision,
+		);
+		const amendWarning = isAmendingSigned
+			? "Исправленному верить: внесена версионная правка в закрытый приём"
+			: null;
+		const combinedWarning = [baseReceipt.warning, amendWarning]
+			.filter(Boolean)
+			.join(". ");
+
 		const saveReceipt: VisitSaveReceipt = {
-			...buildVisitSaveReceipt(
-				input,
-				signedVisit,
-				previousRevision,
-			),
-			warning: isAmendingSigned
-				? "Исправленному верить: внесена версионная правка в закрытый приём"
-				: null,
+			...baseReceipt,
+			warning: combinedWarning || null,
 		};
 
 		/*

@@ -51,7 +51,6 @@ export function isReceptionistAllowedPrimaryDoc(
 ): boolean {
 	if (!kind) return false;
 	const isAllowedFrontDeskDoc =
-		kind === "dental_medical_card_043u" ||
 		kind === "informed_consent" ||
 		kind === "procedure_specific_consent_packet" ||
 		kind === "anesthesia_consent_log" ||
