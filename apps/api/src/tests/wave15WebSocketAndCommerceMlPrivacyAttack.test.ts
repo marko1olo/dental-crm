@@ -26,7 +26,6 @@ import {
 	users,
 } from "../db/schema.js";
 import { registerCommerceMlRoutes } from "../routes/commerceMl.js";
-import { registerSpeechLaboratoryRoutes } from "../routes/speechLaboratory.js";
 import { registerSpeechLiveRoutes } from "../routes/speechLive.js";
 import { registerWebsocketRoutes } from "../routes/websocket.js";
 import { authTokenSecret } from "../security/authSecret.js";
@@ -68,7 +67,6 @@ test("RED-TEAM HAMMER: WAVE 15 — WebSocket Channels, Speech Dictation & Commer
 		app = await createTenantTestApp();
 		await registerWebsocketRoutes(app);
 		await registerSpeechLiveRoutes(app);
-		await registerSpeechLaboratoryRoutes(app);
 		await registerCommerceMlRoutes(app);
 		await app.ready();
 
@@ -356,84 +354,7 @@ test("RED-TEAM HAMMER: WAVE 15 — WebSocket Channels, Speech Dictation & Commer
 		console.log("✔ АТАКА 2 ОТБИТА: Доступ маркетолога к живому речевому сокету диктовки заблокирован.");
 	});
 
-	// =========================================================================
-	// АТАКА 3: GET /api/v1/speech/lab-session — ПЕНТЕСТ ЛАБОРАТОРИИ РЕЧИ
-	// =========================================================================
-	await suite.test("ATTACK 3: Marketer blocked from speech lab WebSocket (4403 Forbidden)", async (t) => {
-		if (!databaseReady || !serverPort) return t.skip("Сервер или БД недоступны");
 
-		const wsUrl = `ws://127.0.0.1:${serverPort}/api/v1/speech/lab-session`;
-
-		// Маркетолог подключается к сокету лаборатории речи
-		const marketerWs = new WebSocket(wsUrl, {
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": marketerToken,
-			},
-		});
-
-		let closedWithCode = 0;
-		let receivedError: any = null;
-
-		await new Promise<void>((resolve) => {
-			marketerWs.on("message", (raw) => {
-				try {
-					receivedError = JSON.parse(raw.toString());
-				} catch {}
-			});
-			marketerWs.on("close", (code) => {
-				closedWithCode = code;
-				resolve();
-			});
-			setTimeout(resolve, 2000);
-		});
-
-		console.log(
-			"\n[RED-TEAM AUDIT 3: /api/v1/speech/lab-session by Marketer]\nClosed code:",
-			closedWithCode,
-			"\nReceived error:",
-			receivedError,
-		);
-
-		assert.equal(closedWithCode, 4403, "Сокет лаборатории речи должен закрыться с кодом 4403!");
-		assert.equal(receivedError?.error, "MedicalSpeechLabForbidden");
-
-		console.log("✔ АТАКА 3 ОТБИТА: Доступ маркетолога к лаборатории речевых сессий заблокирован.");
-	});
-
-	// =========================================================================
-	// АТАКА 4: POST /api/v1/speech/lab-transcribe — REST-АТАКА НА ТРАНСКРИБАЦИЮ
-	// =========================================================================
-	await suite.test("ATTACK 4: Marketer blocked from REST speech lab transcription (403 Forbidden)", async (t) => {
-		if (!databaseReady) return t.skip("БД недоступна");
-
-		const res = await app.inject({
-			method: "POST",
-			url: "/api/v1/speech/lab-transcribe",
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": marketerToken,
-			},
-			payload: {
-				text: "Жалобы на острый пульпит зуба 46, показана депульпация",
-				mode: "browser_speech",
-				language: "ru",
-			},
-		});
-
-		console.log(
-			"\n[RED-TEAM AUDIT 4: POST /api/v1/speech/lab-transcribe by Marketer]\nStatus:",
-			res.statusCode,
-			"\nPayload:",
-			res.body,
-		);
-
-		assert.equal(res.statusCode, 403, "Маркетолог должен получить 403 Forbidden!");
-		const body = JSON.parse(res.body);
-		assert.equal(body.permission, "speech.lab.transcribe");
-
-		console.log("✔ АТАКА 4 ОТБИТА: Расшифровка клинической речи для неклинического персонала заблокирована.");
-	});
 
 	// =========================================================================
 	// АТАКА 5: GET /api/v1/integrations/1c/commerceml/export — ЭКСПОРТ 1C COMMERCEML
@@ -487,30 +408,10 @@ test("RED-TEAM HAMMER: WAVE 15 — WebSocket Channels, Speech Dictation & Commer
 	});
 
 	// =========================================================================
-	// АТАКА 6: ЛЕГИТИМНЫЙ ДОСТУП ВРАЧА И АДМИНИСТРАТОРА
+	// АТАКА 6: ЛЕГИТИМНЫЙ ДОСТУП АДМИНИСТРАТОРА К ВЫГРУЗКЕ 1С
 	// =========================================================================
-	await suite.test("ATTACK 6: Legitimate access for doctor and administrator", async (t) => {
+	await suite.test("ATTACK 6: Legitimate access for administrator to CommerceML", async (t) => {
 		if (!databaseReady) return t.skip("БД недоступна");
-
-		// Врач вызывает REST транскрибацию
-		const doctorTranscribeRes = await app.inject({
-			method: "POST",
-			url: "/api/v1/speech/lab-transcribe",
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": doctorToken,
-			},
-			payload: {
-				text: "Диагноз кариес зуба 16 K02.1, анестезия ультракаин",
-				mode: "browser_speech",
-				language: "ru",
-			},
-		});
-
-		assert.equal(doctorTranscribeRes.statusCode, 200, "Врач имеет законное право использовать STT");
-		const doctorData = JSON.parse(doctorTranscribeRes.body);
-		assert.equal(doctorData.success, true);
-		assert.ok(doctorData.medicalEntities.length > 0, "Медицинские сущности корректно извлечены");
 
 		// Администратор клиники формирует пакет CommerceML
 		const adminCommerceRes = await app.inject({

@@ -310,7 +310,7 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 		);
 	});
 
-	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanWizard, ToothCardModal, and OdontogramStudioStandalone", () => {
+	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanWizard and ToothCardModal", () => {
 		const files = [
 			"TreatmentPlanWizard.tsx",
 			"ToothCardModal.tsx",
@@ -329,14 +329,5 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 				`File ${file} must have 0 cartoon emojis according to HIG & Mandate 8d`,
 			);
 		}
-
-		// Verify OdontogramStudioStandalone.tsx has no unicode dingbat ✕
-		const standalonePath = path.resolve(__dirname, "../../../pages/OdontogramStudioStandalone.tsx");
-		const standaloneContent = fs.readFileSync(standalonePath, "utf-8");
-		assert.strictEqual(
-			standaloneContent.includes("✕"),
-			false,
-			"OdontogramStudioStandalone.tsx must not contain unicode dingbat ✕",
-		);
 	});
 });

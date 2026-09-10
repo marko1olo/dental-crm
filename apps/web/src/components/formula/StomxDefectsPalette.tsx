@@ -33,6 +33,7 @@ import {
 	toggleStomxDefectOnTooth,
 } from "./stomxFormulaAdapter";
 import type { ToothFormulaItem } from "./types";
+import { showToast } from "../GlobalToast";
 
 export interface StomxDefectsPaletteProps {
 	selectedToothNumber?: number | null | undefined;
@@ -97,7 +98,11 @@ export const StomxDefectsPalette: React.FC<StomxDefectsPaletteProps> = ({
 	const [activeTab, setActiveTab] = useState<PaletteTab>("pathology");
 
 	const handleToggleDefect = (alias: string, isPosition = false) => {
-		if (!selectedToothNumber || !onUpdateTooth) return;
+		if (!selectedToothNumber) {
+			showToast("Сначала выберите зуб на формуле", "info");
+			return;
+		}
+		if (!onUpdateTooth) return;
 
 		const currentItem: ToothFormulaItem = toothData ?? {
 			toothNumber: selectedToothNumber,
@@ -110,7 +115,11 @@ export const StomxDefectsPalette: React.FC<StomxDefectsPaletteProps> = ({
 	};
 
 	const handleSetHealthy = () => {
-		if (!selectedToothNumber || !onUpdateTooth) return;
+		if (!selectedToothNumber) {
+			showToast("Сначала выберите зуб на формуле", "info");
+			return;
+		}
+		if (!onUpdateTooth) return;
 		onUpdateTooth(selectedToothNumber, {
 			state: "Healthy",
 			stomxDefects: [],
@@ -164,8 +173,7 @@ export const StomxDefectsPalette: React.FC<StomxDefectsPaletteProps> = ({
 					<button
 						type="button"
 						onClick={handleSetHealthy}
-						disabled={!selectedToothNumber}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
 						title="Пометить выбранный зуб здоровым (ok)"
 					>
 						<Check className="w-3.5 h-3.5" />
@@ -249,8 +257,7 @@ export const StomxDefectsPalette: React.FC<StomxDefectsPaletteProps> = ({
 								key={item.alias}
 								type="button"
 								onClick={() => handleToggleDefect(item.alias)}
-								disabled={!selectedToothNumber}
-								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs disabled:opacity-50 ${
+								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs cursor-pointer ${
 									active
 										? "bg-rose-500 text-white font-semibold border-rose-600 shadow-sm"
 										: "bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/40 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
@@ -280,8 +287,7 @@ export const StomxDefectsPalette: React.FC<StomxDefectsPaletteProps> = ({
 								key={item.alias}
 								type="button"
 								onClick={() => handleToggleDefect(item.alias)}
-								disabled={!selectedToothNumber}
-								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs disabled:opacity-50 ${
+								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs cursor-pointer ${
 									active
 										? "bg-amber-500 text-white font-semibold border-amber-600 shadow-sm"
 										: "bg-slate-50 hover:bg-amber-50 dark:bg-slate-800/60 dark:hover:bg-amber-950/40 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
@@ -311,8 +317,7 @@ export const StomxDefectsPalette: React.FC<StomxDefectsPaletteProps> = ({
 								key={anomaly.alias}
 								type="button"
 								onClick={() => handleToggleDefect(anomaly.alias, true)}
-								disabled={!selectedToothNumber}
-								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs disabled:opacity-50 ${
+								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs cursor-pointer ${
 									active
 										? "bg-purple-600 text-white font-semibold border-purple-700 shadow-sm"
 										: "bg-slate-50 hover:bg-purple-50 dark:bg-slate-800/60 dark:hover:bg-purple-950/40 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
@@ -344,8 +349,7 @@ export const StomxDefectsPalette: React.FC<StomxDefectsPaletteProps> = ({
 								key={item.alias}
 								type="button"
 								onClick={() => handleToggleDefect(item.alias)}
-								disabled={!selectedToothNumber}
-								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs disabled:opacity-50 ${
+								className={`min-h-[44px] px-3 py-2 rounded-lg text-left transition-all border flex items-center justify-between text-xs cursor-pointer ${
 									active
 										? "bg-indigo-600 text-white font-semibold border-indigo-700 shadow-sm"
 										: "bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800/60 dark:hover:bg-indigo-950/40 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"

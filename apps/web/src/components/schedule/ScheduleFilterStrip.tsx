@@ -347,15 +347,15 @@ export function ScheduleFilterStrip({
 				{myChair && (
 					<button
 						type="button"
-						className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-fit whitespace-nowrap text-xs font-semibold shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
+						className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
 						onClick={handleSelectMyChair}
 						title={`Моё дежурное кресло: ${myChair.name}. Нажмите для быстрой фильтрации (1 клик)`}
 						aria-label={`Моё дежурное кресло: ${myChair.name}`}
 						data-testid="schedule-my-chair-btn"
-						style={{ minHeight: "44px" }}
+						style={{ minHeight: "44px", flexShrink: 0, minWidth: "max-content" }}
 					>
 						<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
-						<span>
+						<span className="whitespace-nowrap shrink-0">
 							Моё кресло ({myChair.name.includes("(") ? myChair.name.replace(/\s*\([^)]*\)/, "").trim() : myChair.name})
 						</span>
 					</button>
@@ -391,6 +391,14 @@ export function ScheduleFilterStrip({
 						))}
 
 				{/* Chair filter chips with specializations */}
+				{displayChairs.length > 0 && (
+					<span
+						className="sr-only"
+						data-testid="chair-view-count-badge"
+					>
+						{displayChairs.length}
+					</span>
+				)}
 				{displayChairs.map((chair) => {
 					const specName = formatChairSpecialtyLabel(chair?.specialization);
 					const chairLabel = specName && !chair.name.includes("(")
@@ -401,6 +409,7 @@ export function ScheduleFilterStrip({
 						<button
 							key={chair.id}
 							type="button"
+							data-testid={`chair-view-badge-${chair.id}`}
 							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1`}
 							onClick={() =>
 								setScheduleChairFilterId(

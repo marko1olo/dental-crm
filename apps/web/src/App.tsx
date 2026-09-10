@@ -39,12 +39,12 @@ import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { AuthHub } from "./components/auth/AuthHub";
 import { StaffPinPad } from "./components/auth/StaffPinPad";
-import { CommandPalette } from "./components/CommandPalette";
 import { showToast } from "./components/GlobalToast";
 import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardModal";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { Omnibar } from "./components/Omnibar";
-import { OfflineConflictReviewDrawer } from "./components/offline/OfflineConflictReviewDrawer";
+import { ClinicalModalsHost } from "./components/modals/ClinicalModalsHost";
+import { BackofficeModalsHost } from "./components/modals/BackofficeModalsHost";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
@@ -3415,21 +3415,8 @@ export function App() {
 						}}
 					/>
 					<Omnibar />
-					<OfflineConflictReviewDrawer
-						isOpen={false}
-						onClose={() => {}}
-						conflicts={[]}
-						onResolveConflict={() => {}}
-					/>
-					<CommandPalette
-						patients={filteredPatients}
-						onSelectPatient={(id) => {
-							setSelectedPatientId(id);
-							setCurrentView("patients");
-						}}
-						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-						onNavigate={(view) => setCurrentView(view as any)}
-					/>
+					<ClinicalModalsHost />
+					<BackofficeModalsHost />
 				</section>
 				<nav className="dnt-bottom-nav" aria-label="Мобильная навигация">
 					{(["shift", "schedule", "patients", "visit"] as const).map((view) => (

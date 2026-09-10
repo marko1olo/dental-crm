@@ -2083,6 +2083,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 			{scheduleViewMode === "chairs" ? (
 				<ChairScheduleView
+					hideToolbar={true}
 					dashboard={dashboard}
 					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
 					appointments={dashboard?.appointments ?? []}
@@ -2133,6 +2134,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			) : scheduleViewMode === "grid" ? (
 				<ScheduleGrid
 					dashboard={dashboard}
+					hideInlineAddChair={true}
 					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
 					appointments={dashboard?.appointments ?? []}
 					onSlotClick={(slot) => {

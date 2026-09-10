@@ -93,6 +93,7 @@ export interface ChairScheduleViewProps {
 	onAddDoctor?: (doctorData: QuickAddDoctorData) => Promise<void> | void;
 	onOpenRosterModal?: () => void;
 	onSelectChair?: ((chairId: string | null) => void) | undefined;
+	hideToolbar?: boolean;
 }
 
 const defaultAppointmentLabels: Record<Appointment["status"], string> = {
@@ -226,6 +227,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	onAddDoctor,
 	onOpenRosterModal,
 	onSelectChair,
+	hideToolbar = false,
 }) => {
 	const rawChairs = dashboard?.clinicSettings?.chairs ?? [];
 	const chairs = rawChairs.length > 0 ? rawChairs : [DEFAULT_SOLO_CHAIR as any];
@@ -1308,10 +1310,10 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 
 	return (
 		<div className="flex flex-col h-full w-full bg-[var(--paper)]">
-			{/* Unified Compact Toolbar Row: 32–36px (Hick's Law & Mandate 8d) */}
-			<div
-				className="flex items-center justify-between px-3 h-9 min-h-[36px] max-h-[36px] border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-2 select-none"
-				data-testid="chair-schedule-palette-strip"
+			{!hideToolbar && (
+				<div
+					className="flex items-center justify-between px-3 h-9 min-h-[36px] max-h-[36px] border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-2 select-none"
+					data-testid="chair-schedule-palette-strip"
 				role="toolbar"
 				aria-label="Панель стоматологических установок и смен врачей"
 			>
@@ -1984,11 +1986,13 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					</button>
 				</div>
 			</div>
+			)}
 
 			{/* Main Grid */}
 			<div className="flex-1 overflow-hidden">
 				<ScheduleGrid
 					dashboard={dashboard}
+					hideInlineAddChair={true}
 					dateKey={dateKey}
 					appointments={appointments}
 					onSlotClick={handleSlotClick}

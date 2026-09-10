@@ -105,7 +105,6 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerStaffRoutes } from "./routes/staff.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
-import { registerSpeechLaboratoryRoutes } from "./routes/speechLaboratory.js";
 import { registerSpeechLiveRoutes } from "./routes/speechLive.js";
 import { registerSanpinRoutes } from "./routes/sanpin.js";
 import { registerSterilizationRoutes } from "./routes/sterilization.js";
@@ -733,7 +732,6 @@ export async function createDenteApiApp(
 	await registerSettingsRoutes(app);
 	await registerStaffRoutes(app);
 	await registerSpeechRoutes(app);
-	await registerSpeechLaboratoryRoutes(app);
 	await registerSpeechLiveRoutes(app);
 	void registerSmartImportRoutes(app);
 	void registerYandexCalendarRoutes(app);

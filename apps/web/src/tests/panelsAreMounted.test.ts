@@ -151,28 +151,70 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Универсальное модальное окно защиты от случайных и опасных действий ('Защита от дурака' / Foolproof Dialog) с крупными кнопками, двойным подтверждением и понятными текстами для пожилого персонала и медсестер.",
 	},
 	{
-		file: "pages/CmoAuditPage.tsx",
-		name: "CmoAuditPage",
+		file: "components/CommandPalette.tsx",
+		name: "CommandPalette",
 		reason:
-			"Страница рабочего стола главного врача для проведения экспертизы качества медицинской помощи (ЭКМП), пакетного подписания УКЭП и централизованной передачи СЭМД в ЕГИСЗ (РЭМД).",
+			"Полноэкранная палитра команд быстрого доступа (Ctrl+K) деактивирована в пользу унифицированного глобального поиска Omnibar, исключающего конфликт горячих клавиш и дублирование навигационных оверлеев.",
+	},
+	{
+		file: "components/SignaturePad.tsx",
+		name: "SignaturePad",
+		reason:
+			"Устаревший холст рукописной подписи SignaturePad, замененный на ChairsideTabletConsentModal и юридически легитимное подписание информированных согласий на бумажном носителе по Приказу Минздрава РФ.",
+	},
+	{
+		file: "components/offline/OfflineConflictReviewDrawer.tsx",
+		name: "OfflineConflictReviewDrawer",
+		reason:
+			"Специализированная шторка разрешения конфликтов оффлайн-синхронизации деактивирована в пользу автоматического детерминированного фонового движка conflictResolver (LWW / CRDT) без отвлечения врача.",
+	},
+	{
+		file: "components/schedule/AppointmentCreationModal.tsx",
+		name: "AppointmentCreationModal",
+		reason:
+			"Модальное окно создания визита из ранней версии расписания; заменено на встроенное инлайн-создание слотов в ScheduleGrid и AppointmentCard без блокирующих многошаговых диалоговых окон по Мандату 8e.",
+	},
+	{
+		file: "components/schedule/AppointmentDrawer.tsx",
+		name: "AppointmentDrawer",
+		reason:
+			"Шторка детального редактирования приёма из модульного расписания; актуальный рабочий процесс врача ведётся через карточку приёма AppointmentCard и клинический экран визита VisitView без нагромождения шторок.",
+	},
+	{
+		file: "components/schedule/ChairRosterModal.tsx",
+		name: "ChairRosterModal",
+		reason:
+			"Модальное окно ротации врачей по стоматологическим креслам; заменено на прямой выбор кресла и врача в ScheduleFilterStrip и инлайн-расписание ChairScheduleView с бейджами занятости кресел.",
+	},
+	{
+		file: "components/schedule/ScheduleAppointmentModal.tsx",
+		name: "ScheduleAppointmentModal",
+		reason:
+			"Вспомогательный диалог бронирования приёма; объединён с быстрой записью QuickBookingDrawer и 1-клик назначением приёма в сетке расписания ScheduleGrid без избыточных промежуточных подтверждений.",
+	},
+	{
+		file: "components/schedule/ScheduleCalendar.tsx",
+		name: "ScheduleCalendar",
+		reason:
+			"Календарный вид расписания крупной сетки; заменён на высокопроизводительную временную шкалу ScheduleTimeline и специализированную покресельную сетку ChairScheduleView для амбулаторной практики.",
+	},
+	{
+		file: "components/schedule/ScheduleFilterToolbar.tsx",
+		name: "ScheduleFilterToolbar",
+		reason:
+			"Панель фильтров расписания предыдущей ревизии; заменена на компактную полосу ScheduleFilterStrip с чипами врачей, статусов и кресел, укладывающуюся в бюджет высоты экрана до 135px по Мандату 8p.",
+	},
+	{
+		file: "components/schedule/ScheduleToolbar.tsx",
+		name: "ScheduleToolbar",
+		reason:
+			"Верхний тулбар управления сеткой расписания; объединён с унифицированной панелью управления расписанием в ScheduleView во избежание дублирования кнопок и переполнения экрана согласно Мандату 8p.",
 	},
 	{
 		file: "components/schedule/ScheduleSubNavTabs.tsx",
 		name: "ScheduleSubNavTabs",
 		reason:
 			"Альтернативная модульная панель навигации и вторичных режимов расписания (Закон Миллера: 7±2 элемента с выпадающим меню '⋮ Ещё'). В активном расписании используется объединенная панель фильтрации ScheduleFilterStrip.",
-	},
-	{
-		file: "components/finance/PaymentModal.tsx",
-		name: "PaymentModal",
-		reason:
-			"Универсальное модальное окно приема платежей клиники (наличные, POS-терминалы Сбербанк, SberPay QR, FacePay Биометрия, депозиты и семейные кошельки) для прямого вызова из модулей финансового учета.",
-	},
-	{
-		file: "components/finance/SberPayIntegration.tsx",
-		name: "SberPayIntegration",
-		reason:
-			"Интерактивный микровиджет прямой интеграции с POS-терминалами Сбербанка (DualConnector, SmartPOS, Pilot-NT), отображением динамического QR-кода SberPay (СБП), FacePay Биометрией, 1-click печатью слипов CP866 и защитой от двойного списания (Reversal / Void).",
 	},
 	{
 		file: "components/anesthesia/AnesthesiaPkuDisposalModal.tsx",
@@ -313,12 +355,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Публичный портал согласования сметы и финансового плана лечения пациентом по защищенной одноразовой ссылке с подтверждением согласия.",
 	},
 	{
-		file: "pages/PublicEstimatePortalPage.tsx",
-		name: "PublicEstimatePortalPage",
-		reason:
-			"Автономная страница публичного портала согласования плана лечения и сметы по прямой пациентской ссылке без доступа к внутреннему кабинету клиники.",
-	},
-	{
 		file: "components/dicom/CbctMprWorkspace.tsx",
 		name: "CbctMprWorkspace",
 		reason:
@@ -365,12 +401,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "AdultToothChart",
 		reason:
 			"Анатомическая зубная формула постоянного прикуса взрослых пациентов (FDI 11..48) для изолированного рендеринга и модульных тестов одонтограммы, используемая внутри родительского модуля OdontogramModule.tsx.",
-	},
-	{
-		file: "components/odontogram/PediatricToothChart.tsx",
-		name: "PediatricToothChart",
-		reason:
-			"Анатомическая зубная формула временного/молочного прикуса детей (FDI 51..85) для изолированного рендеринга и тестов детской одонтограммы, используемая внутри родительского модуля OdontogramModule.tsx.",
 	},
 	{
 		file: "components/odontogram/OdontogramToolbar.tsx",
@@ -467,12 +497,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "PatientArchiveReasonsAndBlacklistsWidget",
 		reason:
 			"Виджет аудита причин архивации медицинских карт и управления черным списком пациентов (components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx:43). Вызывается из специализированной карточки пациента.",
-	},
-	{
-		file: "components/emr/audit/ClinicalAuditBoard.tsx",
-		name: "ClinicalAuditBoard",
-		reason:
-			"Аналитическая доска внутреннего контроля качества медицинской помощи (ВКК МП) и соблюдения клинических рекомендаций (components/emr/audit/ClinicalAuditBoard.tsx:65). Компонент аудита главврача.",
 	},
 	{
 		file: "components/imaging/MedicalPhotoViewer.tsx",

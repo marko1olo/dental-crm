@@ -17,15 +17,6 @@ import { logger } from "./utils/logger";
 const PublicBookingWidget = React.lazy(() =>
 	import("./pages/PublicBookingWidget").then((m) => ({ default: m.PublicBookingWidget })),
 );
-const OdontogramStudioStandalone = React.lazy(() =>
-	import("./pages/OdontogramStudioStandalone").then((m) => ({ default: m.OdontogramStudioStandalone })),
-);
-const ClinicalModalsStudioStandalone = React.lazy(() =>
-	import("./pages/ClinicalModalsStudioStandalone").then((m) => ({ default: m.ClinicalModalsStudioStandalone })),
-);
-const SttLaboratoryView = React.lazy(() =>
-	import("./pages/SttLaboratoryView").then((m) => ({ default: m.SttLaboratoryView })),
-);
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -115,55 +106,6 @@ if (publicPortalRoute) {
 					) : (
 						<GuestLabPortal token={publicPortalRoute.token} />
 					)}
-				</React.Suspense>
-				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
-	);
-} else if (
-	typeof window !== "undefined" &&
-	(window.location.hash.startsWith("#clinical-modals-studio") ||
-		window.location.search.includes("clinical-modals-studio"))
-) {
-	installApiAuthFetch();
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
-				<React.Suspense fallback={null}>
-					<ClinicalModalsStudioStandalone />
-				</React.Suspense>
-				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
-	);
-} else if (
-	typeof window !== "undefined" &&
-	(window.location.hash.startsWith("#odontogram-studio") ||
-		window.location.search.includes("odontogram-studio"))
-) {
-	installApiAuthFetch();
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
-				<React.Suspense fallback={null}>
-					<OdontogramStudioStandalone />
-				</React.Suspense>
-				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
-	);
-} else if (
-	typeof window !== "undefined" &&
-	(window.location.hash.startsWith("#stt-lab") ||
-		window.location.pathname.startsWith("/stt-lab") ||
-		window.location.search.includes("stt-lab"))
-) {
-	installApiAuthFetch();
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
-				<React.Suspense fallback={null}>
-					<SttLaboratoryView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

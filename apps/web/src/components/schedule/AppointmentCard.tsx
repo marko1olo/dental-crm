@@ -2094,9 +2094,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										className="primary-button min-h-[44px] min-w-[44px] px-4.5 py-2 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent inline-flex items-center justify-center"
 										type="button"
 										onClick={() => void saveAppointmentSchedule(appointment.id)}
-										disabled={
-											appointmentSaveState === "saving" || !appointmentReadyToSave
-										}
+										disabled={appointmentSaveState === "saving"}
 										aria-busy={appointmentSaveState === "saving" || undefined}
 										aria-describedby={
 											collision.hasCollision
