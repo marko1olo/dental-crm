@@ -3,7 +3,7 @@
  * (DOMAIN: PORTAL FINANCIALS, SMS OTP, FDI TEETH, ICS CALENDAR & ONLINE BOOKING)
  */
 
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
 	calculateBookingPrepayment,

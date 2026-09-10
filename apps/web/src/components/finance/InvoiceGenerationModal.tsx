@@ -614,7 +614,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 				id: createdData.invoiceId || `inv-${Date.now()}`,
 				number:
 					createdData.invoiceNumber ||
-					`СЧ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+					`СЧ-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
 				patientId,
 				patientName,
 				patientPhone,
@@ -670,7 +670,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 				fallbackNetRub === 0 ? "warranty_100" : "issued";
 			const fallbackInvoice: BillingInvoice = {
 				id: `inv-offline-${Date.now()}`,
-				number: `СЧ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+				number: `СЧ-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
 				patientId,
 				patientName,
 				patientPhone,

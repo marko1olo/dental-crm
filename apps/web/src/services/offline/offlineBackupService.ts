@@ -571,7 +571,8 @@ function recordLocalVaultSnapshot(
 	header: DenteBackupHeader,
 	autoSnapshot = false,
 ): void {
-	const snapshotId = `vault_snap_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+	const hashSuffix = (header.payloadSha256 || "snap").slice(0, 8);
+	const snapshotId = `vault_snap_${header.exportedAtMs || Date.now()}_${hashSuffix}`;
 	const meta: LocalVaultSnapshotMeta = {
 		id: snapshotId,
 		timestamp: header.exportedAt,

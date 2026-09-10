@@ -44,6 +44,8 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../GlobalToast";
 
+let refundMutationSeq = 0;
+
 export interface RefundServiceModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -272,7 +274,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 			? `${REFUND_REASON_LABELS[reasonCategory] || reasonCategory}: ${customReason.trim()}`
 			: (REFUND_REASON_LABELS[reasonCategory] || "Возврат средств за услуги");
 
-		const clientMutationId = `refund-${invoiceId || "inv"}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+		const clientMutationId = `refund-${invoiceId || "inv"}-${Date.now()}-${++refundMutationSeq}`;
 
 		const refundPayload = {
 			clientMutationId,

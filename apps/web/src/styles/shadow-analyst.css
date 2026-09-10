@@ -5,8 +5,10 @@
 
 .sa-toast {
 	position: fixed;
-	bottom: 1.5rem;
-	left: 1.5rem;
+	top: 4.5rem;
+	right: 1.5rem;
+	bottom: auto;
+	left: auto;
 	z-index: 99999;
 	display: flex;
 	align-items: center;
@@ -16,13 +18,14 @@
 	font-size: 0.875rem;
 	font-weight: 500;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-	animation: sa-slide-up 0.25s ease-out;
+	animation: sa-slide-down 0.25s ease-out;
 	max-width: 380px;
 }
 
 @media (max-width: 840px) {
 	.sa-toast {
-		bottom: calc(var(--mobile-nav-height, 68px) + 12px + env(safe-area-inset-bottom, 0px));
+		top: 4.25rem;
+		bottom: auto;
 		left: 12px;
 		right: 12px;
 		max-width: calc(100vw - 24px);
@@ -46,10 +49,10 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	z-index: 99999 !important;
 }
 
-@keyframes sa-slide-up {
+@keyframes sa-slide-down {
 	from {
 		opacity: 0;
-		transform: translateY(12px);
+		transform: translateY(-12px);
 	}
 	to {
 		opacity: 1;

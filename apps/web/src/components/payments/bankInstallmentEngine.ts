@@ -318,7 +318,7 @@ export function simulateBankApproval(
 } {
 	const provider = BANK_INSTALLMENT_PROVIDERS[providerId];
 	const calc = calculateBankInstallment(approvedAmountKopecks, providerId, termMonths);
-	const approvalId = `APP-${providerId.toUpperCase().slice(0, 3)}-${Math.floor(100000 + Math.random() * 900000)}`;
+	const approvalId = `APP-${providerId.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-6)}`;
 	const timestampIso = new Date().toISOString();
 
 	return {

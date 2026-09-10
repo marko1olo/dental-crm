@@ -461,11 +461,11 @@ export function createMockSberPosResponse(
 		tvr = "0000008000";
 	}
 
-	const randomRrn = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-	const randomAuth = Math.floor(100000 + Math.random() * 900000).toString();
+	const fallbackRrn = `${Date.now().toString().slice(-8)}${(req.amountKop % 10000).toString().padStart(4, "0")}`;
+	const fallbackAuth = `${((req.amountKop % 900000) + 100000).toString()}`;
 
-	const rrn = req.originalRrn || randomRrn;
-	const authCode = req.originalAuthCode || randomAuth;
+	const rrn = req.originalRrn || fallbackRrn;
+	const authCode = req.originalAuthCode || fallbackAuth;
 
 	let settlementTotals: SberSettlementTotals | undefined = undefined;
 	if (req.operation === "settlement") {

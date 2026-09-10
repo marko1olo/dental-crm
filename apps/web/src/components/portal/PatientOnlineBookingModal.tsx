@@ -382,7 +382,7 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 		setSmsVerified(true);
 		setSmsError(null);
 
-		const confirmationNumber = `ДЕНТЕ-BOOK-${Math.floor(10000 + Math.random() * 90000)}`;
+		const confirmationNumber = `ДЕНТЕ-BOOK-${Date.now().toString(36).toUpperCase()}`;
 		const completedData: OnlineBookingFormData = {
 			branchId: selectedBranchId,
 			specialtyCategory: selectedSpecialty,

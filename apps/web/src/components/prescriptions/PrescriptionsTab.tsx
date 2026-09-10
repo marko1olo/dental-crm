@@ -129,7 +129,7 @@ export const PrescriptionsTab: React.FC<PrescriptionsTabProps> = ({
 			clinicOgrn: clinicOgrn,
 			clinicInn: clinicInn,
 			medicalLicenseNumber: clinicLicense,
-			prescriptionSeriesNumber: `РЕЦ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+			prescriptionSeriesNumber: `РЕЦ-${new Date().getFullYear()}-${(patientCard ? patientCard.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001"}`,
 			prescriptionDate: new Date().toISOString().slice(0, 10),
 			patientFullName: patientName,
 			patientBirthDate: patientBirth,

@@ -69,8 +69,8 @@ export interface TaxDeductionModalProps {
 export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = "Смирнов Алексей Викторович",
-	patientBirthDate = "1985-05-12",
+	patientName = "",
+	patientBirthDate = "",
 	patientInn = "",
 	patientSnils = "",
 	payerSnils: initialPayerSnils = "",
@@ -92,10 +92,10 @@ export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 	const [payerInn, setPayerInn] = useState<string>(patientInn);
 	const [payerBirthDate, setPayerBirthDate] = useState<string>(patientBirthDate);
 	const [payerSnils, setPayerSnils] = useState<string>(initialPayerSnils);
-	const [passportSeries, setPassportSeries] = useState<string>("4510");
-	const [passportNumber, setPassportNumber] = useState<string>("123456");
+	const [passportSeries, setPassportSeries] = useState<string>("");
+	const [passportNumber, setPassportNumber] = useState<string>("");
 	const [certificateNumber, setCertificateNumber] = useState<string>(
-		`${currentYear}-${Math.floor(100 + Math.random() * 900)}`,
+		`${currentYear}-001`,
 	);
 	const [taxOfficeCode, setTaxOfficeCode] = useState<string>("7701");
 	const [isCopiedXml, setIsCopiedXml] = useState<boolean>(false);

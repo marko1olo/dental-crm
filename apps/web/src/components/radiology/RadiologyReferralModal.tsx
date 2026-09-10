@@ -183,8 +183,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		if (!isOpen) return;
 
 		const currentYear = new Date().getFullYear();
-		const randomNum = Math.floor(1000 + Math.random() * 9000);
-		setCustomReferralNumber(`НАПР-РЕНТГЕН-${currentYear}-${randomNum}`);
+		const dateSuffix = Date.now().toString(36).toUpperCase().slice(-4);
+		setCustomReferralNumber(`НАПР-РЕНТГЕН-${currentYear}-${dateSuffix}`);
 
 		if (initialTeeth.length > 0) {
 			setSelectedTeeth(initialTeeth);
@@ -200,9 +200,9 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 
 	if (!isOpen || typeof document === "undefined") return null;
 
-	const patientFullName = patient?.fullName || "Иванов Иван Иванович";
-	const patientBirth = patient?.birthDate || "1990-05-14";
-	const patientPhone = patient?.phone || "+7 (999) 000-00-00";
+	const patientFullName = patient?.fullName || "____________________";
+	const patientBirth = patient?.birthDate || "____-__-__";
+	const patientPhone = patient?.phone || "+7 (___) ___-__-__";
 	const patientCard =
 		patient?.medicalCardNumber || patient?.cardNumber || "043/у-0012";
 	const docName = doctorName || "Др. Смирнов А.В.";

@@ -533,10 +533,12 @@ export function applyBatchResolutionToAllItems(
 export function generateWorkOrderExportPayload(
 	report: PlanPriceValidationReport,
 	orderType: "work_order" | "completed_works_act" = "work_order",
+	options?: { suffix?: string },
 ): WorkOrderValidatedExport {
 	const orderPrefix = orderType === "work_order" ? "НЗ" : "АВР";
-	const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-	const orderNumber = `${orderPrefix}-${report.planNumber.replace(/[^\d]/g, "") || "41"}-${randomSuffix}`;
+	const planDigits = report.planNumber.replace(/[^\d]/g, "") || "41";
+	const cleanSuffix = options?.suffix || (report.planId ? report.planId.replace(/\D/g, "").slice(0, 4) : "").padStart(4, "0") || "0001";
+	const orderNumber = `${orderPrefix}-${planDigits}-${cleanSuffix}`;
 
 	const exportItems: WorkOrderExportItem[] = report.items.map((item) => ({
 		itemId: item.itemId,

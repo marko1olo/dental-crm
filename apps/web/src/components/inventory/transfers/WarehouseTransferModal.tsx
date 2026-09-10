@@ -79,7 +79,8 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 }) => {
 	// 1. Шапка накладной
 	const [docNumber, setDocNumber] = useState<string>(
-		initialDocument?.documentNumber || `ТОРГ-13-2026/08-${Math.floor(100 + Math.random() * 900)}`,
+		initialDocument?.documentNumber ||
+			`ТОРГ-13-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}-${Date.now().toString().slice(-4)}`,
 	);
 	const [docDate, setDocDate] = useState<string>(
 		initialDocument?.documentDate || new Date().toISOString().slice(0, 10),

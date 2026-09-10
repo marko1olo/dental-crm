@@ -475,10 +475,11 @@ export function generate54FzStageFiscalReceipt(
 		fiscalTag1214,
 	};
 
-	const receiptId = `CHK-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const stageDigits = stage.id.replace(/\D/g, "").slice(0, 4) || "0001";
+	const receiptId = `CHK-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${stageDigits.padStart(4, "0")}`;
 	const fnNumber = "9960440301824912";
-	const fdNumber = String(Math.floor(10000 + Math.random() * 89999));
-	const fpd = String(Math.floor(1000000000 + Math.random() * 8999999999));
+	const fdNumber = String(10000 + (Number(stageDigits) % 89999));
+	const fpd = String(1000000000 + (Number(stageDigits) * 111111111));
 
 	const qrPayload = `t=${now.toISOString().replace(/[-:T]/g, "").slice(0, 15)}&s=${(amountKopecks / 100).toFixed(2)}&fn=${fnNumber}&i=${fdNumber}&fp=${fpd}&n=1`;
 

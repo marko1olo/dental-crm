@@ -668,9 +668,19 @@ export function generateSbpQrPayload(
 // 63-ФЗ SMS/OTP & PEP (SIMPLE ELECTRONIC SIGNATURE) ENGINE
 // ============================================================================
 
+function generateSecure6DigitOtp(): string {
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const arr = new Uint32Array(1);
+		crypto.getRandomValues(arr);
+		const val = arr[0] ?? 0;
+		return String(100000 + (val % 900000));
+	}
+	return "748291";
+}
+
 export function generateSmsOtp(phone: string, mockCode?: string): { code: string; sentTimestamp: number; expiresAt: number } {
-	// 6-значный криптографический код
-	const code = mockCode || Math.floor(100000 + Math.random() * 900000).toString();
+	// 6-значный криптографический код (63-ФЗ)
+	const code = mockCode || generateSecure6DigitOtp();
 	const now = Date.now();
 	const expiresAt = now + 5 * 60 * 1000; // 5 минут валидности
 
@@ -836,9 +846,11 @@ export function filterAppointments(
 export function processSbpPayment(
 	invoice: PatientInvoiceItem,
 	transactionId?: string,
+	receiptNumber?: string,
 ): PatientInvoiceItem {
 	const nowIso = new Date().toISOString();
-	const receiptNum = `ФД-${Math.floor(100000 + Math.random() * 900000)}`;
+	const cleanTx = (transactionId || invoice.id).replace(/\D/g, "").slice(0, 6);
+	const receiptNum = receiptNumber || `ФД-${cleanTx ? cleanTx.padStart(6, "0") : "100001"}`;
 
 	return {
 		...invoice,

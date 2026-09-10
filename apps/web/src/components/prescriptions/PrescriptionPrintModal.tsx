@@ -409,22 +409,23 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		}
 
 		const year = new Date().getFullYear();
+		const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001";
 		if (activeForm === "107-1u") {
-			setCustomSeriesNumber(`РЕЦ-${year}-${Math.floor(1000 + Math.random() * 9000)}`);
+			setCustomSeriesNumber(`РЕЦ-${year}-${patSuffix}`);
 			setValidityDays("60");
 		} else if (activeForm === "148-1u-88") {
-			setCustomSeriesNumber(`ПКУ-${year}-${Math.floor(100000 + Math.random() * 900000)}`);
+			setCustomSeriesNumber(`ПКУ-${year}-${patSuffix.padStart(6, "0")}`);
 			setValidityDays("15");
 			setSelectedDrugIds(["tramadol_50"]);
 		} else {
-			setCustomSeriesNumber(`ЛЬГ-${year}-${Math.floor(100000 + Math.random() * 900000)}`);
+			setCustomSeriesNumber(`ЛЬГ-${year}-${patSuffix.padStart(6, "0")}`);
 			setValidityDays("30");
 			setSelectedDrugIds(["metformin_1000"]);
 		}
 
-		setPatientAddress(patient?.address || "г. Москва, Ломоносовский пр-кт, д. 18, кв. 45");
-		setPatientSnils(patient?.snils || "123-456-789 00");
-		setPatientOmsPolicy(patient?.omsPolicy || "1234567890123456");
+		setPatientAddress(patient?.address || "");
+		setPatientSnils(patient?.snils || "");
+		setPatientOmsPolicy(patient?.omsPolicy || "");
 		setIsUkepSigned(false);
 		setUkepSignature(null);
 
@@ -962,7 +963,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								onClick={() => {
 									setActiveForm("107-1u");
 									setValidityDays("60");
-									setCustomSeriesNumber(`РЕЦ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
+									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001";
+									setCustomSeriesNumber(`РЕЦ-${new Date().getFullYear()}-${patSuffix}`);
 								}}
 								className={`min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
 									activeForm === "107-1u"
@@ -978,7 +980,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									setActiveForm("148-1u-88");
 									setValidityDays("15");
 									setSelectedDrugIds(["tramadol_50"]);
-									setCustomSeriesNumber(`ПКУ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`);
+									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(6, "0") || "000001";
+									setCustomSeriesNumber(`ПКУ-${new Date().getFullYear()}-${patSuffix}`);
 								}}
 								className={`min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
 									activeForm === "148-1u-88"
@@ -994,7 +997,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									setActiveForm("148-1u-04l");
 									setValidityDays("30");
 									setSelectedDrugIds(["metformin_1000"]);
-									setCustomSeriesNumber(`ЛЬГ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`);
+									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(6, "0") || "000001";
+									setCustomSeriesNumber(`ЛЬГ-${new Date().getFullYear()}-${patSuffix}`);
 								}}
 								className={`min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
 									activeForm === "148-1u-04l"

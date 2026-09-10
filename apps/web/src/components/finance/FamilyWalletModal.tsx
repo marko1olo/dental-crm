@@ -331,7 +331,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 			amountRub: actualDeductRub,
 			description: `1-Клик списание с семейного баланса без пароля: ${member.fullName}`,
 			tenderSource: "deposit",
-			receiptNumber: `СЕМ-${Math.floor(1000 + Math.random() * 9000)}`,
+			receiptNumber: `СЕМ-${Date.now().toString().slice(-4)}`,
 			status: "completed",
 		};
 
@@ -354,7 +354,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 			amountRub: topupAmountRub,
 			description: `Пополнение семейного счета (${topupMethod.toUpperCase()})`,
 			tenderSource: topupMethod,
-			receiptNumber: `ККТ-${Math.floor(1000 + Math.random() * 9000)}`,
+			receiptNumber: `ККТ-${Date.now().toString().slice(-4)}`,
 			status: "completed",
 		};
 

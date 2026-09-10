@@ -409,7 +409,7 @@ export function generatePatientWebappSession(params: PatientWebappSessionParams)
 
 	const sessionId = `SES-${params.patientId.slice(-6)}-${now.toString(36).toUpperCase()}`;
 	const clinicId = params.clinicId || "CLINIC-MAIN";
-	const nonce = Math.random().toString(36).substring(2, 10);
+	const nonce = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID().replace(/-/g, "").slice(0, 8) : Date.now().toString(36);
 	const secret = params.secretKey || DEFAULT_SECRET_SALT;
 
 	const signaturePayload = [
@@ -855,7 +855,16 @@ export function generateSmsOtpForSigning(
 	documentId: string,
 	mockCode?: string,
 ): { code: string; sentTimestamp: number; expiresAt: number } {
-	const code = mockCode || Math.floor(100000 + Math.random() * 900000).toString();
+	let code = mockCode;
+	if (!code) {
+		if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+			const arr = new Uint32Array(1);
+			crypto.getRandomValues(arr);
+			code = String(100000 + (arr[0]! % 900000));
+		} else {
+			code = String(100000 + (Date.now() % 900000));
+		}
+	}
 	const now = Date.now();
 	const expiresAt = now + 5 * 60 * 1000; // 5 минут валидности
 

@@ -1235,6 +1235,8 @@ const initialLine2: TelephonyLineSession = {
 	isMuted: false,
 };
 
+let telephonyCallSeq = 0;
+
 export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	activeCall: null,
 	callHistory: [],
@@ -1260,7 +1262,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	toggleHold: () => set((state) => ({ isHeld: !state.isHeld })),
 
 	triggerIncomingCall: (call) => {
-		const id = `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+		const id = call.callId || `call-${Date.now()}-${++telephonyCallSeq}`;
 		const historyItem: CallHistoryItem = {
 			...call,
 			id,
@@ -1405,7 +1407,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 				return item;
 			});
 			if (!found) {
-				const id = `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+				const id = activeCall.callId || `call-${Date.now()}-${++telephonyCallSeq}`;
 				const newItem: CallHistoryItem = {
 					...activeCall,
 					id,
@@ -1427,7 +1429,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	},
 
 	logAcutePainCall: (phone, patientName, reason = "Острая боль / Экстренное обращение") => {
-		const id = `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+		const id = `call-${Date.now()}-${++telephonyCallSeq}`;
 		const newItem: CallHistoryItem = {
 			id,
 			phone,

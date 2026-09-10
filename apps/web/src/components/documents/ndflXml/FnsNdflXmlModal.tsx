@@ -85,35 +85,37 @@ export function FnsNdflXmlModal({
 	const [taxYear, setTaxYear] = useState<SupportedTaxYear>(initialTaxYear);
 	const [taxOfficeCode, setTaxOfficeCode] = useState<string>("7701");
 	const [documentNumber, setDocumentNumber] = useState<string>(
-		`СПР-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+		`СПР-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
 	);
 	const [certificateKind, setCertificateKind] = useState<"1" | "2" | "3">("1");
 
 	// 2. Налогоплательщик и родство
 	const [kinshipCode, setKinshipCode] = useState<FnsKinshipCode>("1");
 	const [payerFullName, setPayerFullName] = useState<string>(
-		selectedPatient?.fullName || "Иванов Иван Иванович",
+		selectedPatient?.fullName || "",
 	);
-	const [payerInn, setPayerInn] = useState<string>("770112345678");
+	const [payerInn, setPayerInn] = useState<string>("");
 	const [payerSnils, setPayerSnils] = useState<string>("");
 	const [payerBirthDate, setPayerBirthDate] = useState<string>(
-		selectedPatient?.birthDate?.split("T")[0] || "1990-05-15",
+		selectedPatient?.birthDate?.split("T")[0] || "",
 	);
 	const [payerDocSeriesNumber, setPayerDocSeriesNumber] =
-		useState<string>("4510 123456");
-	const [payerDocDate, setPayerDocDate] = useState<string>("2010-06-20");
+		useState<string>("");
+	const [payerDocDate, setPayerDocDate] = useState<string>("");
 	const [payerDocTypeCode, setPayerDocTypeCode] = useState<string>("21");
 
 	// 3. Данные пациента (если родство != 1)
 	const [patientFullName, setPatientFullName] = useState<string>(
-		selectedPatient?.fullName || "Иванова Мария Ивановна",
+		selectedPatient?.fullName || "",
 	);
 	const [patientInn, setPatientInn] = useState<string>("");
 	const [patientSnils, setPatientSnils] = useState<string>("");
-	const [patientBirthDate, setPatientBirthDate] = useState<string>("2015-09-20");
+	const [patientBirthDate, setPatientBirthDate] = useState<string>(
+		selectedPatient?.birthDate?.split("T")[0] || "",
+	);
 	const [patientDocSeriesNumber, setPatientDocSeriesNumber] =
-		useState<string>("II-МЮ 654321");
-	const [patientDocDate, setPatientDocDate] = useState<string>("2015-10-01");
+		useState<string>("");
+	const [patientDocDate, setPatientDocDate] = useState<string>("");
 	const [patientDocTypeCode, setPatientDocTypeCode] = useState<string>("03");
 
 	// 4. Клиника
@@ -283,7 +285,7 @@ export function FnsNdflXmlModal({
 			id: `rec-${Date.now()}`,
 			receiptNumber:
 				newReceiptNumber.trim() ||
-				`ФЧ-${Math.floor(10000 + Math.random() * 90000)}`,
+				`ФЧ-${Date.now().toString().slice(-5)}`,
 			receiptDate: newReceiptDate || `${taxYear}-01-15`,
 			serviceName:
 				newReceiptService.trim() ||

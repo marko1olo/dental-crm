@@ -78,6 +78,7 @@ import {
 	generatePatientTaxCertificate1151156,
 	generateReceptionCheckinQrPayload,
 	generateSbpQrPayload,
+	generateSha256,
 	generateSmsOtp,
 	openPrintWindow,
 	signConsentWithPep,
@@ -679,7 +680,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 			signatureAudit: {
 				verificationMethod: "sms_otp",
 				phone: data.phone,
-				integrityHash: "sha256-" + Math.random().toString(36).substring(2) + Date.now().toString(36),
+				integrityHash: generateSha256(
+					`${signingConsent.id}:${data.phone}:${Date.now()}:${signingConsent.code}`,
+				),
 				timestamp: Date.now(),
 				signedAtIso: new Date().toISOString(),
 				legalBasis: "63-ФЗ ПЭП",

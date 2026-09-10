@@ -922,6 +922,8 @@ function splitIntoClinicalClauses(text: string): string[] {
 		.filter((s) => s.length > 2);
 }
 
+let voiceCommandSeq = 0;
+
 /**
  * Выполняет полный разбор клинической речи врача:
  * выделяет команды зубной формулы, диагнозы, SOAP заметки, анестезию и материалы.
@@ -956,7 +958,7 @@ export function parseClinicalVoiceSpeech(
 			else if (secType === "recommendations") titleRu = "Рекомендации пациенту";
 
 			commands.push({
-				id: `soap_${secType}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+				id: `soap_${secType}_${Date.now()}_${++voiceCommandSeq}`,
 				rawSpeech: secText,
 				category: "soap",
 				confidence: 0.92,
@@ -972,7 +974,7 @@ export function parseClinicalVoiceSpeech(
 	const { anesthesia, consumables } = extractAnesthesiaAndConsumables(transcript);
 	if (anesthesia) {
 		commands.push({
-			id: `anes_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+			id: `anes_${Date.now()}_${++voiceCommandSeq}`,
 			rawSpeech: transcript,
 			category: "anesthesia",
 			confidence: 0.95,
@@ -984,7 +986,7 @@ export function parseClinicalVoiceSpeech(
 
 	for (const cons of consumables) {
 		commands.push({
-			id: `cons_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+			id: `cons_${Date.now()}_${++voiceCommandSeq}`,
 			rawSpeech: transcript,
 			category: "consumable",
 			confidence: 0.9,
@@ -1007,7 +1009,7 @@ export function parseClinicalVoiceSpeech(
 
 		if (toothNumber && diagnosis) {
 			commands.push({
-				id: `tooth_${toothNumber}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+				id: `tooth_${toothNumber}_${Date.now()}_${++voiceCommandSeq}`,
 				rawSpeech: clause,
 				category: "odontogram",
 				confidence: diagnosis.confidence,
@@ -1021,7 +1023,7 @@ export function parseClinicalVoiceSpeech(
 		} else if (toothNumber && !diagnosis) {
 			// Упомянут только номер зуба без диагноза в этой фразе
 			commands.push({
-				id: `tooth_sel_${toothNumber}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+				id: `tooth_sel_${toothNumber}_${Date.now()}_${++voiceCommandSeq}`,
 				rawSpeech: clause,
 				category: "odontogram",
 				confidence: 0.8,
@@ -1032,7 +1034,7 @@ export function parseClinicalVoiceSpeech(
 		} else if (!toothNumber && diagnosis && !soapNote.assessment) {
 			// Упомянут диагноз без явного номера зуба
 			commands.push({
-				id: `diag_notooth_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+				id: `diag_notooth_${Date.now()}_${++voiceCommandSeq}`,
 				rawSpeech: clause,
 				category: "odontogram",
 				confidence: 0.7,

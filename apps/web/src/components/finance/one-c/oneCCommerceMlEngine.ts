@@ -1391,7 +1391,7 @@ export function createRealisticShiftExportPackage(
 	};
 
 	return {
-		packageId: `pkg-${dateClean}-${Math.random().toString(36).slice(2, 8)}`,
+		packageId: `pkg-${dateClean}-${Date.now().toString(36)}`,
 		generatedAtIso: new Date().toISOString(),
 		exportPeriodStartIso: dateIso,
 		exportPeriodEndIso: dateIso,

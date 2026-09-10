@@ -403,7 +403,7 @@ export function generateTaxDeductionCertificate(params: {
 
 	const certNumber =
 		customCertNumber ||
-		`СПР-${taxYear}-${Math.floor(1000 + Math.random() * 9000)}`;
+		`СПР-${taxYear}-001`;
 
 	return {
 		certificateNumber: certNumber,
@@ -812,10 +812,10 @@ export function generateFiscalReceipt54Fz(params: {
 	const prefix = operationType === "income_return" ? "CHK-RET" : isCorrection ? "CHK-COR" : "CHK";
 	const receiptNumber =
 		customReceiptNumber ||
-		`${prefix}-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+		`${prefix}-${now.getFullYear()}-0001`;
 	const fnSerial = "9960440301234567";
-	const fiscalDocumentNumber = String(Math.floor(1000 + Math.random() * 9000));
-	const fiscalSign = String(Math.floor(1000000000 + Math.random() * 9000000000));
+	const fiscalDocumentNumber = "1001";
+	const fiscalSign = "1234567890";
 
 	const ofdUrl = `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocumentNumber}&fpd=${fiscalSign}&s=${payments.totalRub}.00&n=${operationType === "income_return" ? "2" : "1"}`;
 
@@ -1215,8 +1215,8 @@ export function generateShiftCloseZReport54Fz(params: {
 	const totalRevenueKopecks = Math.max(0, incomeTotalKopecks - incomeReturnTotalKopecks) as Kopecks;
 	const totalRevenueRub = kopecksToRubles(totalRevenueKopecks);
 
-	const fiscalDocumentNumber = String(Math.floor(2000 + Math.random() * 8000));
-	const fiscalSign = String(Math.floor(1000000000 + Math.random() * 9000000000));
+	const fiscalDocumentNumber = `200${shiftNumber}`;
+	const fiscalSign = `100000000${shiftNumber}`;
 	const ofdUrl = `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocumentNumber}&fpd=${fiscalSign}&s=${totalRevenueRub.toFixed(2)}&n=1`;
 
 	return {

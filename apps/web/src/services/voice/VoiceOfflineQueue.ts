@@ -320,6 +320,7 @@ export class VoiceOfflineQueue {
 	private boundOnlineHandler: (() => void) | null = null;
 	private boundOfflineHandler: (() => void) | null = null;
 	private isDisposed = false;
+	private queueSeq = 0;
 
 	constructor(options: VoiceOfflineQueueOptions = {}) {
 		this.options = {
@@ -400,7 +401,7 @@ export class VoiceOfflineQueue {
 	): Promise<PendingTranscriptionRecord> {
 		const recordId =
 			input.id ??
-			`voice_off_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+			`voice_off_${Date.now()}_${++this.queueSeq}`;
 
 		const record: PendingTranscriptionRecord = {
 			id: recordId,

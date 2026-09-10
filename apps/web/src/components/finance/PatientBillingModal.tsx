@@ -142,7 +142,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const [activeTab, setActiveTab] = useState<"preview" | "friendly" | "details">("friendly");
 	const [selectedTender, setSelectedTender] = useState<PatientBillingPaymentMethod>("card");
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
-	const [actNumber] = useState(() => `АКТ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
+	const [actNumber] = useState(() => `АКТ-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`);
 	const [copied, setCopied] = useState(false);
 	const [isQrOpen, setIsQrOpen] = useState(false);
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);

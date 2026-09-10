@@ -2693,10 +2693,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 							data-testid="migration-progress-strip"
 							aria-label="Готовность переноса"
 						>
-							{(migrationProgressItems ?? []).map((item) => (
+							{(migrationProgressItems ?? []).map((item, idx) => (
 								<article
 									className={`migration-progress-step status-${item?.status}`}
-									key={item?.id ?? Math.random()}
+									key={item?.id ?? `prog-item-${idx}`}
 								>
 									<strong>{item?.title}</strong>
 									<span>{item?.detail}</span>
@@ -3267,10 +3267,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 												</span>
 											</div>
 											<div className="migration-triage-grid">
-												{(migrationTriageItems ?? []).map((item) => (
+												{(migrationTriageItems ?? []).map((item, idx) => (
 													<div
 														className={`migration-triage-item status-${item?.status}`}
-														key={item?.id ?? Math.random()}
+														key={item?.id ?? `triage-item-${idx}`}
 													>
 														<strong>{item?.title}</strong>
 														<span>
@@ -3328,7 +3328,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											<div className="migration-autopilot-summary">
 												{(migrationOperatorScriptSteps ?? [])
 													.slice(0, 7)
-													.map((step) => {
+													.map((step, idx) => {
 														const scriptCandidate = step?.sourceFingerprint
 															? (typedMigrationAutopilotSources ?? []).find(
 																	(source) =>
@@ -3337,7 +3337,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 																)?.candidate
 															: null;
 														return (
-															<article key={step?.id ?? Math.random()}>
+															<article key={step?.id ?? `script-step-${idx}`}>
 																<strong>{step?.title}</strong>
 																<span>
 																	{migrationOwnerLabels[step?.owner] ??
@@ -3364,8 +3364,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									<div className="migration-autopilot-summary">
 										{(typedMigrationOperatorLanes ?? [])
 											.slice(0, 5)
-											.map((lane) => (
-												<article key={lane?.id ?? Math.random()}>
+											.map((lane, idx) => (
+												<article key={lane?.id ?? `lane-${idx}`}>
 													<strong>{lane?.title}</strong>
 													<span>
 														{migrationOwnerLabels[lane?.owner] ??
@@ -3402,8 +3402,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									>
 										{(typedMigrationHandoffChecklist ?? [])
 											.slice(0, 6)
-											.map((item) => (
-												<article key={item?.id ?? Math.random()}>
+											.map((item, idx) => (
+												<article key={item?.id ?? `handoff-${idx}`}>
 													<strong>{item?.title}</strong>
 													<span>
 														{migrationOwnerLabels[item?.owner] ??
@@ -4514,10 +4514,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 							{typedSmartImportPreview?.migrationPlan ? (
 								<div className="import-rows">
 									{(typedSmartImportPreview.migrationPlan?.steps ?? []).map(
-										(step) => (
+										(step, idx) => (
 											<article
 												className={`import-row import-${step?.status === "blocked" ? "blocked" : step?.status === "ready" ? "ready" : "warning"}`}
-												key={step?.id ?? Math.random()}
+												key={step?.id ?? `plan-step-${idx}`}
 											>
 												<strong>{step?.title}</strong>
 												<span>
@@ -4672,10 +4672,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 							) : null}
 							<div className="import-rows">
 								{(typedSmartImportPreview?.lineClassifications ?? []).map(
-									(row) => (
+									(row, idx) => (
 										<article
 											className={`import-row import-${row?.kind === "ignored" ? "warning" : "ready"}`}
-											key={row?.lineNumber ?? Math.random()}
+											key={row?.lineNumber ?? `class-line-${idx}`}
 										>
 											<strong>
 												{smartImportLineKindLabels[row?.kind] ?? row?.kind} ·{" "}
@@ -5448,10 +5448,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								<div className="dicom-folder-workup-plans">
 									{(typedDicomFolderWorkupPlan.plans ?? [])
 										.slice(0, 4)
-										.map((plan) => (
+										.map((plan, idx) => (
 											<article
 												className={`workup-${plan?.recommendedPath}`}
-												key={plan?.series?.id ?? Math.random()}
+												key={plan?.series?.id ?? `plan-series-${idx}`}
 											>
 												<strong>
 													{
@@ -5866,10 +5866,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 							<div className="dicom-series-list">
 								{(typedDicomSeriesPreviewSeries ?? [])
 									.slice(0, 6)
-									.map((series) => (
+									.map((series, idx) => (
 										<article
 											className={`dicom-series-row dicom-series-${series?.status}`}
-											key={series?.id ?? Math.random()}
+											key={series?.id ?? `dicom-series-${idx}`}
 										>
 											<div>
 												<strong>{series?.patientName ?? "Пациент ?"}</strong>
@@ -5967,10 +5967,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								)}
 							</div>
 							<div className="import-rows">
-								{(typedImagingImportPreview.rows ?? []).map((row) => (
+								{(typedImagingImportPreview.rows ?? []).map((row, idx) => (
 									<article
 										className={`import-row import-${row?.status}`}
-										key={row?.rowNumber ?? Math.random()}
+										key={row?.rowNumber ?? `img-row-${idx}`}
 									>
 										<strong>
 											{row?.patientName ?? `Строка ${row?.rowNumber}`}
@@ -6284,10 +6284,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								)}
 							</div>
 							<div className="import-rows">
-								{(typedImportPreview.rows ?? []).map((row) => (
+								{(typedImportPreview.rows ?? []).map((row, idx) => (
 									<article
 										className={`import-row import-${row?.status}`}
-										key={row?.rowNumber ?? Math.random()}
+										key={row?.rowNumber ?? `imp-row-${idx}`}
 									>
 										<strong>
 											{row?.fullName ?? `Строка ${row?.rowNumber}`}

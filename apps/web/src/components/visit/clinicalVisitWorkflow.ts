@@ -320,7 +320,7 @@ export function completeClinicalVisitAndAssembleEstimate(
 			const qty = Number(p.quantity) > 0 ? Number(p.quantity) : 1;
 			if (price > 0) {
 				planItems.push({
-					id: p.id || `plan-item-${Math.random()}`,
+					id: p.id || `plan-item-${planItems.length + 1}`,
 					code: p.code || "A16.07.000",
 					name: p.title || p.name || "Стоматологическая услуга",
 					quantity: qty,
@@ -372,7 +372,10 @@ export function completeClinicalVisitAndAssembleEstimate(
 
 	const now = new Date();
 	const year = now.getFullYear();
-	const randNum = Math.floor(10000 + Math.random() * 90000);
+	const visitSeed = Math.abs(
+		(input.visitId || input.patientId || "VISIT").split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)
+	);
+	const randNum = 10000 + (visitSeed % 90000);
 	const receiptNumber = `ЧЕК-${year}-${randNum}`;
 	const invoiceId = `INV-${year}-${randNum}`;
 

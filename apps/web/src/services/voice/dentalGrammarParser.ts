@@ -1593,10 +1593,12 @@ export function extractCephLandmarksVoiceIntent(text: string): CephLandmarkVoice
 	return results;
 }
 
+let voiceIntentSeq = 0;
+
 export function parseDentalVoiceSpeech(rawTranscript: string): DentalVoiceIntent {
 	const transcript = (rawTranscript || "").trim();
 	const now = new Date().toISOString();
-	const intentId = `dvi_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+	const intentId = `dvi_${Date.now()}_${++voiceIntentSeq}`;
 
 	if (!transcript) {
 		return {

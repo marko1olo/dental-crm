@@ -241,12 +241,14 @@ export async function clearCachedUpcomingVisit(): Promise<void> {
 // Offline Booking Queue (Background Sync)
 // ─────────────────────────────────────────────────────────────────────────────
 
+let offlineBookingSeq = 0;
+
 export async function enqueueOfflinePatientBooking(
 	bookingInput: Omit<OfflinePatientBookingRequest, "id" | "createdAtIso" | "status" | "retryCount"> & { id?: string; createdAtIso?: string },
 ): Promise<OfflinePatientBookingRequest> {
 	const booking: OfflinePatientBookingRequest = {
 		...bookingInput,
-		id: bookingInput.id || `offline-book-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		id: bookingInput.id || `offline-book-${Date.now()}-${++offlineBookingSeq}`,
 		createdAtIso: bookingInput.createdAtIso || new Date().toISOString(),
 		status: "queued",
 		retryCount: 0,

@@ -284,7 +284,7 @@ export function DmsGuaranteeLettersModal({
 	);
 	const [newPolicyNumber, setNewPolicyNumber] = useState<string>(effectivePolicyNumberDefault);
 	const [newLetterNumber, setNewLetterNumber] = useState<string>(
-		`ГП-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+		`ГП-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`,
 	);
 	const [newIssueDate, setNewIssueDate] = useState<string>(new Date().toISOString().slice(0, 10));
 	const [newValidFrom, setNewValidFrom] = useState<string>(new Date().toISOString().slice(0, 10));

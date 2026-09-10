@@ -19,6 +19,8 @@
 import { showToast } from "../GlobalToast";
 import type { InventoryItem } from "../inventory/useInventoryLogic";
 
+let packageWriteOffActSeq = 0;
+
 export type ClinicalPackageId = "anesthesia" | "filling" | "hygiene" | "surgery";
 
 export interface ClinicalWriteoffPackageItem {
@@ -437,7 +439,7 @@ export async function handleOneClickPackageWriteOff(
 	const allowSoftOverdraft = options.allowSoftOverdraft ?? true;
 	const now = new Date();
 	const actDate = now.toISOString().slice(0, 10);
-	const actNumber = `АКТ-СПИС-ПК-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${Math.floor(100 + Math.random() * 900)}`;
+	const actNumber = `АКТ-СПИС-ПК-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(++packageWriteOffActSeq).padStart(3, "0")}`;
 
 	// Составляем карту складских остатков
 	const stockMap = new Map<string, number>();

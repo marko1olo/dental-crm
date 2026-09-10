@@ -598,7 +598,7 @@ export function generateDmsPreAuthRequest(
 
 	const now = new Date();
 	const requestDateStr = now.toISOString().slice(0, 10);
-	const requestNumber = `ПРЕ-АВТ-${payload.insurerId.toUpperCase().slice(0, 4)}-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const requestNumber = `ПРЕ-АВТ-${payload.insurerId.toUpperCase().slice(0, 4)}-${now.getFullYear()}-${(payload.patient.id || "REQ").slice(-4).toUpperCase()}-${payload.requestedServices.length}`;
 
 	const slaHours = insurer.defaultSlaHours;
 	const slaDeadlineDate = new Date(now.getTime() + slaHours * 3600 * 1000);

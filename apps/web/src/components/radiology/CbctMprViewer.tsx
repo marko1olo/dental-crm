@@ -1401,7 +1401,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 						setAngles((prev) => [
 							...prev,
 							{
-								id: `angle-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+								id: `angle-${Date.now()}-${prev.length + 1}-${Math.abs(Math.round(angleDeg * 10)).toString(36)}`,
 								plane,
 								startMm: activeAngle.startMm,
 								vertexMm: activeAngle.vertexMm!,
@@ -1423,7 +1423,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				setProbeMarkers((prev) => [
 					...prev,
 					{
-						id: `probe-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+						id: `probe-${Date.now()}-${prev.length + 1}-${Math.abs(Math.round(hu)).toString(36)}`,
 						plane,
 						worldMm: clickedWorldMm,
 						hu,
@@ -1745,7 +1745,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				setRulers((prev) => [
 					...prev,
 					{
-						id: `ruler-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+						id: `ruler-${Date.now()}-${prev.length + 1}-${Math.abs(Math.round(distMm * 10)).toString(36)}`,
 						plane: activeRuler.plane,
 						startMm: activeRuler.startMm,
 						endMm: activeRuler.currentMm,

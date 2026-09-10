@@ -99,8 +99,19 @@ export function generateSbpPaymentQrPayload(
 export function generateSmsOtpCode(phone: string, fixedCode = "7788"): { code: string; expiresAtIso: string } {
 	const now = new Date();
 	const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes validity
+	let code = fixedCode;
+	if (!code) {
+		if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+			const buf = new Uint32Array(1);
+			crypto.getRandomValues(buf);
+			const val = buf[0] ?? 0;
+			code = String(1000 + (val % 9000));
+		} else {
+			code = "7788";
+		}
+	}
 	return {
-		code: fixedCode || String(Math.floor(1000 + Math.random() * 9000)),
+		code,
 		expiresAtIso: expiresAt.toISOString(),
 	};
 }
@@ -196,7 +207,10 @@ export function generateIcsCalendarEvent(
 	const nowStr = formatIcsDate(new Date());
 	const startStr = formatIcsDate(start);
 	const endStr = formatIcsDate(end);
-	const uid = `dente-booking-${start.getTime()}-${Math.floor(Math.random() * 10000)}@dente.clinic`;
+	const hashSuffix = Math.abs(
+		(titleRu + locationRu).split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)
+	).toString(36);
+	const uid = `dente-booking-${start.getTime()}-${hashSuffix}@dente.clinic`;
 
 	return [
 		"BEGIN:VCALENDAR",

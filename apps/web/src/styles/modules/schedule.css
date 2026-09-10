@@ -360,6 +360,13 @@
 	align-self: center;
 	border-radius: 6px;
 	font-size: 12px;
+	flex-shrink: 0;
+}
+.schedule-my-chair-chip {
+	flex-shrink: 0 !important;
+	min-width: max-content !important;
+	max-width: none !important;
+	white-space: nowrap !important;
 }
 .schedule-date-picker-group {
 	display: flex;

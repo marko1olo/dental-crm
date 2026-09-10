@@ -102,7 +102,7 @@ export function DmsGuaranteeLetterModal({
 		initialLetter?.policyNumber || patient?.policyNumber || "",
 	);
 	const [letterNumber, setLetterNumber] = useState<string>(
-		initialLetter?.letterNumber || `ГП-${Math.floor(100000 + Math.random() * 900000)}`,
+		initialLetter?.letterNumber || `ГП-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
 	);
 	const [isEmergencyCare, setIsEmergencyCare] = useState<boolean>(false);
 	const [issueDate, setIssueDate] = useState<string>(

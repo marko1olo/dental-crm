@@ -179,8 +179,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		}
 
 		const currentYear = new Date().getFullYear();
-		const randomNum = Math.floor(1000 + Math.random() * 9000);
-		setCustomReferralNumber(`НАПР-КТ-${currentYear}-${randomNum}`);
+		const dateSuffix = Date.now().toString(36).toUpperCase().slice(-4);
+		setCustomReferralNumber(`НАПР-КТ-${currentYear}-${dateSuffix}`);
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") onClose();
@@ -189,8 +189,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, diary.diagnosisIcd10, diary.diagnosisTooth, onClose]);
 
-	const patientName = patient?.fullName || "Пациент";
-	const patientBirth = patient?.birthDate || "1990-01-01";
+	const patientName = patient?.fullName || "____________________";
+	const patientBirth = patient?.birthDate || "____-__-__";
 	const patientPhone = patient?.phone || "+7 (___) ___-__-__";
 	const patientCard =
 		patient?.medicalCardNumber || patient?.cardNumber || "043/у";

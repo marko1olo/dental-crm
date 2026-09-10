@@ -67,6 +67,7 @@ export class CallKitBridge {
 	private activeCallId: string | null = null;
 	private audioClient: UnifiedAudioClient | null = null;
 	private listeners: Partial<CallKitEventMap> = {};
+	private callCounter = 0;
 
 	constructor(config: Partial<CallKitBridgeConfig> = {}) {
 		this.config = { ...DEFAULT_CALLKIT_CONFIG, ...config };
@@ -151,7 +152,7 @@ export class CallKitBridge {
 	 */
 	public async reportIncomingCall(call: IncomingCallPayload): Promise<void> {
 		await this.initialize();
-		const callId = call.callId || `call_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+		const callId = call.callId || `call_${Date.now()}_${++this.callCounter}`;
 		this.activeCallId = callId;
 
 		// 1. Mobile Native App -> Display Native Incoming Call Screen (wakes phone screen)

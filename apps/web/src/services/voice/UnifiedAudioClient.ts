@@ -115,9 +115,10 @@ export class UnifiedAudioClient {
 	// biome-ignore lint/suspicious/noExplicitAny: Web Speech API instance
 	private browserRecognition: any = null;
 
+	private static sessionCounter = 0;
 	private interimText = "";
 	private accumulatedText = "";
-	private recordingId = `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+	private recordingId = `rec_${Date.now()}_${++UnifiedAudioClient.sessionCounter}`;
 	private chunkIndex = 0;
 	private listeners = new Set<UnifiedAudioListener>();
 	private isDisposed = false;
@@ -347,7 +348,7 @@ export class UnifiedAudioClient {
 	public async start(): Promise<void> {
 		if (this.state === "listening" || this.state === "connecting") return;
 
-		this.recordingId = `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+		this.recordingId = `rec_${Date.now()}_${++UnifiedAudioClient.sessionCounter}`;
 		this.chunkIndex = 0;
 		this.setState("connecting");
 

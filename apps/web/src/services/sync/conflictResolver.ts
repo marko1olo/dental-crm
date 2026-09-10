@@ -24,6 +24,7 @@ import type { ConflictAuditRecord } from "./types";
 
 const conflictAuditTrail: ConflictAuditRecord[] = [];
 const MAX_AUDIT_TRAIL_SIZE = 1000;
+let conflictIdSeq = 0;
 
 export function recordConflictAudit(params: {
 	entityKind: SyncMutationEntityKind;
@@ -36,7 +37,7 @@ export function recordConflictAudit(params: {
 
 	for (const c of params.conflicts) {
 		const rec: ConflictAuditRecord = {
-			conflictId: `cfl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			conflictId: `cfl-${Date.now()}-${++conflictIdSeq}`,
 			entityKind: params.entityKind,
 			entityId: params.entityId,
 			mutationId: params.mutationId,
