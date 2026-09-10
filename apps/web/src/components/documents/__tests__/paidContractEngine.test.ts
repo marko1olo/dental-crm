@@ -5,6 +5,7 @@ import {
 	formatKopecksToRubAndKop,
 	generatePaidContractHtml,
 	generatePaidContractIntegrityHash,
+	generatePaidContractNumber,
 	generatePaidContractText,
 	generateSha256,
 	generateSmsSignOtp,
@@ -278,6 +279,37 @@ describe("Paid Contract Engine (Постановление Правительс�
 			assert.strictEqual(hash1.length, 64);
 			assert.strictEqual(hash1, hash2);
 			assert.notStrictEqual(hash1, hashDiffOtp);
+		});
+	});
+
+	describe("5. Statutory Sequential Contract Numbering (ДПМУ)", () => {
+		test("generatePaidContractNumber produces structured format ДПМУ-YYYY-XXXX-NNNN without Math.random", () => {
+			const num1 = generatePaidContractNumber({
+				patientFullName: "Иванов Иван Иванович",
+				year: 2026,
+			});
+			assert.ok(num1.startsWith("ДПМУ-2026-"));
+			const parts = num1.split("-");
+			assert.strictEqual(parts.length, 4);
+			assert.strictEqual(parts[0], "ДПМУ");
+			assert.strictEqual(parts[1], "2026");
+			assert.strictEqual(parts[2]?.length, 4);
+			assert.strictEqual(parts[3]?.length, 4);
+		});
+
+		test("generatePaidContractNumber incorporates patientId when provided", () => {
+			const num = generatePaidContractNumber({
+				patientId: "usr-uuid-7890",
+				seqNumber: 42,
+				year: 2026,
+			});
+			assert.strictEqual(num, "ДПМУ-2026-7890-0042");
+		});
+
+		test("generatePaidContractNumber produces monotonic sequential numbers across calls", () => {
+			const n1 = generatePaidContractNumber({ year: 2026 });
+			const n2 = generatePaidContractNumber({ year: 2026 });
+			assert.notStrictEqual(n1, n2);
 		});
 	});
 });

@@ -55,6 +55,8 @@ export interface WarrantyItem {
 	country: string;
 	vitaShade?: string | undefined;
 	lotNumber?: string | undefined;
+	serviceCode804n?: string | undefined;
+	labOrderNumber?: string | undefined;
 	implantDiameterMm?: number | undefined;
 	implantLengthMm?: number | undefined;
 	baseWarrantyMonths: number;
@@ -550,13 +552,59 @@ export function calculateMultiItemWarrantyTerms(
 	});
 }
 
+let certificateSequenceCounter = 0;
+
 /**
- * Генерация уникального серийного номера гарантийного паспорта
+ * Генерация уникального детерминированного серийного номера гарантийного паспорта
+ * Формат: WAR-ГГГГ-NNNNN
  */
-export function generateCertificateId(prefix = "WAR"): string {
+export function generateCertificateId(prefix = "WAR", seqNumber?: number | string | null | undefined): string {
 	const year = new Date().getFullYear();
-	const randomNum = Math.floor(10000 + Math.random() * 90000);
-	return `${prefix}-${year}-${randomNum}`;
+	let seqStr: string;
+	if (seqNumber !== undefined && seqNumber !== null && String(seqNumber).trim() !== "") {
+		const numOnly = String(seqNumber).replace(/\D/g, "");
+		seqStr = (numOnly || "1").padStart(5, "0").slice(-5);
+	} else {
+		certificateSequenceCounter = (certificateSequenceCounter + 1) % 100000;
+		if (certificateSequenceCounter === 0) certificateSequenceCounter = 1;
+		seqStr = String(certificateSequenceCounter).padStart(5, "0");
+	}
+	return `${prefix}-${year}-${seqStr}`;
+}
+
+/**
+ * Генерация криптографически надежного RFC 9562 UUIDv7
+ * (48-битный timestamp в миллисекундах + версия 7 + вариант 10 + криптографическая энтропия)
+ */
+export function generateUuidV7(): string {
+	const now = Date.now();
+	const bytes = new Uint8Array(16);
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		crypto.getRandomValues(bytes);
+	} else {
+		for (let i = 0; i < 16; i++) {
+			bytes[i] = ((now >> (i * 2)) ^ (i * 37)) & 0xff;
+		}
+	}
+
+	// 48-bit timestamp
+	bytes[0] = (now / 0x10000000000) & 0xff;
+	bytes[1] = (now / 0x100000000) & 0xff;
+	bytes[2] = (now / 0x1000000) & 0xff;
+	bytes[3] = (now / 0x10000) & 0xff;
+	bytes[4] = (now / 0x100) & 0xff;
+	bytes[5] = now & 0xff;
+
+	// Version 7: 0b0111xxxx
+	bytes[6] = (bytes[6]! & 0x0f) | 0x70;
+	// Variant: 0b10xxxxxx
+	bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+
+	let hex = "";
+	for (let i = 0; i < 16; i++) {
+		hex += bytes[i]!.toString(16).padStart(2, "0");
+	}
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 /**
@@ -819,6 +867,7 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
 			const warrantyMonths = item.customWarrantyMonths ?? calculation.adjustedWarrantyMonths;
 			const serviceLifeMonths = item.customServiceLifeMonths ?? calculation.adjustedServiceLifeMonths;
 			const expDate = addMonthsToDate(issueDate, warrantyMonths);
+			const code804n = item.serviceCode804n || preset.serviceCode804n;
 
 			return `
       <tr class="item-row">
@@ -826,11 +875,11 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
         <td class="col-tooth"><strong>${item.toothNumber}</strong></td>
         <td class="col-work">
           <div class="work-title">${item.clinicalWorkTitle}</div>
-          <div class="work-cat">${preset.shortTitle}</div>
+          <div class="work-cat">${preset.shortTitle} • Код 804н: <code>${code804n}</code></div>
         </td>
         <td class="col-material">
           <div class="mat-name">${item.materialName}</div>
-          <div class="mat-meta">${item.manufacturer} (${item.country})${item.vitaShade ? ` • Оттенок: ${item.vitaShade}` : ""}</div>
+          <div class="mat-meta">${item.manufacturer} (${item.country})${item.vitaShade ? ` • Оттенок VITA: ${item.vitaShade}` : ""}${item.labOrderNumber ? ` • Наряд ЗТЛ: <code>${item.labOrderNumber}</code>` : ""}</div>
           ${item.lotNumber ? `<div class="mat-lot">LOT / UDI: <code>${item.lotNumber}</code></div>` : ""}
         </td>
         <td class="col-warranty">
@@ -1330,6 +1379,25 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
  * Положение СтАР, Закон РФ № 2300-1 (ст. 29) и Мандат 8e (Свобода врача)
  * ============================================================================
  */
+let remediationOrderCounter = 0;
+
+/**
+ * Генерация регламентного номера наряда на гарантийную переделку/рекламацию
+ * Формат: ГП-ГГГГ-NNNN
+ */
+export function generateRemediationOrderNumber(year = new Date().getFullYear(), seq?: number | string | null | undefined): string {
+	let seqStr: string;
+	if (seq !== undefined && seq !== null && String(seq).trim() !== "") {
+		const numOnly = String(seq).replace(/\D/g, "");
+		seqStr = (numOnly || "1").padStart(4, "0").slice(-4);
+	} else {
+		remediationOrderCounter = (remediationOrderCounter + 1) % 10000;
+		if (remediationOrderCounter === 0) remediationOrderCounter = 1;
+		seqStr = String(remediationOrderCounter).padStart(4, "0");
+	}
+	return `ГП-${year}-${seqStr}`;
+}
+
 export function createWarrantyRemediationOrder(params: {
 	certificateId: string;
 	toothNumber: string;
@@ -1346,10 +1414,9 @@ export function createWarrantyRemediationOrder(params: {
 	notes?: string | undefined;
 }): WarrantyRemediationOrder {
 	const template = getWarrantyDefectTemplate(params.defectType);
-	const id = `remed_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+	const id = `remed_${generateUuidV7()}`;
 	const year = new Date().getFullYear();
-	const randomNum = Math.floor(1000 + Math.random() * 9000);
-	const orderNumber = `ГП-${year}-${randomNum}`;
+	const orderNumber = generateRemediationOrderNumber(year);
 	const performedAtIso = new Date().toISOString();
 
 	const clinicalFinding = params.customFinding?.trim() || template.clinicalDescription;

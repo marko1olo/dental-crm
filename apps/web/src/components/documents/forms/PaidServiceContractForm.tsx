@@ -11,6 +11,7 @@ import {
 } from "../paidContractRequiredFields";
 import { PaidContractRequiredFieldsPanel } from "../PaidContractRequiredFieldsPanel";
 import { QuickChipsRow } from "../QuickChipsRow";
+import { generatePaidContractNumber } from "../paidContractEngine";
 
 export const PAID_CONTRACT_FIELDS_BLOCK_TITLE = "Обязательные поля договора";
 
@@ -231,7 +232,12 @@ export const PaidServiceContractForm = React.memo(
 		const handleFillStandardContract = () => {
 			const currentYear = new Date().getFullYear();
 			if (!paidContractNumber.trim()) {
-				setPaidContractNumber(`ДПМУ-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`);
+				setPaidContractNumber(
+					generatePaidContractNumber({
+						patientFullName: documentPatientFullName || null,
+						year: currentYear,
+					}),
+				);
 			}
 			const todayIso = new Date().toISOString().slice(0, 10);
 			if (!paidContractDate.trim()) {

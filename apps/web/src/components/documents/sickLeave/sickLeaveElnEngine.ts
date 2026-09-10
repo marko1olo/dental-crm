@@ -179,14 +179,77 @@ export function calculateSickLeaveDates(startDate: string, durationDays: number)
 }
 
 /**
- * Generates a standard 12-digit statutory ELN Number conforming to SFR/FSS format
+ * Statutory weights for calculating the 12th check digit of Russian ELN (SFR / FSS EIIS "Socstrakh" standard)
+ * 11-digit weighted sum with MOD 11 algorithm.
  */
-export function generateElnNumber(prefix = '999'): string {
-	let randomPart = '';
-	for (let i = 0; i < 9; i++) {
-		randomPart += Math.floor(Math.random() * 10);
+export const ELN_MOD11_WEIGHTS = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8] as const;
+
+/**
+ * Computes statutory 12th check digit for Russian ELN (Electronic Sick Leave)
+ * according to Federal Law № 255-FZ and SFR (FSS) EIIS "Socstrakh" specification (MOD 11).
+ *
+ * @param elevenDigits First 11 digits of the ELN number (3-digit pool/region + 8-digit sequence)
+ * @returns Check digit in range 0..9
+ */
+export function computeElnCheckDigit(elevenDigits: string): number {
+	const clean = (elevenDigits || '').replace(/\D/g, '');
+	if (clean.length < 11) {
+		throw new Error(`ELN check digit calculation requires at least 11 digits, received: "${elevenDigits}"`);
 	}
-	return `${prefix}${randomPart}`;
+	const target = clean.slice(0, 11);
+	let sum = 0;
+	for (let i = 0; i < 11; i++) {
+		sum += Number.parseInt(target[i]!, 10) * ELN_MOD11_WEIGHTS[i]!;
+	}
+	const remainder = sum % 11;
+	return remainder === 10 ? 0 : remainder;
+}
+
+/**
+ * Validates 12-digit Russian Statutory ELN Number format and MOD 11 check digit.
+ *
+ * @param eln 12-digit ELN string
+ * @returns true if format is 12 digits and check digit matches
+ */
+export function validateElnNumber(eln: string): boolean {
+	if (!eln || typeof eln !== 'string') return false;
+	const clean = eln.replace(/\D/g, '');
+	if (clean.length !== 12) return false;
+	const elevenDigits = clean.slice(0, 11);
+	const checkDigit = Number.parseInt(clean[11]!, 10);
+	return computeElnCheckDigit(elevenDigits) === checkDigit;
+}
+
+let elnSequenceCounter = 0;
+
+/**
+ * Generates a statutory 12-digit Russian ELN Number conforming to SFR (FSS) EIIS "Socstrakh"
+ * Structure:
+ * - Digits 1-3: SFR pool / regional code (default '999' for test/dental integration gateway)
+ * - Digits 4-11: 8-digit deterministic sequential number
+ * - Digit 12: MOD 11 weighted check digit
+ */
+export function generateElnNumber(prefix = '999', sequenceNumber?: number | string | null | undefined): string {
+	const cleanPrefix = (prefix || '999').replace(/\D/g, '').slice(0, 3).padEnd(3, '9');
+	let seqStr: string;
+
+	if (sequenceNumber !== undefined && sequenceNumber !== null && String(sequenceNumber).trim() !== '') {
+		const digitsOnly = String(sequenceNumber).replace(/\D/g, '');
+		seqStr = (digitsOnly || '1').padStart(8, '0').slice(-8);
+	} else {
+		elnSequenceCounter = (elnSequenceCounter + 1) % 10000;
+		if (elnSequenceCounter === 0) elnSequenceCounter = 1;
+		const now = new Date();
+		// Compute seconds of current year to ensure unique monotonic sequences across days/sessions
+		const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+		const secondsOfYear = Math.floor((now.getTime() - startOfYear) / 1000);
+		const composite = (secondsOfYear % 10000) * 10000 + elnSequenceCounter;
+		seqStr = String(composite).padStart(8, '0').slice(-8);
+	}
+
+	const first11 = `${cleanPrefix}${seqStr}`;
+	const checkDigit = computeElnCheckDigit(first11);
+	return `${first11}${checkDigit}`;
 }
 
 /**
@@ -199,6 +262,8 @@ export function validateSickLeaveDuration(form: SickLeaveFormState): SickLeaveVa
 
 	if (!form.elnNumber || form.elnNumber.replace(/\D/g, '').length !== 12) {
 		warnings.push('Номер ЭЛН должен состоять из 12 цифр согласно стандарту Социального фонда России (СФР).');
+	} else if (!validateElnNumber(form.elnNumber)) {
+		warnings.push('Контрольный разряд номера ЭЛН не совпадает с расчетным по алгоритму СФР (ЕИИС «Соцстрах»).');
 	}
 
 	if (!form.periods || form.periods.length === 0) {

@@ -44,6 +44,7 @@ import {
 	generateCertificateId,
 	generateQrCodeSvg,
 	generateSha256,
+	generateUuidV7,
 	generateWarrantyCertificateHtml,
 	generateWarrantyRemediationActHtml,
 	type WarrantyCalculationResult,
@@ -286,8 +287,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 		const preset = getWarrantyPreset(activeCategory);
 		const targetTeeth =
 			selectedTeeth.length > 0 ? selectedTeeth : ["Общая конструкция / Челюсть"];
-		const newItems: WarrantyItem[] = targetTeeth.map((tooth, idx) => ({
-			id: `item_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+		const newItems: WarrantyItem[] = targetTeeth.map((tooth) => ({
+			id: `item_${generateUuidV7()}`,
 			toothNumber: tooth,
 			category: activeCategory,
 			clinicalWorkTitle: currentWorkTitle || preset.title,
