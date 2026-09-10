@@ -12,3 +12,5 @@ export * from "./hotFolderSyncEngine.js";
 export * from "./panoramicCprMath.js";
 export * from "./cbctSafetyEngine.js";
 export * from "./mischBoneDensity.js";
+export * from "./cbctScanMeshEngine.js";
+export * from "./cbctCropBox.js";
