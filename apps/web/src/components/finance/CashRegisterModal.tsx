@@ -63,6 +63,12 @@ import {
 	parseChestnyZnakDataMatrix,
 	rublesToKopecks,
 	rubToKopecks,
+	STOMX_CASH_RECEIPT_CATEGORIES,
+	STOMX_CASH_EXPENSE_CATEGORIES,
+	STOMX_CASH_BOXES,
+	type StomxCashBoxType,
+	type StomxReceiptTypeAlias,
+	type StomxExpenseTypeAlias,
 } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
@@ -168,7 +174,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	} | null>(null);
 	const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-	// 6 Кассовых счетов клиники
+	// 6 Кассовых счетов клиники (StomX Bible: Основная, Дополнительная, Безнал, ДМС, Р/счет, Расходы)
 	const [cashBoxesList, setCashBoxesList] = useState<Array<{
 		id: string;
 		name: string;
@@ -176,8 +182,20 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		balanceRub: number;
 		isMain: boolean;
 		isCashless: boolean;
-	}>>([]);
-	const [selectedCashBoxId, setSelectedCashBoxId] = useState<string>("");
+	}>>(() =>
+		STOMX_CASH_BOXES.map((b) => ({
+			id: String(b.id),
+			name: b.name,
+			type: b.type,
+			balanceRub: 0,
+			isMain: b.isMain,
+			isCashless: b.isCashless,
+		}))
+	);
+	const [selectedCashBoxId, setSelectedCashBoxId] = useState<string>(String(STOMX_CASH_BOXES[0]?.id || "1"));
+	const [selectedCashBoxType, setSelectedCashBoxType] = useState<StomxCashBoxType>("main");
+	const [selectedReceiptAlias, setSelectedReceiptAlias] = useState<StomxReceiptTypeAlias>("appointment_payment");
+	const [selectedExpenseAlias, setSelectedExpenseAlias] = useState<StomxExpenseTypeAlias>("return_appointment");
 
 	// Реальная честная рассрочка клиники (0% переплат)
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(6);
@@ -200,16 +218,19 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				return res.json();
 			})
 			.then((data) => {
-				if (isMounted && data?.data && Array.isArray(data.data)) {
+				if (isMounted && data?.data && Array.isArray(data.data) && data.data.length > 0) {
 					setCashBoxesList(data.data);
-					const mainBox = data.data.find((b: { isMain: boolean }) => b.isMain) || data.data[0];
+					const mainBox = data.data.find((b: { isMain: boolean; type?: string }) => b.isMain) || data.data[0];
 					if (mainBox) {
 						setSelectedCashBoxId(mainBox.id);
+						if ((mainBox as { type?: string }).type) {
+							setSelectedCashBoxType((mainBox as { type: StomxCashBoxType }).type);
+						}
 					}
 				}
 			})
 			.catch((err) => {
-				console.warn("[CashRegisterModal] Failed to load cash boxes", err);
+				console.warn("[CashRegisterModal] Failed to load cash boxes, using authentic StomX defaults", err);
 			});
 		return () => {
 			isMounted = false;
@@ -459,7 +480,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 					date: new Date().toISOString().slice(0, 10),
 					nonce: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 						? crypto.randomUUID()
-						: `r-${now}-${Math.random().toString(36).slice(2, 7)}`,
+						: `seq-${now}-${effectiveItems.length}`,
 				},
 			);
 
@@ -567,9 +588,18 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
 			const effectivePatientId = isUuid ? patientId : "00000000-0000-0000-0000-000000000001";
 
+			const activeCategoryTitle =
+				operationType === "income"
+					? STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг"
+					: STOMX_CASH_EXPENSE_CATEGORIES.find((c) => c.alias === selectedExpenseAlias)?.name || "Возврат по приему";
+
 			const payload = {
 				clientMutationId: idempotencyKey,
 				cashBoxId: selectedCashBoxId || undefined,
+				cashBoxType: selectedCashBoxType,
+				cashFlowCategory: activeCategoryTitle,
+				receiptTypeAlias: operationType === "income" ? selectedReceiptAlias : undefined,
+				expenseTypeAlias: operationType === "income_return" ? selectedExpenseAlias : undefined,
 				patientId: effectivePatientId,
 				operationType,
 				customerContact: patientPhone || patientName,
@@ -805,7 +835,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 	// Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
 	const handlePrintSalesSlip = async () => {
-		const docNum = `ТЧ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+		const docNum = `ТЧ-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
 		const nowStr = new Date().toLocaleString("ru-RU", {
 			day: "2-digit",
 			month: "2-digit",
@@ -1929,14 +1959,19 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-xs">
 										<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
 											<Building2 className="w-4 h-4 text-teal-600 shrink-0" />
-											<span>Счет кассы:</span>
+											<span>Счет кассы (StomX):</span>
 										</div>
 										<div className="flex flex-wrap items-center gap-1.5">
 											{cashBoxesList.map((box) => (
 												<button
 													key={box.id}
 													type="button"
-													onClick={() => setSelectedCashBoxId(box.id)}
+													onClick={() => {
+														setSelectedCashBoxId(box.id);
+														if (box.type) {
+															setSelectedCashBoxType(box.type as StomxCashBoxType);
+														}
+													}}
 													className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 														selectedCashBoxId === box.id
 															? "bg-teal-600 text-white shadow-2xs"
@@ -1952,6 +1987,73 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										</div>
 									</div>
 								)}
+
+								{/* Статьи ДДС StomX (Приход / Расход) */}
+								<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs">
+									<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
+										<Tag className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+										<span>Статья ДДС:</span>
+									</div>
+									{operationType === "income" ? (
+										<div className="flex flex-wrap items-center gap-1.5">
+											{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 4).map((cat) => (
+												<button
+													key={cat.alias}
+													type="button"
+													onClick={() => setSelectedReceiptAlias(cat.alias)}
+													className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+														selectedReceiptAlias === cat.alias
+															? "bg-teal-600 text-white shadow-2xs"
+															: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
+													}`}
+												>
+													{cat.name}
+												</button>
+											))}
+											<select
+												value={selectedReceiptAlias}
+												onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
+												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink)] font-medium cursor-pointer"
+												aria-label="Все статьи поступления"
+											>
+												{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
+													<option key={cat.alias} value={cat.alias}>
+														{cat.name}
+													</option>
+												))}
+											</select>
+										</div>
+									) : (
+										<div className="flex flex-wrap items-center gap-1.5">
+											{STOMX_CASH_EXPENSE_CATEGORIES.slice(0, 4).map((cat) => (
+												<button
+													key={cat.alias}
+													type="button"
+													onClick={() => setSelectedExpenseAlias(cat.alias)}
+													className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+														selectedExpenseAlias === cat.alias
+															? "bg-rose-600 text-white shadow-2xs"
+															: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
+													}`}
+												>
+													{cat.name}
+												</button>
+											))}
+											<select
+												value={selectedExpenseAlias}
+												onChange={(e) => setSelectedExpenseAlias(e.target.value as StomxExpenseTypeAlias)}
+												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink)] font-medium cursor-pointer"
+												aria-label="Все статьи расходов"
+											>
+												{STOMX_CASH_EXPENSE_CATEGORIES.map((cat) => (
+													<option key={cat.alias} value={cat.alias}>
+														{cat.name}
+													</option>
+												))}
+											</select>
+										</div>
+									)}
+								</div>
 
 								{/* Conditional Drawer for Cash Tender (Anti-Matryoshka) */}
 								{selectedTender === "cash" && (

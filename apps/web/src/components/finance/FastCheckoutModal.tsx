@@ -32,8 +32,17 @@ import {
 	Layers,
 	Printer,
 	ChevronDown,
+	Tag,
 } from "lucide-react";
-import { kopecksToRub, rubToKopecks } from "@dental/shared";
+import {
+	kopecksToRub,
+	rubToKopecks,
+	createCompositeIdempotencyKey,
+	STOMX_CASH_RECEIPT_CATEGORIES,
+	STOMX_CASH_BOXES,
+	type StomxCashBoxType,
+	type StomxReceiptTypeAlias,
+} from "@dental/shared";
 import {
 	calculateCashChange,
 	validate54FzBuyerInn,
@@ -41,6 +50,8 @@ import {
 } from "./cashboxOperations.js";
 import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+
+let fastCheckoutSeq = 0;
 
 export type FastCheckoutPaymentMethod =
 	| "card_terminal"
@@ -138,6 +149,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	// Cash tender state
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(rawTotalRub);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+	// StomX Cash Box and Cash Flow Categories (Mandates 8e, 8n)
+	const [selectedCashBoxType, setSelectedCashBoxType] = useState<StomxCashBoxType>("main");
+	const [selectedReceiptAlias, setSelectedReceiptAlias] = useState<StomxReceiptTypeAlias>("appointment_payment");
 
 	// 54-FZ Buyer Details & Cashier Autonomy state (Mandates 8e & 8n)
 	const [payerType, setPayerType] = useState<PayerType>("physical");
@@ -284,11 +299,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const handleExecutePayment = async () => {
 		setIsSubmitting(true);
 		try {
-			const clientMutationId = `chk:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-			const headers = denteAdminSecretRequestHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": clientMutationId,
-			});
+			const activeCategoryTitle =
+				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг";
+			const activeBoxTitle =
+				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
 
 			const effectiveMethod = isWarranty100
 				? "warranty_100"
@@ -296,16 +310,29 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					? splitCashRub > splitCardRub ? "cash" : "card"
 					: activeMethod;
 
+			const clientMutationId = createCompositeIdempotencyKey(
+				`chk:${Date.now()}-${++fastCheckoutSeq}`,
+				{ patientId, amountRub: effectiveTotalRub, method: effectiveMethod, cashBoxType: selectedCashBoxType }
+			);
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
+
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
+			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 			const payload = {
 				patientId,
 				amountRub: effectiveTotalRub,
 				method: effectiveMethod,
+				cashBoxType: selectedCashBoxType,
+				receiptTypeAlias: selectedReceiptAlias,
+				cashFlowCategory: activeCategoryTitle,
 				visitId: visitId || null,
 				documentId: documentId || (invoiceId ? invoiceId : null),
 				orderId: orderId || null,
 				clientMutationId,
-				note: `Быстрый расчет 54-ФЗ (${effectiveCashier}): ${effectiveMethod}${innNote}`,
+				note: `Быстрый расчет 54-ФЗ (${effectiveCashier}): ${effectiveMethod}${innNote}${stomxNote}`,
 			};
 
 			const res = await fetch("/api/billing/payments", {
@@ -524,6 +551,88 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								<ShieldCheck size={14} className={isWarranty100 ? "text-white" : "text-emerald-600"} />
 								<span className="truncate">100% Гарантия (0 ₽)</span>
 							</button>
+						</div>
+					</div>
+
+					{/* StomX 6 Cash Boxes and Cash Flow Category (ДДС) Selector (Mandates 8e, 8n) */}
+					<div
+						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs"
+						data-testid="fast-checkout-stomx-bar"
+					>
+						{/* Cash Box Selection */}
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Building2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+								<span>Касса StomX:</span>
+							</div>
+							<div className="flex flex-wrap items-center gap-1">
+								{STOMX_CASH_BOXES.slice(0, 3).map((box) => (
+									<button
+										key={box.type}
+										type="button"
+										onClick={() => setSelectedCashBoxType(box.type)}
+										className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedCashBoxType === box.type
+												? "bg-teal-600 text-white shadow-2xs"
+												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
+										}`}
+										data-testid={`fast-checkout-box-${box.type}`}
+									>
+										{box.name}
+									</button>
+								))}
+								<select
+									value={selectedCashBoxType}
+									onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
+									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
+									aria-label="Все кассы"
+									data-testid="select-fast-checkout-cashbox"
+								>
+									{STOMX_CASH_BOXES.map((b) => (
+										<option key={b.type} value={b.type}>
+											{b.name}
+										</option>
+									))}
+								</select>
+							</div>
+						</div>
+
+						{/* Cash Flow (ДДС) Receipt Category Selection */}
+						<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Tag className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+								<span>Статья ДДС:</span>
+							</div>
+							<div className="flex flex-wrap items-center gap-1">
+								{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 3).map((cat) => (
+									<button
+										key={cat.alias}
+										type="button"
+										onClick={() => setSelectedReceiptAlias(cat.alias)}
+										className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+											selectedReceiptAlias === cat.alias
+												? "bg-indigo-600 text-white shadow-2xs"
+												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
+										}`}
+										data-testid={`fast-checkout-cat-${cat.alias}`}
+									>
+										{cat.name}
+									</button>
+								))}
+								<select
+									value={selectedReceiptAlias}
+									onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
+									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
+									aria-label="Все статьи поступлений"
+									data-testid="select-fast-checkout-receipt-alias"
+								>
+									{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
+										<option key={cat.alias} value={cat.alias}>
+											{cat.name}
+										</option>
+									))}
+								</select>
+							</div>
 						</div>
 					</div>
 

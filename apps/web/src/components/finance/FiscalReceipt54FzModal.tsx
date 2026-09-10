@@ -40,6 +40,12 @@ import {
 	type OneCExportParams,
 	parseChestnyZnakDataMatrix,
 	rubToKopecks,
+	STOMX_CASH_RECEIPT_CATEGORIES,
+	STOMX_CASH_EXPENSE_CATEGORIES,
+	STOMX_CASH_BOXES,
+	type StomxCashBoxType,
+	type StomxReceiptTypeAlias,
+	type StomxExpenseTypeAlias,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
@@ -201,7 +207,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	const [activeTab, setActiveTab] = useState<FiscalModalTab>(initialTab || "payment");
 	const [actNumber, setActNumber] = useState<string>(
-		`АКТ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+		`АКТ-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
 	);
 	const [contractNumber, setContractNumber] = useState<string>(
 		`ДОГ-${new Date().getFullYear()}/${(patientId || "patient").slice(0, 5).toUpperCase()}`,
@@ -262,6 +268,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const [selectedDiscountPreset, setSelectedDiscountPreset] = useState<LoyaltyDiscountPreset>("none");
 	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
 	const [customDiscountRub, setCustomDiscountRub] = useState<number>(0);
+
+	// StomX Cash Box & 54-FZ Cash Flow Categories (ДДС)
+	const [selectedCashBoxType, setSelectedCashBoxType] = useState<StomxCashBoxType>("main");
+	const [selectedReceiptAlias, setSelectedReceiptAlias] = useState<StomxReceiptTypeAlias>("appointment_payment");
+	const [selectedExpenseAlias, setSelectedExpenseAlias] = useState<StomxExpenseTypeAlias>("return_appointment");
 
 	const availableStages = useMemo(() => {
 		const stages = new Set<string>();
@@ -980,7 +991,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	// Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
 	const handlePrintSalesSlip = async () => {
-		const docNum = `ТЧ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+		const docNum = `ТЧ-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
 		const nowStr = new Date().toLocaleString("ru-RU", {
 			day: "2-digit",
 			month: "2-digit",
@@ -1355,6 +1366,64 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										</button>
 									</div>
 								</div>
+
+								{/* StomX Cash Flow (ДДС) & Cash Box Selector */}
+								<div className="p-3.5 rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="stomx-cash-flow-payment-bar">
+									<div className="flex items-center justify-between flex-wrap gap-2">
+										<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)] uppercase tracking-wider">
+											<Coins size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+											<span>Статья ДДС и Касса (StomX):</span>
+										</div>
+										<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
+											<Building2 size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+											<span>Касса:</span>
+											<select
+												value={selectedCashBoxType}
+												onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
+												className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
+												data-testid="select-stomx-cashbox-payment"
+											>
+												{STOMX_CASH_BOXES.map((b) => (
+													<option key={b.id} value={b.type}>
+														{b.name} ({b.isCashless ? "Безнал" : "Нал"})
+													</option>
+												))}
+											</select>
+										</div>
+									</div>
+
+									{/* 1-Click Fast Category Pills for Front Desk & Doctor */}
+									<div className="flex items-center gap-1.5 flex-wrap">
+										{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 5).map((cat) => (
+											<button
+												key={cat.id}
+												type="button"
+												onClick={() => setSelectedReceiptAlias(cat.alias)}
+												className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+													selectedReceiptAlias === cat.alias
+														? "bg-teal-600 text-white shadow-2xs"
+														: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] hover:border-teal-400"
+												}`}
+												data-testid={`btn-receipt-cat-${cat.alias}`}
+											>
+												<span>{cat.name}</span>
+											</button>
+										))}
+										<select
+											value={selectedReceiptAlias}
+											onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
+											className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
+											data-testid="select-receipt-category-all"
+										>
+											{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
+												<option key={cat.id} value={cat.alias}>
+													{cat.name} (ФФД: {cat.ffdCalculationSubject === 4 ? "Услуга" : cat.ffdCalculationSubject === 1 ? "Товар" : cat.ffdCalculationSubject === 3 ? "Аванс" : "Внереализ."})
+												</option>
+											))}
+										</select>
+									</div>
+								</div>
+
 								{/* Stage Filter Chips */}
 								{availableStages.length > 0 && (
 									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
@@ -2336,6 +2405,63 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</button>
 								</div>
 							)}
+
+							{/* StomX Cash Expense (ДДС) & Cash Box Selector for Refund */}
+							<div className="p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="stomx-cash-flow-refund-bar">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div className="flex items-center gap-1.5 font-bold text-xs text-rose-950 dark:text-rose-200 uppercase tracking-wider">
+										<Coins size={14} className="text-rose-600 shrink-0" />
+										<span>Статья расхода ДДС и Касса (StomX):</span>
+									</div>
+									<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
+										<Building2 size={13} className="text-rose-600 shrink-0" />
+										<span>Касса:</span>
+										<select
+											value={selectedCashBoxType}
+											onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
+											className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
+											data-testid="select-stomx-cashbox-refund"
+										>
+											{STOMX_CASH_BOXES.map((b) => (
+												<option key={b.id} value={b.type}>
+													{b.name} ({b.isCashless ? "Безнал" : "Нал"})
+												</option>
+											))}
+										</select>
+									</div>
+								</div>
+
+								{/* 1-Click Fast Expense Category Pills */}
+								<div className="flex items-center gap-1.5 flex-wrap">
+									{STOMX_CASH_EXPENSE_CATEGORIES.slice(0, 5).map((cat) => (
+										<button
+											key={cat.id}
+											type="button"
+											onClick={() => setSelectedExpenseAlias(cat.alias)}
+											className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+												selectedExpenseAlias === cat.alias
+													? "bg-rose-600 text-white shadow-2xs"
+													: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] hover:border-rose-400"
+											}`}
+											data-testid={`btn-expense-cat-${cat.alias}`}
+										>
+											<span>{cat.name}</span>
+										</button>
+									))}
+									<select
+										value={selectedExpenseAlias}
+										onChange={(e) => setSelectedExpenseAlias(e.target.value as StomxExpenseTypeAlias)}
+										className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
+										data-testid="select-expense-category-all"
+									>
+										{STOMX_CASH_EXPENSE_CATEGORIES.map((cat) => (
+											<option key={cat.id} value={cat.alias}>
+												{cat.name} ({cat.isFiscalRefund ? "Чек 54-ФЗ Возврат" : "Без чека"})
+											</option>
+										))}
+									</select>
+								</div>
+							</div>
 
 							{/* Either Advance return form OR Items picker */}
 							{isAdvanceRefund ? (

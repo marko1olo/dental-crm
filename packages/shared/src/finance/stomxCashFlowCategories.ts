@@ -170,6 +170,8 @@ export const STOMX_CASH_RECEIPT_BY_ID = Object.freeze(
 	) as Record<number, StomxCashReceiptTypeMeta>,
 );
 
+export const STOMX_CASH_RECEIPT_CATEGORIES = STOMX_CASH_RECEIPT_CATALOG;
+
 // ============================================================================
 // 2. CASH EXPENSE / OUTFLOW TYPES (РАСХОДНЫЕ ОПЕРАЦИИ И ИЗЪЯТИЯ КАССЫ)
 // ============================================================================
@@ -389,6 +391,115 @@ export const STOMX_CASH_EXPENSE_BY_ID = Object.freeze(
 		STOMX_CASH_EXPENSE_CATALOG.map((item) => [item.id, item]),
 	) as Record<number, StomxCashExpenseTypeMeta>,
 );
+
+export const STOMX_CASH_EXPENSE_CATEGORIES = STOMX_CASH_EXPENSE_CATALOG;
+
+// ============================================================================
+// 2.1 STOMX CASH BOXES & REGISTERS (СПРАВОЧНИК КАСС КЛИНИКИ)
+// ============================================================================
+
+export const STOMX_CASH_BOX_TYPES = [
+	"main",     // id: 1, Основная
+	"extra",    // id: 2, Дополнительная
+	"cashless", // id: 3, Безналичный расчет
+	"dms",      // id: 4, ДМС
+	"account",  // id: 5, Расчетный счет
+	"expenses", // id: 6, Расходы
+] as const;
+
+export const stomxCashBoxTypeSchema = z.enum(STOMX_CASH_BOX_TYPES);
+export type StomxCashBoxType = z.infer<typeof stomxCashBoxTypeSchema>;
+
+export interface StomxCashBoxMeta {
+	readonly id: number;
+	readonly type: StomxCashBoxType;
+	readonly name: string;
+	readonly isMain: boolean;
+	readonly isCashless: boolean;
+	readonly order: number;
+	readonly descriptionRu: string;
+}
+
+export const STOMX_CASH_BOXES: readonly StomxCashBoxMeta[] = [
+	{
+		id: 1,
+		type: "main",
+		name: "Основная",
+		isMain: true,
+		isCashless: false,
+		order: 1,
+		descriptionRu: "Основная касса наличных средств и эквайринга клиники",
+	},
+	{
+		id: 2,
+		type: "extra",
+		name: "Дополнительная",
+		isMain: false,
+		isCashless: false,
+		order: 2,
+		descriptionRu: "Дополнительная касса / операционная касса второго администратора",
+	},
+	{
+		id: 3,
+		type: "cashless",
+		name: "Безналичный расчет",
+		isMain: false,
+		isCashless: true,
+		order: 3,
+		descriptionRu: "Безналичные поступления по терминалам эквайринга и СБП",
+	},
+	{
+		id: 4,
+		type: "dms",
+		name: "ДМС",
+		isMain: false,
+		isCashless: false,
+		order: 4,
+		descriptionRu: "Касса расчетов со страховыми компаниями по программам ДМС",
+	},
+	{
+		id: 5,
+		type: "account",
+		name: "Расчетный счет",
+		isMain: false,
+		isCashless: true,
+		order: 5,
+		descriptionRu: "Банковский расчетный счет организации / ИП в банке",
+	},
+	{
+		id: 6,
+		type: "expenses",
+		name: "Расходы",
+		isMain: false,
+		isCashless: false,
+		order: 6,
+		descriptionRu: "Касса операционных расходов и выдачи подотчетных сумм",
+	},
+] as const;
+
+export const STOMX_CASH_BOX_BY_TYPE = Object.freeze(
+	Object.fromEntries(
+		STOMX_CASH_BOXES.map((b) => [b.type, b]),
+	) as Record<StomxCashBoxType, StomxCashBoxMeta>,
+);
+
+export const STOMX_CASH_BOX_BY_ID = Object.freeze(
+	Object.fromEntries(
+		STOMX_CASH_BOXES.map((b) => [b.id, b]),
+	) as Record<number, StomxCashBoxMeta>,
+);
+
+export function getStomxCashBoxByType(
+	type: string,
+): StomxCashBoxMeta | undefined {
+	return STOMX_CASH_BOX_BY_TYPE[type as StomxCashBoxType];
+}
+
+export function getStomxCashBoxById(
+	id: number,
+): StomxCashBoxMeta | undefined {
+	return STOMX_CASH_BOX_BY_ID[id];
+}
 
 // ============================================================================
 // 3. PAYMENT METHOD & TENDER SCHEMAS (СПОСОБЫ ОПЛАТЫ И ТЕНДЕРЫ ПО 54-ФЗ)

@@ -27,11 +27,17 @@ import {
 	Sparkles,
 	Zap,
 	Percent,
+	Tag,
 } from "lucide-react";
 import {
 	type SberPosTransactionResponse,
 	kopecksToRub,
 	rubToKopecks,
+	createCompositeIdempotencyKey,
+	STOMX_CASH_RECEIPT_CATEGORIES,
+	STOMX_CASH_BOXES,
+	type StomxCashBoxType,
+	type StomxReceiptTypeAlias,
 } from "@dental/shared";
 import {
 	calculateCashChange,
@@ -42,6 +48,8 @@ import { SberPayIntegration } from "./SberPayIntegration.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+
+let paymentMutationSeq = 0;
 
 export type PaymentMethodTab = "card_terminal" | "sberpay_qr" | "biometry" | "cash" | "family_deposit" | "split";
 
@@ -324,6 +332,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
 	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
 	const [isSubmittingDeposit, setIsSubmittingDeposit] = useState<boolean>(false);
+
+	// StomX Cash Box and Cash Flow Categories (Mandates 8e, 8n)
+	const [selectedCashBoxType, setSelectedCashBoxType] = useState<StomxCashBoxType>("main");
+	const [selectedReceiptAlias, setSelectedReceiptAlias] = useState<StomxReceiptTypeAlias>("appointment_payment");
 
 	// Solo Doctor & Cashier Autonomy: fallback to doctor name or default solo clinic (Mandates 8e & 8n)
 	const effectiveCashier = (cashierName || "").trim() || (doctorName || "").trim() || "Врач-стоматолог";
@@ -719,7 +731,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 		setIsSubmittingCash(true);
 		try {
-			const clientMutationId = `cash:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+			const activeCategoryTitle =
+				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг";
+			const activeBoxTitle =
+				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+
+			const effectiveAmountRub =
+				receivedCashRub > 0 && receivedCashRub < totalDueRub
+					? receivedCashRub
+					: totalDueRub;
+
+			const clientMutationId = createCompositeIdempotencyKey(
+				`cash:${Date.now()}-${++paymentMutationSeq}`,
+				{ patientId, amountRub: effectiveAmountRub, method: "cash", cashBoxType: selectedCashBoxType }
+			);
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": clientMutationId,
@@ -727,11 +752,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 			const changeNote = cashChange.changeRub > 0 ? ` (получено ${receivedCashRub} ₽, сдача ${cashChange.changeRub} ₽)` : "";
-
-			const effectiveAmountRub =
-				receivedCashRub > 0 && receivedCashRub < totalDueRub
-					? receivedCashRub
-					: totalDueRub;
+			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 
 			// Record Cash transaction in backend via canonical billing payments endpoint
 			const res = await fetch("/api/billing/payments", {
@@ -741,10 +762,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					patientId,
 					amountRub: effectiveAmountRub,
 					method: "cash",
+					cashBoxType: selectedCashBoxType,
+					receiptTypeAlias: selectedReceiptAlias,
+					cashFlowCategory: activeCategoryTitle,
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}`,
+					note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}${stomxNote}`,
 				}),
 			});
 
@@ -837,7 +861,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 		setIsSubmittingSplit(true);
 		try {
-			const clientMutationId = `split:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+			const activeCategoryTitle =
+				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг";
+			const activeBoxTitle =
+				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+
+			const clientMutationId = createCompositeIdempotencyKey(
+				`split:${Date.now()}-${++paymentMutationSeq}`,
+				{ patientId, amountRub: totalDueRub, method: "split", cashBoxType: selectedCashBoxType }
+			);
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": clientMutationId,
@@ -853,6 +885,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 			const primaryMethod = effectiveCashRub > effectiveCardRub ? "cash" : "card";
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
+			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
 				headers,
@@ -860,10 +893,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					patientId,
 					amountRub: totalDueRub,
 					method: primaryMethod,
+					cashBoxType: selectedCashBoxType,
+					receiptTypeAlias: selectedReceiptAlias,
+					cashFlowCategory: activeCategoryTitle,
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}`,
+					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}${stomxNote}`,
 				}),
 			});
 
@@ -899,13 +935,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const handleDepositSubmit = async (source: "deposit" | "family") => {
 		setIsSubmittingDeposit(true);
 		try {
-			const clientMutationId = `${source}:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+			const activeCategoryTitle =
+				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг";
+			const activeBoxTitle =
+				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+
+			const amountRubNumber = totalDueRub;
+			const clientMutationId = createCompositeIdempotencyKey(
+				`${source}:${Date.now()}-${++paymentMutationSeq}`,
+				{ patientId, amountRub: amountRubNumber, method: source === "family" ? "family_deposit" : "deposit", cashBoxType: selectedCashBoxType }
+			);
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": clientMutationId,
 			});
 
-			const amountRubNumber = totalDueRub;
+			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
 				headers,
@@ -913,12 +958,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					patientId,
 					amountRub: amountRubNumber,
 					method: source === "family" ? "family_deposit" : "deposit",
+					cashBoxType: selectedCashBoxType,
+					receiptTypeAlias: selectedReceiptAlias,
+					cashFlowCategory: activeCategoryTitle,
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
 					note: source === "family"
-						? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}`
-						: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}`,
+						? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}`
+						: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}`,
 				}),
 			});
 
@@ -1401,6 +1449,88 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 				{/* Modal Body */}
 				<div className="p-4 overflow-y-auto flex-1 space-y-4">
+					{/* StomX 6 Cash Boxes & Cash Flow Category (ДДС) Selector (Mandates 8e, 8n) */}
+					<div
+						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs"
+						data-testid="payment-modal-stomx-bar"
+					>
+						{/* Cash Box Selection */}
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Building2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+								<span>Касса StomX:</span>
+							</div>
+							<div className="flex flex-wrap items-center gap-1">
+								{STOMX_CASH_BOXES.slice(0, 3).map((box) => (
+									<button
+										key={box.type}
+										type="button"
+										onClick={() => setSelectedCashBoxType(box.type)}
+										className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedCashBoxType === box.type
+												? "bg-teal-600 text-white shadow-2xs"
+												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
+										}`}
+										data-testid={`payment-box-${box.type}`}
+									>
+										{box.name}
+									</button>
+								))}
+								<select
+									value={selectedCashBoxType}
+									onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
+									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
+									aria-label="Все кассы"
+									data-testid="select-payment-cashbox"
+								>
+									{STOMX_CASH_BOXES.map((b) => (
+										<option key={b.type} value={b.type}>
+											{b.name}
+										</option>
+									))}
+								</select>
+							</div>
+						</div>
+
+						{/* Cash Flow (ДДС) Receipt Category Selection */}
+						<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Tag className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+								<span>Статья ДДС:</span>
+							</div>
+							<div className="flex flex-wrap items-center gap-1">
+								{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 3).map((cat) => (
+									<button
+										key={cat.alias}
+										type="button"
+										onClick={() => setSelectedReceiptAlias(cat.alias)}
+										className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+											selectedReceiptAlias === cat.alias
+												? "bg-indigo-600 text-white shadow-2xs"
+												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
+										}`}
+										data-testid={`payment-cat-${cat.alias}`}
+									>
+										{cat.name}
+									</button>
+								))}
+								<select
+									value={selectedReceiptAlias}
+									onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
+									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
+									aria-label="Все статьи поступлений"
+									data-testid="select-payment-receipt-alias"
+								>
+									{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
+										<option key={cat.alias} value={cat.alias}>
+											{cat.name}
+										</option>
+									))}
+								</select>
+							</div>
+						</div>
+					</div>
+
 					{/* 54-FZ Buyer Details (Mandates 8e & 8n: Frictionless, optional for physical persons) */}
 					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5">
 						<div className="flex items-center justify-between flex-wrap gap-2">
