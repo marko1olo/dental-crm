@@ -252,31 +252,33 @@ npm run db:reset-seed               # npx tsx apps/api/src/scripts/migrateStateT
 
 ## 📋 Core Table Registry & Modular Domain Schema (`apps/api/src/db/schema/`)
 
-> **Re-measured 2026-09-04:**  
-> `apps/api/src/db/schema.ts` is **no longer a monolith**. It was refactored into a **7-line proxy** re-exporting `apps/api/src/db/schema/index.ts`.
-> The schema is now organized into **18 domain-driven modules** in `apps/api/src/db/schema/`, declaring **203 `pgTable`** definitions (measured 2026-09-04 with ripgrep across all schema files; the previous 2026-08-06 count of 129 tables is superseded).
+> **Re-measured 2026-09-10 (Wave 93):**  
+> `apps/api/src/db/schema.ts` is a **7-line proxy** re-exporting `apps/api/src/db/schema/index.ts`.
+> The schema is organized into **20 domain-driven modules** in `apps/api/src/db/schema/`, declaring **209 `pgTable`** definitions (measured 2026-09-10 with ripgrep across all schema files; including Wave 93 clinical additions: `periodontogram.ts`, `treatmentConsumables.ts`, and `patientRelationships`).
 >
-> For the complete HTTP endpoint mapping to these tables, see **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** (771 endpoints with RBAC, Zod schemas, and DB table lineage).
+> For the complete HTTP endpoint mapping to these tables, see **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** (771+ endpoints with RBAC, Zod schemas, and DB table lineage).
 
 ### 🧩 Domain Schema Modules (`apps/api/src/db/schema/*.ts`)
 1. **`auth.ts`** (6 tables): `organizations`, `clinics`, `users`, `userInvitations`, `portalOtpCodes`, `clinicWorkflows`.
-2. **`patients.ts`** (22 tables): `patients`, `patientConsents`, `recentPatientHistory`, `patientServiceLineages`, `lostPatientsFilters`, `familyGroups`, `familyRecommendationSources`, `patientDuplicateMergeQueues`, `patientTaskTickets`, `patientReclamations`, `patientArchiveReasons`, `patientArchiveReasonsAndBlacklists`, `loyaltyPrograms`, `patientBonusBalances`, `bonusTransactions`, `referralCampaigns`, `patientReferralCodes`, `patientReferrals`, `patientDrugAllergies`, `patientRelationships`, etc.
-3. **`schedule.ts`** (15 tables): `chairs`, `appointments`, `cancellationReasonsTwoLevel`, `quickAppointmentConfirmations`, `urgentScheduleRequests`, `confirmationPerformanceReports`, `scheduleClipboardItems`, `scheduleTimeReservations`, `rebookingConversionRules`, `singleSessionEnforcements`, `appointmentWaitlists`, `clinicChairs`, `appointmentChannelInheritances`, `externalScheduleActionLogs`, `yandexCalendarSyncs`.
-4. **`billing.ts`** (16 tables): `payments`, `patientInvoices`, `invoiceItems`, `cashLedger`, `cashShifts`, `shiftDiscrepancyReports`, `sbpQrTransactions`, `fiscalReceiptQueue`, `paymentInstallments`, `installmentTranches`, etc.
-5. **`clinical.ts`** (24 tables): `diagnoses`, `clinicalRules`, `treatmentPlans`, `treatmentPlanStages`, `treatmentPlanItems`, `visitDiaries`, `signedOutpatientCards`, `anesthesiaLogs`, `implantPassports`, `dentalLabOrders`, `pharmacologyCatalog`, `prescriptions`, `orthodonticCases`, etc.
-6. **`imaging.ts`** (15 tables): `attachments`, `imagingStudies`, `aiJobs`, `imagingSeries`, `imagingInstances`, `imagingAnnotations`, `xrayScans`, `imagingViewerSessions`, `dicomWorkbenchBundles`, `patientCtPlannings`, `bulkImageOperationLogs`, `diagnocatAiFindings`, `diagnocatReports`.
+2. **`patients.ts`** (20 tables): `patients`, `patientConsents`, `recentPatientHistory`, `patientServiceLineages`, `lostPatientsFilters`, `familyGroups`, `familyRecommendationSources`, `patientDuplicateMergeQueues`, `patientTaskTickets`, `patientReclamations`, `patientArchiveReasons`, `patientArchiveReasonsAndBlacklists`, `loyaltyPrograms`, `patientBonusBalances`, `bonusTransactions`, `referralCampaigns`, `patientReferralCodes`, `patientReferrals`, `patientDrugAllergies`, `patientRelationships`.
+3. **`schedule.ts`** (16 tables): `chairs`, `appointments`, `cancellationReasonsTwoLevel`, `quickAppointmentConfirmations`, `urgentScheduleRequests`, `confirmationPerformanceReports`, `scheduleClipboardItems`, `scheduleTimeReservations`, `rebookingConversionRules`, `singleSessionEnforcements`, `appointmentWaitlists`, `clinicChairs`, `appointmentChannelInheritances`, `externalScheduleActionLogs`, `yandexCalendarSyncs`, `doctorShiftRosters`.
+4. **`billing.ts`** (13 tables): `payments`, `patientInvoices`, `invoiceItems`, `cashLedger`, `cashShifts`, `shiftDiscrepancyReports`, `sbpQrTransactions`, `fiscalReceiptQueue`, `paymentInstallments`, `installmentTranches`, etc.
+5. **`clinical.ts`** (47 tables): `diagnoses`, `clinicalRules`, `treatmentPlans`, `treatmentPlanStages`, `treatmentPlanItems`, `visitDiaries`, `signedOutpatientCards`, `anesthesiaLogs`, `implantPassports`, `dentalLabOrders`, `pharmacologyCatalog`, `prescriptions`, `orthodonticCases`, etc.
+6. **`imaging.ts`** (13 tables): `attachments`, `imagingStudies`, `aiJobs`, `imagingSeries`, `imagingInstances`, `imagingAnnotations`, `xrayScans`, `imagingViewerSessions`, `dicomWorkbenchBundles`, `patientCtPlannings`, `bulkImageOperationLogs`, `diagnocatAiFindings`, `diagnocatReports`.
 7. **`inventory.ts`** (13 tables): `inventoryItems`, `warehouses`, `stockBatches`, `inventoryTransactions`, `procedureMaterialRules`, `procedureTechCards`, `procedureTechCardItems`, `sterilizationLogs`, `preSterilizationCleaningLogs`, `autoclaveDailyTests`, `inventoryTransfers`, `inventoryTransferItems`, `mdlpItems`.
 8. **`sanpin.ts`** (8 tables): `sterilizerEquipments`, `bactericidalEquipments`, `bactericidalIrradiatorLogs`, `generalCleaningLogs`, `medicalWasteLogs`, `emergencyBiohazardLogs`, `temperatureHumidityEquipments`, `temperatureHumidityLogs`.
 9. **`finance_v2.ts`** (8 tables): `cashBoxes`, `cashBoxShifts`, `cashExpenseReasons`, `cashOperations`, `installmentContracts`, `installmentTranches`, `doctorPaymentRewards`, `doctorPayrollStatements`.
 10. **`documents_v2.ts`** (3 tables): `documentTemplateCategories`, `documentTemplates`, `documentTemplateVariables`.
 11. **`outpatientCore.ts`** (7 tables): `clinicalTeethCatalog`, `toothDefectsCatalog`, `mkbCategories`, `patientToothDefects`, `outpatientTemplateCategories`, `outpatientTemplates`, `outpatientVerifications`.
-12. **`communications.ts`** (12 tables): `communicationEvents`, `communicationTasks`, `messageTemplates`, `outboundMessageQueue`, `smsGateways`, `chatDialogs`, `chatMessages`, `telegramLinkCodes`, `telegramBotConfigs`, etc.
-13. **`crm_leak_detector.ts`** (4 tables): `crmLeakDetectorConfigs`, `crmLeakDetectorLeads`, `crmLeakDetectorAuditLogs`, `crmLeakDetectorRuns`.
+12. **`communications.ts`** (28 tables): `communicationEvents`, `communicationTasks`, `messageTemplates`, `outboundMessageQueue`, `smsGateways`, `chatDialogs`, `chatMessages`, `telegramLinkCodes`, `telegramBotConfigs`, etc.
+13. **`crm_leak_detector.ts`** (1 table): `crmLeakDetectorConfigs`.
 14. **`sync.ts`** (2 tables): `syncIdempotencyRecords`, `syncEntityVectors`.
-15. **`copilot.ts`** (6 tables): `copilotSessions`, `copilotMessages`, `copilotNudges`, `copilotAlerts`, `copilotAuditLogs`, `copilotFeedback`.
+15. **`copilot.ts`** (4 tables): `copilotSessions`, `copilotMessages`, `copilotAlerts`, `copilotFeedback`.
 16. **`rag.ts`** (1 table): `clinicalKnowledgeEmbeddings`.
-17. **`aiTelemetry.ts`** (3 tables): `aiPromptLogs`, `aiTokenSpendings`, `aiModelLatencies`.
-18. **`system.ts`** (6 tables): `auditEvents`, `systemSettings`, `backgroundJobs`, `featureFlags`, `branchOffices`, `backupLedger`.
+17. **`aiTelemetry.ts`** (1 table): `aiPromptLogs`.
+18. **`system.ts`** (12 tables): `auditEvents`, `systemSettings`, `backgroundJobs`, `featureFlags`, `branchOffices`, `backupLedger`, etc.
+19. **`periodontogram.ts`** (3 tables): `periodontogram_snapshots`, `periodontogram_teeth`, `periodontogram_sites` (ADR 0013, реляционная пародонтограмма).
+20. **`treatmentConsumables.ts`** (2 tables): `treatment_consumables`, `treatment_consumable_logs` (автосписание расходников по 804н).
 
 ### 🧭 Core Orientation Tables
 | Table Name | Description | Key Fields / Relations |

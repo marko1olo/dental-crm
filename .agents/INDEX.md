@@ -56,7 +56,7 @@
 
 ### 2. Техническая Архитектура, API и База Данных (`.agents/`)
 9. **[ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Архитектура монорепозитория (`apps/api`, `apps/web`, `packages/shared`), Fastify API, React 19, WebSocket-брокер, ALS тенант-контекст `withTenantCtx`.
-10. **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM PostgreSQL 18.4 (`.data/pg18`, порт 5432), пул соединений, RLS, 18 модулей схемы, 203 таблицы `pgTable`, регламент миграций.
+10. **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM PostgreSQL 18.4 (`.data/pg18`, порт 5432), пул соединений, RLS, 20 модулей схемы, 209 таблиц `pgTable`, регламент миграций.
 11. **[DATABASE_SETUP.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Развёртывание PostgreSQL, обход ошибки `0040`, PL/pgSQL полифилл `uuidv7()`.
 12. **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Справочник команд сборки, 5-этапный typecheck, проверка кодировок UTF-8 и E2E smoke-тесты.
 13. **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Исчерпывающий каталог всех 771 роутов Fastify (14 доменов, параметры, Zod-валидация, RBAC, коды ответов).

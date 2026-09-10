@@ -3127,10 +3127,134 @@
 
 ---
 
+## 201. `клкт_радио_студия::многокадровый_dicom_клиренс_нерва_плотность_миша_crop_box_и_регистрация_скана` [РЕАЛИЗОВАНО] (Wave 93, Feature 264) -> KILLER / MUST-HAVE
+- **Идея**: В соответствии с Мандатами 8c, 8d, 8e, 8i, 8k и 8n модуль 3D КЛКТ и имплант-студия приведены к промышленному стандарту современных дентальных просмотрщиков (Planmeca Romexis, KaVo, Sirona Galileos, DenCT): нативная поддержка однофайловых Multi-Frame Enhanced CT DICOM томов без краша при загрузке 1 файла `.dcm`, санированное извлечение имени пациента с защитой от фейковых фоллбэков, живой расчет костной плотности по Мишу (классы D1–D5 в единицах Хаунсфилда HU) непосредственно под телом планируемого имплантата с рекомендацией протокола препарирования (under-drilling / метчик / биконденсация) и торка установки (Н·см), неблокирующий замер клиренса безопасности до нижнечелюстного канала (IAN $\ge 2.0$ мм) и дна гайморовой пазухи ($\ge 1.0$ мм) в компактном информационном HUD без всплывающих окон и блокировок кнопки сохранения (Мандат 8e), Crop Box отсечение AABB плоскостей по стандарту VTK с экстракцией под-объема (`extractSubVolume`) для 3–5-кратного снижения нагрузки на RAM, сплайн-математика CPR панорамы и жесткая регистрация оптического скана челюсти (STL/PLY) методом кватернионов Хорна и нарезка сетки плоскостью через BVH-дерево.
+- **Статус**:
+  1. **Multi-Frame Enhanced CT DICOM Loader (`dicomMultiFrameLoader.ts`, `realDicomVolumeLoader.ts`)**:
+     * Распознавание однофайловых мультифреймовых томов по тегу NumberOfFrames `(0028,0008)`;
+     * Нарезка кадров из непрерывного PixelData буфера в `Int16Array` 3D-объема `CbctVoxelVolume` с корректным расчетом Z-spacing по тегам `SpacingBetweenSlices` или разнице координат `ImagePositionPatient`;
+     * Ликвидирован позорный хардкод-фоллбэк имени пациента `Барабаш С.В.` — заменен на `Не указан` с многокодировочным декодером (UTF-8, Windows-1251, ISO-8859-1).
+  2. **Живой расчет плотности кости по Мишу (`mischBoneDensity.ts`, `implantSafetyEngine.ts`)**:
+     * 3D-сэмплирование плотности костного ложа (12 осевых шагов, центральная точка + кольцо из 4 радиальных точек на 60% радиуса имплантата) с трилинейной воксельной интерполяцией;
+     * Классификация по шкале Misch: D1 (>1250 HU, плотная кортикальная кость), D2 (850–1250 HU, пористая кортикальная), D3 (350–850 HU, пористая трабекулярная), D4 (150–350 HU, тонкая трабекулярная), D5 (<150 HU, незрелая);
+     * Вывод клинических рекомендаций в карточке имплантата: рекомендуемый торк (15..45 Н·см) и протокол сверления (стандартное препарирование, недопрепарирование under-drilling, костный метчик для плотной D1, биконденсация).
+  3. **Неблокирующий клиренс безопасности (`cbctSafetyEngine.ts`, `CbctMprImplantStudioModal.tsx`)**:
+     * Аналитическое 3D-решение расстояния от отрезка имплантата до полилинии нижнечелюстного нерва (`distSegmentToPolyline3`), дна синуса и соседних имплантатов;
+     * Информационный бейдж в HUD карточки имплантата (зеленый при клиренсе $\ge 2.0$ мм, янтарный/красный при сближении), 100% доступность кнопки «Сохранить» без блокирующих диалогов (Мандат 8e).
+  4. **Crop Box и экстракция под-объема (`cbctCropBox.ts`)**:
+     * Нормализованный бокс [0..1] зоны интереса с генерацией 6 мировых плоскостей отсечения для шейдера MPR;
+     * Функция `extractSubVolume`: физическая обрезка воксельного массива в изолированный легкий объем при фокусировке на одном сегменте/челюсти, снижающая расход оперативной памяти с 1.5 ГБ до 300–400 МБ.
+  5. **Совмещение оптического скана и нарезка сетки (`cbctScanMeshEngine.ts`)**:
+     * Метод единичных кватернионов Хорна (`kabschTransform`) с симметричным диагонализатором Якоби (`jacobiEigenSymmetric`) для жесткого совмещения ориентиров STL/PLY скана с КЛКТ;
+     * AABB-дерево ограничивающих объемов (BVH) и алгоритм `slicePlaneBVH` для мгновенной нарезки тяжелых оптических сеток (100k+ треугольников) произвольной плоскостью MPR среза без торможения UI.
+- **Файлы**:
+  - `apps/web/src/components/radiology/dicomMultiFrameLoader.ts`
+  - `apps/web/src/components/radiology/realDicomVolumeLoader.ts`
+  - `packages/shared/src/radiology/cbctSafetyEngine.ts`
+  - `packages/shared/src/radiology/mischBoneDensity.ts`
+  - `packages/shared/src/radiology/panoramicCprMath.ts`
+  - `packages/shared/src/radiology/cbctCropBox.ts`
+  - `packages/shared/src/radiology/cbctScanMeshEngine.ts`
+  - `apps/web/src/components/radiology/implantSafetyEngine.ts`
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`
+- **Тесты**:
+  - `apps/web/src/components/radiology/__tests__/dicomMultiFrameLoader.test.ts` (10/10 PASS)
+  - `apps/web/src/components/radiology/__tests__/implantProjectionSafety.test.ts` (12/12 PASS)
+  - `packages/shared/src/tests/cbctSafetyAndMisch.test.ts` (31/31 PASS)
+  - `packages/shared/src/tests/cbctCropBox.test.ts` (24/24 PASS)
+  - `packages/shared/src/tests/cbctScanMeshEngine.test.ts` (21/21 PASS) — коммиты `671f8fd1b`, `9617c20e3`, `bfeb5023e`, `9c2d40558`, `4b8ab2716`.
+
+---
+
+## 202. `пародонтограмма_реляционная::adr0013_сепа_индексы_bop_pi_cal_svg_полоса_профиля_и_физиологическая_норма` [РЕАЛИЗОВАНО] (Wave 93, Feature 265) -> KILLER / MUST-HAVE
+- **Идея**: Полное внедрение реляционной архитектуры пародонтограммы (ADR 0013) в PostgreSQL и Fastify API с автоматическим расчетом клинических пародонтологических индексов SEPA/AAP, скоростным вводом обследования и анатомической SVG полосой профиля карманов по канону DentalPin и Florida Probe. В строгом соответствии с Мандатом 8e и принципом снижения трения пародонтограмма является 100% опциональной, открывается строго из меню «...» («Ещё») одонтограммы, имеет 1-клик пресет «Физиологическая норма» и никогда не блокирует дневники Формы 043/у, закрытие визита или кассовую оплату.
+- **Статус**:
+  1. **Реляционная схема снимков (`periodontogram.ts`, PostgreSQL 18)**:
+     * Таблица `periodontogram_snapshots`: id (uuidv7), organization_id, patient_id, status (`draft` | `closed`), recorded_at, recorded_by_user_id, closed_at, closed_by_user_id, notes, indices (JSONB замороженных индексов);
+     * Частичный уникальный индекс `(organization_id, patient_id)` где `status = 'draft'` — предотвращает дублирование черновиков;
+     * Таблица `periodontogram_teeth`: параметры каждого зуба 11..48 (`is_present`, `is_implant`, `mobility` 0..3, `prognosis`, `furcation_buccal`, `furcation_lingual`, `keratinized_gingiva_mm`);
+     * Таблица `periodontogram_sites`: 6 точек зондирования на зуб (`MV`, `V`, `DV`, `ML`, `L`, `DL`) с глубиной кармана `probing_depth_mm` (0..15), рецессией десны `gingival_margin_mm` (-5..10), маркерами `bleeding_on_probing` (BOP), `plaque`, `suppuration`, `calculus`.
+  2. **Клинический калькулятор индексов (`periodontogramIndices.ts`)**:
+     * Расчет процента кровоточивости BOP % со знаменателем $6 \times \text{count}(\text{presentTeeth})$;
+     * Расчет индекса зубного налета PI % / O’Leary;
+     * Клинический уровень прикрепления CAL ($\text{CAL} = \text{PD} + \text{GM}$);
+     * Подсчет глубоких карманов ($\ge 4$ мм и $\ge 6$ мм), OHI-S, PMA, PSR;
+     * Заморозка расчетных индексов в неизменяемый JSONB снимок при закрытии осмотра (`POST /api/periodontogram/snapshots/:id/close`).
+  3. **Анатомическая SVG полоса профиля (`PerioProfileStrip.tsx`, `perioProfileMath.ts`)**:
+     * Компактная полоса высотой 120–140px с миллиметровой сеткой (0..15 мм) и нулевым сдвигом макета (Zero CLS);
+     * Отрисовка базовой линии эмалево-цементной границы CEJ (0 мм), синей линии края десны GM, красной линии дна кармана PD и полупрозрачного патологического кармана `bandPath` (`var(--danger)` с альфой 0.25);
+     * Анатомические силуэты зубов верхней и нижней челюсти с витками резьбы для имплантатов.
+  4. **Скоростная таблица ввода и автономия врача (`PerioArchGrid.tsx`, Мандаты 8e, 8k)**:
+     * Табличная сетка с автовыделением ячеек при фокусе и быстрой Tab-навигацией;
+     * 1-клик переключатели подвижности (0 -> 1 -> 2 -> 3 -> 0), фуркации (0 -> I -> II -> III -> 0), BOP и налета;
+     * 1-клик кнопка «Физиологическая норма» (карманы 1–2 мм, GM 0, BOP нет) для мгновенного заполнения здорового пародонта.
+- **Файлы**:
+  - `apps/api/src/db/schema/periodontogram.ts`
+  - `apps/api/src/services/periodontogramIndices.ts`
+  - `apps/api/src/services/periodontogramService.ts`
+  - `apps/api/src/routes/periodontogram.ts`
+  - `apps/web/src/components/perio/PerioProfileStrip.tsx`
+  - `apps/web/src/components/perio/PerioArchGrid.tsx`
+  - `apps/web/src/components/perio/perioProfileMath.ts`
+  - `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`
+- **Тесты**:
+  - `apps/api/src/tests/routes/periodontogramSnapshots.test.ts` (10/10 PASS)
+  - `apps/web/src/components/perio/__tests__/perioProfileStrip.test.tsx` (PASS) — коммиты `1d558cd6e`, `d58adfa0d`.
+
+---
+
+## 203. `пациенты_родство_закон::ориентированный_граф_родства_ст64_ск_рф_323_фз_семейный_кошелек_и_динамическая_инверсия` [РЕАЛИЗОВАНО] (Wave 93, Feature 266) -> KILLER / MUST-HAVE
+- **Идея**: В соответствии со ст. 64 Семейного Кодекса РФ, ст. 20 и 84 Федерального закона № 323-ФЗ и ст. 185 ГК РФ реализован ориентированный граф родственных связей и полномочий законных представителей пациентов в стоматологической клинике: взаимная динамическая инверсия ролей, юридические права на подписание согласий ИДС за несовершеннолетних до 15 лет, доступ к медицинским дневникам 043/у и безопасная авторизация оплаты с общего семейного кошелька.
+- **Статус**:
+  1. **Ориентированный граф и юридические атрибуты РФ (`patient_relationships`, PostgreSQL 18)**:
+     * Таблица `patient_relationships`: `id` (uuidv7), `organization_id`, `patient_id`, `related_patient_id`, `relationship_type` (`parent`, `child`, `spouse`, `sibling`, `guardian`, `ward`, `trustee`, `other`);
+     * Уникальный индекс на пару `(organization_id, patient_id, related_patient_id)` и проверочное ограничение запрета связи на самого себя (`patient_id != related_patient_id`);
+     * Юридические флаги полномочий: `is_legal_representative` (законный представитель по СК РФ), `can_view_medical_record` (доступ к дневникам визитов), `can_sign_consents` (право подписи ИДС), `can_spend_family_wallet` (право оплаты с общего семейного депозита), `document_proof_number` (реквизиты свидетельства о рождении или нотариальной доверенности).
+  2. **Взаимная динамическая инверсия связей (`patientRelationships.ts`)**:
+     * При запросе связей пациента возвращаются как исходящие, так и входящие ребра графа;
+     * Корректная семантическая инверсия: `parent` <-> `child`, `guardian` <-> `ward`, `spouse` <-> `spouse`, `sibling` <-> `sibling`.
+  3. **Авторизация семейного кошелька (`can_spend_family_wallet`)**:
+     * Прямая интеграция с семейным балансом: члены семьи с подтвержденным флагом могут списывать средства с депозита плательщика без повторного ввода паролей, с защитой от овердрафта.
+- **Файлы**:
+  - `packages/shared/src/patients/patientRelationshipsSchema.ts`
+  - `apps/api/src/db/schema/patientRelationships.ts`
+  - `apps/api/src/routes/patientRelationships.ts`
+- **Тесты**:
+  - `packages/shared/src/tests/patientRelationships.test.ts` (40/40 PASS)
+  - `apps/api/src/tests/routes/patientRelationships.test.ts` (PASS) — коммит `6cf38fa55`.
+
+---
+
+## 204. `склад_расходники_закупки::автосписание_по_процедурам_804н_мягкий_овердрафт_мандат_8e_и_90_дневный_reorder_point` [РЕАЛИЗОВАНО] (Wave 93, Feature 267) -> KILLER / MUST-HAVE
+- **Идея**: В соответствии с Номенклатурой медицинских услуг 804н, СанПиН 3.3686-21 и Мандатом 8e (п. 10 — Автономия склада и медсестры) реализована автоматическая привязка расходных материалов (карпулы анестетиков, перчатки, коффердам, пломбировочные материалы) к процедурам прайс-листа с автосписанием при завершении приёма, поддержкой мягкого овердрафта склада без блокировки врача и предиктивным алгоритмом расчета точки заказа (Reorder Point) на основе 90-дневного расхода.
+- **Статус**:
+  1. **Справочник расходных норм (`treatment_consumables`, PostgreSQL 18)**:
+     * Таблица `treatment_consumables`: связка кода услуги (`catalog_item_code` по 804н / прейскуранту), ID складской позиции (`inventory_item_id`), нормы расхода (`quantity`) и примечания;
+     * Уникальный индекс `(organization_id, catalog_item_code, inventory_item_id)`.
+  2. **Автосписание по Мандату 8e (Doctor Autonomy)**:
+     * Флаг `clamp_at_zero = true`: при физическом отсутствии или дефиците карпул на складе остаток в БД безопасно обнуляется (`SELECT FOR UPDATE`), система фиксирует предупреждение в журнале дефицита, но НИ В КОЕМ СЛУЧАЕ НЕ БЛОКИРУЕТ закрытие визита врача или проведение приёма;
+     * Идемпотентность списаний по `treatment_reference_id`, исключающая двойное списание при повторных сохранениях.
+  3. **Предиктивный расчет точки заказа Reorder Point (`reorderEngine.ts`)**:
+     * Расчет среднесуточного потребления: $\text{daily\_usage} = \text{usage\_90d} / 90$;
+     * Расчет потребности на период поставки: $\text{lead\_time\_demand} = \lceil \text{daily\_usage} \times \text{lead\_time\_days} \rceil$;
+     * Расчет Reorder Point: $\text{ROP} = \max(\text{min\_quantity}, \text{lead\_time\_demand})$;
+     * Расчет рекомендуемого объема заказа с копеечно точным бюджетом закупки (`suggested_quantity` и `estimated_cost_kopecks`).
+- **Файлы**:
+  - `packages/shared/src/inventory/reorderEngine.ts`
+  - `packages/shared/src/inventory/treatmentConsumablesSchema.ts`
+  - `apps/api/src/db/schema/treatmentConsumables.ts`
+  - `apps/api/src/routes/treatmentConsumables.ts`
+  - `apps/api/src/services/reorderSuggestionService.ts`
+- **Тесты**:
+  - `packages/shared/src/tests/inventoryReorderEngine.test.ts` (38/38 PASS)
+  - `apps/api/src/tests/routes/treatmentConsumables.test.ts` (PASS) — коммиты `bf9b72dbb`, `1d558cd6e`.
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 200 дополнительных системных аддендум-фич клинической автономии (Wave 15..71, фичи 64..263) имеют статус **`[РЕАЛИЗОВАНО]`**:
-- 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 204 дополнительных системных аддендум-фич клинической автономии (Wave 15..93, фичи 64..267) имеют статус **`[РЕАЛИЗОВАНО]`**:
+- 209 таблиц PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
 - Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП, экспорт 1С CommerceML);
@@ -3572,5 +3696,20 @@
     * Плавающий голосовой HUD свернут по умолчанию (`isVoiceHudCollapsed = true`), освобождая полезное пространство для клинических кнопок внизу экрана.
 * **Верификация**: `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx` (7/7 PASS), `apps/web/src/components/visit/__tests__/visitViewAutonomyInquisition.test.tsx` (9/9 PASS), `apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts` (17/17 PASS), `apps/web/src/components/chairside/__tests__/chairsideConsentEngine.test.ts` (22/22 PASS), `apps/web/src/components/emr/audit/__tests__/cmoEmrAuditEngine.test.ts` (11/11 PASS), `apps/web/src/tests/egiszRemd.test.ts` (15/15 PASS), `npm run check:encoding` 5144 файлов 0 ошибок, `npm run check:stub-overrides` 828 свойств 0 ошибок, `npm run check:fetch-response` 1695 файлов 0 ошибок, `npm run check:dynamic-imports` 150 импортов 0 ошибок, monorepo `npm run typecheck` Exit Code 0.
 
-
-
+### Wave 93: Промышленный КЛКТ-просмотрщик (Multi-Frame DICOM, плотность Миша, клиренс IAN, Crop Box), реляционная пародонтограмма (ADR 0013, SEPA, PerioProfileStrip), ориентированный граф родства и автосписание расходников 804н с мягким овердрафтом (Мандаты 8c, 8d, 8e, 8i, 8k, 8n)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `671f8fd1b`, `6cf38fa55`, `1d558cd6e`, `d58adfa0d`, `9617c20e3`, `bfeb5023e`, `9c2d40558`, `4b8ab2716`, `8d147e7bc`, `453c6b1b6`
+* **Результаты**:
+  - **Промышленный КЛКТ-просмотрщик и имплант-студия (Мандаты 8c, 8e, 8i, 8k)**:
+    * *dicomMultiFrameLoader.ts*, *realDicomVolumeLoader.ts*: однофайловый мультифреймовый DICOM (Planmeca/KaVo/Sirona) с разбором (0028,0008), нарезкой кадров в Int16Array 3D-объема и санированным фоллбэком имени пациента.
+    * *mischBoneDensity.ts*, *implantSafetyEngine.ts*, *CbctMprImplantStudioModal.tsx*: живое 3D-сэмплирование плотности кости по Мишу (D1–D5 HU), рекомендации по торку (15–45 Н·см) и протоколу сверления, аналитический замер клиренса до IAN канала (норма >= 2.0 мм) и синуса (>= 1.0 мм) в компактном HUD без всплывающих окон и без блокировок кнопки сохранения.
+    * *cbctCropBox.ts*: ограничение зоны интереса Crop Box AABB плоскостями отсечения по стандарту VTK и экстракция под-объема extractSubVolume с 3-5-кратным снижением нагрузки на RAM.
+    * *cbctScanMeshEngine.ts*: жесткая регистрация оптического скана STL/PLY методом Хорна (кватернионы) с диагонализатором Якоби и нарезка сетки плоскостью через BVH дерево.
+  - **Реляционная архитектура пародонтограммы (ADR 0013, Мандаты 8c, 8e, 8k)**:
+    * *periodontogram.ts*, *periodontogramIndices.ts*, *periodontogramService.ts*: таблицы `periodontogram_snapshots` (с частичным уникальным индексом на draft), `periodontogram_teeth`, `periodontogram_sites`; расчет индексов SEPA/AAP (BOP %, PI %, CAL, глубокие карманы) со знаменателем 6 * count(presentTeeth); заморозка JSONB снимка при закрытии.
+    * *PerioProfileStrip.tsx*, *PerioArchGrid.tsx*, *perioProfileMath.ts*: 120-140px SVG полоса профиля карманов (CEJ, GM, PD, полупрозрачный карман bandPath), скоростная сетка ввода с 1-клик кнопкой «Физиологическая норма». 100% опциональность через меню «...» одонтограммы.
+  - **Ориентированный граф родства и полномочий законных представителей (Мандаты 8e, 8n, СК РФ / 323-ФЗ)**:
+    * *patientRelationshipsSchema.ts*, *patientRelationships.ts*: таблица `patient_relationships`, 8 типов связей с динамической инверсией, юридические флаги РФ (ст. 64 СК РФ, 323-ФЗ, 185 ГК РФ) и списание с семейного кошелька.
+  - **Автосписание расходников и предиктивные закупки (Мандаты 8e п. 10, 8n)**:
+    * *treatmentConsumablesSchema.ts*, *treatmentConsumables.ts*, *reorderEngine.ts*: таблица `treatment_consumables`, автосписание с флагом `clamp_at_zero = true` (мягкий овердрафт без блокировки врача), предиктивная точка заказа Reorder Point на основе 90-дневного расхода.
+* **Верификация**: 98 юнит-тестов КЛКТ/радио/пародонтологии/склада/родства (100% PASS), `npm run check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
