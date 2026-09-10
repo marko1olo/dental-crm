@@ -764,6 +764,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	/** Модальное окно свободных окон врачей (DoctorFreeSlotsModal) */
 	const [doctorFreeSlotsOpen, setDoctorFreeSlotsOpen] = useState(false);
 
+	/** Настраиваемый шаг сетки расписания (15 / 30 / 60 мин, StomX parity) */
+	const [scheduleGridStep, setScheduleGridStep] = useState<15 | 30 | 60>(30);
+
 	/** Детальное модальное окно записи (AppointmentModal) */
 	const [modalAppointment, setModalAppointment] =
 		useState<Appointment | null>(null);
@@ -1816,6 +1819,69 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		);
 	}
 
+	const scheduleFilterSummaryNode = hasSummaryContent ? (
+		<div
+			className="schedule-shift-summary-inline inline-flex items-center gap-1.5 flex-nowrap shrink-0"
+			data-testid="schedule-shift-summary"
+			aria-label="Короткая сводка смены"
+			aria-live="polite"
+		>
+			{visibleAppointmentCount > 0 ? (
+				<span className="status-pill status-confirmed shrink-0">
+					Записей: {visibleAppointmentCount}
+				</span>
+			) : null}
+			{activeScheduleFilterLabels.length > 0 ? (
+				<>
+					<span
+						className="status-pill status-arrived max-w-[200px] truncate shrink-0"
+						title={`Что сейчас отобрано на экране: ${activeScheduleFilterLabels.join(", ")}`}
+					>
+						Отбор: {activeScheduleFilterLabels.join(", ")}
+					</span>
+					<button
+						className="text-button shrink-0 h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
+						type="button"
+						onClick={resetScheduleFilters}
+					>
+						Снять отбор
+					</button>
+				</>
+			) : null}
+			{activeScheduleFilterLabels.length === 0 &&
+			visibleDayGroups?.length > 1 ? (
+				<>
+					<span className="status-pill status-planned shrink-0">
+						Показаны все дни: {visibleDayGroups?.length}
+					</span>
+					<button
+						className="text-button shrink-0 h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
+						type="button"
+						onClick={() => setScheduleDateFilter(todayScheduleDate())}
+					>
+						Только сегодня
+					</button>
+				</>
+			) : null}
+			{scheduleOverlapCount > 0 ? (
+				<span className="status-pill status-cancelled shrink-0" role="alert">
+					Наложений: {scheduleOverlapCount}
+				</span>
+			) : null}
+			{(shiftWarnings || []).map((warning) => (
+				<button
+					key={warning.id}
+					type="button"
+					className={`status-pill schedule-warning-chip max-w-[220px] text-left h-7 px-2 inline-flex items-center cursor-pointer shrink-0 ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
+					onClick={() => openScheduleWarning(warning)}
+					title={`${warning.title}: ${warning.detail}`}
+				>
+					<span className="truncate">{warning.title} — {warning.actionLabel.toLowerCase()}</span>
+				</button>
+			))}
+		</div>
+	) : null;
+
 	return (
 		<div
 			className="panel schedule-panel min-w-0 max-w-full overflow-hidden"
@@ -1841,6 +1907,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				chairDoctorAssignments={computedChairDoctorAssignments}
 				scheduleViewMode={scheduleViewMode}
 				setScheduleViewMode={setScheduleViewMode}
+				gridStepMinutes={scheduleGridStep}
+				onGridStepChange={setScheduleGridStep}
+				activeFilterSummary={scheduleFilterSummaryNode}
 				isSmartAiOpen={isSmartAiOpen}
 				onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
 				onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
@@ -1889,97 +1958,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					onOpenWarning={openScheduleWarning}
 				/>
 			)}
-			{hasSummaryContent ? (
-				<section
-					className="schedule-shift-summary min-w-0 max-w-full"
-					data-testid="schedule-shift-summary"
-					aria-label="Короткая сводка смены"
-					aria-live="polite"
-					style={{
-						display: "flex",
-						gap: "8px",
-						flexWrap: "wrap",
-						alignItems: "center",
-						minWidth: 0,
-						maxWidth: "100%",
-					}}
-				>
-					{visibleAppointmentCount > 0 ? (
-						<span className="status-pill status-confirmed shrink-0">
-							Записей: {visibleAppointmentCount}
-						</span>
-					) : null}
-					{/*
-					Названные условия отбора вместо числа «Фильтров: 2»: раньше
-					причина короткого списка была не видна нигде, и человек решал,
-					что день пустой. Формулировка «Отбор: …» намеренно нейтральна —
-					она верна и когда отбор действительно сокращает список, и когда
-					(см. selectedDayKey) список приходит сверху несокращённым.
-				*/}
-					{activeScheduleFilterLabels.length > 0 ? (
-						<>
-							<span
-								className="status-pill status-arrived max-w-full truncate"
-								title={`Что сейчас отобрано на экране: ${activeScheduleFilterLabels.join(", ")}`}
-							>
-								Отбор: {activeScheduleFilterLabels.join(", ")}
-							</span>
-							<button
-								className="text-button shrink-0 h-7.5 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
-								type="button"
-								onClick={resetScheduleFilters}
-							>
-								Снять отбор
-							</button>
-						</>
-					) : null}
-					{/*
-					Несколько дней на одном экране — это законный режим («покажи всё»),
-					но человек должен знать, что он в нём: иначе запись из прошлого
-					года читается как сегодняшняя.
-				*/}
-					{activeScheduleFilterLabels.length === 0 &&
-					visibleDayGroups?.length > 1 ? (
-						<>
-							<span className="status-pill status-planned shrink-0">
-								Показаны все дни: {visibleDayGroups?.length}
-							</span>
-							<button
-								className="text-button shrink-0 h-7.5 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
-								type="button"
-								onClick={() => setScheduleDateFilter(todayScheduleDate())}
-							>
-								Только сегодня
-							</button>
-						</>
-					) : null}
-					{/* Накладки называются на самом верху: это то, из-за чего в коридоре встречаются двое. */}
-					{scheduleOverlapCount > 0 ? (
-						<span className="status-pill status-cancelled shrink-0" role="alert">
-							Наложений на одно время: {scheduleOverlapCount}
-						</span>
-					) : null}
-					{/*
-					Здесь стояли чипы «Нет записей», «Предупреждений: 1» и «Ок».
-					Первый повторял пустое состояние панели ниже. Второй показывал
-					только цифру: что именно требует внимания, было спрятано под
-					кнопкой «Показать аналитику» в карточке «Контроль». Третий не
-					говорил ничего. Теперь предупреждение называет себя и по нажатию
-					ведёт туда, где его закрывают.
-				*/}
-					{(shiftWarnings || []).map((warning) => (
-						<button
-							key={warning.id}
-							type="button"
-							className={`status-pill schedule-warning-chip max-w-full text-left h-7.5 px-2.5 inline-flex items-center cursor-pointer ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
-							onClick={() => openScheduleWarning(warning)}
-							title={`${warning.title}: ${warning.detail}`}
-						>
-							<span className="truncate">{warning.title} — {warning.actionLabel.toLowerCase()}</span>
-						</button>
-					))}
-				</section>
-			) : null}
 			{scheduleAdminSecretNeeded ? (
 				<fieldset
 					className="appointment-editor schedule-admin-unlock min-w-0"
@@ -2135,6 +2113,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				<ScheduleGrid
 					dashboard={dashboard}
 					hideInlineAddChair={true}
+					hideToolbar={true}
+					gridStepMinutes={scheduleGridStep}
+					onGridStepChange={setScheduleGridStep}
 					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
 					appointments={dashboard?.appointments ?? []}
 					onSlotClick={(slot) => {

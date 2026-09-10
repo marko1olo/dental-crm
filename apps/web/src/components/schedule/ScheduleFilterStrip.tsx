@@ -72,6 +72,9 @@ export interface ScheduleFilterStripProps {
 	onOpenCalendarSync?: () => void;
 	onOpenAddChair?: (() => void) | undefined;
 	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
+	gridStepMinutes?: 15 | 30 | 60 | undefined;
+	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
+	activeFilterSummary?: React.ReactNode | undefined;
 }
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
@@ -129,6 +132,9 @@ export function ScheduleFilterStrip({
 	onOpenCalendarSync,
 	onOpenAddChair,
 	onAddChair,
+	gridStepMinutes = 30,
+	onGridStepChange,
+	activeFilterSummary,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
@@ -423,6 +429,9 @@ export function ScheduleFilterStrip({
 						</button>
 					);
 				})}
+
+				{/* Active filter summary & shift warning chips integrated directly into single-row filter strip (Mandates 8d, 8p) */}
+				{activeFilterSummary}
 			</div>
 
 			{/* 1-Click Inline "+ Кресло" addition button (StomX / DentalPRO parity, Mandates 8e, 8n) */}
@@ -594,6 +603,31 @@ export function ScheduleFilterStrip({
 							{/* Actions & Utilities */}
 							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
 								Инструменты расписания
+							</div>
+
+							{/* Grid Step Selector (15 / 30 / 60 min, Feature 192, StomX Parity, Mandate 8p) */}
+							<div className="flex items-center justify-between px-2.5 py-1 text-xs">
+								<span className="font-bold text-[var(--muted)]">Шаг сетки:</span>
+								<div className="flex items-center gap-1" role="group" aria-label="Шаг сетки расписания" data-testid="schedule-filter-grid-step-selector">
+									{([15, 30, 60] as const).map((step) => (
+										<button
+											key={step}
+											type="button"
+											onClick={() => {
+												onGridStepChange?.(step);
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+												(gridStepMinutes ?? 30) === step
+													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)]"
+											}`}
+											data-testid={`filter-strip-step-${step}`}
+										>
+											{step}м
+										</button>
+									))}
+								</div>
 							</div>
 
 							<button

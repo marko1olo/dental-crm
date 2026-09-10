@@ -49,7 +49,6 @@ export function CtPlanningArtifactPanel({
 						<small>{item.blocker ?? item.command.result}</small>
 						<button
 							type="button"
-							disabled={item.status === "blocked" || !onCreateArtifact}
 							onClick={() => onCreateArtifact?.(item.command)}
 							aria-label={`${item.actionLabel}: ${item.command.title}`}
 						>

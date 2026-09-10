@@ -205,6 +205,7 @@ export interface ScheduleGridProps {
 	chairMaintenanceBlocks?: ChairMaintenanceBlock[] | undefined;
 	onAddChairMaintenance?: ((block: ChairMaintenanceBlock) => void) | undefined;
 	onRemoveChairMaintenance?: ((blockId: string) => void) | undefined;
+	hideToolbar?: boolean | undefined;
 	hideInlineAddChair?: boolean | undefined;
 }
 
@@ -282,6 +283,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		selectedDoctorId,
 		onAppointmentMove,
 		onEditChair,
+		hideToolbar = false,
 		hideInlineAddChair = false,
 	} = props;
 
@@ -1808,7 +1810,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			)}
 
 			{/* Daily Chair & Doctor Occupancy Summary Bar with Inline + Кресло (1 neat 36px row) */}
-			<div className="px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs min-h-[36px] overflow-x-auto select-none">
+			{!hideToolbar && (
+				<div className="px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs min-h-[36px] overflow-x-auto select-none">
 				<div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
 					{dailyTally.totalAppointmentsCount > 0 ? (
 						<>
@@ -1934,6 +1937,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					)}
 				</div>
 			</div>
+		)}
 
 			<div
 				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm p-1 sm:p-2 touch-pan-x"

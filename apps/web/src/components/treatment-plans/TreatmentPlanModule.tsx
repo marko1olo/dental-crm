@@ -429,8 +429,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		const discountRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
 		const netTotalRub = loyaltyDeduction.netPayableRub;
 
-		const invoiceId = `inv-plan-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-		const invoiceNumber = `СЧ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+		const cleanPat = (patientId || "pat").replace(/\D/g, "").slice(0, 4) || "0001";
+		const invoiceId = `inv-plan-${Date.now()}-${cleanPat}`;
+		const invoiceNumber = `СЧ-${new Date().getFullYear()}-${cleanPat.padStart(4, "0")}`;
 
 		const exportData: CashierInvoiceExportData = {
 			patientId,
@@ -740,31 +741,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<span>В кассу</span>
 					</button>
 
-					{/* Secondary 3: Full Invoice & Work Order Generation Modal */}
-					<button
-						type="button"
-						onClick={() => setIsInvoiceModalOpen(true)}
-						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors touch-manipulation"
-						title="Сформировать наряд / счет на оплату с контролем цен и защитой сметы (Фича #41)"
-						data-testid="tp-invoice-btn"
-					>
-						<Receipt size={15} />
-						<span>Счет / Наряд</span>
-					</button>
-
-					{/* Secondary 4: 54-FZ Fiscal Receipt & Split Payment Modal */}
-					<button
-						type="button"
-						onClick={() => setIsFiscalModalOpen(true)}
-						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs cursor-pointer transition-all touch-manipulation"
-						title="Принять оплату (карты, СБП QR, наличные) и пробить фискальный чек 54-ФЗ"
-						data-testid="tp-fiscal-btn"
-					>
-						<ShieldCheck size={15} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Чек 54-ФЗ</span>
-					</button>
-
-					{/* Secondary 5: Overflow Dropdown Menu [⋮ Опции] */}
+					{/* Secondary 3: Overflow Dropdown Menu [⋮ Опции] */}
 					<div className="relative inline-flex items-center" ref={optionsMenuRef}>
 						<button
 							type="button"
@@ -779,24 +756,56 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							<span className="hidden sm:inline">Опции</span>
 						</button>
 
-						{isOptionsMenuOpen && (
-							<div
-								className="absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[260px] animate-in fade-in zoom-in-95 duration-100 text-xs"
-								role="menu"
+						<div
+							className={`absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[260px] text-xs ${
+								isOptionsMenuOpen ? "animate-in fade-in zoom-in-95 duration-100" : "hidden"
+							}`}
+							role="menu"
+							aria-hidden={!isOptionsMenuOpen}
+						>
+							<button
+								type="button"
+								onClick={() => {
+									handleExportCashier();
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								role="menuitem"
+								data-testid="options-menu-export-cashier-btn"
 							>
-								<button
-									type="button"
-									onClick={() => {
-										handleExportCashier();
-										setIsOptionsMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
-									role="menuitem"
-									data-testid="options-menu-export-cashier-btn"
-								>
-									<Send size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Отправить счет кассиру (1 клик)</span>
-								</button>
+								<Send size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Отправить счет кассиру (1 клик)</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsInvoiceModalOpen(true);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								role="menuitem"
+								data-testid="tp-invoice-btn"
+								title="Сформировать наряд / счет на оплату с контролем цен и защитой сметы (Фича #41)"
+							>
+								<Receipt size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span>Счет / Наряд на оплату</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsFiscalModalOpen(true);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								role="menuitem"
+								data-testid="tp-fiscal-btn"
+								title="Принять оплату (карты, СБП QR, наличные) и пробить фискальный чек 54-ФЗ"
+							>
+								<ShieldCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span>Чек 54-ФЗ & Оплата</span>
+							</button>
 
 								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 									Специализированные студии
@@ -904,7 +913,6 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									<span>Наряд ЗТЛ в 1 клик (Цирконий A2)</span>
 								</button>
 							</div>
-						)}
 					</div>
 
 					{/* STRICTLY 1 DOMINANT PRIMARY ACTION: Save to DB */}
