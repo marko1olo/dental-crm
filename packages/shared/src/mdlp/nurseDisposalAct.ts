@@ -122,6 +122,8 @@ export { carpulesQuantityToRussianWords as quantityToRussianWords };
 
 // ─── Format Senior Nurse Act Data Helper ────────────────────────────────────
 
+let actSequenceCounter = 100;
+
 export function formatSeniorNurseDisposalActData(options: {
 	actNumber?: string | undefined;
 	actDate?: string | undefined;
@@ -130,6 +132,7 @@ export function formatSeniorNurseDisposalActData(options: {
 	organizationAddress?: string | undefined;
 	departmentName?: string | undefined;
 	cabinetName?: string | undefined;
+	basisRu?: string | undefined;
 	seniorNurseName?: string | undefined;
 	chiefDoctorName?: string | undefined;
 	dentistName?: string | undefined;
@@ -145,9 +148,10 @@ export function formatSeniorNurseDisposalActData(options: {
 	items: readonly MdlpCarpuleQueueItem[];
 }): SeniorNurseDisposalActData {
 	const now = new Date();
+	actSequenceCounter = (actSequenceCounter + 1) % 1000;
 	const actNumber =
 		options.actNumber ??
-		`СПИС-${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}-${Math.floor(100 + Math.random() * 900)}`;
+		`СПИС-${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}-${String(actSequenceCounter).padStart(3, "0")}`;
 	const actDate = options.actDate ?? now.toISOString().slice(0, 10);
 
 	let totalCost = 0;

@@ -55,13 +55,12 @@ import {
 	SAMPLE_043U_PATIENT_PRESET,
 	SAMPLE_DENTAL_SEMD_105_PRESET,
 	canonicalizeCdaXml,
-	createMockGostSignature,
-	createMockMoGostSignature,
 	formatHl7DateTime,
 	formatRuDate,
 	generateEgiszDentalCdaXml,
 	generateEgiszXmlFilename,
 } from "./egiszRemdEngine";
+import { parseDetachedSigFile } from "../../services/cryptoProApiClient";
 import { EgiszRemdSigningModal } from "./EgiszRemdSigningModal";
 import "./egiszRemd.css";
 
@@ -155,15 +154,28 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 			inn: "7701234560",
 		},
 		status: "registered",
-		doctorSignature: createMockGostSignature(
-			"Иванов Сергей Владимирович",
-			"123-456-789 64",
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-		),
-		moSignature: createMockMoGostSignature(
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			"1157746123457",
-		),
+		doctorSignature: {
+			signatureBase64: "U0VNRF8xMDVfRE9DVE9SX1NJR05BVFVSRQ==",
+			certificateSerialNumber: "00E4A28B12345678",
+			certificateSubject: "CN=Иванов Сергей Владимирович, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
+			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-12-31T23:59:59.000Z",
+			signedAt: "2026-08-28T09:30:00+03:00",
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		},
+		moSignature: {
+			signatureBase64: "U0VNRF8xMDVfTU9fU0lHTkFUVVJFCg==",
+			certificateSerialNumber: "00B17F9A11577461",
+			certificateSubject: "CN=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", OGRN=1157746123457, C=RU",
+			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-12-31T23:59:59.000Z",
+			signedAt: "2026-08-28T09:31:00+03:00",
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		},
 		cdaPayload: SAMPLE_DENTAL_SEMD_105_PRESET,
 		registrationInfo: {
 			remdDocId: "REMD-2026-08419-RU",
@@ -204,11 +216,7 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 			inn: "7701234560",
 		},
 		status: "error",
-		doctorSignature: createMockGostSignature(
-			"Смирнова Елена Александровна",
-			"112-233-445 00",
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-		),
+		doctorSignature: undefined,
 		cdaPayload: {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
 			docTypeCode: "303",
@@ -264,11 +272,17 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 			inn: "7701234560",
 		},
 		status: "signed",
-		doctorSignature: createMockGostSignature(
-			"Иванов Сергей Владимирович",
-			"123-456-789 64",
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-		),
+		doctorSignature: {
+			signatureBase64: "U0VNRF8zMDNfRE9DVE9SX1NJR05BVFVSRQ==",
+			certificateSerialNumber: "00E4A28B12345678",
+			certificateSubject: "CN=Иванов Сергей Владимирович, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
+			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-12-31T23:59:59.000Z",
+			signedAt: "2026-08-28T12:10:00+03:00",
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		},
 		cdaPayload: {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
 			docTypeCode: "303",
@@ -309,15 +323,28 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 			inn: "7701234560",
 		},
 		status: "sent",
-		doctorSignature: createMockGostSignature(
-			"Смирнова Елена Александровна",
-			"123-456-789 64",
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-		),
-		moSignature: createMockMoGostSignature(
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			"1157746123457",
-		),
+		doctorSignature: {
+			signatureBase64: "U0VNRF8zMDJfRE9DVE9SX1NJR05BVFVSRQ==",
+			certificateSerialNumber: "00E4A28B11223344",
+			certificateSubject: "CN=Смирнова Елена Александровна, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
+			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-12-31T23:59:59.000Z",
+			signedAt: "2026-08-28T13:38:00+03:00",
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		},
+		moSignature: {
+			signatureBase64: "U0VNRF8zMDJfTU9fU0lHTkFUVVJFCg==",
+			certificateSerialNumber: "00B17F9A11577461",
+			certificateSubject: "CN=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", OGRN=1157746123457, C=RU",
+			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-12-31T23:59:59.000Z",
+			signedAt: "2026-08-28T13:39:00+03:00",
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		},
 		cdaPayload: {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
 			docTypeCode: "302",
@@ -398,11 +425,7 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 			inn: "7701234560",
 		},
 		status: "error",
-		doctorSignature: createMockGostSignature(
-			"Смирнова Елена Александровна",
-			"123-456-789 64",
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-		),
+		doctorSignature: undefined,
 		cdaPayload: {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
 			docTypeCode: "303",
@@ -452,15 +475,28 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 			inn: "7701234560",
 		},
 		status: "registered",
-		doctorSignature: createMockGostSignature(
-			"Иванов Сергей Владимирович",
-			"123-456-789 64",
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-		),
-		moSignature: createMockMoGostSignature(
-			'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			"1157746123457",
-		),
+		doctorSignature: {
+			signatureBase64: "U0VNRF8xMDVfRE9DVE9SX1NJR05BVFVSRQ==",
+			certificateSerialNumber: "00E4A28B12345678",
+			certificateSubject: "CN=Иванов Сергей Владимирович, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
+			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-12-31T23:59:59.000Z",
+			signedAt: "2026-08-27T11:39:00+03:00",
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		},
+		moSignature: {
+			signatureBase64: "U0VNRF8xMDVfTU9fU0lHTkFUVVJFCg==",
+			certificateSerialNumber: "00B17F9A11577461",
+			certificateSubject: "CN=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", OGRN=1157746123457, C=RU",
+			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-12-31T23:59:59.000Z",
+			signedAt: "2026-08-27T11:40:00+03:00",
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		},
 		cdaPayload: {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
 			docTypeCode: "105",
@@ -962,6 +998,41 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 		}
 	};
 
+	// Attach manual detached signature (.sig / .p7s)
+	const handleAttachDetachedSig = async (recordId: string, file: File) => {
+		try {
+			const parsed = await parseDetachedSigFile(file);
+			const sig: GostSignatureInfo = {
+				signatureBase64: parsed.signatureBase64,
+				certificateSerialNumber: parsed.fileName.replace(/[^A-Za-z0-9]/g, "").slice(0, 16) || "ATTACHED_SIG",
+				certificateSubject: `Открепленная подпись (${parsed.fileName})`,
+				certificateIssuer: "Внешний криптопровайдер ГОСТ",
+				validFrom: new Date().toISOString(),
+				validTo: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+			};
+
+			setRecords((prev) =>
+				prev.map((r) =>
+					r.id === recordId
+						? {
+								...r,
+								doctorSignature: sig,
+								status: r.status === "draft" || r.status === "error" ? ("signed" as const) : r.status,
+								updatedAt: new Date().toISOString(),
+							}
+						: r,
+				),
+			);
+			showToast(`Открепленная подпись прикреплена к документу: ${parsed.fileName}`, "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			showToast(`Ошибка разбора файла подписи: ${msg}`, "error");
+		}
+	};
+
 	if (!isOpen) return null;
 
 	const modalContent = (
@@ -1365,6 +1436,24 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 										<FileArchive size={13} />
 										Скачать ZIP (XML + .p7s)
 									</button>
+
+									<label
+										className="egisz-btn sm"
+										style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+										title="Загрузить открепленную подпись (.sig / .p7s) для документа"
+									>
+										<FileCheck size={13} />
+										<span>Прикрепить .sig</span>
+										<input
+											type="file"
+											accept=".sig,.p7s,.sgn,.bin"
+											style={{ display: "none" }}
+											onChange={(e) => {
+												const f = e.target.files?.[0];
+												if (f) void handleAttachDetachedSig(selectedRecord.id, f);
+											}}
+										/>
+									</label>
 
 									<button
 										type="button"

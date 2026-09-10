@@ -8,6 +8,8 @@ import type {
 	MdlpDisposalParams,
 } from "./types.js";
 
+let carpuleSequenceCounter = 1000;
+
 /**
  * Creates a queue item from raw DataMatrix barcode or pre-parsed fields.
  */
@@ -28,7 +30,8 @@ export function createCarpuleQueueItem(
 	const refDate = options.referenceDate ?? new Date();
 	const parsed = parseMdlpDataMatrix(rawBarcode, refDate);
 
-	const id = options.id ?? `carpule_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+	carpuleSequenceCounter = (carpuleSequenceCounter + 1) % 100000;
+	const id = options.id ?? `carpule_${Date.now()}_${String(carpuleSequenceCounter).padStart(5, "0")}`;
 	const scannedAt = new Date().toISOString();
 
 	return {

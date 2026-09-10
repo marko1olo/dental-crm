@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertCircle,
@@ -29,6 +29,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Trash2,
+	Upload,
 	User,
 	Users,
 	X,
@@ -52,7 +53,6 @@ import {
 } from "./egiszRemdPresets";
 import {
 	canonicalizeCdaXml,
-	createMockGostSignature,
 	type Egisz043uPayload,
 	type EgiszDiagnosisItem,
 	type EgiszProcedureItem,
@@ -63,6 +63,14 @@ import {
 	generateGostXmlSignatureBlock,
 	runEgisz043uPreflight,
 } from "./egiszRemdEngine";
+import {
+	type CryptoCertificate,
+	type CryptoProStatusResponse,
+	checkCryptoProStatus,
+	fetchCertificates,
+	parseDetachedSigFile,
+	signDocumentGost,
+} from "../../../services/cryptoProApiClient";
 import "./egiszRemd.css";
 
 export interface EgiszRemdXmlModalProps {
@@ -173,6 +181,42 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 		ticketId?: string;
 	} | null>(null);
 
+	// Real CryptoPro CSP & Certificates State
+	const [cryptoStatus, setCryptoStatus] = useState<CryptoProStatusResponse | null>(null);
+	const [certificates, setCertificates] = useState<CryptoCertificate[]>([]);
+	const [selectedCertThumbprint, setSelectedCertThumbprint] = useState<string>("");
+	const [isSigningUkep, setIsSigningUkep] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		let isMounted = true;
+
+		async function initCrypto() {
+			try {
+				const status = await checkCryptoProStatus();
+				if (!isMounted) return;
+				setCryptoStatus(status);
+
+				if (status.installed) {
+					const certs = await fetchCertificates();
+					if (!isMounted) return;
+					setCertificates(certs);
+					if (certs.length > 0 && !selectedCertThumbprint) {
+						setSelectedCertThumbprint(certs[0]?.thumbprint || "");
+					}
+				}
+			} catch {
+				if (isMounted) setCryptoStatus({ installed: false });
+			}
+		}
+
+		void initCrypto();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, selectedCertThumbprint]);
+
 	// Compiled Payload
 	const fullPayload: Egisz043uPayload = useMemo(() => {
 		return {
@@ -261,18 +305,95 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 		});
 	};
 
-	// 1-Click UKEP Signing
-	const handleSignWithGostUkep = () => {
-		const sig = createMockGostSignature(
-			doctor.doctorFullName,
-			doctor.doctorSnils,
-			clinic.clinicName
-		);
-		setSignature(sig);
-		showToast(
-			`СЭМД 043/у успешно подписан УКЭП (Сертификат № ${sig.certificateSerialNumber})`,
-			"success"
-		);
+	const utf8ToBase64 = (str: string): string => {
+		const bytes = new TextEncoder().encode(str);
+		let binary = "";
+		for (let i = 0; i < bytes.length; i++) {
+			const b = bytes[i];
+			if (b !== undefined) binary += String.fromCharCode(b);
+		}
+		return btoa(binary);
+	};
+
+	// Real UKEP Signing via CryptoPro CSP
+	const handleSignWithGostUkep = async () => {
+		if (!generatedCdaXml) {
+			showToast("Отсутствует сгенерированный XML для подписания", "error");
+			return;
+		}
+
+		if (!cryptoStatus?.installed) {
+			showToast(
+				"КриптоПро CSP не обнаружен. Вы можете прикрепить готовую открепленную подпись (.sig) вручную.",
+				"warning"
+			);
+			return;
+		}
+
+		const targetThumbprint = selectedCertThumbprint || certificates[0]?.thumbprint;
+		if (!targetThumbprint && certificates.length === 0) {
+			showToast("Не найден действующий сертификат УКЭП в хранилище", "error");
+			return;
+		}
+
+		const targetCert = certificates.find(
+			(c) => c.thumbprint.toLowerCase() === targetThumbprint?.toLowerCase()
+		) || certificates[0];
+
+		setIsSigningUkep(true);
+		try {
+			const dataBase64 = utf8ToBase64(generatedCdaXml);
+			const signRes = await signDocumentGost({
+				dataBase64,
+				thumbprint: targetThumbprint || targetCert?.thumbprint || "",
+			});
+
+			const newSig = {
+				signatureBase64: signRes.signatureBase64,
+				certificateSerialNumber: targetCert?.serialNumber || signRes.thumbprint || "GOST-2012",
+				certificateSubject: targetCert ? `${targetCert.subjectName} (${targetCert.issuerName})` : doctor.doctorFullName,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+			};
+
+			setSignature(newSig);
+			showToast(
+				`СЭМД 043/у успешно подписан УКЭП (Сертификат № ${newSig.certificateSerialNumber})`,
+				"success"
+			);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Сбой криптопровайдера КриптоПро CSP";
+			showToast(`Ошибка подписания УКЭП: ${msg}`, "error");
+		} finally {
+			setIsSigningUkep(false);
+		}
+	};
+
+	// Detached Signature (.sig / .p7s) Upload
+	const handleUploadDetachedSig = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		try {
+			const parsed = await parseDetachedSigFile(file);
+			const newSig = {
+				signatureBase64: parsed.signatureBase64,
+				certificateSerialNumber: `DETACHED-${file.name.slice(0, 20)}`,
+				certificateSubject: `${doctor.doctorFullName} (Открепленная подпись из ${file.name})`,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+			};
+
+			setSignature(newSig);
+			showToast(`Открепленная подпись ${file.name} успешно загружена и прикреплена к СЭМД`, "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Неверный формат файла подписи";
+			showToast(`Ошибка загрузки открепленной подписи: ${msg}`, "error");
+		} finally {
+			e.target.value = "";
+		}
 	};
 
 	// 1-Click Download XML
@@ -313,14 +434,12 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 			return;
 		}
 
-		let activeSig = signature;
-		if (!activeSig) {
-			activeSig = createMockGostSignature(
-				doctor.doctorFullName,
-				doctor.doctorSnils,
-				clinic.clinicName
+		if (!signature) {
+			showToast(
+				"Перед отправкой в РЭМД подпишите СЭМД через УКЭП или загрузите файл открепленной подписи (.sig)",
+				"warning"
 			);
-			setSignature(activeSig);
+			return;
 		}
 
 		setIsSendingToRemd(true);
@@ -332,11 +451,11 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 			const packageBody = {
 				cdaXml: generatedCdaXml,
 				doctorSignature: {
-					signatureBase64: activeSig.signatureBase64,
-					certificateSerialNumber: activeSig.certificateSerialNumber,
-					certificateSubject: activeSig.certificateSubject,
-					signedAt: activeSig.signedAt || new Date().toISOString(),
-					algorithmOid: activeSig.algorithmOid || "1.2.643.7.1.1.1.1",
+					signatureBase64: signature.signatureBase64,
+					certificateSerialNumber: signature.certificateSerialNumber,
+					certificateSubject: signature.certificateSubject,
+					signedAt: signature.signedAt || new Date().toISOString(),
+					algorithmOid: signature.algorithmOid || "1.2.643.7.1.1.1.1",
 				},
 				docType: String(fullPayload.docTypeCode || "108"),
 				patientId: cleanPatientSnils || "patient",
@@ -1101,16 +1220,91 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 										<ShieldCheck size={18} color="#10b981" />
 										Усиленная квалифицированная электронная подпись (УКЭП / 63-ФЗ)
 									</div>
-									<button
-										type="button"
-										className="egisz-btn egisz-btn-primary"
-										style={{ padding: "0.35rem 0.75rem", fontSize: "0.8125rem" }}
-										onClick={handleSignWithGostUkep}
-									>
-										<Key size={14} />
-										{signature ? "Переподписать УКЭП" : "Подписать СЭМД"}
-									</button>
+									<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+										<label
+											className="egisz-btn"
+											style={{
+												padding: "0.35rem 0.75rem",
+												fontSize: "0.8125rem",
+												cursor: "pointer",
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "0.35rem",
+											}}
+											title="Загрузить открепленную подпись (.sig / .p7s)"
+										>
+											<Upload size={14} />
+											Загрузить .sig
+											<input
+												type="file"
+												accept=".sig,.p7s,.sgn,.bin"
+												style={{ display: "none" }}
+												onChange={handleUploadDetachedSig}
+											/>
+										</label>
+										{cryptoStatus?.installed && (
+											<button
+												type="button"
+												className="egisz-btn egisz-btn-primary"
+												style={{ padding: "0.35rem 0.75rem", fontSize: "0.8125rem" }}
+												onClick={handleSignWithGostUkep}
+												disabled={isSigningUkep}
+											>
+												<Key size={14} />
+												{isSigningUkep ? "Подписание..." : signature ? "Переподписать УКЭП" : "Подписать СЭМД"}
+											</button>
+										)}
+									</div>
 								</div>
+
+								{/* Warning banner if CSP is not installed */}
+								{cryptoStatus && !cryptoStatus.installed && !signature && (
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											marginBottom: "0.75rem",
+											background: "rgba(245, 158, 11, 0.1)",
+											border: "1px solid rgba(245, 158, 11, 0.3)",
+											borderRadius: "6px",
+											fontSize: "0.8125rem",
+											color: "#d97706",
+										}}
+									>
+										<AlertTriangle size={16} />
+										<span>
+											КриптоПро CSP не обнаружен на рабочем месте. Вы можете загрузить файл открепленной подписи (.sig) вручную через кнопку «Загрузить .sig».
+										</span>
+									</div>
+								)}
+
+								{/* Certificate selector if CSP installed */}
+								{cryptoStatus?.installed && certificates.length > 0 && !signature && (
+									<div style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+										<span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Сертификат УКЭП:</span>
+										<select
+											value={selectedCertThumbprint}
+											onChange={(e) => setSelectedCertThumbprint(e.target.value)}
+											style={{
+												padding: "0.25rem 0.5rem",
+												fontSize: "0.8125rem",
+												borderRadius: "4px",
+												border: "1px solid var(--border-color, #cbd5e1)",
+												background: "var(--bg-input, #fff)",
+												color: "var(--text-primary, #0f172a)",
+												maxWidth: "450px",
+											}}
+										>
+											{certificates.map((cert) => (
+												<option key={cert.thumbprint} value={cert.thumbprint}>
+													{cert.subjectName} ({cert.serialNumber}) — до {new Date(cert.validTo).toLocaleDateString("ru-RU")}
+												</option>
+											))}
+										</select>
+									</div>
+								)}
 
 								{signature ? (
 									<div className="egisz-ukep-details">
@@ -1133,7 +1327,9 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 									</div>
 								) : (
 									<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
-										Электронная подпись еще не наложена. Нажмите «Подписать СЭМД» для создания криптографического конверта по ГОСТ Р 34.10-2012.
+										{cryptoStatus?.installed
+											? "Электронная подпись еще не наложена. Выберите сертификат и нажмите «Подписать СЭМД» для создания криптографического конверта по ГОСТ Р 34.10-2012."
+											: "Электронная подпись еще не наложена. Загрузите файл открепленной подписи (.sig) для отправки в РЭМД."}
 									</div>
 								)}
 							</div>

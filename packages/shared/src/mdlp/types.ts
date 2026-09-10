@@ -100,7 +100,7 @@ export interface MdlpSchema10560Document {
 	readonly operationDate: string;
 	readonly docNum: string;
 	readonly docDate: string;
-	readonly withdrawalType: 13;
+	readonly withdrawalType: 13 | 14 | 6 | number;
 	readonly patientId?: string | null | undefined;
 	readonly visitId?: string | null | undefined;
 	readonly doctorId?: string | null | undefined;

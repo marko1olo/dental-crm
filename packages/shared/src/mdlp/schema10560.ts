@@ -76,7 +76,7 @@ export function generateMdlpSchema10560Payload(
 				? params.operationDate
 				: new Date().toISOString();
 
-	const withdrawalType = (params.withdrawalType ?? options.defaultWithdrawalType ?? 13) as 13;
+	const withdrawalType = params.withdrawalType ?? options.defaultWithdrawalType ?? 13;
 	const schemaVersion = options.version ?? "1.38";
 
 	// XML Document Structure according to official MDLP XSD schema 10560

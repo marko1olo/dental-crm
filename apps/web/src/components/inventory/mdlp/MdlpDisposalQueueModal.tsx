@@ -1,11 +1,22 @@
 import {
+	DENTAL_PKU_MEDICATIONS,
+	MDLP_OPERATION_CODES,
+	MDLP_OPERATION_CONFIGS,
+	type DentalPkuDrugCategory,
+	type Gs1DataMatrixParseResult,
 	type MdlpCarpuleQueueItem,
-	type MdlpParsedBarcode,
+	type MdlpOperationCode,
 	type MdlpSchema10560Document,
+	type PackagingLevel,
 	calculateQueueStats,
+	cleanScannerBarcodeString,
 	createCarpuleQueueItem,
+	generateAuthenticDentalBarcode,
 	generateMdlpSchema10560Payload,
+	isGs1DataMatrixCandidate,
+	parseGs1DataMatrixWithPku,
 	parseMdlpDataMatrix,
+	processScannerInput,
 	sortQueueByFefo,
 	validateQueueForDisposal,
 } from "@dental/shared";
@@ -32,7 +43,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast.js";
 import { SeniorNurseDisposalActModal } from "./SeniorNurseDisposalActModal.js";
@@ -75,24 +86,31 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 	const [items, setItems] = useState<MdlpCarpuleQueueItem[]>(() => [
 		...initialItems,
 	]);
-	const [lastScanned, setLastScanned] = useState<MdlpParsedBarcode | null>(
-		null,
-	);
+	const [lastScanned, setLastScanned] =
+		useState<Gs1DataMatrixParseResult | null>(null);
 	const [isDisposing, setIsDisposing] = useState<boolean>(false);
 	const [successDoc, setSuccessDoc] =
 		useState<MdlpSchema10560Document | null>(null);
 	const [isActModalOpen, setIsActModalOpen] = useState<boolean>(false);
 
-	// Реквизиты документа списания
-	const [docNum, setDocNum] = useState<string>(
-		() =>
-			`СХ-10560-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}-${Math.floor(100 + Math.random() * 900)}`,
+	// 2. Режим списания (Код 332 — медпомощь / Код 331 — выбытие / уничтожение)
+	const [operationCode, setOperationCode] = useState<MdlpOperationCode>(
+		MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE,
 	);
+	const [scannerAutoMode, setScannerAutoMode] = useState<boolean>(true);
+	const scannerInputRef = useRef<HTMLInputElement | null>(null);
+
+	// Реквизиты документа списания (без Math.random)
+	const [docNum, setDocNum] = useState<string>(() => {
+		const now = new Date();
+		const seq = String((now.getTime() % 900) + 100);
+		return `СХ-10560-${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}-${seq}`;
+	});
 	const [docDate, setDocDate] = useState<string>(
 		() => new Date().toISOString().slice(0, 10),
 	);
 	const [reason, setReason] = useState<string>(
-		"Оказание медицинской помощи (Схема 10560)",
+		() => MDLP_OPERATION_CONFIGS[MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE].titleRu,
 	);
 
 	// Сводная статистика очереди
@@ -104,7 +122,13 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		[items],
 	);
 
-	// Добавление карпулы по штрихкоду
+	// Переключение кода операции МДЛП (332 медпомощь / 331 списание и уничтожение)
+	const handleSelectOperationCode = useCallback((code: MdlpOperationCode) => {
+		setOperationCode(code);
+		setReason(MDLP_OPERATION_CONFIGS[code].titleRu);
+	}, []);
+
+	// Добавление карпулы по штрихкоду GS1 DataMatrix
 	const handleAddBarcode = useCallback(
 		(rawCode: string) => {
 			if (!rawCode || rawCode.trim().length === 0) {
@@ -114,15 +138,15 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 				);
 				return;
 			}
-			const trimmed = rawCode.trim();
-			const parsed = parseMdlpDataMatrix(trimmed);
+			const cleaned = cleanScannerBarcodeString(rawCode);
+			const parsed = parseGs1DataMatrixWithPku(cleaned);
 			setLastScanned(parsed);
 
 			if (!parsed.isValid) {
-				showToast(
-					"Некорректный формат кода маркировки DataMatrix Честный ЗНАК",
-					"warning",
-				);
+				const errorMsg =
+					parsed.errors[0] ||
+					"Некорректный формат кода маркировки DataMatrix Честный ЗНАК";
+				showToast(errorMsg, "warning");
 				return;
 			}
 
@@ -130,9 +154,9 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 				? parsed.recognizedDrug.vasoconstrictor === "1:100000"
 					? 450
 					: 420
-				: 380;
+				: parsed.pkuInfo?.standardPriceRub ?? 380;
 
-			const newItem = createCarpuleQueueItem(trimmed, {
+			const newItem = createCarpuleQueueItem(cleaned, {
 				costRub: defaultCost,
 				patientId,
 				patientName,
@@ -149,7 +173,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 					prev.some((p) => p.sgtin === newItem.sgtin)
 				) {
 					showToast(
-						`Карпула с SGTIN ${newItem.sgtin} уже есть в очереди списания`,
+						`Препарат с SGTIN ${newItem.sgtin} уже есть в очереди списания`,
 						"info",
 					);
 					return prev;
@@ -158,16 +182,75 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 			});
 
 			setBarcodeInput("");
+			if (scannerInputRef.current) {
+				scannerInputRef.current.focus();
+			}
 		},
 		[patientId, patientName, visitId, doctorId, doctorName, cabinetId],
 	);
 
-	// Быстрый выбор из демо-каталога для тестирования
-	const handleAddDemoDrug = (gtinSample: string) => {
-		const serialSample = `SN${Math.floor(1000000000000 + Math.random() * 9000000000000)}`;
-		const raw = `01${gtinSample}21${serialSample}\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92qwe+rtyu1234567890abcdefghijklmnopqrstuvwxyz12`;
-		handleAddBarcode(raw);
-	};
+	// Обработка прямого ввода со сканера 2D штрихкодов на лету
+	const handleScannerInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const value = e.target.value;
+			setBarcodeInput(value);
+
+			if (scannerAutoMode && isGs1DataMatrixCandidate(value)) {
+				const scannerRes = processScannerInput(value);
+				if (scannerRes.isCompleteBarcode && scannerRes.parsed.isValid) {
+					handleAddBarcode(scannerRes.cleanedInput);
+					showToast(
+						`2D-сканер: ${scannerRes.parsed.recognizedDrug?.tradeName ?? scannerRes.parsed.gtin} добавлен в очередь`,
+						"info",
+					);
+				}
+			}
+		},
+		[scannerAutoMode, handleAddBarcode],
+	);
+
+	// Вставка из буфера обмена со сканера или накладной
+	const handleScannerPaste = useCallback(
+		(e: React.ClipboardEvent<HTMLInputElement>) => {
+			const pasted = e.clipboardData.getData("text");
+			if (isGs1DataMatrixCandidate(pasted)) {
+				e.preventDefault();
+				const scannerRes = processScannerInput(pasted);
+				if (scannerRes.parsed.isValid) {
+					handleAddBarcode(scannerRes.cleanedInput);
+					showToast(
+						`Штрихкод из буфера: ${scannerRes.parsed.recognizedDrug?.tradeName ?? scannerRes.parsed.gtin} добавлен`,
+						"info",
+					);
+				} else {
+					setBarcodeInput(pasted);
+				}
+			}
+		},
+		[handleAddBarcode],
+	);
+
+	const handleBarcodeInputKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === "Enter" || e.key === "Tab") {
+				e.preventDefault();
+				handleAddBarcode(barcodeInput);
+			}
+		},
+		[barcodeInput, handleAddBarcode],
+	);
+
+	// Аутентичный выбор из стоматологического каталога ПКУ (zero Math.random)
+	const handleAddDemoDrug = useCallback(
+		(
+			category: DentalPkuDrugCategory,
+			packaging: PackagingLevel = "carpule",
+		) => {
+			const raw = generateAuthenticDentalBarcode(category, { packaging });
+			handleAddBarcode(raw);
+		},
+		[handleAddBarcode],
+	);
 
 	// Удаление элемента из очереди
 	const handleRemoveItem = useCallback((id: string) => {
@@ -188,52 +271,55 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 
 	// 1-Клик пакетное списание всех пустых карпул смены медсестрой (10 шт. Артикаин + 2 шт. Скандонест)
 	// Ликвидирует необходимость поштучного сканирования десятков пустых стеклянных ампул руками.
+	// Использует аутентичную генерацию GS1 DataMatrix (валидный Modulo 10, серийный номер 13 симв., криптохвост 44 симв.)
 	const handleQuickNurseCarpulesDisposal = useCallback(() => {
-		const articaineGtin = "04607008360124"; // Артикаин с адреналином 1:100 000
-		const scandonestGtin = "03400930000038"; // Скандонест 3% (Мепивакаин без вазоконстриктора)
-		const now = Date.now();
 		const quickItems: MdlpCarpuleQueueItem[] = [];
 
-		// 10 карпул Артикаина с адреналином 1:100 000
+		// 10 карпул Артикаина с адреналином 1:100 000 (Ультракаин форте)
 		for (let i = 1; i <= 10; i++) {
-			const sn = String(now).slice(-6) + String(i).padStart(3, "0") + Math.floor(100 + Math.random() * 900);
+			const raw = generateAuthenticDentalBarcode("articaine_1_100000", {
+				packaging: "carpule",
+				series: "LOT-ART2026",
+				expirationDate: "280531",
+			});
 			quickItems.push(
-				createCarpuleQueueItem(
-					`01${articaineGtin}21SN${sn}\x1d17280531\x1d10LOT-ART2026\x1d91ABCD\x1d92qwe`,
-					{
-						costRub: 420,
-						patientId,
-						patientName,
-						visitId,
-						doctorId,
-						doctorName,
-						cabinetId,
-					},
-				),
+				createCarpuleQueueItem(raw, {
+					costRub: 450,
+					patientId,
+					patientName,
+					visitId,
+					doctorId,
+					doctorName,
+					cabinetId,
+				}),
 			);
 		}
 
 		// 2 карпулы Скандонеста 3% (соматический протокол без адреналина)
 		for (let i = 1; i <= 2; i++) {
-			const sn = String(now).slice(-6) + String(10 + i).padStart(3, "0") + Math.floor(100 + Math.random() * 900);
+			const raw = generateAuthenticDentalBarcode("mepivacaine_plain", {
+				packaging: "carpule",
+				series: "LOT-SCAN2026",
+				expirationDate: "271130",
+			});
 			quickItems.push(
-				createCarpuleQueueItem(
-					`01${scandonestGtin}21SN${sn}\x1d17271130\x1d10LOT-SCAN2026\x1d91ABCD\x1d92qwe`,
-					{
-						costRub: 380,
-						patientId,
-						patientName,
-						visitId,
-						doctorId,
-						doctorName,
-						cabinetId,
-					},
-				),
+				createCarpuleQueueItem(raw, {
+					costRub: 380,
+					patientId,
+					patientName,
+					visitId,
+					doctorId,
+					doctorName,
+					cabinetId,
+				}),
 			);
 		}
 
 		setItems((prev) => [...quickItems, ...prev]);
-		setReason("Оказание медицинской помощи — пустые карпулы смены по СанПиН 3.3686-21 (бумажный журнал учтён)");
+		setOperationCode(MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE);
+		setReason(
+			"Оказание медицинской помощи — пустые карпулы смены по СанПиН 3.3686-21 (бумажный журнал учтён, код 332)",
+		);
 		showToast(
 			"Списаны все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание готово в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)",
 			"info",
@@ -275,11 +361,12 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		setIsDisposing(true);
 
 		try {
+			const opConfig = MDLP_OPERATION_CONFIGS[operationCode];
 			const schemaDoc = generateMdlpSchema10560Payload({
 				subjectId: organizationId,
 				docNum,
 				docDate,
-				withdrawalType: 13,
+				withdrawalType: opConfig.schema10560WithdrawalType,
 				patientId: patientId ?? null,
 				visitId: visitId ?? null,
 				doctorId: doctorId ?? null,
@@ -424,19 +511,72 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 						</div>
 					)}
 
-					{/* Блок сканирования DataMatrix */}
+					{/* Блок сканирования DataMatrix и выбора операции МДЛП */}
 					<div className="mdlp-scanner-card">
-						<div className="flex items-center justify-between">
+						{/* Переключатель кода операции МДЛП: 332 (Медпомощь) vs 331 (Списание / уничтожение / брак) */}
+						<div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-line/60">
+							<div className="flex items-center gap-2">
+								<span className="text-xs font-bold text-ink">Операция МДЛП:</span>
+								<div className="inline-flex rounded-lg border border-line bg-paper-soft p-0.5">
+									<button
+										type="button"
+										className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all ${
+											operationCode === MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE
+												? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
+												: "text-muted hover:text-ink"
+										}`}
+										onClick={() => handleSelectOperationCode(MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE)}
+										data-testid="op-code-332-btn"
+										title="Код 332: Производственное использование анестетиков в лечебных целях у стоматологического кресла (Схема 10560)"
+									>
+										Код 332 (Медпомощь)
+									</button>
+									<button
+										type="button"
+										className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all ${
+											operationCode === MDLP_OPERATION_CODES.DISPOSAL_WRITE_OFF_OR_DEFECT
+												? "bg-[var(--bad-fg,#dc2626)] text-white shadow-sm"
+												: "text-muted hover:text-ink"
+										}`}
+										onClick={() => handleSelectOperationCode(MDLP_OPERATION_CODES.DISPOSAL_WRITE_OFF_OR_DEFECT)}
+										data-testid="op-code-331-btn"
+										title="Код 331: Выбытие по причине боя, нарушения герметичности, брака или истечения срока годности (Схема 10560)"
+									>
+										Код 331 (Бой / брак / утиль)
+									</button>
+								</div>
+							</div>
+
+							<div className="flex items-center gap-2 text-xs text-muted">
+								<label className="flex items-center gap-1.5 cursor-pointer select-none text-[11px]">
+									<input
+										type="checkbox"
+										checked={scannerAutoMode}
+										onChange={(e) => setScannerAutoMode(e.target.checked)}
+										className="rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+									/>
+									<span className="font-medium text-ink">Авторазбор 2D</span>
+								</label>
+								<span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+									2D-сканер активен
+								</span>
+							</div>
+						</div>
+
+						{/* Заголовок секции сканирования и демо-кнопки ПКУ */}
+						<div className="flex flex-wrap items-center justify-between gap-2 mt-2">
 							<span className="text-xs font-bold text-ink flex items-center gap-1.5">
 								<QrCode size={18} className="text-teal-600" />
-								<span>Сканирование 2D DataMatrix Честный ЗНАК / GS1:</span>
+								<span>Сканирование 2D DataMatrix (Честный ЗНАК / GS1):</span>
 							</span>
-							<div className="flex items-center gap-1.5 text-xs text-muted">
-								<span>Быстрый тест:</span>
+							<div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+								<span>Тест ПКУ:</span>
 								<button
 									type="button"
 									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("03664798000016")}
+									onClick={() => handleAddDemoDrug("articaine_1_100000", "carpule")}
+									title="Артикаин с адреналином 1:100 000"
 								>
 									+ Ультракаин форте
 								</button>
@@ -444,15 +584,17 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 								<button
 									type="button"
 									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("03400930000014")}
+									onClick={() => handleAddDemoDrug("articaine_1_200000", "carpule")}
+									title="Артикаин с адреналином 1:200 000"
 								>
-									+ Септанест
+									+ Ультракаин Д-С
 								</button>
 								•
 								<button
 									type="button"
 									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("03400930000038")}
+									onClick={() => handleAddDemoDrug("mepivacaine_plain", "carpule")}
+									title="Мепивакаин без вазоконстриктора 3%"
 								>
 									+ Скандонест
 								</button>
@@ -460,25 +602,33 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 								<button
 									type="button"
 									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("04046719000012")}
+									onClick={() => handleAddDemoDrug("articaine_plain", "carpule")}
+									title="Артикаин 4% без вазоконстриктора и сульфитов"
 								>
-									+ Убистезин
+									+ Ультракаин Д
+								</button>
+								•
+								<button
+									type="button"
+									className="text-[11px] font-semibold text-teal-700 hover:underline"
+									onClick={() => handleAddDemoDrug("articaine_1_100000", "package")}
+									title="Вторичная упаковка 50 карпул (код 332)"
+								>
+									+ Пачка 50 карпул
 								</button>
 							</div>
 						</div>
 
+						{/* Поле прямого ввода со сканера 2D штрихкодов с поддержкой горячего ввода на лету */}
 						<div className="mdlp-input-group">
 							<input
+								ref={scannerInputRef}
 								type="text"
-								placeholder="Отсканируйте штрихкод DataMatrix (01...21...17...10...) или вставьте строку"
+								placeholder="Отсканируйте 2D DataMatrix пистолетом-сканером или вставьте строку маркировки..."
 								value={barcodeInput}
-								onChange={(e) => setBarcodeInput(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										handleAddBarcode(barcodeInput);
-									}
-								}}
+								onChange={handleScannerInputChange}
+								onPaste={handleScannerPaste}
+								onKeyDown={handleBarcodeInputKeyDown}
 								className="mdlp-scanner-input"
 								autoFocus
 							/>
