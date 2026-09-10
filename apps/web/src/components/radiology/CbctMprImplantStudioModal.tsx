@@ -152,10 +152,13 @@ import {
 	calculateImplant3DWorldPose,
 	calculateAxialImplantIntersection,
 	checkImplantSliceIntersection,
+	computeLiveImplantTelemetry,
 	generateForm043CbctDiary,
 	playNerveSafetyAudioAlarm,
 	pointToSegmentDistance2D,
 	sampleCrossSectionHUProfile,
+	type LiveImplantTelemetry,
+	type Vec3,
 } from "./implantSafetyEngine";
 import {
 	type HUZoneSampling,
@@ -1109,6 +1112,66 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const mischClassification: MischClassificationResult = useMemo(() => {
 		return classifyMischBoneQuality(huSamplingResult);
 	}, [huSamplingResult]);
+
+	// Live Misch Bone Density & 3D Safety Telemetry Engine (Mandate 8e)
+	const liveImplantTelemetry: LiveImplantTelemetry | null = useMemo(() => {
+		if (!implant3DWorld && !currentImplantPose) return null;
+		const implantTarget = implant3DWorld ?? currentImplantPose;
+		const markers =
+			interpolatedNerve3D.length > 0
+				? [
+						{
+							id: "ian-nerve-spline",
+							type: "nerve" as const,
+							radius: 1.4,
+							points: interpolatedNerve3D.map((p) => [p.x, p.y, p.z] as Vec3),
+						},
+					]
+				: currentCanal && activeCrossSection
+					? [
+							{
+								id: "ian-nerve-slice",
+								type: "nerve" as const,
+								radius: currentCanal.radiusMm,
+								points: [
+									[
+										activeCrossSection.centerPointMm.x +
+											activeCrossSection.normalVector2D.x * currentCanal.center.x,
+										activeCrossSection.centerPointMm.y +
+											activeCrossSection.normalVector2D.y * currentCanal.center.x,
+										activeCrossSection.centerPointMm.z +
+											(activeCrossSection.heightMm / 2 - 4.0) -
+											currentCanal.center.y,
+									] as Vec3,
+								],
+							},
+						]
+					: [];
+
+		return computeLiveImplantTelemetry(implantTarget, volume, markers, []);
+	}, [implant3DWorld, currentImplantPose, volume, interpolatedNerve3D, currentCanal, activeCrossSection]);
+
+	const displayBoneClass =
+		liveImplantTelemetry?.boneClass ??
+		(huSamplingResult.status === "measured" ? mischClassification.mischClass : "D3");
+
+	const displayMeanHU =
+		liveImplantTelemetry?.meanHU ??
+		(huSamplingResult.status === "measured" ? huSamplingResult.overallMeanHU : null);
+
+	const displayTorque =
+		liveImplantTelemetry?.recommendedTorqueNcm && liveImplantTelemetry.recommendedTorqueNcm !== "—"
+			? liveImplantTelemetry.recommendedTorqueNcm
+			: `${mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см`;
+
+	const displayNerveClearanceMm =
+		liveImplantTelemetry?.nerveClearanceMm ??
+		(nerveAuditResult.safetyStatus !== "unmeasured"
+			? nerveAuditResult.netClearanceToCanalWallMm
+			: null);
+
+	const displayDrillingProtocol =
+		liveImplantTelemetry?.drillingProtocol ?? mischClassification.recommendedDrillingRpm;
 
 	// ─── AUDIO ALARM SENTINEL EFFECT ──────────────────────────────────────────
 	useEffect(() => {
@@ -5697,8 +5760,69 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</div>
 
 							{/* ─── VIRTUAL IMPLANT CALIPER SELECTION ───────────────────────── */}
-							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2.5">
-								<div className="text-xs font-bold text-zinc-400">Выбор имплантата (Библиотека):</div>
+							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2.5" data-testid="cbct-selected-implant-card">
+								<div className="flex items-center justify-between">
+									<div className="text-xs font-bold text-zinc-300">Выбор имплантата (Библиотека):</div>
+									<div className="text-xs font-mono font-bold text-cyan-400">
+										{currentImplantSpec.brandName} Ø{currentImplantSpec.diameterMm}x{currentImplantSpec.lengthMm}
+									</div>
+								</div>
+
+								{/* ─── LIVE MISCH BONE DENSITY & SAFETY HUD BADGE (МАНДАТ 8e) ─── */}
+								<div
+									className="p-2.5 rounded-md bg-[#09090b] border border-zinc-800 flex flex-col gap-2 shadow-xs"
+									data-testid="cbct-implant-live-telemetry-hud"
+								>
+									<div className="flex items-center justify-between text-xs">
+										<div className="flex items-center gap-1.5 min-w-0">
+											<span className="text-[11px] font-semibold text-zinc-400 shrink-0">Кость (Misch):</span>
+											<span
+												className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-zinc-900 border border-cyan-500/50 text-cyan-400 shrink-0"
+												data-testid="cbct-implant-misch-class-badge"
+											>
+												{displayBoneClass} {displayMeanHU !== null ? `(${displayMeanHU} HU)` : ""}
+											</span>
+										</div>
+										<div className="text-[11px] text-zinc-300 font-mono shrink-0">
+											Торк: <strong className="text-zinc-100">{displayTorque}</strong>
+										</div>
+									</div>
+
+									<div className="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-800">
+										<div className="flex items-center gap-1.5 min-w-0">
+											<span className="text-[11px] font-semibold text-zinc-400 shrink-0">Зазор до IAN:</span>
+											<span
+												className={`px-2 py-0.5 rounded font-mono font-bold text-xs border shrink-0 ${
+													displayNerveClearanceMm === null
+														? "bg-zinc-900 text-zinc-400 border-zinc-800"
+														: displayNerveClearanceMm >= 2.0
+															? "bg-emerald-950/70 text-emerald-300 border-emerald-500/60"
+															: displayNerveClearanceMm >= 1.0
+																? "bg-amber-950/70 text-amber-300 border-amber-500/60"
+																: "bg-rose-950/70 text-rose-300 border-rose-500/60"
+												}`}
+												data-testid="cbct-implant-nerve-clearance-badge"
+											>
+												{displayNerveClearanceMm !== null ? `${displayNerveClearanceMm.toFixed(1)} мм` : "Не определен"}
+											</span>
+										</div>
+										<span className="text-[10px] text-zinc-500 font-mono shrink-0">
+											{displayNerveClearanceMm !== null && displayNerveClearanceMm < 2.0
+												? "Внимание (< 2.0 мм)"
+												: "Норма (>= 2.0 мм)"}
+										</span>
+									</div>
+
+									{displayDrillingProtocol && (
+										<div
+											className="text-[10px] text-zinc-400 leading-tight truncate pt-0.5"
+											title={displayDrillingProtocol}
+											data-testid="cbct-implant-drilling-protocol"
+										>
+											Сверление: <span className="text-zinc-300">{displayDrillingProtocol}</span>
+										</div>
+									)}
+								</div>
 
 								{/* Brand selector */}
 								<div className="grid grid-cols-4 gap-1.5">
@@ -5789,13 +5913,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									<button
 										type="button"
 										onClick={() => {
-											showToast(`Имплантат ${currentImplantSpec.brand.toUpperCase()} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm} добавлен в план лечения (#${activeCrossSection?.nearestToothFdi ?? "46"})`, "success");
+											showToast(`Имплантат ${currentImplantSpec.brand.toUpperCase()} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm} сохранен в план лечения (#${activeCrossSection?.nearestToothFdi ?? "46"})`, "success");
 										}}
-										className="w-full py-2.5 px-3 rounded-md bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-sm shadow-cyan-600/30"
+										className="w-full py-2.5 px-3 rounded-md bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-sm shadow-cyan-600/30 cursor-pointer"
 										data-testid="add-implant-to-plan-btn"
+										title="Сохранить имплантат в план лечения"
 									>
-										<Check className="w-4 h-4" />
-										<span>Добавить в план лечения (18 500 ₽)</span>
+										<Save className="w-4 h-4" />
+										<span>Сохранить в план лечения (18 500 ₽)</span>
 									</button>
 
 									<div className="grid grid-cols-3 gap-1.5">

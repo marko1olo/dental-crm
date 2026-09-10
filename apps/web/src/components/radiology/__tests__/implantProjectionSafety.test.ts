@@ -7,10 +7,17 @@ import {
 	auditMandibularNerveSafety,
 	performCbctPlanningAudit,
 	checkImplantSliceIntersection,
+	computeLiveImplantTelemetry,
+	classifyBone,
+	getMischProfile,
+	DEFAULT_SAFETY_THRESHOLDS,
+	MISCH_BONE_PROFILES,
 	findImplantSpec,
 	sampleCrossSectionHUProfile,
 	type CrossSectionImplantPose,
 	type MandibularCanalCrossSection,
+	type Vec3,
+	type VolumeSamplingData,
 } from "../implantSafetyEngine";
 import {
 	buildDentalArchCurve,
@@ -308,5 +315,203 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 		assert.ok(huResult.trabecularCoreHU >= 500 && huResult.trabecularCoreHU <= 900);
 		assert.ok(huResult.apicalBaseHU >= 700);
 		assert.ok(huResult.overallMeanHU > 600);
+	});
+
+	describe("computeLiveImplantTelemetry Misch Bone Density & Safety Sentinel (Mandate 8e)", () => {
+		function createUniformVolume(huValue: number, dim = 30): VolumeSamplingData {
+			return {
+				dims: [dim, dim, dim],
+				origin: [-15, -15, -15],
+				invSx: 1.0,
+				invSy: 1.0,
+				invSz: 1.0,
+				zMin: -15,
+				zMax: 14,
+				vSpacing: 1.0,
+				getVoxel: (i: number, j: number, k: number) => {
+					if (i < 0 || j < 0 || k < 0 || i >= dim || j >= dim || k >= dim) return -1024;
+					return huValue;
+				},
+			};
+		}
+
+		it("correctly samples HU and classifies all Misch bone classes D1..D5 with torque & protocol", () => {
+			const implant = {
+				id: "implant-misch-test",
+				entry: [0, 0, 8] as Vec3,
+				apex: [0, 0, -2] as Vec3,
+				radius: 2.0,
+			};
+
+			// Test D1 (> 1250 HU)
+			const volD1 = createUniformVolume(1400);
+			const telemD1 = computeLiveImplantTelemetry(implant, volD1, [], []);
+			assert.equal(telemD1.boneClass, "D1");
+			assert.equal(telemD1.boneDensity.isMeasured, true);
+			assert.equal(telemD1.meanHU, 1400);
+			assert.equal(telemD1.recommendedTorqueNcm, "45–60 Н·см");
+			assert.ok(telemD1.drillingProtocol.includes("метчиком"));
+			assert.ok(telemD1.tissueDescription.length > 0);
+
+			// Test D2 (850..1250 HU)
+			const volD2 = createUniformVolume(1000);
+			const telemD2 = computeLiveImplantTelemetry(implant, volD2, [], []);
+			assert.equal(telemD2.boneClass, "D2");
+			assert.equal(telemD2.meanHU, 1000);
+			assert.equal(telemD2.recommendedTorqueNcm, "35–45 Н·см");
+
+			// Test D3 (350..850 HU)
+			const volD3 = createUniformVolume(550);
+			const telemD3 = computeLiveImplantTelemetry(implant, volD3, [], []);
+			assert.equal(telemD3.boneClass, "D3");
+			assert.equal(telemD3.meanHU, 550);
+			assert.equal(telemD3.recommendedTorqueNcm, "25–35 Н·см");
+			assert.ok(telemD3.drillingProtocol.includes("under-drilling") || telemD3.drillingProtocol.includes("недопрепарирования"));
+
+			// Test D4 (150..350 HU)
+			const volD4 = createUniformVolume(220);
+			const telemD4 = computeLiveImplantTelemetry(implant, volD4, [], []);
+			assert.equal(telemD4.boneClass, "D4");
+			assert.equal(telemD4.meanHU, 220);
+			assert.equal(telemD4.recommendedTorqueNcm, "15–25 Н·см");
+			assert.ok(telemD4.drillingProtocol.includes("биконденсацией"));
+
+			// Test D5 (< 150 HU)
+			const volD5 = createUniformVolume(80);
+			const telemD5 = computeLiveImplantTelemetry(implant, volD5, [], []);
+			assert.equal(telemD5.boneClass, "D5");
+			assert.equal(telemD5.meanHU, 80);
+			assert.ok(telemD5.recommendedTorqueNcm.includes("< 15 Н·см"));
+		});
+
+		it("evaluates 3D IAN nerve clearance with Green (>=2.0mm), Amber (1.0..1.99mm), and Red (<1.0mm) statuses", () => {
+			// Vertical implant: Entry [0, 0, 5], Apex [0, 0, -5], radius = 2.0 mm (cylinder outer radius = 2.0 mm)
+			const implant = {
+				id: "implant-ian-test",
+				entry: [0, 0, 5] as Vec3,
+				apex: [0, 0, -5] as Vec3,
+				radius: 2.0,
+			};
+
+			// Case 1: Green / Safe (clearance = 7.4 - 2.0 - 1.4 = 4.0 mm >= 2.0 mm)
+			const greenNerve = [
+				{
+					id: "ian-safe",
+					type: "nerve" as const,
+					radius: 1.4,
+					points: [
+						[7.4, 0, 10] as Vec3,
+						[7.4, 0, -10] as Vec3,
+					],
+				},
+			];
+			const telemGreen = computeLiveImplantTelemetry(implant, null, greenNerve, []);
+			assert.equal(telemGreen.nerveClearanceMm, 4.0);
+			assert.equal(telemGreen.isNerveSafe, true);
+			assert.equal(telemGreen.worstSafetyStatus, "safe");
+
+			// Case 2: Amber / Warning (clearance = 4.9 - 2.0 - 1.4 = 1.5 mm, within 1.0..1.99 mm corridor)
+			const amberNerve = [
+				{
+					id: "ian-warning",
+					type: "nerve" as const,
+					radius: 1.4,
+					points: [
+						[4.9, 0, 10] as Vec3,
+						[4.9, 0, -10] as Vec3,
+					],
+				},
+			];
+			const telemAmber = computeLiveImplantTelemetry(implant, null, amberNerve, []);
+			assert.equal(telemAmber.nerveClearanceMm, 1.5);
+			assert.equal(telemAmber.isNerveSafe, false);
+			assert.equal(telemAmber.worstSafetyStatus, "warning");
+			assert.ok(telemAmber.warnings.some((w) => w.includes("Опасное сближение с нижнечелюстным каналом")));
+
+			// Case 3: Red / Critical Danger (clearance = 3.8 - 2.0 - 1.4 = 0.4 mm < 1.0 mm)
+			const redNerve = [
+				{
+					id: "ian-danger",
+					type: "nerve" as const,
+					radius: 1.4,
+					points: [
+						[3.8, 0, 10] as Vec3,
+						[3.8, 0, -10] as Vec3,
+					],
+				},
+			];
+			const telemRed = computeLiveImplantTelemetry(implant, null, redNerve, []);
+			assert.equal(telemRed.nerveClearanceMm, 0.4);
+			assert.equal(telemRed.isNerveSafe, false);
+			assert.equal(telemRed.worstSafetyStatus, "danger");
+		});
+
+		it("evaluates maxillary sinus and neighbouring implant clearances", () => {
+			const implant = {
+				id: "implant-main",
+				entry: [0, 0, 10] as Vec3,
+				apex: [0, 0, 0] as Vec3,
+				radius: 2.0,
+			};
+
+			const sinusMarker = [
+				{
+					id: "sinus-floor",
+					type: "sinus" as const,
+					radius: 0.0,
+					points: [
+						[-10, 0, -4.5] as Vec3,
+						[10, 0, -4.5] as Vec3,
+					],
+				},
+			];
+
+			const neighborImplant = {
+				id: "implant-adjacent",
+				entry: [7.0, 0, 10] as Vec3,
+				apex: [7.0, 0, 0] as Vec3,
+				radius: 2.0,
+			};
+
+			const telem = computeLiveImplantTelemetry(implant, null, sinusMarker, [neighborImplant]);
+			// Sinus clearance: distance from apex [0, 0, 0] to Z = -4.5 is 4.5 mm - 2.0 mm = 2.5 mm >= 1.0 mm (safe)
+			assert.equal(telem.sinusClearanceMm, 2.5);
+			assert.equal(telem.isSinusSafe, true);
+
+			// Neighbor clearance: center distance 7.0 - 2.0 - 2.0 = 3.0 mm >= 3.0 mm (safe)
+			assert.equal(telem.neighborClearanceMm, 3.0);
+			assert.equal(telem.isNeighborSafe, true);
+		});
+
+		it("respects Mandate 8e: returns telemetry for HUD without throwing or blocking", () => {
+			// Direct collision with nerve
+			const collisionNerve = [
+				{
+					id: "ian-collision",
+					type: "nerve" as const,
+					radius: 1.5,
+					points: [
+						[0, 0, 5] as Vec3,
+						[0, 0, -5] as Vec3,
+					],
+				},
+			];
+
+			const implant = {
+				id: "implant-collision-test",
+				entry: [0, 0, 5] as Vec3,
+				apex: [0, 0, -5] as Vec3,
+				radius: 2.0,
+			};
+
+			// Must NOT throw! Must cleanly return danger status and negative clearance for HUD
+			assert.doesNotThrow(() => {
+				const telem = computeLiveImplantTelemetry(implant, null, collisionNerve, []);
+				assert.equal(telem.worstSafetyStatus, "danger");
+				assert.ok(telem.nerveClearanceMm !== null && telem.nerveClearanceMm < 0);
+				assert.equal(telem.isNerveSafe, false);
+				assert.ok(telem.warnings.length > 0);
+			});
+		});
 	});
 });
