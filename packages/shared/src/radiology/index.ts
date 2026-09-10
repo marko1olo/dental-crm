@@ -14,3 +14,6 @@ export * from "./cbctSafetyEngine.js";
 export * from "./mischBoneDensity.js";
 export * from "./cbctScanMeshEngine.js";
 export * from "./cbctCropBox.js";
+export * from "./surgicalGuideGeom.js";
+export * from "./surgicalGuideValidate.js";
+export * from "./surgicalGuideExport.js";
