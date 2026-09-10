@@ -155,6 +155,14 @@ export const DENTAL_ICD10_CATALOG: readonly DentalDiagnosisItem[] = [
 		recommended804nCode: "A16.07.001",
 		recommended804nName: "Удаление постоянного зуба (простое)",
 	},
+	{
+		icd10Code: "Z01.2",
+		titleRu: "Стоматологическое обследование (Здоров / Полость рта санирована)",
+		descriptionRu: "Профилактический осмотр, отсутствие кариозных полостей, физиологическая норма",
+		category: "other",
+		recommended804nCode: "A01.07.001",
+		recommended804nName: "Прием (осмотр, консультация) врача-стоматолога первичный",
+	},
 ];
 
 export interface DiagnosisSelectorProps {

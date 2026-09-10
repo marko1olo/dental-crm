@@ -34,7 +34,7 @@ import {
 	ZapOff,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
@@ -100,12 +100,29 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 		if (onApplyNorm) {
 			onApplyNorm(updatedProfile);
 		}
+		if (onSave) {
+			onSave(updatedProfile, formatSafetyProfileToDiaryText(updatedProfile));
+		}
 		showToast(
 			"Применена физиологическая норма: соматически здоров (1 клик)",
 			"success",
 			3000,
 		);
-	}, [onApplyNorm]);
+	}, [onApplyNorm, onSave]);
+
+	// Debounced autosave (Mandate 8e: protection against data loss without modal prompts)
+	const isMountedRef = useRef(false);
+	useEffect(() => {
+		if (!isMountedRef.current) {
+			isMountedRef.current = true;
+			return;
+		}
+		if (!onSave) return;
+		const timer = setTimeout(() => {
+			onSave(profile, diaryText);
+		}, 800);
+		return () => clearTimeout(timer);
+	}, [profile, diaryText, onSave]);
 
 	// Toggle helper for boolean pathology flags
 	const toggleFlag = useCallback((key: keyof PatientClinicalSafetyProfile) => {

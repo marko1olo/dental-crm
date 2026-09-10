@@ -26,7 +26,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		assert.ok(html.includes('data-testid="orthopedics-chairside-panel"'), "Must contain root testid");
 	});
 
-	it("renders all 4 canonical orthopedic protocols with 1-click action buttons", () => {
+	it("renders all 5 canonical orthopedic protocols with 1-click action buttons", () => {
 		const html = renderToString(
 			<OrthopedicsChairsidePanel
 				activeToothFdi={16}
@@ -34,7 +34,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 			/>,
 		);
 
-		assert.strictEqual(ORTHOPEDIC_CANONICAL_PROTOCOLS.length, 4, "Must contain exactly 4 protocols");
+		assert.strictEqual(ORTHOPEDIC_CANONICAL_PROTOCOLS.length, 5, "Must contain exactly 5 protocols");
 		for (const proto of ORTHOPEDIC_CANONICAL_PROTOCOLS) {
 			assert.ok(html.includes(proto.shortLabel), `Must render label for ${proto.shortLabel}`);
 			assert.ok(html.includes(proto.defaultIcd10), `Must render ICD-10 for ${proto.defaultIcd10}`);

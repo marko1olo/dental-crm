@@ -15,7 +15,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import {
@@ -449,6 +449,34 @@ export function OrthodonticVisitProtocolWidget({
 	// Angle Classification State & Plate Activation
 	const [angleClass, setAngleClass] = useState<AngleClass>("class_1");
 	const [plateActivationTurns, setPlateActivationTurns] = useState<number>(1);
+
+	// Debounced autosave (Mandate 8e: protection against data loss without modal prompts)
+	const isWidgetMountedRef = useRef(false);
+	useEffect(() => {
+		if (!isOpen) return;
+		if (!isWidgetMountedRef.current) {
+			isWidgetMountedRef.current = true;
+			return;
+		}
+		const timer = setTimeout(() => {
+			try {
+				const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+				if (setVisitNoteForm && notes) {
+					setVisitNoteForm((prev) => ({
+						...prev,
+						treatmentPlan: prev.treatmentPlan?.includes(notes)
+							? prev.treatmentPlan
+							: prev.treatmentPlan
+								? `${prev.treatmentPlan}\n\n[Ортодонтия] ${notes}`
+								: `[Ортодонтия] ${notes}`,
+					}));
+				}
+			} catch {
+				// ignore
+			}
+		}, 800);
+		return () => clearTimeout(timer);
+	}, [isOpen, notes]);
 
 	// Canonical 804n services calculation
 	const calculatedServices804n = useMemo(() => {
@@ -1375,14 +1403,31 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							data-testid="ortho-angle-class-selector"
 							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
 						>
-							<div className="flex items-center justify-between">
+							<div className="flex items-center justify-between flex-wrap gap-1.5">
 								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
 									<Activity size={14} className="text-blue-500" />
 									Прикус по Энглю (1-клик фиксация)
 								</span>
-								<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-									{ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass)?.shortLabel}
-								</span>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											setAngleClass("class_1");
+											setElasticScheme("none");
+											setNotes("Скелетный класс I по Энглю, соотношение моляров и клыков нейтральное. Патологии смыкания не выявлено (физиологическая норма).");
+											showToast("1-клик норма: Скелетный класс I / Физиологический прикус", "success", 2500);
+										}}
+										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer min-h-[36px]"
+										data-testid="angle-class-norm-1click-btn"
+										title="1 клик: Класс I по Энглю / Физиологический прикус (Норма СтАР)"
+									>
+										<CheckCircle2 size={12} />
+										<span>Норма (Класс I)</span>
+									</button>
+									<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+										{ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass)?.shortLabel}
+									</span>
+								</div>
 							</div>
 
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">

@@ -72,6 +72,34 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 
 	const effectiveTooth = activeTooth ?? selectedTooth;
 
+	// Debounced autosave to useVisitStore (Mandate 8e: protection against data loss)
+	const lastSyncedProtocolRef = React.useRef<string>("");
+	React.useEffect(() => {
+		if (!protocolText || protocolText === lastSyncedProtocolRef.current) return;
+		const timer = setTimeout(() => {
+			try {
+				const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+				if (setVisitNoteForm) {
+					setVisitNoteForm((prev) => {
+						const prevObj = prev.objectiveStatus || "";
+						const lastSnippet = lastSyncedProtocolRef.current;
+						let newObj = prevObj;
+						if (lastSnippet && newObj.includes(lastSnippet)) {
+							newObj = newObj.replace(lastSnippet, protocolText);
+						} else {
+							newObj = newObj ? `${newObj}\n\n${protocolText}` : protocolText;
+						}
+						lastSyncedProtocolRef.current = protocolText;
+						return { ...prev, objectiveStatus: newObj };
+					});
+				}
+			} catch {
+				// fallback
+			}
+		}, 800);
+		return () => clearTimeout(timer);
+	}, [protocolText]);
+
 	const handleToothSelect = (t: number) => {
 		setSelectedTooth(t);
 		onSelectActiveTooth?.(t);

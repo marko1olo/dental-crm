@@ -121,8 +121,8 @@ describe("Wave 41: Doctor Autonomy & Eradication of Locked Disabled States (Mand
 		});
 	});
 
-	describe("2. Visiograph Analyzer Voice Autonomy (Mandate 8e)", () => {
-		it("Кнопка озвучки отчета ИИ НЕ заблокирована (нет dead disabled состояния)", () => {
+	describe("2. Visiograph Analyzer Clinical Autonomy (Mandate 8e)", () => {
+		it("Кнопка применения находок ИИ к зубной формуле НЕ заблокирована", () => {
 			const mockScan: XrayScan = {
 				id: "scan-test-41",
 				patientId: "patient-test-41",
@@ -134,6 +134,7 @@ describe("Wave 41: Doctor Autonomy & Eradication of Locked Disabled States (Mand
 				createdAt: new Date().toISOString(),
 				aiReport:
 					"Контрольный прицельный снимок зуба 16: периапикальные ткани без патологических теней. Кариозных полостей не обнаружено.",
+				aiToothStates: { "16": "watch" },
 			};
 
 			const html = renderToString(
@@ -143,17 +144,17 @@ describe("Wave 41: Doctor Autonomy & Eradication of Locked Disabled States (Mand
 			);
 
 			assert.ok(
-				html.includes('data-testid="visiograph-speak-button"'),
-				"Кнопка озвучки должна присутствовать в разметке",
+				html.includes('data-testid="btn-apply-findings-to-chart"'),
+				"Кнопка применения находок ИИ к зубной формуле должна присутствовать в разметке",
 			);
 
 			const match = html.match(
-				/<button[^>]*data-testid="visiograph-speak-button"[^>]*>/,
+				/<button[^>]*data-testid="btn-apply-findings-to-chart"[^>]*>/,
 			);
-			assert.ok(match, "Тег кнопки озвучки должен быть найден");
+			assert.ok(match, "Тег кнопки применения находок ИИ должен быть найден");
 			assert.ok(
 				!match[0].includes("disabled"),
-				"Кнопка озвучки НЕ должна иметь атрибут disabled даже при инициализации голосового движка",
+				"Кнопка применения находок ИИ НЕ должна иметь атрибут disabled (Мандат 8e)",
 			);
 		});
 	});

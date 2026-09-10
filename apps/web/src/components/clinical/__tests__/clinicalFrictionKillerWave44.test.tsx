@@ -133,8 +133,8 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 	// Suite 2: Fast Express Presets "ICD-10 + 804n" in 1 Click (Mandate 8k Friction-Killer Law)
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("2. Fast 1-Click Bundles: ICD-10 + 804n (Mandate 8k Friction-Killer Law)", () => {
-		it("2.1. FAST_CLINICAL_BUNDLES defines all 5 required canonical pairs with exact codes", () => {
-			assert.equal(FAST_CLINICAL_BUNDLES.length, 5);
+		it("2.1. FAST_CLINICAL_BUNDLES defines all required canonical pairs with exact codes including physiological norm", () => {
+			assert.equal(FAST_CLINICAL_BUNDLES.length, 6);
 
 			// 1. Кариес дентина -> К02.1 + A16.07.002.010
 			const caries = getFastClinicalBundle("caries_dentin");
@@ -175,6 +175,14 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 			assert.equal(extraction.icd10Code, "K08.8");
 			assert.equal(extraction.order804nCode, "A16.07.001");
 			assert.ok(extraction.defaultPriceKopecks > 0);
+
+			// 6. Осмотр / Здоров (Норма) -> Z01.2 + A01.07.001
+			const normCheckup = getFastClinicalBundle("norm_checkup");
+			assert.ok(normCheckup);
+			assert.equal(normCheckup.title, "Осмотр / Здоров (Норма)");
+			assert.equal(normCheckup.icd10Code, "Z01.2");
+			assert.equal(normCheckup.order804nCode, "A01.07.001");
+			assert.ok(normCheckup.defaultPriceKopecks > 0);
 		});
 
 		it("2.2. lookup helper functions find bundles by ICD-10 code and 804n code", () => {
@@ -192,9 +200,12 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 
 			const b5 = findBundleByIcd10("K08.8");
 			assert.equal(b5?.id, "extraction_simple");
+
+			const b6 = findBundleByIcd10("Z01.2");
+			assert.equal(b6?.id, "norm_checkup");
 		});
 
-		it("2.3. renders ClinicalProtocolPresets with all 5 bundle action buttons", () => {
+		it("2.3. renders ClinicalProtocolPresets with all bundle action buttons", () => {
 			const html = renderToString(<ClinicalProtocolPresets selectedBundleId="caries_dentin" />);
 			assert.equal(html.includes('data-testid="clinical-protocol-presets-container"'), true);
 			assert.equal(html.includes('data-testid="bundle-btn-caries_dentin"'), true);
@@ -202,6 +213,7 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 			assert.equal(html.includes('data-testid="bundle-btn-periodontitis"'), true);
 			assert.equal(html.includes('data-testid="bundle-btn-hygiene_ultrasound"'), true);
 			assert.equal(html.includes('data-testid="bundle-btn-extraction_simple"'), true);
+			assert.equal(html.includes('data-testid="bundle-btn-norm_checkup"'), true);
 		});
 
 		it("2.4. renders DiagnosisSelector embedding express presets and ICD-10 catalog", () => {
@@ -219,13 +231,14 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 			assert.equal(html.includes("Зуб #16"), true);
 		});
 
-		it("2.5. DENTAL_ICD10_CATALOG covers primary outpatient diagnoses", () => {
+		it("2.5. DENTAL_ICD10_CATALOG covers primary outpatient diagnoses and physiological norm", () => {
 			const codes = DENTAL_ICD10_CATALOG.map((d) => d.icd10Code);
 			assert.ok(codes.includes("K02.1"));
 			assert.ok(codes.includes("K04.0"));
 			assert.ok(codes.includes("K04.4"));
 			assert.ok(codes.includes("K05.0"));
 			assert.ok(codes.includes("K08.8"));
+			assert.ok(codes.includes("Z01.2"));
 		});
 	});
 

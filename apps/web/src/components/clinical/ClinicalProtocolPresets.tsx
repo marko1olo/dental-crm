@@ -24,7 +24,7 @@ import {
 import type React from "react";
 import { useMemo } from "react";
 
-export type ClinicalBundleCategory = "therapy" | "endo" | "hygiene" | "surgery";
+export type ClinicalBundleCategory = "therapy" | "endo" | "hygiene" | "surgery" | "inspection";
 
 export interface FastClinicalBundle {
 	readonly id: string;
@@ -125,6 +125,21 @@ export const FAST_CLINICAL_BUNDLES: readonly FastClinicalBundle[] = [
 		recommendations:
 			"Марлевый тампон сплюнуть через 20 минут. Не принимать пищу 2 часа. Не полоскать полость рта 3 дня (сохранение кровяного сгустка). Исключить бани, сауны, горячий душ и физические нагрузки 3 дня. При болях — Нимесулид 100 мг.",
 	},
+	{
+		id: "norm_checkup",
+		title: "Осмотр / Здоров (Норма)",
+		subtitle: "Полость рта санирована (СтАР)",
+		icd10Code: "Z01.2",
+		icd10Title: "Стоматологическое обследование (Здоров / Санирован)",
+		order804nCode: "A01.07.001",
+		order804nName: "Прием (осмотр, консультация) врача-стоматолога первичный",
+		category: "inspection",
+		defaultPriceKopecks: 100000, // 1 000 ₽
+		diarySnippet:
+			"Жалоб нет. Профилактический осмотр. Зубные ряды интактны, прикус физиологический. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических элементов. Патологии твердых тканей зубов и пародонта не выявлено. Полость рта санирована.",
+		recommendations:
+			"Соблюдение индивидуальной гигиены полости рта (чистка зубов 2 раза в день, зубная нить/ершики). Плановый профилактический осмотр через 6 месяцев.",
+	},
 ];
 
 export function getFastClinicalBundle(id: string): FastClinicalBundle | undefined {
@@ -176,6 +191,12 @@ const CATEGORY_BADGES: Record<
 		textClass: "text-amber-700 dark:text-amber-300",
 		icon: Scissors,
 	},
+	inspection: {
+		label: "Осмотр / Норма",
+		bgClass: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800",
+		textClass: "text-emerald-700 dark:text-emerald-300",
+		icon: ShieldCheck,
+	},
 };
 
 export const ClinicalProtocolPresets: React.FC<ClinicalProtocolPresetsProps> = ({
@@ -224,8 +245,8 @@ export const ClinicalProtocolPresets: React.FC<ClinicalProtocolPresetsProps> = (
 			<div
 				className={`grid gap-2.5 ${
 					isCompact
-						? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
-						: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+						? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6"
+						: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
 				}`}
 			>
 				{FAST_CLINICAL_BUNDLES.map((bundle) => {

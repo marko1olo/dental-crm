@@ -13,14 +13,15 @@ import {
 } from "../orthopedicProtocols.js";
 
 describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k, 8n)", () => {
-	test("Содержит ровно 4 канонических ортопедических протокола", () => {
-		assert.equal(ORTHOPEDIC_CANONICAL_PROTOCOLS.length, 4);
+	test("Содержит 5 канонических ортопедических протоколов включая физиологическую норму СтАР", () => {
+		assert.equal(ORTHOPEDIC_CANONICAL_PROTOCOLS.length, 5);
 
 		const ids = ORTHOPEDIC_CANONICAL_PROTOCOLS.map((p) => p.id);
 		assert.ok(ids.includes("ortho_prep_zirconia_emax"));
 		assert.ok(ids.includes("ortho_try_in_framework_crown"));
 		assert.ok(ids.includes("ortho_permanent_cementation"));
 		assert.ok(ids.includes("ortho_removable_prosthetics"));
+		assert.ok(ids.includes("ortho_norm_occlusion"));
 	});
 
 	test("Каждый протокол привязан к Этапу 3 плана лечения (stage_3_orthopedics) и Приказу 804н", () => {

@@ -331,6 +331,8 @@ export function OrthopedicsChairsidePanel({
 				return <Sparkles size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
 			case "removable_prosthetics":
 				return <Layers size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />;
+			case "consultation_norm":
+				return <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
 		}
 	};
 

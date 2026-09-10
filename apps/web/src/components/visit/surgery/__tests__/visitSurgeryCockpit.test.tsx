@@ -74,7 +74,7 @@ describe("Visit Surgery Protocol & Cockpit (Visit Scope)", () => {
 
 		assert.ok(text.includes("зуба FDI #36"), "Must include tooth FDI");
 		assert.ok(text.includes("Dentium"), "Must include brand");
-		assert.ok(text.includes("35 Н/см"), "Must include torque 35 N/cm");
+		assert.ok(text.includes("35 Н·см") || text.includes("35 Н/см"), "Must include torque 35 N/cm");
 		assert.ok(text.includes("ISQ 72"), "Must include ISQ 72");
 		assert.ok(text.includes("формирователь десны (ФДМ)"), "Must include FDM");
 		assert.ok(text.includes("Prolene 4-0"), "Must include suture Prolene 4-0");
