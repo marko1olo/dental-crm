@@ -18,6 +18,7 @@ import {
 	generateCertificateId,
 	generateQrCodeSvg,
 	generateSha256,
+	generateUuidV7,
 	generateWarrantyCertificateHtml,
 	generateWarrantyRemediationActHtml,
 	type WarrantyCertificateData,
@@ -99,6 +100,12 @@ test("Statutory Dental Warranty Regulations (Закон РФ № 2300-1 & Пол
 	const remov = WARRANTY_PRESETS.removable_prosthesis;
 	assert.equal(remov.baseWarrantyMonths, 12);
 	assert.ok(remov.clinicalConditions.some((c) => c.includes("перебазировка")));
+
+	// Номенклатура 804н (Минздрав РФ Приказ № 804н): Все 8 пресетов имеют валидный код услуги A16.07
+	for (const p of presets) {
+		assert.ok(p.serviceCode804n, `Preset ${p.category} must have serviceCode804n`);
+		assert.ok(p.serviceCode804n.startsWith("A16.07"), `Preset ${p.category} must have dental 804n code starting with A16.07, got ${p.serviceCode804n}`);
+	}
 });
 
 test("Mandatory Warranty Maintenance Conditions: All 9 statutory clinical conditions integrity", () => {
@@ -350,7 +357,7 @@ test("Warranty Certificate HTML Generator (A4 / A5): Full document rendering & s
 		},
 		items: [
 			{
-				id: "item_1",
+				id: generateUuidV7(),
 				toothNumber: "1.6",
 				category: "ceramic_crown_veneer",
 				clinicalWorkTitle: "Коронка E.max на зуб 1.6",
@@ -359,6 +366,8 @@ test("Warranty Certificate HTML Generator (A4 / A5): Full document rendering & s
 				country: "Лихтенштейн",
 				vitaShade: "A2",
 				lotNumber: "LOT-99281",
+				serviceCode804n: "A16.07.004.002",
+				labOrderNumber: "ЗТЛ-2026-0842",
 				baseWarrantyMonths: 36,
 				baseServiceLifeMonths: 120,
 			},
@@ -380,6 +389,9 @@ test("Warranty Certificate HTML Generator (A4 / A5): Full document rendering & s
 	assert.ok(html.includes("043-9824"));
 	assert.ok(html.includes("IPS e.max Press"));
 	assert.ok(html.includes("LOT-99281"));
+	assert.ok(html.includes("A16.07.004.002"), "Certificate HTML must include 804n service code badge");
+	assert.ok(html.includes("ЗТЛ-2026-0842"), "Certificate HTML must include ZTL lab order number badge");
+	assert.ok(html.includes("A2"), "Certificate HTML must include VITA shade");
 	assert.ok(html.includes("36 мес."));
 	assert.ok(html.includes("Закон РФ № 2300-1"));
 	assert.ok(html.includes("<svg"));
@@ -586,4 +598,37 @@ test("Mandate 8e: Warranty Certificate includes remediation history table when p
 	assert.ok(html.includes(order.orderNumber));
 	assert.ok(html.includes("3.6"));
 	assert.ok(html.includes("0 ₽ (100%)"));
+});
+
+test("Statutory Warranty Item UUIDv7 Generation & Clinical Data Linkage (804n, VITA, MDLP, ZTL)", () => {
+	const uuid1 = generateUuidV7();
+	const uuid2 = generateUuidV7();
+	assert.equal(uuid1.length, 36, "UUIDv7 must be 36 characters long");
+	assert.equal(uuid2.length, 36, "UUIDv7 must be 36 characters long");
+	assert.notEqual(uuid1, uuid2, "UUIDv7 outputs must be strictly unique");
+	// RFC 9562 check: version 7 at index 14
+	assert.equal(uuid1.charAt(14), "7", "UUID version nibble must be 7");
+	assert.ok(["8", "9", "a", "b"].includes(uuid1.charAt(19)), "UUID variant must be RFC 4122 / 9562");
+
+	// Проверка привязки всех пресетов к Номенклатуре медицинских услуг 804н (Минздрав РФ)
+	const presets = getAllWarrantyPresets();
+	assert.equal(presets.length, 8);
+	for (const p of presets) {
+		assert.ok(p.serviceCode804n, `Preset ${p.category} must have serviceCode804n`);
+		assert.ok(p.serviceCode804n.startsWith("A16.07"), `Preset ${p.category} code must be dental A16.07`);
+	}
+
+	// Проверка шкалы Vita (Classical A1-D4 + Bleach BL1-BL4)
+	assert.ok(VITA_SHADES.includes("A1"));
+	assert.ok(VITA_SHADES.includes("A2"));
+	assert.ok(VITA_SHADES.includes("A3"));
+	assert.ok(VITA_SHADES.includes("A3.5"));
+	assert.ok(VITA_SHADES.includes("A4"));
+	assert.ok(VITA_SHADES.includes("B1"));
+	assert.ok(VITA_SHADES.includes("C2"));
+	assert.ok(VITA_SHADES.includes("D4"));
+	assert.ok(VITA_SHADES.includes("BL1"));
+	assert.ok(VITA_SHADES.includes("BL2"));
+	assert.ok(VITA_SHADES.includes("BL3"));
+	assert.ok(VITA_SHADES.includes("BL4"));
 });

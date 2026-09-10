@@ -358,6 +358,31 @@
 	color: var(--ink);
 }
 
+.warranty-804n-badge {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-family: monospace;
+	font-weight: 700;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal);
+	border: 1px solid var(--line);
+	margin-top: 3px;
+}
+
+.warranty-ztl-badge {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--paper-soft);
+	color: var(--ink-2);
+	border: 1px solid var(--line);
+	margin-top: 3px;
+}
+
 /* Risk Factor Controls in Sidebar */
 .warranty-risk-panel {
 	background: var(--paper-soft, var(--paper));

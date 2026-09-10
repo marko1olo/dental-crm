@@ -23,6 +23,7 @@ export type WarrantyCategory =
 export interface WarrantyPreset {
 	category: WarrantyCategory;
 	code: string;
+	serviceCode804n: string;
 	title: string;
 	shortTitle: string;
 	description: string;
@@ -105,6 +106,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	composite_restoration: {
 		category: "composite_restoration",
 		code: "WAR-COMP-01",
+		serviceCode804n: "A16.07.002.010",
 		title: "Светоотверждаемые композитные пломбы и художественная реставрация",
 		shortTitle: "Пломбы & Реставрация",
 		description:
@@ -136,6 +138,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	ceramic_crown_veneer: {
 		category: "ceramic_crown_veneer",
 		code: "WAR-CERAM-02",
+		serviceCode804n: "A16.07.004.002",
 		title: "Керамические коронки, виниры E.max, вкладки Inlay/Onlay и диоксид циркония",
 		shortTitle: "Коронки & Виниры E.max",
 		description:
@@ -167,6 +170,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	implant_fixture: {
 		category: "implant_fixture",
 		code: "WAR-IMPL-03",
+		serviceCode804n: "A16.07.006.002",
 		title: "Дентальные имплантаты и протезирование на титановых опорах",
 		shortTitle: "Имплантаты & Абатменты",
 		description:
@@ -200,6 +204,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	orthodontic_aligners: {
 		category: "orthodontic_aligners",
 		code: "WAR-ORTHO-04",
+		serviceCode804n: "A16.07.048.001",
 		title: "Элайнеры и брекет-системы (ортодонтическая коррекция прикуса)",
 		shortTitle: "Элайнеры & Брекеты",
 		description:
@@ -230,6 +235,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	removable_prosthesis: {
 		category: "removable_prosthesis",
 		code: "WAR-REMOV-05",
+		serviceCode804n: "A16.07.036",
 		title: "Бюгельные, пластиночные и условно-съемные протезы",
 		shortTitle: "Съемные & Бюгельные протезы",
 		description:
@@ -260,6 +266,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	endodontic_treatment: {
 		category: "endodontic_treatment",
 		code: "WAR-ENDO-06",
+		serviceCode804n: "A16.07.008.002",
 		title: "Эндодонтическое лечение и трехмерная обтурация корневых каналов",
 		shortTitle: "Эндодонтия (Каналы)",
 		description:
@@ -289,6 +296,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	periodontal_splinting: {
 		category: "periodontal_splinting",
 		code: "WAR-PERIO-07",
+		serviceCode804n: "A16.07.019",
 		title: "Шинирование зубов стекловолокном при заболеваниях пародонта",
 		shortTitle: "Шинирование зубов",
 		description:
@@ -318,6 +326,7 @@ export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
 	temporary_prosthesis: {
 		category: "temporary_prosthesis",
 		code: "WAR-TEMP-08",
+		serviceCode804n: "A16.07.004.004",
 		title: "Временные коронки, мостовидные протезы и адаптационные каппы",
 		shortTitle: "Временные коронки",
 		description:

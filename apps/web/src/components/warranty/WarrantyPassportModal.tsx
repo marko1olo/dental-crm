@@ -147,6 +147,10 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	const [currentCountry, setCurrentCountry] = useState<string>("");
 	const [currentShade, setCurrentShade] = useState<string>("A2");
 	const [currentLot, setCurrentLot] = useState<string>("");
+	const [currentServiceCode804n, setCurrentServiceCode804n] = useState<string>(
+		getWarrantyPreset(initialCategory).serviceCode804n,
+	);
+	const [currentLabOrderNumber, setCurrentLabOrderNumber] = useState<string>("");
 	const [customWarrantyMonths, setCustomWarrantyMonths] = useState<number | undefined>(undefined);
 
 	// Список позиций гарантийного паспорта
@@ -187,6 +191,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 			const preset = getWarrantyPreset(initialCategory);
 			setActiveCategory(initialCategory);
 			setCurrentWorkTitle(preset.title);
+			setCurrentServiceCode804n(preset.serviceCode804n);
+			setCurrentLabOrderNumber("");
 
 			const mat = DENTAL_MATERIALS_CATALOG.find((m) => m.category === initialCategory);
 			if (mat) {
@@ -198,8 +204,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 
 			// Если переданы начальные зубы, создаем первичную позицию
 			if (initialTeeth && initialTeeth.length > 0) {
-				const initialItems: WarrantyItem[] = initialTeeth.map((tooth, idx) => ({
-					id: `item_${Date.now()}_${idx}`,
+				const initialItems: WarrantyItem[] = initialTeeth.map((tooth) => ({
+					id: generateUuidV7(),
 					toothNumber: tooth,
 					category: initialCategory,
 					clinicalWorkTitle: preset.title,
@@ -207,6 +213,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 					manufacturer: mat?.manufacturer ?? preset.popularManufacturers[0] ?? "3M ESPE",
 					country: mat?.country ?? "США",
 					vitaShade: "A2",
+					serviceCode804n: preset.serviceCode804n,
 					baseWarrantyMonths: preset.baseWarrantyMonths,
 					baseServiceLifeMonths: preset.baseServiceLifeMonths,
 				}));
@@ -215,7 +222,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 				// Базовая дефолтная позиция
 				setItems([
 					{
-						id: `item_${Date.now()}_0`,
+						id: generateUuidV7(),
 						toothNumber: "1.6",
 						category: initialCategory,
 						clinicalWorkTitle: preset.title,
@@ -223,6 +230,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 						manufacturer: mat?.manufacturer ?? "3M ESPE",
 						country: mat?.country ?? "США",
 						vitaShade: "A2",
+						serviceCode804n: preset.serviceCode804n,
 						baseWarrantyMonths: preset.baseWarrantyMonths,
 						baseServiceLifeMonths: preset.baseServiceLifeMonths,
 					},
@@ -248,6 +256,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 		setActiveCategory(cat);
 		const preset = getWarrantyPreset(cat);
 		setCurrentWorkTitle(preset.title);
+		setCurrentServiceCode804n(preset.serviceCode804n);
 
 		const mat = DENTAL_MATERIALS_CATALOG.find((m) => m.category === cat);
 		if (mat) {
@@ -288,7 +297,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 		const targetTeeth =
 			selectedTeeth.length > 0 ? selectedTeeth : ["Общая конструкция / Челюсть"];
 		const newItems: WarrantyItem[] = targetTeeth.map((tooth) => ({
-			id: `item_${generateUuidV7()}`,
+			id: generateUuidV7(),
 			toothNumber: tooth,
 			category: activeCategory,
 			clinicalWorkTitle: currentWorkTitle || preset.title,
@@ -296,13 +305,16 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 			manufacturer: currentManufacturer || preset.popularManufacturers[0] || "Производитель",
 			country: currentCountry || "Германия",
 			vitaShade: currentShade || undefined,
-			lotNumber: currentLot || undefined,
+			lotNumber: currentLot.trim() || undefined,
+			serviceCode804n: currentServiceCode804n.trim() || preset.serviceCode804n,
+			labOrderNumber: currentLabOrderNumber.trim() || undefined,
 			baseWarrantyMonths: customWarrantyMonths ?? preset.baseWarrantyMonths,
 			baseServiceLifeMonths: preset.baseServiceLifeMonths,
 		}));
 
 		setItems((prev) => [...prev, ...newItems]);
 		setCurrentLot("");
+		setCurrentLabOrderNumber("");
 	};
 
 	// Удаление позиции
@@ -323,7 +335,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 		const vUrl = `${clinicWebsite}/portal/warranty?cert=${certificateId}&card=${encodeURIComponent(pCard)}`;
 		const qr = generateQrCodeSvg(vUrl, { size: 140 });
 
-		const rawContentForHash = `${certificateId}|${issueDate}|${pName}|${pCard}|${dName}|${items.map((i) => `${i.toothNumber}:${i.category}:${i.materialName}:${i.lotNumber || ""}`).join(";")}|${calculation.adjustedWarrantyMonths}|${calculation.totalRiskMultiplier}`;
+		const rawContentForHash = `${certificateId}|${issueDate}|${pName}|${pCard}|${dName}|${items.map((i) => `${i.toothNumber}:${i.category}:${i.materialName}:${i.lotNumber || ""}:${i.serviceCode804n || ""}:${i.labOrderNumber || ""}:${i.vitaShade || ""}`).join(";")}|${calculation.adjustedWarrantyMonths}|${calculation.totalRiskMultiplier}`;
 		const hash = generateSha256(rawContentForHash);
 
 		return {
@@ -748,13 +760,35 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 										</div>
 
 										<div className="warranty-form-group">
-											<label className="warranty-label">Серийный номер / LOT / UDI</label>
+											<label className="warranty-label">Партия МДЛП / LOT / Серия</label>
 											<input
 												type="text"
 												className="warranty-input"
 												value={currentLot}
 												onChange={(e) => setCurrentLot(e.target.value)}
 												placeholder="LOT #984214 / SN-842"
+											/>
+										</div>
+
+										<div className="warranty-form-group">
+											<label className="warranty-label">Код Номенклатуры 804н</label>
+											<input
+												type="text"
+												className="warranty-input"
+												value={currentServiceCode804n}
+												onChange={(e) => setCurrentServiceCode804n(e.target.value)}
+												placeholder="A16.07.002.010"
+											/>
+										</div>
+
+										<div className="warranty-form-group">
+											<label className="warranty-label">Наряд ЗТЛ (лаборатория)</label>
+											<input
+												type="text"
+												className="warranty-input"
+												value={currentLabOrderNumber}
+												onChange={(e) => setCurrentLabOrderNumber(e.target.value)}
+												placeholder="ЗТЛ-2026-0842"
 											/>
 										</div>
 									</div>
@@ -791,9 +825,9 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 											<thead>
 												<tr>
 													<th>Зуб</th>
-													<th>Вид работы</th>
-													<th>Материал</th>
-													<th>Оттенок / LOT</th>
+													<th>Вид работы & 804н</th>
+													<th>Материал & ЗТЛ</th>
+													<th>Оттенок & LOT (МДЛП)</th>
 													<th>Гарантия</th>
 													<th>Действия</th>
 												</tr>
@@ -804,11 +838,29 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 														<td>
 															<strong>{it.toothNumber}</strong>
 														</td>
-														<td>{it.clinicalWorkTitle}</td>
-														<td>{it.materialName}</td>
 														<td>
-															{it.vitaShade ? `Шейд: ${it.vitaShade}` : "—"}
-															{it.lotNumber ? ` • ${it.lotNumber}` : ""}
+															<div>{it.clinicalWorkTitle}</div>
+															{it.serviceCode804n && (
+																<div className="warranty-804n-badge" title="Код Номенклатуры 804н">
+																	804н: {it.serviceCode804n}
+																</div>
+															)}
+														</td>
+														<td>
+															<div>{it.materialName}</div>
+															{it.labOrderNumber && (
+																<div className="warranty-ztl-badge" title="Номер наряда зуботехнической лаборатории">
+																	ЗТЛ: {it.labOrderNumber}
+																</div>
+															)}
+														</td>
+														<td>
+															{it.vitaShade ? <span>Шейд: <strong>{it.vitaShade}</strong></span> : "—"}
+															{it.lotNumber && (
+																<div style={{ fontSize: "11px", color: "var(--ink-2)", marginTop: "2px" }}>
+																	Партия/МДЛП: {it.lotNumber}
+																</div>
+															)}
 														</td>
 														<td>{it.customWarrantyMonths ?? calculation.adjustedWarrantyMonths} мес.</td>
 														<td>
