@@ -312,7 +312,13 @@ export const VITA_BLEACH_SHADES: ColorShadeOption[] = [
 	{ code: 'BL1', groupRu: 'Bleach: Экстра-белые', hex: '#FAF9F5', descriptionRu: 'Ультра-белый голливудский оттенок' },
 	{ code: 'BL2', groupRu: 'Bleach: Экстра-белые', hex: '#F5F3EB', descriptionRu: 'Яркий отбеленный тон' },
 	{ code: 'BL3', groupRu: 'Bleach: Экстра-белые', hex: '#F0ECE0', descriptionRu: 'Умеренно отбеленный тон' },
-	{ code: 'BL4', groupRu: 'Bleach: Экстра-белые', hex: '#EBE6D5', descriptionRu: 'Мягкий светлый переходный тон к A1' }
+	{ code: 'BL4', groupRu: 'Bleach: Экстра-белые', hex: '#EBE6D5', descriptionRu: 'Мягкий светлый переходный тон к A1' },
+	{ code: 'OM1', groupRu: 'Bleach: VITA 3D Bleach', hex: '#FCFBFA', descriptionRu: 'Экстра-белый 3D Bleach OM1 (0M1)' },
+	{ code: 'OM2', groupRu: 'Bleach: VITA 3D Bleach', hex: '#F9F7F1', descriptionRu: 'Светлый 3D Bleach OM2 (0M2)' },
+	{ code: 'OM3', groupRu: 'Bleach: VITA 3D Bleach', hex: '#F6F2E8', descriptionRu: 'Натуральный 3D Bleach OM3 (0M3)' },
+	{ code: '0M1', groupRu: 'Bleach: VITA 3D Bleach', hex: '#FCFBFA', descriptionRu: 'Экстра-белый 3D Bleach 0M1 (OM1)' },
+	{ code: '0M2', groupRu: 'Bleach: VITA 3D Bleach', hex: '#F9F7F1', descriptionRu: 'Светлый 3D Bleach 0M2 (OM2)' },
+	{ code: '0M3', groupRu: 'Bleach: VITA 3D Bleach', hex: '#F6F2E8', descriptionRu: 'Натуральный 3D Bleach 0M3 (OM3)' }
 ];
 
 export const VITA_3D_MASTER_SHADES: ColorShadeOption[] = [
@@ -376,7 +382,120 @@ export const TRANSLUCENCY_LEVELS: TranslucencyLevelOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// 4. Canonical 4-Status Clinical Workflow (В работе / Примерка / Сдано / Коррекция)
+// 3b. Implant Platforms, Abutments & Fixation Types
+// ---------------------------------------------------------------------------
+
+export type ImplantPlatformType = 'conical' | 'hex';
+
+export interface ImplantPlatformOption {
+	id: ImplantPlatformType;
+	nameRu: string;
+	descriptionRu: string;
+}
+
+export const IMPLANT_PLATFORMS: ImplantPlatformOption[] = [
+	{
+		id: 'conical',
+		nameRu: 'Conical (Коническое соединение / Morse Taper)',
+		descriptionRu: 'Конус Морзе с антиротационным элементом (Straumann BLX, Nobel Conical, Astra EV, Osstem TS, Dentium)'
+	},
+	{
+		id: 'hex',
+		nameRu: 'Hex (Шестигранное соединение / Internal/External Hex)',
+		descriptionRu: 'Внутренний или внешний шестигранник (Zimmer, BioHorizons, MIS, Alpha-Bio)'
+	}
+];
+
+export type AbutmentCategoryType =
+	| 'tibase_bonded'
+	| 'multiunit_straight'
+	| 'multiunit_17'
+	| 'multiunit_30'
+	| 'custom_titanium'
+	| 'custom_zirconia'
+	| 'standard_titanium';
+
+export interface AbutmentTypeOption {
+	id: AbutmentCategoryType;
+	nameRu: string;
+	angle: number;
+	descriptionRu: string;
+	isMultiUnit?: boolean;
+	isTiBase?: boolean;
+}
+
+export const ABUTMENT_TYPE_OPTIONS: AbutmentTypeOption[] = [
+	{
+		id: 'tibase_bonded',
+		nameRu: 'Ti-Base вклеиваемое основание',
+		angle: 0,
+		isTiBase: true,
+		descriptionRu: 'Титановое основание (Ti-Base) под вклейку циркониевой коронки (3M RelyX Ultimate / Multilink Hybrid Abutment).'
+	},
+	{
+		id: 'multiunit_straight',
+		nameRu: 'Multi-Unit прямой (0°)',
+		angle: 0,
+		isMultiUnit: true,
+		descriptionRu: 'Винтовой абатмент Multi-Unit для мостовидных и балочных конструкций при параллельных осях.'
+	},
+	{
+		id: 'multiunit_17',
+		nameRu: 'Multi-Unit угловой 17°',
+		angle: 17,
+		isMultiUnit: true,
+		descriptionRu: 'Угловой абатмент Multi-Unit 17° для компенсации наклона имплантатов в протоколах All-on-4 / All-on-6.'
+	},
+	{
+		id: 'multiunit_30',
+		nameRu: 'Multi-Unit угловой 30°',
+		angle: 30,
+		isMultiUnit: true,
+		descriptionRu: 'Угловой абатмент Multi-Unit 30° для дистальных наклонных имплантатов в протоколах All-on-4 / All-on-6.'
+	},
+	{
+		id: 'custom_titanium',
+		nameRu: 'Индивидуальный титановый абатмент Grade 5',
+		angle: 0,
+		descriptionRu: 'Фрезерованный индивидуальный абатмент из титана Grade 5 с анатомическим десневым уступом.'
+	},
+	{
+		id: 'custom_zirconia',
+		nameRu: 'Индивидуальный циркониевый абатмент ZrO₂',
+		angle: 0,
+		descriptionRu: 'Безметалловый абатмент из оксида циркония на титановом интерфейсе для фронтальной эстетики.'
+	},
+	{
+		id: 'standard_titanium',
+		nameRu: 'Стандартный прямой титановый абатмент',
+		angle: 0,
+		descriptionRu: 'Фабричный стандартный абатмент для цементной фиксации одиночных коронок.'
+	}
+];
+
+export type FixationType = 'screw_retained' | 'cement_retained';
+
+export interface FixationTypeOption {
+	id: FixationType;
+	nameRu: string;
+	descriptionRu: string;
+}
+
+export const FIXATION_TYPES: FixationTypeOption[] = [
+	{
+		id: 'screw_retained',
+		nameRu: 'Винтовая фиксация',
+		descriptionRu: 'Трансокклюзионная шахта винта, прямое прикручивание к имплантату или Multi-Unit. Безопасность для маргинальной кости.'
+	},
+	{
+		id: 'cement_retained',
+		nameRu: 'Цементная фиксация',
+		descriptionRu: 'Фиксация коронки на постоянный/временный цемент на индивидуальный абатмент с зазором 30–50 мкм.'
+	}
+];
+
+// ---------------------------------------------------------------------------
+// 4. Canonical 4-Status Clinical Workflow & 8 Technological Lab Stages
 // ---------------------------------------------------------------------------
 
 export type LabWorkflowStageId =
@@ -389,7 +508,6 @@ export type LabWorkflowStageId =
 	| 'cad_design'
 	| 'milling_wax_up'
 	| 'try_in_fitting'
-	| 'glaze_finish'
 	| 'delivered_to_clinic'
 	| 'installed_in_mouth';
 
@@ -478,15 +596,6 @@ export const LAB_WORKFLOW_STAGES: Record<LabWorkflowStageId, LabStageDefinition>
 		descriptionRu: 'Примерка назначена',
 		colorToken: 'var(--warn, #f59e0b)'
 	},
-	glaze_finish: {
-		id: 'in_progress',
-		orderIndex: 1,
-		nameRu: '1. В работе',
-		shortTitleRu: 'В работе',
-		icon: 'settings',
-		descriptionRu: 'Заказ в лаборатории',
-		colorToken: 'var(--brand-500, #3b82f6)'
-	},
 	delivered_to_clinic: {
 		id: 'fitting_scheduled',
 		orderIndex: 2,
@@ -512,4 +621,135 @@ export const LAB_STAGE_ORDER: LabWorkflowStageId[] = [
 	'fitting_scheduled',
 	'delivered_completed',
 	'correction_remake'
+];
+
+// ---------------------------------------------------------------------------
+// 4b. Real 8 Technological Production Stages of Dental Laboratory
+// 1) Оттиски/3D-скан -> 2) Wax-Up / CAD -> 3) Фрезеровка / каркас ->
+// 4) Примерка в клинике -> 5) Нанесение керамики / покраска ->
+// 6) Финишная глазуровка -> 7) Готовая работа в клинике -> 8) Фиксация пациенту
+// ---------------------------------------------------------------------------
+
+export type LabTechnologicalStageId =
+	| 'impression_scan'     // 1) Оттиски / 3D-скан
+	| 'waxup_cad'           // 2) Wax-Up / CAD-моделирование
+	| 'milling_framework'   // 3) Фрезеровка / каркас
+	| 'clinical_fitting'    // 4) Примерка в клинике
+	| 'ceramic_layering'    // 5) Нанесение керамики / покраска
+	| 'glaze_finish'        // 6) Финишная глазуровка
+	| 'ready_in_clinic'     // 7) Готовая работа в клинике
+	| 'patient_fixation';   // 8) Фиксация пациенту
+
+export interface LabTechnologicalStageDefinition {
+	id: LabTechnologicalStageId;
+	stepIndex: number;
+	stepNumber: number;
+	nameRu: string;
+	shortTitleRu: string;
+	departmentRu: string;
+	descriptionRu: string;
+	icon: string;
+	colorToken: string;
+}
+
+export const LAB_TECHNOLOGICAL_STAGES: Record<LabTechnologicalStageId, LabTechnologicalStageDefinition> = {
+	impression_scan: {
+		id: 'impression_scan',
+		stepIndex: 1,
+		stepNumber: 1,
+		nameRu: '1. Оттиски / 3D-скан',
+		shortTitleRu: 'Слепки / Скан',
+		departmentRu: 'Клинический кабинет / Терапия-Ортопедия',
+		descriptionRu: 'Снятие прецизионных оттисков (А-силикон) или интраоральное 3D-сканирование зубных рядов (STL/PLY).',
+		icon: 'scan',
+		colorToken: 'var(--brand-500, #3b82f6)'
+	},
+	waxup_cad: {
+		id: 'waxup_cad',
+		stepIndex: 2,
+		stepNumber: 2,
+		nameRu: '2. Wax-Up / CAD-моделирование',
+		shortTitleRu: 'Wax-Up / CAD',
+		departmentRu: 'CAD/CAM лаборатория',
+		descriptionRu: 'Цифровое 3D-моделирование анатомической формы реставрации в Exocad или восковой Wax-Up.',
+		icon: 'layers',
+		colorToken: 'var(--brand-500, #3b82f6)'
+	},
+	milling_framework: {
+		id: 'milling_framework',
+		stepIndex: 3,
+		stepNumber: 3,
+		nameRu: '3. Фрезеровка / каркас',
+		shortTitleRu: 'Фрезеровка / Каркас',
+		departmentRu: 'Фрезерный центр / Литейная',
+		descriptionRu: 'CAM-фрезеровка диоксида циркония Prettau/Katana, PMMA или синтеризация Co-Cr каркаса.',
+		icon: 'settings',
+		colorToken: 'var(--teal, #0d9488)'
+	},
+	clinical_fitting: {
+		id: 'clinical_fitting',
+		stepIndex: 4,
+		stepNumber: 4,
+		nameRu: '4. Примерка в клинике',
+		shortTitleRu: 'Примерка каркаса',
+		departmentRu: 'Клинический кабинет ортопеда',
+		descriptionRu: 'Клиническая примерка каркаса / конструкции в полости рта у пациента, проверка окклюзии и контактов.',
+		icon: 'search',
+		colorToken: 'var(--warn, #f59e0b)'
+	},
+	ceramic_layering: {
+		id: 'ceramic_layering',
+		stepIndex: 5,
+		stepNumber: 5,
+		nameRu: '5. Нанесение керамики / покраска',
+		shortTitleRu: 'Керамика / Покраска',
+		departmentRu: 'Керамический цех ЗТЛ',
+		descriptionRu: 'Послойное нанесение керамических масс (Duceram, Noritake) или колоризация многослойного циркония.',
+		icon: 'palette',
+		colorToken: 'var(--brand-500, #3b82f6)'
+	},
+	glaze_finish: {
+		id: 'glaze_finish',
+		stepIndex: 6,
+		stepNumber: 6,
+		nameRu: '6. Финишная глазуровка',
+		shortTitleRu: 'Глазуровка',
+		departmentRu: 'Цех глазуровки и полировки',
+		descriptionRu: 'Финальный глазуровочный обжиг в печи, механическая полировка уступа и подгонка аппроксимальных контактов.',
+		icon: 'sparkles',
+		colorToken: 'var(--teal, #0d9488)'
+	},
+	ready_in_clinic: {
+		id: 'ready_in_clinic',
+		stepIndex: 7,
+		stepNumber: 7,
+		nameRu: '7. Готовая работа в клинике',
+		shortTitleRu: 'В клинике',
+		departmentRu: 'Регистратура / Склад клиники',
+		descriptionRu: 'Работа доставлена курьером в клинику, прошла входной контроль ортопеда и готова к фиксации.',
+		icon: 'truck',
+		colorToken: 'var(--brand-500, #3b82f6)'
+	},
+	patient_fixation: {
+		id: 'patient_fixation',
+		stepIndex: 8,
+		stepNumber: 8,
+		nameRu: '8. Фиксация пациенту',
+		shortTitleRu: 'Сдано пациенту',
+		departmentRu: 'Клинический кабинет ортопеда',
+		descriptionRu: 'Окончательная адгезивная или винтовая фиксация конструкции в полости рта у пациента.',
+		icon: 'check',
+		colorToken: 'var(--ok, #10b981)'
+	}
+};
+
+export const LAB_TECHNOLOGICAL_STAGE_ORDER: readonly LabTechnologicalStageId[] = [
+	'impression_scan',
+	'waxup_cad',
+	'milling_framework',
+	'clinical_fitting',
+	'ceramic_layering',
+	'glaze_finish',
+	'ready_in_clinic',
+	'patient_fixation'
 ];

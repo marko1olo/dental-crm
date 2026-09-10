@@ -8,8 +8,18 @@ import {
 	PROSTHETIC_TYPES,
 	LAB_MATERIALS,
 	LAB_WORKFLOW_STAGES,
-	LabWorkflowStageId
+	LabWorkflowStageId,
+	ImplantPlatformType,
+	IMPLANT_PLATFORMS,
+	AbutmentCategoryType,
+	ABUTMENT_TYPE_OPTIONS,
+	FixationType,
+	FIXATION_TYPES,
+	LabTechnologicalStageId,
+	LAB_TECHNOLOGICAL_STAGES,
+	LAB_TECHNOLOGICAL_STAGE_ORDER
 } from './labWorkOrderPresets';
+import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from '@dental/shared';
 
 // ---------------------------------------------------------------------------
 // 1. Interfaces & Data Contracts
@@ -71,13 +81,25 @@ export interface LabWorkOrder {
 	surfaceTexture: 'high_gloss' | 'microtexture' | 'matte';
 	occlusalScheme?: string | undefined;
 	contactTightness?: string | undefined;
+	// Implant & Abutment Specifications
+	implantPlatform?: ImplantPlatformType | undefined;
+	abutmentType?: AbutmentCategoryType | string | undefined;
+	fixationType?: FixationType | undefined;
+	// Clinical Workflow Status & 8 Technological Stages
 	currentStage: LabWorkflowStageId;
+	techStage?: LabTechnologicalStageId | undefined;
 	stageHistory: Array<{
 		stage: LabWorkflowStageId;
 		timestampIso: string;
 		authorName: string;
 		note?: string | undefined;
 	}>;
+	techStageHistory?: Array<{
+		stage: LabTechnologicalStageId;
+		timestampIso: string;
+		authorName: string;
+		note?: string | undefined;
+	}> | undefined;
 	orderDateIso: string;
 	fittingDateIso?: string | undefined;
 	deliveryDateIso: string;
@@ -278,66 +300,32 @@ export function generateBarcodeSvg(data: string, width = 240, height = 50): stri
 }
 
 /**
- * Generates vector QR Code SVG for mobile scanners and laboratory verification portals.
+ * Generates vector QR Code SVG for mobile scanners and laboratory verification portals using ISO/IEC 18004 engine.
  */
 export function generateQrCodeSvg(content: string, size = 100): string {
-	const grid = 21;
-	const cellSize = size / grid;
-	let rects = '';
-
-	let seed = 0;
-	for (let i = 0; i < content.length; i++) {
-		seed = (seed * 31 + content.charCodeAt(i)) % 1000000007;
-	}
-
-	const isFinder = (r: number, c: number) => {
-		if (r < 7 && c < 7) return true;
-		if (r < 7 && c >= grid - 7) return true;
-		if (r >= grid - 7 && c < 7) return true;
-		return false;
-	};
-
-	const isFinderBlack = (r: number, c: number) => {
-		const check = (top: number, left: number) => {
-			const dr = r - top;
-			const dc = c - left;
-			if (dr === 0 || dr === 6 || dc === 0 || dc === 6) return true;
-			if (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4) return true;
-			return false;
-		};
-
-		if (r < 7 && c < 7) return check(0, 0);
-		if (r < 7 && c >= grid - 7) return check(0, grid - 7);
-		if (r >= grid - 7 && c < 7) return check(grid - 7, 0);
-		return false;
-	};
-
-	for (let r = 0; r < grid; r++) {
-		for (let c = 0; c < grid; c++) {
-			let black = false;
-			if (isFinder(r, c)) {
-				black = isFinderBlack(r, c);
-			} else if (r === 6 || c === 6) {
-				black = (r + c) % 2 === 0;
-			} else {
-				seed = (seed * 1103515245 + 12345) % 2147483648;
-				black = seed % 3 === 0;
-			}
-
-			if (black) {
-				const x = (c * cellSize).toFixed(1);
-				const y = (r * cellSize).toFixed(1);
-				const w = cellSize.toFixed(1);
-				const h = cellSize.toFixed(1);
-				rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#0f172a" />`;
+	try {
+		const { matrix, size: matrixSize } = generateQrMatrix(content || 'DENTE-LAB', 'M');
+		const margin = 1;
+		const totalCells = matrixSize + margin * 2;
+		const cellSize = size / totalCells;
+		let rects = '';
+		for (let r = 0; r < matrixSize; r++) {
+			const row = matrix[r];
+			if (!row) continue;
+			for (let c = 0; c < matrixSize; c++) {
+				if (row[c]) {
+					const x = ((c + margin) * cellSize).toFixed(2);
+					const y = ((r + margin) * cellSize).toFixed(2);
+					const w = cellSize.toFixed(2);
+					const h = cellSize.toFixed(2);
+					rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#0f172a" />`;
+				}
 			}
 		}
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="100%" height="100%" fill="#ffffff" />${rects}</svg>`;
+	} catch {
+		return sharedGenerateQrCodeSvg(content || 'DENTE-LAB', { size, margin: 1 });
 	}
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
-		<rect width="100%" height="100%" fill="#ffffff" />
-		${rects}
-	</svg>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -504,16 +492,49 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 			<span class="label">Прозрачность:</span> <span class="value">${order.translucency}</span>
 			<span style="margin-left: 16px;"><span class="label" style="width: auto;">Текстура:</span> <span class="value">${order.surfaceTexture}</span></span>
 		</div>
+		${order.implantPlatform ? `<div class="data-row"><span class="label">Платформа имплантата:</span> <span class="value">${order.implantPlatform === 'conical' ? 'Конус Морзе (Conical Connection)' : 'Шестигранник (Internal / External Hex)'}</span></div>` : ''}
+		${order.abutmentType ? `<div class="data-row"><span class="label">Тип абатмента:</span> <span class="value">${ABUTMENT_TYPE_OPTIONS.find((a) => a.id === order.abutmentType)?.nameRu || order.abutmentType}</span></div>` : ''}
+		${order.fixationType ? `<div class="data-row"><span class="label">Тип фиксации:</span> <span class="value">${order.fixationType === 'screw_retained' ? 'Винтовая фиксация (Screw-retained)' : 'Цементная фиксация (Cement-retained)'}</span></div>` : ''}
 		${order.occlusalScheme ? `<div class="data-row"><span class="label">Окклюзия:</span> <span class="value">${order.occlusalScheme}</span></div>` : ''}
 		${order.contactTightness ? `<div class="data-row"><span class="label">Апроксимальные контакты:</span> <span class="value">${order.contactTightness}</span></div>` : ''}
 	</div>
 
-	<div class="section-title">3. Клинические указания и примечания врача</div>
+	<div class="section-title">3. Маршрутный лист 8 технологических этапов ЗТЛ</div>
+	<div class="highlight-box" style="padding: 6px 8px;">
+		<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+			<thead>
+				<tr style="border-bottom: 1px solid #cbd5e1; color: #475569; text-align: left;">
+					<th style="padding: 3px 4px; width: 24px;">№</th>
+					<th style="padding: 3px 4px;">Технологический этап</th>
+					<th style="padding: 3px 4px; width: 140px;">Ответственный цех</th>
+					<th style="padding: 3px 4px; width: 90px; text-align: center;">Статус</th>
+				</tr>
+			</thead>
+			<tbody>
+				${LAB_TECHNOLOGICAL_STAGE_ORDER.map((stageKey) => {
+					const sDef = LAB_TECHNOLOGICAL_STAGES[stageKey];
+					const isCurrent = order.techStage === stageKey;
+					const isDone = (sDef.stepIndex < (LAB_TECHNOLOGICAL_STAGES[order.techStage || 'impression_scan']?.stepIndex ?? 1));
+					const rowBg = isCurrent ? '#f0fdfa' : 'transparent';
+					const statusText = isDone ? 'ВЫПОЛНЕНО' : isCurrent ? 'В РАБОТЕ' : 'ОЖИДАНИЕ';
+					const statusColor = isDone ? '#059669' : isCurrent ? '#0d9488' : '#94a3b8';
+					return `<tr style="background: ${rowBg}; border-bottom: 1px solid #f1f5f9;">
+						<td style="padding: 3px 4px; font-weight: 700; color: #64748b;">${sDef.stepIndex}</td>
+						<td style="padding: 3px 4px; font-weight: ${isCurrent ? '700' : '500'}; color: ${isCurrent ? '#0f766e' : '#0f172a'};">${sDef.nameRu}</td>
+						<td style="padding: 3px 4px; color: #64748b;">${sDef.shortTitleRu}</td>
+						<td style="padding: 3px 4px; text-align: center; font-weight: 700; color: ${statusColor}; font-size: 10px;">${statusText}</td>
+					</tr>`;
+				}).join('')}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="section-title">4. Клинические указания и примечания врача</div>
 	<div class="highlight-box" style="min-height: 45px;">
 		${order.clinicalNotes ? `<p style="margin: 0;">${order.clinicalNotes}</p>` : '<p style="margin: 0; color: #94a3b8; font-style: italic;">Особых указаний нет. Изготовление строго по анатомическим нормам и силиконовому ключу.</p>'}
 	</div>
 
-	<div class="section-title">4. Стоимость и взаиморасчеты (для бухгалтерии)</div>
+	<div class="section-title">5. Стоимость и взаиморасчеты (для бухгалтерии)</div>
 	<div class="grid-2">
 		<div class="col">
 			<div class="data-row"><span class="label">Стоимость клиники:</span> <span class="value">${order.financials.patientPriceTotalRub.toLocaleString('ru-RU')} ₽</span></div>
@@ -558,12 +579,19 @@ export function createLabWorkOrder(params: {
 	stumpShadeCode?: string | undefined;
 	translucency?: 'HT' | 'MT' | 'LT' | 'MO' | 'HO' | undefined;
 	surfaceTexture?: 'high_gloss' | 'microtexture' | 'matte' | undefined;
+	implantPlatform?: ImplantPlatformType | undefined;
+	abutmentType?: AbutmentCategoryType | string | undefined;
+	fixationType?: FixationType | undefined;
 	pricePerUnitRub?: number | undefined;
 	costPerUnitRub?: number | undefined;
 	doctorPercent?: number | undefined;
 	customWorkingDays?: number | undefined;
 	clinicalNotes?: string | undefined;
 	orderDate?: Date | string | undefined;
+	orderNumber?: string | undefined;
+	sequenceNumber?: number | undefined;
+	initialStage?: LabWorkflowStageId | undefined;
+	techStage?: LabTechnologicalStageId | undefined;
 }): LabWorkOrder {
 	const orderDate = params.orderDate ? (typeof params.orderDate === 'string' ? new Date(params.orderDate) : params.orderDate) : new Date();
 	const preset = PROSTHETIC_TYPES[params.prostheticTypeId] || PROSTHETIC_TYPES.crown_zirconia_monolithic;
@@ -586,9 +614,13 @@ export function createLabWorkOrder(params: {
 		currentDate: orderDate
 	});
 
-	const orderNumber = generateLabOrderNumber(Math.floor(Math.random() * 9000) + 1000, orderDate);
+	// Explicit orderNumber or monotonic sequence number
+	const seq = params.sequenceNumber ?? ((Math.floor(Date.now() / 1000) % 9000) + 1000);
+	const orderNumber = params.orderNumber || generateLabOrderNumber(seq, orderDate);
 	const orderDateIso = formatDateToIsoDay(orderDate);
-	const id = `lab-ord-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+	const id = `lab-ord-${Date.now()}-${params.patientId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001"}`;
+	const initialStage: LabWorkflowStageId = params.initialStage || 'impression_sent';
+	const techStage: LabTechnologicalStageId = params.techStage || 'impression_scan';
 
 	return {
 		id,
@@ -608,13 +640,25 @@ export function createLabWorkOrder(params: {
 		stumpShadeCode: params.stumpShadeCode || (preset.requiresStumpShade ? 'ND2' : undefined),
 		translucency: params.translucency || 'MT',
 		surfaceTexture: params.surfaceTexture || 'microtexture',
-		currentStage: 'impression_sent',
+		implantPlatform: params.implantPlatform,
+		abutmentType: params.abutmentType,
+		fixationType: params.fixationType,
+		currentStage: initialStage,
+		techStage,
 		stageHistory: [
 			{
-				stage: 'impression_sent',
+				stage: initialStage,
 				timestampIso: new Date().toISOString(),
 				authorName: params.doctorName,
 				note: 'Заказ первично сформирован и слепки отправлены в лабораторию'
+			}
+		],
+		techStageHistory: [
+			{
+				stage: techStage,
+				timestampIso: new Date().toISOString(),
+				authorName: params.doctorName,
+				note: 'Первичный технологический этап ЗТЛ'
 			}
 		],
 		orderDateIso,
