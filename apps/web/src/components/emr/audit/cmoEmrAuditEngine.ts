@@ -919,24 +919,28 @@ export function batchApproveCmoRecords(
 			continue;
 		}
 
-		// Формирование ЭЦП оттиска
-		const signatureHash = `cmo-ecp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}-${rec.id}`;
-		const stampComment = options.comment || "Медицинская карта формы 043/у проверена и утверждена главным врачом с наложением ЭЦП.";
+		// Фиксация утверждения и данных сертификата ЭЦП (при наличии)
+		const certInfo = options.certificateSubject
+			? ` [Сертификат ЭЦП: ${options.certificateSubject}${options.certificateThumbprint ? ` / ${options.certificateThumbprint}` : ""}]`
+			: options.certificateThumbprint
+				? ` [Оттиск ЭЦП: ${options.certificateThumbprint}]`
+				: "";
+		const stampComment = options.comment || "Медицинская карта формы 043/у проверена и утверждена главным врачом.";
 
 		const approvedRec = applyCmoAuditDecision(rec, "approved", {
 			fullName: options.auditorFullName,
 			role: auditorRole,
-			comment: `${stampComment}${options.certificateSubject ? ` [Сертификат ЭЦП: ${options.certificateSubject}]` : ""}`,
+			comment: `${stampComment}${certInfo}`,
 		});
 
-		// Обновляем статус и отметку ЭЦП
+		// Обновляем статус и отметку утверждения
 		approvedRec.status = "approved_by_cmo";
 		approvedRec.auditHistory.push({
 			timestamp: now,
 			actorFullName: options.auditorFullName,
 			actorRole: roleTitle,
 			action: "approved",
-			comment: `Пакетное утверждение с фиксацией ЭЦП главврача (Хеш: ${signatureHash.substring(0, 16)}...)`,
+			comment: `Пакетное утверждение главврача${certInfo ? ` (${certInfo.trim()})` : ""}`,
 			previousStatus: rec.status,
 			newStatus: "approved_by_cmo",
 		});

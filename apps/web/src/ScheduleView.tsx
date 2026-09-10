@@ -2103,20 +2103,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							<span className="truncate">{warning.title} — {warning.actionLabel.toLowerCase()}</span>
 						</button>
 					))}
-					{showShiftAnalytics && (
-						<div
-							className="schedule-shift-summary-grid min-w-0"
-							style={{ width: "100%", marginTop: "12px" }}
-						>
-							{scheduleLoadSummaryCards.map((card) => (
-								<article key={card.id} className="min-w-0">
-									<span>{card.title}</span>
-									<strong>{card.value}</strong>
-									<p className="break-words" title={card.detail}>{card.detail}</p>
-								</article>
-							))}
-						</div>
-					)}
 				</section>
 			) : null}
 			{scheduleAdminSecretNeeded ? (

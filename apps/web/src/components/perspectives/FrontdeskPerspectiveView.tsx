@@ -73,28 +73,18 @@ export function FrontdeskPerspectiveView({
 	// SBP NSPK dynamic payload & authentic ISO/IEC 18004 SVG QR matrix
 	const sbpPayload = useMemo(() => {
 		if (!activeSbpQrAppointment) return "";
-		return `https://qr.nspk.ru/AD1000${encodeURIComponent(activeSbpQrAppointment.appointmentId || "APT")}?type=02&bank=100000000004&sum=${Math.round(Number(activeSbpQrAppointment.amountRub || 0) * 100)}&cur=RUB&crc=${encodeURIComponent(activeSbpQrAppointment.patientName || "PATIENT")}`;
+		const sumKop = Math.round(Number(activeSbpQrAppointment.amountRub || 0) * 100);
+		const aptId = encodeURIComponent(activeSbpQrAppointment.appointmentId || "APT");
+		return `https://qr.nspk.ru/AD1000${aptId}?type=02&bank=100000000004&sum=${sumKop}&cur=RUB`;
 	}, [activeSbpQrAppointment]);
 
 	const sbpQrSvg = useMemo(() => {
 		if (!sbpPayload || !activeSbpQrAppointment) return "";
-		try {
-			return generateQrCodeSvg(sbpPayload, {
-				size: 192,
-				margin: 2,
-				title: `Оплата по СБП: ${activeSbpQrAppointment.patientName}`,
-			});
-		} catch {
-			// Mandate 8e: Doctor & Reception Autonomy. If full Cyrillic name in crc exceeds QR matrix capacity,
-			// fallback to shortened patient initials so the QR code generates reliably without crashing.
-			const safeCrc = encodeURIComponent((activeSbpQrAppointment.patientName || "PATIENT").slice(0, 10));
-			const fallbackPayload = `https://qr.nspk.ru/AD1000${encodeURIComponent(activeSbpQrAppointment.appointmentId || "APT")}?type=02&bank=100000000004&sum=${Math.round(Number(activeSbpQrAppointment.amountRub || 0) * 100)}&cur=RUB&crc=${safeCrc}`;
-			return generateQrCodeSvg(fallbackPayload, {
-				size: 192,
-				margin: 2,
-				title: `Оплата по СБП: ${activeSbpQrAppointment.patientName}`,
-			});
-		}
+		return generateQrCodeSvg(sbpPayload, {
+			size: 192,
+			margin: 2,
+			title: `Оплата по СБП: ${activeSbpQrAppointment.patientName}`,
+		});
 	}, [sbpPayload, activeSbpQrAppointment]);
 
 	// Today's Appointments with unbilled / checkout status
@@ -105,13 +95,13 @@ export function FrontdeskPerspectiveView({
 			.map((apt) => {
 				const patient = dashboard.patients?.find((p) => p.id === apt.patientId);
 				const doctor = dashboard.staff?.find((s) => s.id === apt.doctorId);
-				const amount = apt.priceRub ? Number(apt.priceRub) : 4500;
+				const amount = Number(apt.priceRub || 0);
 				return {
 					appointmentId: apt.id,
 					patientId: apt.patientId,
 					patientName: patient?.fullName || apt.patientName || "Пациент",
 					doctorName: doctor?.name || "Врач клиники",
-					serviceSummary: apt.serviceName || apt.treatmentNotes || "Терапевтический приём и консультация",
+					serviceSummary: apt.serviceName || apt.treatmentNotes || "Приём и консультация",
 					amountRub: amount,
 					fiscalStatus: "pending",
 					time: apt.startTime || "10:00",
@@ -150,10 +140,6 @@ export function FrontdeskPerspectiveView({
 		try {
 			const paymentMutationId = `frontdesk-${visit.appointmentId}-${Date.now()}`;
 			const mappedMethod = method === "sbp" ? "online" : method;
-			const fnNum = `99990789${Math.floor(10000000 + Math.random() * 90000000)}`;
-			const fdNum = `${Math.floor(1000 + Math.random() * 9000)}`;
-			const fpdNum = `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
-			const receiptNumber = `ФЧ-${Math.floor(100000 + Math.random() * 900000)}`;
 
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
@@ -166,15 +152,6 @@ export function FrontdeskPerspectiveView({
 					amountRub: visit.amountRub,
 					method: mappedMethod,
 					clientMutationId: paymentMutationId,
-					fiscalReceiptNumber: receiptNumber,
-					fiscalReceiptIssuedAt: new Date().toISOString().split("T")[0],
-					fiscalReceipt: {
-						fn: fnNum,
-						fd: fdNum,
-						fpd: fpdNum,
-						cashierName: auth?.currentUser?.name || "Администратор кассы",
-						operationType: "income",
-					},
 					note: `Экспресс-касса 54-ФЗ (${method === "cash" ? "Наличные" : method === "card" ? "Банковская карта" : "СБП QR"})`,
 				}),
 			});
@@ -188,8 +165,9 @@ export function FrontdeskPerspectiveView({
 			}
 
 			const paidAmountFormatted = formatKopecksRu(parseKopecks(data?.amountRub ?? visit.amountRub));
+			const receiptInfo = data?.fiscalReceiptNumber ? ` Фискальный чек 54-ФЗ #${data.fiscalReceiptNumber}.` : "";
 			showToast(
-				`Оплата ${paidAmountFormatted} принята! Фискальный чек 54-ФЗ #${data?.fiscalReceiptNumber || receiptNumber} сформирован.`,
+				`Оплата ${paidAmountFormatted} принята!${receiptInfo}`,
 				"success",
 			);
 			if (typeof loadDashboard === "function") {

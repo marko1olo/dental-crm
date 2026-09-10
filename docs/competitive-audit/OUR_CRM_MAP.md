@@ -2655,3 +2655,42 @@
 - **Файлы**: `apps/web/src/components/booking/PublicOnlineBookingWidget.tsx`, `apps/web/src/components/booking/bookingWidget.css`, `apps/web/src/components/booking/__tests__/PublicOnlineBookingWidget.test.tsx`, `apps/web/src/components/booking/__tests__/publicOnlineBookingAutonomy.test.tsx`, `apps/web/src/PriceDictationBar.tsx` (deleted), `apps/web/src/DictationHints.tsx`, `apps/web/src/components/settings/SettingsPricesTab.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/SettingsView.tsx`, `apps/web/src/styles/main.css`, `docs/screenshots/audit_7sins/`.
 - **Тесты**: `PublicOnlineBookingWidget.test.tsx` (24/24 PASS), `publicOnlineBookingAutonomy.test.tsx` (11/11 PASS), `chairDoctorDutyAssignmentWave60.test.tsx` (16/16 PASS), `settingsTabsState.test.ts` (PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 10 скриншотов в `docs/screenshots/audit_7sins/`.
 
+#### 2.10.237. Ликвидация фейковой OCR-симуляции и поддельных фискальных чеков в СБП (Wave 91, Мандаты 8b, 8e, 8k, Core Rule 11)
+- **Назначение**: Очистка системы распознавания документов от аркадной симуляции и исключение фиктивных фискальных чеков `FD-` из СБП-эквайринга (коммит `06962d492`).
+- **Архитектурные механизмы**:
+  1. *Ликвидация фейковой OCR-симуляции в DocumentCameraScannerModal (Мандаты 8k, Core Rule 11 Zero-Mock Fallback)*:
+     - В `DocumentCameraScannerModal.tsx`: ликвидирован процедурный блок «симуляции OCR», выдававший фальшивые сообщения о распознанном паспорте или полисе ОМС на случайные изображения.
+     - Заменен на честное информационное сообщение по стандарту Zero-Mock Fallback: «Снимок сохранен. Проверьте четкость изображения перед прикреплением к карточке».
+     - Добавлен модульный тест `DocumentCameraScannerModal.test.tsx` (2/2 PASS).
+  2. *Ликвидация случайных фискальных чеков FD- в SbpPaymentQrModal (54-ФЗ, Мандат 8b)*:
+     - В `SbpPaymentQrModal.tsx`: удалена генерация случайных номеров чеков через `Math.random` (`FD-...`).
+     - `fiscalReceiptId` инициализируется строго в `null`; при подтверждении от эквайрингового шлюза используется реальный номер фискального чека из ответа сервера, а при ручной сверке фиксируется «Ручная сверка (без чека ККТ)».
+     - Синхронизирован сьют тестов `SbpPaymentQrModal.test.tsx` (3/3 PASS).
+- **Файлы**: `apps/web/src/components/scanner/DocumentCameraScannerModal.tsx`, `apps/web/src/components/scanner/__tests__/DocumentCameraScannerModal.test.tsx`, `apps/web/src/components/messaging/SbpPaymentQrModal.tsx`, `apps/web/src/components/messaging/__tests__/SbpPaymentQrModal.test.tsx`, `apps/web/src/components/patient/PatientOmnichannelHubModal.tsx`.
+- **Тесты**: `DocumentCameraScannerModal.test.tsx` (2/2 PASS), `documentScannerEngine.test.ts` (6/6 PASS), `SbpPaymentQrModal.test.tsx` (3/3 PASS), `check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0.
+
+#### 2.10.238. Автономия кассира без налоговых дедлоков, защита ПДн пациентов (152-ФЗ) и ликвидация псевдо-подписей (Wave 92, Мандаты 8b, 8e, 8i, 8k, 8n, 8p)
+- **Назначение**: Полная автономия кассира при приеме оплат (разблокировка оплаты в 1 клик при неполных реквизитах налогового вычета по Мандату 8e п. 9), защита персональных данных пациентов по 152-ФЗ (искоренение утечки тестового профиля Соколовой А.В. в юридические документы), ликвидация случайных номеров чеков и псевдо-подписей в EMR-аудите начмеда и кассовых сдвигах.
+- **Архитектурные механизмы**:
+  1. *Разделение проверок кассы 54-ФЗ и налогового вычета в PaymentCapture (Мандат 8e п. 9)*:
+     - В `PaymentCapture.tsx` разделены проверки `paymentMissingSteps` (чистые блокеры кассы: сумма, способ оплаты, позиция) и `taxDeductionMissingSteps` (второстепенные реквизиты справки ФНС).
+     - В `handlePrimarySubmit()` и `handleSberPosClick()`: неполные реквизиты налогового вычета больше НЕ блокируют оплату. Кассир проводит оплату в 1 клик (`onSubmit()`), справка сохраняется как черновик с неблокирующим бейджем `payment-capture-tax-draft-hint`.
+     - Синхронизирован тестовый сьют `paymentCaptureTaxAutonomy.test.tsx` (7/7 PASS).
+  2. *Защита персональных данных пациентов в DocumentsView (152-ФЗ, Мандат 8e п. 8)*:
+     - В `DocumentsView.tsx`: ликвидирован тихий фоллбэк на тестовый пресет «Соколова Анна Владимировна» (`SAMPLE_043U_PATIENT_PRESET`), который при незаполненных полях паспорта/СНИЛС/адреса реального пациента впечатывал чужие персональные данные в юридические договоры и согласия.
+     - По Мандату 8e пустые поля выводятся чистыми строками подчеркивания (`"____________________"`, `"___-___-___ __"`), исключая нарушение 152-ФЗ.
+  3. *Ликвидация случайных фискальных номеров и псевдо-CRC в FrontdeskPerspectiveView (Мандаты 8b, 8k)*:
+     - В `FrontdeskPerspectiveView.tsx`: удален псевдо-расчет CRC СБП с конкатенацией имени пациента, удален жесткий дефолт 4500 ₽ (используется реальный `Number(apt.priceRub || 0)`), удалена генерация случайных номеров `Math.random` для `fnNum`, `fdNum`, `fpdNum`, `receiptNumber`.
+  4. *Искоренение псевдо-хэшей ЭЦП и случайных пломб (Мандаты 8b, 8k, Core Rule 11)*:
+     - В `cmoEmrAuditEngine.ts`: удален псевдо-хэш `cmo-ecp-...-Math.random()`; заменен на честный отпечаток сертификата или решение аудита.
+     - В `cashShiftClosingEngine.ts`: удален `Math.random()` для сейф-пакетов и пломб инкассации (выводится `"—"`).
+     - В `chairsideConsentEngine.ts`: генерация OTP переведена на `crypto.getRandomValues`.
+     - В `Header.tsx`: удален фейковый `setTimeout` + `Math.random`; подключен реальный `fetch("/api/health")` с пингом через `performance.now()`.
+     - В `ScheduleView.tsx`: удален дубликат сетки аналитики смены `schedule-shift-summary-grid`.
+  5. *Компактизация заголовка приема и эргономика визита (VisitView.tsx, Мандаты 8d, 8e, 8p)*:
+     - В `VisitView.tsx`: обеспечен тач-таргет $\ge 44\text{px}$ для соматической нормы (Мандат 8e), поддержана быстрая печать 043/у с дуальным статусом («ЧЕРНОВИК» / «ПОДПИСАНО ВРАЧОМ» / «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»).
+     - Плавающий голосовой HUD свернут по умолчанию (`isVoiceHudCollapsed = true`), освобождая полезное пространство для клинических кнопок внизу экрана.
+- **Файлы**: `apps/web/src/PaymentCapture.tsx`, `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/components/perspectives/FrontdeskPerspectiveView.tsx`, `apps/web/src/components/emr/audit/cmoEmrAuditEngine.ts`, `apps/web/src/components/emr/audit/__tests__/cmoEmrAuditEngine.test.ts`, `apps/web/src/components/billing/cashShiftClosingEngine.ts`, `apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts`, `apps/web/src/components/chairside/chairsideConsentEngine.ts`, `apps/web/src/components/chairside/__tests__/chairsideConsentEngine.test.ts`, `apps/web/src/components/Header.tsx`, `apps/web/src/ScheduleView.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/components/visit/__tests__/visitViewAutonomyInquisition.test.tsx`.
+- **Тесты**: `paymentCaptureTaxAutonomy.test.tsx` (7/7 PASS), `visitViewAutonomyInquisition.test.tsx` (9/9 PASS), `cashShiftClosingEngine.test.ts` (17/17 PASS), `chairsideConsentEngine.test.ts` (22/22 PASS), `cmoEmrAuditEngine.test.ts` (11/11 PASS), `egiszRemd.test.ts` (15/15 PASS), `check:encoding` 5144 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+
+

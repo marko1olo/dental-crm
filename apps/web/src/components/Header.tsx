@@ -158,14 +158,26 @@ export function ClinicControlPill({
 	}, [lastSyncTime]);
 
 	// Manual sync trigger
-	const handleManualSync = () => {
+	const handleManualSync = async () => {
 		setIsSyncing(true);
-		setSyncLatencyMs(Math.floor(12 + Math.random() * 15));
-		setTimeout(() => {
-			setIsSyncing(false);
+		const start = performance.now();
+		try {
+			const res = await fetch("/api/health");
+			const latency = Math.round(performance.now() - start);
+			setSyncLatencyMs(latency);
 			setLastSyncTime(new Date());
-			showToast("Синхронизация с облачной базой PostgreSQL 18.4 завершена", "success");
-		}, 800);
+			if (res.ok) {
+				showToast(`Синхронизация с PostgreSQL 18.4 выполнена (${latency} мс)`, "success");
+			} else {
+				showToast(`Синхронизация: сервер вернул статус ${res.status}`, "info");
+			}
+		} catch {
+			const latency = Math.round(performance.now() - start);
+			setSyncLatencyMs(latency);
+			showToast("Ошибка связи с сервером при синхронизации", "error");
+		} finally {
+			setIsSyncing(false);
+		}
 	};
 
 	const agentStateLabel =

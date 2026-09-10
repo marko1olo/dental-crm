@@ -821,6 +821,7 @@ export function PaymentCapture({
 				payerIdentityDocument.trim() ||
 				(payerRelationship.trim() && payerRelationship.trim() !== "пациент"),
 		);
+	// Финансовые блокеры 54-ФЗ (Мандат 8e: только реальные блокеры кассы)
 	const paymentMissingSteps = [
 		!patientContextReady
 			? patientContextMessage || "выберите пациента текущего приема"
@@ -830,23 +831,28 @@ export function PaymentCapture({
 			? "ссылка ОФД должна начинаться с http:// или https://"
 			: null,
 		payerInnInvalid ? "ИНН плательщика должен содержать 10 или 12 цифр" : null,
-		taxDeductionRequested && !fiscalReceiptIssuedAt.trim()
-			? "для вычета укажите дату фискального чека"
-			: null,
-		taxDeductionRequested && !payerFullName.trim()
-			? "для вычета укажите ФИО плательщика явно"
-			: null,
-		taxDeductionRequested && !payerBirthDate.trim()
-			? "для вычета укажите дату рождения плательщика"
-			: null,
-		taxDeductionRequested && !payerIdentityDocument.trim()
-			? "для вычета укажите документ плательщика"
-			: null,
-		taxDeductionRequested && !payerRelationship.trim()
-			? "для вычета укажите родство плательщика"
-			: null,
 	].filter((step): step is string => Boolean(step));
 	const paymentReadyToSubmit = paymentMissingSteps.length === 0;
+
+	// Опциональные поля для справки об оплате мед. услуг в ФНС (Мандат 8e: НЕ БЛОКИРУЮТ приём денег)
+	const taxDeductionMissingSteps = [
+		taxDeductionRequested && !fiscalReceiptIssuedAt.trim()
+			? "дата фискального чека"
+			: null,
+		taxDeductionRequested && !payerFullName.trim()
+			? "ФИО плательщика"
+			: null,
+		taxDeductionRequested && !payerBirthDate.trim()
+			? "дата рождения плательщика"
+			: null,
+		taxDeductionRequested && !payerIdentityDocument.trim()
+			? "документ плательщика"
+			: null,
+		taxDeductionRequested && !payerRelationship.trim()
+			? "родство плательщика"
+			: null,
+	].filter((step): step is string => Boolean(step));
+	const isTaxDeductionDraft = taxDeductionRequested && taxDeductionMissingSteps.length > 0;
 
 	const applyDoctorDiscount = (preset: DoctorDiscountPreset) => {
 		if (selectedDoctorDiscount === preset) {
@@ -940,6 +946,13 @@ export function PaymentCapture({
 			return;
 		}
 
+		if (isTaxDeductionDraft) {
+			showToast(
+				"Оплата принимается. Данные для справки налогового вычета можно довнести позже в карточке пациента.",
+				"info",
+			);
+		}
+
 		onSubmit();
 	};
 
@@ -977,6 +990,13 @@ export function PaymentCapture({
 				"warning",
 			);
 			return;
+		}
+
+		if (isTaxDeductionDraft) {
+			showToast(
+				"Открываю терминал Сбербанка. Данные для справки налогового вычета можно довнести позже в карточке пациента.",
+				"info",
+			);
 		}
 
 		setIsSberPosModalOpen(true);
@@ -1424,6 +1444,15 @@ export function PaymentCapture({
 							<li key={step}>{step}</li>
 						))}
 					</ul>
+				</div>
+			) : isTaxDeductionDraft ? (
+				<div
+					className="payment-capture-tax-draft-hint px-3 py-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200 text-xs font-medium my-2"
+					role="status"
+					data-testid="payment-tax-draft-hint"
+				>
+					<span className="font-bold">Налоговый вычет (черновик): </span>
+					<span>Оплата не блокируется. Для формирования справки ФНС не хватает: {taxDeductionMissingSteps.join(", ")} (можно заполнить позже в карточке пациента).</span>
 				</div>
 			) : null}
 			<p className="payment-capture-safeguard">

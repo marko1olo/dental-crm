@@ -317,6 +317,21 @@ function findNodeByTestId(
 	return null;
 }
 
+function findNodeById(
+	node: MockDomNode | null,
+	id: string,
+): MockDomNode | null {
+	if (!node) return null;
+	if (node.getAttribute?.("id") === id || node.id === id) return node;
+	if (node.children) {
+		for (const child of node.children) {
+			const res = findNodeById(child, id);
+			if (res) return res;
+		}
+	}
+	return null;
+}
+
 function findAllButtons(node: MockDomNode | null): MockDomNode[] {
 	if (!node) return [];
 	const results: MockDomNode[] = [];
@@ -587,5 +602,52 @@ describe("PaymentCapture Tax Deduction Autonomy & Non-Blocking Defaults", () => 
 			expect(btn.style.minHeight).toBe("44px");
 			expect(btn.className).toContain("min-h-[44px]");
 		}
+	});
+
+	it("verifies tax deduction request does NOT block payment submission when tax details are missing (Mandate 8e)", async () => {
+		const onSubmit = vi.fn();
+		const props = createBaseProps({
+			amount: "5000",
+			taxDeductionCode: "1", // Tax deduction requested!
+			payerFullName: "",     // Missing payer full name
+			payerBirthDate: "",    // Missing birth date
+			payerIdentityDocument: "", // Missing document
+			fiscalReceiptIssuedAt: "", // Missing receipt date
+			onSubmit,
+		});
+
+		await act(async () => {
+			root.render(<PaymentCapture {...props} />);
+		});
+
+		const submitBtn = findNodeByTestId(container, "payment-submit-button");
+		expect(submitBtn).not.toBeNull();
+
+		await clickNode(submitBtn!);
+
+		// Crucial assertion: onSubmit MUST be called despite missing tax details!
+		expect(onSubmit).toHaveBeenCalled();
+		expect(showToast).toHaveBeenCalledWith(
+			"Оплата принимается. Данные для справки налогового вычета можно довнести позже в карточке пациента.",
+			"info",
+		);
+	});
+
+	it("verifies non-blocking draft hint is displayed when tax deduction details are incomplete", async () => {
+		const props = createBaseProps({
+			amount: "5000",
+			taxDeductionCode: "1",
+			payerFullName: "",
+		});
+
+		await act(async () => {
+			root.render(<PaymentCapture {...props} />);
+		});
+
+		const draftHint = findNodeByTestId(container, "payment-tax-draft-hint");
+		expect(draftHint).not.toBeNull();
+		// Must not show payment-capture-missing blocker
+		const missingBlocker = findNodeById(container, "payment-capture-missing");
+		expect(missingBlocker).toBeNull();
 	});
 });

@@ -789,12 +789,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				(activeAppointment as { revisionCount?: number })?.revisionCount ??
 				0,
 		);
-		const watermarkText =
+		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
+		const effectiveWatermark =
 			revisionCount > 0
 				? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount})`
-				: isClosed
-					? "ПОДПИСАНО ВРАЧОМ"
-					: "ЧЕРНОВИК";
+				: watermarkText;
 
 		const cardHtml = renderForm043uHtml({
 			medicalCardNumber:
@@ -848,7 +847,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				},
 			],
 			isClosed,
-			watermarkText,
+			watermarkText: effectiveWatermark,
 		});
 
 		const printFrame = document.createElement("iframe");
@@ -1266,7 +1265,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				<section
 					aria-label="Соматический статус"
 					data-testid="visit-somatic-status-block"
-					className="visit-somatic-status-block flex items-center justify-between gap-2 px-3 py-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] shadow-2xs min-h-[36px] sm:h-9"
+					className="visit-somatic-status-block flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[44px]"
 				>
 					<div className="flex items-center gap-2 min-w-0 flex-1">
 						<HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
@@ -1285,7 +1284,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							onClick={handleApplySomaticNormQuick}
 							data-testid="btn-somatic-norm-one-click"
 							className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
-							title="1 клик: зафиксировать статус «Соматически здоров / норма» во всех показателях и перенести в дневник 043/у"
+							title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
+							aria-label="Соматически здоров / норма (1-клик)"
 						>
 							<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
 							<span className="hidden sm:inline">Норма (1-клик)</span>

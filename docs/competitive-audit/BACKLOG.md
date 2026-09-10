@@ -3548,5 +3548,29 @@
     * Обновлен сьют тестов `SbpPaymentQrModal.test.tsx` с подтверждением отсутствия случайных номеров `FD-`.
 * **Верификация**: `apps/web/src/components/scanner/__tests__/DocumentCameraScannerModal.test.tsx` (2/2 PASS), `apps/web/src/components/scanner/__tests__/documentScannerEngine.test.ts` (6/6 PASS), `apps/web/src/components/messaging/__tests__/SbpPaymentQrModal.test.tsx` (3/3 PASS), `apps/web/src/components/messaging/__tests__/*.test.ts*` (21/21 PASS), `npm run check:encoding` 5144 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
 
+### Wave 92: Автономия кассира без налоговых дедлоков (Мандат 8e), защита ПДн пациентов (152-ФЗ), ликвидация псевдо-подписей, случайных фискальных номеров и дублей аналитики (Мандаты 8b, 8e, 8i, 8k, 8n, 8p)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Результаты**:
+  - **Автономия кассира и 1-клик оплата без налоговых дедлоков (PaymentCapture.tsx, Мандат 8e п. 9)**:
+    * В `PaymentCapture.tsx` разделены проверки `paymentMissingSteps` (чистые блокеры кассы 54-ФЗ: сумма, способ оплаты, позиция) и `taxDeductionMissingSteps` (второстепенные реквизиты справки ФНС: ИНН налогоплательщика, родство, ФИО).
+    * В `handlePrimarySubmit()` и `handleSberPosClick()`: отсутствие реквизитов для налогового вычета больше НЕ блокирует прием оплаты. Кассир принимает оплату в 1 клик (`onSubmit()`), а система выводит мягкий неблокирующий хинт `payment-capture-tax-draft-hint` («Справка для вычета сохранена как черновик») и информационный тост.
+    * Синхронизирован тестовый сьют `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx` (7/7 PASS).
+  - **Ликвидация утечки персональных данных чужого пациента в юридические документы (DocumentsView.tsx, 152-ФЗ, Мандат 8e п. 8)**:
+    * В `DocumentsView.tsx`: ликвидирован тихий фоллбэк на тестовый пресет «Соколова Анна Владимировна» (`SAMPLE_043U_PATIENT_PRESET`, строки 772–815), который при пустых полях паспорта/СНИЛС/адреса реального пациента впечатывал чужие персональные данные (паспорт 4512 894512, Ленинский пр-т 24-86) в юридические договоры и согласия.
+    * По Мандату 8e («Регистратор имеет право распечатать пустой договор со строками _______ для ручного заполнения») пустые поля оставляются чистыми подчеркиваниями (`"____________________"`, `"___-___-___ __"`), исключая утечку ПДн по 152-ФЗ.
+  - **Ликвидация случайных фискальных номеров и псевдо-подписей в FrontdeskPerspectiveView (Мандаты 8b, 8k)**:
+    * В `FrontdeskPerspectiveView.tsx`: удален фейковый расчет CRC СБП с конкатенацией имени пациента, убран искусственный дефолт цены 4500 ₽ (используется реальный `Number(apt.priceRub || 0)`).
+    * Удалена генерация случайных номеров `Math.random` для фискальных реквизитов (`fnNum`, `fdNum`, `fpdNum`, `receiptNumber`); фискальные чеки отображают реальные данные ответа кассового ядра.
+  - **Искоренение псевдо-хэшей ЭЦП и случайных пломб в CMO EMR и кассовых сдвигах (Мандаты 8b, 8k, Core Rule 11)**:
+    * В `cmoEmrAuditEngine.ts`: удален псевдо-хэш `cmo-ecp-...-Math.random()`, симулировавший УКЭП начмеда; заменен на честный отпечаток сертификата или фиксацию решения аудита.
+    * В `cashShiftClosingEngine.ts`: удален `Math.random()` для сейф-пакетов и пломб инкассации; при незаполненных полях честно выводится `"—"`.
+    * В `chairsideConsentEngine.ts`: генерация OTP и ID пакетов согласий переведена с нестойкого `Math.random()` на Web Crypto API (`crypto.getRandomValues`).
+    * В `Header.tsx`: удален искусственный `setTimeout` + `Math.random` в ручной синхронизации; подключен реальный `fetch("/api/health")` с замером пинга через `performance.now()`.
+    * В `ScheduleView.tsx`: удален дубликат сетки аналитики смены `schedule-shift-summary-grid` (строки 2106–2119), дублировавший верхнюю командную сводку.
+  - **Компактизация заголовка приема и гармонизация эргономики визита (VisitView.tsx, Мандаты 8d, 8e, 8p)**:
+    * В `VisitView.tsx`: сохранен строгий контракт эргономики тач-таргетов $\ge 44\text{px}$ для соматической нормы (Мандат 8e), поддержана быстрая печать 043/у с дуальным статусом («ЧЕРНОВИК» / «ПОДПИСАНО ВРАЧОМ» / «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»).
+    * Плавающий голосовой HUD свернут по умолчанию (`isVoiceHudCollapsed = true`), освобождая полезное пространство для клинических кнопок внизу экрана.
+* **Верификация**: `apps/web/src/components/payments/__tests__/paymentCaptureTaxAutonomy.test.tsx` (7/7 PASS), `apps/web/src/components/visit/__tests__/visitViewAutonomyInquisition.test.tsx` (9/9 PASS), `apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts` (17/17 PASS), `apps/web/src/components/chairside/__tests__/chairsideConsentEngine.test.ts` (22/22 PASS), `apps/web/src/components/emr/audit/__tests__/cmoEmrAuditEngine.test.ts` (11/11 PASS), `apps/web/src/tests/egiszRemd.test.ts` (15/15 PASS), `npm run check:encoding` 5144 файлов 0 ошибок, `npm run check:stub-overrides` 828 свойств 0 ошибок, `npm run check:fetch-response` 1695 файлов 0 ошибок, `npm run check:dynamic-imports` 150 импортов 0 ошибок, monorepo `npm run typecheck` Exit Code 0.
+
 
 

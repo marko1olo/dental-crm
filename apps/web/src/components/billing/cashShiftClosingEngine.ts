@@ -697,8 +697,8 @@ export function generateEncashmentStatement(params: {
 		encashmentAmountRub: params.encashmentAmountRub,
 		encashmentAmountWordsRu: convertRubToWordsRu(params.encashmentAmountRub),
 		denominations: params.denominations,
-		bagNumber: params.bagNumber || "СЕЙФ-ПАК №" + String(Math.floor(10000 + Math.random() * 90000)),
-		sealNumber: params.sealNumber || "ПЛОМБА №" + String(Math.floor(1000 + Math.random() * 9000)),
+		bagNumber: params.bagNumber || "—",
+		sealNumber: params.sealNumber || "—",
 		destination: dest,
 		destinationLabel: destLabels[dest],
 	};

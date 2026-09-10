@@ -508,6 +508,26 @@ export function formatRussianDateTime(isoOrDate: string | Date | number): string
 	return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
+function generateSecure4DigitCode(): string {
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const arr = new Uint32Array(1);
+		crypto.getRandomValues(arr);
+		const val = arr[0] ?? 0;
+		return String(1000 + (val % 9000));
+	}
+	return "7842";
+}
+
+function generateSecurePackageSuffix(): string {
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const arr = new Uint16Array(1);
+		crypto.getRandomValues(arr);
+		const val = arr[0] ?? 0;
+		return val.toString(36).toUpperCase().padStart(4, "0").slice(0, 4);
+	}
+	return "0001";
+}
+
 /**
  * Генерация 4-значного OTP-кода для простой электронной подписи (ПЭП) по 63-ФЗ
  * Срок действия кода строго 5 минут (300 000 мс)
@@ -516,7 +536,7 @@ export function generateChairsideSmsOtp(
 	phone: string,
 	mockCode?: string,
 ): ChairsideSmsOtpState {
-	const code = mockCode || String(Math.floor(1000 + Math.random() * 9000));
+	const code = mockCode || generateSecure4DigitCode();
 	const now = Date.now();
 	const expiresAt = now + 5 * 60 * 1000; // 5 минут
 
@@ -991,7 +1011,7 @@ export function generateEstimateDocument(
 export function createChairsideConsentPackage(
 	params: CreateChairsidePackageParams,
 ): ChairsideConsentPackage {
-	const packageId = params.packageId || "CSP-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+	const packageId = params.packageId || "CSP-" + Date.now().toString(36).toUpperCase() + "-" + generateSecurePackageSuffix();
 	const createdAt = new Date().toISOString();
 
 	const clinic: ChairsideClinicProfile = {

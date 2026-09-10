@@ -62,7 +62,6 @@ import type { Egisz043uPayload } from "./components/egisz/remdXml/egiszRemdEngin
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
-	SAMPLE_043U_PATIENT_PRESET,
 } from "./components/egisz/remdXml/egiszRemdPresets";
 import { AnesthesiaConsentLogForm } from "./components/documents/forms/AnesthesiaConsentLogForm";
 import type { DocumentSelectOption } from "./components/documents/forms/documentFormTypes";
@@ -773,7 +772,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			const patientBirthDate =
 				activePatient.birthDate ||
 				activePatient.birth_date ||
-				SAMPLE_043U_PATIENT_PRESET.patientBirthDate;
+				"";
 
 			payload.patient = {
 				patientId: activePatient.id || "PAT-001",
@@ -784,10 +783,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				patientFullName:
 					activePatient.fullName ||
 					activePatient.name ||
-					SAMPLE_043U_PATIENT_PRESET.patientFullName,
-				patientSnils:
-					activePatient.snils ||
-					SAMPLE_043U_PATIENT_PRESET.patientSnils,
+					"____________________",
+				patientSnils: activePatient.snils || undefined,
 				patientBirthDate,
 				patientGender:
 					activePatient.gender === "female" || activePatient.gender === "2"
@@ -796,21 +793,17 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				patientPolisOms:
 					activePatient.polisOms ||
 					activePatient.oms ||
-					SAMPLE_043U_PATIENT_PRESET.patientPolisOms,
+					undefined,
 				patientPassport:
 					activePatient.passport ||
 					activePatient.administrativeProfile?.identityDocument ||
-					SAMPLE_043U_PATIENT_PRESET.patientPassport,
+					undefined,
 				patientAddress:
 					activePatient.address ||
 					activePatient.administrativeProfile?.registrationAddress ||
-					SAMPLE_043U_PATIENT_PRESET.patientAddress,
-				patientPhone:
-					activePatient.phone ||
-					SAMPLE_043U_PATIENT_PRESET.patientPhone,
-				patientEmail:
-					activePatient.email ||
-					SAMPLE_043U_PATIENT_PRESET.patientEmail,
+					undefined,
+				patientPhone: activePatient.phone || undefined,
+				patientEmail: activePatient.email || undefined,
 			};
 		}
 
