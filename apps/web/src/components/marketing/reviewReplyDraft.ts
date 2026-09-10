@@ -106,7 +106,7 @@ export function buildReviewReplyDraft(input: {
 	tone: ReviewReplyTone;
 	clinicName: string;
 	chiefDoctorPhone: string;
-	seoKeys: string[];
+	seoKeys?: string[];
 }): ReviewReplyDraft | null {
 	const reviewText = input.reviewText.trim();
 	if (!reviewText) return null;
@@ -130,9 +130,8 @@ export function buildReviewReplyDraft(input: {
 	parts.push(opening);
 
 	// Ключи только в позитив и нейтраль, максимум два: в ответе на негатив реклама
-	// услуг читается как цинизм. Это же правило написано на вкладке «SEO-ключи»,
-	// и здесь оно наконец соблюдается, а не только обещается промптом.
-	const cleanKeys = input.seoKeys
+	// услуг читается как цинизм.
+	const cleanKeys = (input.seoKeys ?? [])
 		.map((key) => key.trim())
 		.filter((key) => key.length > 0);
 	const usedKeys = input.tone === "negative" ? [] : cleanKeys.slice(0, 2);
@@ -160,9 +159,6 @@ export function buildReviewReplyDraft(input: {
 			parts.push(`Будем рады видеть вас снова. ${keysSentence}`);
 		} else {
 			parts.push("Будем рады видеть вас снова.");
-			warnings.push(
-				"SEO-ключей нет, поэтому ответ без них. Добавить их можно на вкладке «SEO-ключи» — они помогают клинике в поиске.",
-			);
 		}
 	}
 

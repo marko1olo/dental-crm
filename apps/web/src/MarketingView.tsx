@@ -1,19 +1,15 @@
 import { showToast } from "./components/GlobalToast";
-import { actionFailureToast } from "./lib/panelStateText";
 import { logger } from "./utils/logger";
 import "./styles/marketing.css";
 import {
+	BookOpen,
 	CheckCircle2,
 	Copy,
-	Globe,
-	MapPin,
 	MessageSquare,
 	Minus,
 	MinusCircle,
-	Search,
 	ThumbsDown,
 	ThumbsUp,
-	TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { MarketingRomiTable } from "./components/marketing/MarketingRomiTable";
@@ -24,33 +20,8 @@ import {
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
 
-type MarketingStats = {
-	yandex: { rating: number; reviews: number };
-	gis2: { rating: number; reviews: number };
-	google: { rating: number; reviews: number };
-};
-
-const DEFAULT_STATS: MarketingStats = {
-	yandex: { rating: 0, reviews: 0 },
-	gis2: { rating: 0, reviews: 0 },
-	google: { rating: 0, reviews: 0 },
-};
-
 type ReviewTone = "positive" | "negative" | "neutral";
 
-/*
-  ПОЧЕМУ ПОЯВИЛИСЬ ЭТИ ДВЕ ОБЁРТКИ. Всё, что вводят на этом экране (телефон
-  главврача, рейтинги площадок, SEO-ключи), лежит только в localStorage браузера,
-  и обращались к нему напрямую. Если браузер запретил хранилище — заблокированы
-  cookie, жёсткий приватный режим, переполнена квота, — то бросает САМ вызов
-  localStorage.getItem. А стоял он в инициализаторе useState, то есть исключение
-  летело при первой отрисовке и уносило весь раздел: владелец видел «Раздел
-  временно не открылся» вместо маркетинга, и починить это из интерфейса было
-  нечем. Запись бросала так же, но уже на каждое нажатие клавиши в поле.
-  Теперь отказ хранилища означает только «не запомнится до перезагрузки», а не
-  потерю раздела и не потерю набранного текста. Чтение/запись идут через
-  safeLocalStorage — единая точка try/catch для всего web-клиента.
-*/
 function readStored(key: string): string | null {
 	return safeLocalStorageGetItem(key);
 }
@@ -66,103 +37,16 @@ export function MarketingView({
 	clinicName: string;
 	clinicPhone: string;
 }) {
-	const [customSeoKeys, setCustomSeoKeys] = useState(() => {
-		try {
-			const saved = readStored("dental_crm_mkt_seo_keys");
-			const parsed = saved ? JSON.parse(saved) : null;
-			// Читаем чужой JSON из браузера: массивом он быть не обязан. Если там
-			// объект или строка, дальше .map/.filter уронили бы весь раздел.
-			if (Array.isArray(parsed) && parsed.every((k) => typeof k === "string"))
-				return parsed as string[];
-		} catch (e) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(e as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.warn(
-				"[Marketing] Failed to parse saved SEO keys from localStorage:",
-				e,
-			);
-		}
-		return [
-			"лечение кариеса",
-			"безболезненное удаление",
-			"стоматология",
-			"профессиональная гигиена",
-			"имплантация зубов",
-		];
-	});
-
-	const handleAddSeoKey = (val: string) => {
-		if (!val.trim()) return;
-		const updated = [...customSeoKeys, val.trim()];
-		setCustomSeoKeys(updated);
-		writeStored("dental_crm_mkt_seo_keys", JSON.stringify(updated));
-	};
-
-	const handleRemoveSeoKey = (val: string) => {
-		const updated = customSeoKeys.filter((k: string) => k !== val);
-		setCustomSeoKeys(updated);
-		writeStored("dental_crm_mkt_seo_keys", JSON.stringify(updated));
-	};
-
 	const [reviewText, setReviewText] = useState("");
 	const [tone, setTone] = useState<ReviewTone>("positive");
 	const [generatedReply, setGeneratedReply] = useState("");
-	/*
-    БЫЛО: если ни в браузере, ни в профиле клиники телефона нет, в поле
-    подставлялось «+7 (800) 000-00-00». Это выдуманный номер, и поле с ним
-    выглядело в точности как заполненное человеком — рамка, чёрный текст, не
-    подсказка. Такой номер попадал в ответ на негативный отзыв («позвоните
-    главврачу»), то есть публично на карточку клиники уходил телефон, по
-    которому никто не ответит. Теперь пусто — это пусто, а как выглядит номер,
-    показывает placeholder ниже.
-  */
+
 	const [phone, setPhone] = useState(() => {
 		return readStored("dental_crm_mkt_phone") || clinicPhone || "";
 	});
 
-	const [stats, setStats] = useState<MarketingStats>(() => {
-		try {
-			const saved = readStored("dental_crm_mkt_stats");
-			const parsed = saved ? JSON.parse(saved) : null;
-			// Достраиваем каждую площадку поверх нулей: сохранённый объект мог
-			// прийти из версии, где Google ещё не было, и stats.google.rating
-			// уронило бы раздел на чтении undefined.
-			if (parsed && typeof parsed === "object") {
-				return {
-					yandex: {
-						...DEFAULT_STATS.yandex,
-						...(parsed as MarketingStats).yandex,
-					},
-					gis2: { ...DEFAULT_STATS.gis2, ...(parsed as MarketingStats).gis2 },
-					google: {
-						...DEFAULT_STATS.google,
-						...(parsed as MarketingStats).google,
-					},
-				};
-			}
-		} catch (e) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(e as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.warn(
-				"[Marketing] Failed to parse saved stats from localStorage:",
-				e,
-			);
-		}
-		return DEFAULT_STATS;
-	});
-
 	const [copied, setCopied] = useState(false);
-	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">(
+	const [activeTab, setActiveTab] = useState<"reviews" | "instructions">(
 		"reviews",
 	);
 
@@ -172,53 +56,6 @@ export function MarketingView({
 		writeStored("dental_crm_mkt_phone", val);
 	};
 
-	const updateStat = (
-		platform: keyof MarketingStats,
-		field: "rating" | "reviews",
-		value: string,
-	) => {
-		const num = parseFloat(value) || 0;
-		const newStats = {
-			...stats,
-			[platform]: { ...stats[platform], [field]: num },
-		};
-		setStats(newStats);
-		writeStored("dental_crm_mkt_stats", JSON.stringify(newStats));
-	};
-
-	/*
-    ВЫДУМАННАЯ ЦИФРА, КОТОРУЮ ВИДЕЛИ ВСЕ. В карточке «Позиция в поиске» стояло
-    жёстко вписанное в вёрстку «Топ-3 по "стоматология"» — одинаковое у каждой
-    клиники, ни откуда не взятое и ничем не проверяемое. Рядом честная подпись
-    «Укажите актуальные данные вручную», при этом указать было негде: поля ввода
-    в карточке не существовало. То есть владельцу показывали приятную неправду о
-    его собственном продвижении и предлагали её обновить нечем. Позицию в поиске
-    не отдаёт ни одна площадка, её действительно считают руками, поэтому карточку
-    не убрал, а сделал тем, чем она притворялась: два поля, которые владелец
-    заполняет сам, и явная пометка «вы записали», чтобы цифру нельзя было принять
-    за измеренную системой. Хранится там же, где рейтинги — в браузере;
-    ДОЛГ: общего на клинику хранилища для этих цифр нет, нужна таблица и маршрут
-    в apps/api (чужая зона), пока цифры видны только на том компьютере, где их
-    ввели.
-  */
-	const [rankQuery, setRankQuery] = useState(
-		() => readStored("dental_crm_mkt_rank_query") || "",
-	);
-	const [rankPlace, setRankPlace] = useState(
-		() => readStored("dental_crm_mkt_rank_place") || "",
-	);
-
-	const handleRankQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setRankQuery(e.target.value);
-		writeStored("dental_crm_mkt_rank_query", e.target.value);
-	};
-
-	const handleRankPlaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setRankPlace(e.target.value);
-		writeStored("dental_crm_mkt_rank_place", e.target.value);
-	};
-
-	const [newKeyInput, setNewKeyInput] = useState("");
 	const [draftWarnings, setDraftWarnings] = useState<string[]>([]);
 	const [copyError, setCopyError] = useState<string | null>(null);
 
@@ -253,7 +90,6 @@ export function MarketingView({
 			tone: effectiveTone,
 			clinicName,
 			chiefDoctorPhone: phone,
-			seoKeys: customSeoKeys,
 		});
 		if (!draft) {
 			setGeneratedReply("");
@@ -327,122 +163,10 @@ export function MarketingView({
 			{/* OWNER ROMI MARKETING TABLE */}
 			<MarketingRomiTable />
 
-			{/* STATS STRIP */}
-			<section className="marketing-stats-strip" aria-label="Рейтинги клиники">
-				<article className="marketing-stat-card">
-					<MapPin aria-hidden="true" className="text-[var(--danger,#e63946)]" />
-					<div>
-						<p className="eyebrow">Яндекс.Карты</p>
-						<div className="marketing-rating flex gap-2 mt-1">
-							<input
-								type="number"
-								step="0.1"
-								value={stats.yandex.rating || ""}
-								onChange={(e) => updateStat("yandex", "rating", e.target.value)}
-								placeholder="Оценка"
-								className="w-16 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-							<input
-								type="number"
-								value={stats.yandex.reviews || ""}
-								onChange={(e) =>
-									updateStat("yandex", "reviews", e.target.value)
-								}
-								placeholder="Отзывов"
-								className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-						</div>
-					</div>
-				</article>
-				<article className="marketing-stat-card">
-					<Globe
-						aria-hidden="true"
-						className="text-[var(--brand-500,#2196f3)]"
-					/>
-					<div>
-						<p className="eyebrow">2ГИС</p>
-						<div className="marketing-rating flex gap-2 mt-1">
-							<input
-								type="number"
-								step="0.1"
-								value={stats.gis2.rating || ""}
-								onChange={(e) => updateStat("gis2", "rating", e.target.value)}
-								placeholder="Оценка"
-								className="w-16 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-							<input
-								type="number"
-								value={stats.gis2.reviews || ""}
-								onChange={(e) => updateStat("gis2", "reviews", e.target.value)}
-								placeholder="Отзывов"
-								className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-						</div>
-					</div>
-				</article>
-				<article className="marketing-stat-card">
-					<Search
-						aria-hidden="true"
-						className="text-[var(--teal-500,#0f766e)]"
-					/>
-					<div>
-						<p className="eyebrow">Google</p>
-						<div className="marketing-rating flex gap-2 mt-1">
-							<input
-								type="number"
-								step="0.1"
-								value={stats.google.rating || ""}
-								onChange={(e) => updateStat("google", "rating", e.target.value)}
-								placeholder="Оценка"
-								className="w-16 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-							<input
-								type="number"
-								value={stats.google.reviews || ""}
-								onChange={(e) =>
-									updateStat("google", "reviews", e.target.value)
-								}
-								placeholder="Отзывов"
-								className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-						</div>
-					</div>
-				</article>
-				<article className="marketing-stat-card col-span-full">
-					<TrendingUp
-						aria-hidden="true"
-						className="text-[var(--teal-500,#0f766e)]"
-					/>
-					<div>
-						<p className="eyebrow">Позиция в поиске</p>
-						<div className="marketing-rating flex gap-2 mt-1 flex-wrap">
-							<input
-								type="text"
-								value={rankQuery}
-								onChange={handleRankQueryChange}
-								placeholder="Запрос, например: стоматология Химки"
-								aria-label="Запрос, по которому проверяли позицию клиники"
-								className="flex-1 min-w-[12rem] px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-							<input
-								type="number"
-								min="1"
-								step="1"
-								value={rankPlace}
-								onChange={handleRankPlaceChange}
-								placeholder="Место"
-								aria-label="Какое по счёту место занимает клиника"
-								className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-							/>
-						</div>
-						<p className="text-xs text-[var(--muted,#94a3b8)] mt-1">
-							{rankQuery.trim() && rankPlace.trim()
-								? `Вы записали: ${rankPlace} место по запросу «${rankQuery.trim()}». Проверьте заново через месяц — тогда будет видно, растёте вы или падаете.`
-								: "Пока не заполнено. Наберите свой запрос в Яндексе, посчитайте, какой по счёту в списке идёт ваша клиника, и впишите запрос и место. Сама система эту цифру узнать не может — её нигде не отдают."}
-						</p>
-					</div>
-				</article>
-			</section>
+			{/* RECALL LIST: ВОЗВРАТ ПАЦИЕНТОВ */}
+			<div className="mt-6 mb-6">
+				<RecallListPanel />
+			</div>
 
 			{/* TAB NAV */}
 			<div className="marketing-tab-nav" role="tablist">
@@ -457,24 +181,14 @@ export function MarketingView({
 					Ответ на отзыв
 				</button>
 				<button
-					className={`marketing-tab ${activeTab === "keys" ? "active" : ""}`}
-					onClick={() => setActiveTab("keys")}
+					className={`marketing-tab ${activeTab === "instructions" ? "active" : ""}`}
+					onClick={() => setActiveTab("instructions")}
 					role="tab"
-					aria-selected={activeTab === "keys"}
+					aria-selected={activeTab === "instructions"}
 					type="button"
 				>
-					<Search aria-hidden="true" />
-					SEO-ключи
-				</button>
-				<button
-					className={`marketing-tab ${activeTab === "stats" ? "active" : ""}`}
-					onClick={() => setActiveTab("stats")}
-					role="tab"
-					aria-selected={activeTab === "stats"}
-					type="button"
-				>
-					<TrendingUp aria-hidden="true" />
-					Инструкции
+					<BookOpen aria-hidden="true" />
+					Инструкция по отзывам
 				</button>
 			</div>
 
@@ -683,76 +397,8 @@ export function MarketingView({
 				</div>
 			) : null}
 
-			{/* SEO KEYS TAB */}
-			{activeTab === "keys" ? (
-				<div
-					className="marketing-panel"
-					style={{
-						background: "var(--paper-soft)",
-						border: "1px solid var(--line)",
-						borderRadius: "12px",
-						padding: "16px",
-					}}
-				>
-					<p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-						Эти ключи автоматически передаются ИИ для вставки в ответы на
-						отзывы. Они помогают продвижению клиники в поиске.
-					</p>
-					<div className="flex gap-2 mb-4">
-						<input
-							type="text"
-							className="text-input"
-							value={newKeyInput}
-							onChange={(e) => setNewKeyInput(e.target.value)}
-							placeholder="Новый SEO-ключ (напр. 'детский ортодонт')"
-						/>
-						<button
-							type="button"
-							className="secondary-button"
-							onClick={() => {
-								handleAddSeoKey(newKeyInput);
-								setNewKeyInput("");
-							}}
-						>
-							Добавить
-						</button>
-					</div>
-					<div className="seo-keys-grid">
-						{customSeoKeys.map((key: string) => (
-							<span
-								className="seo-key-chip"
-								key={key}
-								style={{ display: "flex", alignItems: "center", gap: "6px" }}
-							>
-								{key}
-								<button
-									type="button"
-									onClick={() => handleRemoveSeoKey(key)}
-									aria-label={`Удалить ключ ${key}`}
-									className="bg-transparent border-0 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer min-h-[36px] min-w-[36px] -my-2 -mr-2 inline-flex items-center justify-center text-base font-bold transition-colors"
-								>
-									×
-								</button>
-							</span>
-						))}
-					</div>
-
-					<p className="eyebrow mt-5">Правило вставки ключей</p>
-					<ul className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed pl-5 mt-2 space-y-1">
-						<li>
-							<strong>Позитив/нейтральный:</strong> 1-2 ключа естественно в
-							тексте
-						</li>
-						<li>
-							<strong>Негатив:</strong> 0-1 ключ, минимально, чтобы не выглядело
-							цинично
-						</li>
-					</ul>
-				</div>
-			) : null}
-
 			{/* INSTRUCTIONS TAB */}
-			{activeTab === "stats" ? (
+			{activeTab === "instructions" ? (
 				<div
 					className="marketing-panel"
 					style={{
@@ -795,16 +441,6 @@ export function MarketingView({
 					</div>
 				</div>
 			) : null}
-
-			{/*
-        Возврат пациентов. Во всю ширину и последним в разделе: это единственный
-        блок здесь, по которому в клинике действительно работают руками — звонят и
-        приглашают. Про «стоит перед мелкими виджетами» в прежней редакции этого
-        комментария больше не верно: сетки виджетов под ним нет, см. ниже почему.
-      */}
-			<div className="mt-8">
-				<RecallListPanel />
-			</div>
 
 			{/*
         Здесь была сетка мелких виджетов раздела. Снята целиком вместе с
