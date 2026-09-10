@@ -529,5 +529,56 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 			assert.ok(!html.includes("Ассистент обязателен"));
 			expect(html).toContain("quick-drawer-save-btn");
 		});
+
+		it("7.3. 1-Click Duty Badge in Chair Header and 1-Click Status Badge on Appointment Card (StomX / IDENT)", () => {
+			const mockAppt: Appointment = {
+				id: "appt-test-1",
+				chairId: "chair-1",
+				doctorUserId: "doc-1",
+				patientId: "pat-1",
+				startsAt: "2026-09-10T10:00:00.000Z",
+				endsAt: "2026-09-10T11:00:00.000Z",
+				status: "planned",
+				reason: "Лечение кариеса",
+			} as unknown as Appointment;
+
+			const html = renderToString(
+				React.createElement(ScheduleGrid, {
+					dashboard: mockDashboard,
+					dateKey: "2026-09-10",
+					appointments: [mockAppt],
+					onSlotClick: () => {},
+					onAppointmentClick: () => {},
+					onQuickStatusChange: () => {},
+					patientName: (_p: any, id: string | null) => (id ? "Сидоров С.С." : "—"),
+					formatTime: (iso: string) => iso.slice(11, 16),
+					toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+					appointmentLabels: mockAppointmentLabels,
+					chairDoctorAssignments: {
+						"chair-1": {
+							chairId: "chair-1",
+							chairName: "Кабинет 1 (Терапия)",
+							doctorId: "doc-1",
+							doctorName: "Иванов Иван Иванович",
+							shiftPreset: "full",
+							shiftHours: "08:00–20:00",
+							startHour: 8,
+							endHour: 20,
+						},
+					},
+				}),
+			);
+
+			// Chair Header Doctor Badge
+			expect(html).toContain('data-testid="chair-header-doctor-badge-chair-1"');
+			expect(html).toContain("Иванов И.И.");
+
+			// Appointment Card Status Badge (1-click trigger)
+			expect(html).toContain('data-testid="appointment-card-status-badge-appt-test-1"');
+			expect(html).toContain("Запланирован");
+
+			// Quick doctor switching dropdown in chair header
+			expect(html).toContain('data-testid="chair-duty-doctor-select-chair-1"');
+		});
 	});
 });
