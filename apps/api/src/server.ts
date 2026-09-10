@@ -80,6 +80,7 @@ import { registerPrescriptionRoutes } from "./routes/prescriptions.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
 import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
+import { registerPeriodontogramRoutes } from "./routes/periodontogram.js";
 import { registerOrthodonticsRoutes } from "./routes/orthodontics.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
 import { registerOutpatientV2Routes } from "./routes/outpatient_v2.js";
@@ -675,6 +676,7 @@ export async function createDenteApiApp(
 	// tooth-states/batch not found», поэтому состояния зубов физически не могли
 	// сохраниться, а вкладка «История зуба» не имела источника данных.
 	await registerOdontogramRoutes(app);
+	await registerPeriodontogramRoutes(app);
 	await registerToothHistoryRoutes(app);
 	await registerOutpatientV2Routes(app);
 	await registerLoyaltyRoutes(app);
