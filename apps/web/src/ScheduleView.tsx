@@ -48,6 +48,7 @@ import {
 } from "./components/schedule/QuickAddChairModal";
 import type { QuickAddDoctorData } from "./components/schedule/QuickAddDoctorModal";
 import { ScheduleTimeline } from "./components/schedule/ScheduleTimeline";
+import { ScheduleShiftAnalytics } from "./components/schedule/ScheduleShiftAnalytics";
 import {
 	type DayGroupingAppointment,
 	formatDayTitle,
@@ -1720,21 +1721,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			});
 		});
 	};
-	const highestUtilizationLoad = (loads?: ResourceLoad[]) =>
-		(loads || []).reduce<ResourceLoad | null>((highestLoad, load) => {
-			if (
-				!highestLoad ||
-				load.utilizationPercent > highestLoad.utilizationPercent
-			)
-				return load;
-			return highestLoad;
-		}, null);
-	const busiestDoctorLoad = highestUtilizationLoad(
-		dashboard?.shiftIntelligence?.doctorLoads,
-	);
-	const busiestChairLoad = highestUtilizationLoad(
-		dashboard?.shiftIntelligence?.chairLoads,
-	);
 	// БЫЛО: считались только фильтр по дате и по статусу. Администратор нажимал
 	// чип конкретного врача, список падал с 40 записей до 3, а подпись продолжала
 	// сообщать «фильтры не ограничивают» и «показана вся очередь» — и человек
@@ -1782,45 +1768,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			? `только «${appointmentLabels?.[scheduleStatusFilter as Appointment["status"]] ?? scheduleStatusFilter}»`
 			: null,
 	].filter((value): value is string => Boolean(value));
-	const scheduleLoadSummaryCards = [
-		{
-			id: "doctor",
-			title: "Самый загруженный врач",
-			value: busiestDoctorLoad
-				? `${busiestDoctorLoad.utilizationPercent}%`
-				: "нет загрузки",
-			detail: busiestDoctorLoad
-				? `${busiestDoctorLoad.title}: ${busiestDoctorLoad.appointmentCount} записей, ${busiestDoctorLoad.bookedMinutes} мин.`
-				: "смена не заполнена",
-		},
-		{
-			id: "chair",
-			title: "Самое занятое кресло",
-			value: busiestChairLoad
-				? `${busiestChairLoad.utilizationPercent}%`
-				: "нет загрузки",
-			detail: busiestChairLoad
-				? `${busiestChairLoad.title}: ${busiestChairLoad.appointmentCount} записей, ${busiestChairLoad.nextFreeAt ? `свободно с ${formatTime(busiestChairLoad.nextFreeAt)}` : "окон нет"}`
-				: "кресла не загружены",
-		},
-		{
-			id: "visible",
-			title: "На экране",
-			value: `${sortedAppointments?.length ?? 0}`,
-			detail: activeScheduleFilterCount
-				? `активных фильтров: ${activeScheduleFilterCount}`
-				: "показана вся очередь",
-		},
-		{
-			id: "control",
-			title: "Контроль",
-			value: shiftWarnings?.length ? `${shiftWarnings?.length}` : "0",
-			detail: shiftWarnings?.[0]?.title ?? "Нет предупреждений",
-		},
-	];
-
 	const hasSummaryContent =
-		showShiftAnalytics ||
 		activeScheduleFilterLabels.length > 0 ||
 		(activeScheduleFilterLabels.length === 0 &&
 			(visibleDayGroups?.length ?? 0) > 1) ||
@@ -1935,84 +1883,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			)}
 
 			{showShiftAnalytics && (
-				<div className="schedule-command-grid min-w-0">
-					<article className="min-w-0">
-						<span>Врачи</span>
-						<strong>
-							{dashboard?.shiftIntelligence?.doctorLoads?.length ?? 0}
-						</strong>
-						<p
-							className="break-words"
-							title={(dashboard?.shiftIntelligence?.doctorLoads ?? [])
-								.map(
-									(load: ResourceLoad) =>
-										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
-								)
-								.join(" · ")}
-						>
-							{(dashboard?.shiftIntelligence?.doctorLoads ?? [])
-								.map(
-									(load: ResourceLoad) =>
-										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
-								)
-								.join(" · ")}
-						</p>
-					</article>
-					<article className="min-w-0">
-						<span>Ассистенты</span>
-						<strong>
-							{dashboard?.shiftIntelligence?.assistantLoads?.length ?? 0}
-						</strong>
-						<p
-							className="break-words"
-							title={(dashboard?.shiftIntelligence?.assistantLoads ?? [])
-								.map(
-									(load: ResourceLoad) =>
-										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
-								)
-								.join(" · ") || "не назначены"}
-						>
-							{(dashboard?.shiftIntelligence?.assistantLoads ?? [])
-								.map(
-									(load: ResourceLoad) =>
-										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
-								)
-								.join(" · ") || "не назначены"}
-						</p>
-					</article>
-					<article className="min-w-0">
-						<span>Кресла</span>
-						<strong>
-							{dashboard?.shiftIntelligence?.chairLoads?.length ?? 0}
-						</strong>
-						<p
-							className="break-words"
-							title={(dashboard?.shiftIntelligence?.chairLoads ?? [])
-								.map(
-									(load: ResourceLoad) =>
-										`${load?.title ?? ""} ${load?.utilizationPercent ?? 0}%`,
-								)
-								.join(" · ")}
-						>
-							{(dashboard?.shiftIntelligence?.chairLoads ?? [])
-								.map(
-									(load: ResourceLoad) =>
-										`${load?.title ?? ""} ${load?.utilizationPercent ?? 0}%`,
-								)
-								.join(" · ")}
-						</p>
-					</article>
-					<article className="min-w-0">
-						<span>Контроль</span>
-						<strong>{shiftWarnings?.length ?? 0}</strong>
-						<p
-							className="break-words"
-							title={shiftWarnings?.[0]?.title ?? "Нет предупреждений"}
-						>
-							{shiftWarnings?.[0]?.title ?? "Нет предупреждений"}
-						</p>
-					</article>
-				</div>
+				<ScheduleShiftAnalytics
+					dashboard={dashboard}
+					shiftWarnings={shiftWarnings}
+					onOpenWarning={openScheduleWarning}
+				/>
 			)}
 			{hasSummaryContent ? (
 				<section

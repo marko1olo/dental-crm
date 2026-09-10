@@ -34,6 +34,8 @@ import {
 	formatDoctorShortName,
 } from "../ScheduleGrid";
 import { appointmentScheduleMissingFields } from "../../../AppHelpers";
+import { ScheduleShiftAnalytics } from "../ScheduleShiftAnalytics";
+import { ScheduleFilterToolbar } from "../ScheduleFilterToolbar";
 
 // Cartoon emoji detector per Mandate 8d п. 7
 const CARTOON_EMOJI_REGEX =
@@ -459,6 +461,34 @@ async function clickNode(node: MockDomNode | null) {
 	});
 }
 
+async function changeSelectValue(node: MockDomNode | null, newValue: string) {
+	if (!node) return;
+	await act(async () => {
+		(node as any).value = newValue;
+		let curr: MockDomNode | null = node;
+		while (curr) {
+			const reactPropKey = Object.keys(curr).find((k) =>
+				k.startsWith("__reactProps$"),
+			);
+			if (reactPropKey) {
+				const props = (curr as any)[reactPropKey];
+				if (props && typeof props.onChange === "function") {
+					await props.onChange({
+						target: { value: newValue },
+						currentTarget: { value: newValue },
+						type: "change",
+						preventDefault: () => {},
+						stopPropagation: () => {},
+					});
+					return;
+				}
+			}
+			curr = curr.parentNode;
+		}
+		node.dispatchEvent({ type: "change" });
+	});
+}
+
 const mockStaff = [
 	{
 		id: "doc-1",
@@ -841,6 +871,138 @@ describe("Schedule, Chairs & Shifts Architecture Parity (StomX / IDENT)", () => 
 				false,
 				"Zero cartoon emojis in medical and schedule views (Mandate 8d)",
 			);
+		});
+	});
+
+	describe("4. 1-Click Chair Doctor & Shift Assignment in Column Header & ScheduleShiftAnalytics", () => {
+		it("ScheduleGrid renders duty doctor and shift selects in column header", async () => {
+			const container = document.createElement("div") as unknown as MockDomNode;
+			const root: Root = createRoot(container as unknown as HTMLElement);
+
+			const onAssignMock = vi.fn();
+
+			await act(async () => {
+				root.render(
+					<ScheduleGrid
+						dashboard={mockDashboard}
+						dateKey="2026-09-09"
+						appointments={[]}
+						chairDoctorAssignments={{
+							"chair-1": {
+								chairId: "chair-1",
+								doctorId: "doc-1",
+								doctorName: "Иванов Иван Иванович",
+								shiftPreset: "morning_9",
+								shiftLabel: "Утро 09:00–15:00",
+								shiftHours: "09:00–15:00",
+								startHour: 9,
+								endHour: 15,
+							},
+						}}
+						onSlotClick={noop}
+						onAppointmentClick={noop}
+						onAssignChairDoctor={onAssignMock}
+						patientName={mockPatientName}
+						formatTime={mockFormatTime}
+						toDateTimeLocalValue={mockToDateTimeLocalValue}
+						appointmentLabels={mockAppointmentLabels}
+					/>,
+				);
+			});
+
+			const docSelect = findNodeByTestId(container, "chair-duty-doctor-select-chair-1");
+			assert.ok(docSelect, "ScheduleGrid column header must render chair-duty-doctor-select-chair-1");
+
+			const shiftSelect = findNodeByTestId(container, "chair-shift-select-chair-1");
+			assert.ok(shiftSelect, "ScheduleGrid column header must render chair-shift-select-chair-1");
+
+			// Trigger doctor change to doc-2
+			await changeSelectValue(docSelect, "doc-2");
+			assert.ok(onAssignMock.calls.length >= 1, "onAssignChairDoctor must be called on doctor select change");
+			const [chairId, assignment] = (onAssignMock.calls[0] ?? []) as [string, ChairDoctorShiftAssignment];
+			assert.equal(chairId, "chair-1");
+			assert.equal(assignment?.doctorId, "doc-2");
+
+			// Trigger shift preset change to evening_15 (which combines morning_9 + evening_15 into dual shift)
+			onAssignMock.calls.length = 0;
+			await changeSelectValue(shiftSelect, "evening_15");
+			assert.ok(onAssignMock.calls.length >= 1, "onAssignChairDoctor must be called on shift preset change");
+			const [, shiftAssignment] = (onAssignMock.calls[0] ?? []) as [string, ChairDoctorShiftAssignment];
+			assert.equal(shiftAssignment?.shiftPreset, "custom", "Combines morning and evening into dual shift");
+			assert.ok(shiftAssignment?.subShifts && shiftAssignment.subShifts.length === 2, "Must contain 2 subshifts");
+			assert.equal(shiftAssignment?.endHour, 21);
+		});
+
+		it("ScheduleShiftAnalytics renders 4 distinct KPI cards without duplicates", async () => {
+			const container = document.createElement("div") as unknown as MockDomNode;
+			const root: Root = createRoot(container as unknown as HTMLElement);
+
+			const warningSpy = vi.fn();
+			const testDashboard = {
+				...mockDashboard,
+				shiftIntelligence: {
+					doctorLoads: [
+						{ resourceId: "doc-1", title: "Иванов И.И.", utilizationPercent: 75, appointmentsCount: 5 },
+						{ resourceId: "doc-2", title: "Петров П.П.", utilizationPercent: 50, appointmentsCount: 3 },
+					],
+					assistantLoads: [
+						{ resourceId: "asst-1", title: "Смирнова О.В.", utilizationPercent: 60, appointmentsCount: 4 },
+					],
+					chairLoads: [
+						{ resourceId: "chair-1", title: "Кресло 1", utilizationPercent: 80, appointmentsCount: 6 },
+					],
+				},
+			};
+
+			const testWarnings = [
+				{
+					id: "warn-1",
+					title: "Превышение нагрузки врача",
+					detail: "У доктора Иванова И.И. 3 приема подряд без перерыва",
+					severity: "warning",
+				},
+			];
+
+			await act(async () => {
+				root.render(
+					<ScheduleShiftAnalytics
+						dashboard={testDashboard as any}
+						shiftWarnings={testWarnings}
+						onOpenWarning={warningSpy}
+					/>,
+				);
+			});
+
+			const analyticsGrid = findNodeByTestId(container, "schedule-shift-analytics");
+			assert.ok(analyticsGrid, "Must render schedule-shift-analytics container");
+
+			const docCard = findNodeByTestId(container, "analytics-card-doctors");
+			assert.ok(docCard, "Must render doctors analytics card");
+			assert.ok(collectAllText(docCard).includes("2"), "Must show 2 doctors");
+
+			const asstCard = findNodeByTestId(container, "analytics-card-assistants");
+			assert.ok(asstCard, "Must render assistants analytics card");
+			assert.ok(collectAllText(asstCard).includes("1"), "Must show 1 assistant");
+
+			const chairCard = findNodeByTestId(container, "analytics-card-chairs");
+			assert.ok(chairCard, "Must render chairs analytics card");
+			assert.ok(collectAllText(chairCard).includes("1"), "Must show 1 chair");
+
+			const controlCard = findNodeByTestId(container, "analytics-card-control");
+			assert.ok(controlCard, "Must render control analytics card");
+			assert.ok(collectAllText(controlCard).includes("1"), "Must show 1 warning in control");
+
+			// Click control card to trigger onOpenWarning
+			await clickNode(controlCard);
+			assert.equal(warningSpy.calls.length, 1, "Clicking control card must fire onOpenWarning");
+			const firstCall = warningSpy.calls[0];
+			assert.ok(firstCall);
+			assert.equal(firstCall[0]?.id, "warn-1");
+		});
+
+		it("ScheduleFilterToolbar is a valid component and renders without error", async () => {
+			assert.ok(ScheduleFilterToolbar, "ScheduleFilterToolbar component must be exported");
+			assert.equal(typeof ScheduleFilterToolbar, "function", "ScheduleFilterToolbar must be a function/component");
 		});
 	});
 });

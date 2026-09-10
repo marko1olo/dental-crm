@@ -57,8 +57,6 @@ import {
 	type GostSignatureInfo,
 	SAMPLE_DENTAL_SEMD_105_PRESET,
 	canonicalizeCdaXml,
-	createMockGostSignature,
-	createMockMoGostSignature,
 	escapeXml,
 	formatHl7DateTime,
 	formatRuDate,
@@ -149,39 +147,63 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 					setSelectedCertThumbprint(certs[0]?.thumbprint || "");
 				}
 			} else {
-				// Fallback mock certificates for demonstration / test mode
-				const fallbackDoctorCert: CryptoProCertificate = {
-					name: activePayload.doctor.doctorFullName || "Иванов Сергей Владимирович",
-					subjectName: `CN=${activePayload.doctor.doctorFullName}, SNILS=${activePayload.doctor.doctorSnils}, O=${activePayload.clinic.clinicName}`,
-					issuerName: "CN=Головной Удостоверяющий Центр Минцифры России (Квалифицированный)",
-					validFrom: "2026-01-01T00:00:00Z",
-					validTo: "2027-12-31T23:59:59Z",
-					thumbprint: "7A4C89E10B3456D7891234567890ABCDEF123456",
-					hasPrivateKey: true,
-					isValid: true,
-					certObject: null,
-				};
-				const fallbackMoCert: CryptoProCertificate = {
-					name: activePayload.clinic.clinicName || 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-					subjectName: `O=${activePayload.clinic.clinicName}, OGRN=${activePayload.clinic.clinicOgrn}, INN=${activePayload.clinic.clinicInn}`,
-					issuerName: "CN=УЦ ФНС России (Квалифицированный для юридических лиц)",
-					validFrom: "2026-01-01T00:00:00Z",
-					validTo: "2027-12-31T23:59:59Z",
-					thumbprint: "9B2F10A4456789CDEF0123456789ABCDEF654321",
-					hasPrivateKey: true,
-					isValid: true,
-					certObject: null,
-				};
-				setCertificates([fallbackDoctorCert, fallbackMoCert]);
-				setSelectedCertThumbprint(fallbackDoctorCert.thumbprint);
+				setCertificates([]);
+				setSelectedCertThumbprint("");
 			}
 		} catch (error) {
 			console.warn("[CryptoPro] Plugin detection error:", error);
 			setIsPluginAvailable(false);
+			setCertificates([]);
+			setSelectedCertThumbprint("");
 		} finally {
 			setIsPluginChecking(false);
 		}
-	}, [activePayload, selectedCertThumbprint]);
+	}, [selectedCertThumbprint]);
+
+	// Detached signature (.sig / .p7s) file upload handler
+	const handleUploadDetachedSig = (
+		e: React.ChangeEvent<HTMLInputElement>,
+		target: "doctor" | "mo",
+	) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			const buf = reader.result as ArrayBuffer;
+			const bytes = new Uint8Array(buf);
+			let binary = "";
+			for (let i = 0; i < bytes.byteLength; i++) {
+				binary += String.fromCharCode(bytes[i]!);
+			}
+			const base64 = btoa(binary);
+			const sigInfo: GostSignatureInfo = {
+				signatureBase64: base64,
+				certificateSerialNumber: `DETACHED-${file.name.slice(0, 16)}`,
+				certificateSubject:
+					target === "doctor"
+						? (activePayload.doctor.doctorFullName || "Врач")
+						: (activePayload.clinic.clinicName || "Медицинская организация"),
+				certificateIssuer: "Открепленная подпись (.sig / .p7s)",
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				signatureValueHex: file.name,
+			};
+
+			if (target === "doctor") {
+				setDoctorSig(sigInfo);
+				const updated = { ...activePayload, doctorSignature: sigInfo };
+				setActivePayload(updated);
+				showToast(`Открепленная УКЭП врача загружена: ${file.name}`, "success");
+				onSigned?.(updated, { doctorSignature: sigInfo, moSignature: moSig });
+			} else {
+				setMoSig(sigInfo);
+				showToast(`Открепленная УКЭП организации загружена: ${file.name}`, "success");
+				onSigned?.(activePayload, { doctorSignature: doctorSig, moSignature: sigInfo });
+			}
+		};
+		reader.readAsArrayBuffer(file);
+	};
 
 	useEffect(() => {
 		if (isOpen) {
@@ -224,38 +246,34 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 
 	// 1-Click Action: Sign with Doctor Qualified Electronic Signature (УКЭП врача)
 	const handleSignDoctor = async () => {
+		if (!isPluginAvailable || !selectedCert) {
+			showToast(
+				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Установите плагин или загрузите файл .sig / .p7s",
+				"error",
+			);
+			return;
+		}
 		setIsSigningDoctor(true);
 		try {
-			let sigInfo: GostSignatureInfo;
+			const xmlToSign = canonicalizeCdaXml(generatedXml);
+			const base64Content = btoa(unescape(encodeURIComponent(xmlToSign)));
+			const pkcs7Base64 = await signBase64WithCertificate(
+				base64Content,
+				selectedCert.thumbprint,
+			);
 
-			if (isPluginAvailable && selectedCert) {
-				const xmlToSign = canonicalizeCdaXml(generatedXml);
-				const base64Content = btoa(unescape(encodeURIComponent(xmlToSign)));
-				const pkcs7Base64 = await signBase64WithCertificate(
-					base64Content,
-					selectedCert.thumbprint,
-				);
-
-				sigInfo = {
-					signatureBase64: pkcs7Base64,
-					certificateSerialNumber: selectedCert.thumbprint.slice(0, 16).toUpperCase(),
-					certificateSubject: selectedCert.subjectName,
-					certificateIssuer: selectedCert.issuerName,
-					validFrom: selectedCert.validFrom,
-					validTo: selectedCert.validTo,
-					signedAt: new Date().toISOString(),
-					algorithmOid: "1.2.643.7.1.1.1.1", // GOST R 34.10-2012 (256-bit)
-					digestAlgorithmOid: "1.2.643.7.1.1.2.2", // GOST R 34.11-2012 (256-bit)
-					signatureValueHex: selectedCert.thumbprint.toUpperCase(),
-				};
-			} else {
-				// High-fidelity GOST mock signature generator for environments without CryptoPro CSP installed
-				sigInfo = createMockGostSignature(
-					selectedCert?.name || activePayload.doctor.doctorFullName,
-					activePayload.doctor.doctorSnils,
-					activePayload.clinic.clinicName,
-				);
-			}
+			const sigInfo: GostSignatureInfo = {
+				signatureBase64: pkcs7Base64,
+				certificateSerialNumber: selectedCert.thumbprint.slice(0, 16).toUpperCase(),
+				certificateSubject: selectedCert.subjectName,
+				certificateIssuer: selectedCert.issuerName,
+				validFrom: selectedCert.validFrom,
+				validTo: selectedCert.validTo,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1", // GOST R 34.10-2012 (256-bit)
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2", // GOST R 34.11-2012 (256-bit)
+				signatureValueHex: selectedCert.thumbprint.toUpperCase(),
+			};
 
 			setDoctorSig(sigInfo);
 			const updated = { ...activePayload, doctorSignature: sigInfo };
@@ -277,36 +295,34 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 
 	// 1-Click Action: Sign with Organization Qualified Electronic Signature (УКЭП МО / Главный врач)
 	const handleSignMo = async () => {
+		if (!isPluginAvailable || !selectedCert) {
+			showToast(
+				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Установите плагин или загрузите файл .sig / .p7s",
+				"error",
+			);
+			return;
+		}
 		setIsSigningMo(true);
 		try {
-			let sigInfo: GostSignatureInfo;
+			const xmlToSign = canonicalizeCdaXml(generatedXml);
+			const base64Content = btoa(unescape(encodeURIComponent(xmlToSign)));
+			const pkcs7Base64 = await signBase64WithCertificate(
+				base64Content,
+				selectedCert.thumbprint,
+			);
 
-			if (isPluginAvailable && selectedCert) {
-				const xmlToSign = canonicalizeCdaXml(generatedXml);
-				const base64Content = btoa(unescape(encodeURIComponent(xmlToSign)));
-				const pkcs7Base64 = await signBase64WithCertificate(
-					base64Content,
-					selectedCert.thumbprint,
-				);
-
-				sigInfo = {
-					signatureBase64: pkcs7Base64,
-					certificateSerialNumber: selectedCert.thumbprint.slice(0, 16).toUpperCase(),
-					certificateSubject: selectedCert.subjectName,
-					certificateIssuer: selectedCert.issuerName,
-					validFrom: selectedCert.validFrom,
-					validTo: selectedCert.validTo,
-					signedAt: new Date().toISOString(),
-					algorithmOid: "1.2.643.7.1.1.1.1",
-					digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-					signatureValueHex: selectedCert.thumbprint.toUpperCase(),
-				};
-			} else {
-				sigInfo = createMockMoGostSignature(
-					activePayload.clinic.clinicName,
-					activePayload.clinic.clinicOgrn,
-				);
-			}
+			const sigInfo: GostSignatureInfo = {
+				signatureBase64: pkcs7Base64,
+				certificateSerialNumber: selectedCert.thumbprint.slice(0, 16).toUpperCase(),
+				certificateSubject: selectedCert.subjectName,
+				certificateIssuer: selectedCert.issuerName,
+				validFrom: selectedCert.validFrom,
+				validTo: selectedCert.validTo,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				signatureValueHex: selectedCert.thumbprint.toUpperCase(),
+			};
 
 			setMoSig(sigInfo);
 			showToast(
@@ -552,21 +568,21 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 
 				{/* CryptoPro CSP Plug-in Status Bar */}
 				<div
-					className={`egisz-plugin-status-bar ${isPluginAvailable ? "connected" : "warning"}`}
+					className={`egisz-plugin-status-bar ${isPluginAvailable && certificates.length > 0 ? "connected" : "warning"}`}
 				>
 					<div className="egisz-plugin-status-left">
 						<span
-							className={`egisz-status-dot ${isPluginAvailable ? "green" : "amber"}`}
+							className={`egisz-status-dot ${isPluginAvailable && certificates.length > 0 ? "green" : "amber"}`}
 						/>
 						{isPluginChecking ? (
 							<span>Определение КриптоПро ЭЦП Browser Plug-in...</span>
-						) : isPluginAvailable ? (
+						) : isPluginAvailable && certificates.length > 0 ? (
 							<span>
 								КриптоПро CSP Plug-in подключен • Обнаружено сертификатов: {certificates.length}
 							</span>
 						) : (
 							<span>
-								Плагин КриптоПро не обнаружен • Активен режим эмуляции ГОСТ Р 34.10-2012 для тестирования
+								Плагин КриптоПро CSP не установлен / Сертификат не выбран
 							</span>
 						)}
 					</div>
@@ -577,10 +593,10 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 							className="egisz-btn sm"
 							onClick={loadCryptoProState}
 							disabled={isPluginChecking}
-							title="Обновить список сертификатов"
+							title="Проверить плагин КриптоПро"
 						>
 							<RefreshCw size={13} className={isPluginChecking ? "animate-spin" : ""} />
-							Обновить
+							Проверить плагин
 						</button>
 					</div>
 				</div>
@@ -596,7 +612,49 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 							</div>
 
 							<div className="egisz-cert-list">
-								{certificates.map((cert) => {
+								{certificates.length === 0 ? (
+									<div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded text-xs text-amber-600 dark:text-amber-400 space-y-2">
+										<div className="font-semibold flex items-center gap-1.5">
+											<AlertTriangle size={14} />
+											Плагин КриптоПро CSP не установлен / Сертификат не выбран
+										</div>
+										<p className="text-[11px] leading-relaxed text-muted">
+											Для наложения УКЭП установите плагин КриптоПро ЭЦП Browser Plug-in и вставьте токен (Рутокен/JaCarta), либо загрузите готовую открепленную подпись (.sig / .p7s).
+										</p>
+										<div className="flex flex-col gap-1.5 pt-1">
+											<button
+												type="button"
+												className="egisz-btn sm w-full justify-center"
+												onClick={loadCryptoProState}
+												disabled={isPluginChecking}
+											>
+												<RefreshCw size={12} className={isPluginChecking ? "animate-spin" : ""} />
+												Проверить плагин КриптоПро
+											</button>
+											<label className="egisz-btn sm w-full justify-center cursor-pointer">
+												<FileCode2 size={12} />
+												Загрузить .sig / .p7s (Врач)
+												<input
+													type="file"
+													accept=".sig,.p7s,.sgn,.bin"
+													className="hidden"
+													onChange={(e) => handleUploadDetachedSig(e, "doctor")}
+												/>
+											</label>
+											<label className="egisz-btn sm w-full justify-center cursor-pointer">
+												<Building2 size={12} />
+												Загрузить .sig / .p7s (МО)
+												<input
+													type="file"
+													accept=".sig,.p7s,.sgn,.bin"
+													className="hidden"
+													onChange={(e) => handleUploadDetachedSig(e, "mo")}
+												/>
+											</label>
+										</div>
+									</div>
+								) : (
+									certificates.map((cert) => {
 									const isSelected = cert.thumbprint === selectedCertThumbprint;
 									const isDoctor = cert.subjectName.toLowerCase().includes("врач") ||
 										cert.name.includes("Иванов") ||
@@ -638,7 +696,8 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 											</div>
 										</button>
 									);
-								})}
+								})
+								)}
 							</div>
 						</div>
 
