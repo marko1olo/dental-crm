@@ -33,22 +33,166 @@ import {
 	type AdvertisingChannelMetric,
 	buildAdvertisingChannelMetric,
 	calculateMarketingRomiSummary,
-	DEFAULT_DENTAL_ADVERTISING_CHANNELS,
+	STOMX_MARKETING_SOURCES,
+	buildStomxDefaultAdvertisingChannels,
+	aggregateCrmMarketingMetrics,
+	type StomxMarketingSourceItem,
 } from "@dental/shared";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
-const STORAGE_KEY = "dental_crm_mkt_romi_channels_v2";
+const STORAGE_KEY = "dental_crm_mkt_romi_channels_v3";
+
+const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
+	{
+		id: "ch_stomx_gis2",
+		channelKey: "gis2",
+		nameRu: "2GIS",
+		categoryRu: "Гео-сервисы",
+		spentKopecks: 1800000, // 18 000 ₽
+		leadsCount: 15,
+		primaryPatientsCount: 12,
+		repeatVisitsCount: 5,
+		revenueKopecks: 14200000, // 142 000 ₽
+		totalLtvRevenueKopecks: 21000000, // 210 000 ₽
+		notes: "Картографический справочник 2ГИС: гео-профиль клиники и кнопка онлайн-записи",
+	},
+	{
+		id: "ch_stomx_yandex_maps",
+		channelKey: "yandex_maps",
+		nameRu: "Яндекс Карты",
+		categoryRu: "Гео-сервисы",
+		spentKopecks: 2500000, // 25 000 ₽
+		leadsCount: 20,
+		primaryPatientsCount: 18,
+		repeatVisitsCount: 8,
+		revenueKopecks: 21000000, // 210 000 ₽
+		totalLtvRevenueKopecks: 31500000, // 315 000 ₽
+		notes: "Гео-приоритет клиники в Яндекс Картах и Навигаторе с синей меткой",
+	},
+	{
+		id: "ch_stomx_prodoctorov",
+		channelKey: "prodoctorov",
+		nameRu: "ПроДокторов",
+		categoryRu: "Мед-агрегаторы",
+		spentKopecks: 1500000, // 15 000 ₽
+		leadsCount: 11,
+		primaryPatientsCount: 9,
+		repeatVisitsCount: 4,
+		revenueKopecks: 11500000, // 115 000 ₽
+		totalLtvRevenueKopecks: 16500000, // 165 000 ₽
+		notes: "Профили ведущих врачей на медицинском портале отзывов ПроДокторов",
+	},
+	{
+		id: "ch_stomx_word_of_mouth",
+		channelKey: "word_of_mouth",
+		nameRu: "Сарафанное радио",
+		categoryRu: "Органика",
+		spentKopecks: 0, // 0 ₽ (Органика)
+		leadsCount: 36,
+		primaryPatientsCount: 35,
+		repeatVisitsCount: 22,
+		revenueKopecks: 58000000, // 580 000 ₽
+		totalLtvRevenueKopecks: 89000000, // 890 000 ₽
+		notes: "Рекомендации постоянных пациентов, членов семьи и знакомых (0 ₽ бюджет)",
+	},
+	{
+		id: "ch_stomx_sberhealth",
+		channelKey: "sberhealth",
+		nameRu: "СберЗдоровье",
+		categoryRu: "Мед-агрегаторы",
+		spentKopecks: 1200000, // 12 000 ₽
+		leadsCount: 10,
+		primaryPatientsCount: 7,
+		repeatVisitsCount: 3,
+		revenueKopecks: 8500000, // 85 000 ₽
+		totalLtvRevenueKopecks: 12000000, // 120 000 ₽
+		notes: "Записи пациентов через экосистему медицинских сервисов СберЗдоровье (DocDoc)",
+	},
+	{
+		id: "ch_stomx_vk",
+		channelKey: "vk",
+		nameRu: "ВКонтакте",
+		categoryRu: "Соцсети",
+		spentKopecks: 2000000, // 20 000 ₽
+		leadsCount: 14,
+		primaryPatientsCount: 8,
+		repeatVisitsCount: 3,
+		revenueKopecks: 7800000, // 78 000 ₽
+		totalLtvRevenueKopecks: 11000000, // 110 000 ₽
+		notes: "Таргетированная реклама и официальное сообщество клиники ВКонтакте",
+	},
+	{
+		id: "ch_stomx_outdoor",
+		channelKey: "outdoor",
+		nameRu: "Наружная реклама",
+		categoryRu: "Наружная реклама",
+		spentKopecks: 1500000, // 15 000 ₽
+		leadsCount: 9,
+		primaryPatientsCount: 6,
+		repeatVisitsCount: 2,
+		revenueKopecks: 6200000, // 62 000 ₽
+		totalLtvRevenueKopecks: 8800000, // 88 000 ₽
+		notes: "Фасадная световая вывеска, панель-кронштейн и указатели",
+	},
+	{
+		id: "ch_stomx_website",
+		channelKey: "website",
+		nameRu: "Сайт",
+		categoryRu: "Сайт / SEO",
+		spentKopecks: 3000000, // 30 000 ₽
+		leadsCount: 22,
+		primaryPatientsCount: 15,
+		repeatVisitsCount: 7,
+		revenueKopecks: 19500000, // 195 000 ₽
+		totalLtvRevenueKopecks: 28500000, // 285 000 ₽
+		notes: "Официальный сайт стоматологии, поисковое SEO-продвижение и веб-виджет",
+	},
+	{
+		id: "ch_stomx_instagram",
+		channelKey: "instagram",
+		nameRu: "Инстаграм",
+		categoryRu: "Соцсети",
+		spentKopecks: 1400000, // 14 000 ₽
+		leadsCount: 12,
+		primaryPatientsCount: 7,
+		repeatVisitsCount: 3,
+		revenueKopecks: 6800000, // 68 000 ₽
+		totalLtvRevenueKopecks: 9800000, // 98 000 ₽
+		notes: "Клинические кейсы до/после, сторис и запись через директ Инстаграм",
+	},
+	{
+		id: "ch_stomx_flyers",
+		channelKey: "flyers",
+		nameRu: "Листовки",
+		categoryRu: "Полиграфия",
+		spentKopecks: 800000, // 8 000 ₽
+		leadsCount: 6,
+		primaryPatientsCount: 4,
+		repeatVisitsCount: 1,
+		revenueKopecks: 3200000, // 32 000 ₽
+		totalLtvRevenueKopecks: 4400000, // 44 000 ₽
+		notes: "Печатные промо-листовки, буклеты в жилые комплексы и партнерские стойки",
+	},
+];
 
 const QUICK_CHANNEL_PRESETS = [
-	{ nameRu: "Яндекс.Карты (Гео)", categoryRu: "Гео-сервисы", spentRub: 25000, leadsCount: 20, patients: 18, revenueRub: 210000 },
-	{ nameRu: "2ГИС (Справочник)", categoryRu: "Гео-сервисы", spentRub: 18000, leadsCount: 15, patients: 12, revenueRub: 142000 },
-	{ nameRu: "ПроДокторов / СберЗдоровье", categoryRu: "Мед-агрегаторы", spentRub: 15000, leadsCount: 11, patients: 9, revenueRub: 115000 },
-	{ nameRu: "Telegram-канал клиники", categoryRu: "Мессенджеры", spentRub: 12000, leadsCount: 16, patients: 10, revenueRub: 95000 },
-	{ nameRu: "ВКонтакте (Таргет района)", categoryRu: "Соцсети", spentRub: 22000, leadsCount: 14, patients: 8, revenueRub: 78000 },
-	{ nameRu: "Сарафанное радио (Органика)", categoryRu: "Органика", spentRub: 0, leadsCount: 36, patients: 35, revenueRub: 580000 },
+	{ channelKey: "gis2", nameRu: "2GIS", categoryRu: "Гео-сервисы", spentRub: 18000, leadsCount: 15, patients: 12, repeatVisits: 5, revenueRub: 142000 },
+	{ channelKey: "yandex_maps", nameRu: "Яндекс Карты", categoryRu: "Гео-сервисы", spentRub: 25000, leadsCount: 20, patients: 18, repeatVisits: 8, revenueRub: 210000 },
+	{ channelKey: "prodoctorov", nameRu: "ПроДокторов", categoryRu: "Мед-агрегаторы", spentRub: 15000, leadsCount: 11, patients: 9, repeatVisits: 4, revenueRub: 115000 },
+	{ channelKey: "word_of_mouth", nameRu: "Сарафанное радио", categoryRu: "Органика", spentRub: 0, leadsCount: 36, patients: 35, repeatVisits: 22, revenueRub: 580000 },
+	{ channelKey: "sberhealth", nameRu: "СберЗдоровье", categoryRu: "Мед-агрегаторы", spentRub: 12000, leadsCount: 10, patients: 7, repeatVisits: 3, revenueRub: 85000 },
+	{ channelKey: "vk", nameRu: "ВКонтакте", categoryRu: "Соцсети", spentRub: 20000, leadsCount: 14, patients: 8, repeatVisits: 3, revenueRub: 78000 },
+	{ channelKey: "outdoor", nameRu: "Наружная реклама", categoryRu: "Наружная реклама", spentRub: 15000, leadsCount: 9, patients: 6, repeatVisits: 2, revenueRub: 62000 },
+	{ channelKey: "website", nameRu: "Сайт", categoryRu: "Сайт / SEO", spentRub: 30000, leadsCount: 22, patients: 15, repeatVisits: 7, revenueRub: 195000 },
+	{ channelKey: "instagram", nameRu: "Инстаграм", categoryRu: "Соцсети", spentRub: 14000, leadsCount: 12, patients: 7, repeatVisits: 3, revenueRub: 68000 },
+	{ channelKey: "flyers", nameRu: "Листовки", categoryRu: "Полиграфия", spentRub: 8000, leadsCount: 6, patients: 4, repeatVisits: 1, revenueRub: 32000 },
 ];
 
 export function MarketingRomiTable() {
+	const appLogic = useOptionalAppLogicContext();
+	const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
 	// Channels state loaded from safe storage
 	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => {
 		try {
@@ -60,9 +204,9 @@ export function MarketingRomiTable() {
 				}
 			}
 		} catch {
-			// Fall back to default preset
+			// Fall back to default StomX preset
 		}
-		return [...DEFAULT_DENTAL_ADVERTISING_CHANNELS];
+		return [...DEFAULT_STOMX_CHANNELS];
 	});
 
 	// New channel creation modal/form state
@@ -72,6 +216,7 @@ export function MarketingRomiTable() {
 	const [newChannelSpentRub, setNewChannelSpentRub] = useState("");
 	const [newChannelLeads, setNewChannelLeads] = useState("");
 	const [newChannelPatients, setNewChannelPatients] = useState("");
+	const [newChannelRepeatVisits, setNewChannelRepeatVisits] = useState("");
 	const [newChannelRevenueRub, setNewChannelRevenueRub] = useState("");
 
 	// Save helper
@@ -92,7 +237,7 @@ export function MarketingRomiTable() {
 	// In-place channel field update
 	const handleUpdateField = (
 		channelId: string,
-		field: "spentRub" | "leads" | "patients" | "revenueRub",
+		field: "spentRub" | "leads" | "patients" | "revenueRub" | "repeatVisits",
 		rawValue: string,
 	) => {
 		const num = Math.max(0, parseFloat(rawValue) || 0);
@@ -110,28 +255,34 @@ export function MarketingRomiTable() {
 			if (field === "revenueRub") {
 				return { ...ch, revenueKopecks: Math.round(num * 100) };
 			}
+			if (field === "repeatVisits") {
+				return { ...ch, repeatVisitsCount: Math.round(num) };
+			}
 			return ch;
 		});
 		persistChannels(updated);
 	};
 
-	// 1-Click quick channel preset creation
+	// 1-Click quick channel preset creation from canonical StomX
 	const handleAddPreset = (preset: {
+		channelKey: string;
 		nameRu: string;
 		categoryRu: string;
 		spentRub: number;
 		leadsCount: number;
 		patients: number;
+		repeatVisits: number;
 		revenueRub: number;
 	}) => {
 		const newEntry: AdvertisingChannelInput = {
-			id: `ch_preset_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-			channelKey: `channel_${Date.now()}`,
+			id: `ch_preset_${Date.now()}_${channels.length + 1}`,
+			channelKey: preset.channelKey,
 			nameRu: preset.nameRu,
 			categoryRu: preset.categoryRu,
 			spentKopecks: Math.round(preset.spentRub * 100),
 			leadsCount: preset.leadsCount,
 			primaryPatientsCount: preset.patients,
+			repeatVisitsCount: preset.repeatVisits,
 			revenueKopecks: Math.round(preset.revenueRub * 100),
 		};
 		const updated = [...channels, newEntry];
@@ -147,6 +298,7 @@ export function MarketingRomiTable() {
 		const spentRub = Math.max(0, parseFloat(newChannelSpentRub) || 0);
 		const patients = Math.max(0, parseInt(newChannelPatients, 10) || 0);
 		const leads = Math.max(patients, parseInt(newChannelLeads, 10) || Math.round(patients * 1.25));
+		const repeatVisits = Math.max(0, parseInt(newChannelRepeatVisits, 10) || 0);
 		const revenueRub = Math.max(0, parseFloat(newChannelRevenueRub) || 0);
 
 		const newEntry: AdvertisingChannelInput = {
@@ -157,6 +309,7 @@ export function MarketingRomiTable() {
 			spentKopecks: Math.round(spentRub * 100),
 			leadsCount: leads,
 			primaryPatientsCount: patients,
+			repeatVisitsCount: repeatVisits,
 			revenueKopecks: Math.round(revenueRub * 100),
 		};
 
@@ -168,6 +321,7 @@ export function MarketingRomiTable() {
 		setNewChannelSpentRub("");
 		setNewChannelLeads("");
 		setNewChannelPatients("");
+		setNewChannelRepeatVisits("");
 		setNewChannelRevenueRub("");
 		setIsAddingChannel(false);
 	};
@@ -178,9 +332,38 @@ export function MarketingRomiTable() {
 		persistChannels(updated);
 	};
 
-	// Reset to standard defaults
+	// Reset to standard StomX defaults
 	const handleResetDefaults = () => {
-		persistChannels([...DEFAULT_DENTAL_ADVERTISING_CHANNELS]);
+		persistChannels([...DEFAULT_STOMX_CHANNELS]);
+		setSyncMessage(null);
+	};
+
+	// 1-Click sync with live CRM database
+	const handleSyncWithCrm = () => {
+		const patients = (appLogic?.dashboard?.patients ?? []) as any[];
+		const appointments = (appLogic?.dashboard?.appointments ?? []) as any[];
+		const payments = (appLogic?.dashboard?.payments ?? []) as any[];
+		const communicationEvents = (appLogic?.dashboard?.communicationEvents ?? []) as any[];
+
+		// Preserve custom budgets set by user in current channels
+		const customBudgetsKopecks: Record<string, number> = {};
+		for (const ch of channels) {
+			if (ch.spentKopecks > 0) {
+				customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
+			}
+		}
+
+		const aggregated = aggregateCrmMarketingMetrics({
+			patients,
+			appointments,
+			payments,
+			communicationEvents,
+			customBudgetsKopecks,
+		});
+
+		persistChannels(aggregated);
+		const msg = `Синхронизировано с CRM: учтено ${patients.length} пациентов, ${appointments.length} приемов, ${payments.length} оплат`;
+		setSyncMessage(msg);
 	};
 
 	return (
@@ -199,7 +382,7 @@ export function MarketingRomiTable() {
 						</h3>
 					</div>
 					<p className="marketing-romi-subtitle">
-						Сводная таблица для владельца: реальные затраты, количество первичных пациентов, выручка и чистый возврат инвестиций.
+						Сводная таблица для владельца: реальные затраты, первичные и повторные пациенты, LTV выручка и чистый возврат инвестиций (ROMI).
 					</p>
 				</div>
 
@@ -207,8 +390,18 @@ export function MarketingRomiTable() {
 					<button
 						type="button"
 						className="romi-action-btn secondary"
+						onClick={handleSyncWithCrm}
+						title="Синхронизировать показатели с живой базой CRM"
+						data-testid="romi-sync-crm-btn"
+					>
+						<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0f766e)]" aria-hidden="true" />
+						Синхронизировать с CRM
+					</button>
+					<button
+						type="button"
+						className="romi-action-btn secondary"
 						onClick={handleResetDefaults}
-						title="Восстановить типовые каналы"
+						title="Восстановить канонические каналы StomX"
 					>
 						<RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
 						Сброс
@@ -223,6 +416,14 @@ export function MarketingRomiTable() {
 					</button>
 				</div>
 			</div>
+
+			{/* CRM SYNC NOTIFICATION BANNER */}
+			{syncMessage && (
+				<div className="romi-sync-banner" data-testid="romi-sync-banner">
+					<CheckCircle2 className="w-4 h-4 text-[var(--teal,#0f766e)] flex-shrink-0" aria-hidden="true" />
+					<span>{syncMessage}</span>
+				</div>
+			)}
 
 			{/* KPI STATS STRIP */}
 			<div className="romi-kpi-grid">
@@ -254,6 +455,16 @@ export function MarketingRomiTable() {
 					</span>
 				</div>
 
+				<div className="romi-kpi-item">
+					<span className="romi-kpi-label">LTV и повторные визиты</span>
+					<strong className="romi-kpi-value text-[var(--teal-dark,#0f766e)]">
+						{summary.overallLtvFormatted}
+					</strong>
+					<span className="romi-kpi-hint">
+						Повторных: {summary.totalRepeatVisitsCount} ({summary.overallRepeatRatePercent}%)
+					</span>
+				</div>
+
 				<div className="romi-kpi-item highlight">
 					<span className="romi-kpi-label">Общий ROMI клиники</span>
 					<strong
@@ -276,7 +487,7 @@ export function MarketingRomiTable() {
 
 					<div style={{ marginBottom: "12px" }}>
 						<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
-							Быстрое добавление типового канала (в 1 клик):
+							Быстрое добавление типового канала StomX (в 1 клик):
 						</span>
 						<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
 							{QUICK_CHANNEL_PRESETS.map((p) => (
@@ -294,7 +505,7 @@ export function MarketingRomiTable() {
 						</div>
 					</div>
 
-					<div className="romi-add-grid" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
+					<div className="romi-add-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))" }}>
 						<div>
 							<label className="romi-form-label">Название канала</label>
 							<input
@@ -353,6 +564,18 @@ export function MarketingRomiTable() {
 							/>
 						</div>
 						<div>
+							<label className="romi-form-label">Повторных (чел)</label>
+							<input
+								type="number"
+								min="0"
+								step="1"
+								placeholder="0"
+								value={newChannelRepeatVisits}
+								onChange={(e) => setNewChannelRepeatVisits(e.target.value)}
+								className="romi-input"
+							/>
+						</div>
+						<div>
 							<label className="romi-form-label">Выручка (₽)</label>
 							<input
 								type="number"
@@ -392,6 +615,9 @@ export function MarketingRomiTable() {
 							<th className="text-center">Первичных</th>
 							<th className="text-right">Выручка (₽)</th>
 							<th className="text-right">Ср. чек (₽)</th>
+							<th className="text-center">Повторных</th>
+							<th className="text-center">Доля повт. (%)</th>
+							<th className="text-right">LTV (₽)</th>
 							<th className="text-center">ROMI (%)</th>
 							<th className="text-right">CAC (₽ / чел)</th>
 							<th className="text-center w-12"></th>
@@ -490,6 +716,33 @@ export function MarketingRomiTable() {
 										{metric.averageCheckFormatted}
 									</td>
 
+									{/* Repeat visits (editable) */}
+									<td className="romi-cell-num">
+										<div className="romi-cell-input-wrapper">
+											<input
+												type="number"
+												min="0"
+												step="1"
+												value={metric.repeatVisitsCount.toString()}
+												onChange={(e) =>
+													handleUpdateField(metric.id, "repeatVisits", e.target.value)
+												}
+												aria-label={`Повторные визиты ${metric.nameRu}`}
+												className="romi-table-input text-center"
+											/>
+										</div>
+									</td>
+
+									{/* Repeat visits rate (%) */}
+									<td className="romi-cell-center font-bold text-[var(--teal-dark,#0f766e)]">
+										{metric.repeatRateFormatted}
+									</td>
+
+									{/* LTV */}
+									<td className="romi-cell-num text-right font-medium text-[var(--ink)]">
+										{metric.ltvFormatted}
+									</td>
+
 									{/* ROMI badge */}
 									<td className="romi-cell-center">
 										<span
@@ -554,6 +807,15 @@ export function MarketingRomiTable() {
 							<td className="romi-total-num text-right font-medium">
 								{summary.overallAverageCheckFormatted}
 							</td>
+							<td className="romi-total-num text-center font-bold">
+								{summary.totalRepeatVisitsCount} чел.
+							</td>
+							<td className="romi-total-center font-bold text-[var(--teal-dark,#0f766e)]">
+								{summary.overallRepeatRatePercent}%
+							</td>
+							<td className="romi-total-num text-right font-bold text-[var(--teal-dark,#0f766e)]">
+								{summary.overallLtvFormatted}
+							</td>
 							<td className="romi-total-center">
 								<span
 									className={`romi-badge total ${
@@ -576,7 +838,7 @@ export function MarketingRomiTable() {
 			<div className="romi-footer-hint">
 				<HelpCircle className="w-4 h-4 flex-shrink-0 text-[var(--teal,#0f766e)]" aria-hidden="true" />
 				<p>
-					<strong>Правило владельца:</strong> ROMI выше 300% означает высокоэффективный канал (на 1 ₽ вложений получено от 3 ₽ выручки). Для сарафанного радио затраты равны 0 ₽ (чистая органика с нулевой стоимостью привлечения CAC).
+					<strong>Справочник StomX:</strong> 10 канонических каналов (2GIS, Яндекс Карты, ПроДокторов, Сарафанное радио, СберЗдоровье, ВКонтакте, Наружная реклама, Сайт, Инстаграм, Листовки). Кнопка «Синхронизировать с CRM» автоматически рассчитывает доходимость, первичных и повторных пациентов, выручку и LTV по реальным медицинским картам и чекам оплат клиники.
 				</p>
 			</div>
 		</section>

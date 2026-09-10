@@ -18,8 +18,13 @@ import {
 	calculateChannelRomi,
 	calculateMarketingRomiSummary,
 	DEFAULT_DENTAL_ADVERTISING_CHANNELS,
+	STOMX_DEFAULT_ADVERTISING_CHANNELS,
+	matchStomxMarketingChannel,
+	buildStomxDefaultAdvertisingChannels,
+	aggregateCrmMarketingMetrics,
 	type AdvertisingChannelInput,
 } from "../marketing/marketingRomiEngine.js";
+import { STOMX_MARKETING_SOURCES } from "../patients/stomxPatientTagsCatalog.js";
 
 describe("Dental Marketing ROMI & Performance Engine", () => {
 	it("1. calculateChannelRomi computes exact positive ROMI, CAC, and average check", () => {
@@ -149,5 +154,112 @@ describe("Dental Marketing ROMI & Performance Engine", () => {
 			revenueKopecks: 500000,
 		};
 		assert.throws(() => advertisingChannelInputSchema.parse(invalidNegative));
+	});
+
+	it("8. STOMX_MARKETING_SOURCES defines the 10 canonical Russian dental channels", () => {
+		assert.equal(STOMX_MARKETING_SOURCES.length, 10);
+		const keys = STOMX_MARKETING_SOURCES.map((s) => s.channelKey);
+		assert.deepEqual(keys, [
+			"gis2",
+			"yandex_maps",
+			"prodoctorov",
+			"word_of_mouth",
+			"sberhealth",
+			"vk",
+			"outdoor",
+			"website",
+			"instagram",
+			"flyers",
+		]);
+
+		const defaults = buildStomxDefaultAdvertisingChannels();
+		assert.equal(defaults.length, 10);
+		assert.equal(STOMX_DEFAULT_ADVERTISING_CHANNELS.length, 10);
+
+		// Sarafanное радио has 0 budget (organic)
+		const sarafan = STOMX_DEFAULT_ADVERTISING_CHANNELS.find((c) => c.channelKey === "word_of_mouth");
+		assert.ok(sarafan);
+		assert.equal(sarafan.spentKopecks, 0);
+	});
+
+	it("9. buildAdvertisingChannelMetric computes repeatRatePercent and LTV in exact kopecks", () => {
+		// Spend: 25,000 ₽ (2,500,000 kop), Primary Patients: 10, Revenue: 150,000 ₽ (15,000,000 kop)
+		// Repeat visits: 5 (total visits: 15) -> repeat rate = (5 / 15) * 100 = 33.3%
+		// Avg check: 15,000 ₽. LTV = (150,000 + 5 * 15,000) / 10 = 22,500 ₽ (2,250,000 kop)
+		// CAC: 25,000 / 10 = 2,500 ₽
+		// ROMI: ((150,000 - 25,000) / 25,000) * 100 = +500.0%
+		const input: AdvertisingChannelInput = {
+			id: "ch_stomx_yandex_maps",
+			channelKey: "yandex_maps",
+			nameRu: "Яндекс Карты",
+			categoryRu: "Гео-сервисы",
+			spentKopecks: parseKopecks("25000.00"),
+			leadsCount: 12,
+			primaryPatientsCount: 10,
+			revenueKopecks: parseKopecks("150000.00"),
+			repeatVisitsCount: 5,
+		};
+
+		const metric = buildAdvertisingChannelMetric(input);
+		assert.equal(metric.repeatVisitsCount, 5);
+		assert.equal(metric.repeatRatePercent, 33.3);
+		assert.equal(metric.repeatRateFormatted, "33.3%");
+		assert.equal(metric.ltvKopecks, parseKopecks("22500.00"));
+		assert.equal(metric.ltvFormatted, formatKopecksRu(2250000));
+		assert.equal(metric.cacKopecks, parseKopecks("2500.00"));
+		assert.equal(metric.romiPercent, 500.0);
+		assert.equal(metric.romiFormatted, "+500.0%");
+	});
+
+	it("10. matchStomxMarketingChannel and aggregateCrmMarketingMetrics aggregate real CRM data", () => {
+		// Matcher tests
+		assert.equal(matchStomxMarketingChannel("2ГИС Карты"), "gis2");
+		assert.equal(matchStomxMarketingChannel("Яндекс.Карты"), "yandex_maps");
+		assert.equal(matchStomxMarketingChannel("СберЗдоровье онлайн"), "sberhealth");
+		assert.equal(matchStomxMarketingChannel("ВКонтакте таргет"), "vk");
+		assert.equal(matchStomxMarketingChannel("Рекомендация родственников"), "word_of_mouth");
+		assert.equal(matchStomxMarketingChannel("Официальный сайт клиники"), "website");
+		assert.equal(matchStomxMarketingChannel("Листовка у метро"), "flyers");
+		assert.equal(matchStomxMarketingChannel("Инстаграм кейсы"), "instagram");
+		assert.equal(matchStomxMarketingChannel(null), "word_of_mouth");
+
+		// Aggregator tests
+		const mockPatients = [
+			{ id: "p1", administrativeProfile: { advertisingSource: "2ГИС" } },
+			{ id: "p2", administrativeProfile: { advertisingSource: "2ГИС" } },
+			{ id: "p3", administrativeProfile: { advertisingSource: "Яндекс Карты" } },
+		];
+
+		const mockAppts = [
+			{ id: "a1", patientId: "p1", status: "completed" },
+			{ id: "a2", patientId: "p1", status: "completed" }, // Repeat visit
+			{ id: "a3", patientId: "p2", status: "completed" },
+			{ id: "a4", patientId: "p3", status: "completed" },
+			{ id: "a5", patientId: "p3", status: "planned" }, // Not completed yet
+		];
+
+		const mockPayments = [
+			{ id: "pay1", patientId: "p1", amount: 12000, status: "completed" },
+			{ id: "pay2", patientId: "p2", amount: 8000, status: "completed" },
+			{ id: "pay3", patientId: "p3", amount: 15000, status: "completed" },
+		];
+
+		const channels = aggregateCrmMarketingMetrics({
+			patients: mockPatients,
+			appointments: mockAppts,
+			payments: mockPayments,
+		});
+
+		assert.equal(channels.length, 10);
+		const gisChannel = channels.find((c) => c.channelKey === "gis2")!;
+		assert.ok(gisChannel);
+		assert.equal(gisChannel.primaryPatientsCount, 2);
+		assert.equal(gisChannel.repeatVisitsCount, 1);
+		assert.ok(gisChannel.revenueKopecks > 0);
+
+		const yandexChannel = channels.find((c) => c.channelKey === "yandex_maps")!;
+		assert.ok(yandexChannel);
+		assert.equal(yandexChannel.primaryPatientsCount, 1);
+		assert.equal(yandexChannel.repeatVisitsCount, 0);
 	});
 });

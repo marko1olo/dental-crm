@@ -14,6 +14,10 @@
 
 import { z } from "zod";
 import { formatKopecksRu, parseKopecks } from "../utils/money.js";
+import {
+	STOMX_MARKETING_SOURCES,
+	type StomxMarketingSourceItem,
+} from "../patients/stomxPatientTagsCatalog.js";
 
 export type RomiPerformanceStatus =
 	| "super_profitable" // ROMI >= 300%
@@ -34,6 +38,8 @@ export const advertisingChannelInputSchema = z.object({
 	leadsCount: z.number().int().nonnegative("Количество лидов не может быть отрицательным").optional(),
 	primaryPatientsCount: z.number().int().nonnegative("Количество первичных пациентов не может быть отрицательным"),
 	revenueKopecks: z.number().int().nonnegative("Выручка не может быть отрицательной"),
+	repeatVisitsCount: z.number().int().nonnegative("Количество повторных визитов не может быть отрицательным").optional(),
+	totalLtvRevenueKopecks: z.number().int().nonnegative("Совокупная выручка LTV не может быть отрицательной").optional(),
 	notes: z.string().optional(),
 });
 
@@ -56,6 +62,11 @@ export interface AdvertisingChannelMetric {
 	romiPercent: number | null;
 	cacKopecks: number | null;
 	averageCheckKopecks: number | null;
+	repeatVisitsCount: number; // Количество повторных визитов
+	repeatRatePercent: number; // Доля повторных визитов (%)
+	repeatRateFormatted: string;
+	ltvKopecks: number | null; // LTV (пожизненная выручка на пациента в копейках)
+	ltvFormatted: string;
 	romiStatus: RomiPerformanceStatus;
 	spentFormatted: string;
 	revenueFormatted: string;
@@ -81,6 +92,10 @@ export interface MarketingRomiSummary {
 	overallRomiPercent: number | null;
 	overallCacKopecks: number | null;
 	overallAverageCheckKopecks: number | null;
+	totalRepeatVisitsCount: number;
+	overallRepeatRatePercent: number; // Общая доля повторных визитов (%)
+	overallLtvKopecks: number | null;
+	overallLtvFormatted: string;
 	profitableChannelsCount: number;
 	lossChannelsCount: number;
 	organicChannelsCount: number;
@@ -181,6 +196,24 @@ export function buildAdvertisingChannelMetric(
 		? Number(((input.primaryPatientsCount / leadsCount) * 100).toFixed(1))
 		: (input.primaryPatientsCount > 0 ? 100 : 0);
 
+	const repeatVisitsCount = input.repeatVisitsCount ?? 0;
+	const totalVisits = input.primaryPatientsCount + repeatVisitsCount;
+	const repeatRatePercent = totalVisits > 0
+		? Number(((repeatVisitsCount / totalVisits) * 100).toFixed(1))
+		: 0;
+	const repeatRateFormatted = `${repeatRatePercent.toFixed(1)}%`;
+
+	let ltvKopecks: number | null = null;
+	if (input.primaryPatientsCount > 0) {
+		if (input.totalLtvRevenueKopecks !== undefined && input.totalLtvRevenueKopecks > 0) {
+			ltvKopecks = Math.round(input.totalLtvRevenueKopecks / input.primaryPatientsCount);
+		} else if (averageCheckKopecks !== null) {
+			const estimatedTotalRevenue = input.revenueKopecks + (repeatVisitsCount * averageCheckKopecks);
+			ltvKopecks = Math.round(estimatedTotalRevenue / input.primaryPatientsCount);
+		}
+	}
+	const ltvFormatted = ltvKopecks !== null ? formatKopecksRu(ltvKopecks) : "—";
+
 	let romiFormatted = "—";
 	if (romiStatus === "organic") {
 		romiFormatted = "Органика (∞)";
@@ -202,6 +235,11 @@ export function buildAdvertisingChannelMetric(
 		romiPercent,
 		cacKopecks,
 		averageCheckKopecks,
+		repeatVisitsCount,
+		repeatRatePercent,
+		repeatRateFormatted,
+		ltvKopecks,
+		ltvFormatted,
 		romiStatus,
 		spentFormatted: formatKopecksRu(input.spentKopecks),
 		revenueFormatted: formatKopecksRu(input.revenueKopecks),
@@ -224,6 +262,8 @@ export function calculateMarketingRomiSummary(
 	let totalLeadsCount = 0;
 	let totalPrimaryPatientsCount = 0;
 	let totalRevenueKopecks = 0;
+	let totalRepeatVisitsCount = 0;
+	let totalLtvRevenueAccKopecks = 0;
 	let profitableCount = 0;
 	let lossCount = 0;
 	let organicCount = 0;
@@ -237,6 +277,11 @@ export function calculateMarketingRomiSummary(
 		totalLeadsCount += ch.leadsCount;
 		totalPrimaryPatientsCount += ch.primaryPatientsCount;
 		totalRevenueKopecks += ch.revenueKopecks;
+		totalRepeatVisitsCount += ch.repeatVisitsCount;
+
+		if (ch.ltvKopecks !== null && ch.primaryPatientsCount > 0) {
+			totalLtvRevenueAccKopecks += ch.ltvKopecks * ch.primaryPatientsCount;
+		}
 
 		if (ch.spentKopecks > 0 || ch.primaryPatientsCount > 0 || ch.revenueKopecks > 0) {
 			activeCount++;
@@ -277,6 +322,16 @@ export function calculateMarketingRomiSummary(
 		? Number(((totalPrimaryPatientsCount / totalLeadsCount) * 100).toFixed(1))
 		: (totalPrimaryPatientsCount > 0 ? 100 : 0);
 
+	const totalAllVisits = totalPrimaryPatientsCount + totalRepeatVisitsCount;
+	const overallRepeatRatePercent = totalAllVisits > 0
+		? Number(((totalRepeatVisitsCount / totalAllVisits) * 100).toFixed(1))
+		: 0;
+
+	const overallLtvKopecks = totalPrimaryPatientsCount > 0
+		? Math.round((totalLtvRevenueAccKopecks > 0 ? totalLtvRevenueAccKopecks : totalRevenueKopecks) / totalPrimaryPatientsCount)
+		: null;
+	const overallLtvFormatted = overallLtvKopecks !== null ? formatKopecksRu(overallLtvKopecks) : "—";
+
 	let overallRomiFormatted = "—";
 	if (overallRomiPercent !== null) {
 		overallRomiFormatted = `${overallRomiPercent > 0 ? "+" : ""}${overallRomiPercent.toFixed(1)}%`;
@@ -296,6 +351,10 @@ export function calculateMarketingRomiSummary(
 		overallRomiPercent,
 		overallCacKopecks,
 		overallAverageCheckKopecks,
+		totalRepeatVisitsCount,
+		overallRepeatRatePercent,
+		overallLtvKopecks,
+		overallLtvFormatted,
 		profitableChannelsCount: profitableCount,
 		lossChannelsCount: lossCount,
 		organicChannelsCount: organicCount,
@@ -392,3 +451,218 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		notes: "Пешеходный трафик и фасадная вывеска клиники",
 	},
 ];
+
+/**
+ * Нормализует произвольную строку источника пациента в канонический channelKey из STOMX_MARKETING_SOURCES.
+ */
+export function matchStomxMarketingChannel(rawSource?: string | null): string {
+	if (!rawSource || typeof rawSource !== "string") {
+		return "word_of_mouth";
+	}
+	const s = rawSource.trim().toLowerCase();
+	if (!s) return "word_of_mouth";
+
+	if (s.includes("2gis") || s.includes("2гис") || s.includes("дубльгис")) {
+		return "gis2";
+	}
+	if (s.includes("яндекс") || s.includes("yandex") || s.includes("карты") || s.includes("гео")) {
+		return "yandex_maps";
+	}
+	if (s.includes("продокторов") || s.includes("prodoctorov")) {
+		return "prodoctorov";
+	}
+	if (s.includes("сарафан") || s.includes("знаком") || s.includes("рекомендац") || s.includes("родствен") || s.includes("семь")) {
+		return "word_of_mouth";
+	}
+	if (s.includes("сбер") || s.includes("docdoc") || s.includes("sber")) {
+		return "sberhealth";
+	}
+	if (s.includes("листов") || s.includes("буклет") || s.includes("промо") || s.includes("флаер")) {
+		return "flyers";
+	}
+	if (s.includes("вконтакт") || s.includes("vk") || s.includes("vkontakte") || /\bвк\b/i.test(s) || s === "вк") {
+		return "vk";
+	}
+	if (s.includes("наружн") || s.includes("вывеск") || s.includes("щит") || s.includes("мимо")) {
+		return "outdoor";
+	}
+	if (s.includes("сайт") || s.includes("site") || s.includes("seo") || s.includes("интернет") || s.includes("онлайн")) {
+		return "website";
+	}
+	if (s.includes("инста") || s.includes("insta")) {
+		return "instagram";
+	}
+
+	return "word_of_mouth";
+}
+
+/**
+ * Создает предустановленный набор 10 каналов на основе канонического справочника StomX (STOMX_MARKETING_SOURCES).
+ */
+export function buildStomxDefaultAdvertisingChannels(): AdvertisingChannelInput[] {
+	return STOMX_MARKETING_SOURCES.map((source) => ({
+		id: `ch_stomx_${source.channelKey}`,
+		channelKey: source.channelKey,
+		nameRu: source.nameRu,
+		categoryRu: source.categoryRu,
+		spentKopecks: source.defaultSpendRub * 100,
+		leadsCount: 0,
+		primaryPatientsCount: 0,
+		revenueKopecks: 0,
+		repeatVisitsCount: 0,
+		notes: source.descriptionRu,
+	}));
+}
+
+/**
+ * Канонические 10 каналов StomX с нулевыми исходными показателями для безопасного старта аналитики.
+ */
+export const STOMX_DEFAULT_ADVERTISING_CHANNELS: readonly AdvertisingChannelInput[] =
+	Object.freeze(buildStomxDefaultAdvertisingChannels());
+
+/**
+ * Агрегирует реальные маркетинговые метрики клиники из живых данных CRM:
+ * - Первичные пациенты (у которых есть хотя бы один визит со статусом 'completed')
+ * - Повторные визиты (все последующие завершенные визиты)
+ * - Выручка от первичных пациентов и LTV в копейках
+ * - Звонки и лиды с коллтрекинга
+ */
+export function aggregateCrmMarketingMetrics(params: {
+	patients: ReadonlyArray<{
+		id: string;
+		administrativeProfile?: { advertisingSource?: string | null; marketingSource?: string | null } | null;
+		notes?: string | null;
+	}>;
+	appointments: ReadonlyArray<{
+		id: string;
+		patientId: string;
+		status: string;
+		costRub?: number;
+	}>;
+	payments: ReadonlyArray<{
+		id: string;
+		patientId: string;
+		amount: number;
+		status?: string;
+	}>;
+	communicationEvents?: ReadonlyArray<{
+		id: string;
+		patientId?: string;
+		type?: string;
+		channel?: string;
+		source?: string;
+	}>;
+	customBudgetsKopecks?: Record<string, number>;
+}): AdvertisingChannelInput[] {
+	const {
+		patients,
+		appointments,
+		payments,
+		communicationEvents = [],
+		customBudgetsKopecks = {},
+	} = params;
+
+	// 1. Group completed appointments by patientId
+	const completedApptsByPatient = new Map<string, number>();
+	for (const appt of appointments) {
+		if (appt.status === "completed") {
+			completedApptsByPatient.set(
+				appt.patientId,
+				(completedApptsByPatient.get(appt.patientId) ?? 0) + 1,
+			);
+		}
+	}
+
+	// 2. Group payments by patientId (in kopecks)
+	const paymentsByPatient = new Map<string, number>();
+	for (const p of payments) {
+		if (p.status !== "refunded" && p.status !== "failed") {
+			const kop = Math.round(Number(p.amount || 0) * 100);
+			paymentsByPatient.set(
+				p.patientId,
+				(paymentsByPatient.get(p.patientId) ?? 0) + kop,
+			);
+		}
+	}
+
+	// 3. Accumulate stats per StomX channelKey
+	const channelStats = new Map<
+		string,
+		{
+			leadsCount: number;
+			primaryPatientsCount: number;
+			repeatVisitsCount: number;
+			revenueKopecks: number;
+			totalLtvRevenueKopecks: number;
+		}
+	>();
+
+	for (const source of STOMX_MARKETING_SOURCES) {
+		channelStats.set(source.channelKey, {
+			leadsCount: 0,
+			primaryPatientsCount: 0,
+			repeatVisitsCount: 0,
+			revenueKopecks: 0,
+			totalLtvRevenueKopecks: 0,
+		});
+	}
+
+	// Tally telephony / call tracking events
+	for (const ev of communicationEvents) {
+		const rawKey = ev.source || ev.channel;
+		const channelKey = matchStomxMarketingChannel(rawKey);
+		const stat = channelStats.get(channelKey);
+		if (stat) {
+			stat.leadsCount++;
+		}
+	}
+
+	// Tally patient visits and revenue
+	for (const p of patients) {
+		const rawSource =
+			p.administrativeProfile?.advertisingSource ||
+			p.administrativeProfile?.marketingSource ||
+			p.notes;
+		const channelKey = matchStomxMarketingChannel(rawSource);
+		const stat = channelStats.get(channelKey);
+		if (!stat) continue;
+
+		const completedCount = completedApptsByPatient.get(p.id) ?? 0;
+		const patientTotalPaid = paymentsByPatient.get(p.id) ?? 0;
+
+		if (completedCount >= 1) {
+			stat.primaryPatientsCount++;
+			stat.repeatVisitsCount += completedCount - 1;
+			// If repeat visits exist, estimate primary revenue vs repeat, or attribute all paid
+			stat.revenueKopecks += completedCount > 1
+				? Math.round(patientTotalPaid / completedCount)
+				: patientTotalPaid;
+			stat.totalLtvRevenueKopecks += patientTotalPaid;
+		} else {
+			// Uncompleted lead/inquiry
+			stat.leadsCount++;
+		}
+	}
+
+	return STOMX_MARKETING_SOURCES.map((source) => {
+		const stat = channelStats.get(source.channelKey)!;
+		const spentKopecks =
+			customBudgetsKopecks[source.channelKey] ?? (source.defaultSpendRub * 100);
+
+		const leadsCount = Math.max(stat.leadsCount, stat.primaryPatientsCount);
+
+		return {
+			id: `ch_stomx_${source.channelKey}`,
+			channelKey: source.channelKey,
+			nameRu: source.nameRu,
+			categoryRu: source.categoryRu,
+			spentKopecks,
+			leadsCount,
+			primaryPatientsCount: stat.primaryPatientsCount,
+			repeatVisitsCount: stat.repeatVisitsCount,
+			revenueKopecks: stat.revenueKopecks,
+			totalLtvRevenueKopecks: stat.totalLtvRevenueKopecks,
+			notes: source.descriptionRu,
+		};
+	});
+}
