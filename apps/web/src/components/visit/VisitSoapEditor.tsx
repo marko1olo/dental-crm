@@ -46,10 +46,15 @@ export interface VisitSoapEditorProps {
 	readonly isLocked?: boolean;
 	readonly className?: string;
 	readonly autoFocusField?: "complaint" | "treatmentPlan" | null;
+	readonly isTemplatesOpen?: boolean;
+	readonly onToggleTemplates?: (open: boolean) => void;
 }
 
-const COMMON_FDI_TEETH = [
-	16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44, 18, 48,
+const ALL_FDI_ADULT_TEETH = [
+	18, 17, 16, 15, 14, 13, 12, 11,
+	21, 22, 23, 24, 25, 26, 27, 28,
+	48, 47, 46, 45, 44, 43, 42, 41,
+	31, 32, 33, 34, 35, 36, 37, 38,
 ];
 
 const SPECIALTY_ICONS: Record<OutpatientSpecialty, React.ReactNode> = {
@@ -86,6 +91,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	isLocked = false,
 	className = "",
 	autoFocusField: _autoFocusField = null,
+	isTemplatesOpen: isTemplatesOpenProp,
+	onToggleTemplates,
 }) => {
 	// ── Локальное состояние полей SOAP ──
 	const [values, setValues] = useState<VisitSoapNoteValues>({
@@ -105,7 +112,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	const [activeViewMode, setActiveViewMode] = useState<"fields" | "full_text">(
 		"fields",
 	);
-	const [isTemplatesOpen, setIsTemplatesOpen] = useState<boolean>(false);
+	const [localTemplatesOpen, setLocalTemplatesOpen] = useState<boolean>(false);
+	const isTemplatesOpen =
+		isTemplatesOpenProp !== undefined ? isTemplatesOpenProp : localTemplatesOpen;
+	const setIsTemplatesOpen = useCallback(
+		(val: boolean | ((prev: boolean) => boolean)) => {
+			const next = typeof val === "function" ? val(isTemplatesOpen) : val;
+			setLocalTemplatesOpen(next);
+			onToggleTemplates?.(next);
+		},
+		[isTemplatesOpen, onToggleTemplates],
+	);
+
 	const [activeSpecialty, setActiveSpecialty] = useState<
 		OutpatientSpecialty | "all"
 	>("all");
@@ -119,13 +137,49 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 	// Синхронизация при внешних изменениях activeTooth
 	useEffect(() => {
-		if (activeTooth) {
+		if (activeTooth !== undefined && activeTooth !== null) {
 			setSelectedTooth(activeTooth);
 		}
 	}, [activeTooth]);
 
-	// Дебаунс автосохранения
+	// Синхронизация с внешними изменениями initialValues
 	useEffect(() => {
+		if (initialValues) {
+			setValues((prev) => {
+				const isDifferent =
+					(initialValues.complaint !== undefined &&
+						initialValues.complaint !== prev.complaint) ||
+					(initialValues.anamnesis !== undefined &&
+						initialValues.anamnesis !== prev.anamnesis) ||
+					(initialValues.objectiveStatus !== undefined &&
+						initialValues.objectiveStatus !== prev.objectiveStatus) ||
+					(initialValues.diagnosis !== undefined &&
+						initialValues.diagnosis !== prev.diagnosis) ||
+					(initialValues.treatmentPlan !== undefined &&
+						initialValues.treatmentPlan !== prev.treatmentPlan) ||
+					(initialValues.recommendations !== undefined &&
+						initialValues.recommendations !== prev.recommendations) ||
+					(initialValues.icd10 !== undefined &&
+						initialValues.icd10 !== prev.icd10);
+
+				if (!isDifferent) return prev;
+
+				const next: VisitSoapNoteValues = { ...prev };
+				if (initialValues.complaint !== undefined) next.complaint = initialValues.complaint;
+				if (initialValues.anamnesis !== undefined) next.anamnesis = initialValues.anamnesis;
+				if (initialValues.objectiveStatus !== undefined) next.objectiveStatus = initialValues.objectiveStatus;
+				if (initialValues.diagnosis !== undefined) next.diagnosis = initialValues.diagnosis;
+				if (initialValues.treatmentPlan !== undefined) next.treatmentPlan = initialValues.treatmentPlan;
+				if (initialValues.recommendations !== undefined) next.recommendations = initialValues.recommendations;
+				if (initialValues.icd10 !== undefined) next.icd10 = initialValues.icd10;
+				return next;
+			});
+		}
+	}, [initialValues]);
+
+	// Дебаунс автосохранения (только при активном редактировании)
+	useEffect(() => {
+		if (saveStatus !== "saving") return;
 		const timer = setTimeout(() => {
 			onChange?.(values);
 			onSave?.(values);
@@ -133,7 +187,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}, 400);
 
 		return () => clearTimeout(timer);
-	}, [values, onChange, onSave]);
+	}, [values, saveStatus, onChange, onSave]);
 
 	const handleFieldChange = useCallback(
 		(field: keyof VisitSoapNoteValues, val: string) => {
@@ -186,17 +240,28 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				params,
 			);
 
+			const formattedDiagnosis = `${protocol.mkbCode} ${popDiagnosis}`.trim();
+
 			if (mode === "replace") {
+				// Mandate 8e: preserve custom somatic/allergy notes if already entered by doctor
+				const preservedAnamnesis =
+					values.anamnesis &&
+					!values.anamnesis.includes("Соматически здоров") &&
+					!values.anamnesis.includes(popAnamnesis)
+						? `${values.anamnesis}; ${popAnamnesis}`
+						: popAnamnesis;
+
 				const nextValues: VisitSoapNoteValues = {
 					complaint: popComplaint,
-					anamnesis: popAnamnesis,
+					anamnesis: preservedAnamnesis,
 					objectiveStatus: popObjective,
-					diagnosis: popDiagnosis,
+					diagnosis: formattedDiagnosis,
 					treatmentPlan: popTreatment,
 					recommendations: popRecs,
 					icd10: protocol.mkbCode,
 				};
 				setValues(nextValues);
+				setSaveStatus("saved");
 				onSave?.(nextValues);
 				onChange?.(nextValues);
 
@@ -204,22 +269,23 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				onApplyFullDiary?.(formattedFull);
 			} else {
 				setValues((prev) => {
-					const appendText = (current?: string, add?: string) => {
-						if (!current) return add || "";
-						if (!add) return current;
-						return `${current}; ${add}`;
+					const appendText = (current?: string, add?: string, sep = "; ") => {
+						if (!current || !current.trim()) return add || "";
+						if (!add || !add.trim()) return current;
+						return `${current}${sep}${add}`;
 					};
 					const next: VisitSoapNoteValues = {
 						complaint: appendText(prev.complaint, popComplaint),
 						anamnesis: appendText(prev.anamnesis, popAnamnesis),
-						objectiveStatus: appendText(prev.objectiveStatus, popObjective),
+						objectiveStatus: appendText(prev.objectiveStatus, popObjective, "\n"),
 						diagnosis: prev.diagnosis
-							? `${prev.diagnosis}; ${popDiagnosis}`
-							: popDiagnosis,
-						treatmentPlan: appendText(prev.treatmentPlan, popTreatment),
-						recommendations: appendText(prev.recommendations, popRecs),
+							? `${prev.diagnosis}, ${formattedDiagnosis}`
+							: formattedDiagnosis,
+						treatmentPlan: appendText(prev.treatmentPlan, popTreatment, "\n\n"),
+						recommendations: appendText(prev.recommendations, popRecs, "\n"),
 						icd10: prev.icd10 || protocol.mkbCode,
 					};
+					setSaveStatus("saved");
 					onSave?.(next);
 					onChange?.(next);
 					return next;
@@ -229,7 +295,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			setIsTemplatesOpen(false);
 			setPreviewProtocol(null);
 		},
-		[selectedTooth, selectedSurfaces, onSave, onChange, onApplyFullDiary],
+		[selectedTooth, selectedSurfaces, values.anamnesis, onSave, onChange, onApplyFullDiary, setIsTemplatesOpen],
 	);
 
 	// 1-клик физиологическая норма (Мандат 8e)
@@ -241,7 +307,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			anamnesis:
 				"Соматически здоров. Аллергологический анамнез не отягощен. Сопутствующие системные заболевания отрицает.",
 			objectiveStatus: `Прикус физиологический. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических элементов. Зуб ${targetTooth}: интактен, зондирование и перкуссия безболезненны, реакция на термопробу адекватная, подвижность отсутствует. Зубные отложения умеренные.`,
-			diagnosis: "Z01.2 Стоматологическое обследование (Здоров).",
+			diagnosis: "Z01.2 Стоматологическое обследование (Здоров)",
 			treatmentPlan:
 				"Проведена профессиональная контролируемая гигиена полости рта, обучение технике чистки зубов, подбор индивидуальных средств гигиены.",
 			recommendations:
@@ -249,6 +315,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			icd10: "Z01.2",
 		};
 		setValues(normValues);
+		setSaveStatus("saved");
 		onSave?.(normValues);
 		onChange?.(normValues);
 	}, [selectedTooth, onSave, onChange]);
@@ -275,7 +342,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			className={`flex flex-col bg-[var(--paper,white)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden shadow-xs ${className}`}
 		>
 			{/* ── ТУЛБАР 1 СТРОКА (ХИК / HIG: 32-36px кнопки) ── */}
-			<div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/50 border-b border-[var(--line,#e2e8f0)] flex-wrap">
+			<div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/50 border-b border-[var(--line,#e2e8f0)] flex-wrap min-h-[36px]">
 				<div className="flex items-center gap-2">
 					<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
 						<FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
@@ -302,7 +369,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							className="h-7 px-2 text-xs font-bold bg-white dark:bg-slate-800 border border-[var(--line,#cbd5e1)] rounded-lg text-teal-700 dark:text-teal-300 focus:outline-none focus:ring-1 focus:ring-teal-500"
 						>
 							<option value="">Без зуба</option>
-							{COMMON_FDI_TEETH.map((t) => (
+							{ALL_FDI_ADULT_TEETH.map((t) => (
 								<option key={t} value={t}>
 									{t} зуб
 								</option>

@@ -4,11 +4,20 @@ import {
 	Check,
 	HeartPulse,
 	Plus,
+	Search,
 	ShieldCheck,
+	Sparkles,
 	Stethoscope,
+	X,
 } from "lucide-react";
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+	type OutpatientProtocolTemplate,
+	type OutpatientSpecialty,
+	populateOutpatientTemplateText,
+	searchOutpatientProtocols,
+	STOMX_SPECIALTIES,
+} from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
@@ -16,6 +25,8 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 export interface VisitAnamnesisTabProps {
 	onAppendAnamnesis?: (text: string) => void;
 	onAppendComorbidities?: (text: string) => void;
+	activeTooth?: number | null;
+	onOpenStomxTemplates?: () => void;
 }
 
 const COMMON_COMPLAINTS = [
@@ -58,6 +69,8 @@ const DENTAL_HISTORY_FACTORS = [
 export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 	onAppendAnamnesis,
 	onAppendComorbidities,
+	activeTooth = null,
+	onOpenStomxTemplates,
 }) => {
 	const appLogic = useAppLogicContext();
 	// biome-ignore lint/suspicious/noExplicitAny: patient identification
@@ -68,6 +81,42 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 	const [selectedRisks, setSelectedRisks] = useState<string[]>([]);
 	const [selectedHistory, setSelectedHistory] = useState<string[]>([]);
 	const [customNotes, setCustomNotes] = useState("");
+
+	const [isStomxModalOpen, setIsStomxModalOpen] = useState<boolean>(false);
+	const [stomxSearch, setStomxSearch] = useState<string>("");
+	const [stomxSpecialty, setStomxSpecialty] = useState<OutpatientSpecialty | "all">("all");
+
+	const filteredStomxProtocols = useMemo(() => {
+		const spec = stomxSpecialty === "all" ? undefined : stomxSpecialty;
+		return searchOutpatientProtocols(stomxSearch, spec);
+	}, [stomxSearch, stomxSpecialty]);
+
+	const handleApplyStomxProtocol = (protocol: OutpatientProtocolTemplate) => {
+		const targetTooth = activeTooth ?? 16;
+		const params = { toothNumber: targetTooth };
+		const popComplaint = populateOutpatientTemplateText(protocol.complaint, params);
+		const popAnamnesis = populateOutpatientTemplateText(protocol.anamnesis, params);
+		const popObjective = populateOutpatientTemplateText(protocol.objectiveStatus, params);
+		const popDiagnosis = populateOutpatientTemplateText(protocol.diagnosis, params);
+		const popTreatment = populateOutpatientTemplateText(protocol.treatmentProtocol, params);
+		const popRecs = populateOutpatientTemplateText(protocol.recommendations, params);
+
+		// biome-ignore lint/suspicious/noExplicitAny: integration context
+		const ctx = appLogic as any;
+		if (ctx?.updateVisitNoteField) {
+			ctx.updateVisitNoteField("complaint", popComplaint);
+			ctx.updateVisitNoteField("anamnesis", popAnamnesis);
+			ctx.updateVisitNoteField("objectiveStatus", popObjective);
+			ctx.updateVisitNoteField("diagnosis", `${protocol.mkbCode} ${popDiagnosis}`.trim());
+			ctx.updateVisitNoteField("treatmentPlan", popTreatment);
+			ctx.updateVisitNoteField("recommendations", popRecs);
+		}
+		if (onAppendAnamnesis) {
+			onAppendAnamnesis(popAnamnesis);
+		}
+		showToast(`Применен протокол StomX: ${protocol.name} (зуб ${targetTooth})`, "success", 4000);
+		setIsStomxModalOpen(false);
+	};
 
 	// Restore draft on mount or patient switch
 	useEffect(() => {
@@ -209,6 +258,16 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 					</div>
 				</div>
 				<div className="flex items-center gap-2.5 flex-wrap">
+					<button
+						type="button"
+						onClick={onOpenStomxTemplates || (() => setIsStomxModalOpen(true))}
+						className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer active:scale-98"
+						data-testid="btn-open-stomt-templates-anamnesis"
+						title="Открыть каталог 448 клинических шаблонов 043/у из StomX (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
+					>
+						<Sparkles className="w-4 h-4" />
+						<span>Клинические шаблоны StomX (448)</span>
+					</button>
 					<button
 						type="button"
 						onClick={handleApplyPhysiologicalNorm}
@@ -357,6 +416,94 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 					className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm focus:ring-2 focus:ring-[var(--teal-glow)] focus:border-[var(--teal)] outline-none resize-y"
 				/>
 			</div>
+
+			{/* Модальное окно выбора протоколов StomX (448 шаблонов) */}
+			{isStomxModalOpen && (
+				<div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+					<div className="bg-[var(--paper,white)] text-[var(--ink)] rounded-2xl max-w-2xl w-full p-4 border border-[var(--line)] shadow-2xl max-h-[85vh] flex flex-col">
+						<div className="flex items-center justify-between border-b border-[var(--line)] pb-2 mb-3">
+							<div className="flex items-center gap-2">
+								<Sparkles className="w-5 h-5 text-teal-600" />
+								<div>
+									<h4 className="font-bold text-sm m-0">Клинические шаблоны StomX (448 протоколов 043/у)</h4>
+									<p className="text-[11px] text-[var(--muted)] m-0">Целевой зуб: {activeTooth ?? 16} (автозамена плейсхолдеров)</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsStomxModalOpen(false)}
+								className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+
+						{/* Фильтр специальностей */}
+						<div className="flex items-center gap-1 overflow-x-auto pb-2 scrollbar-none shrink-0">
+							<button
+								type="button"
+								onClick={() => setStomxSpecialty("all")}
+								className={`h-7 px-2.5 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${stomxSpecialty === "all" ? "bg-teal-600 text-white" : "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"}`}
+							>
+								Все ({searchOutpatientProtocols("").length})
+							</button>
+							{STOMX_SPECIALTIES.map((spec) => (
+								<button
+									key={spec.id}
+									type="button"
+									onClick={() => setStomxSpecialty(spec.id)}
+									className={`h-7 px-2.5 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${stomxSpecialty === spec.id ? "bg-teal-600 text-white" : "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"}`}
+								>
+									{spec.shortLabel}
+								</button>
+							))}
+						</div>
+
+						{/* Поиск */}
+						<div className="relative my-2 shrink-0">
+							<Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[var(--muted)]" />
+							<input
+								type="text"
+								value={stomxSearch}
+								onChange={(e) => setStomxSearch(e.target.value)}
+								placeholder="Поиск по диагнозу, коду МКБ-10, протоколу лечения..."
+								className="w-full h-8 pl-8 pr-3 text-xs bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-teal-500"
+							/>
+						</div>
+
+						{/* Список протоколов */}
+						<div className="overflow-y-auto max-h-[50vh] space-y-2 pr-1 flex-1">
+							{filteredStomxProtocols.slice(0, 50).map((protocol) => (
+								<div
+									key={protocol.id}
+									className="p-2.5 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl flex items-center justify-between gap-3 hover:border-teal-500 transition-colors"
+								>
+									<div className="min-w-0 flex-1">
+										<div className="flex items-center gap-1.5 mb-1">
+											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800">
+												{protocol.mkbCode}
+											</span>
+											<span className="text-xs font-bold text-[var(--ink)] truncate">
+												{protocol.name}
+											</span>
+										</div>
+										<p className="text-[11px] text-[var(--muted)] line-clamp-1 m-0">
+											{protocol.complaint}
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={() => handleApplyStomxProtocol(protocol)}
+										className="shrink-0 h-8 px-3 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg cursor-pointer transition-colors shadow-xs"
+									>
+										Применить (1 клик)
+									</button>
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

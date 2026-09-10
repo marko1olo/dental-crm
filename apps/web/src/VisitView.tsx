@@ -251,6 +251,7 @@ import {
 } from "./components/treatment-plans/validation/planPriceValidationPresets";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
+import { VisitSoapEditor, type VisitSoapNoteValues } from "./components/visit/VisitSoapEditor";
 import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { PatientAllergySafetyBanner } from "./components/patient/PatientAllergySafetyBanner";
@@ -958,6 +959,53 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		}
 	};
 
+	// ── SOAP / StomX 448 протоколов (Форма 043/у) ────────────────
+	const [isSoapTemplatesDrawerOpen, setIsSoapTemplatesDrawerOpen] = React.useState<boolean>(false);
+
+	const handleSoapEditorChange = useCallback(
+		(values: VisitSoapNoteValues) => {
+			if (!updateVisitNoteField) return;
+			if (values.complaint !== undefined && values.complaint !== visitNoteForm?.complaint) {
+				updateVisitNoteField("complaint", values.complaint);
+			}
+			if (values.anamnesis !== undefined && values.anamnesis !== visitNoteForm?.anamnesis) {
+				updateVisitNoteField("anamnesis", values.anamnesis);
+			}
+			if (values.objectiveStatus !== undefined && values.objectiveStatus !== visitNoteForm?.objectiveStatus) {
+				updateVisitNoteField("objectiveStatus", values.objectiveStatus);
+			}
+			if (values.diagnosis !== undefined && values.diagnosis !== visitNoteForm?.diagnosis) {
+				updateVisitNoteField("diagnosis", values.diagnosis);
+			}
+			if (values.treatmentPlan !== undefined && values.treatmentPlan !== visitNoteForm?.treatmentPlan) {
+				updateVisitNoteField("treatmentPlan", values.treatmentPlan);
+			}
+			if (values.recommendations !== undefined && values.recommendations !== (visitNoteForm as any)?.recommendations) {
+				updateVisitNoteField("recommendations" as any, values.recommendations);
+			}
+		},
+		[updateVisitNoteField, visitNoteForm],
+	);
+
+	const handleSelectActiveToothFromSoap = useCallback(
+		(toothNumber: number) => {
+			if (typeof setToothState === "function") {
+				setSelectedToothForMenu({ code: String(toothNumber), state: "Caries" });
+			}
+		},
+		[setToothState],
+	);
+
+	const handleOpenStomxTemplatesFromHeader = useCallback(() => {
+		setVisitSubViewTab("anamnesis");
+		setAnamnesisTabWasOpened(true);
+		setIsSoapTemplatesDrawerOpen(true);
+		setTimeout(() => {
+			const el = document.getElementById("visit-soap-editor-container");
+			el?.scrollIntoView({ behavior: "smooth", block: "start" });
+		}, 60);
+	}, []);
+
 	/*
     ПЕРЕХОД ПО ШАГУ ЗАКРЫТИЯ ПРИЁМА НЕ ВЫБРАСЫВАЕТ ВРАЧА ИЗ ПРИЁМА.
 
@@ -1217,6 +1265,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="sm:hidden">Норма</span>
 							</button>
 
+							{/* Клинические шаблоны StomX (448 протоколов) */}
+							<button
+								type="button"
+								onClick={handleOpenStomxTemplatesFromHeader}
+								data-testid="btn-open-stomt-templates-header"
+								className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer shrink-0"
+								title="Клинические шаблоны StomX (448 протоколов 043/у по 5 специальностям)"
+							>
+								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+								<span className="hidden lg:inline">Шаблоны StomX (448)</span>
+							</button>
+
 							{/* Печать Формы 043/у (Мандат 8e) */}
 							<button
 								type="button"
@@ -1347,6 +1407,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							<div className="flex items-center gap-1.5 shrink-0">
 								<button
 									type="button"
+									onClick={() => setIsSoapTemplatesDrawerOpen((prev) => !prev)}
+									data-testid="btn-open-stomt-templates-strip"
+									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
+									title="Клинические шаблоны StomX (448 протоколов 043/у: Терапия, Ортопедия, Хирургия, Имплантация, Пародонтология)"
+								>
+									<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+									<span>Шаблоны StomX (448)</span>
+								</button>
+								<button
+									type="button"
 									onClick={handleApplySomaticNormQuick}
 									data-testid="btn-somatic-norm-one-click"
 									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
@@ -1368,7 +1438,43 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								</button>
 							</div>
 						</section>
-						<VisitAnamnesisTab />
+
+						{/* ── ОСНОВНОЙ РЕДАКТОР ДНЕВНИКА ФОРМЫ 043/У (SOAP) СО STOMX ШАБЛОНАМИ ── */}
+						<div id="visit-soap-editor-container" className="w-full my-3">
+							<VisitSoapEditor
+								initialValues={{
+									complaint: visitNoteForm?.complaint || "",
+									anamnesis: visitNoteForm?.anamnesis || "",
+									objectiveStatus: visitNoteForm?.objectiveStatus || "",
+									diagnosis: visitNoteForm?.diagnosis || "",
+									treatmentPlan: visitNoteForm?.treatmentPlan || "",
+									recommendations: (visitNoteForm as any)?.recommendations || "",
+									icd10: typeof visitNoteForm?.diagnosis === "string"
+										? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] || ""
+										: "",
+								}}
+								activeTooth={selectedToothForMenu?.code ? Number(selectedToothForMenu.code) : null}
+								onSelectActiveTooth={handleSelectActiveToothFromSoap}
+								onChange={handleSoapEditorChange}
+								onSave={handleSoapEditorChange}
+								onApplyFullDiary={(fullDiaryText) => {
+									if (typeof appendToTranscript === "function") {
+										appendToTranscript(`\n\n${fullDiaryText}`);
+									}
+								}}
+								isTemplatesOpen={isSoapTemplatesDrawerOpen}
+								onToggleTemplates={setIsSoapTemplatesDrawerOpen}
+							/>
+						</div>
+
+						<VisitAnamnesisTab
+							activeTooth={selectedToothForMenu?.code ? Number(selectedToothForMenu.code) : null}
+							onOpenStomxTemplates={() => {
+								setIsSoapTemplatesDrawerOpen(true);
+								const el = document.getElementById("visit-soap-editor-container");
+								el?.scrollIntoView({ behavior: "smooth", block: "start" });
+							}}
+						/>
 					</div>
 				)}
 
