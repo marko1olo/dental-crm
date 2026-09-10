@@ -131,6 +131,72 @@ export const ProcedureSpecificConsentForm = React.memo(
 			(state) => state.setProcedureConsentToothOrArea,
 		);
 
+interface PresetButtonDef {
+	type: ProcedureSpecificConsentProcedure;
+	label: string;
+}
+
+interface PresetCategoryDef {
+	id: string;
+	title: string;
+	buttons: PresetButtonDef[];
+}
+
+const PRESET_CATEGORIES: PresetCategoryDef[] = [
+	{
+		id: "therapy",
+		title: "Терапия & Эндодонтия",
+		buttons: [
+			{ type: "superficial_medium_caries", label: "Кариес (пов./средний)" },
+			{ type: "deep_caries", label: "Глубокий кариес" },
+			{ type: "pulpitis_endodontics", label: "Пульпит & Эндодонтия" },
+			{ type: "therapy_endo_restoration", label: "Терапия / Реставрация" },
+		],
+	},
+	{
+		id: "surgery",
+		title: "Хирургия & Имплантация",
+		buttons: [
+			{ type: "surgery_extraction", label: "Удаление зуба" },
+			{ type: "implantation", label: "Имплантация" },
+			{ type: "sinus_lifting", label: "Синус-лифтинг" },
+			{ type: "sedation", label: "Седация (ЗАКС / в/в)" },
+			{ type: "local_anesthesia", label: "Местная анестезия" },
+		],
+	},
+	{
+		id: "prosthetics",
+		title: "Ортопедия & Эстетика",
+		buttons: [
+			{ type: "veneers", label: "Виниры" },
+			{ type: "fixed_prosthetics", label: "Несъемные коронки/мосты" },
+			{ type: "removable_prosthetics", label: "Съемные протезы" },
+		],
+	},
+	{
+		id: "periodontics_hygiene",
+		title: "Пародонтология, Гигиена & Ортодонтия",
+		buttons: [
+			{ type: "professional_hygiene", label: "Проф.гигиена" },
+			{ type: "teeth_whitening", label: "Отбеливание зубов" },
+			{ type: "periodontology", label: "Пародонтология" },
+			{ type: "orthodontics", label: "Ортодонтия (брекеты/элайнеры)" },
+		],
+	},
+	{
+		id: "diagnostics_legal",
+		title: "Диагностика, Дети & Правовые формы",
+		buttons: [
+			{ type: "xray_cbct", label: "Рентген & КЛКТ" },
+			{ type: "photoprotocol", label: "Фотопротокол" },
+			{ type: "minor_general", label: "Несовершеннолетний (представитель)" },
+			{ type: "egisz_refusal", label: "Отказ от передачи в ЕГИСЗ" },
+			{ type: "medical_intervention_refusal", label: "Отказ от медвмешательства" },
+			{ type: "warranty_policy", label: "Гарантийные обязательства" },
+		],
+	},
+];
+
 		const applyClinicalPreset = (procType: ProcedureSpecificConsentProcedure) => {
 			const preset = CLINICAL_CONSENT_PRESETS[procType];
 			if (!preset) return;
@@ -145,89 +211,58 @@ export const ProcedureSpecificConsentForm = React.memo(
 			setProcedureConsentAftercare(preset.aftercareAndLimits.join("\n"));
 		};
 
+		const allProcedureOptions = React.useMemo(() => {
+			const existingValues = new Set(procedureOptions.map((opt) => opt.value));
+			const extraOptions: DocumentSelectOption<ProcedureSpecificConsentProcedure>[] = [];
+			for (const [key, preset] of Object.entries(CLINICAL_CONSENT_PRESETS)) {
+				if (!existingValues.has(key as ProcedureSpecificConsentProcedure)) {
+					extraOptions.push({
+						value: key as ProcedureSpecificConsentProcedure,
+						label: preset.procedureName,
+					});
+				}
+			}
+			return [...procedureOptions, ...extraOptions];
+		}, [procedureOptions]);
+
 		return (
 			<DocumentPayloadCard
 				title="Процедурное согласие"
 				description="Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения."
 			>
-				<div style={{ marginBottom: "14px" }}>
-					<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block", marginBottom: "8px" }}>
+				<div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+					<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block" }}>
 						Быстрое заполнение по клиническому профилю (1 клик):
 					</span>
-					<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("therapy_endo_restoration")}
-						>
-							Терапия / Эндодонтия
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("local_anesthesia")}
-						>
-							Местная анестезия
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("sedation")}
-						>
-							Седация (ЗАКС / в/в)
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("surgery_extraction")}
-						>
-							Хирургия / Удаление
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("implantation_bone_graft")}
-						>
-							Имплантация / Костная пластика
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("prosthetics")}
-						>
-							Ортопедия (коронки, виниры)
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("orthodontics")}
-						>
-							Ортодонтия (брекеты, элайнеры)
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("hygiene_whitening")}
-						>
-							Гигиена и отбеливание
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
-							onClick={() => applyClinicalPreset("periodontology")}
-						>
-							Пародонтология
-						</button>
-					</div>
+					{PRESET_CATEGORIES.map((cat) => (
+						<div key={cat.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+							<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted, #64748b)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+								{cat.title}
+							</span>
+							<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+								{cat.buttons.map((btn) => {
+									const isActive = procedureConsentProcedureType === btn.type;
+									return (
+										<button
+											key={btn.type}
+											type="button"
+											className={isActive ? "primary-button" : "secondary-button"}
+											style={{
+												minHeight: "44px",
+												fontSize: "13px",
+												padding: "8px 14px",
+												borderRadius: "8px",
+												fontWeight: isActive ? 600 : 500,
+											}}
+											onClick={() => applyClinicalPreset(btn.type)}
+										>
+											{btn.label}
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					))}
 				</div>
 
 				<div className="document-payload-row">
@@ -240,7 +275,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 								setProcedureConsentProcedureType(nextType);
 							}}
 						>
-							{procedureOptions.map((option) => (
+							{allProcedureOptions.map((option) => (
 								<option key={option.value} value={option.value}>
 									{option.label}
 								</option>
