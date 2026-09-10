@@ -45,13 +45,13 @@ export interface SbpPaymentQrModalProps {
 		| ((result: {
 				orderId: string;
 				sumRub: number;
-				fiscalReceiptId: string;
+				fiscalReceiptId: string | null;
 				isManualReconciliation?: boolean;
 		  }) => void)
 		| undefined;
 	readonly onSendToChat?: ((channel: "whatsapp" | "telegram", messageText: string) => void) | undefined;
 	readonly onCheckStatus?:
-		| ((orderId: string) => Promise<{ paid: boolean; fiscalReceiptId?: string }>)
+		| ((orderId: string) => Promise<{ paid: boolean; fiscalReceiptId?: string | null }>)
 		| undefined;
 	readonly defaultTtlMinutes?: number | undefined;
 	readonly embedded?: boolean | undefined;
@@ -72,7 +72,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 	const [remainingSeconds, setRemainingSeconds] = useState<number>(defaultTtlMinutes * 60);
 	const [copied, setCopied] = useState<boolean>(false);
 	const [qrPayload, setQrPayload] = useState<SbpDynamicQrResult | null>(null);
-	const [fiscalReceiptId, setFiscalReceiptId] = useState<string>("");
+	const [fiscalReceiptId, setFiscalReceiptId] = useState<string | null>(null);
 	const [isCheckingStatus, setIsCheckingStatus] = useState<boolean>(false);
 	const [statusCheckMessage, setStatusCheckMessage] = useState<{
 		text: string;
@@ -94,7 +94,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 			setQrPayload(payload);
 			setStatus("awaiting_scan");
 			setRemainingSeconds(defaultTtlMinutes * 60);
-			setFiscalReceiptId(`FD-${Math.floor(100000 + Math.random() * 900000)}`);
+			setFiscalReceiptId(null);
 			setIsManualConfirmPending(false);
 			setIsManualReconciliation(false);
 			setStatusCheckMessage(null);
@@ -207,15 +207,14 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 			if (onCheckStatus) {
 				const checkResult = await onCheckStatus(invoice.orderId);
 				if (checkResult.paid) {
-					const receiptId =
-						checkResult.fiscalReceiptId ||
-						fiscalReceiptId ||
-						`FD-${Math.floor(100000 + Math.random() * 900000)}`;
+					const receiptId = checkResult.fiscalReceiptId || fiscalReceiptId || null;
 					setFiscalReceiptId(receiptId);
 					setIsManualReconciliation(false);
 					setStatus("paid_success");
 					setStatusCheckMessage({
-						text: "Эквайринговый шлюз подтвердил зачисление средств! Чек 54-ФЗ сформирован.",
+						text: receiptId
+							? "Эквайринговый шлюз подтвердил зачисление средств! Чек 54-ФЗ сформирован."
+							: "Эквайринговый шлюз подтвердил зачисление средств.",
 						type: "success",
 					});
 					onPaymentSuccess?.({
@@ -239,15 +238,14 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 							fiscalReceiptId?: string;
 						} | null;
 						if (data && (data.status === "paid" || data.isPaid)) {
-							const receiptId =
-								data.fiscalReceiptId ||
-								fiscalReceiptId ||
-								`FD-${Math.floor(100000 + Math.random() * 900000)}`;
+							const receiptId = data.fiscalReceiptId || fiscalReceiptId || null;
 							setFiscalReceiptId(receiptId);
 							setIsManualReconciliation(false);
 							setStatus("paid_success");
 							setStatusCheckMessage({
-								text: "Банковский шлюз подтвердил оплату счета!",
+								text: receiptId
+									? "Банковский шлюз подтвердил оплату счета! Чек 54-ФЗ сформирован."
+									: "Банковский шлюз подтвердил оплату счета!",
 								type: "success",
 							});
 							onPaymentSuccess?.({
@@ -279,11 +277,11 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 		}
 	};
 
-	// 2. Честная фиксация кассиром поступления средств (ручная сверка 54-ФЗ по выписке/СМС)
+	// 2. Честная фиксация кассиром поступления средств (ручная сверка по выписке/СМС без чека ККТ)
 	const handleConfirmManualReconciliation = () => {
 		setIsManualConfirmPending(false);
-		const receiptId = fiscalReceiptId || `FD-${Math.floor(100000 + Math.random() * 900000)}`;
-		setFiscalReceiptId(receiptId);
+		const receiptId = null;
+		setFiscalReceiptId(null);
 		setIsManualReconciliation(true);
 		setStatus("paid_success");
 		setStatusCheckMessage(null);
@@ -291,7 +289,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 		onPaymentSuccess?.({
 			orderId: invoice.orderId,
 			sumRub: invoice.sumRub,
-			fiscalReceiptId: receiptId,
+			fiscalReceiptId: null,
 			isManualReconciliation: true,
 		});
 	};
@@ -343,7 +341,13 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 									<h3 className="sbp-success-title">Оплачено успешно!</h3>
 									<p className="sbp-success-sum">{formatCurrencyRu(invoice.sumRub)}</p>
 									<p className="sbp-success-receipt">
-										Чек 54-ФЗ (Тег 1081): <strong>#{fiscalReceiptId}</strong>
+										{fiscalReceiptId ? (
+											<>
+												Чек 54-ФЗ (Тег 1081): <strong>#{fiscalReceiptId}</strong>
+											</>
+										) : (
+											<strong>Ручная сверка (без чека ККТ)</strong>
+										)}
 									</p>
 									<span className="sbp-badge-online">
 										{isManualReconciliation

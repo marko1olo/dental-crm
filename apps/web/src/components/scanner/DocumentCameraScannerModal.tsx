@@ -31,10 +31,6 @@ import {
 	type DocumentPresetIcon,
 	type DocumentType,
 	applyDocumentEnhancementToCanvas,
-	calculateDocumentGuideFrame,
-	parseOmsPolicyOcrText,
-	parsePassportOcrText,
-	parseSnilsOcrText,
 } from "./documentScannerEngine";
 
 export interface DocumentCameraScannerModalProps {
@@ -80,7 +76,7 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 	const [isUploading, setIsUploading] = useState(false);
 	const [rotationDeg, setRotationDeg] = useState(0);
 
-	// OCR state
+	// Document capture status state
 	const [ocrSummary, setOcrSummary] = useState<string | null>(null);
 
 	const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -176,17 +172,9 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 		setIsCapturing(false);
 		stopCamera();
 
-		// Optional OCR simulation / guidance text
-		if (selectedDocType === "passport_rf") {
-			setOcrSummary("Обнаружен разворот паспорта РФ. Рекомендуется проверить чёткость серии и номера.");
-		} else if (selectedDocType === "oms_policy") {
-			setOcrSummary("Обнаружен полис ОМС. 16-значный номер готов к считыванию.");
-		} else if (selectedDocType === "snils") {
-			setOcrSummary("Обнаружен СНИЛС. Контрольная сумма будет проверена при заполнении карты.");
-		} else {
-			setOcrSummary("Документ захвачен с авто-контрастированием.");
-		}
-	}, [filterMode, selectedDocType, stopCamera]);
+		const selectedDocLabelRu = preset.shortTitle;
+		setOcrSummary(`Снимок сохранён (${selectedDocLabelRu}). Проверьте чёткость изображения перед прикреплением к карточке.`);
+	}, [filterMode, preset.shortTitle, stopCamera]);
 
 	// Retake photo
 	const handleRetake = useCallback(() => {
@@ -423,7 +411,7 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 					/>
 				</div>
 
-				{/* OCR Summary Banner */}
+				{/* Document Capture Status Banner */}
 				{ocrSummary ? (
 					<div className="flex items-center gap-2 border-t border-[var(--line)] bg-[var(--teal-surface)] px-4 py-2 text-xs text-[var(--teal-dark)] font-medium">
 						<Info size={14} className="text-[var(--teal-dark)] shrink-0" />

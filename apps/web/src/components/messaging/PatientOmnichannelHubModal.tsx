@@ -265,7 +265,12 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	};
 
 	// Обработка успешного платежа СБП
-	const handleSbpPaymentSuccess = (res: { orderId: string; sumRub: number; fiscalReceiptId: string }) => {
+	const handleSbpPaymentSuccess = (res: {
+		orderId: string;
+		sumRub: number;
+		fiscalReceiptId: string | null;
+		isManualReconciliation?: boolean;
+	}) => {
 		const successMsg: OmnichannelMessage = {
 			id: `msg-sbp-${Date.now()}`,
 			patientId: selectedPatientId,
@@ -274,7 +279,11 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 			senderName: "DENTE Фискальный Шлюз",
 			senderType: "automated_bot",
 			timestamp: new Date().toISOString(),
-			body: `Поступила оплата заказа №${res.orderId} на сумму ${formatCurrencyRu(res.sumRub)} через СБП.\nЭлектронный фискальный чек 54-ФЗ: #${res.fiscalReceiptId}`,
+			body: `Поступила оплата заказа №${res.orderId} на сумму ${formatCurrencyRu(res.sumRub)} через СБП.\n${
+				res.fiscalReceiptId
+					? `Электронный фискальный чек 54-ФЗ: #${res.fiscalReceiptId}`
+					: "Ручная сверка (без чека ККТ)"
+			}`,
 			status: "delivered",
 			templateCategory: "sbp_payment",
 		};

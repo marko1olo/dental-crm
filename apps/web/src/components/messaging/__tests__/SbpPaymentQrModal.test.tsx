@@ -67,6 +67,9 @@ describe("SbpPaymentQrModal Component Suite", () => {
 		// 54-ФЗ и ГОСТ
 		assert.ok(html.includes("ФЗ-54"), "Contains 54-FZ legal notice");
 		assert.ok(html.includes("ГОСТ Р 56042"), "Contains GOST reference");
+
+		// Запрет на случайные фискальные чеки (54-ФЗ и Мандат 8b)
+		assert.ok(!html.includes("FD-"), "No fake random FD- receipt ID is generated");
 	});
 
 	it("renders split tender deposit coverage when family deposit is applied", () => {
