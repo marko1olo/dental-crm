@@ -53,6 +53,7 @@ export interface CashShiftWidgetProps {
 	readonly onCloseShift?: () => void | Promise<void>;
 	readonly onPrintXReport?: () => void | Promise<void>;
 	readonly onPrintZReport?: () => void | Promise<void>;
+	readonly compact?: boolean | undefined;
 }
 
 function formatMoneyRu(value: number): string {
@@ -67,7 +68,7 @@ function formatMoneyRu(value: number): string {
 export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	initialIsOpen = false,
 	shiftNumber = 1,
-	cashierName = "Кассир",
+	cashierName = "Дежурный администратор",
 	cashierInn = "",
 	cashInDrawerRub = 0,
 	cardSumRub = 0,
@@ -82,6 +83,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	onCloseShift,
 	onPrintXReport,
 	onPrintZReport,
+	compact = false,
 }) => {
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(initialIsOpen);
 	const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -272,6 +274,163 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 		URL.revokeObjectURL(url);
 		showToast("Ведомость смены успешно выгружена для 1С:Бухгалтерии (UTF-8 BOM)", "success");
 	};
+
+	if (compact) {
+		return (
+			<div
+				className="cash-shift-container cash-shift-compact flex items-center justify-between gap-3 px-3 py-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xs text-xs min-h-[36px] h-9 mb-3"
+				data-testid="cash-shift-widget"
+			>
+				{/* Левая часть: статус смены, номер, кассир, выручка, очередь */}
+				<div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+					<div
+						className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+							isShiftOpen
+								? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+								: "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+						}`}
+						title={isShiftOpen ? "Смена открыта" : "Смена закрыта"}
+					>
+						{isShiftOpen ? <Unlock size={14} /> : <Lock size={14} />}
+					</div>
+
+					<span className="font-bold text-[var(--ink)] whitespace-nowrap">
+						{`Смена №${shiftNumber}:`}
+					</span>
+
+					<span
+						className={`px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
+							isShiftOpen
+								? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+								: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+						}`}
+					>
+						{isShiftOpen ? "Открыта" : "Закрыта"}
+					</span>
+
+					<span className="text-[var(--muted)] truncate hidden md:inline">
+						Кассир: <strong className="text-[var(--ink)] font-semibold">{cashierName}</strong>
+					</span>
+
+					<span className="text-[var(--muted)] hidden sm:inline">•</span>
+
+					<span className="font-mono font-bold text-[var(--ink)] whitespace-nowrap">
+						Выручка: {formatMoneyRu(totalTurnoverRub)}
+					</span>
+
+					{pendingOfflineCount > 0 && (
+						<button
+							type="button"
+							onClick={() => setIsOfflineBatchModalOpen(true)}
+							className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 shrink-0 cursor-pointer animate-pulse hover:bg-amber-500/25 transition-colors"
+							title="В офлайн-очереди есть чеки"
+						>
+							<Layers size={12} />
+							<span>Очередь: {pendingOfflineCount}</span>
+						</button>
+					)}
+				</div>
+
+				{/* Правая часть: кнопка X-отчета, кнопка открытия/закрытия, доп. действия */}
+				<div className="flex items-center gap-1.5 shrink-0">
+					<button
+						type="button"
+						onClick={handleXReport}
+						disabled={isProcessing}
+						data-testid="btn-print-x-report"
+						className="secondary-button min-h-[28px] h-7 px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+						title="Печать X-отчета (без гашения)"
+					>
+						<Printer size={13} className="shrink-0" />
+						<span className="hidden lg:inline">Печать X-отчета (без гашения)</span>
+						<span className="lg:hidden">X-отчет</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={isShiftOpen ? handleOpenZReportModal : handleToggleShift}
+						disabled={isProcessing}
+						data-testid="cash-shift-toggle-btn"
+						className={`min-h-[28px] h-7 px-2.5 py-0.5 text-xs font-bold rounded-lg flex items-center gap-1 shrink-0 cursor-pointer transition-all ${
+							isShiftOpen
+								? "bg-rose-600 hover:bg-rose-700 text-white"
+								: "bg-emerald-600 hover:bg-emerald-700 text-white"
+						}`}
+						title={isShiftOpen ? "Сформировать Z-отчет и закрыть смену" : "Открыть кассовую смену"}
+					>
+						{isShiftOpen ? (
+							<>
+								<Lock size={13} />
+								<span>Закрыть смену (Z-отчет)</span>
+							</>
+						) : (
+							<>
+								<Unlock size={13} />
+								<span>Открыть смену</span>
+							</>
+						)}
+					</button>
+
+					{/* Дополнительные действия: Ведомость А4 и Экспорт в 1С */}
+					<button
+						type="button"
+						onClick={handlePrintAccountingStatement}
+						className="secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium hidden xl:inline-flex items-center gap-1 cursor-pointer shrink-0"
+						title="Печать сводной бухгалтерской ведомости А4"
+					>
+						<FileText size={13} className="text-teal-600" />
+						<span>Ведомость А4</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleExport1cCsv}
+						className="secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium hidden xl:inline-flex items-center gap-1 cursor-pointer shrink-0"
+						title="Выгрузить данные смены для 1С:Бухгалтерии"
+					>
+						<FileSpreadsheet size={13} className="text-blue-600" />
+						<span>1С</span>
+					</button>
+				</div>
+
+				{/* Модальное окно закрытия смены Z-отчетом */}
+				<ShiftCloseZReportModal
+					isOpen={isZReportModalOpen}
+					onClose={() => setIsZReportModalOpen(false)}
+					shiftNumber={shiftNumber}
+					cashierFullName={cashierName}
+					cashierInn={cashierInn}
+					clinicLegalName={clinicName}
+					clinicInn={clinicInn}
+					clinicAddress={clinicRequisites.address}
+					kktRegNumber={clinicRequisites.kktRegNumber}
+					kktSerialNumber={clinicRequisites.kktSerialNumber}
+					fnSerial={clinicRequisites.fnSerialNumber}
+					ofdName={clinicRequisites.ofdName}
+					onConfirmCloseShift={async () => {
+						if (onCloseShift) await onCloseShift();
+						setIsShiftOpen(false);
+						setIsZReportModalOpen(false);
+						showToast(`Смена №${shiftNumber} закрыта на ККТ и Z-отчет отправлен в ОФД`, "success");
+					}}
+				/>
+
+				{/* Модальное окно пакетной фискализации офлайн-очереди */}
+				<OfflineFiscalBatchModal
+					isOpen={isOfflineBatchModalOpen}
+					onClose={() => setIsOfflineBatchModalOpen(false)}
+					clinicName={clinicName}
+					cashierFullName={cashierName}
+					shiftNumber={shiftNumber}
+					clinicRequisites={clinicRequisites}
+					onBatchProcessed={() => {
+						FiscalReceiptQueueManager.flushAllPending();
+						showToast("Офлайн-очередь успешно обработана и фискализирована!", "success");
+					}}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<div className="cash-shift-container" data-testid="cash-shift-widget">

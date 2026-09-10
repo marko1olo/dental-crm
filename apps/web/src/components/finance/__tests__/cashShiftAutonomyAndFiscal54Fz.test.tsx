@@ -39,6 +39,26 @@ describe("CashShiftWidget — Mandate 8e Autonomy & X-Report Verification", () =
 		assert.equal(buttonTag.includes("disabled"), false, "X-report button must not be disabled when shift is closed");
 		assert.ok(html.includes("Печать X-отчета (без гашения)"));
 	});
+
+	it("renders compact 1-line mode (36px, data-testid=cash-shift-widget) with X-report and shift toggle buttons", () => {
+		const html = renderToString(
+			React.createElement(CashShiftWidget, {
+				compact: true,
+				initialIsOpen: true,
+				shiftNumber: 2,
+				cashierName: "Иванова А. С.",
+				cashInDrawerRub: 15000,
+			})
+		);
+
+		assert.ok(html.includes('data-testid="cash-shift-widget"'));
+		assert.ok(html.includes("cash-shift-compact"));
+		assert.ok(html.includes('data-testid="btn-print-x-report"'));
+		assert.ok(html.includes('data-testid="cash-shift-toggle-btn"'));
+		assert.ok(html.includes("Печать X-отчета (без гашения)"));
+		assert.ok(html.includes("Смена №2:"));
+		assert.ok(html.includes("Иванова А. С."));
+	});
 });
 
 describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Mandates 8e, 8b, 8n)", () => {

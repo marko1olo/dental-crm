@@ -1,6 +1,6 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { useCallback, useState } from "react";
-import { TrendingUp, Receipt } from "lucide-react";
+import { TrendingUp, Receipt, ChevronDown, FileText } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
@@ -333,17 +333,19 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						<TrendingUp size={15} /> Управленческий P&L
 					</button>
 					<button
-						className="text-button shrink-0 focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:opacity-80 rounded-md px-2 py-1"
+						className="secondary-button shrink-0"
 						type="button"
 						onClick={onGoToDocuments}
 						aria-label="Перейти к документам"
+						style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
 					>
-						Документы
+						<FileText size={15} /> Документы
 					</button>
 				</div>
 			</div>
 
 			<CashShiftWidget
+				compact={true}
 				cashierName={paymentFiscalCashierName || undefined}
 			/>
 
@@ -357,21 +359,44 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				strategyLabels={scenarioStrategyLabels}
 			/>
 
-			<ClinicalRulePanel
-				actionLabels={clinicalRuleActionLabels}
-				context="finance"
-				evaluations={clinicalRuleEvaluations ?? []}
-				patientId={documentPatient?.id ?? null}
-				serviceTitle={serviceTitle}
-				severityLabels={clinicalRuleSeverityLabels}
-				staffRoleLabels={staffRoleLabels}
-				summary={clinicalRuleSummary}
-			/>
+			{/* Сворачиваемый блок клинических рекомендаций и правил (не крадёт полезную высоту экрана) */}
+			<details
+				className="clinical-recommendations-accordion group rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 text-xs shadow-xs my-2 select-none"
+				data-testid="clinical-recommendations-accordion"
+			>
+				<summary className="flex items-center justify-between cursor-pointer font-semibold text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors">
+					<div className="flex items-center gap-2">
+						<FileText size={15} className="text-[var(--teal)] shrink-0" />
+						<span>Клинические рекомендации и правила</span>
+						{clinicalRuleSummary && (
+							<span className="text-[11px] text-[var(--muted)] font-normal">
+								({clinicalRuleSummary})
+							</span>
+						)}
+					</div>
+					<ChevronDown
+						size={15}
+						className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180 shrink-0"
+					/>
+				</summary>
+				<div className="pt-3 space-y-3">
+					<ClinicalRulePanel
+						actionLabels={clinicalRuleActionLabels}
+						context="finance"
+						evaluations={clinicalRuleEvaluations ?? []}
+						patientId={documentPatient?.id ?? null}
+						serviceTitle={serviceTitle}
+						severityLabels={clinicalRuleSeverityLabels}
+						staffRoleLabels={staffRoleLabels}
+						summary={clinicalRuleSummary}
+					/>
 
-			<ClinicalAiPersonalizePanel
-				context="finance"
-				patientId={documentPatient?.id ?? null}
-			/>
+					<ClinicalAiPersonalizePanel
+						context="finance"
+						patientId={documentPatient?.id ?? null}
+					/>
+				</div>
+			</details>
 
 			<PaymentCapture
 				{...remainingDebtProp}

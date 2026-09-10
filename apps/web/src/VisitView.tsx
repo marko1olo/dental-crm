@@ -1048,6 +1048,30 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		return "";
 	}, [activePatient]);
 
+	const patientAge = useMemo(() => {
+		if (!activePatient?.birthDate) return null;
+		const birth = new Date(activePatient.birthDate);
+		if (Number.isNaN(birth.getTime())) return null;
+		const today = new Date();
+		let age = today.getFullYear() - birth.getFullYear();
+		const m = today.getMonth() - birth.getMonth();
+		if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+			age--;
+		}
+		if (age < 0 || age > 130) return null;
+		return `${age} ${countLabel(age, "год", "года", "лет")}`;
+	}, [activePatient?.birthDate]);
+
+	const handleFinishVisitAction = useCallback(async () => {
+		if (typeof flushPendingVisitSaves === "function") {
+			await flushPendingVisitSaves();
+		}
+		showToast(
+			`Прием ${activePatient?.fullName || "пациента"} завершен. Все данные сохранены.`,
+			"success",
+		);
+	}, [activePatient?.fullName, flushPendingVisitSaves]);
+
 	/*
     ЗАГРУЗКА И «ПАЦИЕНТ НЕ ВЫБРАН» — РАЗНЫЕ СОСТОЯНИЯ.
 
@@ -1141,181 +1165,97 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	return (
 		<>
 			<div className="panel visit-panel" id="visit" data-testid="visit-view">
-				<div className="panel-heading">
-					<h2>Текущий прием</h2>
-					<span className="status-pill status-in_treatment">Черновик</span>
-				</div>
-
-				<section
-					className={`visit-focus-bar ${visitSubViewTab === "odontogram" ? "odontogram-compact" : ""}`}
-					aria-label="Быстрый фокус приема"
+				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=82px) (Mandates 8e, 8p, HIG) ═══ */}
+				<header
+					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-2 overflow-hidden shrink-0"
+					data-testid="visit-header-monolith"
+					aria-label="Шапка текущего приёма"
 				>
-					<div className="visit-focus-patient min-w-0">
-						<PatientAvatar fullName={activePatient.fullName} size={44} />
-						<div className="min-w-0">
-							<p className="eyebrow">Пациент сейчас</p>
-							<h3 className="break-words leading-tight">{activePatient.fullName}</h3>
-							<div
-								style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
-							>
-								<p style={{ margin: 0 }} className="break-words leading-tight">
-									{activeAppointment?.reason ?? "прием"} ·{" "}
-									{activePatient.phone ?? "телефон не указан"}
-								</p>
-								<VisitTimer createdAt={dashboard?.activeVisit?.createdAt} />
-								{activePatientAllergyText && (
-									<span
-										className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-rose-600/15 border-2 border-rose-600 text-rose-950 dark:text-rose-100 font-black text-xs shadow-xs animate-pulse"
-										data-testid="visit-focus-allergy-alert"
-										role="alert"
-										title="Критический стоп-фактор / аллергия пациента!"
-									>
-										<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-										<span>АЛЛЕРГИЯ: {activePatientAllergyText}</span>
-									</span>
-								)}
-							</div>
-						</div>
-					</div>
-					<div className="visit-focus-status min-w-0">
-						{/* Было «4 предупр.» — сокращение ради экономии трёх букв. */}
-						<span className={`${safeVisitWarnings.length ? "" : "ready"} shrink-0`}>
-							{safeVisitWarnings.length
-								? countLabel(
-										safeVisitWarnings.length,
-										"предупреждение",
-										"предупреждения",
-										"предупреждений",
-									)
-								: "спокойно"}
-						</span>
-						<strong className="break-words leading-tight">
-							{primaryVisitWarning?.id === "legal-documents" || primaryVisitWarning?.title === "Документы готовы"
-								? safeUsableDocuments.length === 0
-									? "Требуется оформление документов"
-									: "Документы оформлены"
-								: (primaryVisitWarning?.title ?? "Можно вести прием")}
-						</strong>
-						<p className="break-words leading-tight">
-							<span className={safeVisitWarnings.length ? "text-amber-400 font-bold" : "text-emerald-400"}>
-								{safeVisitWarnings.length ? "внимание к клиническим рискам" : "клинический статус в норме"}
-							</span>{" "}
-							·{" "}
-							{countLabel(
-								safeImagingStudies.length,
-								"снимок",
-								"снимка",
-								"снимков",
-							)}{" "}
-							·{" "}
-							{safeUsableDocuments.length > 0
-								? countLabel(
-										safeUsableDocuments.length,
-										"документ",
-										"документа",
-										"документов",
-									)
-								: "документы не оформлены"}
-						</p>
-					</div>
-					<div className="visit-focus-actions">
-						<button
-							className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors"
-							type="button"
-							onClick={() => scrollToVisitArea(".dictation-box")}
-						>
-							<Mic aria-hidden="true" /> Диктовка
-						</button>
-						<button
-							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors"
-							type="button"
-							onClick={openVisitWarningAction}
-						>
-							<AlertTriangle aria-hidden="true" /> Риски
-						</button>
-					</div>
-				</section>
-
-				{/* Prominent Red Emergency Allergy / Clinical Safety Alert Banner (Tier 1, 0-Click) */}
-				{activePatient && (
-					<PatientAllergySafetyBanner
-						patientId={activePatient.id}
-						patientName={activePatient.fullName}
-						profile={
-							// biome-ignore lint/suspicious/noExplicitAny: patient profile compatibility
-							(activePatient as any).clinicalSafetyProfile ||
-							(activePatient as any).allergies ||
-							(activePatient as any).anamnesis?.allergies ||
-							activePatient.notes
-						}
-						notes={activePatient.notes || (activePatient as any).allergies}
-						compact={true}
-						hideWhenClean={true}
-						onSyncToEmkDiary={(text) => {
-							if (updateVisitNoteField) {
-								const curr = visitNoteForm?.anamnesis || "";
-								updateVisitNoteField("anamnesis", curr ? `${curr}\n${text}` : text);
-								showToast("Аллергостатус перенесён в дневник 043/у", "success");
-							}
-						}}
-					/>
-				)}
-
-				{/* 1-Click Somatic Status Autonomy Strip (Mandates 8e, 8k, 8n - 36px Compact Height) */}
-				<section
-					aria-label="Соматический статус"
-					data-testid="visit-somatic-status-block"
-					className="visit-somatic-status-block flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[44px]"
-				>
-					<div className="flex items-center gap-2 min-w-0 flex-1">
-						<HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-						<div className="flex items-center gap-1.5 text-xs truncate">
-							<span className="font-bold text-[var(--muted)] shrink-0">043/у:</span>
-							<span className="font-medium truncate text-[var(--ink)]">
-								{visitNoteForm?.anamnesis?.includes("Соматически здоров")
-									? "Соматически здоров • Норма"
-									: "Физиологическая норма • 0 противопоказаний"}
+					{/* Строка 1 (высота ~44px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
+					<div className="h-11 min-h-[44px] flex items-center justify-between gap-2 px-3 border-b border-[var(--line)] flex-nowrap overflow-x-auto scrollbar-none">
+						<div className="flex items-center gap-2 min-w-0 flex-shrink">
+							<PatientAvatar fullName={activePatient.fullName} size={28} />
+							<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[200px]" title={activePatient.fullName}>
+								{activePatient.fullName}
 							</span>
+							{patientAge && (
+								<span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">
+									· {patientAge}
+								</span>
+							)}
+							{activePatient.phone && (
+								<span className="text-xs text-[var(--muted)] shrink-0 hidden md:inline">
+									· {activePatient.phone}
+								</span>
+							)}
+							{/* Бейдж аллергии (ровно 1 раз во всей шапке!) */}
+							{activePatientAllergyText && (
+								<span
+									className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 animate-pulse"
+									data-testid="visit-focus-allergy-alert"
+									role="alert"
+									title={`Критический стоп-фактор / аллергия пациента: ${activePatientAllergyText}`}
+								>
+									<AlertOctagon size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
+									<span className="truncate max-w-[140px] sm:max-w-[220px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
+								</span>
+							)}
+						</div>
+
+						<div className="flex items-center gap-1.5 shrink-0">
+							{/* Кнопка физиологической нормы 043/у (1-клик) */}
+							<button
+								type="button"
+								onClick={handleApplySomaticNormQuick}
+								data-testid="btn-somatic-norm-one-click"
+								className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0"
+								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
+								aria-label="Соматически здоров / норма (1-клик)"
+							>
+								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+								<span className="hidden sm:inline">Соматически здоров / норма</span>
+								<span className="sm:hidden">Норма</span>
+							</button>
+
+							{/* Печать Формы 043/у (Мандат 8e) */}
+							<button
+								type="button"
+								onClick={handlePrintForm043uFast}
+								data-testid="btn-visit-fast-print-043u"
+								className="secondary-button min-h-[32px] h-8 px-2 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1 cursor-pointer shrink-0"
+								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
+							>
+								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+								<span className="hidden md:inline">Печать 043/у</span>
+							</button>
+
+							{/* Статус приема */}
+							<span className="status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
+								Черновик
+							</span>
+
+							{/* Кнопка «Завершить приём» */}
+							<button
+								type="button"
+								onClick={handleFinishVisitAction}
+								data-testid="btn-complete-visit-header"
+								className="primary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+								title="Завершить приём и сохранить все изменения"
+							>
+								<CheckCircle2 size={14} className="shrink-0" />
+								<span>Завершить приём</span>
+							</button>
 						</div>
 					</div>
-					<div className="flex items-center gap-1.5 shrink-0">
-						<button
-							type="button"
-							onClick={handleApplySomaticNormQuick}
-							data-testid="btn-somatic-norm-one-click"
-							className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
-							title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
-							aria-label="Соматически здоров / норма (1-клик)"
-						>
-							<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-							<span className="hidden sm:inline">Норма (1-клик)</span>
-						</button>
-						<button
-							type="button"
-							onClick={handlePrintForm043uFast}
-							data-testid="btn-visit-fast-print-043u"
-							className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
-							title="Печать Формы 043/у в любой момент (Мандат 8e: если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
-						>
-							<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-							<span>Печать 043/у</span>
-						</button>
-					</div>
-				</section>
 
-				{/* Doctor Shift Cockpit Desktop Header: Telemetry, live % piece-rate, SMS PEP 043/u batch signing */}
-				{selectedWorkspaceRole === "doctor" && (
-					<DoctorDesktopHeader
-						doctorId={activeDoctor?.id || "doc-1"}
-						doctorName={activeDoctor?.fullName || activeDoctor?.name || "Д-р Смирнов Алексей Петрович"}
-						doctorSpecialty={activeDoctor?.specialty || activeDoctor?.specialtyRu || "Терапевт-ортопед"}
-						chairName={activeChair?.name || "Кресло 1 (Терапия)"}
-						shiftDateIso={dashboard?.todayIso || "2026-08-29"}
-						onOpenCockpit={() => setIsDoctorCockpitModalOpen(true)}
-						onInitiateBatchSign={() => setIsDoctorCockpitModalOpen(true)}
-						onEmergencyVisit={props.handleQuickConsult}
-					/>
-				)}
+					{/* Строка 2 (высота ~36px): Компактные табы разделов визита (высота 32px) */}
+					<div className="h-9 min-h-[36px] flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))]">
+						<VisitMainTabs
+							visitSubViewTab={visitSubViewTab}
+							setVisitSubViewTab={setVisitSubViewTab}
+						/>
+					</div>
+				</header>
 
 				{isDoctorCockpitModalOpen && (
 					<DoctorMobileShiftModal
@@ -1327,11 +1267,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
 					/>
 				)}
-
-				<VisitMainTabs
-					visitSubViewTab={visitSubViewTab}
-					setVisitSubViewTab={setVisitSubViewTab}
-				/>
 
 				<div
 					style={{
@@ -1392,6 +1327,47 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						}}
 						aria-hidden={visitSubViewTab !== "anamnesis"}
 					>
+						{/* 1-Click Somatic Status Autonomy Strip (Mandates 8e, 8k, 8n - 36px Compact Height) */}
+						<section
+							aria-label="Соматический статус"
+							data-testid="visit-somatic-status-block"
+							className="visit-somatic-status-block flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[44px]"
+						>
+							<div className="flex items-center gap-2 min-w-0 flex-1">
+								<HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+								<div className="flex items-center gap-1.5 text-xs truncate">
+									<span className="font-bold text-[var(--muted)] shrink-0">043/у:</span>
+									<span className="font-medium truncate text-[var(--ink)]">
+										{visitNoteForm?.anamnesis?.includes("Соматически здоров")
+											? "Соматически здоров • Норма"
+											: "Физиологическая норма • 0 противопоказаний"}
+									</span>
+								</div>
+							</div>
+							<div className="flex items-center gap-1.5 shrink-0">
+								<button
+									type="button"
+									onClick={handleApplySomaticNormQuick}
+									data-testid="btn-somatic-norm-one-click"
+									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
+									title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
+									aria-label="Соматически здоров / норма (1-клик)"
+								>
+									<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+									<span className="hidden sm:inline">Норма (1-клик)</span>
+								</button>
+								<button
+									type="button"
+									onClick={handlePrintForm043uFast}
+									data-testid="btn-visit-fast-print-043u"
+									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
+									title="Печать Формы 043/у в любой момент (Мандат 8e: если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
+								>
+									<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+									<span>Печать 043/у</span>
+								</button>
+							</div>
+						</section>
 						<VisitAnamnesisTab />
 					</div>
 				)}
@@ -1413,6 +1389,41 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								}
 							}}
 						/>
+					</div>
+				)}
+
+				{visitSubViewTab === "consents" && (
+					<div
+						className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] my-3 shadow-xs flex items-center justify-between gap-3 flex-wrap"
+						data-testid="visit-consents-tab-panel"
+					>
+						<div className="flex items-center gap-2.5">
+							<FileText className="w-5 h-5 text-[var(--teal)] shrink-0" />
+							<div>
+								<h4 className="font-bold text-sm m-0 text-[var(--ink)]">
+									Информированные добровольные согласия (ИДС) и сметы
+								</h4>
+								<p className="text-xs text-[var(--muted)] m-0">
+									Форма 043/у, согласия на медицинское вмешательство, анестезию и КТ.
+								</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-2 shrink-0">
+							<button
+								type="button"
+								onClick={handlePrintForm043uFast}
+								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+							>
+								<Printer size={14} />
+								<span>Печать 043/у</span>
+							</button>
+							<a
+								href="#documents"
+								className="primary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+							>
+								<span>Перейти в Документы &rarr;</span>
+							</a>
+						</div>
 					</div>
 				)}
 
@@ -3925,9 +3936,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			/>
 
 
-			{/* ─── HOT PATH TIER 1 FLOATING CHAIRSIDE VOICE HUD ─── */}
+			{/* ─── HOT PATH TIER 1 FLOATING CHAIRSIDE VOICE HUD (Compact 36x36px collapsed) ─── */}
 			<aside
-				className={`fixed bottom-20 right-6 z-40 flex items-center gap-2 bg-[var(--paper,rgba(15,23,42,0.92))] backdrop-blur-md border border-[var(--line,rgba(255,255,255,0.15))] rounded-full p-2 shadow-2xl transition-all select-none ${isVoiceHudCollapsed ? "opacity-90 hover:opacity-100" : ""}`}
+				className={`fixed bottom-24 right-4 transition-all select-none ${
+					isVoiceHudCollapsed
+						? "z-30 w-9 h-9 min-w-[36px] min-h-[36px] p-0 rounded-full flex items-center justify-center bg-[var(--paper,rgba(15,23,42,0.92))] backdrop-blur-md border border-[var(--line,rgba(255,255,255,0.15))] shadow-lg hover:scale-105"
+						: "z-40 flex items-center gap-2 bg-[var(--paper,rgba(15,23,42,0.92))] backdrop-blur-md border border-[var(--line,rgba(255,255,255,0.15))] rounded-full p-2 shadow-2xl"
+				}`}
 				aria-label="Голосовой ввод у кресла"
 				data-testid="chairside-floating-voice-hud"
 			>
@@ -3935,13 +3950,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<button
 						type="button"
 						onClick={() => setIsVoiceHudCollapsed(false)}
-						className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-colors cursor-pointer"
+						className="w-9 h-9 min-w-[36px] min-h-[36px] p-0 rounded-full flex items-center justify-center text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						title="Развернуть панель голосового ввода у кресла"
+						aria-label="Развернуть голосовой ввод"
 						data-testid="chairside-voice-hud-expand"
 					>
-						<LucideMic size={14} className="text-[var(--teal,#0d9488)]" />
-						<span className="font-mono">Голос</span>
-						<ChevronUp size={14} />
+						<LucideMic size={18} className="shrink-0" />
 					</button>
 				) : (
 					<>

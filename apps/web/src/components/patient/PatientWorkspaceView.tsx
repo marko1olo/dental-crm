@@ -1,6 +1,6 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
-import { Calendar, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, Shield, Stethoscope } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Calendar, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Shield, Stethoscope } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
@@ -265,6 +265,25 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			const [isDmsRegistryOpen, setIsDmsRegistryOpen] = useState(false);
 			const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
 			const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
+			const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(false);
+			const docsMenuRef = useRef<HTMLDivElement>(null);
+
+			useEffect(() => {
+				const handleClickOutside = (event: MouseEvent) => {
+					if (
+						docsMenuRef.current &&
+						!docsMenuRef.current.contains(event.target as Node)
+					) {
+						setIsDocsMenuOpen(false);
+					}
+				};
+				if (isDocsMenuOpen) {
+					document.addEventListener("mousedown", handleClickOutside);
+				}
+				return () => {
+					document.removeEventListener("mousedown", handleClickOutside);
+				};
+			}, [isDocsMenuOpen]);
 
 			const handleSaveDmsLetter = useCallback(
 				async (letter: DmsGuaranteeLetter) => {
@@ -327,53 +346,126 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						</div>
 
 						<div className="flex items-center gap-1.5 flex-wrap">
+							{/* Первичная кнопка прямого действия 1: «+ Новый визит» */}
 							<button
 								type="button"
-								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center active:scale-95"
-								onClick={() => setIsLoyaltyModalOpen(true)}
-								title="Программа лояльности и бонусы (54-ФЗ)"
-								aria-label="Программа лояльности и бонусы (54-ФЗ)"
-								data-testid="open-loyalty-program-modal-btn"
-							>
-								<Gift className="w-3.5 h-3.5 mr-1 text-amber-500 shrink-0" />
-								<span>Лояльность (54-ФЗ)</span>
-							</button>
-							<button
-								type="button"
-								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center active:scale-95"
-								onClick={() => setIsDmsManagerOpen(true)}
-								title="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
-								aria-label="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
-								data-testid="patient-dms-manager-btn"
-							>
-								<Shield className="w-3.5 h-3.5 mr-1 text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span>Управление ДМС</span>
-							</button>
-							<button
-								type="button"
-								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center active:scale-95"
-								onClick={() => setIsDmsRegistryOpen(true)}
-								title="Экспорт реестра услуг ДМС"
-							>
-								<FileSpreadsheet className="w-3.5 h-3.5 mr-1 text-emerald-500 shrink-0" />
-								<span>Реестр ДМС</span>
-							</button>
-							<button
-								type="button"
-								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 inline-flex items-center active:scale-95"
+								className="primary-button min-h-[34px] h-8 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95 shadow-xs"
 								onClick={() => {
-									void printBlankMedicalContract(
-										{ id: patientId, fullName: patientName },
-										{ clinicName: dashboard?.clinicSettings?.profile?.legalName },
-									);
+									if (patientId) {
+										appLogic?.setSelectedPatientId?.(patientId);
+									}
+									window.location.hash = "visit";
 								}}
-								title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
-								aria-label="Печать пустого договора"
-								data-testid="patient-print-blank-contract-btn"
+								title="Создать новый клинический визит для пациента"
+								data-testid="btn-patient-create-visit"
 							>
-								<FileText className="w-3.5 h-3.5 mr-1 text-amber-600 dark:text-amber-400 shrink-0" />
-								<span>Бланк договора (_______)</span>
+								<Plus className="w-3.5 h-3.5 shrink-0" />
+								<span>Новый визит</span>
 							</button>
+
+							{/* Первичная кнопка прямого действия 2: «+ План лечения» */}
+							<button
+								type="button"
+								className="secondary-button min-h-[34px] h-8 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
+								onClick={() => {
+									setActiveTab("plans");
+									if (onOpenPlan) {
+										onOpenPlan("new");
+									}
+								}}
+								title="Составить новый план лечения или открыть раздел планов"
+								data-testid="btn-patient-create-treatment-plan"
+							>
+								<Plus className="w-3.5 h-3.5 shrink-0" />
+								<span>План лечения</span>
+							</button>
+
+							{/* Вторичные действия: аккуратное выпадающее меню [⋮ Документы и ДМС] */}
+							<div className="relative inline-block text-left" ref={docsMenuRef}>
+								<button
+									type="button"
+									className="secondary-button min-h-[34px] h-8 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1"
+									onClick={() => setIsDocsMenuOpen((prev) => !prev)}
+									title="Документы, ДМС и программа лояльности"
+									aria-haspopup="true"
+									aria-expanded={isDocsMenuOpen}
+									data-testid="btn-patient-docs-dms-menu"
+								>
+									<MoreVertical className="w-3.5 h-3.5 shrink-0" />
+									<span className="hidden sm:inline">Документы и ДМС</span>
+								</button>
+
+								{isDocsMenuOpen && (
+									<div
+										className="absolute right-0 mt-1 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xl z-50 p-1 flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100"
+										role="menu"
+										data-testid="patient-docs-dms-dropdown"
+									>
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												setIsLoyaltyModalOpen(true);
+											}}
+											title="Программа лояльности и бонусы (54-ФЗ)"
+											data-testid="open-loyalty-program-modal-btn"
+										>
+											<Gift className="w-4 h-4 text-amber-500 shrink-0" />
+											<span>Лояльность (54-ФЗ)</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												setIsDmsManagerOpen(true);
+											}}
+											title="Управление полисами ДМС и гарантийными письмами"
+											data-testid="patient-dms-manager-btn"
+										>
+											<Shield className="w-4 h-4 text-[var(--teal)] shrink-0" />
+											<span>Управление ДМС</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												setIsDmsRegistryOpen(true);
+											}}
+											title="Экспорт реестра услуг ДМС"
+											data-testid="patient-dms-registry-btn"
+										>
+											<FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
+											<span>Реестр ДМС</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-amber-500/10 text-amber-900 dark:text-amber-200 flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												void printBlankMedicalContract(
+													{ id: patientId, fullName: patientName },
+													{ clinicName: dashboard?.clinicSettings?.profile?.legalName },
+												);
+											}}
+											title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
+											data-testid="patient-print-blank-contract-btn"
+										>
+											<FileText className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+											<span>Бланк договора (_______)</span>
+										</button>
+									</div>
+								)}
+							</div>
 							<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] flex-wrap">
 								<button
 									type="button"
