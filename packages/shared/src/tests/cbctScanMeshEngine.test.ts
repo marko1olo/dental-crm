@@ -93,9 +93,9 @@ describe("cbctScanMeshEngine", () => {
       ];
       const { values } = jacobiEigenSymmetric(diag, 3);
       const sorted = [...values].sort((a, b) => a - b);
-      assert.ok(Math.abs(sorted[0] - 1) < 1e-9);
-      assert.ok(Math.abs(sorted[1] - 4) < 1e-9);
-      assert.ok(Math.abs(sorted[2] - 9) < 1e-9);
+      assert.ok(Math.abs(sorted[0]! - 1) < 1e-9);
+      assert.ok(Math.abs(sorted[1]! - 4) < 1e-9);
+      assert.ok(Math.abs(sorted[2]! - 9) < 1e-9);
     });
 
     it("symmetric 3x3 matrix produces orthogonal eigenvectors satisfying A*v = lambda*v", () => {
@@ -107,20 +107,25 @@ describe("cbctScanMeshEngine", () => {
       const { values, vectors } = jacobiEigenSymmetric(A, 3);
 
       for (let c = 0; c < 3; c++) {
-        const lambda = values[c];
-        const v = [vectors[0][c], vectors[1][c], vectors[2][c]];
+        const lambda = values[c]!;
+        const v0 = vectors[0]![c]!;
+        const v1 = vectors[1]![c]!;
+        const v2 = vectors[2]![c]!;
 
         // Check A * v ≈ lambda * v
-        const Av0 = A[0][0] * v[0] + A[0][1] * v[1] + A[0][2] * v[2];
-        const Av1 = A[1][0] * v[0] + A[1][1] * v[1] + A[1][2] * v[2];
-        const Av2 = A[2][0] * v[0] + A[2][1] * v[1] + A[2][2] * v[2];
+        const row0 = A[0]!;
+        const row1 = A[1]!;
+        const row2 = A[2]!;
+        const Av0 = row0[0]! * v0 + row0[1]! * v1 + row0[2]! * v2;
+        const Av1 = row1[0]! * v0 + row1[1]! * v1 + row1[2]! * v2;
+        const Av2 = row2[0]! * v0 + row2[1]! * v1 + row2[2]! * v2;
 
-        assert.ok(Math.abs(Av0 - lambda * v[0]) < 1e-9, `Av0 failed for col ${c}`);
-        assert.ok(Math.abs(Av1 - lambda * v[1]) < 1e-9, `Av1 failed for col ${c}`);
-        assert.ok(Math.abs(Av2 - lambda * v[2]) < 1e-9, `Av2 failed for col ${c}`);
+        assert.ok(Math.abs(Av0 - lambda * v0) < 1e-9, `Av0 failed for col ${c}`);
+        assert.ok(Math.abs(Av1 - lambda * v1) < 1e-9, `Av1 failed for col ${c}`);
+        assert.ok(Math.abs(Av2 - lambda * v2) < 1e-9, `Av2 failed for col ${c}`);
 
         // Check unit length of eigenvector
-        const len = Math.hypot(v[0], v[1], v[2]);
+        const len = Math.hypot(v0, v1, v2);
         assert.ok(Math.abs(len - 1.0) < 1e-9, `eigenvector ${c} not normalized`);
       }
     });
@@ -163,10 +168,12 @@ describe("cbctScanMeshEngine", () => {
       assert.ok(res.rmsMm < 1e-6, `RMS should be near zero, got ${res.rmsMm}`);
 
       for (let i = 0; i < src.length; i++) {
-        const mapped = applyMat4(res.matrix, src[i]);
-        assert.ok(Math.abs(mapped[0] - tgt[i][0]) < 1e-5);
-        assert.ok(Math.abs(mapped[1] - tgt[i][1]) < 1e-5);
-        assert.ok(Math.abs(mapped[2] - tgt[i][2]) < 1e-5);
+        const srcPt = src[i]!;
+        const tgtPt = tgt[i]!;
+        const mapped = applyMat4(res.matrix, srcPt);
+        assert.ok(Math.abs(mapped[0] - tgtPt[0]) < 1e-5);
+        assert.ok(Math.abs(mapped[1] - tgtPt[1]) < 1e-5);
+        assert.ok(Math.abs(mapped[2] - tgtPt[2]) < 1e-5);
       }
     });
 
@@ -185,10 +192,12 @@ describe("cbctScanMeshEngine", () => {
       assert.ok(res.rmsMm < 1e-6, `RMS should be near zero, got ${res.rmsMm}`);
 
       for (let i = 0; i < src.length; i++) {
-        const mapped = applyMat4(res.matrix, src[i]);
-        assert.ok(Math.abs(mapped[0] - tgt[i][0]) < 1e-4);
-        assert.ok(Math.abs(mapped[1] - tgt[i][1]) < 1e-4);
-        assert.ok(Math.abs(mapped[2] - tgt[i][2]) < 1e-4);
+        const srcPt = src[i]!;
+        const tgtPt = tgt[i]!;
+        const mapped = applyMat4(res.matrix, srcPt);
+        assert.ok(Math.abs(mapped[0] - tgtPt[0]) < 1e-4);
+        assert.ok(Math.abs(mapped[1] - tgtPt[1]) < 1e-4);
+        assert.ok(Math.abs(mapped[2] - tgtPt[2]) < 1e-4);
       }
     });
 
@@ -333,8 +342,8 @@ describe("cbctScanMeshEngine", () => {
       // Edge A-B crossing: t = -(-5) / (5 - (-5)) = 0.5 -> (5, 0, 0)
       // Edge C-A crossing: t = -5 / (-5 - 5) = 0.5 -> (0, 5, 0)
       const pts = [p1, p2].sort((a, b) => a[0] - b[0]);
-      assert.ok(Math.abs(pts[0][0] - 0) < 1e-5 && Math.abs(pts[0][1] - 5) < 1e-5);
-      assert.ok(Math.abs(pts[1][0] - 5) < 1e-5 && Math.abs(pts[1][1] - 0) < 1e-5);
+      assert.ok(Math.abs(pts[0]![0] - 0) < 1e-5 && Math.abs(pts[0]![1] - 5) < 1e-5);
+      assert.ok(Math.abs(pts[1]![0] - 5) < 1e-5 && Math.abs(pts[1]![1] - 0) < 1e-5);
     });
 
     it("returns null when triangle does not cross plane", () => {

@@ -426,9 +426,11 @@ describe("CBCT Crop Box Engine & Sub-Volume Extraction", () => {
         const norm = normalizeCropBox(preset);
         assert.deepEqual(norm, preset, `Preset ${name} should already be normalized`);
         for (let a = 0; a < 3; a++) {
-          assert.ok(preset.min[a] >= 0 && preset.min[a] <= 1, `${name} min[${a}] out of range`);
-          assert.ok(preset.max[a] >= 0 && preset.max[a] <= 1, `${name} max[${a}] out of range`);
-          assert.ok(preset.min[a] <= preset.max[a], `${name} min > max on axis ${a}`);
+          const minVal = preset.min[a]!;
+          const maxVal = preset.max[a]!;
+          assert.ok(minVal >= 0 && minVal <= 1, `${name} min[${a}] out of range`);
+          assert.ok(maxVal >= 0 && maxVal <= 1, `${name} max[${a}] out of range`);
+          assert.ok(minVal <= maxVal, `${name} min > max on axis ${a}`);
         }
       }
     });

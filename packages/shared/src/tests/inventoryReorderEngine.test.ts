@@ -224,9 +224,9 @@ describe("Predictive Reorder Engine (DentalPin specification parity)", () => {
 			assert.strictEqual(response.summary.totalEstimatedCostRub, 5890.0);
 
 			// Reorder items should be prioritized at the top of list
-			assert.strictEqual(response.suggestions[0].needsReorder, true);
-			assert.strictEqual(response.suggestions[1].needsReorder, true);
-			assert.strictEqual(response.suggestions[2].needsReorder, false);
+			assert.strictEqual(response.suggestions[0]!.needsReorder, true);
+			assert.strictEqual(response.suggestions[1]!.needsReorder, true);
+			assert.strictEqual(response.suggestions[2]!.needsReorder, false);
 		});
 
 		it("supports filtering to only items needing reorder", () => {
@@ -251,7 +251,7 @@ describe("Predictive Reorder Engine (DentalPin specification parity)", () => {
 				onlyNeedingReorder: true,
 			});
 			assert.strictEqual(response.suggestions.length, 1);
-			assert.strictEqual(response.suggestions[0].itemName, "Дефицит");
+			assert.strictEqual(response.suggestions[0]!.itemName, "Дефицит");
 		});
 	});
 });

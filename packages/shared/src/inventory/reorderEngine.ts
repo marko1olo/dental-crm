@@ -38,7 +38,8 @@ export const reorderItemInputSchema = z.object({
 	isPreferredSupplier: z.boolean().default(false).optional(),
 });
 
-export type ReorderItemInput = z.infer<typeof reorderItemInputSchema>;
+export type ReorderItemInput = z.input<typeof reorderItemInputSchema>;
+export type ReorderItem = z.infer<typeof reorderItemInputSchema>;
 
 /**
  * Output contract representing a single reorder suggestion.
