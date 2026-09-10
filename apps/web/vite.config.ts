@@ -267,8 +267,6 @@ export default defineConfig({
 						return "public-portal-route";
 					if (normalizedId.endsWith("/apps/web/src/SmartParsePreview.tsx"))
 						return "smart-parse-preview";
-					if (normalizedId.endsWith("/apps/web/src/PriceDictationBar.tsx"))
-						return "price-dictation-bar";
 					if (normalizedId.endsWith("/apps/web/src/lib/authedApiFile.ts"))
 						return "authed-api-file";
 					if (

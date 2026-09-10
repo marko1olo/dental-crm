@@ -57,14 +57,12 @@ export const VoiceAssistantUI = memo(function VoiceAssistantUI({
 	const isToggleModeRef = useRef<boolean>(false);
 
 	// Determine hint type based on route
-	let hintType: "schedule" | "patient" | "visit" | "prices" | "payment" =
-		"schedule";
+	let hintType: "schedule" | "patient" | "visit" | "payment" = "schedule";
 	if (typeof window !== "undefined") {
 		const hash = window.location.hash;
 		if (hash.includes("visit") || hash.includes("imaging")) hintType = "visit";
 		else if (hash.includes("patients")) hintType = "patient";
 		else if (hash.includes("finance")) hintType = "payment";
-		else if (hash.includes("settings")) hintType = "prices";
 	}
 
 	// Handle action chip auto-dismissal

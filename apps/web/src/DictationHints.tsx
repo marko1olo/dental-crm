@@ -1,6 +1,6 @@
 interface DictationHintsProps {
 	isVisible: boolean;
-	type: "schedule" | "patient" | "visit" | "prices" | "payment";
+	type: "schedule" | "patient" | "visit" | "payment";
 }
 
 export function DictationHints({ isVisible, type }: DictationHintsProps) {
@@ -46,18 +46,6 @@ export function DictationHints({ isVisible, type }: DictationHintsProps) {
 					</li>
 					<li>
 						Пример: «Жалуется на боль в 45 зубе... Диагноз средний кариес...»
-					</li>
-				</ul>
-			)}
-
-			{type === "prices" && (
-				<ul>
-					<li>
-						<strong>Добавление:</strong> «Добавь в прайс удаление восьмерки за 5
-						тысяч рублей»
-					</li>
-					<li>
-						<strong>Категории:</strong> «... категория терапия»
 					</li>
 				</ul>
 			)}

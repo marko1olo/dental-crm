@@ -26,7 +26,6 @@ import type { ChangeEvent } from "react";
 import { useMemo, useState } from "react";
 import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { PriceDictationBar } from "../../PriceDictationBar";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import {
@@ -758,13 +757,6 @@ export function SettingsPricesTab() {
 										value={pricelistText}
 										onChange={(e) => setPricelistText(e.target.value)}
 										rows={6}
-									/>
-									<PriceDictationBar
-										onPriceParsed={(srv, pr) =>
-											setPricelistText(
-												(prev: string) => `${prev}\n${srv} ${pr} руб`,
-											)
-										}
 									/>
 								</div>
 							)}
