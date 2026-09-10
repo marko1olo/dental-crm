@@ -76,7 +76,7 @@ import type {
 	WeekdayIndex,
 } from "@dental/shared";
 import { motion } from "framer-motion";
-import { ClipboardCheck, Lock, ShieldCheck } from "lucide-react";
+import { ChevronDown, ClipboardCheck, Lock, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 /*
  * Разделы левого меню берутся из общего объявления, а не собираются здесь.
@@ -2324,39 +2324,25 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				) : null}
 
 				{/*
-          Мастер переноса стоит здесь, а не внутри SettingsImportsTab.
-
-          Он самодостаточен: сам ходит в /api/migration/* и не принимает ни
-          одного пропса. Вкладка импорта, наоборот, ждёт сотни пропсов из общего
-          объекта настроек, и отсутствие любого из них роняет её целиком вместе
-          со всем, что внутри. Вкладывать в неё рабочий инструмент переноса
-          значит ставить перенос базы клиники в зависимость от чужих пропсов.
-        */}
-				{settingsTab === "imports" ? <MigrationWizard /> : null}
-				{/*
-          Умный разбор — в собственной границе ошибок.
-
-          Компонент ждёт сотни значений из общего объекта настроек, и часть до
-          него не доходит: при выносе из этого файла потерялись защитные `?.`,
-          которые здесь стоят на каждом обращении к дашборду. Любое такое
-          обращение роняет компонент, а общая граница гасила вместе с ним ВЕСЬ
-          раздел настроек — включая мастер переноса, который от этих пропсов не
-          зависит вовсе.
-
-          Своя граница ограничивает падение одним блоком.
+          Мастер переноса — единый современный интерфейс миграции и импорта баз IDENT / DentalPRO / Инфодент / StomX.
+          Прежний SettingsImportsTab убран из одновременного рендеринга (исключение двойного монтирования)
+          и убран под раскрывающийся спойлер расширенного режима разработчика с собственной границей ошибок ErrorBoundary.
         */}
 				{settingsTab === "imports" ? (
-					<ErrorBoundary moduleName="Умный разбор выгрузки">
-						{/*
-              Обе тяжёлые вкладки объявлены как `SettingsImportsTab(props:
-              Record<string, any>)` и достают значения прямо из `props`. Им
-              передавался объект `{ props: settingsProps, settingsTab }`, то
-              есть всё лежало на уровень глубже: `props.dashboard` было
-              undefined, и вкладка падала на `dashboard.clinicSettings`.
-              Раскладываем мешок так, как объявлен сам компонент.
-            */}
-						<SettingsImportsTab {...settingsProps} settingsTab={settingsTab} />
-					</ErrorBoundary>
+					<div className="space-y-6">
+						<MigrationWizard />
+						<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden">
+							<summary className="px-4 py-3 cursor-pointer text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none transition-colors">
+								<span>Расширенный режим: Индивидуальный импорт и ручные утилиты (legacy)</span>
+								<ChevronDown size={14} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
+							</summary>
+							<div className="p-4 border-t border-[var(--line)]">
+								<ErrorBoundary moduleName="Умный разбор выгрузки">
+									<SettingsImportsTab {...settingsProps} settingsTab={settingsTab} />
+								</ErrorBoundary>
+							</div>
+						</details>
+					</div>
 				) : null}
 				{settingsTab === "audit" ? (
 					<>

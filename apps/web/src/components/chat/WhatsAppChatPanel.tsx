@@ -41,6 +41,8 @@ import {
 	generateAppointmentWhatsAppMessage,
 } from "../schedule/generateAppointmentWhatsAppMessage";
 
+let chatMsgSeq = 0;
+
 export interface ChatMessage {
 	id: string;
 	sender: "clinic" | "patient" | "system";
@@ -181,7 +183,7 @@ export function WhatsAppChatPanel({
 				const parsed: ChatMessage[] = list.map((m: any) => ({
 					id:
 						m.id ||
-						`msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+						`msg-${Date.now()}-${++chatMsgSeq}`,
 					sender: m.direction === "inbound" ? "patient" : "clinic",
 					senderName:
 						m.direction === "inbound"
@@ -331,7 +333,7 @@ export function WhatsAppChatPanel({
 		}
 		if (isSending) return;
 
-		const newMsgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+		const newMsgId = `msg-${Date.now()}-${++chatMsgSeq}`;
 		const newMsg: ChatMessage = {
 			id: newMsgId,
 			sender: "clinic",
@@ -551,8 +553,8 @@ export function WhatsAppChatPanel({
 			<div className="px-4 py-2 bg-[var(--paper-soft,rgba(15,23,42,0.6))] border-b border-[var(--line,#334155)] flex flex-wrap items-center justify-between gap-2 text-xs">
 				<div className="flex items-center gap-3 flex-wrap">
 					{upcomingAppointment ? (
-						<div className="inline-flex items-center gap-1.5 font-semibold text-teal-300">
-							<CalendarCheck size={14} className="text-teal-400" />
+						<div className="inline-flex items-center gap-1.5 font-semibold text-teal-700 dark:text-teal-300">
+							<CalendarCheck size={14} className="text-teal-600 dark:text-teal-400" />
 							<span>
 								Приём: {upcomingAppointment.formattedDate} в {upcomingAppointment.formattedTime}
 								{upcomingAppointment.doctorName ? ` (${upcomingAppointment.doctorName})` : ""}
@@ -568,12 +570,12 @@ export function WhatsAppChatPanel({
 
 				<div className="flex items-center gap-3">
 					{financialSummary.hasDebt && (
-						<span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-300 bg-rose-950/60 border border-rose-800/60 px-2 py-0.5 rounded-md">
+						<span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100 border border-rose-200 dark:text-rose-300 dark:bg-rose-950/60 dark:border-rose-800/60 px-2 py-0.5 rounded-md">
 							<CreditCard size={11} /> Долг {financialSummary.formattedDebt}
 						</span>
 					)}
 					{financialSummary.hasInsurance && (
-						<span className="inline-flex items-center gap-1 text-[11px] font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md">
+						<span className="inline-flex items-center gap-1 text-[11px] font-semibold text-cyan-700 bg-cyan-100 border border-cyan-200 dark:text-cyan-300 dark:bg-cyan-950/60 dark:border-cyan-800/60 px-2 py-0.5 rounded-md">
 							<Shield size={11} /> ДМС
 						</span>
 					)}
@@ -583,7 +585,7 @@ export function WhatsAppChatPanel({
 			{/* Quick Appointment Reminder & Clinical Preparation Chips (Scrollable touch targets >= 44x44px) */}
 			<div className="p-2.5 bg-[var(--paper,#0f172a)] border-b border-[var(--line,#334155)]">
 				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] mb-1.5 px-1 flex items-center gap-1">
-					<Sparkles size={11} className="text-teal-400" />
+					<Sparkles size={11} className="text-teal-600 dark:text-teal-400" />
 					<span>Быстрые шаблоны с клинической памяткой:</span>
 				</div>
 				<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -595,7 +597,7 @@ export function WhatsAppChatPanel({
 							className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border inline-flex items-center gap-1.5 flex-shrink-0 active:scale-95 shadow-xs ${
 								selectedChipTemplate === tmpl.id
 									? "bg-teal-600 text-white border-teal-400 shadow-md ring-2 ring-teal-400/30"
-									: "bg-[var(--paper-soft,#1e293b)] hover:bg-slate-800 text-[var(--ink,#f8fafc)] border-[var(--line,#334155)] hover:border-teal-500/50"
+									: "bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-strong)] text-[var(--ink,#f8fafc)] border-[var(--line,#334155)] hover:border-teal-500/50"
 							}`}
 							title={`Вставить: ${tmpl.label}`}
 						>
@@ -611,7 +613,7 @@ export function WhatsAppChatPanel({
 				{filteredMessages.length === 0 ? (
 					isLoading ? (
 						<div className="my-auto py-16 text-center text-xs text-[var(--muted,#94a3b8)] flex flex-col items-center justify-center gap-2">
-							<RefreshCw size={22} className="animate-spin text-teal-400" />
+							<RefreshCw size={22} className="animate-spin text-teal-600 dark:text-teal-400" />
 							<span>Загрузка переписки...</span>
 						</div>
 					) : searchQuery ? (
@@ -621,7 +623,7 @@ export function WhatsAppChatPanel({
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="min-h-[44px] px-3 py-1.5 text-xs text-teal-400 hover:underline inline-flex items-center justify-center"
+								className="min-h-[44px] px-3 py-1.5 text-xs text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center justify-center"
 							>
 								Сбросить поиск
 							</button>
@@ -629,7 +631,7 @@ export function WhatsAppChatPanel({
 					) : (
 						/* Clean Empty State with Quick Medical Presets (Mandate 8k & 8e) */
 						<div className="my-auto flex flex-col items-center justify-center text-center p-4 sm:p-6 max-w-md mx-auto w-full animate-fade-in">
-							<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mb-3 shadow-inner">
+							<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-3 shadow-inner">
 								<MessageSquare size={26} />
 							</div>
 							<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#f8fafc)] mb-1">
@@ -643,9 +645,9 @@ export function WhatsAppChatPanel({
 								<button
 									type="button"
 									onClick={() => handleApplyTemplate(quickTemplates[0])}
-									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-950/40 text-[var(--ink,#f8fafc)] hover:text-teal-300 border border-[var(--line,#334155)] hover:border-teal-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
+									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-50 dark:hover:bg-teal-950/40 text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line,#334155)] hover:border-teal-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
 								>
-									<span className="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 group-hover:bg-teal-500/20">
+									<span className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:bg-teal-500/20">
 										<Calendar size={16} />
 									</span>
 									<div className="min-w-0 flex-1">
@@ -660,9 +662,9 @@ export function WhatsAppChatPanel({
 								<button
 									type="button"
 									onClick={() => handleApplyTemplate(quickTemplates[1])}
-									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-amber-950/40 text-[var(--ink,#f8fafc)] hover:text-amber-300 border border-[var(--line,#334155)] hover:border-amber-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
+									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[var(--ink)] hover:text-amber-700 dark:hover:text-amber-300 border border-[var(--line,#334155)] hover:border-amber-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
 								>
-									<span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20">
+									<span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/20">
 										<FileText size={16} />
 									</span>
 									<div className="min-w-0 flex-1">
@@ -677,9 +679,9 @@ export function WhatsAppChatPanel({
 								<button
 									type="button"
 									onClick={() => handleApplyTemplate(quickTemplates[2])}
-									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-950/40 text-[var(--ink,#f8fafc)] hover:text-emerald-300 border border-[var(--line,#334155)] hover:border-emerald-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
+									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[var(--ink)] hover:text-emerald-700 dark:hover:text-emerald-300 border border-[var(--line,#334155)] hover:border-emerald-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
 								>
-									<span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20">
+									<span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20">
 										<CalendarCheck size={16} />
 									</span>
 									<div className="min-w-0 flex-1">

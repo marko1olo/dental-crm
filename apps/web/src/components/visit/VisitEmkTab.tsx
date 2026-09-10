@@ -2088,8 +2088,8 @@ export function VisitEmkTab() {
 
 							{field.key === "treatmentPlan" && (
 								<div className="flex flex-col gap-2.5 mt-1">
-									{/* Быстрый протокол анестезии (1-клик пресеты) + скрытая кнопка калькулятора */}
-									<div className="flex items-center justify-between gap-2 flex-wrap p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
+									{/* Быстрый протокол анестезии (1-клик пресеты) — чистый разделитель без двойных рамок (Анти-Матрёшка) */}
+									<div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-[var(--line)] bg-transparent">
 										<div className="flex items-center gap-1.5 flex-wrap">
 											<span className="text-[11px] font-extrabold text-[var(--muted)] flex items-center gap-1">
 												<Syringe size={13} className="text-[var(--teal,var(--brand-primary))]" />
@@ -2173,9 +2173,9 @@ export function VisitEmkTab() {
 												</div>
 											)}
 
-									{/* Аккордеон: ЭНДОДОНТИЯ: Таблица учета корневых каналов, апекслокатор, мастер-файлы и силеры */}
-									<details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] overflow-hidden">
-										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--teal-soft)]/40 transition-colors">
+									{/* Секция: ЭНДОДОНТИЯ — единый документ без вложенных карточек (Анти-Матрёшка) */}
+									<details className="group border-t border-[var(--line)] pt-2 bg-transparent overflow-hidden">
+										<summary className="flex items-center justify-between py-2 px-1 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors">
 											<div className="flex items-center gap-2">
 												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">
 													<Zap className="w-3.5 h-3.5" />
@@ -2184,7 +2184,7 @@ export function VisitEmkTab() {
 											</div>
 											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
 										</summary>
-										<div className="p-3.5 pt-1 flex flex-col gap-3 border-t border-[var(--teal,var(--line))]/20">
+										<div className="py-2.5 px-1 flex flex-col gap-3 border-t border-[var(--line)]/50">
 											<div className="flex items-center justify-between gap-2 flex-wrap">
 												<span className="text-xs text-[var(--muted)]">
 													Форма 043/у • Протокол инструментации и пломбирования каналов
@@ -2386,8 +2386,8 @@ export function VisitEmkTab() {
 												</div>
 											</div>
 
-											{/* Кнопка 1-клик внесения в протокол */}
-											<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 flex-wrap">
+											{/* Кнопка 1-клик внесения в протокол — чистый разделитель без вложенной рамки (Анти-Матрёшка) */}
+											<div className="pt-3 border-t border-[var(--line)] bg-transparent flex items-center justify-between gap-3 flex-wrap">
 												<div className="text-xs text-[var(--muted)]">
 													Канал <strong>{selectedEndoCanalKey}</strong> ({endoRefPoint}): WL = <strong>{endoWorkingLengthMm} мм</strong>, MAF = <strong>{endoMasterFile}/{endoTaper}</strong>, Обтурация: <strong>{endoObturation} + {endoSealer}</strong>
 												</div>
@@ -2426,16 +2426,16 @@ export function VisitEmkTab() {
 										</div>
 									</details>
 
-									{/* Аккордеон: 1-клик быстрый подбор услуг из прайса клиники */}
-									<details className="group rounded-xl border border-indigo-500/25 bg-indigo-500/5 dark:bg-indigo-950/20 overflow-hidden">
-										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-indigo-500/10 transition-colors">
+									{/* Секция: 1-клик быстрый подбор услуг из прайса клиники — единый документ (Анти-Матрёшка) */}
+									<details className="group border-t border-[var(--line)] pt-2 bg-transparent overflow-hidden">
+										<summary className="flex items-center justify-between py-2 px-1 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors">
 											<div className="flex items-center gap-2">
 												<Tag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
 												<span>Подбор услуг из прайса клиники (1 клик в протокол и счет)</span>
 											</div>
 											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
 										</summary>
-										<div className="p-3.5 pt-1 flex flex-col gap-2.5 border-t border-indigo-500/20">
+										<div className="py-2.5 px-1 flex flex-col gap-2.5 border-t border-[var(--line)]/50">
 											<div className="flex items-center justify-between gap-2 flex-wrap">
 												<span className="text-xs text-[var(--muted)]">
 													Быстрое добавление услуг прайса в Форму 043/у:
@@ -2469,7 +2469,7 @@ export function VisitEmkTab() {
 												))}
 											</div>
 											{/* Быстрые клинические пакеты Номенклатуры 804н */}
-											<div className="pt-2.5 border-t border-indigo-500/20">
+											<div className="pt-2.5 border-t border-[var(--line)]">
 												<div className="flex items-center justify-between gap-1 mb-1.5">
 													<span className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
 														<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
