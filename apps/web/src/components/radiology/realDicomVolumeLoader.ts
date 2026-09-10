@@ -7,6 +7,21 @@
 
 import * as fflate from "fflate";
 import type { CbctVoxelVolume } from "./cbctMprMath";
+import {
+  isMultiFrameDicom,
+  buildVolumeFromMultiFrameDicom,
+  parseMultiFrameDicomHeader,
+  decodeDicomString,
+  type MultiFrameDicomHeader,
+} from "./dicomMultiFrameLoader";
+
+export {
+  isMultiFrameDicom,
+  buildVolumeFromMultiFrameDicom,
+  parseMultiFrameDicomHeader,
+  decodeDicomString,
+  type MultiFrameDicomHeader,
+};
 
 export interface ParsedDicomSliceHeader {
   rows: number;
@@ -24,6 +39,7 @@ export interface ParsedDicomSliceHeader {
   windowWidth: number;
   pixelDataByteOffset: number;
   pixelDataByteLength: number;
+  numberOfFrames?: number;
   patientName?: string;
   studyDate?: string;
 }
@@ -54,11 +70,12 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
   let windowWidth = 4400.0;
   let pixelDataOffset = -1;
   let pixelDataLength = 0;
-  let patientName = "Барабаш С.В.";
+  let numberOfFrames = 1;
+  let patientName = "Не указан";
   let studyDate = "";
 
-  // Scan up to 16KB or byteLength for standard DICOM tags
-  const maxHeaderSearch = Math.min(byteLength - 8, 32768);
+  // Scan up to 64KB or byteLength for standard DICOM tags
+  const maxHeaderSearch = Math.min(byteLength - 8, 65536);
   let hasImagePositionPatient = false;
 
   for (let i = 128; i < maxHeaderSearch; i += 2) {
@@ -80,7 +97,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
       if (len > 0 && off + len <= byteLength) {
         try {
           const raw = new Uint8Array(buffer, off, Math.min(len, 64));
-          const decoded = new TextDecoder("latin1").decode(raw).replace(/\^/g, " ").trim();
+          const decoded = decodeDicomString(raw);
           if (decoded) patientName = decoded;
         } catch {}
       }
@@ -135,6 +152,28 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
           const num = Number.parseInt(str, 10);
           if (!Number.isNaN(num)) instanceNumber = num;
+        } catch {}
+      }
+    } else if (group === 0x0028 && element === 0x0008) {
+      // NumberOfFrames
+      const vr0 = String.fromCharCode(view.getUint8(i + 4));
+      const vr1 = String.fromCharCode(view.getUint8(i + 5));
+      const isExplicit = vr0 >= "A" && vr0 <= "Z" && vr1 >= "A" && vr1 <= "Z";
+      const len = isExplicit ? view.getUint16(i + 6, true) : view.getUint32(i + 4, true);
+      const off = i + 8;
+      if (len > 0 && off + len <= byteLength) {
+        try {
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, off, len)).replace(/\0+$/, "").trim();
+          const num = Number.parseInt(str, 10);
+          if (!Number.isNaN(num) && num > 0) {
+            numberOfFrames = num;
+          } else if (len === 2) {
+            const binVal = view.getUint16(off, true);
+            if (binVal > 0) numberOfFrames = binVal;
+          } else if (len === 4) {
+            const binVal = view.getUint32(off, true);
+            if (binVal > 0) numberOfFrames = binVal;
+          }
         } catch {}
       }
     } else if (group === 0x0028 && element === 0x0010) {
@@ -222,13 +261,14 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
     }
   }
 
-  const expectedRawBytes = rows * cols * 2;
+  const bytesPerPixel = bitsAllocated === 8 ? 1 : 2;
+  const expectedRawBytes = rows * cols * bytesPerPixel * numberOfFrames;
   if (pixelDataOffset === -1 || pixelDataOffset + expectedRawBytes > byteLength) {
     if (byteLength >= expectedRawBytes) {
       pixelDataOffset = byteLength - expectedRawBytes;
       pixelDataLength = expectedRawBytes;
     } else {
-      pixelDataOffset = Math.max(0, byteLength - (rows * cols));
+      pixelDataOffset = Math.max(0, byteLength - rows * cols * bytesPerPixel);
       pixelDataLength = byteLength - pixelDataOffset;
     }
   }
@@ -249,6 +289,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
     windowWidth,
     pixelDataByteOffset: pixelDataOffset,
     pixelDataByteLength: pixelDataLength,
+    numberOfFrames,
     patientName,
     studyDate,
   };
@@ -260,6 +301,11 @@ export async function buildVolumeFromDicomBuffers(
 ): Promise<CbctVoxelVolume> {
   if (!items || items.length === 0) {
     throw new Error("Не передано ни одного буфера DICOM для загрузки");
+  }
+
+  // If a single DICOM file is provided and it is a Multi-Frame volume (Planmeca, KaVo, Sirona)
+  if (items.length === 1 && isMultiFrameDicom(items[0]!.buffer)) {
+    return buildVolumeFromMultiFrameDicom(items[0]!.buffer, onProgress);
   }
 
   onProgress?.(5, "Чтение заголовков " + items.length + " срезов КЛКТ...");
