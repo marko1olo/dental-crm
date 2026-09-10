@@ -3,4 +3,5 @@
  */
 
 export * from "./familyRelationshipsEngine.js";
+export * from "./patientRelationshipsSchema.js";
 export * from "./stomxPatientTagsCatalog.js";

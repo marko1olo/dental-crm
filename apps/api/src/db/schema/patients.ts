@@ -4,6 +4,7 @@ import type {
 import { sql, relations } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
 	index,
 	integer,
@@ -740,9 +741,13 @@ export const patientRelationships = pgTable(
 			.notNull()
 			.references(() => patients.id, { onDelete: "cascade" }),
 		relationshipType: text("relationship_type").notNull(),
+		isLegalRepresentative: boolean("is_legal_representative").notNull().default(false),
+		canViewMedicalRecord: boolean("can_view_medical_record").notNull().default(false),
+		canSignConsents: boolean("can_sign_consents").notNull().default(false),
+		canSpendFamilyWallet: boolean("can_spend_family_wallet").notNull().default(false),
+		documentProofNumber: text("document_proof_number"),
 		isPrimaryPayer: boolean("is_primary_payer").notNull().default(false),
 		canViewRecords: boolean("can_view_records").notNull().default(false),
-		canSignConsents: boolean("can_sign_consents").notNull().default(false),
 		notes: text("notes"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -760,6 +765,14 @@ export const patientRelationships = pgTable(
 		relatedPatientIdx: index("patient_relationships_related_patient_idx").on(
 			t.organizationId,
 			t.relatedPatientId,
+		),
+		pairUniqIdx: uniqueIndex("patient_relationships_pair_uniq_idx").on(
+			t.patientId,
+			t.relatedPatientId,
+		),
+		noSelfLinkCheck: check(
+			"patient_relationships_no_self_link",
+			sql`${t.patientId} != ${t.relatedPatientId}`,
 		),
 	}),
 );
