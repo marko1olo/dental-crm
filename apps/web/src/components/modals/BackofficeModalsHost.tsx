@@ -66,30 +66,49 @@ import { OfflineBackupVaultPanel } from "../settings/OfflineBackupVaultPanel";
 import { VoiceDictationAssistantModal } from "../voice/VoiceDictationAssistantModal";
 import { IncomingCallPopupModal } from "../telephony/IncomingCallPopupModal";
 import { TelephonyFloatingWidget } from "../telephony/TelephonyFloatingWidget";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
-const SAMPLE_PATIENT = {
-	id: "pat-sample-1",
-	fullName: "Иванов Иван Иванович",
-	phone: "+7 (999) 123-45-67",
-	birthDate: "1985-05-15",
-	cardNumber: "К-2026-0042",
-};
+interface OpenBackofficeModalDetail {
+	modalId: string;
+	patientId?: string;
+	patientName?: string;
+	patientPhone?: string;
+	patientBirthDate?: string;
+	cardNumber?: string;
+	doctorName?: string;
+	doctorSpecialty?: string;
+}
 
 export const BackofficeModalsHost: React.FC = () => {
 	const [activeModal, setActiveModal] = useState<string | null>(null);
+	const [modalData, setModalData] = useState<OpenBackofficeModalDetail | null>(null);
+	const appLogic = useOptionalAppLogicContext();
 
 	useEffect(() => {
 		const handleOpen = (e: Event) => {
-			const detail = (e as CustomEvent<{ modalId: string }>).detail;
-			if (detail?.modalId) setActiveModal(detail.modalId);
+			const detail = (e as CustomEvent<OpenBackofficeModalDetail>).detail;
+			if (detail?.modalId) {
+				setActiveModal(detail.modalId);
+				setModalData(detail);
+			}
 		};
 		window.addEventListener("dente-open-backoffice-modal", handleOpen);
 		return () => window.removeEventListener("dente-open-backoffice-modal", handleOpen);
 	}, []);
 
-	const close = () => setActiveModal(null);
+	const close = () => {
+		setActiveModal(null);
+		setModalData(null);
+	};
 
 	if (!activeModal) return null;
+
+	const patientId = modalData?.patientId ?? appLogic?.activePatient?.id ?? "";
+	const patientName = modalData?.patientName ?? appLogic?.activePatient?.fullName ?? appLogic?.activePatient?.name ?? "";
+	const patientPhone = modalData?.patientPhone ?? appLogic?.activePatient?.phone ?? "";
+	const cardNumber = modalData?.cardNumber ?? appLogic?.activePatient?.cardNumber ?? appLogic?.activePatient?.medicalCardNumber ?? "";
+	const doctorFullName = modalData?.doctorName ?? appLogic?.activeDoctor?.fullName ?? appLogic?.activeDoctor?.name ?? "Врач";
+	const doctorSpecialty = modalData?.doctorSpecialty ?? appLogic?.activeDoctor?.specialty ?? "Врач-стоматолог терапевт";
 
 	return (
 		<>
@@ -98,8 +117,8 @@ export const BackofficeModalsHost: React.FC = () => {
 					isOpen={true}
 					onClose={close}
 					items={[]}
-					patientId={SAMPLE_PATIENT.id}
-					patientName={SAMPLE_PATIENT.fullName}
+					patientId={patientId}
+					patientName={patientName}
 					patientDepositRub={0}
 				 {...({} as any)} />
 			)}
@@ -108,10 +127,10 @@ export const BackofficeModalsHost: React.FC = () => {
 					isOpen={true}
 					onClose={close}
 					items={[]}
-					patientId={SAMPLE_PATIENT.id}
-					patientName={SAMPLE_PATIENT.fullName}
-					patientPhone={SAMPLE_PATIENT.phone}
-					doctorName="Д-р Смирнов А. П."
+					patientId={patientId}
+					patientName={patientName}
+					patientPhone={patientPhone}
+					doctorName={doctorFullName}
 				 {...({} as any)} />
 			)}
 			{activeModal === "onec_commerceml" && (
@@ -122,14 +141,14 @@ export const BackofficeModalsHost: React.FC = () => {
 					isOpen={true}
 					onClose={close}
 					patient={{
-						id: SAMPLE_PATIENT.id,
-						fullName: SAMPLE_PATIENT.fullName,
-						phone: SAMPLE_PATIENT.phone,
-						medicalCardNumber: SAMPLE_PATIENT.cardNumber,
+						id: patientId,
+						fullName: patientName,
+						phone: patientPhone,
+						medicalCardNumber: cardNumber,
 					}}
 					doctor={{
-						fullName: "Д-р Смирнов Алексей Петрович",
-						specialty: "Врач-стоматолог терапевт",
+						fullName: doctorFullName,
+						specialty: doctorSpecialty,
 					}}
 				 {...({} as any)} />
 			)}
@@ -138,8 +157,8 @@ export const BackofficeModalsHost: React.FC = () => {
 					isOpen={true}
 					onClose={close}
 					totalAmountRub={0}
-					patientName={SAMPLE_PATIENT.fullName}
-					patientPhone={SAMPLE_PATIENT.phone}
+					patientName={patientName}
+					patientPhone={patientPhone}
 					patientDepositRub={0}
 					patientFamilyBalanceRub={0}
 				 {...({} as any)} />
@@ -241,7 +260,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<DoctorShiftCockpitModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "doctor_desktop_header" && (
-				<DoctorDesktopHeader doctorId="doc-1" doctorName="Д-р Смирнов А. П."  {...({} as any)} />
+				<DoctorDesktopHeader doctorId={appLogic?.activeDoctor?.id ?? "doc-1"} doctorName={doctorFullName}  {...({} as any)} />
 			)}
 			{activeModal === "doctor_shift_roster" && (
 				<DoctorShiftRosterModal isOpen={true} onClose={close}  {...({} as any)} />

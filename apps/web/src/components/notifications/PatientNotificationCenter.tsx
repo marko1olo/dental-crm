@@ -84,49 +84,24 @@ export function PatientNotificationCenter({
 
 	const [activeCategory, setActiveCategory] = useState<NotificationCategory>("all");
 	const [notifications, setNotifications] = useState<PatientNotificationItem[]>(() => {
-		const now = new Date();
-		const t1 = new Date(now.getTime() - 15 * 60000).toISOString();
-		const t2 = new Date(now.getTime() - 45 * 60000).toISOString();
-		const t3 = new Date(now.getTime() - 120 * 60000).toISOString();
-
-		return [
-			{
-				id: "notif-1",
-				category: "call",
-				title: "Пропущенный вызов",
-				description: "Входящий звонок от пациента +7 (916) 123-45-67 (Иванов И.И.)",
-				timestamp: t1,
-				isRead: false,
-				phone: "+7 (916) 123-45-67",
-				patientName: "Иванов Иван Иванович",
-				priority: "urgent",
-				actionType: "call",
-			},
-			{
-				id: "notif-2",
-				category: "whatsapp",
-				title: "Входящее сообщение в WhatsApp",
-				description: "Пациент подтвердил визит на завтра 10:00: «Да, подтверждаю приём»",
-				timestamp: t2,
-				isRead: false,
-				phone: "+7 (926) 987-65-43",
-				patientName: "Смирнова Елена Васильевна",
-				priority: "normal",
-				actionType: "whatsapp",
-			},
-			{
-				id: "notif-3",
-				category: "financial",
-				title: "Задолженность по лечению",
-				description: "Остаток к оплате 4 500 ₽ за приём у врача Петрова П.С.",
-				timestamp: t3,
-				isRead: true,
-				phone: "+7 (916) 123-45-67",
-				patientName: "Иванов Иван Иванович",
-				priority: "normal",
-				actionType: "patient_card",
-			},
-		];
+		if (callHistory && callHistory.length > 0) {
+			return callHistory
+				.filter((c) => c.status === "missed")
+				.slice(0, 10)
+				.map((c) => ({
+					id: `call-${c.id}`,
+					category: "call" as const,
+					title: "Пропущенный вызов",
+					description: `Входящий звонок: ${c.phone}${c.patientName ? ` (${c.patientName})` : ""}`,
+					timestamp: c.timestamp || new Date().toISOString(),
+					isRead: false,
+					phone: c.phone,
+					patientName: c.patientName || "Пациент",
+					priority: "urgent" as const,
+					actionType: "call" as const,
+				}));
+		}
+		return [];
 	});
 
 	const unreadCount = useMemo(
@@ -270,7 +245,7 @@ export function PatientNotificationCenter({
 				{filteredNotifications.length === 0 ? (
 					<div className="py-12 text-center text-xs text-[var(--muted,#94a3b8)] space-y-2">
 						<Bell size={24} className="mx-auto opacity-40" />
-						<p>Нет новых уведомлений в выбранной категории.</p>
+						<p>Нет новых уведомлений</p>
 					</div>
 				) : (
 					filteredNotifications.map((item) => (

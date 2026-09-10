@@ -87,30 +87,50 @@ import { PatientMemoPrintModal } from "../visit/PatientMemoPrintModal";
 import { ProcedureMaterialDeductionModal } from "../inventory/ProcedureMaterialDeductionModal";
 import { VisitOdontogramTab } from "../visit/VisitOdontogramTab";
 import { Form043PrintModal } from "../emr/Form043PrintModal";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
-const SAMPLE_PATIENT = {
-	id: "pat-sample-1",
-	fullName: "Иванов Иван Иванович",
-	phone: "+7 (999) 123-45-67",
-	birthDate: "1985-05-15",
-	cardNumber: "К-2026-0042",
-};
+interface OpenClinicalModalDetail {
+	modalId: string;
+	patientId?: string;
+	patientName?: string;
+	patientPhone?: string;
+	patientBirthDate?: string;
+	cardNumber?: string;
+	doctorName?: string;
+	activeTooth?: number;
+}
 
 export const ClinicalModalsHost: React.FC = () => {
 	const [activeModal, setActiveModal] = useState<string | null>(null);
+	const [modalData, setModalData] = useState<OpenClinicalModalDetail | null>(null);
+	const appLogic = useOptionalAppLogicContext();
 
 	useEffect(() => {
 		const handleOpen = (e: Event) => {
-			const detail = (e as CustomEvent<{ modalId: string }>).detail;
-			if (detail?.modalId) setActiveModal(detail.modalId);
+			const detail = (e as CustomEvent<OpenClinicalModalDetail>).detail;
+			if (detail?.modalId) {
+				setActiveModal(detail.modalId);
+				setModalData(detail);
+			}
 		};
 		window.addEventListener("dente-open-clinical-modal", handleOpen);
 		return () => window.removeEventListener("dente-open-clinical-modal", handleOpen);
 	}, []);
 
-	const close = () => setActiveModal(null);
+	const close = () => {
+		setActiveModal(null);
+		setModalData(null);
+	};
 
 	if (!activeModal) return null;
+
+	const patientId = modalData?.patientId ?? appLogic?.activePatient?.id ?? "";
+	const patientName = modalData?.patientName ?? appLogic?.activePatient?.fullName ?? appLogic?.activePatient?.name ?? "";
+	const patientPhone = modalData?.patientPhone ?? appLogic?.activePatient?.phone ?? "";
+	const patientBirthDate = modalData?.patientBirthDate ?? appLogic?.activePatient?.birthDate ?? "";
+	const cardNumber = modalData?.cardNumber ?? appLogic?.activePatient?.cardNumber ?? appLogic?.activePatient?.medicalCardNumber ?? "";
+	const doctorFullName = modalData?.doctorName ?? appLogic?.activeDoctor?.fullName ?? appLogic?.activeDoctor?.name ?? "Врач";
+	const activeTooth = modalData?.activeTooth ?? 46;
 
 	return (
 		<>
@@ -178,11 +198,11 @@ export const ClinicalModalsHost: React.FC = () => {
 				<TreatmentPlanPresenterModal
 					isOpen={true}
 					onClose={close}
-					patientName={SAMPLE_PATIENT.fullName}
-					patientId={SAMPLE_PATIENT.id}
-					patientPhone={SAMPLE_PATIENT.phone}
-					patientBirthDate={SAMPLE_PATIENT.birthDate}
-					doctorFullName="Д-р Смирнов Алексей Петрович"
+					patientName={patientName}
+					patientId={patientId}
+					patientPhone={patientPhone}
+					patientBirthDate={patientBirthDate}
+					doctorFullName={doctorFullName}
 				 {...({} as any)} />
 			)}
 			{activeModal === "plan_validator" && (
@@ -210,8 +230,8 @@ export const ClinicalModalsHost: React.FC = () => {
 				<EmergencyAnaphylaxisProtocolModal
 					isOpen={true}
 					onClose={close}
-					patientName={SAMPLE_PATIENT.fullName}
-					doctorName="Д-р Смирнов Алексей Петрович"
+					patientName={patientName}
+					doctorName={doctorFullName}
 				 {...({} as any)} />
 			)}
 			{activeModal === "emergency_rescue" && (
@@ -221,9 +241,9 @@ export const ClinicalModalsHost: React.FC = () => {
 				<ImagingModal
 					isOpen={true}
 					onClose={close}
-					patientName={SAMPLE_PATIENT.fullName}
+					patientName={patientName}
 					modality="RVG"
-					toothFdiCode="16"
+					toothFdiCode={String(activeTooth)}
 				 {...({} as any)} />
 			)}
 			{activeModal === "dicom_viewer" && (
@@ -254,55 +274,55 @@ export const ClinicalModalsHost: React.FC = () => {
 				<ImplantPassportModal
 					isOpen={true}
 					onClose={close}
-					patientName={SAMPLE_PATIENT.fullName}
-					patientId={SAMPLE_PATIENT.id}
-					doctorName="Д-р Смирнов Алексей Петрович"
-					initialTooth={46}
+					patientName={patientName}
+					patientId={patientId}
+					doctorName={doctorFullName}
+					initialTooth={activeTooth}
 				 {...({} as any)} />
 			)}
 			{activeModal === "surgery_cockpit" && (
 				<SurgeryCockpitModal
 					isOpen={true}
 					onClose={close}
-					patientName={SAMPLE_PATIENT.fullName}
-					patientId={SAMPLE_PATIENT.id}
-					doctorName="Д-р Смирнов Алексей Петрович"
-					initialTooth={46}
+					patientName={patientName}
+					patientId={patientId}
+					doctorName={doctorFullName}
+					initialTooth={activeTooth}
 				 {...({} as any)} />
 			)}
 			{activeModal === "surgery_protocol_panel" && (
-				<SurgeryProtocolPanel patientName={SAMPLE_PATIENT.fullName} toothFdi={46}  {...({} as any)} />
+				<SurgeryProtocolPanel patientName={patientName} toothFdi={activeTooth}  {...({} as any)} />
 			)}
 			{activeModal === "surgery_visit_cockpit" && (
 				<SurgeryVisitCockpit
-					patientName={SAMPLE_PATIENT.fullName}
-					patientId={SAMPLE_PATIENT.id}
-					doctorName="Д-р Смирнов Алексей Петрович"
-					activeTooth={46}
+					patientName={patientName}
+					patientId={patientId}
+					doctorName={doctorFullName}
+					activeTooth={activeTooth}
 				 {...({} as any)} />
 			)}
 			{activeModal === "surgery_protocol_tab" && (
 				<VisitSurgeryProtocolTab
-					patientName={SAMPLE_PATIENT.fullName}
-					patientId={SAMPLE_PATIENT.id}
-					doctorName="Д-р Смирнов Алексей Петрович"
-					activeTooth={46}
+					patientName={patientName}
+					patientId={patientId}
+					doctorName={doctorFullName}
+					activeTooth={activeTooth}
 				 {...({} as any)} />
 			)}
 			{activeModal === "anesthesia_aspiration" && (
 				<AnesthesiaAspirationJournalModal
 					isOpen={true}
 					onClose={close}
-					initialPatientFullName={SAMPLE_PATIENT.fullName}
-					initialToothNumber="46"
+					initialPatientFullName={patientName}
+					initialToothNumber={String(activeTooth)}
 				 {...({} as any)} />
 			)}
 			{activeModal === "nurse_carpule_disposal" && (
 				<NurseCarpuleDisposalModal
 					isOpen={true}
 					onClose={close}
-					initialDoctorName="Д-р Смирнов Алексей Петрович"
-					initialNurseName="Смирнова А. В. (медсестра)"
+					initialDoctorName={doctorFullName}
+					initialNurseName="Медсестра ЦСО"
 				 {...({} as any)} />
 			)}
 			{activeModal === "warranty_passport" && (
@@ -316,7 +336,13 @@ export const ClinicalModalsHost: React.FC = () => {
 			)}
 			{activeModal === "visit_odontogram_tab" && (
 				<VisitOdontogramTab
-					activePatient={SAMPLE_PATIENT as any}
+					activePatient={patientId ? ({
+						id: patientId,
+						fullName: patientName,
+						phone: patientPhone,
+						birthDate: patientBirthDate,
+						cardNumber,
+					} as any) : null}
 					activeAppointment={null}
 					dashboard={null as any}
 				 {...({} as any)} />
@@ -335,7 +361,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<PostOpCareSheetModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "somatic_anamnesis" && (
-				<SomaticAnamnesisCard patientId={SAMPLE_PATIENT.id}  {...({} as any)} />
+				<SomaticAnamnesisCard patientId={patientId}  {...({} as any)} />
 			)}
 			{activeModal === "bone_quality" && (
 				<BoneQualityPanel  {...({} as any)} />

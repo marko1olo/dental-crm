@@ -53,49 +53,6 @@ export interface OfflineFiscalBatchModalProps {
 	readonly onBatchProcessed?: (result: OfflineFiscalBatchResult) => void;
 }
 
-const DEFAULT_MOCK_QUEUED_RECEIPTS: readonly OfflineQueueFiscalItem[] = [
-	{
-		id: "offline_rec_101",
-		invoiceId: "inv_2026_881",
-		patientId: "pat_101",
-		patientFullName: "Иванов Иван Иванович",
-		timestampIso: new Date(Date.now() - 36 * 3600 * 1000).toISOString(), // вчера утром
-		operationType: "income",
-		tenders: { cashRub: 3500 },
-		items: [{ name: "Лечение глубокого кариеса зуба 16", priceRub: 3500, quantity: 1 }],
-	},
-	{
-		id: "offline_rec_102",
-		invoiceId: "inv_2026_882",
-		patientId: "pat_102",
-		patientFullName: "Петрова Анна Сергеевна",
-		timestampIso: new Date(Date.now() - 32 * 3600 * 1000).toISOString(), // вчера днем
-		operationType: "income",
-		tenders: { cardRub: 6800 },
-		items: [{ name: "Эндодонтическая обработка 3 каналов зуба 26", priceRub: 6800, quantity: 1 }],
-	},
-	{
-		id: "offline_rec_103",
-		invoiceId: "inv_2026_883",
-		patientId: "pat_103",
-		patientFullName: "Сидоров Михаил Павлович",
-		timestampIso: new Date(Date.now() - 28 * 3600 * 1000).toISOString(), // вчера вечером
-		operationType: "income",
-		tenders: { sbpRub: 4200 },
-		items: [{ name: "Профессиональная гигиена полости рта AirFlow", priceRub: 4200, quantity: 1 }],
-	},
-	{
-		id: "offline_rec_104",
-		invoiceId: "inv_2026_884",
-		patientId: "pat_104",
-		patientFullName: "Кузнецова Ольга Владимировна",
-		timestampIso: new Date(Date.now() - 4 * 3600 * 1000).toISOString(), // сегодня утром
-		operationType: "income",
-		tenders: { advanceOffsetRub: 2000, cardRub: 4500 },
-		items: [{ name: "Установка циркониевой коронки зуба 11", priceRub: 6500, quantity: 1 }],
-	},
-];
-
 export interface DisplayReceiptItem {
 	readonly id: string;
 	readonly timestampIso: string;
@@ -142,7 +99,7 @@ export function OfflineFiscalBatchModal({
 	isOpen,
 	onClose,
 	queuedReceipts: initialQueuedReceipts,
-	cashierFullName = "Сидорова А. П.",
+	cashierFullName = "Кассир",
 	clinicRequisites = DEFAULT_CLINIC_FISCAL_REQUISITES,
 	onBatchProcessed,
 }: OfflineFiscalBatchModalProps) {
@@ -160,7 +117,7 @@ export function OfflineFiscalBatchModal({
 		if (livePending.length > 0) {
 			return livePending.map(mapHardwareQueueItemToOfflineItem);
 		}
-		return DEFAULT_MOCK_QUEUED_RECEIPTS;
+		return [];
 	}, [initialQueuedReceipts]);
 
 	const receiptsToDisplay: readonly DisplayReceiptItem[] = useMemo(() => {
@@ -553,50 +510,59 @@ export function OfflineFiscalBatchModal({
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-[var(--glass-border)]">
-										{filteredReceipts.map((r) => (
-											<tr key={r.id} className="hover:bg-[var(--glass-hover)] transition-colors">
-												<td className="p-3 font-mono">
-													<div className="font-semibold text-[var(--ink)]">{r.id}</div>
-													<div className="text-[10px] text-[var(--muted)]">
-														{new Date(r.timestampIso).toLocaleString("ru-RU")}
-													</div>
-												</td>
-												<td className="p-3 font-medium">{r.patientFullName || "Пациент клиники"}</td>
-												<td className="p-3 max-w-[200px] truncate text-[var(--muted)]" title={r.itemsNames}>
-													{r.itemsNames}
-												</td>
-												<td className="p-3 text-right font-mono text-amber-600 dark:text-amber-400">
-													{r.cashRub ? `${r.cashRub.toLocaleString("ru-RU")} ₽` : "—"}
-												</td>
-												<td className="p-3 text-right font-mono text-indigo-600 dark:text-indigo-400">
-													{r.cardRub ? `${r.cardRub.toLocaleString("ru-RU")} ₽` : "—"}
-												</td>
-												<td className="p-3 text-right font-mono text-teal-600 dark:text-teal-400">
-													{r.sbpRub ? `${r.sbpRub.toLocaleString("ru-RU")} ₽` : "—"}
-												</td>
-												<td className="p-3 text-right font-mono text-purple-600 dark:text-purple-400">
-													{r.advanceOffsetRub ? `${r.advanceOffsetRub.toLocaleString("ru-RU")} ₽` : "—"}
-												</td>
-												<td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-													{r.totalRub.toLocaleString("ru-RU")} ₽
-												</td>
-												<td className="p-3 text-center">
-													{r.status === "fiscalized" ? (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600">
-															<CheckCircle2 className="w-3 h-3" /> ФД #{r.fiscalDocNumber}
-														</span>
-													) : r.status === "duplicate_skipped" ? (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600">
-															Дубликат
-														</span>
-													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600">
-															В очереди
-														</span>
-													)}
+										{filteredReceipts.length === 0 ? (
+											<tr>
+												<td colSpan={9} className="p-8 text-center text-[var(--muted)]">
+													<Layers className="w-8 h-8 mx-auto mb-2 opacity-40" />
+													<span>Очередь офлайн-чеков пуста. Все чеки фискализированы.</span>
 												</td>
 											</tr>
-										))}
+										) : (
+											filteredReceipts.map((r) => (
+												<tr key={r.id} className="hover:bg-[var(--glass-hover)] transition-colors">
+													<td className="p-3 font-mono">
+														<div className="font-semibold text-[var(--ink)]">{r.id}</div>
+														<div className="text-[10px] text-[var(--muted)]">
+															{new Date(r.timestampIso).toLocaleString("ru-RU")}
+														</div>
+													</td>
+													<td className="p-3 font-medium">{r.patientFullName || "Пациент клиники"}</td>
+													<td className="p-3 max-w-[200px] truncate text-[var(--muted)]" title={r.itemsNames}>
+														{r.itemsNames}
+													</td>
+													<td className="p-3 text-right font-mono text-amber-600 dark:text-amber-400">
+														{r.cashRub ? `${r.cashRub.toLocaleString("ru-RU")} ₽` : "—"}
+													</td>
+													<td className="p-3 text-right font-mono text-indigo-600 dark:text-indigo-400">
+														{r.cardRub ? `${r.cardRub.toLocaleString("ru-RU")} ₽` : "—"}
+													</td>
+													<td className="p-3 text-right font-mono text-teal-600 dark:text-teal-400">
+														{r.sbpRub ? `${r.sbpRub.toLocaleString("ru-RU")} ₽` : "—"}
+													</td>
+													<td className="p-3 text-right font-mono text-purple-600 dark:text-purple-400">
+														{r.advanceOffsetRub ? `${r.advanceOffsetRub.toLocaleString("ru-RU")} ₽` : "—"}
+													</td>
+													<td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+														{r.totalRub.toLocaleString("ru-RU")} ₽
+													</td>
+													<td className="p-3 text-center">
+														{r.status === "fiscalized" ? (
+															<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600">
+																<CheckCircle2 className="w-3 h-3" /> ФД #{r.fiscalDocNumber}
+															</span>
+														) : r.status === "duplicate_skipped" ? (
+															<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600">
+																Дубликат
+															</span>
+														) : (
+															<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600">
+																В очереди
+															</span>
+														)}
+													</td>
+												</tr>
+											))
+										)}
 									</tbody>
 								</table>
 							</div>
