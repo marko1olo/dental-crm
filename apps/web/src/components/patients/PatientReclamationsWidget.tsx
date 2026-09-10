@@ -328,7 +328,7 @@ export function PatientReclamationsWidget({
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
-				className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4 flex flex-wrap items-start gap-3"
+				className="panel-card bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-xl mt-4 p-4 flex flex-wrap items-start gap-3"
 			>
 				{draftDroppedNotice ? (
 					<div className="w-full">{draftDroppedNotice}</div>
@@ -377,18 +377,18 @@ export function PatientReclamationsWidget({
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
-				className="panel-card bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
+				className="panel-card bg-[var(--paper)] border border-dashed border-[var(--line)] text-[var(--ink)] rounded-xl mt-4 p-0 overflow-hidden"
 			>
 				{draftDroppedNotice ? (
 					<div className="px-4 pt-4">{draftDroppedNotice}</div>
 				) : null}
 				<div className="panel-heading flex flex-wrap justify-between items-start gap-3 p-4 bg-transparent m-0">
-					<div className="flex items-start gap-2.5 text-slate-500 dark:text-slate-400 min-w-0">
-						<div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+					<div className="flex items-start gap-2.5 text-[var(--muted)] min-w-0">
+						<div className="w-8 h-8 rounded-lg bg-[var(--paper-soft)] flex items-center justify-center shrink-0">
 							<ShieldAlert size={16} />
 						</div>
 						<div className="min-w-0">
-							<h3 className="text-sm font-semibold m-0 text-slate-900 dark:text-white">
+							<h3 className="text-sm font-semibold m-0 text-[var(--ink)]">
 								{emptyText.title}
 							</h3>
 							{/* Пустота без подсказки — тупик: непонятно, зачем этот блок здесь. */}
@@ -470,8 +470,8 @@ export function PatientReclamationsWidget({
 							className="bg-rose-50 dark:bg-rose-950/30 p-5 rounded-xl border border-dashed border-rose-300 dark:border-rose-800 overflow-hidden"
 						>
 							<div className="grid grid-cols-1 gap-4">
-								{/* 1-Click Clinical Reclamation Presets */}
-								<div className="flex flex-col gap-2 p-3 rounded-xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 shadow-2xs">
+								{/* 1-Click Clinical Reclamation Presets (Анти-Матрёшка: плоский контейнер) */}
+								<div className="flex flex-col gap-2">
 									<div className="flex items-center gap-1.5 text-xs font-bold text-rose-900 dark:text-rose-300">
 										<Zap size={14} className="text-amber-500 shrink-0" />
 										<span>Быстрые клинические шаблоны (1 клик):</span>
@@ -489,7 +489,7 @@ export function PatientReclamationsWidget({
 													}
 													showToast(`Шаблон «${preset.title}» применён`, "info");
 												}}
-												className="min-h-[44px] px-3 py-2 rounded-lg bg-rose-50/80 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-left text-xs font-semibold text-rose-950 dark:text-rose-100 flex items-center gap-1.5 cursor-pointer active:scale-98 transition-all shadow-2xs"
+												className="min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-left text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 cursor-pointer active:scale-98 transition-all shadow-2xs"
 												title={`Заполнить: ${preset.details}`}
 											>
 												<Zap size={14} className="text-amber-500 shrink-0" aria-hidden="true" />

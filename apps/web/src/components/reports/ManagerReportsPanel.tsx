@@ -512,8 +512,34 @@ function computeLocalReportsSummary(
 		).length;
 		const cancelled = docAppts.filter((a) => a.status === "cancelled").length;
 		const noShow = docAppts.filter((a) => a.status === "no_show").length;
-		const docRev =
-			totalRub > 0 ? Math.round(totalRub / Math.max(1, doctorsList.length)) : 0;
+		let docRev = 0;
+		if (completed > 0) {
+			for (const a of docAppts) {
+				if (a.status === "completed" || a.status === "done") {
+					if (typeof a.cost === "number" && a.cost > 0) {
+						docRev += a.cost;
+					} else if (typeof a.price === "number" && a.price > 0) {
+						docRev += a.price;
+					} else if (typeof a.amount === "number" && a.amount > 0) {
+						docRev += a.amount;
+					}
+				}
+			}
+			if (docRev === 0 && totalRub > 0) {
+				const docPayments = payments.filter(
+					(p) =>
+						p.doctorUserId === docId ||
+						docAppts.some(
+							(a) => a.id && (a.id === p.appointmentId || a.id === p.orderId),
+						),
+				);
+				for (const p of docPayments) {
+					if (typeof p.amount === "number" && p.amount > 0) {
+						docRev += p.amount;
+					}
+				}
+			}
+		}
 		return {
 			doctorUserId: docId,
 			doctorName: docName,
@@ -534,6 +560,7 @@ function computeLocalReportsSummary(
 		};
 	});
 
+	const totalCapacityMinutes = 21600;
 	const chairRows: ChairRow[] = chairs.map((c, idx) => {
 		const chairId = typeof c.id === "string" ? c.id : null;
 		const chairName =
@@ -541,12 +568,35 @@ function computeLocalReportsSummary(
 				? c.name.trim()
 				: `Кресло ${idx + 1}`;
 		const chairAppts = appointments.filter((a) => a.chairId === chairId);
+		let bookedMinutes = 0;
+		for (const a of chairAppts) {
+			if (typeof a.duration === "number" && a.duration > 0) {
+				bookedMinutes += a.duration;
+			} else if (
+				typeof a.startsAt === "string" &&
+				typeof a.endsAt === "string"
+			) {
+				const start = new Date(a.startsAt).getTime();
+				const end = new Date(a.endsAt).getTime();
+				if (!Number.isNaN(start) && !Number.isNaN(end) && end > start) {
+					bookedMinutes += Math.round((end - start) / 60000);
+				} else {
+					bookedMinutes += 60;
+				}
+			} else {
+				bookedMinutes += 60;
+			}
+		}
+		const utilization =
+			chairAppts.length === 0
+				? 0
+				: Math.min(100, Math.round((bookedMinutes / totalCapacityMinutes) * 100));
 		return {
 			chairId,
 			chairName,
 			appointments: chairAppts.length,
-			bookedMinutes: chairAppts.length * 60,
-			utilization: 35,
+			bookedMinutes,
+			utilization,
 		};
 	});
 
@@ -747,31 +797,30 @@ export function ManagerReportsPanel({
 
 			if (summaryResult.status === "fulfilled") {
 				setSummary(summaryResult.value);
-			} else {
-				// Офлайн-деградация: формируем локальную сводку из хранилища
-				const fallback = computeLocalReportsSummary(
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					(dashboardRef.current as any) ?? null,
-					from,
-					to,
-					granularity,
-				);
-				setSummary(fallback);
 				setError(null);
+			} else {
+				const reason = summaryResult.reason;
+				const message =
+					reason instanceof Error
+						? reason.message
+						: typeof reason === "string" && reason.trim().length > 0
+							? reason
+							: "сервер отказал в выдаче сводного отчёта";
+				setError(message);
+				setSummary(null);
 			}
 			setServices(sliceOf(servicesResult));
 			setDebtors(sliceOf(debtorsResult));
 			setScheduleLoad(sliceOf(scheduleResult));
-		} catch (_loadError) {
-			const fallback = computeLocalReportsSummary(
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(dashboardRef.current as any) ?? null,
-				from,
-				to,
-				granularity,
-			);
-			setSummary(fallback);
-			setError(null);
+		} catch (loadError) {
+			const message =
+				loadError instanceof Error
+					? loadError.message
+					: typeof loadError === "string" && loadError.trim().length > 0
+						? loadError
+						: "сервер отказал без объяснения";
+			setError(message);
+			setSummary(null);
 			setServices(pendingSlice);
 			setDebtors(pendingSlice);
 			setScheduleLoad(pendingSlice);
@@ -906,9 +955,17 @@ export function ManagerReportsPanel({
 			</div>
 
 			{error ? (
-				<p className="ops-notice ops-notice--error" role="alert">
-					Отчёт не построен: {error}
-				</p>
+				<div className="ops-notice ops-notice--error flex items-center justify-between gap-3" role="alert">
+					<span>Отчёт не построен: {error}</span>
+					<button
+						type="button"
+						className="secondary-button"
+						onClick={() => void load()}
+						disabled={loading}
+					>
+						Повторить
+					</button>
+				</div>
 			) : null}
 
 			{/* Скелет держит высоту: без него содержимое прыгает при каждой смене периода. */}
@@ -1002,8 +1059,8 @@ export function ManagerReportsPanel({
 							<p className="ops-empty">Платежей за период не было.</p>
 						) : (
 							<ul className="ops-bars">
-								{(summary?.revenue?.points ?? []).map((point) => (
-									<li className="ops-bar" key={point?.bucket ?? Math.random()}>
+								{(summary?.revenue?.points ?? []).map((point, idx) => (
+									<li className="ops-bar" key={point?.bucket ?? `rev-pt-${idx}`}>
 										<span className="ops-bar__label">
 											{point?.bucket ?? ""}
 										</span>
@@ -1061,12 +1118,12 @@ export function ManagerReportsPanel({
 													</tr>
 												</thead>
 												<tbody>
-													{(summary?.doctors?.rows ?? []).map((row) => (
+													{(summary?.doctors?.rows ?? []).map((row, idx) => (
 														<tr
 															key={
 																row?.doctorUserId ??
 																row?.doctorName ??
-																Math.random()
+																`doc-row-${idx}`
 															}
 														>
 															<td className="ops-strong" data-label="Врач">
@@ -1152,10 +1209,10 @@ export function ManagerReportsPanel({
 													</tr>
 												</thead>
 												<tbody>
-													{(summary?.chairs?.rows ?? []).map((row) => (
+													{(summary?.chairs?.rows ?? []).map((row, idx) => (
 														<tr
 															key={
-																row?.chairId ?? row?.chairName ?? Math.random()
+																row?.chairId ?? row?.chairName ?? `chair-row-${idx}`
 															}
 														>
 															<td className="ops-strong" data-label="Кресло">
@@ -1298,8 +1355,8 @@ export function ManagerReportsPanel({
 											</tr>
 										</thead>
 										<tbody>
-											{(summary?.patientFlow?.points ?? []).map((point) => (
-												<tr key={point?.bucket ?? Math.random()}>
+											{(summary?.patientFlow?.points ?? []).map((point, idx) => (
+												<tr key={point?.bucket ?? `flow-pt-${idx}`}>
 													<td className="ops-strong" data-label="Месяц">
 														{point?.bucket ?? "—"}
 													</td>
@@ -1480,8 +1537,8 @@ export function ManagerReportsPanel({
 											</tr>
 										</thead>
 										<tbody>
-											{(summary?.receivables?.prepayments ?? []).map((row) => (
-												<tr key={row?.patientId ?? Math.random()}>
+											{(summary?.receivables?.prepayments ?? []).map((row, idx) => (
+												<tr key={row?.patientId ?? `prepay-row-${idx}`}>
 													<td className="ops-strong" data-label="Пациент">
 														{row?.patientName ?? "—"}
 													</td>
@@ -1564,8 +1621,8 @@ export function ManagerReportsPanel({
 										</tr>
 									</thead>
 									<tbody>
-										{(services.data.rows ?? []).map((row) => (
-											<tr key={row?.title ?? Math.random()}>
+										{(services.data.rows ?? []).map((row, idx) => (
+											<tr key={row?.title ?? `srv-row-${idx}`}>
 												<td className="ops-strong" data-label="Услуга">
 													{row?.title ?? "—"}
 												</td>
@@ -1734,8 +1791,8 @@ export function ManagerReportsPanel({
 										</tr>
 									</thead>
 									<tbody>
-										{(debtors?.data?.rows ?? []).map((row) => (
-											<tr key={row?.patientId ?? Math.random()}>
+										{(debtors?.data?.rows ?? []).map((row, idx) => (
+											<tr key={row?.patientId ?? `debtor-row-${idx}`}>
 												<td className="ops-strong" data-label="Пациент">
 													{row?.patientName ?? "—"}
 												</td>

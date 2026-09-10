@@ -511,7 +511,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						<div className="flex flex-col gap-3">
 							<input
 								type="text"
-								className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none text-xs"
+								className="w-full p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none text-xs"
 								placeholder="Название семьи (напр. Семья Ивановых)"
 								value={newFamilyName}
 								onChange={(e) => setNewFamilyName(e.target.value)}
@@ -527,7 +527,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 								</button>
 								<button
 									type="button"
-									className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 p-2 min-h-[44px] text-xs rounded-xl font-semibold cursor-pointer border border-slate-300 dark:border-slate-700 inline-flex items-center justify-center"
+									className="flex-1 bg-[var(--paper-soft)] text-[var(--ink)] p-2 min-h-[44px] text-xs rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
 									onClick={() => setIsCreating(false)}
 									disabled={loading}
 								>
@@ -540,11 +540,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<div className="relative">
 								<Search
 									size={14}
-									className="absolute left-2.5 top-3 text-slate-400"
+									className="absolute left-2.5 top-3 text-[var(--muted)]"
 								/>
 								<input
 									type="text"
-									className="w-full pl-8 pr-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none text-xs"
+									className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none text-xs"
 									placeholder="Поиск семьи по названию..."
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
@@ -579,11 +579,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 									<button
 										type="button"
 										key={f.id}
-										className="w-full text-left flex justify-between items-center p-2 min-h-[44px] bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+										className="w-full text-left flex justify-between items-center p-2 min-h-[44px] bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl cursor-pointer hover:bg-[var(--paper-hover,var(--paper-soft))] text-[var(--ink)] transition-colors"
 										onClick={() => handleLinkFamily(f.id)}
 									>
 										<div>
-											<div className="text-xs font-semibold text-slate-900 dark:text-white">
+											<div className="text-xs font-semibold text-[var(--ink)]">
 												{f.name}
 											</div>
 										</div>
@@ -597,7 +597,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<div className="flex gap-2 mt-1">
 								<button
 									type="button"
-									className="w-full p-2 min-h-[44px] text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-semibold cursor-pointer border border-slate-300 dark:border-slate-700 inline-flex items-center justify-center"
+									className="w-full p-2 min-h-[44px] text-xs bg-[var(--paper-soft)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
 									onClick={() => {
 										setIsLinking(false);
 										setSearchQuery("");

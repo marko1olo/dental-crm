@@ -46,6 +46,17 @@ export {
 	getOrder804nServiceNorm,
 };
 
+/**
+ * Детерминированный генератор ID строк и документов списания.
+ * Использует криптографический UUID (Web Crypto API) или монотонный счётчик на базе времени/performance.
+ * Исключает недетерминированный Math.random() в складских документах.
+ */
+export const generateDocumentRowId = (): string =>
+	typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+		? crypto.randomUUID().slice(0, 8)
+		: Date.now().toString(36).slice(-6) + Math.floor(typeof performance !== "undefined" ? performance.now() : 0).toString(36);
+
+
 export interface CompletedClinicalService {
 	readonly serviceCode: string;
 	readonly toothNumber?: number | string | undefined;
@@ -353,7 +364,7 @@ export function aggregateWriteoffFromServices(
 				const stockStatus = evaluateStockAvailability(stockAvailable, stdQty, criticalThreshold);
 
 				lines.push({
-					id: `line_${service.serviceCode}_${material.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+					id: `line_${service.serviceCode}_${material.id}_${Date.now()}_${generateDocumentRowId()}`,
 					serviceCode: service.serviceCode,
 					serviceTitle,
 					toothNumber: service.toothNumber,
@@ -522,7 +533,7 @@ export function createQuickAnesthesiaPackageWriteoffDocument(
 		const stockStatus = evaluateStockAvailability(stockAvailable, item.count, criticalThreshold);
 
 		return {
-			id: `line_anes_pkg_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+			id: `line_anes_pkg_${Date.now()}_${idx}_${generateDocumentRowId()}`,
 			serviceCode: "A16.07.030.001",
 			serviceTitle: item.title,
 			toothNumber: undefined,
@@ -561,7 +572,7 @@ export function createQuickAnesthesiaPackageWriteoffDocument(
 	const actNumber = `АНЕСТ-${Date.now().toString().slice(-6)}`;
 
 	return {
-		id: `doc_anes_pkg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		id: `doc_anes_pkg_${Date.now()}_${generateDocumentRowId()}`,
 		actNumber,
 		actDate,
 		patientId: params.patientId,
@@ -634,7 +645,7 @@ export function createQuickCarpuleWriteoffDocument(
 	const stockStatus = evaluateStockAvailability(stockAvailable, count, criticalThreshold);
 
 	const line: ClinicalWriteoffLine = {
-		id: `line_carpule_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+		id: `line_carpule_${Date.now()}_${generateDocumentRowId()}`,
 		serviceCode: "A16.07.030.001",
 		serviceTitle: "Утилизация пустых карпул/ампул анестетика",
 		toothNumber: undefined,
@@ -672,7 +683,7 @@ export function createQuickCarpuleWriteoffDocument(
 	const actNumber = `КАРП-${Date.now().toString().slice(-6)}`;
 
 	return {
-		id: `doc_carpule_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		id: `doc_carpule_${Date.now()}_${generateDocumentRowId()}`,
 		actNumber,
 		actDate,
 		patientName: "Списание пустых карпул (кабинет)",
@@ -862,7 +873,7 @@ export function createQuickVisitWriteoffDocument(
 		const stockStatus = evaluateStockAvailability(stockAvailable, actualQty, criticalThreshold);
 
 		lines.push({
-			id: `line_visit_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+			id: `line_visit_${Date.now()}_${generateDocumentRowId()}`,
 			serviceCode: visitType === "surgery" ? "A16.07.001.001" : "A16.07.002.001",
 			serviceTitle: visitType === "surgery" ? "Хирургический приём" : "Терапевтический приём",
 			toothNumber: undefined,
@@ -901,7 +912,7 @@ export function createQuickVisitWriteoffDocument(
 	const actNumber = `ВИЗИТ-${Date.now().toString().slice(-6)}`;
 
 	return {
-		id: `doc_visit_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		id: `doc_visit_${Date.now()}_${generateDocumentRowId()}`,
 		actNumber,
 		actDate,
 		patientName,

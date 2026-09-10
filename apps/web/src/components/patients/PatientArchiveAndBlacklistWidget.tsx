@@ -215,15 +215,15 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 	return (
 		<div
 			data-testid="patient-archive-blacklist-widget"
-			className={`p-4 rounded-xl border my-4 shadow-sm transition-all duration-200 text-slate-900 dark:text-slate-100 ${
+			className={`p-4 rounded-xl border my-4 shadow-sm transition-all duration-200 text-[var(--ink)] ${
 				// Красный фон — утверждение «этот пациент заблокирован». При
 				// непрочитанном статусе такого утверждения делать нельзя.
 				isBlacklisted && !statusUnknown
 					? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800"
-					: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+					: "bg-[var(--paper)] border-[var(--line)]"
 			}`}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--line)]">
 				<div className="flex items-center space-x-2">
 					<ShieldAlert
 						className={`w-5 h-5 ${isBlacklisted && !statusUnknown ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`}
@@ -252,7 +252,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 					/>
 				) : (
 					<>
-						<p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed break-words">
+						<p className="text-xs text-[var(--muted)] leading-relaxed break-words">
 							{isBlacklisted
 								? "Запись на прием заблокирована во всех клиниках сети. Снимите блокировку, если причина больше не действует."
 								: panelStateText(BLACKLIST_SUBJECT, { phase: "empty" }).hint}
@@ -343,14 +343,14 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							<div>
 								<label
 									htmlFor="patient-archive-reason"
-									className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+									className="block text-xs font-semibold text-[var(--ink)] mb-1"
 								>
 									Причина архивации *
 								</label>
 								<input
 									id="patient-archive-reason"
 									type="text"
-									className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+									className="w-full text-xs p-2 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 									value={archiveReason}
 									onChange={(e) => setArchiveReason(e.target.value)}
 									placeholder="Например: Переезд, дубль..."
@@ -359,7 +359,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							<label className="flex items-center space-x-2 cursor-pointer">
 								<input
 									type="checkbox"
-									className="rounded border-slate-300"
+									className="rounded border-[var(--line)]"
 									checked={modalIsBlacklisted}
 									onChange={(e) => setModalIsBlacklisted(e.target.checked)}
 								/>
@@ -371,13 +371,13 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 								<div>
 									<label
 										htmlFor="patient-blacklist-reason"
-										className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+										className="block text-xs font-semibold text-[var(--ink)] mb-1"
 									>
 										Причина занесения в ЧС
 									</label>
 									<textarea
 										id="patient-blacklist-reason"
-										className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+										className="w-full text-xs p-2 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 										value={blacklistReason}
 										onChange={(e) => setBlacklistReason(e.target.value)}
 										placeholder="Например: Агрессивное поведение, долг..."

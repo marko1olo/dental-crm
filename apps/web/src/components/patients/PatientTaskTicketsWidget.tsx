@@ -239,15 +239,15 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	return (
 		<div
 			data-testid="patient-task-tickets-widget"
-			className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
+			className="panel-card bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-xl mt-4 p-0 overflow-hidden"
 		>
-			<div className="panel-heading flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 m-0">
+			<div className="panel-heading flex justify-between items-center p-4 bg-[var(--paper-soft)] border-b border-[var(--line)] m-0">
 				<div className="flex items-center gap-2.5">
 					<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] flex items-center justify-center text-[var(--teal,var(--brand-primary))]">
 						<Clock size={16} />
 					</div>
 					<div>
-						<h3 className="text-sm font-semibold text-slate-900 dark:text-white m-0 flex items-center gap-2">
+						<h3 className="text-sm font-semibold text-[var(--ink)] m-0 flex items-center gap-2">
 							Задачи по пациенту
 							{pendingCount > 0 && (
 								<span className="bg-[var(--teal,var(--brand-primary))] text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
@@ -324,7 +324,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										value={assignedToId}
 										onChange={(e) => setAssignedToId(e.target.value)}
 										required
-										className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
+										className="w-full p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none"
 									>
 										<option value="" disabled>
 											Выберите ответственного сотрудника
@@ -338,7 +338,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									</select>
 									<label
 										htmlFor="ticket-assigned-select"
-										className="text-xs text-slate-500 dark:text-slate-400"
+										className="text-xs text-[var(--muted)]"
 									>
 										Кому назначена
 									</label>
@@ -350,11 +350,11 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										value={newDescription}
 										onChange={(e) => setNewDescription(e.target.value)}
 										placeholder=" "
-										className="w-full p-3 rounded-lg min-h-[80px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none resize-y"
+										className="w-full p-3 rounded-lg min-h-[80px] bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none resize-y"
 									/>
 									<label
 										htmlFor="ticket-description-textarea"
-										className="text-xs text-slate-500 dark:text-slate-400"
+										className="text-xs text-[var(--muted)]"
 									>
 										Описание и комментарии (опционально)
 									</label>
@@ -401,12 +401,12 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				)}
 
 				{phase === "empty" && !isAdding && (
-					<div className="p-8 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+					<div className="p-8 text-center text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-dashed border-[var(--line)]">
 						<Clock size={32} className="mx-auto mb-3 opacity-50" />
-						<p className="m-0 text-sm font-medium text-slate-900 dark:text-white">
+						<p className="m-0 text-sm font-medium text-[var(--ink)]">
 							{panelStateText(TICKETS_SUBJECT, { phase: "empty" }).title}
 						</p>
-						<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400 leading-relaxed break-words">
+						<p className="mt-1 mb-0 text-xs text-[var(--muted)] leading-relaxed break-words">
 							{panelStateText(TICKETS_SUBJECT, { phase: "empty" }).hint}
 						</p>
 					</div>
@@ -429,8 +429,8 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									exit={{ opacity: 0, scale: 0.95 }}
 									className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
 										isPending
-											? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm opacity-100"
-											: "bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-60"
+											? "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] shadow-sm opacity-100"
+											: "bg-[var(--paper-soft)] text-[var(--muted)] border-transparent opacity-60"
 									}`}
 								>
 									<button
@@ -458,20 +458,20 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										<div
 											className={`font-semibold text-sm ${
 												isPending
-													? "text-slate-900 dark:text-white"
-													: "line-through text-slate-500 dark:text-slate-400"
+													? "text-[var(--ink)]"
+													: "line-through text-[var(--muted)]"
 											} ${ticket.description ? "mb-1.5" : "mb-2"}`}
 										>
 											{ticket.title}
 										</div>
 
 										{ticket.description && (
-											<div className="text-xs text-slate-600 dark:text-slate-300 mb-2.5 leading-relaxed bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-md border-l-2 border-slate-300 dark:border-slate-700">
+											<div className="text-xs text-[var(--ink)] mb-2.5 leading-relaxed bg-[var(--paper-soft)] p-2.5 rounded-md border-l-2 border-[var(--line)]">
 												{ticket.description}
 											</div>
 										)}
 
-										<div className="flex items-center gap-4 flex-wrap text-xs text-slate-500 dark:text-slate-400">
+										<div className="flex items-center gap-4 flex-wrap text-xs text-[var(--muted)]">
 											<div className="flex items-center gap-1 font-medium">
 												<User size={14} />
 												<span className="text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2 py-0.5 rounded">

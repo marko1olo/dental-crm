@@ -122,7 +122,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 }) => {
 	// 1. Состояние шапки акта
 	const [actNumber, setActNumber] = useState<string>(
-		() => `АКТ-СПИС-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}-${Math.floor(100 + Math.random() * 900)}`,
+		() => `АКТ-СПИС-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(Date.now()).slice(-4)}`,
 	);
 	const [actDate, setActDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
 	const [selectedCabinetId, setSelectedCabinetId] = useState<string>(cabinetId);

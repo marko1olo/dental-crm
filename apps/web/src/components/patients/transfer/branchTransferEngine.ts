@@ -205,6 +205,10 @@ export interface PatientClinicalSnapshot {
 	readonly checksumSha256: string;
 }
 
+let globalConsentSeq = 1000;
+let globalVoucherSeq = 1000;
+let globalSnapshotSeq = 1000;
+
 export function createPatientBranchTransferConsent(params: {
 	patientId: string;
 	patientFullName: string;
@@ -216,7 +220,8 @@ export function createPatientBranchTransferConsent(params: {
 	operatorPosition: string;
 	signatureType: PatientSignatureType;
 }): PatientBranchTransferConsent {
-	const consentId = `CNST-152FZ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const patientSuffix = params.patientId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001";
+	const consentId = `CNST-152FZ-${Date.now()}-${++globalConsentSeq}-${patientSuffix}`;
 	const signedAtIso = new Date().toISOString();
 	const signatureHash = `SHA256:CONSENT:${params.patientId}`;
 	return {
@@ -236,7 +241,8 @@ export function createPatientBranchTransferConsent(params: {
 }
 
 export function issueDepositTransferVoucher(patientId: string, balanceRub: number, _sourceBranchId: string, _targetBranchId: string): DepositTransferVoucher {
-	const voucherCode = `TRF-VCH-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const patientSuffix = patientId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001";
+	const voucherCode = `TRF-VCH-${Date.now().toString(36).toUpperCase()}-${++globalVoucherSeq}-${patientSuffix}`;
 	const issuedAtIso = new Date().toISOString();
 	const exp = new Date(Date.now() + 30 * 24 * 3600 * 1000);
 	const payloadHash = `VCH-HASH:${voucherCode}:${balanceRub}`;
@@ -346,7 +352,8 @@ export function buildPatientClinicalSnapshot(params: {
 	staffName: string;
 	staffPosition: string;
 }): PatientClinicalSnapshot {
-	const snapshotId = `SNAP-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const patientSuffix = params.consent152Fz.patientId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001";
+	const snapshotId = `SNAP-${Date.now()}-${++globalSnapshotSeq}-${patientSuffix}`;
 	const sourceBranch = getClinicBranch(params.sourceBranchId);
 	const targetBranch = getClinicBranch(params.targetBranchId);
 	const balanceRub = params.balanceRub || 0;
