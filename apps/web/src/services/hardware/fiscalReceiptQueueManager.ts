@@ -9,6 +9,7 @@
  * - 54-FZ idempotency and audit logs
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import type {
 	FiscalReceiptPrintPayload,
 	FiscalReceiptPrintResult,
@@ -86,7 +87,14 @@ export class FiscalReceiptQueueManager {
 	 */
 	public static calculateBackoffDelay(retryCount: number, baseMs = 1000, maxMs = 60000): number {
 		const exponential = baseMs * Math.pow(2, Math.min(retryCount, 6));
-		const jitter = Math.floor(Math.random() * 500);
+		let jitter = 0;
+		if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+			const buf = new Uint32Array(1);
+			globalThis.crypto.getRandomValues(buf);
+			jitter = (buf[0] ?? 0) % 500;
+		} else {
+			jitter = (retryCount * 73 + 127) % 500;
+		}
 		return Math.min(maxMs, exponential + jitter);
 	}
 
@@ -143,7 +151,7 @@ export class FiscalReceiptQueueManager {
 			}
 		}
 
-		const id = queueId || `q-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+		const id = queueId || generateUuidV7();
 		const now = new Date().toISOString();
 
 		const item: QueuedFiscalReceiptItem = {

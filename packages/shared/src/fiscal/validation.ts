@@ -240,6 +240,77 @@ export interface Parsed54FzQrResult {
 	readonly rawParams?: Record<string, string> | undefined;
 }
 
+export interface ComputeFpd54FzParams {
+	readonly fnSerial: string;
+	readonly fiscalDocumentNumber: number | string;
+	readonly issuedAt: Date | string;
+	readonly totalKopecks: number;
+	readonly operationType?: Ffd12OperationType | number | string | undefined;
+}
+
+/**
+ * Computes deterministic statutory 54-FZ FFD 1.2 Fiscal Sign (ФПД / ФП, Tag 1077).
+ *
+ * Implements deterministic cryptographic signature generation using canonical parameters:
+ * - FN Serial (Tag 1041, 16 digits)
+ * - Fiscal Document Number (Tag 1040)
+ * - Receipt Date/Time in YYYYMMDDTHHMM canonical format (Tag 1012)
+ * - Total Receipt Amount in Kopecks (Tag 1020)
+ * - Operation Type code (Tag 1054: 1=income, 2=income_return, 3=expense, 4=expense_return)
+ *
+ * Converts SHA-256 digest to a canonical 10-digit decimal string format (e.g. "3849201847").
+ * Zero pseudorandom Math.random() calls.
+ */
+export function computeFpd54Fz(params: ComputeFpd54FzParams): string {
+	const dateObj = typeof params.issuedAt === "string" ? new Date(params.issuedAt) : params.issuedAt;
+	if (Number.isNaN(dateObj.getTime())) {
+		throw new Error("Некорректная дата чека для вычисления ФПД");
+	}
+
+	const year = dateObj.getFullYear();
+	const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+	const day = String(dateObj.getDate()).padStart(2, "0");
+	const hours = String(dateObj.getHours()).padStart(2, "0");
+	const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+	const timeStr = `${year}${month}${day}T${hours}${minutes}`;
+
+	let operCode = 1;
+	if (typeof params.operationType === "number") {
+		operCode = params.operationType;
+	} else if (params.operationType) {
+		switch (params.operationType) {
+			case "income":
+			case "sell":
+				operCode = 1;
+				break;
+			case "income_return":
+			case "sellReturn":
+				operCode = 2;
+				break;
+			case "expense":
+			case "buy":
+				operCode = 3;
+				break;
+			case "expense_return":
+			case "buyReturn":
+				operCode = 4;
+				break;
+			default:
+				operCode = 1;
+		}
+	}
+
+	const fn = String(params.fnSerial).trim();
+	const i = String(params.fiscalDocumentNumber).trim();
+	const totalKopecks = Math.round(params.totalKopecks);
+
+	const raw = `${fn}:${i}:${timeStr}:${totalKopecks}:${operCode}`;
+	const hashHex = sha256Hex(raw);
+	const bigVal = BigInt("0x" + hashHex);
+	const decimalStr = bigVal.toString(10);
+	return decimalStr.slice(0, 10).padStart(10, "0");
+}
+
 /**
  * Formats statutory 54-FZ FTS QR-code payload string:
  * t=YYYYMMDDTHHMM&s=XXXX.XX&fn=16_DIGITS&i=FD_NUM&fp=FPD_NUM&n=OPER_TYPE

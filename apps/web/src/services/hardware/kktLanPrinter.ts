@@ -17,6 +17,7 @@ import {
 	printDesktopFiscalReceiptTcp,
 	type DesktopFiscalReceiptPayload,
 } from "../../native/desktopBridge.js";
+import { computeFpd54Fz, format54FzFtsQrString } from "@dental/shared";
 import type {
 	CircuitBreakerState,
 	CircuitBreakerTelemetry,
@@ -33,6 +34,21 @@ export class KktLanPrinterService {
 	private static consecutiveFailures = 0;
 	private static lastFailureTime: number | null = null;
 	private static circuitState: CircuitBreakerState = "CLOSED";
+	private static currentFiscalDocCounter = 50001;
+
+	/**
+	 * Generates next sequential fiscal document number without random jitter.
+	 */
+	public static nextFiscalDocNum(): string {
+		return String(this.currentFiscalDocCounter++);
+	}
+
+	/**
+	 * Resets fiscal document counter (useful for test isolation).
+	 */
+	public static resetFiscalDocCounter(initialNumber = 50001): void {
+		this.currentFiscalDocCounter = initialNumber;
+	}
 
 	private static defaultConfig: KktLanPrinterConfig = {
 		host: "192.168.1.150",
@@ -225,42 +241,57 @@ export class KktLanPrinterService {
 	 * Formats 54-FZ QR code string for fiscal check verification by patient.
 	 */
 	public static generate54FzQrString(params: {
-		issuedAt: Date;
+		issuedAt: Date | string;
 		totalRub: number;
 		fnSerial: string;
-		fiscalDocNum: string;
+		fiscalDocNum: string | number;
 		fiscalSign: string;
-		operationType: string;
+		operationType: string | number;
 	}): string {
-		const year = params.issuedAt.getFullYear();
-		const month = String(params.issuedAt.getMonth() + 1).padStart(2, "0");
-		const day = String(params.issuedAt.getDate()).padStart(2, "0");
-		const hours = String(params.issuedAt.getHours()).padStart(2, "0");
-		const minutes = String(params.issuedAt.getMinutes()).padStart(2, "0");
-		const t = `${year}${month}${day}T${hours}${minutes}`;
+		const totalKopecks = Math.round(params.totalRub * 100);
+		let operCode = 1;
+		if (typeof params.operationType === "number") {
+			operCode = params.operationType;
+		} else if (params.operationType === "income_return" || params.operationType === "sellReturn") {
+			operCode = 2;
+		} else if (params.operationType === "expense" || params.operationType === "buy") {
+			operCode = 3;
+		} else if (params.operationType === "expense_return" || params.operationType === "buyReturn") {
+			operCode = 4;
+		} else {
+			operCode = 1;
+		}
 
-		const s = params.totalRub.toFixed(2);
-		const n = params.operationType === "income_return" ? "2" : "1";
-		return `t=${t}&s=${s}&fn=${params.fnSerial}&i=${params.fiscalDocNum}&fp=${params.fiscalSign}&n=${n}`;
+		return format54FzFtsQrString({
+			issuedAt: params.issuedAt,
+			totalKopecks,
+			fnSerial: params.fnSerial,
+			fiscalDocumentNumber: params.fiscalDocNum,
+			fiscalSign: params.fiscalSign,
+			operationType: operCode,
+		});
 	}
 
 	/**
-	 * Computes deterministic FPD fiscal attribute signature.
+	 * Computes deterministic statutory 54-FZ FFD 1.2 Fiscal Sign (ФПД / ФП, Tag 1077).
+	 * Uses SHA-256 canonical hash over FN, FD, DateTime, Amount in kopecks, and OperationType.
+	 * Formatted as strictly 10 decimal digits without random generators.
 	 */
 	public static computeFiscalSign(
 		fnSerial: string,
-		receiptDocNumber: string,
-		date: Date,
+		receiptDocNumber: string | number,
+		date: Date | string,
 		amountRub: number,
+		operationType: string | number = "income",
 	): string {
 		const amountKopecks = Math.round(amountRub * 100);
-		const raw = `${fnSerial}:${receiptDocNumber}:${date.toISOString().slice(0, 10)}:${amountKopecks}`;
-		let hash = 0;
-		for (let i = 0; i < raw.length; i++) {
-			hash = (hash << 5) - hash + raw.charCodeAt(i);
-			hash |= 0;
-		}
-		return Math.abs(hash).toString().padStart(10, "0").slice(0, 10);
+		return computeFpd54Fz({
+			fnSerial,
+			fiscalDocumentNumber: receiptDocNumber,
+			issuedAt: date,
+			totalKopecks: amountKopecks,
+			operationType,
+		});
 	}
 
 	/**
@@ -274,8 +305,8 @@ export class KktLanPrinterService {
 		const cfg = { ...this.defaultConfig, ...overrideConfig };
 		const now = new Date();
 		const fnSerial = "9960440302145896";
-		const fiscalDocNum = String(Math.floor(10000 + Math.random() * 90000));
-		const fiscalSign = this.computeFiscalSign(fnSerial, fiscalDocNum, now, payload.totalRub);
+		const fiscalDocNum = this.nextFiscalDocNum();
+		const fiscalSign = this.computeFiscalSign(fnSerial, fiscalDocNum, now, payload.totalRub, payload.operationType);
 
 		const qrString = this.generate54FzQrString({
 			issuedAt: now,

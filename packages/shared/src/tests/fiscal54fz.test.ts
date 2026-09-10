@@ -17,6 +17,7 @@ import {
 	fiscalReceiptItemSchema,
 	fiscalRefundPayloadSchema,
 	format54FzFtsQrString,
+	computeFpd54Fz,
 	isValidGs1Checksum,
 	kopecksToNumericString,
 	kopecksToRub,
@@ -547,5 +548,58 @@ describe("Shared Fiscal 54-FZ & FFD 1.2 Suite", () => {
 		assert.ok(csv.includes("=== РАСШИФРОВКА СВЕРКИ С БАНКОВСКОЙ ВЫПИСКОЙ (ЭКВАЙРИНГ И СБП) ==="));
 		assert.ok(csv.includes("ИТОГО ЗА ПЕРИОД"));
 	});
+
+	it("1.19 computeFpd54Fz — Deterministic 54-FZ FFD 1.2 Fiscal Sign (ФПД Tag 1077) and FTS QR integration", () => {
+		const params = {
+			fnSerial: "9960440302145896",
+			fiscalDocumentNumber: 50001,
+			issuedAt: new Date("2026-09-10T14:30:00.000Z"),
+			totalKopecks: 350000, // 3,500.00 руб
+			operationType: "income" as const,
+		};
+
+		const fpd1 = computeFpd54Fz(params);
+		const fpd2 = computeFpd54Fz(params);
+
+		// 1. Strict determinism: same input produces identical FPD
+		assert.equal(fpd1, fpd2);
+
+		// 2. Strict statutory format: exactly 10 decimal digits
+		assert.match(fpd1, /^\d{10}$/);
+
+		// 3. Different document number or amount produces strictly different FPD
+		const fpdDifferentDoc = computeFpd54Fz({
+			...params,
+			fiscalDocumentNumber: 50002,
+		});
+		assert.notEqual(fpd1, fpdDifferentDoc);
+		assert.match(fpdDifferentDoc, /^\d{10}$/);
+
+		const fpdDifferentAmount = computeFpd54Fz({
+			...params,
+			totalKopecks: 350050,
+		});
+		assert.notEqual(fpd1, fpdDifferentAmount);
+		assert.match(fpdDifferentAmount, /^\d{10}$/);
+
+		// 4. Seamless integration with format54FzFtsQrString and parseAndValidate54FzFtsQrString
+		const qrString = format54FzFtsQrString({
+			issuedAt: params.issuedAt,
+			totalKopecks: params.totalKopecks,
+			fnSerial: params.fnSerial,
+			fiscalDocumentNumber: params.fiscalDocumentNumber,
+			fiscalSign: fpd1,
+			operationType: params.operationType,
+		});
+
+		const parsedQr = parseAndValidate54FzFtsQrString(qrString);
+		assert.equal(parsedQr.isValid, true);
+		assert.equal(parsedQr.fnSerial, params.fnSerial);
+		assert.equal(parsedQr.fiscalDocumentNumber, params.fiscalDocumentNumber);
+		assert.equal(parsedQr.fiscalSign, fpd1);
+		assert.equal(parsedQr.totalAmountKopecks, params.totalKopecks);
+		assert.equal(parsedQr.operationType, "income");
+	});
 });
+
 

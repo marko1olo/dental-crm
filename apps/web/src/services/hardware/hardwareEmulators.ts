@@ -27,6 +27,11 @@ import {
 	classifyBarcodeScan,
 	type DecodedScanResult,
 } from "@dental/shared/hardware";
+import {
+	computeFpd54Fz,
+	format54FzFtsQrString,
+	type Ffd12OperationType,
+} from "@dental/shared";
 
 export class AtolKkt10Emulator {
 	private fnSerialNumber = "9960440302145896";
@@ -163,14 +168,22 @@ export class AtolKkt10Emulator {
 		this.receiptNumber++;
 
 		const now = new Date();
-		const fiscalSign = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+		const operationType: Ffd12OperationType = req.type === "sellReturn" ? "income_return" : "income";
+		const totalKopecks = Math.round(req.total * 100);
+		const fiscalSign = computeFpd54Fz({
+			fnSerial: this.fnSerialNumber,
+			fiscalDocumentNumber: this.fiscalDocumentCounter,
+			issuedAt: now,
+			totalKopecks,
+			operationType,
+		});
 		const qrCode = buildAtolFiscalQrString({
 			issuedAt: now,
 			totalRub: req.total,
 			fnSerial: this.fnSerialNumber,
 			fiscalDocNum: this.fiscalDocumentCounter,
 			fiscalSign,
-			operationType: req.type === "sellReturn" ? "income_return" : "income",
+			operationType,
 		});
 
 		return {
@@ -263,6 +276,8 @@ export class ShtrihMKktEmulator {
 		success: boolean;
 		fiscalDocNum?: string;
 		fiscalSign?: string;
+		qrCode?: string;
+		qrString?: string;
 		error?: string;
 	} {
 		if (!this.isOnline) {
@@ -273,12 +288,29 @@ export class ShtrihMKktEmulator {
 		}
 
 		this.docCounter++;
-		const fiscalSign = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+		const now = new Date();
+		const fiscalSign = computeFpd54Fz({
+			fnSerial: this.fnSerialNumber,
+			fiscalDocumentNumber: this.docCounter,
+			issuedAt: now,
+			totalKopecks: params.totalKopecks,
+			operationType: params.operationType,
+		});
+		const qrCode = format54FzFtsQrString({
+			issuedAt: now,
+			totalKopecks: params.totalKopecks,
+			fnSerial: this.fnSerialNumber,
+			fiscalDocumentNumber: this.docCounter,
+			fiscalSign,
+			operationType: params.operationType,
+		});
 
 		return {
 			success: true,
 			fiscalDocNum: String(this.docCounter),
 			fiscalSign,
+			qrCode,
+			qrString: qrCode,
 		};
 	}
 }
@@ -351,3 +383,5 @@ export class TwainSensorEmulator {
 		};
 	}
 }
+
+
