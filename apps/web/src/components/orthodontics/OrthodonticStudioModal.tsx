@@ -3,6 +3,7 @@ import {
 	Camera,
 	Check,
 	CheckCircle2,
+	ClipboardList,
 	Clock,
 	Copy,
 	Eye,
@@ -51,6 +52,7 @@ import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
 import { OrthoPhotoProtocolModal } from "./OrthoPhotoProtocolModal";
+import { OrthodonticExaminationCard } from "./OrthodonticExaminationCard";
 
 export interface OrthodonticStudioModalProps {
 	isOpen: boolean;
@@ -63,7 +65,7 @@ export interface OrthodonticStudioModalProps {
 	onSaveSuccess?: () => void;
 }
 
-export type StudioTab = "appliances" | "photos" | "diary" | "soap";
+export type StudioTab = "examination" | "appliances" | "photos" | "diary" | "soap";
 
 export function OrthodonticStudioModal({
 	isOpen,
@@ -443,9 +445,22 @@ export function OrthodonticStudioModal({
 					</div>
 				</div>
 
-				{/* 2. Studio Navigation Toolbar: [Аппаратура & Активация] | [Фотопротокол] | [Протокол 043/у] | [ТРГ] (Mandate 8d: 1 row 32-36px toolbar) */}
+				{/* 2. Studio Navigation Toolbar: [Осмотр (StomX)] | [Аппаратура & Активация] | [Фотопротокол] | [Протокол 043/у] | [ТРГ] (Mandate 8d: 1 row 32-36px toolbar) */}
 				<div className="h-9 min-h-[36px] max-h-[36px] flex items-center justify-between px-4 py-0 bg-[var(--surface-soft,#f1f5f9)] dark:bg-slate-900 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 gap-2 overflow-x-auto whitespace-nowrap shrink-0 flex-nowrap">
 					<div className="flex items-center gap-1 bg-[var(--paper,#ffffff)] dark:bg-slate-800 p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 shrink-0">
+						<button
+							type="button"
+							onClick={() => setActiveTab("examination")}
+							className={`h-7 px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+								activeTab === "examination"
+									? "bg-amber-500 text-white shadow-xs font-black"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white"
+							}`}
+						>
+							<ClipboardList size={13} />
+							<span>Осмотр & Диагностика (StomX)</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={() => setActiveTab("appliances")}
@@ -503,6 +518,23 @@ export function OrthodonticStudioModal({
 
 				{/* 3. Studio Main Content */}
 				<div className="flex-1 overflow-y-auto p-4 sm:p-5">
+					{/* TAB 0: ORTHODONTIC EXAMINATION & FORM 043/U DIAGNOSTICS (STOMX TAXONOMY) */}
+					{activeTab === "examination" && (
+						<div className="flex flex-col gap-4">
+							<OrthodonticExaminationCard
+								patientId={patientId}
+								patientName={patientName}
+								cardNumber={patientCardNumber}
+								doctorName={doctorName}
+								onProtocolGenerated={(protocolText) => {
+									setNotes((prev) => (prev ? `${prev}\n\n${protocolText}` : protocolText));
+									setActiveTab("diary");
+									showToast("Протокол перенесен в дневник", "success");
+								}}
+							/>
+						</div>
+					)}
+
 					{/* TAB 1: APPLIANCES & ACTIVATION */}
 					{activeTab === "appliances" && (
 						<div className="flex flex-col gap-4">
