@@ -11,3 +11,4 @@ export * from "./restorationProtocolEngine.js";
 export * from "./therapyProtocolEngine.js";
 export * from "./stomtDefectsCatalog.js";
 export * from "./stomxDefectsCatalog.js";
+export * from "./stomxPricelistCatalog.js";

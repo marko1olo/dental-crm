@@ -45,6 +45,7 @@ import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerDocumentTemplateRoutes } from "./routes/documentTemplates.js";
 import registerEgiszRoutes from "./routes/egisz.js";
+import { registerCryptoProNativeRoutes } from "./routes/cryptoProNativeRoutes.js";
 // Модули ниже были написаны, но ни разу не зарегистрированы: их маршруты
 // отвечали 404, то есть функциональность существовала только в исходниках.
 import { registerFilesRoutes } from "./routes/files.js";
@@ -766,6 +767,7 @@ export async function createDenteApiApp(
 	// удалён из egisz.ts; на дубле Fastify падал бы при старте.
 	await registerDiaryRoutes(app);
 	await registerEgiszRoutes(app);
+	await registerCryptoProNativeRoutes(app);
 	// templates.ts нашёл тест routeRegistrationCoverage: полностью готовый
 	// CRUD шаблонов приёма (аналог «Шаблонов амбулаторных карт»), при этом
 	// apps/web обращается к /api/templates, а маршрута не существовало.
