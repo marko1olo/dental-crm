@@ -23,8 +23,10 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function EmergencyBiohazardRegisterTab() {
+	const appLogic = useOptionalAppLogicContext();
 	const [logs, setLogs] = useState<EmergencyBiohazardLog[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -32,10 +34,16 @@ export function EmergencyBiohazardRegisterTab() {
 
 	// New accident state
 	const [formDateTime, setFormDateTime] = useState(new Date().toISOString().slice(0, 16));
-	const [formVictimName, setFormVictimName] = useState("Иванова Мария Сергеевна");
+	const [formVictimName, setFormVictimName] = useState(
+		() => (appLogic as any)?.activeDoctor?.fullName || (appLogic as any)?.activeDoctor?.name || "",
+	);
 	const [formVictimRole, setFormVictimRole] = useState("Ассистент врача-стоматолога");
-	const [formPatientName, setFormPatientName] = useState("Петров Алексей Николаевич");
-	const [formPatientCard, setFormPatientCard] = useState("DNT-2026-0842");
+	const [formPatientName, setFormPatientName] = useState(
+		() => (appLogic as any)?.activePatient?.fullName || (appLogic as any)?.activePatient?.name || "",
+	);
+	const [formPatientCard, setFormPatientCard] = useState(
+		() => (appLogic as any)?.activePatient?.cardNumber || (appLogic as any)?.activePatient?.medicalCardNumber || "",
+	);
 	const [formPatientStatus, setFormPatientStatus] = useState("ВИЧ/HCV отрицательный со слов");
 	const [formInjuryType, setFormInjuryType] = useState<BiohazardInjuryType>("needle_stick");
 	const [formCircumstances, setFormCircumstances] = useState(
@@ -369,6 +377,7 @@ export function EmergencyBiohazardRegisterTab() {
 											required
 											value={formVictimName}
 											onChange={(e) => setFormVictimName(e.target.value)}
+											placeholder="ФИО сотрудника"
 											className="sanpin-input"
 										/>
 									</div>
@@ -380,6 +389,7 @@ export function EmergencyBiohazardRegisterTab() {
 											required
 											value={formVictimRole}
 											onChange={(e) => setFormVictimRole(e.target.value)}
+											placeholder="Должность сотрудника"
 											className="sanpin-input"
 										/>
 									</div>
@@ -392,6 +402,7 @@ export function EmergencyBiohazardRegisterTab() {
 											type="text"
 											value={formPatientName}
 											onChange={(e) => setFormPatientName(e.target.value)}
+											placeholder="ФИО пациента (если известен)"
 											className="sanpin-input"
 										/>
 									</div>
@@ -402,6 +413,7 @@ export function EmergencyBiohazardRegisterTab() {
 											type="text"
 											value={formPatientCard}
 											onChange={(e) => setFormPatientCard(e.target.value)}
+											placeholder="Номер медкарты (если известен)"
 											className="sanpin-input"
 										/>
 									</div>

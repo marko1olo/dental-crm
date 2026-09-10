@@ -47,7 +47,7 @@ export const EXPRESS_CYCLE_DEFAULTS = {
 		"Наконечники турбинные и угловые, смотровые лотки (зеркала, зонды, пинцеты), хирургический инструмент",
 	defaultPacksCount: 14,
 	packagingType: "kraft_pouch_sealed" as const,
-	defaultOperatorName: "Смирнова Анна Викторовна (Медсестра ЦСО)",
+	defaultOperatorName: "Медсестра ЦСО",
 	fallbackOperatorName: "Дежурный ассистент",
 	fallbackItemsDescription: "Смотровые лотки и наконечники (стандартный набор)",
 	fallbackPacksCount: 1,
@@ -130,8 +130,8 @@ export interface AutoclaveNewCycleTabProps {
 
 export function AutoclaveNewCycleTab({
 	onSaveRecord,
-	defaultOperatorName = "Смирнова Анна Викторовна (Медсестра ЦСО)",
-	defaultHeadNurseName = "Иванова Ольга Николаевна (Главная медсестра)",
+	defaultOperatorName = "Медсестра ЦСО",
+	defaultHeadNurseName = "Главная медсестра",
 	latestCycleNumber = 1,
 }: AutoclaveNewCycleTabProps) {
 	const [selectedSterilizerId, setSelectedSterilizerId] = useState<string>(

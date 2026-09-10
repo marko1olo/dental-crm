@@ -37,14 +37,16 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 	estimatedCostRub = 4500,
 	familyBalanceRub = 12500,
 	loyaltyPointsBalance = 1850,
-	familyMembers = [
-		{ id: "pat-1", fullName: "Иванов Иван Иванович (Пациент)", phone: "+7 999 111-22-33" },
-		{ id: "pat-2", fullName: "Иванова Мария Сергеевна (Супруга)", phone: "+7 999 222-33-44" },
-		{ id: "pat-3", fullName: "Иванов Артем Иванович (Сын)", phone: "+7 999 333-44-55" },
-	],
+	familyMembers,
 	onApplySplit,
 	onOpenFullFamilyBilling,
 }) => {
+	const resolvedFamilyMembers = useMemo(() => {
+		if (familyMembers && familyMembers.length > 0) {
+			return familyMembers;
+		}
+		return [{ id: patientId, fullName: patientName, phone: "" }];
+	}, [familyMembers, patientId, patientName]);
 	const [depositDeductionRub, setDepositDeductionRub] = useState<number>(
 		Math.min(estimatedCostRub, familyBalanceRub),
 	);
@@ -109,7 +111,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 						<span>Семейный депозит:</span>
 					</div>
 					<div className="dente-kpi-val">{money(familyBalanceRub)}</div>
-					<div className="dente-kpi-sub">Доступен для {familyMembers.length} членов семьи</div>
+					<div className="dente-kpi-sub">Доступен для {resolvedFamilyMembers.length} членов семьи</div>
 				</div>
 
 				<div className="dente-kpi-card">
@@ -128,7 +130,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 			<div className="dente-payer-selection-box">
 				<label className="dente-field-label">Списать средства с карты члена семьи:</label>
 				<div className="dente-payer-chips-row">
-					{familyMembers.map((member) => {
+					{resolvedFamilyMembers.map((member) => {
 						const isSelected = selectedPayerId === member.id;
 						return (
 							<button

@@ -100,9 +100,9 @@ export function generateSanpinShiftAutopilotBundle(
 ): SanpinShiftAutopilotBundle {
 	const now = new Date();
 	const date = options.date || now.toISOString().slice(0, 10);
-	const operatorFullName = options.operatorFullName || "Смирнова О. И.";
+	const operatorFullName = options.operatorFullName || "Медсестра ЦСО";
 	const operatorPosition = options.operatorPosition || "Медицинская сестра ЦСО";
-	const headNurseFullName = options.headNurseFullName || "Иванова М. П.";
+	const headNurseFullName = options.headNurseFullName || "Главная медсестра";
 	const clinicInfo: ClinicLegalInfo = {
 		...DEFAULT_CLINIC_LEGAL,
 		...(options.clinicInfo || {}),

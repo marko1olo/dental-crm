@@ -79,7 +79,7 @@ export function RetroactiveBatchTab() {
 		"cabinet_3",
 		"sterilization_room",
 	]);
-	const [nurseFullName, setNurseFullName] = useState("Смирнова Анна Викторовна");
+	const [nurseFullName, setNurseFullName] = useState("Медсестра ЦСО");
 	const [nursePosition, setNursePosition] = useState("Медсестра ЦСО / Старшая медсестра");
 	const [autoclaveRegimeId, setAutoclaveRegimeId] = useState<
 		"steam_134_5min" | "steam_134_20min" | "steam_121_20min" | "dry_heat_180_60min"
@@ -589,10 +589,10 @@ export function RetroactiveBatchTab() {
 							className="sanpin-select"
 							style={{ minHeight: "44px" }}
 						>
-							<option value="Смирнова Анна Викторовна">Смирнова Анна Викторовна (Медсестра ЦСО)</option>
-							<option value="Петрова Елена Сергеевна">Петрова Елена Сергеевна (Старшая медсестра)</option>
-							<option value="Иванова Мария Павловна">Иванова Мария Павловна (Медсестра стерилизационной)</option>
-							<option value="Воронова Марина Алексеевна">Воронова Марина Алексеевна (Главная медсестра)</option>
+							<option value="Медсестра ЦСО">Медсестра ЦСО</option>
+							<option value="Главная медсестра">Главная медсестра</option>
+							<option value="Оператор стерилизационной">Оператор стерилизационной</option>
+							<option value="Ассистент стоматолога">Ассистент стоматолога</option>
 						</select>
 					</div>
 

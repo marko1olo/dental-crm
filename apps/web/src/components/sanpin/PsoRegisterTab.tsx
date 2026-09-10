@@ -23,6 +23,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 	{
@@ -38,8 +39,8 @@ export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 		detergentBrand: "Биолот 0.5% + Аламинол 1%",
 		rejectionReason: null,
 		operatorId: null,
-		operatorName: "Иванова О.С. (медсестра ЦСО)",
-		notes: "СанПиН 3.3686-21 п. 3584. 1% от партии проверен. Окрашивания нет, кровь и щелочь отсутствуют. [ЭЦП: Иванова О.С.]",
+		operatorName: "Медсестра ЦСО",
+		notes: "СанПиН 3.3686-21 п. 3584. 1% от партии проверен. Окрашивания нет, кровь и щелочь отсутствуют. [ЭЦП: Медсестра ЦСО]",
 		timestamp: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
 		createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
 	},
@@ -56,8 +57,8 @@ export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 		detergentBrand: "Оптимакс Про 1.5%",
 		rejectionReason: null,
 		operatorId: null,
-		operatorName: "Иванова О.С. (медсестра ЦСО)",
-		notes: "Замковые соединения и щечки чистые. Азопирам отрицательный. [ЭЦП: Иванова О.С.]",
+		operatorName: "Медсестра ЦСО",
+		notes: "Замковые соединения и щечки чистые. Азопирам отрицательный. [ЭЦП: Медсестра ЦСО]",
 		timestamp: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
 		createdAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
 	},
@@ -74,8 +75,8 @@ export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 		detergentBrand: "Биолот 0.5%",
 		rejectionReason: null,
 		operatorId: null,
-		operatorName: "Иванова О.С. (медсестра ЦСО)",
-		notes: "Ультразвуковая ванна 15 мин. Витки файлов чистые, проба отрицательная. [ЭЦП: Иванова О.С.]",
+		operatorName: "Медсестра ЦСО",
+		notes: "Ультразвуковая ванна 15 мин. Витки файлов чистые, проба отрицательная. [ЭЦП: Медсестра ЦСО]",
 		timestamp: new Date(Date.now() - 9 * 3600 * 1000).toISOString(),
 		createdAt: new Date(Date.now() - 9 * 3600 * 1000).toISOString(),
 	},
@@ -92,7 +93,7 @@ export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 		detergentBrand: "Дезискраб 2%",
 		rejectionReason: null,
 		operatorId: null,
-		operatorName: "Смирнова Е.А. (старшая медсестра)",
+		operatorName: "Старшая медсестра",
 		notes: "Алмазные грани без биологических остатков. Проба фенолфталеином отрицательна.",
 		timestamp: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
 		createdAt: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
@@ -110,7 +111,7 @@ export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 		detergentBrand: "Биолот 0.5% + Аламинол 1%",
 		rejectionReason: null,
 		operatorId: null,
-		operatorName: "Иванова О.С. (медсестра ЦСО)",
+		operatorName: "Медсестра ЦСО",
 		notes: "Качество ПСО 100% соответствует СанПиН 3.3686-21. Допущено к автоклавированию.",
 		timestamp: new Date(Date.now() - 30 * 3600 * 1000).toISOString(),
 		createdAt: new Date(Date.now() - 30 * 3600 * 1000).toISOString(),
@@ -118,6 +119,7 @@ export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 ];
 
 export function PsoRegisterTab() {
+	const appLogic = useOptionalAppLogicContext();
 	const [logs, setLogs] = useState<PsoCleaningLog[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -321,7 +323,11 @@ export function PsoRegisterTab() {
 			detergentBrand: l.detergentBrand || "Биолот 0.5% + Аламинол 1%",
 			isBatchApproved: l.isBatchApproved ?? true,
 			rejectionReason: l.rejectionReason || undefined,
-			operatorStaffFullName: l.operatorName || "Иванова О.С. (медсестра ЦСО)",
+			operatorStaffFullName:
+				l.operatorName ||
+				(appLogic as any)?.activeDoctor?.fullName ||
+				(appLogic as any)?.activeDoctor?.name ||
+				"Медсестра ЦСО",
 			operatorStaffPosition: "Медсестра ЦСО",
 			electronicStampVerified: stampedRows[l.id] || true,
 			notes: l.notes || undefined,

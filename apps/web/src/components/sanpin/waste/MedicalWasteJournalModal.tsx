@@ -93,7 +93,7 @@ const DEFAULT_DEMO_WASTE_RECORDS: MedicalWasteJournalRecord[] = [
 		decontaminationMethod: "chemical_soaking_disinfectant",
 		decontamDisinfectantName: "Бриллиант Классик 2% 60 мин",
 		storageLocation: "cabinet_room_temp",
-		operatorStaffFullName: "Смирнова А.В.",
+		operatorStaffFullName: "Медсестра процедурного кабинета",
 		operatorStaffPosition: "Медсестра",
 		status: "accumulating",
 	},
@@ -111,7 +111,7 @@ const DEFAULT_DEMO_WASTE_RECORDS: MedicalWasteJournalRecord[] = [
 		barcode: "WASTE-CLASS_B-SURG-20260821-9921",
 		decontaminationMethod: "physical_autoclave_134",
 		storageLocation: "waste_refrigerator_2_8",
-		operatorStaffFullName: "Иванова Е.К.",
+		operatorStaffFullName: "Старшая медсестра",
 		operatorStaffPosition: "Старшая медсестра",
 		status: "accumulating",
 	},
@@ -129,7 +129,7 @@ const DEFAULT_DEMO_WASTE_RECORDS: MedicalWasteJournalRecord[] = [
 		barcode: "WASTE-CLASS_A-ADM-20260822-5501",
 		decontaminationMethod: "none_class_a",
 		storageLocation: "central_accumulation_site",
-		operatorStaffFullName: "Петрова Н.С.",
+		operatorStaffFullName: "Санитарка",
 		operatorStaffPosition: "Санитарка",
 		status: "accumulating",
 	},
@@ -154,7 +154,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 	const [decontamMethod, setDecontamMethod] = useState<DecontaminationMethodType>("chemical_soaking_disinfectant");
 	const [disinfectantName, setDisinfectantName] = useState<string>("Бриллиант Классик 2% (экспозиция 60 мин)");
 	const [storageLocation, setStorageLocation] = useState<WasteStorageLocationId>("cabinet_room_temp");
-	const [operatorName, setOperatorName] = useState<string>("Смирнова А.В.");
+	const [operatorName, setOperatorName] = useState<string>("Медсестра / Санитар");
 	const [operatorPosition, setOperatorPosition] = useState<string>("Медсестра процедурного кабинета");
 	const [sealNumber, setSealNumber] = useState<string>(generateWasteSealNumber("class_B"));
 	const [barcode, setBarcode] = useState<string>(generateWasteBarcode("class_B", "TER"));
@@ -258,7 +258,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				decontaminationMethod: "chemical_soaking_disinfectant",
 				decontamDisinfectantName: "Бриллиант Классик 2% (экспозиция 60 мин)",
 				storageLocation: "cabinet_room_temp",
-				operatorStaffFullName: operatorName || "Смирнова А.В.",
+				operatorStaffFullName: operatorName || "Медсестра процедурного кабинета",
 				operatorStaffPosition: operatorPosition || "Медсестра",
 				status: "accumulating",
 				notes: "1-клик сдача мягких отходов смены (перчатки, маски, салфетки, валики, слюноотсосы) по СанПиН 2.1.3684-21",
@@ -278,7 +278,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				barcode: barcodeSharp,
 				decontaminationMethod: "physical_autoclave_134",
 				storageLocation: "cabinet_room_temp",
-				operatorStaffFullName: operatorName || "Смирнова А.В.",
+				operatorStaffFullName: operatorName || "Медсестра процедурного кабинета",
 				operatorStaffPosition: operatorPosition || "Медсестра",
 				status: "accumulating",
 				notes: "1-клик сдача острых отходов смены в желтом непрокалываемом контейнере (карпулы, иглы, скальпели) по СанПиН 2.1.3684-21",

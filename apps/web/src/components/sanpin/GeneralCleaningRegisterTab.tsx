@@ -24,9 +24,11 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { GeneralCleaningSchedule } from "./GeneralCleaningSchedule";
 
 export function GeneralCleaningRegisterTab() {
+	const appLogic = useOptionalAppLogicContext();
 	const [logs, setLogs] = useState<GeneralCleaningLog[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -176,7 +178,11 @@ export function GeneralCleaningRegisterTab() {
 			exposureTimeMinutes: Number(log.exposureTimeMinutes) || 60,
 			uvIrradiationMinutes: Number(log.uvIrradiationMinutes) || 60,
 			ventilationMinutes: Number(log.ventilationMinutes) || 15,
-			operatorStaffFullName: log.operatorName || "Смирнова А. В.",
+			operatorStaffFullName:
+				log.operatorName ||
+				(appLogic as any)?.activeDoctor?.fullName ||
+				(appLogic as any)?.activeDoctor?.name ||
+				"Ассистент стоматолога",
 			inspectorStaffFullName: log.inspectorName || undefined,
 			isInspectorVerified: Boolean(log.inspectorName || log.status === "verified_by_inspector"),
 			status: (log.status as any) || "completed",
@@ -186,13 +192,13 @@ export function GeneralCleaningRegisterTab() {
 		const html = generateGeneralCleaningJournalPrintHtml({
 			records: mappedRecords,
 			clinicInfo: {
-				name: "ООО «Стоматологическая клиника ДЕНТЕ»",
-				inn: "7701234567",
-				ogrn: "1027700123456",
-				address: "г. Москва, ул. Клиническая, д. 10",
-				licenseNumber: "№ ЛО41-01137-77/00368421",
-				chiefDoctor: "Смирнов А. В.",
-				headNurse: "Иванова М. П.",
+				name: appLogic?.clinicName || "Стоматологическая клиника",
+				inn: appLogic?.clinic?.inn || "",
+				ogrn: appLogic?.clinic?.ogrn || "",
+				address: appLogic?.clinic?.address || "",
+				licenseNumber: (appLogic?.clinic as any)?.licenseNumber || "",
+				chiefDoctor: "Главный врач",
+				headNurse: "Главная медсестра",
 			},
 		});
 

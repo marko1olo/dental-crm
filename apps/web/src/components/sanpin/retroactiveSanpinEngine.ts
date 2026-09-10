@@ -499,8 +499,8 @@ export function generateRetroactiveDossierPrintHtml(
 ): string {
 	const clinicName = meta.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»";
 	const clinicAddress = meta.clinicAddress || "г. Москва, ул. Клиническая, д. 24, стр. 1";
-	const chiefDoctor = meta.chiefDoctorName || "д.м.н. Воронов Михаил Александрович";
-	const headNurse = meta.headNurseName || days[0]?.nurseFullName || "Смирнова Анна Викторовна";
+	const chiefDoctor = meta.chiefDoctorName || "Главный врач";
+	const headNurse = meta.headNurseName || days[0]?.nurseFullName || "Главная медсестра";
 	const periodLabel = meta.periodLabelRu || "За отчетный период";
 	const stats = calculateRetroactiveBatchStats(days);
 

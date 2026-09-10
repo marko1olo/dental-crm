@@ -28,6 +28,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 export const CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET: CreateBactericidalEquipmentDto = {
 	roomName: "Кабинет терапевтической стоматологии №1",
@@ -69,6 +70,7 @@ export async function provisionCanonicalBactericidalEquipment(options?: {
 }
 
 export function BactericidalRegisterTab() {
+	const appLogic = useOptionalAppLogicContext();
 	const [equipments, setEquipments] = useState<any[]>([]);
 	const [logs, setLogs] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -590,7 +592,11 @@ export function BactericidalRegisterTab() {
 					durationHours: Number((dur / 60).toFixed(2)),
 					operatingMode: (l.operatingMode as "continuous_presence" | "pre_op_preparation" | "post_cleaning" | "intermittent") || "continuous_presence",
 					cumulativeHoursAfterSession: Number(l.cumulativeHoursAfterSession) || 0,
-					operatorStaffFullName: l.operatorName || "Иванова О.С. (медсестра ЦСО)",
+					operatorStaffFullName:
+						l.operatorName ||
+						(appLogic as any)?.activeDoctor?.fullName ||
+						(appLogic as any)?.activeDoctor?.name ||
+						"Медсестра ЦСО",
 					notes: l.notes || "",
 				};
 			});

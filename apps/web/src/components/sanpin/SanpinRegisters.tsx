@@ -181,7 +181,7 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		preparationDate: getRecentDateTimeRu(0, "08:00"),
 		expiryDate: getRecentDateTimeRu(14, "08:00"),
 		testStripResultRu: "Дезиконт-Аламинол: 1.5% норма (тест пройден)",
-		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		responsibleNurseRu: "Медсестра ЦСО",
 		volumeLiters: 10,
 	},
 	{
@@ -192,7 +192,7 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		preparationDate: `${getRecentIsoDate(0)} (заводской)`,
 		expiryDate: getRecentIsoDate(365),
 		testStripResultRu: "Готовый заводской раствор (активен)",
-		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		responsibleNurseRu: "Медсестра ЦСО",
 		volumeLiters: 1.0,
 	},
 	{
@@ -203,7 +203,7 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		preparationDate: getRecentDateTimeRu(-1, "09:00"),
 		expiryDate: getRecentDateTimeRu(13, "09:00"),
 		testStripResultRu: "Тест-полоска Оптимакс: 1.0% норма",
-		responsibleNurseRu: "Смирнова Е.А. (старшая медсестра)",
+		responsibleNurseRu: "Старшая медсестра",
 		volumeLiters: 5,
 	},
 	{
@@ -214,7 +214,7 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		preparationDate: getRecentDateTimeRu(0, "07:30"),
 		expiryDate: getRecentDateTimeRu(14, "07:30"),
 		testStripResultRu: "Дезиконт-Дезискраб: 2.0% норма",
-		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		responsibleNurseRu: "Медсестра ЦСО",
 		volumeLiters: 8,
 	},
 	{
@@ -225,7 +225,7 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		preparationDate: getRecentDateTimeRu(0, "08:15"),
 		expiryDate: getRecentDateTimeRu(7, "08:15"),
 		testStripResultRu: "Тест-полоска Бриллиант: 2.0% норма",
-		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		responsibleNurseRu: "Медсестра ЦСО",
 		volumeLiters: 15,
 	},
 ];
@@ -475,8 +475,8 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 		treatmentMethodRu: "Иглоотсекатель / деструктор игл + хим. дезинфекция Бриллиант Классик 2%",
 		netWeightKg: 1.2,
 		containerCodeRu: "Желтый контейнер КБ-12 (одноразовый с иглосъемником)",
-		surrenderedNurseRu: "Иванова О.С. (медсестра ЦСО)",
-		acceptedNurseRu: "Смирнова Е.А. (старшая медсестра)",
+		surrenderedNurseRu: "Медсестра ЦСО",
+		acceptedNurseRu: "Старшая медсестра",
 	},
 	{
 		id: "nd-02",
@@ -485,8 +485,8 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 		treatmentMethodRu: "Механическое разрушение + автоклавирование 134°C (класс Б)",
 		netWeightKg: 0.85,
 		containerCodeRu: "Желтый контейнер КБ-11 (проколостойкий герметичный)",
-		surrenderedNurseRu: "Иванова О.С. (медсестра ЦСО)",
-		acceptedNurseRu: "Смирнова Е.А. (старшая медсестра)",
+		surrenderedNurseRu: "Медсестра ЦСО",
+		acceptedNurseRu: "Старшая медсестра",
 	},
 	{
 		id: "nd-03",
@@ -495,8 +495,8 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 		treatmentMethodRu: "Химическое обезвреживание дезсредством в желтом баке",
 		netWeightKg: 1.4,
 		containerCodeRu: "Желтый контейнер КБ-10 (пломба № 04812)",
-		surrenderedNurseRu: "Смирнова Е.А. (старшая медсестра)",
-		acceptedNurseRu: "ООО «ЭкоМедТранс» (лицензия № 77-04/182)",
+		surrenderedNurseRu: "Старшая медсестра",
+		acceptedNurseRu: "Специализированная организация (Класс Б)",
 	},
 ];
 
@@ -683,9 +683,11 @@ export function SanpinRegisters() {
 	const handleAutofillShift = async () => {
 		try {
 			setAutoFilling(true);
+			const operatorName = (appLogic as any)?.activeDoctor?.fullName || "Медсестра / Оператор ЦСО";
+			const headNurseName = (appLogic as any)?.clinic?.legalEntityName || "Главная медсестра";
 			const bundle = generateSanpinShiftAutopilotBundle({
-				operatorFullName: "Смирнова О. И.",
-				headNurseFullName: "Иванова М. П.",
+				operatorFullName: operatorName,
+				headNurseFullName: headNurseName,
 			});
 
 			const headers: Record<string, string> = auth
@@ -781,7 +783,11 @@ export function SanpinRegisters() {
 			detergentBrand: item.detergentBrand || "Биолот 0.5% + Аламинол 1.0%",
 			isBatchApproved: item.isBatchApproved ?? true,
 			rejectionReason: item.rejectionReason || undefined,
-			operatorStaffFullName: item.operatorName || "Смирнова Анна Викторовна",
+			operatorStaffFullName:
+				item.operatorName ||
+				(appLogic as any)?.activeDoctor?.fullName ||
+				(appLogic as any)?.activeDoctor?.name ||
+				"Медсестра ЦСО",
 			operatorStaffPosition: "Медсестра ЦСО",
 			electronicStampVerified: true,
 			notes: item.notes || undefined,
@@ -844,9 +850,9 @@ export function SanpinRegisters() {
 				isCyclePassed: isPassed,
 				rejectionReason: !isPassed ? (item.rejectionReason || "Не пройден тест индикатора") : undefined,
 				status: isPassed ? "sterile_passed" : "rejected_defect",
-				operatorStaffFullName: item.operatorName || "Смирнова А. В.",
+				operatorStaffFullName: item.operatorName || (appLogic as any)?.activeDoctor?.fullName || "Медсестра ЦСО",
 				operatorStaffPosition: "Медсестра ЦСО",
-				headNurseSignatureFullName: "Иванова М. П.",
+				headNurseSignatureFullName: (appLogic as any)?.clinic?.legalEntityName || "Главная медсестра",
 				isHeadNurseVerified: true,
 				verificationTimestamp: item.createdAt || new Date().toISOString(),
 				digitalStampHash: `STAMP-${item.barcode || (item.id ? item.id.slice(0, 8) : "VERIFIED")}-ECP`,
@@ -887,7 +893,7 @@ export function SanpinRegisters() {
 			durationHours: Number(l.durationHours) || Number((Number(l.durationMinutes) / 60).toFixed(2)) || 0.5,
 			operatingMode: (l.operatingMode as any) || "pre_op_preparation",
 			cumulativeHoursAfterSession: Number(l.cumulativeHoursAfterSession) || 0,
-			operatorStaffFullName: l.operatorName || "Соколова Т. Н.",
+			operatorStaffFullName: l.operatorName || (appLogic as any)?.activeDoctor?.fullName || "Оператор / Медсестра",
 		}));
 
 		// Map General Cleanings
@@ -905,7 +911,7 @@ export function SanpinRegisters() {
 			exposureTimeMinutes: Number(r.exposureTimeMinutes) || 60,
 			uvIrradiationMinutes: Number(r.uvIrradiationMinutes) || 60,
 			ventilationMinutes: Number(r.ventilationMinutes) || 15,
-			operatorStaffFullName: r.operatorName || "Смирнова А. В.",
+			operatorStaffFullName: r.operatorName || "Медсестра / Санитар",
 			inspectorStaffFullName: r.inspectorName || undefined,
 			isInspectorVerified: Boolean(r.inspectorName || r.status === "verified_by_inspector"),
 			status: (r.status as any) || "completed",
@@ -928,7 +934,7 @@ export function SanpinRegisters() {
 			isWithinNorm: t.isWithinNorm ?? true,
 			deviationReason: t.deviationReason || undefined,
 			correctiveAction: t.correctiveAction || undefined,
-			operatorStaffFullName: t.operatorName || "Иванова М. П.",
+			operatorStaffFullName: t.operatorName || "Оператор ЦСО",
 			notes: t.notes || undefined,
 		}));
 
@@ -938,13 +944,13 @@ export function SanpinRegisters() {
 
 		return {
 			clinicInfo: {
-				name: "ООО «Стоматологическая клиника ДЕНТЕ»",
-				ogrn: "1027700123456",
-				inn: "7701234567",
-				address: "г. Москва, ул. Клиническая, д. 10",
-				chiefDoctor: "Смирнов А. В.",
-				headNurse: "Иванова М. П.",
-				licenseNumber: "№ ЛО41-01137-77/00368421",
+				name: (appLogic as any)?.clinicName || (appLogic as any)?.clinic?.clinicName || "Стоматологическая клиника",
+				ogrn: (appLogic as any)?.clinic?.ogrn || "",
+				inn: (appLogic as any)?.clinic?.inn || "",
+				address: (appLogic as any)?.clinic?.address || "",
+				chiefDoctor: "Главный врач",
+				headNurse: "Главная медсестра",
+				licenseNumber: (appLogic as any)?.clinic?.licenseNumber || "",
 				volumeNumber: 1,
 			},
 			periodLabelRu,

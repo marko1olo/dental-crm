@@ -556,8 +556,8 @@ export const DEFAULT_CLINIC_REQUISITES: ClinicRequisites = {
 	legalEntity: "ООО «ДЕНТЕ КЛИНИК»",
 	licenseNumber: "ЛО41-01137-77/00368412 от 14.10.2021",
 	address: "г. Москва, ул. Профсоюзная, д. 45",
-	chiefDoctorFullName: "Барабаш С.В.",
-	seniorNurseFullName: "Смирнова А.В.",
+	chiefDoctorFullName: "Главный врач",
+	seniorNurseFullName: "Главная медсестра",
 };
 
 export interface MonthlySanpinGenerationOptions {
@@ -952,7 +952,7 @@ export function generateDailyShiftSanpinLog(params: {
 	const now = new Date();
 	const pad2 = (n: number) => String(n).padStart(2, "0");
 	const dateStr = params.date || `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-	const operatorName = params.operatorFullName || "Смирнова Анна Викторовна";
+	const operatorName = params.operatorFullName || "Медсестра ЦСО";
 	const shiftNum = params.shiftNumber || 1;
 
 	const melag = STATUTORY_STERILIZERS[0]!;
@@ -1188,8 +1188,8 @@ export function generateMonthlySanpinJournal(
 		year,
 		month,
 		clinicInfo = DEFAULT_CLINIC_REQUISITES,
-		primaryOperatorFullName = "Смирнова Анна Викторовна",
-		secondaryOperatorFullName = "Петрова Елена Сергеевна",
+		primaryOperatorFullName = "Медсестра ЦСО",
+		secondaryOperatorFullName = "Оператор стерилизационной",
 		includeSaturdays = true,
 		includeSundays = false,
 		dailyPatientLoadLevel = "standard",

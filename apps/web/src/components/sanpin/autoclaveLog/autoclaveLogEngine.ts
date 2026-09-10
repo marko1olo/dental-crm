@@ -737,8 +737,8 @@ export const DEFAULT_CLINIC_LEGAL_INFO: ClinicLegalInfo = {
 	ogrn: "1187746123456",
 	inn: "7701987654",
 	address: "г. Москва, ул. Клиническая, д. 18, стр. 2",
-	chiefDoctor: "Д-р Воронов Михаил Александрович",
-	headNurse: "Смирнова Анна Викторовна",
+	chiefDoctor: "Главный врач",
+	headNurse: "Главная медсестра",
 };
 
 /**

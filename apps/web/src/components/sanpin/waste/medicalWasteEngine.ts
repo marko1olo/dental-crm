@@ -281,7 +281,7 @@ export function generateMedicalWasteTransferAct(params: {
 		inn: params.clinicInfo?.inn || "7701234567",
 		ogrn: params.clinicInfo?.ogrn || "1027700123456",
 		address: params.clinicInfo?.address || "г. Москва, ул. Клиническая, д. 10",
-		responsiblePerson: params.clinicInfo?.responsiblePerson || "Смирнова Анна Викторовна",
+		responsiblePerson: params.clinicInfo?.responsiblePerson || "Главная медицинская сестра",
 		responsiblePosition: params.clinicInfo?.responsiblePosition || "Главная медицинская сестра",
 	};
 
@@ -705,7 +705,7 @@ export function createQuickClassBWasteRecord(params?: {
 		decontaminationMethod: "chemical_soaking_disinfectant",
 		decontamDisinfectantName: "Бриллиант Классик 2% (экспозиция 60 мин)",
 		storageLocation: "waste_refrigerator_2_8",
-		operatorStaffFullName: params?.operatorStaffFullName || "Смирнова А.В.",
+		operatorStaffFullName: params?.operatorStaffFullName || "Медсестра процедурного кабинета",
 		operatorStaffPosition: "Медсестра процедурного кабинета",
 		status: "accumulating",
 		notes: params?.notes || "Эпидемиологически опасные отходы Класса Б: карпулы от анестетиков с кровью, салфетки, перчатки, удаленные зубы. Дезинфекция проведена, упаковано в желтый пакет.",
@@ -736,7 +736,7 @@ export function createQuickClassGWasteRecord(params?: {
 		barcode: generateWasteBarcode("class_G", "CSO", new Date().toISOString().slice(0, 10), count),
 		decontaminationMethod: "centralized_licensed_incineration",
 		storageLocation: "central_accumulation_site",
-		operatorStaffFullName: params?.operatorStaffFullName || "Смирнова А.В.",
+		operatorStaffFullName: params?.operatorStaffFullName || "Старшая медицинская сестра",
 		operatorStaffPosition: "Старшая медицинская сестра",
 		status: "accumulating",
 		notes: params?.notes || "Токсикологически опасные отходы Класса Г: люминесцентные и бактерицидные лампы, дезинфектанты с истекшим сроком, рентген-реактивы. Упаковано в маркированную тару для передачи спецоператору.",
