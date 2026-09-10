@@ -20,6 +20,7 @@ import {
 	serviceCatalogItems,
 } from "../db/schema.js";
 import { seedDefaultProcedureMaterialRules } from "../services/inventory/defaultBomSeeds.js";
+import { ReorderSuggestionService } from "../services/reorderSuggestionService.js";
 import { TreatmentConsumablesService } from "../services/treatmentConsumablesService.js";
 
 /**
@@ -147,6 +148,57 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return items;
 		},
 	);
+
+	// GET /reorder-suggestions — Предиктивные рекомендации к закупкам (DentalPin Reorder Point)
+	server.get<{ Querystring: { onlyNeedingReorder?: string | boolean } }>(
+		"/reorder-suggestions",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"inventory reorder suggestions read",
+			);
+			if (!resolvedOrgId) return;
+
+			const onlyNeedingReorder =
+				request.query.onlyNeedingReorder === "true" ||
+				request.query.onlyNeedingReorder === true;
+
+			const suggestions = await ReorderSuggestionService.getSuggestions(
+				resolvedOrgId,
+				{ onlyNeedingReorder },
+			);
+			return reply.status(200).send(suggestions);
+		},
+	);
+
+	// GET /:organizationId/reorder-suggestions
+	server.get<{
+		Params: { organizationId: string };
+		Querystring: { onlyNeedingReorder?: string | boolean };
+	}>("/:organizationId/reorder-suggestions", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"inventory reorder suggestions read",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const onlyNeedingReorder =
+			request.query.onlyNeedingReorder === "true" ||
+			request.query.onlyNeedingReorder === true;
+
+		const suggestions = await ReorderSuggestionService.getSuggestions(
+			organizationId,
+			{ onlyNeedingReorder },
+		);
+		return reply.status(200).send(suggestions);
+	});
 
 	// GET /:organizationId/alerts — сводка по дефициту и срокам годности материалов
 	server.get<{ Params: { organizationId: string } }>(

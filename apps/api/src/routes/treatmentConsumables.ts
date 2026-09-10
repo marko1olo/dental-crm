@@ -7,8 +7,11 @@ import {
 	consumableLinkUpdateSchema,
 	stockAvailabilityCheckRequestSchema,
 	toothTreatmentStockDeductionRequestSchema,
+	treatmentConsumableDeductionRequestSchema,
+	treatmentConsumableLinkCreateSchema,
 	visitStockDeductionRequestSchema,
 } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import {
@@ -16,6 +19,9 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { inventoryItems, treatmentConsumables } from "../db/schema.js";
+import { ReorderSuggestionService } from "../services/reorderSuggestionService.js";
+import { TreatmentConsumableDeductionService } from "../services/treatmentConsumableDeductionService.js";
 import {
 	InsufficientStockError,
 	TreatmentConsumablesService,
@@ -41,6 +47,157 @@ const alertsQuerySchema = z.object({
 export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
+	// GET / — List consumable links for current organization (CRUD)
+	server.get("/", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"treatment consumables list",
+		);
+		if (!orgId) return;
+
+		const mappings = await db
+			.select({
+				id: treatmentConsumables.id,
+				organizationId: treatmentConsumables.organizationId,
+				catalogItemCode: treatmentConsumables.catalogItemCode,
+				inventoryItemId: treatmentConsumables.inventoryItemId,
+				quantity: treatmentConsumables.quantity,
+				note: treatmentConsumables.note,
+				createdAt: treatmentConsumables.createdAt,
+				updatedAt: treatmentConsumables.updatedAt,
+				itemName: inventoryItems.name,
+				itemCategory: inventoryItems.category,
+				unit: inventoryItems.unit,
+				currentStock: inventoryItems.currentQty,
+				unitCostRub: inventoryItems.unitCostRub,
+			})
+			.from(treatmentConsumables)
+			.leftJoin(
+				inventoryItems,
+				eq(treatmentConsumables.inventoryItemId, inventoryItems.id),
+			)
+			.where(eq(treatmentConsumables.organizationId, orgId));
+
+		return mappings;
+	});
+
+	// POST / — Create or update consumable link for procedure (CRUD)
+	server.post("/", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment consumables create",
+		);
+		if (!orgId) return;
+
+		const parsed = treatmentConsumableLinkCreateSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+
+		const body = parsed.data;
+		const [link] = await db
+			.insert(treatmentConsumables)
+			.values({
+				organizationId: orgId,
+				catalogItemCode: body.catalogItemCode,
+				inventoryItemId: body.inventoryItemId,
+				quantity: body.quantity.toFixed(4),
+				note: body.note ?? null,
+			})
+			.onConflictDoUpdate({
+				target: [
+					treatmentConsumables.organizationId,
+					treatmentConsumables.catalogItemCode,
+					treatmentConsumables.inventoryItemId,
+				],
+				set: {
+					quantity: body.quantity.toFixed(4),
+					note: body.note ?? null,
+					updatedAt: new Date(),
+				},
+			})
+			.returning();
+
+		return reply.status(201).send(link);
+	});
+
+	// DELETE /:id — Delete consumable link
+	server.delete<{ Params: { id: string } }>("/:id", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment consumables delete",
+		);
+		if (!orgId) return;
+
+		const { id } = request.params;
+		const deleted = await db
+			.delete(treatmentConsumables)
+			.where(
+				and(
+					eq(treatmentConsumables.organizationId, orgId),
+					eq(treatmentConsumables.id, id),
+				),
+			)
+			.returning();
+
+		if (deleted.length === 0) {
+			return reply.status(404).send({ error: "NotFound", message: "Связь не найдена" });
+		}
+		return { success: true, deletedId: id };
+	});
+
+	// POST /apply-deduction — Idempotent consumable deduction on visit completion (Mandate 8e Doctor Autonomy)
+	server.post("/apply-deduction", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment consumables apply deduction",
+		);
+		if (!orgId) return;
+
+		const parsed = treatmentConsumableDeductionRequestSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+
+		const result = await TreatmentConsumableDeductionService.applyDeduction(
+			orgId,
+			parsed.data,
+		);
+		return reply.status(200).send(result);
+	});
+
+	// GET /reorder-suggestions — Predictive reorder point calculation
+	server.get<{ Querystring: { onlyNeedingReorder?: string | boolean } }>(
+		"/reorder-suggestions",
+		async (request, reply) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"inventory reorder suggestions",
+			);
+			if (!orgId) return;
+
+			const onlyNeedingReorder =
+				request.query.onlyNeedingReorder === "true" ||
+				request.query.onlyNeedingReorder === true;
+
+			const suggestions = await ReorderSuggestionService.getSuggestions(orgId, {
+				onlyNeedingReorder,
+			});
+			return reply.status(200).send(suggestions);
+		},
+	);
+
 	// GET /:organizationId/links — List all consumable links
 	server.get<{
 		Params: { organizationId: string };
