@@ -457,7 +457,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 													{ clinicName: dashboard?.clinicSettings?.profile?.legalName },
 												);
 											}}
-											title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
+											title="Распечатать пустой договор со строками _______ для ручного заполнения"
 											data-testid="patient-print-blank-contract-btn"
 										>
 											<FileText className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />

@@ -137,7 +137,7 @@ export function buildPatientConsentSummary(params: PatientConsentSummaryParams):
 		"Лечащий врач"
 	).trim();
 	const effectiveClinicName = (params.clinicName || params.clinicLegalName || "ООО «Стоматологическая клиника ДЕНТЕ»").trim();
-	const effectiveClinicPhone = (params.clinicPhone || "+7 (495) 123-45-67").trim();
+	const effectiveClinicPhone = (params.clinicPhone || "").trim();
 	const effectiveTeeth = (params.toothNumbers || "").trim();
 	const hashPrefix = (params.integrityHash || "0000000000000000").slice(0, 16);
 
@@ -150,7 +150,7 @@ export function buildPatientConsentSummary(params: PatientConsentSummaryParams):
 			})
 			.join(", ");
 
-		return [
+		const memoLines = [
 			`Информированные согласия на лечение (клиника «${effectiveClinicName}»):`,
 			`Пациент: ${effectivePatientName}`,
 			`Пакет: ${pkg.title}`,
@@ -158,14 +158,19 @@ export function buildPatientConsentSummary(params: PatientConsentSummaryParams):
 			`Врач: ${effectiveDoctorName}`,
 			`Область лечения: ${effectiveTeeth || "По плану лечения"}`,
 			`Хеш целостности SHA-256: ${hashPrefix}...`,
-			`Памятка: перед приёмом ознакомьтесь с противопоказаниями. При возникновении вопросов звоните в клинику: ${effectiveClinicPhone}.`,
-		].join("\n");
+		];
+		if (effectiveClinicPhone) {
+			memoLines.push(`Памятка: перед приёмом ознакомьтесь с противопоказаниями. При возникновении вопросов звоните в клинику: ${effectiveClinicPhone}.`);
+		} else {
+			memoLines.push(`Памятка: перед приёмом ознакомьтесь с противопоказаниями.`);
+		}
+		return memoLines.join("\n");
 	}
 
 	const tpl = getConsentTemplate(params.templateKey || "CONSENT_THERAPY");
 	const effectiveDiagnosis = (params.customDiagnosis || params.diagnosisIcd || "По плану лечения").trim();
 
-	return [
+	const memoLines = [
 		`Информированное добровольное согласие (клиника «${effectiveClinicName}»):`,
 		`Пациент: ${effectivePatientName}`,
 		`Медицинское вмешательство: ${tpl.title} (${tpl.code})`,
@@ -174,8 +179,11 @@ export function buildPatientConsentSummary(params: PatientConsentSummaryParams):
 		`Диагноз МКБ: ${effectiveDiagnosis}`,
 		`Ключевые риски и памятка: после вмешательства возможно появление локальной болезненности, отёка и чувствительности (1-3 дня). Строго соблюдайте назначения лечащего врача.`,
 		`Хеш целостности SHA-256: ${hashPrefix}...`,
-		`Телефон клиники: ${effectiveClinicPhone}.`,
-	].join("\n");
+	];
+	if (effectiveClinicPhone) {
+		memoLines.push(`Телефон клиники: ${effectiveClinicPhone}.`);
+	}
+	return memoLines.join("\n");
 }
 
 /**
@@ -203,7 +211,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	clinicLegalName = "ООО «Стоматологическая клиника ДЕНТЕ»",
 	clinicAddress,
 	clinicOgrn,
-	clinicPhone = "+7 (495) 123-45-67",
+	clinicPhone = "",
 	licenseNumber,
 	diagnosisIcd,
 	toothNumbers,

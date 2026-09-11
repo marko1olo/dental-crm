@@ -360,7 +360,7 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 		assert.ok(html.includes('data-testid="doctor-clinical-decision-btn"'));
 		assert.ok(html.includes("Решение врача (1 клик)"));
 		assert.ok(
-			html.includes("Согласовать цены решением лечащего врача (Мандат 8e)"),
+			html.includes("Согласовать цены решением лечащего врача"),
 		);
 
 		// Verify admin verify button is present and not disabled in initial state

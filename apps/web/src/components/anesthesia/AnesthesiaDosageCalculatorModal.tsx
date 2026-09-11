@@ -63,7 +63,7 @@ export interface AnesthesiaPatientMemoParams {
 
 export function formatAnesthesiaPatientMemo(params: AnesthesiaPatientMemoParams): string {
 	const clinicName = params.clinicName.trim() || "Стоматологическая клиника DENTE";
-	const clinicPhone = params.clinicPhone.trim() || "+7 (495) 123-45-67";
+	const clinicPhone = params.clinicPhone ? params.clinicPhone.trim() : "";
 	const patientName = params.patientName.trim() || "Пациент";
 	const doctorName = params.doctorName.trim() || "Лечащий врач-стоматолог";
 	const date = params.date || new Date().toLocaleDateString("ru-RU");
@@ -81,7 +81,7 @@ export function formatAnesthesiaPatientMemo(params: AnesthesiaPatientMemoParams)
 		`1. Не принимайте горячую пищу и напитки до полного восстановления чувствительности (риск незаметного термического ожога слизистой).`,
 		`2. Не прикусывайте онемевшую губу, щёку или язык.`,
 		`3. Не массируйте и не согревайте место инъекции.`,
-		`4. При сохранении выраженного онемения более 6 часов или аллергических реакциях немедленно свяжитесь с клиникой: ${clinicPhone}.`,
+		`4. При сохранении выраженного онемения более 6 часов или аллергических реакциях немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
 	].join("\n");
 }
 
@@ -112,7 +112,7 @@ export function AnesthesiaDosageCalculatorModal({
 	initialVisitId,
 	onApplied,
 	clinicName = "Стоматологическая клиника DENTE",
-	clinicPhone = "+7 (495) 123-45-67",
+	clinicPhone = "",
 	doctorName = "Лечащий врач-стоматолог",
 	patientName = "Пациент",
 }: AnesthesiaDosageCalculatorModalProps) {

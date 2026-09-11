@@ -111,7 +111,7 @@ export function generateClinicalPackageHtml(
 	const clinicOgrn = escapeHtml(clinic?.ogrn) || "1217700123456";
 	const clinicLicense =
 		escapeHtml(clinic?.licenseNumber) || "ЛО41-01137-77/00584930";
-	const clinicPhone = escapeHtml(clinic?.phone) || "+7 (495) 123-45-67";
+	const clinicPhone = escapeHtml(clinic?.phone) || "";
 
 	// Реквизиты пациента
 	const ptName =
@@ -318,7 +318,7 @@ export function generateClinicalPackageHtml(
         <div class="clinic-top-row">
           <div>
             <strong>${clinicName}</strong><br>
-            Адрес: ${clinicAddress} • Тел: ${clinicPhone}<br>
+            Адрес: ${clinicAddress}${clinicPhone ? ` • Тел: ${clinicPhone}` : ""}<br>
             Лицензия: № ${clinicLicense} • ИНН: ${clinicInn} • ОГРН: ${clinicOgrn}
           </div>
           <div style="text-align: right;">
@@ -403,7 +403,7 @@ export function generateClinicalPackageHtml(
         <div class="clinic-top-row">
           <div>
             <strong>${clinicName}</strong> • Лицензия № ${clinicLicense}<br>
-            Адрес: ${clinicAddress} • Тел: ${clinicPhone}
+            Адрес: ${clinicAddress}${clinicPhone ? ` • Тел: ${clinicPhone}` : ""}
           </div>
           <div style="text-align: right;">
             <span class="statutory-badge">Приказ МЗ РФ № 1051н</span><br>
@@ -486,7 +486,7 @@ export function generateClinicalPackageHtml(
         <div class="clinic-top-row">
           <div>
             <strong>${clinicName}</strong><br>
-            Адрес: ${clinicAddress} • Круглосуточный телефон клиники: <strong>${clinicPhone}</strong>
+            Адрес: ${clinicAddress}${clinicPhone ? ` • Круглосуточный телефон клиники: <strong>${clinicPhone}</strong>` : ""}
           </div>
           <div style="text-align: right;">
             <span class="statutory-badge">Закон РФ № 2300-1</span><br>
@@ -533,8 +533,7 @@ export function generateClinicalPackageHtml(
       </div>
 
       <p style="font-size: 8pt; color: #4b5563;">
-        Следующий плановый визит / осмотр назначен на: <strong>«___» _________ _____ г. в ____:____</strong>.<br>
-        Телефон клиники для экстренной связи: <strong>${clinicPhone}</strong>.
+        Следующий плановый визит / осмотр назначен на: <strong>«___» _________ _____ г. в ____:____</strong>.${clinicPhone ? `<br/>Телефон клиники для экстренной связи: <strong>${clinicPhone}</strong>.` : ""}
       </p>
     </div>
 
@@ -549,7 +548,7 @@ export function generateClinicalPackageHtml(
         <strong>Памятку выдал:</strong><br>
         Врач: <strong>${docDoctorName}</strong><br>
         <div class="sign-line"></div>
-        <div class="sign-caption">(подпись врача) • Телефон клиники: ${clinicPhone}</div>
+        <div class="sign-caption">(подпись врача)${clinicPhone ? ` • Телефон клиники: ${clinicPhone}` : ""}</div>
       </div>
     </div>
   </div>

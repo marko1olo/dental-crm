@@ -1124,7 +1124,7 @@ export function SickLeaveElnModal({
 								type="button"
 								className="sick-leave-btn primary"
 								onClick={handleApplyDiary}
-								title="Вставить запись в медицинскую карту 043/у (автономия врача: черновик вставляется без блокировок, Мандат 8e)"
+								title="Вставить запись в медицинскую карту 043/у (автономия врача: черновик вставляется без блокировок)"
 							>
 								<Check size={16} />
 								{!validation.isValid ? 'Вставить в дневник (Черновик)' : 'Вставить в дневник приема'}

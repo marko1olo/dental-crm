@@ -564,7 +564,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 				{/* Footer Controls */}
 				<div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-5 sm:px-8 border-t border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))]">
 					<div className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium hidden sm:block">
-						Мандат 8e: печать памятки доступна в 1 клик в любой момент приема
+						Печать памятки доступна в 1 клик в любой момент приема
 					</div>
 
 					<div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">

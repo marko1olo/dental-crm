@@ -815,7 +815,7 @@ export function createDentalLabOrder(params: CreateDentalLabOrderParams): Dental
 		orderNumber,
 		clinicName: params.clinicName || "Стоматологическая клиника DENTE",
 		labName: params.labName || "Центральная зуботехническая лаборатория",
-		labContactPhone: params.labContactPhone || "+7 (495) 123-45-67",
+		labContactPhone: params.labContactPhone || "",
 		patientId: params.patientId,
 		patientName: params.patientName,
 		patientChartNumber: params.patientChartNumber || "043/у",

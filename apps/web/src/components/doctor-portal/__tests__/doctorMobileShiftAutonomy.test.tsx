@@ -394,7 +394,7 @@ describe("Doctor Mobile Shift Autonomy & Non-Blocking SMS Signing (Mandates 8e, 
 		const warningToast = toasts.find((t) => t.type === "warning");
 		expect(warningToast).toBeDefined();
 		expect(warningToast?.text).toBe(
-			"Введите 6-значный СМС-код подтверждения или нажмите кнопку ниже для сессионной ПЭП (Мандат 8e)",
+			"Введите 6-значный СМС-код подтверждения или нажмите кнопку ниже для сессионной ПЭП",
 		);
 
 		// 5. Verify batch signing was NOT completed (update callback not called, modal remains open)

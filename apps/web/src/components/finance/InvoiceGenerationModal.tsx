@@ -534,7 +534,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 					itemAnalogueSelections,
 					adminOverrideAuthorized: true,
 					adminOverrideStaffName: effectiveStaffName,
-					adminOverrideReason: adminReasonInput || "Клиническое согласование врача (Мандат 8e)",
+					adminOverrideReason: adminReasonInput || "Клиническое согласование врача",
 			  })
 			: report;
 
@@ -1136,7 +1136,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 								onClick={handleDoctorClinicalOverride}
 								className="px-3 py-1.5 min-h-[36px] sm:min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1 cursor-pointer"
 								data-testid="doctor-clinical-decision-btn"
-								title="Согласовать цены решением лечащего врача (Мандат 8e)"
+								title="Согласовать цены решением лечащего врача"
 							>
 								<ShieldCheck size={14} />
 								<span>Решение врача (1 клик)</span>
@@ -1201,7 +1201,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 									onClick={handleDoctorClinicalOverride}
 									data-testid="doctor-override-footer-btn"
 									className="px-3 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-									title="Согласовать цены под личную клиническую ответственность врача (Мандат 8e)"
+									title="Согласовать цены под личную клиническую ответственность врача"
 								>
 									<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400" /> Согласовать врачом
 								</button>

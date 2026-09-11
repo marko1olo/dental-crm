@@ -91,7 +91,7 @@ describe("Wave 54 / Feature 243: Endo Patient Memo and A4 Worksheet Print", () =
 			});
 
 			assert.ok(memo.includes("Стоматологическая клиника DENTE"));
-			assert.ok(memo.includes("+7 (495) 123-45-67"));
+			assert.ok(!memo.includes("+7 (495) 123-45-67"));
 			assert.ok(memo.includes("Пациент"));
 			assert.ok(memo.includes("Врач-стоматолог-терапевт (эндодонтист)"));
 			assert.ok(memo.includes("зуб 11"));

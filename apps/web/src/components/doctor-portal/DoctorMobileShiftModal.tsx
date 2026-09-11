@@ -182,7 +182,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 		if (!signingSession) return;
 		if (enteredSmsCode.length < 6) {
 			showToast(
-				"Введите 6-значный СМС-код подтверждения или нажмите кнопку ниже для сессионной ПЭП (Мандат 8e)",
+				"Введите 6-значный СМС-код подтверждения или нажмите кнопку ниже для сессионной ПЭП",
 				"warning",
 			);
 			return;

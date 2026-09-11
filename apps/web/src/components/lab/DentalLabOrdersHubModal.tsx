@@ -523,7 +523,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					>
 						<CheckCircle2 size={15} style={{ color: "#10b981", flexShrink: 0 }} />
 						<span>
-							<strong>Мандат 8e (Автономия врача):</strong> Срок плана лечения ({treatmentPlanAgeDays} дн.) превысил 30 дней, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты.
+							<strong>Клинический регламент:</strong> Срок плана лечения ({treatmentPlanAgeDays} дн.) превысил 30 дней, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты.
 						</span>
 					</div>
 				)}

@@ -77,7 +77,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	onSaveCatalog,
 	clinicName = 'Стоматологическая клиника «DENTE»',
 	clinicAddress = 'г. Москва, ул. Медицинская, д. 12',
-	clinicPhone = '+7 (495) 123-45-67',
+	clinicPhone = '',
 	clinicLicense = 'ЛО-77-01-012345 от 12.04.2021',
 	chiefDoctorName = 'Петров А. В.',
 }) => {

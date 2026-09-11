@@ -348,7 +348,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 										});
 									}}
 									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-									title="Распечатать пустой договор на оказание услуг со строками _______ (Мандат 8e)"
+									title="Распечатать пустой договор на оказание услуг со строками _______"
 									data-testid="header-print-blank-contract-btn"
 								>
 									<FileText size={13} className="text-amber-600 shrink-0" />

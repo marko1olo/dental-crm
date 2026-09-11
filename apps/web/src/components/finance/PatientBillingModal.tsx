@@ -1484,7 +1484,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 																			? "bg-teal-600 text-white shadow-2xs hover:bg-teal-700"
 																			: "bg-[var(--paper-soft)] hover:bg-teal-50 dark:hover:bg-teal-950/30 text-[var(--muted)] hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line)]"
 																	}`}
-																	title="Мандат 8e: 100% гарантийная переделка врача без паролей администратора"
+																	title="100% гарантийная переделка врача без паролей администратора"
 																>
 																	<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 																	<span>{isWarrantyActive ? "Гарантия 100% (Включена)" : "Гарантийная переделка (100% скидка)"}</span>
@@ -1590,7 +1590,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 																				? "bg-teal-600 text-white shadow-2xs hover:bg-teal-700"
 																				: "bg-[var(--paper-soft)] hover:bg-teal-50 dark:hover:bg-teal-950/30 text-[var(--muted)] hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line)]"
 																		}`}
-																		title="Мандат 8e: 100% гарантийная переделка врача без паролей администратора"
+																		title="100% гарантийная переделка врача без паролей администратора"
 																	>
 																		<ShieldCheck className="w-3 h-3 shrink-0" />
 																		<span>

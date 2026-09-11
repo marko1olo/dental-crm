@@ -561,7 +561,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<div className="flex items-center gap-2">
 								<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-300">
-									1-Клик Клинические Протоколы &amp; Физиологическая Норма (Мандат 8e / Приказ 804н)
+									1-Клик Клинические Протоколы &amp; Физиологическая Норма (Приказ 804н)
 								</span>
 							</div>
 							<span className="text-[11px] font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -754,7 +754,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								{/* Clinical Age Presets Bar (3-5 years, 6-7 years, 8-10 years, 11-13 years) */}
 								<div className="space-y-2">
 									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
-										Клинические возрастные пресеты (Мандат 8e &amp; 8k — норма в 1 клик):
+										Клинические возрастные пресеты (норма в 1 клик):
 									</div>
 									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 										{PEDIATRIC_AGE_PRESETS.map((preset) => {

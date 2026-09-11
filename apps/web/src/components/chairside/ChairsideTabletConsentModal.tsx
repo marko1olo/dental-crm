@@ -642,7 +642,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 													className="chairside-btn teal min-h-[44px] min-w-[44px]"
 													onClick={handleSignInPerson}
 													data-testid="chairside-in-person-confirm-btn"
-													title="Подтверждение в присутствии пациента у кресла (Мандаты 8e, 8n)"
+													title="Подтверждение в присутствии пациента у кресла"
 												>
 													<UserCheck size={18} />
 													<span>В присутствии пациента (1 клик)</span>
@@ -662,7 +662,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 													className="chairside-btn secondary min-h-[44px] min-w-[44px]"
 													onClick={handleSignWithPaper}
 													data-testid="chairside-paper-confirm-btn"
-													title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
+													title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик"
 												>
 													<FileCheck size={18} className="text-emerald-600" />
 													<span>На бумаге</span>
@@ -721,7 +721,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 														className="chairside-btn teal min-h-[44px] min-w-[44px]"
 														onClick={handleSignInPerson}
 														data-testid="chairside-in-person-confirm-btn-step2"
-														title="Подтверждение в присутствии пациента у кресла (Мандаты 8e, 8n)"
+														title="Подтверждение в присутствии пациента у кресла"
 													>
 														<UserCheck size={18} />
 														<span>В присутствии пациента</span>
@@ -731,7 +731,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 														className="chairside-btn secondary min-h-[44px] min-w-[44px]"
 														onClick={handleSignWithPaper}
 														data-testid="chairside-paper-confirm-btn"
-														title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
+														title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик"
 													>
 														<FileCheck size={18} className="text-emerald-600" />
 														<span>На бумаге</span>
@@ -849,7 +849,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 								className="chairside-btn secondary min-h-[44px] min-w-[44px]"
 								onClick={handleSignWithPaper}
 								data-testid="chairside-paper-confirm-btn"
-								title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
+								title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик"
 							>
 								<FileCheck size={18} className="text-emerald-600" />
 								<span>Подтвердить на бумаге (1 клик)</span>

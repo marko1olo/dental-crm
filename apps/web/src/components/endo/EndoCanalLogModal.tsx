@@ -115,7 +115,7 @@ export interface EndoPatientMemoParams {
 
 export function formatEndoPatientMemo(params: EndoPatientMemoParams): string {
 	const clinicName = params.clinicName.trim() || "Стоматологическая клиника DENTE";
-	const clinicPhone = params.clinicPhone.trim() || "+7 (495) 123-45-67";
+	const clinicPhone = params.clinicPhone ? params.clinicPhone.trim() : "";
 	const patientName = params.patientName.trim() || "Пациент";
 	const doctorName = params.doctorName.trim() || "Врач-стоматолог-терапевт (эндодонтист)";
 	const date = params.date || new Date().toLocaleDateString("ru-RU");
@@ -143,7 +143,9 @@ export function formatEndoPatientMemo(params: EndoPatientMemoParams): string {
 		`2. Не нагружайте зуб твёрдой или липкой пищей (сухари, орехи, ириски) во избежание скола стенок зуба до покрытия коронкой.`,
 		`3. Умеренная болезненность при накусывании в течение 2–5 дней является естественной реакцией тканей периодонта на механическую и медикаментозную обработку. При дискомфорте примите назначенное врачом обезболивающее средство (Парацетамол / Ибупрофен).`,
 		`4. Срок следующего визита: ${nextVisit}.`,
-		`5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой: ${clinicPhone}.`,
+		clinicPhone
+			? `5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой: ${clinicPhone}.`
+			: `5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой.`,
 	].join("\n");
 }
 
@@ -189,7 +191,7 @@ export function EndoCanalLogModal({
 	onSaveCanals,
 	onSave,
 	clinicName = "Стоматологическая клиника DENTE",
-	clinicPhone = "+7 (495) 123-45-67",
+	clinicPhone = "",
 	doctorName = "Врач-стоматолог-терапевт (эндодонтист)",
 	patientName = "Пациент",
 }: EndoCanalLogModalProps) {

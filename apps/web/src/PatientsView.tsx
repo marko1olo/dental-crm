@@ -1083,7 +1083,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								gap: "6px",
 								minHeight: "36px",
 							}}
-							title="Установить соматическую норму в 1 клик (Мандат 8e)"
+							title="Установить соматическую норму в 1 клик"
 							data-testid="patient-card-somatic-norm-btn"
 						>
 							<Check size={16} aria-hidden="true" />

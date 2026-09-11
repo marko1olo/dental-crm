@@ -726,7 +726,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 								<span className="font-semibold text-xs text-[var(--ink)]">
 									Предпросмотр структурированного протокола для Формы 043/у ({activePreset.shortLabel}):
 								</span>
-								<span className="text-[11px] text-[var(--muted)]">Мандат 8e • Без ручного набора</span>
+								<span className="text-[11px] text-[var(--muted)]">Автозаполнение • Без ручного набора</span>
 							</div>
 							<pre className="ortho-preset-preview-text">
 								{generateOrthodonticDiaryNote(activePreset, session)}

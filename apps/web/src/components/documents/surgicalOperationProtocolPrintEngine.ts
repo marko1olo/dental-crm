@@ -384,7 +384,7 @@ export function generateSurgicalOperationProtocolHtml(
         <td style="vertical-align: top;">
           <div class="clinic-title">${clinicName}</div>
           <div class="clinic-meta">
-            ${clinicAddress} · Тел: ${escapeHtml(clinic?.phone || "+7 (495) 123-45-67")}<br/>
+            ${clinicAddress}${clinic?.phone ? ` · Тел: ${escapeHtml(clinic.phone)}` : ""}<br/>
             Лицензия: ${clinicLicense} · ИНН: ${clinicInn}
           </div>
         </td>

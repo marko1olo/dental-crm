@@ -328,7 +328,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 							type="button"
 							onClick={handle1ClickNorm}
 							className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 touch-manipulation"
-							title="1 клик: Физиологическая норма (Мандат 8e автономия врача)"
+							title="1 клик: Физиологическая норма"
 							data-testid="jaw-1click-norm-btn"
 						>
 							<Zap size={14} className="text-emerald-600 dark:text-emerald-400" />

@@ -1373,7 +1373,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<AlertTriangle size={14} className="shrink-0 text-amber-600" />
 						<span>
 							Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽.
-							Мандат 8e: Долг не блокирует приём оплаты на фактически внесённую сумму и фискализацию чека.
+							Долг не блокирует приём оплаты на фактически внесённую сумму и фискализацию чека.
 						</span>
 					</div>
 				)}

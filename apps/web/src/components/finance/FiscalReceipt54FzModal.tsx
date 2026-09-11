@@ -707,7 +707,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 				inn: oneCClinicInn,
 				kpp: oneCClinicKpp,
 				isLegalEntity: true,
-				phone: "+7 (495) 123-45-67",
+				phone: "",
 				address: "г. Москва, Ломоносовский проспект, д. 24",
 				bankAccount: "40702810938000012345",
 				bankBik: "044525225",
@@ -1535,7 +1535,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										<div className="flex items-center gap-2">
 											<Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 											<span className="text-xs font-black text-[var(--ink,#0f172a)] uppercase tracking-wider">
-												Скидка врача и округление (Мандат 8e):
+												Скидка врача и округление:
 											</span>
 										</div>
 										<button

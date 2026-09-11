@@ -487,7 +487,7 @@ describe("Treatment Plan Signature & Estimator Paper-First Autonomy (Mandates 8e
 			expect(html).toContain('data-testid="estimator-paper-confirm-btn"');
 			expect(html).toContain("На бумаге (1 клик)");
 			expect(html).toContain(
-				"Пациент подписал распечатанную смету — подтвердить в 1 клик (Мандат 8e)",
+				"Пациент подписал распечатанную смету — подтвердить в 1 клик",
 			);
 		});
 

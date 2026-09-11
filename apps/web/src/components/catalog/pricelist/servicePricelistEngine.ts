@@ -1054,7 +1054,7 @@ export function generatePrintablePricelistHtml(
 		<div class="clinic-info">
 			<h1>${clinicInfo.clinicName}</h1>
 			<div class="clinic-details">
-				<div>${clinicInfo.clinicAddress} · Тел: ${clinicInfo.clinicPhone}</div>
+				<div>${clinicInfo.clinicAddress}${clinicInfo.clinicPhone ? ` · Тел: ${clinicInfo.clinicPhone}` : ''}</div>
 				<div>Лицензия на осуществление медицинской деятельности: ${clinicInfo.clinicLicense}</div>
 			</div>
 		</div>

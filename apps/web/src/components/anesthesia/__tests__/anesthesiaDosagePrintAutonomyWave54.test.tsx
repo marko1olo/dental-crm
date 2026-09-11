@@ -80,7 +80,7 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 			});
 
 			assert.ok(memo.includes("Стоматологическая клиника DENTE"));
-			assert.ok(memo.includes("+7 (495) 123-45-67"));
+			assert.ok(!memo.includes("+7 (495) 123-45-67"));
 			assert.ok(memo.includes("Пациент"));
 			assert.ok(memo.includes("Лечащий врач-стоматолог"));
 			assert.ok(memo.includes("2–3 часа"));

@@ -67,7 +67,7 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 	doctorSnils,
 	clinicName = "ООО «ДЕНТЕ» / Стоматологическая клиника",
 	clinicAddress = "г. Москва, ул. Клиническая, д. 10",
-	clinicPhone = "+7 (495) 123-45-67",
+	clinicPhone = "",
 	clinicOgrn = "1157746123456",
 	clinicInn = "7701123456",
 	medicalLicenseNumber = "ЛО-77-01-019842",

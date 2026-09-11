@@ -1174,7 +1174,7 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
 	const clinicName = params.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»";
 	const clinicLicense = params.clinicLicense || "ЛО41-01137-77/00368421";
 	const clinicAddress = params.clinicAddress || "г. Москва, ул. Большая Стоматологическая, д. 12";
-	const clinicPhone = params.clinicPhone || "+7 (495) 123-45-67";
+	const clinicPhone = params.clinicPhone || "";
 
 	const ptName = isBlank ? "__________________________________________________" : (params.patientName?.trim() || "__________________________________________________");
 	const ptBirth = isBlank ? "«___» _________ _____ г." : (params.birthDate?.trim() || "«___» _________ _____ г.");
@@ -1356,7 +1356,7 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
         <div class="clinic-top-row">
           <div>
             <strong>${clinicName}</strong> · Лицензия: № ${clinicLicense}<br>
-            Адрес: ${clinicAddress} · Тел.: ${clinicPhone}
+            Адрес: ${clinicAddress}${clinicPhone ? ` · Тел.: ${clinicPhone}` : ""}
           </div>
           <div style="text-align: right;">
             <div style="margin-bottom: 2pt;">
@@ -1424,7 +1424,7 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 	const clinicName = params.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»";
 	const clinicLicense = params.clinicLicense || "ЛО41-01137-77/00368421";
 	const clinicAddress = params.clinicAddress || "г. Москва, ул. Большая Стоматологическая, д. 12";
-	const clinicPhone = params.clinicPhone || "+7 (495) 123-45-67";
+	const clinicPhone = params.clinicPhone || "";
 
 	const repName = isBlank ? "__________________________________________________" : (params.representativeName?.trim() || "__________________________________________________");
 	const repRel = isBlank ? "мать / отец / опекун / законный представитель" : (params.representativeRelation?.trim() || "мать / отец / опекун");
@@ -1600,7 +1600,7 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
         <div class="clinic-top-row">
           <div>
             <strong>${clinicName}</strong> · Лицензия: № ${clinicLicense}<br>
-            Адрес: ${clinicAddress} · Тел.: ${clinicPhone}
+            Адрес: ${clinicAddress}${clinicPhone ? ` · Тел.: ${clinicPhone}` : ""}
           </div>
           <div style="text-align: right;">
             <div style="margin-bottom: 2pt;">

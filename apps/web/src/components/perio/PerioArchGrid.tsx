@@ -493,7 +493,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = ({
 							data-testid="perio-preset-norm-btn"
 							onClick={applyPhysiologicalNorm}
 							className="inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[36px] text-xs font-semibold rounded-md text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer shadow-xs"
-							title="Установить норму: глубина 2 мм, GM 0, BOP нет (Мандат 8e)"
+							title="Установить норму: глубина 2 мм, GM 0, BOP нет"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
 							Физиологическая норма

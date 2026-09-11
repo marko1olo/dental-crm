@@ -124,7 +124,7 @@ export function generatePrimaryIntakePackageHtml(
 	const clinicOgrn = escapeHtml(clinic?.ogrn) || "1217700123456";
 	const clinicLicense =
 		escapeHtml(clinic?.licenseNumber) || "ЛО41-01137-77/00584930";
-	const clinicPhone = escapeHtml(clinic?.phone) || "+7 (495) 123-45-67";
+	const clinicPhone = escapeHtml(clinic?.phone) || "";
 	const clinicDirector =
 		escapeHtml(clinic?.directorFullName) || "Иванов И.И.";
 	const clinicDirectorTitle =
@@ -321,7 +321,7 @@ export function generatePrimaryIntakePackageHtml(
           <div>
             <strong>${clinicName}</strong><br>
             ИНН: ${clinicInn} · ОГРН: ${clinicOgrn} · Лицензия: № ${clinicLicense}<br>
-            Адрес: ${clinicAddress} · Тел: ${clinicPhone}
+            Адрес: ${clinicAddress}${clinicPhone ? ` · Тел: ${clinicPhone}` : ""}
           </div>
           <div style="text-align: right;">
             <span class="statutory-badge">ПП РФ от 11.05.2023 № 736</span><br>

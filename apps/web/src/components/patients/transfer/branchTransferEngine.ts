@@ -33,7 +33,7 @@ export const CLINIC_NETWORK_BRANCHES: readonly ClinicBranchInfo[] = [
 		shortNameRu: "DENTE Центр",
 		addressRu: "г. Москва, ул. Тверская, д. 12, стр. 2",
 		chiefDoctorRu: "Смирнов А. П.",
-		phone: "+7 (495) 123-45-67",
+		phone: "",
 	},
 	{
 		id: "branch-west",

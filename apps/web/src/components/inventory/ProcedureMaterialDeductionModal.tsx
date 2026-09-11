@@ -669,7 +669,7 @@ export function ProcedureMaterialDeductionModal({
 							data-testid-alt="btn-dispense-standard-anesthesia-kit"
 							data-testid-package="btn-writeoff-anesthesia-packet"
 							onClick={() => handleApplyPackage(["SANPIN_PPE", "A16.07.004"])}
-							title="Стандартный набор: анестезия 1.7 мл + карпульная игла + валики (Мандат 8e п. 10, 8k)"
+							title="Стандартный набор: анестезия 1.7 мл + карпульная игла + валики"
 						>
 							<Zap size={14} className="shrink-0 text-amber-500" />
 							<span>Стандартная анестезия 1.7 мл + карпульная игла + валики</span>
@@ -1275,7 +1275,7 @@ export function ProcedureMaterialDeductionModal({
 							style={{ minHeight: "44px" }}
 							title={
 								summary.hasDeficit
-									? `Остаток 0, списано в овердрафт: задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача (Мандат 8e п. 10, Мандат 8k, Мандат 8n п. 2): дефицит ${summary.criticalCount} поз.`
+									? `Остаток 0, списано в овердрафт: задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача: дефицит ${summary.criticalCount} поз.`
 									: "Провести списание выбранных материалов"
 							}
 						>

@@ -358,7 +358,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 								type="button"
 								onClick={() => setDoctorDiscountPercent(100)}
 								className="min-h-[32px] px-2 py-1 text-[10px] font-black rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
-								title="Гарантийная переделка 100% (Мандат 8e)"
+								title="Гарантийная переделка 100%"
 								data-testid="wizard-discount-100-btn"
 							>
 								100% (Гарантия)

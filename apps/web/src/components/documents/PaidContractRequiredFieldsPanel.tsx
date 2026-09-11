@@ -129,7 +129,7 @@ export function PaidContractRequiredFieldsPanel({
 					<span>Печать договора (бланк со строками _______)</span>
 				</button>
 				<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-					0 ₽ · Ручная подпись до приёма врача (Мандат 8e, без 403)
+					0 ₽ · Ручная подпись до приёма врача
 				</span>
 			</div>
 		</div>

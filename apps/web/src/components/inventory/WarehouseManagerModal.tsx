@@ -376,7 +376,7 @@ export function WarehouseManagerModal({
 								className="h-9 px-3 text-xs font-semibold rounded-lg border border-teal-600 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40 flex items-center gap-1.5 transition-colors"
 								onClick={() => setActiveView("act_preview")}
 								data-testid="switch-to-act-btn"
-								title="Оформить акт списания единолично (Мандат 8e п. 10)"
+								title="Оформить акт списания единолично"
 							>
 								<FileText size={14} />
 								Акт списания ({activeWriteoffLines.length})
@@ -490,7 +490,7 @@ export function WarehouseManagerModal({
 					>
 						<ShieldAlert size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 						<div className="flex-1 leading-snug">
-							<strong>Мягкий овердрафт склада активен:</strong> позиция с остатком 0 списана в минус. Задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача (Мандат 8e п. 10, Мандат 8k, Мандат 8n п. 2).
+							<strong>Мягкий овердрафт склада активен:</strong> позиция с остатком 0 списана в минус. Задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача.
 						</div>
 					</div>
 				)}

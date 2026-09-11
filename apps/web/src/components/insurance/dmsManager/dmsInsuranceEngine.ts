@@ -138,7 +138,7 @@ export const DEFAULT_CLINIC_LEGAL_INFO: ClinicLegalInfo = {
 	ogrn: "1037704012345",
 	kpp: "770401001",
 	address: "г. Москва, ул. Стоматологическая, д. 12, стр. 1",
-	phone: "+7 (495) 123-45-67",
+	phone: "",
 	licenseNumber: "ЛО41-01137-77/00589123",
 	licenseDate: "15.03.2021",
 	chiefDoctorFullName: "Д-р Смирнов Константин Владимирович",
@@ -661,7 +661,7 @@ export function generateDmsPreAuthRequest(
 		<div class="clinic-title">${clinic.legalName} (${clinic.brandName})</div>
 		<div style="font-size: 11px; color: #64748b;">
 			ИНН: ${clinic.inn} | ОГРН: ${clinic.ogrn} | Лицензия: ${clinic.licenseNumber} от ${clinic.licenseDate}<br>
-			Адрес: ${clinic.address} | Тел: ${clinic.phone}
+			Адрес: ${clinic.address}${clinic.phone ? ` | Тел: ${clinic.phone}` : ""}
 		</div>
 	</div>
 

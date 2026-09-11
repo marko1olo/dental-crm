@@ -252,7 +252,7 @@ export const StomxToothFormulaView: React.FC<ToothFormulaProps> = ({
 						type="button"
 						onClick={handleApplyIntactDentition}
 						className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition-colors shadow-sm"
-						title="Пометить все зубы интактными в 1 клик (Мандат 8e)"
+						title="Пометить все зубы интактными в 1 клик"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-amber-300" />
 						Все здоровы (Интактный ряд)
