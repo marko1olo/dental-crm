@@ -130,6 +130,7 @@ export type AppointmentCardProps = {
 	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
 	useManualSelects: boolean;
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
+	onOpenVisit?: () => void;
 };
 
 export function AppointmentCard(props: AppointmentCardProps) {
@@ -163,6 +164,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		fromDateTimeLocalValue,
 		useManualSelects,
 		activeVisitLockedAppointmentStatuses,
+		onOpenVisit,
 	} = props;
 
 	const appointmentSuggestions = (visibleScheduleSuggestions ?? []).filter(
@@ -392,9 +394,19 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				appointmentHasOpenVisit &&
 				activeVisitLockedAppointmentStatuses?.has(newStatus)
 			) {
+				// Мандат 8e: Запрет на палки в колёса врачам.
+				// Вместо блокирующего отказа переводим врача в активный визит в ЭМК для сохранения протокола и завершения приёма.
+				if (onOpenVisit) {
+					onOpenVisit();
+				} else {
+					if (appointmentPatient?.id) {
+						usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+					}
+					useAppStore.getState().setCurrentView("visit");
+				}
 				showToast(
-					"Статус приема заблокирован: по этому приему открыт активный визит",
-					"error",
+					"Переход в активный визит для сохранения протокола и завершения приёма",
+					"info",
 				);
 				return;
 			}
@@ -446,6 +458,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			saveAppointmentSchedule,
 			appointmentPatientName,
 			appointmentLabels,
+			onOpenVisit,
+			appointmentPatient?.id,
 		],
 	);
 

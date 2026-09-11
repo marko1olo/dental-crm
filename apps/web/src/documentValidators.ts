@@ -1293,6 +1293,11 @@ export function validateXrayCbctReferral(
 	);
 }
 
+/**
+ * @deprecated Форма 025/у является госпитальной поликлинической формой (Приказ 834н/274н) и не применяется в стоматологии (Мандат 8i).
+ * В частной амбулаторной стоматологии официальной регламентной формой является исключительно стоматологическая Форма 043/у.
+ * Депрекейтировано: очищено от госпитального блоата и переведено на стоматологический регламент (Форма 043/у).
+ */
 export function validateOutpatientMedicalCard025U(
 	state: DocumentState,
 ): string[] | string | null {
@@ -1323,7 +1328,7 @@ export function validateOutpatientMedicalCard025U(
 		"Стоматологическая клиника";
 	const effectiveCardNumber =
 		outpatient025uMedicalCardNumberValue?.() ||
-		(documentPatient?.id ? `025/у-${documentPatient.id.slice(0, 8).toUpperCase()}` : "");
+		(documentPatient?.id ? `043/у-${documentPatient.id.slice(0, 8).toUpperCase()}` : "043/у-Б/Н");
 	const effectiveOpenedAt =
 		outpatient025uOpenedAt?.trim() ||
 		recordExtractPeriodStart?.trim() ||
@@ -1336,37 +1341,37 @@ export function validateOutpatientMedicalCard025U(
 		documentPatient?.fullName?.trim() ?? "";
 	const effectiveComplaint =
 		recordExtractComplaintAndAnamnesisValue?.()?.trim() ||
-		"Жалобы на момент осмотра активно не предъявляет / Направление в стационар";
+		"Жалобы на момент осмотра отсутствуют / Плановый стоматологический осмотр";
 	const effectiveObjective =
 		recordExtractObjectiveStatusValue?.()?.trim() ||
-		"Общее состояние удовлетворительное, сознание ясное, видимые слизистые физиологической окраски";
+		"Слизистая оболочка полости рта физиологической окраски, зубные ряды без острых воспалительных изменений";
 	const effectiveDiagnosis =
 		recordExtractDiagnosisValue?.()?.trim() ||
-		"Амбулаторное стоматологическое обследование (К00-К14)";
+		"К02-К08 Стоматологическое обследование / Санация полости рта";
 	const effectiveTreatment =
 		recordExtractTreatmentProvidedValue?.()?.trim() ||
-		"Санация полости рта, консультация и осмотр перед плановой госпитализацией";
+		"Амбулаторный стоматологический прием, осмотр полости рта, составление плана санации";
 	const effectiveRecommendations =
 		recordExtractRecommendations?.trim() ||
-		"Плановое наблюдение специалистов стационара, соблюдение индивидуальной гигиены полости рта";
+		"Индивидуальная гигиена полости рта, контрольный осмотр через 6 месяцев";
 	const effectiveDoctor =
 		recordExtractDoctorFullName?.trim() ||
 		activeDoctor?.fullName?.trim() ||
-		"";
+		"Лечащий врач-стоматолог";
 
 	return (
-		requiredDocumentField(effectiveOrgName, "карта 025/у, медорганизация") ??
-		requiredDocumentField(effectiveCardNumber, "карта 025/у, номер медицинской карты") ??
-		requiredDocumentField(effectiveOpenedAt, "карта 025/у, дата открытия") ??
-		requiredDocumentField(effectivePeriodStart, "карта 025/у, период с") ??
-		requiredDocumentField(effectivePeriodEnd, "карта 025/у, период по") ??
-		requiredDocumentField(effectivePatientName, "карта 025/у, пациент") ??
-		requiredDocumentField(effectiveComplaint, "карта 025/у, жалобы и анамнез") ??
-		requiredDocumentField(effectiveObjective, "карта 025/у, объективный статус") ??
-		requiredDocumentField(effectiveDiagnosis, "карта 025/у, диагноз") ??
-		requiredDocumentField(effectiveTreatment, "карта 025/у, проведенное лечение") ??
-		requiredDocumentField(effectiveRecommendations, "карта 025/у, назначения и рекомендации") ??
-		requiredDocumentField(effectiveDoctor, "карта 025/у, врач")
+		requiredDocumentField(effectiveOrgName, "карта 043/у, медорганизация") ??
+		requiredDocumentField(effectiveCardNumber, "карта 043/у, номер медицинской карты") ??
+		requiredDocumentField(effectiveOpenedAt, "карта 043/у, дата приема") ??
+		requiredDocumentField(effectivePeriodStart, "карта 043/у, период с") ??
+		requiredDocumentField(effectivePeriodEnd, "карта 043/у, период по") ??
+		requiredDocumentField(effectivePatientName, "карта 043/у, пациент") ??
+		requiredDocumentField(effectiveComplaint, "карта 043/у, жалобы и анамнез") ??
+		requiredDocumentField(effectiveObjective, "карта 043/у, объективный статус") ??
+		requiredDocumentField(effectiveDiagnosis, "карта 043/у, диагноз") ??
+		requiredDocumentField(effectiveTreatment, "карта 043/у, проведенное лечение") ??
+		requiredDocumentField(effectiveRecommendations, "карта 043/у, назначения и рекомендации") ??
+		requiredDocumentField(effectiveDoctor, "карта 043/у, врач")
 	);
 }
 

@@ -1314,7 +1314,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		() =>
 			new Set<DocumentKind>([
 				"dental_medical_card_043u",
-				"outpatient_medical_card_025u",
 				"orthodontic_medical_card_043_1u",
 				"daily_dentist_diary_037u",
 				"summary_dentist_statement_039u",
@@ -1356,7 +1355,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	const certificatesSanpinKinds = useMemo(
 		() =>
 			new Set<DocumentKind>([
-				"outpatient_medical_card_025u",
 				"medical_record_extract",
 				"radiation_dose_sheet",
 				"xray_cbct_referral",
@@ -1364,6 +1362,25 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			]),
 		[],
 	);
+
+	// Мандат 8i: Суверенитет амбулаторной стоматологии.
+	// Исключаем госпитальную поликлиническую карту 025/у из каталога шаблонов в пользу стоматологической Формы 043/у.
+	const sanitizedDocumentFactoryGroups = useMemo(
+		() =>
+			(documentFactoryGroups ?? []).map((group) => ({
+				...group,
+				kinds: group.kinds.filter(
+					(kind) => kind !== "outpatient_medical_card_025u",
+				),
+			})),
+		[],
+	);
+
+	useEffect(() => {
+		if (selectedDocumentKind === "outpatient_medical_card_025u") {
+			setSelectedDocumentKind("dental_medical_card_043u");
+		}
+	}, [selectedDocumentKind, setSelectedDocumentKind]);
 
 	const navCategoryCounts = useMemo(() => {
 		const allDocs = typedActiveDocuments ?? [];
@@ -1700,7 +1717,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								)
 							}
 						>
-							{(documentFactoryGroups ?? []).map((group) => (
+							{(sanitizedDocumentFactoryGroups ?? []).map((group) => (
 								<optgroup key={group.title} label={group.title}>
 									{(group?.kinds ?? []).map((kind) => (
 										<option key={kind} value={kind}>
@@ -4055,452 +4072,44 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 					{selectedDocumentKind === "outpatient_medical_card_025u" ? (
 						<article className="document-payload-card">
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
-								<div>
-									<h3>Медицинская карта 025/у</h3>
-									<p>
-										Официальная учетная форма по приказу Минздрава N 274н: только
-										карточка пациента, профиль клиники и подписанные записи.
-									</p>
-									<p className="document-payload-note">
-										Черновик этой карты сохраняется локально для выбранного
-										пациента и визита до изменения или выпуска документа.
-									</p>
-								</div>
-								<button
-									type="button"
-									className="secondary-button"
-									onClick={() => setIsEgiszRemdOpen(true)}
-									data-testid="open-egisz-remd-modal-025u-btn"
-									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-								>
-									<Shield size={16} />
-									Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2)
-								</button>
-							</div>
-							<details
-								className="document-manual-override"
+							<div
 								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
+									background: "var(--paper-soft, #f8fafc)",
+									border: "1px solid var(--line, #e2e8f0)",
 									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
+									padding: "16px",
 								}}
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
-								>
-									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
-								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
-								>
-									<div className="document-payload-row">
-										<label>
-											Номер карты
-											<input
-												value={outpatient025uMedicalCardNumber}
-												onChange={(event) =>
-													setOutpatient025uMedicalCardNumber(event.target.value)
-												}
-												placeholder={outpatient025uMedicalCardNumberValue()}
-											/>
-										</label>
-										<label>
-											Дата открытия
-											<input
-												type="date"
-												value={outpatient025uOpenedAt}
-												onChange={(event) =>
-													setOutpatient025uOpenedAt(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Период с
-											<input
-												type="date"
-												value={recordExtractPeriodStart}
-												onChange={(event) =>
-													setRecordExtractPeriodStart(event.target.value)
-												}
-											/>
-										</label>
-										<label>
-											Период по
-											<input
-												type="date"
-												value={recordExtractPeriodEnd}
-												onChange={(event) =>
-													setRecordExtractPeriodEnd(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<label>
-										Источники подписанных записей
-										<textarea
-											value={recordExtractSourceVisitIds}
-											onChange={(event) =>
-												setRecordExtractSourceVisitIds(event.target.value)
-											}
-											placeholder={
-												dashboard?.activeVisit?.id ??
-												"метки подписанных визитов, по одной в строке"
-											}
-											rows={2}
-										/>
-									</label>
-									<div className="document-payload-row">
-										<label>
-											Пол пациента
-											<select
-												value={outpatient025uPatientSexCode}
-												onChange={(event) =>
-													setOutpatient025uPatientSexCode(
-														normalizedOutpatient025uDemographicCode(
-															event.target.value,
-														),
-													)
-												}
-											>
-												<option value="unknown">не указано</option>
-												<option value="1">мужской</option>
-												<option value="2">женский</option>
-											</select>
-										</label>
-										<label>
-											Гражданство
-											<input
-												value={outpatient025uCitizenship}
-												onChange={(event) =>
-													setOutpatient025uCitizenship(event.target.value)
-												}
-												placeholder="например: Российская Федерация"
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Адрес регистрации
-											<input
-												value={
-													documentPatient?.administrativeProfile
-														?.registrationAddress ?? ""
-												}
-												readOnly
-												placeholder="из карточки пациента"
-											/>
-										</label>
-										<label>
-											Тип местности регистрации
-											<select
-												value={outpatient025uRegistrationUrbanRuralCode}
-												onChange={(event) =>
-													setOutpatient025uRegistrationUrbanRuralCode(
-														normalizedOutpatient025uDemographicCode(
-															event.target.value,
-														),
-													)
-												}
-											>
-												<option value="unknown">не указано</option>
-												<option value="1">город</option>
-												<option value="2">село</option>
-											</select>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Адрес пребывания
-											<input
-												value={
-													documentPatient?.administrativeProfile
-														?.residentialAddress ?? ""
-												}
-												readOnly
-												placeholder="из карточки пациента"
-											/>
-										</label>
-										<label>
-											Тип местности пребывания
-											<select
-												value={outpatient025uStayUrbanRuralCode}
-												onChange={(event) =>
-													setOutpatient025uStayUrbanRuralCode(
-														normalizedOutpatient025uDemographicCode(
-															event.target.value,
-														),
-													)
-												}
-											>
-												<option value="unknown">не указано</option>
-												<option value="1">город</option>
-												<option value="2">село</option>
-											</select>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Полис ОМС
-											<input
-												value={
-													documentPatient?.administrativeProfile
-														?.insurancePolicyNumber ?? ""
-												}
-												readOnly
-												placeholder="из карточки пациента"
-											/>
-										</label>
-										<label>
-											Дата выдачи ОМС
-											<input
-												type="date"
-												value={outpatient025uOmsIssuedAt}
-												onChange={(event) =>
-													setOutpatient025uOmsIssuedAt(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Страховая организация
-											<input
-												value={outpatient025uInsurerName}
-												onChange={(event) =>
-													setOutpatient025uInsurerName(event.target.value)
-												}
-											/>
-										</label>
-										<label>
-											СНИЛС
-											<input
-												value={
-													documentPatient?.administrativeProfile?.snils ?? ""
-												}
-												readOnly
-												placeholder="из карточки пациента"
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Код льгот
-											<input
-												value={outpatient025uSocialSupportCode}
-												onChange={(event) =>
-													setOutpatient025uSocialSupportCode(event.target.value)
-												}
-											/>
-										</label>
-										<label>
-											Кому сообщать сведения
-											<input
-												value={outpatient025uHealthStatusDisclosureContact}
-												onChange={(event) =>
-													setOutpatient025uHealthStatusDisclosureContact(
-														event.target.value,
-													)
-												}
-												placeholder={
-													documentPatient?.administrativeProfile
-														?.legalRepresentativeFullName ??
-													"ФИО и контакт при наличии"
-												}
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Занятость
-											<input
-												value={outpatient025uEmploymentCode}
-												onChange={(event) =>
-													setOutpatient025uEmploymentCode(event.target.value)
-												}
-												placeholder="код или текст"
-											/>
-										</label>
-										<label>
-											Место работы/учебы
-											<input
-												value={outpatient025uWorkOrStudyPlace}
-												onChange={(event) =>
-													setOutpatient025uWorkOrStudyPlace(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Инвалидность
-											<input
-												value={outpatient025uDisabilityGroup}
-												onChange={(event) =>
-													setOutpatient025uDisabilityGroup(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<label>
-										Аллергологический анамнез
-										<textarea
-											value={outpatient025uAllergyHistory}
-											onChange={(event) =>
-												setOutpatient025uAllergyHistory(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Жалобы и анамнез
-										<textarea
-											value={recordExtractComplaintAndAnamnesis}
-											onChange={(event) =>
-												setRecordExtractComplaintAndAnamnesis(
-													event.target.value,
-												)
-											}
-											placeholder={
-												compactDocumentText(
-													dashboard?.activeVisit?.complaint,
-													dashboard?.activeVisit?.anamnesis,
-												) || "из подписанной записи визита"
-											}
-											rows={3}
-										/>
-									</label>
-									<label>
-										Объективный статус
-										<textarea
-											value={recordExtractObjectiveStatus}
-											onChange={(event) =>
-												setRecordExtractObjectiveStatus(event.target.value)
-											}
-											placeholder={
-												dashboard?.activeVisit?.objectiveStatus ??
-												"из подписанной записи визита"
-											}
-											rows={3}
-										/>
-									</label>
-									<label>
-										Заключительный диагноз
-										<textarea
-											value={recordExtractDiagnosis}
-											onChange={(event) =>
-												setRecordExtractDiagnosis(event.target.value)
-											}
-											placeholder={
-												dashboard?.activeVisit?.diagnosis ??
-												"только после врачебной проверки"
-											}
-											rows={2}
-										/>
-									</label>
-									{renderClinicalToothRowsEditor()}
-									<label>
-										Проведенное лечение
-										<textarea
-											value={recordExtractTreatmentProvided}
-											onChange={(event) =>
-												setRecordExtractTreatmentProvided(event.target.value)
-											}
-											placeholder={
-												compactDocumentText(
-													dashboard?.activeVisit?.doctorSummary,
-													dashboard?.activeVisit?.treatmentPlan,
-												) || "из подписанной записи визита"
-											}
-											rows={3}
-										/>
-									</label>
-									<label>
-										Назначения и рекомендации
-										<textarea
-											value={recordExtractRecommendations}
-											onChange={(event) =>
-												setRecordExtractRecommendations(event.target.value)
-											}
-											placeholder="назначения, режим, контроль, срочные признаки"
-											rows={3}
-										/>
-									</label>
-									<div className="document-payload-row">
-										<label>
-											Врач
-											<input
-												value={recordExtractDoctorFullName}
-												onChange={(event) =>
-													setRecordExtractDoctorFullName(event.target.value)
-												}
-												placeholder={activeDoctor?.fullName ?? "лечащий врач"}
-											/>
-										</label>
-										<label>
-											Итоговый эпикриз
-											<input
-												value={outpatient025uFinalEpicrisis}
-												onChange={(event) =>
-													setOutpatient025uFinalEpicrisis(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<label className="document-payload-checkbox">
-										<input
-											checked={recordExtractPreparedFromSignedRecords}
-											type="checkbox"
-											onChange={(event) =>
-												setRecordExtractPreparedFromSignedRecords(
-													event.target.checked,
-												)
-											}
-										/>
-										Карта 025/у собрана из подписанных медицинских записей
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={outpatient025uOfficialForm274nChecked}
-											type="checkbox"
-											onChange={(event) =>
-												setOutpatient025uOfficialForm274nChecked(
-													event.target.checked,
-												)
-											}
-										/>
-										Структура сверена с приказом Минздрава России от 13.05.2025
-										N 274н
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={outpatient025uThirdPartyDataChecked}
-											type="checkbox"
-											onChange={(event) =>
-												setOutpatient025uThirdPartyDataChecked(
-													event.target.checked,
-												)
-											}
-										/>
-										Лишние данные третьих лиц исключены
-									</label>
+								<h3 style={{ margin: "0 0 8px 0", fontSize: "16px" }}>
+									Форма 025/у исключена из амбулаторного стоматологического регламента
+								</h3>
+								<p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "var(--muted, #64748b)" }}>
+									В соответствии с Мандатом 8i (суверенитет амбулаторной стоматологии) форма 025/у является общей поликлинической/госпитальной формой и не применяется в частной стоматологии. Врач-стоматолог заполняет исключительно Форму 043/у («Медицинская карта стоматологического больного»). Для пациента также доступны официальная справка об осмотре полости рта или выписка из карты 043/у.
+								</p>
+								<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+									<button
+										type="button"
+										className="primary-button"
+										onClick={() => setSelectedDocumentKind("dental_medical_card_043u")}
+									>
+										Форма 043/у (Стоматологическая карта)
+									</button>
+									<button
+										type="button"
+										className="secondary-button"
+										onClick={() => setSelectedDocumentKind("visit_attendance_certificate")}
+									>
+										Справка об осмотре полости рта
+									</button>
+									<button
+										type="button"
+										className="secondary-button"
+										onClick={() => setSelectedDocumentKind("medical_record_extract")}
+									>
+										Выписка из карты 043/у
+									</button>
 								</div>
-							</details>
+							</div>
 						</article>
 					) : null}
 
@@ -5613,7 +5222,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							<span className="settings-advanced-icon">
 								<FolderArchive size={16} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
 							</span>
-							Каталог шаблонов документов ({documentFactoryGroups.length}{" "}
+							Каталог шаблонов документов ({sanitizedDocumentFactoryGroups.length}{" "}
 							разделов, 30+ форм)
 						</span>
 						<span className="settings-advanced-hint">
@@ -5622,7 +5231,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						<span className="settings-advanced-chevron">{"\u25BC"}</span>
 					</summary>
 					<div className="settings-advanced-form">
-						{(documentFactoryGroups ?? []).map((group) => (
+						{(sanitizedDocumentFactoryGroups ?? []).map((group) => (
 							<section className="document-factory-group" key={group.title}>
 								<h3>{group.title}</h3>
 								<div>
