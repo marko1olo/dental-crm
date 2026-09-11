@@ -119,8 +119,8 @@ export const DEFAULT_CLINIC_FISCAL_DETAILS: ClinicFiscalDetails = {
 	kktModelName: "АТОЛ 27Ф",
 	fnSerialNumber: "9960440302145896",
 	ofdName: "АО «ПЕРВЫЙ ОФД»",
-	chiefExecutiveFullName: "Смирнов А. В.",
-	chiefAccountantFullName: "Кузнецова Е. И.",
+	chiefExecutiveFullName: "",
+	chiefAccountantFullName: "",
 };
 
 export interface CashShiftTendersBreakdown {

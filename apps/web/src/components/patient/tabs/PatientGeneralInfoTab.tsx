@@ -3,15 +3,23 @@ import {
 	AlertTriangle,
 	Calendar,
 	CheckCircle2,
+	FileText,
 	HeartPulse,
 	MapPin,
+	Megaphone,
 	Phone,
 	Printer,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	User,
+	UserCheck,
+	Users,
 } from "lucide-react";
+import {
+	STOMX_MARKETING_SOURCES_CATALOG,
+	STOMX_REPRESENTATIVE_CATALOG,
+} from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,
@@ -33,6 +41,11 @@ export interface PatientGeneralInfo {
 	inn?: string | null | undefined;
 	omsPolicyNumber?: string | null | undefined;
 	notes?: string | null | undefined;
+	acquisitionSource?: string | null | undefined;
+	representativeType?: string | null | undefined;
+	representativeFullName?: string | null | undefined;
+	representativePhone?: string | null | undefined;
+	representativeDoc?: string | null | undefined;
 }
 
 export interface PatientGeneralInfoTabProps {
@@ -192,6 +205,139 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							data-testid="input-patient-address"
 						/>
 					</div>
+				</div>
+
+				{/* Marketing Acquisition Source (StomX Catalog) */}
+				<div className="p-4 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-900/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5">
+					<div className="flex items-center justify-between gap-2 flex-wrap">
+						<div className="flex items-center gap-2">
+							<Megaphone className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<span className="font-bold text-xs text-[var(--ink,#1e293b)] dark:text-slate-100">
+								Канал привлечения пациента (Маркетинг / StomX):
+							</span>
+						</div>
+						{patient?.acquisitionSource && (
+							<span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300">
+								{patient.acquisitionSource}
+							</span>
+						)}
+					</div>
+
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{STOMX_MARKETING_SOURCES_CATALOG.slice(0, 9).map((src) => {
+							const isSelected = patient?.acquisitionSource === src.nameRu;
+							return (
+								<button
+									key={src.channel}
+									type="button"
+									data-testid={`chip-marketing-${src.channel}`}
+									className={`min-h-[36px] px-3 py-1.5 text-xs rounded-lg font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+										isSelected
+											? "bg-teal-600 text-white border-teal-600 dark:bg-teal-600 dark:border-teal-500"
+											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+									}`}
+									onClick={() => {
+										if (disabled) return;
+										onUpdatePatient?.("acquisitionSource", isSelected ? "" : src.nameRu);
+									}}
+									disabled={disabled}
+								>
+									<span>{src.nameRu}</span>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
+				{/* Statutory & Family Legal Representative (СК РФ ст. 64 / 323-ФЗ ст. 20) */}
+				<div className="p-4 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-900/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-3">
+					<div className="flex items-center justify-between gap-2 flex-wrap">
+						<div className="flex items-center gap-2">
+							<Users className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<span className="font-bold text-xs text-[var(--ink,#1e293b)] dark:text-slate-100">
+								Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ):
+							</span>
+						</div>
+						{patient?.representativeType && (
+							<span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+								{patient.representativeType}
+							</span>
+						)}
+					</div>
+
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{STOMX_REPRESENTATIVE_CATALOG.slice(0, 8).map((rep) => {
+							const isSelected = patient?.representativeType === rep.nameRu;
+							return (
+								<button
+									key={rep.code}
+									type="button"
+									data-testid={`chip-representative-${rep.code}`}
+									className={`min-h-[36px] px-3 py-1.5 text-xs rounded-lg font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+										isSelected
+											? "bg-indigo-600 text-white border-indigo-600 dark:bg-indigo-600 dark:border-indigo-500"
+											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+									}`}
+									onClick={() => {
+										if (disabled) return;
+										onUpdatePatient?.("representativeType", isSelected ? "" : rep.nameRu);
+									}}
+									disabled={disabled}
+								>
+									<span>{rep.nameRu}</span>
+								</button>
+							);
+						})}
+					</div>
+
+					{patient?.representativeType && (
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<div className="flex flex-col gap-1">
+								<label className="text-[11px] font-bold text-[var(--ink,#1e293b)] dark:text-slate-200">
+									ФИО представителя
+								</label>
+								<input
+									type="text"
+									className="min-h-[40px] px-3 py-1.5 text-xs rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+									value={patient?.representativeFullName ?? ""}
+									onChange={(e) => onUpdatePatient?.("representativeFullName", e.target.value)}
+									placeholder="Фамилия Имя Отчество"
+									disabled={disabled}
+									data-testid="input-representative-fullname"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label className="text-[11px] font-bold text-[var(--ink,#1e293b)] dark:text-slate-200">
+									Телефон представителя
+								</label>
+								<input
+									type="tel"
+									className="min-h-[40px] px-3 py-1.5 text-xs rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+									value={patient?.representativePhone ?? ""}
+									onChange={(e) => onUpdatePatient?.("representativePhone", e.target.value)}
+									placeholder="+7 (___) ___-__-__"
+									disabled={disabled}
+									data-testid="input-representative-phone"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label className="text-[11px] font-bold text-[var(--ink,#1e293b)] dark:text-slate-200">
+									Документ-основание (Свид-во о рождении / Доверенность)
+								</label>
+								<input
+									type="text"
+									className="min-h-[40px] px-3 py-1.5 text-xs rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+									value={patient?.representativeDoc ?? ""}
+									onChange={(e) => onUpdatePatient?.("representativeDoc", e.target.value)}
+									placeholder="Свидетельство II-МЮ №123456 / Доверенность 77 АБ 1234"
+									disabled={disabled}
+									data-testid="input-representative-doc"
+								/>
+							</div>
+						</div>
+					)}
 				</div>
 
 				{/* Somatic Safety Profile & Allergy Chips */}

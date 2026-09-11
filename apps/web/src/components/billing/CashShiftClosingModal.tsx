@@ -39,6 +39,10 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
+import {
+	STOMX_CASH_RECEIPT_CATALOG,
+	STOMX_CASH_EXPENSE_CATALOG,
+} from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import {
 	type CashDiscrepancyReason,
@@ -638,7 +642,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 												rows={2}
 												value={cashierExplanation}
 												onChange={(e) => setCashierExplanation(e.target.value)}
-												placeholder="Опишите обстоятельства расхождения (например: ошибочно выбита сдача 500 ₽ пациенту Смирновой)..."
+												placeholder="Опишите обстоятельства расхождения (например: ошибочно внесена сдача, расхождение эквайринга)..."
 												className="cash-shift-textarea"
 											/>
 										</div>
@@ -752,6 +756,21 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 											className="cash-shift-input-primary"
 											style={{ width: "100%" }}
 										/>
+										<div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", marginTop: "0.375rem" }}>
+											{STOMX_CASH_RECEIPT_CATALOG.filter((c) =>
+												["cash_deposit", "advance_payment", "income_employee", "income_contractor"].includes(c.alias),
+											).map((cat) => (
+												<button
+													key={cat.alias}
+													type="button"
+													data-testid={`btn-cashin-preset-${cat.alias}`}
+													onClick={() => setCashInBasis(cat.name)}
+													className={`cash-shift-btn secondary-small ${cashInBasis === cat.name ? "active" : ""}`}
+												>
+													{cat.name}
+												</button>
+											))}
+										</div>
 									</div>
 
 									<button

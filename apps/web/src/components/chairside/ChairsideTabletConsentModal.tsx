@@ -93,57 +93,23 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 		if (initialPackage) return initialPackage;
 		return createChairsideConsentPackage({
 			patient: patient || {
-				fullName: "Иванова Анна Сергеевна",
-				birthDate: "14.05.1988",
-				passport: "Паспорт РФ 4510 № 123456",
-				phone: "+7 (916) 777-88-12",
-				snils: "123-456-789 00",
-				cardNumber: "043/у-7842",
+				fullName: "",
+				birthDate: "",
+				passport: "",
+				phone: "",
+				snils: "",
+				cardNumber: "",
 			},
 			doctor: doctor || {
-				fullName: "Барабаш Сергей Владимирович",
-				specialty: "Врач-стоматолог-терапевт, ортопед",
+				fullName: "Лечащий врач",
+				specialty: "Врач-стоматолог",
 			},
 			clinic,
 			clinicalContext: clinicalContext || {
-				diagnosisIcd: "K02.1 Кариес дентина, K04.0 Пульпит",
-				teeth: ["16", "17"],
+				diagnosisIcd: "",
+				teeth: [],
 			},
-			treatmentItems: treatmentItems || [
-				{
-					id: "trt-1",
-					serviceCode: "A16.07.002.001",
-					title: "Препарирование и механическая обработка кариозной полости зуба 1.6",
-					toothNumber: "16",
-					stageTitle: "Этап 1: Терапия",
-					quantity: 1,
-					unitPriceKopecks: 350000,
-					discountPercent: 0,
-					totalKopecks: 350000,
-				},
-				{
-					id: "trt-2",
-					serviceCode: "A16.07.008.002",
-					title: "Эстетическая реставрация зуба 1.6 светоотверждаемым нанокомпозитом",
-					toothNumber: "16",
-					stageTitle: "Этап 1: Терапия",
-					quantity: 1,
-					unitPriceKopecks: 650000,
-					discountPercent: 0,
-					totalKopecks: 650000,
-				},
-				{
-					id: "trt-3",
-					serviceCode: "A16.07.030.001",
-					title: "Эндодонтическое лечение 3-х корневых каналов зуба 1.7 под микроскопом",
-					toothNumber: "17",
-					stageTitle: "Этап 2: Эндодонтия",
-					quantity: 1,
-					unitPriceKopecks: 1450000,
-					discountPercent: 5,
-					totalKopecks: 1377500,
-				},
-			],
+			treatmentItems: treatmentItems || [],
 			exitPin: doctorPin,
 		});
 	});
@@ -152,7 +118,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 	const [activeDocIndex, setActiveDocIndex] = useState<number>(0);
 
 	// SMS-PEP State
-	const [patientPhone, setPatientPhone] = useState<string>(() => pkg.patient.phone || "+7 (916) 777-88-12");
+	const [patientPhone, setPatientPhone] = useState<string>(() => pkg.patient.phone || "");
 	const [otpInput, setOtpInput] = useState<string>("");
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const [timeLeftSeconds, setTimeLeftSeconds] = useState<number>(300);
@@ -171,20 +137,20 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 		if (isOpen) {
 			if (initialPackage) {
 				setPkg(initialPackage);
-				setPatientPhone(initialPackage.patient.phone || "+7 (916) 777-88-12");
+				setPatientPhone(initialPackage.patient.phone || "");
 			} else {
 				const freshPkg = createChairsideConsentPackage({
 					patient: patient || {
-						fullName: "Иванова Анна Сергеевна",
-						birthDate: "14.05.1988",
-						passport: "Паспорт РФ 4510 № 123456",
-						phone: "+7 (916) 777-88-12",
-						snils: "123-456-789 00",
-						cardNumber: "043/у-7842",
+						fullName: "",
+						birthDate: "",
+						passport: "",
+						phone: "",
+						snils: "",
+						cardNumber: "",
 					},
 					doctor: doctor || {
-						fullName: "Барабаш Сергей Владимирович",
-						specialty: "Врач-стоматолог-терапевт, ортопед",
+						fullName: "Лечащий врач",
+						specialty: "Врач-стоматолог",
 					},
 					clinic,
 					clinicalContext: clinicalContext || {
@@ -195,7 +161,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 					exitPin: doctorPin,
 				});
 				setPkg(freshPkg);
-				setPatientPhone(freshPkg.patient.phone || "+7 (916) 777-88-12");
+				setPatientPhone(freshPkg.patient.phone || "");
 			}
 			setMode(initialMode);
 			setActiveDocIndex(0);
