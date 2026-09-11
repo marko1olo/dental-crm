@@ -579,7 +579,7 @@ export const DEFAULT_MESSAGES_BY_PATIENT: Record<string, OmnichannelMessage[]> =
 			senderName: "DENTE",
 			senderType: "automated_bot",
 			timestamp: "2026-08-27T15:00:00.000Z",
-			body: "Анна Дмитриевна! Запись на прием 10.09 в 10:00 к д-ру Васильеву Д.А. подтверждена. Клиника DENTE: +74951234567",
+			body: "Анна Дмитриевна! Запись на прием 10.09 в 10:00 к д-ру Васильеву Д.А. подтверждена. Клиника DENTE",
 			status: "delivered",
 		},
 		{

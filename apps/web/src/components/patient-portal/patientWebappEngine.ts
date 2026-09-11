@@ -605,7 +605,7 @@ export function assemblePatientWebappProfile(params: {
 		clinicName: params.clinicName || 'ООО "Стоматологическая клиника ДЕНТЕ"',
 		clinicAddress: params.clinicAddress || "г. Москва, ул. Стоматологическая, д. 10",
 		clinicPhone: params.clinicPhone || "+7 (495) 789-01-23",
-		clinicInn: params.clinicInn || "7701234567",
+		clinicInn: params.clinicInn || "",
 		fullName: params.fullName,
 		phone: params.phone,
 		birthDate: params.birthDate,
@@ -787,7 +787,7 @@ export function generateSbpPaymentQrModel(params: {
 	const expiresAtIso = new Date(Date.now() + ttl * 60 * 1000).toISOString();
 
 	const recipientLegalName = params.clinicLegalName || 'ООО "Стоматологическая клиника ДЕНТЕ"';
-	const recipientInn = params.clinicInn || "7701234567";
+	const recipientInn = params.clinicInn || "";
 	const recipientAccount = params.clinicAccount || "40702810938000123456";
 	const bankBic = params.bankBic || "044525225";
 	const paymentPurpose = params.purpose || `Оплата стоматологических услуг по заказу №${orderId} (ИНН ${recipientInn})`;

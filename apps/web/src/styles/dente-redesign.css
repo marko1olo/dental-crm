@@ -884,13 +884,14 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	padding: 8px 16px;
+	padding: 0 16px;
+	margin: 0;
 	background: var(--paper);
 	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
 	min-height: 52px;
 	height: 52px;
-	max-height: 56px;
+	max-height: 52px;
 	box-sizing: border-box;
 	position: sticky;
 	top: 0;

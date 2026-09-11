@@ -186,7 +186,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		}
 	}, [isOpen, initialServices]);
 
-	// ⚡ 1-Клик: Активация экстренного приёма / Гарантии в пути
+	// 1-Клик: Активация экстренного приёма / Гарантии в пути
 	const handleActivateEmergencyCare = () => {
 		setIsEmergencyCare(true);
 		setHasGuaranteeLetter(true);
@@ -202,7 +202,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 			setPolicyNumber(patient?.policyNumber || "ПОЛИС-ДМС-ОСТРАЯ-БОЛЬ");
 		}
 		showToast(
-			"⚡ Экстренный приём / Гарантия в пути: лечение начато без ожидания письма, устное подтверждение куратора зафиксировано, приём разблокирован!",
+			"Экстренный приём / Гарантия в пути: лечение начато без ожидания письма, устное подтверждение куратора зафиксировано, приём разблокирован!",
 			"success",
 		);
 	};
@@ -230,7 +230,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		showToast("1-Клик: Доплата за премиум-материал включена в сплит без разбивки визита", "info");
 	};
 
-	// ⚡ 1-Клик: Оформление комбинированной оплаты (сплит-биллинг)
+	// 1-Клик: Оформление комбинированной оплаты (сплит-биллинг)
 	const handleExecuteSplitBilling = () => {
 		if (onSplitPaymentCompleted) {
 			onSplitPaymentCompleted({
@@ -252,7 +252,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 						? "через СБП"
 						: "смешанной оплатой";
 		showToast(
-			`⚡ Комбинированная оплата оформлена: Покрыто ДМС (${formatCurrencyRub(splitResult.totalInsuranceCoveredKopecks, true)}) + Доплата пациента (${formatCurrencyRub(splitResult.totalPatientOutOfPocketKopecks, true)} ${methodLabel}) без разбивки визита!`,
+			`Комбинированная оплата оформлена: Покрыто ДМС (${formatCurrencyRub(splitResult.totalInsuranceCoveredKopecks, true)}) + Доплата пациента (${formatCurrencyRub(splitResult.totalPatientOutOfPocketKopecks, true)} ${methodLabel}) без разбивки визита!`,
 			"success",
 		);
 		onClose();
@@ -412,7 +412,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		}
 		showToast(
 			isEmergencyCare
-				? "⚡ Авторизация ДМС (Экстренный приём / Гарантия в пути) успешно применена!"
+				? "Авторизация ДМС (Экстренный приём / Гарантия в пути) успешно применена!"
 				: "Авторизация ДМС успешно применена",
 			"success",
 		);
@@ -447,7 +447,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 
 				{/* Body */}
 				<div className="dms-modal-body">
-					{/* ⚡ 1-Клик Режим: Экстренный приём / Гарантия в пути (Мандат 8e) */}
+					{/* 1-Клик Режим: Экстренный приём / Гарантия в пути (Мандат 8e) */}
 					<div
 						style={{
 							padding: "12px 16px",
@@ -469,7 +469,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 							<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
 								<Zap size={18} className="text-amber-600" />
 								<strong style={{ fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
-									⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
+									Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
 								</strong>
 								{isEmergencyCare && (
 									<span
@@ -509,13 +509,13 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 								gap: "8px",
 								boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
 							}}
-							title="⚡ 1-клик: Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)"
+							title="1-клик: Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)"
 						>
 							<Zap size={16} />
 							<span>
 								{isEmergencyCare
-									? "✓ Экстренный приём активен"
-									: "⚡ 1-клик: Экстренный приём / Гарантия в пути"}
+									? "Экстренный приём активен"
+									: "1-клик: Экстренный приём / Гарантия в пути"}
 							</span>
 						</button>
 					</div>
@@ -987,10 +987,10 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 										fontWeight: 700,
 										minHeight: "44px",
 									}}
-									title="⚡ 1-Клик Оформить сплит-оплату: ДМС + Пациент в едином чеке визита"
+									title="1-Клик Оформить сплит-оплату: ДМС + Пациент в едином чеке визита"
 								>
 									<Zap size={16} />
-									⚡ 1-Клик Сплит (ДМС {formatCurrencyRub(splitResult.totalInsuranceCoveredKopecks, true)} + Пациент {formatCurrencyRub(splitResult.totalPatientOutOfPocketKopecks, true)})
+									1-Клик Сплит (ДМС {formatCurrencyRub(splitResult.totalInsuranceCoveredKopecks, true)} + Пациент {formatCurrencyRub(splitResult.totalPatientOutOfPocketKopecks, true)})
 								</button>
 							</div>
 						</div>
@@ -1021,9 +1021,9 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 						className="dms-btn dms-btn-primary"
 						style={{ background: "#0d9488", borderColor: "#0d9488", fontWeight: 700 }}
 						onClick={handleExecuteSplitBilling}
-						title="⚡ 1-Клик: Оформить сплит-оплату без разбивки на 2 визита"
+						title="1-Клик: Оформить сплит-оплату без разбивки на 2 визита"
 					>
-						<CreditCard size={18} /> ⚡ 1-Клик Сплит в кассе
+						<CreditCard size={18} /> <Zap className="w-3.5 h-3.5" /> 1-Клик Сплит в кассе
 					</button>
 
 					<button

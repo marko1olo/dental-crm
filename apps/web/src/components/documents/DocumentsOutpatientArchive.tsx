@@ -86,7 +86,7 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 				clinicName: appLogic?.dashboard?.clinicSettings?.profile?.clinicName || "ООО «Денте»",
 				legalName: "ООО «Денте»",
 				fullName: "ООО «Денте»",
-				inn: "7701234567",
+				inn: (appLogic?.dashboard?.organization as { inn?: string } | undefined)?.inn || "",
 			},
 			doctorFullName: activeDoctor?.fullName || "",
 		});
@@ -109,7 +109,7 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 				clinicName: appLogic?.dashboard?.clinicSettings?.profile?.clinicName || "ООО «Денте»",
 				legalName: "ООО «Денте»",
 				fullName: "ООО «Денте»",
-				inn: "7701234567",
+				inn: (appLogic?.dashboard?.organization as { inn?: string } | undefined)?.inn || "",
 			},
 			doctorFullName: activeDoctor?.fullName || "",
 		});

@@ -255,11 +255,16 @@ export function SettingsAiTab() {
 														: "speech-runtime-missing"
 												}
 											>
-												{runtime.canTranscribeChunks
-													? "✅ Готов"
-													: runtime.configured
-														? "Настроен"
-														: "Не настроен"}
+												{runtime.canTranscribeChunks ? (
+													<span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+														<CheckCircle2 size={12} />
+														<span>Готов</span>
+													</span>
+												) : runtime.configured ? (
+													"Настроен"
+												) : (
+													"Не настроен"
+												)}
 											</span>
 										</span>
 									)}

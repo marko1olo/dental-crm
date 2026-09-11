@@ -582,7 +582,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 										<ShieldAlert size={20} className="warranty-remediation-banner-icon" />
 										<div>
 											<strong>Гарантийный приём (выпала пломба, расцементировка коронки, скол)</strong>
-											<p>1-клик оформление: Пациент платит 0 ₽ • Списание со склада по факту • Без мастер-паролей (Мандат 8e)</p>
+											<p>1-клик оформление: Пациент платит 0 ₽ • Списание со склада по факту • Без мастер-паролей</p>
 										</div>
 									</div>
 									<button
@@ -1172,7 +1172,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 									<div>
 										<h4>Гарантийный приём & Устранение дефекта (0 ₽)</h4>
 										<p>
-											Закон РФ № 2300-1 «О защите прав потребителей» (ст. 29) • Положение СтАР • Мандат 8e
+											Закон РФ № 2300-1 «О защите прав потребителей» (ст. 29) • Положение СтАР • Внутренний регламент клиники
 										</p>
 									</div>
 								</div>

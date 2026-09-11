@@ -137,7 +137,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 			`${capText}\n` +
 			`Аугментация: ${gbrText}\n` +
 			`LOT: ${assembledData.lotNumber}, SN: ${assembledData.serialNumber}.\n` +
-			(isOverdraftActive ? "Примечание: списание проведено в мягкий овердрафт склада (Мандат 8e).\n" : "") +
+			(isOverdraftActive ? "Примечание: списание проведено в мягкий овердрафт склада.\n" : "") +
 			`Рекомендации даны. Протокол зафиксирован.`
 		);
 	};
@@ -323,7 +323,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							<AlertTriangle size={18} className="text-[var(--amber,#f59e0b)] shrink-0" />
 							<div className="flex-1">
 								<strong className="text-[var(--amber-dark,#b45309)]">Мягкий овердрафт склада: </strong>
-								<span>Задержка накладной не блокирует сохранение (Мандат 8e). Паспорт сохраняется штатно.</span>
+								<span>Задержка накладной не блокирует сохранение. Паспорт сохраняется штатно.</span>
 							</div>
 							<button
 								type="button"
@@ -739,7 +739,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 										Складской статус: {isOverdraftActive ? "Мягкий овердрафт (задержка накладной)" : "компоненты оприходованы"}
 									</span>
 									<span className={`text-xs font-semibold ${isOverdraftActive ? "text-amber-500" : "text-[var(--teal,#0d9488)]"}`}>
-										{isOverdraftActive ? "Овердрафт разрешен (Мандат 8e)" : "В наличии"}
+										{isOverdraftActive ? "Овердрафт разрешен (списание до проведения накладной)" : "В наличии"}
 									</span>
 								</div>
 							</div>

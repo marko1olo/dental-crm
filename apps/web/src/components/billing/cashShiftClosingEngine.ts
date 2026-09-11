@@ -110,10 +110,10 @@ export interface ClinicFiscalDetails {
 
 export const DEFAULT_CLINIC_FISCAL_DETAILS: ClinicFiscalDetails = {
 	legalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	inn: "7701234567",
-	kpp: "770101001",
-	ogrn: "1157746001234",
-	address: "г. Москва, ул. Клиническая, д. 10",
+	inn: "",
+	kpp: "",
+	ogrn: "",
+	address: "",
 	kktRegNumber: "0004829104058291",
 	kktSerialNumber: "019482019482",
 	kktModelName: "АТОЛ 27Ф",

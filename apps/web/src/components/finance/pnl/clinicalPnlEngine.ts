@@ -1186,7 +1186,7 @@ export const SAMPLE_CLINICAL_PNL_APPOINTMENTS: readonly ClinicalAppointmentPnlIt
 	{
 		id: "pnl-app-002",
 		dateIso: "2026-08-04",
-		patientName: "Смирнова Екатерина Васильевна",
+		patientName: "Васильева Ольга Дмитриевна",
 		medicalCardNumber: "043/у-2026/891",
 		doctorId: "doc-vasiliev",
 		doctorName: "Д-р Васильев Максим Сергеевич",

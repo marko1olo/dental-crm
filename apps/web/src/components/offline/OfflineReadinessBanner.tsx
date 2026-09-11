@@ -2,7 +2,7 @@
  * DENTE CRM — Offline Readiness & Local Autonomous Protection Banner
  *
  * Баннер готовности к офлайн-работе:
- * «⚡ Приложение готово к полной автономной работе без интернета»
+ * «Приложение готово к полной автономной работе без интернета»
  *
  * Функционал:
  * - Индикация активности Service Worker, Shell Cache и готовности IndexedDB
@@ -149,7 +149,7 @@ export const OfflineReadinessBanner: React.FC<OfflineReadinessBannerProps> = ({
 					</div>
 					<div>
 						<h3 className="offline-readiness-banner__title">
-							⚡ Приложение готово к полной автономной работе без интернета
+							Приложение готово к полной автономной работе без интернета
 						</h3>
 						<p className="offline-readiness-banner__subtitle">
 							Кэш оболочки v6 активен • База данных защищена локально в памяти устройства

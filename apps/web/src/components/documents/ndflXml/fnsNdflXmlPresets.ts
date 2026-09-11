@@ -316,9 +316,9 @@ export function validateRussianOgrn(ogrn: string | null | undefined): boolean {
  */
 export const DEFAULT_FNS_CLINIC_PRESET = {
 	clinicName: "ООО Стоматологическая клиника «ДЕНТЕ»",
-	inn: "7701234567",
-	kpp: "770101001",
-	ogrn: "1157746123456",
+	inn: "",
+	kpp: "",
+	ogrn: "",
 	taxOfficeCode: "7701",
 	licenseNumber: "ЛО-77-01-019842",
 	licenseDate: "2021-04-12",

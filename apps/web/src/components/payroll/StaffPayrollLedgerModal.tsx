@@ -78,7 +78,7 @@ const SAMPLE_DOCTORS: readonly DoctorStaffPayrollInput[] = [
 			{
 				id: "srv-1",
 				dateIso: "2026-08-05",
-				patientName: "Смирнова Екатерина Васильевна",
+				patientName: "Алексеева Елена Николаевна",
 				medicalCardNumber: "043/у-2026/891",
 				serviceNameRu: "Эндодонтическое лечение 3-канального моляра",
 				order804nCode: "A16.07.002.001",

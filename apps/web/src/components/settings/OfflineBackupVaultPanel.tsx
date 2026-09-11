@@ -29,6 +29,7 @@ import {
 	UploadCloud,
 	Wifi,
 	WifiOff,
+	XCircle,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -913,7 +914,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							{dryRunResult.warnings.length > 0 && (
 								<div style={{ fontSize: "12px", color: "var(--warn-fg)", marginBottom: "8px" }}>
 									{dryRunResult.warnings.map((w, idx) => (
-										<div key={idx}>⚠️ {w}</div>
+										<div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											<AlertTriangle size={13} style={{ flexShrink: 0 }} />
+											<span>{w}</span>
+										</div>
 									))}
 								</div>
 							)}
@@ -921,7 +925,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							{dryRunResult.errors.length > 0 && (
 								<div style={{ fontSize: "12px", color: "var(--bad-fg)" }}>
 									{dryRunResult.errors.map((err, idx) => (
-										<div key={idx}>❌ {err}</div>
+										<div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											<XCircle size={13} style={{ flexShrink: 0 }} />
+											<span>{err}</span>
+										</div>
 									))}
 								</div>
 							)}

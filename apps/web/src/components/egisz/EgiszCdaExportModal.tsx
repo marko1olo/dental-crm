@@ -205,9 +205,9 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 			?.egiszClinicOid ||
 		"1.2.643.5.1.13.13.12.2";
 	const effectiveClinicOgrn =
-		clinicOgrn || dashboard?.organization?.ogrn || "1027700132195";
+		clinicOgrn || dashboard?.organization?.ogrn || "";
 	const effectiveClinicInn =
-		clinicInn || dashboard?.organization?.inn || "7701234567";
+		clinicInn || dashboard?.organization?.inn || "";
 
 	// Prepare data for CDA builder
 	const exportData: CdaExportData = useMemo(() => {

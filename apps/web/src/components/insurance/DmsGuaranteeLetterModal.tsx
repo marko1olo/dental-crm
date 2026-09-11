@@ -277,7 +277,7 @@ export function DmsGuaranteeLetterModal({
 		}
 		showToast(
 			isEmergencyCare
-				? `⚡ Временное согласование по острой боли № ${letter.letterNumber} сохранено. Приём и касса разблокированы!`
+				? `Временное согласование по острой боли № ${letter.letterNumber} сохранено. Приём и касса разблокированы!`
 				: `Гарантийное письмо № ${letter.letterNumber} (${letter.insurerName}) успешно сохранено`,
 			"success",
 		);
@@ -328,7 +328,7 @@ export function DmsGuaranteeLetterModal({
 						</div>
 					)}
 
-					{/* ⚡ 1-Клик Режим: Экстренная помощь по острой боли (письмо будет дослано страховой) */}
+					{/* 1-Клик Режим: Экстренная помощь по острой боли (письмо будет дослано страховой) */}
 					<div
 						style={{
 							padding: "12px 16px",
@@ -350,7 +350,7 @@ export function DmsGuaranteeLetterModal({
 							<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
 								<Zap size={18} className="text-amber-600" />
 								<strong style={{ fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
-									⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
+									Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
 								</strong>
 								{isEmergencyCare && (
 									<span
@@ -390,13 +390,13 @@ export function DmsGuaranteeLetterModal({
 								gap: "8px",
 								boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
 							}}
-							title="⚡ 1-клик: Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)"
+							title="1-клик: Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)"
 						>
 							<Zap size={16} />
 							<span>
 								{isEmergencyCare
-									? "✓ Экстренный приём активен"
-									: "⚡ 1-клик: Экстренный приём / Гарантия в пути"}
+									? "Экстренный приём активен"
+									: "1-клик: Экстренный приём / Гарантия в пути"}
 							</span>
 						</button>
 					</div>
@@ -846,10 +846,10 @@ export function DmsGuaranteeLetterModal({
 							className="dms-btn dms-btn-primary"
 							style={{ background: "#059669", borderColor: "#059669", fontWeight: 700 }}
 							onClick={handleSave}
-							title="⚡ 1-клик: Применить временное согласование по острой боли и разблокировать прием"
+							title="1-клик: Применить временное согласование по острой боли и разблокировать прием"
 						>
 							<Zap size={18} />
-							⚡ 1-Клик: Сохранить экстренное согласование
+							1-Клик: Сохранить экстренное согласование
 						</button>
 					)}
 					<button

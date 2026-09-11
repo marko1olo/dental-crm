@@ -763,7 +763,7 @@ export function generateForm043uPrintHtml(payload: EgiszDentalCdaPayload): strin
 
 	${!payload.doctorSignature ? `
 	<div style="border: 2px dashed #b91c1c; color: #b91c1c; font-weight: bold; text-align: center; padding: 6px; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">
-		[ ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП (МАНДАТ 8E) ]
+		[ ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП ]
 	</div>` : ""}
 
 	<div class="field-row">
@@ -830,7 +830,7 @@ export function generateForm043uPrintHtml(payload: EgiszDentalCdaPayload): strin
 			orgName: payload.clinic.clinicName,
 		}) : `
 		<div style="text-align: right;">
-			<div style="font-weight: bold; color: #b91c1c; font-size: 11px; margin-bottom: 4px;">ШТАМП: ЧЕРНОВИК (МАНДАТ 8E)</div>
+			<div style="font-weight: bold; color: #b91c1c; font-size: 11px; margin-bottom: 4px;">ШТАМП: ЧЕРНОВИК</div>
 			<div style="border: 1px dashed #b91c1c; padding: 4px 8px; margin-bottom: 6px; display: inline-block; color: #b91c1c; font-weight: bold; font-size: 10px;">ДОКУМЕНТ НЕ ЗАВЕРЕН ЭЦП — ПРЕДВАРИТЕЛЬНЫЙ ЭКЗЕМПЛЯР</div>
 			<div>Подпись врача: ___________________ / ${escapeXml(payload.doctor.doctorFullName)}</div>
 		</div>`}

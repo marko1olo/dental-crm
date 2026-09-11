@@ -230,7 +230,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 
 	const [isSubmittingQuickShift, setIsSubmittingQuickShift] = useState(false);
 
-	// ⚡ 1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21
+	// 1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21
 	const handleQuickShiftWaste = async () => {
 		try {
 			setIsSubmittingQuickShift(true);
@@ -306,7 +306,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 			}
 
 			showToast(
-				"⚡ Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
+				"Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
 				"success",
 			);
 			setActiveTab("journal");
@@ -506,7 +506,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 										data-testid="waste-quick-shift-btn"
 									>
 										<Sparkles size={18} />
-										<span>{isSubmittingQuickShift ? "Оформление смены..." : "⚡ 1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
+										<span>{isSubmittingQuickShift ? "Оформление смены..." : "1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
 									</button>
 								</div>
 							</div>

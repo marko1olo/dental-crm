@@ -427,7 +427,7 @@ export function SeniorNurseKraftUnsealModal({
 		onClose();
 	};
 
-	// ⚡ 1-Клик вскрытие стандартного смотрового лотка (Зеркало, зонд, пинцет, гладилка)
+	// 1-Клик вскрытие стандартного смотрового лотка (Зеркало, зонд, пинцет, гладилка)
 	const handleUnsealStandardTray = (toolSet: "therapy" | "surgery" | "endo" = "therapy") => {
 		const freshTray = createStandardTrayKraftPackageRecord(toolSet);
 		setDynamicPackages((prev) => [freshTray, ...prev]);
@@ -491,7 +491,7 @@ export function SeniorNurseKraftUnsealModal({
 
 				{/* Body */}
 				<div className="snk-body">
-					{/* ⚡ 1-Click Fast Standard Tray Express Banner (Mandates 8e, 8k) */}
+					{/* 1-Click Fast Standard Tray Express Banner (Mandates 8e, 8k) */}
 					<div
 						className="snk-express-tray-banner"
 						style={{
@@ -543,7 +543,7 @@ export function SeniorNurseKraftUnsealModal({
 								data-testid="snk-1click-standard-tray-btn"
 							>
 								<Sparkles size={18} />
-								<span>⚡ Вскрыть стандартный смотровой лоток</span>
+								<span>Вскрыть стандартный смотровой лоток</span>
 							</button>
 
 							<button
@@ -710,7 +710,7 @@ export function SeniorNurseKraftUnsealModal({
 								В лотке нет зарегистрированных крафт-пакетов
 							</h4>
 							<p style={{ margin: 0, fontSize: "0.825rem" }}>
-								Нажмите кнопку «⚡ Вскрыть стандартный смотровой лоток» выше, либо отсканируйте физический штрихкод пакета сканером или камерой.
+								Нажмите кнопку «Вскрыть стандартный смотровой лоток» выше, либо отсканируйте физический штрихкод пакета сканером или камерой.
 							</p>
 						</div>
 					)}

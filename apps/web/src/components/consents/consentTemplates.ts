@@ -1666,7 +1666,7 @@ export interface ConsentPackagePrintOptions {
 
 /**
  * Генерация непрерывного печатного документа пакета ИДС со строками «________» (или заполненными данными)
- * Мандат 8e п. 8: Регистратура и врач печатают пакет бланков в 1 клик БЕЗ 403-ошибок!
+ * Регистратура и врач печатают пакет бланков в 1 клик без блокировок.
  */
 export function generateConsentPackagePrintHtml(
 	packageKey: ConsentPackageKey,

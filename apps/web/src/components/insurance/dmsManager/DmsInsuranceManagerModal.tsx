@@ -354,7 +354,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 			curatorPhone: insMeta?.phone ?? "8 (800) 000-00-00",
 			curatorEmail: insMeta?.email ?? "dms-urgent@clinic.ru",
 			attachedXrayUris: [],
-			notes: "⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора). Временное согласование неотложных манипуляций (депульпирование, анестезия, вскрытие абсцесса) без блокировки кассы или приёма (Мандат 8e).",
+			notes: "Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора). Временное согласование неотложных манипуляций (депульпирование, анестезия, вскрытие абсцесса) без блокировки кассы или приёма (Мандат 8e).",
 		};
 
 		setLetters((prev) => [emergencyLetterRecord, ...prev]);
@@ -365,12 +365,12 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		setPreAuthDiagnosisTitle("Пульпит зуба (острый очаговый / острая боль)");
 		setPreAuthServiceCode("A16.07.030.001");
 		setPreAuthClinicalNotes(
-			"⚡ Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
+			"Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
 		);
 		setPreAuthOverrideStatus("approved");
 
 		showToast(
-			`⚡ Экстренный приём / Гарантия в пути: согласование № ${emergencyLetterRecord.letterNumber} создано! Приём врача и касса 54-ФЗ разблокированы.`,
+			`Экстренный приём / Гарантия в пути: согласование № ${emergencyLetterRecord.letterNumber} создано! Приём врача и касса 54-ФЗ разблокированы.`,
 			"success",
 		);
 	};
@@ -380,7 +380,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		setPreAuthDiagnosisTitle("Пульпит зуба (острый очаговый / острая боль)");
 		setPreAuthServiceCode("A16.07.030.001");
 		setPreAuthClinicalNotes(
-			"⚡ Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
+			"Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
 		);
 		setPreAuthOverrideStatus("approved");
 
@@ -389,7 +389,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		if (!hasEmergencyLetter) {
 			handleActivateEmergencyLetter();
 		} else {
-			showToast("⚡ Экстренный приём / Гарантия в пути активирован! Устное подтверждение зафиксировано, приём и касса разблокированы.", "success");
+			showToast("Экстренный приём / Гарантия в пути активирован! Устное подтверждение зафиксировано, приём и касса разблокированы.", "success");
 		}
 	};
 
@@ -416,7 +416,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		showToast("1-Клик: Доплата за премиум-материал включена в сплит без разбивки визита", "info");
 	};
 
-	// ⚡ 1-Клик: Проведение сплит-оплаты в кассе клиники (единый визит)
+	// 1-Клик: Проведение сплит-оплаты в кассе клиники (единый визит)
 	const handleExecuteSplitCashierPayment = () => {
 		const methodLabel =
 			splitPatientPayMethod === "card"
@@ -427,7 +427,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 						? "через СБП"
 						: "смешанной оплатой";
 		showToast(
-			`⚡ Комбинированная оплата проведена в кассе: ДМС (${formatKopecks(splitSummary.totalDmsCoveredKopecks)}) + Пациент (${formatKopecks(splitSummary.totalPatientCoPayKopecks)} ${methodLabel}) в едином чеке 54-ФЗ без разбивки визита!`,
+			`Комбинированная оплата проведена в кассе: ДМС (${formatKopecks(splitSummary.totalDmsCoveredKopecks)}) + Пациент (${formatKopecks(splitSummary.totalPatientCoPayKopecks)} ${methodLabel}) в едином чеке 54-ФЗ без разбивки визита!`,
 			"success",
 		);
 	};
@@ -637,7 +637,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 					   ========================================================= */}
 					{activeTab === "letters" && (
 						<>
-							{/* ⚡ 1-КЛИК: ЭКСТРЕННАЯ ПОМОЩЬ ПО ОСТРОЙ БОЛИ (МАНДАТ 8e) */}
+							{/* 1-КЛИК: ЭКСТРЕННАЯ ПОМОЩЬ ПО ОСТРОЙ БОЛИ (МАНДАТ 8e) */}
 							<div
 								style={{
 									display: "flex",
@@ -670,7 +670,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 												color: "var(--ink, #0f172a)",
 											}}
 										>
-											⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
+											Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
 										</div>
 										<div
 											style={{
@@ -702,7 +702,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 									onClick={handleActivateEmergencyLetter}
 								>
 									<Zap size={16} />
-									⚡ 1-Клик: Экстренный приём / Гарантия в пути
+									1-Клик: Экстренный приём / Гарантия в пути
 								</button>
 							</div>
 
@@ -1116,7 +1116,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 						<div
 							style={{ display: "flex", flexDirection: "column", gap: 16 }}
 						>
-							{/* ⚡ 1-КЛИК: ЭКСТРЕННАЯ ПОМОЩЬ ПО ОСТРОЙ БОЛИ (МАНДАТ 8e) */}
+							{/* 1-КЛИК: ЭКСТРЕННАЯ ПОМОЩЬ ПО ОСТРОЙ БОЛИ (МАНДАТ 8e) */}
 							<div
 								style={{
 									display: "flex",
@@ -1149,7 +1149,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 												color: "var(--ink, #0f172a)",
 											}}
 										>
-											⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
+											Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
 										</div>
 										<div
 											style={{
@@ -1181,7 +1181,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 									onClick={handleActivateEmergencyPreAuth}
 								>
 									<Zap size={16} />
-									⚡ 1-Клик: Экстренный приём / Гарантия в пути
+									1-Клик: Экстренный приём / Гарантия в пути
 								</button>
 							</div>
 

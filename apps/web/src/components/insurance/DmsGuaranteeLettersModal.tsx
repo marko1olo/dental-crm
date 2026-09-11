@@ -811,8 +811,8 @@ export function DmsGuaranteeLettersModal({
 									onChange={(e) => setIsEmergencyCare(e.target.checked)}
 									style={{ width: "16px", height: "16px", cursor: "pointer" }}
 								/>
-								<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit" }}>
-									⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
+								<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+									<Zap size={14} /> Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
 								</span>
 							</label>
 						</div>
@@ -886,7 +886,7 @@ export function DmsGuaranteeLettersModal({
 								) : (
 									<Zap size={15} />
 								)}
-								⚡ Прикрепить полис в 1 клик
+								Прикрепить полис в 1 клик
 							</button>
 						</div>
 					</div>

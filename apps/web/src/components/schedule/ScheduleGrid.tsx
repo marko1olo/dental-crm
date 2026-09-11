@@ -1813,7 +1813,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 			{/* Daily Chair & Doctor Occupancy Summary Bar with Inline + Кресло (1 neat 36px row) */}
 			{!hideToolbar && (
-				<div className="px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs min-h-[36px] overflow-x-auto select-none">
+				<div className="px-3 py-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs h-9 min-h-[36px] max-h-[36px] overflow-x-auto select-none">
 				<div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
 					{dailyTally.totalAppointmentsCount > 0 ? (
 						<>
@@ -1886,13 +1886,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
-						className={`min-h-[28px] h-7 min-w-[44px] px-2.5 py-1 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0 ${
+						className={`h-7 min-h-[28px] max-h-[30px] min-w-[44px] px-2.5 py-0.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0 ${
 							hideInlineAddChair ? "hidden" : ""
 						}`}
 						title="Добавить кресло в расписание (+ Кресло)"
 						aria-label="Добавить кресло"
 						data-testid="btn-grid-inline-add-chair"
-						style={{ minHeight: "44px", minWidth: "44px" }}
 					>
 						<span className="font-bold">+ Кресло</span>
 					</button>
@@ -1900,11 +1899,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					<button
 						type="button"
 						onClick={() => setIsQuickAddDoctorOpen(true)}
-						className="min-h-[28px] h-7 min-w-[44px] px-2.5 py-1 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
+						className="h-7 min-h-[28px] max-h-[30px] min-w-[44px] px-2.5 py-0.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
 						title="Быстро добавить врача в расписание"
 						aria-label="Быстро добавить врача в расписание"
 						data-testid="btn-grid-quick-add-doctor"
-						style={{ minHeight: "44px", minWidth: "44px" }}
 					>
 						<UserPlus size={13} className="shrink-0 text-[var(--teal)]" />
 						<span className="font-bold">+ Врач</span>
@@ -1913,11 +1911,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					<button
 						type="button"
 						onClick={handleCopyWeekShiftsToNextWeek}
-						className="min-h-[28px] h-7 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+						className="h-7 min-h-[28px] max-h-[30px] px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
 						title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
 						aria-label="Скопировать график на следующую неделю"
 						data-testid="btn-grid-copy-next-week"
-						style={{ minHeight: "44px" }}
 					>
 						<Copy size={13} className="shrink-0 text-[var(--teal)]" />
 						<span className="hidden xl:inline font-bold">На след. неделю</span>
@@ -1927,11 +1924,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						<button
 							type="button"
 							onClick={handleToggleShowRevenue}
-							className="font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-lg whitespace-nowrap shrink-0 flex items-center gap-1 text-xs cursor-pointer transition-all active:scale-95 shadow-2xs min-h-[28px] h-7"
+							className="font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-lg whitespace-nowrap shrink-0 flex items-center gap-1 text-xs cursor-pointer transition-all active:scale-95 shadow-2xs h-7 min-h-[28px] max-h-[30px]"
 							title={showRevenue ? "Скрыть сумму выручки дня от пациентов (Режим приватности)" : "Показать выручку дня"}
 							data-testid="btn-grid-toggle-revenue-privacy"
 							aria-label="Переключить приватность выручки дня"
-							style={{ minHeight: "44px" }}
 						>
 							{showRevenue ? <EyeOff size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" /> : <Eye size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />}
 							<span>{showRevenue ? `${dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽` : "•••••• ₽"}</span>
@@ -3878,17 +3874,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															</div>
 														)}
 
-														{/* Compact 2-Button Action Bar (Позвонить, Профиль) + More Options Dropdown (...) */}
-														<div className="flex items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/50 mt-1">
+														{/* Compact Action Bar (Позвонить, Профиль, Меню ...) — Compact 24px height to avoid distorting 15-30 min grid slots */}
+														<div className="flex items-center gap-1 pt-1 border-t border-[var(--line)]/50 mt-1">
 															{patObj?.phone ? (
 																<a
 																	href={`tel:${patObj.phone}`}
 																	onClick={(e) => e.stopPropagation()}
-																	className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+																	className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																	title={`Позвонить ${pName}: ${patObj.phone}`}
 																	aria-label={`Позвонить ${pName}`}
 																>
-																	<Phone size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+																	<Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 																	<span className="hidden sm:inline whitespace-nowrap">Позвонить</span>
 																</a>
 															) : (
@@ -3898,11 +3894,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																		e.stopPropagation();
 																		onAppointmentClick(a);
 																	}}
-																	className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+																	className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																	title={`Открыть прием ${pName}`}
 																	aria-label={`Открыть прием ${pName}`}
 																>
-																	<User size={14} className="text-[var(--teal)] shrink-0" />
+																	<User size={12} className="text-[var(--teal)] shrink-0" />
 																	<span className="hidden sm:inline whitespace-nowrap">Прием</span>
 																</button>
 															)}
@@ -3913,11 +3909,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	e.stopPropagation();
 																	onAppointmentClick(a);
 																}}
-																className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+																className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																title={`Открыть профиль ${pName}`}
 																aria-label={`Открыть профиль ${pName}`}
 															>
-																<User size={14} className="text-[var(--teal)] shrink-0" />
+																<User size={12} className="text-[var(--teal)] shrink-0" />
 																<span className="whitespace-nowrap">Профиль</span>
 															</button>
 
@@ -3929,12 +3925,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																		e.stopPropagation();
 																		setActiveMenuApptId((prev) => (prev === a.id ? null : a.id));
 																	}}
-																	className="min-h-[44px] min-w-[44px] p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
+																	className="h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
 																	title="Все действия и статусы визита"
 																	aria-label="Дополнительные действия визита"
 																	aria-expanded={activeMenuApptId === a.id}
 																>
-																	<MoreVertical size={16} />
+																	<MoreVertical size={13} />
 																</button>
 
 																{activeMenuApptId === a.id && (

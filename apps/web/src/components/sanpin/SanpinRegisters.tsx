@@ -1080,7 +1080,7 @@ export function SanpinRegisters() {
 				</div>
 
 				<div className="sanpin-header-actions" style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>
-					{/* SOLE DOMINANT PRIMARY ACTION: ⚡ 1-Клик автопилот смены СанПиН (ПСО 366/у + Автоклавы 257/у + Дезар + Температура) */}
+					{/* SOLE DOMINANT PRIMARY ACTION: 1-Клик автопилот смены СанПиН (ПСО 366/у + Автоклавы 257/у + Дезар + Температура) */}
 					<button
 						type="button"
 						onClick={handleAutofillShift}
@@ -1102,13 +1102,13 @@ export function SanpinRegisters() {
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-1click-autopilot-primary-btn"
-						title="⚡ 1-Клик автопилот смены СанПиН: фиксирует пробы ПСО (Форма 366/у), циклы автоклавирования 134°C (Форма 257/у), облучатели Дезар и журнал T° (+4.2°C)"
+						title="1-Клик автопилот смены СанПиН: фиксирует пробы ПСО (Форма 366/у), циклы автоклавирования 134°C (Форма 257/у), облучатели Дезар и журнал T° (+4.2°C)"
 					>
 						<Sparkles size={16} />
 						<span>
 							{autoFilling
 								? "Оформление смены СанПиН..."
-								: "⚡ 1-Клик автопилот смены СанПиН (ПСО 366/у + Автоклавы 257/у + Дезар + Температура)"}
+								: "1-Клик автопилот смены СанПиН (ПСО 366/у + Автоклавы 257/у + Дезар + Температура)"}
 						</span>
 					</button>
 

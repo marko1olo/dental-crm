@@ -23,6 +23,7 @@ import {
 	Flame,
 	Kanban,
 	Layers,
+	Lightbulb,
 	List,
 	Mail,
 	MessageCircle,
@@ -34,10 +35,12 @@ import {
 	Search,
 	Send,
 	ShieldCheck,
+	Smartphone,
 	Sparkles,
 	Tag,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import "./patientRecall.css";
@@ -304,7 +307,7 @@ export function buildRecallMessageContent(
 					`Здравствуйте, ${firstName}!\n\n` +
 					`Стоматологическая клиника «${clinicName}» заботится о Вашей улыбке.\n` +
 					`Прошел год с момента установки имплантатов. Доктор ${doctor} приглашает Вас на плановый рентген-контроль и гарантийный осмотр.\n\n` +
-					`🦷 Записаться в 1 клик:\n${bookingUrl}\n\n` +
+					`Записаться в 1 клик:\n${bookingUrl}\n\n` +
 					`Или просто напишите нам ответное сообщение!`
 				);
 			case "orthodontics":
@@ -312,13 +315,13 @@ export function buildRecallMessageContent(
 					`Добрый день, ${firstName}!\n\n` +
 					`Клиника «${clinicName}». Ваш ортодонт ${doctor} ждет Вас на плановый контроль ретейнеров и капп.\n` +
 					`Это необходимо для сохранения ровного положения зубов.\n\n` +
-					`✨ Выбрать удобное время:\n${bookingUrl}`
+					`Выбрать удобное время:\n${bookingUrl}`
 				);
 			case "endodontics":
 				return (
 					`Здравствуйте, ${firstName}!\n\n` +
 					`Стоматология «${clinicName}». Подошел срок контрольного осмотра после эндодонтического лечения у доктора ${doctor}.\n\n` +
-					`📅 Онлайн-запись:\n${bookingUrl}`
+					`Онлайн-запись:\n${bookingUrl}`
 				);
 			case "hygiene":
 			default:
@@ -326,7 +329,7 @@ export function buildRecallMessageContent(
 					`Здравствуйте, ${firstName}!\n\n` +
 					`Прошло 6 месяцев с Вашего последнего визита в «${clinicName}».\n` +
 					`Доктор ${doctor} рекомендует пройти плановый осмотр и гигиену Air-Flow для сохранения гарантий и здоровья зубов.\n\n` +
-					`✨ Онлайн-запись без звонков:\n${bookingUrl}\n\n` +
+					`Онлайн-запись без звонков:\n${bookingUrl}\n\n` +
 					`Будем рады видеть Вас!`
 				);
 		}
@@ -336,32 +339,32 @@ export function buildRecallMessageContent(
 	switch (candidate.category) {
 		case "implants":
 			return (
-				`Здравствуйте, ${firstName}! 👋\n\n` +
+				`Здравствуйте, ${firstName}!\n\n` +
 				`Стоматология «${clinicName}» беспокоится о здоровье Ваших зубов.\n` +
 				`Прошел 1 год с момента установки коронок на имплантатах. Доктор ${doctor} ждет Вас на контрольный рентген-осмотр и специализированную гигиену для сохранения гарантии.\n\n` +
-				`🦷 Запись к доктору в 1 клик:\n${bookingUrl}\n\n` +
+				`Запись к доктору в 1 клик:\n${bookingUrl}\n\n` +
 				`Или ответьте на это сообщение, и администратор подберет слот!`
 			);
 		case "orthodontics":
 			return (
-				`Здравствуйте, ${firstName}! ✨\n\n` +
+				`Здравствуйте, ${firstName}!\n\n` +
 				`Клиника «${clinicName}». Ваш ортодонт ${doctor} приглашает на плановый контроль ретейнеров и капп.\n` +
 				`Регулярный чекап гарантирует стабильность ровной дуги зубов.\n\n` +
-				`📅 Записаться онлайн:\n${bookingUrl}`
+				`Записаться онлайн:\n${bookingUrl}`
 			);
 		case "endodontics":
 			return (
-				`Добрый день, ${firstName}! 🌿\n\n` +
+				`Добрый день, ${firstName}!\n\n` +
 				`Стоматология «${clinicName}». Напоминаем о плановом контрольном снимке зуба после лечения у доктора ${doctor}.\n\n` +
-				`📅 Выбрать время:\n${bookingUrl}`
+				`Выбрать время:\n${bookingUrl}`
 			);
 		case "hygiene":
 		default:
 			return (
-				`Здравствуйте, ${firstName}! 👋\n\n` +
+				`Здравствуйте, ${firstName}!\n\n` +
 				`Прошло 6 месяцев с Вашего последнего визита в клинику «${clinicName}».\n` +
 				`Доктор ${doctor} рекомендует пройти плановый профилактический осмотр и гигиену Air-Flow для сохранения здоровья зубов и гарантии.\n\n` +
-				`✨ Записаться онлайн без звонков:\n${bookingUrl}\n\n` +
+				`Записаться онлайн без звонков:\n${bookingUrl}\n\n` +
 				`Будем рады видеть Вас!`
 			);
 	}
@@ -1316,7 +1319,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 										{/* Smartphone Mockup Preview */}
 										<div className="pr-phone-mockup">
 											<div className="pr-phone-header">
-												<span>📱 Предпросмотр у пациента ({activeChannel.toUpperCase()}):</span>
+												<span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Smartphone size={14} /> Предпросмотр у пациента ({activeChannel.toUpperCase()}):</span>
 												<span>{activeCandidate.phone || "тел."}</span>
 											</div>
 											<div className={`pr-message-bubble pr-message-bubble--${activeChannel}`}>
@@ -1451,8 +1454,8 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 													<div style={{ fontWeight: 600, color: "var(--pr-ink)", marginBottom: "6px" }}>
 														{activeObjection.answer}
 													</div>
-													<div style={{ fontSize: "0.6875rem", color: "var(--pr-muted)", fontStyle: "italic" }}>
-														💡 Совет: {activeObjection.tip}
+													<div style={{ fontSize: "0.6875rem", color: "var(--pr-muted)", fontStyle: "italic", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+														<Lightbulb size={13} /> Совет: {activeObjection.tip}
 													</div>
 												</div>
 											)}

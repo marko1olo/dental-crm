@@ -181,7 +181,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			{data.isWarehouseOverdraft && (
 				<div className="p-2.5 rounded-lg bg-[var(--amber-surface,rgba(245,158,11,0.1))] text-xs text-[var(--amber-dark,#b45309)] flex items-center gap-2">
 					<AlertTriangle size={15} className="shrink-0 text-[var(--amber,#f59e0b)]" />
-					<span>Списание зафиксировано в мягкий овердрафт склада до проведения накладной (Мандат 8e).</span>
+					<span>Списание зафиксировано в мягкий овердрафт склада до проведения накладной.</span>
 				</div>
 			)}
 		</div>

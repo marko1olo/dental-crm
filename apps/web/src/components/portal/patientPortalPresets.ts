@@ -21,9 +21,9 @@ import type {
 
 export const SAMPLE_PORTAL_PROFILE: PatientPortalProfile = {
 	patientId: "PAT-2026-0891",
-	fullName: "Смирнова Екатерина Васильевна",
+	fullName: "Павлова Светлана Игоревна",
 	phone: "+7 (926) 555-12-34",
-	email: "ekaterina.smirnova@example.com",
+	email: "svetlana.pavlova@example.com",
 	birthDate: "1988-06-14",
 	cardNumber: "043/у-2026/891",
 	curatingDoctor: "Д-р Смирнов Алексей Петрович",
@@ -650,7 +650,7 @@ export const SAMPLE_PORTAL_TREATMENT_PLAN: PortalTreatmentPlan = {
 export const SAMPLE_UPCOMING_VISIT = {
 	id: "visit-upcoming-2026-0902",
 	patientId: "PAT-2026-0891",
-	patientFullName: "Смирнова Екатерина Васильевна",
+	patientFullName: "Павлова Светлана Игоревна",
 	dateIso: "2026-09-02",
 	timeRu: "14:30",
 	doctorId: "doc-smirnov",

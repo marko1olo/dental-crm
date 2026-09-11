@@ -214,7 +214,7 @@ export function SanpinCycleModal({
 		setNurseVerified(true);
 		setNurseName("Медсестра ЦСО");
 		setNotes("СанПиН 3.3686-21. Все 5 контрольных точек камеры изменили цвет на эталон (Норма)");
-		showToast("⚡ Установлен типовой цикл автоклава (134°C, 2.15 бар, 5 мин)", "success");
+		showToast("Установлен типовой цикл автоклава (134°C, 2.15 бар, 5 мин)", "success");
 	};
 
 	const handleSubmit = async (e?: React.FormEvent, bypassNurse = false) => {
@@ -417,7 +417,7 @@ export function SanpinCycleModal({
 								title="Заполнить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) в 1 клик"
 							>
 								<Sparkles size={15} />
-								<span>⚡ Применить типовой цикл (134°C, 2.1 бар, 5 мин)</span>
+								<span>Применить типовой цикл (134°C, 2.1 бар, 5 мин)</span>
 							</button>
 						</div>
 
