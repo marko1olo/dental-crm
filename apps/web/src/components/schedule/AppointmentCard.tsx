@@ -1619,10 +1619,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</h3>
 						<div className="flex items-center gap-1.5 min-w-0 max-w-full mt-0.5">
 							<span
-								className="chip chip-reason text-xs font-medium text-[var(--muted)] truncate max-w-full"
+								className="chip chip-reason text-xs font-medium text-[var(--muted)] max-w-full min-w-0 inline-flex items-center justify-start text-left"
 								title={appointment?.reason || "Консультация"}
 							>
-								{appointment?.reason || "Консультация"}
+								<span className="truncate block min-w-0">
+									{appointment?.reason || "Консультация"}
+								</span>
 							</span>
 						</div>
 					</div>

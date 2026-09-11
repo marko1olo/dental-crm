@@ -363,7 +363,8 @@ export function ScheduleFilterStrip({
 					>
 						<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
 						<span className="whitespace-nowrap shrink-0">
-							Моё кресло
+							<span className="sm:hidden">Моё</span>
+							<span className="hidden sm:inline">Моё кресло</span>
 						</span>
 					</button>
 				)}
