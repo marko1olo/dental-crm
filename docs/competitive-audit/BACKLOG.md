@@ -3901,4 +3901,31 @@
     * Тест: `apps/web/src/components/schedule/__tests__/wave115StomxParity.test.ts` (12/12 PASS).
 * **Верификация**: все тесты Wave 115 (22/22 PASS), монорепо `typecheck` Exit Code 0, `check:encoding` 6657 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
+### Wave 116: 21 клиническая категория прайс-листа StomX, поэтапная оплата сметы в кассе, очистка рантайма (ЭГИСЗ, ДМС, реколл, чат) и реформа ВКК (Форма 043/у Минздрава РФ)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `f23c4fb79`, `4630a5765`, `7b4ce9872`
+* **Результаты**:
+  - **21 каноническая клиническая категория прайс-листа StomX (`4630a5765`)**:
+    * `packages/shared/src/types/pricing.ts`, `packages/shared/src/clinical/stomxPricelistCategories.ts`, `packages/shared/src/index.ts`: адаптирован каталог 21 клинической категории из `data/pricelist/categories.json` (Терапия, Хирургия, Ортопедия, Ортодонтия, Пародонтология, Гигиена, Рентгенология, Анестезия, Лазерная стоматология, ЧЛХ, Зуботехническая лаборатория и др.) со схемой `stomxPricelistCategoryNameSchema` и коллекцией `STOMX_PRICELIST_CATEGORY_ITEMS`;
+    * Разрешены коллизии с каталогом категорий специалистов `STOMX_SPECIALTY_CATEGORIES`;
+    * Тест: `packages/shared/src/tests/stomxPricelist.test.ts` (14/14 PASS).
+  - **Поэтапная оплата плана лечения в окне кассы (`4630a5765`)**:
+    * `apps/web/src/components/finance/PatientBillingModal.tsx`: внедрена панель `patient-billing-plan-stage-panel` с селектором активного этапа (`plan-stage-select-btn`), отображением выполненных услуг этапа, кнопкой 1-клик выставления суммы этапа к оплате (`btn-tender-plan-stage`) без риска повреждения или принудительного закрытия всего комплексного плана лечения;
+    * Все интерактивные элементы приведены к стандарту тач-таргетов `min-h-[44px]` (Apple HIG / Мандат 8c);
+    * Тест: `apps/web/src/components/schedule/__tests__/wave116StomxPricelistAndStageBilling.test.ts` (4/4 PASS).
+  - **Очистка синтетических моков и эмодзи из ЭГИСЗ, ДМС, реколлов и омниканальности (`f23c4fb79`)**:
+    * `EgiszSigningCabinetModal.tsx`: массив `INITIAL_CABINET_DOCUMENTS` очищен в `[]` с рендерингом чистого пустого состояния (`egisz-docs-empty-state`);
+    * `DmsInsurersHubModal.tsx`: `initialRegistryRecords` переведен в `[]` по умолчанию;
+    * `PatientRecallManagerModal.tsx`: массив кандидатов инициализируется в чистый `[]`;
+    * `PatientOmnichannelHubModal.tsx`: удалены демо-даты «29.08.2026», телефоны «+7 999 123-45-67», фиктивный СБП QR и демо-суммы;
+    * Эмодзи ⭐, ⚠️, 🚨, 📋 заменены на векторные Lucide-иконки (`AlertTriangle`, `ClipboardList`);
+    * Тест: `apps/web/src/components/cmo/__tests__/wave116MockAndEmojiPurification.test.ts` (7/7 PASS).
+  - **Реформа ВКК и очистка стационарного блоата (`7b4ce9872`)**:
+    * `CmoQualityAuditModal.tsx`: стационарный заголовок «Служба контроля качества Начмеда» заменен на амбулаторный стандарт «Внутренний контроль качества (Форма 043/у Минздрава РФ)» с консультативным статусом без блокировок врача (Мандат 8e п. 4);
+    * `packages/shared/src/index.ts`: схема `outpatientMedicalCard025uPayloadSchema` помечена как Legacy Hospital Bloat с опциональными комиссионными полями;
+    * `sickLeaveElnEngine.ts`: члены экспертной комиссии ВК по умолчанию дефолтятся в чистый массив `[]` без захардкоженных фамилий Смирнова и Кузнецовой;
+    * Тест: `apps/web/src/components/cmo/__tests__/wave116BloatPurification.test.ts` (3/3 PASS).
+* **Верификация**: все тесты Wave 116 (28/28 PASS), монорепо `typecheck` Exit Code 0, `check:encoding` 6661 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+
 
