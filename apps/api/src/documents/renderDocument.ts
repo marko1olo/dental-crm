@@ -57,7 +57,7 @@ import {
  */
 import { chargeLineOutcome } from "../money/patientDebt.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
-import { kopecksToWordsRu, legalMoneyInWordsRu } from "./moneyWordsRu.js";
+import { kopecksToWordsRu, legalMoneyInWordsFromKopecksRu, legalMoneyInWordsRu } from "./moneyWordsRu.js";
 import { taxPaymentsForDocumentScope } from "./taxPaymentSnapshot.js";
 
 export type DocumentRenderContext = {
@@ -1518,7 +1518,7 @@ function financialServiceTable(
 ) {
 	const totalKopecks = treatmentPlanTotalKopecks(document, context);
 	const totalFormatted = rub(treatmentPlanTotalRub(document, context));
-	const totalWords = totalKopecks !== null ? legalMoneyInWordsRu(totalKopecks) : "";
+	const totalWords = totalKopecks !== null ? legalMoneyInWordsFromKopecksRu(totalKopecks) : "";
 
 	return `<table class="financial-table">
       <thead>

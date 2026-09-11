@@ -3,6 +3,7 @@ import { describe, test } from "node:test";
 import {
 	integerToWordsRu,
 	kopecksToWordsRu,
+	legalMoneyInWordsFromKopecksRu,
 	legalMoneyInWordsRu,
 	RUBLE_FORMS,
 } from "./moneyWordsRu.js";
@@ -40,5 +41,13 @@ describe("moneyWordsRu", () => {
 		const result = legalMoneyInWordsRu(15450.5);
 		assert.ok(result.includes("15 450,50 ₽") || result.includes("15 450,50"));
 		assert.ok(result.includes("(Пятнадцать тысяч четыреста пятьдесят) рублей 50 копеек"));
+	});
+
+	test("legalMoneyInWordsFromKopecksRu correctly formats exact kopecks without 100x inflation", () => {
+		// 38 500.00 ₽ in kopecks is 3 850 000 kopecks
+		const result = legalMoneyInWordsFromKopecksRu(3850000);
+		assert.ok(result.includes("38 500,00 ₽") || result.includes("38 500,00"));
+		assert.ok(result.includes("(Тридцать восемь тысяч пятьсот) рублей 00 копеек"));
+		assert.ok(!result.includes("миллион"), "Must NOT inflate kopecks to millions!");
 	});
 });

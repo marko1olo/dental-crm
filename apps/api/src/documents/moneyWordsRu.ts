@@ -181,18 +181,19 @@ export function kopecksToWordsRu(kopecks: number): string {
 }
 
 /**
- * Полная официальная формулировка суммы прописью для договоров, смет и актов.
- * Пример: 15450.50 -> "15 450,50 (Пятнадцать тысяч четыреста пятьдесят) рублей 50 копеек"
+ * Полная официальная формулировка суммы прописью строго из КОПЕЕК (целое число)
+ * для договоров, смет и актов выполненных работ.
+ * Пример: 3850000 -> "38 500,00 ₽ (Тридцать восемь тысяч пятьсот) рублей 00 копеек"
  */
-export function legalMoneyInWordsRu(kopecksOrRubles: number | null | undefined): string {
-	if (kopecksOrRubles === null || kopecksOrRubles === undefined || !Number.isFinite(kopecksOrRubles)) {
+export function legalMoneyInWordsFromKopecksRu(kopecks: number | null | undefined): string {
+	if (kopecks === null || kopecks === undefined || !Number.isFinite(kopecks)) {
 		return "не указана";
 	}
-	const kopecks = parseKopecks(kopecksOrRubles);
-	const abs = Math.abs(kopecks);
+	const roundKop = Math.round(kopecks);
+	const abs = Math.abs(roundKop);
 	const rubles = Math.floor(abs / 100);
 	const kop = abs % 100;
-	const formattedNumeric = formatKopecksRu(kopecks);
+	const formattedNumeric = formatKopecksRu(roundKop);
 	const rublesWords = integerToWordsRu(rubles, undefined, false);
 	const capitalizedRublesWords = rublesWords.charAt(0).toUpperCase() + rublesWords.slice(1);
 	const rubDeclension = getDeclension(rubles, RUBLE_FORMS);
@@ -200,4 +201,17 @@ export function legalMoneyInWordsRu(kopecksOrRubles: number | null | undefined):
 	const kopDeclension = getDeclension(kop, KOPECK_FORMS);
 
 	return `${formattedNumeric} (${capitalizedRublesWords}) ${rubDeclension} ${kopStr} ${kopDeclension}`;
+}
+
+/**
+ * Полная официальная формулировка суммы прописью для договоров, смет и актов.
+ * Принимает рубли (число с плавающей точкой или целые рубли) либо строковое значение.
+ * Пример: 15450.50 -> "15 450,50 ₽ (Пятнадцать тысяч четыреста пятьдесят) рублей 50 копеек"
+ */
+export function legalMoneyInWordsRu(kopecksOrRubles: number | null | undefined): string {
+	if (kopecksOrRubles === null || kopecksOrRubles === undefined || !Number.isFinite(kopecksOrRubles)) {
+		return "не указана";
+	}
+	const kopecks = parseKopecks(kopecksOrRubles);
+	return legalMoneyInWordsFromKopecksRu(kopecks);
 }
