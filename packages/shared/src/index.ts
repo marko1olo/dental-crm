@@ -21,6 +21,19 @@ export * from "./finance/stomxCashFlowCatalogs.js";
 export * from "./imaging/index.js";
 export type { MischBoneClass } from "./radiology/boneQualityClassification.js";
 export { interpolateNerveSpline3D } from "./radiology/index.js";
+export {
+	classifyBone,
+	sampleImplantBoneHU,
+	getMischBoneClinicalGuidance,
+	MISCH_CLINICAL_GUIDANCE,
+	type BoneClass,
+	type BoneSample,
+	type BoneQualityProfile,
+	type MischGuidance,
+	trilinear,
+	buildUniformCurve,
+	type VolumeSamplingData,
+} from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
 export { GOST_CRYPTO_OIDS } from "./egisz/index.js";
@@ -55,6 +68,32 @@ export * from "./diagnostics/index.js";
 export * from "./orthodontics/index.js";
 export * from "./branches/index.js";
 export * from "./warehouse/index.js";
+export {
+	DEFAULT_LOOKBACK_DAYS,
+	DEFAULT_COVER_DAYS,
+	DEFAULT_SAFETY_STOCK_RATIO,
+	reorderStatusSchema,
+	REORDER_STATUS_LABELS_RU,
+	reorderCalculationParamsSchema,
+	reorderSuggestionSchema,
+	supplierRiskTierSchema,
+	SUPPLIER_RISK_TIER_LABELS_RU,
+	supplierRatingWeightsSchema,
+	supplierRatingInputSchema,
+	supplierRatingScoreSchema,
+	computeReorderSuggestion,
+	computeSupplierRating,
+	determineSupplierRiskTier,
+	computeBatchReorderSuggestions,
+	groupSuggestionsBySupplier,
+	type ReorderStatus,
+	type ReorderCalculationParams,
+	type ReorderSuggestion,
+	type SupplierRiskTier,
+	type SupplierRatingWeights,
+	type SupplierRatingInput,
+	type SupplierRatingScore,
+} from "./warehouse/index.js";
 export * from "./mobile/index.js";
 export * from "./curator/index.js";
 export * from "./outpatient/index.js";

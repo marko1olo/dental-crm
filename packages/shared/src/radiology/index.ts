@@ -28,3 +28,33 @@ export {
 export * from "./implantSafetyClearance.js";
 export * from "./boneQualityClassification.js";
 export * from "./nerveCanalSpline.js";
+
+// Wave 120: CBCT Bone Quality & CPR Math Adapter
+export {
+	classifyBone,
+	sampleImplantBoneHU,
+	type BoneClass,
+	type BoneSample,
+	type BoneQualityProfile,
+	type MischGuidance,
+	getMischBoneClinicalGuidance,
+	MISCH_CLINICAL_GUIDANCE,
+} from "./boneQuality.js";
+
+export {
+	trilinear,
+	buildUniformCurve,
+	type VolumeSamplingData,
+	type Point2,
+	type CPRResult,
+	type CrossSectionGeometryParams,
+	type CrossSectionFrame,
+	MAX_CROSS_SECTION_TILT_DEG,
+	crossSectionFrame,
+	computeCrossSection,
+	AIR_HU,
+} from "./cprMath.js";
+
+export * as cprMathEngine from "./cprMath.js";
+export * as boneQualityEngine from "./boneQuality.js";
+
