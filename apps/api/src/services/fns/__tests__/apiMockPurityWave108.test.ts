@@ -184,7 +184,7 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 			notes: null,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
-		} as Patient;
+		} as unknown as Patient;
 
 		const doc025u = {
 			id: "b0000000-0000-0000-0000-000000000001",
@@ -243,7 +243,10 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 			updatedAt: new Date().toISOString(),
 		};
 
-		const html = renderDocumentHtml(doc025u, mockPatient);
+		const html = renderDocumentHtml(
+			doc025u as unknown as GeneratedDocument,
+			mockPatient,
+		);
 		assert(
 			html.includes("dental-sovereignty-notice"),
 			"Rendered HTML must include dental sovereignty notice",
