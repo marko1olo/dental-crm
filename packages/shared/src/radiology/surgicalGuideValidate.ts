@@ -15,69 +15,24 @@
 
 import type { Vec3 } from "./cbctSafetyEngine.js";
 import { distSegmentToPolyline3 } from "./cbctSafetyEngine.js";
+import {
+  MIN_WALL_MM,
+  MIN_DRILL_MM,
+  DRILL_OVERSHOOT_MM,
+  drillRadius,
+  type GuideCheckImplant,
+  type GuideParams,
+  type AnatomyMarker,
+} from "./guideValidate.js";
 
-/** Minimum printable wall thickness (mm) for typical SLA/DLP dental resin. */
-export const MIN_WALL_MM = 1.0;
+/** Planned implant definition for surgical guide validation. */
+export type SurgicalGuideCheckImplant = GuideCheckImplant;
 
-/** Smallest sensible guided-drill bur diameter (mm). */
-export const MIN_DRILL_MM = 1.8;
+/** Guide template manufacturing and design parameters. */
+export type SurgicalGuideParams = GuideParams;
 
-/** Extra travel depth (mm) the drill bur travels past the implant apex. */
-export const DRILL_OVERSHOOT_MM = 2.0;
-
-/**
- * Planned implant definition for surgical guide validation.
- */
-export interface SurgicalGuideCheckImplant {
-  /** Entry point at the bone crest / platform center */
-  entry: Vec3;
-  /** Unit axis vector directed from entry toward apex */
-  axis: Vec3;
-  /** Planned implant body length (mm) */
-  length: number;
-  /** Outer working diameter of drill sleeve bushing (mm) */
-  sleeveDiameter: number;
-  /** Sleeve bottom to implant platform distance along axis (mm) */
-  sleeveOffset: number;
-  /** Sleeve cylinder height (mm) */
-  sleeveHeight: number;
-}
-
-/**
- * Guide template manufacturing and design parameters.
- */
-export interface SurgicalGuideParams {
-  /** Sleeve housing outer resin wall thickness (radial, mm) */
-  wallMm: number;
-  /** Base bar cross-section width (mm) */
-  baseWidthMm?: number;
-  /** Base bar cross-section height along Z (mm) */
-  baseHeightMm?: number;
-  /** Radial extra tolerance on drill channel (mm) */
-  channelTolMm: number;
-  /** Tessellation segments */
-  segments?: number;
-  /** Use stepped metal sleeve pocket (depth-stop shoulder) */
-  sleeveSeat?: boolean;
-  /** Radial clearance for metal sleeve fit (mm) */
-  seatClearanceMm?: number;
-  /** Wall thickness of the metal sleeve bushing (radial, mm) */
-  sleeveWallMm: number;
-}
-
-/**
- * Traced anatomical boundary (mandibular canal, sinus floor) with safety margin.
- */
-export interface SurgicalGuideAnatomyMarker {
-  id: string;
-  name?: string;
-  type: "nerve" | "sinus";
-  color?: string;
-  /** Safety tube radius in mm */
-  radius: number;
-  /** World polyline vertices in mm */
-  points: Vec3[];
-}
+/** Traced anatomical boundary (mandibular canal, sinus floor) with safety margin. */
+export type SurgicalGuideAnatomyMarker = AnatomyMarker;
 
 /**
  * Complete input for surgical guide safety verification.
@@ -116,15 +71,6 @@ export const DEFAULT_SURGICAL_GUIDE_PARAMS: SurgicalGuideParams = {
   sleeveWallMm: 0.9,
 };
 
-// Aliases for compatibility
-export const GUIDE_DEFAULTS = DEFAULT_SURGICAL_GUIDE_PARAMS;
-export type GuideParams = SurgicalGuideParams;
-export type GuideCheckImplant = SurgicalGuideCheckImplant;
-export type GuideCheckInput = SurgicalGuideCheckInput;
-export type GuideIssue = SurgicalGuideIssue;
-export type GuideIssueSeverity = SurgicalGuideIssueSeverity;
-export type AnatomyMarker = SurgicalGuideAnatomyMarker;
-
 const f1 = (x: number): string => (Math.round(x * 10) / 10).toFixed(1);
 
 const at = (imp: SurgicalGuideCheckImplant, t: number): Vec3 => [
@@ -132,20 +78,6 @@ const at = (imp: SurgicalGuideCheckImplant, t: number): Vec3 => [
   imp.entry[1] + imp.axis[1] * t,
   imp.entry[2] + imp.axis[2] * t,
 ];
-
-/**
- * Inner drill-channel radius for an implant, honouring sleeve-seat mode.
- */
-export function drillRadius(
-  imp: SurgicalGuideCheckImplant,
-  params: SurgicalGuideParams,
-): number {
-  if (params.sleeveSeat) {
-    const innerD = Math.max(0.5, imp.sleeveDiameter - 2 * params.sleeveWallMm);
-    return innerD / 2 + params.channelTolMm;
-  }
-  return (imp.sleeveDiameter + params.channelTolMm) / 2;
-}
 
 /**
  * Validate a surgical drill-guide plan for printability, bur clearance, and anatomical safety.
@@ -231,6 +163,3 @@ export function validateSurgicalGuidePlan(
     a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1,
   );
 }
-
-/** Backward compatibility alias */
-export const validateGuide = validateSurgicalGuidePlan;
