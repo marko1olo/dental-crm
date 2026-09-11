@@ -1221,9 +1221,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				>
 					{/* Строка 1 (высота ~44px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
 					<div className="h-11 min-h-[44px] flex items-center justify-between gap-2 px-3 border-b border-[var(--line)] flex-nowrap overflow-x-auto scrollbar-none">
-						<div className="flex items-center gap-2 min-w-[260px] flex-1 overflow-hidden">
+						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={28} />
-							<span className="shrink-0 text-base md:text-lg font-bold text-[var(--ink)] whitespace-nowrap" title={activePatient.fullName}>
+							<span className="truncate min-w-0 text-sm sm:text-base md:text-lg font-bold text-[var(--ink)]" title={activePatient.fullName}>
 								{activePatient.fullName}
 							</span>
 							{patientAge && (
@@ -1266,12 +1266,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="sm:hidden">Норма</span>
 							</button>
 
-							{/* Клинические шаблоны StomX (448 протоколов) */}
+							{/* Клинические шаблоны StomX (448 протоколов) — на десктопе */}
 							<button
 								type="button"
 								onClick={handleOpenStomxTemplatesFromHeader}
 								data-testid="btn-open-stomt-templates-header"
-								className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer shrink-0"
+								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1.5 cursor-pointer shrink-0"
 								title="Клинические шаблоны StomX (448 протоколов 043/у по 5 специальностям)"
 							>
 								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
@@ -1279,20 +1279,20 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="hidden xl:inline 2xl:hidden">Шаблоны</span>
 							</button>
 
-							{/* Печать Формы 043/у (Мандат 8e) */}
+							{/* Печать Формы 043/у (Мандат 8e) — на десктопе */}
 							<button
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1 cursor-pointer shrink-0"
+								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0"
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 								<span className="hidden xl:inline">Печать 043/у</span>
 							</button>
 
-							{/* Статус приема */}
-							<span className="status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
+							{/* Статус приема: только на широких экранах */}
+							<span className="!hidden md:!inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
 								Черновик
 							</span>
 
@@ -1301,11 +1301,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+								className="primary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 py-1 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
 								title="Завершить приём и сохранить все изменения"
 							>
 								<CheckCircle2 size={14} className="shrink-0" />
-								<span>Завершить приём</span>
+								<span className="hidden sm:inline">Завершить приём</span>
+								<span className="sm:hidden">Завершить</span>
 							</button>
 						</div>
 					</div>
