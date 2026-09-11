@@ -123,6 +123,24 @@ export {
 	validatePrinterAndResinSettings,
 	formatGuide3DPrintProtocol,
 	guideExportEngine,
+	// Wave 129: CBCT Measurement Statistics & HU Density Profile Engine
+	type DistanceMeasurement,
+	type AngleMeasurement,
+	type PolygonAreaMeasurement,
+	type HUProfileSample,
+	type HUStats,
+	type MeasureStatsReportInput,
+	calculateDistance3D,
+	calculateAngle3D,
+	calculatePolygonArea3D,
+	sampleVolumeHU,
+	sampleProfileHU,
+	computeHUStats,
+	measureDistance,
+	measureAngle,
+	measurePolygonArea,
+	formatMeasureStatsA4Report,
+	measureStatsEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";

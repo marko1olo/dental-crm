@@ -73,7 +73,28 @@ export {
 	calculateImplantBedDensitometry,
 } from "./measureStats.js";
 
-export * as measureStatsEngine from "./measureStats.js";
+// Wave 129: CBCT Measure Stats & HU Profile Engine
+export {
+	type DistanceMeasurement,
+	type AngleMeasurement,
+	type PolygonAreaMeasurement,
+	type HUProfileSample,
+	type HUStats,
+	type MeasureStatsReportInput,
+	calculateDistance3D,
+	calculateAngle3D,
+	calculatePolygonArea3D,
+	sampleVolumeHU,
+	sampleProfileHU,
+	computeHUStats,
+	measureDistance,
+	measureAngle,
+	measurePolygonArea,
+	formatMeasureStatsA4Report,
+} from "./measureStatsEngine.js";
+
+export * as measureStatsEngine from "./measureStatsEngine.js";
+export * from "./measureStatsEngine.js";
 
 // Wave 125: Tooth Setup & Prosthetically-Driven Implant Planning Engine
 export {
