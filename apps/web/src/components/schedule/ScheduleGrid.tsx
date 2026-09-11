@@ -2118,7 +2118,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									)}
 									{doctors.length >= 1 && (
 										<div
-											className="flex items-center justify-center w-full my-0.5 gap-1 min-h-[44px] sm:min-h-0 cursor-pointer"
+											className="flex flex-col sm:flex-row items-center justify-center w-full my-0.5 gap-1 min-h-[44px] sm:min-h-0 cursor-pointer"
 											data-testid={`chair-doctor-badge-${chair.id}`}
 											title={assignment?.doctorName ? `Врач на смене: ${assignment.doctorName} (${assignment.shiftHours || "08:00–20:00"}). Нажмите для смены` : undefined}
 											aria-label={assignment?.doctorName ? `Врач ${assignment.doctorName}, ${assignment.shiftHours || "08:00–20:00"}. Нажмите для изменения` : undefined}
@@ -2146,7 +2146,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] max-w-[120px] truncate cursor-pointer h-6"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full sm:w-auto sm:min-w-[130px] sm:max-w-none truncate cursor-pointer h-6"
 												title="Закрепление врача за креслом в 1 клик (выбор из списка)"
 												data-testid={`chair-duty-doctor-select-${chair.id}`}
 												aria-label={`Дежурный врач для ${chair.name}`}
@@ -2192,7 +2192,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] min-w-[125px] w-auto truncate cursor-pointer h-6"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full sm:w-auto sm:min-w-[125px] truncate cursor-pointer h-6"
 												title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день)"
 												data-testid={`chair-shift-select-${chair.id}`}
 												aria-label={`Смена для ${chair.name}`}

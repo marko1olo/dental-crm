@@ -1221,9 +1221,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				>
 					{/* Строка 1 (высота ~44px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
 					<div className="h-11 min-h-[44px] flex items-center justify-between gap-2 px-3 border-b border-[var(--line)] flex-nowrap overflow-x-auto scrollbar-none">
-						<div className="flex items-center gap-2 min-w-0 flex-shrink">
+						<div className="flex items-center gap-2 min-w-[260px] flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={28} />
-							<span className="max-w-[450px] lg:max-w-none text-base md:text-lg font-bold text-[var(--ink)] truncate" title={activePatient.fullName}>
+							<span className="shrink-0 text-base md:text-lg font-bold text-[var(--ink)] whitespace-nowrap" title={activePatient.fullName}>
 								{activePatient.fullName}
 							</span>
 							{patientAge && (
@@ -1245,7 +1245,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									title={`Критический стоп-фактор / аллергия пациента: ${activePatientAllergyText}`}
 								>
 									<AlertOctagon size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span className="truncate max-w-[140px] sm:max-w-[220px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
+									<span className="truncate max-w-[110px] sm:max-w-[160px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
 								</span>
 							)}
 						</div>
@@ -1261,7 +1261,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
 								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-								<span className="hidden sm:inline">Соматически здоров / норма</span>
+								<span className="hidden 2xl:inline">Соматически здоров / норма</span>
+								<span className="hidden sm:inline 2xl:hidden">Норма 043/у</span>
 								<span className="sm:hidden">Норма</span>
 							</button>
 
@@ -1274,7 +1275,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								title="Клинические шаблоны StomX (448 протоколов 043/у по 5 специальностям)"
 							>
 								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-								<span className="hidden lg:inline">Шаблоны StomX (448)</span>
+								<span className="hidden 2xl:inline">Шаблоны StomX (448)</span>
+								<span className="hidden xl:inline 2xl:hidden">Шаблоны</span>
 							</button>
 
 							{/* Печать Формы 043/у (Мандат 8e) */}
@@ -1286,7 +1288,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-								<span className="hidden md:inline">Печать 043/у</span>
+								<span className="hidden xl:inline">Печать 043/у</span>
 							</button>
 
 							{/* Статус приема */}

@@ -29,7 +29,7 @@ export const appointmentLabels: Record<Appointment["status"], string> = {
 	completed: "Готово",
 	cancelled: "Отмена",
 	no_show: "Не пришел",
-	...({ in_progress: "В кресле" }),
+	...({ in_progress: "В кресле", IN_PROGRESS: "В кресле" }),
 };
 
 export const documentLabels = Object.fromEntries(

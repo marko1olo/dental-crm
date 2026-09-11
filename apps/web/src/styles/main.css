@@ -14301,11 +14301,14 @@ html.dark .communication-side .panel-heading h3,
 	.topbar {
 		align-items: stretch;
 		flex-direction: column;
+		gap: 8px;
+		padding-bottom: 6px;
 	}
 
 	.top-actions {
 		display: flex;
 		flex-wrap: wrap;
+		margin-bottom: 8px;
 		width: 100%;
 	}
 

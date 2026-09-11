@@ -100,11 +100,11 @@ export const RecentPatientHistoryWidget: React.FC<{
 	if (compactDropdown) {
 		return (
 			<details
-				className="workspace-role-switcher recent-patients-header-dropdown"
+				className="workspace-role-switcher recent-patients-header-dropdown shrink-0"
 				data-testid="recent-patient-history-header-widget"
 				open={isOpen}
 				onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
-				style={{ position: "relative" }}
+				style={{ position: "relative", flexShrink: 0 }}
 			>
 				<summary
 					title="История 10 последних просмотренных карточек"
