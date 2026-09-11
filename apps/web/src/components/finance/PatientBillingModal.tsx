@@ -157,11 +157,38 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const [customAmountRub, setCustomAmountRub] = useState<number>(0);
 	const [customServiceName, setCustomServiceName] = useState<string>("Аванс за стоматологические услуги");
 
-	// Raw services before discount
+	// Per-item warranty rework overrides (Doctor Autonomy Mandate 8e: freedom of 100% doctor discount without admin passwords)
+	const [itemWarrantyMap, setItemWarrantyMap] = useState<Record<string, boolean>>(() => {
+		const initial: Record<string, boolean> = {};
+		for (const s of initialServices) {
+			if (s.isWarranty) {
+				initial[s.id] = true;
+			}
+		}
+		return initial;
+	});
+
+	const toggleItemWarranty = (itemId: string) => {
+		const nextVal = !(itemWarrantyMap[itemId] ?? false);
+		setItemWarrantyMap((prev) => ({
+			...prev,
+			[itemId]: nextVal,
+		}));
+		if (nextVal) {
+			setToastMsg("Гарантийная переделка 100%: стоимость позиции списана в 0 ₽ без паролей начмеда (Мандат 8e)");
+		} else {
+			setToastMsg("Гарантия снята: стандартная стоимость позиции возвращена");
+		}
+		setTimeout(() => setToastMsg(null), 3000);
+	};
+
+	// Raw services before discount with per-item warranty overrides
 	const rawServices: InvoiceServiceItem[] = useMemo(() => {
-		if (initialServices.length > 0) return [...initialServices];
-		if (customAmountRub > 0) {
-			return [
+		let baseItems: InvoiceServiceItem[] = [];
+		if (initialServices.length > 0) {
+			baseItems = [...initialServices];
+		} else if (customAmountRub > 0) {
+			baseItems = [
 				{
 					id: "srv-custom",
 					name: customServiceName.trim() || "Аванс за стоматологические услуги",
@@ -172,8 +199,26 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 				},
 			];
 		}
-		return [];
-	}, [initialServices, customAmountRub, customServiceName]);
+
+		return baseItems.map((s) => {
+			const isW = itemWarrantyMap[s.id] ?? !!s.isWarranty;
+			if (isW) {
+				return {
+					...s,
+					isWarranty: true,
+					warrantyDiscountPercent: 100,
+					warrantyPriceRub: s.priceRub * s.quantity,
+					warrantySourceAppointmentId: s.warrantySourceAppointmentId ?? null,
+				};
+			}
+			return {
+				...s,
+				isWarranty: false,
+				warrantyDiscountPercent: undefined,
+				warrantyPriceRub: 0,
+			};
+		});
+	}, [initialServices, customAmountRub, customServiceName, itemWarrantyMap]);
 
 	const discountResult = useMemo(() => {
 		return distributeLoyaltyDiscountAcrossItems(rawServices, {
@@ -321,6 +366,10 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					vatRate: "vat_none" as const,
 					measure: "piece" as const,
 					taxDeductionCategory: s.category === "implantology" ? ("2" as const) : ("1" as const),
+					isWarranty: s.isWarranty,
+					warrantyDiscountPercent: s.warrantyDiscountPercent,
+					warrantyPriceRub: s.warrantyPriceRub,
+					warrantySourceAppointmentId: s.warrantySourceAppointmentId,
 				}))}
 				patientId={patient?.id || "00000000-0000-0000-0000-000000000001"}
 				patientName={patient?.fullName || "Пациент"}
@@ -1150,6 +1199,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									const singleItem = grp.items[0];
 
 									if (isSingle && singleItem) {
+										const isWarrantyActive = !!itemWarrantyMap[singleItem.id];
 										return (
 											<div
 												key={grp.categoryGroup}
@@ -1170,23 +1220,54 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 																	{singleItem.toothNumber ? `Зуб ${singleItem.toothNumber} • ` : ""}
 																	{singleItem.friendlyName}
 																</strong>
+																{isWarrantyActive && (
+																	<span
+																		data-testid={`badge-warranty-${singleItem.id}`}
+																		className="text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-500/30 rounded px-1.5 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+																	>
+																		<ShieldCheck className="w-3 h-3" />
+																		[ГАРАНТИЯ]
+																	</span>
+																)}
 															</div>
 															{singleItem.plainDescriptionRu && (
 																<div className="text-[11px] text-[var(--muted)] mt-0.5">
 																	{singleItem.plainDescriptionRu}
 																</div>
 															)}
+															<div className="mt-2 flex items-center gap-2">
+																<button
+																	type="button"
+																	onClick={() => toggleItemWarranty(singleItem.id)}
+																	data-testid={`btn-item-warranty-${singleItem.id}`}
+																	className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+																		isWarrantyActive
+																			? "bg-teal-600 text-white shadow-2xs hover:bg-teal-700"
+																			: "bg-[var(--paper-soft)] hover:bg-teal-50 dark:hover:bg-teal-950/30 text-[var(--muted)] hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line)]"
+																	}`}
+																	title="Мандат 8e: 100% гарантийная переделка врача без паролей администратора"
+																>
+																	<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+																	<span>{isWarrantyActive ? "Гарантия 100% (Включена)" : "Гарантийная переделка (100% скидка)"}</span>
+																</button>
+															</div>
 														</div>
 													</div>
 
 													<div className="text-right shrink-0">
 														<div className="font-bold text-[var(--ink)] font-mono text-sm sm:text-base">
-															{singleItem.totalRub.toLocaleString("ru-RU")} ₽
+															{isWarrantyActive ? "0 ₽" : `${singleItem.totalRub.toLocaleString("ru-RU")} ₽`}
 														</div>
-														{singleItem.quantity > 1 && (
-															<div className="text-[10px] text-[var(--muted)]">
-																{singleItem.quantity} шт. &times; {singleItem.priceRub.toLocaleString("ru-RU")} ₽
+														{isWarrantyActive ? (
+															<div className="text-[10px] text-[var(--muted)] line-through font-mono">
+																{singleItem.priceRub.toLocaleString("ru-RU")} ₽
 															</div>
+														) : (
+															singleItem.quantity > 1 && (
+																<div className="text-[10px] text-[var(--muted)]">
+																	{singleItem.quantity} шт. &times; {singleItem.priceRub.toLocaleString("ru-RU")} ₽
+																</div>
+															)
 														)}
 													</div>
 												</div>
@@ -1232,35 +1313,75 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 											{/* Items in this group — Anti-Matryoshka: clean rows without double-bordered box */}
 											<div className="divide-y divide-[var(--line)]/50">
-												{grp.items.map((it) => (
-													<div
-														key={it.id}
-														className="py-2.5 px-1.5 flex items-center justify-between gap-3 text-xs hover:bg-[var(--paper-soft)]/50 rounded-lg transition-colors"
-													>
-														<div className="flex-1 min-w-0">
-															<div className="flex items-center gap-2 flex-wrap">
-																<strong className="text-[var(--ink)] font-bold">
-																	{it.toothNumber ? `Зуб ${it.toothNumber} • ` : ""}
-																	{it.friendlyName}
-																</strong>
-															</div>
-															<div className="text-[11px] text-[var(--muted)] mt-0.5">
-																{it.plainDescriptionRu}
-															</div>
-														</div>
-
-														<div className="text-right shrink-0">
-															<div className="font-bold text-[var(--ink)] font-mono text-sm">
-																{it.totalRub.toLocaleString("ru-RU")} ₽
-															</div>
-															{it.quantity > 1 && (
-																<div className="text-[10px] text-[var(--muted)]">
-																	{it.quantity} шт. &times; {it.priceRub.toLocaleString("ru-RU")} ₽
+												{grp.items.map((it) => {
+													const isItemWarranty = !!itemWarrantyMap[it.id];
+													return (
+														<div
+															key={it.id}
+															className="py-2.5 px-1.5 flex items-center justify-between gap-3 text-xs hover:bg-[var(--paper-soft)]/50 rounded-lg transition-colors"
+														>
+															<div className="flex-1 min-w-0">
+																<div className="flex items-center gap-2 flex-wrap">
+																	<strong className="text-[var(--ink)] font-bold">
+																		{it.toothNumber ? `Зуб ${it.toothNumber} • ` : ""}
+																		{it.friendlyName}
+																	</strong>
+																	{isItemWarranty && (
+																		<span
+																			data-testid={`badge-warranty-${it.id}`}
+																			className="text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-500/30 rounded px-1.5 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+																		>
+																			<ShieldCheck className="w-3 h-3" />
+																			[ГАРАНТИЯ]
+																		</span>
+																	)}
 																</div>
-															)}
+																{it.plainDescriptionRu && (
+																	<div className="text-[11px] text-[var(--muted)] mt-0.5">
+																		{it.plainDescriptionRu}
+																	</div>
+																)}
+																<div className="mt-1.5 flex items-center gap-2">
+																	<button
+																		type="button"
+																		onClick={() => toggleItemWarranty(it.id)}
+																		data-testid={`btn-item-warranty-${it.id}`}
+																		className={`h-6 px-2 rounded-md text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
+																			isItemWarranty
+																				? "bg-teal-600 text-white shadow-2xs hover:bg-teal-700"
+																				: "bg-[var(--paper-soft)] hover:bg-teal-50 dark:hover:bg-teal-950/30 text-[var(--muted)] hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line)]"
+																		}`}
+																		title="Мандат 8e: 100% гарантийная переделка врача без паролей администратора"
+																	>
+																		<ShieldCheck className="w-3 h-3 shrink-0" />
+																		<span>
+																			{isItemWarranty
+																				? "Гарантия 100% (Включена)"
+																				: "Гарантийная переделка (100% скидка)"}
+																		</span>
+																	</button>
+																</div>
+															</div>
+
+															<div className="text-right shrink-0">
+																<div className="font-bold text-[var(--ink)] font-mono text-sm">
+																	{isItemWarranty ? "0 ₽" : `${it.totalRub.toLocaleString("ru-RU")} ₽`}
+																</div>
+																{isItemWarranty ? (
+																	<div className="text-[10px] text-[var(--muted)] line-through font-mono">
+																		{it.priceRub.toLocaleString("ru-RU")} ₽
+																	</div>
+																) : (
+																	it.quantity > 1 && (
+																		<div className="text-[10px] text-[var(--muted)]">
+																			{it.quantity} шт. &times; {it.priceRub.toLocaleString("ru-RU")} ₽
+																		</div>
+																	)
+																)}
+															</div>
 														</div>
-													</div>
-												))}
+													);
+												})}
 											</div>
 										</div>
 									);
@@ -1334,10 +1455,22 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 													<td className="border border-[var(--line)] p-1 text-center font-mono">{idx + 1}</td>
 													<td className="border border-[var(--line)] p-1 text-center font-mono text-[10px]">{it.code804n || "—"}</td>
 													<td className="border border-[var(--line)] p-1 text-center font-bold">{it.toothNumber ? `№${it.toothNumber}` : "—"}</td>
-													<td className="border border-[var(--line)] p-1">{it.name}</td>
+													<td className="border border-[var(--line)] p-1">
+														<span>{it.name}</span>
+														{it.isWarranty && (
+															<span
+																data-testid={`badge-warranty-preview-${it.id}`}
+																className="ml-2 text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-500/30 rounded px-1.5 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+															>
+																[ГАРАНТИЯ]
+															</span>
+														)}
+													</td>
 													<td className="border border-[var(--line)] p-1 text-center font-mono">{it.quantity}</td>
 													<td className="border border-[var(--line)] p-1 text-right font-mono">{it.priceRub.toFixed(2)}</td>
-													<td className="border border-[var(--line)] p-1 text-right font-mono font-bold">{(it.priceRub * it.quantity - (it.discountRub || 0)).toFixed(2)}</td>
+													<td className="border border-[var(--line)] p-1 text-right font-mono font-bold">
+														{it.isWarranty ? "0.00" : (it.priceRub * it.quantity - (it.discountRub || 0)).toFixed(2)}
+													</td>
 												</tr>
 											))}
 											<tr className="bg-[var(--paper-soft)] font-bold">

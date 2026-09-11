@@ -140,6 +140,10 @@ export interface InvoiceServiceItem {
 	readonly priceRub: number;
 	readonly discountRub?: number | undefined;
 	readonly category?: "therapy" | "orthopedics" | "implantology" | "surgery" | "hygiene" | "orthodontics" | "other" | undefined;
+	readonly isWarranty?: boolean | undefined;
+	readonly warrantyDiscountPercent?: number | undefined;
+	readonly warrantyPriceRub?: number | undefined;
+	readonly warrantySourceAppointmentId?: string | number | null | undefined;
 }
 
 export interface WarrantyObligationTerm {
@@ -197,6 +201,10 @@ export interface CompiledActAndWarrantySummary {
 	readonly totalNetRubFormatted: string;
 	readonly totalInWords: string;
 	readonly warrantyTerms: readonly WarrantyObligationTerm[];
+	readonly hasWarrantyRework?: boolean | undefined;
+	readonly warrantyItemsCount?: number | undefined;
+	readonly totalWarrantyPriceRub?: number | undefined;
+	readonly warrantySourceAppointmentId?: string | number | null | undefined;
 }
 
 /**
@@ -287,16 +295,30 @@ export function resolveServiceWarranty(item: InvoiceServiceItem): {
 export function compileCompletedWorksAct(params: CompletedWorksActParams): CompiledActAndWarrantySummary {
 	let totalGrossKopecks = 0;
 	let totalDiscountKopecks = 0;
+	let warrantyItemsCount = 0;
+	let totalWarrantyKopecks = 0;
+	let warrantySourceAppointmentId: string | number | null | undefined = undefined;
 
 	const warrantyGroupMap = new Map<string, { categoryName: string; teeth: Set<string>; warrantyMonths: number; warrantyPeriodText: string; serviceLifeText: string; conditionsText: string }>();
 
 	for (const item of params.items) {
 		const unitPriceKop = rubToKopecks(item.priceRub);
 		const lineGrossKop = unitPriceKop * item.quantity;
-		const lineDiscKop = item.discountRub ? rubToKopecks(item.discountRub) : 0;
+		const isWarranty = !!item.isWarranty;
+		const lineDiscKop = isWarranty
+			? lineGrossKop
+			: (item.discountRub ? rubToKopecks(item.discountRub) : 0);
 
 		totalGrossKopecks += lineGrossKop;
 		totalDiscountKopecks += lineDiscKop;
+
+		if (isWarranty) {
+			warrantyItemsCount++;
+			totalWarrantyKopecks += lineGrossKop;
+			if (item.warrantySourceAppointmentId && !warrantySourceAppointmentId) {
+				warrantySourceAppointmentId = item.warrantySourceAppointmentId;
+			}
+		}
 
 		const wInfo = resolveServiceWarranty(item);
 		let group = warrantyGroupMap.get(wInfo.categoryName);
@@ -342,6 +364,10 @@ export function compileCompletedWorksAct(params: CompletedWorksActParams): Compi
 		totalNetRubFormatted: kopecksToNumericString(totalNetKopecks),
 		totalInWords: numberToWordsRu(totalNetRub),
 		warrantyTerms,
+		hasWarrantyRework: warrantyItemsCount > 0,
+		warrantyItemsCount,
+		totalWarrantyPriceRub: kopecksToRub(totalWarrantyKopecks),
+		warrantySourceAppointmentId,
 	};
 }
 
@@ -453,12 +479,15 @@ export function generateCompletedActAndWarrantyHtml(params: CompletedWorksActPar
 		</thead>
 		<tbody>
 			${summary.items.map((it, idx) => {
-				const sum = it.priceRub * it.quantity - (it.discountRub || 0);
+				const sum = it.isWarranty ? 0 : Math.max(0, it.priceRub * it.quantity - (it.discountRub || 0));
+				const nameDisplay = it.isWarranty
+					? `${it.name} <span style="color: #0d9488; font-weight: bold;">[ГАРАНТИЙНАЯ ПЕРЕДЕЛКА 100%]</span>`
+					: it.name;
 				return `<tr>
 					<td class="num-cell">${idx + 1}</td>
 					<td class="num-cell">${it.code804n || "—"}</td>
 					<td class="num-cell font-bold">${it.toothNumber || "—"}</td>
-					<td>${it.name}</td>
+					<td>${nameDisplay}</td>
 					<td class="num-cell">${it.quantity}</td>
 					<td class="money-cell">${it.priceRub.toFixed(2)}</td>
 					<td class="money-cell">${sum.toFixed(2)}</td>

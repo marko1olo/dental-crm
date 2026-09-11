@@ -55,6 +55,10 @@ export interface FiscalItemDraft {
 	readonly patientId?: string | undefined;
 	readonly patientFullName?: string | undefined;
 	readonly familyMemberRole?: string | undefined;
+	readonly isWarranty?: boolean | undefined;
+	readonly warrantyDiscountPercent?: number | undefined;
+	readonly warrantyPriceRub?: number | undefined;
+	readonly warrantySourceAppointmentId?: string | number | null | undefined;
 }
 
 export interface SplitTenderState {
@@ -1096,11 +1100,16 @@ export interface DistributedDiscountResult<T> {
 	readonly effectivePercent: number;
 	readonly savingsText: string;
 	readonly isCapped: boolean;
+	readonly hasWarrantyRework?: boolean | undefined;
+	readonly warrantyItemsCount?: number | undefined;
+	readonly totalWarrantyPriceRub?: number | undefined;
 }
 
 /**
  * Distributes discount across multiple receipt items with exact integer kopeck precision (Largest Remainder Method).
  * Eliminates penny rounding errors so that: sum(item.effectivePrice * item.quantity) === totalNet EXACTLY.
+ * Seamlessly integrates StomX warranty reworks: warranty items receive 100% discount, zeroing out net price,
+ * while loyalty presets apply proportionally across the remaining non-warranty positions.
  */
 export function distributeLoyaltyDiscountAcrossItems<T extends {
 	readonly id: string;
@@ -1108,6 +1117,10 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 	readonly quantity: number;
 	readonly priceRub: number;
 	readonly discountRub?: number | undefined;
+	readonly isWarranty?: boolean | undefined;
+	readonly warrantyDiscountPercent?: number | undefined;
+	readonly warrantyPriceRub?: number | undefined;
+	readonly warrantySourceAppointmentId?: string | number | null | undefined;
 }>(
 	items: readonly T[],
 	params: LoyaltyDiscountParams,
@@ -1124,11 +1137,17 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 			effectivePercent: 0,
 			savingsText: "Экономия для пациента: 0,00 ₽",
 			isCapped: false,
+			hasWarrantyRework: false,
+			warrantyItemsCount: 0,
+			totalWarrantyPriceRub: 0,
 		};
 	}
 
-	// 1. Calculate Gross Kopecks per item and Total Gross
+	// 1. Calculate Gross Kopecks per item and classify warranty rework positions
 	let totalGrossKopecks = 0;
+	let nonWarrantyGrossKopecks = 0;
+	let warrantyKopecks = 0;
+	let warrantyItemsCount = 0;
 	const itemGrossKopecksList: number[] = [];
 
 	for (const item of items) {
@@ -1137,9 +1156,19 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 		const lineGrossKop = unitGrossKop * qty;
 		itemGrossKopecksList.push(lineGrossKop);
 		totalGrossKopecks += lineGrossKop;
+
+		if (item.isWarranty) {
+			warrantyKopecks += lineGrossKop;
+			warrantyItemsCount++;
+		} else {
+			nonWarrantyGrossKopecks += lineGrossKop;
+		}
 	}
 
-	if (totalGrossKopecks <= 0 || params.preset === "none") {
+	const hasWarranty = warrantyItemsCount > 0;
+	const totalWarrantyPriceRub = kopecksToRub(warrantyKopecks);
+
+	if (totalGrossKopecks <= 0) {
 		const resetItems = items.map((it) => ({
 			...it,
 			discountRub: 0,
@@ -1147,83 +1176,94 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 		return {
 			items: resetItems,
 			totalGrossKopecks,
-			totalGrossRub: kopecksToRub(totalGrossKopecks),
+			totalGrossRub: 0,
 			totalDiscountKopecks: 0,
 			totalDiscountRub: 0,
-			totalNetKopecks: totalGrossKopecks,
-			totalNetRub: kopecksToRub(totalGrossKopecks),
+			totalNetKopecks: 0,
+			totalNetRub: 0,
 			effectivePercent: 0,
 			savingsText: "Экономия для пациента: 0,00 ₽",
 			isCapped: false,
+			hasWarrantyRework: false,
+			warrantyItemsCount: 0,
+			totalWarrantyPriceRub: 0,
 		};
 	}
 
-	// 2. Determine target discount in kopecks
-	let targetDiscountKopecks = 0;
+	// 2. Determine target discount on non-warranty items in kopecks
+	let targetLoyaltyDiscountKopecks = 0;
 	let isCapped = false;
 
-	if (params.preset === "round_hundreds") {
-		// Округление до сотен рублей (скидка на копейки): 7 428 ₽ -> 7 400 ₽ (скидка 28 ₽)
-		if (totalGrossKopecks >= 10000) {
-			const roundedKopecks = Math.floor(totalGrossKopecks / 10000) * 10000;
-			targetDiscountKopecks = totalGrossKopecks - roundedKopecks;
-		} else {
-			const roundedKopecks = Math.floor(totalGrossKopecks / 100) * 100;
-			targetDiscountKopecks = totalGrossKopecks - roundedKopecks;
+	if (params.preset === "warranty_100" || params.preset === "colleague_100") {
+		// All non-warranty items also receive 100% discount
+		targetLoyaltyDiscountKopecks = nonWarrantyGrossKopecks;
+	} else if (params.preset === "round_hundreds") {
+		if (nonWarrantyGrossKopecks >= 10000) {
+			const roundedKopecks = Math.floor(nonWarrantyGrossKopecks / 10000) * 10000;
+			targetLoyaltyDiscountKopecks = nonWarrantyGrossKopecks - roundedKopecks;
+		} else if (nonWarrantyGrossKopecks > 0) {
+			const roundedKopecks = Math.floor(nonWarrantyGrossKopecks / 100) * 100;
+			targetLoyaltyDiscountKopecks = nonWarrantyGrossKopecks - roundedKopecks;
 		}
 	} else if (params.preset === "discount_3") {
-		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.03);
+		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.03);
 	} else if (params.preset === "discount_5") {
-		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.05);
-	} else if (params.preset === "discount_10") {
-		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.10);
-	} else if (params.preset === "pensioner_10") {
-		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.10);
+		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.05);
+	} else if (params.preset === "discount_10" || params.preset === "pensioner_10") {
+		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.10);
 	} else if (params.preset === "family_5") {
-		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.05);
+		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.05);
 	} else if (params.preset === "employee_20") {
-		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.20);
-	} else if (params.preset === "warranty_100" || params.preset === "colleague_100") {
-		targetDiscountKopecks = totalGrossKopecks;
+		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.20);
 	} else if (params.preset === "manual_percent") {
 		const pct = Math.max(0, Math.min(100, params.customPercent ?? 0));
-		targetDiscountKopecks = Math.round((totalGrossKopecks * pct) / 100);
+		targetLoyaltyDiscountKopecks = Math.round((nonWarrantyGrossKopecks * pct) / 100);
 	} else if (params.preset === "manual_rub") {
 		const requestedKop = Math.max(0, rubToKopecks(params.customRub ?? 0));
-		if (requestedKop > totalGrossKopecks) {
-			targetDiscountKopecks = totalGrossKopecks;
+		if (requestedKop > nonWarrantyGrossKopecks) {
+			targetLoyaltyDiscountKopecks = nonWarrantyGrossKopecks;
 			isCapped = true;
 		} else {
-			targetDiscountKopecks = requestedKop;
+			targetLoyaltyDiscountKopecks = requestedKop;
 		}
 	}
 
-	// Hard boundary guard: [0, totalGrossKopecks]
-	if (targetDiscountKopecks > totalGrossKopecks) {
-		targetDiscountKopecks = totalGrossKopecks;
+	// Hard boundary guard: [0, nonWarrantyGrossKopecks]
+	if (targetLoyaltyDiscountKopecks > nonWarrantyGrossKopecks) {
+		targetLoyaltyDiscountKopecks = nonWarrantyGrossKopecks;
 		isCapped = true;
-	} else if (targetDiscountKopecks < 0) {
-		targetDiscountKopecks = 0;
+	} else if (targetLoyaltyDiscountKopecks < 0) {
+		targetLoyaltyDiscountKopecks = 0;
 	}
 
-	// 3. Proportional exact kopeck distribution without rounding drift (Hamilton-Hare Largest Remainder Method)
-	const itemLineDiscountKopecks: number[] = [];
+	// 3. Proportional exact kopeck distribution across non-warranty items (Hamilton-Hare Largest Remainder Method)
+	const itemLineDiscountKopecks: number[] = new Array(items.length).fill(0);
 	let allocatedKopecks = 0;
 
 	for (let i = 0; i < items.length; i++) {
-		const lineGross = itemGrossKopecksList[i]!;
-		const idealLineDiscountKop = (lineGross * targetDiscountKopecks) / totalGrossKopecks;
-		const baseLineDiscountKop = Math.floor(idealLineDiscountKop);
-		itemLineDiscountKopecks.push(baseLineDiscountKop);
-		allocatedKopecks += baseLineDiscountKop;
+		if (items[i]!.isWarranty) {
+			// 100% warranty discount for rework
+			itemLineDiscountKopecks[i] = itemGrossKopecksList[i]!;
+		} else if (nonWarrantyGrossKopecks > 0 && targetLoyaltyDiscountKopecks > 0) {
+			const lineGross = itemGrossKopecksList[i]!;
+			const idealLineDiscountKop = (lineGross * targetLoyaltyDiscountKopecks) / nonWarrantyGrossKopecks;
+			const baseLineDiscountKop = Math.floor(idealLineDiscountKop);
+			itemLineDiscountKopecks[i] = baseLineDiscountKop;
+			allocatedKopecks += baseLineDiscountKop;
+		}
 	}
 
-	const remainderKopecks = targetDiscountKopecks - allocatedKopecks;
+	const remainderKopecks = targetLoyaltyDiscountKopecks - allocatedKopecks;
 
-	if (remainderKopecks > 0) {
-		const remainders = items.map((_, i) => ({
+	if (remainderKopecks > 0 && nonWarrantyGrossKopecks > 0) {
+		const nonWarrantyIndices: number[] = [];
+		for (let i = 0; i < items.length; i++) {
+			if (!items[i]!.isWarranty) nonWarrantyIndices.push(i);
+		}
+
+		const remainders = nonWarrantyIndices.map((i) => ({
 			index: i,
-			remainder: ((itemGrossKopecksList[i]! * targetDiscountKopecks) % totalGrossKopecks) / totalGrossKopecks,
+			remainder: ((itemGrossKopecksList[i]! * targetLoyaltyDiscountKopecks) % nonWarrantyGrossKopecks) / nonWarrantyGrossKopecks,
 			gross: itemGrossKopecksList[i]!,
 		})).sort((a, b) => b.remainder - a.remainder || b.gross - a.gross);
 
@@ -1233,21 +1273,32 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 		}
 	}
 
-	// 4. Construct updated items with per-unit discountRub
+	// 4. Construct updated items
 	const updatedItems: T[] = items.map((it, idx) => {
 		const qty = Math.max(1, Math.round(it.quantity || 1));
 		const lineDiscKop = itemLineDiscountKopecks[idx]!;
 		const unitDiscRub = kopecksToRub(Math.round(lineDiscKop / qty));
+		if (it.isWarranty) {
+			return {
+				...it,
+				discountRub: it.priceRub * qty, // Full 100% warranty discount
+				isWarranty: true,
+				warrantyDiscountPercent: 100,
+				warrantyPriceRub: kopecksToRub(itemGrossKopecksList[idx]!),
+				warrantySourceAppointmentId: it.warrantySourceAppointmentId ?? null,
+			};
+		}
 		return {
 			...it,
 			discountRub: unitDiscRub,
 		};
 	});
 
-	const totalNetKopecks = totalGrossKopecks - targetDiscountKopecks;
-	const totalDiscountRub = kopecksToRub(targetDiscountKopecks);
+	const totalDiscountKopecks = warrantyKopecks + targetLoyaltyDiscountKopecks;
+	const totalNetKopecks = Math.max(0, totalGrossKopecks - totalDiscountKopecks);
+	const totalDiscountRub = kopecksToRub(totalDiscountKopecks);
 	const effectivePercent = totalGrossKopecks > 0
-		? Math.round((targetDiscountKopecks / totalGrossKopecks) * 1000) / 10
+		? Math.round((totalDiscountKopecks / totalGrossKopecks) * 1000) / 10
 		: 0;
 
 	const savingsFormatted = totalDiscountRub.toLocaleString("ru-RU", {
@@ -1255,21 +1306,29 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 		maximumFractionDigits: 2,
 	});
 
-	const savingsText = params.preset === "round_hundreds"
-		? `Округление до сотен: скидка ${savingsFormatted} ₽`
-		: `Экономия для пациента: ${savingsFormatted} ₽`;
+	let savingsText = "";
+	if (params.preset === "round_hundreds") {
+		savingsText = `Округление до сотен: скидка ${savingsFormatted} ₽`;
+	} else if (hasWarranty && totalDiscountRub > 0) {
+		savingsText = `Гарантия и скидки: экономия ${savingsFormatted} ₽`;
+	} else {
+		savingsText = `Экономия для пациента: ${savingsFormatted} ₽`;
+	}
 
 	return {
 		items: updatedItems,
 		totalGrossKopecks,
 		totalGrossRub: kopecksToRub(totalGrossKopecks),
-		totalDiscountKopecks: targetDiscountKopecks,
+		totalDiscountKopecks,
 		totalDiscountRub,
 		totalNetKopecks,
 		totalNetRub: kopecksToRub(totalNetKopecks),
 		effectivePercent,
 		savingsText,
 		isCapped,
+		hasWarrantyRework: hasWarranty,
+		warrantyItemsCount,
+		totalWarrantyPriceRub,
 	};
 }
 

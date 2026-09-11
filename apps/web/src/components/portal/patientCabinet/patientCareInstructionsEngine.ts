@@ -123,6 +123,7 @@ export interface FriendlyBillingItem {
 	readonly quantity: number;
 	readonly priceRub: number;
 	readonly totalRub: number;
+	readonly isWarranty?: boolean | undefined;
 }
 
 export interface FriendlyBillingGroup {
@@ -1662,6 +1663,7 @@ export function groupServicesIntoFriendlyBlocks(
 			quantity,
 			priceRub,
 			totalRub,
+			isWarranty: !!it.isWarranty,
 		};
 
 		const existing = groupsMap.get(friendlyMeta.categoryGroup);

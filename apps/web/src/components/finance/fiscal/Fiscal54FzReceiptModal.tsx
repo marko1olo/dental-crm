@@ -70,6 +70,9 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 					candidate.stageKind && candidate.stageKind !== ("all" as string)
 						? (candidate.stageKind as TreatmentPlanStageKind)
 						: "stage_1_therapy",
+				isWarranty: candidate.isWarranty,
+				warrantyDiscountPercent: candidate.warrantyDiscountPercent,
+				warrantyPriceRub: candidate.warrantyPriceRub,
 			};
 		});
 	}, [items]);

@@ -44,6 +44,9 @@ export interface TreatmentPlanItem {
 	readonly clinicalRationale?: string | undefined;
 	readonly isDraft?: boolean | undefined;
 	readonly requiresManualPricing?: boolean | undefined;
+	readonly isWarranty?: boolean | undefined;
+	readonly warrantyDiscountPercent?: number | undefined;
+	readonly warrantyPriceRub?: number | undefined;
 }
 
 export interface TreatmentPlanStage {
