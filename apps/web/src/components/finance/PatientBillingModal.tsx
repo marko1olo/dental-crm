@@ -221,7 +221,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			},
 			patient: {
 				id: patient?.id,
-				fullName: patient?.fullName || "Иванов Иван Иванович",
+				fullName: patient?.fullName || "",
 				birthDate: patient?.birthDate || undefined,
 				passportData: patient?.passportData || "Паспорт РФ: 45 12 № 384920, выдан ОВД Хамовники г. Москвы",
 				phone: patient?.phone || "+7 (916) 123-45-67",

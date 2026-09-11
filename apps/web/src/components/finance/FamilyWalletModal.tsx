@@ -105,10 +105,10 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 	isOpen,
 	onClose,
 	familyGroupId = "fam-grp-1",
-	familyGroupName = "Семья Ивановых",
-	headPayerName = "Иванов Иван Иванович",
-	headPayerPhone = "+7 (916) 123-45-67",
-	initialTotalBalanceRub = 45000,
+	familyGroupName = "Семейный счет",
+	headPayerName = "",
+	headPayerPhone = "",
+	initialTotalBalanceRub = 0,
 	initialMembers,
 	initialTransactions,
 	onSaveAllocations,
@@ -123,39 +123,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 		if (initialMembers && initialMembers.length > 0) {
 			return [...initialMembers];
 		}
-		return [
-			{
-				id: "mem-1",
-				patientId: "pat-1",
-				fullName: "Иванов Иван Иванович",
-				role: "parent",
-				monthlyLimitRub: 0, // unlimited
-				spentThisMonthRub: 12500,
-				allocatedBalanceRub: 20000,
-				isLocked: false,
-			},
-			{
-				id: "mem-2",
-				patientId: "pat-2",
-				fullName: "Иванова Елена Сергеевна",
-				role: "spouse",
-				monthlyLimitRub: 25000,
-				spentThisMonthRub: 6500,
-				allocatedBalanceRub: 15000,
-				isLocked: false,
-			},
-			{
-				id: "mem-3",
-				patientId: "pat-3",
-				fullName: "Иванов Михаил Иванович",
-				role: "child",
-				birthDate: "2015-06-12",
-				monthlyLimitRub: 10000,
-				spentThisMonthRub: 3500,
-				allocatedBalanceRub: 10000,
-				isLocked: false,
-			},
-		];
+		return [];
 	});
 
 	// Default fallback transactions
@@ -163,50 +131,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 		if (initialTransactions && initialTransactions.length > 0) {
 			return [...initialTransactions];
 		}
-		return [
-			{
-				id: "tx-1",
-				dateIso: new Date(Date.now() - 86400000 * 2).toISOString(),
-				memberId: "mem-1",
-				memberName: "Иванов Иван Иванович",
-				memberRole: "Родитель (Плательщик)",
-				type: "deduction",
-				amountRub: 12500,
-				description: "Лечение кариеса и фотополимерная пломба (Зуб 16)",
-				procedureCode804n: "A16.07.002.001",
-				toothNumber: 16,
-				tenderSource: "deposit",
-				receiptNumber: "ФД-4819",
-				status: "completed",
-			},
-			{
-				id: "tx-2",
-				dateIso: new Date(Date.now() - 86400000 * 5).toISOString(),
-				memberId: "mem-3",
-				memberName: "Иванов Михаил Иванович",
-				memberRole: "Ребенок",
-				type: "deduction",
-				amountRub: 3500,
-				description: "Профессиональная гигиена молочных зубов и фторирование",
-				procedureCode804n: "A16.07.051",
-				tenderSource: "deposit",
-				receiptNumber: "ФД-4790",
-				status: "completed",
-			},
-			{
-				id: "tx-3",
-				dateIso: new Date(Date.now() - 86400000 * 8).toISOString(),
-				memberId: "mem-1",
-				memberName: "Иванов Иван Иванович",
-				memberRole: "Родитель (Плательщик)",
-				type: "topup",
-				amountRub: 50000,
-				description: "Пополнение семейного депозита через СБП QR",
-				tenderSource: "sbp",
-				receiptNumber: "СБП-99281",
-				status: "completed",
-			},
-		];
+		return [];
 	});
 
 	// Topup form states
@@ -347,8 +272,8 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 		const newTx: FamilyTransactionRecord = {
 			id: `tx-${Date.now()}`,
 			dateIso: new Date().toISOString(),
-			memberId: "mem-1",
-			memberName: headPayerName,
+			memberId: members[0]?.id || "mem-head",
+			memberName: headPayerName || "Плательщик",
 			memberRole: "Родитель (Плательщик)",
 			type: "topup",
 			amountRub: topupAmountRub,
@@ -415,9 +340,13 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 								</span>
 							</div>
 							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex items-center gap-2">
-								<span>Глава семьи / Плательщик: <strong>{headPayerName}</strong></span>
-								<span>•</span>
-								<span>{headPayerPhone}</span>
+								<span>Глава семьи / Плательщик: <strong>{headPayerName || "Не указан"}</strong></span>
+								{headPayerPhone ? (
+									<>
+										<span>•</span>
+										<span>{headPayerPhone}</span>
+									</>
+								) : null}
 							</p>
 						</div>
 					</div>
@@ -553,7 +482,12 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 
 							{/* Members Allocation List (Monolithic Clean Rows - Anti-Matryoshka) */}
 							<div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs divide-y divide-[var(--line)]/60">
-								{members.map((mem) => {
+								{members.length === 0 ? (
+									<div className="p-8 text-center text-sm text-[var(--muted)]" data-testid="empty-family-members">
+										Члены семьи не добавлены
+									</div>
+								) : (
+									members.map((mem) => {
 									const isChild = mem.role === "child";
 									const hasLimit = mem.monthlyLimitRub && mem.monthlyLimitRub > 0;
 									const limitUsagePct = hasLimit ? Math.min(100, Math.round((mem.spentThisMonthRub / mem.monthlyLimitRub!) * 100)) : 0;
@@ -672,7 +606,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 											</div>
 										</div>
 									);
-								})}
+								}))}
 							</div>
 						</div>
 					)}
@@ -699,7 +633,12 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 
 							{/* Ledger Table */}
 							<div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs divide-y divide-[var(--line)]/60 text-xs">
-								{filteredTransactions.map((tx) => (
+								{filteredTransactions.length === 0 ? (
+									<div className="p-8 text-center text-sm text-[var(--muted)]" data-testid="empty-family-transactions">
+										История операций пуста
+									</div>
+								) : (
+									filteredTransactions.map((tx) => (
 									<div key={tx.id} className="p-3.5 sm:p-4 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft)]/40 transition-colors">
 										<div className="flex items-center gap-3 min-w-0 flex-1">
 											<div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -739,7 +678,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 											</div>
 										</div>
 									</div>
-								))}
+								)))}
 							</div>
 						</div>
 					)}

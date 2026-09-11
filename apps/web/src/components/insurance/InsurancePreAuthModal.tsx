@@ -276,7 +276,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 			franchiseFixedKopecks: franchiseType === "fixed" ? rublesToKopecks(franchiseFixedRub) : undefined,
 			validFrom,
 			validTo,
-			patientFullName: patient?.fullName || "Иванов Иван Иванович",
+			patientFullName: patient?.fullName || "",
 			patientBirthDate: patient?.birthDate || "1990-05-14",
 		};
 	}, [
@@ -323,7 +323,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 			validUntil: letterValidUntil,
 			maxApprovedAmountKopecks: rublesToKopecks(approvedLimitRub > 0 ? approvedLimitRub : 50000),
 			insurerId: selectedInsurerId,
-			patientFullName: patient?.fullName || "Иванов Иван Иванович",
+			patientFullName: patient?.fullName || "",
 			patientPolicyNumber: currentPolicy.policyNumber,
 			approvedTeethFdi: isEmergencyCare ? [] : teeth,
 			approvedServiceCodes804n: isEmergencyCare ? [] : codes,
@@ -385,7 +385,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 			periodStart: validFrom,
 			periodEnd: validTo,
 			splitResults: splitResult.lineItems.map((item) => ({
-				patientFullName: patient?.fullName || "Иванов Иван Иванович",
+				patientFullName: patient?.fullName || "",
 				policyNumber: currentPolicy.policyNumber,
 				guaranteeLetterNumber: hasGuaranteeLetter ? letterNumber : undefined,
 				serviceDate: new Date().toISOString().slice(0, 10),
