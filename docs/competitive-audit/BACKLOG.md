@@ -3955,5 +3955,37 @@
     * Тест: `apps/web/src/components/anesthesia/__tests__/wave117DevLeaksPurification.test.ts` (8/8 PASS).
 * **Верификация**: все тесты Wave 117 (30/30 PASS), монорепо `typecheck` Exit Code 0, `check:encoding` 6665 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
+### Wave 118: Санитаризация мок-данных и синтетических ФИО в клинических и бэк-офис модалках
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `8c71269f0`
+* **Результаты**:
+  - Санитаризированы 19 файлов: `DmsGuaranteeLettersModal.tsx`, `DmsGuaranteeLetterModal.tsx`, `InsurancePreAuthModal.tsx`, `DmsInsurersHubModal.tsx`, `PatientRecallManagerModal.tsx`, `PatientOmnichannelHubModal.tsx`, `DirectorExecutiveDashboard.tsx`, `PatientGeneralInfoTab.tsx`, `PatientDiagnosticsTab.tsx`, `TreatmentEstimator.tsx`, `MedicalPrescriptionModal.tsx`, `QuickAddChairModal.tsx`, `StaffProfileCard.tsx`, `VisiographAnalyzer.tsx`, `DentalLabOrderModal.tsx`, `EndoCanalLogModal.tsx`, `RadiationDoseSheetModal.tsx`, `StaffPayrollLedgerModal.tsx`, `EgiszSigningCabinetModal.tsx`;
+  - Ликвидированы синтетические ФИО пациентов, дефолтные врачи заменены на контекстные сущности или «Лечащий врач»;
+  - Пустые состояния переведены на честные пустые списки с `data-testid` вместо псевдо-заполненных моков.
+* **Верификация**: `typecheck` Exit Code 0, `check:encoding` 6674 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+### Wave 119: Реверс-инжиниринг DenCT 3D Catmull-Rom сплайна нервного канала, тотальная очистка сырых эмодзи, фиксация топбара 52px и ликвидация воровства десктопного вьюпорта
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `82801bd4f`, `2cc5db5e4`
+* **Результаты**:
+  - **Реверс-инжиниринг DenCT Catmull-Rom 3D сплайна и оценка безопасности имплантации (`82801bd4f`)**:
+    * Создан модуль `packages/shared/src/radiology/nerveCanalSpline.ts` (адаптирован из референса `Dental-CBCT-Viewer-main/src/core/archCurve.ts` и `safety.ts`);
+    * Реализована 3D Catmull-Rom интерполяция, расчет длины дуги, равномерный ресэмплинг по длине дуги, расчет касательных и нормалей;
+    * Реализован алгоритм Голдмана-Люмельского поиска кратчайшего расстояния между 3D отрезками (`closestPointsBetweenSegments3D`);
+    * Реализован движок оценки безопасности импланта относительно нервного канала (`evaluateImplantToNerveCanalSafety`) с цилиндрической трубкой нерва, порогом 2.0 мм, статусами SAFE / WARNING / CRITICAL_DANGER и клиническими рекомендациями хирургу;
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave119NerveCanalSpline.test.ts` (32/32 PASS).
+  - **Тотальная ликвидация сырых Unicode-эмодзи (`2cc5db5e4`)**:
+    * Очищены 12 компонентов: `InsurancePreAuthModal.tsx`, `DmsInsuranceManagerModal.tsx`, `DmsGuaranteeLettersModal.tsx`, `DmsGuaranteeLetterModal.tsx`, `PatientRecallManagerModal.tsx`, `OfflineBackupVaultPanel.tsx`, `SettingsAiTab.tsx`, `OfflineReadinessBanner.tsx`, `SanpinRegisters.tsx`, `SanpinCycleModal.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `MedicalWasteJournalModal.tsx`;
+    * Все сырые эмодзи (⚡, 🦷, ⚠️, ❌, ✅, 🚨, 🔥) заменены на векторные SVG Lucide-иконки (`Zap`, `AlertTriangle`, `CheckCircle2`, `XCircle`, `Sparkles`, `Smartphone`, `Lightbulb`);
+    * Тест: `apps/web/src/components/cmo/__tests__/wave119EmojiPurification.test.ts` (12/12 PASS).
+  - **Устранение воровства рабочей высоты десктопа и очистка промпт-утечек (`2cc5db5e4`)**:
+    * `main.css` & `dente-redesign.css`: удалены раздувающие `margin: -22px -22px 0; padding: 16px 22px;`, раздувавшие топбар до 171px. Зафиксирована строгая высота 52px (`height: 52px; min-height: 52px; max-height: 52px; box-sizing: border-box;`);
+    * `ScheduleGrid.tsx`: второй тулбар сжат до компактной 1 строки 36px (Закон Хика), кнопки в ячейках слотов уменьшены с 44px до 24px с выпадающим меню `...` (Закон Миллера);
+    * Искоренены утечки «Мандат 8e» из XML ЕГИСЗ РЭМД, гарантийных паспортов и согласий;
+    * Вычищен фиктивный ИНН `7701234567` из фискальных модулей, кассы, ЭДО ФНС и выгрузок ЕГИСЗ.
+* **Верификация**: все тесты Wave 119 (52/52 PASS), `typecheck` Exit Code 0, `check:encoding` 6674 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+
 
 
