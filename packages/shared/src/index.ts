@@ -103,6 +103,8 @@ export {
 	orientAxisByBone,
 	suggestImplantFromMesh,
 	toothSetupEngine,
+	formatGuideValidationA4Protocol,
+	guideValidationEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
@@ -14306,6 +14308,7 @@ export * from "./crypto/index.js";
 export * from "./radiology/index.js";
 export * from "./types/pricing.js";
 export * from "./warehouse/index.js";
+
 
 
 
