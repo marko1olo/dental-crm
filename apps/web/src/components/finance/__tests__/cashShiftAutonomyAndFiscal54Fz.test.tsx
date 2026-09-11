@@ -196,3 +196,128 @@ describe("ExpressFiscalReceiptModal & RefundReceiptModal (Mandates 8e, 8b, 8n)",
 		assert.ok(html.includes("Лечение кариеса эмали"));
 	});
 });
+
+describe("CashShiftWidget — Wave 118 StomX Cash-In / Cash-Out Presets & 54-FZ Tag 1054", () => {
+	it("renders compact mode with 1-click cash-in and cash-out buttons", () => {
+		const html = renderToString(
+			React.createElement(CashShiftWidget, {
+				compact: true,
+				initialIsOpen: true,
+				shiftNumber: 5,
+				cashierName: "Петров В. С.",
+				cashInDrawerRub: 35000,
+			})
+		);
+
+		assert.ok(html.includes('data-testid="btn-compact-cash-in"'), "Compact mode must include cash-in button");
+		assert.ok(html.includes('data-testid="btn-compact-cash-out"'), "Compact mode must include cash-out button");
+		assert.ok(html.includes("Внесение"));
+		assert.ok(html.includes("Изъятие"));
+	});
+
+	it("renders standard mode with 1-click cash-in and cash-out action buttons", () => {
+		const html = renderToString(
+			React.createElement(CashShiftWidget, {
+				compact: false,
+				initialIsOpen: true,
+				shiftNumber: 5,
+				cashierName: "Петров В. С.",
+				cashInDrawerRub: 35000,
+			})
+		);
+
+		assert.ok(html.includes('data-testid="btn-open-cash-in-modal"'), "Standard mode must include cash-in button");
+		assert.ok(html.includes('data-testid="btn-open-cash-out-modal"'), "Standard mode must include cash-out button");
+		assert.ok(html.includes("Внесение ДС"));
+		assert.ok(html.includes("Изъятие / Инкассация"));
+	});
+
+	it("renders cash flow modal in cash_in mode with all 9 StomX receipt presets & 54-FZ Tag 1054 labels", () => {
+		const html = renderToString(
+			React.createElement(CashShiftWidget, {
+				compact: false,
+				initialIsOpen: true,
+				initialCashFlowModalOpen: true,
+				initialCashFlowMode: "cash_in",
+				shiftNumber: 5,
+			})
+		);
+
+		assert.ok(html.includes('data-testid="cash-flow-modal"'));
+		assert.ok(html.includes('data-testid="tab-cash-in-mode"'));
+		assert.ok(html.includes('data-testid="tab-cash-out-mode"'));
+		assert.ok(html.includes("Кассовое внесение наличных (Приход)"));
+
+		// Verify 9 receipt presets
+		const receiptAliases = [
+			"installment_payment",
+			"appointment_payment",
+			"sale_product",
+			"xray_payment",
+			"dms_pay",
+			"advance_payment",
+			"cash_deposit",
+			"income_employee",
+			"income_contractor",
+		];
+		for (const alias of receiptAliases) {
+			assert.ok(html.includes(`data-testid="preset-receipt-${alias}"`), `Must render preset-receipt-${alias}`);
+		}
+
+		// Verify 54-FZ Tag 1054 indicator
+		assert.ok(html.includes("54-ФЗ: Тег 1054 = 1 (приход)"));
+		assert.ok(html.includes("Нефискально"));
+
+		// Verify inputs and confirm button
+		assert.ok(html.includes('data-testid="input-cash-flow-amount"'));
+		assert.ok(html.includes('data-testid="input-cash-flow-basis"'));
+		assert.ok(html.includes('data-testid="input-cash-flow-person"'));
+		assert.ok(html.includes('data-testid="btn-confirm-cash-operation"'));
+		assert.ok(html.includes('data-testid="btn-cancel-cash-operation"'));
+	});
+
+	it("renders cash flow modal in cash_out mode with all 14 StomX expense presets & 54-FZ Tag 1054 labels", () => {
+		const html = renderToString(
+			React.createElement(CashShiftWidget, {
+				compact: false,
+				initialIsOpen: true,
+				initialCashFlowModalOpen: true,
+				initialCashFlowMode: "cash_out",
+				cashInDrawerRub: 45000,
+				shiftNumber: 5,
+			})
+		);
+
+		assert.ok(html.includes('data-testid="cash-flow-modal"'));
+		assert.ok(html.includes("Кассовое изъятие наличных (Расход)"));
+
+		// Verify 14 expense presets
+		const expenseAliases = [
+			"family_transfer",
+			"collection",
+			"return_appointment",
+			"return_advance",
+			"payment_employee",
+			"payment_contractor",
+			"return_product",
+			"service_charge",
+			"cash_to_balance",
+			"payment_lab",
+			"block",
+			"remainder",
+			"dms_return",
+			"xray_return",
+		];
+		for (const alias of expenseAliases) {
+			assert.ok(html.includes(`data-testid="preset-expense-${alias}"`), `Must render preset-expense-${alias}`);
+		}
+
+		// Verify 54-FZ Tag 1054 return_income (2) and expense (3) indicators
+		assert.ok(html.includes("54-ФЗ: Тег 1054 = 2 (возврат_прихода)"));
+		assert.ok(html.includes("54-ФЗ: Тег 1054 = 3 (расход)"));
+
+		// Quick chip for all drawer cash
+		assert.ok(html.includes("Вся наличность"));
+		assert.ok(html.includes((45000).toLocaleString("ru-RU")));
+	});
+});

@@ -23,4 +23,10 @@ export * from "./planToInvoiceValidator.js";
 export * from "./priceLockEngine.js";
 export * from "./doctorNetSalaryEngine.js";
 export * from "./managerialPnlEngine.js";
+export {
+	STOMX_EXPENSE_PNL_CATEGORIES,
+	stomxExpensePnlCategorySchema,
+	type StomxExpensePnlCategory,
+} from "./stomxCashFlowCatalogs.js";
 export * from "./stomxCashFlowCategories.js";
+export * from "./stomxCashFlowCatalogs.js";
