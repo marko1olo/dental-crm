@@ -167,3 +167,36 @@ export {
 	drillSegment,
 } from "./implantGeometryEngine.js";
 export * as implantGeometryEngine from "./implantGeometryEngine.js";
+
+// Wave 131: CBCT Surgical Plan Persistence & Case IO Engine
+export {
+	PLAN_IO_VERSION,
+	MAX_PLAN_IMPLANTS,
+	MAX_CANAL_SPLINE_POINTS,
+	MAX_ARCH_CONTROL_POINTS,
+	MAX_FIXATION_PINS,
+	MAX_CANALS_COUNT,
+	isValidPermanentFdiToothNumber,
+	vec3TupleSchema,
+	vec2TupleSchema,
+	fixationPinTupleSchema,
+	implantPlanItemSchema,
+	nerveCanalPlanSchema,
+	projectionModeSchema,
+	archCurvePlanSchema,
+	surgicalGuidePlanSchema,
+	safetyLimitsSchema,
+	planCaseSchema,
+	type ImplantPlanItem,
+	type NerveCanalPlan,
+	type ArchCurvePlan,
+	type SurgicalGuidePlan,
+	type SafetyLimits,
+	type PlanCase,
+	type ActiveRadiologyContext,
+	type PlanCaseValidationResult,
+	serializePlanCase,
+	parseAndSanitizePlanCase,
+	formatSurgicalPlanForm043A4Protocol,
+} from "./cbctPlanIOEngine.js";
+export * as cbctPlanIOEngine from "./cbctPlanIOEngine.js";
