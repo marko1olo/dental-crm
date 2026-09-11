@@ -678,7 +678,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						{isShiftOpen ? "Открыта" : "Закрыта"}
 					</span>
 
-					<span className="text-[var(--muted)] truncate hidden md:inline">
+					<span className="text-[var(--muted)] hidden 2xl:inline whitespace-nowrap shrink-0">
 						Кассир: <strong className="text-[var(--ink)] font-semibold">{cashierName}</strong>
 					</span>
 
@@ -766,7 +766,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<button
 						type="button"
 						onClick={handlePrintAccountingStatement}
-						className="secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium hidden xl:inline-flex items-center gap-1 cursor-pointer shrink-0"
+						className="!hidden xl:!inline-flex secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium items-center gap-1 cursor-pointer shrink-0"
 						title="Печать сводной бухгалтерской ведомости А4"
 					>
 						<FileText size={13} className="text-teal-600" />
@@ -776,7 +776,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<button
 						type="button"
 						onClick={handleExport1cCsv}
-						className="secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium hidden xl:inline-flex items-center gap-1 cursor-pointer shrink-0"
+						className="!hidden xl:!inline-flex secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium items-center gap-1 cursor-pointer shrink-0"
 						title="Выгрузить данные смены для 1С:Бухгалтерии"
 					>
 						<FileSpreadsheet size={13} className="text-blue-600" />

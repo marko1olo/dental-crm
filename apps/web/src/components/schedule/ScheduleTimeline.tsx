@@ -314,12 +314,16 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 								>
 									<div className="flex items-center gap-2 min-w-0 flex-1">
 										<Clock size={14} className="text-[var(--teal)] shrink-0" />
-										<span className="truncate">
-											Свободно {formatMinutesForHumans(row.minutes)}
-											{gapStartLabel && gapEndLabel
-												? ` (${gapStartLabel} - ${gapEndLabel})`
-												: ""}
-										</span>
+										<div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center">
+											<span className="whitespace-nowrap">
+												Свободно {formatMinutesForHumans(row.minutes)}
+											</span>
+											{gapStartLabel && gapEndLabel ? (
+												<span className="text-[11px] sm:text-xs text-[var(--muted)] sm:ml-1 whitespace-nowrap">
+													({gapStartLabel} – {gapEndLabel})
+												</span>
+											) : null}
+										</div>
 									</div>
 									<span className="min-h-[36px] min-w-[76px] px-2.5 py-1 rounded-lg bg-[var(--teal-dark)] text-white text-xs font-bold flex items-center justify-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity shrink-0 whitespace-nowrap">
 										<Plus size={14} className="shrink-0" />
