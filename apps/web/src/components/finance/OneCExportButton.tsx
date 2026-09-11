@@ -61,7 +61,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
   patientAddress = '',
   doctorName = 'Врач стоматолог',
   clinicName = 'ООО «ДЕНТЕ СТОМАТОЛОГИЯ»',
-  clinicInn = '7701234567',
+  clinicInn = '',
   clinicKpp = '770101001',
   items,
   totalRub,
@@ -102,7 +102,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
           inn: clinicInn,
           kpp: clinicKpp,
           isLegalEntity: true,
-          phone: '+7 (495) 123-45-67',
+          phone: '',
           address: 'г. Москва, ул. Стоматологическая, д. 10',
         },
         documents: [

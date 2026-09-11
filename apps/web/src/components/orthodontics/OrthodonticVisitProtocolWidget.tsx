@@ -196,7 +196,7 @@ export interface OrthodonticVisitProtocolWidgetProps {
 	patientId?: string | undefined;
 	patientName?: string | undefined;
 	readonly clinicName?: string | undefined; // Дефолт: 'Стоматологическая клиника DENTE'
-	readonly clinicPhone?: string | undefined; // Дефолт: '+7 (495) 123-45-67'
+	readonly clinicPhone?: string | undefined;
 	readonly doctorName?: string | undefined; // Дефолт: 'Лечащий врач-ортодонт'
 	selectedTooth?: number | null;
 	onSelectTooth?: (toothNumber: number) => void;
@@ -312,7 +312,7 @@ export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
 
 export interface OrthodonticPatientMemoParams {
 	clinicName: string;
-	clinicPhone: string;
+	clinicPhone?: string | undefined;
 	doctorName: string;
 	patientName: string;
 	visitDate?: string | undefined;
@@ -340,7 +340,7 @@ export function formatOrthodonticPatientMemo(
 	params: OrthodonticPatientMemoParams,
 ): string {
 	const clinicName = params.clinicName || "Стоматологическая клиника DENTE";
-	const clinicPhone = params.clinicPhone || "+7 (495) 123-45-67";
+	const clinicPhone = params.clinicPhone || "";
 	const doctorName = params.doctorName || "Лечащий врач-ортодонт";
 	const patientName = params.patientName || "Пациент";
 	const visitDate = params.visitDate || getRuDateString();
@@ -398,7 +398,7 @@ ${apparatusDetails}${elasticsBlock}Памятка пациенту:
 1. Первые 2-3 дня возможна умеренная чувствительность зубов при накусывании (физиологическая норма перемещения зубов).
 2. Эластики снимаются только во время еды и чистки зубов. При обрыве эластика надеть новый из упаковки.
 3. При натирании щеки или губы нанесите защитный ортодонтический воск на выступающий элемент.
-4. При отклейке брекета, утере кнопки или дискомфорте от дуги немедленно свяжитесь с клиникой: ${clinicPhone}.
+4. При отклейке брекета, утере кнопки или дискомфорте от дуги немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.
 Следующий контрольный визит: через 4–6 недель.`;
 }
 
@@ -408,7 +408,7 @@ export function OrthodonticVisitProtocolWidget({
 	patientId,
 	patientName = "Пациент",
 	clinicName = "Стоматологическая клиника DENTE",
-	clinicPhone = "+7 (495) 123-45-67",
+	clinicPhone = "",
 	doctorName = "Лечащий врач-ортодонт",
 	selectedTooth = null,
 	onSelectTooth,

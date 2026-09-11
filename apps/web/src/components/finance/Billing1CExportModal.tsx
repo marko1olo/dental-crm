@@ -58,7 +58,7 @@ export function Billing1CExportModal({
 	patientAddress = "",
 	patientInn = "",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "7701234567",
+	clinicInn = "",
 	clinicKpp = "770101001",
 	contractNumber = "Д-2026/01",
 	contractDate,
@@ -111,7 +111,7 @@ export function Billing1CExportModal({
 					inn: clinicInn,
 					kpp: clinicKpp,
 					isLegalEntity: true,
-					phone: "+7 (495) 123-45-67",
+					phone: "",
 					address: "г. Москва, ул. Стоматологическая, д. 10",
 				},
 				documents: [

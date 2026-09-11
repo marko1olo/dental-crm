@@ -75,7 +75,7 @@ export function formatEmergencyRelativeNotice(
 		`Вызвана бригада скорой медицинской помощи (СМП 112).\n` +
 		`Адрес нахождения пациента: ${params.clinicAddress}, кабинет ${params.cabinetNumber}.\n` +
 		`Лечащий врач: ${params.doctorFullName}.\n` +
-		`Контактный телефон клиники для связи: ${params.clinicPhone}.`;
+		`Контактный телефон клиники для связи: ${params.clinicPhone || "не указан"}.`;
 }
 
 export interface EmergencyRescueModalProps {
@@ -88,7 +88,7 @@ export interface EmergencyRescueModalProps {
 	initialPatientGender?: 'male' | 'female' | undefined;
 	clinicName?: string | undefined;
 	clinicAddress?: string | undefined;
-	clinicPhone?: string | undefined; // Дефолт: '+7 (495) 123-45-67'
+	clinicPhone?: string | undefined;
 	cabinetNumber?: string | undefined;
 	doctorFullName?: string | undefined;
 	assistantFullName?: string | undefined;
@@ -106,7 +106,7 @@ export function EmergencyRescueModal({
 	initialPatientGender = 'male',
 	clinicName = 'Стоматологическая клиника DENTE',
 	clinicAddress = 'г. Москва, ул. Клиническая, д. 10, стр. 2',
-	clinicPhone = '+7 (495) 123-45-67',
+	clinicPhone = '',
 	cabinetNumber = '1',
 	doctorFullName = 'Лечащий врач-стоматолог',
 	assistantFullName = 'Ассистент / медсестра',

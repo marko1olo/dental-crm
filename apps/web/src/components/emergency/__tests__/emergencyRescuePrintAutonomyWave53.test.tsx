@@ -596,7 +596,7 @@ describe('Wave 53 / Feature 241: Emergency Rescue Act Print & 1-Click Relative N
 			);
 		});
 
-		it('uses default clinicPhone "+7 (495) 123-45-67" when clinicPhone prop is omitted (Mandate 8n)', async () => {
+		it('uses clean fallback when clinicPhone prop is omitted (Wave 118, Mandate 8n)', async () => {
 			await act(async () => {
 				root?.render(
 					<EmergencyRescueModal
@@ -614,8 +614,12 @@ describe('Wave 53 / Feature 241: Emergency Rescue Act Print & 1-Click Relative N
 
 			const copiedText = mockDom.getClipboardText();
 			assert.ok(
-				copiedText.includes('+7 (495) 123-45-67'),
-				'Must use default clinicPhone +7 (495) 123-45-67 when prop is omitted'
+				!copiedText.includes('+7 (495) 123-45-67'),
+				'Must NOT contain fake clinicPhone +7 (495) 123-45-67 when prop is omitted'
+			);
+			assert.ok(
+				copiedText.includes('Контактный телефон клиники для связи: не указан'),
+				'Must state that phone is not specified'
 			);
 		});
 	});

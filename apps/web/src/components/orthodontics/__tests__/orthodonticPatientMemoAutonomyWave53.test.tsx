@@ -428,7 +428,7 @@ describe("Wave 53 / Feature 240: 1-Click Patient Orthodontic Memo for Messengers
 		it("formatOrthodonticPatientMemo correctly formats aligner block when isAligners=true", () => {
 			const text = formatOrthodonticPatientMemo({
 				clinicName: "DENTE",
-				clinicPhone: "+7 (495) 123-45-67",
+				clinicPhone: "+7 (495) 777-11-22",
 				doctorName: "Д-р Кузнецова",
 				patientName: "Алексей Иванов",
 				visitDate: "10.09.2026",
@@ -489,8 +489,12 @@ describe("Wave 53 / Feature 240: 1-Click Patient Orthodontic Memo for Messengers
 				"Falls back to default doctor",
 			);
 			assert.ok(
-				text.includes("+7 (495) 123-45-67"),
-				"Falls back to default clinic phone",
+				!text.includes("+7 (495) 123-45-67"),
+				"Does not fall back to fake phone number when omitted",
+			);
+			assert.ok(
+				text.includes("немедленно свяжитесь с клиникой."),
+				"Outputs clean contact text without trailing colon/empty number",
 			);
 			assert.ok(
 				text.includes("Установленная дуга: CuNiTi .016 (обе челюсти)"),

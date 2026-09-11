@@ -334,7 +334,6 @@ describe("Wave 52 (Feature 239) — Dental Lab Messenger Summary & Universal A4 
 	it("2. buildLabOrderMessengerSummary handles optional trial dates and default notes", () => {
 		const minimalParams: LabOrderMessengerParams = {
 			clinicName: "Денте",
-			clinicPhone: "+7 (495) 123-45-67",
 			gostOrderNumber: "ЗТЛ-2026-0001",
 			patientName: "Иванова Ольга Николаевна",
 			doctorName: "Др. Смирнова Е. В.",
@@ -360,8 +359,12 @@ describe("Wave 52 (Feature 239) — Dental Lab Messenger Summary & Universal A4 
 			"При отсутствии примечаний должно быть указано «Без особенностей»",
 		);
 		assert.ok(
-			text.includes("Курьерская доставка / Связь с клиникой: +7 (495) 123-45-67."),
-			"Дефолтный телефон клиники",
+			text.includes("Курьерская доставка / Связь с клиникой: не указан."),
+			"При отсутствии телефона клиники указывается «не указан»",
+		);
+		assert.ok(
+			!text.includes("+7 (495) 123-45-67"),
+			"Запрещены синтетические заглушки номеров телефонов",
 		);
 		assert.strictEqual(/\p{Extended_Pictographic}/u.test(text), false);
 	});

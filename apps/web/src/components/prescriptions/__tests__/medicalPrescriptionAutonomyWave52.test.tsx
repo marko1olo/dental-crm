@@ -657,7 +657,7 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 			assert.strictEqual(lastToast?.detail?.type, "success");
 		});
 
-		it("uses default clinicPhone '+7 (495) 123-45-67' when clinicPhone prop is omitted (Mandate 8n)", async () => {
+		it("does NOT emit fake clinicPhone '+7 (495) 123-45-67' when clinicPhone prop is omitted", async () => {
 			await act(async () => {
 				root?.render(
 					<MedicalPrescriptionModal
@@ -676,8 +676,8 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 
 			const copiedText = mockDom.getClipboardText();
 			assert.ok(
-				copiedText.includes("+7 (495) 123-45-67"),
-				"Must include default clinic phone '+7 (495) 123-45-67' for solo practitioner",
+				!copiedText.includes("+7 (495) 123-45-67"),
+				"Must NOT include fake clinic phone '+7 (495) 123-45-67' when omitted",
 			);
 		});
 

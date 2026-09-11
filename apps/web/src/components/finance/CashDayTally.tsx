@@ -75,7 +75,7 @@ export function CashDayTally({
 	money,
 	cashierFullName = "Сидорова Анна Павловна",
 	clinicName = "ООО «ДЕНТЕ КЛИНИКА»",
-	clinicInn = "7701234567",
+	clinicInn = "",
 }: CashDayTallyProps) {
 	const [countedCashInput, setCountedCashInput] = useState("");
 	const [isZReportOpen, setIsZReportOpen] = useState(false);

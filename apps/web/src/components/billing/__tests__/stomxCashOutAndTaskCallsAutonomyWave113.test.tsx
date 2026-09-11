@@ -60,7 +60,7 @@ describe("Wave 113 — StomX Cash Out (РКО КО-2) & Task Calls Workflow", ()
 			for (const item of STOMX_CASH_EXPENSE_CATALOG) {
 				assert.ok(item.alias.length > 0);
 				assert.ok(item.name.length > 0);
-				assert.ok(item.descriptionRu.length > 0);
+				assert.ok(item.descriptionRu && item.descriptionRu.length > 0);
 			}
 		});
 

@@ -73,7 +73,7 @@ export function formatPatientPrescriptionMemo(
 		`Дата назначения: ${dateStr}`,
 		"Назначенные препараты:",
 		...medsList,
-		`Памятка: строго соблюдайте назначенную дозировку и график приёма. Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой: ${clinicPhone}.`,
+		`Памятка: строго соблюдайте назначенную дозировку и график приёма. Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
 	];
 
 	return lines.join("\n");
@@ -95,7 +95,7 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 	doctorName = "Д-р Смирнов Алексей Петрович",
 	doctorSpecialty = "Врач-стоматолог терапевт-эндодонтист",
 	clinicName = "ООО «Денте Стоматология»",
-	clinicPhone = "+7 (495) 123-45-67",
+	clinicPhone = "",
 	onInsertToDiary,
 }) => {
 	const [selectedIds, setSelectedIds] = useState<readonly string[]>([
@@ -133,7 +133,7 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 
 		const memoText = formatPatientPrescriptionMemo({
 			clinicName,
-			clinicPhone: clinicPhone || "+7 (495) 123-45-67",
+			clinicPhone: clinicPhone || "",
 			patientName,
 			doctorName,
 			prescriptionDate: new Date().toLocaleDateString("ru-RU"),

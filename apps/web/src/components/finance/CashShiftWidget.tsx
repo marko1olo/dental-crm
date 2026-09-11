@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	Banknote,
+	Check,
 	CheckCircle2,
 	Clock,
 	CreditCard,
@@ -13,12 +14,15 @@ import {
 	FileText,
 	Layers,
 	Lock,
+	MinusCircle,
+	PlusCircle,
 	Printer,
 	QrCode,
 	RefreshCw,
 	ShieldCheck,
 	Unlock,
 	Wallet,
+	X,
 	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -30,6 +34,10 @@ import {
 	DEFAULT_CLINIC_FISCAL_REQUISITES,
 	exportFiscalPeriodStatementToCsv,
 	generateFiscalPeriodStatementHtml,
+	STOMX_CASH_EXPENSE_CATALOG,
+	STOMX_CASH_RECEIPT_CATALOG,
+	getFfd1054Label,
+	isFiscal54FzOperation,
 } from "@dental/shared";
 import { OfflineFiscalBatchModal } from "./fiscal/OfflineFiscalBatchModal";
 import { ShiftCloseZReportModal } from "./fiscal/ShiftCloseZReportModal";
@@ -53,6 +61,8 @@ export interface CashShiftWidgetProps {
 	readonly onCloseShift?: () => void | Promise<void>;
 	readonly onPrintXReport?: () => void | Promise<void>;
 	readonly onPrintZReport?: () => void | Promise<void>;
+	readonly onCashIn?: (amountRub: number, basis: string, typeAlias?: string) => void | Promise<void>;
+	readonly onCashOut?: (amountRub: number, basis: string, recipientFio?: string, typeAlias?: string) => void | Promise<void>;
 	readonly compact?: boolean | undefined;
 }
 
@@ -76,7 +86,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	advanceOffsetRub = 0,
 	openedAt = "08:00",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "7701234567",
+	clinicInn = "",
 	clinicRequisites = DEFAULT_CLINIC_FISCAL_REQUISITES,
 	queuedReceipts: externalQueuedReceipts,
 	onOpenShift,

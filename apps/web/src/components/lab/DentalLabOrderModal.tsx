@@ -115,7 +115,7 @@ declare module "./labMath" {
 
 export interface LabOrderMessengerParams {
 	clinicName: string;
-	clinicPhone: string;
+	clinicPhone?: string | undefined;
 	gostOrderNumber: string;
 	patientName: string;
 	doctorName: string;
@@ -151,7 +151,7 @@ export function buildLabOrderMessengerSummary(params: LabOrderMessengerParams): 
 
 	const notes = params.clinicalNotes?.trim() || "Без особенностей";
 	lines.push(`Особые указания: ${notes}`);
-	lines.push(`Курьерская доставка / Связь с клиникой: ${params.clinicPhone}.`);
+	lines.push(`Курьерская доставка / Связь с клиникой: ${params.clinicPhone?.trim() || "не указан"}.`);
 
 	return lines.join("\n");
 }
@@ -175,7 +175,7 @@ export function DentalLabOrderModal({
 	treatmentPlanAgeDays,
 	isPlanExpired,
 	onOrderSaved,
-	clinicPhone = "+7 (495) 123-45-67",
+	clinicPhone = "",
 	clinicName = "Денте",
 }: DentalLabOrderModalProps) {
 	const [activeTab, setActiveTab] = useState<TabKey>("main");
@@ -655,7 +655,7 @@ export function DentalLabOrderModal({
 
 		const text = buildLabOrderMessengerSummary({
 			clinicName: clinicName || "Денте",
-			clinicPhone: clinicPhone || "+7 (495) 123-45-67",
+			clinicPhone: clinicPhone || "",
 			gostOrderNumber,
 			patientName: formPatientName,
 			doctorName: formDoctorName,
