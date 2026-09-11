@@ -670,7 +670,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				actualAddress: clinicProfileDraft.address || "г. Москва, ул. Большая Стоматологическая, д. 12",
 				phone: clinicProfileDraft.phone || "+7 (495) 777-22-11",
 				directorTitle: clinicProfileDraft.directorTitle || "Генеральный директор",
-				directorFullName: clinicProfileDraft.directorFullName || "Барабаш С.В.",
+				directorFullName: clinicProfileDraft.directorFullName || "",
 			} : undefined,
 			doctorFullName: activeDoctor?.fullName || null,
 			intakeNormApplied: true,

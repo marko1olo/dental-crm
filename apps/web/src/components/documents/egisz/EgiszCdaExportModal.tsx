@@ -139,13 +139,13 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 	// Patient & Doctor Normalized Models
 	const currentPatient = useMemo(() => ({
 		patientId: incomingPatient?.patientId || patientId,
-		name: incomingPatient?.name || { first: "Алиса", last: "Волкова", middle: "Сергеевна" },
-		snils: incomingPatient?.snils || "123-456-789 64",
-		birthDate: incomingPatient?.birthDate || "2012-05-14",
+		name: incomingPatient?.name || { first: "", last: "", middle: "" },
+		snils: incomingPatient?.snils || "",
+		birthDate: incomingPatient?.birthDate || "",
 		gender: (incomingPatient?.gender as "male" | "female" | "other") || "female",
-		polisOms: incomingPatient?.polisOms || "1658493021948572",
-		address: incomingPatient?.address || "г. Москва, ул. Профсоюзная, д. 42, кв. 10",
-		phone: incomingPatient?.phone || "+7 (999) 123-45-67",
+		polisOms: incomingPatient?.polisOms || "",
+		address: incomingPatient?.address || "",
+		phone: incomingPatient?.phone || "",
 	}), [incomingPatient, patientId]);
 
 	const currentDoctor = useMemo(() => ({
@@ -480,13 +480,13 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 			const fallbackPatient = {
 				patientId: currentPatient.patientId || patientId,
-				name: currentPatient.name?.last && currentPatient.name?.first ? currentPatient.name : { first: "Алиса", last: "Волкова", middle: "Сергеевна" },
-				snils: currentPatient.snils && currentPatient.snils.trim().length > 0 ? currentPatient.snils : "123-456-789 64",
-				birthDate: currentPatient.birthDate || "2012-05-14",
+				name: currentPatient.name?.last && currentPatient.name?.first ? currentPatient.name : { first: "", last: "", middle: "" },
+				snils: currentPatient.snils && currentPatient.snils.trim().length > 0 ? currentPatient.snils : "",
+				birthDate: currentPatient.birthDate || "",
 				gender: (currentPatient.gender as "male" | "female" | "other") || "female",
-				polisOms: currentPatient.polisOms || "1658493021948572",
-				address: currentPatient.address || "г. Москва, ул. Профсоюзная, д. 42, кв. 10",
-				phone: currentPatient.phone || "+7 (999) 123-45-67",
+				polisOms: currentPatient.polisOms || "",
+				address: currentPatient.address || "",
+				phone: currentPatient.phone || "",
 			};
 
 			const fallbackParams = {

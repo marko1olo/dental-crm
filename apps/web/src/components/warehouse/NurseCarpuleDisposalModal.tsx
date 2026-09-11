@@ -99,8 +99,8 @@ export function NurseCarpuleDisposalModal({
 	isOpen,
 	onClose,
 	onDisposalConfirmed,
-	initialNurseName = "Смирнова А. В. (медсестра)",
-	initialDoctorName = "Д-р Волкова Е. С.",
+	initialNurseName = "Дежурная медсестра",
+	initialDoctorName = "Лечащий врач",
 	currentStockAvailable = 0,
 }: NurseCarpuleDisposalModalProps) {
 	const now = new Date();

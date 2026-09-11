@@ -1320,7 +1320,7 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 	const [formData, setFormData] = useState<Protocol043Data>(() => {
 		const d = data || {};
 		return {
-			patientName: d.patientName || "Барабаш Сергей Владимирович",
+			patientName: d.patientName || "",
 			tooth: d.tooth || "36",
 			diagnosis: d.diagnosis || "K02.1 Кариес дентина (глубокий кариес)",
 			complaints:

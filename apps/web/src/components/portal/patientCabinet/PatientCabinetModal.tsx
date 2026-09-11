@@ -608,7 +608,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	// Открытие модального окна SMS/OTP подписания
 	const handleStartConsentSigning = (consent: PatientStatutoryConsent) => {
-		const otp = generateSmsOtp(data.phone, "842109");
+		const otp = generateSmsOtp(data.phone);
 		setSigningConsent(consent);
 		setOtpDigits(["", "", "", "", "", ""]);
 		setOtpExpectedCode(otp.code);
@@ -3058,10 +3058,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												{otpCountdown > 0 ? `Повтор через ${otpCountdown} сек.` : "Отправить код повторно"}
 											</span>
 										</button>
-
-										<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
-											Демо-код: <strong>{otpExpectedCode}</strong>
-										</span>
 									</div>
 
 									<div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>

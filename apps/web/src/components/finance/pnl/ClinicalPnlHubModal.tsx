@@ -165,7 +165,7 @@ const SAMPLE_DOCTORS: DoctorPerformanceRow[] = [
 	},
 	{
 		id: "doc-2",
-		fullName: "Д-р Барабаш Сергей Владимирович",
+		fullName: "Врач-хирург-имплантолог",
 		specialty: "Хирург-имплантолог",
 		chairHours: 110,
 		patientVisits: 74,
@@ -178,7 +178,7 @@ const SAMPLE_DOCTORS: DoctorPerformanceRow[] = [
 	},
 	{
 		id: "doc-3",
-		fullName: "Д-р Волкова Екатерина Сергеевна",
+		fullName: "Врач-терапевт-эндодонтист",
 		specialty: "Врач-стоматолог терапевт-эндодонтист",
 		chairHours: 140,
 		patientVisits: 118,

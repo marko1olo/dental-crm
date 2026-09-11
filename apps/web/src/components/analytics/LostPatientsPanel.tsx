@@ -586,7 +586,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 												<span className="font-semibold text-[var(--ink)] text-sm">
 													{patient?.patientName && patient.patientName !== "Пациент"
 														? patient.patientName
-														: "Барабаш С. В."}
+														: (patient?.patientName || "Пациент")}
 												</span>
 												<span
 													className={`px-2 py-0.5 rounded border text-[11px] font-medium ${badgeClass}`}

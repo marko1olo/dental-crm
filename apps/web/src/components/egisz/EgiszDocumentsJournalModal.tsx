@@ -196,7 +196,7 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 		encounterDate: "2026-08-28",
 		patient: {
 			id: "PAT-002",
-			fullName: "Барабаш Сергей Васильевич",
+			fullName: "Пациент клиники",
 			birthDate: "1979-11-23",
 			snils: "112-233-445 95",
 			cardNumber: "К-2026/0842",
@@ -223,7 +223,7 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 			documentUuid: "DOC-303-2026-08422",
 			patient: {
 				...SAMPLE_043U_PATIENT_PRESET,
-				patientFullName: "Барабаш Сергей Васильевич",
+				patientFullName: "Пациент клиники",
 				patientSnils: "112-233-445 95",
 				cardNumber: "К-2026/0842",
 			},

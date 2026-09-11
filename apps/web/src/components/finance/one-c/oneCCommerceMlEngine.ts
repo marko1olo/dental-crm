@@ -103,8 +103,8 @@ export const DEFAULT_CLINIC_PROFILE_1C: OneCClinicProfile = {
 	bankBik: "044525225",
 	bankName: "ПАО СБЕРБАНК Г. МОСКВА",
 	bankCorrAccount: "30101810400000000225",
-	chiefDoctorName: "Барабаш С.В.",
-	chiefAccountantName: "Смирнова Е.А.",
+	chiefDoctorName: "",
+	chiefAccountantName: "",
 	defaultWarehouseName: "Основной склад клиники",
 	defaultCashRegisterName: "Касса №1 (АТОЛ 27Ф, ФН 9960440302)",
 	prefix1C: "DN",
@@ -1056,7 +1056,7 @@ export function createRealisticShiftExportPackage(
 			totalKopecks: 650000,
 			vatRate: "Без НДС",
 			vatAmountKopecks: 0,
-			doctorName: "Барабаш С.В.",
+			doctorName: "Лечащий врач",
 			nomenclatureGroup: "Стоматологическая терапия",
 		},
 		{
@@ -1072,7 +1072,7 @@ export function createRealisticShiftExportPackage(
 			totalKopecks: 800000, // 8,000.00 RUB
 			vatRate: "Без НДС",
 			vatAmountKopecks: 0,
-			doctorName: "Барабаш С.В.",
+			doctorName: "Лечащий врач",
 			nomenclatureGroup: "Стоматологическая терапия",
 		},
 		{
@@ -1281,7 +1281,7 @@ export function createRealisticShiftExportPackage(
 		{
 			id: "emp-01",
 			employeeTabNumber: "ВР-001",
-			employeeName: "Барабаш С.В.",
+			employeeName: "Врач-терапевт",
 			positionTitleRu: "Врач-стоматолог терапевт",
 			specialtyRu: "Терапевтическая стоматология",
 			calculationTypeTitleRu: "Сдельная оплата труда (25% от выручки терапевта)",

@@ -664,9 +664,9 @@ export function buildCbctReportData(params: {
 	readonly tonerSaving?: boolean | undefined;
 }): CbctReportData {
 	const {
-		patientName = "Барабаш С.В.",
+		patientName = "Пациент",
 		clinicName = "Стоматологический центр DENTE",
-		doctorName = "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.",
+		doctorName = "Врач-стоматолог-хирург-имплантолог",
 		studyDate = new Date().toLocaleDateString("ru-RU"),
 		targetToothFdi,
 		implantPose,
@@ -903,7 +903,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
 			trimmed === "Врач-стоматолог-хирург-имплантолог" ||
 			trimmed === "Хирург-имплантолог"
 		) {
-			return "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.";
+			return "Врач-стоматолог-хирург-имплантолог";
 		}
 		if (trimmed.startsWith("Врач-стоматолог-хирург-имплантолог:")) {
 			return trimmed;
@@ -1317,7 +1317,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     <div class="info-group">
       <div class="info-item">Пациент: <b>${escapeHtml(patient.patientName)}</b></div>
       <div class="info-item">Карта: <b>${escapeHtml(patient.cardRecordNumber || "043/у")}</b></div>
-      <div class="info-item">Врач: <b>${escapeHtml((patient.doctorName || "Барабаш С.В.").trim().replace(/^Врач[-:\s]*/i, ""))}</b></div>
+      <div class="info-item">Врач: <b>${escapeHtml((patient.doctorName || "Лечащий врач").trim().replace(/^Врач[-:\s]*/i, ""))}</b></div>
     </div>
     <div class="right-badges">
       <div class="tooth-pill">ЗУБ FDI #${targetToothFdi}</div>

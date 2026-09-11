@@ -339,8 +339,8 @@ export class CommerceMlService {
 			const cat = tr.serviceId ? catalogMap.get(tr.serviceId) : undefined;
 			const code804n = cat?.order804nCode || cat?.code || undefined;
 			const doctorName = tr.doctorUserId
-				? doctorMap.get(tr.doctorUserId) || "Барабаш С.В."
-				: "Барабаш С.В.";
+				? doctorMap.get(tr.doctorUserId) || "Лечащий врач"
+				: "Лечащий врач";
 
 			const qty = Number(tr.quantity) || 1;
 			const priceKop = rubToKopecks(Number(tr.priceRub) || 0);
@@ -468,7 +468,7 @@ export class CommerceMlService {
 				},
 				contractNumber: `ДОГ-${cleanDate}-${actIdx}`,
 				contractDateIso: startDateIso,
-				attendingDoctorName: actItems[0]?.attendingDoctorName || "Барабаш С.В.",
+				attendingDoctorName: actItems[0]?.attendingDoctorName || "Лечащий врач",
 				items: actItems,
 				totalKopecks: actTotal,
 				comment: "Акт об оказании медицинских услуг (Номенклатура 804н)",

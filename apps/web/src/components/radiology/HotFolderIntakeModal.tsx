@@ -241,7 +241,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "imported",
 		patientMatch: {
-			patientName: "Барабаш Сергей Владимирович",
+			patientName: "Пациент клиники",
 			cardNumber: "043/у-2026/042",
 			confidence: 94,
 		},

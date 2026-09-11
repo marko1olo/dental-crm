@@ -1143,15 +1143,15 @@ export function renderClinicalPnlPrintA4Html(report: ClinicalPnlReport): string 
 	<div class="signatures">
 		<div class="sig-block">
 			Главный врач<br><br>
-			________________ / Барабаш С.В. /
+			________________ / ________________ /
 		</div>
 		<div class="sig-block">
 			Главный бухгалтер<br><br>
-			________________ / Смирнова Е.А. /
+			________________ / ________________ /
 		</div>
 		<div class="sig-block">
 			Генеральный директор<br><br>
-			________________ / Денте Холдинг /
+			________________ / ________________ /
 		</div>
 	</div>
 </body>
@@ -1165,7 +1165,7 @@ export const SAMPLE_CLINICAL_PNL_APPOINTMENTS: readonly ClinicalAppointmentPnlIt
 	{
 		id: "pnl-app-001",
 		dateIso: "2026-08-03",
-		patientName: "Барабаш Сергей Владимирович",
+		patientName: "Пациент клиники",
 		medicalCardNumber: "043/у-2026/102",
 		doctorId: "doc-kovalev",
 		doctorName: "Д-р Ковалев Игорь Олегович",

@@ -1511,8 +1511,8 @@ export function generateVkkExpertiseAct(record: CmoQualityAuditRecord): VkkExper
 		defectsList,
 		expertConclusion,
 		correctivePrescriptions,
-		commissionChairFullName: record.cmoResolution?.auditorFullName || "Барабаш С.В. (Начмед)",
-		commissionMembers: ["Иванова Т.П. (Зав. терапевтическим отделением)", "Смирнов К.А. (Врач-эксперт)"],
+		commissionChairFullName: record.cmoResolution?.auditorFullName || "Председатель ВК",
+		commissionMembers: ["Зав. отделением", "Врач-эксперт"],
 		attendingDoctorFullName: record.doctorFullName,
 	};
 }

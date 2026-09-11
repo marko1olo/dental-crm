@@ -745,8 +745,8 @@ export const DEFAULT_CLINIC_COMPLIANCE: ClinicComplianceMetadata = {
 	ogrn: '1227700456789',
 	inn: '7704812345',
 	operatorRegistrationNumberRoskomnadzor: '77-22-019842',
-	responsiblePersonFullName: 'Волкова Елена Сергеевна',
-	headDoctorFullName: 'Д-р Барабаш С. В.',
+	responsiblePersonFullName: 'Ответственное лицо по ПДн',
+	headDoctorFullName: 'Главный врач',
 	securityAdminFullName: 'Калашников Д. М.',
 };
 
@@ -1041,15 +1041,15 @@ export function getInitialAuditTrailDemoData(): AuditTrailEntry[] {
 		timestamp: '2026-08-28T08:30:15.000Z',
 		eventType: 'login_attempt',
 		actor: {
-			userId: 'usr-volkova',
-			fullName: 'Волкова Елена Сергеевна',
+			userId: 'usr-doctor-cmo',
+			fullName: 'Главный врач (Начмед)',
 			role: 'head_doctor',
 			ipAddress: '192.168.1.12',
 		},
 		entity: {
 			entityType: 'staff_user',
-			entityId: 'usr-volkova',
-			entityName: 'Д-р Волкова Е. С. (Начмед)',
+			entityId: 'usr-doctor-cmo',
+			entityName: 'Главный врач (Начмед)',
 		},
 		payload: {
 			actionDescriptionRu: 'Успешный вход в систему по личному PIN-коду (Кабинет № 1)',
@@ -1061,8 +1061,8 @@ export function getInitialAuditTrailDemoData(): AuditTrailEntry[] {
 		timestamp: '2026-08-28T09:15:00.000Z',
 		eventType: 'view_patient_card',
 		actor: {
-			userId: 'usr-volkova',
-			fullName: 'Волкова Елена Сергеевна',
+			userId: 'usr-doctor-cmo',
+			fullName: 'Главный врач (Начмед)',
 			role: 'head_doctor',
 			ipAddress: '192.168.1.12',
 		},
@@ -1139,7 +1139,7 @@ export function getInitialAuditTrailDemoData(): AuditTrailEntry[] {
 		entity: {
 			entityType: 'appointment',
 			entityId: 'app-9912',
-			entityName: 'Запись на 14:00 к д-ру Барабашу',
+			entityName: 'Запись на 14:00 к врачу',
 			patientId: 'pat-kuznetsov',
 			patientNameMasked: 'Кузнецов И. П.',
 		},

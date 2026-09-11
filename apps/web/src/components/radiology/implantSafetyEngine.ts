@@ -550,7 +550,7 @@ export function performCbctPlanningAudit(
 	const diaryLines = [
 		"============================================================",
 		"ПРОТОКОЛ ОПЕРАЦИИ ДЕНТАЛЬНОЙ ИМПЛАНТАЦИИ (ФОРМА 043/У)",
-		`Пациент: ${params.patientName || "Барабаш С.В."} | Клиника: ${params.clinicName || "Стоматологический центр DENTE"} | Зуб: FDI #${params.toothFdi}`,
+		`Пациент: ${params.patientName || "Пациент"} | Клиника: ${params.clinicName || "Стоматологический центр DENTE"} | Зуб: FDI #${params.toothFdi}`,
 		"============================================================",
 		"1. ВЫБОР И ХАРАКТЕРИСТИКИ ИМПЛАНТАТА:",
 		"   - Система: " + params.implantPose.implantSpec.brandName + " (" + params.implantPose.implantSpec.lineName + ")",

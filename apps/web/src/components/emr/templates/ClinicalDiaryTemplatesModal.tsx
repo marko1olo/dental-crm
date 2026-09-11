@@ -46,7 +46,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 		isOpen,
 		onClose,
 		initialToothNumber,
-		doctorFullName = "Волкова Екатерина Сергеевна",
+		doctorFullName = "",
 		doctorSpecialty = "Врач-стоматолог-терапевт",
 		patientFullName,
 		onApplyDiary,

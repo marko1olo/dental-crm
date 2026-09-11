@@ -178,7 +178,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 		const [selectedAnesthesiaTechnique, setSelectedAnesthesiaTechnique] = useState<LocalAnesthesiaType>("infiltration");
 		const [selectedAnesthesiaDoseMl, setSelectedAnesthesiaDoseMl] = useState<number>(1.7);
 
-		const [doctorNameInput, setDoctorNameInput] = useState<string>(doctorFullName || "Волкова Екатерина Сергеевна");
+		const [doctorNameInput, setDoctorNameInput] = useState<string>(doctorFullName || "");
 		const [doctorSpecialtyInput, setDoctorSpecialtyInput] = useState<string>(doctorSpecialty || "Врач-стоматолог-терапевт");
 
 		const [isCopied, setIsCopied] = useState<boolean>(false);

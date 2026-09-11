@@ -159,7 +159,7 @@ export function PrimaryIntakePackageModal({
 				actualAddress: clinicProfileDraft.address || "г. Москва, ул. Большая Стоматологическая, д. 12",
 				phone: clinicProfileDraft.phone || "+7 (495) 777-22-11",
 				directorTitle: clinicProfileDraft.directorTitle || "Генеральный директор",
-				directorFullName: clinicProfileDraft.directorFullName || "Барабаш С.В.",
+				directorFullName: clinicProfileDraft.directorFullName || "",
 			} : {
 				clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 				legalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
@@ -174,7 +174,7 @@ export function PrimaryIntakePackageModal({
 				actualAddress: "г. Москва, ул. Большая Стоматологическая, д. 12",
 				phone: "+7 (495) 777-22-11",
 				directorTitle: "Генеральный директор",
-				directorFullName: "Барабаш С.В.",
+				directorFullName: "",
 			},
 			doctorFullName: doctorFullName || null,
 			intakeNormApplied: isNormApplied || Boolean(store.intakeAccuracyConfirmed),

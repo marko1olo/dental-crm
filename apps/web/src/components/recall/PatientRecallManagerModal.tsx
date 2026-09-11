@@ -134,9 +134,9 @@ export const DEFAULT_RECALL_CANDIDATES: readonly PatientRecallItem[] = [
 	{
 		id: "rec-102",
 		patientId: "pat-102",
-		fullName: "Волкова Мария Сергеевна",
+		fullName: "Пациент клиники (М.С.)",
 		phone: "+7 (925) 780-99-11",
-		email: "volkova.m@example.com",
+		email: "patient.102@example.com",
 		category: "endodontics",
 		categoryLabel: "Эндодонтия / Кариес",
 		lastVisitDate: "2026-05-10",

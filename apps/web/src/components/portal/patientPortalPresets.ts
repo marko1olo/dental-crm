@@ -192,7 +192,7 @@ export const SAMPLE_RADIOLOGY_SCANS: RadiologyScanItem[] = [
 		effectiveDoseMicrosv: 42.0,
 		imageUrl: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=800&q=80",
 		diagnosticConclusion: "3D КЛКТ верхней челюсти (FOV 8x8 см). В зубе 1.6 верифицировано 4 канала (MB1, MB2, DB, Palatal). Дно верхнечелюстного синуса интактно, толщина костной перегородки 12.4 мм. Слизистая пазухи без утолщений.",
-		doctorName: "Д-р Барабаш Сергей Владимирович",
+		doctorName: "Врач-рентгенолог",
 		clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
 		apparatusModel: "Vatech Green 16 CBCT 3D",
 		metadata: {
@@ -395,8 +395,8 @@ export const SAMPLE_BOOKING_DOCTORS: BookingDoctor[] = [
 		educationRu: "СПбГМУ им. акад. И.П. Павлова, постдипломная эндодонтия Carl Zeiss",
 	},
 	{
-		id: "doc-barabash",
-		fullName: "Д-р Барабаш Сергей Владимирович",
+		id: "doc-surgeon",
+		fullName: "Врач-хирург-имплантолог",
 		specialtyRu: "Ведущий хирург-имплантолог, ЧЛХ",
 		specialtyCategory: "surgery",
 		avatarUrl: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=200&q=80",
@@ -640,7 +640,7 @@ export const SAMPLE_PORTAL_TREATMENT_PLAN: PortalTreatmentPlan = {
 					toothFdi: "4.6",
 					priceRub: 28700,
 					status: "planned",
-					doctorName: "Д-р Барабаш С. В.",
+					doctorName: "Врач-хирург-имплантолог",
 				},
 			],
 		},
