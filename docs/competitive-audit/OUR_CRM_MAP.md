@@ -2794,3 +2794,24 @@
 - **Файлы**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/AppointmentCard.tsx`, `apps/web/src/AppHelpers.tsx`, `apps/web/src/utils/AppointmentHelpers.ts`, `apps/api/src/sampleData.ts`, `packages/shared/src/index.ts`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/appointmentRefusalAndBreakAutonomyWave110.test.tsx` (5/5 PASS), `apps/web/src/tests/appointmentMissingFields.test.ts` (12/12 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 0 ошибок, `check:css-tokens` 0 ошибок.
 
+#### 2.10.244. Маркетинговые каналы StomX, законные представители СК РФ / 323-ФЗ, пресеты кассы и чистые согласия без синтетических моков (Wave 111, Мандаты 8b, 8d, 8e, 8f, 8n)
+- **Назначение**: Полная гармонизация карточки пациента и кассы со стандартами StomX и законодательством РФ (ст. 64 СК РФ, 323-ФЗ ст. 20, 54-ФЗ), внедрение 1-клик выбора каналов привлечения и законных представителей, пресетов приходных кассовых операций (ПКО КО-1) и беспощадная ликвидация синтетических моков пациентов («Иванова А.С.», «Барабаш С.В.», пул `DEFAULT_REGISTRY` из 8 пациентов, `INITIAL_DEMO_RECORDS`) из боевых компонентов (коммит `c99c050ca`).
+- **Архитектурные механизмы**:
+  1. *StomX Marketing Channels in Patient Card (`PatientGeneralInfoTab.tsx`)*:
+     - Интеграция 1-клик чипов 9 маркетинговых каналов из `STOMX_MARKETING_SOURCES_CATALOG`: `Яндекс (Карты, Поиск, Директ)`, `2GIS (ДубльГис)`, `Сарафанное радио`, `ПроДокторов`, `НаПоправку`, `Социальные сети`, `Вывеска`, `Реклама`, `Сайт клиники`.
+     - Тач-таргеты $\ge 36\text{px}$, активное состояние, 1-клик запись в профиль без всплывающих окон.
+  2. *Statutory & Family Representatives under Russian Law (`PatientGeneralInfoTab.tsx`)*:
+     - Реализация блока законных представителей по ст. 64 СК РФ и 323-ФЗ ст. 20 для несовершеннолетних и недееспособных пациентов (`STOMX_REPRESENTATIVE_CATALOG`: `Мать`, `Отец`, `Родитель`, `Опекун`, `Попечитель`, `Усыновитель`, `Представитель по доверенности`, `Муж`, `Жена`).
+     - При выборе представителя динамически раскрываются поля ввода ФИО, контактного телефона и документа-основания (свидетельство о рождении, нотариальная доверенность).
+  3. *1-Click StomX Cash-In Presets in 54-FZ Cash Shift (`CashShiftClosingModal.tsx`)*:
+     - В режиме внесения наличности (`activeView === "cash_in"`) под полем основания добавлены 1-клик пресеты из `STOMX_CASH_RECEIPT_CATALOG`: «Внесение для размена» (`cash_deposit`), «Внесение аванса» (`advance_payment`), «Внесение ДС сотрудником (возврат подотчета)» (`income_employee`), «Внесение ДС контрагентом» (`income_contractor`).
+     - Автоматическое формирование ПКО КО-1 без рутинного набора текста.
+  4. *Total Eradication of Synthetic Mock Patients (Мандаты 8b, 8f, ZERO MOCKS)*:
+     - В `PatientRecallsHubModal.tsx`: полностью вычищен массив `DEFAULT_REGISTRY` из 8 синтетических пациентов (Смирнов, Волкова, Иванов, Петрова, Соколов, Ковалева, Федоров, Григорьева с фейковыми номерами и почтами). Компонент переведен на честный контракт `initialCandidates ?? []` с чистым пустым состоянием (`recall-empty-state`).
+     - В `CmoEmrAuditModal.tsx`: ликвидирован 150-строчный массив `INITIAL_DEMO_RECORDS` с фейковыми паспортами и пациентами Смирновым и Ивановой; имя аудитора переведено в системное «Главный врач».
+     - В `ChairsideTabletConsentModal.tsx`: удалены синтетические пациенты и врачи, фиктивные диагнозы и прейскурант на 23 775 ₽ (`treatmentItems || []`, `clinicalContext: { diagnosisIcd: "", teeth: [] }`).
+     - В `cashShiftClosingEngine.ts` и `CashShiftClosingModal.tsx`: устранены захардкоженные фамилии «Смирнов А.В.», «Кузнецова Е.И.», а также упоминание «Смирновой» в плейсхолдере объяснительной.
+- **Файлы**: `apps/web/src/components/patient/tabs/PatientGeneralInfoTab.tsx`, `apps/web/src/components/billing/CashShiftClosingModal.tsx`, `apps/web/src/components/billing/cashShiftClosingEngine.ts`, `apps/web/src/components/chairside/ChairsideTabletConsentModal.tsx`, `apps/web/src/components/emr/audit/CmoEmrAuditModal.tsx`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`, `apps/web/src/components/patient/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx`.
+- **Тесты**: `apps/web/src/components/patient/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx` (5/5 PASS), `apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts` (17/17 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6651 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+

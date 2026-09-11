@@ -3794,4 +3794,25 @@
     * В `AppointmentCard.tsx`, `AppHelpers.tsx` и `AppointmentHelpers.ts` внедрен хелпер `isTechnicalBreakAppointment`: карточка отображает «Обед / Служебный перерыв» вместо «Новый пациент», а валидатор `missingFields` не блокирует сохранение записи из-за отсутствия пациента.
 * **Верификация**: `apps/web/src/components/schedule/__tests__/appointmentRefusalAndBreakAutonomyWave110.test.tsx` (5/5 PASS), `apps/web/src/tests/appointmentMissingFields.test.ts` (12/12 PASS), `npm run check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0.
 
+### Wave 111: Маркетинговые каналы StomX, законные представители СК РФ / 323-ФЗ, пресеты кассы и чистые согласия без синтетических моков (Мандаты 8b, 8d, 8e, 8f, 8n)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `c99c050ca`
+* **Результаты**:
+  - **Каталог маркетинговых каналов StomX в карточке пациента (`PatientGeneralInfoTab.tsx`, `STOMX_MARKETING_SOURCES_CATALOG`)**:
+    * 1-клик выбор 9 каналов привлечения (`Яндекс Карты/Поиск`, `2GIS`, `Сарафанное радио`, `ПроДокторов`, `НаПоправку`, `Социальные сети`, `Вывеска`, `Реклама`, `Сайт клиники`).
+    * Тач-таргеты $\ge 36\text{px}$, активный бейдж, запись в профиль без модальных окон.
+  - **Законные представители и члены семьи по СК РФ ст. 64 / 323-ФЗ ст. 20 (`PatientGeneralInfoTab.tsx`, `STOMX_REPRESENTATIVE_CATALOG`)**:
+    * Выбор статуса представителя (`Мать`, `Отец`, `Родитель`, `Опекун`, `По доверенности`, `Муж`, `Жена`).
+    * Автоматическое раскрытие полей ввода ФИО, контактного телефона и реквизитов документа-основания (свидетельство о рождении, нотариальная доверенность).
+  - **1-клик пресеты внесения кассы 54-ФЗ (`CashShiftClosingModal.tsx`, `STOMX_CASH_RECEIPT_CATALOG`)**:
+    * Добавлены кнопки быстрого заполнения основания внесения размена в кассу: «Внесение для размена» (`cash_deposit`), «Внесение аванса» (`advance_payment`), «Внесение ДС сотрудником» (`income_employee`), «Внесение ДС контрагентом» (`income_contractor`).
+    * Формирование ордера ПКО КО-1 без рутинного набора текста.
+  - **Тотальное искоренение синтетических моков (Мандаты 8b, 8f, ZERO MOCKS)**:
+    * В `PatientRecallsHubModal.tsx`: ликвидирован константный пул `DEFAULT_REGISTRY` (8 фиктивных пациентов: Смирнов, Волкова, Иванов, Петрова, Соколов, Ковалева, Федоров, Григорьева), компонент переведен на честный пустой список `initialCandidates ?? []` с чистым `recall-empty-state`.
+    * В `CmoEmrAuditModal.tsx`: удален 150-строчный массив `INITIAL_DEMO_RECORDS` с фейковыми паспортами; аудитор переведен в системное нейтральное «Главный врач».
+    * В `ChairsideTabletConsentModal.tsx`: устранены захардкоженные диагнозы K02/K04, зубы 16/17 и фиктивная смета на 23 775 ₽ (`treatmentItems || []`, `clinicalContext: { diagnosisIcd: "", teeth: [] }`).
+    * В `cashShiftClosingEngine.ts` и `CashShiftClosingModal.tsx`: вычищены жесткие фамилии «Смирнов А.В.», «Кузнецова Е.И.» и упоминание «пациенту Смирновой» в плейсхолдере.
+* **Верификация**: `apps/web/src/components/patient/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx` (5/5 PASS), `apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts` (17/17 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6651 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+
 
