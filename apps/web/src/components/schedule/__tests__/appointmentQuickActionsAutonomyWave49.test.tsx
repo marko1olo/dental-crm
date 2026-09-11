@@ -962,7 +962,7 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 			const root: Root = createRoot(container as unknown as HTMLElement);
 
 			let savedApptPatientId = "";
-			const onSaveMock = async (_id: string, data: { patientId: string }) => {
+			const onSaveMock = async (_id: string, data: { patientId?: string | null }) => {
 				savedApptPatientId = data.patientId || "";
 				return true;
 			};

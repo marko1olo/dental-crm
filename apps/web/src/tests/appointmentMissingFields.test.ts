@@ -170,4 +170,31 @@ describe("appointmentScheduleMissingFields", () => {
 			missing.join("; "),
 		);
 	});
+
+	it("служебный перерыв (Обед / Санобработка / Учеба) не требует пациента (Мандат 8e)", () => {
+		const lunchMissing = appointmentScheduleMissingFields(
+			draft({ patientId: "", reason: "Служебный перерыв: Обед" }),
+			"small_clinic",
+			staff,
+			{ chairs, patients },
+		);
+		assert.deepEqual(lunchMissing, [], "Обед сохраняется без требования пациента");
+
+		const sanpinMissing = appointmentScheduleMissingFields(
+			draft({ patientId: "", reason: "Технический перерыв: Санобработка" }),
+			"one_chair",
+			staff,
+			{ chairs, patients },
+		);
+		assert.deepEqual(sanpinMissing, [], "Санобработка сохраняется без требования пациента");
+
+		const studyMissing = appointmentScheduleMissingFields(
+			draft({ patientId: "", reason: "Служебный перерыв: Учеба / Консилиум" }),
+			"one_chair",
+			staff,
+			{ chairs, patients },
+		);
+		assert.deepEqual(studyMissing, [], "Консилиум сохраняется без требования пациента");
+	});
 });
+

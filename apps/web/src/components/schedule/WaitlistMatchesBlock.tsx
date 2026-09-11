@@ -15,7 +15,7 @@
 import { Check, Zap } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -82,7 +82,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 	lazy = false,
 	lazyLabel = "Показать всех из листа ожидания",
 }) => {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
 
 	const [report, setReport] = useState<WaitlistMatchReport | null>(null);

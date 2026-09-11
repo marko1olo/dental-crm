@@ -42,6 +42,7 @@ import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
 import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { isTechnicalBreakAppointment } from "./AppointmentModal";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -200,7 +201,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		return Number.isFinite(num) ? num : null;
 	}, [appointmentPatient]);
 	const appointmentPatientName =
-		typeof patientName === "function"
+		isTechnicalBreakAppointment(appointment) && !appointment?.patientId
+			? appointment?.reason || "Служебный перерыв"
+			: typeof patientName === "function"
 			? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
 			: "";
 
@@ -1926,13 +1929,25 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											cabinetName={appointmentChair?.name}
 											appointmentHasOpenVisit={appointmentHasOpenVisit}
 											activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
-											onStatusChange={(newStatus) =>
+											onStatusChange={(newStatus, noteAppend) => {
 												updateAppointmentScheduleDraft(
 													appointment.id,
 													"status",
 													normalizedAppointmentStatus(newStatus),
-												)
-											}
+												);
+												if (noteAppend) {
+													const existingComment =
+														appointmentDraft?.comment ?? appointment.comment ?? "";
+													const updatedComment = existingComment
+														? `${existingComment}\n[${noteAppend}]`
+														: `[${noteAppend}]`;
+													updateAppointmentScheduleDraft(
+														appointment.id,
+														"comment",
+														updatedComment,
+													);
+												}
+											}}
 											disabled={appointmentSaveState === "saving"}
 										/>
 									</div>

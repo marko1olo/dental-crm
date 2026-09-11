@@ -3569,7 +3569,7 @@ function parseStrictAppointmentDateTimeMs(value: string): number | null {
 
 export const createAppointmentSchema = z
 	.object({
-		patientId: z.string().uuid(),
+		patientId: z.string().uuid().nullable().optional(),
 		doctorUserId: z.string().uuid(),
 		assistantUserId: z.string().uuid().nullable().optional(),
 		chairId: z.string().uuid(),
@@ -14129,6 +14129,7 @@ export * from "./clinical/index.js";
 export * from "./analytics/callTrackingEngine.js";
 export * from "./marketing/marketingRomiEngine.js";
 export * from "./crypto/index.js";
+export * from "./radiology/index.js";
 
 
 

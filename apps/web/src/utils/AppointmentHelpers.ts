@@ -407,6 +407,23 @@ export function appointmentScheduleDateMissingSteps(
  * `resources` необязателен: без него поведение прежнее.
  */
 
+export function isTechnicalBreakAppointment(
+	item: { reason?: string | null; comment?: string | null } | null | undefined,
+): boolean {
+	if (!item) return false;
+	const r = String(item.reason || "").toLowerCase();
+	const c = String(item.comment || "").toLowerCase();
+	return (
+		r.includes("служебный перерыв") ||
+		r.includes("технический перерыв") ||
+		r.includes("служебная бронь") ||
+		r.includes("санобработка") ||
+		r.includes("обед") ||
+		r.includes("консилиум") ||
+		c.includes("служебная бронь")
+	);
+}
+
 export function appointmentScheduleMissingFields(
 	draft: AppointmentScheduleDraft,
 	clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined,
@@ -426,7 +443,8 @@ export function appointmentScheduleMissingFields(
 		: null;
 	const patients = resources?.patients ?? null;
 
-	if (!draft.patientId) {
+	const isTechnicalBreak = isTechnicalBreakAppointment(draft);
+	if (!draft.patientId && !isTechnicalBreak) {
 		missing.push(
 			patients && patients.length === 0
 				? "в клинике ещё нет пациентов — создайте карточку в разделе «Пациенты»"

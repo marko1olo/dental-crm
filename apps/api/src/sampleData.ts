@@ -11204,7 +11204,12 @@ function assertNoAppointmentResourceOverlap(candidate: Appointment): void {
 
 function assertAppointmentWithinOperationalHours(candidate: Appointment): void {
 	if (!appointmentRequiresHardScheduleValidation(candidate)) return;
-	if (!candidate.patientId) {
+	const isTechnicalBreak =
+		/служебный перерыв|технический перерыв|служебная бронь|санобработка|обед|консилиум/i.test(
+			candidate.reason || "",
+		) ||
+		/служебная бронь/i.test(candidate.comment || "");
+	if (!candidate.patientId && !isTechnicalBreak) {
 		throw new Error("Для активной будущей записи нужно выбрать пациента");
 	}
 	if (!candidate.doctorUserId) {
@@ -11218,7 +11223,7 @@ function assertAppointmentWithinOperationalHours(candidate: Appointment): void {
 				(item) => item.id === candidate.patientId && item.status === "active",
 			)
 		: null;
-	if (!patient) {
+	if (!patient && !isTechnicalBreak) {
 		throw new Error("Для активной будущей записи нужен активный пациент");
 	}
 	const clinicScheduleCheck = appointmentWithinClinicSchedule(candidate);
@@ -11423,7 +11428,7 @@ export function createAppointment(input: CreateAppointmentInput): Appointment {
 	const appointment: Appointment = {
 		id: randomUUID(),
 		organizationId,
-		patientId: input.patientId,
+		patientId: input.patientId ?? null,
 		doctorUserId: input.doctorUserId,
 		assistantUserId: input.assistantUserId ?? null,
 		chairId: input.chairId,

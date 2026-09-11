@@ -1,7 +1,8 @@
-import type {
-	Appointment,
-	AppointmentReadiness,
-	Dashboard,
+import {
+	type Appointment,
+	type AppointmentReadiness,
+	type Dashboard,
+	STOMX_REFUSE_REASONS_CATALOG,
 } from "@dental/shared";
 import {
 	AlertCircle,
@@ -81,6 +82,44 @@ export const QUICK_APPOINTMENT_REASONS = [
 	},
 ] as const;
 
+export const TECHNICAL_BREAK_PRESETS = [
+	{
+		label: "Обед (60 мин)",
+		reason: "Служебный перерыв: Обед",
+		durationMinutes: 60,
+		comment: "Служебная бронь: Обед врача / персонала",
+	},
+	{
+		label: "Санобработка (30 мин)",
+		reason: "Технический перерыв: Санобработка",
+		durationMinutes: 30,
+		comment: "Служебная бронь: Текущая дезинфекция и санобработка кабинета",
+	},
+	{
+		label: "Учеба / Консилиум (120 мин)",
+		reason: "Служебный перерыв: Учеба / Консилиум",
+		durationMinutes: 120,
+		comment: "Служебная бронь: Клинический консилиум / Обучение",
+	},
+] as const;
+
+export function isTechnicalBreakAppointment(
+	item: { reason?: string | null; comment?: string | null } | null | undefined,
+): boolean {
+	if (!item) return false;
+	const r = String(item.reason || "").toLowerCase();
+	const c = String(item.comment || "").toLowerCase();
+	return (
+		r.includes("служебный перерыв") ||
+		r.includes("технический перерыв") ||
+		r.includes("служебная бронь") ||
+		r.includes("санобработка") ||
+		r.includes("обед") ||
+		r.includes("консилиум") ||
+		c.includes("служебная бронь")
+	);
+}
+
 export interface AppointmentModalProps {
 	isOpen: boolean;
 	appointment: Appointment | null;
@@ -94,7 +133,7 @@ export interface AppointmentModalProps {
 			doctorUserId: string;
 			assistantUserId: string | null;
 			chairId: string;
-			patientId: string;
+			patientId: string | null;
 			status: Appointment["status"];
 			reason: string;
 			comment: string;
@@ -598,6 +637,25 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		[applyDuration, comment],
 	);
 
+	const handleApplyTechnicalBreakPreset = useCallback(
+		(preset: (typeof TECHNICAL_BREAK_PRESETS)[number]) => {
+			setReason(preset.reason);
+			applyDuration(preset.durationMinutes);
+			setComment(preset.comment);
+		},
+		[applyDuration],
+	);
+
+	const handleApplyRefusalReason = useCallback((nameRu: string) => {
+		const cancelTag = `[Отмена: ${nameRu}]`;
+		setComment((prev) => {
+			if (/\[Отмена:[^\]]*\]/.test(prev)) {
+				return prev.replace(/\[Отмена:[^\]]*\]/, cancelTag);
+			}
+			return prev.trim() ? `${prev.trim()}\n${cancelTag}` : cancelTag;
+		});
+	}, []);
+
 	const handleConvertToCito = useCallback(() => {
 		setIsCito(true);
 		const citoReason = "CITO! Острая боль";
@@ -665,7 +723,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			}
 		}
 
-		if (!effectivePatientId) {
+		const isTechnicalBreak = isTechnicalBreakAppointment({ reason, comment });
+		if (!effectivePatientId && !isTechnicalBreak) {
 			setError("Укажите пациента: выберите из списка или создайте во вкладке «+ Новый пациент»");
 			return;
 		}
@@ -699,7 +758,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setError(null);
 
 		const success = await onSave(appointment.id, {
-			patientId: effectivePatientId,
+			patientId: effectivePatientId || null,
 			doctorUserId: effectiveDoctorUserId,
 			assistantUserId: isSoloDoctor ? null : (assistantUserId?.trim() || null),
 			chairId: effectiveChairId,
@@ -720,8 +779,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 	if (!isOpen || !appointment) return null;
 
+	const isTechnicalBreak = isTechnicalBreakAppointment({ reason, comment });
 	const currentPatientName =
-		typeof patientName === "function"
+		isTechnicalBreak && !patientId
+			? reason || "Служебный перерыв"
+			: typeof patientName === "function"
 			? patientName(dashboard.patients, patientId)
 			: dashboard.patients?.find((p) => p.id === patientId)?.fullName || "Пациент";
 	const isNewAppointment = Boolean(appointment?.id?.startsWith("new"));
@@ -1526,6 +1588,43 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<span>По этой записи открыт активный визит. Смена статуса разрешена врачу (Мандат 8e).</span>
 								</div>
 							)}
+
+							{(status === "cancelled" || status === "no_show") && (
+								<div
+									className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-2 mt-2"
+									data-testid="appointment-refusal-reasons-block"
+								>
+									<div className="flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-200">
+										<span className="flex items-center gap-1.5">
+											<UserX size={14} className="text-rose-600 dark:text-rose-400" />
+											Причина отмены / неявки (StomX 1 клик):
+										</span>
+										<span className="text-[10px] text-[var(--muted)] font-normal">
+											Фиксируется в комментарии и таймлайне
+										</span>
+									</div>
+									<div className="flex items-center gap-1.5 flex-wrap">
+										{STOMX_REFUSE_REASONS_CATALOG.map((refuse) => {
+											const isSelected = comment.includes(`[Отмена: ${refuse.nameRu}]`);
+											return (
+												<button
+													key={refuse.id}
+													type="button"
+													onClick={() => handleApplyRefusalReason(refuse.nameRu)}
+													className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer select-none ${
+														isSelected
+															? "bg-rose-600 text-white border-rose-600 shadow-xs"
+															: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-rose-400 dark:hover:border-rose-500"
+													}`}
+													title={`${refuse.nameRu} (${refuse.responsibility === "clinic" ? "Клиника" : refuse.responsibility === "patient" ? "Пациент" : "Система"})`}
+												>
+													{refuse.nameRu}
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							)}
 						</div>
 
 						{/* Reason */}
@@ -1553,6 +1652,17 @@ export function AppointmentModal(props: AppointmentModalProps) {
 												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
 										}`}
 										title={preset.reason}
+									>
+										{preset.label}
+									</button>
+								))}
+								{TECHNICAL_BREAK_PRESETS.map((preset) => (
+									<button
+										key={preset.label}
+										type="button"
+										onClick={() => handleApplyTechnicalBreakPreset(preset)}
+										className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer"
+										title={preset.comment}
 									>
 										{preset.label}
 									</button>
