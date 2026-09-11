@@ -1643,7 +1643,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (cariesPreset) handleApplyClinicalSoapPreset(cariesPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -1655,7 +1655,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (pulpitisPreset) handleApplyClinicalSoapPreset(pulpitisPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -1667,7 +1667,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (periodontitisPreset) handleApplyClinicalSoapPreset(periodontitisPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
@@ -1679,7 +1679,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (hygienePreset) handleApplyClinicalSoapPreset(hygienePreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
 				>
 					<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />

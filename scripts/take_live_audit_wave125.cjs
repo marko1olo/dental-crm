@@ -66,8 +66,8 @@ async function provisionSession() {
 					if (Array.isArray(chList) && chList.length > 0) chairId = chList[0].id;
 				}
 				const now = new Date();
-				const startsAt = new Date(now.getTime() - 15 * 60 * 1000);
-				const endsAt = new Date(now.getTime() + 45 * 60 * 1000);
+				const startsAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
+				const endsAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0);
 				const aRes = await fetch(`${API_BASE}/api/appointments`, {
 					method: "POST",
 					headers,

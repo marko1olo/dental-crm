@@ -345,7 +345,7 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 			);
 
 			expect(html).toContain("duty-doctor-override-note");
-			expect(html).toContain("Мандат 8e: запись не блокируется");
+			expect(html).toContain("Запись не блокируется");
 			assert.ok(!html.includes('data-testid="btn-save-appointment" disabled'));
 		});
 	});

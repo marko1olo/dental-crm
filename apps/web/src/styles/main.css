@@ -14302,6 +14302,8 @@ html.dark .communication-side .panel-heading h3,
 		align-items: stretch;
 		flex-direction: column;
 		gap: 8px;
+		height: auto !important;
+		max-height: none !important;
 		padding-bottom: 6px;
 	}
 
