@@ -2814,4 +2814,30 @@
 - **Файлы**: `apps/web/src/components/patient/tabs/PatientGeneralInfoTab.tsx`, `apps/web/src/components/billing/CashShiftClosingModal.tsx`, `apps/web/src/components/billing/cashShiftClosingEngine.ts`, `apps/web/src/components/chairside/ChairsideTabletConsentModal.tsx`, `apps/web/src/components/emr/audit/CmoEmrAuditModal.tsx`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`, `apps/web/src/components/patient/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx`.
 - **Тесты**: `apps/web/src/components/patient/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx` (5/5 PASS), `apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts` (17/17 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6651 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
+### 2.10.245. Волна 112: Тотальная ликвидация синтетических персонажей «Барабаш», «Волкова», захардкоженных SMS OTP и экспозиции демо-кодов по всей CRM (Мандаты 8b, 8d, 8e, 8f, ZERO MOCKS)
+- **Идея & Бизнес-эффект**: Искоренение оставшихся процедурных фиктивных персонажей («Барабаш», «Волкова»), устранение жестких подстановок кода SMS-ПЭП `842109` и удаление отладочной экспозиции «Демо-код» из интерфейса личного кабинета пациента (Мандаты 8b, 8d, 8e, 8f, ZERO MOCKS).
+- **Архитектурные изменения**:
+  1. *Ликвидация персонажа «Барабаш» в 18 модулях*:
+     - `apps/api/src/services/finance/commerceMlService.ts`: doctorName и attendingDoctorName fallback заменены на «Лечащий врач» (было «Барабаш С.В.»);
+     - `PrimaryIntakePackageModal.tsx` и `DocumentsView.tsx`: directorFullName переведен на пустую строку по умолчанию (было «Барабаш С.В.»);
+     - `TaxDeductionModal.tsx`: главный врач в справке КНД 1151156 по умолчанию «Главный врач» (было «Барабаш Сергей Владимирович»);
+     - `RefundServiceModal.tsx`: в 5 позициях счета возврата 54-ФЗ врач переведен на «Лечащий врач» (было «Д-р Барабаш С.В.»);
+     - `cbctExportEngine.ts` и `implantSafetyEngine.ts`: пациент «Пациент», врач «Врач-стоматолог-хирург-имплантолог» / «Лечащий врач»;
+     - `auditTrailEngine.ts`: ответственный «Главный врач», отмена визита «Запись на 14:00 к врачу»;
+     - `LostPatientsPanel.tsx`: fallback имени пациента `patient?.patientName || "Пациент"`;
+     - `ClinicalPnlHubModal.tsx` и `clinicalPnlEngine.ts`: sample-врачи переведены на должности, подписи в P&L очищены от «Барабаш С.В.», пациент в отчете «Пациент клиники»;
+     - `oneCCommerceMlEngine.ts`: реквизиты клиники очищены, врачи и сотрудники переведены на «Лечащий врач» / «Врач-терапевт»;
+     - `EgiszDocumentsJournalModal.tsx`, `CopilotGenerativeCards.tsx`, `clinicalQualityEngine.ts`, `omnichannelEngine.ts`, `patientPortalPresets.ts`, `HotFolderIntakeModal.tsx`: заменены все вхождения на нейтральные роли и дефолты;
+  2. *Ликвидация персонажа «Волкова» в 10 модулях*:
+     - `EmrProtocolGeneratorModal.tsx` и `ClinicalDiaryTemplatesModal.tsx`: doctorFullName по умолчанию пустая строка `""` (было «Волкова Екатерина Сергеевна»);
+     - `EgiszCdaExportModal.tsx`: ликвидирован синтетический пациент «Алиса Волкова Сергеевна», поля приведены к честным пустым дефолтам `""`;
+     - `NurseCarpuleDisposalModal.tsx`: initialDoctorName = «Лечащий врач», initialNurseName = «Дежурная медсестра»;
+     - `PatientRecallManagerModal.tsx`, `EgiszSigningCabinetModal.tsx`, `cmoComplianceHubEngine.ts`, `auditTrailEngine.ts`, `ClinicalPnlHubModal.tsx`, `omnichannelEngine.ts`: переведены на нейтральные профессиональные статусы;
+  3. *Ликвидация захардкоженного SMS OTP и демо-кода в ЛК Пациента*:
+     - В `PatientCabinetModal.tsx#L611`: вызов `generateSmsOtp(data.phone, "842109")` заменен на `generateSmsOtp(data.phone)`, использующий криптографический `crypto.getRandomValues`;
+     - В `PatientCabinetModal.tsx#L3062-L3065`: удален блок `Демо-код: <strong>{otpExpectedCode}</strong>`, исключив утечку отладочного кода в продакшен-UI;
+- **Файлы**: `apps/api/src/services/finance/commerceMlService.ts`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/components/analytics/LostPatientsPanel.tsx`, `apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx`, `apps/web/src/components/cmo/clinicalQualityEngine.ts`, `apps/web/src/components/copilot/CopilotGenerativeCards.tsx`, `apps/web/src/components/documents/PrimaryIntakePackageModal.tsx`, `apps/web/src/components/documents/egisz/EgiszCdaExportModal.tsx`, `apps/web/src/components/egisz/EgiszDocumentsJournalModal.tsx`, `apps/web/src/components/emr/audit/cmoComplianceHubEngine.ts`, `apps/web/src/components/emr/protocolGenerator/EmrProtocolGeneratorModal.tsx`, `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`, `apps/web/src/components/finance/one-c/oneCCommerceMlEngine.ts`, `apps/web/src/components/finance/pnl/ClinicalPnlHubModal.tsx`, `apps/web/src/components/finance/pnl/clinicalPnlEngine.ts`, `apps/web/src/components/finance/refunds/RefundServiceModal.tsx`, `apps/web/src/components/messaging/omnichannelEngine.ts`, `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`, `apps/web/src/components/portal/patientPortalPresets.ts`, `apps/web/src/components/radiology/HotFolderIntakeModal.tsx`, `apps/web/src/components/radiology/cbctExportEngine.ts`, `apps/web/src/components/radiology/implantSafetyEngine.ts`, `apps/web/src/components/recall/PatientRecallManagerModal.tsx`, `apps/web/src/components/security/auditTrailEngine.ts`, `apps/web/src/components/tax/TaxDeductionModal.tsx`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts`.
+- **Тесты**: `apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts` (4/4 PASS), `apps/web/src/tests/patientCabinet.test.ts` (15/15 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6652 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+
 

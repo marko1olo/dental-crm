@@ -3814,5 +3814,29 @@
     * В `cashShiftClosingEngine.ts` и `CashShiftClosingModal.tsx`: вычищены жесткие фамилии «Смирнов А.В.», «Кузнецова Е.И.» и упоминание «пациенту Смирновой» в плейсхолдере.
 * **Верификация**: `apps/web/src/components/patient/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx` (5/5 PASS), `apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts` (17/17 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6651 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
-
-
+### Wave 112: Тотальная ликвидация синтетических персонажей «Барабаш», «Волкова», захардкоженных SMS OTP 842109 и экспозиции демо-кодов по всей CRM (Мандаты 8b, 8d, 8e, 8f, ZERO MOCKS)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `cad50d877`
+* **Результаты**:
+  - **Ликвидация вымышленного персонажа «Барабаш» в 18 модулях API и Web**:
+    * В `apps/api/src/services/finance/commerceMlService.ts`: doctorName и attendingDoctorName fallback заменены на «Лечащий врач» (было «Барабаш С.В.»).
+    * В `PrimaryIntakePackageModal.tsx` и `DocumentsView.tsx`: directorFullName переведен на пустую строку `""` по умолчанию (было «Барабаш С.В.»).
+    * В `TaxDeductionModal.tsx`: главный врач в справке КНД 1151156 по умолчанию «Главный врач» (было «Барабаш Сергей Владимирович»).
+    * В `RefundServiceModal.tsx`: в 5 позициях счета возврата 54-ФЗ врач переведен на «Лечащий врач» (было «Д-р Барабаш С.В.»).
+    * В `cbctExportEngine.ts` и `implantSafetyEngine.ts`: пациент «Пациент», врач «Врач-стоматолог-хирург-имплантолог» / «Лечащий врач».
+    * В `auditTrailEngine.ts`: ответственный «Главный врач», отмена визита «Запись на 14:00 к врачу».
+    * В `LostPatientsPanel.tsx`: fallback имени пациента `patient?.patientName || "Пациент"`.
+    * В `ClinicalPnlHubModal.tsx` и `clinicalPnlEngine.ts`: sample-врачи переведены на должности, подписи в P&L очищены от «Барабаш С.В.», пациент в отчете «Пациент клиники».
+    * В `oneCCommerceMlEngine.ts`: реквизиты клиники очищены, врачи и сотрудники переведены на «Лечащий врач» / «Врач-терапевт».
+    * В `EgiszDocumentsJournalModal.tsx`, `CopilotGenerativeCards.tsx`, `clinicalQualityEngine.ts`, `omnichannelEngine.ts`, `patientPortalPresets.ts`, `HotFolderIntakeModal.tsx`: ликвидированы все упоминания «Барабаш».
+  - **Ликвидация вымышленного персонажа «Волкова» в 10 модулях Web**:
+    * В `EmrProtocolGeneratorModal.tsx` и `ClinicalDiaryTemplatesModal.tsx`: doctorFullName по умолчанию пустая строка `""` (было «Волкова Екатерина Сергеевна»).
+    * В `EgiszCdaExportModal.tsx`: ликвидирован синтетический пациент «Алиса Волкова Сергеевна», поля приведены к честным пустым дефолтам `""`.
+    * В `NurseCarpuleDisposalModal.tsx`: initialDoctorName = «Лечащий врач», initialNurseName = «Дежурная медсестра».
+    * В `PatientRecallManagerModal.tsx`, `EgiszSigningCabinetModal.tsx`, `cmoComplianceHubEngine.ts`, `auditTrailEngine.ts`, `ClinicalPnlHubModal.tsx`, `omnichannelEngine.ts`: переведены на нейтральные профессиональные статусы без синтетических фамилий.
+  - **Ликвидация захардкоженного SMS OTP и демо-кода в ЛК Пациента**:
+    * В `PatientCabinetModal.tsx#L611`: вызов `generateSmsOtp(data.phone, "842109")` заменен на `generateSmsOtp(data.phone)`, использующий криптографический генератор `crypto.getRandomValues`.
+    * В `PatientCabinetModal.tsx#L3062-L3065`: удален блок `Демо-код: <strong>{otpExpectedCode}</strong>`, исключив утечку отладочного кода в продакшен-UI.
+  - **Специализированный юнит-тест Wave 112 (`mockEradicationWave112.test.ts`)**:
+    * 4/4 тестовых сценария: проверка нулевого присутствия «Барабаш» в 18 файлах, нулевого присутствия «Волкова» в 10 файлах, нулевого присутствия `842109` и «Демо-код:» в `PatientCabinetModal.tsx`, а также валидация криптографического 6-значного OTP в `patientCabinetEngine`.
+* **Верификация**: `apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts` (4/4 PASS), `apps/web/src/tests/patientCabinet.test.ts` (15/15 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6652 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
