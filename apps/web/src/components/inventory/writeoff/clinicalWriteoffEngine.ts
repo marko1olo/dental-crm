@@ -595,7 +595,7 @@ export function createQuickAnesthesiaPackageWriteoffDocument(
 		status: "confirmed",
 		notes:
 			params.notes ||
-			"1-клик списание стандартного пакета анестезии (1 карпула 1.7 мл + карпульная игла + антисептик) без комиссии из 3 человек (Мандаты 8e, 8n)",
+			"1-клик списание стандартного пакета анестезии (1 карпула 1.7 мл + карпульная игла + антисептик) — списание медсестрой без комиссии (Клинический регламент)",
 		confirmedAt: new Date().toISOString(),
 		isQuickCarpuleWriteoff: true,
 		isSingleSigner: true,

@@ -124,7 +124,7 @@ export function LabTrackingDrawer({
 		) {
 			const autoOverride = createDoctorClinicalOverride(
 				order.doctorName || "Лечащий врач",
-				"Перевод этапа ЗТЛ — клиническое решение лечащего врача (Мандат 8e)",
+				"Перевод этапа ЗТЛ — клиническое решение лечащего врача (Автономия врача)",
 			);
 			setGateOverride(autoOverride);
 		}

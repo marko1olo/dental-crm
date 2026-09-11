@@ -494,7 +494,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				}))}
 				patientId={patient?.id || "00000000-0000-0000-0000-000000000001"}
 				patientName={patient?.fullName || "Пациент"}
-				patientPhone={patient?.phone || "+7 (999) 000-00-00"}
+				patientPhone={patient?.phone || ""}
 				patientDepositRub={patientDepositRub || patient?.depositRub || 0}
 				patientFamilyBalanceRub={patientFamilyBalanceRub || patient?.familyBalanceRub || 0}
 				clinicName={clinicLegalName}

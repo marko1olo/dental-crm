@@ -492,12 +492,12 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 									<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 										<ShieldCheck size={18} color="var(--teal, #0d9488)" />
 										<span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--teal, #0d9488)' }}>
-											Экспресс-наряд ЗТЛ в 3 клика (Мандат 8e)
+											Экспресс-наряд ЗТЛ в 3 клика (Автономия врача)
 										</span>
 									</div>
 									<div style={{ fontSize: '0.7rem', fontWeight: 700, color: (isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) ? 'var(--teal, #0d9488)' : 'var(--muted, #64748b)' }}>
 										{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30))
-											? 'План составлен >30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряд ЗТЛ, услуги и оплату (Мандат 8e) · Без согласований начмеда'
+											? 'План составлен >30 дней назад: по регламенту клиники срок плана НЕ БЛОКИРУЕТ наряд ЗТЛ, услуги и оплату (Клинический регламент) · Без согласований начмеда'
 											: 'Истечение 30 дней плана НЕ БЛОКИРУЕТ наряд · Без согласований начмеда'}
 									</div>
 								</div>
@@ -609,7 +609,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 								{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) && (
 									<div style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#047857', fontSize: '0.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
 										<ShieldCheck size={14} style={{ flexShrink: 0 }} />
-										<span>План составлен &gt;30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e).</span>
+										<span>План составлен &gt;30 дней назад: по регламенту клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Клинический регламент).</span>
 									</div>
 								)}
 							</div>

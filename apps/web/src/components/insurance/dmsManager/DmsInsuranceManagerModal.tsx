@@ -77,6 +77,7 @@ export interface DmsInsuranceManagerModalProps {
 		readonly policyNumber?: string | undefined;
 		readonly insurerId?: DmsInsurerId | undefined;
 		readonly programKey?: DmsProgramKey | undefined;
+		readonly phone?: string | undefined;
 	} | undefined;
 }
 
@@ -365,7 +366,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		setPreAuthDiagnosisTitle("Пульпит зуба (острый очаговый / острая боль)");
 		setPreAuthServiceCode("A16.07.030.001");
 		setPreAuthClinicalNotes(
-			"Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
+			"Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно клиническому регламенту приём и касса 54-ФЗ не блокируются.",
 		);
 		setPreAuthOverrideStatus("approved");
 
@@ -380,7 +381,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		setPreAuthDiagnosisTitle("Пульпит зуба (острый очаговый / острая боль)");
 		setPreAuthServiceCode("A16.07.030.001");
 		setPreAuthClinicalNotes(
-			"Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
+			"Экстренный приём / Гарантия в пути. ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Устное подтверждение куратора зафиксировано. Согласно клиническому регламенту приём и касса 54-ФЗ не блокируются.",
 		);
 		setPreAuthOverrideStatus("approved");
 
@@ -485,7 +486,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 				id: patientContext?.id ?? "pat-demo",
 				fullName: preAuthPatientName,
 				policyNumber: preAuthPolicyNumber,
-				phone: "+7 (999) 000-00-00",
+				phone: patientContext?.phone ?? "",
 			},
 			programKey: preAuthProgramKey,
 			diagnosisMkb10: {

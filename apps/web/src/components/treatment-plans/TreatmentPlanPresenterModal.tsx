@@ -202,8 +202,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	onClose,
 	patientName = "Пациент",
 	patientId = "PAT-2026-0891",
-	patientPhone = "+7 (926) 555-12-34",
-	patientBirthDate = "14.06.1988",
+	patientPhone = "",
+	patientBirthDate = "",
 	doctorFullName = "Лечащий врач",
 	doctorSpecialty = "Врач-стоматолог терапевт-ортопед",
 	clinicName = "Стоматологическая клиника «ДЕНТЕ СТОМАТОЛОГИЯ»",
@@ -211,7 +211,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	clinicInn = "",
 	clinicOgrn = "",
 	clinicAddress = "г. Москва, ул. Клиническая, д. 10, стр. 1",
-	clinicPhone = "+7 (495) 777-88-99",
+	clinicPhone = "",
 	clinicLicense = "ЛО41-01137-77/00567890 от 15.01.2023 выдана Департаментом здравоохранения г. Москвы",
 	contractNumber,
 	teeth,
@@ -1596,7 +1596,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 												{clinicName}
 											</div>
 											<div className="text-xs text-slate-500">
-												Лицензия: {clinicLicense} · Тел: +7 (495) 000-00-00
+												Лицензия: {clinicLicense}{clinicPhone ? ` · Тел: ${clinicPhone}` : ""}
 											</div>
 										</div>
 										<div className="text-right">
@@ -1615,7 +1615,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											<span className="text-slate-500 block text-[10.5px]">Пациент:</span>
 											<strong className="text-slate-900 text-sm">{patientName}</strong>
 											<div className="text-slate-500 text-[10.5px] mt-0.5">
-												Карта ф. 043/у: {patientId} · Тел: {patientPhone}
+												Карта ф. 043/у: {patientId}{patientPhone ? ` · Тел: ${patientPhone}` : ""}
 											</div>
 										</div>
 										<div>
@@ -1836,10 +1836,10 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										</div>
 										<div>
 											<div className="font-bold border-b border-black pb-1 mb-1">ЗАКАЗЧИК (ПАЦИЕНТ):</div>
-											<div>ФИО: <strong>{patientName}</strong></div>
-											<div>Дата рождения: {patientBirthDate}</div>
-											<div>Телефон: {patientPhone}</div>
-											<div>Номер медицинской карты: {patientId} (ф. 043/у)</div>
+											<div>ФИО: <strong>{patientName || "_________________________________"}</strong></div>
+											<div>Дата рождения: {patientBirthDate || "«___» _______ 19___ г."}</div>
+											<div>Телефон: {patientPhone || "____________________"}</div>
+											<div>Номер медицинской карты: {patientId || "____________________"} (ф. 043/у)</div>
 										</div>
 									</div>
 

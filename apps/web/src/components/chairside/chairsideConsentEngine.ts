@@ -712,7 +712,7 @@ export function sendChairsideSmsOtpToPatient(
 	customPhone?: string,
 	explicitOtpCode?: string,
 ): ChairsideConsentPackage {
-	const targetPhone = customPhone || pkg.patient.phone || "+7 (999) 000-00-00";
+	const targetPhone = customPhone || pkg.patient.phone || "";
 	const smsOtp = generateChairsideSmsOtp(targetPhone, explicitOtpCode);
 
 	return {
@@ -754,7 +754,7 @@ export function signPackageWithSmsPep(
 	const timestamp = new Date(signedAtIso).getTime();
 	const signedAtFormatted = formatRussianDateTime(signedAtIso);
 
-	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "+7 (999) 000-00-00";
+	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "";
 	const phoneMasked = pkg.smsOtp?.phoneMasked || maskRussianPhone(targetPhone);
 
 	const integrity = generateDocumentPackageIntegrityHash(
@@ -1030,7 +1030,7 @@ export function signPackageWithInPersonConfirmation(
 		.join(";");
 
 	const canonicalLines = [
-		"=== CANONICAL DENTAL CHAIRSIDE IN-PERSON CONFIRMATION (323-FZ / 1051N / MANDATE 8E) ===",
+		"=== CANONICAL DENTAL CHAIRSIDE IN-PERSON CONFIRMATION (323-FZ / 1051N / DOCTOR AUTONOMY) ===",
 		"PACKAGE_ID: " + pkg.packageId,
 		"TIMESTAMP_ISO: " + signedAtIso,
 		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),

@@ -788,6 +788,27 @@ export function createDefaultPaidContract(params: {
 	const [year, month, day] = today.split("-");
 	const formattedDate = year && month && day ? `${day}.${month}.${year}` : today;
 
+	let initialSeries = "";
+	let initialNumber = "";
+	if (params.patientPassport) {
+		const clean = params.patientPassport.trim().replace(/\s+/g, " ");
+		const parts = clean.split(" ");
+		const p0 = parts[0] ?? "";
+		const p1 = parts[1] ?? "";
+		if (parts.length >= 3) {
+			initialSeries = `${p0} ${p1}`.trim();
+			initialNumber = parts.slice(2).join("");
+		} else if (parts.length === 2) {
+			initialSeries = p0;
+			initialNumber = p1;
+		} else if (clean.length >= 10) {
+			initialSeries = `${clean.slice(0, 2)} ${clean.slice(2, 4)}`;
+			initialNumber = clean.slice(4);
+		} else {
+			initialNumber = clean;
+		}
+	}
+
 	return {
 		contractNumber: params.contractNumber || `ДПМУ-${year || "2026"}-001`,
 		contractDate: formattedDate,
@@ -828,21 +849,19 @@ export function createDefaultPaidContract(params: {
 		},
 		patient: {
 			fullName: params.patientFullName || "",
-			birthDate: params.patientBirthDate || "15.05.1990",
+			birthDate: params.patientBirthDate || "",
 			gender: "Мужской",
-			passportSeries: "45 10",
-			passportNumber: "123456",
-			passportIssuedBy: "ГУ МВД России по г. Москве",
-			passportIssuedDate: "20.05.2010",
-			passportDepartmentCode: "770-001",
-			snils: params.patientSnils || "123-456-789 00",
-			registrationAddress:
-				params.patientAddress || "119021, г. Москва, ул. Льва Толстого, д. 16, кв. 42",
-			actualAddress:
-				params.patientAddress || "119021, г. Москва, ул. Льва Толстого, д. 16, кв. 42",
-			phone: params.patientPhone || "+7 (999) 000-00-00",
-			email: "patient@example.com",
-			cardNumber: params.cardNumber || "043/у-2026/01",
+			passportSeries: initialSeries,
+			passportNumber: initialNumber,
+			passportIssuedBy: "",
+			passportIssuedDate: "",
+			passportDepartmentCode: "",
+			snils: params.patientSnils || "",
+			registrationAddress: params.patientAddress || "",
+			actualAddress: params.patientAddress || "",
+			phone: params.patientPhone || "",
+			email: "",
+			cardNumber: params.cardNumber || "",
 		},
 		customer: {
 			isDifferentFromPatient: false,

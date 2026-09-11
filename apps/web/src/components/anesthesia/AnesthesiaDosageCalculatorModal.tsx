@@ -514,7 +514,7 @@ export function AnesthesiaDosageCalculatorModal({
 							}}
 						>
 							<Zap size={16} className="text-amber-400" />
-							<span>Доминантные 1-клик пресеты стандартной анестезии (Минздрав РФ / Mandate 8e):</span>
+							<span>Доминантные 1-клик пресеты стандартной анестезии (Клинический регламент):</span>
 						</div>
 						<div
 							style={{

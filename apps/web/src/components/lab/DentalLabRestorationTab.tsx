@@ -239,7 +239,7 @@ export function DentalLabRestorationTab({
 								</strong>
 							</span>
 							<span className="text-[11px] font-normal opacity-85 hidden sm:inline">
-								· Врач свободен от выбора отдельных зубов (Мандат 8e)
+								· Врач свободен от выбора отдельных зубов (Автономия врача)
 							</span>
 						</div>
 						<button
@@ -558,7 +558,7 @@ export function DentalLabRestorationTab({
 						</span>
 						<div>
 							<h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 m-0 leading-tight">
-								Оформление наряда ЗТЛ в 3 клика (Мандат 8e)
+								Оформление наряда ЗТЛ в 3 клика (Автономия врача)
 							</h3>
 							<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
 								Клик 1: Зуб/Мост · Клик 2: Конструкция · Клик 3: Цвет VITA · Авто-срок сдачи

@@ -115,7 +115,7 @@ export function checkDentalLabFinancialGate(
 		(params.treatmentPlanAgeDays !== undefined && params.treatmentPlanAgeDays > 30) ||
 		params.isPlanExpired === true;
 	const planExpiredNotice = isPlanOver30Days
-		? "План составлен >30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e)."
+		? "План составлен >30 дней назад: по регламенту клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Клинический регламент)."
 		: undefined;
 
 	let gateStatus: DentalLabGateStatus;
@@ -137,7 +137,7 @@ export function checkDentalLabFinancialGate(
 
 	const warningMessageRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Отправить наряд под ответственность главврача? Лечащий врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Мандат 8e).`
+			? `Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Отправить наряд под ответственность главврача? Лечащий врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Автономия врача).`
 			: gateStatus === "DOCTOR_OVERRIDE"
 				? `Наряд ЗТЛ отправлен в производство под клиническую ответственность лечащего врача (${activeOverride?.doctorName || "Лечащий врач"}).`
 				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"

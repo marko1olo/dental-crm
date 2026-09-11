@@ -1293,7 +1293,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		const clinicAddress =
 			dashboard?.clinicSettings?.profile?.address || "г. Москва";
 		const clinicPhone =
-			dashboard?.clinicSettings?.profile?.phone || "+7 (495) 000-00-00";
+			dashboard?.clinicSettings?.profile?.phone || "";
 
 		const selectedDoc = doctors.find((d) => d.id === doctorUserId) || dutyDoc;
 		const doctorName = selectedDoc?.fullName || "Врач клиники";
@@ -1308,7 +1308,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			`Врач: ${doctorName}`,
 			`Кабинет / кресло: ${chairName}`,
 			`Адрес клиники: ${clinicAddress}`,
-			`Телефон для справок: ${clinicPhone}`,
+			...(clinicPhone ? [`Телефон для справок: ${clinicPhone}`] : []),
 			"Пожалуйста, приходите за 10 минут до начала приёма.",
 		].join("\n");
 

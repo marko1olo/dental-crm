@@ -1281,7 +1281,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					items={currentTier.stages.flatMap((s) => s.items)}
 					patientId={patientId}
 					patientName={patientName}
-					patientPhone={dashboard?.activePatient?.phone || "+7 (999) 000-00-00"}
+					patientPhone={dashboard?.activePatient?.phone || ""}
 					patientDepositRub={Math.round((dashboard?.activePatient?.balanceKopecks || 0) / 100)}
 					cashierFullName={auth?.currentUser?.name || "Кассир-администратор"}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
@@ -1454,7 +1454,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onClose={() => setIsPresenterModalOpen(false)}
 					patientId={patientId}
 					patientName={patientName}
-					patientPhone={dashboard?.activePatient?.phone || "+7 (999) 000-00-00"}
+					patientPhone={dashboard?.activePatient?.phone || ""}
 					doctorFullName={auth?.currentUser?.name || "Д-р Ковалев С. П."}
 					teeth={teethData}
 					onSelectPlan={(plan) => {

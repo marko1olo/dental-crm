@@ -426,7 +426,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
 							/>
 							<p className="text-[11px] text-[var(--muted,#64748b)] mt-1">
-								По 54-ФЗ и Мандату 8e ИНН для физических лиц не требуется.
+								По 54-ФЗ ИНН для физических лиц не требуется.
 							</p>
 						</div>
 					</div>

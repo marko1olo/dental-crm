@@ -640,7 +640,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 									<div className="flex items-center gap-2">
 										<ShieldCheck size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 										<span className="text-xs font-black uppercase tracking-wider text-teal-900 dark:text-teal-200">
-											Экспресс-наряд ЗТЛ в 3 клика (Мандат 8e)
+											Экспресс-наряд ЗТЛ в 3 клика (Автономия врача)
 										</span>
 									</div>
 									<div className="text-[11px] font-bold text-teal-800 dark:text-teal-300">
@@ -837,7 +837,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 								{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) && (
 									<div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold leading-relaxed flex items-center gap-1.5">
 										<CheckCircle2 size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-										<span>План составлен &gt;30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e).</span>
+										<span>План составлен &gt;30 дней назад: по регламенту клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Клинический регламент).</span>
 									</div>
 								)}
 							</div>

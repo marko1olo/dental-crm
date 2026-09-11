@@ -84,10 +84,10 @@ export const PrescriptionsTab: React.FC<PrescriptionsTabProps> = ({
 		clinic?.name ||
 		"ООО «Стоматологическая клиника»";
 	const clinicAddress = clinic?.address || "г. Москва";
-	const clinicPhone = clinic?.phone || "+7 (495) 000-00-00";
-	const clinicOgrn = clinic?.ogrn || "1027700000000";
-	const clinicInn = clinic?.inn || "7700000000";
-	const clinicLicense = clinic?.licenseNumber || "ЛО-77-01-000000";
+	const clinicPhone = clinic?.phone || "";
+	const clinicOgrn = clinic?.ogrn || "";
+	const clinicInn = clinic?.inn || "";
+	const clinicLicense = clinic?.licenseNumber || "";
 
 	const filteredDrugs = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((drug) => {
 		if (!searchQuery.trim()) return true;

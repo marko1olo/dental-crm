@@ -1470,7 +1470,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											type="text"
 											value={patientSnils}
 											onChange={(e) => setPatientSnils(e.target.value)}
-											placeholder="123-456-789 00"
+											placeholder="000-000-000 00"
 											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
 										/>
 									</div>

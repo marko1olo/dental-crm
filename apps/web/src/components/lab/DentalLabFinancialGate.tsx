@@ -130,7 +130,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							Предупреждение: Аванс &lt; 50% ({formatKopecksRu(gateResult.totalPaidAndCoveredKopecks)} из {formatKopecksRu(gateResult.requiredAdvanceKopecks)})
 						</div>
 						<p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 mt-0.5">
-							Внесено {gateResult.paidPercent}% от стоимости этапа. Врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Мандат 8e).
+							Внесено {gateResult.paidPercent}% от стоимости этапа. Врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Автономия врача).
 						</p>
 						{gateResult.isPlanExpiredNotice && (
 							<p className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-0.5 flex items-center gap-1">
@@ -358,7 +358,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2 text-teal-900 dark:text-teal-200 font-bold text-xs">
 								<Sparkles size={16} className="text-teal-600" />
-								<span>Клиническая автономия врача (Мандат 8e): отправка наряда без задержки</span>
+								<span>Клиническая автономия врача: отправка наряда без задержки</span>
 							</div>
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-800 dark:text-teal-200 font-bold">
 								1 клик

@@ -66,7 +66,7 @@ export const BankInstallmentQrModal: React.FC<BankInstallmentQrModalProps> = ({
 	stageAmountKopecks,
 	patientId = "pat-1001",
 	patientName = "",
-	patientPhone = "+7 (999) 000-00-00",
+	patientPhone = "",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn = "",
 	planId,

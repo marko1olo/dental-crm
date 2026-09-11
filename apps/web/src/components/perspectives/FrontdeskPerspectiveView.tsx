@@ -121,7 +121,7 @@ export function FrontdeskPerspectiveView({
 					id: apt.id,
 					patientId: apt.patientId,
 					patientName: patient?.fullName || apt.patientName || "Пациент",
-					phone: patient?.phone || "+7 (999) 000-00-00",
+					phone: patient?.phone || "",
 					doctorName: doctor?.name || "Врач клиники",
 					time: apt.startTime || "11:00",
 					chair: apt.chairId || "Кабинет 1",
@@ -390,12 +390,16 @@ export function FrontdeskPerspectiveView({
 												</div>
 												<div className="text-xs text-[var(--ink,#0f172a)] dark:text-slate-300 mt-1.5 flex items-center gap-2 flex-wrap">
 													<Phone size={12} className="text-[var(--muted,#64748b)] dark:text-slate-400" />
-													<a
-														href={`tel:${call.phone}`}
-														className="text-[var(--teal-dark,var(--teal))] font-semibold hover:underline"
-													>
-														{call.phone}
-													</a>
+													{call.phone ? (
+														<a
+															href={`tel:${call.phone}`}
+															className="text-[var(--teal-dark,var(--teal))] font-semibold hover:underline"
+														>
+															{call.phone}
+														</a>
+													) : (
+														<span className="text-[var(--muted,#64748b)]">телефон не указан</span>
+													)}
 													<span className="text-[var(--muted,#64748b)] dark:text-slate-400">· {call.chair}</span>
 												</div>
 											</div>

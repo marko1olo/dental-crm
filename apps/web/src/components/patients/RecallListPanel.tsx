@@ -133,7 +133,7 @@ export const RecallListPanel: React.FC = () => {
 					const pId = typeof p.id === "string" ? p.id : `pat-${idx}`;
 					const pName = typeof p.name === "string" ? p.name : "Пациент";
 					const pPhone =
-						typeof p.phone === "string" ? p.phone : "+7 (999) 000-00-00";
+						typeof p.phone === "string" ? p.phone : null;
 					const bands: RecallBand[] = [
 						"due",
 						"overdue",

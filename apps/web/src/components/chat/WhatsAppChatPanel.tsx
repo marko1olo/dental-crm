@@ -96,7 +96,7 @@ export function WhatsAppChatPanel({
 		return null;
 	}, [dashboard?.patients, effectivePatientId, patientPhone]);
 
-	const effectivePhone = patient?.phone || patientPhone || "+7 (999) 000-00-00";
+	const effectivePhone = patient?.phone || patientPhone || "";
 	const effectiveName = patient?.fullName || patientName || "Пациент клиники";
 	const formattedPhone = formatPhoneDisplay(effectivePhone);
 	const initials = formatPatientInitials(effectiveName);

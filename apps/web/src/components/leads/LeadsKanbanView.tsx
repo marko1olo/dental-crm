@@ -1384,7 +1384,7 @@ export function LeadsKanbanView() {
 								(staff.length === 1 &&
 									staff[0]?.id === FALLBACK_SOLO_DOCTOR.id) ? (
 									<p className="m-0 text-xs leading-relaxed text-[var(--muted)]">
-										В клинике пока не настроен список врачей. Автоматически назначен дежурный врач для соло-практики (Мандат 8e/8n).
+										В клинике пока не настроен список врачей. Автоматически назначен дежурный врач для соло-практики (Режим соло-практики).
 									</p>
 								) : null}
 							</div>
@@ -1423,7 +1423,7 @@ export function LeadsKanbanView() {
 								(chairs.length === 1 &&
 									chairs[0]?.id === FALLBACK_DEFAULT_CHAIR.id) ? (
 									<p className="m-0 text-xs leading-relaxed text-[var(--muted)]">
-										В клинике пока не настроены кресла. Автоматически выбрано основное кресло №1 (Мандат 8e/8n).
+										В клинике пока не настроены кресла. Автоматически выбрано основное кресло №1 (Режим соло-практики).
 									</p>
 								) : null}
 							</div>

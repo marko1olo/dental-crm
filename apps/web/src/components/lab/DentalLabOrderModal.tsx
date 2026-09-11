@@ -449,7 +449,7 @@ export function DentalLabOrderModal({
 		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed && !isWarrantyOrder && !effectiveOverride) {
 			effectiveOverride = createDoctorClinicalOverride(
 				formDoctorName || "Лечащий врач",
-				"Отправка наряда в ЗТЛ — клиническое решение лечащего врача (Мандат 8e)",
+				"Отправка наряда в ЗТЛ — клиническое решение лечащего врача (Автономия врача)",
 			);
 			setGateOverride(effectiveOverride);
 		}

@@ -39,7 +39,7 @@ type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
 export const DEFAULT_TELEGRAM_PREVIEW_PATIENT = {
 	id: "00000000-0000-0000-0000-000000000001",
 	fullName: "",
-	phone: "+7 (916) 123-45-67",
+	phone: "",
 	appointmentTime: "завтра 14:00",
 	doctorName: "Смирнова Е.А.",
 	amountRub: 4500,

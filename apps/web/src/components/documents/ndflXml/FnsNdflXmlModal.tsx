@@ -75,8 +75,8 @@ export function FnsNdflXmlModal({
 			dashboard?.patients?.[0] || {
 				id: "sample-patient-1",
 				fullName: "",
-				birthDate: "1990-05-15",
-				phone: "+7 (999) 123-45-67",
+				birthDate: "",
+				phone: "",
 			}
 		);
 	}, [dashboard?.patients, initialPatientId, activePatientId]);

@@ -370,7 +370,7 @@ export function KraftPackageQuickScanner({
 								<div className="sterilization-soft-overdraft-banner" data-testid="kraft-soft-overdraft-alert">
 									<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 800 }}>
 										<AlertTriangle size={18} />
-										<span>Мягкий допуск / Острая боль (СанПиН Mandate 8e):</span>
+										<span>Мягкий допуск / Острая боль (Клинический регламент):</span>
 									</div>
 									<div style={{ color: "var(--ink)", lineHeight: 1.45 }}>
 										Расчетный срок годности крафт-пакета истек {Math.abs(parsed.daysRemaining)} дн. назад (годен до {parsed.expDateIso}).

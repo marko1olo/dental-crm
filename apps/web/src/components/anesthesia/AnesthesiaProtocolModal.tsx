@@ -308,7 +308,7 @@ export function AnesthesiaProtocolModal({
 							}}
 						>
 							<Zap size={16} color="var(--brand-primary, var(--teal))" />
-							<span>1-клик пресеты стандартной анестезии (Минздрав РФ / Mandate 8e):</span>
+							<span>1-клик пресеты стандартной анестезии (Клинический регламент):</span>
 						</div>
 						<div
 							style={{

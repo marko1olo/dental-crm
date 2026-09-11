@@ -370,7 +370,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 
 							<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] leading-relaxed">
 								<strong className="text-[var(--ink)] block mb-1">
-									Клинический протокол (Мандаты 8e, 8i, 8k):
+									Клинический регламент и протокол (Автономия врача):
 								</strong>
 								CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см, ISQ {assembledData.isqDay0 ?? 72} и плотность кости {boneDensity}. Данные автоматически экспортируются в карту 043/у.
 							</div>

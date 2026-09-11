@@ -364,7 +364,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 		setAdminStaffName(`${docName} (клиническое решение врача)`);
 		setShowAdminPinDrawer(false);
 		showToast(
-			`Цены согласованы лечащим врачом (${docName}) в соответствии с Мандатом 8e`,
+			`Цены согласованы лечащим врачом (${docName}) в рамках клинической автономии`,
 			"success",
 			4000,
 		);
@@ -509,7 +509,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			setAdminOverrideAuthorized(true);
 			setAdminStaffName(effectiveStaffName);
 			showToast(
-				`Цены согласованы лечащим врачом (${docName}) в соответствии с Мандатом 8e`,
+				`Цены согласованы лечащим врачом (${docName}) в рамках клинической автономии`,
 				"success",
 				4000,
 			);

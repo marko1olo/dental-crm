@@ -869,7 +869,7 @@ export function ProcedureMaterialDeductionModal({
 									const preset = createStandardConsumablePresetItem(warehouseItems);
 									setLines([preset]);
 									showToast(
-										"Добавлен стандартный клинический расходный набор (Мандат 8e / 8n)",
+										"Добавлен стандартный клинический расходный набор (Клинический регламент)",
 										"info",
 									);
 								}}
@@ -1249,7 +1249,7 @@ export function ProcedureMaterialDeductionModal({
 									const standardPreset = createStandardConsumablePresetItem(warehouseItems);
 									setLines([standardPreset]);
 									showToast(
-										"Добавлен стандартный клинический расходный набор (Мандат 8e / 8n)",
+										"Добавлен стандартный клинический расходный набор (Клинический регламент)",
 										"info",
 									);
 									return;
