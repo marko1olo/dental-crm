@@ -790,7 +790,7 @@ export function DmsInsurersHubModal({
 	onClose,
 	initialTab = "registry",
 	initialContracts = DEFAULT_STATUTORY_INSURANCE_CONTRACTS,
-	initialRegistryRecords = DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,
+	initialRegistryRecords = [],
 	clinicInfo = DEFAULT_CLINIC_PROFILE,
 	onSaveContract,
 }: DmsInsurersHubModalProps) {

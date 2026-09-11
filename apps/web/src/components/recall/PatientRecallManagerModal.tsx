@@ -422,7 +422,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 	const [candidates, setCandidates] = useState<readonly PatientRecallItem[]>(
 		initialCandidates && initialCandidates.length > 0
 			? initialCandidates
-			: DEFAULT_RECALL_CANDIDATES,
+			: [],
 	);
 
 	const [viewMode, setViewMode] = useState<"table" | "kanban">("table");

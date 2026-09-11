@@ -207,7 +207,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		);
 	};
 
-	// ⭐ 1-Клик: Доплата за премиум-материал (разница рассчитывается в едином визите)
+	// 1-Клик: Доплата за премиум-материал (разница рассчитывается в едином визите)
 	const handleTogglePremiumUpgrade = (itemId: string) => {
 		setBillableItems((prev) =>
 			prev.map((item) => {
@@ -227,7 +227,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 				};
 			}),
 		);
-		showToast("⭐ 1-Клик: Доплата за премиум-материал включена в сплит без разбивки визита", "info");
+		showToast("1-Клик: Доплата за премиум-материал включена в сплит без разбивки визита", "info");
 	};
 
 	// ⚡ 1-Клик: Оформление комбинированной оплаты (сплит-биллинг)
@@ -828,7 +828,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 																	? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 font-bold"
 																	: "text-muted hover:text-ink hover:bg-paper-soft"
 															}`}
-															title="⭐ 1-Клик: Доплата за премиум-материал (разница сооплаты) без разбивки на 2 визита"
+															title="1-Клик: Доплата за премиум-материал (разница сооплаты) без разбивки на 2 визита"
 														>
 															<Star size={14} className={item.serviceName.includes("Премиум") ? "text-amber-500 fill-amber-500" : "text-muted"} />
 															<span className="text-[11px] hidden sm:inline">Премиум</span>

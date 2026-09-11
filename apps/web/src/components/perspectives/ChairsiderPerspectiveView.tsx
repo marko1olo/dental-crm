@@ -767,7 +767,7 @@ export function ChairsiderPerspectiveView() {
 					{/* Header of Visit Block: Selected tooth info, 043/u protocol header */}
 					<div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 						<div className="flex items-center gap-2.5">
-							<span className="text-2xl">📋</span>
+							<ClipboardList className="w-6 h-6 text-[var(--teal,#0d9488)] shrink-0" />
 							<div>
 								<h3 className="text-base md:text-lg font-black text-[var(--ink,#0f172a)] dark:text-white m-0">
 									Клинический приём и документация (Форма 043/у)

@@ -14,7 +14,28 @@ import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { CmoQualityAuditModal } from "../CmoQualityAuditModal";
-import { EgiszSigningCabinetModal } from "../EgiszSigningCabinetModal";
+import {
+	EgiszSigningCabinetModal,
+	type EgiszCabinetDocumentItem,
+} from "../EgiszSigningCabinetModal";
+import { SAMPLE_DENTAL_SEMD_105_PRESET } from "../../egisz/egiszRemdEngine";
+
+const TEST_EGISZ_DOC: EgiszCabinetDocumentItem = {
+	id: "semd-test-001",
+	documentNumber: "СЭМД-2026-TEST",
+	docType: "302",
+	titleRu: "Протокол стоматологического осмотра (Форма 043/у)",
+	patientId: "pat-test-01",
+	patientFullName: "Пациент Тестовый",
+	patientSnils: "112-233-445 95",
+	doctorFullName: "Лечащий врач",
+	doctorSnils: "000-001-001 00",
+	visitDate: "2026-08-20",
+	status: "draft",
+	icd10Code: "K02.1",
+	diagnosisText: "Кариес дентина зуба 1.6",
+	payload: SAMPLE_DENTAL_SEMD_105_PRESET,
+};
 
 type MockFn = {
 	(...args: any[]): any;
@@ -382,6 +403,7 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 				<EgiszSigningCabinetModal
 					isOpen={true}
 					onClose={() => {}}
+					initialDocuments={[TEST_EGISZ_DOC]}
 				/>,
 			);
 		});
@@ -420,6 +442,7 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 				<EgiszSigningCabinetModal
 					isOpen={true}
 					onClose={() => {}}
+					initialDocuments={[TEST_EGISZ_DOC]}
 				/>,
 			);
 		});

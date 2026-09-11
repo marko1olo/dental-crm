@@ -641,7 +641,7 @@ export function generateEmergencyIncidentAct(input: EmergencyIncidentInput): str
 export function generateSmpDispatchCheatSheet(input: EmergencyIncidentInput): string {
 	const scenario = EMERGENCY_SCENARIOS[input.scenarioId];
 	return (
-		`🚨 ТЕКСТ ДЛЯ ДИСПЕТЧЕРА СКОРОЙ ПОМОЩИ (103 / 112):\n\n` +
+		`[ЭКСТРЕННО] ТЕКСТ ДЛЯ ДИСПЕТЧЕРА СКОРОЙ ПОМОЩИ (103 / 112):\n\n` +
 		`1. АДРЕС: ${input.clinicAddress}, Кабинет № ${input.cabinetNumber || '1'}.\n` +
 		`2. КТО ВЫЗЫВАЕТ: Врач-стоматолог ${input.doctorFullName}, клиника «${input.clinicName}».\n` +
 		`3. ПАЦИЕНТ: ${input.patientFullName}, ${input.patientAgeYears} лет (${input.patientGender === 'male' ? 'мужчина' : 'женщина'}), вес ${input.patientWeightKg} кг.\n` +

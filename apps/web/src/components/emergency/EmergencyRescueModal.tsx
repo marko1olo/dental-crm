@@ -26,7 +26,8 @@ import {
 	FileText,
 	Stethoscope,
 	User,
-	Printer
+	Printer,
+	AlertTriangle,
 } from 'lucide-react';
 import { showToast } from '../GlobalToast';
 import {
@@ -838,8 +839,9 @@ export function EmergencyRescueModal({
 							</div>
 
 							{isAdrenalineDue && (
-								<div className="emergency-timer-alert">
-									⚠️ ВРЕМЯ ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА (0.3–0.5 МЛ В/М)!
+								<div className="emergency-timer-alert flex items-center justify-center gap-1.5">
+									<AlertTriangle className="w-4 h-4 shrink-0" />
+									<span>ВРЕМЯ ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА (0.3–0.5 МЛ В/М)!</span>
 								</div>
 							)}
 

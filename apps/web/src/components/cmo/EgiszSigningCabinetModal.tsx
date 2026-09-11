@@ -108,117 +108,24 @@ export interface EgiszSigningCabinetModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly initialDocumentId?: string | undefined;
+	readonly initialDocuments?: readonly EgiszCabinetDocumentItem[] | undefined;
 }
 
 // ── Statutory Pre-loaded Dental Outpatient Documents ──
-const INITIAL_CABINET_DOCUMENTS: EgiszCabinetDocumentItem[] = [
-	{
-		id: "semd-001",
-		documentNumber: "СЭМД-2026-0819",
-		docType: "302",
-		titleRu: "Протокол стоматологического осмотра (Форма 043/у)",
-		patientId: "pat-101",
-		patientFullName: "Смирнов Алексей Владимирович",
-		patientSnils: "112-233-445 95",
-		doctorFullName: "Врач-стоматолог-терапевт",
-		doctorSnils: "000-001-001 00",
-		visitDate: "2026-08-20",
-		status: "draft",
-		icd10Code: "K02.1",
-		diagnosisText: "Кариес дентина зуба 1.6",
-		payload: SAMPLE_DENTAL_SEMD_105_PRESET,
-	},
-	{
-		id: "semd-002",
-		documentNumber: "СЭМД-2026-0820",
-		docType: "105",
-		titleRu: "Протокол операции дентальной имплантации (Зуб 4.6)",
-		patientId: "pat-102",
-		patientFullName: "Кузнецова Ирина Павловна",
-		patientSnils: "123-456-789 00",
-		doctorFullName: "Петров Сергей Иванович",
-		doctorSnils: "000-001-001 00",
-		visitDate: "2026-08-21",
-		status: "draft",
-		icd10Code: "K08.1",
-		diagnosisText: "Потеря зуба вследствие несчастного случая (Адентия 4.6)",
-		payload: {
-			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			documentUuid: "urn:uuid:8a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
-			docTypeCode: "105",
-			patient: {
-				...SAMPLE_DENTAL_SEMD_105_PRESET.patient,
-				patientFullName: "Кузнецова Ирина Павловна",
-				patientSnils: "123-456-789 00",
-				patientBirthDate: "1988-11-20",
-				patientGender: "female",
-			},
-			diagnoses: [
-				{
-					icd10Code: "K08.1",
-					icd10Name: "Частичное отсутствие зубов нижней челюсти (Адентия 4.6)",
-					isPrimary: true,
-					tooth: "46",
-				},
-			],
-			doctor: {
-				...SAMPLE_DENTAL_SEMD_105_PRESET.doctor,
-				doctorFullName: "Петров Сергей Иванович",
-				doctorPosition: "Врач-стоматолог-хирург",
-			},
-		},
-	},
-	{
-		id: "semd-003",
-		documentNumber: "СЭМД-2026-0821",
-		docType: "302",
-		titleRu: "Протокол первичного эндодонтического лечения (Зуб 2.4)",
-		patientId: "pat-103",
-		patientFullName: "Морозов Дмитрий Олегович",
-		patientSnils: "145-678-901 22",
-		doctorFullName: "Врач-стоматолог-терапевт",
-		doctorSnils: "000-001-001 00",
-		visitDate: "2026-08-19",
-		status: "registered_remd",
-		icd10Code: "K04.0",
-		diagnosisText: "Острый очаговый пульпит зуба 2.4",
-		remdRegistrationNumber: "РЭМД-2026-0819-09412",
-		remdRegisteredAt: "2026-08-19 14:32:10",
-		payload: SAMPLE_DENTAL_SEMD_105_PRESET,
-		doctorSignature: {
-			signatureBase64: "U0VNRF8zMDJfRE9DVE9SX1NJR05BVFVSRQ==",
-			certificateSerialNumber: "00E4A28B00000001",
-			certificateSubject: "CN=Врач-стоматолог-терапевт, SNILS=000-001-001 00, O=ДЕНТЕ, C=RU",
-			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-19T14:30:00.000Z",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		clinicSignature: {
-			signatureBase64: "U0VNRF8zMDJfTU9fU0lHTkFUVVJFCg==",
-			certificateSerialNumber: "00B17F9A10277001",
-			certificateSubject: "CN=ДЕНТЕ, OGRN=1027700132195, C=RU",
-			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-19T14:31:00.000Z",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-	},
-];
+export const INITIAL_CABINET_DOCUMENTS: readonly EgiszCabinetDocumentItem[] = [];
 
 export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> = ({
 	isOpen,
 	onClose,
 	initialDocumentId,
+	initialDocuments,
 }) => {
 	// ── 1. Documents State ──
-	const [documents, setDocuments] = useState<EgiszCabinetDocumentItem[]>(INITIAL_CABINET_DOCUMENTS);
+	const [documents, setDocuments] = useState<EgiszCabinetDocumentItem[]>(() =>
+		initialDocuments ? [...initialDocuments] : INITIAL_CABINET_DOCUMENTS,
+	);
 	const [selectedDocId, setSelectedDocId] = useState<string>(
-		initialDocumentId || INITIAL_CABINET_DOCUMENTS[0]?.id || "",
+		initialDocumentId || (documents[0]?.id ?? ""),
 	);
 	const [filterStatus, setFilterStatus] = useState<string>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -233,7 +140,8 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 
 	// Currently Selected Document
 	const currentDoc = useMemo(() => {
-		return documents.find((d) => d.id === selectedDocId) || documents[0]!;
+		if (documents.length === 0) return null;
+		return documents.find((d) => d.id === selectedDocId) || documents[0] || null;
 	}, [documents, selectedDocId]);
 
 	// Filtered Documents List
@@ -641,6 +549,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 
 	// Download XML file
 	const handleDownloadXml = () => {
+		if (!currentDoc) return;
 		const blob = new Blob([generatedXml], { type: "application/xml;charset=utf-8" });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
@@ -757,42 +666,93 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 
 						{/* Document List */}
 						<div className="egisz-doc-items-list">
-							{filteredDocs.map((doc) => (
-								<button
-									key={doc.id}
-									type="button"
-									className={`egisz-doc-card ${doc.id === selectedDocId ? "active" : ""}`}
-									onClick={() => setSelectedDocId(doc.id)}
+							{filteredDocs.length === 0 ? (
+								<div
+									data-testid="egisz-docs-empty-state"
+									className="egisz-docs-empty-state"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "center",
+										justifyContent: "center",
+										padding: "2rem 1rem",
+										textAlign: "center",
+										gap: "8px",
+										color: "#64748b",
+									}}
 								>
-									<div className="egisz-doc-card-header">
-										<span className="egisz-doc-number">{doc.documentNumber}</span>
-										<span className={`egisz-status-pill ${doc.status}`}>
-											{doc.status === "draft"
-												? "Черновик"
-												: doc.status === "signed_doctor"
-													? "Подписан врачом"
-													: doc.status === "signed_clinic"
-														? "Подписан МО"
-														: doc.status === "registered_remd"
-															? "В РЭМД"
-															: doc.status === "validation_error"
-																? "Ошибка"
-																: "Отправка"}
-										</span>
+									<FileText size={32} color="#94a3b8" />
+									<div style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+										В очереди нет документов для передачи в ЕГИСЗ РЭМД
 									</div>
-									<div className="egisz-doc-patient-name">{doc.patientFullName}</div>
-									<div className="egisz-doc-meta">
-										<span>СНИЛС: {doc.patientSnils}</span>
-										<span>{doc.visitDate}</span>
+									<div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+										Документы формируются автоматически при подписании протоколов осмотра Формы 043/у
 									</div>
-								</button>
-							))}
+								</div>
+							) : (
+								filteredDocs.map((doc) => (
+									<button
+										key={doc.id}
+										type="button"
+										className={`egisz-doc-card ${doc.id === selectedDocId ? "active" : ""}`}
+										onClick={() => setSelectedDocId(doc.id)}
+									>
+										<div className="egisz-doc-card-header">
+											<span className="egisz-doc-number">{doc.documentNumber}</span>
+											<span className={`egisz-status-pill ${doc.status}`}>
+												{doc.status === "draft"
+													? "Черновик"
+													: doc.status === "signed_doctor"
+														? "Подписан врачом"
+														: doc.status === "signed_clinic"
+															? "Подписан МО"
+															: doc.status === "registered_remd"
+																? "В РЭМД"
+																: doc.status === "validation_error"
+																	? "Ошибка"
+																	: "Отправка"}
+											</span>
+										</div>
+										<div className="egisz-doc-patient-name">{doc.patientFullName}</div>
+										<div className="egisz-doc-meta">
+											<span>СНИЛС: {doc.patientSnils}</span>
+											<span>{doc.visitDate}</span>
+										</div>
+									</button>
+								))
+							)}
 						</div>
 					</aside>
 
 					{/* ── Main Workspace Area ── */}
 					<main className="egisz-main-workspace">
-						{activeTab === "signing" && (
+						{!currentDoc ? (
+							<div
+								data-testid="egisz-docs-empty-state"
+								className="egisz-docs-empty-state"
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									alignItems: "center",
+									justifyContent: "center",
+									padding: "3rem 1.5rem",
+									textAlign: "center",
+									gap: "12px",
+									color: "#64748b",
+									minHeight: "360px",
+								}}
+							>
+								<FileText size={48} color="#94a3b8" />
+								<div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#1e293b" }}>
+									В очереди нет документов для передачи в ЕГИСЗ РЭМД
+								</div>
+								<p style={{ fontSize: "0.875rem", maxWidth: "420px", margin: 0 }}>
+									Документы формируются автоматически при подписании протоколов осмотра Формы 043/у
+								</p>
+							</div>
+						) : (
+							<>
+								{activeTab === "signing" && (
 							<div className="egisz-signing-workspace">
 								{/* 1. Document Summary Card */}
 								<div className="egisz-card">
@@ -1177,6 +1137,8 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 									</tbody>
 								</table>
 							</div>
+						)}
+							</>
 						)}
 					</main>
 				</div>

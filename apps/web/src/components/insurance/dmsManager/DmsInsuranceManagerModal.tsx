@@ -393,7 +393,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		}
 	};
 
-	// ⭐ 1-Клик: Доплата за премиум-материал (разница сооплаты)
+	// 1-Клик: Доплата за премиум-материал (разница сооплаты)
 	const handleToggleSplitPremium = (itemId: string) => {
 		setSplitItems((prev) =>
 			prev.map((item) => {
@@ -413,7 +413,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 				};
 			}),
 		);
-		showToast("⭐ 1-Клик: Доплата за премиум-материал включена в сплит без разбивки визита", "info");
+		showToast("1-Клик: Доплата за премиум-материал включена в сплит без разбивки визита", "info");
 	};
 
 	// ⚡ 1-Клик: Проведение сплит-оплаты в кассе клиники (единый визит)
@@ -1668,7 +1668,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 															fontWeight: line.serviceName.includes("Премиум") ? 700 : 500,
 														}}
 														onClick={() => handleToggleSplitPremium(line.itemId)}
-														title="⭐ 1-Клик: Доплата за премиум-материал (разница сооплаты) без разбивки визита"
+														title="1-Клик: Доплата за премиум-материал (разница сооплаты) без разбивки визита"
 													>
 														<Star size={12} className={line.serviceName.includes("Премиум") ? "text-amber-500 fill-amber-500" : ""} />
 														Премиум

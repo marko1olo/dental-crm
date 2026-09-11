@@ -183,16 +183,16 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 			patientName: selectedContact.fullName,
 			clinicName,
 			clinicAddress,
-			appointmentDate: selectedContact.nextAppointment?.date || "29.08.2026",
-			appointmentTime: selectedContact.nextAppointment?.time || "15:00",
-			cabinet: selectedContact.nextAppointment?.cabinet || "302",
-			doctorName: selectedContact.nextAppointment?.doctorName || "Кузнецова Е.В.",
+			appointmentDate: selectedContact.nextAppointment?.date || "",
+			appointmentTime: selectedContact.nextAppointment?.time || "",
+			cabinet: selectedContact.nextAppointment?.cabinet || "",
+			doctorName: selectedContact.nextAppointment?.doctorName || "Лечащий врач",
 			treatmentPlanTitle: selectedContact.activeTreatmentPlan?.title || "Комплексный план лечения",
 			treatmentSum: selectedContact.activeTreatmentPlan
 				? formatCurrencyRu(selectedContact.activeTreatmentPlan.totalRub)
-				: "15 000,00 ₽",
+				: "0,00 ₽",
 			orderId: `ORD-${Date.now().toString().slice(-6)}`,
-			paymentLink: "https://qr.nspk.ru/SBP-ORD-DEMO",
+			paymentLink: "",
 		};
 
 		const filled = replaceTemplateVariables(template.templateText, context);
