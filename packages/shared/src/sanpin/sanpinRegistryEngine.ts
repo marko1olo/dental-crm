@@ -333,7 +333,7 @@ export interface ClinicLegalInfo {
 export const DEFAULT_CLINIC_LEGAL: ClinicLegalInfo = {
 	name: "ООО «Стоматологическая клиника ДЕНТЕ»",
 	ogrn: "1027700123456",
-	inn: "7701234567",
+	inn: "",
 	address: "г. Москва, ул. Клиническая, д. 10",
 	chiefDoctor: "Смирнов А. В.",
 	headNurse: "Иванова М. П.",

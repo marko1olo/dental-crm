@@ -335,14 +335,14 @@ function generateZReportTape(
 	};
 
 	const clinicName = options.clinicLegalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
-	const clinicInn = options.clinicInn || "7701234567";
+	const clinicInn = options.clinicInn || "";
 	const kktReg = options.kktRegNumber || "0005423891047123";
 	const fnSerial = options.fnSerial || "9960440301849210";
 
 	const lines: string[] = [
 		divider,
 		padCenter(clinicName),
-		padCenter(`ИНН: ${clinicInn}`),
+		...(clinicInn ? [padCenter(`ИНН: ${clinicInn}`)] : []),
 		divider,
 		padCenter("ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ (Z-ОТЧЕТ 54-ФЗ)"),
 		padJustify("СМЕНА:", `№ ${zReport.shiftNumber}`),

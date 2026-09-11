@@ -90,7 +90,7 @@ export const informedConsent1051nPayloadSchema = z.object({
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
 	clinicAddress: z.string().trim().max(240).default(""),
 	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
-	clinicInn: z.string().trim().max(16).default("7701234567"),
+	clinicInn: z.string().trim().max(16).default(""),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
 	medicalLicenseDate: z.string().trim().max(32).default(DEFAULT_CLINIC_LICENSE_DATE),
 	patientFullName: z.string().trim().min(1).max(160),
@@ -182,7 +182,7 @@ export function generateStatutoryConsent1051nPayload(params: {
 		clinicLegalName: c?.legalName || 'ООО "Денте Клиник"',
 		clinicAddress: c?.address || "",
 		clinicOgrn: c?.ogrn || "1234567890123",
-		clinicInn: c?.inn || "7701234567",
+		clinicInn: c?.inn || "",
 		medicalLicenseNumber: c?.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER,
 		medicalLicenseDate: DEFAULT_CLINIC_LICENSE_DATE,
 		patientFullName: p.fullName,
@@ -372,12 +372,12 @@ export const paidServiceContract736PayloadSchema = z.object({
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
 	clinicAddress: z.string().trim().max(240).default(""),
 	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
-	clinicInn: z.string().trim().max(16).default("7701234567"),
+	clinicInn: z.string().trim().max(16).default(""),
 	clinicKpp: z.string().trim().max(16).nullable().optional().default("770101001"),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
 	medicalLicenseDate: z.string().trim().max(32).default(DEFAULT_CLINIC_LICENSE_DATE),
 	medicalLicenseIssuer: z.string().trim().max(160).default(DEFAULT_CLINIC_LICENSE_ISSUER),
-	clinicPhone: z.string().trim().max(64).default("+7 (495) 123-45-67"),
+	clinicPhone: z.string().trim().max(64).default(""),
 	clinicWebsite: z.string().trim().max(120).default("https://dente-clinic.ru"),
 	patientFullName: z.string().trim().min(1).max(160),
 	patientBirthDate: z.string().trim().min(10).max(32),
@@ -406,12 +406,12 @@ export function renderPaidServiceContract736Html(payload: PaidServiceContract736
 	const clinicName = payload.clinicLegalName || 'ООО "Денте Клиник"';
 	const clinicAddress = payload.clinicAddress || "";
 	const clinicOgrn = payload.clinicOgrn || "1234567890123";
-	const clinicInn = payload.clinicInn || "7701234567";
+	const clinicInn = payload.clinicInn || "_______________";
 	const clinicKpp = payload.clinicKpp || "770101001";
 	const medLic = payload.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER;
 	const medLicDate = payload.medicalLicenseDate || DEFAULT_CLINIC_LICENSE_DATE;
 	const medLicIssuer = payload.medicalLicenseIssuer || DEFAULT_CLINIC_LICENSE_ISSUER;
-	const clinicPhone = payload.clinicPhone || "+7 (495) 123-45-67";
+	const clinicPhone = payload.clinicPhone || "";
 	const clinicWebsite = payload.clinicWebsite || "https://dente-clinic.ru";
 
 	const patientName = payload.patientFullName || "";
@@ -572,7 +572,7 @@ export const actOfCompletedWorksPayloadSchema = z.object({
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
 	clinicAddress: z.string().trim().max(240).default(""),
 	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
-	clinicInn: z.string().trim().max(16).default("7701234567"),
+	clinicInn: z.string().trim().max(16).default(""),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
 	customerFullName: z.string().trim().min(1).max(160),
 	customerPassport: z.string().trim().max(120).default("Паспорт гражданина РФ"),
@@ -597,7 +597,7 @@ export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksPayloa
 	const clinicName = payload.clinicLegalName || 'ООО "Денте Клиник"';
 	const clinicAddress = payload.clinicAddress || "";
 	const clinicOgrn = payload.clinicOgrn || "1234567890123";
-	const clinicInn = payload.clinicInn || "7701234567";
+	const clinicInn = payload.clinicInn || "_______________";
 	const medLic = payload.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER;
 
 	const customerName = payload.customerFullName || payload.patientFullName || "";

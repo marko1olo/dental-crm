@@ -91,7 +91,7 @@ export const omnichannelAppointmentContextSchema = z.object({
 	clinicName: z.string().default("DENTE Clinic"),
 	clinicAddress: z.string().default("г. Москва, ул. Арбат, д. 24, стр. 1"),
 	clinicFloorOffice: z.string().optional(), // "2 этаж, каб. 4"
-	clinicPhone: z.string().default("+7 (495) 123-45-67"),
+	clinicPhone: z.string().default(""),
 	clinicCoordinates: clinicCoordinatesSchema.default({
 		latitude: 55.751244,
 		longitude: 37.618423,

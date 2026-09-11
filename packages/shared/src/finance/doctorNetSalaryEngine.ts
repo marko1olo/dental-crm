@@ -615,7 +615,7 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 	<div class="t51-header">
 		<div>
 			<div class="clinic-title">${payload.organizationName}</div>
-			<div class="clinic-sub">ИНН: ${payload.organizationInn || "7701234567"} • Стоматологическая клиника DENTE</div>
+			<div class="clinic-sub">${payload.organizationInn ? `ИНН: ${payload.organizationInn} • ` : ""}Стоматологическая клиника DENTE</div>
 		</div>
 		<div class="okud-badge">
 			Унифицированная форма № Т-51<br>

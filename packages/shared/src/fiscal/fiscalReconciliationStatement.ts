@@ -25,7 +25,7 @@ export interface ClinicFiscalRequisites {
 
 export const DEFAULT_CLINIC_FISCAL_REQUISITES: ClinicFiscalRequisites = {
 	name: "ООО «Стоматологическая клиника ДЕНТЕ»",
-	inn: "7701234567",
+	inn: "",
 	kpp: "770101001",
 	ogrn: "1027700123456",
 	address: "г. Москва, ул. Клиническая, д. 10",
@@ -444,7 +444,7 @@ export function generateFiscalPeriodStatementHtml(data: FiscalPeriodStatementDat
 			<div class="clinic-name">${escapeHtml(req.name)}</div>
 			<div class="requisites-grid">
 				<div>
-					ИНН: <strong>${escapeHtml(req.inn)}</strong> ${req.kpp ? `• КПП: <strong>${escapeHtml(req.kpp)}</strong>` : ""} • ОГРН: <strong>${escapeHtml(req.ogrn)}</strong><br>
+					${req.inn ? `ИНН: <strong>${escapeHtml(req.inn)}</strong> • ` : ""}${req.kpp ? `КПП: <strong>${escapeHtml(req.kpp)}</strong> • ` : ""}ОГРН: <strong>${escapeHtml(req.ogrn)}</strong><br>
 					Адрес: ${escapeHtml(req.address)}<br>
 					Медицинская лицензия: <strong>${escapeHtml(req.licenseNumber)}</strong>
 				</div>

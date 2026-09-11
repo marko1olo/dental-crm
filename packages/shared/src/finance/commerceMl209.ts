@@ -120,7 +120,7 @@ export const DEFAULT_CLINIC_PROFILE_1C: OneCClinicProfile = {
 	kpp: "770101001",
 	ogrn: "1207700123454",
 	address: "101000, г. Москва, ул. Стоматологическая, д. 10, стр. 1",
-	phone: "+7 (495) 123-45-67",
+	phone: "",
 	email: "buh@dente-clinic.ru",
 	bankAccount: "40702810938000012345",
 	bankBik: "044525225",

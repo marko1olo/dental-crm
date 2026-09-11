@@ -250,7 +250,7 @@ export function formatSeniorNurseDisposalActData(options: {
 		actNumber,
 		actDate,
 		organizationName: options.organizationName ?? 'ООО "ДЕНТЕ КЛИНИК"',
-		organizationInn: options.organizationInn ?? "7701234567",
+		organizationInn: options.organizationInn ?? "",
 		organizationAddress: options.organizationAddress ?? "г. Москва, ул. Клиническая, д. 10, стр. 2",
 		departmentName: options.departmentName ?? "Стоматологическое отделение",
 		cabinetName: options.cabinetName ?? "Кабинет №1 (Терапия / Хирургия)",
@@ -417,8 +417,7 @@ export function generateSeniorNurseDisposalActHtml(actData: SeniorNurseDisposalA
     <tr>
       <td style="width: 55%;">
         <strong>${actData.organizationName}</strong><br/>
-        <span>ИНН: ${actData.organizationInn}</span><br/>
-        <span style="font-size: 10.5px; color: #333;">${actData.organizationAddress}</span><br/>
+        ${actData.organizationInn ? `<span>ИНН: ${actData.organizationInn}</span><br/>` : ""}<span style="font-size: 10.5px; color: #333;">${actData.organizationAddress}</span><br/>
         <span>Отделение: <u>${actData.departmentName}</u></span><br/>
         ${actData.cabinetName ? `<span>Кабинет / Пост: <u>${actData.cabinetName}</u></span>` : ""}
       </td>

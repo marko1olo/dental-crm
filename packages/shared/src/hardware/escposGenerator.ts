@@ -527,7 +527,9 @@ export function buildEscPosFiscalReceiptBuffer(
 	builder.doubleBoth(false);
 
 	builder.line(payload.clinicAddress || "г. Москва, Ломоносовский пр-т, 24");
-	builder.line(`ИНН: ${payload.inn || "7701234567"} КПП: ${payload.kpp || "770101001"}`);
+	if (payload.inn) {
+		builder.line(`ИНН: ${payload.inn}${payload.kpp ? ` КПП: ${payload.kpp}` : ""}`);
+	}
 	builder.line(`Лицензия: № ${payload.licenseNumber || "ЛО41-01137-77/00368421"}`);
 	builder.separator("-");
 
@@ -634,6 +636,7 @@ export function buildEscPosFiscalReceiptBuffer(
 
 export interface EscPosAppointmentTicketPayload {
 	readonly clinicName?: string | undefined;
+	readonly clinicPhone?: string | undefined;
 	readonly ticketNumber: string;
 	readonly patientFullName: string;
 	readonly doctorFullName: string;
@@ -732,7 +735,9 @@ export function buildEscPosAppointmentTicketBuffer(
 
 	builder.align("center");
 	builder.line("Пожалуйста, приходите за 10 мин до начала");
-	builder.line("тел. клиники: +7 (495) 123-45-67");
+	if (payload.clinicPhone) {
+		builder.line(`тел. клиники: ${payload.clinicPhone}`);
+	}
 
 	// 6. Paper Feed & Cut
 	builder.feed(4);

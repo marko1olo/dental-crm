@@ -739,7 +739,7 @@ export function buildOneCZupAccrualsList(
 export function exportOneCZup31Xml(
 	accruals: readonly OneCZupAccrualEntry[],
 	organizationNameRu: string = "ООО «Денте Стоматология»",
-	organizationInn: string = "7701234567",
+	organizationInn: string = "",
 	documentNumber: string = "CRM-PAY-001",
 	exportDateIso: string = new Date().toISOString().split("T")[0]!,
 ): string {

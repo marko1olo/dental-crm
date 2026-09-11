@@ -298,9 +298,9 @@ export function generateFnsFileNameAndId(
 	filePrefix: "NO_MEDOPL" | "UT_SVOPLMEDUSL" | string = "NO_MEDOPL",
 ): { fileName: string; fileId: string; uuid: string } {
 	const cleanOffice = (taxOfficeCode || "7701").padStart(4, "0").slice(0, 4);
-	const cleanInn = cleanDigits(senderInn) || "7701234567";
+	const cleanInn = cleanDigits(senderInn) || "";
 	const cleanKpp = senderKpp ? cleanDigits(senderKpp) : "";
-	const senderId = cleanInn.length === 12 ? cleanInn : `${cleanInn}${cleanKpp || "770101001"}`;
+	const senderId = cleanInn.length === 12 ? cleanInn : (cleanInn ? `${cleanInn}${cleanKpp || "770101001"}` : "");
 
 	let rawDate = "20260818";
 	if (documentDate.includes(".")) {
