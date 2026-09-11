@@ -225,3 +225,19 @@ export {
 } from "./nativeVolumeImportEngine.js";
 export * as nativeVolumeImportEngine from "./nativeVolumeImportEngine.js";
 export * from "./nativeVolumeImportEngine.js";
+
+// Wave 133: 3D Optical Scan Rigid Registration & Prosthetic Tooth Setup Engine
+export {
+	identity4,
+	classifyRegistrationQuality,
+	pickMeshRay,
+	suggestImplantFromCrown,
+	formatScanRegistrationA4Protocol,
+	type RegistrationQuality,
+	type KabschResultWithQuality,
+	type MeshRayHit,
+	type CrownImplantSuggestion,
+	type ScanRegistrationProtocolInput,
+} from "./scanRegistrationEngine.js";
+export * as scanRegistrationEngine from "./scanRegistrationEngine.js";
+
