@@ -408,3 +408,34 @@ Integrity mode: development
 
 Квота восполнена. Продолжай глубокую работу согласно Конституции THE HAMMER (Мандаты 8d, 8e, 8k, 8n).
 Заверши сквозную проверку расписания, закрепления врачей за креслами по графику смен, проверь типы и проведи коммит с точечным git add. Доложи фактами.
+
+
+## Follow-up — 2026-09-11T20:28:03Z
+
+Use a very large team of agents to perform a comprehensive mobile UI/UX overhaul, responsive layout refactoring, and adversarial Playwright visual verification across all primary views of Dental CRM (`apps/web/`): Schedule (Расписание), Visit/EMK (Приём и дневник 043/у), Patients (Пациенты), Finance (Касса 54-ФЗ), and Documents (Документы).
+
+Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: development
+
+## Requirements
+
+### R1. Mobile Layout Responsiveness & Zero Horizontal Overflow
+Every clinical view must render cleanly at 390x844 (and 360–430px mobile viewports) with strictly 0px horizontal body scroll. Eliminate text clipping (truncate ellipsis breaking patient names), overlapping buttons, and topbar/header collision.
+
+### R2. Touch Targets & Ergonomic Mobile Controls (Mandates 8c & 8e)
+All buttons, inputs, pills, select dropdowns, and navigation triggers must have a minimum interactive tap target of >= 44x44px. Heavy desktop multi-column tables and strips must adapt into clean, touch-friendly mobile cards with clear spacing.
+
+### R3. Mobile Bottom Navigation & Safe Area Clearance
+The fixed mobile bottom navigation bar (`Смена`, `Записи`, `Пациенты`, `Прием`, `Ещё`, `Голос`) must have proper clearance (`pb-20` / safe-area-inset-bottom) so it never covers content, scroll areas, or primary action buttons (`+ Запись`, `Завершить приём`, `Оплатить`).
+
+### R4. Multi-Theme Mobile Visual Polish & WCAG AAA Parity
+Both Mobile Light and Mobile Dark themes must be verified via Playwright live screenshots. Eliminate all blinding white background patches or borders in Dark Mode (`#090d11` / `#0f172a`), ensure high contrast for all text (`var(--ink)`), and enforce strictly 0 cartoon emojis in medical records.
+
+## Acceptance Criteria
+
+### Visual & Machine Verification
+- [ ] Live Playwright mobile screenshots (390x844 Light & Dark) for Schedule, Visit, Patients, Finance, and Documents captured and visually proven.
+- [ ] All interactive controls meet or exceed 44x44px touch target size.
+- [ ] Viewport horizontal overflow (`document.documentElement.scrollWidth > window.innerWidth`) is strictly false.
+- [ ] Zero unhandled runtime exceptions or React error boundaries.
+- [ ] Compilation and encoding gates pass (`npm run check:encoding`, `npm run typecheck -w @dental/web`, `npm run check:css-tokens`).
