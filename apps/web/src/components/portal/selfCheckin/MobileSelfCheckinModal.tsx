@@ -503,7 +503,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												title="Открыть анкету здоровья с предзаполненной физиологической нормой (хронических патологий нет)"
 											>
 												<Zap size={13} />
-												<span>Норма по умолчанию (Мандат 8e)</span>
+												<span>Норма по умолчанию</span>
 											</button>
 										</div>
 									</div>
@@ -660,7 +660,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									<div className="selfcheckin-norm-title-row">
 										<ShieldCheck size={18} className="selfcheckin-norm-icon" />
 										<span className="selfcheckin-norm-title">
-											Физиологическая норма по умолчанию (Мандат 8e)
+											Физиологическая норма по умолчанию
 										</span>
 									</div>
 									{isNormApplied && (

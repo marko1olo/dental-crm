@@ -971,11 +971,11 @@ export function generate54FzZReportReceiptTapeText(params: ZReportPrintTapeParam
 	const subDivider = "-".repeat(maxCols);
 
 	const clinicName = params.clinicLegalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
-	const clinicInn = params.clinicInn || "7701234567";
-	const clinicKpp = params.clinicKpp || "770101001";
-	const clinicAddr = params.clinicAddress || "г. Москва, ул. Клиническая, д. 10";
+	const clinicInn = params.clinicInn || "";
+	const clinicKpp = params.clinicKpp || "";
+	const clinicAddr = params.clinicAddress || "";
 	const cashier = params.cashierFullName || "Кассир-администратор";
-	const cashierInn = params.cashierInn || "770198765432";
+	const cashierInn = params.cashierInn || "";
 	const kktReg = params.kktRegNumber || "0004829104058291";
 	const kktSerial = params.kktSerialNumber || "019482019482";
 	const fnSerial = params.fnSerial || "9960440302145896";

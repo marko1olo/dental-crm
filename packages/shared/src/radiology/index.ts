@@ -31,10 +31,6 @@ export * from "./nerveCanalSpline.js";
 
 // Wave 120: CBCT Bone Quality & CPR Math Adapter
 export {
-	classifyBone,
-	sampleImplantBoneHU,
-	type BoneClass,
-	type BoneSample,
 	type BoneQualityProfile,
 	type MischGuidance,
 	getMischBoneClinicalGuidance,
@@ -42,10 +38,7 @@ export {
 } from "./boneQuality.js";
 
 export {
-	trilinear,
 	buildUniformCurve,
-	type VolumeSamplingData,
-	type Point2,
 	type CPRResult,
 	type CrossSectionGeometryParams,
 	type CrossSectionFrame,

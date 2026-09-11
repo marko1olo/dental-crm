@@ -2281,7 +2281,6 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											<Zap className="w-3.5 h-3.5 text-amber-400" />
 											Протоколы для 043/у (1 клик):
 										</span>
-										<span className="text-[10px] text-[var(--teal)] font-mono font-bold">Мандат 8e</span>
 									</div>
 									<div className="grid grid-cols-1 gap-1.5">
 										{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (

@@ -228,7 +228,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								className="roster-btn roster-btn-primary"
 								onClick={() => onSaveAll(false)}
 								style={{ minHeight: "44px" }}
-								title="Сохранить изменения графика (Мандат 8e)"
+								title="Сохранить изменения графика"
 							>
 								<Save size={16} />
 								<span>Сохранить</span>

@@ -259,10 +259,10 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const [oneCDocType, setOneCDocType] = useState<OneCDocumentType>("act");
 	const [oneCDocDate, setOneCDocDate] = useState<string>(new Date().toISOString().slice(0, 10));
 	const [oneCDocTime] = useState<string>("12:00:00");
-	const [oneCClinicInn, setOneCClinicInn] = useState<string>("7701234567");
-	const [oneCClinicKpp, setOneCClinicKpp] = useState<string>("770101001");
+	const [oneCClinicInn, setOneCClinicInn] = useState<string>("");
+	const [oneCClinicKpp, setOneCClinicKpp] = useState<string>("");
 	const [oneCPatientInn, setOneCPatientInn] = useState<string>("");
-	const [oneCPatientAddress, setOneCPatientAddress] = useState<string>("г. Москва, ул. Клиническая, д. 12");
+	const [oneCPatientAddress, setOneCPatientAddress] = useState<string>("");
 
 	// Doctor Discounts & Round to Hundreds (Mandate 8e: Freedom for doctors)
 	const [selectedDiscountPreset, setSelectedDiscountPreset] = useState<LoyaltyDiscountPreset>("none");
@@ -1113,7 +1113,6 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		<div class="meta-grid">
 			<div>
 				<div><strong>Организация:</strong> ${clinicName}</div>
-				<div><strong>ИНН:</strong> 7701234567</div>
 				<div><strong>Лицензия:</strong> ЛО41-01137-77/00368421</div>
 			</div>
 			<div>
@@ -2952,7 +2951,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 								<div className="text-xs space-y-1 text-slate-800 font-sans">
 									<p>
-										<strong>Исполнитель:</strong> {clinicName}, ИНН 7701234567, КПП 770101001, Лицензия ЛО41-01137-77/00123456
+										<strong>Исполнитель:</strong> {clinicName}, Лицензия ЛО41-01137-77/00123456
 									</p>
 									<p>
 										<strong>Заказчик (Пациент):</strong> {patientName}, тел. {customerContact}
@@ -3201,7 +3200,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												</label>
 												<input
 													type="text"
-													placeholder="770123456789"
+													placeholder="ИНН (10 или 12 цифр)"
 													value={oneCPatientInn}
 													onChange={(e) => setOneCPatientInn(e.target.value)}
 													className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"

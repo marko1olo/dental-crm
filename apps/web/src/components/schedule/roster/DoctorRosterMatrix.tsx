@@ -1066,7 +1066,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 										letterSpacing: "0.05em",
 									}}
 								>
-									Быстрые шаблоны смен (Мандат 8k)
+									Быстрые шаблоны смен
 								</div>
 								<div
 									style={{

@@ -208,8 +208,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	doctorSpecialty = "Врач-стоматолог терапевт-ортопед",
 	clinicName = "Стоматологическая клиника «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "7701234567",
-	clinicOgrn = "1237700456789",
+	clinicInn = "",
+	clinicOgrn = "",
 	clinicAddress = "г. Москва, ул. Клиническая, д. 10, стр. 1",
 	clinicPhone = "+7 (495) 777-88-99",
 	clinicLicense = "ЛО41-01137-77/00567890 от 15.01.2023 выдана Департаментом здравоохранения г. Москвы",
@@ -546,7 +546,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 		if (validPct === 100) {
 			setConfirmedNotice(
-				"Применена 100% скидка врача (Гарантийная переделка / Персонал). Без мастер-паролей (Мандат 8e).",
+				"Применена 100% скидка врача (Гарантийная переделка / Персонал). Без мастер-паролей.",
 			);
 		} else if (validPct > 0) {
 			setConfirmedNotice(
@@ -628,11 +628,11 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									{planAgeDays > 30 && (
 										<span
 											className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 text-xs inline-flex items-center gap-1 shadow-2xs"
-											title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом, Мандат 8e)."
+											title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
 											data-testid="presenter-expired-unblocked-badge"
 										>
 											<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-											Смета составлена &gt;30 дней назад (актуальна / продлена, Мандат 8e)
+											Смета составлена &gt;30 дней назад (актуальна / продлена)
 										</span>
 									)}
 								</h2>
@@ -856,7 +856,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					<div className="flex items-center gap-2 flex-wrap">
 						<div className="inline-flex items-center gap-1 font-bold text-[var(--tp-primary)]">
 							<Percent size={13} className="text-emerald-600 dark:text-emerald-400" />
-							<span>Скидка врача (Мандат 8e):</span>
+							<span>Скидка врача:</span>
 						</div>
 						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
 							<button
@@ -865,7 +865,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								onClick={() => handleApplyDoctorDiscount(pct)}
 								title={
 									pct === 100
-										? "100% скидка: гарантийные переделки и персонал без мастер-паролей администратора (Мандат 8e)"
+										? "100% скидка: гарантийные переделки и персонал без мастер-паролей администратора"
 										: `Применить скидку ${pct}%`
 								}
 								className={`min-h-[36px] px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
@@ -1640,7 +1640,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold mb-4 flex items-center gap-2">
 											<Clock size={15} className="text-amber-600 shrink-0" />
 											<span>
-												Смета составлена &gt;30 дней назад. Стоимость зафиксирована по согласованию с лечащим врачом. Оказание услуг, оформление нарядов в ЗТЛ и оплата производятся без ограничений (Мандат 8e).
+												Смета составлена &gt;30 дней назад. Стоимость зафиксирована по согласованию с лечащим врачом. Оказание услуг, оформление нарядов в ЗТЛ и оплата производятся без ограничений.
 											</span>
 										</div>
 									)}

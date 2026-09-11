@@ -47,7 +47,7 @@ export const DEFAULT_SBER_TERMINAL_CONFIG: SberPosTerminalConfig = {
 	retryCount: 2,
 	clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicAddress: "г. Москва, Ломоносовский пр-т, 24",
-	clinicInn: "7701234567",
+	clinicInn: "",
 };
 
 export type SberTerminalStatusListener = (

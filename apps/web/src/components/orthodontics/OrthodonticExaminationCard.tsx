@@ -205,7 +205,7 @@ export function OrthodonticExaminationCard({
 							type="button"
 							onClick={handleResetToNorm}
 							className="h-8 min-h-[32px] px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-							title="Установить норму во всех разделах в 1 клик (Мандат 8e)"
+							title="Установить норму во всех разделах в 1 клик"
 							data-testid="ortho-reset-norm-btn"
 						>
 							<RotateCcw size={13} />

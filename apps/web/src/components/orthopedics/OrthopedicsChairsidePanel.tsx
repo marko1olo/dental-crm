@@ -169,7 +169,7 @@ export function OrthopedicsChairsidePanel({
 				);
 			}
 			showToast(
-				"Исправленному верить: клинический оверрайд врача активирован (Мандат 8e)",
+				"Исправленному верить: клинический оверрайд врача активирован",
 				"info",
 				3000,
 			);
@@ -249,7 +249,7 @@ export function OrthopedicsChairsidePanel({
 					);
 				}
 				showToast(
-					"Исправленному верить: клинический оверрайд врача активирован (Мандат 8e)",
+					"Исправленному верить: клинический оверрайд врача активирован",
 					"info",
 					3000,
 				);
@@ -350,7 +350,7 @@ export function OrthopedicsChairsidePanel({
 							Ортопедия у кресла (043/у · Этап 3 · ЗТЛ)
 						</h3>
 						<p className="text-xs text-slate-600 dark:text-slate-300">
-							1-клик протоколы · Приказ 804н · Автономия врача (Мандат 8e)
+							1-клик протоколы · Приказ 804н · Автономия врача
 						</p>
 					</div>
 				</div>
@@ -667,12 +667,12 @@ export function OrthopedicsChairsidePanel({
 								: "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
 						}`}
 						data-testid="doctor-clinical-override-toggle"
-						title="Мандат 8e п. 7: Клинический оверрайд врача при авансе < 50% без согласований начмеда"
+						title="Клинический оверрайд врача при авансе < 50% без согласований начмеда"
 					>
 						<ShieldCheck size={16} />
 						<span>
 							{overrideActive
-								? "Оверрайд врача: АКТИВЕН (Мандат 8e)"
+								? "Оверрайд врача: АКТИВЕН"
 								: "Клинический оверрайд (Аванс < 50%)"}
 						</span>
 					</button>
@@ -703,7 +703,7 @@ export function OrthopedicsChairsidePanel({
 						disabled={isLabOrderSending}
 						className="min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
 						data-testid="direct-send-lab-order-btn"
-						title="Мандат 8e, 8i: Мгновенно отправить заказ-наряд в лабораторию без бюрократических барьеров"
+						title="Мгновенно отправить заказ-наряд в лабораторию без бюрократических барьеров"
 					>
 						<Send size={15} />
 						<span>{isLabOrderSending ? "Отправка в ЗТЛ..." : "В ЗТЛ (1 клик)"}</span>

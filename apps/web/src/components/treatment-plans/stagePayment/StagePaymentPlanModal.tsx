@@ -647,7 +647,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 																type="button"
 																onClick={() => handleStageStatusChange(stage.id, "in_progress")}
 																className="stage-action-btn secondary"
-																title="Начать оказание услуг на этапе без обязательного аванса (доверие, гарантия, экстренный приём — Мандат 8e)"
+																title="Начать оказание услуг на этапе без обязательного аванса (доверие, гарантия, экстренный приём)"
 																data-testid={`stage-start-no-advance-btn-${stage.id}`}
 															>
 																<CheckCircle2 className="h-4 w-4 text-[var(--ok,#10b981)]" />

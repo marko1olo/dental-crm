@@ -110,8 +110,8 @@ const DEFAULT_BRANDING: Omit<DocumentBrandingState, "updateBranding" | "resetToD
 	clinicPhone: "+7 (495) 777-88-99",
 	clinicEmail: "info@dente-clinic.ru",
 	clinicWebsite: "dente-clinic.ru",
-	clinicInn: "7701234567",
-	clinicOgrn: "1237700123456",
+	clinicInn: "",
+	clinicOgrn: "",
 	logoUrl: null,
 	slogan: "Премиальная цифровая стоматология и имплантология",
 

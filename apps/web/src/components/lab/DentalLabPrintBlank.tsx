@@ -157,7 +157,7 @@ export function DentalLabPrintBlank({
 					<span>
 						{isSigned && !isDraft
 							? "ШТАМП: ПОДПИСАНО ВРАЧОМ • ОФИЦИАЛЬНЫЙ НАPЯД ЗТЛ"
-							: "ШТАМП: ЧЕРНОВИК • ПРЕДВАРИТЕЛЬНОЕ ТЗ (МАНДАТ 8E)"}
+							: "ШТАМП: ЧЕРНОВИК • ПРЕДВАРИТЕЛЬНОЕ ТЗ"}
 					</span>
 					<span className="font-mono text-[11px] font-bold">
 						{isSigned && !isDraft ? "СТАТУС: ПОДПИСАН" : "СТАТУС: ЧЕРНОВИК"}

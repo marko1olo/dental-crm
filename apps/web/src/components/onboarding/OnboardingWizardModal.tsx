@@ -391,7 +391,7 @@ export function OnboardingWizardModal({
 	const dismissOnboarding = () => {
 		if (!onboardingReadyToFinish) {
 			showToast(
-				"Настройки сохранены в черновике. Профиль клиники можно дополнить в любой момент в разделе Настройки (Мандат 8e)",
+				"Настройки сохранены в черновике. Профиль клиники можно дополнить в любой момент в разделе Настройки",
 				"success",
 				4000,
 			);

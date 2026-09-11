@@ -1250,21 +1250,44 @@ export function computeLiveImplantTelemetry(
 	let boneDensity: LiveBoneDensityTelemetry;
 	if (boneSample) {
 		const profile = boneSample.profile ?? getMischProfile(boneSample.bone);
-		const tissueDesc = [profile.corticalDescription, profile.trabecularDescription]
+		const corticalDesc =
+			"corticalDescription" in profile
+				? profile.corticalDescription
+				: profile.corticalDescriptionRu;
+		const trabecularDesc =
+			"trabecularDescription" in profile
+				? profile.trabecularDescription
+				: profile.trabecularDescriptionRu;
+		const tissueDesc = [corticalDesc, trabecularDesc]
 			.filter(Boolean)
 			.join("; ");
+
+		const torque =
+			"expectedTorqueNcm" in profile
+				? profile.expectedTorqueNcm
+				: `${profile.recommendedTorqueNcm.min}–${profile.recommendedTorqueNcm.max} Н·см`;
+
+		const drilling =
+			"drillingProtocol" in profile
+				? profile.drillingProtocol
+				: profile.drillingProtocolRu;
+
+		const healing =
+			"recommendedHealingMonths" in profile
+				? profile.recommendedHealingMonths
+				: profile.healingMonths.mandible;
 
 		boneDensity = {
 			isMeasured: true,
 			meanHU: boneSample.meanHU,
-			minHU: boneSample.minHU,
-			maxHU: boneSample.maxHU,
-			stdDevHU: boneSample.stdDevHU,
+			minHU: boneSample.minHU ?? null,
+			maxHU: boneSample.maxHU ?? null,
+			stdDevHU: boneSample.stdDevHU ?? null,
 			boneClass: boneSample.bone,
 			tissueDescription: tissueDesc,
-			recommendedTorqueNcm: profile.expectedTorqueNcm,
-			drillingProtocol: profile.drillingProtocol,
-			healingMonths: profile.recommendedHealingMonths,
+			recommendedTorqueNcm: torque,
+			drillingProtocol: drilling,
+			healingMonths: healing,
 			samplesCount: boneSample.samples,
 		};
 	} else {

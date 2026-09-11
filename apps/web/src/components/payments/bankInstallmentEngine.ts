@@ -267,8 +267,8 @@ export function generateBankInstallmentDeepLink(
 	readonly applicationOrderId: string;
 } {
 	const orderId = `INST-${params.providerId.toUpperCase().slice(0, 4)}-${Date.now().toString().slice(-6)}`;
-	const clinicInn = params.clinicInn || "7701234567";
-	const clinicName = encodeURIComponent(params.clinicName || "ООО ДЕНТЕ СТОМАТОЛОГИЯ");
+	const clinicInn = params.clinicInn || "";
+	const clinicName = encodeURIComponent(params.clinicName || "");
 	const amount = params.amountRub;
 	const term = params.termMonths || 12;
 

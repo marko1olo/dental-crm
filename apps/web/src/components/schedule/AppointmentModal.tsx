@@ -736,7 +736,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			setStatus("confirmed");
 		}
 		showToast(
-			"Приём переведён в CITO (Острая боль): 30 мин, овербукинг разрешён (Мандат 8e)",
+			"Приём переведён в CITO (Острая боль): 30 мин, овербукинг разрешён",
 			"warning",
 			3500,
 		);
@@ -950,7 +950,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								);
 							}}
 							className="min-h-[44px] px-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-							title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения (Мандат 8e, без 403)"
+							title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
 							data-testid="appointment-modal-print-blank-contract-btn"
 						>
 							<FileText size={15} className="text-amber-600 dark:text-amber-400" />
@@ -1010,7 +1010,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<div className="flex items-center gap-2">
 								<Zap size={16} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
 								<span className="font-bold text-sm">Экстренный приём CITO (Острая боль)</span>
-								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён (Мандат 8e)</span>
+								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён</span>
 							</div>
 							<span className="px-2 py-0.5 rounded bg-rose-500/25 text-rose-800 dark:text-rose-200 text-[10px] font-extrabold uppercase shrink-0">
 								CITO
@@ -1185,7 +1185,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<div className="flex items-center gap-2">
 										<Clock size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 										<span>
-											<strong>Режим технической блокировки:</strong> Слот забронирован для служебного перерыва врача ({reason || "Перерыв"}). Выбор пациента не требуется (Мандат 8e / 8n).
+											<strong>Режим технической блокировки:</strong> Слот забронирован для служебного перерыва врача ({reason || "Перерыв"}). Выбор пациента не требуется.
 										</span>
 									</div>
 								</div>
@@ -1469,7 +1469,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
 											</span>
 											<span className="text-[11px] text-[var(--muted)]">
-												(Мандат 8e: запись не блокируется, врач может принять пациента в свободном кабинете)
+												(Запись не блокируется, врач может принять пациента в свободном кабинете)
 											</span>
 										</div>
 									</div>
@@ -1642,7 +1642,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									setStatus(nextStatus);
 									if (hasOpenVisit && activeVisitLockedAppointmentStatuses.has(nextStatus)) {
 										showToast(
-											"Внимание: по этой записи открыт активный визит в кресле. Изменение статуса разрешено врачу (Мандат 8e).",
+											"Внимание: по этой записи открыт активный визит в кресле. Изменение статуса разрешено лечащему врачу.",
 											"warning",
 											4000,
 										);
@@ -1665,7 +1665,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									data-testid="status-open-visit-warning"
 								>
 									<AlertTriangle size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
-									<span>По этой записи открыт активный визит. Смена статуса разрешена врачу (Мандат 8e).</span>
+									<span>По этой записи открыт активный визит. Смена статуса разрешена лечащему врачу.</span>
 								</div>
 							)}
 
@@ -1750,7 +1750,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								</div>
 
 								<div className="flex items-center justify-between text-[11px] font-bold text-amber-800 dark:text-amber-300 pt-1.5 border-t border-[var(--line)]/50">
-									<span>Технические блокировки расписания врача (без пациента / Мандат 8e):</span>
+									<span>Технические блокировки расписания врача (без пациента):</span>
 									<span className="text-[10px] uppercase text-amber-600 dark:text-amber-400 font-extrabold">1-клик интервал</span>
 								</div>
 								<div className="flex items-center gap-1.5 flex-wrap" data-testid="appointment-doctor-blocks">

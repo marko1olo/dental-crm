@@ -1435,7 +1435,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					patientName={patientName}
 					patientPhone={patientPhone}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-					clinicInn={dashboard?.clinicSettings?.requisites?.inn || "7701234567"}
+					clinicInn={dashboard?.clinicSettings?.requisites?.inn || ""}
 					planId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
 					onInstallmentApproved={(approval) => {
 						showToast(

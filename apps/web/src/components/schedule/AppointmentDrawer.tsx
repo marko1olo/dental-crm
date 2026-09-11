@@ -970,7 +970,7 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 											);
 										}}
 										className="flex-1 min-h-[44px] py-2 px-3 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-500/30 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-										title="Печать пустого договора со строками _______ (Мандат 8e)"
+										title="Печать типового медицинского договора со строками _______ для ручного заполнения"
 									>
 										<FileText size={14} className="text-amber-600" />
 										<span>Печать договора (_______)</span>
@@ -1132,7 +1132,7 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 								data-testid="drawer-solo-doctor-badge"
 							>
 								<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Режим соло-врача: ассистент не требуется (автономия врача, Мандат 8e/8n)</span>
+								<span>Режим соло-врача: выбор ассистента не требуется</span>
 							</div>
 						) : assistants.length > 0 ? (
 							<div className="sm:col-span-2">

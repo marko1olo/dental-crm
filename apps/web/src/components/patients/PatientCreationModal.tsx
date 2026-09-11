@@ -996,7 +996,7 @@ export function PatientCreationModal({
 										</span>
 									)}
 									<span className="text-[10px] text-[var(--muted)] block mt-0.5">
-										Не блокирует регистрацию (Мандат 8e). Требуется для выгрузки
+										Не блокирует регистрацию. Требуется для выгрузки
 										в ЕГИСЗ (РЭМД).
 									</span>
 								</div>
@@ -1066,7 +1066,7 @@ export function PatientCreationModal({
 										</span>
 									)}
 									<span className="text-[10px] text-[var(--muted)] block mt-0.5">
-										Не блокирует регистрацию (Мандат 8e). Можно внести позже при
+										Не блокирует регистрацию. Можно внести позже при
 										оформлении договора.
 									</span>
 								</div>
@@ -1098,9 +1098,9 @@ export function PatientCreationModal({
 						</button>
 						<button
 							type="button"
-							className="secondary-button quick-create-print-blank-btn"
+							className="secondary-button quick-create-print-blank-contract-btn"
 							onClick={handlePrintBlankContract}
-							title="Распечатать бланк договора и согласий со строками «________» для ручного заполнения пациентом в зоне ожидания (Мандат 8e, без 403-ошибок)"
+							title="Распечатать бланк договора и согласий со строками «________» для ручного заполнения пациентом в зоне ожидания"
 							data-testid="patient-creation-print-blank-contract-btn"
 							style={{
 								display: "inline-flex",

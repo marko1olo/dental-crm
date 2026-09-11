@@ -454,7 +454,7 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 	</table>
 
 	<div style="border: 2px dashed ${stampColor}; background: ${stampBg}; color: ${stampColor}; font-weight: 800; font-size: 11px; padding: 5px 10px; border-radius: 4px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.04em; text-transform: uppercase;">
-		<span>ШТАМП: ${stampText} (МАНДАТ 8E)</span>
+		<span>ШТАМП: ${stampText}</span>
 		<span>ЭТАП: ${stage.nameRu}</span>
 	</div>
 

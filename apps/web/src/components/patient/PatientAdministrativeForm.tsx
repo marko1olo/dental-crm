@@ -121,7 +121,7 @@ export function PatientAdministrativeForm({
 				<div className="text-xs text-amber-950 dark:text-amber-100">
 					<strong>Бланк договора со строками _______</strong>
 					<p className="m-0 text-[11px] text-amber-800 dark:text-amber-300">
-						Регистратор имеет право распечатать пустой договор для ручного заполнения пациентом до приема врача (Мандат 8e).
+						Регистратор имеет право распечатать пустой договор для ручного заполнения пациентом до приема врача.
 					</p>
 				</div>
 				<button

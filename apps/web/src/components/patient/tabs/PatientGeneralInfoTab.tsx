@@ -126,7 +126,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</div>
 						<div>
 							<div className="text-sm font-bold text-[var(--ink,#1e293b)] dark:text-slate-100 flex items-center gap-1.5">
-								<span>Клиническая автономия врача (Мандат 8e)</span>
+								<span>Клинический статус</span>
 								<span className="text-[11px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
 									1 клик
 								</span>
@@ -143,7 +143,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						className="min-h-[44px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
 						onClick={handleApplyNorm}
 						disabled={disabled}
-						title="Установить физиологическую норму в 1 клик (Мандат 8e)"
+						title="Установить физиологическую норму в 1 клик"
 					>
 						<CheckCircle2 className="w-4 h-4 shrink-0" />
 						<span>Соматически здоров / Физиологическая норма</span>

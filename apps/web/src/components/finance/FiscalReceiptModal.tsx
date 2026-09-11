@@ -348,7 +348,7 @@ export const FiscalReceiptModal: React.FC<FiscalReceiptModalProps> = ({
 						<AlertTriangle size={14} className="shrink-0 text-amber-600" />
 						<span>
 							Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽.
-							Мандат 8e п. 9: Долг не блокирует фискализацию чека на фактически вносимую сумму.
+							Долг не блокирует фискализацию чека на фактически вносимую сумму.
 						</span>
 					</div>
 				)}
@@ -408,7 +408,7 @@ export const FiscalReceiptModal: React.FC<FiscalReceiptModalProps> = ({
 								ИНН покупателя {payerType === "physical_person" ? "(опционально, 54-ФЗ Tag 1228)" : "(обязательно для B2B)"}:
 							</label>
 							{payerType === "physical_person" && (
-								<span className="text-emerald-600 font-medium">Мандат 8e: не требуется для физлиц</span>
+								<span className="text-emerald-600 font-medium">Не требуется для физлиц (54-ФЗ)</span>
 							)}
 						</div>
 						<input

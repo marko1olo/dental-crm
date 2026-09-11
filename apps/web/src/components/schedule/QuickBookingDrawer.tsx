@@ -1617,7 +1617,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											);
 										}}
 										className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-amber-500/10 rounded-xl cursor-pointer transition-colors"
-										title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
+										title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
 										data-testid="quick-booking-print-blank-contract-btn"
 									>
 										<FileText size={14} className="text-amber-600" />
@@ -1817,7 +1817,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 														По пациенту сейчас идет активный приём в кресле
 													</p>
 													<p className="m-0 font-normal text-[11px] text-[var(--muted)]">
-														(Мандат 8e: запись на следующий приём не блокируется, врач или администратор может сразу забронировать слот)
+														(Запись на следующий приём не блокируется, врач или администратор может сразу забронировать слот)
 													</p>
 												</div>
 											</div>
@@ -2106,7 +2106,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										}}
 										className="flex-1 min-h-[44px] py-2 px-3 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-500/30 font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
 										data-testid="quick-booking-inline-print-contract-btn"
-										title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
+										title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
 									>
 										<FileText size={14} className="text-amber-600" />
 										<span>Печать договора (_______)</span>
@@ -2337,7 +2337,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
 											</span>
 											<span className="text-[11px] text-[var(--muted)]">
-												(Мандат 8e: запись не блокируется, врач может принять пациента в свободном кабинете)
+												(Запись не блокируется, врач может принять пациента в свободном кабинете)
 											</span>
 										</div>
 									</div>

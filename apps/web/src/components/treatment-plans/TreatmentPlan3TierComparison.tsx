@@ -489,7 +489,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				>
 					<Clock size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
 					<span>
-						План лечения составлен {effectivePlanAgeDays} дн. назад. Стоимость зафиксирована по согласованию с врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений (Мандат 8e).
+						План лечения составлен {effectivePlanAgeDays} дн. назад. Стоимость зафиксирована по согласованию с врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений.
 					</span>
 				</div>
 			)}

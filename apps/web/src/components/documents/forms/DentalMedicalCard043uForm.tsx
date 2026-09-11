@@ -808,7 +808,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										Режим ревизии («Исправленному верить»):
 									</strong>
 									<span style={{ fontSize: "12px", marginLeft: "6px", color: "var(--ink)" }}>
-										Правки вносятся лечащим врачом без бюрократических замков и согласований начмедов (Мандат 8e).
+										Правки вносятся лечащим врачом с сохранением истории ревизий («Исправленному верить»).
 									</span>
 								</div>
 							</div>
@@ -1228,7 +1228,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 							>
 								<div>
 									<strong style={{ color: "var(--teal-dark, #0f766e)", fontSize: "13px" }}>
-										Клиническая автономия врача (Мандат 8e):
+										Клиническая норма:
 									</strong>
 									<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
 										Заполнение физиологической нормой в 1 клик. Врач правит только патологию.

@@ -156,7 +156,7 @@ export function generateSurgicalOperationProtocolHtml(
 		escapeHtml(protocolText) ||
 		"Под местной анестезией проведен разрез слизистой оболочки альвеолярного отростка. Сформирован слизисто-надкостничный лоскут. Скелетирована костная ткань. Ложе имплантата сформировано ступенчатыми фрезами с обильной ирригацией охлажденным стерильным физраствором 0.9%. Установлен дентальный имплантат. Первичная механическая стабильность достигнута. Контроль гемостаза. Лоскуты адаптированы и ушиты узловыми швами. Даны рекомендации.";
 
-	// Штамп подписания по Мандату 8e
+	// Штамп подписания протокола
 	const stampHtml = isSignedByDoctor
 		? `<div class="stamp-signed">
 				<div class="stamp-title">ПОДПИСАНО ВРАЧОМ</div>
@@ -165,7 +165,7 @@ export function generateSurgicalOperationProtocolHtml(
 			</div>`
 		: `<div class="stamp-draft">
 				<div class="stamp-title">ЧЕРНОВИК</div>
-				<div class="stamp-sub">МАНДАТ 8E: АВТОНОМИЯ ВРАЧА</div>
+				<div class="stamp-sub">ПРЕДВАРИТЕЛЬНЫЙ ПРОТОКОЛ</div>
 				<div class="stamp-sub">ПЕЧАТЬ В ЛЮБОЙ МОМЕНТ</div>
 			</div>`;
 

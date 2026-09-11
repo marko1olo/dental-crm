@@ -1096,7 +1096,6 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 						<div className="fiscal-receipt-thermal" data-testid="thermal-receipt-paper">
 							<div className="fiscal-receipt-header">
 								<div className="font-black text-sm">ООО «СТОМАТОЛОГИЯ ДЕНТЕ»</div>
-								<div>ИНН 7701234567 • КПП 770101001</div>
 								<div>г. Санкт-Петербург, Невский пр-т, 140</div>
 								<div className="mt-1 font-bold">КАССОВЫЙ ЧЕК / ПРИХОД</div>
 							</div>

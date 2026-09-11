@@ -166,7 +166,7 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
 								</div>
 								<p className="m-0 mt-1 text-teal-800 dark:text-teal-300 leading-normal">
 									Истечение 30 дней не блокирует создание зуботехнических нарядов (ЗТЛ), оказание услуг или приём
-									оплаты в кассу (Мандаты 8e, 8n). Цены зафиксированы по согласованию с лечащим врачом.
+									оплаты в кассу. Цены зафиксированы по согласованию с лечащим врачом.
 								</p>
 							</div>
 						</div>
@@ -204,7 +204,7 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
 						<div className="flex items-center justify-between flex-wrap gap-1">
 							<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
 								<Percent size={14} className="text-teal-600" />
-								<span>Скидка лечащего врача (Мандат 8e: свобода до 100%):</span>
+								<span>Скидка лечащего врача (до 100%):</span>
 							</div>
 							{discountPercent === 100 && (
 								<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">

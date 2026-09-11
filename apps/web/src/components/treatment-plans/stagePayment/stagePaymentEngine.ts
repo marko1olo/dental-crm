@@ -426,7 +426,7 @@ export function generate54FzStageFiscalReceipt(
 	stage: MilestoneStage,
 	paymentType: "advance" | "completion" | "full",
 	paymentMethod: "CASH" | "BANK_CARD" | "PATIENT_DEPOSIT" | "SBP_QR" = "BANK_CARD",
-	clinicInn = "7701234567",
+	clinicInn = "",
 	patientName = "Пациент",
 	clinicName = "ООО 'ДЕНТЕ СТОМАТОЛОГИЯ'",
 ): StageFiscalReceipt54Fz {

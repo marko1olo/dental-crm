@@ -1112,7 +1112,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										<div className="text-[11px] text-[var(--muted)] border-t border-red-300/40 dark:border-red-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
 											<span className="flex items-center gap-1">
 												<Scale className="w-3.5 h-3.5 text-red-600 shrink-0" />
-												<span><strong>Мандат 8e (Автономия врача):</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность лечащего врача.</span>
+												<span><strong>Автономия врача:</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность лечащего врача.</span>
 											</span>
 											<span className="text-[10px] italic text-[var(--muted)]">
 												Клиническая альтернатива: рассмотрите макролиды (Азитромицин / Сумамед 500 мг) или линкозамиды (Линкомицин 500 мг).
@@ -1148,7 +1148,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										<div className="text-[11px] text-[var(--muted)] border-t border-amber-300/40 dark:border-amber-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
 											<span className="flex items-center gap-1">
 												<Scale className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-												<span><strong>Мандат 8e (Автономия врача):</strong> Печать бланка 107-1/у не блокируется. Врач автономен и принимает решение под свою клиническую ответственность.</span>
+												<span><strong>Автономия врача:</strong> Печать бланка 107-1/у не блокируется. Врач автономен и принимает решение под свою клиническую ответственность.</span>
 											</span>
 											<span className="text-[10px] italic text-[var(--muted)]">
 												Рекомендуется оценить степень сенсибилизации или применить альтернативное обезболивание (Парацетамол при отсутствии противопоказаний).
@@ -1679,7 +1679,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									</span>
 								</div>
 								<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
-									Мандат 8e: печать доступна
+									Печать доступна
 								</span>
 							</div>
 						)}
@@ -1894,7 +1894,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						{(penicillinConflict || nsaidConflict) && (
 							<span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1">
 								<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-								<span>Аллергия в анамнезе (печать разрешена по Мандату 8e)</span>
+								<span>Аллергия в анамнезе (печать разрешена)</span>
 							</span>
 						)}
 						<button

@@ -964,7 +964,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						<div className="flex items-center justify-between flex-wrap gap-1">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
 								<Sparkles size={14} className="text-teal-600" />
-								Скидки врача и Гарантия (Мандат 8e):
+								Скидки врача и Гарантия:
 							</span>
 							{discountCalc.discountKop > 0 && (
 								<span className="text-xs font-bold font-mono text-teal-700 dark:text-teal-300">

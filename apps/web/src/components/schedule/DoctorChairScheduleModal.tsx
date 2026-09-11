@@ -810,7 +810,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 							onClick={handleUnassign}
 							className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
 							data-testid="btn-unassign-chair-doctor"
-							title="Снять назначение врача с кресла (Мандат 8e)"
+							title="Снять назначение врача с кресла"
 							style={{ minHeight: "44px" }}
 						>
 							<Trash2 size={15} />

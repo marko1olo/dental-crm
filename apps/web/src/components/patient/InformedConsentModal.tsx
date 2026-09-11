@@ -338,7 +338,7 @@ export const InformedConsentModal: React.FC<PatientInformedConsentModalProps> = 
 								disabled={false}
 								data-testid="btn-print-blank-consent"
 								className="h-9 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#fff)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 cursor-pointer inline-flex items-center gap-1.5 transition-colors"
-								title="Печать чистого бланка со строками «________» для ручного заполнения пациентом (Мандат 8e)"
+								title="Печать чистого бланка со строками «________» для ручного заполнения пациентом"
 							>
 								<FileText className="w-4 h-4 text-slate-500" />
 								<span>Печать бланка («________»)</span>

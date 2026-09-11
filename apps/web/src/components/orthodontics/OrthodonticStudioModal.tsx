@@ -1009,7 +1009,7 @@ export function OrthodonticStudioModal({
 										Стандартный фотопротокол (8 ракурсов)
 									</h3>
 									<p className="text-xs text-slate-500 m-0">
-										Прикрепление снимков в 1 клик · Сохранение доступно при любом числе фото (Мандат 8e)
+										Прикрепление снимков в 1 клик · Сохранение доступно при любом числе фото
 									</p>
 								</div>
 
@@ -1107,7 +1107,7 @@ export function OrthodonticStudioModal({
 				{/* 4. Studio Footer */}
 				<div className="flex items-center justify-between px-4 sm:px-5 py-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0 gap-3">
 					<div className="text-xs text-slate-500 dark:text-slate-400">
-						Мандат 8e: Полная автономия врача · Свобода сохранения черновиков
+						Автономия врача · Свобода сохранения черновиков
 					</div>
 
 					<div className="flex items-center gap-2">

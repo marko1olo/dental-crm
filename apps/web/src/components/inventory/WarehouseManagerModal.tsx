@@ -597,7 +597,7 @@ export function WarehouseManagerModal({
 							</table>
 						</div>
 					) : (
-						/* SINGLE SIGNER ACT PREVIEW (МАНДАТ 8e: ЕДИНОЛИЧНОЕ СПИСАНИЕ БЕЗ 3-СТОРОННЕЙ КОМИССИИ) */
+						/* SINGLE SIGNER ACT PREVIEW (СПИСАНИЕ ОТВЕТСТВЕННЫМ ЛИЦОМ) */
 						<div className="bg-[var(--paper,#ffffff)] border border-[var(--border,#e2e8f0)] rounded-lg p-6 max-w-3xl mx-auto text-xs space-y-4 font-sans">
 							<div className="flex items-center justify-between border-b border-[var(--border,#cbd5e1)] dark:border-slate-700 pb-3">
 								<div className="space-y-1">
@@ -605,7 +605,7 @@ export function WarehouseManagerModal({
 										АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ
 									</h3>
 									<p className="text-[11px] text-[var(--muted,#64748b)]">
-										Утверждено ответственным лицом единолично (Мандат 8e п. 10 • СанПиН 3.3686-21 • Приказ 804н)
+										Утверждено ответственным лицом (СанПиН 3.3686-21 • Приказ Минздрава 804н)
 									</p>
 								</div>
 								<button
@@ -613,7 +613,7 @@ export function WarehouseManagerModal({
 									onClick={() => window.print()}
 									className="h-11 px-4 text-xs font-bold rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal-dark,#0f766e)] bg-[var(--teal-soft,#ccfbf1)] hover:bg-[var(--teal)] hover:text-white transition-colors inline-flex items-center gap-2 cursor-pointer shadow-2xs"
 									style={{ minHeight: "44px" }}
-									title="Распечатать бумажный акт списания (Мандат 8e)"
+									title="Распечатать бумажный акт списания"
 								>
 									<Printer size={16} />
 									Распечатать акт
@@ -694,7 +694,7 @@ export function WarehouseManagerModal({
 									Подпись ответственного лица: ____________________ / {nurseName}
 								</div>
 								<div className="text-right">
-									Основание: Мандат 8e п. 10 (Без бюрократических комиссий)
+									Основание: Фактический расход (Приказ Минздрава 804н, СанПиН 3.3686-21)
 								</div>
 							</div>
 						</div>
