@@ -52,14 +52,15 @@ export {
 export * as cprMathEngine from "./cprMath.js";
 export * as boneQualityEngine from "./boneQuality.js";
 
-// Wave 121: CBCT Auto Arch Detection Adapter
+// Wave 124: CBCT Auto Arch Detection Engine
 export {
 	smoothPolyline,
 	detectArchControlPoints,
 	type ArchDetectOptions,
-} from "./archDetect.js";
+} from "./archDetectEngine.js";
 
-export * as archDetectEngine from "./archDetect.js";
+export * as archDetectEngine from "./archDetectEngine.js";
+export * from "./archDetectEngine.js";
 
 // Wave 123: CBCT Line Profile HU & ROI Densitometry Engine
 export {

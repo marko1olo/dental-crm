@@ -62,6 +62,7 @@ export {
 	smoothPolyline,
 	detectArchControlPoints,
 	type ArchDetectOptions,
+	archDetectEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
