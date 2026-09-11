@@ -4039,3 +4039,29 @@
     * В `PatientPlanView.tsx` и `PatientWebappPortalModal.tsx` ликвидированы фиктивные телефоны `+7 (800) 555-35-35` и `79991234567` в пользу пустой строки и динамических реквизитов клиники;
     * В `implantSafetyEngine.ts` устранена регрессия TS2339 с прямым типизированным обращением к свойствам `MischDensityProfile`.
 * **Верификация**: все тесты Wave 121 (49/49 PASS: 43 warehouse + 6 radiology), `build -w @dental/shared` Exit Code 0, `typecheck -w @dental/web` Exit Code 0, `check:encoding` 6683 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+### Wave 122: Валидация хирургических навигационных шаблонов (DenCT), автоматическое списание расходников по технологическим картам BOM (DentalPin), тотальная инквизиция по 5 осям
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `db9ee80c8`, `9548f71d9`
+* **Результаты**:
+  - **Движок технологических карт расходных материалов BOM (`db9ee80c8`)**:
+    * Создан модуль `packages/shared/src/warehouse/treatmentConsumablesEngine.ts`;
+    * Реализованы строгие Zod-схемы и интерфейсы: `TreatmentConsumableLink` (связь услуги со складом с нормой `quantityPerService`), `TreatmentPerformedEvent` (факт оказания услуги в визите с `treatmentReferenceId` для идемпотентности), `ConsumableDeductionItem`, `TreatmentDeductionResult`;
+    * Реализован расчет списания `calculateConsumablesForTreatment` с поддержкой мягкого овердрафта (Мандаты 8e/8n/8k: `allowOverdraft: true` по умолчанию фиксирует отрицательный остаток как предупреждение, но не блокирует спасение зуба врачом);
+    * Реализован пакетный расчет `calculateBatchTreatmentConsumables` для всей цепочки услуг визита с кумулятивным пересчетом остатков;
+    * Реализован структурированный акт автоматического списания `formatConsumablesDeductionReceipt` для медсестры и склада без эмодзи (Мандат 8d);
+    * Экспорт в `packages/shared/src/warehouse/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/warehouse/__tests__/wave122TreatmentConsumables.test.ts` (9/9 PASS).
+  - **Валидация 3D хирургических навигационных шаблонов перед печатью (`9548f71d9`)**:
+    * Создан модуль `packages/shared/src/radiology/guideValidate.ts`;
+    * Реализованы канонические константы: `MIN_WALL_MM = 1.0` (минимальная толщина смолы для SLA/DLP печати), `MIN_DRILL_MM = 1.8` (минимальный диаметр направляющей втулки), `DRILL_OVERSHOOT_MM = 2.0` (стандартный клинический заступ сверла за апекс);
+    * Реализован расчет радиуса канала `drillRadius` с учетом ступеньки плеча втулки (`sleeveSeat`);
+    * Реализована проверка хрупкости полимерной перемычки между соседними сверлильными каналами (`fragileWeb`);
+    * **Ключевая клиническая защита**: проверка заступа сверла `drill overshoot` за апекс имплантата на коллизию с нижнечелюстным нервом (IAN) и гайморовой пазухой (`drillNerveCollision` error, `drillSinusCollision` error/warning);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave122GuideValidate.test.ts` (9/9 PASS, 33/33 вместе с `surgicalGuide.test.ts`).
+  - **Тотальный инквизиционный аудит Red Team по 5 осям**:
+    * Подтверждена 100% чистота по Оси 3 (`TODO/FIXME` в `packages/shared/src/radiology/` и `packages/shared/src/warehouse/` — 0) и Оси 4 (сырые эмодзи в печатных медицинских документах — 0);
+    * Составлен детальный дефект-лист по Оси 1 (фиктивные телефоны), Оси 2 (утечки текста промптов) и Оси 5 (хардкодные ИНН 7701234567);
+    * Развернуты специализированные воркеры очистки для полного устранения замечаний инквизитора.
+* **Верификация**: все тесты Wave 122 (18/18 PASS: 9 warehouse + 9 radiology), монорепо `typecheck -w @dental/shared` Exit Code 0, `build -w @dental/shared` Exit Code 0, `check:encoding` 6687 файлов 0 ошибок.
