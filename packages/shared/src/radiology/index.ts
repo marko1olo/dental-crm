@@ -137,3 +137,33 @@ export * as cbctRegistrationEngine from "./cbctRegistrationEngine.js";
 // Wave 128: CBCT Mesh Slice & Surgical Guide STL Export Engine
 export * from "./guideExportEngine.js";
 export * as guideExportEngine from "./guideExportEngine.js";
+
+// Wave 130: CBCT 3D Implant Geometry & Mesh Generator Engine
+export {
+	type ImplantDimensions,
+	type Implant3DPlacement,
+	type ImplantMeshBuffers,
+	type SafetyZoneCheckResult,
+	type ImplantSafetyOptions,
+	type ImplantPlanningReportInput,
+	type ArchFrame,
+	type PlaneFrame,
+	type ImplantBody,
+	type SleeveSpec,
+	generateImplantMesh,
+	transformImplantMesh,
+	checkImplantSafetyDistances,
+	formatImplantPlanningReportA4,
+	calculateImplantRadius,
+	radiusProfile,
+	archFrameAt,
+	nearestArchFrame,
+	implantAxis,
+	implantWorldAxis,
+	projectToPlane,
+	cylinderPlaneStrip,
+	implantPlaneStrip,
+	sleeveBody,
+	drillSegment,
+} from "./implantGeometryEngine.js";
+export * as implantGeometryEngine from "./implantGeometryEngine.js";

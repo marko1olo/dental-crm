@@ -142,6 +142,18 @@ export {
 	measurePolygonArea,
 	formatMeasureStatsA4Report,
 	measureStatsEngine,
+	// Wave 130: CBCT 3D Implant Geometry & Mesh Generator Engine
+	type ImplantDimensions,
+	type Implant3DPlacement,
+	type ImplantMeshBuffers,
+	type SafetyZoneCheckResult,
+	type ImplantSafetyOptions,
+	type ImplantPlanningReportInput,
+	generateImplantMesh,
+	transformImplantMesh,
+	checkImplantSafetyDistances,
+	formatImplantPlanningReportA4,
+	implantGeometryEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
