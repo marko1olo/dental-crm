@@ -113,7 +113,7 @@ describe('Statutory Electronic Sick Leave (ЭЛН) & Medical Commission (Order �
 			assert.ok(chair);
 			assert.equal(chair.role, 'CHAIRPERSON');
 			assert.ok(chair.fio.length > 0);
-			assert.ok(chair.snils.length > 0);
+			assert.equal(chair.snils, '');
 		});
 	});
 

@@ -86,8 +86,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	onClose,
 	shiftNumber = 42,
 	openedAtIso = new Date(Date.now() - 9 * 3600 * 1000).toISOString(),
-	cashierFullName = "Сидорова Анна Павловна",
-	cashierInn = "770198765432",
+	cashierFullName = "Кассир",
+	cashierInn = "",
 	initialChangeFundRub = 5000,
 	operations: providedOperations,
 	clinicDetails,
@@ -117,70 +117,10 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	// Local state for dynamic operations (including newly added cash_in)
 	const [dynamicOperations, setDynamicOperations] = useState<readonly CashShiftOperationRecord[]>([]);
 
-	// Generate realistic operations if none provided
+	// Return empty operations if none provided (honest zero shift)
 	const initialOperations: readonly CashShiftOperationRecord[] = useMemo(() => {
-		if (providedOperations && providedOperations.length > 0) {
-			return providedOperations;
-		}
-		const baseTime = new Date(openedAtIso).getTime();
-		return [
-			{
-				id: "op-1",
-				timestampIso: new Date(baseTime + 30 * 60 * 1000).toISOString(),
-				type: "patient_payment",
-				amountRub: 12500,
-				amountKopecks: 1250000 as any,
-				tenderType: "card",
-				description: "Оплата услуг: Лечение кариеса и реставрация",
-				patientName: "Барабаш С. В.",
-				cashierFullName,
-			},
-			{
-				id: "op-2",
-				timestampIso: new Date(baseTime + 90 * 60 * 1000).toISOString(),
-				type: "patient_payment",
-				amountRub: 8000,
-				amountKopecks: 800000 as any,
-				tenderType: "cash",
-				description: "Оплата услуг: Профессиональная гигиена полости рта",
-				patientName: "Смирнова Е. А.",
-				cashierFullName,
-			},
-			{
-				id: "op-3",
-				timestampIso: new Date(baseTime + 180 * 60 * 1000).toISOString(),
-				type: "patient_payment",
-				amountRub: 35000,
-				amountKopecks: 3500000 as any,
-				tenderType: "sbp",
-				description: "Оплата по СБП QR: Дентальная имплантация Straumann",
-				patientName: "Кузнецов Д. И.",
-				cashierFullName,
-			},
-			{
-				id: "op-4",
-				timestampIso: new Date(baseTime + 240 * 60 * 1000).toISOString(),
-				type: "patient_payment",
-				amountRub: 15000,
-				amountKopecks: 1500000 as any,
-				tenderType: "advance_offset",
-				description: "Зачет депозита: Ортопедический этап",
-				patientName: "Петрова Н. С.",
-				cashierFullName,
-			},
-			{
-				id: "op-5",
-				timestampIso: new Date(baseTime + 300 * 60 * 1000).toISOString(),
-				type: "patient_refund",
-				amountRub: 2000,
-				amountKopecks: 200000 as any,
-				tenderType: "cash",
-				description: "Возврат прихода (наличные): Отмена снимка ОПТГ",
-				patientName: "Васильев П. О.",
-				cashierFullName,
-			},
-		];
-	}, [providedOperations, openedAtIso, cashierFullName]);
+		return providedOperations ?? [];
+	}, [providedOperations]);
 
 	const effectiveOperations = useMemo(() => {
 		return [...initialOperations, ...dynamicOperations];

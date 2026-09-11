@@ -321,29 +321,29 @@ export const DEFAULT_COMMISSION_PRESETS: CommissionMemberPreset[] = [
 	{
 		role: 'CHAIRPERSON',
 		roleTitleRu: 'Председатель ВК (Главный врач)',
-		fio: 'Иванова Елена Васильевна',
+		fio: 'Главный врач',
 		specialty: 'Главный врач, стоматолог-терапевт высшей категории',
-		snils: '142-876-543 89'
+		snils: ''
 	},
 	{
 		role: 'DEPUTY_CHAIRPERSON',
 		roleTitleRu: 'Зам. председателя ВК',
-		fio: 'Смирнов Петр Александрович',
+		fio: 'Зам. главного врача',
 		specialty: 'Зав. ортопедическим отделением, стоматолог-ортопед',
-		snils: '154-321-987 65'
+		snils: ''
 	},
 	{
 		role: 'COMMISSION_MEMBER',
 		roleTitleRu: 'Член ВК (Врач-эксперт)',
-		fio: 'Кузнецова Ольга Дмитриевна',
+		fio: 'Врач-эксперт',
 		specialty: 'Врач-стоматолог-хирург, эксперт КЭР',
-		snils: '167-456-123 01'
+		snils: ''
 	},
 	{
 		role: 'ATTENDING_DOCTOR',
 		roleTitleRu: 'Лечащий врач',
-		fio: 'Соколов Андрей Михайлович',
+		fio: 'Лечащий врач',
 		specialty: 'Врач-стоматолог-хирург',
-		snils: '139-204-857 44'
+		snils: ''
 	}
 ];

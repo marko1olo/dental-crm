@@ -75,15 +75,15 @@ export function SickLeaveElnModal({
 	isOpen,
 	onClose,
 	onApplyToDiary,
-	initialPatientName = 'Иванов Иван Иванович',
-	initialPatientBirthDate = '1988-05-14',
-	initialPatientSnils = '154-823-912 60',
+	initialPatientName = '',
+	initialPatientBirthDate = '',
+	initialPatientSnils = '',
 	initialPatientGender = 'male',
-	initialEmployerName = 'ООО "ТехноПромСервис"',
+	initialEmployerName = '',
 	initialDiagnosisText = 'Острый гнойный периостит нижней челюсти от зуба 4.6',
 	initialIcd10Code = 'K10.2',
-	initialDoctorFio = 'Соколов Андрей Михайлович',
-	initialDoctorSnils = '139-204-857 44',
+	initialDoctorFio = '',
+	initialDoctorSnils = '',
 	initialDoctorSpecialty = 'Врач-стоматолог-хирург'
 }: SickLeaveElnModalProps) {
 	const todayStr: string = useMemo(() => new Date().toISOString().split('T')[0] ?? '2026-08-22', []);
@@ -99,11 +99,11 @@ export function SickLeaveElnModal({
 		patientBirthDate: initialPatientBirthDate,
 		patientGender: initialPatientGender,
 		patientSnils: initialPatientSnils,
-		patientOmsNumber: '7753210984001234',
-		patientPassport: '45 12 893450',
+		patientOmsNumber: '',
+		patientPassport: '',
 		employerName: initialEmployerName,
 		isPrimaryWorkplace: true,
-		patientPhone: '+7 (999) 234-56-78'
+		patientPhone: ''
 	});
 
 	// Form State
@@ -175,8 +175,8 @@ export function SickLeaveElnModal({
 				doctorFio: initialDoctorFio,
 				doctorSnils: initialDoctorSnils,
 				doctorRole: 'vk_member',
-				vkChairpersonFio: chair ? chair.fio : 'Иванова Е.В.',
-				vkChairpersonSnils: chair ? chair.snils : '142-876-543 89',
+				vkChairpersonFio: chair ? chair.fio : 'Председатель ВК',
+				vkChairpersonSnils: chair ? chair.snils : '',
 				vkProtocolNumber: 'ВК-84/2026',
 				vkProtocolDate: p1Dates.dateTo
 			};
@@ -205,11 +205,11 @@ export function SickLeaveElnModal({
 			? {
 					protocolNumber: 'ВК-84/2026',
 					protocolDate: firstP ? firstP.dateTo : formState.issueDate,
-					chairpersonFio: chairPreset ? chairPreset.fio : 'Иванова Е.В.',
+					chairpersonFio: chairPreset ? chairPreset.fio : 'Председатель ВК',
 					chairpersonSpecialty: chairPreset ? chairPreset.specialty : 'Главный врач',
-					chairpersonSnils: chairPreset ? chairPreset.snils : '142-876-543 89',
-					deputyChairpersonFio: deputyPreset ? deputyPreset.fio : 'Смирнов П.А.',
-					memberFios: [memberPreset ? memberPreset.fio : 'Кузнецова О.Д.', initialDoctorFio],
+					chairpersonSnils: chairPreset ? chairPreset.snils : '',
+					deputyChairpersonFio: deputyPreset ? deputyPreset.fio : 'Зам. председателя ВК',
+					memberFios: [memberPreset ? memberPreset.fio : 'Член ВК', initialDoctorFio].filter(Boolean),
 					attendingDoctorFio: initialDoctorFio,
 					clinicalDiagnosis: preset.clinicalDescriptionRu,
 					icd10Code: preset.icd10Code,
@@ -310,11 +310,11 @@ export function SickLeaveElnModal({
 			const vkProtocol: MedicalCommissionProtocol = {
 				protocolNumber: formState.vkProtocol?.protocolNumber || 'ВК-84/2026',
 				protocolDate: lastPeriod?.dateFrom || formState.issueDate,
-				chairpersonFio: chair ? chair.fio : 'Иванова Е.В.',
+				chairpersonFio: chair ? chair.fio : 'Председатель ВК',
 				chairpersonSpecialty: chair ? chair.specialty : 'Главный врач',
-				chairpersonSnils: chair ? chair.snils : '142-876-543 89',
-				deputyChairpersonFio: deputy ? deputy.fio : 'Смирнов П.А.',
-				memberFios: [member ? member.fio : 'Кузнецова О.Д.', initialDoctorFio],
+				chairpersonSnils: chair ? chair.snils : '',
+				deputyChairpersonFio: deputy ? deputy.fio : 'Зам. председателя ВК',
+				memberFios: [member ? member.fio : 'Член ВК', initialDoctorFio].filter(Boolean),
 				attendingDoctorFio: initialDoctorFio,
 				clinicalDiagnosis: formState.diagnosisText,
 				icd10Code: formState.icd10Code,
@@ -639,9 +639,6 @@ export function SickLeaveElnModal({
 										}
 									>
 										<option value="ambulatory">01 - Амбулаторный</option>
-										<option value="hospital">02 - Стационарный</option>
-										<option value="day_hospital">03 - Дневной стационар</option>
-										<option value="sanatorium">04 - Санаторно-курортный</option>
 									</select>
 								</div>
 

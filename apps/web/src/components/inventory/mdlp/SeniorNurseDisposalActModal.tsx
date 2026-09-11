@@ -52,14 +52,14 @@ export const SeniorNurseDisposalActModal: React.FC<
 	isOpen,
 	onClose,
 	items,
-	organizationName = 'ООО "ДЕНТЕ КЛИНИК"',
-	organizationInn = "7701234567",
-	organizationAddress = "г. Москва, ул. Клиническая, д. 10, стр. 2",
+	organizationName = "",
+	organizationInn = "",
+	organizationAddress = "",
 	departmentName = "Стоматологическое отделение",
 	cabinetName = "Кабинет №1 (Терапия / Хирургия)",
-	initialSeniorNurseName = "Иванова Е.В.",
-	initialChiefDoctorName = "Петров А.С.",
-	initialDentistName = "Кузнецов М.С.",
+	initialSeniorNurseName = "Старшая медсестра",
+	initialChiefDoctorName = "Главный врач",
+	initialDentistName = "Врач-стоматолог",
 	onApproveAct,
 	initialApproverRole = "doctor",
 	initialPaperJournalAcknowledged = true,
@@ -79,9 +79,9 @@ export const SeniorNurseDisposalActModal: React.FC<
 		useState<boolean>(initialPaperJournalAcknowledged);
 	const [approverName, setApproverName] = useState<string>(() => {
 		if (initialApproverRole === "senior_nurse") {
-			return initialSeniorNurseName || "Иванова Е.В.";
+			return initialSeniorNurseName || "Старшая медсестра";
 		}
-		return initialDentistName || initialSeniorNurseName || "Кузнецов М.С.";
+		return initialDentistName || initialSeniorNurseName || "Врач-стоматолог";
 	});
 	const [seniorNurseName, setSeniorNurseName] = useState<string>(
 		initialSeniorNurseName,
@@ -533,9 +533,9 @@ export const SeniorNurseDisposalActModal: React.FC<
 										const newRole = e.target.value as typeof approverRole;
 										setApproverRole(newRole);
 										if (newRole === "doctor") {
-											setApproverName(dentistName || initialDentistName || "Кузнецов М.С.");
+											setApproverName(dentistName || initialDentistName || "Врач-стоматолог");
 										} else if (newRole === "senior_nurse") {
-											setApproverName(seniorNurseName || initialSeniorNurseName || "Иванова Е.В.");
+											setApproverName(seniorNurseName || initialSeniorNurseName || "Старшая медсестра");
 										} else if (newRole === "administrator") {
 											setApproverName("Администратор клиники");
 										} else if (newRole === "authorized_staff") {

@@ -161,14 +161,14 @@ describe("omnichannelEngine — Pure Logic, NPS Math & Template Engines", () => 
 			assert.ok(text.includes(testContact.fullName));
 			assert.ok(text.includes("Клиника DENTE"));
 			assert.ok(text.includes("Арбат 24"));
-			assert.ok(text.includes("Кузнецова Е.В."));
+			assert.ok(text.includes("Лечащий врач"));
 		});
 
 		it("generates appointment confirmation message", () => {
 			const text = generateAppointmentConfirmationText(testContact, "Клиника DENTE");
 			assert.ok(text.includes(testContact.fullName));
 			assert.ok(text.includes("Клиника DENTE"));
-			assert.ok(text.includes("Кузнецова Е.В."));
+			assert.ok(text.includes("Лечащий врач"));
 		});
 
 		it("generates treatment plan message with FDI teeth numbers and formatted sum", () => {

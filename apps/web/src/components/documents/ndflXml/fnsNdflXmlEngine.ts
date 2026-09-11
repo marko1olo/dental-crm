@@ -193,9 +193,9 @@ export function generateFnsFileName(
 	customUuid?: string,
 ): { fileName: string; fileId: string; uuid: string } {
 	const cleanOffice = (taxOfficeCode || "7701").padStart(4, "0").slice(0, 4);
-	const cleanInn = cleanDigits(senderInn) || "7701234567";
+	const cleanInn = cleanDigits(senderInn);
 	const cleanKpp = senderKpp ? cleanDigits(senderKpp) : "";
-	const senderId = cleanInn.length === 12 ? cleanInn : `${cleanInn}${cleanKpp || "770101001"}`;
+	const senderId = cleanInn.length === 12 ? cleanInn : (cleanInn ? `${cleanInn}${cleanKpp || "770101001"}` : "");
 
 	let rawDate = "20260818";
 	if (documentDate.includes(".")) {
@@ -227,10 +227,10 @@ export function parseFio(fullNameStr: string): {
 	given: string;
 	patronymic?: string | undefined;
 } {
-	const parts = fullNameStr.trim().split(/\s+/).filter(Boolean);
+	const parts = (fullNameStr || "").trim().split(/\s+/).filter(Boolean);
 	return {
-		family: parts[0] || "Иванов",
-		given: parts[1] || "Иван",
+		family: parts[0] || "",
+		given: parts[1] || "",
 		patronymic: parts.slice(2).join(" ") || undefined,
 	};
 }
@@ -242,11 +242,31 @@ export function preflightValidatePayload(payload: FnsNdflXmlPayload): FnsPreflig
 	const issues: FnsPreflightIssue[] = [];
 
 	// 1. Проверка клиники
-	const clinicInnValidation = validateRussianInn(payload.clinic.inn);
-	if (!clinicInnValidation.isValid) {
+	if (!payload.clinic.inn || cleanDigits(payload.clinic.inn).length === 0) {
 		issues.push({
 			field: "clinic.inn",
-			message: `ИНН клиники некорректен: ${clinicInnValidation.error}`,
+			message: "Не указан ИНН или руководитель клиники в настройках организации",
+			severity: "error",
+		});
+	} else {
+		const clinicInnValidation = validateRussianInn(payload.clinic.inn);
+		if (!clinicInnValidation.isValid) {
+			issues.push({
+				field: "clinic.inn",
+				message: `ИНН клиники некорректен: ${clinicInnValidation.error}`,
+				severity: "error",
+			});
+		}
+	}
+
+	const hasDirectorName = Boolean(payload.clinic.directorName?.trim());
+	const hasIpFullName = Boolean(
+		payload.clinic.ipFullName?.family?.trim() && payload.clinic.ipFullName?.given?.trim(),
+	);
+	if (!hasDirectorName && !hasIpFullName) {
+		issues.push({
+			field: "clinic.directorName",
+			message: "Не указан ИНН или руководитель клиники в настройках организации",
 			severity: "error",
 		});
 	}
@@ -355,7 +375,7 @@ export function generateFnsNdflXml(
 	// 1. Блок медицинской организации / ИП (<СвОргМ>)
 	let orgBlockXml = "";
 	if (payload.clinic.isIndividualEntrepreneur || clinicInn.length === 12) {
-		const ipFio = payload.clinic.ipFullName || parseFio(payload.clinic.directorName || "Иванов Иван Иванович");
+		const ipFio = payload.clinic.ipFullName || parseFio(payload.clinic.directorName || "");
 		const patronymicAttr = ipFio.patronymic
 			? ` Отчество="${escapeXmlAttr(ipFio.patronymic)}"`
 			: "";
@@ -475,7 +495,7 @@ export function generateFnsNdflXml(
 	// 5. Блок подписанта (<Подписант>)
 	const signatory = payload.signatory || {
 		signatoryRole: "1" as const,
-		fullName: parseFio(payload.clinic.directorName || "Смирнов Алексей Владимирович"),
+		fullName: parseFio(payload.clinic.directorName || ""),
 		snils: payload.clinic.directorSnils,
 	};
 	const signSnils = cleanDigits(signatory.snils);
@@ -742,7 +762,7 @@ export function generateFnsNdflPrintHtml(payload: FnsNdflXmlPayload): string {
     <div class="sign-col">
       <div>Руководитель организации / уполномоченное лицо:</div>
       <div class="sign-line"></div>
-      <div class="sign-caption">(подпись, расшифровка: ${escapeXmlAttr(clinic.directorName || "Смирнов А.В.")})</div>
+      <div class="sign-caption">(подпись, расшифровка: ${escapeXmlAttr(clinic.directorName || "")})</div>
     </div>
     <div class="sign-col">
       <div style="text-align: right;">М.П. (при наличии печати)</div>

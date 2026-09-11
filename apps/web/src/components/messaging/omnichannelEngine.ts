@@ -175,11 +175,11 @@ export function formatKopecksRu(kopecks: number): string {
 export function generateVisitReminderText(
 	contact: PatientOmnichannelContact,
 	clinicName = "DENTE Dental Clinic",
-	clinicAddress = "г. Москва, ул. Арбат, д. 24",
+	clinicAddress = "Адрес клиники",
 ): string {
 	const appt = contact.nextAppointment;
 	const dateStr = appt ? `${appt.date} в ${appt.time}` : "завтра в 14:00";
-	const docStr = appt?.doctorName || "Кузнецова Е.В.";
+	const docStr = appt?.doctorName || "Лечащий врач";
 	const cabStr = appt?.cabinet ? ` (кабинет ${appt.cabinet})` : "";
 	const reasonStr = appt?.reason ? `\nПовод: ${appt.reason}` : "";
 
@@ -354,11 +354,11 @@ export const DEFAULT_CONTACTS: readonly PatientOmnichannelContact[] = [
 		nextAppointment: {
 			date: "2026-08-29",
 			time: "15:00",
-			doctorName: "Д-р Кузнецова Е.В.",
+			doctorName: "Лечащий врач",
 			doctorSpecialty: "Стоматолог-терапевт",
 			cabinet: "302",
 			reason: "Лечение кариеса зуба 4.6, реставрация",
-			address: "г. Москва, ул. Арбат, д. 24",
+			address: "Адрес клиники",
 		},
 		activeTreatmentPlan: {
 			id: "tp-881",
@@ -390,7 +390,7 @@ export const DEFAULT_CONTACTS: readonly PatientOmnichannelContact[] = [
 			doctorSpecialty: "Стоматолог-хирург-имплантолог",
 			cabinet: "401",
 			reason: "Установка дентального имплантата Dentium SuperLine (зуб 3.6)",
-			address: "г. Москва, ул. Арбат, д. 24",
+			address: "Адрес клиники",
 		},
 		activeTreatmentPlan: {
 			id: "tp-882",
@@ -421,7 +421,7 @@ export const DEFAULT_CONTACTS: readonly PatientOmnichannelContact[] = [
 			doctorSpecialty: "Стоматолог-терапевт",
 			cabinet: "305",
 			reason: "Контрольный осмотр и полировка реставрации 1.5",
-			address: "г. Москва, ул. Арбат, д. 24",
+			address: "Адрес клиники",
 		},
 		activeTreatmentPlan: {
 			id: "tp-883",
@@ -450,7 +450,7 @@ export const DEFAULT_CONTACTS: readonly PatientOmnichannelContact[] = [
 			doctorSpecialty: "Стоматолог-ортопед",
 			cabinet: "308",
 			reason: "Фиксация керамических виниров E-max (1.3-2.3)",
-			address: "г. Москва, ул. Арбат, д. 24",
+			address: "Адрес клиники",
 		},
 		activeTreatmentPlan: {
 			id: "tp-884",
@@ -473,7 +473,7 @@ export const DEFAULT_MESSAGES_BY_PATIENT: Record<string, OmnichannelMessage[]> =
 			senderName: "DENTE Bot",
 			senderType: "automated_bot",
 			timestamp: "2026-08-28T14:10:00.000Z",
-			body: "Здравствуйте, Алексей Викторович!\nНапоминаем о вашем визите в клинику DENTE Dental Clinic:\n📅 29.08.2026 в 15:00 (кабинет 302)\n👨‍⚕️ Врач: Д-р Кузнецова Е.В.\n📍 Адрес: г. Москва, ул. Арбат, д. 24\n\nПодтвердите, пожалуйста, визит нажатием кнопки ниже.",
+			body: "Здравствуйте, Алексей Викторович!\nНапоминаем о вашем визите в клинику DENTE Dental Clinic:\n📅 29.08.2026 в 15:00 (кабинет 302)\n👨‍⚕️ Врач: Лечащий врач\n📍 Адрес: Адрес клиники\n\nПодтвердите, пожалуйста, визит нажатием кнопки ниже.",
 			status: "read",
 			templateCategory: "visit_reminder",
 			interactivePayload: {

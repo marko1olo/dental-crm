@@ -146,4 +146,20 @@ describe("FNS Tax Deduction Certificate (КНД 1151156 / XML КНД 1184043)", 
 		assert.ok(issues.some((i) => i.field === "clinic.inn" && i.severity === "error"));
 		assert.ok(issues.some((i) => i.field === "receipts" && i.severity === "error"));
 	});
+
+	test("preflight validation returns structured error when clinic INN or director is missing", () => {
+		const missingClinicDataPayload: FnsNdflXmlPayload = {
+			...validPayload,
+			clinic: {
+				...validPayload.clinic,
+				inn: "",
+				directorName: "",
+				ipFullName: undefined,
+			},
+		};
+		const issues = preflightValidatePayload(missingClinicDataPayload);
+		const expectedMsg = "Не указан ИНН или руководитель клиники в настройках организации";
+		assert.ok(issues.some((i) => i.field === "clinic.inn" && i.message === expectedMsg));
+		assert.ok(issues.some((i) => i.field === "clinic.directorName" && i.message === expectedMsg));
+	});
 });
