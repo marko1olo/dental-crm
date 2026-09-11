@@ -34,6 +34,13 @@ export function KraftBarcodeLabelSheet({
 	};
 
 	const handlePrint = () => {
+		if (selectedBarcodes.size === 0 && packs.length > 0) {
+			setSelectedBarcodes(new Set(packs.map(p => p.barcode)));
+			setTimeout(() => {
+				window.print();
+			}, 50);
+			return;
+		}
 		window.print();
 	};
 
@@ -67,10 +74,17 @@ export function KraftBarcodeLabelSheet({
 						type="button"
 						onClick={handlePrint}
 						className="autoclave-btn autoclave-btn-primary"
-						disabled={printablePacks.length === 0}
+						disabled={packs.length === 0}
+						title={
+							packs.length === 0
+								? 'Нет этикеток для печати'
+								: printablePacks.length === 0
+								? 'Печать всех этикеток партии (выбор будет включен автоматически)'
+								: `Печать выбранных этикеток (${printablePacks.length} шт.)`
+						}
 					>
 						<Printer size={16} />
-						Печать этикеток ({printablePacks.length})
+						Печать этикеток ({printablePacks.length === 0 ? packs.length : printablePacks.length})
 					</button>
 				</div>
 			</div>
@@ -78,7 +92,9 @@ export function KraftBarcodeLabelSheet({
 			{/* Printable Sheet */}
 			{printablePacks.length === 0 ? (
 				<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted, #64748b)' }}>
-					Нет выбранных этикеток для печати.
+					{packs.length === 0
+						? 'Нет доступных этикеток для печати.'
+						: 'Нет выбранных этикеток. Нажмите «Печать этикеток» или «Выбрать все» для распечатки всей партии.'}
 				</div>
 			) : (
 				<div className="kraft-label-sheet">

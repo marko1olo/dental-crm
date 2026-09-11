@@ -17,6 +17,30 @@ export * from "./perio/index.js";
 export * from "./emr/index.js";
 export type { TimelineCategory } from "./emr/index.js";
 export type { TimelineCategory as ClinicalTimelineCategory } from "./clinical/index.js";
+export {
+	type RelationshipType,
+	type PatientRelationship,
+	type CreateRelationshipInput,
+	type UpdateRelationshipInput,
+	type AuthorizedSignersResolution,
+	RELATIONSHIP_TYPES,
+	RELATIONSHIP_LABELS_RU,
+	INVERSE_RELATIONSHIP_TYPE,
+	RF_STATUTORY_CONSENT_AGE_THRESHOLD,
+	relationshipTypeSchema,
+	patientRelationshipSchema,
+	createRelationshipInputSchema,
+	updateRelationshipInputSchema,
+	getInverseRelationship,
+	getRelationshipLabelRu,
+	createRelationshipPair,
+	resolveAuthorizedSigners,
+	resolveFamilyPayers,
+	resolveEmergencyContacts,
+	formatKinshipSummaryA4,
+	isRelationshipType,
+} from "./clinical/index.js";
+
 export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./finance/stomxCashFlowCatalogs.js";

@@ -26,3 +26,5 @@ export {
 	formatTimelineA4Summary,
 	isTimelineCategory,
 } from "./patientTimelineEngine.js";
+export * from "./patientRelationshipsEngine.js";
+
