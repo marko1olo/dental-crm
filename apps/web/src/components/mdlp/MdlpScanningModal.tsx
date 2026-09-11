@@ -190,7 +190,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 	const [isCopied, setIsCopied] = useState(false);
 
 	// Статус связи с ЦРПТ и фоновый офлайн-буфер (Законы медсестры и МДЛП)
-	const [crptStatus, setCrptStatus] = useState<"online" | "degraded" | "offline">("online");
+	const [crptStatus] = useState<"online" | "degraded" | "offline">("online");
 	const [offlineQueue, setOfflineQueue] = useState<MdlpOfflinePackage[]>(() => loadMdlpOfflineQueue());
 	const [showOfflineDrawer, setShowOfflineDrawer] = useState(false);
 	const [showEmergencyScannerBypass, setShowEmergencyScannerBypass] = useState(false);
@@ -307,13 +307,6 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 		}
 
 		inputRef.current?.focus();
-	};
-
-	const handleAddSample = (sample: (typeof SAMPLE_BARCODES)[0]) => {
-		const newItem = createChestnyZnakScannedItem(sample.code, { costRub: sample.cost });
-		setScannedItems((prev) => [newItem, ...prev]);
-		setGeneratedXml(null);
-		showToast(`Добавлен тестовый код: ${sample.label}`, "info");
 	};
 
 	const handleRemoveItem = (id: string) => {
@@ -519,14 +512,6 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 								{crptStatus === "degraded" && "ЦРПТ: Серверы тормозят (Активен офлайн-буфер, приём не прерывается)"}
 								{crptStatus === "offline" && "ЦРПТ: Серверы недоступны (Офлайн-буфер активен, приём пациентов продолжается)"}
 							</span>
-							<button
-								type="button"
-								onClick={() => setCrptStatus((prev) => prev === "online" ? "offline" : prev === "offline" ? "degraded" : "online")}
-								className="mdlp-crpt-test-btn"
-								title="Смоделировать отклик серверов ЦРПТ для проверки устойчивости офлайн-буфера"
-							>
-								[Тест связи: {crptStatus}]
-							</button>
 						</div>
 
 						<div className="mdlp-crpt-status-right">
@@ -691,28 +676,12 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 								type="submit"
 								className="mdlp-action-btn"
 								data-testid="mdlp-scan-submit-btn"
-								title={barcodeInput.trim() ? "Добавить отсканированный код" : "Поднесите 2D-сканер или выберите быстрый образец"}
+								title={barcodeInput.trim() ? "Добавить отсканированный код" : "Поднесите 2D-сканер к коду DataMatrix на упаковке"}
 							>
 								<Scan className="w-4 h-4" />
 								<span>Добавить</span>
 							</button>
 						</form>
-
-						{/* Quick Sample Scans Strip */}
-						<div className="mdlp-sample-strip">
-							<span className="mdlp-sample-label">Тестовые образцы:</span>
-							{SAMPLE_BARCODES.map((sample) => (
-								<button
-									key={sample.label}
-									type="button"
-									onClick={() => handleAddSample(sample)}
-									className="mdlp-sample-pill"
-									data-testid={`mdlp-sample-${sample.label.replace(/\s+/g, "_")}`}
-								>
-									+ {sample.label}
-								</button>
-							))}
-						</div>
 					</div>
 
 					{/* Scanned Items Table */}
@@ -740,7 +709,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 													Нет отсканированных упаковок
 												</p>
 												<p className="text-xs text-[var(--muted)]">
-													Поднесите 2D-сканер к коду DataMatrix на упаковке или используйте тестовые образцы выше
+													Поднесите 2D-сканер к коду DataMatrix на упаковке
 												</p>
 											</div>
 										</td>

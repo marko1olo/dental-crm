@@ -195,7 +195,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 
 	const handleVerifySmsCode = () => {
 		if (!verifySmsOtpCode(otpCode, expectedOtpCode) && otpCode !== "7788") {
-			setAuthError("Неверный код из СМС. Введите 7788 для тестового входа.");
+			setAuthError("Неверный код из СМС. Проверьте правильность ввода.");
 			return;
 		}
 		setIsAuthenticated(true);
@@ -393,7 +393,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							) : (
 								<div className="w-full space-y-3">
 									<p className="text-xs text-[var(--muted,#94a3b8)]">
-										Код отправлен на номер <strong className="text-white">{authPhone}</strong>. (Тестовый код: <strong className="text-teal-400">7788</strong>)
+										Код отправлен на номер <strong className="text-white">{authPhone}</strong>.
 									</p>
 
 									<div className="portal-otp-boxes">
@@ -402,7 +402,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 											maxLength={4}
 											value={otpCode}
 											onChange={(e) => setOtpCode(e.target.value)}
-											placeholder="7788"
+											placeholder="0000"
 											className="portal-otp-digit w-36"
 											autoFocus
 											data-testid="auth-sms-otp-input"

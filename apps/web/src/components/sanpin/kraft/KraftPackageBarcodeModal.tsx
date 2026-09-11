@@ -1349,27 +1349,6 @@ export function KraftPackageBarcodeModal({
 										</button>
 									)}
 								</div>
-
-								{/* Quick Sample Chips */}
-								<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
-									<span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}>Тестовые образцы:</span>
-									<button
-										type="button"
-										onClick={() => setScannedInput(`KP-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-01-01`)}
-										className="sanpin-tag"
-										style={{ cursor: "pointer", fontSize: "0.75rem", border: "1px solid var(--line)", background: "var(--paper)" }}
-									>
-										• Azov Свежий (50 сут)
-									</button>
-									<button
-										type="button"
-										onClick={() => setScannedInput("KP-20260101-01-01")}
-										className="sanpin-tag"
-										style={{ cursor: "pointer", fontSize: "0.75rem", border: "1px solid rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.08)", color: "#b91c1c" }}
-									>
-										• Просроченный пакет
-									</button>
-								</div>
 							</div>
 
 							{/* Scanned Result Card */}

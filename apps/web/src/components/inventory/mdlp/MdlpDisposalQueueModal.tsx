@@ -2,12 +2,10 @@ import {
 	DENTAL_PKU_MEDICATIONS,
 	MDLP_OPERATION_CODES,
 	MDLP_OPERATION_CONFIGS,
-	type DentalPkuDrugCategory,
 	type Gs1DataMatrixParseResult,
 	type MdlpCarpuleQueueItem,
 	type MdlpOperationCode,
 	type MdlpSchema10560Document,
-	type PackagingLevel,
 	calculateQueueStats,
 	cleanScannerBarcodeString,
 	createCarpuleQueueItem,
@@ -238,18 +236,6 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 			}
 		},
 		[barcodeInput, handleAddBarcode],
-	);
-
-	// Аутентичный выбор из стоматологического каталога ПКУ (zero Math.random)
-	const handleAddDemoDrug = useCallback(
-		(
-			category: DentalPkuDrugCategory,
-			packaging: PackagingLevel = "carpule",
-		) => {
-			const raw = generateAuthenticDentalBarcode(category, { packaging });
-			handleAddBarcode(raw);
-		},
-		[handleAddBarcode],
 	);
 
 	// Удаление элемента из очереди
@@ -564,59 +550,12 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							</div>
 						</div>
 
-						{/* Заголовок секции сканирования и демо-кнопки ПКУ */}
+						{/* Заголовок секции сканирования */}
 						<div className="flex flex-wrap items-center justify-between gap-2 mt-2">
 							<span className="text-xs font-bold text-ink flex items-center gap-1.5">
 								<QrCode size={18} className="text-teal-600" />
 								<span>Сканирование 2D DataMatrix (Честный ЗНАК / GS1):</span>
 							</span>
-							<div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-								<span>Тест ПКУ:</span>
-								<button
-									type="button"
-									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("articaine_1_100000", "carpule")}
-									title="Артикаин с адреналином 1:100 000"
-								>
-									+ Ультракаин форте
-								</button>
-								•
-								<button
-									type="button"
-									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("articaine_1_200000", "carpule")}
-									title="Артикаин с адреналином 1:200 000"
-								>
-									+ Ультракаин Д-С
-								</button>
-								•
-								<button
-									type="button"
-									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("mepivacaine_plain", "carpule")}
-									title="Мепивакаин без вазоконстриктора 3%"
-								>
-									+ Скандонест
-								</button>
-								•
-								<button
-									type="button"
-									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("articaine_plain", "carpule")}
-									title="Артикаин 4% без вазоконстриктора и сульфитов"
-								>
-									+ Ультракаин Д
-								</button>
-								•
-								<button
-									type="button"
-									className="text-[11px] font-semibold text-teal-700 hover:underline"
-									onClick={() => handleAddDemoDrug("articaine_1_100000", "package")}
-									title="Вторичная упаковка 50 карпул (код 332)"
-								>
-									+ Пачка 50 карпул
-								</button>
-							</div>
 						</div>
 
 						{/* Поле прямого ввода со сканера 2D штрихкодов с поддержкой горячего ввода на лету */}
@@ -846,7 +785,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 												}}
 											>
 												Очередь списания пуста. Отсканируйте DataMatrix код
-												карпулы или воспользуйтесь быстрым тестом выше.
+												карпулы 2D-сканером.
 											</td>
 										</tr>
 									) : (

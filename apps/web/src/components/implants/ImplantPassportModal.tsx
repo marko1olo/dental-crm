@@ -35,6 +35,7 @@ export interface ImplantPassportModalProps {
 	readonly doctorName?: string;
 	readonly doctorId?: string;
 	readonly initialTooth?: number;
+	readonly inventoryOverdraftActive?: boolean;
 	readonly onSavePassport?: (data: FastImplantPassportData) => void;
 	readonly onInsertIntoDiary?: (diaryText: string) => void;
 	readonly className?: string;
@@ -48,6 +49,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	doctorName = "Хирург-имплантолог",
 	doctorId = "DOC-01",
 	initialTooth = 46,
+	inventoryOverdraftActive = false,
 	onSavePassport,
 	onInsertIntoDiary,
 	className = "",
@@ -62,7 +64,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	const [catalogArticle, setCatalogArticle] = useState<string>("TS3S4010S");
 	const [lotNumber, setLotNumber] = useState<string>("LOT-2026-OSS-8842");
 	const [serialNumber, setSerialNumber] = useState<string>("SN-991428");
-	const [isOverdraftActive, setIsOverdraftActive] = useState<boolean>(false);
+	const [isOverdraftDismissed, setIsOverdraftDismissed] = useState<boolean>(false);
+	const isOverdraftActive = inventoryOverdraftActive;
 	const [activeTab, setActiveTab] = useState<"protocol" | "isq" | "diary" | "passport">("protocol");
 	const [isGbrPerformed, setIsGbrPerformed] = useState<boolean>(false);
 	const [isIsqEnabled, setIsIsqEnabled] = useState<boolean>(false);
@@ -315,7 +318,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 				{/* Body */}
 				<div className="implant-passport-content">
 					{/* Мягкий овердрафт предупреждение */}
-					{isOverdraftActive && (
+					{isOverdraftActive && !isOverdraftDismissed && (
 						<div className="p-3 rounded-xl bg-[var(--amber-surface,rgba(245,158,11,0.1))] border border-[var(--amber-soft,rgba(245,158,11,0.3))] text-xs text-[var(--ink)] flex items-center gap-2.5" data-testid="passport-overdraft-notice">
 							<AlertTriangle size={18} className="text-[var(--amber,#f59e0b)] shrink-0" />
 							<div className="flex-1">
@@ -324,7 +327,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							</div>
 							<button
 								type="button"
-								onClick={() => setIsOverdraftActive(false)}
+								onClick={() => setIsOverdraftDismissed(true)}
 								className="text-xs font-bold underline text-[var(--ink)]"
 							>
 								Закрыть
@@ -730,19 +733,14 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									/>
 								</div>
 
-								{/* Имитация овердрафта для проверки неблокирующего сохранения */}
+								{/* Статус склада и мягкий овердрафт (Мандат 8e) */}
 								<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
 									<span className="text-[var(--muted)]">
-										Складской статус: компоненты оприходованы
+										Складской статус: {isOverdraftActive ? "Мягкий овердрафт (задержка накладной)" : "компоненты оприходованы"}
 									</span>
-									<button
-										type="button"
-										onClick={() => setIsOverdraftActive(!isOverdraftActive)}
-										className="text-xs font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
-										data-testid="btn-toggle-overdraft-test"
-									>
-										{isOverdraftActive ? "Снять овердрафт" : "Тест задержки накладной"}
-									</button>
+									<span className={`text-xs font-semibold ${isOverdraftActive ? "text-amber-500" : "text-[var(--teal,#0d9488)]"}`}>
+										{isOverdraftActive ? "Овердрафт разрешен (Мандат 8e)" : "В наличии"}
+									</span>
 								</div>
 							</div>
 						</div>

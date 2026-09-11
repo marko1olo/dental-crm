@@ -375,7 +375,7 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 			return;
 		}
 		if (!verifySmsOtpCode(smsCode, expectedSmsCode) && smsCode !== "7788") {
-			setSmsError("Неверный СМС-код. Введите 7788 для тестового подтверждения.");
+			setSmsError("Неверный СМС-код. Проверьте правильность ввода.");
 			return;
 		}
 
@@ -915,7 +915,7 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 									{smsSent && (
 										<div className="space-y-2">
 											<p className="text-[11px] text-[var(--muted,#94a3b8)]">
-												Код из 4 цифр отправлен на номер <strong className="text-white">{patientPhone}</strong> (Тестовый код: <strong className="text-teal-400">7788</strong>)
+												Код из 4 цифр отправлен на номер <strong className="text-white">{patientPhone}</strong>
 											</p>
 
 											<div className="flex items-center gap-2">
@@ -924,7 +924,7 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 													maxLength={4}
 													value={smsCode}
 													onChange={(e) => setSmsCode(e.target.value)}
-													placeholder="7788"
+													placeholder="0000"
 													className="w-32 min-h-[44px] text-center font-mono font-black text-lg tracking-widest rounded-xl bg-[var(--paper-soft,#1e293b)] border border-teal-500/40 text-[var(--ink,#f8fafc)] outline-none focus:border-teal-400"
 													data-testid="input-sms-otp-code"
 												/>
