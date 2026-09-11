@@ -1223,7 +1223,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<div className="h-11 min-h-[44px] flex items-center justify-between gap-2 px-3 border-b border-[var(--line)] flex-nowrap overflow-x-auto scrollbar-none">
 						<div className="flex items-center gap-2 min-w-0 flex-shrink">
 							<PatientAvatar fullName={activePatient.fullName} size={28} />
-							<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[200px]" title={activePatient.fullName}>
+							<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[360px] lg:max-w-none" title={activePatient.fullName}>
 								{activePatient.fullName}
 							</span>
 							{patientAge && (
