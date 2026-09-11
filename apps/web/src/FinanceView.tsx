@@ -312,34 +312,34 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						{documentPatient?.fullName ?? "пациент не выбран"}
 					</p>
 				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+				<div className="finance-header-actions flex items-center flex-wrap gap-2 max-w-full min-w-0">
 					<button
-						className="secondary-button shrink-0"
+						className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-semibold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer"
 						type="button"
 						onClick={() => setIsInvoicesOpen(true)}
 						aria-label="Счета и акты (804н)"
 						data-testid="btn-finance-open-invoices"
-						style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
 					>
-						<Receipt size={15} /> Счета и акты (804н)
+						<Receipt size={15} className="shrink-0" />
+						<span>Счета и акты (804н)</span>
 					</button>
 					<button
-						className="secondary-button shrink-0"
+						className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-semibold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer"
 						type="button"
 						onClick={() => setIsPnlOpen(true)}
 						aria-label="Управленческий P&L отчет"
-						style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
 					>
-						<TrendingUp size={15} /> Управленческий P&L
+						<TrendingUp size={15} className="shrink-0" />
+						<span>Управленческий P&L</span>
 					</button>
 					<button
-						className="secondary-button shrink-0"
+						className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-semibold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer"
 						type="button"
 						onClick={onGoToDocuments}
 						aria-label="Перейти к документам"
-						style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
 					>
-						<FileText size={15} /> Документы
+						<FileText size={15} className="shrink-0" />
+						<span>Документы</span>
 					</button>
 				</div>
 			</div>

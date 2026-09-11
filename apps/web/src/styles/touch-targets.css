@@ -45,13 +45,13 @@
    мышью, — там раздувать элементы не за что.
    ============================================================ */
 
-@media (pointer: coarse), (max-width: 700px) {
+@media (pointer: coarse), (max-width: 840px) {
 	/* --- Самостоятельные кнопки --- */
 	.primary-button,
 	.secondary-button,
 	.text-button,
 	.icon-button {
-		min-height: 44px;
+		min-height: 44px !important;
 	}
 
 	/* --- Вкладки ---
@@ -63,10 +63,10 @@
      существовало, но ни к чему не применялось, и вкладки оставались 29px даже
      на телефоне. */
 	.visit-sub-nav-tabs button {
-		min-height: 44px;
+		min-height: 44px !important;
 	}
 	.emk-tab-button {
-		min-height: 32px;
+		min-height: 44px !important;
 	}
 
 	/* !important обязателен: main.css:14512 задаёт
@@ -74,7 +74,7 @@
      специфичности (0,1,1). Без !important правило проигрывает, и вкладки
      остаются 29px — именно это и замерено на 768px. */
 	.settings-tabs button {
-		min-height: 44px;
+		min-height: 44px !important;
 	}
 
 	/* --- Плотные наборы чипов ---
@@ -88,8 +88,14 @@
        main.css  .quick-chip--sm        { min-height: 24px !important }
        main.css  .appointment-edit-button { min-height: 28px !important }
      Замерено до правки: чипы быстрых сумм оплаты 55x24, 56x24, 41x24. */
-	.quick-chip--sm {
-		min-height: 44px;
+	.quick-chip--sm,
+	.quick-chip,
+	.mobile-back-to-list-btn,
+	.doc-link,
+	.btn-finance-action,
+	.schedule-reassign-pill {
+		min-height: 44px !important;
+		min-width: 44px;
 	}
 
 	.appointment-edit-button,
@@ -98,7 +104,7 @@
 	.history-close-btn,
 	.btn-sign,
 	.btn-save {
-		min-height: 44px;
+		min-height: 44px !important;
 	}
 
 	.quick-chips-row,

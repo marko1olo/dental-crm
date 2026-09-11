@@ -1256,7 +1256,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0"
+								className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0"
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
@@ -1271,7 +1271,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleOpenStomxTemplatesFromHeader}
 								data-testid="btn-open-stomt-templates-header"
-								className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer shrink-0"
+								className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer shrink-0"
 								title="Клинические шаблоны StomX (448 протоколов 043/у по 5 специальностям)"
 							>
 								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
@@ -1284,7 +1284,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="secondary-button min-h-[32px] h-8 px-2 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1 cursor-pointer shrink-0"
+								className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1 cursor-pointer shrink-0"
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
@@ -1301,7 +1301,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+								className="primary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
 								title="Завершить приём и сохранить все изменения"
 							>
 								<CheckCircle2 size={14} className="shrink-0" />
@@ -1311,7 +1311,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 
 					{/* Строка 2 (высота ~36px): Компактные табы разделов визита (высота 32px) */}
-					<div className="h-9 min-h-[36px] flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))]">
+					<div className="min-h-[44px] sm:h-9 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))]">
 						<VisitMainTabs
 							visitSubViewTab={visitSubViewTab}
 							setVisitSubViewTab={setVisitSubViewTab}

@@ -325,7 +325,7 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[44px] px-1 sm:px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[96px] sm:w-[115px] text-center tracking-tight"
+					className="schedule-date-input min-h-[44px] px-1 sm:px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] sm:w-[115px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
@@ -455,16 +455,16 @@ export function ScheduleFilterStrip({
 
 			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
 			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l border-[var(--line)]">
-				{/* 1-Click View Mode Switcher: [ Лента | Сетка | По креслам ] */}
+				{/* 1-Click View Mode Switcher: [ Лента | Сетка | По креслам ] (desktop & tablet, on mobile embedded in options dropdown) */}
 				{setScheduleViewMode && (
-					<div className="flex items-center gap-0.5 sm:gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
+					<div className="hidden sm:flex items-center gap-0.5 sm:gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("timeline")}
-							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] min-w-[34px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "timeline"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-									: "text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Лента приемов по дням"
 							aria-label="Лента по дням"
@@ -477,10 +477,10 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("grid")}
-							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] min-w-[34px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "grid"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-									: "text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Сетка по кабинетам и креслам"
 							aria-label="Сетка по кабинетам"
@@ -493,10 +493,10 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("chairs")}
-							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] min-w-[34px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "chairs"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-									: "text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Режим расписания по креслам (StomX паритет)"
 							aria-label="По креслам"
@@ -531,6 +531,62 @@ export function ScheduleFilterStrip({
 						role="menu"
 						aria-hidden={!isOptionsMenuOpen}
 					>
+							{/* Mobile View Mode Switcher (visible strictly on < sm) */}
+							{setScheduleViewMode && (
+								<div className="sm:hidden mb-1.5 pb-1.5 border-b border-[var(--line)]">
+									<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+										Режим отображения
+									</div>
+									<div className="flex items-center gap-1 p-0.5 bg-[var(--paper-soft)] rounded-lg">
+										<button
+											type="button"
+											onClick={() => {
+												setScheduleViewMode("timeline");
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`flex-1 min-h-[44px] px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+												scheduleViewMode === "timeline"
+													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													: "bg-transparent text-[var(--ink)]"
+											}`}
+										>
+											<List size={13} className="shrink-0" />
+											<span>Лента</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setScheduleViewMode("grid");
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`flex-1 min-h-[44px] px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+												scheduleViewMode === "grid"
+													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													: "bg-transparent text-[var(--ink)]"
+											}`}
+										>
+											<LayoutGrid size={13} className="shrink-0" />
+											<span>Сетка</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setScheduleViewMode("chairs");
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`flex-1 min-h-[44px] px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+												scheduleViewMode === "chairs"
+													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													: "bg-transparent text-[var(--ink)]"
+											}`}
+										>
+											<Armchair size={13} className="shrink-0" />
+											<span>Кресла</span>
+										</button>
+									</div>
+								</div>
+							)}
+
 							{/* Quick dates */}
 							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
 								Навигация по датам

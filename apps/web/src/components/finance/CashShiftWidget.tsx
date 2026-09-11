@@ -648,11 +648,11 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	if (compact) {
 		return (
 			<div
-				className="cash-shift-container cash-shift-compact flex items-center justify-between gap-3 px-3 py-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xs text-xs min-h-[36px] h-9 mb-3"
+				className="cash-shift-container cash-shift-compact flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2.5 sm:px-3 sm:py-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xs text-xs min-h-[44px] sm:h-9 h-auto mb-3"
 				data-testid="cash-shift-widget"
 			>
 				{/* Левая часть: статус смены, номер, кассир, выручка, очередь */}
-				<div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+				<div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap flex-1">
 					<div
 						className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
 							isShiftOpen
@@ -702,12 +702,12 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 				</div>
 
 				{/* Правая часть: кнопка X-отчета, кнопки внесения/изъятия, кнопка открытия/закрытия, доп. действия */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap justify-start sm:justify-end shrink-0">
 					<button
 						type="button"
 						onClick={handleOpenCashInModal}
 						data-testid="btn-compact-cash-in"
-						className="secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-emerald-700 dark:text-emerald-300"
+						className="secondary-button min-h-[36px] sm:min-h-[28px] sm:h-7 px-2 py-1 sm:py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-emerald-700 dark:text-emerald-300"
 						title="Внесение наличных в кассу (размен / приход)"
 					>
 						<PlusCircle size={13} className="shrink-0 text-emerald-600" />
@@ -718,7 +718,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						type="button"
 						onClick={handleOpenCashOutModal}
 						data-testid="btn-compact-cash-out"
-						className="secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-rose-700 dark:text-rose-300"
+						className="secondary-button min-h-[36px] sm:min-h-[28px] sm:h-7 px-2 py-1 sm:py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-rose-700 dark:text-rose-300"
 						title="Изъятие / инкассация наличных из кассы"
 					>
 						<MinusCircle size={13} className="shrink-0 text-rose-600" />
@@ -730,7 +730,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						onClick={handleXReport}
 						disabled={isProcessing}
 						data-testid="btn-print-x-report"
-						className="secondary-button min-h-[28px] h-7 px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+						className="secondary-button min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
 						title="Печать X-отчета (без гашения)"
 					>
 						<Printer size={13} className="shrink-0" />
@@ -743,7 +743,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						onClick={isShiftOpen ? handleOpenZReportModal : handleToggleShift}
 						disabled={isProcessing}
 						data-testid="cash-shift-toggle-btn"
-						className={`min-h-[28px] h-7 px-2.5 py-0.5 text-xs font-bold rounded-lg flex items-center gap-1 shrink-0 cursor-pointer transition-all ${
+						className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 text-xs font-bold rounded-lg flex items-center gap-1 shrink-0 cursor-pointer transition-all ${
 							isShiftOpen
 								? "bg-rose-600 hover:bg-rose-700 text-white"
 								: "bg-emerald-600 hover:bg-emerald-700 text-white"

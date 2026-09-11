@@ -1826,7 +1826,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						data-testid="btn-grid-first-appointment"
 					>
 						<Plus size={14} aria-hidden="true" />
-						<span>+ Записать первого пациента</span>
+						<span>Записать первого пациента</span>
 					</button>
 				</div>
 			)}
@@ -2073,7 +2073,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														prev === chair.id ? null : chair.id,
 													);
 												}}
-												className="min-h-[28px] h-7 w-7 p-1 rounded-lg hover:bg-[var(--line)]/50 text-[var(--teal)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center"
+												className="min-h-[28px] h-7 w-7 p-1 rounded-lg bg-transparent hover:bg-[var(--line)]/50 text-[var(--teal)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center"
 												title={`Быстрый выбор врача и смены для «${chair.name}» (1 клик)`}
 												aria-label={`Быстрый выбор врача для ${chair.name}`}
 												data-testid={`btn-chair-doctor-popover-${chair.id}`}
@@ -2090,7 +2090,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													prev === chair.id ? null : chair.id,
 												);
 											}}
-											className="min-h-[28px] h-7 w-7 p-1 rounded-lg hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-amber-600 transition-colors cursor-pointer flex items-center justify-center"
+											className="min-h-[28px] h-7 w-7 p-1 rounded-lg bg-transparent hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-amber-600 transition-colors cursor-pointer flex items-center justify-center"
 											title={`Санобработка / Техперерыв для «${chair.name}» (1 клик)`}
 											aria-label={`Санобработка и техперерыв для ${chair.name}`}
 											data-testid={`btn-chair-maintenance-${chair.id}`}

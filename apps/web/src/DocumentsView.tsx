@@ -1535,7 +1535,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<button
 						type="button"
 						className="secondary-button min-h-[44px] sm:min-h-[36px]"
-						style={{ minHeight: "36px" }}
 						onClick={() => setIsSickLeaveElnOpen(true)}
 						data-testid="open-sick-leave-eln-modal-btn"
 					>
@@ -1544,7 +1543,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<button
 						type="button"
 						className="secondary-button min-h-[44px] sm:min-h-[36px]"
-						style={{ minHeight: "36px" }}
 						onClick={() => setIsAutoclaveLogOpen(true)}
 						data-testid="open-autoclave-log-257-btn"
 					>
@@ -1552,7 +1550,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					</button>
 					<button
 						className="text-button min-h-[44px] sm:min-h-[36px]"
-						style={{ minHeight: "36px" }}
 						type="button"
 						disabled={false}
 						data-testid="btn-open-latest-document"
@@ -6246,7 +6243,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								{document.status === "draft" ? (
 									<button
 										className="doc-link min-h-[44px] sm:min-h-[36px]"
-										style={{ minHeight: "36px" }}
 										type="button"
 										disabled={documentStatusSaving}
 										aria-busy={documentStatusSaving || undefined}
@@ -6260,7 +6256,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								) : (
 									<button
 										className="doc-link min-h-[44px] sm:min-h-[36px]"
-										style={{ minHeight: "36px" }}
 										type="button"
 										onClick={() => void downloadIssuedDocumentPdf(document.id)}
 										aria-describedby={documentLifecycleGuidanceId}
@@ -6274,7 +6269,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								{/* Кнопка прямого действия 2: Открыть */}
 								<button
 									className="doc-link min-h-[44px] sm:min-h-[36px]"
-									style={{ minHeight: "36px" }}
 									type="button"
 									onClick={() => void openIssuedDocumentHtml(document.id)}
 									aria-describedby={documentLifecycleGuidanceId}
@@ -6287,7 +6281,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								{/* Контекстное меню дополнительных действий (...) */}
 								<div style={{ position: "relative", display: "inline-block" }}>
 									<button
-										className="doc-link document-row-actions-btn min-h-[44px] sm:min-h-[36px]"
+										className="doc-link document-row-actions-btn min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]"
 										type="button"
 										onClick={() =>
 											setOpenDocActionMenuId(
@@ -6301,8 +6295,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 											display: "inline-flex",
 											alignItems: "center",
 											justifyContent: "center",
-											minWidth: "36px",
-											minHeight: "36px",
 											padding: "0 6px",
 										}}
 									>

@@ -1897,7 +1897,7 @@ button[data-tooth-state="missing"] {
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 		overscroll-behavior-y: contain;
-		padding-bottom: 24px;
+		padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 	}
 	.dnt-bottom-nav {
 		display: flex;

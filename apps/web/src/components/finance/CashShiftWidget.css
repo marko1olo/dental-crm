@@ -78,7 +78,7 @@
 }
 
 @media (max-width: 640px) {
-	.cash-shift-container {
+	.cash-shift-container:not(.cash-shift-compact) {
 		padding: 16px;
 		padding-bottom: max(24px, 5.5rem);
 	}

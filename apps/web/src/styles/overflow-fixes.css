@@ -89,3 +89,66 @@
 .tooth-chart-arch-container {
 	max-width: 100%;
 }
+
+/* --- 6. Гарантия строго 0px горизонтального скролла на мобильных (R1) --- */
+@media (max-width: 840px) {
+	html,
+	body,
+	#root,
+	.app-shell,
+	.app-shell.dente-redesign {
+		max-width: 100vw;
+		overflow-x: hidden !important;
+	}
+
+	.app-shell.dente-redesign .workspace {
+		max-width: 100vw;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	.panel.schedule-panel,
+	.panel.visit-panel,
+	.patients-panel,
+	.finance-panel,
+	.panel.documents-panel,
+	.panel {
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	.schedule-filter-strip,
+	.visit-monolithic-header,
+	.patients-header,
+	.panel-heading,
+	.finance-header-actions,
+	.document-patient-banner,
+	.document-intake-quick-row,
+	.document-factory,
+	.document-list,
+	.document-row {
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	.patients-search-box {
+		flex: 1 1 100%;
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	.patients-header-actions {
+		width: 100%;
+		justify-content: flex-start;
+	}
+
+	.document-row p,
+	.patient-row p,
+	.appointment-card p {
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+}
+

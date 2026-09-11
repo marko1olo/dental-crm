@@ -85,6 +85,14 @@
 	background: var(--line);
 }
 
+@media (pointer: coarse), (max-width: 840px) {
+	.patients-search-clear-btn {
+		min-width: 44px;
+		min-height: 44px;
+		right: 36px;
+	}
+}
+
 .patients-search-shortcut-hint {
 	position: absolute;
 	right: 10px;
@@ -250,7 +258,8 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-height: 40px;
+	min-height: 44px;
+	min-width: 44px;
 	padding: 6px 14px;
 	border-radius: 10px;
 	border: 1px solid var(--line-strong);
