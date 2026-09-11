@@ -2122,8 +2122,8 @@ export const PublicOnlineBookingWidget: React.FC<
 								<div className="min-w-0">
 									<div className="dbw-detail-label">Пациент и телефон</div>
 									<div className="dbw-detail-value min-w-0 break-words">
-										{confirmationData?.patientName || patientName || "Пациент"}{" "}
-										({confirmationData?.patientPhone || patientPhone || "+7 (999) 000-00-00"})
+										{confirmationData?.patientName || patientName || "Пациент"}
+										{confirmationData?.patientPhone || patientPhone ? ` (${confirmationData?.patientPhone || patientPhone})` : ""}
 									</div>
 								</div>
 							</div>
