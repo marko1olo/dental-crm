@@ -508,6 +508,10 @@ export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<
 
 	// =========================================================================
 	// 8. ОЧЕРЕДЬ АМБУЛАТОРНЫХ КАРТ НАЧМЕДА / КОНТРОЛЬ КАЧЕСТВА ЭМК
+	// Пояснение: Мандат 8e (п. 4) и Мандат 8n. Очередь верификации служит инструментом
+	// экспертного аудита качества и соблюдения стандартов 043/у, а НЕ карательным
+	// блокирующим механизмом. Нахождение карты на ревью или утверждение начмедом
+	// НЕ блокирует возможность лечащего врача вносить правки в дневник («Исправленному верить»).
 	// =========================================================================
 	const getVerifyQueueQuerySchema = z.object({
 		status: outpatientVerificationStatusSchema.optional(),
@@ -570,14 +574,22 @@ export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<
 			.offset(parsed.data.offset);
 
 		const now = Date.now();
-		const itemsWithLockStatus = queue.map((item) => ({
-			...item,
-			isEditableDeadlineExpired: now > new Date(item.editableDeadline).getTime(),
-		}));
+		const itemsWithLockStatus = queue.map((item) => {
+			const isExpired = now > new Date(item.editableDeadline).getTime();
+			return {
+				...item,
+				isEditableDeadlineExpired: isExpired,
+				// Мандат 8e: рекомендательный аудит, врач сохраняет неограниченный доступ к дневнику
+				doctorAccess: "unrestricted",
+				canDoctorEdit: true,
+			};
+		});
 
 		return reply.send({
 			count: itemsWithLockStatus.length,
 			queue: itemsWithLockStatus,
+			advisoryNotice:
+				"Очередь верификации носит рекомендательно-экспертный характер (Мандат 8e). Дневники врачей не подлежат карательной блокировке.",
 		});
 	});
 
@@ -722,11 +734,17 @@ export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<
 			const now = Date.now();
 			const isDeadlineExpired = now > new Date(verif.editableDeadline).getTime();
 			const isApproved = verif.status === "approved";
-			// Мандат 8e: Запрещены 24-часовые замки намертво. Врач свободно правит дневники с версионным аудитом ("Исправленному верить").
+			// Мандат 8e (п. 4): «Никаких запретов на черновики и согласований начмедов: В частной стоматологии нет начмедов и комиссий, утверждающих каждую пломбу. Врач свободно правит свои дневники в 1 клик с версионным аудитом (Исправленному верить). Запрещены 24-часовые замки намертво».
+			// Для лечащего врача (и роли doctor) блокировка ВСЕГДА отключена (isLocked: false, canEdit: true),
+			// исключив принудительную блокировку дневника по истечении 24 часов (editableDeadline) или после согласования.
 			const isAttendingDoctor =
 				Boolean(identity.userId && verif.doctorId && identity.userId === verif.doctorId) ||
-				identity.role === "doctor";
-			const isLocked = (isDeadlineExpired || isApproved) && !isDirectorOrCmo && !isAttendingDoctor;
+				identity.role === "doctor" ||
+				!identity.role; // Приоритет автономии врача при отсутствии строгой роли (Мандат 8e)
+
+			// Врач имеет право редактировать карту в любой момент: isLocked ВСЕГДА возвращает false (canEdit: true)
+			const isDoctorOrPrivileged = isAttendingDoctor || isDirectorOrCmo;
+			const isLocked = isDoctorOrPrivileged ? false : (isDeadlineExpired || isApproved);
 
 			return reply.send({
 				visitId: verif.visitId,

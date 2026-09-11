@@ -298,36 +298,3 @@ export function generateBankInstallmentDeepLink(
 		applicationOrderId: orderId,
 	};
 }
-
-/**
- * Имитация быстрого одобрения кредитного скоринга банком (для мгновенного закрытия аванса в CRM)
- */
-export function simulateBankApproval(
-	approvedAmountKopecks: Kopecks,
-	providerId: BankInstallmentProviderId,
-	patientName = "Пациент",
-	termMonths = 12,
-): {
-	readonly isApproved: boolean;
-	readonly approvalId: string;
-	readonly providerName: string;
-	readonly approvedAmountKopecks: Kopecks;
-	readonly monthlyPaymentRub: number;
-	readonly timestampIso: string;
-	readonly confirmationMessageRu: string;
-} {
-	const provider = BANK_INSTALLMENT_PROVIDERS[providerId];
-	const calc = calculateBankInstallment(approvedAmountKopecks, providerId, termMonths);
-	const approvalId = `APP-${providerId.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-6)}`;
-	const timestampIso = new Date().toISOString();
-
-	return {
-		isApproved: true,
-		approvalId,
-		providerName: provider.name,
-		approvedAmountKopecks,
-		monthlyPaymentRub: calc.monthlyPaymentRub,
-		timestampIso,
-		confirmationMessageRu: `Рассрочка на сумму ${formatKopecksRu(approvedAmountKopecks)} успешно одобрена банком ${provider.name} (№${approvalId})! Аванс за этап зачислен на депозит пациента.`,
-	};
-}

@@ -3683,15 +3683,15 @@ export function useDocumentWorkflowModule({
 			finalEpicrisis: outpatient025uFinalEpicrisis.trim() || null,
 			preparedFromSignedMedicalRecords: confirmedDocumentLiteral(
 				recordExtractPreparedFromSignedRecords,
-				"карта 025/у собрана из подписанных медицинских записей",
+				"стоматологическая карта 043/у собрана из подписанных медицинских записей",
 			),
 			officialForm274nChecked: confirmedDocumentLiteral(
 				outpatient025uOfficialForm274nChecked,
-				"структура карты 025/у сверена с приказом Минздрава N 274н",
+				"структура стоматологической карты 043/у сверена с медицинскими записями",
 			),
 			thirdPartyDataChecked: confirmedDocumentLiteral(
 				outpatient025uThirdPartyDataChecked,
-				"данные третьих лиц для карты 025/у проверены",
+				"данные третьих лиц для карты 043/у проверены",
 			),
 		};
 	}

@@ -139,7 +139,10 @@ export const outpatientTemplates = pgTable(
 );
 
 /**
- * 7. Верификация амбулаторных карт начмедом / контроль качества (24-часовой замок)
+ * 7. Верификация амбулаторных карт начмедом / контроль качества (рекомендательный аудит)
+ * Мандат 8e (п. 4): В частной стоматологии нет начмедов и комиссий, утверждающих каждую пломбу.
+ * Врач свободно правит свои дневники в 1 клик с версионным аудитом («Исправленному верить»).
+ * Запрещены 24-часовые замки намертво. editableDeadline используется исключительно для аналитики и аудита.
  */
 export const outpatientVerifications = pgTable(
 	"outpatient_verifications",
@@ -162,7 +165,7 @@ export const outpatientVerifications = pgTable(
 		rejectionReason: text("rejection_reason"),
 		submittedAt: timestamp("submitted_at", { withTimezone: true }),
 		verifiedAt: timestamp("verified_at", { withTimezone: true }),
-		editableDeadline: timestamp("editable_deadline", { withTimezone: true }).notNull(), // 24 часа от даты приема
+		editableDeadline: timestamp("editable_deadline", { withTimezone: true }).notNull(), // Рекомендательный срок проверки (Мандат 8e: не блокирует редактирование врачом)
 	},
 	(t) => ({
 		orgStatusIdx: index("idx_outpatient_verif_org_status").on(t.organizationId, t.status),

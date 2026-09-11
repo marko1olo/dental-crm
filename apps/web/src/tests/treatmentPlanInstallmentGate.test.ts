@@ -13,7 +13,7 @@
  *   - Корректность 4-этапного графика «Подели» (25% + 25% + 25% + 25%).
  *   - Валидация лимитов минимальной и максимальной суммы.
  *   - Генерация deep-link ссылок и QR-пейлоадов.
- *   - Имитация банковского скоринга и одобрения.
+ *   - Расчет параметров рассрочки без процедурных моков (Мандаты 8b, 8c, 8k).
  */
 
 import assert from "node:assert/strict";
@@ -38,7 +38,6 @@ import {
 	BANK_INSTALLMENT_PROVIDERS,
 	calculateBankInstallment,
 	generateBankInstallmentDeepLink,
-	simulateBankApproval,
 } from "../components/payments/bankInstallmentEngine.js";
 
 describe("Dental Lab Financial Gate & Staged Installment Financing", () => {
@@ -242,15 +241,15 @@ describe("Dental Lab Financial Gate & Staged Installment Financing", () => {
 			assert.ok(link.formattedSmsText.includes("PAT-9912") || link.formattedSmsText.includes("ДЕНТЕ"));
 		});
 
-		it("simulateBankApproval моментально подтверждает одобрение кредитного скоринга", () => {
+		it("calculateBankInstallment точно рассчитывает параметры рассрочки Т-Банка без моков", () => {
 			const amount = rublesToKopecks(85000);
-			const approval = simulateBankApproval(amount, "tbank", "Сидоров П. А.", 6);
+			const calc = calculateBankInstallment(amount, "tbank", 6);
 
-			assert.equal(approval.isApproved, true);
-			assert.equal(approval.approvedAmountKopecks, amount);
-			assert.equal(approval.providerName, "Т-Банк");
-			assert.ok(approval.approvalId.startsWith("APP-TBA-"));
-			assert.ok(approval.confirmationMessageRu.includes("успешно одобрена"));
+			assert.equal(calc.totalKopecks, amount);
+			assert.equal(calc.provider.name, "Т-Банк");
+			assert.equal(calc.termMonths, 6);
+			assert.ok(calc.monthlyPaymentRub > 0);
+			assert.equal(calc.isWithinLimits, true);
 		});
 	});
 
@@ -268,12 +267,14 @@ describe("Dental Lab Financial Gate & Staged Installment Financing", () => {
 			assert.equal(gate1.isGatePassed, false);
 			assert.equal(gate1.gateStatus, "BLOCKED_REQUIRES_ADVANCE");
 
-			// 2. Пациент оформляет рассрочку Сбера на 140 000 руб
-			const approval = simulateBankApproval(stageTotal, "sberbank", "Иванов И. И.", 12);
-			assert.equal(approval.isApproved, true);
+			// 2. Пациент оформляет банковскую рассрочку Сбера на 140 000 руб (расчет через calculateBankInstallment)
+			const calc = calculateBankInstallment(stageTotal, "sberbank", 12);
+			assert.equal(calc.totalKopecks, stageTotal);
+			assert.equal(calc.termMonths, 12);
+			assert.ok(calc.monthlyPaymentRub > 0);
 
 			// 3. Средства зачисляются на депозит пациента
-			const deposit = approval.approvedAmountKopecks;
+			const deposit = stageTotal;
 
 			// 4. Повторная проверка финансового шлюза — шлюз открыт!
 			const gate2 = checkDentalLabFinancialGate({

@@ -525,7 +525,7 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 	};
 
 	const html003vu = renderForm003vuHtml(form003vuPayload);
-	assert.equal(html003vu.includes("003-В/у"), true);
+	assert.equal(html003vu.includes("043/у"), true);
 	assert.equal(html003vu.includes("Ковалев Игорь Николаевич"), true);
 
 	// 6. Radiation Dose Sheet

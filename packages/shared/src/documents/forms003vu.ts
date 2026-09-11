@@ -21,7 +21,7 @@ export type MedicalExtractTreatmentStage = z.infer<typeof medicalExtractTreatmen
 
 /** Полный структурированный Payload формы № 003-В/у (Выписка) */
 export const medicalCardExtract003vuPayloadSchema = z.object({
-	formNumber: z.literal("003-В/у"),
+	formNumber: z.union([z.literal("003-В/у"), z.literal("043/у"), z.literal("027/у")]).default("043/у"),
 	// Реквизиты медорганизации
 	clinicLegalName: z.string().trim().min(1).max(240),
 	clinicAddress: z.string().trim().max(240).nullable().optional(),

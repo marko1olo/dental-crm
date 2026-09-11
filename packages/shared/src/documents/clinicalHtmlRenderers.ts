@@ -1511,8 +1511,8 @@ export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload |
 }
 
 /**
- * 5. Рендерер Формы № 003-В/у — Выписка из медицинской карты амбулаторного стоматологического больного
- * Приказ Минздрава России № 834н / Порядок выдачи медицинских выписок
+ * 5. Рендерер выписки из медицинской карты стоматологического пациента (Форма 043/у)
+ * Порядок выдачи медицинских выписок (Приказ Минздрава России № 834н / Форма 043/у)
  * Formal medical extract with clinic angular stamp, patient info, ICD-10 diagnosis, chronologic treatment stages, recommendations, Chief Physician signature and seal
  */
 export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | any): string {
@@ -1579,7 +1579,7 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
 <html lang="ru">
 <head>
   <meta charset="utf-8"/>
-  <title>Выписка № ${escapeHtml(regNumber)} (Форма 003-В/у) — ${escapeHtml(patientName)}</title>
+  <title>Выписка № ${escapeHtml(regNumber)} (Форма 043/у) — ${escapeHtml(patientName)}</title>
   ${CLINICAL_DOCUMENT_PRINT_STYLES}
 </head>
 <body>
@@ -1595,13 +1595,13 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
     <div class="doc-requisites" style="width:38%;">
       <div class="form-badge">МИНЗДРАВ РОССИИ</div>
       <div>Медицинская документация</div>
-      <div><strong>ФОРМА № 003-В/у</strong></div>
-      <div>Выписка из медицинской карты амбулаторного больного</div>
+      <div><strong>ФОРМА № 043/у</strong></div>
+      <div>Выписка из медицинской карты стоматологического пациента</div>
     </div>
   </div>
 
   <div class="doc-title-block">
-    <h1 class="doc-main-title">ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО</h1>
+    <h1 class="doc-main-title">ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА</h1>
     <p class="doc-sub-title">Регистрационный № <strong>${escapeHtml(regNumber)}</strong> от <strong>${escapeHtml(issueDate)}</strong></p>
     <p style="font-size:8pt; margin:3px 0 0 0; color:#334155;">Направляется в: <strong>${escapeHtml(destination)}</strong></p>
   </div>

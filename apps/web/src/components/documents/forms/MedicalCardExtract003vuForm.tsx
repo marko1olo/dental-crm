@@ -61,7 +61,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 		return (
 			<div className="document-form-container form-003vu-wrapper">
 				<DocumentPayloadCard
-					title="Выписка из медицинской карты стоматологического больного (Форма № 003-В/у)"
+					title="Выписка из медицинской карты стоматологического пациента (Форма 043/у)"
 					description="Официальная выписка с хроникой этапов лечения, диагностическими данными и рекомендациями"
 				>
 					<div className="form-group" style={{ marginBottom: "12px" }}>
