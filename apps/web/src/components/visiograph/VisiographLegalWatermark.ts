@@ -53,18 +53,18 @@ export interface LegalWatermarkOptions {
 }
 
 export const DEFAULT_CLINIC_CREDENTIALS: LegalClinicCredentials = {
-	clinicName: 'Стоматологическая клиника «DENTE CLINIC»',
-	ogrn: "1187746001234",
-	inn: "7701234567",
-	licenseNumber: "ЛО-77-01-019842 от 14.10.2020",
-	clinicAddress: "г. Москва, ул. Клиническая, д. 12",
-	clinicPhone: "+7 (495) 789-01-23",
+	clinicName: "Стоматологическая клиника",
+	ogrn: "",
+	inn: "",
+	licenseNumber: "",
+	clinicAddress: "",
+	clinicPhone: "",
 };
 
 export const DEFAULT_DOCTOR_SIGNATURE: LegalDoctorSignature = {
-	doctorFullName: "Врач-стоматолог-рентгенолог ДЕНТЕ",
+	doctorFullName: "Врач-стоматолог-рентгенолог",
 	speciality: "Стоматология общей практики / Лучевая диагностика",
-	certificateOrSnils: "СНИЛС: 123-456-789 00",
+	certificateOrSnils: "",
 };
 
 /**

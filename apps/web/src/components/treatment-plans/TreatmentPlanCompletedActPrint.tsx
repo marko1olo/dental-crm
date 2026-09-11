@@ -260,18 +260,18 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 	const palette = BRAND_COLOR_PALETTES[branding.brandAccentColor] || BRAND_COLOR_PALETTES.deep_teal;
 
 	// Legal Clinic Requisites
-	const legalName = clinicLegalName || branding.clinicLegalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
-	const inn = clinicInn || branding.clinicInn || "7701234567";
-	const kpp = clinicKpp || "770101001";
-	const ogrn = clinicOgrn || branding.clinicOgrn || "1237700123456";
-	const address = clinicAddress || branding.clinicAddress || "г. Москва, ул. Клиническая, д. 10, стр. 1";
+	const legalName = clinicLegalName || branding.clinicLegalName || "Стоматологическая клиника";
+	const inn = clinicInn || branding.clinicInn || "";
+	const kpp = clinicKpp || "";
+	const ogrn = clinicOgrn || branding.clinicOgrn || "";
+	const address = clinicAddress || branding.clinicAddress || "";
 	const license =
 		clinicLicense ||
 		branding.licenseNumber ||
-		"ЛО41-01137-77/00567890 от 15.01.2023 выдана Департаментом здравоохранения г. Москвы";
-	const phone = clinicPhone || branding.clinicPhone || "+7 (495) 777-88-99";
-	const website = clinicWebsite || branding.clinicWebsite || "dente-clinic.ru";
-	const email = clinicEmail || "info@dente-clinic.ru";
+		"";
+	const phone = clinicPhone || branding.clinicPhone || "";
+	const website = clinicWebsite || branding.clinicWebsite || "";
+	const email = clinicEmail || "";
 
 	// Patient Requisites
 	const patientDob = patientBirthDate || "14.05.1988";

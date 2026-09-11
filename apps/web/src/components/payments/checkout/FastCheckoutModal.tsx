@@ -87,13 +87,13 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	totalBillRub: propTotalBillRub,
 	initialPaymentMethod,
 	patientId,
-	patientName = "Смирнова Екатерина Васильевна",
-	patientPhone = "+7 (999) 123-45-67",
-	patientEmail = "patient@example.com",
-	patientDepositRub = 85000,
+	patientName = "",
+	patientPhone = "",
+	patientEmail = "",
+	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
-	familyPayerName = "Глава семьи",
-	orderId = "CHK-2026-891",
+	familyPayerName = "",
+	orderId = "",
 	stages = DEFAULT_TREATMENT_STAGES,
 	cashierFullName: propCashierFullName,
 	attendingDoctorName,
@@ -101,7 +101,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 }) => {
 	const initialTotalBillKop =
 		propTotalBillKop ??
-		(propTotalBillRub !== undefined ? Math.round(propTotalBillRub * 100) : 1960000);
+		(propTotalBillRub !== undefined ? Math.round(propTotalBillRub * 100) : 0);
 	const effectiveCashierFullName =
 		(propCashierFullName || "").trim() ||
 		(attendingDoctorName || "").trim() ||
@@ -109,7 +109,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 	const [selectedStageId, setSelectedStageId] = useState<string>("full_plan");
 	const [stagePaymentMode, setStagePaymentMode] = useState<StagePaymentMode>("full");
-	const [advanceAlreadyPaidRub, setAdvanceAlreadyPaidRub] = useState<number>(15000);
+	const [advanceAlreadyPaidRub, setAdvanceAlreadyPaidRub] = useState<number>(0);
 	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>(
 		initialPaymentMethod ?? "sbp_qr"
 	);
@@ -1307,7 +1307,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										maxLength={12}
 										value={buyerInn}
 										onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
-										placeholder="7701234567"
+										placeholder="ИНН (10 или 12 цифр)"
 										className="h-8 w-full px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
 										data-testid="input-buyer-inn-legal"
 									/>

@@ -244,6 +244,7 @@ export function generateFnsTaxCertificateData(
 	profile: PatientPortalProfile,
 	invoices: PortalInvoiceItem[],
 	year = 2026,
+	clinic?: { name?: string; inn?: string; kpp?: string },
 ): FnsTaxCertificateSummary {
 	const paidThisYear = invoices
 		.filter((inv) => inv.status === "paid" && (inv.paidAtIso || inv.issueDateIso).startsWith(String(year)))
@@ -257,9 +258,9 @@ export function generateFnsTaxCertificateData(
 		taxYear: year,
 		patientFullName: profile.fullName,
 		patientBirthDate: profile.birthDate,
-		clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
-		clinicInn: "7701234567",
-		clinicKpp: "770101001",
+		clinicName: clinic?.name || "Стоматологическая клиника",
+		clinicInn: clinic?.inn || "",
+		clinicKpp: clinic?.kpp || "",
 		serviceCode: "1", // 1 - обычное лечение
 		totalPaidEligibleRub: paidThisYear,
 		maxDeductionRefundRub: refund13Pct,

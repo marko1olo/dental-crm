@@ -437,17 +437,17 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, initialSelectedDrugIds, onClose]);
 
 	const patientName = patient?.fullName || "";
-	const patientBirth = patient?.birthDate || "1988-05-14";
-	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "043/у-2026/891";
-	const docName = doctorName || "Д-р Смирнова Анна Сергеевна";
-	const docSpecialty = doctorSpecialty || "Врач-стоматолог терапевт-эндодонтист";
-	const docSnils = doctorSnils || "123-456-789 00";
-	const clinic = clinicName || "ООО «Денте Стоматология»";
-	const address = clinicAddress || "г. Москва, Клинический переулок, д. 7";
-	const phone = clinicPhone || "+7 (495) 777-22-11";
-	const ogrn = clinicOgrn || "1207700123456";
-	const inn = clinicInn || "7701234567";
-	const licNum = medicalLicenseNumber || "ЛО-77-01-019845";
+	const patientBirth = patient?.birthDate || "";
+	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "";
+	const docName = doctorName || "Лечащий врач";
+	const docSpecialty = doctorSpecialty || "Врач-стоматолог";
+	const docSnils = doctorSnils || "";
+	const clinic = clinicName || "Стоматологическая клиника";
+	const address = clinicAddress || "";
+	const phone = clinicPhone || "";
+	const ogrn = clinicOgrn || "";
+	const inn = clinicInn || "";
+	const licNum = medicalLicenseNumber || "";
 
 	const fullCatalog = useMemo(() => {
 		if (activeForm === "148-1u-88") {

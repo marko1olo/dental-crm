@@ -277,22 +277,22 @@ export function generateMedicalWasteTransferAct(params: {
 	const actDate = params.actDate || new Date().toISOString().slice(0, 10);
 
 	const defaultClinic = {
-		name: params.clinicInfo?.name || "ООО «Стоматологическая клиника ДЕНТЕ»",
-		inn: params.clinicInfo?.inn || "7701234567",
-		ogrn: params.clinicInfo?.ogrn || "1027700123456",
-		address: params.clinicInfo?.address || "г. Москва, ул. Клиническая, д. 10",
+		name: params.clinicInfo?.name || "Стоматологическая клиника",
+		inn: params.clinicInfo?.inn || "",
+		ogrn: params.clinicInfo?.ogrn || "",
+		address: params.clinicInfo?.address || "",
 		responsiblePerson: params.clinicInfo?.responsiblePerson || "Главная медицинская сестра",
 		responsiblePosition: params.clinicInfo?.responsiblePosition || "Главная медицинская сестра",
 	};
 
 	const defaultDisposal = {
-		name: params.disposalCompanyInfo?.name || "ООО «ЭкоМедУтилизация-Сервис»",
-		inn: params.disposalCompanyInfo?.inn || "7709876543",
-		licenseNumber: params.disposalCompanyInfo?.licenseNumber || "№ Л020-00113-77/00154892 от 14.02.2023",
-		contractNumber: params.disposalCompanyInfo?.contractNumber || "ДОГ-УТИЛ-2026/08-ДЕНТЕ",
-		contractDate: params.disposalCompanyInfo?.contractDate || "2026-01-15",
-		driverFullName: params.disposalCompanyInfo?.driverFullName || "Кузнецов Михаил Сергеевич",
-		vehiclePlateNumber: params.disposalCompanyInfo?.vehiclePlateNumber || "А 784 МЕ 777 (спецавтомобиль)",
+		name: params.disposalCompanyInfo?.name || "Специализированная организация по утилизации",
+		inn: params.disposalCompanyInfo?.inn || "",
+		licenseNumber: params.disposalCompanyInfo?.licenseNumber || "",
+		contractNumber: params.disposalCompanyInfo?.contractNumber || "",
+		contractDate: params.disposalCompanyInfo?.contractDate || "",
+		driverFullName: params.disposalCompanyInfo?.driverFullName || "Водитель-экспедитор",
+		vehiclePlateNumber: params.disposalCompanyInfo?.vehiclePlateNumber || "",
 	};
 
 	const totalsByClass: Record<
