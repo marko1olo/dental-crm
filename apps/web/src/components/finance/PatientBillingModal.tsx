@@ -395,7 +395,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 				medicalCardNumber: patient?.medicalCardNumber || "043/у-2026",
 			},
 			doctor: {
-				fullName: doctor?.fullName || "Д-р Кузнецов П. С.",
+				fullName: doctor?.fullName || "Лечащий врач",
 				specialty: doctor?.specialty || "Врач-стоматолог терапевт-ортопед",
 			},
 			items: services,

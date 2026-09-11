@@ -62,7 +62,7 @@ export function AnesthesiaProtocolModal({
 	initialPatientWeightKg = 70,
 	initialPatientAgeYears = 35,
 	initialHasCardioRisk = false,
-	nurseFullName = 'Смирнова А. В.'
+	nurseFullName = 'Ассистент'
 }: AnesthesiaProtocolModalProps) {
 	const effectiveToothNumber = toothNumber ?? initialToothNumber;
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>('articaine_1_100k');

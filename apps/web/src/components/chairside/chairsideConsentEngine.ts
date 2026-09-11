@@ -1050,7 +1050,7 @@ export function signPackageWithInPersonConfirmation(
 	const integrityHash = generateSha256(canonicalData);
 
 	const legalStampText =
-		"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н, Мандат 8e)";
+		"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)";
 
 	const docsDigest = pkg.documents.map((d) => d.code).join("; ");
 

@@ -396,7 +396,7 @@ export function AnesthesiaPkuDisposalModal({
 							<div>
 								<div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
 									<Zap size={16} color="var(--brand-primary, var(--teal))" />
-									<span>1-клик быстрые пресеты списания анестезии и ПКУ (СанПиН 3.3686-21 / Мандат 8e)</span>
+									<span>1-клик быстрые пресеты списания анестезии и ПКУ (СанПиН 3.3686-21, п. 10)</span>
 								</div>
 								<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)', marginTop: '0.125rem' }}>
 									Автозаполнение серии, партии, срока (+2 г.), дезинфекции. Достаточно подписи медсестры в 1 клик (без комиссии из 3 человек!).
@@ -954,7 +954,7 @@ export function AnesthesiaPkuDisposalModal({
 								/>
 								<span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
 									<UserCheck size={16} color="var(--teal)" />
-									Подпись медсестры / ассистента подтверждена в 1 клик (Мандат 8e п. 10)
+									Подпись медсестры / ассистента подтверждена в 1 клик
 								</span>
 							</label>
 							<span style={{ fontSize: '0.75rem', color: 'var(--ok-fg)', fontWeight: 600, background: 'var(--ok-bg, rgba(16, 185, 129, 0.12))', padding: '2px 8px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>

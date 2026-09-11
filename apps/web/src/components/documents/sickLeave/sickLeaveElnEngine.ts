@@ -568,7 +568,7 @@ export function generateForm036uEntry(
 			`Продлить ЭЛН № ${form.elnNumber} с ${formatDateRu(form.vkProtocol?.extensionDateFrom || firstDate)} по ${formatDateRu(form.vkProtocol?.extensionDateTo || lastDate)}. Повторный осмотр ВК ${formatDateRu(form.vkProtocol?.nextReviewDate || lastDate)}.`
 		: `Выдать ЭЛН № ${form.elnNumber} на срок ${totalDays} дн. с ${formatDateRu(firstDate)} по ${formatDateRu(lastDate)}. Режим: ${form.regimeType === 'ambulatory' ? 'Амбулаторный' : 'Стационарный'}.`;
 
-	const chairperson = isVk ? form.vkProtocol?.chairpersonFio || 'Иванова Е.В.' : form.periods[0]?.doctorFio || 'Соколов А.М.';
+	const chairperson = isVk ? form.vkProtocol?.chairpersonFio || 'Председатель ВК' : form.periods[0]?.doctorFio || 'Лечащий врач';
 	const members = isVk ? form.vkProtocol?.memberFios || [] : [];
 
 	return {

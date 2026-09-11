@@ -1829,7 +1829,7 @@ export function App() {
 							isOpen={isDoctorShiftCockpitOpen}
 							onClose={closeDoctorShiftCockpit}
 							initialDoctorId={activeDoctor?.id || "doc-1"}
-							initialDoctorName={activeDoctor?.fullName || "Д-р Смирнов Алексей Петрович"}
+							initialDoctorName={activeDoctor?.fullName || "Лечащий врач"}
 							initialDoctorSpecialty={activeDoctor?.specialty || "Терапевт-ортопед"}
 							initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
 						/>

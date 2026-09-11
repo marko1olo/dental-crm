@@ -122,7 +122,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 }) => {
 	// ── 1. Documents State ──
 	const [documents, setDocuments] = useState<EgiszCabinetDocumentItem[]>(() =>
-		initialDocuments ? [...initialDocuments] : INITIAL_CABINET_DOCUMENTS,
+		initialDocuments ? [...initialDocuments] : [...INITIAL_CABINET_DOCUMENTS],
 	);
 	const [selectedDocId, setSelectedDocId] = useState<string>(
 		initialDocumentId || (documents[0]?.id ?? ""),

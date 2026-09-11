@@ -157,7 +157,7 @@ export async function getDocumentById(
 }
 
 const documentTitles: Record<string, string> = {
-	medical_record_extract: "Выписка из медицинской карты стоматологического пациента (043/у)",
+	medical_record_extract: "Выписка из медицинской карты стоматологического пациента (Форма 043/у)",
 	outpatient_medical_card_025u: "Медицинская карта 025/у",
 	dental_medical_card_043u: "Медицинская карта 043/у",
 	orthodontic_medical_card_043_1u: "Ортодонтическая карта 043-1/у",
