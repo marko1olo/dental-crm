@@ -523,7 +523,7 @@ export function generateDoseSheetHtml(
 		patientGender = "male",
 		medicalCardNumber = "043/у-0012",
 		reportingYear = new Date().getFullYear(),
-		responsibleDoctorName = "Др. Смирнов А.В.",
+		responsibleDoctorName = "Рентгенолог / Лечащий врач",
 		responsibleOfficerTitle = "Врач-рентгенолог / Ответственный за радиационную безопасность",
 		includeSignatureLine = true,
 		paperFormat = "A4",

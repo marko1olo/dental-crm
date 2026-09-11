@@ -205,7 +205,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	const patientPhone = patient?.phone || "+7 (___) ___-__-__";
 	const patientCard =
 		patient?.medicalCardNumber || patient?.cardNumber || "043/у-0012";
-	const docName = doctorName || "Др. Смирнов А.В.";
+	const docName = doctorName || "Лечащий врач";
 	const clinic = clinicName || 'ООО "Денте Клиник"';
 
 	// Toggle tooth selection

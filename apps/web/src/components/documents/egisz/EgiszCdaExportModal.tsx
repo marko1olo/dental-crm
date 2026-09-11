@@ -149,8 +149,8 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 	}), [incomingPatient, patientId]);
 
 	const currentDoctor = useMemo(() => ({
-		name: incomingDoctor?.name || { first: "Елена", last: "Смирнова", middle: "Викторовна" },
-		snils: incomingDoctor?.snils || "123-456-789 64",
+		name: incomingDoctor?.name || { first: "", last: "", middle: "" },
+		snils: incomingDoctor?.snils || "",
 		specialtyCode: incomingDoctor?.specialtyCode || "1.2.643.5.1.13.13.11.1066.31.08.77",
 		specialtyName: incomingDoctor?.specialtyName || (formType === "043_1u" ? "Ортодонтия" : "Стоматология терапевтическая"),
 		position: incomingDoctor?.position || (formType === "043_1u" ? "Врач-ортодонт" : "Врач-стоматолог-терапевт"),
@@ -182,7 +182,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							const cleanDoctorSnils = currentDoctor.snils?.replace(/\D/g, "");
 							const matched = certs.find((c) =>
 								(cleanDoctorSnils && c.subjectName.includes(cleanDoctorSnils)) ||
-								c.subjectName.toLowerCase().includes(currentDoctor.name.last.toLowerCase()),
+								(Boolean(currentDoctor.name?.last) && c.subjectName.toLowerCase().includes(currentDoctor.name.last.toLowerCase())),
 							);
 							setSelectedThumbprint(matched?.thumbprint || certs[0]?.thumbprint || "");
 						}
@@ -470,8 +470,8 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 			};
 
 			const fallbackDoctor = {
-				name: currentDoctor.name?.last && currentDoctor.name?.first ? currentDoctor.name : { first: "Елена", last: "Смирнова", middle: "Викторовна" },
-				snils: currentDoctor.snils && currentDoctor.snils.trim().length > 0 ? currentDoctor.snils : "123-456-789 64",
+				name: currentDoctor.name?.last && currentDoctor.name?.first ? currentDoctor.name : { first: "", last: "", middle: "" },
+				snils: currentDoctor.snils && currentDoctor.snils.trim().length > 0 ? currentDoctor.snils : "",
 				specialtyCode: currentDoctor.specialtyCode || "1.2.643.5.1.13.13.11.1066.31.08.77",
 				specialtyName: currentDoctor.specialtyName || (formType === "043_1u" ? "Ортодонтия" : "Стоматология терапевтическая"),
 				position: currentDoctor.position || (formType === "043_1u" ? "Врач-ортодонт" : "Врач-стоматолог-терапевт"),
@@ -518,7 +518,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 		if (!currentDocSig) {
 			currentDocSig = createDemonstrationGostSignature({
-				doctorName: `${(currentDoctor.name?.last || "Смирнова")} ${(currentDoctor.name?.first || "Елена")} ${(currentDoctor.name?.middle || "")}`.trim(),
+				doctorName: `${(currentDoctor.name?.last || "")} ${(currentDoctor.name?.first || "")} ${(currentDoctor.name?.middle || "")}`.trim() || "Лечащий врач",
 				doctorSnils: currentDoctor.snils || "123-456-789 64",
 				clinicName: currentClinic.name || 'ООО "Стоматологическая клиника ДЕНТЕ"',
 				isMoSignature: false,

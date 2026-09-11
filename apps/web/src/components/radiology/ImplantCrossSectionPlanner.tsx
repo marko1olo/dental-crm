@@ -76,7 +76,7 @@ const SCALE_PX_PER_MM = 10.0;
 
 export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProps> = ({
   toothFdi = 46,
-  patientName = "Иванов И.И.",
+  patientName = "Пациент",
   initialBrand = "osstem",
   initialDiameterMm = 4.0,
   initialLengthMm = 10.0,

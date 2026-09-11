@@ -1621,7 +1621,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								{studyDateFormatted}
 							</div>
 							<div className="text-slate-400 text-[10px]">
-								{study?.patientName || "Смирнова Е. В."} · {study?.metadata?.pixelSpacingMm || 0.05} мм/пикс
+								{study?.patientName || "Пациент"} · {study?.metadata?.pixelSpacingMm || 0.05} мм/пикс
 							</div>
 						</div>
 					)}

@@ -200,11 +200,11 @@ const DEFAULT_SAMPLE_TEETH: ToothData[] = [
 export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = "Смирнова Екатерина Васильевна",
+	patientName = "Пациент",
 	patientId = "PAT-2026-0891",
 	patientPhone = "+7 (926) 555-12-34",
 	patientBirthDate = "14.06.1988",
-	doctorFullName = "Д-р Смирнов Алексей Петрович",
+	doctorFullName = "Лечащий врач",
 	doctorSpecialty = "Врач-стоматолог терапевт-ортопед",
 	clinicName = "Стоматологическая клиника «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",

@@ -120,7 +120,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
 		patientMatch: {
-			patientName: "Смирнова Екатерина Васильевна",
+			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
 			confidence: 98,
 		},
@@ -154,7 +154,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
 		patientMatch: {
-			patientName: "Смирнова Екатерина Васильевна",
+			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
 			confidence: 95,
 		},
@@ -183,7 +183,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
 		patientMatch: {
-			patientName: "Смирнова Екатерина Васильевна",
+			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
 			confidence: 92,
 		},
@@ -212,7 +212,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
 		patientMatch: {
-			patientName: "Смирнова Екатерина Васильевна",
+			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
 			confidence: 90,
 		},
@@ -325,10 +325,10 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	isOpen,
 	onClose,
 	patientId = "PAT-001",
-	patientName = "Смирнова Екатерина Васильевна",
+	patientName = "Пациент",
 	patientCardNumber = "043/у-2026/891",
 	patientBirthDate = "1988-06-14",
-	doctorName = "Д-р Смирнов Алексей Петрович",
+	doctorName = "Лечащий врач",
 	onAttachToEmr,
 	onExportDicom,
 	onSendToLab,

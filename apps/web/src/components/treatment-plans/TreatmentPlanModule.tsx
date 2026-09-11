@@ -397,7 +397,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			patientId,
 			patientName,
 			doctorId: auth?.currentUser?.id || "doc-01",
-			doctorFullName: auth?.currentUser?.name || "Д-р Смирнов А. В.",
+			doctorFullName: auth?.currentUser?.name || "Лечащий врач",
 			createdAtIso: planCreatedAtIso || new Date().toISOString(),
 			items: allItems.map((it) => ({
 				itemId: it.id,
@@ -1159,7 +1159,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					isOpen={isComparatorModalOpen}
 					onClose={() => setIsComparatorModalOpen(false)}
 					patientName={patientName}
-					doctorName={auth?.currentUser?.name || "Д-р Смирнов А. В."}
+					doctorName={auth?.currentUser?.name || "Лечащий врач"}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
 					onPlanSelected={(tierCode) => {
 						const mappedTierId =
@@ -1204,7 +1204,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					patientId={patientId}
 					planTitle={currentTier.title}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-					doctorFullName={auth?.currentUser?.name || "Д-р Смирнов А. В."}
+					doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
 				/>
 			)}
 
@@ -1361,7 +1361,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					planCreatedAtIso={new Date().toISOString()}
 					approvedAtIso={signedAgreement ? new Date().toISOString() : undefined}
 					isSignedWithPatient={Boolean(signedAgreement)}
-					doctorFullName={auth?.currentUser?.name || "Д-р Смирнов А. В."}
+					doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
 					doctorUserId={auth?.currentUser?.id || undefined}
 					planItems={stages.flatMap((s) => s.items)}
 					onInvoiceCreated={(inv) => {

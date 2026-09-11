@@ -169,7 +169,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 	const [actNumber, setActNumber] = useState<string>(`АКТ-ВЫВОЗ-${new Date().getFullYear()}/048`);
 	const [disposalCompanyName, setDisposalCompanyName] = useState<string>("ООО «ЭкоМедУтилизация-Сервис»");
 	const [disposalContractNo, setDisposalContractNo] = useState<string>("ДОГ-УТИЛ-2026/08-ДЕНТЕ");
-	const [driverName, setDriverName] = useState<string>("Кузнецов М.С.");
+	const [driverName, setDriverName] = useState<string>("");
 	const [vehiclePlate, setVehiclePlate] = useState<string>("А 784 МЕ 777");
 
 	// Автоматический пересчет весов
