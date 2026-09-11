@@ -28,6 +28,7 @@ import {
 	History,
 	Lock,
 	LogOut,
+	MinusCircle,
 	PlusCircle,
 	Printer,
 	QrCode,
@@ -83,6 +84,7 @@ export interface CashShiftClosingModalProps {
 	readonly onConfirmCloseShift?: (reconciliation: CashShiftReconciliationResult) => Promise<void> | void;
 	readonly onPerformEncashment?: (encashment: EncashmentStatementData) => Promise<void> | void;
 	readonly onCashIn?: (amountRub: number, basis: string) => Promise<void> | void;
+	readonly onCashOut?: (amountRub: number, basis: string, recipientFio?: string) => Promise<void> | void;
 }
 
 export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
@@ -98,9 +100,10 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	onConfirmCloseShift,
 	onPerformEncashment,
 	onCashIn,
+	onCashOut,
 }) => {
-	// Mode view: "main" (closing & reconciliation), "cash_in" (drawer deposit), "x_report" (intermediate tape), "documents" (A4 printouts)
-	const [activeView, setActiveView] = useState<"main" | "cash_in" | "x_report" | "documents">("main");
+	// Mode view: "main" (closing & reconciliation), "cash_in" (drawer deposit), "cash_out" (drawer payout / KO-2), "x_report" (intermediate tape), "documents" (A4 printouts)
+	const [activeView, setActiveView] = useState<"main" | "cash_in" | "cash_out" | "x_report" | "documents">("main");
 	
 	// Actual physical cash input by admin (NO bill-counting bloat required!)
 	const [countedCashInput, setCountedCashInput] = useState<string>("");
@@ -108,9 +111,14 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	const [discrepancyReason, setDiscrepancyReason] = useState<CashDiscrepancyReason>("exact_match");
 	const [cashierExplanation, setCashierExplanation] = useState<string>("");
 	
-	// Cash-in (Внесение размена) state
+	// Cash-in (Внесение размена / ПКО КО-1) state
 	const [cashInAmountInput, setCashInAmountInput] = useState<string>("5000");
 	const [cashInBasis, setCashInBasis] = useState<string>("Внесение утреннего разменного фонда для расчетов с пациентами");
+
+	// Cash-out (Выемка средств / Расход по РКО КО-2) state
+	const [cashOutAmountInput, setCashOutAmountInput] = useState<string>("1000");
+	const [cashOutBasis, setCashOutBasis] = useState<string>("Выдача наличных средств сотруднику под отчет");
+	const [cashOutRecipientFio, setCashOutRecipientFio] = useState<string>("");
 	
 	// Tape & Encashment settings
 	const [tapeWidth, setTapeWidth] = useState<"58mm" | "80mm">("58mm");
@@ -252,6 +260,56 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 		setActiveView("main");
 	};
 
+	// Perform Cash Out (Выемка средств / Расход по РКО КО-2)
+	const handleExecuteCashOut = async () => {
+		const amount = parseFloat(cashOutAmountInput.replace(/\s/g, "").replace(",", "."));
+		if (Number.isNaN(amount) || amount <= 0) {
+			showToast("Укажите корректную сумму выемки в рублях", "warning");
+			return;
+		}
+
+		if (amount > reconciliation.calculatedCashInDrawerRub) {
+			showToast(
+				`Внимание: сумма выемки (${amount.toLocaleString("ru-RU")} ₽) превышает расчетный остаток в кассе (${reconciliation.calculatedCashInDrawerRub.toLocaleString("ru-RU")} ₽)`,
+				"warning",
+			);
+		}
+
+		const newOp: CashShiftOperationRecord = {
+			id: `cash-out-${Date.now()}`,
+			timestampIso: new Date().toISOString(),
+			type: "cash_out",
+			amountRub: amount,
+			amountKopecks: (amount * 100) as any,
+			description: cashOutBasis || "Выемка денежных средств",
+			docNumber: `РКО-${shiftNumber}-${dynamicOperations.filter((o) => o.type === "cash_out").length + 1}`,
+			cashierFullName,
+		};
+
+		setDynamicOperations((prev) => [...prev, newOp]);
+
+		if (onCashOut) {
+			try {
+				await onCashOut(amount, cashOutBasis, cashOutRecipientFio);
+			} catch (e) {
+				// Non-fatal, local state updated
+			}
+		}
+
+		const voucher = generateKo2Voucher({
+			docNumber: newOp.docNumber || `РКО-${shiftNumber}`,
+			amountRub: amount,
+			issuedTo: cashOutRecipientFio || "Сотрудник клиники / Получатель",
+			basisRu: cashOutBasis || "Выемка денежных средств из кассы",
+			cashierFullName,
+			clinic: clinicDetails,
+		});
+
+		handlePrintWindow(generateKo2Html(voucher));
+		showToast(`Из кассы выдано ${amount.toLocaleString("ru-RU")} ₽ (РКО КО-2 сформирован)`, "success");
+		setActiveView("main");
+	};
+
 	// Close Shift & Submit Z-Report
 	const handleConfirmClose = async () => {
 		if (reconciliation.isExplanationRequired && (!cashierExplanation || cashierExplanation.trim().length < 5)) {
@@ -352,12 +410,24 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 						<div className="cash-shift-nav-tabs">
 							<button
 								type="button"
+								data-testid="btn-nav-cash-in"
 								onClick={() => setActiveView("cash_in")}
 								className={`cash-shift-nav-btn action-green ${activeView === "cash_in" ? "active" : ""}`}
-								title="Внесение утреннего размена или доплаты в кассовый ящик"
+								title="Внесение утреннего размена или доплаты в кассовый ящик (ПКО КО-1)"
 							>
 								<PlusCircle size={15} />
 								<span>Внесение размена</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="btn-nav-cash-out"
+								onClick={() => setActiveView("cash_out")}
+								className={`cash-shift-nav-btn action-amber ${activeView === "cash_out" ? "active" : ""}`}
+								title="Выемка средств, выплата под отчет, оплата лаборатории (РКО КО-2)"
+							>
+								<MinusCircle size={15} />
+								<span>Выемка / Расход</span>
 							</button>
 
 							<button
@@ -801,6 +871,145 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 													<strong style={{ color: "var(--ok-fg, #047857)" }}>+{op.amountRub.toLocaleString("ru-RU")} ₽</strong>
 												</div>
 											))}
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* VIEW 2.5: Cash Out / Drawer Payout & KO-2 Voucher */}
+					{activeView === "cash_out" && (
+						<div className="cash-shift-card-section" data-testid="cash-out-view-section">
+							<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+								<div>
+									<h3 className="cash-shift-section-title">
+										Выемка наличных средств из кассового ящика (Расход по РКО КО-2)
+									</h3>
+									<p style={{ fontSize: "0.75rem", color: "var(--ink-2, #64748b)", margin: "0.25rem 0 0 0" }}>
+										Формирование операции выемки (Cash Out), фискального чека расхода и ордера КО-2 (РКО)
+									</p>
+								</div>
+								<button
+									type="button"
+									onClick={() => setActiveView("main")}
+									className="cash-shift-btn secondary-small"
+								>
+									Вернуться к сверке
+								</button>
+							</div>
+
+							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+									<div>
+										<label htmlFor="cashout-amount-input" style={{ fontSize: "0.75rem", fontWeight: 700, display: "block", marginBottom: "0.25rem" }}>
+											Сумма выемки / расхода (₽):
+										</label>
+										<input
+											id="cashout-amount-input"
+											type="text"
+											value={cashOutAmountInput}
+											onChange={(e) => setCashOutAmountInput(e.target.value)}
+											placeholder="1000"
+											className="cash-shift-input-primary"
+											style={{ width: "100%" }}
+										/>
+										<div style={{ display: "flex", gap: "0.375rem", marginTop: "0.375rem", flexWrap: "wrap" }}>
+											{[1000, 3000, 5000, 10000].map((amt) => (
+												<button
+													key={amt}
+													type="button"
+													onClick={() => setCashOutAmountInput(amt.toString())}
+													className="cash-shift-btn secondary-small"
+												>
+													{amt.toLocaleString("ru-RU")} ₽
+												</button>
+											))}
+											<button
+												type="button"
+												onClick={() => setCashOutAmountInput(reconciliation.calculatedCashInDrawerRub.toString())}
+												className="cash-shift-btn secondary-small"
+												title="Установить всю расчетную выручку кассы"
+											>
+												Вся выручка ({reconciliation.calculatedCashInDrawerRub.toLocaleString("ru-RU")} ₽)
+											</button>
+										</div>
+									</div>
+
+									<div>
+										<label htmlFor="cashout-basis-input" style={{ fontSize: "0.75rem", fontWeight: 700, display: "block", marginBottom: "0.25rem" }}>
+											Основание расхода:
+										</label>
+										<input
+											id="cashout-basis-input"
+											type="text"
+											value={cashOutBasis}
+											onChange={(e) => setCashOutBasis(e.target.value)}
+											className="cash-shift-input-primary"
+											style={{ width: "100%" }}
+										/>
+										<div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", marginTop: "0.375rem" }}>
+											{STOMX_CASH_EXPENSE_CATALOG.filter((c) =>
+												["collection", "payment_employee", "payment_contractor", "payment_lab", "return_appointment", "return_advance", "return_product"].includes(c.alias),
+											).map((cat) => (
+												<button
+													key={cat.alias}
+													type="button"
+													data-testid={`btn-cashout-preset-${cat.alias}`}
+													onClick={() => setCashOutBasis(cat.name)}
+													className={`cash-shift-btn secondary-small ${cashOutBasis === cat.name ? "active" : ""}`}
+												>
+													{cat.name}
+												</button>
+											))}
+										</div>
+									</div>
+
+									<div>
+										<label htmlFor="cashout-recipient-input" style={{ fontSize: "0.75rem", fontWeight: 700, display: "block", marginBottom: "0.25rem" }}>
+											Кому выдать (ФИО сотрудника / контрагента):
+										</label>
+										<input
+											id="cashout-recipient-input"
+											type="text"
+											value={cashOutRecipientFio}
+											onChange={(e) => setCashOutRecipientFio(e.target.value)}
+											placeholder="ФИО сотрудника или наименование контрагента..."
+											className="cash-shift-input-primary"
+											style={{ width: "100%" }}
+										/>
+									</div>
+
+									<button
+										type="button"
+										data-testid="btn-execute-cash-out"
+										onClick={handleExecuteCashOut}
+										className="cash-shift-btn primary-teal"
+										style={{ justifyContent: "center", minHeight: "2.75rem" }}
+									>
+										<MinusCircle size={16} />
+										<span>Изъять из кассы и распечатать РКО КО-2</span>
+									</button>
+								</div>
+
+								<div style={{ padding: "1rem", borderRadius: "0.75rem", backgroundColor: "var(--paper, #ffffff)", border: "1px solid var(--line, #e2e8f0)" }}>
+									<div style={{ fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase", color: "var(--ink-2, #64748b)", marginBottom: "0.5rem" }}>
+										Текущие операции выемки и расходов за смену:
+									</div>
+									<div style={{ fontSize: "0.8125rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+										{dynamicOperations.filter((op) => op.type === "cash_out").length === 0 ? (
+											<div style={{ padding: "0.75rem", color: "var(--ink-2, #64748b)", fontStyle: "italic", textAlign: "center" }}>
+												Расходных операций за текущую смену не зафиксировано
+											</div>
+										) : (
+											dynamicOperations
+												.filter((op) => op.type === "cash_out")
+												.map((op) => (
+													<div key={op.id} style={{ display: "flex", justifyContent: "space-between", padding: "0.5rem", borderRadius: "0.5rem", background: "var(--paper-soft, #f8fafc)" }}>
+														<span>{op.description} ({new Date(op.timestampIso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}):</span>
+														<strong style={{ color: "var(--danger-fg, #dc2626)" }}>−{op.amountRub.toLocaleString("ru-RU")} ₽</strong>
+													</div>
+												))
+										)}
 									</div>
 								</div>
 							</div>

@@ -652,3 +652,109 @@ export function getApptRefuseReasonMeta(code: StomxApptRefuseReason): StomxApptR
 export function getTimelineEventLabel(key: StomxClientTimelineEventKey): string {
 	return STOMX_CLIENT_TIMELINE_BY_KEY[key]?.labelRu ?? key;
 }
+
+// ============================================================================
+// 8. STOMX TASK CALLS & PATIENT CARE WORKFLOW (СЕРВИСНЫЕ ЗВОНКИ ЗАБОТЫ)
+// ============================================================================
+
+export const STOMX_TASK_CALL_TYPES = [
+	"learn_health",             // Контроль самочувствия на 1-2 день после операции/лечения
+	"preventive_inspection",    // Приглашение на плановый полугодовой осмотр и профгигиену
+	"medplan_not_started",      // План лечения согласован, но не начат
+	"medplan_not_finished",     // План лечения начат, но визиты прерваны
+	"appointment_confirmation", // Подтверждение записи на прием на завтра
+	"appointment_refuse",       // Выяснение причины отмены / возврат в воронку
+	"birthday",                 // Поздравление с днем рождения и бонусные рубли
+] as const;
+
+export const stomxTaskCallTypeSchema = z.enum(STOMX_TASK_CALL_TYPES);
+export type StomxTaskCallType = z.infer<typeof stomxTaskCallTypeSchema>;
+
+export interface StomxTaskCallMeta {
+	readonly type: StomxTaskCallType;
+	readonly timelineKey: StomxClientTimelineEventKey;
+	readonly titleRu: string;
+	readonly shortLabelRu: string;
+	readonly defaultDueDays: number;
+	readonly iconName: string;
+	readonly defaultScriptRu: string;
+}
+
+export const STOMX_TASK_CALLS_CATALOG: readonly StomxTaskCallMeta[] = [
+	{
+		type: "learn_health",
+		timelineKey: "task_call.client.learn_health",
+		titleRu: "Контроль самочувствия после лечения (1-2 день)",
+		shortLabelRu: "Самочувствие",
+		defaultDueDays: 1,
+		iconName: "HeartPulse",
+		defaultScriptRu: "«Добрый день! Клиника «DENTE», меня зовут [Имя]. Звоню по поручению Вашего доктора узнать, как Ваше самочувствие после визита? Есть ли отек, болезненность, всё ли в порядке?»",
+	},
+	{
+		type: "preventive_inspection",
+		timelineKey: "task_call.client.preventive_inspection",
+		titleRu: "Приглашение на плановую профгигиену (6 мес.)",
+		shortLabelRu: "Профгигиена 6 мес",
+		defaultDueDays: 180,
+		iconName: "Sparkles",
+		defaultScriptRu: "«Здравствуйте! Прошло 6 месяцев с прошлой профессиональной гигиены. Доктор рекомендовал плановый осмотр для сохранения гарантии. Подобрать удобное время на этой неделе?»",
+	},
+	{
+		type: "medplan_not_started",
+		timelineKey: "task_call.medplan.not_started",
+		titleRu: "Выяснить почему план лечения не начат",
+		shortLabelRu: "План не начат",
+		defaultDueDays: 7,
+		iconName: "FileQuestion",
+		defaultScriptRu: "«Добрый день! Доктор составил для Вас комплексный план лечения. Хотели уточнить, остались ли вопросы по стоимости или этапам, чтобы мы могли забронировать удобное время?»",
+	},
+	{
+		type: "medplan_not_finished",
+		timelineKey: "task_call.medplan.not_finished",
+		titleRu: "Выяснить почему план лечения не закончен",
+		shortLabelRu: "План не закончен",
+		defaultDueDays: 14,
+		iconName: "ClockAlert",
+		defaultScriptRu: "«Здравствуйте! Вы успешно прошли первые этапы лечения, но следующий визит пока не назначен. Для стабильности результата важно не прерывать график. Когда Вам удобно подойти?»",
+	},
+	{
+		type: "appointment_confirmation",
+		timelineKey: "task_call.appointment.confirmation",
+		titleRu: "Подтверждение записи на прием на завтра",
+		shortLabelRu: "Подтверждение",
+		defaultDueDays: 1,
+		iconName: "CalendarCheck",
+		defaultScriptRu: "«Добрый день! Напоминаем о Вашей записи к доктору на завтра. Вы планируете быть вовремя?»",
+	},
+	{
+		type: "appointment_refuse",
+		timelineKey: "task_call.appointment.refuse",
+		titleRu: "Выяснить причину отмены приема",
+		shortLabelRu: "Причина отмены",
+		defaultDueDays: 2,
+		iconName: "PhoneOff",
+		defaultScriptRu: "«Здравствуйте! Очень жаль, что пришлось отменить прием. Подскажите, пожалуйста, самочувствие позволяет перенести запись на следующую неделю?»",
+	},
+	{
+		type: "birthday",
+		timelineKey: "task_call.client.birthday",
+		titleRu: "Поздравление с днем рождения и бонус",
+		shortLabelRu: "День рождения",
+		defaultDueDays: 0,
+		iconName: "Gift",
+		defaultScriptRu: "«Поздравляем Вас с днем рождения от всего коллектива клиники «DENTE»! Желаем крепкого здоровья и дарим 1000 бонусных рублей на профгигиену!»",
+	},
+];
+
+export const STOMX_TASK_CALL_BY_TYPE = Object.freeze(
+	Object.fromEntries(
+		STOMX_TASK_CALLS_CATALOG.map((item) => [item.type, item]),
+	) as Record<StomxTaskCallType, StomxTaskCallMeta>,
+);
+
+/**
+ * Возвращает метаданные сервисного звонка по его типу
+ */
+export function getTaskCallMeta(type: StomxTaskCallType): StomxTaskCallMeta | undefined {
+	return STOMX_TASK_CALL_BY_TYPE[type];
+}

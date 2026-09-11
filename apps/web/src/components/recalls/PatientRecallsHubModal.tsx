@@ -27,6 +27,11 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import {
+	STOMX_TASK_CALLS_CATALOG,
+	STOMX_TASK_CALL_BY_TYPE,
+	type StomxTaskCallType,
+} from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import {
 	RECALL_CYCLE_CATALOG,
@@ -34,6 +39,7 @@ import {
 	buildWhatsAppUrl,
 	calculateCohortRetention,
 	calculateRecallMetrics,
+	determineTaskCallTypeForCandidate,
 	filterAndSortRecallCandidates,
 	generateSmsRecallMessage,
 	generateTelegramRecallMessage,
@@ -80,11 +86,13 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		initialCandidates ?? [],
 	);
 
-	const [activeTab, setActiveTab] = useState<"registry" | "cohorts">("registry");
+	const [activeTab, setActiveTab] = useState<"registry" | "cohorts" | "task_calls">("registry");
 	const [statusFilter, setStatusFilter] = useState<
 		"all" | "due_now" | "invited" | "scheduled" | "declined" | "completed"
 	>("all");
 	const [selectedCycle, setSelectedCycle] = useState<RecallCycleType | "all">("all");
+	const [selectedTaskCallType, setSelectedTaskCallType] = useState<StomxTaskCallType | "all">("all");
+	const [activeTaskCallScriptType, setActiveTaskCallScriptType] = useState<StomxTaskCallType | null>(null);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [cohortGrouping, setCohortGrouping] = useState<"month" | "quarter">("month");
 
@@ -104,7 +112,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		return calculateCohortRetention(candidates, { grouping: cohortGrouping });
 	}, [candidates, cohortGrouping]);
 
-	// Фильтрация кандидатов
+	// Фильтрация кандидатов по клиническому реестру
 	const filteredCandidates = useMemo(() => {
 		return filterAndSortRecallCandidates(candidates, {
 			status: statusFilter,
@@ -114,6 +122,30 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			sortDirection: "desc",
 		});
 	}, [candidates, statusFilter, selectedCycle, searchQuery]);
+
+	// Фильтрация кандидатов по сервисным звонкам StomX
+	const taskCallCandidates = useMemo(() => {
+		return candidates
+			.map((c) => ({
+				candidate: c,
+				taskType: determineTaskCallTypeForCandidate(c),
+			}))
+			.filter((item) => {
+				if (selectedTaskCallType !== "all" && item.taskType !== selectedTaskCallType) {
+					return false;
+				}
+				if (searchQuery.trim() !== "") {
+					const q = searchQuery.toLowerCase();
+					return (
+						item.candidate.fullName.toLowerCase().includes(q) ||
+						(item.candidate.phone && item.candidate.phone.includes(q)) ||
+						(item.candidate.attendingDoctorName &&
+							item.candidate.attendingDoctorName.toLowerCase().includes(q))
+					);
+				}
+				return true;
+			});
+	}, [candidates, selectedTaskCallType, searchQuery]);
 
 	// Обновление статуса пациента
 	const handleStatusUpdate = (
@@ -271,6 +303,17 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 							>
 								<BarChart3 size={16} />
 								<span>Когорты Retention & LTV</span>
+							</button>
+							<button
+								type="button"
+								role="tab"
+								data-testid="tab-task-calls"
+								aria-selected={activeTab === "task_calls"}
+								className={`recall-tab-btn ${activeTab === "task_calls" ? "active" : ""}`}
+								onClick={() => setActiveTab("task_calls")}
+							>
+								<PhoneCall size={16} />
+								<span>Задачи сервисных звонков (StomX)</span>
 							</button>
 						</div>
 
@@ -875,6 +918,259 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 								</div>
 							</div>
 						</div>
+					</main>
+				)}
+
+				{/* Tab 3: StomX Task Calls & Patient Care Workflow */}
+				{activeTab === "task_calls" && (
+					<main className="recall-content-area" data-testid="task-calls-view-section">
+						<div className="recall-toolbar">
+							<div className="recall-toolbar-top">
+								<div className="recall-search-input-wrap">
+									<Search size={16} className="recall-search-icon" aria-hidden="true" />
+									<label htmlFor="task-call-search-input" className="sr-only">
+										Поиск по пациенту, телефону или врачу
+									</label>
+									<input
+										id="task-call-search-input"
+										type="search"
+										className="recall-search-input"
+										placeholder="Поиск по пациенту, телефону или врачу..."
+										value={searchQuery}
+										onChange={(e) => setSearchQuery(e.target.value)}
+									/>
+								</div>
+
+								{activeTaskCallScriptType ? (
+									<button
+										type="button"
+										onClick={() => setActiveTaskCallScriptType(null)}
+										className="recall-action-btn"
+										style={{ minHeight: "44px" }}
+									>
+										<span>Скрыть речевой скрипт</span>
+									</button>
+								) : null}
+							</div>
+
+							{/* StomX 7 Task Call Category Chips */}
+							<div className="recall-status-chips" role="radiogroup" aria-label="Фильтр по типам сервисных звонков StomX">
+								<button
+									type="button"
+									data-testid="chip-task-call-all"
+									className={`recall-chip ${selectedTaskCallType === "all" ? "active" : ""}`}
+									onClick={() => setSelectedTaskCallType("all")}
+								>
+									Все задачи
+									<span className="recall-chip-badge">{taskCallCandidates.length}</span>
+								</button>
+
+								{STOMX_TASK_CALLS_CATALOG.map((cat) => {
+									const count = taskCallCandidates.filter((item) => item.taskType === cat.type).length;
+									return (
+										<button
+											key={cat.type}
+											type="button"
+											data-testid={`chip-task-call-${cat.type}`}
+											className={`recall-chip ${selectedTaskCallType === cat.type ? "active" : ""}`}
+											onClick={() => setSelectedTaskCallType(cat.type)}
+										>
+											{cat.shortLabelRu}
+											{count > 0 ? <span className="recall-chip-badge">{count}</span> : null}
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
+						{/* Contextual Speech Script Banner */}
+						{activeTaskCallScriptType ? (
+							<div
+								data-testid="task-call-script-banner"
+								style={{
+									margin: "0 24px 16px 24px",
+									padding: "16px",
+									borderRadius: "10px",
+									backgroundColor: "var(--paper-soft, #f8fafc)",
+									border: "1px solid var(--line, #e2e8f0)",
+									display: "flex",
+									flexDirection: "column",
+									gap: "8px",
+								}}
+							>
+								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+										<Lightbulb size={18} style={{ color: "var(--primary, #0d9488)" }} />
+										<span>Речевой скрипт звонка: {STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.titleRu}</span>
+									</div>
+									<button
+										type="button"
+										onClick={() => setActiveTaskCallScriptType(null)}
+										style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--ink-2, #64748b)" }}
+										aria-label="Закрыть скрипт"
+									>
+										<X size={16} />
+									</button>
+								</div>
+								<p style={{ margin: 0, fontSize: "0.875rem", lineHeight: 1.5, color: "var(--ink-2, #334155)", fontStyle: "italic" }}>
+									{STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultScriptRu}
+								</p>
+								<div style={{ fontSize: "0.75rem", color: "var(--ink-2, #64748b)" }}>
+									Срок регламентного контакта: {STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultDueDays === 0 ? "В день события" : `через ${STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultDueDays} дн.`}
+								</div>
+							</div>
+						) : null}
+
+						{/* Task Call Cards or Empty State */}
+						{taskCallCandidates.length === 0 ? (
+							<div className="recall-empty-state" data-testid="task-calls-empty-state">
+								<PhoneCall size={48} className="recall-empty-icon" aria-hidden="true" />
+								<h3 className="recall-empty-title">Все плановые звонки выполнены</h3>
+								<p className="recall-empty-text">
+									В выбранной категории сервисных звонков StomX нет ожидающих пациентов.
+									Новые задачи формируются автоматически при завершении приемов, операций и истечении сроков планов лечения.
+								</p>
+							</div>
+						) : (
+							<div style={{ padding: "0 24px 24px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+								{taskCallCandidates.map(({ candidate, taskType }) => {
+									const meta = STOMX_TASK_CALL_BY_TYPE[taskType];
+									return (
+										<div
+											key={candidate.id}
+											data-testid={`task-call-card-${candidate.id}`}
+											style={{
+												padding: "16px",
+												borderRadius: "10px",
+												backgroundColor: "var(--paper, #ffffff)",
+												border: "1px solid var(--line, #e2e8f0)",
+												display: "grid",
+												gridTemplateColumns: "1fr auto",
+												alignItems: "center",
+												gap: "16px",
+											}}
+										>
+											<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+												<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+													<span style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
+														{candidate.fullName}
+													</span>
+													{candidate.phone ? (
+														<a
+															href={`tel:${candidate.phone.replace(/[^+\d]/g, "")}`}
+															style={{ fontSize: "0.8125rem", color: "var(--primary, #0d9488)", textDecoration: "none", fontWeight: 600 }}
+														>
+															{candidate.phone}
+														</a>
+													) : null}
+													<span
+														className="recall-badge"
+														style={{
+															backgroundColor: "rgba(13, 148, 136, 0.1)",
+															color: "var(--primary, #0d9488)",
+															fontWeight: 700,
+														}}
+													>
+														{meta?.titleRu || "Сервисный звонок"}
+													</span>
+													{candidate.daysOverdue > 0 ? (
+														<span className="recall-badge recall-badge--overdue">
+															Просрочен на {candidate.daysOverdue} дн.
+														</span>
+													) : (
+														<span className="recall-badge recall-badge--upcoming">
+															Срок: {candidate.dueDate}
+														</span>
+													)}
+												</div>
+
+												<div style={{ fontSize: "0.8125rem", color: "var(--ink-2, #64748b)" }}>
+													{candidate.attendingDoctorName ? (
+														<span>Врач: <strong>{candidate.attendingDoctorName}</strong> • </span>
+													) : null}
+													<span>Последний визит: {candidate.lastVisitDate}</span>
+													{candidate.clinicalNotes ? (
+														<span> • {candidate.clinicalNotes}</span>
+													) : null}
+												</div>
+											</div>
+
+											{/* Action Buttons */}
+											<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+												{candidate.phone ? (
+													<a
+														href={`tel:${candidate.phone.replace(/[^+\d]/g, "")}`}
+														className="recall-action-btn"
+														style={{ minHeight: "44px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}
+														data-testid={`btn-call-phone-${candidate.id}`}
+													>
+														<Phone size={16} />
+														<span>Позвонить</span>
+													</a>
+												) : null}
+
+												<button
+													type="button"
+													className="recall-action-btn recall-action-btn--whatsapp"
+													style={{ minHeight: "44px" }}
+													onClick={() => void handleWhatsApp(candidate)}
+													data-testid={`btn-call-wa-${candidate.id}`}
+												>
+													<MessageCircle size={16} />
+													<span>WhatsApp</span>
+												</button>
+
+												<button
+													type="button"
+													className="recall-action-btn recall-action-btn--telegram"
+													style={{ minHeight: "44px" }}
+													onClick={() => void handleTelegram(candidate)}
+													data-testid={`btn-call-tg-${candidate.id}`}
+												>
+													<Send size={16} />
+													<span>TG</span>
+												</button>
+
+												<button
+													type="button"
+													className={`recall-action-btn recall-action-btn--script ${activeTaskCallScriptType === taskType ? "active" : ""}`}
+													style={{ minHeight: "44px" }}
+													onClick={() => setActiveTaskCallScriptType(activeTaskCallScriptType === taskType ? null : taskType)}
+													data-testid={`btn-call-script-${candidate.id}`}
+													title="Показать речевой скрипт для этой задачи"
+												>
+													<Lightbulb size={16} />
+													<span>Скрипт</span>
+												</button>
+
+												<button
+													type="button"
+													className="recall-action-btn recall-action-btn--book"
+													style={{ minHeight: "44px" }}
+													onClick={() => handleBook(candidate)}
+													data-testid={`btn-call-book-${candidate.id}`}
+												>
+													<Calendar size={16} />
+													<span>Записать</span>
+												</button>
+
+												<button
+													type="button"
+													className="recall-action-btn"
+													style={{ minHeight: "44px", color: "var(--ok-fg, #047857)" }}
+													onClick={() => handleStatusUpdate(candidate.id, "scheduled")}
+													data-testid={`btn-call-done-${candidate.id}`}
+													title="Отметить успешный контакт"
+												>
+													<Check size={16} />
+													<span>Успех</span>
+												</button>
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						)}
 					</main>
 				)}
 			</div>

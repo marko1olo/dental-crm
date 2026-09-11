@@ -218,6 +218,20 @@
 	border: 1px solid rgba(14, 165, 233, 0.3);
 }
 
+.cash-shift-nav-btn.action-amber {
+	color: var(--warn-fg, #b45309);
+}
+
+.cash-shift-nav-btn.action-amber:hover {
+	background-color: rgba(245, 158, 11, 0.1);
+}
+
+.cash-shift-nav-btn.action-amber.active {
+	background-color: var(--warn-bg, #fffbeb);
+	color: var(--warn-fg, #b45309);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
 .cash-shift-close-btn {
 	min-height: 44px;
 	min-width: 44px;

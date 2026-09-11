@@ -58,6 +58,9 @@ import {
 	getApptReasonMeta,
 	getApptRefuseReasonMeta,
 	getTimelineEventLabel,
+	STOMX_TASK_CALLS_CATALOG,
+	STOMX_TASK_CALL_BY_TYPE,
+	getTaskCallMeta,
 	stomxPatientTagCodeSchema,
 	stomxRepresentativeTypeSchema,
 	stomxMarketingChannelSchema,
@@ -392,4 +395,45 @@ test("StomX Client Timeline: maps all 26 events from client_labels.json", () => 
 	assert.strictEqual(getTimelineEventLabel("payment.advance_payment"), "Внесение аванса");
 	assert.strictEqual(getTimelineEventLabel("voip.call_in"), "Звонок пациенту (Входящий)");
 	assert.strictEqual(getTimelineEventLabel("task_call.appointment.confirmation"), "Звонок: Подтверждение приема");
+});
+
+// ============================================================================
+// 7. STOMX TASK CALLS & PATIENT CARE WORKFLOW
+// ============================================================================
+
+test("StomX Task Calls: contains all 7 canonical service call tasks with scripts & metadata", () => {
+	assert.strictEqual(STOMX_TASK_CALLS_CATALOG.length, 7);
+
+	const healthCall = getTaskCallMeta("learn_health");
+	assert.ok(healthCall);
+	assert.strictEqual(healthCall.titleRu, "Контроль самочувствия после лечения (1-2 день)");
+	assert.strictEqual(healthCall.timelineKey, "task_call.client.learn_health");
+	assert.strictEqual(healthCall.defaultDueDays, 1);
+	assert.ok(healthCall.defaultScriptRu.includes("самочувствие"));
+
+	const hygieneCall = getTaskCallMeta("preventive_inspection");
+	assert.ok(hygieneCall);
+	assert.strictEqual(hygieneCall.defaultDueDays, 180);
+	assert.strictEqual(hygieneCall.timelineKey, "task_call.client.preventive_inspection");
+
+	const medplanNotStarted = getTaskCallMeta("medplan_not_started");
+	assert.ok(medplanNotStarted);
+	assert.strictEqual(medplanNotStarted.defaultDueDays, 7);
+
+	const medplanNotFinished = getTaskCallMeta("medplan_not_finished");
+	assert.ok(medplanNotFinished);
+	assert.strictEqual(medplanNotFinished.defaultDueDays, 14);
+
+	const apptConfirm = getTaskCallMeta("appointment_confirmation");
+	assert.ok(apptConfirm);
+	assert.strictEqual(apptConfirm.defaultDueDays, 1);
+
+	const apptRefuse = getTaskCallMeta("appointment_refuse");
+	assert.ok(apptRefuse);
+	assert.strictEqual(apptRefuse.defaultDueDays, 2);
+
+	const birthday = getTaskCallMeta("birthday");
+	assert.ok(birthday);
+	assert.strictEqual(birthday.defaultDueDays, 0);
+	assert.ok(birthday.defaultScriptRu.includes("днем рождения"));
 });
