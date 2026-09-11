@@ -3779,3 +3779,19 @@
     * В `FastCheckoutModal.tsx`, `patientPortalEngine.ts`, `VisiographLegalWatermark.ts`, `TreatmentPlanCompletedActPrint.tsx`, `TreatmentPlanContractPrint.tsx`, `PrescriptionPrintModal.tsx`, `medicalWasteEngine.ts` ликвидированы фиктивные имена («Иванов И.И.», «Смирнова»), фальшивые СНИЛС и жесткий ИНН 7701234567.
 * **Верификация**: все тесты PASS, `npm run check:encoding` 6649 файлов 0 ошибок, `npm run check:css-tokens` 173 файла 0 ошибок, monorepo `typecheck` Exit Code 0.
 
+### Wave 110: 10 Причин отказа StomX и 1-клик служебные перерывы в расписании без обязательного пациента (Мандаты 8c, 8e п. 8, 8k, 8n)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `29206321e`
+* **Результаты**:
+  - **Каталог 10 канонических причин отказа StomX (`AppointmentModal.tsx`, `STOMX_REFUSE_REASONS_CATALOG`)**:
+    * При переходе в `cancelled` / `no_show` отображается сетка 1-клик причин (`Дорого`, `Заболел`, `Не отвечает`, `Неудобное время`, `Передумал`, `Уехал`, `Выбрал другую клинику`, `Отказ от продолжения лечения`, `Конфликт с персоналом`, `Форс-мажор`).
+    * Маркировка тегом `[Отмена: ${nameRu}]` в комментарии для сквозной маркетинговой конверсии.
+  - **1-клик пресеты служебных перерывов (`AppointmentModal.tsx`)**:
+    * Пресеты «Обед (60 мин)», «Санобработка (30 мин)», «Учеба / Консилиум (120 мин)» мгновенно бронируют слот с категорией `technical_break` без лишних кликов.
+  - **Автономия регистратуры и снятие требования пациента для служебных блоков (Мандат 8e п. 8, Мандат 8n)**:
+    * В `@dental/shared` поле `patientId` ослаблено до `.nullable().optional()`.
+    * В `sampleData.ts` корректная типизация `patientId: input.patientId ?? null`, исключение технических перерывов из блокирующего контроля рабочих часов.
+    * В `AppointmentCard.tsx`, `AppHelpers.tsx` и `AppointmentHelpers.ts` внедрен хелпер `isTechnicalBreakAppointment`: карточка отображает «Обед / Служебный перерыв» вместо «Новый пациент», а валидатор `missingFields` не блокирует сохранение записи из-за отсутствия пациента.
+* **Верификация**: `apps/web/src/components/schedule/__tests__/appointmentRefusalAndBreakAutonomyWave110.test.tsx` (5/5 PASS), `apps/web/src/tests/appointmentMissingFields.test.ts` (12/12 PASS), `npm run check:encoding` 0 ошибок, monorepo `typecheck` Exit Code 0.
+
+
