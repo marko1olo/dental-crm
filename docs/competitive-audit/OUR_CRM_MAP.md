@@ -2839,5 +2839,37 @@
 - **Файлы**: `apps/api/src/services/finance/commerceMlService.ts`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/components/analytics/LostPatientsPanel.tsx`, `apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx`, `apps/web/src/components/cmo/clinicalQualityEngine.ts`, `apps/web/src/components/copilot/CopilotGenerativeCards.tsx`, `apps/web/src/components/documents/PrimaryIntakePackageModal.tsx`, `apps/web/src/components/documents/egisz/EgiszCdaExportModal.tsx`, `apps/web/src/components/egisz/EgiszDocumentsJournalModal.tsx`, `apps/web/src/components/emr/audit/cmoComplianceHubEngine.ts`, `apps/web/src/components/emr/protocolGenerator/EmrProtocolGeneratorModal.tsx`, `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`, `apps/web/src/components/finance/one-c/oneCCommerceMlEngine.ts`, `apps/web/src/components/finance/pnl/ClinicalPnlHubModal.tsx`, `apps/web/src/components/finance/pnl/clinicalPnlEngine.ts`, `apps/web/src/components/finance/refunds/RefundServiceModal.tsx`, `apps/web/src/components/messaging/omnichannelEngine.ts`, `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`, `apps/web/src/components/portal/patientPortalPresets.ts`, `apps/web/src/components/radiology/HotFolderIntakeModal.tsx`, `apps/web/src/components/radiology/cbctExportEngine.ts`, `apps/web/src/components/radiology/implantSafetyEngine.ts`, `apps/web/src/components/recall/PatientRecallManagerModal.tsx`, `apps/web/src/components/security/auditTrailEngine.ts`, `apps/web/src/components/tax/TaxDeductionModal.tsx`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts`.
 - **Тесты**: `apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts` (4/4 PASS), `apps/web/src/tests/patientCabinet.test.ts` (15/15 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6652 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
+### 2.10.246. Волна 113: Двусторонняя касса 54-ФЗ (Выемка по РКО КО-2 с пресетами StomX) и 7 категорий сервисных звонков заботы о пациенте (Мандаты 8b, 8d, 8e, 8k, 8n / StomX паритет)
+- **Идея & Бизнес-эффект**: Завершение двустороннего управления наличностью в кассовом узле клиники (внесение ПКО КО-1 + выемка РКО КО-2) с 1-клик пресетами оснований из каталога StomX, и внедрение полноценного контура сервисных звонков заботы о пациенте по 7 каноническим сценариям из `client_labels.json` архива StomX с речевыми скриптами и быстрыми действиями телефонии/мессенджеров.
+- **Архитектурные изменения**:
+  1. *Двусторонняя касса и выемка наличных по РКО КО-2 (`CashShiftClosingModal.tsx`, `cashShiftClosing.css`)*:
+     - В навигационный тулбар кассы закрытия смены добавлена кнопка режима «Выемка / Расход» (`btn-nav-cash-out`, класс `action-amber`);
+     - Реализован полнофункциональный вид выемки (`data-testid="cash-out-view-section"`):
+       * 1-клик пресеты оснований из `STOMX_CASH_EXPENSE_CATALOG`: «Инкассация» (`collection`), «Выплата сотруднику» (`payment_employee`), «Оплата поставщику» (`payment_contractor`), «Оплата зуботехнической лаборатории» (`payment_lab`), «Возврат за прием» (`return_appointment`), «Возврат аванса» (`return_advance`), «Возврат за товар» (`return_product`);
+       * Кнопки быстрого выбора сумм (1 000 ₽, 3 000 ₽, 5 000 ₽, 10 000 ₽, «Вся выручка»);
+       * Поле ФИО получателя / наименования контрагента;
+       * Блок аудита текущих расходных операций за смену с точным временем и суммами;
+       * Кнопка «Изъять из кассы и распечатать РКО КО-2» (`btn-execute-cash-out`) с автоматическим вычитанием суммы из остатка ящика и запуском печати расходного ордера КО-2;
+  2. *7 категорий сервисных звонков заботы о пациенте (`packages/shared/src/patients/stomxPatientTagsCatalog.ts`)*:
+     - Создан каталог `STOMX_TASK_CALLS_CATALOG` и справочник `STOMX_TASK_CALL_BY_TYPE` с типами звонков:
+       * `learn_health`: Контроль самочувствия после лечения / хирургии (1-2 день);
+       * `preventive_inspection`: Приглашение на плановую профгигиену (6 мес);
+       * `medplan_not_started`: Выяснить почему план лечения не начат (7 дн);
+       * `medplan_not_finished`: Выяснить почему план лечения не закончен (14 дн);
+       * `appointment_confirmation`: Подтверждение записи на прием на завтра (1 дн);
+       * `appointment_refuse`: Выяснить причину отмены приема (2 дн);
+       * `birthday`: Поздравление с днем рождения и бонусный баланс (в день события);
+     - Для каждого типа звонка зафиксированы регламентные сроки, иконка и утвержденный речевой скрипт для администратора/куратора;
+  3. *Вкладка сервисных звонков в модуле диспансерного учета (`PatientRecallsHubModal.tsx`, `patientRecallEngine.ts`)*:
+     - В `patientRecallEngine.ts` добавлена функция `determineTaskCallTypeForCandidate(c)` для автоматической классификации кандидатов по клиническим признакам (хирургия/удаление -> `learn_health`, статус `scheduled` -> `appointment_confirmation`, статус `declined` -> `appointment_refuse`, и т.д.);
+     - В `PatientRecallsHubModal.tsx` добавлен режим «Задачи сервисных звонков (StomX)» (`tab-task-calls`):
+       * Горизонтальная лента фильтрации по 7 категориям звонков;
+       * Выдвижная панель актуального речевого скрипта звонка со сроками регламентного контакта;
+       * Карточки задач со звонком в 1 клик (`tel:`), WhatsApp, Telegram, открытием скрипта, записью на прием и отметкой успешного контакта;
+       * Чистое пустое состояние (`recall-empty-state`, 0 синтетических моков);
+- **Файлы**: `packages/shared/src/patients/stomxPatientTagsCatalog.ts`, `packages/shared/src/tests/stomxCatalogs.test.ts`, `apps/web/src/components/billing/CashShiftClosingModal.tsx`, `apps/web/src/components/billing/cashShiftClosing.css`, `apps/web/src/components/recalls/patientRecallEngine.ts`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`, `apps/web/src/components/billing/__tests__/stomxCashOutAndTaskCallsAutonomyWave113.test.tsx`.
+- **Тесты**: `apps/web/src/components/billing/__tests__/stomxCashOutAndTaskCallsAutonomyWave113.test.tsx` (7/7 PASS), `packages/shared/src/tests/stomxCatalogs.test.ts` (16/16 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6653 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+
 
 
