@@ -15,6 +15,8 @@ export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";
+export type { TimelineCategory } from "./emr/index.js";
+export type { TimelineCategory as ClinicalTimelineCategory } from "./clinical/index.js";
 export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./finance/stomxCashFlowCatalogs.js";

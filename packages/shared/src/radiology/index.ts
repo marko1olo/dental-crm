@@ -61,4 +61,17 @@ export {
 
 export * as archDetectEngine from "./archDetect.js";
 
+// Wave 123: CBCT Line Profile HU & ROI Densitometry Engine
+export {
+	type RoiStats,
+	type ImplantBedDensitometry,
+	roiStats,
+	lineProfileHU,
+	angleDeg,
+	calculateImplantBedDensitometry,
+} from "./measureStats.js";
+
+export * as measureStatsEngine from "./measureStats.js";
+
+
 

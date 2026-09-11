@@ -12,3 +12,16 @@ export * from "./therapyProtocolEngine.js";
 export * from "./stomtDefectsCatalog.js";
 export * from "./stomxDefectsCatalog.js";
 export * from "./stomxPricelistCatalog.js";
+export {
+	type TimelineCategory,
+	type TimelineCategory as ClinicalTimelineCategory,
+	CLINICAL_TIMELINE_CATEGORIES,
+	TIMELINE_CATEGORY_LABELS_RU,
+	PATIENT_TIMELINE_EVENT_TYPES,
+	type PatientTimelineEvent,
+	type TimelineFilter,
+	type TimelineQueryResult,
+	createTimelineEvent,
+	filterAndPaginateTimeline,
+	formatTimelineA4Summary,
+} from "./patientTimelineEngine.js";
