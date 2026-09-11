@@ -3986,6 +3986,26 @@
     * Вычищен фиктивный ИНН `7701234567` из фискальных модулей, кассы, ЭДО ФНС и выгрузок ЕГИСЗ.
 * **Верификация**: все тесты Wave 119 (52/52 PASS), `typecheck` Exit Code 0, `check:encoding` 6674 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
-
-
-
+### Wave 120: Адаптация классификации качества кости по Мишу (DenCT), автоматический расчет Reorder Point (DentalPin), ликвидация фейковых ИНН и утечек промптов
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `0beef34c3`, `3403635ab`, `ececd5c69`
+* **Результаты**:
+  - **Адаптация классификации плотности кости по Мишу и 3D трилинейного сэмплинга объема DenCT (`0beef34c3`)**:
+    * Созданы модули `packages/shared/src/radiology/boneQuality.ts` и `cprMath.ts`;
+    * Реализована классификация `classifyBone(hu)` по шкале Миша: D1 (>1250 HU: плотная кортикальная кость), D2 (850–1250 HU: пористая кортикальная и грубая губчатая), D3 (350–850 HU: тонкая пористая кортикальная и мелкоячеистая губчатая), D4 (150–350 HU: тонкая губчатая кость), D5 (<150 HU: неминерализованная кость / воздушные полости);
+    * Реализовано получение клинического руководства хирурга `getMischBoneClinicalGuidance(boneClass)`: рекомендуемый крутящий момент (Н·см), протокол остеотомии (недопрепарирование, остеоконденсация, метчики);
+    * Реализована 3D трилинейная интерполяция `trilinear` с защитой от выхода за границы и sentinel `AIR_HU = -1024`, а также сэмплирование кости вокруг виртуального импланта `sampleImplantBoneHU`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave120BoneQualityAndCprMath.test.ts` (28/28 PASS).
+  - **Автоматический расчет Reorder Point (ROP) и скоринг надежности поставщиков из DentalPin (`3403635ab`)**:
+    * Создан модуль `packages/shared/src/warehouse/inventoryReorderEngine.ts`;
+    * Реализован расчет рекомендаций `computeReorderSuggestion`: `dailyUsage`, `leadTimeDemand`, `reorderPoint`, `coverDays`, статусы `URGENT_OUT_OF_STOCK`, `CRITICAL_REORDER`, `STANDARD_REORDER`, `OPTIMAL`, расчет финансовой оценки в копейках;
+    * Реализован скоринг надежности поставщиков `computeSupplierRating`: процент своевременных доставок `onTimeDeliveryRatePct`, рекламаций `defectRatePct`, композитный балл 1.0–5.0 и тиры риска `RELIABLE` (>=4.2), `MODERATE_RISK` (3.0..4.19), `HIGH_RISK` (<3.0);
+    * Реализована группировка по поставщикам `groupReorderSuggestionsBySupplier` для пакетного формирования заказов;
+    * Экспорт в `packages/shared/src/warehouse/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/warehouse/__tests__/wave120InventoryReorder.test.ts` (29/29 PASS).
+  - **Унификация телеметрии импланта, очистка фейковых ИНН и промпт-утечек (`ececd5c69`)**:
+    * В `implantSafetyEngine.ts` реализована полиморфная поддержка `MischGuidance` и `MischDensityProfile` с безопасным null-coalescing для предотвращения регрессий в существующих модальных окнах;
+    * Из 45 компонентов и модулей вычищены утечки внутренних промптов `(Мандат 8e)`, `(Мандат 8k)`, `(Мандат 8e/8n)` из видимых пользователю тостов, заголовков кнопок и бейджей;
+    * Полностью искоренен фиктивный ИНН `7701234567` из фискальных модулей, кассы, банковских терминалов и генераторов документов;
+    * Тест: `apps/web/src/components/radiology/__tests__/implantProjectionSafety.test.ts` (12/12 PASS).
+* **Верификация**: все тесты Wave 120 (69/69 PASS: 57 shared + 12 web), монорепо `typecheck` Exit Code 0, `build -w @dental/shared` Exit Code 0, `check:encoding` 6679 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
