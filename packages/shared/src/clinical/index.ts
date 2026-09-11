@@ -28,4 +28,5 @@ export {
 } from "./patientTimelineEngine.js";
 export * from "./patientRelationshipsEngine.js";
 export * from "./perioIndicesEngine.js";
+export * from "./odontogramTreatmentEngine.js";
 
