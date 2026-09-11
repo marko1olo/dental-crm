@@ -27,4 +27,5 @@ export {
 	isTimelineCategory,
 } from "./patientTimelineEngine.js";
 export * from "./patientRelationshipsEngine.js";
+export * from "./perioIndicesEngine.js";
 
