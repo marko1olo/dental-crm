@@ -112,6 +112,23 @@ export * from "./logging/index.js";
 export * from "./hardware/index.js";
 export * from "./mobile/index.js";
 export * from "./inventory/index.js";
+export {
+	reliabilityStatusSchema,
+	type ReliabilityStatus,
+	RELIABILITY_STATUS_LABELS_RU,
+	supplierRatingMetricsSchema,
+	type SupplierRatingMetrics,
+	supplierEvaluationSchema,
+	type SupplierEvaluation,
+	supplierRatingSummarySchema,
+	type SupplierRatingSummary,
+	computeOnTimeRate,
+	computeRejectRate,
+	computeCompositeScore,
+	determineReliabilityStatus,
+	buildSupplierRatingSummary,
+	formatSupplierReliabilityA4,
+} from "./inventory/index.js";
 export * from "./lab/index.js";
 export * from "./communications/index.js";
 export * from "./schedule/index.js";

@@ -86,3 +86,28 @@ export {
 
 export * as toothSetupEngine from "./toothSetupEngine.js";
 export * from "./toothSetupEngine.js";
+
+// Wave 126: CBCT <-> Intraoral Scan Registration & ICP Engine
+export {
+	IDENTITY4,
+	mul4,
+	applyMat4,
+	rigidMatrix,
+	centroid,
+	jacobiEigenSymmetric,
+	type JacobiEigenResult,
+	kabschTransform,
+	kabschTransformWithRms,
+	type KabschResultWithRms,
+	type IcpOptions,
+	type IcpResult,
+	nearestPoint,
+	nearestRms,
+	icpAlign,
+	rayTriangleHit,
+	pickTriangleSoup,
+	type RegistrationProtocolInput,
+	formatRegistrationA4Protocol,
+} from "./cbctRegistrationEngine.js";
+
+export * as cbctRegistrationEngine from "./cbctRegistrationEngine.js";
