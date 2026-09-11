@@ -118,6 +118,20 @@ export {
 	type PurchaseReceiptLineInput,
 	type ApplyPurchaseReceiptOptions,
 	type ApplyPurchaseReceiptResult,
+	treatmentConsumableLinkSchema,
+	treatmentPerformedEventSchema,
+	consumableDeductionItemSchema,
+	treatmentDeductionResultSchema,
+	calculateConsumablesForTreatment,
+	calculateBatchTreatmentConsumables,
+	formatConsumablesDeductionReceipt,
+	roundQuantity,
+	formatQuantityRu,
+	type TreatmentConsumableLink,
+	type TreatmentPerformedEvent,
+	type ConsumableDeductionItem,
+	type TreatmentDeductionResult,
+	type BatchTreatmentConsumablesResult,
 } from "./warehouse/index.js";
 export * from "./mobile/index.js";
 export * from "./curator/index.js";
