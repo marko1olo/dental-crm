@@ -4009,3 +4009,17 @@
     * Полностью искоренен фиктивный ИНН `7701234567` из фискальных модулей, кассы, банковских терминалов и генераторов документов;
     * Тест: `apps/web/src/components/radiology/__tests__/implantProjectionSafety.test.ts` (12/12 PASS).
 * **Верификация**: все тесты Wave 120 (69/69 PASS: 57 shared + 12 web), монорепо `typecheck` Exit Code 0, `build -w @dental/shared` Exit Code 0, `check:encoding` 6679 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+### Wave 121: Адаптация жизненного цикла заказов поставщикам (Purchase Orders) и приемки товаров на склад (DentalPin), автоопределение зубной дуги КЛКТ (DenCT)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `dbab8d2e5`
+* **Результаты**:
+  - **Движок заказов поставщикам и приемки на склад (`packages/shared/src/warehouse/purchaseOrderEngine.ts`)**:
+    * Реализован жизненный цикл и строгая матрица допустимых переходов статусов: `DRAFT -> SENT -> CONFIRMED -> COMPLETED`, запрет переходов из терминальных состояний `CANCELLED` и `COMPLETED`;
+    * Реализован копеечный расчет строк заказа `calculatePOLineTotal` с поддержкой ставок НДС (20%, 10%, 0%, EXEMPT — пп. 2 п. 2 ст. 149 НК РФ для медицинских изделий), а также цен без НДС и с учетом НДС;
+    * Реализована автоматическая генерация заказов поставщикам `generatePurchaseOrderFromReorderSuggestions` на основе складских рекомендаций ROP из Wave 120 (`inventoryReorderEngine.ts`) с фильтрацией нулевых остатков и установкой статуса `DRAFT`;
+    * Реализована процедура приемки товаров на склад `applyPurchaseReceipt`: автоматический пересчет `receivedQuantity`, переход заказа в `PARTIALLY_RECEIVED` или `COMPLETED`, защита от переприемки без флага овердрафта (`allowOverdraft`);
+    * Реализован генератор печатной формы договора-заказа `formatPurchaseOrderPrintSummary` со спецификацией товаров, реквизитами клиники и поставщика и строгим запретом эмодзи (Мандат 8d);
+    * Экспорт в `packages/shared/src/warehouse/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/warehouse/__tests__/wave121PurchaseOrderEngine.test.ts` (43/43 PASS).
+* **Верификация**: все тесты Wave 121 (49/49 PASS: 43 warehouse + 6 radiology), `typecheck -w @dental/shared` Exit Code 0, `build -w @dental/shared` Exit Code 0, `check:encoding` 6683 файлов 0 ошибок.

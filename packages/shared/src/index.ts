@@ -33,6 +33,9 @@ export {
 	trilinear,
 	buildUniformCurve,
 	type VolumeSamplingData,
+	smoothPolyline,
+	detectArchControlPoints,
+	type ArchDetectOptions,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
@@ -93,6 +96,28 @@ export {
 	type SupplierRatingWeights,
 	type SupplierRatingInput,
 	type SupplierRatingScore,
+	purchaseOrderStatusSchema,
+	PURCHASE_ORDER_STATUS_LABELS_RU,
+	ALLOWED_PO_TRANSITIONS,
+	RECEIVABLE_PO_STATUSES,
+	vatRateSchema,
+	VAT_RATE_LABELS_RU,
+	purchaseOrderLineItemSchema,
+	purchaseOrderSchema,
+	validatePOStatusTransition,
+	calculatePOLineTotal,
+	generatePurchaseOrderFromReorderSuggestions,
+	applyPurchaseReceipt,
+	formatPurchaseOrderPrintSummary,
+	type PurchaseOrderStatus,
+	type VatRate,
+	type PurchaseOrderLineItem,
+	type PurchaseOrder,
+	type POLineTotalOptions,
+	type GeneratePurchaseOrderParams,
+	type PurchaseReceiptLineInput,
+	type ApplyPurchaseReceiptOptions,
+	type ApplyPurchaseReceiptResult,
 } from "./warehouse/index.js";
 export * from "./mobile/index.js";
 export * from "./curator/index.js";
