@@ -5,3 +5,4 @@ export * from "./contrastPresets.js";
 export * from "./cbctSeriesManager.js";
 export * from "./heicTypes.js";
 export * from "./colorCalibration.js";
+export * from "./volumeImporters/index.js";

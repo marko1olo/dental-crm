@@ -30,4 +30,31 @@ export * from "./patientRelationshipsEngine.js";
 export * from "./perioIndicesEngine.js";
 export * from "./odontogramTreatmentEngine.js";
 export * from "./smartClinicalPlaybooksEngine.js";
+export {
+  generateMorningDoctorBriefing,
+  MorningAppointmentItemSchema,
+  MorningDoctorBriefingInputSchema,
+  ChairLoadItemSchema,
+  RedAlertSummarySchema,
+  MorningDoctorBriefingSummarySchema,
+  CancelledSlotSchema,
+  RecallCandidateSchema,
+  CancellationGapRecoveryInputSchema,
+  ScoredCandidateSchema,
+  CancellationGapRecoveryResultSchema,
+  PreAppointmentSummaryInputSchema,
+  PreAppointmentSummarySchema,
+  type MorningAppointmentItem,
+  type MorningDoctorBriefingInput,
+  type ChairLoadItem,
+  type RedAlertSummary,
+  type MorningDoctorBriefingSummary,
+  type CancelledSlot,
+  type RecallCandidate,
+  type CancellationGapRecoveryInput,
+  type ScoredCandidate,
+  type CancellationGapRecoveryResult,
+  type PreAppointmentSummaryInput,
+  type PreAppointmentSummary,
+} from "./clinicalPlaybooksEngine.js";
 

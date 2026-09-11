@@ -439,3 +439,52 @@ Both Mobile Light and Mobile Dark themes must be verified via Playwright live sc
 - [ ] Viewport horizontal overflow (`document.documentElement.scrollWidth > window.innerWidth`) is strictly false.
 - [ ] Zero unhandled runtime exceptions or React error boundaries.
 - [ ] Compilation and encoding gates pass (`npm run check:encoding`, `npm run typecheck -w @dental/web`, `npm run check:css-tokens`).
+
+## Follow-up — 2026-09-11T21:58:26Z
+
+Use a very large team of agents to perform comprehensive deep-code reverse-engineering of clinical, financial, and CBCT modules from external goldmines (DenCT & DentalPin) into Dental CRM (`packages/shared/`), coupled with a relentless adversarial Red Team visual and ergonomic audit across desktop (1440x900) and mobile (390x844) viewports under Mandates 8d, 8e, 8m, 8p, and 8o.
+
+Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: development
+
+## Requirements
+
+### R1. Deep-Code Domain Adaptation from External Goldmines
+Adapt specialized dental modules from DenCT (`надо отсюда всё спиздить сука/Dental-CBCT-Viewer-main`) and DentalPin (`надо отсюда всё спиздить сука/dentalpin-main`) into `packages/shared/`:
+- Native Non-DICOM Volume Importers: Sirona Galileos (XML metadata + gzip uint16 slices) and Morita OneVolume (`CT_0.vol` binary container with `CArray3D` bounds, little-endian header, background sentinel mapping, int16 HU calibration).
+- Smart Clinical Playbooks & Gap Recovery: Morning Doctor Briefing (today's appointments, chair distribution, red somatic/allergy alerts), Cancellation Gap Recovery scoring and matching recall candidates for open slots, 0-click pre-appointment summary.
+- Strict code standards: every new module strictly < 800 lines, 100% typed with strict Zod schemas, zero mocks, zero cartoon emojis in clinical/financial outputs (Mandate 8d point 7).
+
+### R2. Adversarial Red Team Live Screenshot Pipeline
+Capture and maintain verified live screenshots across 4 core states (1440x900 Desktop Light, 1440x900 Desktop Dark, 390x844 Mobile Light, 390x844 Mobile Dark) for all primary views:
+- Schedule (Расписание), Visit/EMK (Приём и карта 043/у), Patients (Картотека пациентов), and Finance (Касса 54-ФЗ).
+- Screenshots must only be captured from live, running servers (HTTP 200) with authenticated clinic/staff tokens, real seeded patients, and explicit data-load waiters (zero blank or "Загрузка CRM" screens).
+- Verification threshold: every image file size >= 40 KB, unique MD5 hashes.
+
+### R3. Ruthless Pixel-by-Pixel Visual & Ergonomic Inspection
+An independent Red Team Inquisitor inspects every captured image with multimodal vision (`view_file`) under the 7 Deadly Sins checklist (Mandate 8d):
+1. Text & Localization: 0 clipped words (`...`), 0 button overlaps, 0 `NaN`/`undefined`.
+2. Toolbar density: strictly 1 row (32–36px), 0 clutter.
+3. Entity cards: <= 2 primary action buttons, secondary actions in `...` menu.
+4. Theme contrast: WCAG AAA compliance, zero blinding white patches in dark mode.
+5. Doctor Autonomy (Mandate 8e): zero disabled buttons without explanation, 0-click physiological norm preset, instant checkout without physical-person INN.
+6. Anti-Matryoshka: modal nesting depth strictly 1.
+7. Official documents: strictly 0 emojis.
+Any detected defect must be immediately corrected in CSS/TSX with automated re-capture.
+
+## Acceptance Criteria
+
+### Machine Verification Gates
+- [ ] `npm run check:encoding` passes with 0 errors.
+- [ ] `npm run check:css-tokens` passes with 0 errors.
+- [ ] `npm run typecheck:tests -w @dental/shared` passes with 0 errors.
+- [ ] `npm run build -w @dental/shared` passes with 0 errors.
+- [ ] `npm run typecheck -w @dental/web` passes with 0 errors.
+- [ ] Unit test suites in `packages/shared/src/**/__tests__/` execute with 100% passing tests (zero mocks).
+
+### Visual & Ergonomic Proof
+- [ ] All live screenshots present in `docs/screenshots/inquisition_live/` with verified file sizes >= 40 KB and unique MD5 hashes.
+- [ ] Zero unhandled React runtime exceptions or error boundaries.
+- [ ] Red Team Inquisitor reviews every screen via `view_file` and logs verbatim pixel evidence for all 7 deadly sins.
+- [ ] Clean conventional commits with exact per-file `git add`.
+

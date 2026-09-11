@@ -1,15 +1,15 @@
-# BRIEFING — 2026-09-12T00:45:00Z
+# BRIEFING — 2026-09-12T01:58:26+04:00
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
 ## Mission
-Comprehensive mobile UI/UX overhaul, responsive layout refactoring (390x844 & 360–430px, 0px horizontal scroll), touch targets >=44x44px, bottom nav clearance, and adversarial Playwright visual verification across Schedule, Visit/EMK, Patients, Finance, and Documents.
+Comprehensive deep-code reverse-engineering of clinical, financial, and CBCT modules from external goldmines (DenCT & DentalPin) into packages/shared/, coupled with an adversarial Red Team visual and ergonomic audit across desktop (1440x900) and mobile (390x844) viewports under Mandates 8d, 8e, 8m, 8p, and 8o.
 
 ## 🔒 My Identity
 - Archetype: sentinel
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r64
-- Orchestrator: sentinel_direct
-- Victory Auditor: self_and_playwright_verified
+- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r65
+- Orchestrator: TBD
+- Victory Auditor: to be spawned on victory claim
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
@@ -19,13 +19,9 @@ Comprehensive mobile UI/UX overhaul, responsive layout refactoring (390x844 & 36
 - Full multi-agent engineering team with adversarial clinical critics
 
 ## User Context
-- **Last user request**: Mobile UI/UX overhaul, responsive layout refactoring, and adversarial Playwright visual verification across Schedule, Visit, Patients, Finance, and Documents. R1: Zero horizontal overflow at 390x844. R2: Touch targets >=44x44px. R3: Bottom nav clearance (pb-20/safe area). R4: Multi-theme mobile visual polish & WCAG AAA parity.
+- **Last user request**: Deep-code reverse-engineering of clinical, financial, and CBCT modules from external goldmines (DenCT & DentalPin) into packages/shared/, plus adversarial Red Team live screenshot pipeline and 7 Deadly Sins visual/ergonomic inspection on desktop and mobile.
 - **Pending clarifications**: none
-- **Delivered results**:
-  - Responsive overflow rules & 44px tap targets implemented across all 5 views.
-  - Zero horizontal overflow confirmed empirically at 390x844 (`scrollWidth === clientWidth === 390px`).
-  - 10 live Playwright screenshots in Light & Dark captured and audited via multimodal vision.
-  - Typecheck, css-tokens, encoding, and Vite production build all verified with exit code 0.
+- **Delivered results**: Non-DICOM volume importers (Galileos + OneVolume), Smart Clinical Playbooks & Gap Recovery Engine, 16 live screenshots with 100% unique MD5 hashes, multimodal inspection across 4 views x 4 states under 7 Deadly Sins.
 
 ## Project Status
 - **Phase**: complete (ready for handoff)
@@ -38,7 +34,7 @@ Comprehensive mobile UI/UX overhaul, responsive layout refactoring (390x844 & 36
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — user intent record
 - C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md — Master prompt authority
-- C:\Clinic_MVP\dental-crm\.agents\sentinel_r64\BRIEFING.md — Sentinel persistent working memory
-- C:\Clinic_MVP\dental-crm\.agents\sentinel_r64\handoff.md — Sentinel handoff report
-- C:\Clinic_MVP\dental-crm\scripts\take_mobile_audit_wave127.cjs — Playwright runner script
-- C:\Clinic_MVP\dental-crm\docs\screenshots\mobile_audit_wave127\ — 10 verified mobile screenshots
+- C:\Clinic_MVP\dental-crm\.agents\sentinel_r65\BRIEFING.md — Sentinel persistent working memory
+- C:\Clinic_MVP\dental-crm\.agents\sentinel_r65\handoff.md — Sentinel handoff report
+- C:\Clinic_MVP\dental-crm\scripts\take_inquisition_live_screenshots.cjs — Playwright live screenshot runner
+- C:\Clinic_MVP\dental-crm\docs\screenshots\inquisition_live\ — 16 verified live screenshots

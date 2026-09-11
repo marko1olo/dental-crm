@@ -2,9 +2,8 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-10 / WAVE 91 / RADIOLOGY & CLINICAL SUBSYSTEMS): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 204 КИЛЛЕР-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 267 ФИЧ: 63 КАНОНИЧЕСКИЕ + 204 АДДЕНДУМ).**  
-> В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Аудит StomX New Drop (479 API эндпоинтов, 456 методов сервисов) и перенесенные клинические субсистемы КЛКТ/пародонтограммы/склада/родства подтверждают архитектурное и клиническое превосходство Clinic MVP. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
-> Повторная разработка запрещена (Мандаты 8g, 8h).
+> ⚠️ **СТАТУС (2026-09-12 / WAVE 133 / SCAN REGISTRATION KABSCH & PATIENT GUARDIANS 323-ФЗ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 252 АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 315 ФИЧ: 63 КАНОНИЧЕСКИЕ + 252 АДДЕНДУМ).**  
+> В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все субсистемы Волн 126–133 покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8d (Инструментальное бремя доказательства), 8e (Автономия врача), 8h (Синхронизация документации), 8i (Клинический суверенитет), 8j (DoD), 8k (CRM != симулятор) и 8o (Анти-карго-культ). Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
 
@@ -4137,5 +4136,167 @@
     * Санитизированы захардкоженные реквизиты ООО «ДЕНТЕ СТОМАТОЛОГИЯ», чужой ИНН Сбербанка 7707083893, КПП, ОГРН, фиктивный московский адрес и телефон `+7 (495) 777-22-11` во всех модальных окнах договоров (`DocumentsView.tsx`, `ClinicalVisitPackageModal.tsx`, `PrimaryIntakePackageModal.tsx`, `SurgicalPackageModal.tsx`, `TaxDeductionModal.tsx`);
     * Санитизирован фоллбэк телефона `+7 (999) 000-00-00` в `PublicOnlineBookingWidget.tsx`.
 * **Верификация**: 41 unit-тест Wave 125 (18 tooth setup + 23 perio indices, 100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `npm run check:encoding` 6702 файлов 0 ошибок. Все 5 живых скриншотов проверены мультимодальным зрением (MD5 уникальны, размер $\ge 57$–257 КБ, 0 эмодзи, WCAG AAA).
+
+### Wave 126: Сопоставление сканов КЛКТ-IOS (Horn/Kabsch ICP) & Скоринг надежности поставщиков (DentalPin)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фичи #301, #302; коммиты `fe71b3ca7`, `6cec921e7`)
+* **Результаты**:
+  - **CBCT <-> IOS Landmark Registration & ICP Engine (`packages/shared/src/radiology/cbctRegistrationEngine.ts`, фича 301)**:
+    * Регистрация по анатомическим ориентирам (Landmark-based Horn/Kabsch quaternion rigid alignment): вычисление центроидов, ковариационной матрицы $3 \times 3$, разложение через циклический диагонализатор Якоби, нахождение оптимального единичного кватерниона вращения $q$ и вектора переноса $t$;
+    * Построение однородной матрицы жесткой трансформации $4 \times 4$ ($RT$);
+    * Расчет среднеквадратичной ошибки (RMS) сопоставления контрольных точек;
+    * Клиническая классификация качества регистрации: `EXCELLENT` ($< 0.5$ мм), `ACCEPTABLE` ($0.5\dots 1.0$ мм), `WARNING` ($1.0\dots 2.0$ мм), `REJECT` ($> 2.0$ мм);
+    * Официальный печатный протокол сопоставления А4 для Формы 043/у Минздрава РФ строго без эмодзи (`formatRegistrationProtocolA4`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave126CbctRegistration.test.ts` (36/36 PASS).
+  - **Скоринг надежности поставщиков DentalPin (`packages/shared/src/inventory/supplierRatingsEngine.ts`, фича 302)**:
+    * Двухфакторный учет исполнения заказов: коэффициент своевременности (`onTimeDeliveryRatePct`) и уровень брака/дефектов (`defectRatePct`);
+    * Взвешенный композитный балл надежности $1.0\dots 5.0$ (`calculateSupplierScore`);
+    * Трёхуровневая классификация рисков: `RELIABLE` ($\ge 4.2$), `MODERATE_RISK` ($3.0\dots 4.19$), `HIGH_RISK` ($< 3.0$);
+    * Анализ дисперсии сроков поставки (`leadTimeVarianceDays`);
+    * Структурированный протокол аудита закупок А4 без эмодзи (`formatSupplierRatingA4Protocol`);
+    * Экспорт в `packages/shared/src/inventory/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/inventory/__tests__/wave126SupplierRatings.test.ts` (32/32 PASS).
+* **Верификация**: 68 тестов Wave 126 (36 cbct registration + 32 supplier ratings, 100% PASS), `typecheck` Exit 0.
+
+### Wave 127: Валидация хирургических шаблонов & Наряды в зуботехническую лабораторию (ЗТЛ)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фичи #303, #304; коммиты `c62e0f4f6`, `f9bf75dd0`)
+* **Результаты**:
+  - **Валидация хирургических шаблонов и безопасность сверления (`packages/shared/src/radiology/guideValidationEngine.ts`, фича 303)**:
+    * Проверка минимальной толщины стенок направляющей (минимальный порог $\ge 2.0$ мм);
+    * Аналитический контроль критических зазоров: до нижнечелюстного канала ($\ge 2.0$ мм) и дна гайморовой пазухи ($\ge 1.0$ мм) с учетом вылета верхушки фрезы (`DRILL_OVERSHOOT_MM`);
+    * Расчет объема светоотверждаемого биосовместимого полимера и себестоимости печати в копейках;
+    * Анализ механических коллизий между соседними цилиндрическими втулками направляющей;
+    * Печатный протокол параметров шаблона А4 для хирургического протокола без эмодзи (`formatGuideValidationA4Protocol`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave127GuideValidation.test.ts` (21/21 PASS).
+  - **Наряды в зуботехническую лабораторию ЗТЛ (`packages/shared/src/lab/labOrdersEngine.ts`, фича 304)**:
+    * 8 типов ортопедических конструкций (`crown`, `bridge`, `veneer`, `inlay_onlay`, `removable_partial`, `complete_denture`, `implant_abutment`, `surgical_guide`);
+    * Поддержка шкалы оттенков VITA Classical и Bleach (`A1`–`D4`, `BL1`–`BL4`);
+    * Полный жизненный цикл наряда: `draft` $\to$ `sent_to_lab` $\to$ `in_progress` $\to$ `ready` $\to$ `received` $\to$ `fitted` $\to$ `warranty_remake`;
+    * Автономия врача при гарантийных переделках (Мандат 8e): возврат припасованной работы на доработку без блокировок;
+    * Контроль дедлайнов SLA и выявление просрочек (`isLabOrderOverdue`);
+    * Официальный бланк наряда-заказа А4 с номерами зубов FDI без эмодзи (`formatLabOrderA4Prescription`);
+    * Экспорт в `packages/shared/src/lab/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/lab/__tests__/wave127LabOrders.test.ts` (22/22 PASS).
+* **Верификация**: 43 теста Wave 127 (21 guide validation + 22 lab orders, 100% PASS), `typecheck` Exit 0.
+
+### Wave 128: Бинарный STL экспорт хирургических шаблонов & BVH слайсинг контуров
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фича #305; коммит `b657d41f7`)
+* **Результаты**:
+  - **Бинарный экспорт STL и BVH-слайсинг (`packages/shared/src/radiology/guideExportEngine.ts`, фича 305)**:
+    * Генерация спецификационного бинарного файла STL (80 байт ASCII-заголовок, 4 байта `uint32` количество фасетов, по 50 байт на треугольник с нормалями IEEE 754);
+    * Построение иерархии ограничивающих параллелепипедов (Bounding Volume Hierarchy / BVH) для логарифмического ускорения пространственных запросов $O(\log N)$;
+    * Послойное сечение полигональной сетки горизонтальными плоскостями $Z = z_i$ (slicing) с генерацией 2D-периметров для контроля кривизны и подготовки к 3D-печати;
+    * Проверка топологической целостности полигонального тела (замкнутость watertight 2-manifold);
+    * Печатная спецификация параметров STL печати А4 без эмодзи (`formatGuideExportA4Protocol`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave128GuideExport.test.ts` (36/36 PASS).
+* **Верификация**: 36 тестов Wave 128 (100% PASS), `typecheck` Exit 0.
+
+### Wave 129: CBCT статистика измерений HU & Бюджетирование смет лечения и рассрочки
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фичи #306, #307; коммиты `d8f83cf9c`, `79ad9fa29`)
+* **Результаты**:
+  - **CBCT статистика измерений и профиль плотности HU (`packages/shared/src/radiology/measureStatsEngine.ts`, фича 306)**:
+    * Дискретное сэмплирование вокселей КЛКТ вдоль пространственного отрезка с трилинейной интерполяцией;
+    * Вычисление статистических параметров плотности костной ткани: Min, Max, Mean, Median, StdDev в единицах Хаунсфилда (HU);
+    * Гистограмма распределения плотности по кортикальным и губчатым слоям альвеолярного отростка;
+    * Классификация плотности кости по шкале Миша (Misch D1–D5);
+    * Генерация клинических рекомендаций хирургу по остеотомии, пилотному сверлению и планируемому торку импланта;
+    * Клинический протокол измерений плотности А4 для Формы 043/у строго без эмодзи (`formatMeasureStatsA4Protocol`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave129MeasureStats.test.ts` (24/24 PASS).
+  - **Бюджетирование лечения и беспроцентная рассрочка (`packages/shared/src/finance/treatmentBudgetEngine.ts`, фича 307)**:
+    * Копеечно-точный расчет стоимости комплексных стоматологических планов лечения;
+    * Поддержка скидок врача вплоть до 100% на гарантийные переделки (Мандат 8e п. 7);
+    * Моделирование графика беспроцентной рассрочки клиники (до 12 траншей) с копеечным выравниванием остатка на завершающий платеж;
+    * Расчет распределения оплат, авансовых депозитов и остатка задолженности;
+    * Официальное финансовое приложение к договору об оказании медицинских услуг А4 без эмодзи (`formatTreatmentBudgetA4Document`);
+    * Экспорт в `packages/shared/src/finance/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/finance/__tests__/wave129TreatmentBudget.test.ts` (24/24 PASS).
+* **Верификация**: 48 тестов Wave 129 (24 measure stats + 24 treatment budget, 100% PASS), `typecheck` Exit 0.
+
+### Wave 130: Параметрический 3D меш имплантов & 1С Клиент-Банк 1.03 и эквайринг
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фичи #308, #309; коммиты `0bec0f523`, `a807cb779`)
+* **Результаты**:
+  - **Параметрическая 3D геометрия имплантов и зоны безопасности (`packages/shared/src/radiology/implantGeometryEngine.ts`, фича 308)**:
+    * Аналитическое построение полигональной 3D сетки дентального имплантата (фаска платформы, шейка, коническое тело, резьба, апикальный купол) с замкнутой поверхностью 2-manifold и вычислением объема;
+    * Единичные нормали к вершинам, преобразование геометрии в мировую систему координат;
+    * Анализ зон безопасности с расчетом кратчайших расстояний до нижнечелюстного канала ($\ge 2.0$ мм), корней соседних зубов ($\ge 1.5$ мм) и кортикальной пластинки ($\ge 1.0$ мм);
+    * Печатный протокол планирования имплантации А4 для Формы 043/у без эмодзи (`formatImplantGeometryA4Protocol`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave130ImplantGeometry.test.ts` (27/27 PASS).
+  - **Выгрузка 1С Клиент-Банк 1.03 и сверка эквайринга (`packages/shared/src/finance/accountingExportEngine.ts`, фича 309)**:
+    * Формирование текстового файла обмена `1CClientBankExchange` стандарта 1.03 в кодировке Windows-1251 / UTF-8 с копеечной точностью;
+    * Секции плательщиков/получателей с верификацией ИНН/КПП/БИК/расчетных счетов;
+    * Сверка реестров банковского эквайринга с чеками онлайн-кассы 54-ФЗ с обнаружением расхождений по суммам и комиссиям;
+    * Бухгалтерский акт сверки А4 без эмодзи (`formatAccountingExportA4Reconciliation`);
+    * Экспорт в `packages/shared/src/finance/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/finance/__tests__/wave130AccountingExport.test.ts` (25/25 PASS).
+* **Верификация**: 52 теста Wave 130 (27 implant geometry + 25 accounting export, 100% PASS), `typecheck` Exit 0.
+
+### Wave 131: Персистентность хирургического плана КЛКТ & Пакетная одонтограмма
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фичи #310, #311; коммиты `a3f0a4391`, `838a56adb`)
+* **Результаты**:
+  - **Персистентность и сериализация плана КЛКТ (`packages/shared/src/radiology/cbctPlanIOEngine.ts`, фича 310)**:
+    * Полная сериализация и десериализация кейса планирования (зубная дуга, сплайн нерва, имплантаты с позициями/углами, направляющие втулки) в детерминированный JSON;
+    * Схемы валидации Zod с ограничением на переполнение памяти (до 100 имплантов, до 2000 точек сплайна каналов);
+    * Валидация номеров зубов по формуле FDI (11–48);
+    * Детекция несовпадения StudyInstanceUID и PatientID с активным исследованием;
+    * Официальный протокол сохранения плана А4 для Формы 043/у без эмодзи (`formatCbctPlanA4Protocol`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave131CbctPlanIO.test.ts` (19/19 PASS).
+  - **Пакетная мультизубная одонтограмма (`packages/shared/src/clinical/odontogramTreatmentEngine.ts`, фича 311)**:
+    * Одновременное назначение клинических услуг группе зубов (FDI) в 1 клик;
+    * Анатомическое управление 5 поверхностями коронки (окклюзионная/режущая O/I, мезиальная M, дистальная D, вестибулярная V, язычная/небная L) с автоматической дифференциацией диагнозов МКБ-10 К02.0–К02.2;
+    * Автоматический маппинг услуг на государственную номенклатуру МЗ РФ 804н;
+    * Расчет стоимости в копейках;
+    * Клинический протокол первичного осмотра зубных рядов А4 без эмодзи (`formatOdontogramTreatmentA4Protocol`);
+    * Экспорт в `packages/shared/src/clinical/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/clinical/__tests__/wave131OdontogramTreatment.test.ts` (24/24 PASS).
+* **Верификация**: 43 теста Wave 131 (19 cbct plan IO + 24 odontogram treatment, 100% PASS), `typecheck` Exit 0.
+
+### Wave 132: Нативные тома КЛКТ (Sirona & Morita) & Умные клинические плейбуки
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фичи #312, #313; коммиты `f324a393b`, `db89196b6`)
+* **Результаты**:
+  - **Импорт нативных томов Sirona GALILEOS и Morita OneVolume (`packages/shared/src/radiology/nativeVolumeImportEngine.ts`, `packages/shared/src/imaging/volumeImporters/`, фича 312)**:
+    * Прямой парсер проприетарных форматов без сторонних конвертеров;
+    * Sirona GALILEOS: чтение XML-заголовка, декомпрессия gzip-сжатых воксельных слайсов, сборка непрерывного воксельного массива Int16Array;
+    * Morita 3D Accuitomo OneVolume: парсинг бинарного контейнера `CT_0.vol` (`JmVolumeVersion=1`), считывание XML метаданных, калибровка rescale slope / intercept и замена сенсинела воздуха `-32768`;
+    * Санирование геометрии вокселей и порогов размеров;
+    * Протокол параметров нативного импорта А4 для Формы 043/у без эмодзи (`formatNativeVolumeA4Protocol`);
+    * Экспорт в `packages/shared/src/radiology/index.ts`, `packages/shared/src/imaging/index.ts` и `packages/shared/src/index.ts`;
+    * Тесты: `wave132NativeVolumeImport.test.ts` (13/13 PASS) и `nonDicomVolumeImporters.test.ts` (11/11 PASS) — суммарно 24 теста.
+  - **Умные клинические плейбуки (`packages/shared/src/clinical/smartClinicalPlaybooksEngine.ts`, `smartClinicalPlaybookProtocols.ts`, `clinicalPlaybooksEngine.ts`, фича 313)**:
+    * Утренний брифинг врача (`generateMorningDoctorBriefing`): распределение нагрузки по креслам, перечень приёмов, подсветка экстренных аллергических и соматических алертов;
+    * Алгоритм восстановления окон расписания (`scoreCancellationGapRecovery`): ранжирование кандидатов из листа ожидания и диспансерного учёта с учетом совпадения врачебного профиля и времени;
+    * Кресельная сводка перед приемом в 0 кликов (`generatePreAppointmentSummary`);
+    * Печатный протокол сводки А4 для лечащего врача без эмодзи (`formatClinicalPlaybookA4Summary`);
+    * Экспорт в `packages/shared/src/clinical/index.ts` и `packages/shared/src/index.ts`;
+    * Тесты: `wave132SmartClinicalPlaybooks.test.ts` (13/13 PASS) и `clinicalPlaybooksEngine.test.ts` (4/4 PASS) — суммарно 17 тестов.
+* **Верификация**: 41 тест Wave 132 (24 native volume + 17 playbooks, 100% PASS), `typecheck` Exit 0.
+
+### Wave 133: Двусторонний граф родства (323-ФЗ) & 3D сопоставление сканов (Horn/Kabsch Quaternion)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (Фичи #314, #315; коммиты `c3c8708d1`, `21d8e1cb9`)
+* **Результаты**:
+  - **Двусторонний граф родственных связей и семейные плательщики (`packages/shared/src/clinical/patientRelationshipsEngine.ts`, фича 314)**:
+    * 7 типов родственных связей с таблицей взаимной инверсии (`parent` $\leftrightarrow$ `child`, `guardian` $\leftrightarrow$ `ward`, `spouse`, `sibling`, `other`);
+    * Двустороннее разрешение связей (`buildBidirectionalRelationshipList`) с защитой от самосвязывания и дублирующих ребер;
+    * Автоматическое подтверждение полномочий законного представителя по ст. 20 и 54 № 323-ФЗ;
+    * Авторизация платежей из семейного баланса (`evaluateFamilyPaymentAuthorization`) без блокировок по Мандату 8e;
+    * Официальный протокол согласия законного представителя А4 без эмодзи (`formatLegalGuardianConsentA4Protocol`);
+    * Экспорт в `packages/shared/src/clinical/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/clinical/__tests__/wave133PatientRelationships.test.ts` (31/31 PASS).
+  - **3D жесткая регистрация оптических сканов и Tooth Setup (`packages/shared/src/radiology/scanRegistrationEngine.ts`, фича 315)**:
+    * Алгебра $4 \times 4$ матриц жестких трансформаций;
+    * Циклический симметричный диагонализатор Якоби для собственных значений и векторов;
+    * Жесткая регистрация по ориентирам методом кватернионов Хорна/Кабша с гарантией точности RMS;
+    * Классификация клинического качества выравнивания сканов по хирургическим порогам КЛКТ;
+    * Высокоточная трассировка луча Möller-Trumbore по триангулированным сеткам зубов и челюстей;
+    * Анализ формы зуба методом главных компонент (PCA Tooth Shape Analysis) для ортопедически-ориентированного позиционирования импланта (Tooth Setup);
+    * Официальный протокол сопоставления А4 для Формы 043/у Минздрава РФ без эмодзи (`formatScanRegistrationA4Protocol`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave133ScanRegistration.test.ts` (25/25 PASS).
+* **Верификация**: 56 тестов Wave 133 (31 patient relationships + 25 scan registration, 100% PASS), `typecheck` Exit 0.
+
 
 

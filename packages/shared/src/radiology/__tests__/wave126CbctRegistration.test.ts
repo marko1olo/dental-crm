@@ -480,8 +480,8 @@ describe("Wave 126: CBCT <-> Intraoral Scan Registration & ICP Engine", () => {
 
     it("verifies cbctRegistrationEngine.ts source strictly contains zero cartoon emojis", () => {
       const filePath = resolve(
-        process.cwd(),
-        "packages/shared/src/radiology/cbctRegistrationEngine.ts",
+        import.meta.dirname,
+        "../cbctRegistrationEngine.ts",
       );
       const code = readFileSync(filePath, "utf8");
       assert.ok(
@@ -492,8 +492,8 @@ describe("Wave 126: CBCT <-> Intraoral Scan Registration & ICP Engine", () => {
 
     it("verifies wave126CbctRegistration.test.ts source strictly contains zero cartoon emojis", () => {
       const filePath = resolve(
-        process.cwd(),
-        "packages/shared/src/radiology/__tests__/wave126CbctRegistration.test.ts",
+        import.meta.dirname,
+        "wave126CbctRegistration.test.ts",
       );
       const code = readFileSync(filePath, "utf8");
       assert.ok(
