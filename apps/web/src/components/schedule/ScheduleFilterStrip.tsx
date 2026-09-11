@@ -379,7 +379,8 @@ export function ScheduleFilterStrip({
 							<button
 								key={member.id}
 								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center`}
+								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center flex-shrink-0 select-none`}
+								style={{ flexShrink: 0, whiteSpace: "nowrap", minWidth: "fit-content" }}
 								onClick={() =>
 									setScheduleDoctorFilterId(
 										scheduleDoctorFilterId === member.id ? null : member.id,
@@ -387,12 +388,14 @@ export function ScheduleFilterStrip({
 								}
 								title={`Фильтр по врачу: ${member?.fullName || "Врач"}`}
 							>
-								{member?.fullName
-									?.split(" ")
-									.map((part, index) => (index === 0 ? part : `${part[0]}.`))
-									.join(" ") ||
-									member?.fullName ||
-									"Врач"}
+								<span className="shrink-0 whitespace-nowrap min-w-fit">
+									{member?.fullName
+										?.split(" ")
+										.map((part, index) => (index === 0 ? part : `${part[0]?.toUpperCase() || ""}.`))
+										.join(" ") ||
+										member?.fullName ||
+										"Врач"}
+								</span>
 							</button>
 						))}
 

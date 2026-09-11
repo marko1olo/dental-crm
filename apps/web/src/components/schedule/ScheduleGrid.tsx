@@ -2117,7 +2117,13 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										</div>
 									)}
 									{doctors.length >= 1 && (
-										<div className="flex items-center justify-center w-full my-0.5 gap-1">
+										<div
+											className="flex items-center justify-center w-full my-0.5 gap-1 min-h-[44px] sm:min-h-0 cursor-pointer"
+											data-testid={`chair-doctor-badge-${chair.id}`}
+											title={assignment?.doctorName ? `Врач на смене: ${assignment.doctorName} (${assignment.shiftHours || "08:00–20:00"}). Нажмите для смены` : undefined}
+											aria-label={assignment?.doctorName ? `Врач ${assignment.doctorName}, ${assignment.shiftHours || "08:00–20:00"}. Нажмите для изменения` : undefined}
+											onClick={() => openAssignModal(chair.id)}
+										>
 											<select
 												value={assignment?.doctorId || ""}
 												onChange={(e) => {
@@ -2186,7 +2192,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] max-w-[110px] truncate cursor-pointer h-6"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] min-w-[125px] w-auto truncate cursor-pointer h-6"
 												title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день)"
 												data-testid={`chair-shift-select-${chair.id}`}
 												aria-label={`Смена для ${chair.name}`}
@@ -2810,49 +2816,51 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 											return (
 												<div className="w-full flex flex-col gap-1 text-left">
-													<button
-														type="button"
-														onClick={() => openAssignModal(chair.id)}
-														className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-between gap-1.5 text-xs font-semibold normal-case transition-colors cursor-pointer group shadow-2xs"
-														style={{ minHeight: "44px" }}
-														title={`Врач на смене: ${assignment!.doctorName} (${assignment!.shiftHours}). Нажмите для смены`}
-														aria-label={`Врач ${assignment!.doctorName}, ${assignment!.shiftHours}. Нажмите для изменения`}
-														data-testid={`chair-doctor-badge-${chair.id}`}
-													>
-														<div className="flex items-center gap-1.5 min-w-0 flex-1">
-															<UserCheck size={14} className="shrink-0 text-[var(--teal)]" />
-															<span className="truncate min-w-0">
-																{formatDoctorShortName(assignment!.doctorName)}
-																{assignment!.doctorSpecialty ? ` (${assignment!.doctorSpecialty})` : ""}
-															</span>
-															<span className="shrink-0 whitespace-nowrap text-[var(--muted)] font-normal text-[11px] inline-flex items-center gap-1">
-																·{" "}
-																{assignment!.shiftPreset === "morning" || assignment!.shiftHours === "08:00–14:00" ? (
-																	<>
-																		<Sun size={11} className="text-amber-500 shrink-0" aria-hidden="true" />
+													{(!doctors || doctors.length === 0) && (
+														<button
+															type="button"
+															onClick={() => openAssignModal(chair.id)}
+															className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-between gap-1.5 text-xs font-semibold normal-case transition-colors cursor-pointer group shadow-2xs"
+															style={{ minHeight: "44px" }}
+															title={`Врач на смене: ${assignment!.doctorName} (${assignment!.shiftHours}). Нажмите для смены`}
+															aria-label={`Врач ${assignment!.doctorName}, ${assignment!.shiftHours}. Нажмите для изменения`}
+															data-testid={`chair-doctor-badge-${chair.id}`}
+														>
+															<div className="flex items-center gap-1.5 min-w-0 flex-1">
+																<UserCheck size={14} className="shrink-0 text-[var(--teal)]" />
+																<span className="truncate min-w-0">
+																	{formatDoctorShortName(assignment!.doctorName)}
+																	{assignment!.doctorSpecialty ? ` (${assignment!.doctorSpecialty})` : ""}
+																</span>
+																<span className="shrink-0 whitespace-nowrap text-[var(--muted)] font-normal text-[11px] inline-flex items-center gap-1">
+																	·{" "}
+																	{assignment!.shiftPreset === "morning" || assignment!.shiftHours === "08:00–14:00" ? (
+																		<>
+																			<Sun size={11} className="text-amber-500 shrink-0" aria-hidden="true" />
+																			<span>{assignment!.shiftHours}</span>
+																		</>
+																	) : assignment!.shiftPreset === "evening" || assignment!.shiftHours === "14:00–20:00" ? (
+																		<>
+																			<Moon size={11} className="text-indigo-400 shrink-0" aria-hidden="true" />
+																			<span>{assignment!.shiftHours}</span>
+																		</>
+																	) : (
 																		<span>{assignment!.shiftHours}</span>
-																	</>
-																) : assignment!.shiftPreset === "evening" || assignment!.shiftHours === "14:00–20:00" ? (
-																	<>
-																		<Moon size={11} className="text-indigo-400 shrink-0" aria-hidden="true" />
-																		<span>{assignment!.shiftHours}</span>
-																	</>
-																) : (
-																	<span>{assignment!.shiftHours}</span>
-																)}
-															</span>
-														</div>
-														{isSingleOnDuty && (
-															<span
-																className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30"
-																data-testid={`chair-duty-badge-${chair.id}`}
-															>
-																<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-																<span>● На смене</span>
-															</span>
-														)}
-														<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
-													</button>
+																	)}
+																</span>
+															</div>
+															{isSingleOnDuty && (
+																<span
+																	className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30"
+																	data-testid={`chair-duty-badge-${chair.id}`}
+																>
+																	<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+																	<span>● На смене</span>
+																</span>
+															)}
+															<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
+														</button>
+													)}
 													{/* StomX / IDENT Shift Coverage Strip (Only show when not full day to eliminate duplicate chips) */}
 													{!(assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8 && sEnd >= 20)) && (
 														<div
@@ -3287,9 +3295,9 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	? "bg-rose-500/20 border-rose-500 text-rose-900 dark:text-rose-100 ring-2 ring-rose-500/60 font-bold"
 																	: a.status === "confirmed"
 																		? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
-																		: a.status === "in_treatment"
+																		: a.status === "in_treatment" || (a.status as string) === "in_progress"
 																			? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]"
-																			: a.status === "arrived"
+																		: a.status === "arrived"
 																				? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
 																				: a.status === "completed"
 																					? "bg-slate-500/10 border-slate-400/30 text-slate-600 dark:text-slate-400"
@@ -3532,7 +3540,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																					handleAppointmentMouseLeave();
 																				}}
 																				className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-																					a.status === "in_treatment"
+																					a.status === "in_treatment" || (a.status as string) === "in_progress"
 																						? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
 																						: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
 																				}`}
@@ -3711,7 +3719,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																			}
 																		}}
 																		className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 ${
-																			a.status === "in_treatment"
+																			a.status === "in_treatment" || (a.status as string) === "in_progress"
 																				? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 																				: a.status === "arrived"
 																					? "bg-amber-500 text-white shadow-xs"
@@ -3721,17 +3729,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																							? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
 																							: "bg-[var(--paper)]/80 text-[var(--ink)]"
 																		}`}
-																		title={`Статус: ${appointmentLabels[a.status] || a.status}. Нажмите для быстрой смены в 1 клик`}
-																		aria-label={`Сменить статус визита, текущий: ${appointmentLabels[a.status] || a.status}`}
+																		title={`Статус: ${(appointmentLabels as any)[a.status] || ((a.status as string) === "in_progress" ? "В кресле" : a.status)}. Нажмите для быстрой смены в 1 клик`}
+																		aria-label={`Сменить статус визита, текущий: ${(appointmentLabels as any)[a.status] || ((a.status as string) === "in_progress" ? "В кресле" : a.status)}`}
 																		data-testid={`appointment-card-status-badge-${a.id}`}
 																	>
-																		{a.status === "in_treatment" && (
+																		{(a.status === "in_treatment" || (a.status as string) === "in_progress") && (
 																			<span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
 																		)}
 																		{a.status === "completed" && (
 																			<Check size={11} className="shrink-0 text-current" />
 																		)}
-																		<span>{appointmentLabels[a.status] || a.status}</span>
+																		<span>{(appointmentLabels as any)[a.status] || ((a.status as string) === "in_progress" ? "В кресле" : a.status)}</span>
 																	</button>
 
 																	{activeStatusPickerApptId === a.id && onQuickStatusChange && (
@@ -3782,7 +3790,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																					setActiveStatusPickerApptId(null);
 																				}}
 																				className={`w-full text-left min-h-[36px] px-2 py-1 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-																					a.status === "in_treatment"
+																					a.status === "in_treatment" || (a.status as string) === "in_progress"
 																						? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
 																						: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
 																				}`}
@@ -3970,7 +3978,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						setActiveMenuApptId(null);
 																					}}
 																					className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-																						a.status === "in_treatment"
+																						a.status === "in_treatment" || (a.status as string) === "in_progress"
 																							? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
 																							: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
 																					}`}
@@ -4565,8 +4573,29 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							<div className="text-lg font-black text-[var(--ink)] truncate">
 								{mPatName}
 							</div>
-							<div className="text-xs text-[var(--muted)] font-medium">
-								{mStart} – {mEnd} · {selectedMobileAppt.reason || "Прием"}
+							<div className="text-xs text-[var(--muted)] font-medium flex items-center gap-1.5 flex-wrap mt-0.5">
+								<span>{mStart} – {mEnd} · {selectedMobileAppt.reason || "Прием"}</span>
+								<span
+									className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 inline-flex items-center gap-1 ${
+										selectedMobileAppt.status === "in_treatment" || (selectedMobileAppt.status as string) === "in_progress"
+											? "bg-[var(--teal,var(--brand-primary))] text-white"
+											: selectedMobileAppt.status === "arrived"
+												? "bg-amber-500 text-white"
+												: selectedMobileAppt.status === "confirmed"
+													? "bg-emerald-600 text-white"
+													: selectedMobileAppt.status === "completed"
+														? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+														: "bg-[var(--paper-soft)] text-[var(--ink)]"
+									}`}
+								>
+									{(selectedMobileAppt.status === "in_treatment" || (selectedMobileAppt.status as string) === "in_progress") && (
+										<span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+									)}
+									<span>
+										{(appointmentLabels as any)[selectedMobileAppt.status] ||
+											((selectedMobileAppt.status as string) === "in_progress" ? "В кресле" : selectedMobileAppt.status)}
+									</span>
+								</span>
 							</div>
 						</div>
 						<button
@@ -4746,7 +4775,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										onQuickStatusChange(selectedMobileAppt.id, "in_treatment");
 										setSelectedMobileAppt(null);
 									}}
-									className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)] flex items-center justify-center gap-2 cursor-pointer"
+									className={`min-h-[44px] px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer ${
+										selectedMobileAppt.status === "in_treatment" || (selectedMobileAppt.status as string) === "in_progress"
+											? "bg-[var(--teal,var(--brand-primary))] text-white border border-[var(--teal)] font-bold shadow-xs"
+											: "bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)]"
+									}`}
 								>
 									<CalendarCheck size={14} />
 									<span>В кресле</span>

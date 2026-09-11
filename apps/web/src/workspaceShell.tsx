@@ -689,7 +689,7 @@ export function WorkspaceTopbar({
 					</p>
 					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden">{formatDisplayClinicName(clinicName)}</h1>
 				</div>
-				<div className="topbar-selectors">
+				<div className="topbar-selectors shrink-0 mr-3">
 					<details
 						className="workspace-role-switcher"
 						aria-label={workspaceTopbarLabels.role.region}
@@ -772,7 +772,7 @@ export function WorkspaceTopbar({
         скрыты — `dente-redesign.css:610` и `:624`), затем инструменты помощника.
         Главное действие не забирается никогда.
       */}
-			<div className="top-actions">
+			<div className="top-actions shrink-0">
 				{/*
           ГЛАВНОЕ ДЕЙСТВИЕ — ПЕРВЫМ ЭЛЕМЕНТОМ СТРОКИ И БЕЗ УСЛОВИЯ ВОКРУГ.
           Оба свойства несут смысл. «Первым» даёт гарантию из шапки строки.
