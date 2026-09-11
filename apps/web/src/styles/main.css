@@ -865,23 +865,73 @@ button:disabled {
 
 .boot-state {
 	align-items: center;
+	background: var(--paper, #fdfdfd);
+	color: var(--ink, #111827);
 	display: grid;
 	gap: 10px;
 	min-height: 100vh;
+	min-height: 100dvh;
 	place-content: center;
 	text-align: center;
 }
 
-.boot-state svg {
-	color: var(--teal);
-	height: 40px;
+.boot-state svg,
+.boot-state .boot-logo {
+	color: var(--teal, #0d9488);
+	height: 44px;
 	justify-self: center;
-	width: 40px;
+	width: 44px;
 }
 
 .boot-state h1,
-.boot-state p {
+.boot-state .boot-title {
+	color: var(--ink, #111827);
+	font-size: 2rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
 	margin: 0;
+}
+
+.boot-state p,
+.boot-state .boot-subtitle {
+	color: var(--teal-dark, #0f766e);
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 0;
+}
+
+:root[data-theme="dark"] .boot-state,
+html.dark .boot-state,
+[data-theme="dark"] .boot-state {
+	background: #090d11;
+	color: #ffffff;
+}
+
+:root[data-theme="dark"] .boot-state svg,
+html.dark .boot-state svg,
+[data-theme="dark"] .boot-state svg,
+:root[data-theme="dark"] .boot-state .boot-logo,
+html.dark .boot-state .boot-logo,
+[data-theme="dark"] .boot-state .boot-logo {
+	color: #14b8a6;
+}
+
+:root[data-theme="dark"] .boot-state h1,
+html.dark .boot-state h1,
+[data-theme="dark"] .boot-state h1,
+:root[data-theme="dark"] .boot-state .boot-title,
+html.dark .boot-state .boot-title,
+[data-theme="dark"] .boot-state .boot-title {
+	color: #ffffff;
+}
+
+:root[data-theme="dark"] .boot-state p,
+html.dark .boot-state p,
+[data-theme="dark"] .boot-state p,
+:root[data-theme="dark"] .boot-state .boot-subtitle,
+html.dark .boot-state .boot-subtitle,
+[data-theme="dark"] .boot-state .boot-subtitle {
+	color: #14b8a6;
 }
 
 .boot-retry-button {

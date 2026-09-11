@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { Stethoscope } from "lucide-react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { DiagnosticDrawer } from "./components/diagnostic/DiagnosticDrawer";
@@ -39,8 +40,9 @@ export function AppShell() {
 			<Suspense
 				fallback={
 					<main className="boot-state" aria-busy="true">
-						<h1>DENTE</h1>
-						<p>Загрузка CRM</p>
+						<Stethoscope aria-hidden="true" className="boot-logo" />
+						<h1 className="boot-title">DENTE</h1>
+						<p className="boot-subtitle">Загрузка CRM</p>
 					</main>
 				}
 			>

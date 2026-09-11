@@ -16,9 +16,128 @@
     <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Dental CRM | Управление клиникой</title>
+    <style>
+      :root {
+        --boot-bg: #fdfdfd;
+        --boot-title: #111827;
+        --boot-subtitle: #0f766e;
+        --boot-logo: #0d9488;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --boot-bg: #090d11;
+          --boot-title: #ffffff;
+          --boot-subtitle: #14b8a6;
+          --boot-logo: #14b8a6;
+        }
+      }
+      html.dark,
+      [data-theme="dark"] {
+        --boot-bg: #090d11;
+        --boot-title: #ffffff;
+        --boot-subtitle: #14b8a6;
+        --boot-logo: #14b8a6;
+      }
+      body {
+        margin: 0;
+        background-color: var(--boot-bg);
+      }
+      .boot-state {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        justify-content: center;
+        place-content: center;
+        text-align: center;
+        background-color: var(--boot-bg);
+        color: var(--boot-title);
+        font-family: "Golos Text", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      .boot-state svg,
+      .boot-logo {
+        color: var(--boot-logo);
+        height: 48px;
+        width: 48px;
+        justify-self: center;
+      }
+      .boot-state h1,
+      .boot-title {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--boot-title);
+      }
+      .boot-state p,
+      .boot-subtitle {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--boot-subtitle);
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #090d11;
+        }
+        .boot-state {
+          background-color: #090d11;
+        }
+        .boot-state svg,
+        .boot-logo {
+          color: #14b8a6;
+        }
+        .boot-state h1,
+        .boot-title {
+          color: #ffffff;
+        }
+        .boot-state p,
+        .boot-subtitle {
+          color: #14b8a6;
+        }
+      }
+      html.dark body,
+      [data-theme="dark"] body {
+        background-color: #090d11;
+      }
+      html.dark .boot-state,
+      [data-theme="dark"] .boot-state {
+        background-color: #090d11;
+      }
+      html.dark .boot-state svg,
+      [data-theme="dark"] .boot-state svg,
+      html.dark .boot-logo,
+      [data-theme="dark"] .boot-logo {
+        color: #14b8a6;
+      }
+      html.dark .boot-state h1,
+      [data-theme="dark"] .boot-state h1,
+      html.dark .boot-title,
+      [data-theme="dark"] .boot-title {
+        color: #ffffff;
+      }
+      html.dark .boot-state p,
+      [data-theme="dark"] .boot-state p,
+      html.dark .boot-subtitle,
+      [data-theme="dark"] .boot-subtitle {
+        color: #14b8a6;
+      }
+    </style>
   </head>
   <body class="antialiased">
-    <div id="root"></div>
+    <div id="root">
+      <main class="boot-state" aria-busy="true">
+        <svg class="boot-logo" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+          <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+          <circle cx="20" cy="10" r="2"/>
+        </svg>
+        <h1 class="boot-title">DENTE</h1>
+        <p class="boot-subtitle">Загрузка CRM</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

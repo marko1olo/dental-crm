@@ -14,9 +14,9 @@ export function AppLoadingState({
 }: AppLoadingStateProps) {
 	return (
 		<main className="boot-state" aria-busy={onAction ? undefined : "true"}>
-			<Stethoscope aria-hidden="true" />
-			<h1>DENTE</h1>
-			<p>{message}</p>
+			<Stethoscope aria-hidden="true" className="boot-logo" />
+			<h1 className="boot-title">DENTE</h1>
+			<p className="boot-subtitle">{message}</p>
 			{onAction ? (
 				<button
 					className="secondary-button boot-retry-button"
@@ -53,8 +53,8 @@ export function AppUnlockState({
 
 	return (
 		<main className="boot-state boot-unlock-state">
-			<ShieldCheck aria-hidden="true" />
-			<h1>DENTE</h1>
+			<ShieldCheck aria-hidden="true" className="boot-logo" />
+			<h1 className="boot-title">DENTE</h1>
 			<form className="boot-unlock-form" onSubmit={submitUnlock}>
 				<div>
 					<strong>Нужен доступ к данным клиники</strong>
