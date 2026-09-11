@@ -3749,3 +3749,33 @@
     * В `cbctCropBox.test.ts` и `cbctScanMeshEngine.test.ts`: устранена неоднозначность индексации кортежей при строгих проверках `noUncheckedIndexedAccess`.
 * **Верификация**: `npm run build -w @dental/shared` Exit Code 0, `npm run typecheck` Exit Code 0 по всем пакетам (@dental/shared, @dental/api, @dental/web), `check:encoding` 6627 файлов 0 ошибок, `check:css-tokens` 173 файла 0 ошибок, `node --test src/tests/panelsAreMounted.test.ts` 10/10 PASS, `treatmentPlanPresenterAutonomyWave49.test.tsx` 7/7 PASS, `scheduleChairDoctorBinding.test.tsx` 23/23 PASS, `scheduleWave40StomxParity.test.tsx` 15/15 PASS.
 
+### Wave 106: 3D Хирургические шаблоны DenCT, ликвидация процедурных моков и утечек тестовых данных в интерфейсе (Мандаты 8b, 8c, 8d, 8e, 8n)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `e1c0709ae`, `745c29fc`, `c387e2ac`, `f96d4195`
+* **Результаты**:
+  - **3D Геометрия хирургических шаблонов и бинарный экспорт STL (`surgicalGuideGeom.ts`, `surgicalGuideValidate.ts`, `surgicalGuideExport.ts`)**:
+    * Реализован TriMesh и MeshBuilder в `@dental/shared/radiology`: построение направляющих втулок, ступенчатого посадочного места (seat + shoulder), сплайна балки вдоль дуги, расчет объема полимерной смолы по Остроградскому-Гауссу.
+    * Аналитическая валидация толщины стенки (>= 1.0 мм) и клиренса сверла до нерва (>= 2.0 мм) и синуса (>= 1.0 мм) с учетом вылета верхушки фрезы +2.0 мм.
+    * Бинарный экспорт STL (80 байт заголовок + 50 байт/треугольник) для прямой 3D-печати.
+  - **Ликвидация Math.random() в клинической логике и РЭМД ЕГИСЗ**:
+    * В `ClinicalRulePanel.tsx`, `cdaR2XmlBuilder.ts`, `egiszRemdEngine.ts`, `clinicalEmrEngine.ts` заменен псевдорандом на детерминированные ключи и криптографические UUID/генераторы.
+  - **Очистка от утечек тестовых данных в прод-интерфейсе**:
+    * Устранены «Тестовый код: 7788», кнопки «Тест задержки накладной», «Тест связи МДЛП» и тестовые образцы из прод-экранов (`PatientOnlineBookingModal.tsx`, `PatientMobilePortalModal.tsx`, `ImplantPassportModal.tsx`, `MdlpScanningModal.tsx`).
+
+### Waves 108–109: Адаптация репозиториев StomX & DentalPin, 448 амбулаторных шаблонов, гарантия 100%, амбулаторный суверенитет и зачистка синтетических реквизитов (Мандаты 8b, 8c, 8e, 8i, 8k, 8n)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `48f04fb16`, `e67298e77`, `a6b559ce2`, `4fe1df7d6`, `020935587`, `05e387895`
+* **Результаты**:
+  - **DentalPin Perio Heatmap & 1-Click Gingiva Norm (`perioHeatmap.ts`, `PeriodontalChartingModal.tsx`)**:
+    * Клиническая палитра AAP/EFP (изумруд <= 3 мм, янтарь 4 мм, оранжевый 5-6 мм, роза >= 7 мм).
+    * Кнопка «Вся десна здорова (Норма 1-клик)» заполняет 192 кармана за 0 кликов.
+  - **StomX 448 Амбулаторных протоколов в дневнике SOAP (`stomxFullTemplatesCatalog.ts`, `VisitSoapEditor.tsx`)**:
+    * Полный каталог 448 шаблонов StomX с поиском, фильтрами категорий и авто-заменой «__ зубе» на выбранный номер зуба FDI.
+  - **StomX Гарантийные переделки со 100% скидкой врача (`PatientBillingModal.tsx`)**:
+    * Построчный тумблер гарантии: 100% скидка врача без мастер-паролей администратора, 0 ₽ к оплате, мягкий овердрафт склада.
+  - **Амбулаторный суверенитет и ликвидация стационарной карты 025/у (`renderDocument.ts`, `documentTemplates.ts`)**:
+    * Исключение госпитального блоата 025/у в пользу канонической Формы 043/у Минздрава РФ.
+  - **Тотальная очистка от синтетических имен и реквизитов (Wave 109)**:
+    * В `FastCheckoutModal.tsx`, `patientPortalEngine.ts`, `VisiographLegalWatermark.ts`, `TreatmentPlanCompletedActPrint.tsx`, `TreatmentPlanContractPrint.tsx`, `PrescriptionPrintModal.tsx`, `medicalWasteEngine.ts` ликвидированы фиктивные имена («Иванов И.И.», «Смирнова»), фальшивые СНИЛС и жесткий ИНН 7701234567.
+* **Верификация**: все тесты PASS, `npm run check:encoding` 6649 файлов 0 ошибок, `npm run check:css-tokens` 173 файла 0 ошибок, monorepo `typecheck` Exit Code 0.
+
