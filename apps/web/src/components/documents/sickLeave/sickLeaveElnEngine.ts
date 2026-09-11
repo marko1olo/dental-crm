@@ -569,7 +569,7 @@ export function generateForm036uEntry(
 		: `Выдать ЭЛН № ${form.elnNumber} на срок ${totalDays} дн. с ${formatDateRu(firstDate)} по ${formatDateRu(lastDate)}. Режим: ${form.regimeType === 'ambulatory' ? 'Амбулаторный' : 'Стационарный'}.`;
 
 	const chairperson = isVk ? form.vkProtocol?.chairpersonFio || 'Иванова Е.В.' : form.periods[0]?.doctorFio || 'Соколов А.М.';
-	const members = isVk ? form.vkProtocol?.memberFios || ['Смирнов П.А.', 'Кузнецова О.Д.'] : [];
+	const members = isVk ? form.vkProtocol?.memberFios || [] : [];
 
 	return {
 		entryNumber: entryNum,

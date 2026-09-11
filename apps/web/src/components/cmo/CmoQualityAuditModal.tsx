@@ -73,7 +73,11 @@ interface OutpatientVerificationQueueItem {
 	isEditableDeadlineExpired?: boolean;
 }
 
-/** Преобразование записи из PostgreSQL таблицы outpatient_verifications в модель аудита начмеда */
+/**
+ * Преобразование записи из PostgreSQL таблицы outpatient_verifications в модель внутреннего аудита медкарт.
+ * Мандат 8e (п. 4): Аудит качества носит строго консультативный/экспертный характер и НИКОГДА не блокирует
+ * редактирование карты лечащим врачом («Исправленному верить»). 24-часовые замки исключены.
+ */
 function mapVerificationQueueToAuditRecord(item: OutpatientVerificationQueueItem): CmoQualityAuditRecord {
 	const cmoStatus: CmoAuditStatus =
 		item.status === "approved"
@@ -447,7 +451,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 						</div>
 						<div>
 							<h2 id="cmo-modal-title" className="cmo-header-title">
-								Служба контроля качества Начмеда (ВКК Приказ № 785н & 834н)
+								Внутренний контроль качества (Форма 043/у Минздрава РФ)
 							</h2>
 							<p className="cmo-header-subtitle">
 								Экспертиза медкарт 043/у · ИДС 1051н · Анестезиология (доза мг/кг и серия) · Эндодонтический апекс · Номенклатура 804н
@@ -951,7 +955,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 								</div>
 
 								<div className="cmo-act-signatures">
-									<div>Председатель комиссии (Начмед): ________________ / {currentVkkAct.commissionChairFullName} /</div>
+									<div>Ответственный за контроль качества: ________________ / {currentVkkAct.commissionChairFullName} /</div>
 									<div>Члены экспертной комиссии: ________________ / {currentVkkAct.commissionMembers.join(" /\n                                ________________ / ")} /</div>
 									<div>С актом экспертизы ознакомлен (Лечащий врач): ________________ / {currentVkkAct.attendingDoctorFullName} / Дата: __________</div>
 								</div>
