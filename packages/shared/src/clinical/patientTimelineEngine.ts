@@ -40,6 +40,16 @@ export const TIMELINE_CATEGORY_LABELS_RU: Record<TimelineCategory, string> = {
 	communication: "Коммуникация и связь",
 };
 
+/**
+ * Type guard to verify whether a string is a valid TimelineCategory.
+ */
+export function isTimelineCategory(category: unknown): category is TimelineCategory {
+	return (
+		typeof category === "string" &&
+		(CLINICAL_TIMELINE_CATEGORIES as readonly string[]).includes(category)
+	);
+}
+
 export const PATIENT_TIMELINE_EVENT_TYPES = {
 	APPOINTMENT_SCHEDULED: "appointment.scheduled",
 	APPOINTMENT_CONFIRMED: "appointment.confirmed",

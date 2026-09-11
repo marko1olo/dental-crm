@@ -4065,3 +4065,25 @@
     * Составлен детальный дефект-лист по Оси 1 (фиктивные телефоны), Оси 2 (утечки текста промптов) и Оси 5 (хардкодные ИНН 7701234567);
     * Развернуты специализированные воркеры очистки для полного устранения замечаний инквизитора.
 * **Верификация**: все тесты Wave 122 (18/18 PASS: 9 warehouse + 9 radiology), монорепо `typecheck -w @dental/shared` Exit Code 0, `build -w @dental/shared` Exit Code 0, `check:encoding` 6687 файлов 0 ошибок.
+
+### Wave 123: Сквозной таймлайн пациента (DentalPin), линейный профиль HU и денситометрия КЛКТ (DenCT)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `f7e297196`
+* **Результаты**:
+  - **Сквозной таймлайн истории пациента Patient Timeline Engine (`f7e297196`, DentalPin реверс-инжиниринг)**:
+    * Создан модуль `packages/shared/src/clinical/patientTimelineEngine.ts`;
+    * Реализованы строгие типы, схемы и интерфейсы: `TimelineCategory` ('clinical' | 'financial' | 'administrative' | 'imaging' | 'lab' | 'communication'), `PatientTimelineEvent`, `TimelineFilter`, `TimelineQueryResult`;
+    * Каталоги и хелперы: константа `CLINICAL_TIMELINE_CATEGORIES`, русскоязычные наименования `TIMELINE_CATEGORY_LABELS_RU`, канонические типы событий `PATIENT_TIMELINE_EVENT_TYPES`, тайпгард `isTimelineCategory`;
+    * Resilient-фабрика `createTimelineEvent`: автоматическая генерация UUID v4, валидация ISO-таймстемпа с fallback на текущий момент, санирование пустых полей, отсутствие блокировок и палок в колеса (Мандат 8e);
+    * Фильтрация и пагинация `filterAndPaginateTimeline`: мульти-категорийная фильтрация (`categories`), поиск по подстроке без учета регистра (`searchQuery` по `title`, `description`, `actorName`), диапазон дат (`startDate`, `endDate`), детерминированная хронологическая сортировка по убыванию с tie-breaking по id, безопасная пагинация с нормализацией границ страниц и подсчет фасетов `categoryCounts` по отфильтрованному множеству;
+    * Медицинская печать Формы 043/у Минздрава РФ `formatTimelineA4Summary` (алиас `formatPatientTimelineChronology`): строго 0 эмодзи (Мандат 8d п. 7, доказано тестом `\p{Extended_Pictographic}`), структурированные моноширинные разделители, метаданные карты, хронологическая лента и поле подписи врача;
+    * Реэкспорт в `packages/shared/src/clinical/index.ts` и бесконфликтное разрешение пересечения `TimelineCategory` в `packages/shared/src/index.ts` (`ClinicalTimelineCategory`);
+    * Тест: `packages/shared/src/clinical/__tests__/wave123PatientTimeline.test.ts` (31/31 PASS).
+  - **Линейный профиль HU и денситометрия воксельных областей КЛКТ (`f7e297196`, DenCT реверс-инжиниринг)**:
+    * Создан модуль `packages/shared/src/radiology/measureStats.ts`;
+    * Реализован расчет линейного профиля плотности `computeLineProfile` между произвольными 3D-точками КЛКТ с субвоксельной трилинейной интерполяцией;
+    * Реализована денситометрия воксельных областей интереса `computeRoiDensitometry`: расчет `min`, `max`, `mean`, `stdDev`, `median`, межквартильного размаха `IQR`, гистограммы плотности и процентного распределения по типам кости Миша D1–D5 (`mischDistribution`);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave123MeasureStats.test.ts` (14/14 PASS).
+* **Верификация**: все тесты Wave 123 (45/45 PASS: 31 clinical timeline + 14 radiology densitometry), монорепо `typecheck -w @dental/shared` Exit Code 0, `check:encoding` 6691 файлов 0 ошибок.
+

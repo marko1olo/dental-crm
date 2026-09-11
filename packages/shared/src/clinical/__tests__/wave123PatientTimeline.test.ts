@@ -24,6 +24,7 @@ import {
 	createTimelineEvent,
 	filterAndPaginateTimeline,
 	formatTimelineA4Summary,
+	isTimelineCategory,
 } from "../patientTimelineEngine.js";
 import {
 	createTimelineEvent as createTimelineEventFromIndex,
@@ -259,7 +260,11 @@ describe("Wave 123: Patient Timeline Engine (DentalPin Adaptation)", () => {
 				assert.ok(TIMELINE_CATEGORY_LABELS_RU[cat]);
 				const result = filterAndPaginateTimeline(events, { categories: [cat] });
 				assert.ok(result.total >= 1);
+				assert.strictEqual(isTimelineCategory(cat), true);
 			}
+			assert.strictEqual(isTimelineCategory("invalid_category"), false);
+			assert.strictEqual(isTimelineCategory(null), false);
+			assert.strictEqual(isTimelineCategory(123), false);
 		});
 	});
 

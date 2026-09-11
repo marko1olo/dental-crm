@@ -24,4 +24,5 @@ export {
 	createTimelineEvent,
 	filterAndPaginateTimeline,
 	formatTimelineA4Summary,
+	isTimelineCategory,
 } from "./patientTimelineEngine.js";
