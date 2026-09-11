@@ -78,6 +78,7 @@ export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./finance/stomxCashFlowCatalogs.js";
 export * from "./finance/treatmentBudgetEngine.js";
+export * from "./finance/accountingExportEngine.js";
 export * from "./imaging/index.js";
 export type { MischBoneClass } from "./radiology/boneQualityClassification.js";
 export { interpolateNerveSpline3D } from "./radiology/index.js";
