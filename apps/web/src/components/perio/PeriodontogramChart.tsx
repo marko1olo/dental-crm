@@ -72,6 +72,11 @@ import {
 	PSR_CODE_DEFINITIONS,
 	type PsrCode,
 } from "./perioMath";
+import {
+	probingDepthClasses,
+	probingDepthHex,
+	probingDepthTone,
+} from "./perioHeatmap";
 
 export interface PeriodontogramChartProps {
 	readonly patientId?: string | undefined;
@@ -1190,11 +1195,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							type="button"
 							onClick={() => handleApplyExpressPreset("perio_norm_express")}
 							className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
-							title="1-клик: Здоровый пародонт (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
+							title="1-клик: Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
 							data-testid="perio-toolbar-norm-1click-btn"
 						>
 							<ShieldCheck size={16} />
-							<span>1-клик: Здоровый пародонт (Норма)</span>
+							<span>Вся десна здорова (Норма)</span>
 						</button>
 
 						{/* 1-Click Pro-Hygiene: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
@@ -1213,11 +1218,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							type="button"
 							onClick={handleSetAllIntact}
 							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
-							title="Установить все 32 зуба в норму (PD 2мм, рецессия 0мм, BOP 0%)"
-							data-testid="perio-preset-intact"
+							title="Установить все 32 зуба в физиологическую норму (PD 2мм, рецессия 0мм, BOP 0%)"
+							data-testid="perio-healthy-norm-btn"
 						>
-							<Sparkles size={14} className="text-emerald-400" />
-							<span>Все интактны</span>
+							<ShieldCheck size={14} className="text-emerald-400" />
+							<span>Десна здорова (Норма 1-клик)</span>
 						</button>
 
 						<button
@@ -1958,17 +1963,25 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 									Глубина:{" "}
 									<strong
 										className={`text-sm ${
-											(
+											probingDepthTone(
 												toothMap.get(focusedSite.toothNumber)?.[
 													focusedSite.siteKey
-												]?.probingDepthMm ?? 0
-											) <= 3
+												]?.probingDepthMm,
+											) === "success"
 												? "text-emerald-400"
-												: (toothMap.get(focusedSite.toothNumber)?.[
-															focusedSite.siteKey
-														]?.probingDepthMm ?? 0) <= 5
+												: probingDepthTone(
+															toothMap.get(focusedSite.toothNumber)?.[
+																focusedSite.siteKey
+															]?.probingDepthMm,
+													  ) === "warning-low"
 													? "text-amber-400"
-													: "text-rose-400"
+													: probingDepthTone(
+																toothMap.get(focusedSite.toothNumber)?.[
+																	focusedSite.siteKey
+																]?.probingDepthMm,
+														  ) === "warning-high"
+														? "text-orange-400"
+														: "text-rose-400"
 										}`}
 									>
 										{toothMap.get(focusedSite.toothNumber)?.[
@@ -2431,11 +2444,13 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 												)}
 												<span
 													className={`w-6 text-center font-mono font-bold ${
-														pd <= 3
+														probingDepthTone(pd) === "success"
 															? "text-emerald-400"
-															: pd <= 5
+															: probingDepthTone(pd) === "warning-low"
 																? "text-amber-400"
-																: "text-rose-400"
+																: probingDepthTone(pd) === "warning-high"
+																	? "text-orange-400"
+																	: "text-rose-400"
 													}`}
 												>
 													{pd}
@@ -2892,11 +2907,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 							className={`flex flex-col items-center justify-center py-1 px-0.5 rounded border transition-all ${
 								isFocused
 									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
-									: pd >= 6
-										? "bg-rose-500/20 border-rose-500/40 text-rose-300"
-										: pd >= 4
-											? "bg-amber-500/15 border-amber-500/30 text-amber-300"
-											: "bg-[var(--paper-soft)]/80 border-[var(--line)]/60 text-emerald-400"
+									: probingDepthClasses(pd)
 							}`}
 						>
 							<span className="font-mono text-[10px] font-black leading-none">
@@ -2993,11 +3004,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 							className={`flex flex-col items-center justify-center py-1 px-0.5 rounded border transition-all ${
 								isFocused
 									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
-									: pd >= 6
-										? "bg-rose-500/20 border-rose-500/40 text-rose-300"
-										: pd >= 4
-											? "bg-amber-500/15 border-amber-500/30 text-amber-300"
-											: "bg-[var(--paper-soft)]/80 border-[var(--line)]/60 text-emerald-400"
+									: probingDepthClasses(pd)
 							}`}
 						>
 							<span className="font-mono text-[10px] font-black leading-none">

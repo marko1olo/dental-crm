@@ -24,6 +24,7 @@ import {
 	type PerioAspect,
 	type PerioStripDirection,
 } from "./perioProfileMath";
+import { probingDepthHex } from "./perioHeatmap";
 
 export interface PerioProfileStripProps {
 	/** Массив зубов зубного ряда (16 зубов: 18..28 для верхней челюсти, 48..38 для нижней) */
@@ -452,7 +453,7 @@ export const PerioProfileStrip: React.FC<PerioProfileStripProps> = ({
 												cx={x}
 												cy={y}
 												r={pd >= 5 ? 3 : 2}
-												fill={pd >= 5 ? "var(--danger,#ef4444)" : "var(--ink,#334155)"}
+												fill={probingDepthHex(pd)}
 												stroke="var(--paper,#ffffff)"
 												strokeWidth={1}
 											/>

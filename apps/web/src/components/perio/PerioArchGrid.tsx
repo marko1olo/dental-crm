@@ -39,6 +39,7 @@ import {
 	type PerioAspect,
 } from "./perioProfileMath";
 import { PerioProfileStrip } from "./PerioProfileStrip";
+import { probingDepthClasses } from "./perioHeatmap";
 
 export interface PerioArchGridProps {
 	/** Зубы зубного ряда (16 зубов: 18..28 для верхней челюсти, 48..38 для нижней) */
@@ -276,8 +277,6 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = ({
 								<div className="flex items-center justify-center gap-0.5">
 									{sites.map((siteKey, si) => {
 										const val = tooth[siteKey]?.probingDepthMm ?? 0;
-										const isDeep = val >= 5;
-										const isModerate = val >= 4;
 
 										return (
 											<input
@@ -296,11 +295,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = ({
 												className={`w-[17px] h-[20px] p-0 text-center font-mono text-[11px] font-semibold rounded border outline-none transition-colors ${
 													tooth.isMissing
 														? "opacity-30 bg-transparent border-transparent"
-														: isDeep
-															? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/40"
-															: isModerate
-																? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-																: "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#cbd5e1)] focus:border-[var(--primary,#0284c7)]"
+														: probingDepthClasses(val)
 												}`}
 											/>
 										);
@@ -495,8 +490,9 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = ({
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
+							data-testid="perio-preset-norm-btn"
 							onClick={applyPhysiologicalNorm}
-							className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer shadow-xs"
+							className="inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[36px] text-xs font-semibold rounded-md text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer shadow-xs"
 							title="Установить норму: глубина 2 мм, GM 0, BOP нет (Мандат 8e)"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
