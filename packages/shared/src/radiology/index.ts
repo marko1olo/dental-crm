@@ -17,3 +17,13 @@ export * from "./cbctCropBox.js";
 export * from "./surgicalGuideGeom.js";
 export * from "./surgicalGuideValidate.js";
 export * from "./surgicalGuideExport.js";
+export {
+	dot3,
+	sub3,
+	distPointToSegment3,
+	distSegmentToSegment3,
+	distSegmentToPolyline3,
+	type Vec3,
+} from "./implantSafetyClearance.js";
+export * from "./implantSafetyClearance.js";
+export * from "./boneQualityClassification.js";

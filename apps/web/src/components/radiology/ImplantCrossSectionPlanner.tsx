@@ -26,6 +26,12 @@ import {
   type MischClassificationResult,
 } from "./boneDensityMischMath";
 import {
+  classifyMischBoneDensity,
+  evaluateNerveClearance,
+  type MischBoneAssessment,
+  type LandmarkSafetyClearance,
+} from "@dental/shared";
+import {
   createEmptyCbctVolume,
   type CbctVoxelVolume,
 } from "./cbctMprMath";
@@ -188,6 +194,11 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     return analyzeMischBoneQuality(huSampling, diameterMm);
   }, [huSampling, diameterMm]);
 
+  // Carl Misch D1-D5 Bone Assessment from @dental/shared
+  const mischAssessment: MischBoneAssessment = useMemo(() => {
+    return classifyMischBoneDensity(huSampling.overallMeanHU);
+  }, [huSampling.overallMeanHU]);
+
   const audit: ComprehensiveCbctPlanAudit = useMemo(() => {
     return performCbctPlanningAudit({
       toothFdi,
@@ -199,15 +210,42 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     });
   }, [toothFdi, implantPose, activeCanal, activeEnvelope, huSampling, patientName]);
 
+  // Evaluate 3D clearance to IAN nerve from @dental/shared
+  const sharedNerveClearance: LandmarkSafetyClearance = useMemo(() => {
+    if (!activeCanal) {
+      return {
+        landmarkType: "nerve",
+        landmarkNameRu: "Нижнечелюстной канал (IAN)",
+        centerlineDistanceMm: 0,
+        surfaceClearanceMm: 999,
+        thresholdMm: 2.0,
+        status: "safe",
+        clinicalRecommendationRu: "Канал не сегментирован",
+      };
+    }
+    const entryVec: [number, number, number] = [entryX, entryY, 0];
+    const apexVec: [number, number, number] = [audit.apexPoint.x, audit.apexPoint.y, 0];
+    const canalCenterVec: [number, number, number] = [activeCanal.center.x, activeCanal.center.y, 0];
+    return evaluateNerveClearance(entryVec, apexVec, diameterMm, [canalCenterVec], activeCanal.radiusMm);
+  }, [activeCanal, entryX, entryY, audit.apexPoint, diameterMm]);
+
+  // Mandatory red alert if clearance to IAN nerve is < 2.0 mm (corridor safety standard)
+  const isNerveCorridorBreached = Boolean(
+    hasRealVolume &&
+      activeCanal &&
+      (audit.nerveSafety.netClearanceToCanalWallMm < 2.0 ||
+        sharedNerveClearance.surfaceClearanceMm < 2.0),
+  );
+
   const drillSteps = useMemo(() => {
     return generateMischDrillSequence(boneQuality.mischClass, diameterMm, lengthMm);
   }, [boneQuality.mischClass, diameterMm, lengthMm]);
 
   useEffect(() => {
-    if (hasRealVolume && audit.nerveSafety.shouldTriggerAudioAlarm && isAudioEnabled) {
-      playNerveSafetyAudioAlarm(audit.nerveSafety.safetyStatus, isAudioEnabled);
+    if (hasRealVolume && (audit.nerveSafety.shouldTriggerAudioAlarm || isNerveCorridorBreached) && isAudioEnabled) {
+      playNerveSafetyAudioAlarm(isNerveCorridorBreached ? "danger" : audit.nerveSafety.safetyStatus, isAudioEnabled);
     }
-  }, [hasRealVolume, audit.nerveSafety.shouldTriggerAudioAlarm, audit.nerveSafety.safetyStatus, isAudioEnabled]);
+  }, [hasRealVolume, audit.nerveSafety.shouldTriggerAudioAlarm, isNerveCorridorBreached, audit.nerveSafety.safetyStatus, isAudioEnabled]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -249,7 +287,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   const pxApexX = audit.apexPoint.x * SCALE_PX_PER_MM;
   const pxApexY = audit.apexPoint.y * SCALE_PX_PER_MM;
 
-  const statusColor = audit.nerveSafety.isDangerous
+  const statusColor = isNerveCorridorBreached
     ? "#ef4444"
     : audit.nerveSafety.isWarning
       ? "#f59e0b"
@@ -270,6 +308,19 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
               </h3>
               <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--teal,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)]">
                 FDI #{toothFdi}
+              </span>
+              <span
+                className="px-2.5 py-0.5 rounded-full text-xs font-bold border transition-colors flex items-center gap-1"
+                style={{
+                  backgroundColor: hasRealVolume ? mischAssessment.bgBadgeHex : "var(--line)",
+                  borderColor: hasRealVolume ? mischAssessment.borderBadgeHex : "var(--line)",
+                  color: hasRealVolume ? mischAssessment.colorHex : "var(--muted)",
+                }}
+                data-testid="header-misch-badge"
+                title={mischAssessment.clinicalDescriptionRu}
+              >
+                <Activity size={12} />
+                <span>{hasRealVolume ? `Кость: ${mischAssessment.mischClass}` : "Кость: Misch N/A"}</span>
               </span>
             </div>
             <p className="text-xs text-[var(--muted)]">
@@ -322,19 +373,31 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
           </div>
         </div>
       ) : (
-        <div className={`nerve-alarm-banner ${audit.nerveSafety.safetyStatus}`}>
+        <div
+          className={`nerve-alarm-banner ${isNerveCorridorBreached ? "danger" : "safe"}`}
+          data-testid="nerve-safety-corridor-banner"
+        >
           <div className="flex items-center gap-2">
-            {audit.nerveSafety.isDangerous ? (
-              <ShieldAlert className="w-5 h-5 text-red-500 animate-bounce" />
-            ) : audit.nerveSafety.isWarning ? (
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
+            {isNerveCorridorBreached ? (
+              <ShieldAlert className="w-5 h-5 text-red-500 animate-bounce shrink-0" />
             ) : (
-              <ShieldCheck className="w-5 h-5 text-emerald-500" />
+              <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0" />
             )}
-            <span>{audit.nerveSafety.clinicalMessageRu}</span>
+            <span className={isNerveCorridorBreached ? "text-red-700 dark:text-red-300 font-bold" : ""}>
+              {isNerveCorridorBreached
+                ? `ТРЕВОГА БЕЗОПАСНОСТИ IAN: Зазор до нижнечелюстного нерва ${Math.min(audit.nerveSafety.netClearanceToCanalWallMm, sharedNerveClearance.surfaceClearanceMm).toFixed(1)} мм (< 2.0 мм порога). Риск парестезии!`
+                : audit.nerveSafety.clinicalMessageRu}
+            </span>
           </div>
-          <div className="text-xs font-bold px-2.5 py-1 rounded-md bg-[var(--paper-strong)]/85 text-[var(--ink)] border border-[var(--line)] backdrop-blur-sm shadow-sm">
-            Дистанция: {audit.nerveSafety.netClearanceToCanalWallMm.toFixed(1)} мм
+          <div
+            className={`text-xs font-bold px-2.5 py-1 rounded-md border backdrop-blur-sm shadow-sm ${
+              isNerveCorridorBreached
+                ? "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/50"
+                : "bg-[var(--paper-strong)]/85 text-[var(--ink)] border-[var(--line)]"
+            }`}
+            data-testid="nerve-clearance-indicator"
+          >
+            Дистанция: {Math.min(audit.nerveSafety.netClearanceToCanalWallMm, sharedNerveClearance.surfaceClearanceMm).toFixed(1)} мм (норма &ge; 2.0 мм)
           </div>
         </div>
       )}
@@ -358,7 +421,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
             <button
               type="button"
               onClick={handleResetCenter}
-              className="text-xs font-semibold text-[var(--teal,#0d9488)] hover:opacity-80 flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] transition-all min-h-[36px]"
+              className="text-xs font-semibold text-[var(--teal,#0d9488)] hover:opacity-80 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] transition-all min-h-[44px] min-w-[44px]"
             >
               <RotateCw size={12} />
               <span>Центрировать</span>
@@ -676,8 +739,16 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                   <Activity size={16} className="text-[var(--teal)]" />
                   {hasRealVolume ? "Измеренная плотность кости (Misch HU)" : "Оценка плотности кости (Misch)"}
                 </span>
-                <span className={`misch-badge-pill ${boneQuality.mischClass}`}>
-                  {hasRealVolume ? `Класс ${boneQuality.mischClass}` : "Не измерена"}
+                <span
+                  className={`misch-badge-pill ${mischAssessment.mischClass}`}
+                  style={{
+                    backgroundColor: hasRealVolume ? mischAssessment.bgBadgeHex : undefined,
+                    borderColor: hasRealVolume ? mischAssessment.borderBadgeHex : undefined,
+                    color: hasRealVolume ? mischAssessment.colorHex : undefined,
+                  }}
+                  data-testid="misch-classification-badge"
+                >
+                  {hasRealVolume ? `Класс ${mischAssessment.mischClass} (${mischAssessment.densityRangeRu})` : "Не измерена"}
                 </span>
               </div>
 
@@ -726,7 +797,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                   <div className="p-2.5 rounded-lg bg-[var(--teal-surface,#f0fdfa)] border border-[var(--teal,#0d9488)]/30 flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-[var(--ink)]">Средняя плотность ложа</div>
-                      <div className="text-[11px] text-[var(--muted)]">{boneQuality.classNameRu}</div>
+                      <div className="text-[11px] text-[var(--muted)]">{mischAssessment.classNameRu}</div>
                     </div>
                     <div className="text-base font-extrabold font-mono text-[var(--teal,#0d9488)]">
                       {huSampling.overallMeanHU} HU
@@ -734,6 +805,39 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                   </div>
                 </div>
               )}
+
+              {/* Surgical preparation protocol per Carl Misch D1–D5 classification */}
+              <div
+                className="p-3 rounded-xl border mt-2"
+                style={{
+                  borderColor: hasRealVolume ? mischAssessment.borderBadgeHex : "var(--line)",
+                  backgroundColor: hasRealVolume ? mischAssessment.bgBadgeHex : "var(--paper)",
+                }}
+                data-testid="misch-surgical-protocol-card"
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-xs font-bold" style={{ color: hasRealVolume ? mischAssessment.colorHex : "var(--ink)" }}>
+                    {hasRealVolume ? mischAssessment.classNameRu : "Классификация Misch (D1–D5)"}
+                  </div>
+                  <div
+                    className="text-[11px] font-bold font-mono px-2 py-0.5 rounded-full border"
+                    style={{
+                      color: hasRealVolume ? mischAssessment.colorHex : "var(--muted)",
+                      borderColor: hasRealVolume ? mischAssessment.borderBadgeHex : "var(--line)",
+                      backgroundColor: "var(--paper)",
+                    }}
+                  >
+                    Торк: {mischAssessment.recommendedTorqueNcm.min}–{mischAssessment.recommendedTorqueNcm.max} Н·см (цель {mischAssessment.recommendedTorqueNcm.target} Н·см)
+                  </div>
+                </div>
+                <div className="text-[11px] text-[var(--muted)] mt-1">
+                  Тактильное ощущение: {mischAssessment.tactileFeelRu} • Остеоинтеграция: {mischAssessment.healingMonths.mandible} мес. (н/ч) / {mischAssessment.healingMonths.maxilla} мес. (в/ч)
+                </div>
+                <div className="text-[11px] text-[var(--ink)] mt-2 leading-relaxed bg-[var(--paper-strong)] p-2.5 rounded-lg border border-[var(--line)]">
+                  <span className="font-semibold text-[var(--ink)]">Хирургический протокол остеотомии: </span>
+                  {mischAssessment.surgicalPreparationProtocolRu}
+                </div>
+              </div>
 
               <div className="pt-2">
                 <span className="text-xs font-bold text-[var(--ink)] block mb-1.5">
