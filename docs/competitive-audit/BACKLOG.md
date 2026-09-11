@@ -4010,11 +4010,23 @@
     * Тест: `apps/web/src/components/radiology/__tests__/implantProjectionSafety.test.ts` (12/12 PASS).
 * **Верификация**: все тесты Wave 120 (69/69 PASS: 57 shared + 12 web), монорепо `typecheck` Exit Code 0, `build -w @dental/shared` Exit Code 0, `check:encoding` 6679 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
-### Wave 121: Адаптация жизненного цикла заказов поставщикам (Purchase Orders) и приемки товаров на склад (DentalPin), автоопределение зубной дуги КЛКТ (DenCT)
+### Wave 121: Адаптация жизненного цикла заказов поставщикам (Purchase Orders) и приемки товаров на склад (DentalPin), автоопределение зубной дуги КЛКТ (DenCT), тотальная чистка промпт-утечек и фиктивных телефонов
 * **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
-* **Коммиты**: `dbab8d2e5`
+* **Коммиты**: `e9845eeb5`, `e6798b713`, `aa40b960a`
 * **Результаты**:
-  - **Движок заказов поставщикам и приемки на склад (`packages/shared/src/warehouse/purchaseOrderEngine.ts`)**:
+  - **Автоматическая эвристическая детекция зубной дуги КЛКТ из DenCT (`e9845eeb5`)**:
+    * Создан модуль `packages/shared/src/radiology/archDetect.ts`;
+    * Реализована функция `detectArchControlPoints(vol, opts)`:
+      1. MIP (Maximum Intensity Projection) по аксиальному срезу толщиной `slabHalfMm` (дефолт 6 мм) вокруг фокальной высоты `focalWorldZ` -> 2D карта плотности M(i, j);
+      2. Расчет центроида кости `(ci, cj)` по порогу `boneThreshold` (дефолт 400 HU) и перевод в мировые координаты `(cxw, cyw)`;
+      3. Радиальный поиск (ray sweeping) веером `angularSpanDeg` (дефолт 115°) от центроида для нахождения пиковой плотности альвеолярного гребня;
+      4. Сглаживание скользящим средним `smoothPolyline(pts, radius = 2)` для подавления воксельного шума;
+      5. Ресэмплинг по длине дуги `resampleByArcLength` к 9 контрольным точкам дуги панорамы;
+      6. Полная защита от дегенеративных объемов (возврат `null` при пустом объеме или нехватке кости);
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave121ArchDetect.test.ts` (6/6 PASS).
+  - **Движок заказов поставщикам и приемки на склад (`e6798b713`)**:
+    * Создан модуль `packages/shared/src/warehouse/purchaseOrderEngine.ts`;
     * Реализован жизненный цикл и строгая матрица допустимых переходов статусов: `DRAFT -> SENT -> CONFIRMED -> COMPLETED`, запрет переходов из терминальных состояний `CANCELLED` и `COMPLETED`;
     * Реализован копеечный расчет строк заказа `calculatePOLineTotal` с поддержкой ставок НДС (20%, 10%, 0%, EXEMPT — пп. 2 п. 2 ст. 149 НК РФ для медицинских изделий), а также цен без НДС и с учетом НДС;
     * Реализована автоматическая генерация заказов поставщикам `generatePurchaseOrderFromReorderSuggestions` на основе складских рекомендаций ROP из Wave 120 (`inventoryReorderEngine.ts`) с фильтрацией нулевых остатков и установкой статуса `DRAFT`;
@@ -4022,4 +4034,8 @@
     * Реализован генератор печатной формы договора-заказа `formatPurchaseOrderPrintSummary` со спецификацией товаров, реквизитами клиники и поставщика и строгим запретом эмодзи (Мандат 8d);
     * Экспорт в `packages/shared/src/warehouse/index.ts` и `packages/shared/src/index.ts`;
     * Тест: `packages/shared/src/warehouse/__tests__/wave121PurchaseOrderEngine.test.ts` (43/43 PASS).
-* **Верификация**: все тесты Wave 121 (49/49 PASS: 43 warehouse + 6 radiology), `typecheck -w @dental/shared` Exit Code 0, `build -w @dental/shared` Exit Code 0, `check:encoding` 6683 файлов 0 ошибок.
+  - **Тотальная чистка видимых промпт-утечек и фиктивных телефонов в UI (`aa40b960a`)**:
+    * Из 24 компонентов `apps/web/src/` вычищены утечки промптов (`Мандат 8e`, `Мандат 8k`, `Мандат 8i`, `Мандат 8n`) в кнопках, бейджах, подсказках и тултипах (ClinicalBundlesPanel, SurgerySafetyChecklist, VisitEndoProtocolWidget, VisitTherapyProtocolWidget, ImplantCrossSectionPlanner, EgiszCdaExportModal, DentalMedicalCard043uForm, TreatmentPlanCompletedActPrint, AppointmentModal, VisiographStudioCanvas, VisitSoapEditor, VisitDiarySection, NurseCarpuleDisposalModal, WarehousePackageWriteOffBar, DocumentsView, VisitView, InsurancePreAuthModal, VisitNoteDraftPanel, insuranceCatalogs, DmsGuaranteeLettersModal, DmsInsuranceManagerModal);
+    * В `PatientPlanView.tsx` и `PatientWebappPortalModal.tsx` ликвидированы фиктивные телефоны `+7 (800) 555-35-35` и `79991234567` в пользу пустой строки и динамических реквизитов клиники;
+    * В `implantSafetyEngine.ts` устранена регрессия TS2339 с прямым типизированным обращением к свойствам `MischDensityProfile`.
+* **Верификация**: все тесты Wave 121 (49/49 PASS: 43 warehouse + 6 radiology), `build -w @dental/shared` Exit Code 0, `typecheck -w @dental/web` Exit Code 0, `check:encoding` 6683 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
