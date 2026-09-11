@@ -105,6 +105,24 @@ export {
 	toothSetupEngine,
 	formatGuideValidationA4Protocol,
 	guideValidationEngine,
+	// Wave 128: Surgical Guide STL Export & Mesh Slicing Engine
+	triMeshToBinarySTL,
+	triangleSoupToBinarySTL,
+	parseBinarySTL,
+	sliceTriangleAt,
+	slicePlaneSegments,
+	buildTriangleBVH,
+	slicePlaneBVH,
+	sliceMeshByPlane,
+	chainSegmentsIntoPolylines,
+	calculateSleeveSitePlan,
+	calculateAnchorPinChannel,
+	STANDARD_SLEEVE_PRESETS,
+	DENTAL_PRINTER_PROFILES,
+	DENTAL_RESIN_PROFILES,
+	validatePrinterAndResinSettings,
+	formatGuide3DPrintProtocol,
+	guideExportEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";

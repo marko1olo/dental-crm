@@ -112,3 +112,7 @@ export {
 } from "./cbctRegistrationEngine.js";
 
 export * as cbctRegistrationEngine from "./cbctRegistrationEngine.js";
+
+// Wave 128: CBCT Mesh Slice & Surgical Guide STL Export Engine
+export * from "./guideExportEngine.js";
+export * as guideExportEngine from "./guideExportEngine.js";
