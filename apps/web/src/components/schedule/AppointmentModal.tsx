@@ -2,7 +2,9 @@ import {
 	type Appointment,
 	type AppointmentReadiness,
 	type Dashboard,
+	STOMX_APPT_REASONS_CATALOG,
 	STOMX_REFUSE_REASONS_CATALOG,
+	type StomxApptReasonMeta,
 } from "@dental/shared";
 import {
 	AlertCircle,
@@ -19,6 +21,7 @@ import {
 	PhoneCall,
 	Printer,
 	Repeat,
+	ShieldCheck,
 	User,
 	UserCheck,
 	UserPlus,
@@ -43,39 +46,59 @@ import { showToast } from "../GlobalToast";
 
 export const QUICK_APPOINTMENT_REASONS = [
 	{
-		label: "Острая боль (30 мин)",
-		reason: "Острая боль (Неотложная помощь / ст. 124 УК РФ)",
+		label: "Острая боль",
+		fullLabel: "Острая боль (30 мин)",
+		reason: "Острая боль (Неотложная помощь / Cito / ст. 124 УК РФ)",
 		durationMinutes: 30,
 		comment: "Экстренно: обращение с острой болью (ст. 124 УК РФ)",
 		status: "confirmed" as const,
 		tone: "emergency" as const,
 	},
 	{
-		label: "Консультация (30 мин)",
+		label: "Плановое обследование",
+		fullLabel: "Плановое обследование (30 мин)",
+		reason: "Плановое обследование полости рта",
+		durationMinutes: 30,
+		tone: "standard" as const,
+	},
+	{
+		label: "Повторно",
+		fullLabel: "Повторно (30 мин)",
+		reason: "Повторный приём / продолжение лечения",
+		durationMinutes: 30,
+		tone: "standard" as const,
+	},
+	{
+		label: "Лечение",
+		fullLabel: "Лечение (60 мин)",
+		reason: "Лечение кариеса / терапия / эстетическая реставрация",
+		durationMinutes: 60,
+		tone: "standard" as const,
+	},
+	{
+		label: "Консультация",
+		fullLabel: "Консультация (30 мин)",
 		reason: "Первичный осмотр и составление плана лечения",
 		durationMinutes: 30,
 		tone: "standard" as const,
 	},
 	{
-		label: "Терапия / Кариес (60 мин)",
-		reason: "Лечение кариеса / эстетическая реставрация",
-		durationMinutes: 60,
-		tone: "standard" as const,
-	},
-	{
-		label: "Профгигиена / AirFlow (60 мин)",
+		label: "Профгигиена",
+		fullLabel: "Профгигиена / AirFlow (60 мин)",
 		reason: "Комплексная гигиена полости рта (AirFlow + УЗ)",
 		durationMinutes: 60,
 		tone: "standard" as const,
 	},
 	{
-		label: "Удаление зуба (45 мин)",
+		label: "Удаление зуба",
+		fullLabel: "Удаление зуба (45 мин)",
 		reason: "Хирургический прием: удаление зуба / анестезия",
 		durationMinutes: 45,
 		tone: "standard" as const,
 	},
 	{
-		label: "Примерка / ЗТЛ (30 мин)",
+		label: "Примерка / ЗТЛ",
+		fullLabel: "Примерка / ЗТЛ (30 мин)",
 		reason: "Ортопедический прием: примерка / фиксация конструкции ЗТЛ",
 		durationMinutes: 30,
 		tone: "standard" as const,
@@ -85,21 +108,52 @@ export const QUICK_APPOINTMENT_REASONS = [
 export const TECHNICAL_BREAK_PRESETS = [
 	{
 		label: "Обед (60 мин)",
+		shortLabel: "Обед",
 		reason: "Служебный перерыв: Обед",
 		durationMinutes: 60,
 		comment: "Служебная бронь: Обед врача / персонала",
 	},
 	{
-		label: "Санобработка (30 мин)",
-		reason: "Технический перерыв: Санобработка",
+		label: "Перерыв (30 мин)",
+		shortLabel: "Перерыв",
+		reason: "Технический перерыв: Перерыв",
 		durationMinutes: 30,
-		comment: "Служебная бронь: Текущая дезинфекция и санобработка кабинета",
+		comment: "Служебная бронь: Перерыв врача",
+	},
+	{
+		label: "Отпуск",
+		shortLabel: "Отпуск",
+		reason: "Блокировка расписания: Отпуск",
+		durationMinutes: 480,
+		comment: "Служебная бронь: Отпуск врача",
 	},
 	{
 		label: "Учеба / Консилиум (120 мин)",
+		shortLabel: "Учеба",
 		reason: "Служебный перерыв: Учеба / Консилиум",
 		durationMinutes: 120,
 		comment: "Служебная бронь: Клинический консилиум / Обучение",
+	},
+	{
+		label: "Отсутствует",
+		shortLabel: "Отсутствует",
+		reason: "Блокировка расписания: Отсутствует",
+		durationMinutes: 120,
+		comment: "Служебная бронь: Врач отсутствует",
+	},
+	{
+		label: "Другое (блокировка)",
+		shortLabel: "Другое",
+		reason: "Служебный перерыв: Другое",
+		durationMinutes: 30,
+		comment: "Служебная бронь: Другое (блокировка)",
+	},
+	{
+		label: "Санобработка (30 мин)",
+		shortLabel: "Санобработка",
+		reason: "Технический перерыв: Санобработка",
+		durationMinutes: 30,
+		comment: "Служебная бронь: Текущая дезинфекция и санобработка кабинета",
 	},
 ] as const;
 
@@ -113,10 +167,22 @@ export function isTechnicalBreakAppointment(
 		r.includes("служебный перерыв") ||
 		r.includes("технический перерыв") ||
 		r.includes("служебная бронь") ||
+		r.includes("служебная блокировка") ||
 		r.includes("санобработка") ||
 		r.includes("обед") ||
+		r.includes("перерыв") ||
+		r.includes("отпуск") ||
+		r.includes("учеба") ||
+		r.includes("учёба") ||
+		r.includes("отсутствует") ||
 		r.includes("консилиум") ||
-		c.includes("служебная бронь")
+		r.includes("другое (блокировка)") ||
+		r.includes("другое (служебное)") ||
+		r.includes("блокировка") ||
+		c.includes("служебная бронь") ||
+		c.includes("служебная блокировка") ||
+		c.includes("технический интервал") ||
+		c.includes("блокировка")
 	);
 }
 
@@ -1080,7 +1146,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
 								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 									<User size={14} className="text-[var(--teal)]" />
-									<span>Пациент *</span>
+									<span>Пациент {isTechnicalBreak ? "(не требуется)" : "*"}</span>
 								</label>
 								<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
 									<button
@@ -1110,6 +1176,20 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									</button>
 								</div>
 							</div>
+
+							{isTechnicalBreak && !patientId && (
+								<div
+									className="mb-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2"
+									data-testid="technical-break-patient-free-banner"
+								>
+									<div className="flex items-center gap-2">
+										<Clock size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+										<span>
+											<strong>Режим технической блокировки:</strong> Слот забронирован для служебного перерыва врача ({reason || "Перерыв"}). Выбор пациента не требуется (Мандат 8e / 8n).
+										</span>
+									</div>
+								</div>
+							)}
 
 							{isInlineNewPatient ? (
 								<div
@@ -1639,34 +1719,55 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								placeholder="Например: Лечение кариеса, консультация, острая боль..."
 							/>
-							{/* Quick Clinical Purpose Presets */}
-							<div className="flex items-center gap-1.5 flex-wrap mt-2" data-testid="appointment-quick-reasons">
-								{QUICK_APPOINTMENT_REASONS.map((preset) => (
-									<button
-										key={preset.label}
-										type="button"
-										onClick={() => handleApplyReasonPreset(preset)}
-										className={`min-h-[44px] px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-											preset.tone === "emergency"
-												? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
-												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-										}`}
-										title={preset.reason}
-									>
-										{preset.label}
-									</button>
-								))}
-								{TECHNICAL_BREAK_PRESETS.map((preset) => (
-									<button
-										key={preset.label}
-										type="button"
-										onClick={() => handleApplyTechnicalBreakPreset(preset)}
-										className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer"
-										title={preset.comment}
-									>
-										{preset.label}
-									</button>
-								))}
+							{/* Quick Clinical Purpose & Doctor Blocking Intervals from StomX */}
+							<div className="space-y-2 mt-2.5" data-testid="appointment-quick-reasons">
+								<div className="flex items-center justify-between text-[11px] font-bold text-[var(--muted)]">
+									<span>Причины визита (StomX):</span>
+									<span className="text-[10px] uppercase text-[var(--teal)] font-extrabold">1-клик выбор</span>
+								</div>
+								<div className="flex items-center gap-1.5 flex-wrap">
+									{QUICK_APPOINTMENT_REASONS.map((preset) => (
+										<button
+											key={preset.label}
+											type="button"
+											data-testid={`chip-reason-${(preset as any).shortLabel || preset.label}`}
+											onClick={() => handleApplyReasonPreset(preset)}
+											className={`min-h-[44px] px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+												preset.tone === "emergency"
+													? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20 shadow-xs"
+													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+											}`}
+											title={preset.reason}
+										>
+											<span>{preset.label}</span>
+											{preset.tone === "emergency" && (
+												<span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider">
+													CITO
+												</span>
+											)}
+										</button>
+									))}
+								</div>
+
+								<div className="flex items-center justify-between text-[11px] font-bold text-amber-800 dark:text-amber-300 pt-1.5 border-t border-[var(--line)]/50">
+									<span>Технические блокировки расписания врача (без пациента / Мандат 8e):</span>
+									<span className="text-[10px] uppercase text-amber-600 dark:text-amber-400 font-extrabold">1-клик интервал</span>
+								</div>
+								<div className="flex items-center gap-1.5 flex-wrap" data-testid="appointment-doctor-blocks">
+									{TECHNICAL_BREAK_PRESETS.map((preset) => (
+										<button
+											key={preset.label}
+											type="button"
+											data-testid={`chip-block-${(preset as any).shortLabel || preset.label}`}
+											onClick={() => handleApplyTechnicalBreakPreset(preset)}
+											className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+											title={preset.comment}
+										>
+											<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<span>{preset.label}</span>
+										</button>
+									))}
+								</div>
 							</div>
 						</div>
 

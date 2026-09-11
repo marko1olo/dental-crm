@@ -78,6 +78,15 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 			return evaluatePatientSafetyFlags(currentProfile);
 		}, [currentProfile]);
 
+		const selectedRep = useMemo(() => {
+			if (!patient?.representativeType) return null;
+			return (
+				STOMX_REPRESENTATIVE_CATALOG.find(
+					(r) => r.nameRu === patient.representativeType || r.code === patient.representativeType,
+				) ?? null
+			);
+		}, [patient?.representativeType]);
+
 		const handleApplyNorm = useCallback(() => {
 			const cleanProfile = createHealthySomaticNormProfile();
 			if (onUpdateSafetyProfile) {
@@ -266,16 +275,18 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 					</div>
 
 					<div className="flex items-center gap-1.5 flex-wrap">
-						{STOMX_REPRESENTATIVE_CATALOG.slice(0, 8).map((rep) => {
-							const isSelected = patient?.representativeType === rep.nameRu;
+						{STOMX_REPRESENTATIVE_CATALOG.map((rep) => {
+							const isSelected =
+								patient?.representativeType === rep.nameRu ||
+								patient?.representativeType === rep.code;
 							return (
 								<button
 									key={rep.code}
 									type="button"
 									data-testid={`chip-representative-${rep.code}`}
-									className={`min-h-[36px] px-3 py-1.5 text-xs rounded-lg font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+									className={`min-h-[44px] px-3 py-1.5 text-xs rounded-xl font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
 										isSelected
-											? "bg-indigo-600 text-white border-indigo-600 dark:bg-indigo-600 dark:border-indigo-500"
+											? "bg-indigo-600 text-white border-indigo-600 dark:bg-indigo-600 dark:border-indigo-500 shadow-xs"
 											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
 									}`}
 									onClick={() => {
@@ -283,12 +294,68 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 										onUpdatePatient?.("representativeType", isSelected ? "" : rep.nameRu);
 									}}
 									disabled={disabled}
+									title={
+										rep.isLegalRepresentative
+											? `${rep.nameRu}: Законный представитель ребёнка (Право подписи ИДС по ст. 20 323-ФЗ / ст. 64 СК РФ)`
+											: `${rep.nameRu}: Член семьи (Для подписи ИДС за несовершеннолетнего требуется нотариальная доверенность)`
+									}
 								>
 									<span>{rep.nameRu}</span>
+									{rep.isLegalRepresentative && (
+										<span
+											className={`px-1 py-0.5 rounded text-[9px] font-black uppercase ${
+												isSelected
+													? "bg-white/20 text-white"
+													: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+											}`}
+										>
+											ИДС
+										</span>
+									)}
 								</button>
 							);
 						})}
 					</div>
+
+					{/* Automatic Statutory Legal Representative & IDS Signing Rights Notice (ст. 20 323-ФЗ / ст. 64 СК РФ) */}
+					{selectedRep && (
+						<div
+							className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 ${
+								selectedRep.isLegalRepresentative
+									? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+									: "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300"
+							}`}
+							data-testid="representative-ids-signing-badge"
+						>
+							<div className="flex items-center gap-2">
+								{selectedRep.isLegalRepresentative ? (
+									<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								) : (
+									<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								)}
+								<span>
+									{selectedRep.isLegalRepresentative ? (
+										<>
+											<strong>Законный представитель ребёнка:</strong> Имеет безусловное законное право подписывать информированное добровольное согласие (ИДС) за несовершеннолетнего (ст. 20 323-ФЗ и ст. 64 СК РФ).
+										</>
+									) : (
+										<>
+											<strong>Член семьи (не является законным представителем):</strong> Для подписания ИДС за несовершеннолетнего требуется нотариальная доверенность (ст. 20 323-ФЗ).
+										</>
+									)}
+								</span>
+							</div>
+							<span
+								className={`px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 border ${
+									selectedRep.isLegalRepresentative
+										? "bg-emerald-600 text-white border-emerald-700"
+										: "bg-amber-600 text-white border-amber-700"
+								}`}
+							>
+								{selectedRep.isLegalRepresentative ? "Право подписи ИДС: ДА" : "ИДС: по доверенности"}
+							</span>
+						</div>
+					)}
 
 					{patient?.representativeType && (
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">

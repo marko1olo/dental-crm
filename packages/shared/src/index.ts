@@ -34,6 +34,7 @@ export * from "./recalls/index.js";
 export * from "./tasks/index.js";
 export { INVERSE_RELATIONSHIP_MAP } from "./patients/index.js";
 export * from "./patients/index.js";
+export * from "./patients/stomxPatientTagsCatalog.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";

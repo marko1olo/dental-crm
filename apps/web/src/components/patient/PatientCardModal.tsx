@@ -22,6 +22,50 @@ import {
 	type PatientGeneralInfo,
 } from "./tabs/PatientGeneralInfoTab";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
+import {
+	STOMX_REPRESENTATIVE_CATALOG,
+	isStatutoryLegalRepresentative,
+	type StomxRepresentativeType,
+	type StomxRepresentativeTypeMeta,
+} from "@dental/shared";
+
+export {
+	STOMX_REPRESENTATIVE_CATALOG,
+	isStatutoryLegalRepresentative,
+	type StomxRepresentativeType,
+	type StomxRepresentativeTypeMeta,
+};
+
+/**
+ * Возвращает правовой статус представителя по ст. 20 323-ФЗ и СК РФ ст. 64
+ */
+export function getRepresentativeLegalStatus(type: string | null | undefined): {
+	isLegalRepresentative: boolean;
+	labelRu: string;
+	idsSigningAllowed: boolean;
+	descriptionRu: string;
+} {
+	if (!type) {
+		return {
+			isLegalRepresentative: false,
+			labelRu: "",
+			idsSigningAllowed: false,
+			descriptionRu: "Представитель не выбран",
+		};
+	}
+	const match = STOMX_REPRESENTATIVE_CATALOG.find(
+		(r) => r.nameRu === type || r.code === type,
+	);
+	const isLegal = match?.isLegalRepresentative ?? false;
+	return {
+		isLegalRepresentative: isLegal,
+		labelRu: match?.nameRu ?? type,
+		idsSigningAllowed: isLegal,
+		descriptionRu: isLegal
+			? "Законный представитель: имеет законное право подписывать ИДС за несовершеннолетнего (ст. 20 323-ФЗ и ст. 64 СК РФ)"
+			: "Член семьи: подписание ИДС за несовершеннолетнего требует нотариальной доверенности (ст. 20 323-ФЗ)",
+	};
+}
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;

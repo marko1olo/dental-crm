@@ -417,10 +417,22 @@ export function isTechnicalBreakAppointment(
 		r.includes("служебный перерыв") ||
 		r.includes("технический перерыв") ||
 		r.includes("служебная бронь") ||
+		r.includes("служебная блокировка") ||
 		r.includes("санобработка") ||
 		r.includes("обед") ||
+		r.includes("перерыв") ||
+		r.includes("отпуск") ||
+		r.includes("учеба") ||
+		r.includes("учёба") ||
+		r.includes("отсутствует") ||
 		r.includes("консилиум") ||
-		c.includes("служебная бронь")
+		r.includes("другое (блокировка)") ||
+		r.includes("другое (служебное)") ||
+		r.includes("блокировка") ||
+		c.includes("служебная бронь") ||
+		c.includes("служебная блокировка") ||
+		c.includes("технический интервал") ||
+		c.includes("блокировка")
 	);
 }
 

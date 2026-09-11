@@ -522,6 +522,8 @@ export const STOMX_REFUSE_REASON_BY_CODE = Object.freeze(
 	) as Record<StomxApptRefuseReason, StomxApptRefuseReasonMeta>,
 );
 
+export const STOMX_APPT_REFUSE_REASONS_CATALOG = STOMX_REFUSE_REASONS_CATALOG;
+
 // ============================================================================
 // 6. CLIENT ACTIVITY TIMELINE EVENT LABELS (СОБЫТИЯ И ЛОГИ ИЗ CLIENT_LABELS)
 // ============================================================================
