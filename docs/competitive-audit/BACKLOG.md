@@ -3874,3 +3874,31 @@
     * 7/7 тестовых сценариев: проверка 7 канонических типов звонков в каталоге, 14 пресетов расходов, автоматического маппинга кандидатов, рендеринга режима выемки в кассе с кнопками пресетов и отсутствия синтетических моков в обоих модулях.
 * **Верификация**: `apps/web/src/components/billing/__tests__/stomxCashOutAndTaskCallsAutonomyWave113.test.tsx` (7/7 PASS), `packages/shared/src/tests/stomxCatalogs.test.ts` (16/16 PASS), monorepo `typecheck` Exit Code 0, `check:encoding` 6653 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
+### Wave 115: Искоренение госпитального блоата (24ч замок, форма 003-В/у, скоринг банков), очистка синтетических моков и паритет StomX (4-state палитры кресел, 1-клик отказные причины, тач-таргеты 44px)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `8b35614b8`, `53a1c106a`, `5ff936f8d`
+* **Результаты**:
+  - **Искоренение синтетических моков, фейковых реквизитов и эмодзи (`8b35614b8`)**:
+    * `InsurancePreAuthModal.tsx`: куратор ДМС очищен от «Иванова Елена», пациент от «Иванов И.И.»;
+    * `ChairsidePreFlightChecklist.tsx`: дефолты врача и ассистента очищены от «Др. Смирнова Е. В.» и «Асс. Иванова М. А.» в пользу нейтральных «Лечащий врач» / «Ассистент»;
+    * `DmsInsuranceManagerModal.tsx` & `dmsInsurancePresets.ts`: вычищены «Иванов Сергей Александрович», фальшивый полис и массив `sampleRegistryVisits` заменен на чистый пустой список `[]`;
+    * `dmsSplitEngine.ts`: исключен хардкод ИНН `7701234567`;
+    * `PatientBillingModal.tsx`: вычищены хардкод ИНН `7701234567`, КПП, ОГРН, фиктивный паспорт Хамовники и фиктивный адрес Арбат;
+    * `PrescriptionPrintModal.tsx`: удалены эмодзи ⚠️ и ⚖️ в пользу векторных Lucide `AlertTriangle` и `Scale`;
+    * `PublicBookingWidget.tsx`: удален автозаполненный демо-телефон `+7 (999) 123-45-67`.
+    * Тест: `apps/web/src/components/insurance/__tests__/wave115MockPurification.test.ts` (6/6 PASS).
+  - **Искоренение 24-часовых замков, формы 003-В/у и банковских симуляторов (`53a1c106a`)**:
+    * `apps/api/src/routes/outpatient_v2.ts` & `outpatientCore.ts`: в `/api/outpatient/verify/visit/:visitId/lock-status` лечащий врач ВСЕГДА получает `isLocked: false` и `canEdit: true` без 24-часовой блокировки (`editableDeadline`) и очередей начмедов (Мандат 8e п. 4);
+    * `MedicalCardExtract003vuForm.tsx`, `clinicalHtmlRenderers.ts`, `forms003vu.ts`, `documentQuery.ts`: форма «003-В/у» заменена на легитимную выписку из стоматологической карты (Форма 043/у);
+    * `useDocumentPayloads.ts`, `useDocumentWorkflowModule.ts`, `usePatientIntakeLogic.ts`: устранены упоминания госпитальной карты 025/у в пользу Формы 043/у;
+    * `bankInstallmentEngine.ts`: ликвидирована функция-симулятор `simulateBankApproval` (Мандаты 8b, 8c, 8k);
+    * Тест: `apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts` (4/4 PASS).
+  - **4-state палитры рабочих мест StomX, отказные причины и тач-таргеты 44px (`5ff936f8d`)**:
+    * `packages/shared/src/types/schedule.ts`, `packages/shared/src/index.ts`, `schedule/index.ts`: реализован каталог `STOMX_WORKPLACE_PALETTES` (5 палитр: Лаванда, Синий, Роза, Олива, Песок) с 4 состояниями токенов: `bright_code`, `bright_dark`, `code`, `dark`;
+    * `ScheduleGrid.tsx`: шапки колонок кресел расписания подключены к палитрам StomX через `getStomxWorkplacePalette` и бейджи;
+    * `AppointmentCard.tsx`: 1-клик категоризация отказов и отмен с быстрым дропдауном `STOMX_REFUSE_REASONS_CATALOG`, статусными тегами и чипами;
+    * `PatientBillingModal.tsx`: все вкладки, быстрые суммы сдачи (1000, 2000, 5000, без сдачи), кнопки методов оплаты и действия подвала приведены к стандарту `min-h-[44px]` (Apple HIG / Мандат 8c).
+    * Тест: `apps/web/src/components/schedule/__tests__/wave115StomxParity.test.ts` (12/12 PASS).
+* **Верификация**: все тесты Wave 115 (22/22 PASS), монорепо `typecheck` Exit Code 0, `check:encoding` 6657 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
+
