@@ -759,7 +759,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                     Загрузите КЛКТ для измерения плотности кости и расстояния до IAN
                   </div>
                   <div className="text-[11px] text-[var(--muted)] mt-1 leading-relaxed max-w-sm mx-auto">
-                    Значения плотности ткани (HU) рассчитываются автоматически по 3D вокселям томограммы. Ручной ввод и аркадные ползунки отключены в соответствии со стандартами клинической достоверности (Мандат 8k).
+                    Значения плотности ткани (HU) рассчитываются автоматически по 3D вокселям томограммы. Ручной ввод и аркадные ползунки отключены в соответствии со стандартами клинической достоверности.
                   </div>
                 </div>
               ) : (
@@ -878,7 +878,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
               data-testid="add-implant-to-plan-btn"
               title={
                 audit.nerveSafety.isDangerous
-                  ? "Внимание: клиренс до нижнечелюстного канала < 1.0 мм. Добавить в план по клиническому решению врача (Мандат 8e)"
+                  ? "Внимание: клиренс до нижнечелюстного канала < 1.0 мм. Добавить в план по клиническому решению врача"
                   : undefined
               }
             >

@@ -129,7 +129,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 				"Плановый осмотр полости рта. Соматически здоров. Жалоб нет. Зубные ряды интактны, слизистая оболочка физиологической нормы.";
 			setTranscript(text);
 			showToast(
-				"Подставлен стандартный протокол осмотра (Мандат 8e). Собираю черновик...",
+				"Подставлен стандартный протокол осмотра. Собираю черновик...",
 				"info",
 				5000,
 			);
@@ -342,7 +342,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 								data-testid="btn-draft-somatic-norm-one-click"
 								onClick={applySomaticNormQuick}
 								className="px-3 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 min-h-[44px] inline-flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer"
-								title="Зафиксировать статус «Соматически здоров / норма» в 1 клик (Мандат 8e)"
+								title="Зафиксировать статус «Соматически здоров / норма» в 1 клик"
 							>
 								<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
 								<span>Норма в 1 клик</span>

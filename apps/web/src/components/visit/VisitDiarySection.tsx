@@ -740,7 +740,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							handleApplyFullPhysiologicalNorm();
 						}}
 						className="vde-043__btn"
-						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию (Мандат 8e)"
+						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
 					>
 						<CheckCircle2 className="w-4 h-4 text-emerald-500" />
 						Норма / Здоров

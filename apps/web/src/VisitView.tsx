@@ -1431,7 +1431,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									onClick={handlePrintForm043uFast}
 									data-testid="btn-visit-fast-print-043u"
 									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
-									title="Печать Формы 043/у в любой момент (Мандат 8e: если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
+									title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 								>
 									<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 									<span>Печать 043/у</span>

@@ -143,7 +143,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 								Клинические пакеты «под ключ» (1 клик)
 							</h3>
 							<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-								Мандат 8e
+								Быстрый ввод
 							</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20">
 								Приказ МЗ РФ №804н

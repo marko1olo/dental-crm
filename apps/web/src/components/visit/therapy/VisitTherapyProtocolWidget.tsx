@@ -292,7 +292,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 							</span>
 						</div>
 						<p className="text-xs text-slate-500 dark:text-slate-400">
-							Фиксация кариеса и реставраций за &le; 30 секунд (Мандаты 8e, 8k, 8n)
+							Фиксация кариеса и реставраций за &le; 30 секунд без лишней бюрократии
 						</p>
 					</div>
 				</div>

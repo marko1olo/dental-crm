@@ -450,7 +450,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								} disabled:opacity-50`}
 								title={
 									hasDeficit
-										? "Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Мандат 8e п. 10, Мандат 8n п. 2)"
+										? "Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой"
 										: "Провести списание расходных материалов ТМЦ"
 								}
 								data-testid="execute-act-writeoff-btn"

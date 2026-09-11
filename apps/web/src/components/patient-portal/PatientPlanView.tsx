@@ -230,8 +230,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	onRescheduleAppointment,
 	onDownloadTaxCertificate,
 	onViewPriceDetails,
-	emergencyPhone = "+7 (800) 555-35-35",
-	emergencyWhatsappNumber = "79991234567",
+	emergencyPhone = "",
+	emergencyWhatsappNumber = "",
 }) => {
 	// Diagnostic scans to render (defaults to real clinical samples)
 	const activeScans = scans ?? DEFAULT_PATIENT_SCANS;

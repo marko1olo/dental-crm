@@ -897,7 +897,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								type="button"
 								onClick={handleConvertToCito}
 								className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-								title="Пациент обратился с острой болью: перевести в CITO, разрешить овербукинг и включить CITO-подсветку в расписании (Мандаты 8e, 8k)"
+								title="Пациент обратился с острой болью: перевести в CITO, разрешить овербукинг и включить CITO-подсветку в расписании"
 								data-testid="convert-to-cito-btn"
 							>
 								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />

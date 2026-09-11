@@ -512,7 +512,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								onClick={handleEnableCorrection}
 								data-testid="btn-soap-enable-correction"
 								className="h-8 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-xs"
-								title="Приём закрыт. Нажмите для внесения правок с версионным аудитом (Мандат 8e: «Исправленному верить»)"
+								title="Приём закрыт. Нажмите для внесения правок с версионным аудитом («Исправленному верить»)"
 							>
 								<Edit3 className="w-3.5 h-3.5" />
 								<span>Внести исправление («Исправленному верить»)</span>

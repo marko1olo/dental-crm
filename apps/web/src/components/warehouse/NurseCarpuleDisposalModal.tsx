@@ -223,7 +223,7 @@ export function NurseCarpuleDisposalModal({
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold text-teal-800 dark:text-teal-200 flex items-center gap-1.5">
 								<Zap size={14} className="text-teal-600 shrink-0" />
-								<span>Пакетное списание в 1 клик (Мандаты 8e, 8k, 8n):</span>
+								<span>Пакетное списание в 1 клик:</span>
 							</span>
 							<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300">
 								Мягкий овердрафт активен
@@ -239,7 +239,7 @@ export function NurseCarpuleDisposalModal({
 								}}
 								className="btn-writeoff-anesthesia-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-teal-500/40 bg-[var(--paper,#ffffff)] text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer"
 								data-testid="btn-writeoff-anesthesia-packet"
-								title="Пакет: анестезия 1.7 мл + карпульная игла 30G + валики (Мандат 8e п. 10)"
+								title="Пакет: анестезия 1.7 мл + карпульная игла 30G + валики"
 							>
 								<Syringe size={16} className="text-teal-600 shrink-0" />
 								<span>Стандартная анестезия</span>
@@ -257,7 +257,7 @@ export function NurseCarpuleDisposalModal({
 								}}
 								className="btn-writeoff-hygiene-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-blue-500/40 bg-[var(--paper,#ffffff)] text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer"
 								data-testid="btn-writeoff-hygiene-packet"
-								title="Пакет: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка (Мандат 8e п. 10)"
+								title="Пакет: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка"
 							>
 								<PackageCheck size={16} className="text-blue-600 shrink-0" />
 								<span>Профгигиена</span>

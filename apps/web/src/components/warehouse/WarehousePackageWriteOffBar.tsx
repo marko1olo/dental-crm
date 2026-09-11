@@ -107,12 +107,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="flex items-center gap-2 text-xs font-bold text-[var(--ink,#0f172a)]">
 					<Zap size={16} className="text-teal-600 shrink-0" />
-					<span>1-Клик пакетное списание расходников (Мандаты 8e, 8k, 8n):</span>
+					<span>1-Клик пакетное списание расходников:</span>
 				</div>
 
 				<div
 					className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
-					title="Задержка накладной не блокирует прием врача (Мандат 8e п. 10)"
+					title="Задержка накладной не блокирует прием врача (мягкий овердрафт)"
 				>
 					<ShieldCheck size={14} className="shrink-0 text-teal-600" />
 					<span>Мягкий овердрафт активен (без блокировок)</span>

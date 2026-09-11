@@ -244,7 +244,7 @@ export const VisitEndoProtocolWidget: React.FC<VisitEndoProtocolWidgetProps> = (
 							</span>
 						</div>
 						<p className="text-xs text-slate-500 dark:text-slate-400">
-							Фиксация корневых каналов за 30 секунд без процедурных симуляторов (Мандаты 8e, 8k, 8n)
+							Фиксация корневых каналов за 30 секунд без лишней бюрократии
 						</p>
 					</div>
 				</div>

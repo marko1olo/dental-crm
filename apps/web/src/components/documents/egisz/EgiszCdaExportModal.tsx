@@ -438,7 +438,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 		showToast(
 			doctorSig
 				? "Печать формы с отметкой ЭЦП"
-				: "Печать черновика со штампом «ЧЕРНОВИК» (Мандат 8e)",
+				: "Печать черновика со штампом «ЧЕРНОВИК»",
 			"info",
 		);
 	}, [formType, currentClinic, currentPatient, currentDoctor, patientId, diagnosis, applianceType, doctorSig]);
@@ -1095,7 +1095,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							type="button"
 							className="egisz-btn egisz-btn-secondary"
 							onClick={handlePrintDraft}
-							title="Печать бланка (доступна всегда в 1 клик со штампом ЧЕРНОВИК при отсутствии ЭЦП, Мандат 8e)"
+							title="Печать бланка (доступна всегда в 1 клик со штампом ЧЕРНОВИК при отсутствии ЭЦП)"
 							style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 							data-testid="egisz-print-draft-btn"
 						>

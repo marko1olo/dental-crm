@@ -1250,32 +1250,15 @@ export function computeLiveImplantTelemetry(
 	let boneDensity: LiveBoneDensityTelemetry;
 	if (boneSample) {
 		const profile = boneSample.profile ?? getMischProfile(boneSample.bone);
-		const corticalDesc =
-			"corticalDescription" in profile
-				? profile.corticalDescription
-				: profile.corticalDescriptionRu;
-		const trabecularDesc =
-			"trabecularDescription" in profile
-				? profile.trabecularDescription
-				: profile.trabecularDescriptionRu;
+		const corticalDesc = profile.corticalDescription;
+		const trabecularDesc = profile.trabecularDescription;
 		const tissueDesc = [corticalDesc, trabecularDesc]
 			.filter(Boolean)
 			.join("; ");
 
-		const torque =
-			"expectedTorqueNcm" in profile
-				? profile.expectedTorqueNcm
-				: `${profile.recommendedTorqueNcm.min}–${profile.recommendedTorqueNcm.max} Н·см`;
-
-		const drilling =
-			"drillingProtocol" in profile
-				? profile.drillingProtocol
-				: profile.drillingProtocolRu;
-
-		const healing =
-			"recommendedHealingMonths" in profile
-				? profile.recommendedHealingMonths
-				: profile.healingMonths.mandible;
+		const torque = profile.expectedTorqueNcm;
+		const drilling = profile.drillingProtocol;
+		const healing = profile.recommendedHealingMonths;
 
 		boneDensity = {
 			isMeasured: true,

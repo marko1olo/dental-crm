@@ -636,7 +636,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 											handleBeginRevise();
 										}
 									}}
-									title="Внести исправление в закрытую карту 043/у («Исправленному верить») без согласований начмедов (Мандат 8e)"
+									title="Внести исправление в закрытую карту 043/у («Исправленному верить») без согласований начмедов"
 									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 								>
 									<FileEdit style={{ width: "16px", height: "16px" }} />
@@ -718,7 +718,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										}
 									}
 								}}
-								title="Печать чистого бланка Формы 043/у со строками «________» для ручного заполнения на приёме (Мандат 8e)"
+								title="Печать чистого бланка Формы 043/у со строками «________» для ручного заполнения на приёме"
 								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 							>
 								<Printer style={{ width: "16px", height: "16px" }} />
@@ -776,7 +776,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										}
 									}
 								}}
-								title="Печать карты 043/у в любой момент (Мандат 8e)"
+								title="Печать карты 043/у в любой момент"
 								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 							>
 								<Printer style={{ width: "16px", height: "16px" }} />

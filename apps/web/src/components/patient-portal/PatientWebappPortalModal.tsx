@@ -965,7 +965,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 										</p>
 										<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
 											<a
-												href="https://wa.me/79991234567"
+												href={profile.clinicPhone ? `https://wa.me/${profile.clinicPhone.replace(/\D/g, "")}` : "#"}
 												target="_blank"
 												rel="noreferrer"
 												className="pwa-action-btn-primary"

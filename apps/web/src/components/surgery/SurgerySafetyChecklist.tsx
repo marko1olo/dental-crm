@@ -186,7 +186,7 @@ export const SurgerySafetyChecklist: React.FC<SurgerySafetyChecklistProps> = ({
 				<div className="flex items-center justify-between gap-2">
 					<div className="flex items-center gap-1.5 text-xs font-black uppercase text-[var(--muted)] tracking-wider">
 						<HeartPulse size={15} className="text-[var(--teal,#0d9488)]" />
-						<span>4 фактора риска хирурга-стоматолога (Мандат 8i · Амбулаторный профиль):</span>
+						<span>4 фактора риска хирурга-стоматолога (Амбулаторный профиль):</span>
 					</div>
 					<span className="text-[11px] text-[var(--muted)] font-medium">
 						{hasSomaticRisks ? "Обнаружены соматические риски" : "Физиологическая норма"}

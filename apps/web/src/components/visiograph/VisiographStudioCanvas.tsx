@@ -1033,7 +1033,7 @@ export function VisiographStudioCanvas({
 								fontSize: "0.82rem",
 								cursor: "pointer",
 							}}
-							title="1-клик калибровка по стандартным датчикам RVG / ОПТГ (Мандат 8e, 8k)"
+							title="1-клик калибровка по стандартным датчикам RVG / ОПТГ"
 						>
 							<option value="" disabled>
 								Калибровка датчика...
