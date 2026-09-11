@@ -459,7 +459,7 @@ export function QuickAddDoctorModal({
 							className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
 							data-testid="quick-doctor-submit-btn"
 							style={{ minHeight: "44px" }}
-							title="Сохранить врача в расписание (Мандат 8e: 0 disabled кнопок)"
+							title="Сохранить врача в расписание"
 						>
 							<Check className="w-4 h-4" aria-hidden="true" />
 							<span>{isSubmitting ? "Сохранение..." : "Сохранить врача"}</span>

@@ -670,7 +670,7 @@ export function ScheduleFilterStrip({
 								}}
 								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 								role="menuitem"
-								title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e, без 403)"
+								title="Распечатать пустой договор со строками _______ для ручного заполнения"
 								data-testid="schedule-toolbar-print-blank-contract-btn"
 							>
 								<Printer size={14} className="text-[var(--teal,var(--brand-primary))]" />

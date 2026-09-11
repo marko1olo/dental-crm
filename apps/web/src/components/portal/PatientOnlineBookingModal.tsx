@@ -191,9 +191,9 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 	const [selectedTimeRu, setSelectedTimeRu] = useState<string>("");
 
 	// Step 3: Patient Information & SMS Verification
-	const [patientFullName, setPatientFullName] = useState<string>("Смирнова Екатерина Васильевна");
-	const [patientPhone, setPatientPhone] = useState<string>("+7 (926) 555-12-34");
-	const [patientBirthDate, setPatientBirthDate] = useState<string>("1988-06-14");
+	const [patientFullName, setPatientFullName] = useState<string>("");
+	const [patientPhone, setPatientPhone] = useState<string>("");
+	const [patientBirthDate, setPatientBirthDate] = useState<string>("");
 	const [patientComment, setPatientComment] = useState<string>("");
 	const [consent152Fz, setConsent152Fz] = useState<boolean>(true);
 

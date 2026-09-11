@@ -466,7 +466,7 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 		assert.notStrictEqual(toastEvent, null);
 		assert.strictEqual(
 			toastEvent?.text,
-			"Документ 043/у сохранен в локальной базе ЭМК клиники (Мандат 8n)",
+			"Документ 043/у сохранен в локальной базе ЭМК клиники",
 		);
 		assert.strictEqual(toastEvent?.type, "success");
 

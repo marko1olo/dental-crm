@@ -1093,7 +1093,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-blue-950 dark:text-blue-100">
 								<div className="flex items-center gap-2 font-bold">
 									<ShieldCheck size={14} className="text-blue-600 shrink-0" />
-									<span>100% Гарантийная переделка (Мандат 8e): стоимость списана в 0 ₽ без блокировок</span>
+									<span>100% Гарантийная переделка: стоимость списана в 0 ₽</span>
 								</div>
 								<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">Чек 0 ₽ / Гарантия</span>
 							</div>
@@ -1102,7 +1102,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-purple-950 dark:text-purple-100">
 								<div className="flex items-center gap-2 font-bold">
 									<ShieldCheck size={14} className="text-purple-600 shrink-0" />
-									<span>100% Скидка сотруднику (Мандат 8e): лечение персонала без мастер-паролей</span>
+									<span>100% Скидка сотруднику: лечение персонала</span>
 								</div>
 								<span className="text-[11px] font-mono text-purple-700 dark:text-purple-300">Чек 0 ₽ / Персонал</span>
 							</div>

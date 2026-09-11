@@ -381,7 +381,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 			),
 		);
 
-		showToast("Документ 043/у сохранен в локальной базе ЭМК клиники (Мандат 8n)", "success");
+		showToast("Документ 043/у сохранен в локальной базе ЭМК клиники", "success");
 	};
 
 	// ── 6. Send to EGISZ REMD ──
@@ -536,7 +536,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 		showToast(
 			currentDoc.doctorSignature
 				? "Печать протокола осмотра 043/у с отметкой ЭЦП"
-				: "Печать черновика формы 043/у со штампом «ЧЕРНОВИК» (Мандат 8e)",
+				: "Печать черновика формы 043/у со штампом «ЧЕРНОВИК»",
 			"info",
 		);
 	}, [currentDoc]);
@@ -614,7 +614,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 							type="button"
 							className="egisz-btn-secondary"
 							onClick={handlePrintForm043u}
-							title="Печать формы 043/у (доступна всегда в 1 клик со штампом ЧЕРНОВИК при отсутствии ЭЦП, Мандат 8e)"
+							title="Печать формы 043/у (доступна всегда в 1 клик со штампом ЧЕРНОВИК при отсутствии ЭЦП)"
 							style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "36px", padding: "0 12px" }}
 						>
 							<Printer size={16} />

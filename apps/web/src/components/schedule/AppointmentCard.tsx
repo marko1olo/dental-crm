@@ -1415,7 +1415,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
 												});
 											}}
-											title="Распечатать пустой договор со строками _______ для пациента (Мандат 8e, без 403)"
+											title="Распечатать пустой договор со строками _______ для пациента"
 											data-testid="appointment-card-print-blank-contract-btn"
 										>
 											<Printer size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />

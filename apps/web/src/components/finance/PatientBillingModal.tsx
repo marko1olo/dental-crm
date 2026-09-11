@@ -273,7 +273,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			[itemId]: nextVal,
 		}));
 		if (nextVal) {
-			setToastMsg("Гарантийная переделка 100%: стоимость позиции списана в 0 ₽ без паролей начмеда (Мандат 8e)");
+			setToastMsg("Гарантийная переделка 100%: стоимость позиции списана в 0 ₽");
 		} else {
 			setToastMsg("Гарантия снята: стандартная стоимость позиции возвращена");
 		}
@@ -799,7 +799,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
 								}`}
 								data-testid="btn-discount-colleague"
-								title="100% скидка для медицинского персонала и коллег (Мандат 8e)"
+								title="100% скидка для медицинского персонала и коллег"
 							>
 								<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 								<span>Персонал 100%</span>
@@ -883,7 +883,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					<div className="px-4 sm:px-6 py-2 bg-blue-50 dark:bg-blue-950/40 border-b border-blue-200 dark:border-blue-800 text-xs flex items-center justify-between gap-2 flex-wrap" data-testid="warranty-rework-banner">
 						<div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-200">
 							<ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-							<span>100% Гарантийная переделка (Мандат 8e): стоимость услуг списана в 0 ₽ без блокировок</span>
+							<span>100% Гарантийная переделка: стоимость услуг списана в 0 ₽</span>
 						</div>
 						<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">
 							Чек 0 ₽ / Гарантия
@@ -896,7 +896,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					<div className="px-4 sm:px-6 py-2 bg-purple-50 dark:bg-purple-950/40 border-b border-purple-200 dark:border-purple-800 text-xs flex items-center justify-between gap-2 flex-wrap" data-testid="colleague-discount-banner">
 						<div className="flex items-center gap-2 font-bold text-purple-900 dark:text-purple-200">
 							<ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
-							<span>100% Скидка сотруднику (Мандат 8e): лечение персонала без мастер-паролей</span>
+							<span>100% Скидка сотруднику: лечение персонала</span>
 						</div>
 						<span className="text-[11px] font-mono text-purple-700 dark:text-purple-300">
 							Чек 0 ₽ / Персонал

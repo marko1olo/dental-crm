@@ -625,7 +625,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 								className="roster-btn roster-btn-primary"
 								onClick={() => handleSaveAll(false)}
 								style={{ minHeight: "44px" }}
-								title="Сохранить изменения сетки кресел (Мандат 8e)"
+								title="Сохранить изменения сетки кресел"
 							>
 								<Save size={16} />
 								<span>Сохранить</span>
@@ -944,7 +944,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 								className="roster-btn roster-btn-primary"
 								onClick={handleAddNewDoctor}
 								style={{ minHeight: "44px" }}
-								title="Добавить врача в график (Мандат 8e — кнопка никогда не блокируется)"
+								title="Добавить врача в график"
 							>
 								<Check size={16} />
 								<span>Добавить врача</span>

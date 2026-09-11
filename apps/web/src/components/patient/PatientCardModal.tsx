@@ -175,7 +175,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
 								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800 text-[var(--ink,#1e293b)] dark:text-slate-200 inline-flex items-center gap-1.5 cursor-pointer"
-								title="Печать карты пациента (Мандат 8e)"
+								title="Печать карты пациента"
 							>
 								<Printer className="w-4 h-4" />
 								<span>Печать</span>
@@ -252,7 +252,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						) : (
 							<div className="flex flex-col gap-4">
 								<div className="p-3 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/50 rounded-xl text-xs text-teal-900 dark:text-teal-200">
-									Детальный клинический опросник и соматический статус (Мандат 8e п. 3). Врач правит только патологию.
+									Детальный клинический опросник и соматический статус. Врач фиксирует выявленную патологию.
 								</div>
 								<SomaticAnamnesisCard
 									initialProfile={safetyProfile}

@@ -263,7 +263,7 @@ export function PatientSearchModal({
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2 text-xs font-bold text-teal-950 dark:text-teal-200">
 								<UserPlus className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Быстрый пациент за 5 сек: ФИО + Телефон (Мандат 8n Solo Doctor)</span>
+								<span>Быстрое создание пациента: ФИО + Телефон</span>
 							</div>
 							<button
 								type="button"

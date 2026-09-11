@@ -914,7 +914,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								);
 							}}
 							className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-							title="Распечатать пустой типовой договор со строками _______ для ручного заполнения (Мандат 8e, без 403)"
+							title="Распечатать пустой типовой договор со строками _______ для ручного заполнения"
 							data-testid="new-appointment-print-blank-contract-btn"
 						>
 							<FileText size={14} className="text-amber-600 dark:text-amber-400" />
@@ -957,7 +957,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								data-testid="cito-overbooking-badge"
 								className="save-state font-semibold text-rose-700 dark:text-rose-300 text-xs flex items-center gap-1 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-lg"
 								role="alert"
-								title={`${collision.message || "CITO-овербукинг (острая боль)"}. Мягкий овербукинг разрешен (Мандат 8e)`}
+								title={`${collision.message || "CITO-овербукинг (острая боль)"}. Мягкий овербукинг разрешен`}
 							>
 								<Zap size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
 								<span>CITO-овербукинг (острая боль)</span>

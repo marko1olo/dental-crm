@@ -106,12 +106,12 @@ export function IncomingCallPopupModal({
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
 
-	// Effective call state (using store or rich fallback demo when mounted in standalone studio)
-	const effectivePhone = overridePhone || activeCall?.phone || "+7 (926) 555-01-92";
+	// Effective call state (using store or clean neutral fallback)
+	const effectivePhone = overridePhone || activeCall?.phone || "";
 	const effectiveCallerName =
 		overridePatientName ||
 		activeCall?.patientName ||
-		"Смирнова Екатерина Александровна";
+		"Пациент";
 	const effectiveProvider = activeCall?.provider || "mango";
 	const effectiveRecordingUrl =
 		recordingUrl ||
