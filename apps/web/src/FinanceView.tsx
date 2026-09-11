@@ -370,7 +370,9 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						<span>Клинические рекомендации и правила</span>
 						{clinicalRuleSummary && (
 							<span className="text-[11px] text-[var(--muted)] font-normal">
-								({clinicalRuleSummary})
+								({clinicalRuleSummary.unresolved > 0
+									? `${clinicalRuleSummary.unresolved} нерешённых`
+									: clinicalRuleSummary.activeRules ?? 0})
 							</span>
 						)}
 					</div>
