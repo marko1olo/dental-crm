@@ -242,7 +242,7 @@ describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autono
 			);
 			assert.equal(
 				DEFAULT_TELEGRAM_PREVIEW_PATIENT.fullName,
-				"Иванов Иван Иванович",
+				"",
 			);
 			assert.equal(
 				DEFAULT_TELEGRAM_PREVIEW_PATIENT.doctorName,

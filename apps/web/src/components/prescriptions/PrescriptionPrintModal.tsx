@@ -436,7 +436,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, initialSelectedDrugIds, onClose]);
 
-	const patientName = patient?.fullName || "Иванов Иван Иванович";
+	const patientName = patient?.fullName || "";
 	const patientBirth = patient?.birthDate || "1988-05-14";
 	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "043/у-2026/891";
 	const docName = doctorName || "Д-р Смирнова Анна Сергеевна";

@@ -74,7 +74,7 @@ export function FnsNdflXmlModal({
 			dashboard?.patients?.find((p) => p.id === targetId) ||
 			dashboard?.patients?.[0] || {
 				id: "sample-patient-1",
-				fullName: "Иванов Иван Иванович",
+				fullName: "",
 				birthDate: "1990-05-15",
 				phone: "+7 (999) 123-45-67",
 			}

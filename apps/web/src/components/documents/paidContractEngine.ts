@@ -827,7 +827,7 @@ export function createDefaultPaidContract(params: {
 			actingOnBasis: "Устава",
 		},
 		patient: {
-			fullName: params.patientFullName || "Иванов Иван Иванович",
+			fullName: params.patientFullName || "",
 			birthDate: params.patientBirthDate || "15.05.1990",
 			gender: "Мужской",
 			passportSeries: "45 10",

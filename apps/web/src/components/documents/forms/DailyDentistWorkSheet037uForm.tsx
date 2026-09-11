@@ -18,7 +18,7 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 			initialPayload?.shiftDate ?? new Date().toISOString().slice(0, 10),
 		);
 		const [doctorName, setDoctorName] = useState(
-			initialPayload?.doctorFullName ?? "Иванов Иван Иванович",
+			initialPayload?.doctorFullName ?? "",
 		);
 		const [records, setRecords] = useState<DailyPatientRecord037u[]>(() => {
 			return (
