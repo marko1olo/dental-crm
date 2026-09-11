@@ -20,6 +20,7 @@ export * from "./finance/index.js";
 export * from "./finance/stomxCashFlowCatalogs.js";
 export * from "./imaging/index.js";
 export type { MischBoneClass } from "./radiology/boneQualityClassification.js";
+export { interpolateNerveSpline3D } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
 export { GOST_CRYPTO_OIDS } from "./egisz/index.js";

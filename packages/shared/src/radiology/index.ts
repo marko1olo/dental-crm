@@ -27,3 +27,4 @@ export {
 } from "./implantSafetyClearance.js";
 export * from "./implantSafetyClearance.js";
 export * from "./boneQualityClassification.js";
+export * from "./nerveCanalSpline.js";
