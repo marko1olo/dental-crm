@@ -4,9 +4,12 @@ import {
 	type OutpatientSpecialty,
 	type PopulateTemplateParams,
 	populateOutpatientTemplateText,
+	STOMX_ALL_448_TEMPLATES_INDEX,
 	STOMX_KEY_CLINICAL_PROTOCOLS,
 	STOMX_SPECIALTIES,
+	searchAll448Templates,
 	searchOutpatientProtocols,
+	type StomxOutpatientTemplateMetadata,
 } from "@dental/shared";
 import {
 	Check,
@@ -76,6 +79,42 @@ const SPECIALTY_BADGE_COLORS: Record<OutpatientSpecialty, string> = {
 	periodontics:
 		"bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
 };
+
+/**
+ * Преобразует шаблон StomX из каталога 448 шаблонов в полноценный клинический протокол Формы 043/у (SOAP)
+ */
+export function resolveProtocolFromTemplate(
+	tpl: StomxOutpatientTemplateMetadata,
+): OutpatientProtocolTemplate {
+	const exact = STOMX_KEY_CLINICAL_PROTOCOLS.find(
+		(p) =>
+			p.stomxId === tpl.id ||
+			p.id === String(tpl.id) ||
+			p.name.toLowerCase() === tpl.name.toLowerCase(),
+	);
+	if (exact) {
+		return exact;
+	}
+
+	return {
+		id: `stomx_${tpl.id}`,
+		stomxId: tpl.id,
+		specialty: tpl.specialty,
+		subcategory: tpl.categoryName,
+		name: tpl.name,
+		mkbCode: tpl.mkbCode,
+		mkbName: tpl.name,
+		complaint: `Жалобы по протоколу ${tpl.name}: дискомфорт, боли или дефект твердых тканей в области __ зуба.`,
+		anamnesis: `Соматически здоров. Аллергологический анамнез не отягощен. Ранее по поводу ${tpl.name} в __ зубе лечение не проводилось.`,
+		objectiveStatus: `Объективный осмотр: в __ зубе определяется ${tpl.name}. Перкуссия безболезненна, зондирование по клиническому протоколу, слизистая оболочка десны интактна.`,
+		diagnosis: `${tpl.mkbCode} ${tpl.name}`,
+		treatmentProtocol: `Выполнено лечение по клиническим рекомендациям СтАР (${tpl.name} в __ зубе): антисептическая обработка, препарирование / обработка, пломбирование / фиксация по протоколу.`,
+		recommendations:
+			"Соблюдение гигиены полости рта, щадящая диета на стороне вмешательства 24 часа. Плановый осмотр через 6 месяцев.",
+		defaultTooth: 16,
+		tags: [tpl.categoryName, tpl.mkbCode, tpl.specialty],
+	};
+}
 
 /**
  * Редактор амбулаторной карты 043/у (SOAP) с быстрым выбором протоколов StomX
@@ -250,10 +289,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		[isLocked, isCorrectionMode],
 	);
 
-	// Фильтрация протоколов StomX
+	// Фильтрация протоколов StomX среди всех 448 шаблонов
 	const filteredProtocols = useMemo(() => {
 		const specFilter = activeSpecialty === "all" ? undefined : activeSpecialty;
-		return searchOutpatientProtocols(searchQuery, specFilter);
+		const matchingTemplates = searchAll448Templates(searchQuery, specFilter);
+		return matchingTemplates.map(resolveProtocolFromTemplate);
 	}, [searchQuery, activeSpecialty]);
 
 	// Применение протокола StomX
@@ -489,7 +529,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						)
 					)}
 
-					{/* Кнопка "Шаблоны 043/у StomX" (Мандат 8e: никогда не disabled!) */}
+					{/* Кнопка "Шаблоны 043/у (448)" (Мандат 8e: никогда не disabled!) */}
 					<button
 						type="button"
 						onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
@@ -498,7 +538,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						title="Открыть каталог 448 клинических шаблонов 043/у из StomX"
 					>
 						<Sparkles className="w-3.5 h-3.5" />
-						<span>Шаблоны 043/у StomX</span>
+						<span>Шаблоны 043/у (448)</span>
 					</button>
 
 					{/* Физиологическая норма в 1 клик (Мандат 8e: никогда не disabled!) */}
@@ -584,10 +624,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							onClick={() => setActiveSpecialty("all")}
 							className={`h-7 px-2.5 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${activeSpecialty === "all" ? "bg-teal-600 text-white" : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"}`}
 						>
-							Все протоколы ({STOMX_KEY_CLINICAL_PROTOCOLS.length})
+							Все протоколы ({STOMX_ALL_448_TEMPLATES_INDEX.length})
 						</button>
 						{STOMX_SPECIALTIES.map((spec) => {
-							const count = STOMX_KEY_CLINICAL_PROTOCOLS.filter(
+							const count = STOMX_ALL_448_TEMPLATES_INDEX.filter(
 								(p) => p.specialty === spec.id,
 							).length;
 							const isActive = activeSpecialty === spec.id;

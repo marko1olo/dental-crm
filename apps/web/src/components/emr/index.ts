@@ -37,4 +37,4 @@ export {
 	type LocalAnesthesiaType,
 	type AnestheticDrug,
 } from "./protocolGenerator/index";
-
+export * from "./VisitSoapEditor.js";
