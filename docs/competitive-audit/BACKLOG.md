@@ -4111,3 +4111,31 @@
     * **Ликвидировано 100-кратное завышение суммы прописью**: в `apps/api/src/documents/moneyWordsRu.ts` создана функция `legalMoneyInWordsFromKopecksRu`, подключена к таблице услуг в `renderDocument.ts:1521` (коммит `e06becdf4`).
 * **Верификация**: все тесты Wave 124 (39/39 PASS: 8 arch detect + 31 patient relationships), `moneyWordsRu.test.ts` PASS, `npm run check:encoding` 6696 файлов 0 ошибок.
 
+### Wave 125: Ортопедически-ориентированное планирование имплантации (DenCT) & Пародонтологические индексы SEPA (DentalPin)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]` (300/300 фич, 100% паритет)
+* **Результаты**:
+  - **Ортопедически-ориентированное планирование имплантации (`packages/shared/src/radiology/toothSetupEngine.ts`, фича 299)**:
+    * `PrincipalAxis` & `principalAxis`: 3D PCA анализ набора точек коронки/wax-up (центроид, 3x3 ковариационная матрица, `jacobiEigenSymmetric`, выбор максимального собственного вектора, расчет проекционного размаха extent = max - min).
+    * `anglesFromWorldAxis`: обратное преобразование мирового единичного вектора оси импланта в букко-лингвальный (BL) и мезио-дистальный (MD) углы наклона в локальной системе координат зубной дуги (`ArchFrame`). Взаимно-однозначное обращение функции `implantAxis`.
+    * `orientAxisByBone`: ориентация апикального направления винтовой шахты в сторону более плотной кости (HU) за пределами коронки с автодетекцией челюсти (верхняя/нижняя).
+    * `suggestImplantFromMesh`: вычисление предложения установки импланта на апикальном крае коронки (платформа на `centroid + axis * (extent / 2)`), привязка к зубной дуге через `nearestArchFrame`, расчет углов наклона.
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`.
+    * Тест: `packages/shared/src/radiology/__tests__/wave125ToothSetup.test.ts` (18/18 PASS).
+  - **Пародонтологические индексы SEPA и стадирование AAP/EFP 2018 (`packages/shared/src/clinical/perioIndicesEngine.ts`, фича 300)**:
+    * Канонические 6 зон зондирования SEPA (`MV`, `V`, `DV`, `ML`, `L`, `DL`), `SITES_PER_TOOTH = 6`, `DEEP_POCKET_THRESHOLD_MM = 5`;
+    * Теоретический знаменатель: $\text{total\_sites} = 6 \times \#(\text{present teeth})$ — исключает инфляцию процентов на частично заполненных картах; отсутствующие зубы исключаются из числителя и знаменателя;
+    * `computeBoPPct`: процент кровоточивости при зондировании;
+    * `computePlaqueIndexPct`: процент зубного налета / бляшки;
+    * `computeMeanCalMm`: средняя клиническая потеря прикрепления (CAL = PD + GM);
+    * `countDeepPockets`: количество уникальных зубов с глубиной зондирования $\ge 5$ мм;
+    * `determineAapEfpStage`: классификация стадий пародонтита AAP/EFP 2018 (`health_gingivitis`, `I`, `II`, `III`, `IV`);
+    * `computePerioIndices`: расчет сводного диагностического профиля;
+    * `formatPerioIndicesA4Summary`: медицинский протокол пародонтологического обследования для Формы 043/у строго без эмодзи (Мандат 8d п. 7);
+    * Экспорт в `packages/shared/src/clinical/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/clinical/__tests__/wave125PerioIndices.test.ts` (23/23 PASS).
+  - **Очистка реквизитов и фейковых телефонов в документах (коммит `3c8372b16`)**:
+    * Санитизированы захардкоженные реквизиты ООО «ДЕНТЕ СТОМАТОЛОГИЯ», чужой ИНН Сбербанка 7707083893, КПП, ОГРН, фиктивный московский адрес и телефон `+7 (495) 777-22-11` во всех модальных окнах договоров (`DocumentsView.tsx`, `ClinicalVisitPackageModal.tsx`, `PrimaryIntakePackageModal.tsx`, `SurgicalPackageModal.tsx`, `TaxDeductionModal.tsx`);
+    * Санитизирован фоллбэк телефона `+7 (999) 000-00-00` в `PublicOnlineBookingWidget.tsx`.
+* **Верификация**: 41 unit-тест Wave 125 (18 tooth setup + 23 perio indices, 100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `npm run check:encoding` 6702 файлов 0 ошибок. Все 5 живых скриншотов проверены мультимодальным зрением (MD5 уникальны, размер $\ge 57$–257 КБ, 0 эмодзи, WCAG AAA).
+
+
