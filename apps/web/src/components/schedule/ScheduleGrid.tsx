@@ -170,6 +170,26 @@ export function formatDoctorShortName(fullName: string): string {
 	return `${lastName} ${firstInitial}${middleInitial}`.trim();
 }
 
+export function isAppointmentInChair(status: string | undefined | null): boolean {
+	if (!status) return false;
+	const s = String(status).toLowerCase();
+	return s === "in_treatment" || s === "in_progress";
+}
+
+export function getNormalizedAppointmentStatusLabel(
+	status: string | undefined | null,
+	labels?: Record<string, string>,
+): string {
+	if (!status) return "";
+	const s = String(status).toLowerCase();
+	if (s === "in_treatment" || s === "in_progress") return "В кресле";
+	if (labels) {
+		if (labels[s]) return labels[s];
+		if (labels[status]) return labels[status];
+	}
+	return status;
+}
+
 export interface ScheduleGridProps {
 	dashboard: Dashboard;
 	dateKey: string;
@@ -1995,6 +2015,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														prev === chair.id ? null : chair.id,
 													);
 												}}
+												style={{ display: "none" }}
 												className="hidden text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2 py-0.5 rounded-lg border border-[var(--teal)]/30 shrink-0 cursor-pointer hover:bg-[var(--teal-surface)] transition-colors items-center gap-1 max-w-[170px] truncate"
 												title={`Врач: ${assignment.doctorName} (${assignment.shiftHours || "смена"}). Нажмите для смены в 1 клик`}
 												aria-label={`Дежурный врач: ${assignment.doctorName}`}
@@ -2118,7 +2139,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									)}
 									{doctors.length >= 1 && (
 										<div
-											className="flex flex-col sm:flex-row items-center justify-center w-full my-0.5 gap-1 min-h-[44px] sm:min-h-0 cursor-pointer"
+											className="flex flex-col xl:flex-row items-center justify-center w-full my-0.5 gap-1 min-h-[44px] sm:min-h-0 cursor-pointer"
 											data-testid={`chair-doctor-badge-${chair.id}`}
 											title={assignment?.doctorName ? `Врач на смене: ${assignment.doctorName} (${assignment.shiftHours || "08:00–20:00"}). Нажмите для смены` : undefined}
 											aria-label={assignment?.doctorName ? `Врач ${assignment.doctorName}, ${assignment.shiftHours || "08:00–20:00"}. Нажмите для изменения` : undefined}
@@ -2146,7 +2167,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full sm:w-auto sm:min-w-[130px] sm:max-w-none truncate cursor-pointer h-6"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full xl:w-auto min-w-0 xl:min-w-[120px] truncate cursor-pointer h-6"
 												title="Закрепление врача за креслом в 1 клик (выбор из списка)"
 												data-testid={`chair-duty-doctor-select-${chair.id}`}
 												aria-label={`Дежурный врач для ${chair.name}`}
@@ -2192,7 +2213,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full sm:w-auto sm:min-w-[125px] truncate cursor-pointer h-6"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full xl:w-auto min-w-[130px] max-w-none whitespace-nowrap cursor-pointer h-6 shrink-0"
 												title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день)"
 												data-testid={`chair-shift-select-${chair.id}`}
 												aria-label={`Смена для ${chair.name}`}
@@ -2862,7 +2883,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														</button>
 													)}
 													{/* StomX / IDENT Shift Coverage Strip (Only show when not full day to eliminate duplicate chips) */}
-													{!(assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8 && sEnd >= 20)) && (
+													{Boolean(!doctors || doctors.length === 0) && !(assignment!.shiftPreset === "full" || (!assignment!.shiftPreset && sStart <= 8 && sEnd >= 20)) && (
 														<div
 															className="grid grid-cols-2 gap-1 w-full text-[10px] font-medium"
 															data-testid={`chair-shift-strip-${chair.id}`}
@@ -3295,7 +3316,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	? "bg-rose-500/20 border-rose-500 text-rose-900 dark:text-rose-100 ring-2 ring-rose-500/60 font-bold"
 																	: a.status === "confirmed"
 																		? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
-																		: a.status === "in_treatment" || (a.status as string) === "in_progress"
+																		: isAppointmentInChair(a.status)
 																			? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]"
 																		: a.status === "arrived"
 																				? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
@@ -3540,7 +3561,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																					handleAppointmentMouseLeave();
 																				}}
 																				className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-																					a.status === "in_treatment" || (a.status as string) === "in_progress"
+																					isAppointmentInChair(a.status)
 																						? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
 																						: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
 																				}`}
@@ -3719,7 +3740,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																			}
 																		}}
 																		className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 ${
-																			a.status === "in_treatment" || (a.status as string) === "in_progress"
+																			isAppointmentInChair(a.status)
 																				? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 																				: a.status === "arrived"
 																					? "bg-amber-500 text-white shadow-xs"
@@ -3729,17 +3750,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																							? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
 																							: "bg-[var(--paper)]/80 text-[var(--ink)]"
 																		}`}
-																		title={`Статус: ${(appointmentLabels as any)[a.status] || ((a.status as string) === "in_progress" ? "В кресле" : a.status)}. Нажмите для быстрой смены в 1 клик`}
-																		aria-label={`Сменить статус визита, текущий: ${(appointmentLabels as any)[a.status] || ((a.status as string) === "in_progress" ? "В кресле" : a.status)}`}
+																		title={`Статус: ${getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}. Нажмите для быстрой смены в 1 клик`}
+																		aria-label={`Сменить статус визита, текущий: ${getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}`}
 																		data-testid={`appointment-card-status-badge-${a.id}`}
 																	>
-																		{(a.status === "in_treatment" || (a.status as string) === "in_progress") && (
+																		{isAppointmentInChair(a.status) && (
 																			<span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
 																		)}
-																		{a.status === "completed" && (
+																		{String(a.status).toLowerCase() === "completed" && (
 																			<Check size={11} className="shrink-0 text-current" />
 																		)}
-																		<span>{(appointmentLabels as any)[a.status] || ((a.status as string) === "in_progress" ? "В кресле" : a.status)}</span>
+																		<span>{getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}</span>
 																	</button>
 
 																	{activeStatusPickerApptId === a.id && onQuickStatusChange && (
@@ -3790,7 +3811,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																					setActiveStatusPickerApptId(null);
 																				}}
 																				className={`w-full text-left min-h-[36px] px-2 py-1 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-																					a.status === "in_treatment" || (a.status as string) === "in_progress"
+																					isAppointmentInChair(a.status)
 																						? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
 																						: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
 																				}`}
@@ -3978,7 +3999,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						setActiveMenuApptId(null);
 																					}}
 																					className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-																						a.status === "in_treatment" || (a.status as string) === "in_progress"
+																						isAppointmentInChair(a.status)
 																							? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
 																							: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
 																					}`}
@@ -4577,7 +4598,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								<span>{mStart} – {mEnd} · {selectedMobileAppt.reason || "Прием"}</span>
 								<span
 									className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 inline-flex items-center gap-1 ${
-										selectedMobileAppt.status === "in_treatment" || (selectedMobileAppt.status as string) === "in_progress"
+										isAppointmentInChair(selectedMobileAppt.status)
 											? "bg-[var(--teal,var(--brand-primary))] text-white"
 											: selectedMobileAppt.status === "arrived"
 												? "bg-amber-500 text-white"
@@ -4588,12 +4609,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														: "bg-[var(--paper-soft)] text-[var(--ink)]"
 									}`}
 								>
-									{(selectedMobileAppt.status === "in_treatment" || (selectedMobileAppt.status as string) === "in_progress") && (
+									{isAppointmentInChair(selectedMobileAppt.status) && (
 										<span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
 									)}
 									<span>
-										{(appointmentLabels as any)[selectedMobileAppt.status] ||
-											((selectedMobileAppt.status as string) === "in_progress" ? "В кресле" : selectedMobileAppt.status)}
+										{getNormalizedAppointmentStatusLabel(selectedMobileAppt.status, appointmentLabels)}
 									</span>
 								</span>
 							</div>
@@ -4776,7 +4796,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										setSelectedMobileAppt(null);
 									}}
 									className={`min-h-[44px] px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer ${
-										selectedMobileAppt.status === "in_treatment" || (selectedMobileAppt.status as string) === "in_progress"
+										isAppointmentInChair(selectedMobileAppt.status)
 											? "bg-[var(--teal,var(--brand-primary))] text-white border border-[var(--teal)] font-bold shadow-xs"
 											: "bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)]"
 									}`}

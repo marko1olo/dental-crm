@@ -64,6 +64,7 @@ import {
 	type WorkspacePerspective,
 	perspectiveDescriptions,
 	perspectiveLabels,
+	perspectiveShortLabels,
 	usePerspectiveStore,
 } from "./store/perspectiveStore";
 import {
@@ -523,7 +524,8 @@ export function PerspectiveSwitcher() {
 		<details className="workspace-role-switcher workspace-perspective-switcher" aria-label="Клинический режим">
 			<summary title={perspectiveDescriptions[perspective]}>
 				<span className="hidden 2xl:inline">Режим</span>
-				<strong>{perspectiveLabels[perspective]}</strong>
+				<strong className="hidden 2xl:inline">{perspectiveLabels[perspective]}</strong>
+				<strong className="2xl:hidden">{perspectiveShortLabels[perspective] || perspectiveLabels[perspective]}</strong>
 				<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
 			</summary>
 			<div className="role-switcher-options">
@@ -682,14 +684,14 @@ export function WorkspaceTopbar({
 
 	return (
 		<header className="topbar">
-			<div className="topbar-context">
-				<div className="topbar-clinic min-w-0 max-w-[280px] shrink-0 sm:min-w-[180px]">
+			<div className="topbar-context min-w-0 flex-1 overflow-hidden">
+				<div className="topbar-clinic min-w-0 max-w-[240px] shrink sm:min-w-[140px]">
 					<p className="eyebrow truncate">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
 					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden">{formatDisplayClinicName(clinicName)}</h1>
 				</div>
-				<div className="topbar-selectors shrink-0 mr-3">
+				<div className="topbar-selectors shrink-0 flex items-center gap-1.5 mr-2">
 					<details
 						className="workspace-role-switcher"
 						aria-label={workspaceTopbarLabels.role.region}

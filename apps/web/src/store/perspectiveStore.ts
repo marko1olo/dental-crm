@@ -21,6 +21,15 @@ export const perspectiveLabels: Record<WorkspacePerspective, string> = {
 	orthodontic: "Ортодонтия (Таймлайн)",
 };
 
+export const perspectiveShortLabels: Record<WorkspacePerspective, string> = {
+	standard: "Стандарт",
+	chairsider: "У кресла",
+	frontdesk: "Ресепшн",
+	pediatric: "Детский",
+	presentation: "2-й экран",
+	orthodontic: "Ортодонтия",
+};
+
 export const perspectiveDescriptions: Record<WorkspacePerspective, string> = {
 	standard: "Полный рабочий стол со всеми клиническими и административными модулями.",
 	chairsider: "Крупные тач-кнопки ≥64px, голосовое управление без рук, быстрый доступ к КТ.",

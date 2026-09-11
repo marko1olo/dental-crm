@@ -375,29 +375,33 @@ export function ScheduleFilterStrip({
 								member?.active &&
 								(member?.role === "doctor" || member?.role === "owner"),
 						)
-						.map((member) => (
-							<button
-								key={member.id}
-								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center flex-shrink-0 select-none`}
-								style={{ flexShrink: 0, whiteSpace: "nowrap", minWidth: "fit-content" }}
-								onClick={() =>
-									setScheduleDoctorFilterId(
-										scheduleDoctorFilterId === member.id ? null : member.id,
-									)
-								}
-								title={`Фильтр по врачу: ${member?.fullName || "Врач"}`}
-							>
-								<span className="shrink-0 whitespace-nowrap min-w-fit">
-									{member?.fullName
-										?.split(" ")
-										.map((part, index) => (index === 0 ? part : `${part[0]?.toUpperCase() || ""}.`))
-										.join(" ") ||
-										member?.fullName ||
-										"Врач"}
-								</span>
-							</button>
-						))}
+						.map((member) => {
+							const rawName = member?.fullName || "Врач";
+							const parts = rawName.trim().split(/\s+/);
+							const formattedShort =
+								parts.length > 1
+									? `${parts[0]} ${parts.slice(1).map((p) => (p[0] ? `${p[0].toUpperCase()}.` : "")).join("")}`
+									: rawName;
+
+							return (
+								<button
+									key={member.id}
+									type="button"
+									className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center flex-shrink-0 select-none`}
+									style={{ flexShrink: 0, whiteSpace: "nowrap", minWidth: "fit-content" }}
+									onClick={() =>
+										setScheduleDoctorFilterId(
+											scheduleDoctorFilterId === member.id ? null : member.id,
+										)
+									}
+									title={`Фильтр по врачу: ${member?.fullName || "Врач"}`}
+								>
+									<span className="shrink-0 whitespace-nowrap min-w-fit font-medium">
+										{formattedShort}
+									</span>
+								</button>
+							);
+						})}
 
 				{/* Chair filter chips with specializations */}
 				{displayChairs.length > 0 && (

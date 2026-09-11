@@ -361,6 +361,8 @@
 	border-radius: 6px;
 	font-size: 12px;
 	flex-shrink: 0;
+	white-space: nowrap;
+	min-width: max-content;
 }
 .schedule-my-chair-chip {
 	flex-shrink: 0 !important;
