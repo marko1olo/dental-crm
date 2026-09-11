@@ -1885,19 +1885,6 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 					<button
 						type="button"
-						onClick={handleOpenAddChair}
-						className={`h-7 min-h-[28px] max-h-[30px] min-w-[44px] px-2.5 py-0.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0 ${
-							hideInlineAddChair ? "hidden" : ""
-						}`}
-						title="Добавить кресло в расписание (+ Кресло)"
-						aria-label="Добавить кресло"
-						data-testid="btn-grid-inline-add-chair"
-					>
-						<span className="font-bold">+ Кресло</span>
-					</button>
-
-					<button
-						type="button"
 						onClick={() => setIsQuickAddDoctorOpen(true)}
 						className="h-7 min-h-[28px] max-h-[30px] min-w-[44px] px-2.5 py-0.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
 						title="Быстро добавить врача в расписание"

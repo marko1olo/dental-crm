@@ -4087,3 +4087,27 @@
     * Тест: `packages/shared/src/radiology/__tests__/wave123MeasureStats.test.ts` (14/14 PASS).
 * **Верификация**: все тесты Wave 123 (45/45 PASS: 31 clinical timeline + 14 radiology densitometry), монорепо `typecheck -w @dental/shared` Exit Code 0, `check:encoding` 6691 файлов 0 ошибок.
 
+### Wave 124: Граф родственных связей и законных представителей (DentalPin), автодетекция зубной дуги КЛКТ (DenCT)
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `8a1327c61`, `739c5e9cc`, `52df17822`, `e06becdf4`
+* **Результаты**:
+  - **Автоматическая эвристическая детекция зубной дуги КЛКТ (`8a1327c61`, DenCT реверс-инжиниринг)**:
+    * Создан модуль `packages/shared/src/radiology/archDetectEngine.ts`;
+    * Реализован чистый математический алгоритм `detectArchControlPoints`: MIP-проекция аксиального слоя толщиной `slabHalfMm` вокруг фокальной высоты `focalWorldZ`, взвешенный центроид костной плотности, веерное радиальное лучевое сканирование (sweep rays) с шагом 0.5°, сглаживание скользящим средним и сплайн-ресэмплинг Catmull-Rom в 9 анатомических контрольных точек;
+    * Экспорт в `packages/shared/src/radiology/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/radiology/__tests__/wave124ArchDetect.test.ts` (8/8 PASS).
+  - **Граф родственных связей и законных представителей (`739c5e9cc`, DentalPin реверс-инжиниринг)**:
+    * Создан модуль `packages/shared/src/clinical/patientRelationshipsEngine.ts`;
+    * Типы родства `RelationshipType` ('parent', 'child', 'spouse', 'sibling', 'guardian', 'ward', 'other') и русскоязычные юридические наименования `getRelationshipLabelRu`;
+    * Матрица взаимной инверсии связей `getInverseRelationship`;
+    * Двусторонняя фабрика `createRelationshipPair` с правами `canSignConsent`, `isFinancialPayer`, `isEmergencyContact`;
+    * Автоматическое определение законных представителей `resolveAuthorizedSigners` по ст. 20 ч. 2 № 323-ФЗ (несовершеннолетние до 15 лет требуют согласия законного представителя, с 15 лет автономны);
+    * Медицинский печатный протокол семейных связей А4 `formatKinshipSummaryA4` строго без эмодзи (Мандат 8d п. 7);
+    * Экспорт в `packages/shared/src/clinical/index.ts` и `packages/shared/src/index.ts`;
+    * Тест: `packages/shared/src/clinical/__tests__/wave124PatientRelationships.test.ts` (31/31 PASS).
+  - **Эргономика десктопа и исправление критической ошибки суммы прописью**:
+    * В `apps/web/src/components/schedule/` тулбары сжаты до 88px, устранен дублирующий инлайн `+ Кресло`, чип «Моё кресло» очищен от обрезания;
+    * Разблокирована кнопка печати этикеток крафт-пакетов в `KraftBarcodeLabelSheet.tsx`;
+    * **Ликвидировано 100-кратное завышение суммы прописью**: в `apps/api/src/documents/moneyWordsRu.ts` создана функция `legalMoneyInWordsFromKopecksRu`, подключена к таблице услуг в `renderDocument.ts:1521` (коммит `e06becdf4`).
+* **Верификация**: все тесты Wave 124 (39/39 PASS: 8 arch detect + 31 patient relationships), `moneyWordsRu.test.ts` PASS, `npm run check:encoding` 6696 файлов 0 ошибок.
+

@@ -56,15 +56,21 @@ export function GlobalToast() {
 			data-testid="global-toast"
 			style={{
 				position: "fixed",
+				top: "1.25rem",
+				right: "1.25rem",
+				bottom: "auto",
+				left: "auto",
+				zIndex: 99999,
 				display: "flex",
 				alignItems: "center",
 				gap: "8px",
 				padding: "12px 16px",
+				maxWidth: "420px",
 				background: "var(--surface-sunken, #0f172a)",
 				color: "var(--paper, #ffffff)",
 				borderRadius: "8px",
-				boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-				border: "1px solid rgba(255,255,255,0.1)",
+				boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+				border: "1px solid rgba(255,255,255,0.15)",
 			}}
 		>
 			{toast.type === "error" && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
