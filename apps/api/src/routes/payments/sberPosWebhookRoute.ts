@@ -30,6 +30,7 @@ import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	generatedDocuments,
+	organizations,
 	patientInvoices,
 	patients,
 	payments,
@@ -1031,6 +1032,16 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					}
 				}
 
+				const [org] = await tx
+					.select({
+						name: organizations.name,
+						inn: organizations.inn,
+						legalAddress: organizations.legalAddress,
+					})
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.limit(1);
+
 				const config = {
 					terminalId: input.terminalId || "19827340",
 					merchantId: "981273948192031",
@@ -1040,9 +1051,9 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					hardwareModel: "sber_smartpos" as const,
 					timeoutMs: 60000,
 					retryCount: 2,
-					clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-					clinicAddress: "г. Москва, Ломоносовский пр-т, 24",
-					clinicInn: "7701234567",
+					clinicName: org?.name || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+					clinicAddress: org?.legalAddress || "",
+					clinicInn: org?.inn || "",
 				};
 
 				const slipData = {

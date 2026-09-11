@@ -82,88 +82,10 @@ export class PublicEstimatesService {
 	}
 
 	/**
-	 * Seed initial demo / fallback estimate for token if not already in store
+	 * Returns stored public estimate for token or null if not found
 	 */
 	public static getOrInitEstimate(token: string): StoredPublicEstimate | null {
-		const existing = estimatesStore.get(token);
-		if (existing) return existing;
-
-		// If token has valid UUID structure, generate structured default
-		if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token) || token.startsWith("demo-")) {
-			const defaultItems: PublicEstimateItem[] = [
-				{
-					id: "item-1",
-					title: "Компьютерная томография челюстно-лицевой области (КЛКТ)",
-					tooth_number: null,
-					quantity: 1,
-					unit_price_rub: 4500,
-					line_total_rub: 4500,
-					discount_rub: 500,
-					net_line_total_rub: 4000,
-					category: "Диагностика",
-				},
-				{
-					id: "item-2",
-					title: "Эндодонтическое лечение 3-канального зуба под микроскопом",
-					tooth_number: 16,
-					quantity: 1,
-					unit_price_rub: 18000,
-					line_total_rub: 18000,
-					discount_rub: 0,
-					net_line_total_rub: 18000,
-					category: "Терапия",
-				},
-				{
-					id: "item-3",
-					title: "Установка коронки из диоксида циркония (ZrO2) CAD/CAM",
-					tooth_number: 16,
-					quantity: 1,
-					unit_price_rub: 27500,
-					line_total_rub: 27500,
-					discount_rub: 2500,
-					net_line_total_rub: 25000,
-					category: "Ортопедия",
-				},
-			];
-
-			const totals = calculateEstimateTotals(
-				defaultItems.map((i) => ({
-					quantity: i.quantity,
-					unit_price_rub: i.unit_price_rub,
-					discount_rub: i.discount_rub,
-				})),
-			);
-
-			const newEstimate: StoredPublicEstimate = {
-				id: `est-${token.slice(0, 8)}`,
-				organizationId: "11111111-1111-1111-1111-111111111111",
-				patientId: "22222222-2222-2222-2222-222222222222",
-				publicToken: token,
-				estimateNumber: `СМ-${new Date().getFullYear()}/${token.slice(0, 5).toUpperCase()}`,
-				status: "sent",
-				validFrom: new Date().toISOString().slice(0, 10),
-				validUntil: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10),
-				clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
-				clinicPhone: "+7 (495) 123-45-67",
-				clinicEmail: "info@dente-clinic.ru",
-				clinicAddress: "г. Москва, ул. Арбат, д. 24",
-				clinicCurrency: "RUB",
-				patientFirstName: "Алексей",
-				patientPhone: "+7 (916) 123-45-67",
-				patientBirthDate: "1988-04-12",
-				verbalPinHash: hashVerbalPin("1234"),
-				failedAttempts: 0,
-				totalFailures: 0,
-				isLocked: false,
-				patientNotes: "План согласован на первичной консультации. Гарантия на коронку 2 года.",
-				items: defaultItems,
-			};
-
-			estimatesStore.set(token, newEstimate);
-			return newEstimate;
-		}
-
-		return null;
+		return estimatesStore.get(token) ?? null;
 	}
 
 	/**

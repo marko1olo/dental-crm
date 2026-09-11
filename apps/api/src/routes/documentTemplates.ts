@@ -412,42 +412,41 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 			const organizationId = await resolveOrganizationId(request);
 
 			// Данные клиники
-			let clinicData = {
-				name: 'ООО "Денте Стоматология"',
-				inn: "7701234567",
-				kpp: "773601001",
-				address: "г. Москва, ул. Стоматологов, д. 15",
-				phone: "+7 (495) 123-45-67",
-				licenseNumber: "ЛО41-01137-77/00368421",
-				licenseIssuedDate: "25.01.2020",
-				licenseValidity: "Бессрочно",
-				licenseIssuer: "Департамент здравоохранения города Москвы",
-			};
-
+			let org: typeof organizations.$inferSelect | undefined;
 			if (organizationId && UUID_REGEX.test(organizationId)) {
-				const [org] = await db
+				const [foundOrg] = await db
 					.select()
 					.from(organizations)
 					.where(eq(organizations.id, organizationId))
 					.limit(1);
-
-				if (org) {
-					clinicData = {
-						name: org.name || clinicData.name,
-						inn: org.inn || clinicData.inn,
-						kpp: org.kpp || clinicData.kpp,
-						address: org.legalAddress || clinicData.address,
-						phone: org.email || clinicData.phone,
-						licenseNumber:
-							org.medicalLicenseNumber || clinicData.licenseNumber,
-						licenseIssuedDate:
-							org.medicalLicenseIssuedAt || clinicData.licenseIssuedDate,
-						licenseValidity: "Бессрочно",
-						licenseIssuer:
-							org.medicalLicenseIssuer || clinicData.licenseIssuer,
-					};
-				}
+				org = foundOrg;
 			}
+			if (!org) {
+				const [firstOrg] = await db
+					.select()
+					.from(organizations)
+					.limit(1);
+				org = firstOrg;
+			}
+
+			if (!org) {
+				return reply.status(400).send({
+					error: "Не найдены реквизиты клиники для формирования шаблона документа. Пожалуйста, укажите данные клиники в настройках организации.",
+				});
+			}
+
+			const clinicData = {
+				name: org.name || "",
+				inn: org.inn || "",
+				kpp: org.kpp || "",
+				address: org.legalAddress || "",
+				phone: org.email || "",
+				licenseNumber: org.medicalLicenseNumber || "",
+				licenseIssuedDate: org.medicalLicenseIssuedAt || "",
+				licenseValidity: "Бессрочно",
+				licenseIssuer:
+					org.medicalLicenseIssuer || "Департамент здравоохранения города Москвы",
+			};
 
 			// Данные пациента
 			let patientContextData: TemplateExecutionContext["patient"] = undefined;

@@ -141,8 +141,8 @@ export function buildFnsKnd1151156Xml(
 } {
 	const taxOffice = payload.taxInspectionCode || "7701";
 	const docDateFormatted = formatFnsDate(payload.documentDate);
-	const taxYear = (
-		payload.taxYear || new Date().getFullYear().toString()
+	const taxYear = String(
+		payload.taxYear || new Date().getFullYear(),
 	).slice(0, 4);
 	const certKind = payload.certificateKind || "1";
 	const corrNumber = payload.correctionNumber ?? (certKind === "1" ? 0 : 1);
@@ -166,10 +166,16 @@ export function buildFnsKnd1151156Xml(
 	// 1. Clinic block (<СвОргМ>)
 	let orgBlockXml = "";
 	if (payload.clinic.isIndividualEntrepreneur || clinicInn.length === 12) {
-		const ipFio = payload.clinic.ipFullName || {
-			family: "Иванов",
-			given: "Иван",
-		};
+		if (
+			!payload.clinic.ipFullName ||
+			!payload.clinic.ipFullName.family?.trim() ||
+			!payload.clinic.ipFullName.given?.trim()
+		) {
+			throw new Error(
+				"Не указано ФИО индивидуального предпринимателя в реквизитах клиники для справки ФНС",
+			);
+		}
+		const ipFio = payload.clinic.ipFullName;
 		const patronymicAttr = ipFio.patronymic
 			? ` Отчество="${escapeXml(ipFio.patronymic)}"`
 			: "";

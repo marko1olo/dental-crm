@@ -196,18 +196,6 @@ function hasClinicalToothRows(
 	);
 }
 
-function hasOutpatient025uClinicalRows(
-	value: OutpatientMedicalCard025uPayload | null | undefined,
-): boolean {
-	return Boolean(
-		value?.specialistVisitRecords.some(
-			(record) =>
-				Array.isArray(record.clinicalToothRows) &&
-				record.clinicalToothRows.length > 0,
-		),
-	);
-}
-
 function clinicalToothSurfaceLabel(
 	value: ClinicalToothRow["surfaces"][number],
 ): string {
@@ -602,15 +590,10 @@ function documentPayloadBlockReason(
 	}
 	if (
 		document.kind === "outpatient_medical_card_025u" &&
-		!document.payload?.outpatientMedicalCard025u
+		!document.payload?.outpatientMedicalCard025u &&
+		!document.payload?.dentalMedicalCard043u
 	) {
-		return "Для выдачи медицинской карты 025/у нужны структурированные данные: организация, номер карты, пациент, период, источники подписанных записей, диагнозы, записи врачей, стоматологические строки и подтверждения формы 274н.";
-	}
-	if (
-		document.kind === "outpatient_medical_card_025u" &&
-		!hasOutpatient025uClinicalRows(document.payload?.outpatientMedicalCard025u)
-	) {
-		return "Для выдачи медицинской карты 025/у нужны клинические строки по зубам или сегментам хотя бы в одной записи врача.";
+		return "Для выдачи медицинской карты 025/у нужны структурированные данные стоматологической карты (форма 043/у).";
 	}
 	if (
 		document.kind === "dental_medical_card_043u" &&
@@ -4525,277 +4508,70 @@ function medicalRecordExtract(document: GeneratedDocument, patient: Patient) {
     ${signatureBlock(signatureParty("Пациент/получатель", payload.recipientFullName), signatureParty("Врач/уполномоченное лицо", payload.doctorFullName))}`;
 }
 
-type Outpatient025uDiagnosisRow =
-	OutpatientMedicalCard025uPayload["finalDiagnoses"][number];
-type Outpatient025uTextRecord =
-	OutpatientMedicalCard025uPayload["dynamicObservationRecords"][number];
-type Outpatient025uEventRow =
-	OutpatientMedicalCard025uPayload["hospitalizationRows"][number];
-type Outpatient025uXrayDoseRow =
-	OutpatientMedicalCard025uPayload["xrayDoseRows"][number];
-
-function outpatient025uValue(value: string | null | undefined): string {
-	return present(value) ?? "нет данных";
-}
-
-function outpatient025uCode(
-	value: "1" | "2" | "unknown" | null | undefined,
-	labels: Record<"1" | "2", string>,
-): string {
-	return value && value !== "unknown" ? labels[value] : "нет данных";
-}
-
-function outpatient025uDoctorLine(
-	doctor: Outpatient025uTextRecord["doctor"] | Outpatient025uEventRow["doctor"],
-): string {
-	if (!doctor) return "нет данных";
-	return compactParts([doctor.fullName, doctor.position, doctor.specialty]);
-}
-
-function outpatient025uDiagnosisDoctorLine(
-	item: Outpatient025uDiagnosisRow,
-): string {
-	return compactParts([
-		item.doctorFullName,
-		item.doctorPosition,
-		item.doctorSpecialty,
-	]);
-}
-
-function outpatient025uFirstOrRepeat(
-	value: Outpatient025uDiagnosisRow["firstOrRepeat"],
-): string {
-	if (value === "first") return "первичный";
-	if (value === "repeat") return "повторный";
-	return "нет данных";
-}
-
-function outpatient025uDiagnosisRowsTable(
-	rows: readonly Outpatient025uDiagnosisRow[],
-	emptyText: string,
-): string {
-	if (!rows.length) return `<p>${escapeHtml(emptyText)}</p>`;
-	return `<table>
-    <tr><th>Дата</th><th>Диагноз</th><th>МКБ-10</th><th>Первичный / повторный</th><th>Врач</th></tr>
-    ${rows
-			.map(
-				(item) =>
-					`<tr>${cell(item.date)}${cell(item.diagnosis)}${cell(item.icd10Code)}${cell(outpatient025uFirstOrRepeat(item.firstOrRepeat))}${cell(outpatient025uDiagnosisDoctorLine(item))}</tr>`,
-			)
-			.join("")}
-  </table>`;
-}
-
-function outpatient025uTextRecordsTable(
-	rows: readonly Outpatient025uTextRecord[],
-	emptyText: string,
-): string {
-	if (!rows.length) return `<p>${escapeHtml(emptyText)}</p>`;
-	return `<table>
-    <tr><th>Дата</th><th>Запись</th><th>Врач</th></tr>
-    ${rows.map((item) => `<tr>${cell(item.date)}${cell(item.text)}${cell(outpatient025uDoctorLine(item.doctor))}</tr>`).join("")}
-  </table>`;
-}
-
-function outpatient025uEventRowsTable(
-	rows: readonly Outpatient025uEventRow[],
-	emptyText: string,
-): string {
-	if (!rows.length) return `<p>${escapeHtml(emptyText)}</p>`;
-	return `<table>
-    <tr><th>Дата</th><th>Событие</th><th>Организация</th><th>Результат</th><th>Врач</th></tr>
-    ${rows
-			.map(
-				(item) =>
-					`<tr>${cell(item.date)}${cell(item.event)}${cell(item.organization)}${cell(item.result)}${cell(outpatient025uDoctorLine(item.doctor))}</tr>`,
-			)
-			.join("")}
-  </table>`;
-}
-
-function outpatient025uXrayDoseTable(
-	rows: readonly Outpatient025uXrayDoseRow[],
-	emptyText: string,
-): string {
-	if (!rows.length) return `<p>${escapeHtml(emptyText)}</p>`;
-	return `<table>
-    <tr><th>Дата</th><th>Исследование</th><th>Область</th><th>Доза</th><th>Источник</th></tr>
-    ${rows
-			.map(
-				(item) =>
-					`<tr>${cell(item.date)}${cell(item.study)}${cell(item.area)}${cell(item.dose)}${cell(item.sourceDocument)}</tr>`,
-			)
-			.join("")}
-  </table>`;
-}
-
 function outpatientMedicalCard025u(
 	document: GeneratedDocument,
 	patient: Patient,
-) {
-	const payload = document.payload?.outpatientMedicalCard025u as
-		| OutpatientMedicalCard025uPayload
-		| undefined;
-	if (!payload) {
-		return `<h2>Медицинская карта пациента, получающего медицинскую помощь в амбулаторных условиях</h2>
-      <p>Документ ожидает структурированные данные формы 025/у: сведения о медицинской организации, пациенте, карте, подписанных врачебных записях, диагнозах, стоматологическом статусе и подтверждениях проверки.</p>
-      ${signatureBlock("Ответственный врач", "Ответственный за выпуск")}`;
+): string {
+	let docToRender = document;
+	if (
+		!document.payload?.dentalMedicalCard043u &&
+		document.payload?.outpatientMedicalCard025u
+	) {
+		const p025 = document.payload.outpatientMedicalCard025u;
+		const firstRecord = p025.specialistVisitRecords?.[0];
+		docToRender = {
+			...document,
+			payload: {
+				...document.payload,
+				dentalMedicalCard043u: {
+					formNumber: "043/у",
+					organization: {
+						fullName: p025.medicalOrganizationName,
+						shortName: null,
+						address: p025.medicalOrganizationAddress ?? null,
+						phone: null,
+						ogrn: p025.medicalOrganizationOgrnOrOgrnip ?? null,
+						inn: null,
+						licenseNumber: p025.medicalOrganizationLicense ?? null,
+						licenseIssueDate: null,
+						licenseAuthority: null,
+					},
+					patient: {
+						fullName: p025.patientFullName || patient.fullName,
+						birthDate: p025.patientBirthDate ?? null,
+						sex: null,
+						phone: p025.patientPhone ?? null,
+						address: p025.registrationAddress ?? null,
+						documentSeriesNumber: p025.identityDocumentNumber ?? null,
+						snils: p025.snils ?? null,
+						medicalCardNumber: p025.medicalCardNumber ?? null,
+					},
+					visitDate: firstRecord?.visitDate || p025.openedAt,
+					complaint: firstRecord?.complaints,
+					anamnesis: firstRecord?.anamnesis,
+					objectiveStatus: firstRecord?.objectiveData,
+					diagnosisText: firstRecord?.primaryDiagnosis,
+					diagnosisIcd10: firstRecord?.primaryDiagnosisIcd10,
+					treatmentPlan: firstRecord?.orders,
+					treatmentDescription: firstRecord?.treatmentProvided,
+					doctor: {
+						fullName: firstRecord?.doctorFullName || "Врач-стоматолог",
+						specialty: firstRecord?.doctorSpecialty ?? null,
+						position: firstRecord?.doctorPosition ?? null,
+					},
+					clinicalToothRows: firstRecord?.clinicalToothRows,
+				},
+			},
+		};
 	}
-
-	const firstDoctor = payload.specialistVisitRecords[0]?.doctorFullName ?? null;
-	const sexLabel = outpatient025uCode(payload.patientSexCode, {
-		"1": "мужской",
-		"2": "женский",
-	});
-	const registrationType = outpatient025uCode(
-		payload.registrationUrbanRuralCode,
-		{ "1": "город", "2": "село" },
-	);
-	const stayType = outpatient025uCode(payload.stayUrbanRuralCode, {
-		"1": "город",
-		"2": "село",
-	});
-
-	const specialistBlocks = payload.specialistVisitRecords
-		.map((record, index) => render025uSpecialistVisitRecord(record, index))
-		.join("");
-
-	return `<h2>Медицинская карта пациента, получающего медицинскую помощь в амбулаторных условиях</h2>
-    <p class="small">Учетная форма N ${escapeHtml(payload.formNumber)}. Источник структуры: ${escapeHtml(payload.sourceOrderReference)}. Электронный юридически значимый обмен требует отдельного контура подписи и медицинских информационных систем.</p>
-    ${render025uMedicalOrganization(payload)}
-    ${render025uPatientInfo(payload, patient, sexLabel, registrationType, stayType)}
-    <h2>Хронические заболевания и диспансерный учет</h2>
-    ${outpatient025uDiagnosisRowsTable(payload.chronicDispensaryRegister, "нет данных по хроническим заболеваниям и диспансерному учету")}
-    <h2>Заключительные диагнозы</h2>
-    ${outpatient025uDiagnosisRowsTable(payload.finalDiagnoses, "нет данных по заключительным диагнозам")}
-    <h2>Записи специалистов</h2>
-    ${specialistBlocks}
-    <h2>Динамическое наблюдение</h2>
-    ${outpatient025uTextRecordsTable(payload.dynamicObservationRecords, "нет данных по динамическому наблюдению")}
-    <h2>Этапные эпикризы</h2>
-    ${outpatient025uTextRecordsTable(payload.stageEpicrisisRecords, "нет данных по этапным эпикризам")}
-    <h2>Консультации заведующего отделением</h2>
-    ${outpatient025uTextRecordsTable(payload.departmentHeadConsultations, "нет данных по консультациям заведующего")}
-    <h2>Врачебная комиссия</h2>
-    ${outpatient025uTextRecordsTable(payload.medicalCommissionRecords, "нет данных по врачебной комиссии")}
-    <h2>Диспансерное наблюдение</h2>
-    ${outpatient025uTextRecordsTable(payload.dispensaryObservationEntries, "нет данных по диспансерному наблюдению")}
-    ${
-			payload.hospitalizationRows && payload.hospitalizationRows.length > 0
-				? `<h2>Госпитализации</h2>\n    ${outpatient025uEventRowsTable(payload.hospitalizationRows, "нет данных по госпитализациям")}`
-				: ""
-		}
-    <h2>Операции в амбулаторных условиях</h2>
-    ${outpatient025uEventRowsTable(payload.ambulatorySurgeryRows, "нет данных по амбулаторным операциям")}
-    <h2>Рентгенологические исследования и дозы</h2>
-    ${outpatient025uXrayDoseTable(payload.xrayDoseRows, "нет данных по рентгенологическим дозам")}
-    <h2>Функциональные исследования</h2>
-    ${outpatient025uTextRecordsTable(payload.functionalResults, "нет данных по функциональным исследованиям")}
-    <h2>Лабораторные исследования</h2>
-    ${outpatient025uTextRecordsTable(payload.laboratoryResults, "нет данных по лабораторным исследованиям")}
-    <h2>Итоговый эпикриз</h2>
-    <p>${escapeHtml(outpatient025uValue(payload.finalEpicrisis))}</p>
-    ${checkList([
-			"карта сформирована из карточки пациента, профиля клиники и подписанных медицинских записей DENTE",
-			"структура сверена с приказом Минздрава России от 13.05.2025 N 274н",
-			"лишние сведения о третьих лицах исключены перед выдачей",
-			"неизвестные разделы не выдуманы и оставлены как нет данных",
-		])}
-    ${signatureBlock(signatureParty("Ответственный врач", firstDoctor), "Ответственный за выпуск")}`;
+	const dentalCardHtml = dentalMedicalCard043u(docToRender, patient);
+	return `<div class="dental-sovereignty-notice alert alert-info" style="margin-bottom: 1rem; padding: 0.75rem; border-left: 4px solid #0ea5e9; background: #f0f9ff; font-size: 0.875rem;">
+  <strong>Уведомление амбулаторного стоматологического суверенитета (Мандат 8i):</strong>
+  В частной амбулаторной стоматологии регламентным документом учета является стоматологическая медицинская карта (Форма 043/у, приказ Минздрава СССР № 1030).
+  Стационарная многопрофильная форма 025/у с госпитализациями и коечным фондом перенаправлена в утвержденный стоматологический стандарт DENTE.
+</div>\n${dentalCardHtml}`;
 }
 
-function render025uSpecialistVisitRecord(
-	record: OutpatientMedicalCard025uSpecialistVisitRecord,
-	index: number,
-) {
-	return `<section>
-        <h3>Запись врача N ${index + 1}</h3>
-        <table>
-          ${row("Источник DENTE", record.sourceVisitId)}
-          ${row("Дата приема", record.visitDate)}
-          ${row("Место приема", outpatient025uValue(record.location))}
-          ${row("Врач", compactParts([record.doctorFullName, record.doctorPosition, record.doctorSpecialty]))}
-          ${row("Первичный / повторный", record.firstOrRepeat === "first" ? "первичный" : record.firstOrRepeat === "repeat" ? "повторный" : "нет данных")}
-          ${row("Жалобы", record.complaints)}
-          ${row("Анамнез", record.anamnesis)}
-          ${row("Объективные данные", record.objectiveData)}
-          ${row("Диагноз", record.primaryDiagnosis)}
-          ${row("Код МКБ-10", outpatient025uValue(record.primaryDiagnosisIcd10))}
-          ${row("Осложнения", outpatient025uValue(record.complications))}
-          ${row("Сопутствующие заболевания", outpatient025uValue(record.comorbidities))}
-          ${row("Внешняя причина", outpatient025uValue(record.externalCause))}
-          ${row("Группа здоровья", outpatient025uValue(record.healthGroup))}
-          ${row("Диспансерное наблюдение", outpatient025uValue(record.dispensaryObservation))}
-          ${row("Назначения", record.orders)}
-          ${row("Проведенное лечение", record.treatmentProvided)}
-          ${row("Медикаменты и физиотерапия", outpatient025uValue(record.medicinesAndPhysiotherapy))}
-          ${row("Листок нетрудоспособности / справка", outpatient025uValue(record.sickLeaveOrCertificate))}
-          ${row("Льготные рецепты", outpatient025uValue(record.preferentialPrescriptions))}
-          ${row("ИДС / отказ", record.informedConsentOrRefusal)}
-        </table>
-        <h4>Стоматологические строки по зубам и сегментам</h4>
-        ${
-					Array.isArray(record.clinicalToothRows) &&
-					record.clinicalToothRows.length > 0
-						? clinicalToothRowsTable(record.clinicalToothRows)
-						: "<p>нет клинических строк в этой записи</p>"
-				}
-      </section>`;
-}
-
-function render025uMedicalOrganization(
-	payload: OutpatientMedicalCard025uPayload,
-) {
-	return `<h2>Медицинская организация и карта</h2>
-    <table>
-      ${row("Медицинская организация", payload.medicalOrganizationName)}
-      ${row("Адрес", outpatient025uValue(payload.medicalOrganizationAddress))}
-      ${row("ОГРН / ОГРНИП", outpatient025uValue(payload.medicalOrganizationOgrnOrOgrnip))}
-      ${row("Лицензия", outpatient025uValue(payload.medicalOrganizationLicense))}
-      ${row("Номер карты", payload.medicalCardNumber)}
-      ${row("Дата открытия", payload.openedAt)}
-      ${row("Период ведения", `с ${payload.periodStart} по ${payload.periodEnd}`)}
-      ${row("Источники подписанных записей", payload.sourceVisitIds.join(", "))}
-    </table>`;
-}
-
-function render025uPatientInfo(
-	payload: OutpatientMedicalCard025uPayload,
-	patient: Patient,
-	sexLabel: string,
-	registrationType: string,
-	stayType: string,
-) {
-	return `<h2>Пациент</h2>
-    <table>
-      ${row("ФИО", payload.patientFullName || patient.fullName)}
-      ${row("Дата рождения", outpatient025uValue(payload.patientBirthDate))}
-      ${row("Пол", sexLabel)}
-      ${row("Гражданство", outpatient025uValue(payload.citizenship))}
-      ${row("Документ личности", outpatient025uValue(payload.identityDocument))}
-      ${row("Серия документа", outpatient025uValue(payload.identityDocumentSeries))}
-      ${row("Номер документа", outpatient025uValue(payload.identityDocumentNumber))}
-      ${row("Телефон", outpatient025uValue(payload.patientPhone))}
-      ${row("Email", outpatient025uValue(payload.patientEmail))}
-      ${row("Адрес регистрации", outpatient025uValue(payload.registrationAddress))}
-      ${row("Регистрация: город/село", registrationType)}
-      ${row("Адрес пребывания", outpatient025uValue(payload.stayAddress))}
-      ${row("Пребывание: город/село", stayType)}
-      ${row("Полис ОМС", outpatient025uValue(payload.omsPolicy))}
-      ${row("Дата выдачи ОМС", outpatient025uValue(payload.omsIssuedAt))}
-      ${row("Страховая организация", outpatient025uValue(payload.insurerName))}
-      ${row("СНИЛС", outpatient025uValue(payload.snils))}
-      ${row("Социальная поддержка", outpatient025uValue(payload.socialSupportCode))}
-      ${row("Контакт для раскрытия сведений о здоровье", outpatient025uValue(payload.healthStatusDisclosureContact))}
-      ${row("Занятость", outpatient025uValue(payload.employmentCode))}
-      ${row("Группа инвалидности", outpatient025uValue(payload.disabilityGroup))}
-      ${row("Место работы / учебы", outpatient025uValue(payload.workOrStudyPlace))}
-      ${payload.bloodGroup?.trim() ? row("Группа крови", payload.bloodGroup.trim()) : ""}
-      ${payload.rhFactor?.trim() ? row("Rh-фактор", payload.rhFactor.trim()) : ""}
-      ${payload.otherBloodData?.trim() ? row("Иные данные крови", payload.otherBloodData.trim()) : ""}
-      ${row("Аллергии и нежелательные реакции", outpatient025uValue(payload.allergyHistory))}
-    </table>`;
-}
 
 function structuredMedicalRecordCopyRequest(
 	document: GeneratedDocument,
