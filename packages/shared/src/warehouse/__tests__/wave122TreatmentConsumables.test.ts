@@ -289,6 +289,7 @@ describe("Wave 122: Treatment Consumables Consumption Engine", () => {
 
 		// Event 1 checks
 		const res1 = batchResult.results[0];
+		assert.ok(res1);
 		assert.strictEqual(res1.treatmentReferenceId, "visit-005-ev1");
 		const anes1 = res1.items.find((i) => i.inventoryItemId === "mat-anes-01");
 		assert.strictEqual(anes1?.currentStock, 2);
@@ -297,6 +298,7 @@ describe("Wave 122: Treatment Consumables Consumption Engine", () => {
 
 		// Event 2 checks (cumulative: stock was 1 after event 1, becomes 0)
 		const res2 = batchResult.results[1];
+		assert.ok(res2);
 		assert.strictEqual(res2.treatmentReferenceId, "visit-005-ev2");
 		const anes2 = res2.items.find((i) => i.inventoryItemId === "mat-anes-01");
 		assert.strictEqual(anes2?.currentStock, 1, "Must see updated stock from event 1");

@@ -20,7 +20,6 @@ import {
 	sampleImplantBoneHU,
 	MISCH_CLINICAL_GUIDANCE,
 	type BoneClass,
-	type VolumeSamplingData,
 } from "../boneQuality.js";
 import {
 	trilinear,
@@ -30,6 +29,7 @@ import {
 	AIR_HU,
 	MAX_CROSS_SECTION_TILT_DEG,
 	type Point2,
+	type VolumeSamplingData,
 } from "../cprMath.js";
 import type { Vec3 } from "../cbctSafetyEngine.js";
 
@@ -212,7 +212,7 @@ describe("Wave 120: CBCT Bone Quality & CPR Math Engine", () => {
 			return {
 				dims: [50, 50, 50],
 				origin: [0, 0, 0],
-				getVoxel: (_i, _j, k) => 100 + 10 * k, // HU = 100 + 10*z
+				getVoxel: (_i: number, _j: number, k: number) => 100 + 10 * k, // HU = 100 + 10*z
 				invSx: 1,
 				invSy: 1,
 				invSz: 1,

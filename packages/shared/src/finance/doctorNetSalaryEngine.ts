@@ -644,7 +644,7 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 	</div>
 
 	<div class="overhead-notice">
-		🛡️ <strong>Клинический стандарт DENTE:</strong> Общеклинические расходники (салфетки, ватные валики, слюноотсосы, перчатки, маски) на сумму <strong>${formatMoney(payload.overheadConsumablesCoveredRub || 0)}</strong> полностью оплачены клиникой и НЕ удерживаются из зарплаты врача.
+		<strong>Клинический стандарт DENTE:</strong> Общеклинические расходники (салфетки, ватные валики, слюноотсосы, перчатки, маски) на сумму <strong>${formatMoney(payload.overheadConsumablesCoveredRub || 0)}</strong> полностью оплачены клиникой и НЕ удерживаются из зарплаты врача.
 	</div>
 
 	<!-- 1. Начисления и категории -->

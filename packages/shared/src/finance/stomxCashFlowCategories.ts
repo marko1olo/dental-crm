@@ -55,6 +55,9 @@ export {
 	STOMX_CASH_EXPENSE_BY_ID,
 	type StomxCashExpenseItem,
 	type StomxCashReceiptItem,
+	STOMX_EXPENSE_PNL_CATEGORIES,
+	stomxExpensePnlCategorySchema,
+	type StomxExpensePnlCategory,
 };
 
 /**

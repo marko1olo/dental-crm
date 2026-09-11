@@ -296,6 +296,7 @@ describe("Wave 121: Warehouse Purchase Order & Receipt Engine", () => {
 
 			// Line 1 verification
 			const line1 = po.lines[0];
+			assert.ok(line1);
 			assert.strictEqual(line1.itemId, "item-composite-a2");
 			assert.strictEqual(line1.itemName, "Композит светоотверждаемый А2");
 			assert.strictEqual(line1.orderedQuantity, 39);
@@ -306,6 +307,7 @@ describe("Wave 121: Warehouse Purchase Order & Receipt Engine", () => {
 
 			// Line 2 verification
 			const line2 = po.lines[1];
+			assert.ok(line2);
 			assert.strictEqual(line2.itemId, "item-anesthetic-articaine");
 			assert.strictEqual(line2.orderedQuantity, 50);
 			assert.strictEqual(line2.unitPriceKopecks, 380000);
@@ -362,8 +364,10 @@ describe("Wave 121: Warehouse Purchase Order & Receipt Engine", () => {
 			});
 
 			assert.strictEqual(po.lines.length, 1);
-			assert.strictEqual(po.lines[0].itemId, "item-needed");
-			assert.strictEqual(po.lines[0].orderedQuantity, 14);
+			const line0 = po.lines[0];
+			assert.ok(line0);
+			assert.strictEqual(line0.itemId, "item-needed");
+			assert.strictEqual(line0.orderedQuantity, 14);
 		});
 
 		it("handles empty suggestions array producing empty draft PO with 0 totals", () => {
@@ -437,7 +441,7 @@ describe("Wave 121: Warehouse Purchase Order & Receipt Engine", () => {
 			assert.strictEqual(updatedLine2?.receivedQuantity, 0);
 
 			// Original order must remain unmutated (immutability check)
-			assert.strictEqual(order.lines[0].receivedQuantity, 0);
+			assert.strictEqual(order.lines[0]?.receivedQuantity, 0);
 			assert.strictEqual(order.status, "CONFIRMED");
 		});
 

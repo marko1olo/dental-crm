@@ -114,9 +114,10 @@ describe("Wave 123: CBCT Measure Stats, HU Line Profile & Densitometry Engine", 
 
 			assert.strictEqual(p.length, 21);
 			for (let idx = 0; idx < p.length; idx++) {
+				const val = p[idx] ?? 0;
 				assert.ok(
-					Math.abs(p[idx] - idx * 10) < 1e-5,
-					`Expected ${idx * 10}, got ${p[idx]} at index ${idx}`,
+					Math.abs(val - idx * 10) < 1e-5,
+					`Expected ${idx * 10}, got ${val} at index ${idx}`,
 				);
 			}
 		});
@@ -127,9 +128,10 @@ describe("Wave 123: CBCT Measure Stats, HU Line Profile & Densitometry Engine", 
 
 			assert.strictEqual(p.length, 11);
 			for (let idx = 0; idx < p.length; idx++) {
+				const val = p[idx] ?? 0;
 				assert.ok(
-					Math.abs(p[idx] - (50 + 20 * idx)) < 1e-5,
-					`Expected ${50 + 20 * idx}, got ${p[idx]} at index ${idx}`,
+					Math.abs(val - (50 + 20 * idx)) < 1e-5,
+					`Expected ${50 + 20 * idx}, got ${val} at index ${idx}`,
 				);
 			}
 		});
@@ -142,9 +144,10 @@ describe("Wave 123: CBCT Measure Stats, HU Line Profile & Densitometry Engine", 
 			assert.strictEqual(p.length, 11);
 			// At sample t = idx / 10: x = idx, y = idx, z = idx -> f = (2 + 3 + 5) * idx = 10 * idx
 			for (let idx = 0; idx < p.length; idx++) {
+				const val = p[idx] ?? 0;
 				assert.ok(
-					Math.abs(p[idx] - 10 * idx) < 1e-5,
-					`Expected ${10 * idx}, got ${p[idx]} at index ${idx}`,
+					Math.abs(val - 10 * idx) < 1e-5,
+					`Expected ${10 * idx}, got ${val} at index ${idx}`,
 				);
 			}
 		});
@@ -164,7 +167,7 @@ describe("Wave 123: CBCT Measure Stats, HU Line Profile & Densitometry Engine", 
 			const p = lineProfileHU(vol, [5, 5, 5], [100, 5, 5], 5);
 			assert.strictEqual(p.length, 5);
 			// First sample is inside -> 600 HU
-			assert.ok(Math.abs(p[0] - 600) < 1e-4);
+			assert.ok(Math.abs((p[0] ?? 0) - 600) < 1e-4);
 			// Last sample is far outside -> AIR_HU
 			assert.strictEqual(p[4], AIR_HU);
 		});

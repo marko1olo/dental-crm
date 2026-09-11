@@ -60,6 +60,7 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 
 			// Lookup by ID parity
 			const byId = STOMX_CASH_EXPENSE_BY_ID[expected.id];
+			assert.ok(byId);
 			assert.equal(byId.alias, alias, `ID map lookup mismatch for id ${expected.id}`);
 		}
 	});
@@ -97,6 +98,7 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 
 			// Lookup by ID parity
 			const byId = STOMX_CASH_RECEIPT_BY_ID[expected.id];
+			assert.ok(byId);
 			assert.equal(byId.alias, alias, `ID map lookup mismatch for id ${expected.id}`);
 		}
 	});

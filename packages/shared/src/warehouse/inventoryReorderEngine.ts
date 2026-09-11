@@ -94,6 +94,9 @@ export const reorderCalculationParamsSchema = z.object({
 export type ReorderCalculationParams = z.infer<
 	typeof reorderCalculationParamsSchema
 >;
+export type ReorderCalculationInput = z.input<
+	typeof reorderCalculationParamsSchema
+>;
 
 export const reorderSuggestionSchema = z.object({
 	inventoryItemId: z.string().optional(),
@@ -184,7 +187,7 @@ export type SupplierRatingScore = z.infer<typeof supplierRatingScoreSchema>;
  *     estimatedStockDepletionDays = dailyUsage > 0 ? Math.floor(stockQuantity / dailyUsage) : Infinity
  */
 export function computeReorderSuggestion(
-	params: ReorderCalculationParams,
+	params: ReorderCalculationInput,
 ): ReorderSuggestion | null {
 	const stockQuantity = params.stockQuantity ?? 0;
 	const onOrderQuantity = params.onOrderQuantity ?? 0;
@@ -428,7 +431,7 @@ export function determineSupplierRiskTier(score: number): SupplierRiskTier {
  * and sorting results by urgency: URGENT_OUT_OF_STOCK -> CRITICAL_REORDER -> STANDARD_REORDER.
  */
 export function computeBatchReorderSuggestions(
-	items: ReorderCalculationParams[],
+	items: ReorderCalculationInput[],
 ): ReorderSuggestion[] {
 	const suggestions: ReorderSuggestion[] = [];
 

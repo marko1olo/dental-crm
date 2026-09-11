@@ -95,9 +95,9 @@ export const informedConsent1051nPayloadSchema = z.object({
 	medicalLicenseDate: z.string().trim().max(32).default(DEFAULT_CLINIC_LICENSE_DATE),
 	patientFullName: z.string().trim().min(1).max(160),
 	patientBirthDate: z.string().trim().min(10).max(32),
-	patientPassport: z.string().trim().max(120).default("Паспорт гражданина РФ"),
-	patientAddress: z.string().trim().max(240).default("г. Москва"),
-	patientPhone: z.string().trim().max(64).default("+7 (999) 000-00-00"),
+	patientPassport: z.string().trim().max(120).default(""),
+	patientAddress: z.string().trim().max(240).default(""),
+	patientPhone: z.string().trim().max(64).default(""),
 	patientSnils: z.string().trim().max(32).nullable().optional(),
 	representativeFullName: z.string().trim().max(160).nullable().optional(),
 	representativePassport: z.string().trim().max(120).nullable().optional(),
@@ -381,9 +381,9 @@ export const paidServiceContract736PayloadSchema = z.object({
 	clinicWebsite: z.string().trim().max(120).default("https://dente-clinic.ru"),
 	patientFullName: z.string().trim().min(1).max(160),
 	patientBirthDate: z.string().trim().min(10).max(32),
-	patientPassport: z.string().trim().max(120).default("Паспорт гражданина РФ"),
-	patientAddress: z.string().trim().max(240).default("г. Москва"),
-	patientPhone: z.string().trim().max(64).default("+7 (999) 000-00-00"),
+	patientPassport: z.string().trim().max(120).default(""),
+	patientAddress: z.string().trim().max(240).default(""),
+	patientPhone: z.string().trim().max(64).default(""),
 	patientSnils: z.string().trim().max(32).nullable().optional(),
 	customerFullName: z.string().trim().max(160).nullable().optional(),
 	customerPassport: z.string().trim().max(120).nullable().optional(),
@@ -415,10 +415,10 @@ export function renderPaidServiceContract736Html(payload: PaidServiceContract736
 	const clinicWebsite = payload.clinicWebsite || "https://dente-clinic.ru";
 
 	const patientName = payload.patientFullName || "";
-	const patientBirth = payload.patientBirthDate || "01.01.1990";
-	const patientPassport = payload.patientPassport || "Паспорт гражданина РФ";
-	const patientAddress = payload.patientAddress || "г. Москва";
-	const patientPhone = payload.patientPhone || "+7 (999) 000-00-00";
+	const patientBirth = payload.patientBirthDate || "__.__.____";
+	const patientPassport = payload.patientPassport || "_________________________________";
+	const patientAddress = payload.patientAddress || "_________________________________";
+	const patientPhone = payload.patientPhone || "_______________";
 
 	const customerName = payload.customerFullName || patientName;
 	const customerPassport = payload.customerPassport || patientPassport;

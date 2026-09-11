@@ -207,11 +207,10 @@ describe("Surgical Drill Guide Validation & Overshoot Engine — Wave 122", () =
     });
     assert.deepStrictEqual(emptyImplants, []);
 
-    // Valid implant with undefined anatomy
+    // Valid implant with omitted anatomy
     const noAnatomy = validateGuide({
       implants: [makeImplant([0, 0, 0])],
       params: makeParams(),
-      anatomy: undefined,
     });
     assert.deepStrictEqual(noAnatomy, []);
 
