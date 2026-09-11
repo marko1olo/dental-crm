@@ -19,6 +19,7 @@ import {
 } from "./panoramicCprMath.js";
 
 export type Point2 = [number, number];
+export type Vec3 = [number, number, number];
 
 export interface CPRResult {
 	pixelData: Float32Array;

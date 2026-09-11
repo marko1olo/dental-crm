@@ -96,6 +96,13 @@ export {
 	detectArchControlPoints,
 	type ArchDetectOptions,
 	archDetectEngine,
+	type PrincipalAxis,
+	type CrownSuggestion,
+	principalAxis,
+	anglesFromWorldAxis,
+	orientAxisByBone,
+	suggestImplantFromMesh,
+	toothSetupEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";

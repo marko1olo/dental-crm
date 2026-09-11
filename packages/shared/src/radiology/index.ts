@@ -74,5 +74,15 @@ export {
 
 export * as measureStatsEngine from "./measureStats.js";
 
+// Wave 125: Tooth Setup & Prosthetically-Driven Implant Planning Engine
+export {
+	type PrincipalAxis,
+	type CrownSuggestion,
+	principalAxis,
+	anglesFromWorldAxis,
+	orientAxisByBone,
+	suggestImplantFromMesh,
+} from "./toothSetupEngine.js";
 
-
+export * as toothSetupEngine from "./toothSetupEngine.js";
+export * from "./toothSetupEngine.js";

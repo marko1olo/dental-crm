@@ -498,6 +498,7 @@ function getCachedCurve(controlPoints: Point2[]) {
 
 /** Frame of the dental arch at normalized position s (0..1) */
 export function archFrameAt(controlPoints: Point2[], s: number): ArchFrame | null {
+  if (controlPoints.length < 2) return null;
   const { curve, normals } = getCachedCurve(controlPoints);
   if (curve.length < 2) return null;
   const idx = Math.round(Math.max(0, Math.min(1, s)) * (curve.length - 1));
@@ -513,6 +514,7 @@ export function archFrameAt(controlPoints: Point2[], s: number): ArchFrame | nul
 
 /** Frame of the dental arch at the curve point nearest (in XY) to point p */
 export function nearestArchFrame(controlPoints: Point2[], p: Point2): ArchFrame | null {
+  if (controlPoints.length < 2) return null;
   const { curve, normals } = getCachedCurve(controlPoints);
   if (curve.length < 2) return null;
 
