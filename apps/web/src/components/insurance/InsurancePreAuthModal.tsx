@@ -126,7 +126,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 	const [approvedLimitRub, setApprovedLimitRub] = useState<number>(25000);
 	const [approvedTeethInput, setApprovedTeethInput] = useState<string>("16, 17, 26, 46");
 	const [approvedCodesInput, setApprovedCodesInput] = useState<string>("A16.07.002, A16.07.030, A16.07.008");
-	const [curatorName, setCuratorName] = useState<string>("Иванова Елена (Врач-эксперт)");
+	const [curatorName, setCuratorName] = useState<string>("");
 	const [curatorPhone, setCuratorPhone] = useState<string>("8 (800) 333-08-88 доб. 142");
 
 	// 3. Таблица услуг для расчета
@@ -527,7 +527,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 								<ShieldCheck size={18} className="text-teal-600" />
 								<span>Страховой полис ДМС</span>
 							</div>
-							<div className="text-xs text-muted">Пациент: <span className="font-semibold text-ink">{patient?.fullName || "Иванов И.И."}</span></div>
+							<div className="text-xs text-muted">Пациент: <span className="font-semibold text-ink">{patient?.fullName || "Пациент"}</span></div>
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">

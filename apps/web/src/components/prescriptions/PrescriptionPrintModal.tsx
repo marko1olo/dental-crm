@@ -38,6 +38,7 @@ import {
 	Printer,
 	QrCode,
 	Search,
+	Scale,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
@@ -1096,7 +1097,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									<div className="flex flex-col gap-1 min-w-0">
 										<div className="flex items-center gap-2 flex-wrap">
 											<span className="text-xs font-black uppercase tracking-wider text-red-700 dark:text-red-300">
-												⚠️ ВНИМАНИЕ: КЛИНИЧЕСКИЙ КОНФЛИКТ АЛЛЕРГИИ / РИСК АНАФИЛАКСИИ!
+												ВНИМАНИЕ: КЛИНИЧЕСКИЙ КОНФЛИКТ АЛЛЕРГИИ / РИСК АНАФИЛАКСИИ!
 											</span>
 											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-600 text-white shadow-xs">
 												Пенициллины
@@ -1109,8 +1110,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											Высокий риск развития анафилактического шока, отёка Квинке и острой токсико-аллергической реакции немедленного типа!
 										</p>
 										<div className="text-[11px] text-[var(--muted)] border-t border-red-300/40 dark:border-red-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
-											<span>
-												⚖️ <strong>Мандат 8e (Автономия врача):</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность лечащего врача.
+											<span className="flex items-center gap-1">
+												<Scale className="w-3.5 h-3.5 text-red-600 shrink-0" />
+												<span><strong>Мандат 8e (Автономия врача):</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность лечащего врача.</span>
 											</span>
 											<span className="text-[10px] italic text-[var(--muted)]">
 												Клиническая альтернатива: рассмотрите макролиды (Азитромицин / Сумамед 500 мг) или линкозамиды (Линкомицин 500 мг).
@@ -1131,7 +1133,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									<div className="flex flex-col gap-1 min-w-0">
 										<div className="flex items-center gap-2 flex-wrap">
 											<span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
-												⚠️ ВНИМАНИЕ: АЛЛЕРГИЧЕСКАЯ НЕПЕРЕНОСИМОСТЬ НПВС / АСПИРИНА!
+												ВНИМАНИЕ: АЛЛЕРГИЧЕСКАЯ НЕПЕРЕНОСИМОСТЬ НПВС / АСПИРИНА!
 											</span>
 											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shadow-xs">
 												НПВС / Анальгетики
@@ -1144,8 +1146,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											Риск развития бронхоспазма («аспириновая астма»), крапивницы, ангионевротического отёка и обострения язвенной болезни.
 										</p>
 										<div className="text-[11px] text-[var(--muted)] border-t border-amber-300/40 dark:border-amber-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
-											<span>
-												⚖️ <strong>Мандат 8e (Автономия врача):</strong> Печать бланка 107-1/у не блокируется. Врач автономен и принимает решение под свою клиническую ответственность.
+											<span className="flex items-center gap-1">
+												<Scale className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+												<span><strong>Мандат 8e (Автономия врача):</strong> Печать бланка 107-1/у не блокируется. Врач автономен и принимает решение под свою клиническую ответственность.</span>
 											</span>
 											<span className="text-[10px] italic text-[var(--muted)]">
 												Рекомендуется оценить степень сенсибилизации или применить альтернативное обезболивание (Парацетамол при отсутствии противопоказаний).

@@ -119,10 +119,10 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 
 	// 2. Состояние Pre-Auth Studio (Согласование услуг)
 	const [preAuthPatientName, setPreAuthPatientName] = useState(
-		patientContext?.fullName ?? "Иванов Сергей Александрович",
+		patientContext?.fullName ?? "",
 	);
 	const [preAuthPolicyNumber, setPreAuthPolicyNumber] = useState(
-		patientContext?.policyNumber ?? "СГЗ-77-991283",
+		patientContext?.policyNumber ?? "",
 	);
 	const [preAuthInsurerId, setPreAuthInsurerId] = useState<DmsInsurerId>(
 		patientContext?.insurerId ?? "sogaz",
@@ -190,75 +190,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 		useState<DmsInsurerId>("sogaz");
 
 	const sampleRegistryVisits: readonly DmsRegistryVisitServiceItem[] = useMemo(
-		() => [
-			{
-				visitId: "v-8801",
-				visitDate: "2026-08-05",
-				patientFullName: "Иванов Сергей Александрович",
-				policyNumber: "СГЗ-77-991283",
-				guaranteeLetterNumber: "ГП-СОГАЗ-2026-8812",
-				diagnosisMkb10: "K04.0",
-				toothNumber: "1.6",
-				serviceCode804n: "A16.07.030.001",
-				serviceName: "Инструментальная и медикаментозная обработка корневого канала",
-				doctorFullName: "Д-р Смирнов К.В.",
-				quantity: 3,
-				unitPriceKopecks: 210000,
-				totalBillKopecks: 630000,
-				dmsAcceptedKopecks: 630000,
-				patientPaidKopecks: 0,
-			},
-			{
-				visitId: "v-8802",
-				visitDate: "2026-08-05",
-				patientFullName: "Иванов Сергей Александрович",
-				policyNumber: "СГЗ-77-991283",
-				guaranteeLetterNumber: "ГП-СОГАЗ-2026-8812",
-				diagnosisMkb10: "K04.0",
-				toothNumber: "1.6",
-				serviceCode804n: "A11.07.010",
-				serviceName: "Инъекционное введение анестетика",
-				doctorFullName: "Д-р Смирнов К.В.",
-				quantity: 1,
-				unitPriceKopecks: 95000,
-				totalBillKopecks: 95000,
-				dmsAcceptedKopecks: 95000,
-				patientPaidKopecks: 0,
-			},
-			{
-				visitId: "v-8803",
-				visitDate: "2026-08-12",
-				patientFullName: "Кузнецова Ольга Дмитриевна",
-				policyNumber: "ИНГ-902-11487",
-				guaranteeLetterNumber: "ИНГОС-МЕД-26-44091",
-				diagnosisMkb10: "K01.1",
-				toothNumber: "3.8",
-				serviceCode804n: "A16.07.001.002",
-				serviceName: "Удаление ретинированного зуба мудрости",
-				doctorFullName: "Д-р Васильев А.А.",
-				quantity: 1,
-				unitPriceKopecks: 850000,
-				totalBillKopecks: 850000,
-				dmsAcceptedKopecks: 850000,
-				patientPaidKopecks: 0,
-			},
-			{
-				visitId: "v-8804",
-				visitDate: "2026-08-15",
-				patientFullName: "Петров Василий Николаевич",
-				policyNumber: "РЕСО-994-0012",
-				diagnosisMkb10: "K02.1",
-				toothNumber: "2.1",
-				serviceCode804n: "A16.07.002.001",
-				serviceName: "Восстановление зуба светоотверждаемой пломбой",
-				doctorFullName: "Д-р Смирнов К.В.",
-				quantity: 1,
-				unitPriceKopecks: 380000,
-				totalBillKopecks: 380000,
-				dmsAcceptedKopecks: 380000,
-				patientPaidKopecks: 0,
-			},
-		],
+		() => [],
 		[],
 	);
 
@@ -908,7 +840,7 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 											<input
 												type="text"
 												className="dms-input"
-												placeholder="Иванов Иван Иванович (по умолчанию контекст)"
+												placeholder="ФИО пациента (по умолчанию контекст)"
 												value={newLetterPatientName}
 												onChange={(e) =>
 													setNewLetterPatientName(e.target.value)

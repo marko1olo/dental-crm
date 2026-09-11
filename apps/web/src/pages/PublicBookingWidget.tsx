@@ -28,7 +28,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	const [patientData, setPatientData] = useState<PatientPersonalCabinetData>(DEMO_PATIENT_CABINET);
 
 	// Авторизация в портале
-	const [loginPhone, setLoginPhone] = useState("+7 (999) 123-45-67");
+	const [loginPhone, setLoginPhone] = useState("");
 	const [otpCode, setOtpCode] = useState("");
 	const [otpSent, setOtpSent] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);

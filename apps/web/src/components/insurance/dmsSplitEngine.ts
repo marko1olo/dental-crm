@@ -482,7 +482,7 @@ export function buildDmsReconciliationRegistry(params: {
 		registryDate: params.registryDate || new Date().toISOString().slice(0, 10),
 		insurer,
 		clinicName: params.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-		clinicInn: params.clinicInn || "7701234567",
+		clinicInn: params.clinicInn || "",
 		clinicOgrn: params.clinicOgrn || "1027700123456",
 		periodStart: params.periodStart,
 		periodEnd: params.periodEnd,

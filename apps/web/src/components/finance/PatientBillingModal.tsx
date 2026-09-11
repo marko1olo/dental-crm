@@ -254,23 +254,23 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			actDateIso: new Date().toISOString(),
 			clinic: {
 				name: "Стоматологическая клиника ДЕНТЕ",
-				legalName: clinicLegalName,
-				inn: "7701234567",
-				kpp: "770101001",
-				ogrn: "1027700132195",
-				licenseNumber: clinicLicenseNumber,
+				legalName: clinicLegalName || "",
+				inn: "",
+				kpp: "",
+				ogrn: "",
+				licenseNumber: clinicLicenseNumber || "",
 				licenseDate: "12.10.2021",
-				address: "г. Москва, Ломоносовский проспект, д. 24",
-				phone: "+7 (495) 789-01-23",
-				chiefDoctorName: "Д-р Смирнов А. В.",
+				address: "",
+				phone: "",
+				chiefDoctorName: "",
 			},
 			patient: {
 				id: patient?.id,
 				fullName: patient?.fullName || "",
 				birthDate: patient?.birthDate || undefined,
-				passportData: patient?.passportData || "Паспорт РФ: 45 12 № 384920, выдан ОВД Хамовники г. Москвы",
-				phone: patient?.phone || "+7 (916) 123-45-67",
-				address: patient?.address || "г. Москва, ул. Арбат, д. 12, кв. 4",
+				passportData: patient?.passportData || "",
+				phone: patient?.phone || "",
+				address: patient?.address || "",
 				medicalCardNumber: patient?.medicalCardNumber || "043/у-2026",
 			},
 			doctor: {
@@ -289,9 +289,9 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			actParams.patient.fullName,
 			friendlyBreakdown,
 			actParams.clinic.name,
-			actParams.clinic.phone || "+7 (495) 789-01-23",
+			actParams.clinic.phone || "",
 		);
-		const link = buildWhatsAppLink(actParams.patient.phone || "+79991234567", text);
+		const link = buildWhatsAppLink(actParams.patient.phone || "", text);
 		window.open(link, "_blank");
 		setToastMsg("Детализация счета отправлена в WhatsApp!");
 		setTimeout(() => setToastMsg(null), 3000);

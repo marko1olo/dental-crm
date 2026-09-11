@@ -550,7 +550,7 @@ export const SAMPLE_DMS_GUARANTEE_LETTERS: readonly DmsGuaranteeLetterRecord[] =
 		insurerId: "sogaz",
 		insurerName: "АО «СОГАЗ»",
 		patientId: "pat-101",
-		patientFullName: "Иванов Сергей Александрович",
+		patientFullName: "Пациент ДМС (Тестовый полис)",
 		policyNumber: "СГЗ-77-991283",
 		programKey: "standard_therapy",
 		issueDate: "2026-08-01",
