@@ -58,7 +58,7 @@ export interface RadiologyModuleProps {
 const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 	{
 		id: "study-cbct-001",
-		patientName: "Иванов Иван Иванович",
+		patientName: "",
 		studyDate: "2026-08-15 14:30",
 		studyType: "cbct_jaw_8x8",
 		modality: "cbct_3d",
@@ -119,7 +119,7 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 	},
 	{
 		id: "study-optg-002",
-		patientName: "Иванов Иван Иванович",
+		patientName: "",
 		studyDate: "2026-08-10 11:15",
 		studyType: "optg_digital_panoramic",
 		modality: "optg_panoramic",
@@ -146,7 +146,7 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 	},
 	{
 		id: "study-rvg-003",
-		patientName: "Иванов Иван Иванович",
+		patientName: "",
 		studyDate: "2026-08-01 09:40",
 		studyType: "intraoral_radiovisiography",
 		modality: "intraoral_rvg",
@@ -282,7 +282,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	);
 
 	// Patient details
-	const patientFullName = patient?.fullName || "Иванов Иван Иванович";
+	const patientFullName = patient?.fullName || "";
 	const patientBirth = patient?.birthDate || "1990-05-14";
 	const patientCard =
 		patient?.medicalCardNumber || patient?.cardNumber || "043/у-0012";

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
 	Activity,
+	BellPlus,
 	Check,
 	History,
 	X,
@@ -22,7 +23,36 @@ export interface ToothCardModalProps {
 	onUpdateTooth?: ((toothNumber: number, updates: Partial<ToothData>) => void) | undefined;
 	onOpenHistory?: ((toothNumber: number) => void) | undefined;
 	onOpenEndo?: ((toothNumber: number) => void) | undefined;
+	onSetRecall?: ((toothNumber: number, cycleType: string, monthsOffset: number) => void) | undefined;
 	className?: string | undefined;
+}
+
+export interface SuggestedRecall {
+	cycle: string;
+	months: number;
+	label: string;
+}
+
+export function getSuggestedRecallForToothState(state: ToothState): SuggestedRecall {
+	switch (state) {
+		case "Healthy":
+			return { cycle: "standard_prophylaxis", months: 6, label: "Профгигиена 6 мес." };
+		case "Caries":
+		case "Filled":
+			return { cycle: "caries_high_risk", months: 6, label: "Контроль пломбы 6 мес." };
+		case "Pulpitis":
+		case "Periodontitis":
+			return { cycle: "periodontal_maintenance", months: 3, label: "Контроль пародонта / рентген 3 мес." };
+		case "Crown":
+			return { cycle: "prosthetic_check", months: 6, label: "Окклюзия / коронка 6 мес." };
+		case "Implant":
+		case "Planned_Implant":
+			return { cycle: "implant_monitoring", months: 3, label: "Остеоинтеграция 3 мес." };
+		case "Missing":
+			return { cycle: "standard_prophylaxis", months: 6, label: "Профосмотр 6 мес." };
+		default:
+			return { cycle: "standard_prophylaxis", months: 6, label: "Профосмотр 6 мес." };
+	}
 }
 
 const AVAILABLE_SURFACES = [
@@ -43,6 +73,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 	onUpdateTooth,
 	onOpenHistory,
 	onOpenEndo,
+	onSetRecall,
 	className = "",
 }) => {
 	const [currentState, setCurrentState] = useState<ToothState>(toothData?.state ?? "Healthy");
@@ -99,6 +130,32 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(`Клиническая карточка зуба #${toothNumber} обновлена`, "success", 3000);
 		onClose();
+	};
+
+	const suggestedRecall = useMemo(() => {
+		return getSuggestedRecallForToothState(currentState);
+	}, [currentState]);
+
+	const handleTriggerRecall = () => {
+		if (onSetRecall) {
+			onSetRecall(toothNumber, suggestedRecall.cycle, suggestedRecall.months);
+		} else if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-open-recall-modal", {
+					detail: {
+						toothNumber,
+						cycleType: suggestedRecall.cycle,
+						monthsOffset: suggestedRecall.months,
+					},
+				}),
+			);
+		}
+		showToast(
+			`Назначен вызов по зубу #${toothNumber}: ${suggestedRecall.label}`,
+			"success",
+			3000,
+		);
+		SoundFeedbackService.getInstance().playActionSuccess();
 	};
 
 	if (!isOpen) return null;
@@ -269,7 +326,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 						</div>
 					</div>
 
-					{/* Quick Links: History & Endo */}
+					{/* Quick Links: History, Endo & Treatment Recall */}
 					<div className="flex items-center gap-2">
 						{onOpenHistory && (
 							<button
@@ -299,6 +356,15 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 								<span>Журнал каналов (Эндо)</span>
 							</button>
 						)}
+						<button
+							type="button"
+							onClick={handleTriggerRecall}
+							className="min-h-[44px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-teal-700 dark:text-teal-400"
+							data-testid="tooth-card-set-recall-btn"
+						>
+							<BellPlus size={14} className="shrink-0" />
+							<span>Вызов ({suggestedRecall.label})</span>
+						</button>
 					</div>
 				</div>
 

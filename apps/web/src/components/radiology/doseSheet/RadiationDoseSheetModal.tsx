@@ -71,7 +71,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 	isOpen,
 	onClose,
 	studies,
-	patientName = "Иванов Иван Иванович",
+	patientName = "",
 	patientBirthDate = "1990-05-14",
 	medicalCardNumber = "043/у-0012",
 	clinicName = 'ООО "Денте Клиник"',
@@ -249,7 +249,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 	const handlePrintDoseSheet = () => {
 		const html = generateDoseSheetHtml(records, {
 			clinicName: clinicName || 'ООО "Денте Клиник"',
-			patientFullName: patientName || "Иванов Иван Иванович",
+			patientFullName: patientName || "",
 			patientBirthDate: patientBirthDate || "1990-05-14",
 			medicalCardNumber: medicalCardNumber || "043/у-0012",
 			reportingYear: selectedYear === 0 ? currentYear : selectedYear,
@@ -277,7 +277,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 	const handleExportCsv = () => {
 		const csvContent = exportDoseJournalToCsv(records, {
 			clinicName: clinicName || 'ООО "Денте Клиник"',
-			patientFullName: patientName || "Иванов Иван Иванович",
+			patientFullName: patientName || "",
 			medicalCardNumber: medicalCardNumber || "043/у-0012",
 			delimiter: ";",
 		});

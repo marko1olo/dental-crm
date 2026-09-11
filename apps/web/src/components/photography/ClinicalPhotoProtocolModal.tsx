@@ -39,7 +39,7 @@ const EMPTY_INITIAL_SLOTS: Record<string, PhotoSlotRecord> = {};
 export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = 'Иванов Иван Иванович',
+	patientName = '',
 	patientCardNumber = 'К-8492',
 	doctorName = 'Д-р Смирнова Е. В.',
 	clinicName = 'DENTE CLINIC',

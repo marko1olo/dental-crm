@@ -518,7 +518,7 @@ export function generateDoseSheetHtml(
 		clinicAddress = "г. Москва, ул. Клиническая, д. 10, стр. 1",
 		clinicOgrn = "1127746000000",
 		clinicLicense = "ЛО-77-01-012345 от 12.04.2021",
-		patientFullName = "Иванов Иван Иванович",
+		patientFullName = "",
 		patientBirthDate = "1990-05-14",
 		patientGender = "male",
 		medicalCardNumber = "043/у-0012",
@@ -848,7 +848,7 @@ export function exportDoseJournalToCsv(
 ): string {
 	const {
 		clinicName = 'ООО "Денте Клиник"',
-		patientFullName = "Иванов Иван Иванович",
+		patientFullName = "",
 		medicalCardNumber = "043/у-0012",
 		delimiter = ";",
 	} = options;

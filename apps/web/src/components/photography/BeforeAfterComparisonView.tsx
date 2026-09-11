@@ -50,7 +50,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 	beforeSlotId,
 	afterSlotId,
 	clinicName = 'DENTE CLINIC',
-	patientName = 'Иванов Иван Иванович',
+	patientName = '',
 	patientCardNumber = 'К-8492',
 	doctorName = 'Д-р Смирнова Е. В.',
 	onBeforeSlotChange,
