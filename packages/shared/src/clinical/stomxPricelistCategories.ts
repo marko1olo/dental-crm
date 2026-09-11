@@ -7,7 +7,7 @@
 
 import type { StomxCategoryDefinition, StomxPricelistCategory } from "./stomxPricelistTypes.js";
 
-export const STOMX_PRICELIST_CATEGORIES: readonly StomxCategoryDefinition[] = [
+export const STOMX_SPECIALTY_CATEGORIES: readonly StomxCategoryDefinition[] = [
 	{
 		id: "therapy",
 		code: "THERAPY",
@@ -80,17 +80,19 @@ export const STOMX_PRICELIST_CATEGORIES: readonly StomxCategoryDefinition[] = [
 	},
 ] as const;
 
+export const STOMX_PRICELIST_SPECIALTIES = STOMX_SPECIALTY_CATEGORIES;
+
 export const STOMX_CATEGORY_MAP: Readonly<Record<StomxPricelistCategory, StomxCategoryDefinition>> = {
-	therapy: STOMX_PRICELIST_CATEGORIES[0]!,
-	orthopedics: STOMX_PRICELIST_CATEGORIES[1]!,
-	surgery: STOMX_PRICELIST_CATEGORIES[2]!,
-	implantology: STOMX_PRICELIST_CATEGORIES[3]!,
-	orthodontics: STOMX_PRICELIST_CATEGORIES[4]!,
-	periodontics: STOMX_PRICELIST_CATEGORIES[5]!,
-	hygiene: STOMX_PRICELIST_CATEGORIES[6]!,
-	radiology: STOMX_PRICELIST_CATEGORIES[7]!,
-	anesthesiology: STOMX_PRICELIST_CATEGORIES[8]!,
-	ztl: STOMX_PRICELIST_CATEGORIES[9]!,
+	therapy: STOMX_SPECIALTY_CATEGORIES[0]!,
+	orthopedics: STOMX_SPECIALTY_CATEGORIES[1]!,
+	surgery: STOMX_SPECIALTY_CATEGORIES[2]!,
+	implantology: STOMX_SPECIALTY_CATEGORIES[3]!,
+	orthodontics: STOMX_SPECIALTY_CATEGORIES[4]!,
+	periodontics: STOMX_SPECIALTY_CATEGORIES[5]!,
+	hygiene: STOMX_SPECIALTY_CATEGORIES[6]!,
+	radiology: STOMX_SPECIALTY_CATEGORIES[7]!,
+	anesthesiology: STOMX_SPECIALTY_CATEGORIES[8]!,
+	ztl: STOMX_SPECIALTY_CATEGORIES[9]!,
 };
 
 export function getStomxCategoryTitle(category: StomxPricelistCategory): string {

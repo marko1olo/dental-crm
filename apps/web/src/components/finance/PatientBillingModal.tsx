@@ -63,6 +63,26 @@ import { TaxDeductionModal } from "../tax/TaxDeductionModal";
 import type { TaxDeductionPaymentItem } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
 
+export interface PatientBillingPlanStage {
+	readonly id: string;
+	readonly stageNumber?: number | undefined;
+	readonly title?: string | undefined;
+	readonly titleRu?: string | undefined;
+	readonly totalAmountRub?: number | undefined;
+	readonly totalRub?: number | undefined;
+	readonly totalPriceKopecks?: number | undefined;
+	readonly status?: string | undefined;
+	readonly items?: readonly any[] | undefined;
+}
+
+export interface PatientBillingTreatmentPlan {
+	readonly id?: string | undefined;
+	readonly planNumber?: string | undefined;
+	readonly title?: string | undefined;
+	readonly stages?: readonly PatientBillingPlanStage[] | undefined;
+	readonly activeStage?: PatientBillingPlanStage | undefined;
+}
+
 export interface PatientBillingModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -90,6 +110,8 @@ export interface PatientBillingModalProps {
 	readonly contractDateIso?: string | undefined;
 	readonly fiscalPayments?: readonly TaxDeductionPaymentItem[] | undefined;
 	readonly onFiscalize?: (() => void) | undefined;
+	readonly activeTreatmentPlan?: PatientBillingTreatmentPlan | undefined;
+	readonly onPayTreatmentPlanStage?: ((stageId: string, stageAmountRub: number) => void) | undefined;
 }
 
 function renderCategoryIcon(categoryGroup: string) {
@@ -138,6 +160,8 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	contractDateIso,
 	fiscalPayments,
 	onFiscalize,
+	activeTreatmentPlan,
+	onPayTreatmentPlanStage,
 }) => {
 	const [activeTab, setActiveTab] = useState<"preview" | "friendly" | "details">("friendly");
 	const [selectedTender, setSelectedTender] = useState<PatientBillingPaymentMethod>("card");
@@ -156,6 +180,80 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 
 	const [customAmountRub, setCustomAmountRub] = useState<number>(0);
 	const [customServiceName, setCustomServiceName] = useState<string>("Аванс за стоматологические услуги");
+
+	const planStages: readonly PatientBillingPlanStage[] = useMemo(() => {
+		if (activeTreatmentPlan?.stages && activeTreatmentPlan.stages.length > 0) {
+			return activeTreatmentPlan.stages;
+		}
+		if (activeTreatmentPlan?.activeStage) {
+			return [activeTreatmentPlan.activeStage];
+		}
+		return [];
+	}, [activeTreatmentPlan]);
+
+	const [selectedStageId, setSelectedStageId] = useState<string | null>(() => {
+		return activeTreatmentPlan?.activeStage?.id ?? activeTreatmentPlan?.stages?.[0]?.id ?? null;
+	});
+
+	const [isStageApplied, setIsStageApplied] = useState<boolean>(() => {
+		return Boolean(
+			activeTreatmentPlan &&
+				(activeTreatmentPlan.activeStage ||
+					(activeTreatmentPlan.stages && activeTreatmentPlan.stages.length > 0 && (!initialServices || initialServices.length === 0))),
+		);
+	});
+
+	const selectedStage = useMemo(() => {
+		if (selectedStageId) {
+			const found = planStages.find((s) => s.id === selectedStageId);
+			if (found) return found;
+		}
+		return activeTreatmentPlan?.activeStage ?? planStages[0] ?? null;
+	}, [planStages, selectedStageId, activeTreatmentPlan]);
+
+	const getStageAmountRub = (stg: PatientBillingPlanStage | null | undefined): number => {
+		if (!stg) return 0;
+		if (typeof stg.totalAmountRub === "number") return stg.totalAmountRub;
+		if (typeof stg.totalRub === "number") return stg.totalRub;
+		if (typeof stg.totalPriceKopecks === "number") return stg.totalPriceKopecks / 100;
+		if (stg.items && stg.items.length > 0) {
+			return stg.items.reduce((sum: number, it: any) => {
+				const pr = it.priceRub ?? (it.priceKopecks ? it.priceKopecks / 100 : (it.totalRub ?? 0));
+				const qty = it.quantity ?? 1;
+				return sum + pr * qty;
+			}, 0);
+		}
+		return 0;
+	};
+
+	const handleSelectPlanStage = (stg: PatientBillingPlanStage) => {
+		setSelectedStageId(stg.id);
+		setIsStageApplied(true);
+		const amt = getStageAmountRub(stg);
+		if (onPayTreatmentPlanStage) {
+			onPayTreatmentPlanStage(stg.id, amt);
+		}
+		setToastMsg(`Выбран этап «${stg.titleRu ?? stg.title ?? `Этап ${stg.stageNumber ?? 1}`}» (${amt.toLocaleString("ru-RU")} ₽)`);
+		setTimeout(() => setToastMsg(null), 2500);
+	};
+
+	const handleTenderPlanStage = (stageToPay: PatientBillingPlanStage | null) => {
+		const targetStage = stageToPay ?? selectedStage;
+		if (!targetStage) return;
+		setSelectedStageId(targetStage.id);
+		setIsStageApplied(true);
+		const amt = getStageAmountRub(targetStage);
+		if (onPayTreatmentPlanStage) {
+			onPayTreatmentPlanStage(targetStage.id, amt);
+		}
+		setToastMsg(`Этап «${targetStage.titleRu ?? targetStage.title ?? `Этап ${targetStage.stageNumber ?? 1}`}» готов к оплате: ${amt.toLocaleString("ru-RU")} ₽`);
+		setTimeout(() => setToastMsg(null), 3000);
+		if (onFiscalize) {
+			onFiscalize();
+		} else {
+			setIsFiscalOpen(true);
+		}
+	};
 
 	// Per-item warranty rework overrides (Doctor Autonomy Mandate 8e: freedom of 100% doctor discount without admin passwords)
 	const [itemWarrantyMap, setItemWarrantyMap] = useState<Record<string, boolean>>(() => {
@@ -185,7 +283,30 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	// Raw services before discount with per-item warranty overrides
 	const rawServices: InvoiceServiceItem[] = useMemo(() => {
 		let baseItems: InvoiceServiceItem[] = [];
-		if (initialServices.length > 0) {
+		if (isStageApplied && selectedStage) {
+			if (selectedStage.items && selectedStage.items.length > 0) {
+				baseItems = selectedStage.items.map((item: any, idx: number) => ({
+					id: item.id ?? `stage-item-${idx}`,
+					name: item.name ?? item.titleRu ?? item.title ?? `Услуга этапа ${selectedStage.stageNumber ?? ""}`,
+					code804n: item.code804n ?? "A16.07.001",
+					quantity: item.quantity ?? 1,
+					priceRub: item.priceRub ?? (item.priceKopecks ? item.priceKopecks / 100 : (item.totalRub ?? 0)),
+					category: item.category ?? "therapy",
+				}));
+			} else {
+				const stgAmt = getStageAmountRub(selectedStage);
+				baseItems = [
+					{
+						id: `stage-${selectedStage.id}`,
+						name: `Этап ${selectedStage.stageNumber ?? 1}: ${selectedStage.titleRu ?? selectedStage.title ?? "Стоматологическое лечение"}`,
+						code804n: "A16.07.001",
+						quantity: 1,
+						priceRub: stgAmt,
+						category: "therapy",
+					},
+				];
+			}
+		} else if (initialServices.length > 0) {
 			baseItems = [...initialServices];
 		} else if (customAmountRub > 0) {
 			baseItems = [
@@ -218,7 +339,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 				warrantyPriceRub: 0,
 			};
 		});
-	}, [initialServices, customAmountRub, customServiceName, itemWarrantyMap]);
+	}, [isStageApplied, selectedStage, initialServices, customAmountRub, customServiceName, itemWarrantyMap]);
 
 	const discountResult = useMemo(() => {
 		return distributeLoyaltyDiscountAcrossItems(rawServices, {
@@ -815,6 +936,124 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									</div>
 								</div>
 							</div>
+
+							{/* Блок выбора оплачиваемого этапа плана лечения (Wave 116 — StomX Parity) */}
+							{planStages.length > 0 && (
+								<div
+									className="p-4 rounded-2xl border-2 border-indigo-500/40 bg-indigo-500/5 space-y-3"
+									data-testid="patient-billing-plan-stage-panel"
+								>
+									<div className="flex items-center justify-between flex-wrap gap-2">
+										<div className="flex items-center gap-2">
+											<Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+											<div>
+												<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink)] m-0 uppercase tracking-wider">
+													Оплата этапа плана лечения {activeTreatmentPlan?.planNumber ? `№ ${activeTreatmentPlan.planNumber}` : ""}
+												</h4>
+												{activeTreatmentPlan?.title && (
+													<p className="text-[11px] text-[var(--muted)] m-0">
+														{activeTreatmentPlan.title}
+													</p>
+												)}
+											</div>
+										</div>
+
+										{initialServices.length > 0 && (
+											<div className="flex items-center gap-1.5">
+												<button
+													type="button"
+													onClick={() => setIsStageApplied(false)}
+													className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+														!isStageApplied
+															? "bg-slate-700 text-white shadow-xs"
+															: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+													}`}
+												>
+													Услуги визита ({initialServices.length})
+												</button>
+												<button
+													type="button"
+													onClick={() => setIsStageApplied(true)}
+													className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+														isStageApplied
+															? "bg-indigo-600 text-white shadow-xs"
+															: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+													}`}
+												>
+													Этап плана
+												</button>
+											</div>
+										)}
+									</div>
+
+									{/* Список этапов */}
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+										{planStages.map((stg, idx) => {
+											const isSelected = isStageApplied && (selectedStage?.id === stg.id);
+											const amt = getStageAmountRub(stg);
+											return (
+												<button
+													key={stg.id || idx}
+													type="button"
+													onClick={() => handleSelectPlanStage(stg)}
+													className={`min-h-[44px] p-2.5 rounded-xl text-left transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs border ${
+														isSelected
+															? "bg-indigo-50 dark:bg-indigo-950/50 border-indigo-500 ring-2 ring-indigo-400"
+															: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
+													}`}
+													data-testid={`plan-stage-item-${stg.id}`}
+												>
+													<div className="min-w-0 flex-1">
+														<div className="flex items-center gap-1.5">
+															<span className="text-[10px] font-mono font-black uppercase px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
+																Этап {stg.stageNumber ?? idx + 1}
+															</span>
+															{stg.status && (
+																<span className="text-[10px] text-[var(--muted)]">
+																	{stg.status}
+																</span>
+															)}
+														</div>
+														<div className="text-xs font-bold text-[var(--ink)] truncate mt-0.5">
+															{stg.titleRu ?? stg.title ?? `Этап ${stg.stageNumber ?? idx + 1}`}
+														</div>
+													</div>
+													<div className="text-right shrink-0">
+														<span className="text-xs sm:text-sm font-extrabold font-mono text-[var(--ink)]">
+															{amt.toLocaleString("ru-RU")} ₽
+														</span>
+													</div>
+												</button>
+											);
+										})}
+									</div>
+
+									{/* 1-клик кнопка оплаты выбранного этапа */}
+									<div className="pt-1 flex items-center justify-between flex-wrap gap-2">
+										<div className="text-xs text-[var(--muted)]">
+											{isStageApplied && selectedStage ? (
+												<span>
+													К оплате выбран: <strong className="text-[var(--ink)]">{selectedStage.titleRu ?? selectedStage.title ?? `Этап ${selectedStage.stageNumber ?? 1}`}</strong> ({getStageAmountRub(selectedStage).toLocaleString("ru-RU")} ₽)
+												</span>
+											) : (
+												<span>Выберите этап для подстановки суммы в чек</span>
+											)}
+										</div>
+										<button
+											type="button"
+											onClick={() => handleTenderPlanStage(selectedStage)}
+											className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+											data-testid="btn-tender-plan-stage"
+											title="Оплатить выбранный этап плана лечения в 1 клик"
+										>
+											<Zap className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
+											<span>
+												Оплатить этап в 1 клик • {getStageAmountRub(selectedStage).toLocaleString("ru-RU")} ₽
+											</span>
+										</button>
+									</div>
+								</div>
+							)}
 
 							{/* Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
 							<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">

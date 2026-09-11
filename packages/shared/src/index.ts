@@ -4970,6 +4970,7 @@ export type OutpatientMedicalCard025uSpecialistVisitRecord = z.infer<
 	typeof outpatientMedicalCard025uSpecialistVisitRecordSchema
 >;
 
+// LEGACY / HOSPITAL BLOAT: В частной стоматологии используется исключительно Форма 043/у Минздрава РФ (Мандат 8i).
 export const outpatientMedicalCard025uPayloadSchema = z.object({
 	formNumber: z.literal("025/у"),
 	sourceOrderReference: z.literal(
@@ -5016,6 +5017,7 @@ export const outpatientMedicalCard025uPayloadSchema = z.object({
 	employmentCode: z.string().trim().max(120).nullable().optional(),
 	disabilityGroup: z.string().trim().max(120).nullable().optional(),
 	workOrStudyPlace: z.string().trim().max(240).nullable().optional(),
+	// Стационарные и трансфузиологические поля (чужеродный госпитальный блоат, Мандат 8i — помечены как опциональные deprecated)
 	palliativeCareNeedCode: z.string().trim().max(120).nullable().optional(),
 	bloodGroup: z.string().trim().max(40).nullable().optional(),
 	rhFactor: z.string().trim().max(40).nullable().optional(),
@@ -5039,12 +5041,17 @@ export const outpatientMedicalCard025uPayloadSchema = z.object({
 	stageEpicrisisRecords: z
 		.array(outpatientMedicalCard025uTextRecordSchema)
 		.max(50),
+	// Согласования начмедов и врачебных комиссий стационаров (в стоматологии не используются, Мандат 8e / 8i)
 	departmentHeadConsultations: z
 		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(50),
+		.max(50)
+		.optional()
+		.default([]),
 	medicalCommissionRecords: z
 		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(50),
+		.max(50)
+		.optional()
+		.default([]),
 	dispensaryObservationEntries: z
 		.array(outpatientMedicalCard025uTextRecordSchema)
 		.max(100),
@@ -14131,6 +14138,7 @@ export * from "./analytics/callTrackingEngine.js";
 export * from "./marketing/marketingRomiEngine.js";
 export * from "./crypto/index.js";
 export * from "./radiology/index.js";
+export * from "./types/pricing.js";
 
 
 

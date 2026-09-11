@@ -24,7 +24,7 @@ import {
 	searchStomxProcedures,
 	STOMX_CORE_PROCEDURES,
 	STOMX_ORTHOPEDICS_PROCEDURES,
-	STOMX_PRICELIST_CATEGORIES,
+	STOMX_SPECIALTY_CATEGORIES,
 	STOMX_SURGERY_PROCEDURES,
 	STOMX_THERAPY_PROCEDURES,
 	type StomxPricelistCategory,
@@ -33,7 +33,7 @@ import {
 describe("StomX Pricelist & 804n Harmonizer Catalog", () => {
 	describe("1. Category Structure & Specialty Parity", () => {
 		test("contains exactly 10 canonical dental specialties", () => {
-			assert.equal(STOMX_PRICELIST_CATEGORIES.length, 10);
+			assert.equal(STOMX_SPECIALTY_CATEGORIES.length, 10);
 			const expectedCategories: StomxPricelistCategory[] = [
 				"therapy",
 				"orthopedics",
@@ -48,7 +48,7 @@ describe("StomX Pricelist & 804n Harmonizer Catalog", () => {
 			];
 
 			for (const cat of expectedCategories) {
-				const found = STOMX_PRICELIST_CATEGORIES.find((c) => c.id === cat);
+				const found = STOMX_SPECIALTY_CATEGORIES.find((c) => c.id === cat);
 				assert.ok(found, `Категория ${cat} обязана присутствовать в каталоге`);
 				assert.ok(found.titleRu.length > 0, `Название категории ${cat} не может быть пустым`);
 				assert.ok(found.descriptionRu.length > 0, `Описание категории ${cat} не может быть пустым`);
