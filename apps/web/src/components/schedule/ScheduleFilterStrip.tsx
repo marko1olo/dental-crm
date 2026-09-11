@@ -343,10 +343,11 @@ export function ScheduleFilterStrip({
 				{/* "Все записи" filter chip */}
 				<button
 					type="button"
-					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-fit whitespace-nowrap text-xs font-semibold shrink-0 cursor-pointer rounded-lg inline-flex items-center justify-center`}
+					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 min-w-fit whitespace-nowrap text-xs font-semibold shrink-0 cursor-pointer rounded-lg inline-flex items-center justify-center`}
 					onClick={resetScheduleFilters}
 				>
-					Все записи
+					<span className="sm:hidden">Все</span>
+					<span className="hidden sm:inline">Все записи</span>
 				</button>
 
 				{/* 1-Click "Моё кресло" filter chip (StomX / DentalPRO parity, Mandates 8e, 8n) */}
@@ -947,19 +948,18 @@ export function ScheduleFilterStrip({
 						</div>
 				</div>
 
-				{/* Secondary Action: "+ Запись" (Header CTA is dominant Primary) */}
+				{/* Secondary Action: "+ Запись" (Header CTA is dominant Primary; on mobile hidden to prevent duplicate button bloat and toolbar squeeze) */}
 				{onQuickBooking && (
 					<button
 						type="button"
 						onClick={onQuickBooking}
-						className="secondary-button min-h-[38px] min-w-[38px] sm:min-h-[30px] sm:min-w-0 sm:h-7.5 px-2 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] active:scale-95 text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 transition-all cursor-pointer select-none"
+						className="!hidden sm:!inline-flex secondary-button min-h-[30px] sm:h-7.5 px-2 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] active:scale-95 text-xs font-bold items-center justify-center gap-1 sm:gap-1.5 shrink-0 transition-all cursor-pointer select-none"
 						title="Новая запись пациента на прием (горячая клавиша N)"
 						aria-label="Добавить запись"
 						data-testid="schedule-toolbar-quick-booking-btn"
 					>
 						<Sparkles size={13} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
-						<span className="hidden sm:inline whitespace-nowrap font-bold">Быстрая запись</span>
-						<span className="sm:hidden font-bold text-sm leading-none">+</span>
+						<span className="whitespace-nowrap font-bold">Быстрая запись</span>
 					</button>
 				)}
 			</div>

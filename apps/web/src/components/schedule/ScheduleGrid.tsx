@@ -1798,12 +1798,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		<div className="space-y-3">
 			{/* Day 0 Empty State Banner when no appointments for selected day */}
 			{dayAppointments.length === 0 && (
-				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
-					<div className="flex items-center gap-3">
-						<CalendarCheck size={18} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+				<div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 text-xs">
+					<div className="flex items-center gap-2 sm:gap-3">
+						<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<div>
 							<span className="font-bold text-[var(--ink)]">На выбранный день записей пока нет.</span>
-							<span className="text-[var(--muted)] ml-1">Нажмите на любой свободный интервал в сетке ниже или кнопку «+ Записать первого пациента».</span>
+							<span className="text-[var(--muted)] ml-1 hidden sm:inline">Нажмите на любой свободный интервал в сетке ниже или кнопку «+ Записать первого пациента».</span>
 						</div>
 					</div>
 					<button
@@ -1822,7 +1822,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								doctorName: firstDocName || undefined,
 							});
 						}}
-						className="primary-button min-h-[44px] px-3.5 flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer"
+						className="primary-button hidden sm:flex min-h-[44px] px-3.5 items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer shrink-0"
 						data-testid="btn-grid-first-appointment"
 					>
 						<Plus size={14} aria-hidden="true" />

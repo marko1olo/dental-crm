@@ -684,7 +684,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 
 					<span className="text-[var(--muted)] hidden sm:inline">•</span>
 
-					<span className="font-mono font-bold text-[var(--ink)] whitespace-nowrap">
+					<span className="font-mono font-bold text-[var(--ink)] whitespace-nowrap shrink-0 min-w-max">
 						Выручка: {formatMoneyRu(totalTurnoverRub)}
 					</span>
 
@@ -734,8 +734,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						title="Печать X-отчета (без гашения)"
 					>
 						<Printer size={13} className="shrink-0" />
-						<span className="hidden lg:inline">Печать X-отчета (без гашения)</span>
-						<span className="lg:hidden">X-отчет</span>
+						<span>X-отчет</span>
 					</button>
 
 					<button

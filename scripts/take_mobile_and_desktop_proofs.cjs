@@ -2,6 +2,11 @@ const { chromium } = require("playwright");
 const path = require("node:path");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
+const { Pool } = require("pg");
+
+const pool = new Pool({
+	connectionString: process.env.DATABASE_URL || "postgres://dental@127.0.0.1:5432/dental_crm",
+});
 
 async function provisionSession() {
 	const API_BASE = "http://127.0.0.1:4100";
@@ -22,6 +27,21 @@ async function provisionSession() {
 		throw new Error(`Clinic setup failed: ${await initRes.text()}`);
 	}
 	const initData = await initRes.json();
+	const orgId = initData.organizationId;
+	console.log(`[Provisioning] Organization created: ${orgId}`);
+
+	// Seed clinic and chair directly into PostgreSQL so foreign keys & checks are valid
+	const clinicId = crypto.randomUUID();
+	const chairId = crypto.randomUUID();
+	await pool.query(
+		`INSERT INTO clinics (id, organization_id, name, timezone) VALUES ($1, $2, $3, $4)`,
+		[clinicId, orgId, "Стоматология ДЕНТЕ Плюс", "Europe/Samara"]
+	);
+	await pool.query(
+		`INSERT INTO chairs (id, organization_id, clinic_id, name, is_active) VALUES ($1, $2, $3, $4, true)`,
+		[chairId, orgId, clinicId, "Кресло 1 (Терапия/Хирургия)"]
+	);
+	console.log(`[Provisioning] Seeded clinic ${clinicId} and chair ${chairId} into PostgreSQL`);
 
 	const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
 		method: "POST",
@@ -54,42 +74,13 @@ async function provisionSession() {
 				fullName: "Алексеев Владимир Сергеевич",
 				phone: "+7 (999) 111-22-33",
 				birthDate: "1988-05-14",
-				notes: "Аллергия на пенициллин",
+				notes: "Аллергия на пенициллин. План лечения согласован.",
 			}),
 		});
 		if (p1Res.ok) {
 			const p1Data = await p1Res.json();
 			patient1Id = p1Data.id;
 			console.log(`[Provisioning] Created patient 1: ${patient1Id} (${p1Data.fullName})`);
-
-			// Sample appointment for patient 1
-			try {
-				const chairsRes = await fetch(`${API_BASE}/api/chairs`, { headers });
-				let chairId = "chair-1";
-				if (chairsRes.ok) {
-					const chList = await chairsRes.json();
-					if (Array.isArray(chList) && chList.length > 0) chairId = chList[0].id;
-				}
-				const now = new Date();
-				const startsAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0);
-				const endsAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 0);
-				await fetch(`${API_BASE}/api/appointments`, {
-					method: "POST",
-					headers,
-					body: JSON.stringify({
-						patientId: patient1Id,
-						doctorUserId: initData.ownerUserId,
-						chairId,
-						status: "in_treatment",
-						startsAt: startsAt.toISOString(),
-						endsAt: endsAt.toISOString(),
-						reason: "Лечение кариеса 1.6",
-					}),
-				});
-				console.log("[Provisioning] Created in_treatment appointment for patient 1");
-			} catch (ae) {
-				console.log("[Provisioning] Appointment note:", ae.message);
-			}
 
 			// Sample payment 1
 			try {
@@ -154,7 +145,7 @@ async function provisionSession() {
 				fullName: "Смирнова Елена Васильевна",
 				phone: "+7 (916) 234-56-78",
 				birthDate: "1992-11-20",
-				notes: "Соматически здорова / норма",
+				notes: "Соматически здорова / норма. Первичный приём.",
 			}),
 		});
 		if (p2Res.ok) {
@@ -191,11 +182,90 @@ async function provisionSession() {
 		console.log("[Provisioning] Patient 2 err:", e2.message);
 	}
 
+	// Seed multiple appointments across today and tomorrow so schedule is rich
+	const today = new Date();
+	const tomorrow = new Date();
+	tomorrow.setDate(today.getDate() + 1);
+
+	const apptDates = [today, tomorrow];
+	for (const d of apptDates) {
+		const y = d.getFullYear();
+		const m = d.getMonth();
+		const day = d.getDate();
+
+		// Appt 1
+		try {
+			const s1 = new Date(y, m, day, 9, 30, 0);
+			const e1 = new Date(y, m, day, 10, 30, 0);
+			const res = await fetch(`${API_BASE}/api/appointments`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					patientId: patient1Id,
+					doctorUserId: initData.ownerUserId,
+					chairId,
+					status: "in_treatment",
+					startsAt: s1.toISOString(),
+					endsAt: e1.toISOString(),
+					reason: "Лечение кариеса 1.6, реставрация Ceram.X",
+				}),
+			});
+			console.log(`[Provisioning] Appt 1 (${day}.${m+1}): HTTP ${res.status}`);
+		} catch (e) {
+			console.log("[Provisioning] Appt 1 err:", e.message);
+		}
+
+		// Appt 2
+		try {
+			const s2 = new Date(y, m, day, 11, 0, 0);
+			const e2 = new Date(y, m, day, 12, 0, 0);
+			const res = await fetch(`${API_BASE}/api/appointments`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					patientId: patient2Id,
+					doctorUserId: initData.ownerUserId,
+					chairId,
+					status: "planned",
+					startsAt: s2.toISOString(),
+					endsAt: e2.toISOString(),
+					reason: "Профессиональная гигиена и AirFlow",
+				}),
+			});
+			console.log(`[Provisioning] Appt 2 (${day}.${m+1}): HTTP ${res.status}`);
+		} catch (e) {
+			console.log("[Provisioning] Appt 2 err:", e.message);
+		}
+
+		// Appt 3
+		try {
+			const s3 = new Date(y, m, day, 13, 0, 0);
+			const e3 = new Date(y, m, day, 14, 30, 0);
+			const res = await fetch(`${API_BASE}/api/appointments`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					patientId: patient1Id,
+					doctorUserId: initData.ownerUserId,
+					chairId,
+					status: "confirmed",
+					startsAt: s3.toISOString(),
+					endsAt: e3.toISOString(),
+					reason: "Имплантация Nobel Biocare 4.6",
+				}),
+			});
+			console.log(`[Provisioning] Appt 3 (${day}.${m+1}): HTTP ${res.status}`);
+		} catch (e) {
+			console.log("[Provisioning] Appt 3 err:", e.message);
+		}
+	}
+
 	return {
 		clinicToken: initData.clinicToken,
 		staffToken: unlockData.staffToken,
 		ownerUserId: initData.ownerUserId,
 		patientId: patient1Id,
+		chairId,
 	};
 }
 
@@ -224,56 +294,64 @@ async function capture() {
 		args: ["--no-sandbox", "--disable-setuid-sandbox"],
 	});
 
-	const context = await browser.newContext({
-		viewport: { width: 1440, height: 900 },
-	});
-	const page = await context.newPage();
-
-	console.log("[Playwright] Navigating to http://127.0.0.1:5173/...");
-	await page.goto("http://127.0.0.1:5173/", { waitUntil: "domcontentloaded", timeout: 15000 });
-
-	// Inject authenticated tokens and dismiss onboarding completely
-	await page.evaluate(({ ct, st, uid, pid }) => {
-		localStorage.setItem("dente_clinic_token", ct);
-		localStorage.setItem("dente_staff_token", st);
-		localStorage.setItem("dente_active_role", "owner");
-		localStorage.setItem("dente_theme_mode", "light");
-		localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
-			onboardingDismissed: true,
-			onboardingStep: "done",
-			version: 1,
-		}));
-		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({
-			dismissed: true,
-			step: "done",
-			completed: true,
-			onboardingDismissed: true,
-			onboardingStep: "done",
-			version: 1,
-		}));
-		localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
-			version: 1,
-			uiLanguage: "ru",
-			selectedWorkspaceRole: "owner",
-			selectedPatientId: pid,
-			onboardingDismissed: true,
-			onboardingStep: "done",
-		}));
-		localStorage.setItem(
-			"dente-workspace-profile",
-			JSON.stringify({
-				state: {
-					clinicName: "Стоматология ДЕНТЕ Плюс",
-					currentDoctor: { id: uid, fullName: "Д-р Смирнов А. В.", role: "owner" },
-					flags: { disableTour: true },
-				},
-			})
-		);
-	}, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId, pid: auth.patientId });
-
 	const capturedFiles = [];
 
-	async function recordScreenshot(fileName) {
+	async function setupPageAuth(page, theme) {
+		await page.goto("http://127.0.0.1:5173/", { waitUntil: "domcontentloaded", timeout: 15000 });
+		await page.evaluate(({ ct, st, uid, pid, themeMode }) => {
+			localStorage.setItem("dente_clinic_token", ct);
+			localStorage.setItem("dente_staff_token", st);
+			localStorage.setItem("dente_active_role", "owner");
+			localStorage.setItem("dente_theme_mode", themeMode);
+			localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
+				onboardingDismissed: true,
+				onboardingStep: "done",
+				version: 1,
+			}));
+			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({
+				dismissed: true,
+				step: "done",
+				completed: true,
+				onboardingDismissed: true,
+				onboardingStep: "done",
+				version: 1,
+			}));
+			localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
+				version: 1,
+				uiLanguage: "ru",
+				selectedWorkspaceRole: "owner",
+				selectedPatientId: pid,
+				onboardingDismissed: true,
+				onboardingStep: "done",
+			}));
+			localStorage.setItem(
+				"dente-workspace-profile",
+				JSON.stringify({
+					state: {
+						clinicName: "Стоматология ДЕНТЕ Плюс",
+						currentDoctor: { id: uid, fullName: "Д-р Смирнов А. В.", role: "owner" },
+						flags: { disableTour: true },
+					},
+				})
+			);
+			document.documentElement.setAttribute("data-theme", themeMode);
+			if (themeMode === "dark") {
+				document.documentElement.classList.add("dark");
+				document.documentElement.classList.remove("light");
+			} else {
+				document.documentElement.classList.remove("dark");
+				document.documentElement.classList.add("light");
+			}
+		}, {
+			ct: auth.clinicToken,
+			st: auth.staffToken,
+			uid: auth.ownerUserId,
+			pid: auth.patientId,
+			themeMode: theme,
+		});
+	}
+
+	async function recordScreenshot(page, fileName) {
 		const targetPath = path.join(outDir, fileName);
 		const parentBrainPath = path.join(parentBrainDir, fileName);
 		const selfBrainPath = path.join(selfBrainDir, fileName);
@@ -291,152 +369,153 @@ async function capture() {
 		console.log(`[Captured] ${fileName} -> ${stats.size} bytes (MD5: ${hash})`);
 	}
 
-	// ==========================================
-	// SECTION 1: «Расписание» (Schedule View)
-	// ==========================================
-	console.log("\n--- NAVIGATING TO SCHEDULE VIEW via window.location.hash = 'schedule' ---");
-	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.evaluate(() => {
-		window.location.hash = "schedule";
+	// =========================================================================
+	// PHASE 1: DESKTOP WORKSPACE (1440x900)
+	// =========================================================================
+	console.log("\n=== CREATING DESKTOP CONTEXT (1440x900, scale: 1) ===");
+	const desktopContext = await browser.newContext({
+		viewport: { width: 1440, height: 900 },
+		deviceScaleFactor: 1,
 	});
-	await page.waitForTimeout(2000);
+	const desktopPage = await desktopContext.newPage();
 
-	const scheduleFound = await page.$("#schedule, .schedule-panel, .schedule-view");
-	if (!scheduleFound) {
-		console.log("Locating Schedule nav item click fallback...");
-		const navSchedule = await page.$("a[href='#schedule'], button:has-text('Расписание'), .nav-item[href='#schedule']");
-		if (navSchedule) {
-			await navSchedule.click();
-			await page.waitForTimeout(2000);
+	// 1. Desktop Schedule Light
+	console.log("--> Navigating to Schedule (Desktop Light)...");
+	await setupPageAuth(desktopPage, "light");
+	await desktopPage.evaluate(() => { window.location.hash = "schedule"; });
+	await desktopPage.waitForTimeout(2000);
+	await desktopPage.waitForFunction(() => {
+		const text = document.body.innerText || "";
+		return text.includes("Расписание") || text.includes("КРЕСЛО") || document.querySelector(".schedule-grid, .schedule-view, #schedule");
+	}, { timeout: 15000 }).catch(() => {});
+	await desktopPage.waitForTimeout(1000);
+	await recordScreenshot(desktopPage, "01_schedule_1440x900_light.png");
+
+	// 2. Desktop Schedule Dark
+	console.log("--> Switching to Schedule (Desktop Dark)...");
+	await desktopPage.evaluate(() => {
+		document.documentElement.setAttribute("data-theme", "dark");
+		document.documentElement.classList.add("dark");
+		document.documentElement.classList.remove("light");
+		localStorage.setItem("dente_theme_mode", "dark");
+		if (window.__useThemeStore) {
+			window.__useThemeStore.getState().setThemeMode("dark");
 		}
-	}
+	});
+	await desktopPage.waitForTimeout(1500);
+	await recordScreenshot(desktopPage, "02_schedule_1440x900_dark.png");
 
-	try {
-		await page.waitForFunction(() => {
-			const text = document.body.innerText || "";
-			return (
-				!text.includes("Подготовка модулей расписания") &&
-				(text.includes("КРЕСЛО") || text.includes("Записать первого пациента") || text.includes("Все записи") || text.includes("Расписание") || document.querySelector(".schedule-grid, .schedule-view"))
-			);
-		}, { timeout: 15000 });
-	} catch (se) {
-		console.log("Schedule wait warning:", se.message);
-	}
-	await page.waitForTimeout(1500);
-
-	// 1. 01_schedule_1440x900_light.png
-	await page.evaluate(() => {
+	// 5. Desktop Finance Light
+	console.log("--> Navigating to Finance (Desktop Light)...");
+	await desktopPage.evaluate(() => {
 		document.documentElement.setAttribute("data-theme", "light");
 		document.documentElement.classList.remove("dark");
 		document.documentElement.classList.add("light");
 		localStorage.setItem("dente_theme_mode", "light");
-	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("01_schedule_1440x900_light.png");
-
-	// 2. 02_schedule_1440x900_dark.png
-	await page.evaluate(() => {
-		document.documentElement.setAttribute("data-theme", "dark");
-		document.documentElement.classList.add("dark");
-		document.documentElement.classList.remove("light");
-		localStorage.setItem("dente_theme_mode", "dark");
-	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("02_schedule_1440x900_dark.png");
-
-	// 3. 03_schedule_390x844_mobile_light.png
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.evaluate(() => {
-		document.documentElement.setAttribute("data-theme", "light");
-		document.documentElement.classList.remove("dark");
-		document.documentElement.classList.add("light");
-		localStorage.setItem("dente_theme_mode", "light");
-	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("03_schedule_390x844_mobile_light.png");
-
-	// 4. 04_schedule_390x844_mobile_dark.png
-	await page.evaluate(() => {
-		document.documentElement.setAttribute("data-theme", "dark");
-		document.documentElement.classList.add("dark");
-		document.documentElement.classList.remove("light");
-		localStorage.setItem("dente_theme_mode", "dark");
-	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("04_schedule_390x844_mobile_dark.png");
-
-	// ==========================================
-	// SECTION 2: «Оплаты» (Finance View / Касса 54-ФЗ)
-	// ==========================================
-	console.log("\n--- NAVIGATING TO FINANCE VIEW via window.location.hash = 'finance' ---");
-	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.evaluate(() => {
+		if (window.__useThemeStore) {
+			window.__useThemeStore.getState().setThemeMode("light");
+		}
 		window.location.hash = "finance";
 	});
-	await page.waitForTimeout(2000);
+	await desktopPage.waitForTimeout(2000);
+	await desktopPage.waitForFunction(() => {
+		const text = document.body.innerText || "";
+		return text.includes("Оплаты") || text.includes("Касса") || document.querySelector("#finance, .finance-panel");
+	}, { timeout: 15000 }).catch(() => {});
+	await desktopPage.waitForTimeout(1000);
+	await recordScreenshot(desktopPage, "05_finance_1440x900_light.png");
 
-	const financeFound = await page.$("#finance, .finance-panel, .finance-view");
-	if (!financeFound) {
-		console.log("Locating Finance nav item click fallback...");
-		const navFinance = await page.$("a[href='#finance'], button:has-text('Оплаты'), .nav-item[href='#finance']");
-		if (navFinance) {
-			await navFinance.click();
-			await page.waitForTimeout(2000);
+	// 6. Desktop Finance Dark
+	console.log("--> Switching to Finance (Desktop Dark)...");
+	await desktopPage.evaluate(() => {
+		document.documentElement.setAttribute("data-theme", "dark");
+		document.documentElement.classList.add("dark");
+		document.documentElement.classList.remove("light");
+		localStorage.setItem("dente_theme_mode", "dark");
+		if (window.__useThemeStore) {
+			window.__useThemeStore.getState().setThemeMode("dark");
 		}
-	}
-
-	try {
-		await page.waitForFunction(() => {
-			const text = document.body.innerText || "";
-			return text.includes("Оплаты") || text.includes("Касса") || text.includes("вычет") || document.querySelector("#finance, .finance-panel");
-		}, { timeout: 15000 });
-	} catch (fe) {
-		console.log("Finance wait warning:", fe.message);
-	}
-	await page.waitForTimeout(1500);
-
-	// 5. 05_finance_1440x900_light.png
-	await page.evaluate(() => {
-		document.documentElement.setAttribute("data-theme", "light");
-		document.documentElement.classList.remove("dark");
-		document.documentElement.classList.add("light");
-		localStorage.setItem("dente_theme_mode", "light");
 	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("05_finance_1440x900_light.png");
+	await desktopPage.waitForTimeout(1500);
+	await recordScreenshot(desktopPage, "06_finance_1440x900_dark.png");
 
-	// 6. 06_finance_1440x900_dark.png
-	await page.evaluate(() => {
+	await desktopContext.close();
+
+	// =========================================================================
+	// PHASE 2: MOBILE WORKSPACE (390x844, scale: 2)
+	// =========================================================================
+	console.log("\n=== CREATING MOBILE CONTEXT (390x844, scale: 2, touch: true) ===");
+	const mobileContext = await browser.newContext({
+		viewport: { width: 390, height: 844 },
+		deviceScaleFactor: 2,
+		isMobile: true,
+		hasTouch: true,
+	});
+	const mobilePage = await mobileContext.newPage();
+
+	// 3. Mobile Schedule Light
+	console.log("--> Navigating to Schedule (Mobile Light)...");
+	await setupPageAuth(mobilePage, "light");
+	await mobilePage.evaluate(() => { window.location.hash = "schedule"; });
+	await mobilePage.waitForTimeout(2000);
+	await mobilePage.waitForFunction(() => {
+		const text = document.body.innerText || "";
+		return text.includes("Расписание") || text.includes("КРЕСЛО") || document.querySelector(".schedule-grid, .schedule-view, #schedule");
+	}, { timeout: 15000 }).catch(() => {});
+	await mobilePage.waitForTimeout(1000);
+	await recordScreenshot(mobilePage, "03_schedule_390x844_mobile_light.png");
+
+	// 4. Mobile Schedule Dark
+	console.log("--> Switching to Schedule (Mobile Dark)...");
+	await mobilePage.evaluate(() => {
 		document.documentElement.setAttribute("data-theme", "dark");
 		document.documentElement.classList.add("dark");
 		document.documentElement.classList.remove("light");
 		localStorage.setItem("dente_theme_mode", "dark");
+		if (window.__useThemeStore) {
+			window.__useThemeStore.getState().setThemeMode("dark");
+		}
 	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("06_finance_1440x900_dark.png");
+	await mobilePage.waitForTimeout(1500);
+	await recordScreenshot(mobilePage, "04_schedule_390x844_mobile_dark.png");
 
-	// 7. 07_finance_390x844_mobile_light.png
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.evaluate(() => {
+	// 7. Mobile Finance Light
+	console.log("--> Navigating to Finance (Mobile Light)...");
+	await mobilePage.evaluate(() => {
 		document.documentElement.setAttribute("data-theme", "light");
 		document.documentElement.classList.remove("dark");
 		document.documentElement.classList.add("light");
 		localStorage.setItem("dente_theme_mode", "light");
+		if (window.__useThemeStore) {
+			window.__useThemeStore.getState().setThemeMode("light");
+		}
+		window.location.hash = "finance";
 	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("07_finance_390x844_mobile_light.png");
+	await mobilePage.waitForTimeout(2000);
+	await mobilePage.waitForFunction(() => {
+		const text = document.body.innerText || "";
+		return text.includes("Оплаты") || text.includes("Касса") || document.querySelector("#finance, .finance-panel");
+	}, { timeout: 15000 }).catch(() => {});
+	await mobilePage.waitForTimeout(1000);
+	await recordScreenshot(mobilePage, "07_finance_390x844_mobile_light.png");
 
-	// 8. 08_finance_390x844_mobile_dark.png
-	await page.evaluate(() => {
+	// 8. Mobile Finance Dark
+	console.log("--> Switching to Finance (Mobile Dark)...");
+	await mobilePage.evaluate(() => {
 		document.documentElement.setAttribute("data-theme", "dark");
 		document.documentElement.classList.add("dark");
 		document.documentElement.classList.remove("light");
 		localStorage.setItem("dente_theme_mode", "dark");
+		if (window.__useThemeStore) {
+			window.__useThemeStore.getState().setThemeMode("dark");
+		}
 	});
-	await page.waitForTimeout(1500);
-	await recordScreenshot("08_finance_390x844_mobile_dark.png");
+	await mobilePage.waitForTimeout(1500);
+	await recordScreenshot(mobilePage, "08_finance_390x844_mobile_dark.png");
 
+	await mobileContext.close();
 	await browser.close();
+	await pool.end();
 
 	console.log("\n=======================================================");
 	console.log("LIVE AUDIT SCREEN CAPTURE COMPLETE. SUMMARY OF PROOFS:");
