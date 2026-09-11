@@ -5,3 +5,4 @@
 export * from "./shiftCollisionEngine.js";
 export * from "./calDavTypes.js";
 export * from "./iCalGenerator.js";
+export * from "../types/schedule.js";

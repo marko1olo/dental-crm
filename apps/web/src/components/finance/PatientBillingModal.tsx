@@ -496,11 +496,11 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 				{/* Tabs Navigation (Compact 32px SegmentedControl) */}
 				<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 						<button
 							type="button"
 							onClick={() => setActiveTab("friendly")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
+							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "friendly"
 									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
 									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
@@ -514,7 +514,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => setActiveTab("preview")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
+							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "preview"
 									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
 									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
@@ -528,7 +528,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => setActiveTab("details")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
+							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "details"
 									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
 									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
@@ -583,7 +583,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<select
 							value={discountPreset}
 							onChange={(e) => setDiscountPreset(e.target.value as LoyaltyDiscountPreset)}
-							className="h-8 px-2.5 py-1 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] focus:border-[var(--teal,#0d9488)] outline-none cursor-pointer transition-colors shadow-2xs"
+							className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] focus:border-[var(--teal,#0d9488)] outline-none cursor-pointer transition-colors shadow-2xs"
 							data-testid="select-loyalty-discount"
 						>
 							<option value="none">Без скидки</option>
@@ -605,7 +605,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("round_hundreds")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+								className={`min-h-[44px] px-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
 									discountPreset === "round_hundreds"
 										? "bg-amber-600 text-white shadow-2xs"
 										: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/30"
@@ -619,7 +619,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("discount_3")}
-								className={`h-8 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] min-w-[44px] px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
 									discountPreset === "discount_3"
 										? "bg-teal-600 text-white shadow-2xs"
 										: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
@@ -632,7 +632,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("discount_5")}
-								className={`h-8 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] min-w-[44px] px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
 									discountPreset === "discount_5"
 										? "bg-teal-600 text-white shadow-2xs"
 										: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
@@ -645,7 +645,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("discount_10")}
-								className={`h-8 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] min-w-[44px] px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
 									discountPreset === "discount_10"
 										? "bg-teal-600 text-white shadow-2xs"
 										: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
@@ -658,7 +658,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("warranty_100")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+								className={`min-h-[44px] px-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
 									discountPreset === "warranty_100"
 										? "bg-blue-600 text-white shadow-2xs"
 										: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
@@ -672,7 +672,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("colleague_100")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+								className={`min-h-[44px] px-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
 									discountPreset === "colleague_100"
 										? "bg-purple-600 text-white shadow-2xs"
 										: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
@@ -691,7 +691,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										setCustomDiscountPercent(0);
 										setCustomDiscountRub(0);
 									}}
-									className="h-8 px-2 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--muted)] border border-[var(--border,#cbd5e1)] cursor-pointer inline-flex items-center gap-1"
+									className="min-h-[44px] px-2.5 rounded-xl text-xs font-bold bg-[var(--paper)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--muted)] border border-[var(--border,#cbd5e1)] cursor-pointer inline-flex items-center gap-1"
 									title="Сбросить скидку"
 									data-testid="btn-discount-reset"
 								>
@@ -841,7 +841,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 												setIsFiscalOpen(true);
 											}
 										}}
-										className="h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+										className="min-h-[44px] px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 										data-testid="btn-express-pay-card"
 										title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
@@ -859,7 +859,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 												setIsFiscalOpen(true);
 											}
 										}}
-										className="h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+										className="min-h-[44px] px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 										data-testid="btn-express-pay-cash"
 										title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
@@ -876,7 +876,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 												setIsFiscalOpen(true);
 											}
 										}}
-										className="h-10 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+										className="min-h-[44px] px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 										data-testid="btn-express-pay-sbp"
 										title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
@@ -905,7 +905,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									<button
 										type="button"
 										onClick={() => setSelectedTender("card")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "card"
 												? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
@@ -919,7 +919,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									<button
 										type="button"
 										onClick={() => setSelectedTender("sbp")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "sbp"
 												? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
@@ -936,7 +936,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											setSelectedTender("cash");
 											if (!receivedCashRub) setReceivedCashRub(totalNetRub);
 										}}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "cash"
 												? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
@@ -950,7 +950,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									<button
 										type="button"
 										onClick={() => setSelectedTender("family")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "family"
 												? "bg-pink-600 text-white shadow-xs ring-2 ring-pink-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
@@ -964,7 +964,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									<button
 										type="button"
 										onClick={() => setSelectedTender("deposit")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "deposit"
 												? "bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
@@ -978,7 +978,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									<button
 										type="button"
 										onClick={() => setSelectedTender("installment")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "installment"
 												? "bg-amber-600 text-white shadow-xs ring-2 ring-amber-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
@@ -1027,7 +1027,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
 													onKeyDown={handleInputEnterKeyDown}
 													placeholder={`${totalNetRub} ₽`}
-													className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
+													className="min-h-[44px] w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
 												/>
 											</div>
 
@@ -1039,28 +1039,28 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(totalNetRub)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95"
+														className="min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 													>
 														Без сдачи
 													</button>
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(1000)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono flex items-center justify-center"
 													>
 														1 000 ₽
 													</button>
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(2000)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono flex items-center justify-center"
 													>
 														2 000 ₽
 													</button>
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(5000)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono flex items-center justify-center"
 													>
 														5 000 ₽
 													</button>
@@ -1621,7 +1621,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] text-white hover:opacity-90 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							className="min-h-[44px] px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] text-white hover:opacity-90 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-print-billing-act"
 						>
 							<Printer className="w-3.5 h-3.5 shrink-0" />
@@ -1670,14 +1670,14 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
 							label="1С (XML)"
 							variant="secondary"
-							className="h-9 px-2.5 sm:px-3 text-xs font-bold justify-center whitespace-nowrap shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+							className="min-h-[44px] px-2.5 sm:px-3 text-xs font-bold justify-center whitespace-nowrap shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
 						/>
 
 						{/* Secondary: Send WhatsApp */}
 						<button
 							type="button"
 							onClick={handleSendWhatsApp}
-							className="h-9 px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-footer-send-whatsapp"
 						>
 							<MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1688,7 +1688,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => setIsRefundOpen(true)}
-							className="h-9 px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-footer-partial-refund"
 						>
 							<RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -1711,7 +1711,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									<button
 										type="button"
 										onClick={() => setIsMobileActionsOpen(false)}
-										className="p-1 text-[var(--muted)] hover:text-[var(--ink)]"
+										className="p-1 text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] min-w-[44px] flex items-center justify-center"
 									>
 										<X className="w-4 h-4" />
 									</button>
@@ -1723,7 +1723,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											setIsMobileActionsOpen(false);
 											handlePrint();
 										}}
-										className="w-full py-2.5 px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left"
+										className="w-full py-2.5 px-3 min-h-[44px] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left"
 									>
 										<Printer className="w-4 h-4 text-slate-600 dark:text-slate-400" />
 										<span>Печать бланка А4 (ГОСТ)</span>
@@ -1734,7 +1734,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											setIsMobileActionsOpen(false);
 											handleSendWhatsApp();
 										}}
-										className="w-full py-2.5 px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-emerald-700 dark:text-emerald-400"
+										className="w-full py-2.5 px-3 min-h-[44px] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-emerald-700 dark:text-emerald-400"
 									>
 										<MessageSquare className="w-4 h-4 text-emerald-600" />
 										<span>Отправить в WhatsApp</span>
@@ -1745,7 +1745,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											setIsMobileActionsOpen(false);
 											setIsTaxModalOpen(true);
 										}}
-										className="w-full py-2.5 px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-teal-700 dark:text-teal-400"
+										className="w-full py-2.5 px-3 min-h-[44px] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-teal-700 dark:text-teal-400"
 									>
 										<FileSpreadsheet className="w-4 h-4 text-teal-600" />
 										<span>Справка 13% НДФЛ (КНД 1151156)</span>
@@ -1756,7 +1756,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											setIsMobileActionsOpen(false);
 											setIsRefundOpen(true);
 										}}
-										className="w-full py-2.5 px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-amber-700 dark:text-amber-400"
+										className="w-full py-2.5 px-3 min-h-[44px] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-amber-700 dark:text-amber-400"
 									>
 										<RotateCcw className="w-4 h-4 text-amber-600" />
 										<span>Оформить возврат прихода</span>
@@ -1772,7 +1772,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => setIsMobileActionsOpen(true)}
-							className="sm:hidden h-10 w-10 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0"
+							className="sm:hidden min-h-[44px] min-w-[44px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0"
 							title="Дополнительные действия..."
 							aria-label="Дополнительные действия"
 						>
@@ -1791,7 +1791,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => (onFiscalize ? onFiscalize() : setIsFiscalOpen(true))}
-							className="flex-1 sm:flex-initial h-10 sm:h-9 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							className="flex-1 sm:flex-initial min-h-[44px] px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-fiscalize-54fz"
 							title="Фискализировать чек по 54-ФЗ"
 						>
@@ -1803,7 +1803,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={onClose}
-							className="hidden sm:flex h-9 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors items-center justify-center shrink-0 whitespace-nowrap"
+							className="hidden sm:flex min-h-[44px] px-3 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors items-center justify-center shrink-0 whitespace-nowrap"
 						>
 							Закрыть
 						</button>

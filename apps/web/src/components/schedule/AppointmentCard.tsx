@@ -1,9 +1,10 @@
-import type {
-	Appointment,
-	AppointmentReadiness,
-	Dashboard,
-	DentalSpecialty,
-	ScheduleSuggestion,
+import {
+	type Appointment,
+	type AppointmentReadiness,
+	type Dashboard,
+	type DentalSpecialty,
+	type ScheduleSuggestion,
+	STOMX_REFUSE_REASONS_CATALOG,
 } from "@dental/shared";
 import React, { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -11,6 +12,7 @@ import {
 	CalendarCheck,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	Clock,
 	Copy,
 	CreditCard,
@@ -319,6 +321,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 	const [isHoverPreviewOpen, setIsHoverPreviewOpen] = useState(false);
 	const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
 	const [isCardMenuOpen, setIsCardMenuOpen] = useState(false);
+	const [isRefusalReasonsOpen, setIsRefusalReasonsOpen] = useState(false);
 	const cardMenuRef = useRef<HTMLDivElement>(null);
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -351,11 +354,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		const handleClickOutside = (e: MouseEvent) => {
 			if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
 				setIsCardMenuOpen(false);
+				setIsRefusalReasonsOpen(false);
 			}
 		};
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
 				setIsCardMenuOpen(false);
+				setIsRefusalReasonsOpen(false);
 				setIsMobileSheetOpen(false);
 				setIsHoverPreviewOpen(false);
 			}
@@ -1509,16 +1514,74 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										<button
 											type="button"
 											disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer disabled:opacity-40"
+											role="menuitem"
+											onClick={() => setIsRefusalReasonsOpen((prev) => !prev)}
+											title="Отменить приём с фиксацией 1-клик причины StomX"
+											data-testid="appointment-card-refusal-menu-trigger"
+										>
+											<div className="flex items-center gap-2">
+												<XCircle size={14} className="text-rose-600 shrink-0" />
+												<span>Отменить (1 клик причина)</span>
+											</div>
+											<ChevronDown
+												size={14}
+												className={`text-rose-600 shrink-0 transition-transform ${
+													isRefusalReasonsOpen ? "rotate-180" : ""
+												}`}
+											/>
+										</button>
+										{isRefusalReasonsOpen && (
+											<div
+												className="p-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-1 my-1 max-h-[190px] overflow-y-auto [scrollbar-width:thin]"
+												data-testid="appointment-card-refusal-reasons-dropdown"
+											>
+												<div className="text-[10px] font-bold text-rose-800 dark:text-rose-200 uppercase tracking-wider px-1">
+													Причины отмены (StomX):
+												</div>
+												{STOMX_REFUSE_REASONS_CATALOG.map((refuse) => (
+													<button
+														key={refuse.id}
+														type="button"
+														onClick={() => {
+															setIsCardMenuOpen(false);
+															setIsRefusalReasonsOpen(false);
+															const statusToSet = refuse.code.startsWith("no_show")
+																? "no_show"
+																: "cancelled";
+															void handleQuickStatusChange(
+																statusToSet,
+																`[Отмена: ${refuse.nameRu}]`,
+															);
+														}}
+														className="w-full text-left px-2 py-1.5 min-h-[36px] rounded-lg text-[11px] font-medium text-[var(--ink)] hover:bg-rose-500/15 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer"
+														data-testid={`appointment-card-refusal-reason-${refuse.code}`}
+														title={`${refuse.nameRu} (${
+															refuse.responsibility === "clinic"
+																? "Клиника"
+																: refuse.responsibility === "patient"
+																? "Пациент"
+																: "Система"
+														})`}
+													>
+														<span className="truncate">{refuse.nameRu}</span>
+													</button>
+												))}
+											</div>
+										)}
+										<button
+											type="button"
+											disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
 											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40"
 											role="menuitem"
 											onClick={() => {
 												setIsCardMenuOpen(false);
 												void handleQuickStatusChange("cancelled");
 											}}
-											title="Отменить приём"
+											title="Отменить приём без указания причины"
 										>
-											<XCircle size={14} className="text-rose-600 shrink-0" />
-											<span>Отменить приём</span>
+											<XCircle size={14} className="text-rose-600 shrink-0 opacity-60" />
+											<span>Отменить без причины</span>
 										</button>
 										<button
 											type="button"
@@ -1573,6 +1636,86 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							закрытия приема.
 						</p>
 					) : null}
+
+					{(appointment?.status === "cancelled" ||
+						appointment?.status === "no_show") && (
+						<div
+							className="mt-1.5 p-2 rounded-lg border text-xs flex flex-col gap-1.5"
+							style={{
+								borderColor:
+									appointment.status === "cancelled"
+										? "rgba(225, 29, 72, 0.25)"
+										: "rgba(217, 119, 6, 0.25)",
+								backgroundColor:
+									appointment.status === "cancelled"
+										? "rgba(225, 29, 72, 0.06)"
+										: "rgba(217, 119, 6, 0.06)",
+								color: "var(--ink)",
+							}}
+							data-testid="appointment-card-refusal-banner"
+						>
+							<div className="flex items-center justify-between gap-1 flex-wrap">
+								<span className="font-semibold text-[11px] uppercase tracking-wider text-rose-700 dark:text-rose-300">
+									{appointment.status === "cancelled"
+										? "Запись отменена"
+										: "Пациент не явился"}
+								</span>
+								{(() => {
+									const text = `${appointment.reason || ""} ${appointment.comment || ""}`;
+									const match = text.match(/\[Отмена: ([^\]]+)\]/);
+									if (match && match[1]) {
+										return (
+											<span className="font-medium text-xs text-rose-800 dark:text-rose-200 bg-rose-100 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800/40">
+												{match[1]}
+											</span>
+										);
+									}
+									return null;
+								})()}
+							</div>
+							{(() => {
+								const text = `${appointment.reason || ""} ${appointment.comment || ""}`;
+								const hasReason = /\[Отмена: [^\]]+\]/.test(text);
+								if (!hasReason) {
+									return (
+										<div
+											className="flex flex-wrap gap-1 mt-0.5"
+											data-testid="appointment-card-refusal-chips"
+										>
+											<span className="text-[11px] text-[var(--muted)] w-full">
+												Причина отказа (1 клик):
+											</span>
+											{STOMX_REFUSE_REASONS_CATALOG.slice(0, 4).map((refuse) => (
+												<button
+													key={refuse.code}
+													type="button"
+													disabled={
+														isQuickStatusUpdating || appointmentHasOpenVisit
+													}
+													className="px-2 py-1 min-h-[28px] rounded text-[11px] font-medium bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/50 border border-[var(--line)] text-[var(--ink)] hover:border-rose-300 transition-colors cursor-pointer"
+													data-testid={`appointment-card-refusal-chip-${refuse.code}`}
+													onClick={(e) => {
+														e.stopPropagation();
+														const statusToSet =
+															appointment.status === "no_show"
+																? "no_show"
+																: "cancelled";
+														void handleQuickStatusChange(
+															statusToSet,
+															`[Отмена: ${refuse.nameRu}]`,
+														);
+													}}
+												>
+													{refuse.nameRu}
+												</button>
+											))}
+										</div>
+									);
+								}
+								return null;
+							})()}
+						</div>
+					)}
 
 					{(appointment?.status === "cancelled" ||
 						appointment?.status === "no_show") &&

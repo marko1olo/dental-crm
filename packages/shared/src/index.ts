@@ -29,6 +29,7 @@ export * from "./inventory/index.js";
 export * from "./lab/index.js";
 export * from "./communications/index.js";
 export * from "./schedule/index.js";
+export * from "./types/schedule.js";
 export * from "./recalls/index.js";
 export * from "./tasks/index.js";
 export { INVERSE_RELATIONSHIP_MAP } from "./patients/index.js";

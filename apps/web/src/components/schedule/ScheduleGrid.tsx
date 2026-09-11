@@ -5,6 +5,8 @@ import {
 	calculateEmergencyReserveSlots,
 	type DoctorShiftSchedule,
 	type EmergencyReserveSlot,
+	getStomxWorkplacePalette,
+	STOMX_WORKPLACE_PALETTES,
 } from "@dental/shared";
 import {
 	AlertTriangle,
@@ -1967,25 +1969,40 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								toDateTimeLocalValue(now.toISOString(), timezone).slice(11, 13),
 								10,
 							) || now.getHours();
-						return effectiveChairs.map((chair) => {
+						return effectiveChairs.map((chair, chairIndex) => {
 							const chairStat = dailyTally.chairs.find((c) => c.chairId === chair.id);
 							const assignment = effectiveChairAssignments[chair.id];
 							const hasDoctor = Boolean(assignment && assignment.doctorId);
 							const suggestedDoctor = getSuggestedDoctorForChair(chair.id);
+							const chairPalette = getStomxWorkplacePalette((chair as any).colorId ?? chair.id ?? chairIndex);
+							const chairAccentColor = chair.color || chairPalette.bright_code;
 							return (
 								<div
 									key={chair.id}
-									className="p-1 sm:p-1.5 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1 min-w-0 relative"
-									style={{ borderTop: `3px solid ${chair.color || "var(--teal, #0d9488)"}` }}
+									className="p-1 sm:p-1.5 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1 min-w-0 relative transition-colors"
+									style={{ borderTop: `3px solid ${chairAccentColor}` }}
 									data-testid={`chair-header-${chair.id}`}
+									data-chair-palette={chairPalette.nameRu}
 								>
 									<div
 										className="h-1.5 w-full absolute top-0 left-0 right-0 shrink-0"
-										style={{ backgroundColor: chair.color || "var(--teal, #0d9488)" }}
+										style={{ backgroundColor: chairAccentColor }}
 										data-testid={`chair-accent-bar-${chair.id}`}
 									/>
 									<div className="flex items-center justify-center gap-1 flex-wrap">
 										<span className="truncate">{chair.name}</span>
+										<span
+											className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border shrink-0 transition-colors"
+											style={{
+												color: chairPalette.bright_code,
+												borderColor: `${chairPalette.bright_code}50`,
+												backgroundColor: "var(--paper-soft)",
+											}}
+											title={`Рабочее место StomX: ${chairPalette.nameRu}`}
+											data-testid={`chair-palette-badge-${chair.id}`}
+										>
+											{chairPalette.nameRu}
+										</span>
 										{hasDoctor && assignment?.doctorName && (
 											<button
 												type="button"
@@ -3101,6 +3118,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 							{/* Chair Cells */}
 							{effectiveChairs.map((chair, chairIndex) => {
+								const chairPalette = getStomxWorkplacePalette((chair as any).colorId ?? chair.id ?? chairIndex);
+								const chairAccentColor = chair.color || chairPalette.bright_code;
 								const slotStartIso = `${dateKey}T${hour}:00.000Z`;
 								const cellAppointments = dayAppointments.filter((a) => {
 									if (chair.id !== DEFAULT_SOLO_CHAIR.id && a.chairId !== chair.id) {
@@ -3153,6 +3172,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										<div
 											key={chair.id}
 											className="p-1.5 border-r border-[var(--line)] last:border-r-0 space-y-1.5 min-h-[56px] flex flex-col justify-center"
+											data-chair-id={chair.id}
+											data-chair-palette={chairPalette.nameRu}
 										>
 											{continuingAppointments.map((cA) => {
 												const cPatientName = patientName(dashboard.patients, cA.patientId);
@@ -4138,7 +4159,9 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																					Сменить кресло (1 клик)
 																				</div>
 																				<div className="flex items-center gap-1 px-1 flex-wrap">
-																					{effectiveChairs.map((ch) => {
+																					{effectiveChairs.map((ch, chIdx) => {
+																						const chPalette = getStomxWorkplacePalette((ch as any).colorId ?? ch.id ?? chIdx);
+																						const chAccent = ch.color || chPalette.bright_code;
 																						const isCurrent = a.chairId === ch.id;
 																						return (
 																							<button
@@ -4151,11 +4174,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																										? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-2xs"
 																										: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
 																								}`}
-																								title={`Переместить прием на кресло «${ch.name}»`}
+																								title={`Переместить прием на кресло «${ch.name}» (${chPalette.nameRu})`}
 																							>
 																								<span
 																									className="w-2 h-2 rounded-full shrink-0"
-																									style={{ backgroundColor: ch.color || "var(--teal, #0d9488)" }}
+																									style={{ backgroundColor: chAccent }}
 																								/>
 																								<span className="truncate">{ch.name}</span>
 																							</button>
@@ -4246,6 +4269,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									<div
 										key={chair.id}
 										className="p-1 border-r border-[var(--line)] last:border-r-0 min-h-[56px] flex items-center justify-center"
+										data-chair-id={chair.id}
+										data-chair-palette={chairPalette.nameRu}
 										onDragOver={(e) => {
 											e.preventDefault();
 											e.dataTransfer.dropEffect = "move";
