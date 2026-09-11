@@ -242,6 +242,27 @@ export {
 	parseAndSanitizePlanCase,
 	formatSurgicalPlanForm043A4Protocol,
 	cbctPlanIOEngine,
+	// Wave 132: Sirona Galileos & Morita OneVolume Native CBCT Import Engine
+	MAX_NATIVE_AXIS,
+	MAX_NATIVE_DEPTH,
+	MAX_NATIVE_VOXELS,
+	ONEVOLUME_SENTINEL,
+	ONEVOLUME_VERSION_MARKER,
+	AIR_SENTINEL_HU,
+	nativeVolumeModalitySchema,
+	nativeVolumeMetadataSchema,
+	parsedNativeVolumeSchema,
+	type NativeVolumeModality,
+	type NativeVolumeMetadata,
+	type ParsedNativeVolume,
+	matchGalileosFiles,
+	matchOneVolumeFilename,
+	parseGalileosHeader,
+	assembleGalileosVolume,
+	parseOneVolumeBinary,
+	formatNativeVolumeA4Protocol,
+	decompressGzipSync,
+	nativeVolumeImportEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
@@ -269,9 +290,11 @@ export {
 	formatSupplierReliabilityA4,
 } from "./inventory/index.js";
 export * from "./lab/index.js";
+export type { RecallPriority } from "./communications/index.js";
 export * from "./communications/index.js";
 export * from "./schedule/index.js";
 export * from "./types/schedule.js";
+export type { RecallItem } from "./recalls/index.js";
 export * from "./recalls/index.js";
 export * from "./tasks/index.js";
 export { INVERSE_RELATIONSHIP_MAP } from "./patients/index.js";

@@ -200,3 +200,28 @@ export {
 	formatSurgicalPlanForm043A4Protocol,
 } from "./cbctPlanIOEngine.js";
 export * as cbctPlanIOEngine from "./cbctPlanIOEngine.js";
+
+// Wave 132: Sirona Galileos & Morita OneVolume Native CBCT Import Engine
+export {
+	MAX_NATIVE_AXIS,
+	MAX_NATIVE_DEPTH,
+	MAX_NATIVE_VOXELS,
+	ONEVOLUME_SENTINEL,
+	ONEVOLUME_VERSION_MARKER,
+	AIR_SENTINEL_HU,
+	nativeVolumeModalitySchema,
+	nativeVolumeMetadataSchema,
+	parsedNativeVolumeSchema,
+	type NativeVolumeModality,
+	type NativeVolumeMetadata,
+	type ParsedNativeVolume,
+	matchGalileosFiles,
+	matchOneVolumeFilename,
+	parseGalileosHeader,
+	assembleGalileosVolume,
+	parseOneVolumeBinary,
+	formatNativeVolumeA4Protocol,
+	decompressGzipSync,
+} from "./nativeVolumeImportEngine.js";
+export * as nativeVolumeImportEngine from "./nativeVolumeImportEngine.js";
+export * from "./nativeVolumeImportEngine.js";
