@@ -3927,5 +3927,33 @@
     * Тест: `apps/web/src/components/cmo/__tests__/wave116BloatPurification.test.ts` (3/3 PASS).
 * **Верификация**: все тесты Wave 116 (28/28 PASS), монорепо `typecheck` Exit Code 0, `check:encoding` 6661 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
 
+### Wave 117: Экспорт каталогов StomX, 1-клик причины визитов CITO и блокировки врача без пациента, тотальная очистка рентгена, планов, СанПиН и UI от синтетических имен и утечек разработки
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `9f180ded8`, `129060468`, `5e09aab1c`
+* **Результаты**:
+  - **Экспорт каталогов StomX, 1-клик причины визитов и технические блокировки врача (`129060468`)**:
+    * `packages/shared/src/index.ts` & `packages/shared/src/patients/stomxPatientTagsCatalog.ts`: экспортированы каталоги StomX: `STOMX_PATIENT_TAGS_CATALOG` (13 тегов), `STOMX_REPRESENTATIVE_CATALOG` (14 типов представителей), `STOMX_MARKETING_SOURCES` (10 каналов), `STOMX_APPT_REASONS_CATALOG` (12 причин/блоков), `STOMX_APPT_REFUSE_REASONS_CATALOG` (10 причин отказов);
+    * `AppointmentModal.tsx`: внедрены быстрые чипы клинических причин (`QUICK_APPOINTMENT_REASONS`: «Острая боль» с CITO бейджем, «Плановое обследование», «Повторно», «Лечение», «Консультация», «Профгигиена») и чипы технических блокировок (`TECHNICAL_BREAK_PRESETS`: «Обед», «Перерыв», «Отпуск», «Учеба», «Отсутствует», «Другое», «Санобработка»);
+    * Автономия врача (Мандаты 8e, 8n): при выборе технической блокировки требование обязательного выбора пациента снимается (`isTechnicalBreakAppointment`), выводится информативный статус-баннер;
+    * `PatientCardModal.tsx` & `PatientGeneralInfoTab.tsx`: интегрирован селектор 14 типов представителей из `STOMX_REPRESENTATIVE_CATALOG` с автопроверкой права подписи ИДС по ст. 20 323-ФЗ и ст. 64 СК РФ;
+    * Тест: `apps/web/src/components/schedule/__tests__/wave117StomxApptReasonsAndBlocks.test.ts` (13/13 PASS).
+  - **Тотальная очистка рентгенологии, планов лечения, ЭГИСЗ и СанПиН от синтетических ФИО (`9f180ded8`)**:
+    * `DirectRvgCaptureModal.tsx`, `HotFolderIntakeModal.tsx`, `RadiologyReferralModal.tsx`, `RadiologyModule.tsx`, `RadiologyViewerModal.tsx`, `ImplantCrossSectionPlanner.tsx`, `RadiationDoseSheetModal.tsx`, `radiationDoseEngine.ts`: искоренены синтетические ФИО «Смирнова Екатерина Васильевна», «Иванов И.И.», дефолты врачей «Д-р Смирнов Алексей Петрович», «Др. Смирнов А.В.» заменены на нейтральные «Пациент» и «Лечащий врач» / «Рентгенолог / Лечащий врач»;
+    * `TreatmentPlanPresenterModal.tsx` & `TreatmentPlanModule.tsx`: заменены жесткие ФИО «Смирнова Екатерина Васильевна» и «Д-р Смирнов Алексей Петрович»;
+    * `EgiszCdaExportModal.tsx`: ликвидирован хардкод врача `{ first: "Елена", last: "Смирнова", middle: "Викторовна" }` и фальшивый СНИЛС;
+    * `MedicalWasteJournalModal.tsx`: водитель отходов СанПиН дефолтится в пустую строку `""` вместо «Кузнецов М.С.»;
+    * `retroactiveSanpinEngine.ts`: синтетические фамилии заменены на нейтральные ролевые обозначения «Врач-стоматолог 1/2/3»;
+    * Тест: `apps/web/src/components/radiology/__tests__/wave117RadiologyAndTreatmentPlanMocks.test.ts` (9/9 PASS).
+  - **Ликвидация утечек правил разработки и очистка рантайм-дефолтов врачей (`5e09aab1c`)**:
+    * `AnesthesiaPkuDisposalModal.tsx`: ликвидированы утечки текста внутренних правил «(СанПиН 3.3686-21 / Мандат 8e)» -> «(СанПиН 3.3686-21, п. 10)» и «... (Мандат 8e п. 10)»;
+    * `chairsideConsentEngine.ts`: исключена ссылка на «Мандат 8e» из юридического текста информированных добровольных согласий (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н);
+    * `App.tsx`: устранен дефолт врача «Д-р Смирнов Олег Игоревич» -> «Лечащий врач»;
+    * `PatientBillingModal.tsx`: устранен дефолт врача «Д-р Кузнецов П. С.» -> «Лечащий врач»;
+    * `sickLeaveElnEngine.ts`: исключены хардкодные ФИО «Иванова Е.В.» и «Соколов А.М.» -> «Председатель ВК» / «Лечащий врач»;
+    * `AnesthesiaProtocolModal.tsx`: исключен дефолт ассистента «Смирнова А. В.» -> «Ассистент»;
+    * `documentQuery.ts` & `forms003vu.ts`: выписка из карты строго переведена на амбулаторную «Форму 043/у» в соответствии с законодательством РФ;
+    * Тест: `apps/web/src/components/anesthesia/__tests__/wave117DevLeaksPurification.test.ts` (8/8 PASS).
+* **Верификация**: все тесты Wave 117 (30/30 PASS), монорепо `typecheck` Exit Code 0, `check:encoding` 6665 файлов 0 ошибок, `check:css-tokens` 0 ошибок.
+
 
 
