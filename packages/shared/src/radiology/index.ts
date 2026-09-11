@@ -17,7 +17,8 @@ export * from "./cbctCropBox.js";
 export * from "./surgicalGuideGeom.js";
 export * from "./surgicalGuideValidate.js";
 export * from "./surgicalGuideExport.js";
-export * from "./guideValidate.js";
+export * from "./guideValidationEngine.js";
+export * as guideValidationEngine from "./guideValidationEngine.js";
 export {
 	dot3,
 	sub3,
