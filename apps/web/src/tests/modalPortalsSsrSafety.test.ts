@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SberbankTerminalPaymentModal } from "../components/finance/SberbankTerminalPaymentModal";
 import { InventoryConfirmDialog } from "../components/inventory/InventoryConfirmDialog";
 import { EndoCanalLogModal } from "../components/endo/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../components/radiology/CephalometricAnalysisModal";
@@ -52,19 +51,6 @@ describe("Modal Portals & SSR Safety Hardening", () => {
 		assert.ok(html.includes("Лист ожидания"));
 	});
 
-	it("SberbankTerminalPaymentModal renders SSR-safe static markup inside AppLogicProvider", () => {
-		const child = createElement(SberbankTerminalPaymentModal, {
-			isOpen: true,
-			patientId: "p-test-1",
-			amountInRubles: 5000,
-			onClose: () => {},
-			onSuccess: () => {},
-		});
-		const html = renderToStaticMarkup(
-			createElement(AppLogicProvider, { value: mockAppLogicValue, children: child }),
-		);
-		assert.ok(html.includes("Оплата через терминал Сбербанка"));
-	});
 
 	it("InventoryConfirmDialog renders SSR-safe static markup", () => {
 		const html = renderToStaticMarkup(

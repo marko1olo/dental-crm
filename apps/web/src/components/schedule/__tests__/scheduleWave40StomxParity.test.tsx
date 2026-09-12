@@ -28,7 +28,6 @@ import {
 import { applyDoctorChairWeeklyTemplate } from "../roster/doctorWeeklyScheduleGenerator";
 import { DoctorRosterToolbar } from "../roster/DoctorRosterToolbar";
 import { DoctorRosterMatrix } from "../roster/DoctorRosterMatrix";
-import { ChairRosterModal } from "../ChairRosterModal";
 import {
 	checkAppointmentResourceCollision,
 	isCitoAppointment,
@@ -294,7 +293,7 @@ describe("Wave 40 — StomX Parity Suite (Features 190, 191, 192)", () => {
 			assert.strictEqual(oddShift?.endTime, "20:00");
 		});
 
-		it("DoctorRosterToolbar, DoctorRosterMatrix and ChairRosterModal include even-odd template buttons", () => {
+		it("DoctorRosterToolbar and DoctorRosterMatrix include even-odd template buttons", () => {
 			const toolbarHtml = renderToString(
 				<DoctorRosterToolbar
 					clinicName="Клиника ДЕНТЕ"
@@ -366,19 +365,6 @@ describe("Wave 40 — StomX Parity Suite (Features 190, 191, 192)", () => {
 				/>,
 			);
 			assert.ok(matrixHtml.includes('data-testid="cell-template-even-odd"'), "matrix popover has even-odd button");
-
-			const chairModalHtml = renderToString(
-				<ChairRosterModal
-					isOpen={true}
-					onClose={() => {}}
-					cabinets={mockCabinets}
-					weekStartDateIso="2026-09-07"
-					initialShifts={[]}
-					staffList={mockStaff}
-					onSave={() => {}}
-				/>,
-			);
-			assert.ok(chairModalHtml.includes('data-testid="chair-template-even-odd-chair-1"'), "chair modal has even-odd button");
 		});
 
 		it("ScheduleGrid renders chair maintenance button and maintenance block", () => {

@@ -108,12 +108,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Автономный клинический классификатор и селектор диагнозов МКБ-10 (K00–K14) с нечетким многословным поиском, 1-click пресетами и валидацией номеров зубов FDI. Предоставляется как изолированный клинический микровиджет для интеграции в дневник 043/у, ЕГИСЗ СЭМД и радиальное меню зубной формулы.",
 	},
-	{
-		file: "components/finance/SberbankTerminalPaymentModal.tsx",
-		name: "SberbankTerminalPaymentModal",
-		reason:
-			"Резервный интерфейс оплаты через веб-шлюз Сбербанк Эквайринг (501 Not Implemented, до подключения прямых API-ключей банка). В приложении активна и смонтирована аппаратная POS-интеграция SberPosTerminalModal (протоколы Pilot-NT / Arcus-D).",
-	},
+	/*
+	 * SberbankTerminalPaymentModal УДАЛЁН per Mandate 8s (Wave 175) как несмонтированный 501-стаб.
+	 * В приложении смонтирована аппаратная POS-интеграция SberPosTerminalModal (Pilot-NT / Arcus-D).
+	 */
 	{
 		file: "components/clinical/PrescriptionsWidget.tsx",
 		name: "PrescriptionsWidget",
@@ -144,18 +142,14 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Универсальное модальное окно защиты от случайных и опасных действий ('Защита от дурака' / Foolproof Dialog) с крупными кнопками, двойным подтверждением и понятными текстами для пожилого персонала и медсестер.",
 	},
-	{
-		file: "components/schedule/AppointmentDrawer.tsx",
-		name: "AppointmentDrawer",
-		reason:
-			"Шторка детального редактирования приёма из модульного расписания; актуальный рабочий процесс врача ведётся через карточку приёма AppointmentCard и клинический экран визита VisitView без нагромождения шторок.",
-	},
-	{
-		file: "components/schedule/ChairRosterModal.tsx",
-		name: "ChairRosterModal",
-		reason:
-			"Модальное окно ротации врачей по стоматологическим креслам; заменено на прямой выбор кресла и врача в ScheduleFilterStrip и инлайн-расписание ChairScheduleView с бейджами занятости кресел.",
-	},
+	/*
+	 * AppointmentDrawer УДАЛЁН per Mandate 8s (Wave 175).
+	 * Актуальный рабочий процесс ведётся через AppointmentCard, AppointmentModal и визит VisitView.
+	 */
+	/*
+	 * ChairRosterModal УДАЛЁН per Mandate 8s (Wave 175) как мертвый дубликат-обертка.
+	 * Актуальный функционал ростера смонтирован в DoctorShiftRosterModal и ChairScheduleView.
+	 */
 	/*
 	 * OneCCommerceMlModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
 	 * через точку входа #clinical-modals-studio.

@@ -13,8 +13,6 @@ import {
 	type DoctorShift,
 } from "../roster/doctorShiftRosterEngine";
 import { ScheduleView } from "../../../ScheduleView";
-import { ChairScheduleView } from "../ChairScheduleView";
-import { ChairRosterModal } from "../ChairRosterModal";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 
 describe("Schedule & Chair Roster StomX / IDENT Comprehensive Parity", () => {
@@ -362,11 +360,6 @@ describe("Schedule & Chair Roster StomX / IDENT Comprehensive Parity", () => {
 			assert.ok(html.includes("Стоматологические установки:"), "Must render chair header label");
 			assert.ok(html.includes("2 кресла"), "Must display chair counter badge");
 			assert.ok(html.includes("+ Кресло"), "Must display quick add chair button");
-		});
-
-		it("exports ChairRosterModal for StomX / IDENT weekly shift roster management", () => {
-			assert.ok(ChairRosterModal, "ChairRosterModal must be exported");
-			assert.equal(typeof ChairRosterModal, "function");
 		});
 
 		it("exports QuickBookingDrawer conforming to Mandate 8e (0 disabled buttons)", () => {

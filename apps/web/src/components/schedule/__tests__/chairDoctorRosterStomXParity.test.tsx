@@ -28,7 +28,7 @@ import {
 	DEFAULT_SOLO_CHAIR,
 	type ChairDoctorShiftAssignment,
 } from "../ScheduleGrid";
-import ChairRosterModal, {
+import {
 	applyCellShiftPreset,
 	applyDoctorChairDateRange,
 	copyWeekShiftsToTargetWeek,
@@ -38,7 +38,7 @@ import ChairRosterModal, {
 	type DoctorShift,
 	type StaffMember,
 	type CabinetDefinition,
-} from "../ChairRosterModal";
+} from "../chairRosterMath";
 
 // Cartoon emoji detector per Mandate 8d
 const CARTOON_EMOJI_REGEX =
@@ -785,34 +785,6 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 			assert.strictEqual(s6.length, 0, "Shift should be cleared");
 		});
 
-		it("ChairRosterModal matrix cell renders morning-9 and evening-15 preset buttons", async () => {
-			await act(async () => {
-				root.render(
-					<ChairRosterModal
-						isOpen={true}
-						onClose={() => {}}
-						currentDate="2026-09-09"
-						initialShifts={[]}
-						staffList={DEFAULT_CLINIC_STAFF}
-						cabinets={CLINIC_CABINETS_CATALOG}
-					/>,
-				);
-			});
-
-			const firstChair = CLINIC_CABINETS_CATALOG[0]!.chairs[0]!;
-			const m9Btn = findNodeByTestId(
-				container,
-				`chair-btn-morning-9-${firstChair.id}-2026-09-07`,
-			);
-			const e15Btn = findNodeByTestId(
-				container,
-				`chair-btn-evening-15-${firstChair.id}-2026-09-07`,
-			);
-
-			assert.ok(m9Btn, "chair-btn-morning-9 button must exist in cell matrix");
-			assert.ok(e15Btn, "chair-btn-evening-15 button must exist in cell matrix");
-		});
-
 		it("ChairScheduleView popover renders morning-9 and evening-15 preset buttons", async () => {
 			const db = getMockDashboard();
 			await act(async () => {
@@ -894,33 +866,6 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 
 			// Monday to Sunday: 5 workdays (Mon–Fri), Sat and Sun skipped
 			assert.strictEqual(result.length, 5, "five_day preset must skip Sat and Sun");
-		});
-
-		it("ChairRosterModal: date range trigger opens panel with doctor, chair, and apply buttons", async () => {
-			await act(async () => {
-				root.render(
-					<ChairRosterModal
-						isOpen={true}
-						onClose={() => {}}
-						currentDate="2026-09-09"
-						initialShifts={[]}
-						staffList={DEFAULT_CLINIC_STAFF}
-						cabinets={CLINIC_CABINETS_CATALOG}
-					/>,
-				);
-			});
-
-			const triggerBtn = findNodeByTestId(container, "chair-date-range-trigger-btn");
-			assert.ok(triggerBtn, "chair-date-range-trigger-btn must exist");
-
-			// Click to open date range panel
-			await clickNode(triggerBtn);
-
-			const panel = findNodeByTestId(container, "chair-date-range-panel");
-			assert.ok(panel, "chair-date-range-panel must open");
-
-			const applyBtn = findNodeByTestId(container, "chair-apply-date-range-btn");
-			assert.ok(applyBtn, "chair-apply-date-range-btn must exist in panel");
 		});
 
 		it("ChairScheduleView: dropdown menu has btn-assign-date-range which opens date range modal", async () => {
@@ -1013,27 +958,6 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 			assert.ok(copied.some((s) => s.dateIso === "2026-09-28"));
 		});
 
-		it("ChairRosterModal has chair-copy-next-week-btn and chair-copy-month-btn", async () => {
-			await act(async () => {
-				root.render(
-					<ChairRosterModal
-						isOpen={true}
-						onClose={() => {}}
-						currentDate="2026-09-09"
-						initialShifts={[]}
-						staffList={DEFAULT_CLINIC_STAFF}
-						cabinets={CLINIC_CABINETS_CATALOG}
-					/>,
-				);
-			});
-
-			const copyWeekBtn = findNodeByTestId(container, "chair-copy-next-week-btn");
-			const copyMonthBtn = findNodeByTestId(container, "chair-copy-month-btn");
-
-			assert.ok(copyWeekBtn, "chair-copy-next-week-btn must exist");
-			assert.ok(copyMonthBtn, "chair-copy-month-btn must exist");
-		});
-
 		it("ChairScheduleView dropdown menu has btn-copy-chair-week-next and btn-copy-chair-month", async () => {
 			const db = getMockDashboard();
 			await act(async () => {
@@ -1058,28 +982,6 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 
 	// --- 6. Mandate 8d & 8e Compliance Audit ---
 	describe("6. Mandate 8d & 8e Compliance Audit", () => {
-		it("all buttons in ChairRosterModal have zero cartoon emojis", async () => {
-			await act(async () => {
-				root.render(
-					<ChairRosterModal
-						isOpen={true}
-						onClose={() => {}}
-						currentDate="2026-09-09"
-						initialShifts={[]}
-						staffList={DEFAULT_CLINIC_STAFF}
-						cabinets={CLINIC_CABINETS_CATALOG}
-					/>,
-				);
-			});
-
-			const text = collectAllText(container);
-			assert.strictEqual(
-				hasCartoonEmojis(text),
-				false,
-				"ChairRosterModal must contain 0 cartoon emojis (Mandate 8d)",
-			);
-		});
-
 		it("all buttons in ChairScheduleView have zero cartoon emojis", async () => {
 			const db = getMockDashboard();
 			await act(async () => {
@@ -1100,131 +1002,6 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 				false,
 				"ChairScheduleView must contain 0 cartoon emojis (Mandate 8d)",
 			);
-		});
-
-		it("ChairRosterModal: quick doctor add is an inline panel without nested modal (Mandate 8d Anti-Matryoshka, Mandate 8e)", async () => {
-			const onAddDoctor = vi.fn();
-			await act(async () => {
-				root.render(
-					<ChairRosterModal
-						isOpen={true}
-						onClose={() => {}}
-						currentDate="2026-09-09"
-						initialShifts={[]}
-						staffList={DEFAULT_CLINIC_STAFF}
-						cabinets={CLINIC_CABINETS_CATALOG}
-						onAddDoctor={onAddDoctor}
-					/>,
-				);
-			});
-
-			const addDoctorBtn = findNodeByTestId(container, "btn-roster-add-doctor");
-			assert.ok(addDoctorBtn, "btn-roster-add-doctor must exist in ChairRosterModal header");
-			assert.equal(addDoctorBtn.disabled, false, "Add doctor button must not be disabled");
-
-			// Click to open inline panel
-			await clickNode(addDoctorBtn);
-
-			// Verify inline panel is open inside ChairRosterModal
-			const inlinePanel = findNodeByTestId(container, "chair-quick-add-doctor-panel");
-			assert.ok(inlinePanel, "chair-quick-add-doctor-panel must be rendered inline inside ChairRosterModal");
-
-			// Verify NO nested modal overlay exists (Sin 6: Anti-Matryoshka Law)
-			const nestedModal = findNodeByTestId(container, "quick-doctor-modal");
-			assert.equal(nestedModal, null, "No nested QuickAddDoctorModal overlay allowed (modal depth strictly 1)");
-
-			// Check all required fields inside the inline panel
-			const nameInput = findNodeByTestId(container, "chair-new-doctor-name-input");
-			const specialtySelect = findNodeByTestId(container, "chair-new-doctor-specialty-select");
-			const chairSelect = findNodeByTestId(container, "chair-new-doctor-chair-select");
-			const submitBtn = findNodeByTestId(container, "chair-submit-new-doctor-btn");
-			const cancelBtn = findNodeByTestId(container, "chair-cancel-doctor-inline-btn");
-
-			assert.ok(nameInput, "chair-new-doctor-name-input must exist");
-			assert.ok(specialtySelect, "chair-new-doctor-specialty-select must exist");
-			assert.ok(chairSelect, "chair-new-doctor-chair-select must exist");
-			assert.ok(submitBtn, "chair-submit-new-doctor-btn must exist");
-			assert.ok(cancelBtn, "chair-cancel-doctor-inline-btn must exist");
-			assert.equal(submitBtn.disabled, false, "Submit doctor button must never be disabled (Mandate 8e)");
-			assert.equal(submitBtn.style?.minHeight, "44px", "Submit button must have minHeight >= 44px");
-
-			// Fill in doctor name
-			await changeInputNode(nameInput, "Соколов Дмитрий Сергеевич");
-
-			// Submit the new doctor
-			await clickNode(submitBtn);
-
-			// Verify onAddDoctor called with authentic data (Zero synthetic Math.random mocks)
-			assert.equal(onAddDoctor.calls.length, 1, "onAddDoctor callback must be called exactly once");
-			const addedDoc = onAddDoctor.calls[0]![0];
-			assert.equal(addedDoc.fullName, "Соколов Дмитрий Сергеевич");
-			assert.equal(addedDoc.shortName, "Соколов Д.С.");
-			assert.ok(addedDoc.id, "Doctor ID must be generated");
-			assert.match(addedDoc.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$|doc-/, "Doctor ID must be a UUID or valid identifier");
-
-			// Panel should close after adding
-			const closedPanel = findNodeByTestId(container, "chair-quick-add-doctor-panel");
-			assert.equal(closedPanel, null, "Inline panel must close after successful submission");
-		});
-
-		it("ChairRosterModal: supports Escape key to close inline doctor panel", async () => {
-			await act(async () => {
-				root.render(
-					<ChairRosterModal
-						isOpen={true}
-						onClose={() => {}}
-						currentDate="2026-09-09"
-						initialShifts={[]}
-						staffList={DEFAULT_CLINIC_STAFF}
-						cabinets={CLINIC_CABINETS_CATALOG}
-					/>,
-				);
-			});
-
-			const addDoctorBtn = findNodeByTestId(container, "btn-roster-add-doctor");
-			await clickNode(addDoctorBtn);
-
-			assert.ok(findNodeByTestId(container, "chair-quick-add-doctor-panel"), "Panel must be open");
-
-			// Dispatch Escape on window
-			await act(async () => {
-				const escEvent = { type: "keydown", key: "Escape", stopPropagation: () => {} };
-				window.dispatchEvent(escEvent as any);
-			});
-
-			assert.equal(findNodeByTestId(container, "chair-quick-add-doctor-panel"), null, "Escape must close inline panel");
-		});
-
-		it("ChairRosterModal: buttons in roster-actions-group have >=44px touch targets (Mandate 8d, Apple HIG)", async () => {
-			await act(async () => {
-				root.render(
-					<ChairRosterModal
-						isOpen={true}
-						onClose={() => {}}
-						currentDate="2026-09-09"
-						initialShifts={[]}
-						staffList={DEFAULT_CLINIC_STAFF}
-						cabinets={CLINIC_CABINETS_CATALOG}
-					/>,
-				);
-			});
-
-			const copyNextWeekBtn = findNodeByTestId(container, "chair-copy-next-week-btn");
-			const copyMonthBtn = findNodeByTestId(container, "chair-copy-month-btn");
-			const clearWeekBtn = findNodeByTestId(container, "chair-clear-week-btn");
-			const rotateBtn = findNodeByTestId(container, "chair-global-rotate-shifts-btn");
-			const rangeBtn = findNodeByTestId(container, "chair-date-range-trigger-btn");
-
-			assert.ok(copyNextWeekBtn, "copyNextWeekBtn must exist");
-			assert.ok(copyMonthBtn, "copyMonthBtn must exist");
-			assert.ok(clearWeekBtn, "clearWeekBtn must exist");
-			assert.ok(rotateBtn, "rotateBtn must exist");
-			assert.ok(rangeBtn, "rangeBtn must exist");
-
-			for (const btn of [copyNextWeekBtn, copyMonthBtn, clearWeekBtn, rotateBtn, rangeBtn]) {
-				assert.equal(btn.style?.minHeight, "44px", "Roster action buttons must have minHeight 44px");
-				assert.equal(btn.disabled, false, "Buttons must never be disabled (Mandate 8e)");
-			}
 		});
 	});
 });

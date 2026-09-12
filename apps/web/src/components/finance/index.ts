@@ -21,7 +21,6 @@ export * from "./FamilyWalletModal";
 export * from "./refunds/RefundServiceModal";
 export * from "./SberPayIntegration";
 export * from "./PaymentModal";
-export * from "./SberbankTerminalPaymentModal";
 export * from "./InvoiceGenerationModal";
 export * from "./invoiceEngine";
 export * from "./cashboxOperations";

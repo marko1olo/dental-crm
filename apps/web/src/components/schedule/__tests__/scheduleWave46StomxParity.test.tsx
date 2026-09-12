@@ -18,16 +18,14 @@ import {
 	CHAIR_COLOR_PRESETS,
 } from "../QuickAddChairModal";
 import { ChairScheduleView } from "../ChairScheduleView";
-import { ScheduleGrid, type ChairDoctorShiftAssignment } from "../ScheduleGrid";
 import {
-	ChairRosterModal,
 	rotateWeekShifts,
 	copyWeekShiftsToTargetWeek,
 	getMondayOfWeekIso,
 	type DoctorShift,
 	type StaffMember,
 	type CabinetDefinition,
-} from "../ChairRosterModal";
+} from "../roster/DoctorShiftRosterModal";
 import { DoctorRosterToolbar } from "../roster/DoctorRosterToolbar";
 import { DoctorShiftRosterModal } from "../roster/DoctorShiftRosterModal";
 import type { Dashboard } from "@dental/shared";
@@ -311,63 +309,7 @@ describe("Wave 46 — StomX & IDENT Chair-Doctor Shift Assignment Parity Suite",
 		});
 	});
 
-	describe("4. ChairRosterModal & DoctorShiftRosterModal: 5/2, 2/2, Even/Odd & Shift Rotation (Утро ⇄ Вечер)", () => {
-		it("ChairRosterModal renders 5/2 template and shift rotation buttons", () => {
-			const html = renderToString(
-				<ChairRosterModal
-					isOpen={true}
-					onClose={() => {}}
-					staffList={mockStaff}
-					cabinets={mockCabinets}
-					currentDate="2026-09-08"
-				/>,
-			);
-
-			// Template buttons for chair 1
-			assert.ok(
-				html.includes("chair-template-mon-wed-fri-chair-1"),
-				"Пн/Ср/Пт template button rendered",
-			);
-			assert.ok(
-				html.includes("chair-template-tue-thu-sat-chair-1"),
-				"Вт/Чт/Сб template button rendered",
-			);
-			assert.ok(
-				html.includes("chair-template-two-two-chair-1"),
-				"2/2 template button rendered",
-			);
-			assert.ok(
-				html.includes("chair-template-even-odd-chair-1"),
-				"Чет/Нечет template button rendered",
-			);
-			assert.ok(
-				html.includes("chair-template-five-day-chair-1"),
-				"5/2 template button rendered",
-			);
-
-			// Shift rotation button for chair 1
-			assert.ok(
-				html.includes("chair-rotate-shifts-chair-1"),
-				"Shift rotation button for chair 1 rendered",
-			);
-
-			// Global shift rotation button in action strip
-			assert.ok(
-				html.includes("chair-global-rotate-shifts-btn"),
-				"Global week shift rotation button rendered",
-			);
-
-			// 1-Click week copy buttons
-			assert.ok(
-				html.includes("chair-copy-next-week-btn"),
-				"Copy to next week button rendered",
-			);
-			assert.ok(
-				html.includes("chair-copy-month-btn"),
-				"Copy to month button rendered",
-			);
-		});
-
+	describe("4. DoctorShiftRosterModal: 5/2, 2/2, Even/Odd & Shift Rotation (Утро ⇄ Вечер)", () => {
 		it("DoctorRosterToolbar renders rotate shifts buttons in toolbar and preset dropdown", () => {
 			const html = renderToString(
 				<DoctorRosterToolbar

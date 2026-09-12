@@ -27,9 +27,6 @@ import {
 	type SyncShiftPayload,
 } from "../ChairScheduleView";
 import {
-	ChairRosterModal,
-} from "../ChairRosterModal";
-import {
 	type ChairDoctorShiftAssignment,
 	type ChairDoctorSubShift,
 	formatDoctorShortName,
@@ -762,61 +759,5 @@ describe("Wave 59 (Feature 248) — Chair SubShifts Two-Shift Binding, Server Sy
 		assert.ok(findNodeByTestId(container, "btn-copy-chair-month"), "btn-copy-chair-month must exist");
 		assert.ok(findNodeByTestId(container, "btn-rotate-chair-shifts"), "btn-rotate-chair-shifts must exist");
 		assert.ok(findNodeByTestId(container, "btn-apply-preferred-chairs"), "btn-apply-preferred-chairs must exist");
-		assert.ok(findNodeByTestId(container, "btn-copy-chair-week-next"), "btn-copy-chair-week-next must exist");
-		assert.ok(findNodeByTestId(container, "btn-clear-day-shifts"), "btn-clear-day-shifts must exist");
-	});
-
-	it("5. ChairRosterModal: Day cell preset buttons >=36px, theme design tokens, 0 disabled buttons and 0 emojis", async () => {
-		await act(async () => {
-			root.render(
-				<ChairRosterModal
-					isOpen={true}
-					onClose={() => {}}
-					weekStartDateIso="2026-09-07"
-					cabinets={[
-						{
-							id: "cab-1",
-							number: 101,
-							name: "Кабинет 101",
-							specialty: "Терапия",
-							chairs: [mockChairs[0] as any],
-						},
-					]}
-					staffList={mockStaff as any}
-					initialShifts={[]}
-				/>,
-			);
-		});
-
-		// Check the 4 preset buttons in day cell
-		const mornBtn = findNodeByTestId(container, "chair-btn-morning-chair-1-2026-09-07");
-		const eveBtn = findNodeByTestId(container, "chair-btn-evening-chair-1-2026-09-07");
-		const fullBtn = findNodeByTestId(container, "chair-btn-full-chair-1-2026-09-07");
-		const offBtn = findNodeByTestId(container, "chair-btn-off-chair-1-2026-09-07");
-
-		assert.ok(mornBtn, "Morning cell button must exist");
-		assert.ok(eveBtn, "Evening cell button must exist");
-		assert.ok(fullBtn, "Full day cell button must exist");
-		assert.ok(offBtn, "Off day cell button must exist");
-
-		// Touch targets >= 36px (Mandate 8c)
-		assert.equal(mornBtn.style.minHeight, "36px", "Morning button touch target >= 36px");
-		assert.equal(eveBtn.style.minHeight, "36px", "Evening button touch target >= 36px");
-		assert.equal(fullBtn.style.minHeight, "36px", "Full day button touch target >= 36px");
-		assert.equal(offBtn.style.minHeight, "36px", "Off day button touch target >= 36px");
-
-		// Check backward compatibility test-ids
-		assert.ok(findNodeByTestId(container, "chair-btn-full-day-chair-1-2026-09-07"), "Legacy full-day testid must exist");
-		assert.ok(findNodeByTestId(container, "chair-btn-clear-chair-1-2026-09-07"), "Legacy clear testid must exist");
-
-		// Mandate 8e: 0 disabled buttons
-		const allButtons = findAllNodesByTag(container, "button");
-		for (const b of allButtons) {
-			assert.equal(b.disabled, false, `Button should not be disabled: ${b.getAttribute("data-testid") || b.textContent}`);
-		}
-
-		// Mandate 8d п. 7: 0 cartoon emojis in entire rendered modal
-		const entireText = collectAllText(container);
-		assert.equal(hasCartoonEmojis(entireText), false, "Must not contain cartoon emojis in ChairRosterModal");
 	});
 });

@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+
 import {
   addDaysToDateIso,
   getWeekDaysIso,
@@ -11,7 +10,6 @@ import {
   rotateWeekShifts,
 } from '../doctorWeeklyScheduleGenerator';
 import type { DoctorShift } from '../doctorShiftRosterEngine';
-import { ChairRosterModal } from '../../ChairRosterModal';
 
 describe('doctorWeeklyScheduleGenerator - copy and clear functions', () => {
   const mockShifts: DoctorShift[] = [
@@ -212,30 +210,4 @@ describe('doctorWeeklyScheduleGenerator - copy and clear functions', () => {
   });
 });
 
-describe('ChairRosterModal - Compact StomX Chair-Doctor Week Matrix (Mandates 8e, 8k, 8n)', () => {
-  it('renders ChairRosterModal with compact week matrix and day columns (Пн-Вс)', () => {
-    const markup = renderToStaticMarkup(
-      <ChairRosterModal
-        isOpen={true}
-        onClose={() => {}}
-        currentDate="2026-09-07"
-      />
-    );
 
-    // Check presence of key matrix headers and controls
-    assert.ok(markup.includes('Сетка кресел'), 'Must contain modal title');
-    assert.ok(markup.includes('data-testid="chair-copy-next-week-btn"'), 'Must have 1-click copy next week button');
-    assert.ok(markup.includes('data-testid="chair-copy-month-btn"'), 'Must have 1-click copy month button');
-    assert.ok(markup.includes('data-testid="chair-clear-week-btn"'), 'Must have 1-click clear week button');
-    assert.ok(markup.includes('data-testid="chair-save-btn"'), 'Must have save button');
-
-    // Mandate 8e: Save button must NOT be disabled
-    assert.ok(!markup.includes('data-testid="chair-save-btn" disabled'), 'Save button must never be disabled');
-
-    // 1-tap shift buttons
-    assert.ok(markup.includes('Утро'), 'Must include 1-tap Morning shift button');
-    assert.ok(markup.includes('Вечер'), 'Must include 1-tap Evening shift button');
-    assert.ok(markup.includes('День'), 'Must include 1-tap Full Day shift button');
-    assert.ok(markup.includes('Выходной'), 'Must include 1-tap Day off / Clear button');
-  });
-});

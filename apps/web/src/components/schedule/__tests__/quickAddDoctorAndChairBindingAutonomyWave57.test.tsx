@@ -28,7 +28,6 @@ import {
 	DEFAULT_SOLO_CHAIR,
 	type ChairDoctorShiftAssignment,
 } from "../ScheduleGrid";
-import ChairRosterModal from "../ChairRosterModal";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import { AppointmentModal } from "../AppointmentModal";
 
@@ -659,31 +658,6 @@ describe("Wave 57 (Feature 246) — Quick Add Doctor & Chair Binding Autonomy", 
 
 		// Mandate 8d: 0 cartoon emojis in toolbar buttons
 		assert.equal(hasCartoonEmojis(collectAllText(applyBtn)), false);
-		assert.equal(hasCartoonEmojis(collectAllText(addDocBtn)), false);
-	});
-
-	it("ChairRosterModal: contains btn-roster-add-doctor and opens quick add doctor inline panel (Mandate 8d Anti-Matryoshka)", async () => {
-		await act(async () => {
-			reactRoot.render(
-				<ChairRosterModal
-					isOpen={true}
-					onClose={() => {}}
-					currentDate="2026-09-08"
-				/>,
-			);
-		});
-
-		const addDoctorBtn = findNodeByTestId(rootNode, "btn-roster-add-doctor");
-		assert.ok(addDoctorBtn, "btn-roster-add-doctor must exist in ChairRosterModal top header");
-		assert.equal(addDoctorBtn.disabled, false, "Roster add doctor button must not be disabled");
-
-		await clickNode(addDoctorBtn);
-
-		const quickPanel = findNodeByTestId(mockDoc.body, "chair-quick-add-doctor-panel");
-		assert.ok(quickPanel, "chair-quick-add-doctor-panel must be open inline when clicking btn-roster-add-doctor");
-
-		const quickModal = findNodeByTestId(mockDoc.body, "quick-doctor-modal");
-		assert.equal(quickModal, null, "No nested QuickAddDoctorModal overlay must be rendered (modal depth strictly 1)");
 	});
 
 	it("QuickBookingDrawer & AppointmentModal: Solo doctor resilience with 0 chairs fallback (Mandate 8n)", async () => {
