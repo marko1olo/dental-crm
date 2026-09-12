@@ -1,0 +1,460 @@
+/**
+ * Patient Budget Mobile Portal & Digital Signature Stylesheet
+ * Optimized for mobile viewport 390x844 with dark/light theme tokens
+ * Strict clinical style, 0 emojis, >=44px touch targets
+ */
+
+.patient-budget-container {
+	width: 100%;
+	max-width: 480px;
+	margin: 0 auto;
+	min-height: 100vh;
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	padding: 1rem;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Header */
+.patient-budget-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-bottom: 1rem;
+	border-bottom: 1px solid var(--border, #e2e8f0);
+	margin-bottom: 1rem;
+}
+
+.patient-budget-clinic-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.3;
+}
+
+.patient-budget-doctor-name {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.25rem;
+}
+
+.patient-budget-status-chip {
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 0.25rem 0.5rem;
+	border-radius: 9999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	white-space: nowrap;
+}
+
+.patient-budget-status-chip.pending {
+	background-color: #fef3c7;
+	color: #92400e;
+}
+
+.patient-budget-status-chip.accepted {
+	background-color: #dcfce7;
+	color: #166534;
+}
+
+/* Items List Card */
+.patient-budget-card {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 0.75rem;
+	padding: 1rem;
+	margin-bottom: 1rem;
+}
+
+.patient-budget-card-title {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	margin-bottom: 0.75rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.patient-budget-item-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.625rem 0;
+	border-bottom: 1px dashed var(--border, #e2e8f0);
+}
+
+.patient-budget-item-row:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+
+.patient-budget-item-info {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	flex: 1;
+	min-width: 0;
+}
+
+.patient-budget-tooth-badge {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	background-color: #e0f2fe;
+	color: #0369a1;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.25rem;
+	display: inline-block;
+	width: fit-content;
+}
+
+.patient-budget-item-title {
+	font-size: 0.8125rem;
+	color: var(--ink, #0f172a);
+	line-height: 1.35;
+	word-break: break-word;
+}
+
+.patient-budget-item-qty {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.patient-budget-item-price {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	text-align: right;
+	white-space: nowrap;
+}
+
+/* Totals Box */
+.patient-budget-totals {
+	margin-top: 0.75rem;
+	padding-top: 0.75rem;
+	border-top: 2px solid var(--border, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.patient-budget-total-line {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+}
+
+.patient-budget-grand-total {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	margin-top: 0.25rem;
+	font-size: 1.125rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+}
+
+.patient-budget-grand-price {
+	color: #059669;
+	font-size: 1.25rem;
+}
+
+/* 2FA Verification Box */
+.patient-budget-verify-box {
+	background-color: #f8fafc;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.75rem;
+	padding: 1rem;
+	margin-bottom: 1rem;
+}
+
+.patient-budget-verify-input-group {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+.patient-budget-verify-input {
+	flex: 1;
+	min-height: 44px;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #94a3b8;
+	border-radius: 0.5rem;
+	font-size: 1.25rem;
+	text-align: center;
+	letter-spacing: 0.35rem;
+	background: #ffffff;
+	color: #0f172a;
+	box-sizing: border-box;
+}
+
+.patient-budget-verify-btn {
+	min-height: 44px;
+	min-width: 100px;
+	padding: 0 1rem;
+	background-color: #0284c7;
+	color: #ffffff;
+	border: none;
+	border-radius: 0.5rem;
+	font-weight: 600;
+	font-size: 0.875rem;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	transition: background-color 0.2s;
+}
+
+.patient-budget-verify-btn:hover:not(:disabled) {
+	background-color: #0369a1;
+}
+
+.patient-budget-verify-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.patient-budget-error-msg {
+	margin-top: 0.5rem;
+	font-size: 0.75rem;
+	color: #dc2626;
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+/* Touch Signature Canvas */
+.patient-budget-canvas-wrap {
+	position: relative;
+	width: 100%;
+	height: 160px;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	touch-action: none;
+	margin-top: 0.75rem;
+}
+
+.patient-budget-canvas {
+	width: 100%;
+	height: 100%;
+	display: block;
+	cursor: crosshair;
+	touch-action: none;
+}
+
+.patient-budget-canvas-guide {
+	position: absolute;
+	bottom: 30px;
+	left: 20px;
+	right: 20px;
+	border-bottom: 1px dashed #cbd5e1;
+	pointer-events: none;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+}
+
+.patient-budget-canvas-guide-text {
+	font-size: 0.6875rem;
+	color: #94a3b8;
+	padding-bottom: 2px;
+}
+
+.patient-budget-canvas-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 0.5rem;
+}
+
+.patient-budget-clear-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0 0.75rem;
+	background: transparent;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	font-size: 0.75rem;
+	color: #64748b;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.patient-budget-clear-btn:hover {
+	background: #f1f5f9;
+	color: #0f172a;
+}
+
+.patient-budget-signer-input {
+	min-height: 44px;
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	font-size: 0.875rem;
+	background: #ffffff;
+	color: #0f172a;
+	margin-top: 0.5rem;
+	box-sizing: border-box;
+}
+
+/* Legal Disclaimer */
+.patient-budget-legal-text {
+	font-size: 0.6875rem;
+	color: #64748b;
+	line-height: 1.4;
+	margin: 0.75rem 0;
+	text-align: justify;
+}
+
+/* Action Button */
+.patient-budget-submit-btn {
+	min-height: 48px;
+	width: 100%;
+	padding: 0.75rem 1.25rem;
+	background-color: #059669;
+	color: #ffffff;
+	border: none;
+	border-radius: 0.5rem;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2);
+	transition: background-color 0.2s, transform 0.1s;
+}
+
+.patient-budget-submit-btn:hover:not(:disabled) {
+	background-color: #047857;
+}
+
+.patient-budget-submit-btn:active:not(:disabled) {
+	transform: scale(0.99);
+}
+
+.patient-budget-submit-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+/* Accepted Card */
+.patient-budget-accepted-card {
+	background-color: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	text-align: center;
+	margin-bottom: 1rem;
+}
+
+.patient-budget-accepted-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: #166534;
+	margin-top: 0.5rem;
+	margin-bottom: 0.25rem;
+}
+
+.patient-budget-hash-box {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.6875rem;
+	color: #64748b;
+	background: #ffffff;
+	padding: 0.5rem;
+	border-radius: 0.375rem;
+	border: 1px solid #e2e8f0;
+	margin: 0.75rem 0;
+	word-break: break-all;
+}
+
+.patient-budget-print-btn {
+	min-height: 44px;
+	width: 100%;
+	padding: 0.5rem 1rem;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #0f172a;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	margin-top: 0.75rem;
+}
+
+.patient-budget-print-btn:hover {
+	background: #f8fafc;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+	[data-theme="dark"] .patient-budget-container {
+		background-color: #0f172a;
+		color: #f8fafc;
+	}
+	[data-theme="dark"] .patient-budget-clinic-title {
+		color: #f8fafc;
+	}
+	[data-theme="dark"] .patient-budget-card {
+		background-color: #1e293b;
+		border-color: #334155;
+	}
+	[data-theme="dark"] .patient-budget-item-title {
+		color: #f8fafc;
+	}
+	[data-theme="dark"] .patient-budget-item-price {
+		color: #f8fafc;
+	}
+	[data-theme="dark"] .patient-budget-grand-total {
+		color: #f8fafc;
+	}
+	[data-theme="dark"] .patient-budget-verify-box {
+		background-color: #1e293b;
+		border-color: #334155;
+	}
+	[data-theme="dark"] .patient-budget-verify-input {
+		background-color: #0f172a;
+		color: #f8fafc;
+		border-color: #475569;
+	}
+	[data-theme="dark"] .patient-budget-signer-input {
+		background-color: #0f172a;
+		color: #f8fafc;
+		border-color: #475569;
+	}
+	[data-theme="dark"] .patient-budget-canvas-wrap {
+		background-color: #ffffff; /* signature canvas remains white paper for clarity */
+	}
+	[data-theme="dark"] .patient-budget-accepted-card {
+		background-color: #064e3b;
+		border-color: #047857;
+	}
+	[data-theme="dark"] .patient-budget-accepted-title {
+		color: #ecfdf5;
+	}
+	[data-theme="dark"] .patient-budget-hash-box {
+		background-color: #0f172a;
+		color: #94a3b8;
+		border-color: #334155;
+	}
+}

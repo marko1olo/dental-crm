@@ -14,4 +14,5 @@ export * from "./patientPortalEngine";
 export * from "./patientPortalPresets";
 export * from "./patientPortalTypes";
 export { generateQrCodeSvg, generateSha256 } from "./patientCabinet";
+export * from "./PatientBudgetSignView";
 export { PatientPortalModal as default } from "./PatientPortalModal";
