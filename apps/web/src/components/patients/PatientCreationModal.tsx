@@ -1183,3 +1183,6 @@ export function PatientCreationModal({
 		? createPortal(modalContent, document.body)
 		: modalContent;
 }
+
+export { PatientCreationModal as CreatePatientModal };
+export default PatientCreationModal;

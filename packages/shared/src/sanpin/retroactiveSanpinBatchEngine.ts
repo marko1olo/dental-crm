@@ -10,7 +10,7 @@
  * ============================================================================
  */
 
-import type { TemperatureHumidityLog } from "../sanpin.js";
+import type { TemperatureHumidityLog } from "./sanpinSchemas.js";
 import {
 	type CabinetReadinessPreset,
 	DENTAL_INSTRUMENT_CATEGORIES,

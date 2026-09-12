@@ -9,7 +9,7 @@ import {
 	parseMdlpDataMatrix,
 	parseMdlpExpirationDate,
 	recognizeDentalMedication,
-} from "./mdlpDataMatrix.js";
+} from "../mdlp/index.js";
 
 describe("MDLP / GS1 DataMatrix Checksum & Utility Tests", () => {
 	test("computeGtinCheckDigit calculates correct Modulo 10 check digit", () => {

@@ -9,7 +9,7 @@ import {
 	TIMESHEET_STATUTORY_CODES,
 	type TimesheetDayRecord,
 	type EmployeeTimesheetInput,
-} from "../finance/timesheetT13.js";
+} from "../payroll/formT13TimesheetEngine.js";
 
 describe("Statutory Form T-13 Timesheet Engine (Госкомстат РФ № 1)", () => {
 	it("1.1 Accurately evaluates days in month for leap and non-leap years", () => {

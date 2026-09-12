@@ -7,7 +7,6 @@
 export * from "../money.js";
 export * from "./dates.js";
 export * from "./strings.js";
-export * from "./mdlpDataMatrix.js";
 export * from "./snils.js";
 export {
 	validateRussianInn,

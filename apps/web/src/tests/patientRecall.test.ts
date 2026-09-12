@@ -17,7 +17,7 @@ import {
 	resolveUrgencyStatus,
 	type PatientRecallCandidate,
 	type RecallCycleType,
-} from "../components/recalls/recallEngine";
+} from "../components/recalls/patientRecallEngine";
 import {
 	CLINICAL_CALLING_SCRIPTS,
 	buildWhatsAppUrl,

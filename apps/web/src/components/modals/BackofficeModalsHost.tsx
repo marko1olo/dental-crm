@@ -1,4 +1,4 @@
-import { FiscalReceiptModal } from "../finance/FiscalReceiptModal";
+import { FiscalReceiptModal } from "../finance/FiscalReceipt54FzModal";
 import { SignaturePadCanvas } from "../portal/selfCheckin/SignaturePadCanvas";
 import { ExpressFiscalReceiptModal } from "../finance/ExpressFiscalReceiptModal";
 import { RefundReceiptModal } from "../finance/RefundReceiptModal";

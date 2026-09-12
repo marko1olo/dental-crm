@@ -4,7 +4,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { EgiszMonitor } from "../EgiszMonitor";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
-import { VisitDiaryEditor } from "../VisitDiaryEditor";
+import { VisitDiarySection } from "./VisitDiarySection";
 import { realVisitFieldId } from "./visitIdentity";
 
 export interface VisitOdontogramTabPatient {
@@ -178,7 +178,7 @@ export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 							сервера с нуля, а внутри одного визита ключ не меняется, поэтому
 							набранный текст и автосохранение живут как раньше.
 						*/}
-						<VisitDiaryEditor
+						<VisitDiarySection
 							key={diaryVisitId}
 							visitId={diaryVisitId}
 							patientId={diaryPatientId}

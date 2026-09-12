@@ -5,7 +5,7 @@ import "./SettingsMessengersTab.css";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { MaxSettingsPanel } from "./MaxSettingsPanel.js";
-import { MessageTemplatesPanel } from "./MessageTemplatesPanel.js";
+import { SettingsMessageTemplatesTab } from "./SettingsMessageTemplatesTab.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
 
@@ -187,7 +187,7 @@ export function SettingsMessengersTab({
 					role="tabpanel"
 					aria-labelledby="messenger-tab-templates"
 				>
-					<MessageTemplatesPanel />
+					<SettingsMessageTemplatesTab />
 				</div>
 			)}
 		</section>

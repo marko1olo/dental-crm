@@ -16,7 +16,7 @@ import { renderToString } from "react-dom/server";
 
 import { validateBuyerInn54Fz } from "../cashboxOperations";
 import { PaymentModal } from "../PaymentModal";
-import { FiscalReceiptModal } from "../FiscalReceiptModal";
+import { FiscalReceiptModal } from "../FiscalReceipt54FzModal";
 import { ProcedureMaterialDeductionModal } from "../../inventory/ProcedureMaterialDeductionModal";
 import { SterilizationJournalModal } from "../../sterilization/SterilizationJournalModal";
 import {

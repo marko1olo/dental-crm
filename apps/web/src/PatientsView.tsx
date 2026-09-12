@@ -34,7 +34,7 @@ import { LoyaltyProgramModal } from "./components/loyalty/program/LoyaltyProgram
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
 import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
-import { CreatePatientModal } from "./components/patients/CreatePatientModal";
+import { PatientCreationModal, PatientCreationModal as CreatePatientModal } from "./components/patients/PatientCreationModal";
 import { PatientCardModal } from "./components/patients/PatientCardModal";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
@@ -1431,7 +1431,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			</div>
 
 			{/* Create Patient Modal Pop-up */}
-			<CreatePatientModal
+			<PatientCreationModal
 				isOpen={isCreateModalOpen}
 				onClose={() => setIsCreateModalOpen(false)}
 				createPatient={createPatient}

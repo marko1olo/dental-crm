@@ -43,7 +43,7 @@ import {
 import { EndoCanalLogModal, type EndoToothClinicalData } from "../endo/EndoCanalLogModal";
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
-import { RadialToothMenu } from "../odontogram/RadialToothMenu";
+import { ToothRadialMenu } from "../odontogram/ToothRadialMenu";
 import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
@@ -1086,7 +1086,7 @@ export function ChairsiderPerspectiveView() {
 
 			{/* Floating 1-Tap Radial Tooth Context Menu on Arch Click */}
 			{radialMenuState && (
-				<RadialToothMenu
+				<ToothRadialMenu
 					toothNumber={radialMenuState.toothNumber}
 					anchorRect={radialMenuState.anchorRect}
 					currentState={toothStates[radialMenuState.toothNumber] || "Healthy"}

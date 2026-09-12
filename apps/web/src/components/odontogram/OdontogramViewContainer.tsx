@@ -43,7 +43,7 @@ import {
 } from "./ToothChart";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
-import { RadialToothMenu } from "./RadialToothMenu";
+import { ToothRadialMenu } from "./ToothRadialMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
@@ -1230,7 +1230,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 
 			{/* Radial Context Menu Modal */}
 			{radialMenuData && (
-				<RadialToothMenu
+				<ToothRadialMenu
 					toothNumber={radialMenuData.toothNumber}
 					anchorRect={radialMenuData.rect}
 					currentState={radialMenuData.currentState}

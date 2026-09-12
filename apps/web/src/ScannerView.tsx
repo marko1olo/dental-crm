@@ -1,5 +1,5 @@
 import React from "react";
-import { SanpinRegistersView } from "./components/sanpin/SanpinRegistersView";
+import { SanpinRegisters, SanpinRegisters as SanpinRegistersView } from "./components/sanpin/SanpinRegisters";
 import { AutoclaveLog257Modal } from "./components/sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { KraftPackageBarcodeModal } from "./components/sanpin/kraft/KraftPackageBarcodeModal";
 import { DocumentCameraScannerModal } from "./components/scanner/DocumentCameraScannerModal";
@@ -15,12 +15,13 @@ export function ScannerView() {
 			}}
 		>
 			{/* Main SanPiN Registers, Journals & Packaging Studio */}
-			<SanpinRegistersView />
+			<SanpinRegisters />
 		</div>
 	);
 }
 
 export {
+	SanpinRegisters,
 	SanpinRegistersView,
 	KraftPackageBarcodeModal,
 	AutoclaveLog257Modal,

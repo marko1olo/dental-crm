@@ -76,7 +76,7 @@ import { ImplantCrossSectionPlanner } from "../radiology/ImplantCrossSectionPlan
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import { SurgeryCockpitModal } from "../surgery/SurgeryCockpitModal";
 import { SurgeryProtocolPanel } from "../surgery/SurgeryProtocolPanel";
-import { SurgeryVisitCockpit } from "../visit/surgery/SurgeryVisitCockpit";
+import { SurgeryVisitCockpit } from "../surgery/SurgeryVisitCockpit";
 import { VisitSurgeryProtocolTab } from "../visit/surgery/VisitSurgeryProtocolTab";
 import { AnesthesiaAspirationJournalModal } from "../visit/anesthesia/AnesthesiaAspirationJournalModal";
 import { NurseCarpuleDisposalModal } from "../warehouse/NurseCarpuleDisposalModal";

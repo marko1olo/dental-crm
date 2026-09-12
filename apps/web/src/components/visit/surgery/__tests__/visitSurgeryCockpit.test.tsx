@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { VisitSurgeryProtocolTab } from "../VisitSurgeryProtocolTab";
-import { SurgeryVisitCockpit } from "../SurgeryVisitCockpit";
+import { SurgeryVisitCockpit } from "../../../surgery/SurgeryVisitCockpit";
 
 describe("Visit Surgery Protocol & Cockpit (Visit Scope)", () => {
 	it("1. VisitSurgeryProtocolTab renders with active tooth, 1-click norms and actions", () => {

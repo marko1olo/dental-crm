@@ -5,7 +5,6 @@
 // Core Patient Modal & Creation
 export * from "./PatientCardModal";
 export * from "./PatientCreationModal";
-export * from "./CreatePatientModal";
 export * from "./patientCardSavePill";
 
 // Overview & Widgets

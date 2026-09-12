@@ -3692,3 +3692,6 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		</div>
 	);
 };
+
+export { FiscalReceipt54FzModal as FiscalReceiptModal };
+export default FiscalReceipt54FzModal;
