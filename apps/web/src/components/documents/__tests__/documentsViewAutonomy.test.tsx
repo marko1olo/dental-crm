@@ -20,7 +20,7 @@ import {
 	executeOpenLatestDocumentAutonomy,
 } from "../../../DocumentsView";
 import { DocumentsOutpatientArchive } from "../DocumentsOutpatientArchive";
-import { PaidMedicalContractModal } from "../forms/PaidMedicalContractModal";
+import { PaidMedicalContractModal } from "../PaidMedicalContractModal";
 import { DentalMedicalCard043uForm } from "../forms/DentalMedicalCard043uForm";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { documentSourceStatusClassNames } from "../../../workspaceUiLabels";

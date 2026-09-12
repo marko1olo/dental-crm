@@ -27,7 +27,7 @@ import {
 import type React from "react";
 import { useMemo, useState } from "react";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal";
-import { RadiationDoseSheetModal } from "./RadiationDoseSheetModal";
+import { RadiationDoseSheetModal } from "./doseSheet/RadiationDoseSheetModal";
 import { formatRadiationDose } from "./radiologyMath";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { RadiologyStudyList } from "./RadiologyStudyList";

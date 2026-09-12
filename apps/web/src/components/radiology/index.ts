@@ -1,5 +1,4 @@
 export { getTissueNameFromHU, formatHuProbe } from "./cbctMprMath";
-export * from "./RadiationDoseSheetModal";
 export * from "./doseSheet";
 export * from "./radiologyMath";
 export * from "./RadiologyModule";
