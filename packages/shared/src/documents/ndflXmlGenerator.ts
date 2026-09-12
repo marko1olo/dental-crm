@@ -507,11 +507,31 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 	const issues: FnsPreflightIssue[] = [];
 
 	// 1. Проверка клиники
-	const clinicInnValidation = validateRussianInn(payload.clinic.inn);
-	if (!clinicInnValidation.isValid) {
+	if (!payload.clinic.inn || cleanDigits(payload.clinic.inn).length === 0) {
 		issues.push({
 			field: "clinic.inn",
-			message: `ИНН клиники некорректен: ${clinicInnValidation.errorMessageRu || "неверный формат"}`,
+			message: "Не указан ИНН или руководитель клиники в настройках организации",
+			severity: "error",
+		});
+	} else {
+		const clinicInnValidation = validateRussianInn(payload.clinic.inn);
+		if (!clinicInnValidation.isValid) {
+			issues.push({
+				field: "clinic.inn",
+				message: `ИНН клиники некорректен: ${clinicInnValidation.errorMessageRu || "неверный формат"}`,
+				severity: "error",
+			});
+		}
+	}
+
+	const hasDirectorName = Boolean(payload.clinic.directorName?.trim());
+	const hasIpFullName = Boolean(
+		payload.clinic.ipFullName?.family?.trim() && payload.clinic.ipFullName?.given?.trim(),
+	);
+	if (!hasDirectorName && !hasIpFullName) {
+		issues.push({
+			field: "clinic.directorName",
+			message: "Не указан ИНН или руководитель клиники в настройках организации",
 			severity: "error",
 		});
 	}

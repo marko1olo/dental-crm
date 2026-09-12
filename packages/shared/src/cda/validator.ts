@@ -47,45 +47,17 @@ export function validateFrmoOid(oid: string): boolean {
 	);
 }
 
-/**
- * Normalizes SNILS string to digits only.
- */
-export function normalizeSnils(input: unknown): string {
-	if (typeof input === "number") return String(input).replace(/\D/g, "");
-	if (typeof input !== "string") return "";
-	return input.replace(/\D/g, "");
-}
+import {
+	formatSnils,
+	isValidSnils,
+	normalizeSnils,
+} from "../utils/snils.js";
 
-/**
- * Validates Russian SNILS 11-digit number with checksum algorithm (Resolution 192p).
- */
-export function isValidSnils(input: unknown): boolean {
-	const digits = normalizeSnils(input);
-	if (digits.length !== 11) return false;
-	if (/^(\d)\1{10}$/.test(digits)) return false;
-
-	const numberPart = digits.slice(0, 9);
-	const providedChecksum = Number.parseInt(digits.slice(9, 11), 10);
-
-	if (Number.parseInt(numberPart, 10) <= 1001998) return true;
-
-	let sum = 0;
-	for (let index = 0; index < 9; index += 1) {
-		sum += Number.parseInt(numberPart.charAt(index), 10) * (9 - index);
-	}
-
-	let expected: number;
-	if (sum < 100) {
-		expected = sum;
-	} else if (sum === 100 || sum === 101) {
-		expected = 0;
-	} else {
-		const remainder = sum % 101;
-		expected = remainder === 100 || remainder === 101 ? 0 : remainder;
-	}
-
-	return expected === providedChecksum;
-}
+export {
+	formatSnils,
+	isValidSnils,
+	normalizeSnils,
+};
 
 /**
  * Validates Russian OGRN (13 digits for Legal Entity, 15 digits for IP).

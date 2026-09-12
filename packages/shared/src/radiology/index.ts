@@ -42,6 +42,17 @@ export {
 	MISCH_BONE_CONFIGS,
 	classifyMischBoneDensity,
 	getMischClassConfig,
+	type MischClass,
+	type ExtendedMischClass,
+	type ImplantSystem,
+	type HUZoneProfile,
+	type DrillStep,
+	type DrillProtocol,
+	classifyMisch,
+	classifyExtendedBoneDensity,
+	extractHUZones,
+	generateDrillProtocol,
+	mischDescription,
 } from "./boneQualityEngine.js";
 
 export {
