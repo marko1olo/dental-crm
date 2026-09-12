@@ -59,7 +59,12 @@ import {
 	formatJawScopeLabel,
 	isJawWideConstruction,
 } from "./labMath";
-import { rublesToKopecks } from "@dental/shared";
+import {
+	rublesToKopecks,
+	formatLabOrderFormZtl1A4Protocol,
+	labOrdersEngine,
+	type LabOrder,
+} from "@dental/shared";
 import {
 	checkDentalLabFinancialGate,
 	createDoctorClinicalOverride,
@@ -620,6 +625,44 @@ export function DentalLabOrderModal({
 
 	const gostOrderNumber = formatGostOrderNumber(secureToken);
 
+	const handleCopyZtl1Protocol = () => {
+		try {
+			const safeWorkType = (constructionType as any) || "single_crown";
+			const safeMaterial = (material as any) || "zirconia_multilayer";
+			const synthOrder: LabOrder = {
+				id: gostOrderNumber,
+				clinicId: "clinic-default",
+				patientId: patientId || "pat-default",
+				patientFullName: formPatientName || "Пациент",
+				doctorId: doctorId || "doc-default",
+				doctorFullName: formDoctorName || "Лечащий врач-ортопед",
+				labId: "lab-primary",
+				labName: "Зуботехническая лаборатория DENTE",
+				workType: safeWorkType,
+				material: safeMaterial,
+				shade: (shadeClassical || shade3dMaster || shadeBleach || "A2") as any,
+				toothNumbers: selectedTeeth && selectedTeeth.length > 0 ? selectedTeeth : [11],
+				antagonistInfo: "В центральной окклюзии",
+				impressionType: (impressionType as any) || "digital_intraoral_scan",
+				sentDate: new Date().toISOString().split("T")[0]!,
+				expectedDate: dueDate || new Date(Date.now() + 5 * 86400000).toISOString().split("T")[0]!,
+				status: (currentStage as any) || "sent_to_lab",
+				stages: [],
+				labCostKopecks: rublesToKopecks(totalLabPriceRub || 0),
+				isWarrantyRework: currentStage === "correction_remake",
+				warrantyMonths: 12,
+				notes: clinicalNotes || undefined,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			};
+			const protocolText = formatLabOrderFormZtl1A4Protocol(synthOrder, "Стоматологическая клиника DENTE");
+			navigator.clipboard.writeText(protocolText);
+			showToast("Протокол ЗТЛ-1 (Форма 043/у) скопирован в буфер", "success");
+		} catch (_e) {
+			showToast("Не удалось скопировать протокол ЗТЛ-1", "error");
+		}
+	};
+
 	const handleCopyMessengerSummary = async () => {
 		const finalShade =
 			shadeSystem === "3d_master"
@@ -1028,35 +1071,51 @@ export function DentalLabOrderModal({
 
 					{/* ═══ TAB 4: PRINTABLE BLANK (GOST) & QR CODE ══════════════════ */}
 					{activeTab === "print" && (
-						<DentalLabPrintBlank
-							gostOrderNumber={gostOrderNumber}
-							secureToken={secureToken}
-							formPatientName={formPatientName}
-							formDoctorName={formDoctorName}
-							selectedTeeth={selectedTeeth}
-							jawScope={jawScope}
-							constructionType={constructionType}
-							material={material}
-							shadeSystem={shadeSystem}
-							shadeClassical={shadeClassical}
-							shade3dMaster={shade3dMaster}
-							shadeBleach={shadeBleach}
-							shadeCervical={shadeCervical}
-							shadeBody={shadeBody}
-							shadeIncisal={shadeIncisal}
-							shadeStump={shadeStump}
-							translucency={translucency}
-							mamelons={mamelons}
-							calcifications={calcifications}
-							impressionType={impressionType}
-							frameworkTrialDate={frameworkTrialDate}
-							ceramicTrialDate={ceramicTrialDate}
-							dueDate={dueDate}
-							clinicalNotes={clinicalNotes}
-							totalLabPriceRub={totalLabPriceRub}
-							portalUrl={portalUrl}
-							handlePrint={handlePrint}
-						/>
+						<div className="flex flex-col gap-3">
+							<div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
+								<div className="text-xs font-semibold text-slate-500">
+									Форма ЗТЛ-1 утверждена Минздравом РФ (Приказ 804н / Форма 043/у)
+								</div>
+								<button
+									type="button"
+									onClick={handleCopyZtl1Protocol}
+									className="px-3 py-1.5 rounded-lg border border-teal-500 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 text-xs font-bold hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors flex items-center gap-1.5 min-h-[36px]"
+									title="Скопировать текстовый протокол наряда ЗТЛ-1 для вставки в карту 043/у"
+								>
+									<Copy size={14} />
+									Скопировать протокол ЗТЛ-1
+								</button>
+							</div>
+							<DentalLabPrintBlank
+								gostOrderNumber={gostOrderNumber}
+								secureToken={secureToken}
+								formPatientName={formPatientName}
+								formDoctorName={formDoctorName}
+								selectedTeeth={selectedTeeth}
+								jawScope={jawScope}
+								constructionType={constructionType}
+								material={material}
+								shadeSystem={shadeSystem}
+								shadeClassical={shadeClassical}
+								shade3dMaster={shade3dMaster}
+								shadeBleach={shadeBleach}
+								shadeCervical={shadeCervical}
+								shadeBody={shadeBody}
+								shadeIncisal={shadeIncisal}
+								shadeStump={shadeStump}
+								translucency={translucency}
+								mamelons={mamelons}
+								calcifications={calcifications}
+								impressionType={impressionType}
+								frameworkTrialDate={frameworkTrialDate}
+								ceramicTrialDate={ceramicTrialDate}
+								dueDate={dueDate}
+								clinicalNotes={clinicalNotes}
+								totalLabPriceRub={totalLabPriceRub}
+								portalUrl={portalUrl}
+								handlePrint={handlePrint}
+							/>
+						</div>
 					)}
 				</div>
 

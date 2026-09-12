@@ -35,13 +35,15 @@ export interface BeforeAfterComparisonViewProps {
 	slotsData: Record<string, PhotoSlotRecord>;
 	beforeSlotId: string;
 	afterSlotId: string;
+	beforePhotoUrl?: string | undefined;
+	afterPhotoUrl?: string | undefined;
 	clinicName?: string;
 	patientName?: string;
 	patientCardNumber?: string;
 	doctorName?: string;
-	onBeforeSlotChange: (id: string) => void;
-	onAfterSlotChange: (id: string) => void;
-	onUpdateSlotRecord?: (slotId: string, updates: Partial<PhotoSlotRecord>) => void;
+	onBeforeSlotChange?: ((id: string) => void) | undefined;
+	onAfterSlotChange?: ((id: string) => void) | undefined;
+	onUpdateSlotRecord?: ((slotId: string, updates: Partial<PhotoSlotRecord>) => void) | undefined;
 }
 
 export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps> = ({
@@ -334,7 +336,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						</label>
 						<select
 							value={beforeSlotId}
-							onChange={(e) => onBeforeSlotChange(e.target.value)}
+							onChange={(e) => onBeforeSlotChange?.(e.target.value)}
 							style={{
 								padding: '6px 10px',
 								borderRadius: '8px',
@@ -358,7 +360,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						</label>
 						<select
 							value={afterSlotId}
-							onChange={(e) => onAfterSlotChange(e.target.value)}
+							onChange={(e) => onAfterSlotChange?.(e.target.value)}
 							style={{
 								padding: '6px 10px',
 								borderRadius: '8px',

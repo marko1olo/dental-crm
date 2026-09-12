@@ -258,7 +258,7 @@ export function SterilizationAutoclaveLogModal({
 					{/* 1-КЛИКОВЫЙ МЕГА-ПРЕСЕТ (МАНДАТ 8e, 8k) */}
 					<button
 						type="button"
-						className="h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-1.5 shadow-sm transition-colors"
+						className="btn-confirm-autoclave-batch h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-1.5 shadow-sm transition-colors"
 						onClick={handleApplyMegaPreset}
 						data-testid="mega-preset-autoclave-btn"
 						title="1 клик: Режим 134°C / 2.1 bar, азопирамовая/фенолфталеиновая проба отрицательна, тест-полоски 5 класс норма"

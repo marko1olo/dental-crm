@@ -5,7 +5,8 @@ import {
 	X,
 	Grid,
 	FileText,
-	MoveHorizontal
+	MoveHorizontal,
+	UploadCloud,
 } from 'lucide-react';
 import './clinicalPhotography.css';
 import {
@@ -31,7 +32,12 @@ export interface ClinicalPhotoProtocolModalProps {
 	doctorName?: string;
 	clinicName?: string;
 	initialSlots?: Record<string, PhotoSlotRecord>;
+	initialPresetId?: string;
+	initialStage?: 'before' | 'during' | 'after' | 'followup';
 	onSaveProtocol?: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
+	onPhotoSaved?: ((result: any) => void) | undefined;
+	onPhotoProcessed?: ((result: any) => void) | undefined;
+	onBatchCompleted?: ((results: any[]) => void) | undefined;
 }
 
 const EMPTY_INITIAL_SLOTS: Record<string, PhotoSlotRecord> = {};
@@ -44,10 +50,19 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 	doctorName = 'Д-р Смирнова Е. В.',
 	clinicName = 'DENTE CLINIC',
 	initialSlots = EMPTY_INITIAL_SLOTS,
-	onSaveProtocol
+	initialPresetId,
+	initialStage = 'before',
+	onSaveProtocol,
+	onPhotoSaved,
+	onPhotoProcessed,
+	onBatchCompleted,
 }) => {
 	// State
-	const [activePreset, setActivePreset] = useState<PhotoProtocolPreset>(STANDARD_12_SLOT_PROTOCOL);
+	const [activePreset, setActivePreset] = useState<PhotoProtocolPreset>(() => {
+		if (initialPresetId) return getPresetById(initialPresetId);
+		return STANDARD_12_SLOT_PROTOCOL;
+	});
+	const [currentStage, setCurrentStage] = useState<'before' | 'during' | 'after' | 'followup'>(initialStage);
 	const [slotsData, setSlotsData] = useState<Record<string, PhotoSlotRecord>>(() => initialSlots || EMPTY_INITIAL_SLOTS);
 	const [activeViewMode, setActiveViewMode] = useState<'grid' | 'comparison' | 'export'>('grid');
 	const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<string | null>(null);
@@ -126,18 +141,58 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		}
 	};
 
+	const handleBatchFilesUpload = async (files: FileList | File[], startSlotId?: string) => {
+		const fileArr = Array.from(files);
+		if (fileArr.length === 0) return;
+
+		const slotIds = activePreset.slots.map(s => s.id);
+		let targetIndex = startSlotId ? slotIds.indexOf(startSlotId as any) : 0;
+		if (targetIndex < 0) targetIndex = 0;
+
+		const completedResults: any[] = [];
+		for (let i = 0; i < fileArr.length; i++) {
+			const file = fileArr[i];
+			if (!file) continue;
+			let slotToFill = slotIds[(targetIndex + i) % slotIds.length];
+			if (!slotToFill) continue;
+			// If target slot is already filled and there's an empty slot, pick the empty slot
+			if (slotsData[slotToFill]?.imageUrl) {
+				const emptySlot = slotIds.find(id => id && !slotsData[id]?.imageUrl);
+				if (emptySlot) slotToFill = emptySlot;
+			}
+			await handleFileUpload(slotToFill, file);
+			const res = { slotId: slotToFill, fileName: file.name, stage: currentStage };
+			completedResults.push(res);
+			onPhotoSaved?.(res);
+			onPhotoProcessed?.(res);
+		}
+		if (completedResults.length > 0) {
+			onBatchCompleted?.(completedResults);
+		}
+	};
+
 	const triggerUploadForSlot = (slotId: string) => {
 		currentUploadingSlotRef.current = slotId;
 		fileInputRef.current?.click();
 	};
 
+	const triggerBatchUpload = () => {
+		currentUploadingSlotRef.current = null;
+		fileInputRef.current?.click();
+	};
+
 	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = e.target.files;
-		const file = files && files.length > 0 ? files[0] : null;
-		if (file && currentUploadingSlotRef.current) {
-			handleFileUpload(currentUploadingSlotRef.current, file);
+		if (files && files.length > 0) {
+			const firstFile = files[0];
+			if (currentUploadingSlotRef.current && files.length === 1 && firstFile) {
+				handleFileUpload(currentUploadingSlotRef.current, firstFile);
+			} else {
+				handleBatchFilesUpload(files, currentUploadingSlotRef.current || undefined);
+			}
 		}
 		if (fileInputRef.current) fileInputRef.current.value = '';
+		currentUploadingSlotRef.current = null;
 	};
 
 	const handleDeleteImage = (slotId: string, e?: React.MouseEvent) => {
@@ -167,6 +222,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				type="file"
 				ref={fileInputRef}
 				style={{ display: 'none' }}
+				multiple
 				accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png,.webp"
 				onChange={handleFileInputChange}
 			/>
@@ -241,7 +297,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 					{activeViewMode === 'grid' && (
 						<>
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-								<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+								<div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
 									<span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted, #64748b)' }}>
 										Протокол:
 									</span>
@@ -264,9 +320,20 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 											<option key={p.id} value={p.id}>{p.nameRu}</option>
 										))}
 									</select>
+
+									<button
+										type="button"
+										className="photo-touch-btn"
+										onClick={triggerBatchUpload}
+										title="Загрузить несколько снимков сразу (авто-раскладка по слотам)"
+										style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', minHeight: '40px', fontSize: '13px', fontWeight: 600 }}
+									>
+										<UploadCloud size={16} />
+										Пакетная загрузка снимков
+									</button>
 								</div>
 
-								<div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
+								<div style={{ display: 'flex', gap: '8px', fontSize: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
 									<span className="photo-category-pill extraoral">
 										Внеротовые: {activePreset.categoryCount.extraoral}
 									</span>
@@ -276,7 +343,18 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 								</div>
 							</div>
 
-							<div className={`photo-slots-grid ${activePreset.totalSlots === 12 ? 'photo-slots-grid-12' : ''}`}>
+							<div
+								className={`photo-slots-grid ${activePreset.totalSlots === 12 ? 'photo-slots-grid-12' : ''}`}
+								onDragOver={(e) => {
+									e.preventDefault();
+								}}
+								onDrop={(e) => {
+									e.preventDefault();
+									if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+										handleBatchFilesUpload(e.dataTransfer.files);
+									}
+								}}
+							>
 								{activePreset.slots.map((slotDef) => {
 									const record = getSlotRecord(slotDef.id);
 									return (

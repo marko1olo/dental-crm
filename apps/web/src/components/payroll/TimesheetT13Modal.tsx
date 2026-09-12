@@ -31,8 +31,8 @@ import "./timesheetT13.css";
 export interface TimesheetT13ModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly clinicName?: string;
-	readonly employees?: readonly EmployeeInfo[];
+	readonly clinicName?: string | undefined;
+	readonly employees?: readonly EmployeeInfo[] | undefined;
 }
 
 export interface EmployeeInfo {

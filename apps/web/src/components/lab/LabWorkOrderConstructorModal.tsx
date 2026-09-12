@@ -640,7 +640,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 									<div className="flex items-center gap-2">
 										<ShieldCheck size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 										<span className="text-xs font-black uppercase tracking-wider text-teal-900 dark:text-teal-200">
-											Экспресс-наряд ЗТЛ в 3 клика (Автономия врача)
+											Экспресс-наряд ЗТЛ в 3 клика (Мандат 8e)
 										</span>
 									</div>
 									<div className="text-[11px] font-bold text-teal-800 dark:text-teal-300">
