@@ -120,7 +120,6 @@
 
 	.schedule-filter-strip,
 	.visit-monolithic-header,
-	.patients-header,
 	.panel-heading,
 	.finance-header-actions,
 	.document-patient-banner,
@@ -133,6 +132,15 @@
 		box-sizing: border-box;
 	}
 
+	.patients-header {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		box-sizing: border-box !important;
+		flex-direction: column !important;
+		flex-wrap: nowrap !important;
+		align-items: stretch !important;
+	}
+
 	.patients-search-box {
 		flex: 1 1 100%;
 		max-width: 100%;
@@ -140,8 +148,18 @@
 	}
 
 	.patients-header-actions {
-		width: 100%;
-		justify-content: flex-start;
+		width: 100% !important;
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: wrap !important;
+		gap: 8px !important;
+		justify-content: stretch !important;
+	}
+
+	.patients-header-actions > button {
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
+		justify-content: center !important;
 	}
 
 	.document-row p,

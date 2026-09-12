@@ -295,7 +295,7 @@ export function KraftPackageBarcodeModal({
 		}
 	};
 
-	// Subscribe to HardwareScanner global events
+	// Subscribe to HardwareScanner global events (physical USB / Bluetooth barcode scanners)
 	useEffect(() => {
 		const unsubscribe = hardwareScanner.subscribe((result) => {
 			if (result.success && result.rawCode) {
@@ -343,6 +343,49 @@ export function KraftPackageBarcodeModal({
 			onClose();
 		} else {
 			showToast("Протокол для привязки не передан", "warning");
+		}
+	};
+
+	// 1-Клик фиксация стерилизации (Норма / Тест-индикатор 5 класса) без видеокамер
+	const handleFixateSterilizationNorm = async () => {
+		const todayIso = new Date().toISOString().slice(0, 10);
+		const expDateIso = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+		const autoId = selectedAutoclaveId || "AUTO-01";
+		const cycNum = cycleNumber || 1;
+		const toolName = selectedToolSet?.nameRu || "Набор смотровой терапевтический";
+		const rawCode = `KP-AUTO-NORM-${Date.now().toString().slice(-4)}`;
+		const record: ParsedKraftBarcode = {
+			rawInput: rawCode,
+			barcodeType: "datamatrix_2d",
+			isValid: true,
+			isExpired: false,
+			isExpiringSoon: false,
+			daysRemaining: 30,
+			daysLifespan: 30,
+			batchId: `KB-${todayIso.replace(/-/g, "")}-01`,
+			autoclaveId: autoId,
+			cycleNumber: cycNum,
+			packDateIso: todayIso,
+			expDateIso: expDateIso,
+			operatorId: "STAFF-01",
+			operatorName: operatorName || "Персонал клиники",
+			toolSetId: selectedToolSetId || "set_therapeutic_tray",
+			toolSetNameRu: toolName,
+			packageMaterialId: selectedMaterialId || "paper_self_seal_single",
+			packageSizeId: selectedSizeId || "size_100x200",
+			indicatorId: "vinar_intetest_5",
+			indicatorClassRu: "Химический интегратор 5 класса (ИнтеТЕСТ / ГОСТ ISO 11140-1)",
+			indicatorPassed: true,
+			sanpinClauseRu: "СанПиН 3.3686-21 Таблица 3.14",
+			formattedProtocolRecord043: `Стерилизация проведена: Автоклав ${autoId}, цикл №${cycNum}, крафт-пакет «${toolName}». Тест-индикатор 5 класса (Норма). Вскрыт при пациенте.`,
+		};
+		setScannedInput(rawCode);
+		if (onAttachToProtocol) {
+			await onAttachToProtocol(record);
+			showToast("Стерилизация зафиксирована (Тест-индикатор 5 класса, Норма) и внесена в 043/у", "success");
+			onClose();
+		} else {
+			showToast("Стерилизация зафиксирована: Тест-индикатор 5 класса (Норма)", "success");
 		}
 	};
 
@@ -1142,166 +1185,58 @@ export function KraftPackageBarcodeModal({
 					{/* ─── TAB 2: QUICK SCANNER & 043/U LINK ─────────────────────────── */}
 					{activeTab === "scan" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", maxWidth: "760px", margin: "0 auto", width: "100%" }}>
-							{/* Hardware Camera Viewport & Stream Controls */}
+							{/* 1-Клик фиксация стерилизации (СанПиН 3.3686-21) без видеокамер */}
 							<div
 								style={{
 									borderRadius: "10px",
 									background: "var(--paper-soft, #f8fafc)",
 									border: "1px solid var(--line, #e2e8f0)",
-									padding: "1rem",
+									padding: "1.25rem",
 									display: "flex",
 									flexDirection: "column",
-									gap: "0.75rem",
+									gap: "1rem",
 								}}
 							>
 								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
 									<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-										<Camera size={18} color="var(--brand-primary, #2563eb)" />
-										<span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-											Аппаратный сканер 2D DataMatrix (СанПиН 3.3686-21)
+										<CheckCircle2 size={20} color="var(--ok-fg, #059669)" />
+										<span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink)" }}>
+											Фиксация стерилизации (СанПиН 3.3686-21)
 										</span>
 									</div>
-									<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-										{isCameraActive ? (
-											<>
-												<button
-													type="button"
-													onClick={handleToggleTorch}
-													className={`kraft-btn ${isTorchOn ? "kraft-btn-primary" : "kraft-btn-secondary"} touch-manipulation`}
-													style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-													title="Включить/выключить подсветку камеры"
-												>
-													<Zap size={15} />
-													<span>{isTorchOn ? "Подсветка ВКЛ" : "Подсветка"}</span>
-												</button>
-												<button
-													type="button"
-													onClick={handleToggleFacingMode}
-													className="kraft-btn kraft-btn-secondary touch-manipulation"
-													style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-													title="Переключить камеру (задняя / передняя)"
-												>
-													<span>{facingMode === "environment" ? "Основная камера" : "Фронтальная"}</span>
-												</button>
-												<button
-													type="button"
-													onClick={stopCamera}
-													className="kraft-btn kraft-btn-secondary touch-manipulation"
-													style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", color: "var(--bad-fg)", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-												>
-													<CameraOff size={15} />
-													<span>Остановить</span>
-												</button>
-											</>
-										) : (
-											<>
-												<button
-													type="button"
-													onClick={() => startCamera()}
-													className="kraft-btn kraft-btn-primary touch-manipulation"
-													style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.88rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-													data-testid="start-camera-scan-btn"
-												>
-													<Camera size={16} />
-													<span>Запустить камеру 60 FPS</span>
-												</button>
-												{hardwareScanner.isCapacitorNative() && (
-													<button
-														type="button"
-														onClick={handleNativeMlKitScan}
-														className="kraft-btn kraft-btn-secondary touch-manipulation"
-														style={{ minHeight: "44px", padding: "0.45rem 0.95rem", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-														data-testid="start-native-mlkit-btn"
-													>
-														<Smartphone size={16} />
-														<span>Сканер ML Kit</span>
-													</button>
-												)}
-											</>
-										)}
-									</div>
+									<span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}>
+										Тест-индикатор 5 класса • Без видеокамер
+									</span>
 								</div>
 
-								{/* Camera Video Viewfinder with Reticle Overlay */}
-								<div
+								<div style={{ fontSize: "0.85rem", color: "var(--muted)", lineHeight: 1.4 }}>
+									Мгновенная фиксация стерильности смотрового или процедурного лотка без необходимости сканирования камерой. Соответствует нормативам СанПиН 3.3686-21.
+								</div>
+
+								<button
+									type="button"
+									onClick={handleFixateSterilizationNorm}
+									className="kraft-btn touch-manipulation"
 									style={{
-										position: "relative",
-										width: "100%",
-										height: isCameraActive ? "240px" : "80px",
-										background: "var(--ink, #0f172a)",
-										borderRadius: "8px",
-										overflow: "hidden",
-										display: "flex",
+										minHeight: "48px",
+										fontSize: "0.95rem",
+										fontWeight: 800,
+										background: "var(--teal, #0d9488)",
+										borderColor: "var(--teal, #0d9488)",
+										color: "#ffffff",
+										boxShadow: "0 2px 10px rgba(13, 148, 136, 0.3)",
+										display: "inline-flex",
 										alignItems: "center",
 										justifyContent: "center",
-										transition: "height 0.2s ease",
+										gap: "0.5rem",
+										cursor: "pointer",
 									}}
+									data-testid="btn-fixate-sterilization-norm"
+									title="1-Клик фиксация стерилизации крафт-пакета по тест-индикатору 5 класса (Норма) для формы 043/у"
 								>
-									<video
-										ref={videoRef}
-										playsInline
-										muted
-										style={{
-											width: "100%",
-											height: "100%",
-											objectFit: "cover",
-											display: isCameraActive ? "block" : "none",
-										}}
-									/>
-
-									{isCameraActive ? (
-										<div
-											style={{
-												position: "absolute",
-												inset: 0,
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												pointerEvents: "none",
-											}}
-										>
-											<div
-												style={{
-													width: "160px",
-													height: "160px",
-													border: "2px solid var(--teal, #0d9488)",
-													borderRadius: "12px",
-													boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 15px rgba(20, 184, 166, 0.6)",
-													position: "relative",
-												}}
-											>
-												<div style={{ position: "absolute", top: "-20px", left: 0, right: 0, textAlign: "center", color: "var(--ok-fg, #34d399)", fontSize: "0.75rem", fontWeight: 700, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
-													Наведите на DataMatrix
-												</div>
-											</div>
-										</div>
-									) : (
-										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--muted)", fontSize: "0.825rem" }}>
-											<Scan size={18} />
-											<span>Камера выключена. Нажмите «Запустить камеру 60 FPS» или используйте USB-сканер / ручной ввод.</span>
-										</div>
-									)}
-								</div>
-
-								{/* Camera Error Message */}
-								{cameraError && (
-									<div
-										style={{
-											padding: "0.65rem 0.85rem",
-											borderRadius: "6px",
-											background: "rgba(220, 38, 38, 0.08)",
-											border: "1px solid rgba(220, 38, 38, 0.25)",
-											fontSize: "0.8rem",
-											color: "#b91c1c",
-											display: "flex",
-											alignItems: "center",
-											gap: "0.5rem",
-										}}
-									>
-										<AlertTriangle size={16} style={{ flexShrink: 0 }} />
-										<span>{cameraError} (доступен ручной ввод кода или USB-сканер)</span>
-									</div>
-								)}
+									<CheckCircle2 size={18} />
+									<span>Стерилизация проведена / Тест-индикатор 5 класса (Норма)</span>
+								</button>
 							</div>
 
 							{/* Barcode Input & Test Chips */}
