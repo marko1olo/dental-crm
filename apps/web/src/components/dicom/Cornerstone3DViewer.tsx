@@ -8,12 +8,14 @@ import {
 	Camera,
 	CheckCircle2,
 	Download,
+	FileText,
 	Layers,
 	Loader2,
 	Maximize2,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
+	X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -111,6 +113,7 @@ export interface Cornerstone3DViewerProps {
 	 */
 	patientId?: string | null;
 	authHeaders?: Record<string, string>;
+	onClose?: () => void;
 }
 
 /** Задержка перед записью правки уже обведённой дуги. */
@@ -253,6 +256,7 @@ export function Cornerstone3DViewer({
 	imageIds,
 	patientId = null,
 	authHeaders = {},
+	onClose,
 }: Cornerstone3DViewerProps) {
 	const axialRef = useRef<HTMLDivElement>(null);
 	const sagittalRef = useRef<HTMLDivElement>(null);
@@ -1733,6 +1737,33 @@ export function Cornerstone3DViewer({
 				>
 					<Download className="w-4 h-4" />
 				</button>
+
+				{onClose && (
+					<button
+						type="button"
+						data-testid="cbct-mpr-close-btn"
+						aria-label="Закрыть 3D MPR"
+						style={{
+							minHeight: "44px",
+							minWidth: "44px",
+							flexShrink: 0,
+							backgroundColor: "rgba(239,68,68,0.2)",
+							color: "#fca5a5",
+							padding: "8px 12px",
+							borderRadius: "12px",
+							border: "1px solid rgba(239,68,68,0.3)",
+							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							transition: "all 0.2s",
+						}}
+						onClick={onClose}
+						title="Закрыть 3D просмотрщик"
+					>
+						<X className="w-4 h-4" />
+					</button>
+				)}
 			</div>
 
 			{/* MANDIBULAR NERVE TRACING HUD (HONEST ZERO-MOCK STATUS & CONTROLS) */}
@@ -2210,6 +2241,25 @@ export function Cornerstone3DViewer({
 					>
 						Протокол хирургического планирования (Форма 043/у)
 					</div>
+
+					{(!aiProtocolLog || implants.length === 0) && (
+						<div
+							style={{
+								padding: "16px",
+								textAlign: "center",
+								color: "#71717a",
+								fontSize: "12px",
+								maxWidth: "320px",
+								lineHeight: 1.5,
+								backgroundColor: "rgba(255,255,255,0.03)",
+								borderRadius: "12px",
+								border: "1px dashed rgba(255,255,255,0.12)",
+							}}
+						>
+							<FileText className="w-6 h-6 mx-auto mb-2 text-neutral-500" />
+							Для формирования хирургического протокола установите контрольные точки нижнечелюстного канала («Нерв») или добавьте виртуальный имплантат («+ Имплантат»).
+						</div>
+					)}
 
 					{aiProtocolLog && implants.length > 0 && (
 						<div

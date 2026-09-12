@@ -1,4 +1,5 @@
 import type React from "react";
+import { useEffect } from "react";
 import { Cornerstone3DViewer } from "./Cornerstone3DViewer";
 
 export interface CbctMprWorkspaceProps {
@@ -19,13 +20,31 @@ export interface CbctMprWorkspaceProps {
  */
 export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	isOpen,
+	onClose,
 	patientId = null,
 	authHeaders = {},
 }) => {
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
+
 	if (!isOpen) return null;
+
 	return (
-		<div className="cbct-mpr-workspace-modal fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-			<Cornerstone3DViewer imageIds={[]} patientId={patientId} authHeaders={authHeaders} />
+		<div className="cbct-mpr-workspace-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+			<Cornerstone3DViewer
+				imageIds={[]}
+				patientId={patientId}
+				authHeaders={authHeaders}
+				onClose={onClose}
+			/>
 		</div>
 	);
 };

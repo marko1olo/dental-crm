@@ -547,15 +547,15 @@ export function PanoramicRendererWindow({
 			style={{ background: "var(--paper, #09090b)" }}
 		>
 			{/* CLINICAL HEADER */}
-			<div className="mpr-toolbar bg-neutral-900 border-b border-neutral-800 px-4 py-2.5 flex flex-wrap justify-between items-center cursor-move handle gap-3">
-				<div className="flex items-center gap-3">
-					<div className="flex items-center gap-2">
-						<Activity className="w-5 h-5 text-[var(--teal)]" />
-						<h3 className="text-white font-bold text-sm sm:text-base tracking-tight">
-							3D MPR & Панорамная реконструкция (ОПТГ)
+			<div className="mpr-toolbar bg-neutral-900 border-b border-neutral-800 px-3 py-1.5 flex flex-nowrap justify-between items-center cursor-move handle gap-2 overflow-x-auto no-scrollbar min-h-[36px]">
+				<div className="flex items-center gap-2 shrink-0">
+					<div className="flex items-center gap-1.5">
+						<Activity className="w-4 h-4 text-[var(--teal)] shrink-0" />
+						<h3 className="text-white font-bold text-xs sm:text-sm tracking-tight truncate max-w-[180px] sm:max-w-none">
+							3D MPR & ОПТГ
 						</h3>
 					</div>
-					<span className="text-xs font-bold text-neutral-300 bg-neutral-800 px-2.5 py-1 rounded-lg border border-neutral-700">
+					<span className="text-[11px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-lg border border-neutral-700 whitespace-nowrap hidden sm:inline-flex">
 						{sliceThicknessMm > 0
 							? `Слой: ${sliceThicknessMm} мм (${blendMode.toUpperCase()})`
 							: "Тонкий луч (Ray)"}
@@ -563,17 +563,17 @@ export function PanoramicRendererWindow({
 				</div>
 
 				{/* ACTIONS */}
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5 shrink-0">
 					<button
 						type="button"
 						onClick={handleAutoDetectArch}
 						disabled={loading}
 						aria-label="Автоматическое определение зубной дуги"
-						className="mpr-btn-touch text-xs font-bold bg-indigo-600/80 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg border border-indigo-500/50 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+						className="mpr-btn-touch text-xs font-bold bg-indigo-600/80 hover:bg-indigo-600 text-white px-2.5 py-1 rounded-lg border border-indigo-500/50 flex items-center gap-1 transition-all shadow-sm active:scale-95 whitespace-nowrap min-h-[32px]"
 						title="Автоматическое определение зубной дуги по MIP срезу КЛКТ"
 					>
-						<Sparkles className="w-4 h-4 text-amber-300" />
-						<span>Авто-дуга</span>
+						<Sparkles className="w-3.5 h-3.5 text-amber-300" />
+						<span className="hidden sm:inline">Авто-дуга</span>
 					</button>
 
 					<button
@@ -581,15 +581,15 @@ export function PanoramicRendererWindow({
 						onClick={handleExportTo043}
 						disabled={loading || isExporting}
 						aria-label="Экспорт в форму 043/у"
-						className="mpr-btn-touch mpr-btn-success text-xs font-bold"
+						className="mpr-btn-touch mpr-btn-success text-xs font-bold px-2.5 py-1 whitespace-nowrap min-h-[32px] flex items-center gap-1"
 						title="Прикрепить снимок к амбулаторной карте 043/у"
 					>
 						{isExporting ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
+							<Loader2 className="w-3.5 h-3.5 animate-spin" />
 						) : (
-							<Camera className="w-4 h-4" />
+							<Camera className="w-3.5 h-3.5" />
 						)}
-						<span>В карту 043/у</span>
+						<span className="hidden sm:inline">В карту 043/у</span>
 					</button>
 
 					<button
@@ -597,37 +597,38 @@ export function PanoramicRendererWindow({
 						onClick={handleLocalDownload}
 						disabled={loading}
 						aria-label="Скачать снимок"
-						className="mpr-btn-touch text-xs font-medium"
+						className="mpr-btn-touch text-xs font-medium px-2 py-1 min-h-[32px] min-w-[32px]"
 						title="Скачать JPG"
 					>
-						<Download className="w-4 h-4" />
+						<Download className="w-3.5 h-3.5" />
 					</button>
 
 					<button
 						type="button"
 						onClick={onClose}
+						data-testid="panoramic-close-btn"
 						aria-label="Закрыть окно панорамы"
-						className="text-neutral-400 hover:text-white min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 rounded-xl text-lg font-bold transition-colors hover:bg-neutral-800"
+						className="text-neutral-400 hover:text-white min-h-[32px] min-w-[32px] inline-flex items-center justify-center p-1 rounded-lg text-base font-bold transition-colors hover:bg-neutral-800"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4" />
 					</button>
 				</div>
 			</div>
 
 			{/* SECONDARY TOOLBAR: HU PRESETS & CROSS-SECTION NAVIGATOR */}
-			<div className="bg-neutral-950/90 px-4 py-2 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 text-xs">
+			<div className="bg-neutral-950/90 px-3 py-1.5 flex flex-nowrap items-center justify-between gap-2 border-b border-neutral-800 text-xs overflow-x-auto no-scrollbar min-h-[36px]">
 				{/* HU Presets */}
-				<div className="flex items-center gap-2 overflow-x-auto">
-					<span className="text-neutral-400 font-medium whitespace-nowrap">
-						Режим HU:
+				<div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
+					<span className="text-neutral-400 font-medium whitespace-nowrap text-[11px]">
+						HU:
 					</span>
-					<div className="flex gap-1.5">
+					<div className="flex gap-1">
 						{VISIOGRAPH_PRESETS_LIST.map((preset) => (
 							<button
 								key={preset.id}
 								type="button"
 								onClick={() => setActivePreset(preset.id)}
-								className={`px-3 py-1.5 rounded-lg text-xs font-bold min-h-[38px] transition-all whitespace-nowrap ${
+								className={`px-2.5 py-1 rounded-lg text-[11px] font-bold min-h-[30px] transition-all whitespace-nowrap ${
 									activePreset === preset.id
 										? "bg-blue-600 text-white shadow-md"
 										: "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
@@ -642,8 +643,8 @@ export function PanoramicRendererWindow({
 
 				{/* Cross-Section Stepper (Step 1.0 - 2.0 mm) */}
 				{crossSections.length > 0 && (
-					<div className="flex items-center gap-2 mpr-slice-stepper">
-						<span className="text-neutral-400 font-bold text-xs">
+					<div className="flex items-center gap-1.5 shrink-0 mpr-slice-stepper">
+						<span className="text-neutral-400 font-bold text-[11px] hidden sm:inline">
 							Кросс-срез:
 						</span>
 						<button
@@ -652,13 +653,13 @@ export function PanoramicRendererWindow({
 								setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))
 							}
 							disabled={activeCrossSectionIdx <= 0}
-							className="mpr-btn-touch min-h-[36px] min-w-[36px] p-1 rounded-md"
+							className="mpr-btn-touch min-h-[30px] min-w-[30px] p-1 rounded-md"
 							title="Предыдущий срез (шаг 1.5мм)"
 						>
-							<ChevronLeft className="w-4 h-4" />
+							<ChevronLeft className="w-3.5 h-3.5" />
 						</button>
 
-						<span className="text-xs font-extrabold text-blue-400 min-w-[70px] text-center">
+						<span className="text-[11px] font-extrabold text-blue-400 min-w-[65px] text-center">
 							#{activeCrossSectionIdx + 1} / {crossSections.length} (
 							{activeSlice?.arcLengthMm.toFixed(1)} мм)
 						</span>
@@ -671,17 +672,17 @@ export function PanoramicRendererWindow({
 								)
 							}
 							disabled={activeCrossSectionIdx >= crossSections.length - 1}
-							className="mpr-btn-touch min-h-[36px] min-w-[36px] p-1 rounded-md"
+							className="mpr-btn-touch min-h-[30px] min-w-[30px] p-1 rounded-md"
 							title="Следующий срез (шаг 1.5мм)"
 						>
-							<ChevronRight className="w-4 h-4" />
+							<ChevronRight className="w-3.5 h-3.5" />
 						</button>
 					</div>
 				)}
 
 				{/* Slice Thickness Slider */}
-				<div className="flex items-center gap-2">
-					<span className="text-neutral-400 font-medium">Толщина:</span>
+				<div className="flex items-center gap-1.5 shrink-0">
+					<span className="text-neutral-400 font-medium text-[11px] hidden sm:inline">Толщина:</span>
 					<input
 						type="range"
 						min="0.5"
@@ -689,16 +690,16 @@ export function PanoramicRendererWindow({
 						step="0.5"
 						value={sliceThicknessMm}
 						onChange={(e) => setSliceThicknessMm(Number(e.target.value))}
-						className="mpr-slider-touch w-20"
+						className="mpr-slider-touch w-16 sm:w-20"
 					/>
-					<span className="text-xs font-bold text-[var(--teal)] w-12 text-right">
+					<span className="text-[11px] font-bold text-[var(--teal)] w-10 text-right">
 						{sliceThicknessMm.toFixed(1)} мм
 					</span>
 				</div>
 			</div>
 
 			{/* MAIN VIEWPORT BODY */}
-			<div className="flex-1 relative bg-black flex flex-row items-center justify-center p-2 min-h-0 overflow-hidden">
+			<div className="flex-1 relative bg-black flex flex-col sm:flex-row items-center justify-center p-2 min-h-0 overflow-hidden">
 				{loading && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-20">
 						<div className="w-10 h-10 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin"></div>
@@ -715,7 +716,7 @@ export function PanoramicRendererWindow({
 				)}
 
 				{/* PANORAMIC REFORMAT CANVAS */}
-				<div className="flex-1 h-full relative flex items-center justify-center min-w-0">
+				<div className="flex-1 w-full h-full relative flex items-center justify-center min-w-0 min-h-[140px]">
 					<canvas
 						ref={canvasRef}
 						width={800}
@@ -726,7 +727,7 @@ export function PanoramicRendererWindow({
 				</div>
 
 				{/* CROSS-SECTION SLICE VIEWPORT (240x240px) */}
-				<div className="w-[240px] h-[240px] shrink-0 ml-2 relative rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden flex flex-col shadow-lg z-10">
+				<div className="w-[200px] h-[200px] sm:w-[240px] sm:h-[240px] shrink-0 sm:ml-2 mt-2 sm:mt-0 relative rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden flex flex-col shadow-lg z-10">
 					<div className="bg-neutral-900/90 px-2.5 py-1 border-b border-neutral-800 flex items-center justify-between">
 						<span className="text-xs font-bold text-blue-400 flex items-center gap-1">
 							<span>Кросс-срез #{activeCrossSectionIdx + 1}</span>

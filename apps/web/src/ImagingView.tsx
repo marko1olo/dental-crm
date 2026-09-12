@@ -1,4 +1,5 @@
 import {
+	Activity,
 	Bot,
 	Check,
 	ClipboardList,
@@ -113,10 +114,12 @@ function imagingDescriptionTemplate(
 	return body.join("\n");
 }
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
+import { CbctMprWorkspace } from "./components/dicom/CbctMprWorkspace";
+import { PanoramicRendererWindow } from "./components/dicom/PanoramicRendererWindow";
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
@@ -302,6 +305,21 @@ export function ImagingView(props: ImagingViewProps) {
 	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
 	const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
 	const [enhancementOn, setEnhancementOn] = useState(false);
+	const [isCbctWorkspaceOpen, setIsCbctWorkspaceOpen] = useState(false);
+	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
+
+	useEffect(() => {
+		const handleOpen = (e: Event) => {
+			const detail = (e as CustomEvent<{ modalId: string }>).detail;
+			if (detail?.modalId === "cbct_mpr_workspace") {
+				setIsCbctWorkspaceOpen(true);
+			} else if (detail?.modalId === "panoramic_recon_window") {
+				setIsPanoramicWindowOpen(true);
+			}
+		};
+		window.addEventListener("dente-open-backoffice-modal", handleOpen);
+		return () => window.removeEventListener("dente-open-backoffice-modal", handleOpen);
+	}, []);
 	/*
 	 * Разбор ИИ держится в состоянии этого экрана, а не дописывается в объект
 	 * исследования.
@@ -616,6 +634,24 @@ export function ImagingView(props: ImagingViewProps) {
 						title="Выбрать отдельные DICOM, RVG, JPG/PNG/TIFF, ZIP/RAR/7z или 3D-файлы"
 					>
 						<FileText aria-hidden="true" /> Файлы
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						data-testid="imaging-open-3d-mpr"
+						onClick={() => setIsCbctWorkspaceOpen(true)}
+						title="Открыть 3D MPR рабочее пространство"
+					>
+						<Activity aria-hidden="true" className="w-4 h-4 text-teal-500 inline-block mr-1" /> 3D MPR / КТ
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						data-testid="imaging-open-panoramic"
+						onClick={() => setIsPanoramicWindowOpen(true)}
+						title="Открыть панорамную реконструкцию (ОПТГ)"
+					>
+						<Sparkles aria-hidden="true" className="w-4 h-4 text-amber-400 inline-block mr-1" /> ОПТГ
 					</button>
 					{isBrowserImagingFolderPicking && browserImagingScanProgress ? (
 						<button
@@ -2333,6 +2369,26 @@ export function ImagingView(props: ImagingViewProps) {
 					</div>
 				</section>
 			) : null}
+
+			{isCbctWorkspaceOpen && (
+				<CbctMprWorkspace
+					isOpen={true}
+					onClose={() => setIsCbctWorkspaceOpen(false)}
+					patientId={activePatient?.id ?? null}
+					{...(activePatient?.fullName ? { patientName: activePatient.fullName } : {})}
+				/>
+			)}
+
+			{isPanoramicWindowOpen && (
+				<div className="panoramic-recon-window-modal fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+					<PanoramicRendererWindow
+						volume={null}
+						splinePoints={[]}
+						onClose={() => setIsPanoramicWindowOpen(false)}
+						patientId={activePatient?.id ?? null}
+					/>
+				</div>
+			)}
 		</section>
 	);
 }

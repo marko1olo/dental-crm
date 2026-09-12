@@ -65,6 +65,8 @@ import { OfflineBackupVaultPanel } from "../settings/OfflineBackupVaultPanel";
 import { VoiceDictationAssistantModal } from "../voice/VoiceDictationAssistantModal";
 import { IncomingCallPopupModal } from "../telephony/IncomingCallPopupModal";
 import { TelephonyFloatingWidget } from "../telephony/TelephonyFloatingWidget";
+import { CbctMprWorkspace } from "../dicom/CbctMprWorkspace";
+import { PanoramicRendererWindow } from "../dicom/PanoramicRendererWindow";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface OpenBackofficeModalDetail {
@@ -346,6 +348,24 @@ export const BackofficeModalsHost: React.FC = () => {
 			)}
 			{activeModal === "signature_pad_canvas" && (
 				<SignaturePadCanvas {...({} as any)} />
+			)}
+			{activeModal === "cbct_mpr_workspace" && (
+				<CbctMprWorkspace
+					isOpen={true}
+					onClose={close}
+					patientId={modalData?.patientId ?? null}
+					{...(modalData?.patientName ? { patientName: modalData.patientName } : {})}
+				/>
+			)}
+			{activeModal === "panoramic_recon_window" && (
+				<div className="panoramic-recon-window-modal fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+					<PanoramicRendererWindow
+						volume={null}
+						splinePoints={[]}
+						onClose={close}
+						patientId={modalData?.patientId ?? null}
+					/>
+				</div>
 			)}
 		</>
 	);

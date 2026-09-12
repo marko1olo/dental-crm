@@ -133,9 +133,9 @@
 	font-size: 13px;
 	font-weight: 600;
 	cursor: pointer;
-	border: 1px solid var(--line, rgba(255, 255, 255, 0.15));
-	background: var(--paper, rgba(39, 39, 42, 0.8));
-	color: var(--ink, #f4f4f5);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	background: rgba(39, 39, 42, 0.85);
+	color: #f4f4f5;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -145,7 +145,7 @@
 }
 
 .mpr-btn-touch:hover:not(:disabled) {
-	background: var(--brand-500, #2563eb);
+	background: #2563eb;
 	color: #ffffff;
 	border-color: transparent;
 	transform: translateY(-1px);
@@ -161,7 +161,7 @@
 }
 
 .mpr-btn-active {
-	background: var(--brand-500, #2563eb) !important;
+	background: #2563eb !important;
 	color: #ffffff !important;
 	border-color: #3b82f6 !important;
 	box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
@@ -177,7 +177,7 @@
 	background: #047857;
 }
 
-/* MISCH BONE QUALITY FLOATING HUD */
+/* MISCH BONE QUALITY FLOATING HUD (WCAG AAA DARK GLASSMORPHISM) */
 .mpr-density-hud {
 	position: absolute;
 	bottom: 16px;
@@ -185,15 +185,16 @@
 	max-width: 400px;
 	padding: 12px 16px;
 	border-radius: 14px;
-	background: var(--glass-panel, rgba(18, 18, 20, 0.92));
+	background: rgba(18, 18, 20, 0.94);
 	backdrop-filter: blur(14px);
 	-webkit-backdrop-filter: blur(14px);
-	border: 1.5px solid var(--line, rgba(255, 255, 255, 0.18));
+	border: 1.5px solid rgba(255, 255, 255, 0.18);
 	box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
 	z-index: 25;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+	color: #f4f4f5;
 }
 
 .mpr-density-badge {
