@@ -26,7 +26,7 @@ import {
 	validateRussianKpp,
 	validateRussianOgrn,
 	validateRussianSnils,
-} from "../fiscal/taxDeduction.js";
+} from "../finance/taxDeduction.js";
 
 export {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,

@@ -20,7 +20,7 @@ import {
 	type TaxDeductionPaymentItem,
 	type TaxDeductionPersonParams,
 	type TaxDeductionRelationship,
-} from "./taxDeduction.js";
+} from "../finance/taxDeduction.js";
 import { renderOfficialTaxCertificateKnd1151156Html } from "./fnsTaxDeductionEngine.js";
 
 export interface FamilyMemberPayerConfig {

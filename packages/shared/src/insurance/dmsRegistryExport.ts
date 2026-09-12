@@ -13,7 +13,7 @@ import { z } from "zod";
 import type { Kopecks } from "../utils/money.js";
 import { formatKopecksRu, kopecksToNumericString } from "../utils/money.js";
 import { escapeXml } from "../cda/c14n.js";
-import { amountToWordsRu } from "../fiscal/taxDeduction.js";
+import { amountToWordsRu } from "../finance/taxDeduction.js";
 
 export interface DmsRegistryClinicInfo {
 	readonly nameRu: string;

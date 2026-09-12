@@ -15,7 +15,7 @@
 
 import { z } from "zod";
 import { escapeXml } from "../cda/c14n.js";
-import { amountToWordsRu } from "../fiscal/taxDeduction.js";
+import { amountToWordsRu } from "./taxDeduction.js";
 import { kopecksToRub } from "../fiscal/kopecksArithmetic.js";
 
 // ─── 1. ZOD SCHEMAS & DOMAIN TYPES ──────────────────────────────────────────

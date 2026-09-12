@@ -47,7 +47,7 @@ import {
 	validateRussianOgrn,
 	validateRussianPassport,
 	validateRussianSnils,
-} from "./taxDeduction.js";
+} from "../finance/taxDeduction.js";
 
 export {
 	amountToWordsRu,

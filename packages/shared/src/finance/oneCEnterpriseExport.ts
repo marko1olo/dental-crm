@@ -16,7 +16,7 @@
 import { z } from "zod";
 import { escapeXml } from "../cda/c14n.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
-import { validateRussianInn, validateRussianKpp } from "../fiscal/taxDeduction.js";
+import { validateRussianInn, validateRussianKpp } from "./taxDeduction.js";
 
 export const oneCDocumentTypeSchema = z.enum([
 	"invoice",

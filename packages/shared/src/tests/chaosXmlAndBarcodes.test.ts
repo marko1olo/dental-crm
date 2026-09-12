@@ -44,7 +44,7 @@ import {
 	validateRussianPassport,
 	validateRussianSnils,
 	resolveTaxDeductionCategoryShared,
-} from "../fiscal/taxDeduction.js";
+} from "../finance/taxDeduction.js";
 
 // MDLP / GS1 DataMatrix imports
 import {

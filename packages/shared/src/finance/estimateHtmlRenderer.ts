@@ -5,7 +5,7 @@
 
 import { escapeXml } from "../cda/c14n.js";
 import { kopecksToRub } from "../fiscal/kopecksArithmetic.js";
-import { amountToWordsRu } from "../fiscal/taxDeduction.js";
+import { amountToWordsRu } from "./taxDeduction.js";
 
 export interface EstimateStageItem {
 	readonly id: string;

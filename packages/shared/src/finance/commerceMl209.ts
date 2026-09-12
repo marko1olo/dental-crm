@@ -23,7 +23,7 @@ import {
 	validateRussianInn,
 	validateRussianKpp,
 	validateRussianOgrn,
-} from "../fiscal/taxDeduction.js";
+} from "./taxDeduction.js";
 import { canonicalJsonStringify, sha256Hex } from "../sync/hashing.js";
 import {
 	type OneCPartyInfo,

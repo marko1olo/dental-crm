@@ -31,7 +31,7 @@ import {
 import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	resolveTaxDeductionCategoryShared,
-} from "../fiscal/taxDeduction.js";
+} from "../finance/taxDeduction.js";
 import { integerToRussianWords } from "../sanpin/sanpinRegistryEngine.js";
 import { isValidToothFdi } from "../radiology/hotFolderSyncEngine.js";
 

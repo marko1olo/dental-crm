@@ -52,7 +52,7 @@ import {
 	validateRussianKpp,
 	validateRussianOgrn,
 	validateRussianSnils,
-} from "../fiscal/taxDeduction.js";
+} from "../finance/taxDeduction.js";
 import {
 	injectVisualSignatureStampIntoHtml,
 	renderDigitalSignatureStampHtml,

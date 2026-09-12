@@ -41,7 +41,7 @@ import {
 	calculateServiceConsumables,
 	type ConsumableItemLink,
 	type RenderedServiceItem,
-} from "../../clinical/treatmentConsumablesEngine.js";
+} from "../../warehouse/treatmentConsumablesEngine.js";
 
 describe("Wave 135: Clinic Expenses & Chair-Hour Cost Allocation Engine", () => {
 	// Sample clinic expenses data across multiple categories and recurrences

@@ -23,7 +23,7 @@ import {
 	type ConsumableDeductionRequest,
 	type ConsumableItemLink,
 	type RenderedServiceItem,
-} from "../treatmentConsumablesEngine.js";
+} from "../../warehouse/treatmentConsumablesEngine.js";
 
 // Parity checks from clinical/index.js
 import {
