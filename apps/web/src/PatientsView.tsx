@@ -110,6 +110,7 @@ export type PatientsViewProps = {
 		value: string,
 	) => void;
 	weekdayOptions: WeekdayOption[];
+	dashboard?: Dashboard | null;
 	showToast?: (
 		text: string,
 		type?: "success" | "error" | "info" | "warning",
@@ -565,7 +566,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	}, [patientCoreDraft?.notes]);
 
 	const patientBalance = Number(
-		selectedPatient?.balanceRub ?? selectedPatient?.balance ?? 0,
+		(selectedPatient as any)?.balanceRub ?? (selectedPatient as any)?.balance ?? 0,
 	);
 
 	const nextPatientAppointment = useMemo(() => {
@@ -966,7 +967,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										<button
 											type="button"
 											onClick={() => {
-												useScheduleStore.getState().setSelectedDate(nextPatientAppointment.startsAt?.split("T")[0] || new Date().toISOString().split("T")[0]);
+												useScheduleStore.getState().setScheduleDateFilter(nextPatientAppointment.startsAt?.split("T")[0] || new Date().toISOString().split("T")[0]);
 												useAppStore.getState().setCurrentView("schedule");
 												showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
 											}}
