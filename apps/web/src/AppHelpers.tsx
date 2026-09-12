@@ -379,12 +379,12 @@ export type Outpatient025uDocumentDraftFields = {
 	outpatient025uPalliativeCareNeedCode: string;
 	outpatient025uBloodGroup: string;
 	outpatient025uRhFactor: string;
-	outpatient025uKellK1: string;
 	outpatient025uOtherBloodData: string;
 	outpatient025uAllergyHistory: string;
 	outpatient025uFinalEpicrisis: string;
 	outpatient025uOfficialForm274nChecked: boolean;
 	outpatient025uThirdPartyDataChecked: boolean;
+	legacyDraftFields?: Record<string, unknown>;
 };
 
 export type MedicalRecordExtractDocumentDraftFields = {
@@ -741,7 +741,6 @@ export function emptyOutpatient025uDocumentDraftFields(): Outpatient025uDocument
 		outpatient025uPalliativeCareNeedCode: "",
 		outpatient025uBloodGroup: "",
 		outpatient025uRhFactor: "",
-		outpatient025uKellK1: "",
 		outpatient025uOtherBloodData: "",
 		outpatient025uAllergyHistory: "",
 		outpatient025uFinalEpicrisis: "",
@@ -877,7 +876,6 @@ export function normalizeOutpatient025uDocumentDraftFields(
 			candidate.outpatient025uRhFactor,
 			80,
 		),
-		outpatient025uKellK1: localDraftString(candidate.outpatient025uKellK1, 80),
 		outpatient025uOtherBloodData: localDraftString(
 			candidate.outpatient025uOtherBloodData,
 		),

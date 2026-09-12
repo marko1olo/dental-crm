@@ -282,7 +282,6 @@ export function emptyOutpatient025uDocumentDraftFields(): Outpatient025uDocument
 		outpatient025uPalliativeCareNeedCode: "",
 		outpatient025uBloodGroup: "",
 		outpatient025uRhFactor: "",
-		outpatient025uKellK1: "",
 		outpatient025uOtherBloodData: "",
 		outpatient025uAllergyHistory: "",
 		outpatient025uFinalEpicrisis: "",
@@ -407,7 +406,6 @@ export function normalizeOutpatient025uDocumentDraftFields(
 			candidate.outpatient025uRhFactor,
 			80,
 		),
-		outpatient025uKellK1: localDraftString(candidate.outpatient025uKellK1, 80),
 		outpatient025uOtherBloodData: localDraftString(
 			candidate.outpatient025uOtherBloodData,
 		),

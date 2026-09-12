@@ -39,7 +39,6 @@ export function useDocumentPayloads(scope: any) {
         outpatient025uPalliativeCareNeedCode,
         outpatient025uBloodGroup,
         outpatient025uRhFactor,
-        outpatient025uKellK1,
         outpatient025uOtherBloodData,
         outpatient025uAllergyHistory,
         recordExtractRecommendations,

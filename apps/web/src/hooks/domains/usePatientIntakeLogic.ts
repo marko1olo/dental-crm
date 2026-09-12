@@ -143,8 +143,6 @@ export function usePatientIntakeLogic({
 		setOutpatient025uBloodGroup,
 		outpatient025uRhFactor,
 		setOutpatient025uRhFactor,
-		outpatient025uKellK1,
-		setOutpatient025uKellK1,
 		outpatient025uOtherBloodData,
 		setOutpatient025uOtherBloodData,
 		outpatient025uAllergyHistory,
@@ -226,7 +224,6 @@ export function usePatientIntakeLogic({
 				outpatient025uPalliativeCareNeedCode,
 				outpatient025uBloodGroup,
 				outpatient025uRhFactor,
-				outpatient025uKellK1,
 				outpatient025uOtherBloodData,
 				outpatient025uAllergyHistory,
 				outpatient025uFinalEpicrisis,
@@ -260,7 +257,6 @@ export function usePatientIntakeLogic({
 			outpatient025uPalliativeCareNeedCode,
 			outpatient025uBloodGroup,
 			outpatient025uRhFactor,
-			outpatient025uKellK1,
 			outpatient025uOtherBloodData,
 			outpatient025uAllergyHistory,
 			outpatient025uFinalEpicrisis,
@@ -312,7 +308,6 @@ export function usePatientIntakeLogic({
 			);
 			setOutpatient025uBloodGroup(fields.outpatient025uBloodGroup);
 			setOutpatient025uRhFactor(fields.outpatient025uRhFactor);
-			setOutpatient025uKellK1(fields.outpatient025uKellK1);
 			setOutpatient025uOtherBloodData(fields.outpatient025uOtherBloodData);
 			setOutpatient025uAllergyHistory(fields.outpatient025uAllergyHistory);
 			setOutpatient025uFinalEpicrisis(fields.outpatient025uFinalEpicrisis);
@@ -350,7 +345,6 @@ export function usePatientIntakeLogic({
 			setOutpatient025uPalliativeCareNeedCode,
 			setOutpatient025uBloodGroup,
 			setOutpatient025uRhFactor,
-			setOutpatient025uKellK1,
 			setOutpatient025uOtherBloodData,
 			setOutpatient025uAllergyHistory,
 			setOutpatient025uFinalEpicrisis,
@@ -842,8 +836,6 @@ export function usePatientIntakeLogic({
 		setOutpatient025uBloodGroup,
 		outpatient025uRhFactor,
 		setOutpatient025uRhFactor,
-		outpatient025uKellK1,
-		setOutpatient025uKellK1,
 		outpatient025uOtherBloodData,
 		setOutpatient025uOtherBloodData,
 		outpatient025uAllergyHistory,

@@ -216,12 +216,12 @@ export type Outpatient025uDocumentDraftFields = {
 	outpatient025uPalliativeCareNeedCode: string;
 	outpatient025uBloodGroup: string;
 	outpatient025uRhFactor: string;
-	outpatient025uKellK1: string;
 	outpatient025uOtherBloodData: string;
 	outpatient025uAllergyHistory: string;
 	outpatient025uFinalEpicrisis: string;
 	outpatient025uOfficialForm274nChecked: boolean;
 	outpatient025uThirdPartyDataChecked: boolean;
+	legacyDraftFields?: Record<string, unknown>;
 };
 
 export type MedicalRecordExtractDocumentDraftFields = {

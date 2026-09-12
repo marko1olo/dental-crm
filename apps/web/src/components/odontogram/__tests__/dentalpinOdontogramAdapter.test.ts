@@ -1,4 +1,4 @@
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import assert from "node:assert/strict";
 import {
 	getToothTransform,
@@ -172,9 +172,9 @@ describe("DentalPin Odontogram Adapter — Lateral Pathology Anchors", () => {
 		assert.ok(LATERAL_ICONS.post, "Must have post config");
 		assert.equal(LATERAL_ICONS.post.anchorPosition, "rootCenter");
 
-		assert.equal(LATERAL_ICONS.periapical_small.radius, 6);
-		assert.equal(LATERAL_ICONS.periapical_medium.radius, 10);
-		assert.equal(LATERAL_ICONS.periapical_large.radius, 16);
+		assert.equal(LATERAL_ICONS.periapical_small!.radius, 6);
+		assert.equal(LATERAL_ICONS.periapical_medium!.radius, 10);
+		assert.equal(LATERAL_ICONS.periapical_large!.radius, 16);
 	});
 });
 
@@ -261,7 +261,7 @@ describe("DentalPin Odontogram Adapter — Global Treatments Strip", () => {
 	});
 
 	test("Filtering items restricts strictly to global_mouth and global_arch scopes", () => {
-		const items: (GlobalTreatmentItem | { scope: string })[] = [
+		const items: Array<{ id: string; scope: string; arch?: "upper" | "lower"; clinicalType?: string; title?: string; status?: string }> = [
 			{ id: "1", scope: "global_mouth", clinicalType: "hygiene", title: "Air-Flow", status: "planned" },
 			{ id: "2", scope: "global_arch", arch: "upper", clinicalType: "splint", title: "Сплинт", status: "planned" },
 			{ id: "3", scope: "single_tooth", clinicalType: "caries", title: "Кариес 16", status: "existing" },

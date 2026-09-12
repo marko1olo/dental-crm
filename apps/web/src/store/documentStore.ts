@@ -333,7 +333,13 @@ export interface DocumentState {
 		val: string | ((prev: string) => string),
 	) => void;
 	setOutpatient025uRhFactor: (val: string | ((prev: string) => string)) => void;
-	setOutpatient025uKellK1: (val: string | ((prev: string) => string)) => void;
+	legacyDraftFields?: Record<string, unknown>;
+	setLegacyDraftFields?: (
+		val:
+			| Record<string, unknown>
+			| undefined
+			| ((prev: Record<string, unknown> | undefined) => Record<string, unknown> | undefined),
+	) => void;
 	setOutpatient025uOtherBloodData: (
 		val: string | ((prev: string) => string),
 	) => void;
@@ -510,7 +516,6 @@ export interface DocumentState {
 	outpatient025uPalliativeCareNeedCode: string;
 	outpatient025uBloodGroup: string;
 	outpatient025uRhFactor: string;
-	outpatient025uKellK1: string;
 	outpatient025uOtherBloodData: string;
 	outpatient025uAllergyHistory: string;
 	outpatient025uFinalEpicrisis: string;
@@ -3323,8 +3328,8 @@ const createClinicalSlice = (set: any) => ({
 	setOutpatient025uBloodGroup: createSetter(set, "outpatient025uBloodGroup"),
 	outpatient025uRhFactor: "",
 	setOutpatient025uRhFactor: createSetter(set, "outpatient025uRhFactor"),
-	outpatient025uKellK1: "",
-	setOutpatient025uKellK1: createSetter(set, "outpatient025uKellK1"),
+	legacyDraftFields: undefined as Record<string, unknown> | undefined,
+	setLegacyDraftFields: createSetter(set, "legacyDraftFields"),
 	outpatient025uOtherBloodData: "",
 	setOutpatient025uOtherBloodData: createSetter(
 		set,

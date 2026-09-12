@@ -604,8 +604,8 @@ export const createClinicalSlice = (set: any) => ({
 	setOutpatient025uBloodGroup: createSetter(set, "outpatient025uBloodGroup"),
 	outpatient025uRhFactor: "",
 	setOutpatient025uRhFactor: createSetter(set, "outpatient025uRhFactor"),
-	outpatient025uKellK1: "",
-	setOutpatient025uKellK1: createSetter(set, "outpatient025uKellK1"),
+	legacyDraftFields: undefined as Record<string, unknown> | undefined,
+	setLegacyDraftFields: createSetter(set, "legacyDraftFields"),
 	outpatient025uOtherBloodData: "",
 	setOutpatient025uOtherBloodData: createSetter(
 		set,
