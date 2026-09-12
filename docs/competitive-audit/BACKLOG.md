@@ -4313,8 +4313,35 @@
   - Мультисрезовая пространственная фильтрация `filterVisibleAnnotations` для срезов Axial (Z), Sagittal (X), Coronal (Y), CPR и 3D;
   - Генератор цветовых стопов `getPresetColorMapStops`;
   - Регламентный протокол лучевых измерений и аннотаций Формы 043/у Минздрава РФ строго без эмодзи (`formatAnnotationReportForm043A4`).
-* **Верификация**: 18 тестов Wave 135 (100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
+* **Верификация**: 18 тестов Wave 135 (100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.### Wave 134: CPR Панорамная реформация Catmull-Rom и Списание расходных материалов 804н
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `3ea7a73cc`, `ecf010614`)
+* **Файлы**:
+  - `packages/shared/src/radiology/cprPanoramicEngine.ts`
+  - `packages/shared/src/radiology/__tests__/wave134CprPanoramic.test.ts`
+  - `packages/shared/src/clinical/treatmentConsumablesEngine.ts`
+  - `packages/shared/src/clinical/__tests__/wave134TreatmentConsumables.test.ts`
+* **Архитектурное решение**:
+  - CPR Панорамная реформация КЛКТ: Catmull-Rom сплайн кривой дуги челюсти с анатомическими ориентирами зубов FDI 11–48;
+  - Трилинейная интерполяция вокселей без краевых артефактов;
+  - Генерация панорамных слэбов (MIP, Average, MinIP) и косых парааксиальных кросс-секций с углом наклона tilt;
+  - Автоматическое списание складских материалов и анестетиков по номенклатуре МЗ РФ 804н;
+  - Мягкий овердрафт склада без прерывания приема и без блокировки врача (Мандаты 8e и 8n);
+  - Регламентные протоколы А4 без эмодзи по Мандату 8d п. 7.
+* **Верификация**: 36 тестов (23 CPR + 13 Consumables, 100% PASS), typecheck Exit 0, check:encoding Exit 0.
 
-
-
+### Wave 135 (Часть 2): Калькуляция операционных расходов клиники, себестоимость кресло-часа и юнит-экономика приемов
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммит: `cc10e4d94`)
+* **Файлы**:
+  - `packages/shared/src/finance/clinicExpensesEngine.ts`
+  - `packages/shared/src/finance/__tests__/wave135ClinicExpenses.test.ts`
+  - `packages/shared/src/finance/index.ts`
+  - `packages/shared/src/index.ts`
+* **Архитектурное решение**:
+  - Калькуляция накладных расходов клиники по модулю expenses из DentalPin;
+  - Разделение постоянных (Fix), переменных (Var) и условно-постоянных затрат;
+  - Модель соло-врача (аренда 1 кресла по Мандату 8n) и многокресельной клиники;
+  - Точный копеечный расчет стоимости 1 кресло-часа и 1 кресло-минуты с учетом целевой загрузки;
+  - Юнит-экономика и расчет чистой маржи приема за вычетом времени кресла, материалов (Wave 134), лаборатории и комиссии врача с поддержкой 100% скидки врача по Мандату 8e;
+  - Ведомость управленческого учета А4 без эмодзи (`formatClinicExpensesAndChairCostA4Report`).
+* **Верификация**: 6 тестов (100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
 
