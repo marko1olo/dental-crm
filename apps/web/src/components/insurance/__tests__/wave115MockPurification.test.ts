@@ -59,7 +59,7 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 	it("3. DmsInsuranceManagerModal.tsx: must NOT contain 'Иванов Сергей Александрович'", () => {
 		const filePath = path.resolve(
 			webSrcRoot,
-			"components/insurance/dmsManager/DmsInsuranceManagerModal.tsx",
+			"components/insurance/DmsInsuranceManagerModal.tsx",
 		);
 		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
 		const content = fs.readFileSync(filePath, "utf-8");

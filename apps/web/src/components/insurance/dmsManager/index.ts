@@ -1,9 +1,5 @@
 /**
- * ============================================================================
- * DMS VOLUNTARY INSURANCE CASE MANAGER & PRE-AUTH STUDIO (DOMAIN EXPORTS)
- * ============================================================================
+ * DMS Case Manager re-export facade for backward compatibility
  */
+export * from "../index.js";
 
-export * from "./dmsInsurancePresets";
-export * from "./dmsInsuranceEngine";
-export { DmsInsuranceManagerModal, type DmsInsuranceManagerModalProps, type DmsManagerTab } from "./DmsInsuranceManagerModal";

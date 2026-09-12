@@ -19,7 +19,7 @@ import {
 	kopecksToRub,
 	rubToKopecks,
 	verifyServiceForDms,
-} from "../components/insurance/dmsManager/dmsInsuranceEngine";
+} from "../components/insurance/dmsInsuranceEngine";
 import {
 	type DmsGuaranteeLetterRecord,
 	getNomenclature804nByCode,
@@ -30,7 +30,7 @@ import {
 	STATUTORY_DMS_EXCLUSION_RULES,
 	STATUTORY_DMS_INSURERS,
 	STATUTORY_DMS_PROGRAMS,
-} from "../components/insurance/dmsManager/dmsInsurancePresets";
+} from "../components/insurance/dmsInsurancePresets";
 
 describe("DMS Insurance Catalog & Presets (РФ ДМС-2026)", () => {
 	it("Каталог ведущих страховщиков содержит всех обязательных участников рынка", () => {

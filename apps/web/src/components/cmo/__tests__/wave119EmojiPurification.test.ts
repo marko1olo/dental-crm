@@ -35,7 +35,7 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 	it("2. DmsInsuranceManagerModal: zero raw emojis, uses Lucide Zap vector icon", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/dmsManager/DmsInsuranceManagerModal.tsx",
+			"apps/web/src/components/insurance/DmsInsuranceManagerModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 

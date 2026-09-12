@@ -118,31 +118,78 @@ describe("Patient Recall Manager - Unit Tests", () => {
 	});
 
 	describe("3. Category Filtering & Candidate Pool Integrity", () => {
-		it("provides realistic default candidate records", () => {
-			assert.ok(DEFAULT_RECALL_CANDIDATES.length >= 6);
-			for (const c of DEFAULT_RECALL_CANDIDATES) {
-				assert.ok(c.id.startsWith("rec-"));
-				assert.ok(c.patientId.startsWith("pat-"));
-				assert.ok(c.fullName.length > 5);
-				assert.ok(["hygiene", "implants", "orthodontics", "endodontics"].includes(c.category));
-				assert.ok(["pending", "contacted", "scheduled", "completed", "declined"].includes(c.status));
-				assert.ok(["upcoming", "due_now", "overdue_30", "overdue_90", "completed"].includes(c.urgency));
-			}
+		it("provides strictly empty default candidate pool per Mandate 8s and Wave 116", () => {
+			assert.deepStrictEqual(DEFAULT_RECALL_CANDIDATES, []);
 		});
 
 		it("filters candidates accurately by clinical category", () => {
-			const hygieneItems = DEFAULT_RECALL_CANDIDATES.filter((c) => c.category === "hygiene");
-			const implantItems = DEFAULT_RECALL_CANDIDATES.filter((c) => c.category === "implants");
-			const orthoItems = DEFAULT_RECALL_CANDIDATES.filter((c) => c.category === "orthodontics");
-			const endoItems = DEFAULT_RECALL_CANDIDATES.filter((c) => c.category === "endodontics");
+			const sampleCandidates: readonly PatientRecallItem[] = [
+				{
+					id: "rec-test-h",
+					patientId: "pat-1",
+					fullName: "Пациент Гигиена",
+					phone: "+79991112233",
+					category: "hygiene",
+					categoryLabel: "Гигиена 6 мес.",
+					lastVisitDate: "2026-02-15",
+					dueDate: "2026-08-15",
+					daysOverdue: 14,
+					urgency: "due_now",
+					status: "pending",
+				},
+				{
+					id: "rec-test-i",
+					patientId: "pat-2",
+					fullName: "Пациент Импланты",
+					phone: "+79991112244",
+					category: "implants",
+					categoryLabel: "Импланты 1 год",
+					lastVisitDate: "2025-08-20",
+					dueDate: "2026-08-20",
+					daysOverdue: 9,
+					urgency: "due_now",
+					status: "contacted",
+				},
+				{
+					id: "rec-test-o",
+					patientId: "pat-3",
+					fullName: "Пациент Ортодонтия",
+					phone: "+79991112255",
+					category: "orthodontics",
+					categoryLabel: "Ортодонтия",
+					lastVisitDate: "2026-05-25",
+					dueDate: "2026-08-25",
+					daysOverdue: 4,
+					urgency: "due_now",
+					status: "scheduled",
+				},
+				{
+					id: "rec-test-e",
+					patientId: "pat-4",
+					fullName: "Пациент Эндодонтия",
+					phone: "+79991112266",
+					category: "endodontics",
+					categoryLabel: "Эндодонтия",
+					lastVisitDate: "2026-05-10",
+					dueDate: "2026-08-10",
+					daysOverdue: 19,
+					urgency: "due_now",
+					status: "pending",
+				},
+			];
 
-			assert.ok(hygieneItems.length > 0);
-			assert.ok(implantItems.length > 0);
-			assert.ok(orthoItems.length > 0);
-			assert.ok(endoItems.length > 0);
+			const hygieneItems = sampleCandidates.filter((c) => c.category === "hygiene");
+			const implantItems = sampleCandidates.filter((c) => c.category === "implants");
+			const orthoItems = sampleCandidates.filter((c) => c.category === "orthodontics");
+			const endoItems = sampleCandidates.filter((c) => c.category === "endodontics");
+
+			assert.strictEqual(hygieneItems.length, 1);
+			assert.strictEqual(implantItems.length, 1);
+			assert.strictEqual(orthoItems.length, 1);
+			assert.strictEqual(endoItems.length, 1);
 			assert.strictEqual(
 				hygieneItems.length + implantItems.length + orthoItems.length + endoItems.length,
-				DEFAULT_RECALL_CANDIDATES.length,
+				sampleCandidates.length,
 			);
 		});
 	});

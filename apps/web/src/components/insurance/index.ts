@@ -25,11 +25,22 @@ export {
 	DmsInsuranceManagerModal,
 	type DmsInsuranceManagerModalProps,
 	type DmsManagerTab,
+} from "./DmsInsuranceManagerModal.js";
+export {
 	calculateDmsSplitInvoice,
 	generateDmsPreAuthRequest,
 	generateDmsStatutoryRegistry,
 	verifyServiceForDms,
 	formatKopecks,
+	exportRegistryToCsv,
+	generateBilateralAcceptanceActHtml,
+	type DmsBillItemInput,
+	type DmsSplitInvoiceSummary,
+	type DmsRegistryVisitServiceItem,
+	type DmsStatutoryRegistry,
+	type ClinicLegalInfo,
+} from "./dmsInsuranceEngine.js";
+export {
 	STATUTORY_DMS_INSURERS,
 	STATUTORY_DMS_PROGRAMS,
 	STATUTORY_804N_NOMENCLATURE,
@@ -46,12 +57,7 @@ export {
 	type DmsProgramKey,
 	type DmsProgramPolicyDefinition,
 	type DmsNomenclature804nItem,
-	type DmsBillItemInput,
-	type DmsSplitInvoiceSummary,
-	type DmsRegistryVisitServiceItem,
-	type DmsStatutoryRegistry,
-	type ClinicLegalInfo,
-} from "./dmsManager/index.js";
+} from "./dmsInsurancePresets.js";
 export {
 	RUSSIAN_DMS_INSURERS,
 	DMS_STANDARD_EXCLUSIONS,

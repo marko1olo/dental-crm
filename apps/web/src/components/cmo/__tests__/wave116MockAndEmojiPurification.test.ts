@@ -112,7 +112,7 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 
 		const dmsManagerPath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/dmsManager/DmsInsuranceManagerModal.tsx",
+			"apps/web/src/components/insurance/DmsInsuranceManagerModal.tsx",
 		);
 		const dmsManagerContent = fs.readFileSync(dmsManagerPath, "utf-8");
 		assert.ok(!dmsManagerContent.includes("⭐"), "DmsInsuranceManagerModal must not contain ⭐ emoji");

@@ -34,7 +34,7 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
-import { showToast } from "../../GlobalToast";
+import { showToast } from "../GlobalToast";
 import "./dmsInsurance.css";
 import {
 	calculateDmsSplitInvoice,

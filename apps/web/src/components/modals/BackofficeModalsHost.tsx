@@ -54,7 +54,7 @@ import { MdlpScanningModal } from "../mdlp";
 import { MarketingRoiModal } from "../analytics/MarketingRoiModal";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
 import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
-import { DmsInsuranceManagerModal } from "../insurance/dmsManager/DmsInsuranceManagerModal";
+import { DmsInsuranceManagerModal } from "../insurance/DmsInsuranceManagerModal";
 import { DmsGuaranteeLettersModal } from "../insurance/DmsGuaranteeLettersModal";
 import { DmsInsurersHubModal } from "../insurance/DmsInsurersHubModal";
 import { AccessMatrixModal } from "../settings/AccessMatrixModal";
