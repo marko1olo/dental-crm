@@ -346,3 +346,30 @@ export {
 	formatSurgicalGuideAssemblyA4Protocol,
 } from "./guideAssemblyEngine.js";
 export * as guideAssemblyEngine from "./guideAssemblyEngine.js";
+
+// Wave 138: CBCT 3D Volume Presets & Transfer Function Engine (DenCT Reverse-Engineering)
+export {
+	SAMPLE_DISTANCE_BY_QUALITY,
+	MAX_SAMPLES_BY_QUALITY,
+	RAY_PITCH_BY_QUALITY,
+	COLORMAP_STOPS_MAP,
+	volumePresetTypeSchema,
+	type VolumePresetType,
+	transferFunctionStopSchema,
+	type TransferFunctionStop,
+	opacityRampNodeSchema,
+	type OpacityRampNode,
+	volume3DStyleConfigSchema,
+	type Volume3DStyleConfig,
+	volumePatientInfoSchema,
+	type VolumePatientInfo,
+	type VolumePresetDefinition,
+	VOLUME_PRESET_DEFINITIONS,
+	calculateSampleParams,
+	generateColorTransferFunction,
+	generateOpacityPiecewiseRamp,
+	computeRayMarchingStepBudget,
+	createVolume3DStyleConfig,
+	formatVolume3DVisualizationA4Report,
+} from "./volume3DPresetEngine.js";
+export * as volume3DPresetEngine from "./volume3DPresetEngine.js";
