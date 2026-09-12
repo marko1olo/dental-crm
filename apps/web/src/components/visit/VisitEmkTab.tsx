@@ -1632,7 +1632,7 @@ export function VisitEmkTab() {
 			/>
 
 			{/* Единый компактный тулбар ЭМК: Вкладки протокола + 1-Клик SOAP (1 строка 32-36px по Мандату 8p) */}
-			<div className="emk-unified-toolbar flex items-center justify-between gap-2 overflow-x-auto my-1 py-1 border-b border-[var(--line)] scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[36px]">
+			<div className="emk-unified-toolbar flex items-center justify-between gap-2 overflow-x-auto my-1 py-1 pr-3 border-b border-[var(--line)] scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[36px]">
 				{/* Вкладки протокола приема ЭМК */}
 				<div
 					className="emk-tabs-container flex items-center gap-1 shrink-0 m-0 p-0 border-b-0"
@@ -1667,7 +1667,7 @@ export function VisitEmkTab() {
 
 				{/* 1-Клик Экспресс-Бар SOAP по Приказам Минздрава РФ (Tier 1 Hot Path — 0 кликов до применения) */}
 				<div
-					className="flex items-center gap-1 shrink-0"
+					className="flex items-center gap-1 shrink-0 pr-1.5"
 					data-testid="emk-tier1-quick-soap-bar"
 				>
 					<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider hidden xl:inline-flex items-center gap-1">
