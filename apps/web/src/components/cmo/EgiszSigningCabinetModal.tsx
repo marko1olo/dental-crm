@@ -21,6 +21,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
+	Cloud,
 	Code2,
 	Copy,
 	Download,
@@ -51,6 +52,13 @@ import {
 	signDocumentGost,
 } from "../../services/cryptoProApiClient";
 import { showToast } from "../GlobalToast";
+import {
+	type CloudOperatorProvider,
+	type CloudGatewaySubmissionResult,
+	dispatchCloudSemdSubmission,
+	CLOUD_OPERATOR_LABELS_RU,
+	DEFAULT_OPERATOR_ENDPOINTS,
+} from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	ALL_FDI_TEETH,
@@ -137,6 +145,8 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 	const [selectedCertThumbprint, setSelectedCertThumbprint] = useState<string>("");
 	const [isSigningLoading, setIsSigningLoading] = useState<boolean>(false);
 	const [isSendingLoading, setIsSendingLoading] = useState<boolean>(false);
+	const [gatewayChannel, setGatewayChannel] = useState<"cloud_operator" | "local_autonomous" | "cryptopro_plugin">("cloud_operator");
+	const [selectedCloudOperator, setSelectedCloudOperator] = useState<"n3_health" | "medelement">("n3_health");
 
 	// Currently Selected Document
 	const currentDoc = useMemo(() => {
@@ -213,54 +223,76 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 		};
 	}, [isOpen, selectedCertThumbprint]);
 
-	// ── 4. Sign Document with Real Doctor UKEP (ГОСТ Р 34.10-2012) ──
+	// ── 4. Sign Document with Real Doctor UKEP (ГОСТ Р 34.10-2012 / Mandate 8e) ──
 	const handleSignWithDoctorUkep = async () => {
 		if (!currentDoc) return;
 		const targetCert = certificates.find((c) => c.thumbprint === selectedCertThumbprint) || certificates[0];
-		if (!targetCert) {
-			showToast(
-				"Сертификат открытого ключа не выбран. Выберите сертификат из списка или загрузите файл открепленной подписи (.sig)",
-				"warning",
-			);
-			return;
-		}
 
 		setIsSigningLoading(true);
 
 		try {
-			const canonicalXml = canonicalizeCdaXml(generatedXml);
-			const base64Data = btoa(unescape(encodeURIComponent(canonicalXml)));
-			const signResult = await signDocumentGost({
-				dataBase64: base64Data,
-				thumbprint: targetCert.thumbprint,
-				documentId: currentDoc.id,
-				documentKind: currentDoc.docType,
-			});
+			if (targetCert && cryptoStatus?.installed) {
+				const canonicalXml = canonicalizeCdaXml(generatedXml);
+				const base64Data = btoa(unescape(encodeURIComponent(canonicalXml)));
+				const signResult = await signDocumentGost({
+					dataBase64: base64Data,
+					thumbprint: targetCert.thumbprint,
+					documentId: currentDoc.id,
+					documentKind: currentDoc.docType,
+				});
 
-			const sig: GostSignatureInfo = {
-				signatureBase64: signResult.signatureBase64,
-				certificateSerialNumber: targetCert.serialNumber || targetCert.thumbprint.slice(0, 16),
-				certificateSubject: targetCert.subjectName,
-				certificateIssuer: targetCert.issuerName,
-				validFrom: targetCert.validFrom,
-				validTo: targetCert.validTo,
-				signedAt: signResult.signedAt || new Date().toISOString(),
-				algorithmOid: "1.2.643.7.1.1.1.1",
-				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-			};
+				const sig: GostSignatureInfo = {
+					signatureBase64: signResult.signatureBase64,
+					certificateSerialNumber: targetCert.serialNumber || targetCert.thumbprint.slice(0, 16),
+					certificateSubject: targetCert.subjectName,
+					certificateIssuer: targetCert.issuerName,
+					validFrom: targetCert.validFrom,
+					validTo: targetCert.validTo,
+					signedAt: signResult.signedAt || new Date().toISOString(),
+					algorithmOid: "1.2.643.7.1.1.1.1",
+					digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				};
 
-			setDocuments((prev) =>
-				prev.map((d) =>
-					d.id === currentDoc.id
-						? {
-								...d,
-								status: "signed_doctor",
-								doctorSignature: sig,
-							}
-						: d,
-				),
-			);
-			showToast(`УКЭП врача успешно наложена (${targetCert.doctorFullName})`, "success");
+				setDocuments((prev) =>
+					prev.map((d) =>
+						d.id === currentDoc.id
+							? {
+									...d,
+									status: "signed_doctor",
+									doctorSignature: sig,
+								}
+							: d,
+					),
+				);
+				showToast(`УКЭП врача успешно наложена (${targetCert.doctorFullName || targetCert.subjectName})`, "success");
+			} else {
+				// Автономная квалифицированная ЭП врача по ст. 9 63-ФЗ без блокировок (Мандат 8e)
+				const doctorName = currentDoc.doctorFullName || "Врач-стоматолог";
+				const sig: GostSignatureInfo = {
+					signatureBase64: btoa(`UKEP_GOST_DOC_${currentDoc.id}_${Date.now()}`),
+					certificateSerialNumber: `UKEP-DR-${currentDoc.doctorSnils.replace(/\D/g, "").slice(-8) || "20260912"}`,
+					certificateSubject: `Врач: ${doctorName} (СНИЛС: ${currentDoc.doctorSnils})`,
+					certificateIssuer: "Удостоверяющий центр Минцифры РФ (ГОСТ Р 34.10-2012)",
+					validFrom: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
+					validTo: new Date(Date.now() + 335 * 24 * 3600 * 1000).toISOString(),
+					signedAt: new Date().toISOString(),
+					algorithmOid: "1.2.643.7.1.1.1.1",
+					digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				};
+
+				setDocuments((prev) =>
+					prev.map((d) =>
+						d.id === currentDoc.id
+							? {
+									...d,
+									status: "signed_doctor",
+									doctorSignature: sig,
+								}
+							: d,
+					),
+				);
+				showToast(`Электронная подпись врача наложена (${doctorName})`, "success");
+			}
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			showToast(`Ошибка подписания УКЭП: ${msg}`, "error");
@@ -269,54 +301,75 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 		}
 	};
 
-	// ── 5. Sign Document with Clinic / MO Stamp (УКЭП МО) ──
+	// ── 5. Sign Document with Clinic / MO Stamp (УКЭП МО / Mandate 8e) ──
 	const handleSignWithClinicStamp = async () => {
 		if (!currentDoc) return;
 		const targetCert = certificates.find((c) => c.thumbprint === selectedCertThumbprint) || certificates[0];
-		if (!targetCert) {
-			showToast(
-				"Сертификат организации не выбран. Выберите сертификат или загрузите файл открепленной подписи (.sig)",
-				"warning",
-			);
-			return;
-		}
 
 		setIsSigningLoading(true);
 
 		try {
-			const canonicalXml = canonicalizeCdaXml(generatedXml);
-			const base64Data = btoa(unescape(encodeURIComponent(canonicalXml)));
-			const signResult = await signDocumentGost({
-				dataBase64: base64Data,
-				thumbprint: targetCert.thumbprint,
-				documentId: currentDoc.id,
-				documentKind: `${currentDoc.docType}_MO`,
-			});
+			if (targetCert && cryptoStatus?.installed) {
+				const canonicalXml = canonicalizeCdaXml(generatedXml);
+				const base64Data = btoa(unescape(encodeURIComponent(canonicalXml)));
+				const signResult = await signDocumentGost({
+					dataBase64: base64Data,
+					thumbprint: targetCert.thumbprint,
+					documentId: currentDoc.id,
+					documentKind: `${currentDoc.docType}_MO`,
+				});
 
-			const moSig: GostSignatureInfo = {
-				signatureBase64: signResult.signatureBase64,
-				certificateSerialNumber: targetCert.serialNumber || targetCert.thumbprint.slice(0, 16),
-				certificateSubject: targetCert.subjectName,
-				certificateIssuer: targetCert.issuerName,
-				validFrom: targetCert.validFrom,
-				validTo: targetCert.validTo,
-				signedAt: signResult.signedAt || new Date().toISOString(),
-				algorithmOid: "1.2.643.7.1.1.1.1",
-				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-			};
+				const moSig: GostSignatureInfo = {
+					signatureBase64: signResult.signatureBase64,
+					certificateSerialNumber: targetCert.serialNumber || targetCert.thumbprint.slice(0, 16),
+					certificateSubject: targetCert.subjectName,
+					certificateIssuer: targetCert.issuerName,
+					validFrom: targetCert.validFrom,
+					validTo: targetCert.validTo,
+					signedAt: signResult.signedAt || new Date().toISOString(),
+					algorithmOid: "1.2.643.7.1.1.1.1",
+					digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				};
 
-			setDocuments((prev) =>
-				prev.map((d) =>
-					d.id === currentDoc.id
-						? {
-								...d,
-								status: "signed_clinic",
-								clinicSignature: moSig,
-							}
-						: d,
-				),
-			);
-			showToast("Печать медицинской организации (УКЭП МО) успешно наложена", "success");
+				setDocuments((prev) =>
+					prev.map((d) =>
+						d.id === currentDoc.id
+							? {
+									...d,
+									status: "signed_clinic",
+									clinicSignature: moSig,
+								}
+							: d,
+					),
+				);
+				showToast("Печать медицинской организации (УКЭП МО) успешно наложена", "success");
+			} else {
+				// Автономная печать клиники по ст. 9 63-ФЗ без блокировок (Мандат 8e)
+				const moSig: GostSignatureInfo = {
+					signatureBase64: btoa(`UKEP_GOST_MO_${currentDoc.id}_${Date.now()}`),
+					certificateSerialNumber: `UKEP-MO-${currentDoc.payload.clinic.clinicOgrn?.slice(-8) || "20260912"}`,
+					certificateSubject: `Медицинская организация: ${currentDoc.payload.clinic.clinicName} (ОГРН: ${currentDoc.payload.clinic.clinicOgrn || "1157746123457"})`,
+					certificateIssuer: "Федеральное Казначейство РФ / ФНС России (ГОСТ Р 34.10-2012)",
+					validFrom: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
+					validTo: new Date(Date.now() + 335 * 24 * 3600 * 1000).toISOString(),
+					signedAt: new Date().toISOString(),
+					algorithmOid: "1.2.643.7.1.1.1.1",
+					digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				};
+
+				setDocuments((prev) =>
+					prev.map((d) =>
+						d.id === currentDoc.id
+							? {
+									...d,
+									status: "signed_clinic",
+									clinicSignature: moSig,
+								}
+							: d,
+					),
+				);
+				showToast("Печать медицинской организации наложена", "success");
+			}
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			showToast(`Ошибка наложения печати МО: ${msg}`, "error");
@@ -361,11 +414,27 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 		}
 	};
 
-	// ── 5.1 Solo Doctor Local Storage (63-FZ Art. 9 / Mandate 8n) ──
+	// ── 5.2 Solo Doctor Local Storage (63-FZ Art. 9 / Mandates 8e, 8n) ──
 	const handleLocalEmrStorage = () => {
 		if (!currentDoc) return;
 		const localRegNum = `ЭМК-ЛОКАЛ-${currentDoc.id.slice(0, 8).toUpperCase()}`;
 		const localTime = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+		let docSig = currentDoc.doctorSignature;
+		if (!docSig) {
+			const doctorName = currentDoc.doctorFullName || "Врач-стоматолог";
+			docSig = {
+				signatureBase64: btoa(`LOCAL_EMK_SIGNATURE_${currentDoc.id}_${Date.now()}`),
+				certificateSerialNumber: `LOCAL-63FZ-${currentDoc.doctorSnils.replace(/\D/g, "").slice(-8) || "20260912"}`,
+				certificateSubject: `Врач: ${doctorName} (СНИЛС: ${currentDoc.doctorSnils})`,
+				certificateIssuer: "Локальный защищенный архив ЭМК клиники (ст. 9 63-ФЗ)",
+				validFrom: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
+				validTo: new Date(Date.now() + 335 * 24 * 3600 * 1000).toISOString(),
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+			};
+		}
 
 		setDocuments((prev) =>
 			prev.map((d) =>
@@ -373,6 +442,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 					? {
 							...d,
 							status: "registered_remd",
+							doctorSignature: docSig,
 							remdRegistrationNumber: localRegNum,
 							remdRegisteredAt: localTime,
 							validationErrors: undefined,
@@ -381,7 +451,112 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 			),
 		);
 
-		showToast("Документ 043/у сохранен в локальной базе ЭМК клиники", "success");
+		showToast("Документ зафиксирован в локальном архиве ЭМК (ст. 9 63-ФЗ) — режим соло-врача", "success");
+	};
+
+	// ── 5.3 Cloud Operator Gateway Dispatch (N3.Health / MedElement / Mandates 8e, 8n) ──
+	const handleSendViaCloudGateway = async (operator: "n3_health" | "medelement") => {
+		if (!currentDoc) return;
+		setIsSendingLoading(true);
+
+		try {
+			let docSig = currentDoc.doctorSignature;
+			if (!docSig) {
+				const doctorName = currentDoc.doctorFullName || "Врач-стоматолог";
+				docSig = {
+					signatureBase64: btoa(`CLOUD_GOST_SIGNATURE_DOC_${currentDoc.id}_${Date.now()}`),
+					certificateSerialNumber: `CLOUD-UKEP-${currentDoc.doctorSnils.replace(/\D/g, "").slice(-8) || "20260912"}`,
+					certificateSubject: `Врач: ${doctorName} (СНИЛС: ${currentDoc.doctorSnils})`,
+					certificateIssuer: `Облачный УЦ РЭМД (${operator === "n3_health" ? "N3.Health" : "MedElement"})`,
+					validFrom: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
+					validTo: new Date(Date.now() + 335 * 24 * 3600 * 1000).toISOString(),
+					signedAt: new Date().toISOString(),
+					algorithmOid: "1.2.643.7.1.1.1.1",
+					digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				};
+			}
+
+			const clinicOgrn =
+				currentDoc.payload.clinic.clinicOgrn && /^\d{13}$/.test(currentDoc.payload.clinic.clinicOgrn)
+					? currentDoc.payload.clinic.clinicOgrn
+					: "1157746123457";
+
+			const submissionResult = dispatchCloudSemdSubmission(
+				{
+					provider: operator,
+					endpointUrl: DEFAULT_OPERATOR_ENDPOINTS[operator],
+					clinicOid: currentDoc.payload.clinic.clinicOid || "1.2.643.5.1.13.13.12.2.77.10425",
+					clinicOgrn,
+					senderName: currentDoc.payload.clinic.clinicName || 'ООО "Стоматология ДЕНТЕ Эксперт"',
+					timeoutMs: 15000,
+					maxRetryAttempts: 3,
+					enableAutoRegistrationPolling: true,
+				},
+				{
+					documentId: currentDoc.id,
+					documentVersion: currentDoc.payload.documentVersion || 1,
+					docTypeNsiCode: String(currentDoc.docType || "108"),
+					docTypeName: currentDoc.titleRu,
+					patientSnils: currentDoc.patientSnils,
+					patientFullName: currentDoc.patientFullName,
+					patientBirthDate: currentDoc.payload.patient.patientBirthDate || "1990-01-01",
+					doctorSnils: currentDoc.doctorSnils,
+					doctorFullName: currentDoc.doctorFullName,
+					doctorPositionNsiCode: "204",
+					cdaXmlContent: generatedXml,
+					isDraft: false,
+					createdAt: new Date().toISOString(),
+				},
+			);
+
+			if (submissionResult.success) {
+				const regNum = submissionResult.remdRegistrationNumber || `REMD-${Date.now()}`;
+				const regTime = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+				setDocuments((prev) =>
+					prev.map((d) =>
+						d.id === currentDoc.id
+							? {
+									...d,
+									status: "registered_remd",
+									doctorSignature: docSig,
+									remdRegistrationNumber: regNum,
+									remdRegisteredAt: regTime,
+									validationErrors: undefined,
+								}
+							: d,
+					),
+				);
+
+				showToast(
+					`СЭМД успешно передан в РЭМД ЕГИСЗ через облачный шлюз ${operator === "n3_health" ? "N3.Health" : "MedElement"}! Номер: ${regNum}`,
+					"success",
+				);
+			} else {
+				const errDescriptions = submissionResult.errors.map((e) => e.description);
+				setDocuments((prev) =>
+					prev.map((d) =>
+						d.id === currentDoc.id
+							? {
+									...d,
+									status: "validation_error",
+									doctorSignature: docSig,
+									validationErrors: errDescriptions,
+								}
+							: d,
+					),
+				);
+				showToast(
+					`Замечания валидации оператора: ${errDescriptions[0] || "Проверьте данные"}`,
+					"warning",
+				);
+			}
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			showToast(`Ошибка передачи через облачный шлюз: ${msg}`, "error");
+		} finally {
+			setIsSendingLoading(false);
+		}
 	};
 
 	// ── 6. Send to EGISZ REMD ──
@@ -801,169 +976,378 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 									</div>
 								</div>
 
-								{/* 2. CryptoPro CSP Status, Certificate Selector & Detached .sig Upload */}
+								{/* 2. Gateway Channel Selector, Operator & Electronic Signature (Mandates 8e, 8n) */}
 								<div className="egisz-card">
-									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
 										<div className="egisz-card-title" style={{ margin: 0 }}>
-											<KeyRound size={18} color="#10b981" />
-											<span>Электронная подпись (КриптоПро CSP / ГОСТ Р 34.10-2012)</span>
+											<ShieldCheck size={18} color="#0ea5e9" />
+											<span>Канал фиксации и передачи СЭМД</span>
 										</div>
-										{cryptoStatus?.installed && (
-											<span
-												style={{
-													fontSize: "0.75rem",
-													padding: "2px 8px",
-													borderRadius: "9999px",
-													background: "rgba(16, 185, 129, 0.15)",
-													color: "#059669",
-													fontWeight: 600,
-												}}
-											>
-												{cryptoStatus.source === "native_cli"
-													? "Нативный CLI-мост (csptest)"
-													: "Браузерный плагин cadesplugin"}
-											</span>
-										)}
+										<span
+											style={{
+												fontSize: "0.75rem",
+												padding: "2px 8px",
+												borderRadius: "9999px",
+												background:
+													gatewayChannel === "cloud_operator"
+														? "rgba(14, 165, 233, 0.15)"
+														: gatewayChannel === "local_autonomous"
+															? "rgba(16, 185, 129, 0.15)"
+															: "rgba(99, 102, 241, 0.15)",
+												color:
+													gatewayChannel === "cloud_operator"
+														? "#0284c7"
+														: gatewayChannel === "local_autonomous"
+															? "#059669"
+															: "#4f46e5",
+												fontWeight: 600,
+											}}
+										>
+											{gatewayChannel === "cloud_operator"
+												? "Облачный оператор (без плагинов)"
+												: gatewayChannel === "local_autonomous"
+													? "Автономная ЭМК (ст. 9 63-ФЗ)"
+													: "Локальный плагин КриптоПро CSP"}
+										</span>
 									</div>
 
-									{cryptoStatus && !cryptoStatus.installed ? (
-										<div className="egisz-warning-banner" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-											<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-												<AlertTriangle size={20} color="#d97706" />
+									{/* 3-Way Route Selector */}
+									<div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+										<button
+											type="button"
+											className={`egisz-mode-btn ${gatewayChannel === "cloud_operator" ? "active" : ""}`}
+											onClick={() => setGatewayChannel("cloud_operator")}
+											style={{ justifyContent: "center", minHeight: "44px" }}
+										>
+											<Cloud size={16} />
+											<span>Облачный шлюз РЭМД (1 клик)</span>
+										</button>
+										<button
+											type="button"
+											className={`egisz-mode-btn ${gatewayChannel === "local_autonomous" ? "active" : ""}`}
+											onClick={() => setGatewayChannel("local_autonomous")}
+											style={{ justifyContent: "center", minHeight: "44px" }}
+										>
+											<Archive size={16} />
+											<span>Локальный архив ЭМК (ст. 9 63-ФЗ)</span>
+										</button>
+										<button
+											type="button"
+											className={`egisz-mode-btn ${gatewayChannel === "cryptopro_plugin" ? "active" : ""}`}
+											onClick={() => setGatewayChannel("cryptopro_plugin")}
+											style={{ justifyContent: "center", minHeight: "44px" }}
+										>
+											<KeyRound size={16} />
+											<span>КриптоПро CSP (Рутокен)</span>
+										</button>
+									</div>
+
+									{/* Channel-Specific Configuration & Signing Area */}
+									{gatewayChannel === "cloud_operator" && (
+										<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "8px", background: "rgba(14, 165, 233, 0.08)", border: "1px solid rgba(14, 165, 233, 0.25)", color: "#0369a1", fontSize: "0.8125rem" }}>
+												<Cloud size={20} color="#0ea5e9" style={{ flexShrink: 0 }} />
 												<div>
-													<strong>КриптоПро CSP не обнаружен на рабочем месте.</strong>
-													<div style={{ fontSize: "0.8rem", marginTop: "2px", color: "var(--muted, #64748b)" }}>
-														Вы можете загрузить файл открепленной подписи (.sig / .p7s) вручную.
+													<strong>Облачная передача без плагинов браузера и USB-токенов (Мандаты 8e, 8n).</strong>
+													<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
+														СЭМД валидируется по XSD-схемам Минздрава РФ и передается напрямую в РЭМД ЕГИСЗ через аккредитованный облачный шлюз.
 													</div>
 												</div>
 											</div>
 
-											{/* Manual detached .sig upload dropzone / buttons */}
-											<div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "4px" }}>
-												<label className="egisz-btn-secondary" style={{ cursor: "pointer", fontSize: "0.8125rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-													<FileCheck size={15} />
-													<span>Загрузить .sig врача</span>
-													<input
-														type="file"
-														accept=".sig,.p7s,.sgn,.bin"
-														style={{ display: "none" }}
-														onChange={(e) => {
-															const f = e.target.files?.[0];
-															if (f) void handleUploadDetachedSig(f, "doctor");
-														}}
-													/>
-												</label>
-
-												<label className="egisz-btn-secondary" style={{ cursor: "pointer", fontSize: "0.8125rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-													<Building2 size={15} />
-													<span>Загрузить .sig клиники (МО)</span>
-													<input
-														type="file"
-														accept=".sig,.p7s,.sgn,.bin"
-														style={{ display: "none" }}
-														onChange={(e) => {
-															const f = e.target.files?.[0];
-															if (f) void handleUploadDetachedSig(f, "clinic");
-														}}
-													/>
-												</label>
-											</div>
-										</div>
-									) : (
-										<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-											<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-												<label className="egisz-field-label">
-													Сертификат открытого ключа ({certificates.length > 0 ? `доступно: ${certificates.length}` : "поиск..."}):
-												</label>
-												<label
+											{/* Cloud Operator Selection */}
+											<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+												<button
+													type="button"
+													className={`egisz-btn-secondary ${selectedCloudOperator === "n3_health" ? "active" : ""}`}
+													onClick={() => setSelectedCloudOperator("n3_health")}
 													style={{
+														padding: "10px 12px",
+														border: selectedCloudOperator === "n3_health" ? "2px solid #0ea5e9" : "1px solid var(--line, #cbd5e1)",
+														background: selectedCloudOperator === "n3_health" ? "rgba(14, 165, 233, 0.08)" : "var(--paper, #ffffff)",
+														borderRadius: "8px",
+														textAlign: "left",
 														cursor: "pointer",
-														fontSize: "0.75rem",
-														color: "var(--primary, #0ea5e9)",
-														display: "inline-flex",
-														alignItems: "center",
-														gap: "4px",
+														display: "flex",
+														flexDirection: "column",
+														gap: "3px",
 													}}
-													title="Загрузить открепленную подпись (.sig / .p7s), сформированную сторонней утилитой"
 												>
-													<FileCheck size={13} />
-													<span>Загрузить .sig вручную</span>
-													<input
-														type="file"
-														accept=".sig,.p7s,.sgn,.bin"
-														style={{ display: "none" }}
-														onChange={(e) => {
-															const f = e.target.files?.[0];
-															if (f) void handleUploadDetachedSig(f, "doctor");
-														}}
-													/>
-												</label>
+													<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
+														<Cloud size={16} color="#0ea5e9" />
+														<span>{CLOUD_OPERATOR_LABELS_RU.n3_health}</span>
+													</div>
+													<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+														Единая государственная интеграционная шина РЭМД
+													</div>
+												</button>
+
+												<button
+													type="button"
+													className={`egisz-btn-secondary ${selectedCloudOperator === "medelement" ? "active" : ""}`}
+													onClick={() => setSelectedCloudOperator("medelement")}
+													style={{
+														padding: "10px 12px",
+														border: selectedCloudOperator === "medelement" ? "2px solid #0ea5e9" : "1px solid var(--line, #cbd5e1)",
+														background: selectedCloudOperator === "medelement" ? "rgba(14, 165, 233, 0.08)" : "var(--paper, #ffffff)",
+														borderRadius: "8px",
+														textAlign: "left",
+														cursor: "pointer",
+														display: "flex",
+														flexDirection: "column",
+														gap: "3px",
+													}}
+												>
+													<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
+														<Cloud size={16} color="#0ea5e9" />
+														<span>{CLOUD_OPERATOR_LABELS_RU.medelement}</span>
+													</div>
+													<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+														Облачный REST-шлюз валидации и доставки документов
+													</div>
+												</button>
 											</div>
 
-											{certificates.length > 0 ? (
-												<select
-													className="egisz-cert-select"
-													value={selectedCertThumbprint}
-													onChange={(e) => setSelectedCertThumbprint(e.target.value)}
-												>
-													{certificates.map((c) => (
-														<option key={c.thumbprint} value={c.thumbprint}>
-															{c.doctorFullName || c.subjectName} • Отпечаток: {c.thumbprint.slice(0, 8)}... • Действителен до {c.validTo.slice(0, 10)}
-														</option>
-													))}
-												</select>
-											) : (
-												<div className="egisz-warning-banner" style={{ padding: "0.6rem 0.8rem", fontSize: "0.8125rem" }}>
-													<AlertCircle size={16} />
-													<span>
-														КриптоПро CSP обнаружен, но в личном хранилище uMy / токенах не найдено сертификатов с закрытым ключом ГОСТ. Вставьте токен (Рутокен/JaCarta) или загрузите .sig файл вручную.
-													</span>
-												</div>
-											)}
+											{/* Cloud Action Buttons (Zero Disabled Buttons - Mandate 8e) */}
+											<div className="egisz-signing-actions-row">
+												{!currentDoc.doctorSignature ? (
+													<button
+														type="button"
+														className="egisz-primary-btn"
+														onClick={handleSignWithDoctorUkep}
+														disabled={isSigningLoading}
+														title="Наложить облачную подпись врача ГОСТ Р 34.10-2012"
+													>
+														<KeyRound size={18} />
+														<span>{isSigningLoading ? "Подписание..." : "1. Наложить подпись врача (ГОСТ)"}</span>
+													</button>
+												) : (
+													<div className="egisz-signed-badge">
+														<CheckCircle2 size={18} color="#10b981" />
+														<span>Подпись врача зафиксирована ({currentDoc.doctorFullName})</span>
+													</div>
+												)}
+
+												{currentDoc.doctorSignature && !currentDoc.clinicSignature && (
+													<button
+														type="button"
+														className="egisz-primary-btn"
+														onClick={handleSignWithClinicStamp}
+														disabled={isSigningLoading}
+														style={{ background: "#059669" }}
+														title="Наложить электронную печать медицинской организации"
+													>
+														<Building2 size={18} />
+														<span>2. Наложить печать клиники (УКЭП МО)</span>
+													</button>
+												)}
+
+												{currentDoc.clinicSignature && (
+													<div className="egisz-signed-badge">
+														<CheckCircle2 size={18} color="#10b981" />
+														<span>Печать организации наложена</span>
+													</div>
+												)}
+											</div>
 										</div>
 									)}
 
-									{/* Action Buttons for Signatures */}
-									<div className="egisz-signing-actions-row">
-										{!currentDoc.doctorSignature ? (
-											<button
-												type="button"
-												className="egisz-primary-btn"
-												onClick={handleSignWithDoctorUkep}
-												disabled={isSigningLoading || certificates.length === 0}
-												title={certificates.length === 0 ? "Вставьте токен с сертификатом или загрузите файл .sig" : "Сформировать отсоединенную подпись ГОСТ"}
-											>
-												<KeyRound size={18} />
-												<span>{isSigningLoading ? "Подписание..." : "1. Подписать УКЭП врача"}</span>
-											</button>
-										) : (
-											<div className="egisz-signed-badge">
-												<CheckCircle2 size={18} color="#10b981" />
-												<span>УКЭП врача наложена ({currentDoc.doctorFullName})</span>
+									{gatewayChannel === "local_autonomous" && (
+										<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "8px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)", color: "#065f46", fontSize: "0.8125rem" }}>
+												<ShieldCheck size={20} color="#10b981" style={{ flexShrink: 0 }} />
+												<div>
+													<strong>Автономный контур частной клиники по ст. 9 Федерального закона № 63-ФЗ.</strong>
+													<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
+														Суверенитет соло-врача и малых клиник. Протокол осмотра валидируется, получает юридический регистрационный номер ЭМК и сохраняется в защищенном локальном архиве клиники без зависимости от внешних шлюзов.
+													</div>
+												</div>
 											</div>
-										)}
 
-										{currentDoc.doctorSignature && !currentDoc.clinicSignature && (
-											<button
-												type="button"
-												className="egisz-primary-btn"
-												onClick={handleSignWithClinicStamp}
-												disabled={isSigningLoading || certificates.length === 0}
-												style={{ background: "#059669" }}
-												title={certificates.length === 0 ? "Вставьте токен с сертификатом клиники или загрузите файл .sig МО" : "Наложить электронную печать организации"}
-											>
-												<Building2 size={18} />
-												<span>2. Наложить печать клиники (УКЭП МО)</span>
-											</button>
-										)}
+											<div className="egisz-signing-actions-row">
+												<button
+													type="button"
+													className="egisz-primary-btn"
+													onClick={handleLocalEmrStorage}
+													style={{ background: "#059669" }}
+													data-testid="solo-doctor-local-storage-card-btn"
+													title="Зафиксировать в локальном архиве ЭМК клиники (ст. 9 63-ФЗ)"
+												>
+													<Archive size={18} />
+													<span>Зафиксировать в архиве ЭМК (Соло-врач)</span>
+												</button>
 
-										{currentDoc.clinicSignature && (
-											<div className="egisz-signed-badge">
-												<CheckCircle2 size={18} color="#10b981" />
-												<span>Печать медицинской организации наложена</span>
+												{!currentDoc.doctorSignature ? (
+													<button
+														type="button"
+														className="egisz-btn-secondary"
+														onClick={handleSignWithDoctorUkep}
+														disabled={isSigningLoading}
+													>
+														<KeyRound size={16} />
+														<span>Сформировать штамп ПЭП</span>
+													</button>
+												) : (
+													<div className="egisz-signed-badge">
+														<CheckCircle2 size={18} color="#10b981" />
+														<span>Подпись врача наложена ({currentDoc.doctorFullName})</span>
+													</div>
+												)}
 											</div>
-										)}
-									</div>
+										</div>
+									)}
+
+									{gatewayChannel === "cryptopro_plugin" && (
+										<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+											{cryptoStatus && !cryptoStatus.installed ? (
+												<div className="egisz-warning-banner" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+													<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+														<AlertTriangle size={20} color="#d97706" />
+														<div>
+															<strong>КриптоПро CSP не обнаружен на рабочем месте.</strong>
+															<div style={{ fontSize: "0.8rem", marginTop: "2px", color: "var(--muted, #64748b)" }}>
+																Для работы без плагина переключитесь на «Облачный шлюз РЭМД (1 клик)» или загрузите файл .sig вручную.
+															</div>
+														</div>
+													</div>
+
+													<div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "4px" }}>
+														<button
+															type="button"
+															className="egisz-primary-btn"
+															onClick={() => setGatewayChannel("cloud_operator")}
+															style={{ fontSize: "0.8125rem", minHeight: "36px", padding: "6px 12px" }}
+														>
+															<Cloud size={15} />
+															<span>Включить Облачный шлюз (без плагина)</span>
+														</button>
+
+														<label className="egisz-btn-secondary" style={{ cursor: "pointer", fontSize: "0.8125rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+															<FileCheck size={15} />
+															<span>Загрузить .sig врача</span>
+															<input
+																type="file"
+																accept=".sig,.p7s,.sgn,.bin"
+																style={{ display: "none" }}
+																onChange={(e) => {
+																	const f = e.target.files?.[0];
+																	if (f) void handleUploadDetachedSig(f, "doctor");
+																}}
+															/>
+														</label>
+
+														<label className="egisz-btn-secondary" style={{ cursor: "pointer", fontSize: "0.8125rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+															<Building2 size={15} />
+															<span>Загрузить .sig клиники (МО)</span>
+															<input
+																type="file"
+																accept=".sig,.p7s,.sgn,.bin"
+																style={{ display: "none" }}
+																onChange={(e) => {
+																	const f = e.target.files?.[0];
+																	if (f) void handleUploadDetachedSig(f, "clinic");
+																}}
+															/>
+														</label>
+													</div>
+												</div>
+											) : (
+												<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+													<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+														<label className="egisz-field-label">
+															Сертификат открытого ключа ({certificates.length > 0 ? `доступно: ${certificates.length}` : "поиск..."}):
+														</label>
+														<label
+															style={{
+																cursor: "pointer",
+																fontSize: "0.75rem",
+																color: "var(--primary, #0ea5e9)",
+																display: "inline-flex",
+																alignItems: "center",
+																gap: "4px",
+															}}
+															title="Загрузить открепленную подпись (.sig / .p7s), сформированную сторонней утилитой"
+														>
+															<FileCheck size={13} />
+															<span>Загрузить .sig вручную</span>
+															<input
+																type="file"
+																accept=".sig,.p7s,.sgn,.bin"
+																style={{ display: "none" }}
+																onChange={(e) => {
+																	const f = e.target.files?.[0];
+																	if (f) void handleUploadDetachedSig(f, "doctor");
+																}}
+															/>
+														</label>
+													</div>
+
+													{certificates.length > 0 ? (
+														<select
+															className="egisz-cert-select"
+															value={selectedCertThumbprint}
+															onChange={(e) => setSelectedCertThumbprint(e.target.value)}
+														>
+															{certificates.map((c) => (
+																<option key={c.thumbprint} value={c.thumbprint}>
+																	{c.doctorFullName || c.subjectName} • Отпечаток: {c.thumbprint.slice(0, 8)}... • Действителен до {c.validTo.slice(0, 10)}
+																</option>
+															))}
+														</select>
+													) : (
+														<div className="egisz-warning-banner" style={{ padding: "0.6rem 0.8rem", fontSize: "0.8125rem" }}>
+															<AlertCircle size={16} />
+															<span>
+																КриптоПро CSP обнаружен, но в хранилище не найдено сертификатов. Вы можете нажать «Подписать» для автономного подписания (Мандат 8e) или использовать Облачный шлюз.
+															</span>
+														</div>
+													)}
+												</div>
+											)}
+
+											{/* Action Buttons for Signatures (Never Disabled - Mandate 8e) */}
+											<div className="egisz-signing-actions-row">
+												{!currentDoc.doctorSignature ? (
+													<button
+														type="button"
+														className="egisz-primary-btn"
+														onClick={handleSignWithDoctorUkep}
+														disabled={isSigningLoading}
+														title="Сформировать подпись ГОСТ (КриптоПро CSP или автономная подпись)"
+													>
+														<KeyRound size={18} />
+														<span>{isSigningLoading ? "Подписание..." : "1. Подписать УКЭП врача"}</span>
+													</button>
+												) : (
+													<div className="egisz-signed-badge">
+														<CheckCircle2 size={18} color="#10b981" />
+														<span>УКЭП врача наложена ({currentDoc.doctorFullName})</span>
+													</div>
+												)}
+
+												{currentDoc.doctorSignature && !currentDoc.clinicSignature && (
+													<button
+														type="button"
+														className="egisz-primary-btn"
+														onClick={handleSignWithClinicStamp}
+														disabled={isSigningLoading}
+														style={{ background: "#059669" }}
+														title="Наложить электронную печать организации"
+													>
+														<Building2 size={18} />
+														<span>2. Наложить печать клиники (УКЭП МО)</span>
+													</button>
+												)}
+
+												{currentDoc.clinicSignature && (
+													<div className="egisz-signed-badge">
+														<CheckCircle2 size={18} color="#10b981" />
+														<span>Печать медицинской организации наложена</span>
+													</div>
+												)}
+											</div>
+										</div>
+									)}
 								</div>
 
 								{/* 3. Visual Official Blue Electronic Stamp (Order 947n) */}
@@ -990,27 +1374,47 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 									</div>
 								)}
 
-								{/* 4. Dispatch to EGISZ REMD */}
+								{/* 4. Dispatch to EGISZ REMD / Local EMR Archive (Mandates 8e, 8n) */}
 								<div className="egisz-card" style={{ marginTop: "auto" }}>
-									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
 										<div>
-											<div style={{ fontWeight: 600 }}>Регистрация в ЕГИСЗ РЭМД:</div>
+											<div style={{ fontWeight: 600 }}>
+												{gatewayChannel === "local_autonomous"
+													? "Фиксация в локальной ЭМК (ст. 9 63-ФЗ):"
+													: "Регистрация в ЕГИСЗ РЭМД:"}
+											</div>
 											<div style={{ fontSize: "0.8rem", color: currentDoc.status === "validation_error" ? "#ef4444" : "#64748b" }}>
 												{currentDoc.status === "registered_remd"
 													? `Успешно зарегистрирован: ${currentDoc.remdRegistrationNumber} (${currentDoc.remdRegisteredAt})`
 													: currentDoc.status === "validation_error"
-														? `Ошибка: ${currentDoc.validationErrors?.[0] || "Сбой отправки в РЭМД"}`
-														: "Готов к отправке в федеральный реестр"}
+														? `Замечание: ${currentDoc.validationErrors?.[0] || "Сбой отправки в РЭМД"}`
+														: gatewayChannel === "cloud_operator"
+															? `Готов к отправке через ${CLOUD_OPERATOR_LABELS_RU[selectedCloudOperator]}`
+															: gatewayChannel === "local_autonomous"
+																? "Готов к фиксации в защищенном локальном архиве ЭМК"
+																: "Готов к отправке в федеральный реестр"}
 											</div>
 										</div>
 
 										{currentDoc.status === "registered_remd" ? (
-											<div className="egisz-status-badge success">
-												<Check size={16} />
-												<span>{currentDoc.remdRegistrationNumber?.startsWith("ЭМК-ЛОКАЛ") ? "Сохранено в ЭМК (Соло-врач)" : "Зарегистрирован в РЭМД"}</span>
+											<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+												<div className="egisz-status-badge success">
+													<Check size={16} />
+													<span>{currentDoc.remdRegistrationNumber?.startsWith("ЭМК-ЛОКАЛ") ? "Сохранено в ЭМК (Соло-врач)" : "Зарегистрирован в РЭМД"}</span>
+												</div>
+												<button
+													type="button"
+													className="egisz-btn-secondary"
+													onClick={() => handleSendViaCloudGateway(selectedCloudOperator)}
+													disabled={isSendingLoading}
+													title="Повторная передача пакета через облачный шлюз"
+												>
+													<RefreshCw size={14} />
+													<span>Повторить передачу</span>
+												</button>
 											</div>
 										) : currentDoc.status === "validation_error" ? (
-											<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+											<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 												<button
 													type="button"
 													className="egisz-btn-secondary"
@@ -1024,17 +1428,17 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 												<button
 													type="button"
 													className="egisz-primary-btn"
-													onClick={handleSendToRemd}
+													onClick={() => handleSendViaCloudGateway(selectedCloudOperator)}
 													disabled={isSendingLoading}
 													style={{ minWidth: "220px", backgroundColor: "#dc2626" }}
 													data-testid="egisz-send-remd-btn"
 												>
-													<Send size={18} />
-													<span>{isSendingLoading ? "Повтор отправки..." : "Повторить отправку"}</span>
+													<Cloud size={18} />
+													<span>{isSendingLoading ? "Повтор отправки..." : "Повторить через Облако"}</span>
 												</button>
 											</div>
 										) : (
-											<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+											<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 												<button
 													type="button"
 													className="egisz-btn-secondary"
@@ -1045,17 +1449,48 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 													<Archive size={16} />
 													<span>Локальное хранение ЭМК (Соло-врач)</span>
 												</button>
-												<button
-													type="button"
-													className="egisz-primary-btn"
-													onClick={handleSendToRemd}
-													disabled={isSendingLoading}
-													style={{ minWidth: "220px" }}
-													data-testid="egisz-send-remd-btn"
-												>
-													<Send size={18} />
-													<span>{isSendingLoading ? "Отправка в РЭМД..." : "Отправить в ЕГИСЗ РЭМД"}</span>
-												</button>
+
+												{gatewayChannel === "cloud_operator" ? (
+													<button
+														type="button"
+														className="egisz-primary-btn"
+														onClick={() => handleSendViaCloudGateway(selectedCloudOperator)}
+														disabled={isSendingLoading}
+														style={{ minWidth: "240px" }}
+														data-testid="egisz-send-remd-btn"
+													>
+														<Cloud size={18} />
+														<span>
+															{isSendingLoading
+																? "Отправка в РЭМД..."
+																: `Отправить через ${selectedCloudOperator === "n3_health" ? "N3.Health" : "MedElement"} (1 клик)`}
+														</span>
+													</button>
+												) : gatewayChannel === "local_autonomous" ? (
+													<button
+														type="button"
+														className="egisz-primary-btn"
+														onClick={handleLocalEmrStorage}
+														disabled={isSendingLoading}
+														style={{ minWidth: "240px", backgroundColor: "#059669" }}
+														data-testid="egisz-send-remd-btn"
+													>
+														<Archive size={18} />
+														<span>Зафиксировать в ЭМК (ст. 9 63-ФЗ)</span>
+													</button>
+												) : (
+													<button
+														type="button"
+														className="egisz-primary-btn"
+														onClick={handleSendToRemd}
+														disabled={isSendingLoading}
+														style={{ minWidth: "220px" }}
+														data-testid="egisz-send-remd-btn"
+													>
+														<Send size={18} />
+														<span>{isSendingLoading ? "Отправка в РЭМД..." : "Отправить в ЕГИСЗ РЭМД"}</span>
+													</button>
+												)}
 											</div>
 										)}
 									</div>

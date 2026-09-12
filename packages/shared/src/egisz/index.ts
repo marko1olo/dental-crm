@@ -6,3 +6,4 @@
 
 export * from "./egiszCryptoProEngine.js";
 export * from "./egiszRemdTransport.js";
+export * from "./egiszCloudGatewayEngine.js";
