@@ -7,6 +7,8 @@
  * - Нормализация ФИО, дат рождения (DD.MM.YYYY -> YYYY-MM-DD), телефонов в E.164 (+7XXXXXXXXXX), полов и денежных сумм в копейках.
  */
 
+import { normalizeDate, parseKopecks, rublesToKopecks } from "@dental/shared";
+
 export interface InfodentPatientRecord {
 	externalId: string;
 	fullName: string;
@@ -1103,28 +1105,7 @@ export class InfodentCsvParser {
 	}
 
 	public static normalizeDate(value: string | null | undefined): string | null {
-		if (!value) return null;
-		const trimmed = value.trim();
-
-		// DD.MM.YYYY или DD/MM/YYYY или DD-MM-YYYY
-		const ruMatch = trimmed.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
-		if (ruMatch) {
-			const day = (ruMatch[1] ?? "01").padStart(2, "0");
-			const month = (ruMatch[2] ?? "01").padStart(2, "0");
-			const year = ruMatch[3] ?? "2000";
-			return `${year}-${month}-${day}`;
-		}
-
-		// YYYY-MM-DD или YYYY.MM.DD
-		const isoMatch = trimmed.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})/);
-		if (isoMatch) {
-			const year = isoMatch[1] ?? "2000";
-			const month = (isoMatch[2] ?? "01").padStart(2, "0");
-			const day = (isoMatch[3] ?? "01").padStart(2, "0");
-			return `${year}-${month}-${day}`;
-		}
-
-		return null;
+		return normalizeDate(value);
 	}
 
 	public static normalizeGender(
@@ -1153,11 +1134,19 @@ export class InfodentCsvParser {
 		};
 	}
 
-	public static parseKopecks(value: string | null | undefined): number | null {
-		if (!value) return null;
-		const cleaned = value.replace(/\s+/g, "").replace(",", ".");
-		const num = Number.parseFloat(cleaned);
-		if (Number.isNaN(num)) return null;
-		return Math.round(num * 100);
+	public static parseKopecks(
+		value: string | number | null | undefined,
+	): number | null {
+		if (value === null || value === undefined || value === "") return null;
+		try {
+			if (typeof value === "number") {
+				return Number.isFinite(value) && !Number.isNaN(value) ? rublesToKopecks(value) : null;
+			}
+			const cleaned = String(value).replace(/\s+/g, "").replace(",", ".");
+			return parseKopecks(cleaned);
+		} catch {
+			const num = Number.parseFloat(String(value).replace(/\s+/g, "").replace(",", "."));
+			return Number.isNaN(num) ? null : Math.round(num * 100);
+		}
 	}
 }

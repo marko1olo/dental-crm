@@ -11,6 +11,8 @@
  * корректно обрабатывает CDATA, сущности (&amp;, &lt;, &gt;, &quot;), пространства имен и самозакрывающиеся теги.
  */
 
+import { normalizeDate, parseKopecks, rublesToKopecks } from "@dental/shared";
+
 export interface D4WPatientRecord {
 	externalId: string;
 	cardNumber: string | null;
@@ -961,28 +963,7 @@ export class Dental4WindowsXmlParser {
 	}
 
 	public static normalizeDate(value: string | null | undefined): string | null {
-		if (!value) return null;
-		const trimmed = value.trim();
-
-		// ISO 8601 YYYY-MM-DD
-		const iso = trimmed.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})/);
-		if (iso) {
-			const y = iso[1] ?? "2000";
-			const m = (iso[2] ?? "01").padStart(2, "0");
-			const d = (iso[3] ?? "01").padStart(2, "0");
-			return `${y}-${m}-${d}`;
-		}
-
-		// DD/MM/YYYY или DD.MM.YYYY
-		const dmy = trimmed.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
-		if (dmy) {
-			const d = (dmy[1] ?? "01").padStart(2, "0");
-			const m = (dmy[2] ?? "01").padStart(2, "0");
-			const y = dmy[3] ?? "2000";
-			return `${y}-${m}-${d}`;
-		}
-
-		return null;
+		return normalizeDate(value);
 	}
 
 	public static normalizeGender(
@@ -995,11 +976,19 @@ export class Dental4WindowsXmlParser {
 		return "unknown";
 	}
 
-	public static parseKopecks(value: string | null | undefined): number | null {
-		if (!value) return null;
-		const cleaned = value.replace(/\s+/g, "").replace(",", ".");
-		const num = Number.parseFloat(cleaned);
-		if (Number.isNaN(num)) return null;
-		return Math.round(num * 100);
+	public static parseKopecks(
+		value: string | number | null | undefined,
+	): number | null {
+		if (value === null || value === undefined || value === "") return null;
+		try {
+			if (typeof value === "number") {
+				return Number.isFinite(value) && !Number.isNaN(value) ? rublesToKopecks(value) : null;
+			}
+			const cleaned = String(value).replace(/\s+/g, "").replace(",", ".");
+			return parseKopecks(cleaned);
+		} catch {
+			const num = Number.parseFloat(String(value).replace(/\s+/g, "").replace(",", "."));
+			return Number.isNaN(num) ? null : Math.round(num * 100);
+		}
 	}
 }

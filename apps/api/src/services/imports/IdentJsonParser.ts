@@ -13,6 +13,8 @@
  * 3. Прямой массив объектов сущностей `[ { id: 1, fullName: "..." }, ... ]`
  */
 
+import { normalizeDate, parseKopecks, rublesToKopecks } from "@dental/shared";
+
 export interface IdentPatientRecord {
 	id: string;
 	code: string | null;
@@ -959,28 +961,7 @@ export class IdentJsonParser {
 	}
 
 	public static normalizeDate(value: string | null | undefined): string | null {
-		if (!value) return null;
-		const str = String(value).trim();
-
-		// ISO 8601
-		const iso = str.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})/);
-		if (iso) {
-			const y = iso[1] ?? "2000";
-			const m = (iso[2] ?? "01").padStart(2, "0");
-			const d = (iso[3] ?? "01").padStart(2, "0");
-			return `${y}-${m}-${d}`;
-		}
-
-		// DD.MM.YYYY
-		const dmy = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
-		if (dmy) {
-			const d = (dmy[1] ?? "01").padStart(2, "0");
-			const m = (dmy[2] ?? "01").padStart(2, "0");
-			const y = dmy[3] ?? "2000";
-			return `${y}-${m}-${d}`;
-		}
-
-		return null;
+		return normalizeDate(value);
 	}
 
 	public static normalizeGender(
@@ -999,15 +980,15 @@ export class IdentJsonParser {
 		value: string | number | null | undefined,
 	): number | null {
 		if (value === null || value === undefined || value === "") return null;
-		if (typeof value === "number") {
-			if (Number.isNaN(value)) return null;
-			return Math.round(value * 100);
+		try {
+			if (typeof value === "number") {
+				return Number.isFinite(value) && !Number.isNaN(value) ? rublesToKopecks(value) : null;
+			}
+			const cleaned = String(value).replace(/\s+/g, "").replace(",", ".");
+			return parseKopecks(cleaned);
+		} catch {
+			const num = Number.parseFloat(String(value).replace(/\s+/g, "").replace(",", "."));
+			return Number.isNaN(num) ? null : Math.round(num * 100);
 		}
-		const cleaned = String(value)
-			.replace(/\s+/g, "")
-			.replace(",", ".");
-		const num = Number.parseFloat(cleaned);
-		if (Number.isNaN(num)) return null;
-		return Math.round(num * 100);
 	}
 }
