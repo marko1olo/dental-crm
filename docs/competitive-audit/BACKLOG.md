@@ -83,7 +83,7 @@
 ## 7. `финансы::отображение_суммы_начислений_врачам_в_прайс_листе` [РЕАЛИЗОВАНО] -> KILLER
 - **Идея**: Вывод динамической суммы ЗП врача напротив каждой позиции в прейскуранте для прозрачности начислений и контроля маржи.
 - **Статус**: 
-  - Схема Drizzle: `apps/api/src/db/schema/billing.ts` (`pricelistDoctorPayrolls`), `finance_v2.ts` (`doctorPaymentRewards`, `doctorPayrollStatements`)
+  - Схема Drizzle: `apps/api/src/db/schema/billing.ts` (`pricelistDoctorPayrolls`), `apps/api/src/db/schema/finance.ts` (`doctorPaymentRewards`, `doctorPayrollStatements`)
   - Маршруты API: `apps/api/src/routes/pricelist.ts`, `apps/api/src/routes/billing.ts`
   - Фронтенд: `apps/web/src/components/settings/SettingsPricesTab.tsx`, `apps/web/src/components/payroll/DoctorPayrollModal.tsx`
 
@@ -4454,4 +4454,115 @@
   - Машинная: `check:encoding` 6702 файлов 0 ошибок, `npm run typecheck -w @dental/shared` Exit 0, `npm run typecheck -w @dental/api` Exit 0, `npm run typecheck -w @dental/web` Exit 0.
   - Тесты: `npm test -w @dental/shared` (2466 pass, 0 fail), `panelsAreMounted.test.ts` (11 pass, 0 fail), `cashShiftAutonomyAndFiscal54Fz.test.tsx` (12 pass, 0 fail).
   - Визуальная (Red Team Screenshot Proof): 12 скриншотов PC/Mobile Light/Dark в `docs/screenshots/inquisition_live/` (все $\ge 57.3$ КБ, MD5 уникальны, проверены через `view_file`).
+
+### Wave 162: Тотальная консолидация дубликатов и ликвидация мертвого кода (API CDA, Messaging, Surgery & Odontogram SSOT)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `735ad86a2`, `63dd82d1d`, `59cb8f1da`, `913aa0d14`, `432be3409`)
+* **Файлы**:
+  - `apps/web/src/components/surgery/` (консолидация модулей хирургии и стилей)
+  - `apps/web/src/components/visit/endo/` (консолидация эндодонтических констант и анестезии с `@dental/shared`)
+  - `apps/web/src/components/odontogram/` (дедупликация CSS между модулями и компонентами)
+  - `apps/api/src/services/documents/cda/` (сведение сервисов CDA к фасадам над `@dental/shared/cda`)
+  - `apps/api/src/services/communications/templateEngine.ts` (сведение шаблонизатора сообщений к SSOT `@dental/shared`)
+* **Архитектурное решение**:
+  - **Закон Единого Неделимого Авторитета (Мандат 8s)**:
+    * Исключено параллельное дублирование логики генерации CDA R3 / ЕГИСЗ между `apps/api` и `packages/shared`: API использует единый канонический генератор XML из `@dental/shared/cda`.
+    * Шаблонизатор мессенджеров `templateEngine.ts` в API переведен на прямое переиспользование движка `@dental/shared/messaging`.
+    * Устранены разрозненные CSS-файлы одонтограммы и хирургического кокпита.
+* **Верификация**: `check:encoding` 0 ошибок, Single-Compiler Gate `@dental/shared`, `@dental/api`, `@dental/web` Exit Code 0.
+
+### Wave 163: Ликвидация мертвого окладного расчета, схлопывание схем БД _v2 и дедупликация тестов API
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `d755e0b1c`, `1aa4eda65`, `aab4e4bae`, `d08edf8c3`, `29676f3f7`)
+* **Файлы**:
+  - `apps/api/src/db/schema/finance_v2.ts` (ликвидирован дубликат схемы, таблицы перенесены в `finance.ts`)
+  - `apps/api/src/db/schema/documents_v2.ts` (ликвидирован дубликат схемы, таблицы перенесены в `documents.ts`)
+  - `apps/web/src/services/payroll/advancedDoctorPayrollEngine.ts` (ликвидирован неиспользуемый расчет окладов, -843 строки)
+  - `apps/web/src/styles/staffPayrollLedger.css` (ликвидирован мертвый CSS, -334 строки)
+  - `apps/api/src/routes/patientRelationships.test.ts` (ликвидирован клон тестов)
+  - `apps/api/src/routes/tests/imaging.test.ts` (ликвидирован клон тестов)
+  - `apps/api/src/routes/treatmentConsumables.test.ts` (консолидирован с `tests/routes/treatmentConsumables.test.ts`)
+  - `apps/api/src/routes/visits.test.ts` (консолидирован с `tests/routes/visits.test.ts`)
+  - `apps/api/src/tests/cdaGeneration.test.ts` (консолидирован с каноническими тестами CDA)
+* **Архитектурное решение**:
+  - **Ликвидация академического блоата и псевдо-окладов (Мандаты 8i, 8k, 8s)**:
+    * Снесен мертвый академический расчет окладов и прогрессивных сеток `advancedDoctorPayrollEngine.ts` (-843 строки); в CRM действует честный, прозрачный процентный расчет сдельной оплаты врачей.
+    * Ликвидированы схемы `_v2` в Drizzle ORM: таблицы `cash_boxes`, `cash_box_shifts`, `cash_expense_reasons`, `cash_operations`, `installment_contracts`, `installment_tranches`, `doctor_payment_rewards`, `doctor_payroll_statements` объединены в каноническую схему `finance.ts`, а документы — в `documents.ts`.
+    * Устранены тесты-клоны маршрутов API в пользу единых канонических тестовых файлов.
+* **Верификация**: Single-Compiler Gate Exit Code 0, `check:encoding` 0 ошибок.
+
+### Wave 164: Консолидация тестов shared (НДФЛ, 54-ФЗ, EMR) и устранение амбигуити экспортов (TS2308)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `af07281bc`, `2b1877d0a`, `caf3dd1f9`, `9b957acd5`)
+* **Файлы**:
+  - `packages/shared/src/tests/ndflXmlGenerator.test.ts` (ликвидирован, объединен с `documents/__tests__/ndflXmlGenerator.test.ts`)
+  - `packages/shared/src/tests/offlineFiscalBatchReconciler.test.ts` (ликвидирован, объединен с `fiscal/offlineFiscalBatchReconciler.test.ts`)
+  - `packages/shared/src/tests/emrProtocolEngine.test.ts` (ликвидирован, объединен с `emr/emrProtocolEngine.test.ts`)
+  - `apps/api/src/tests/documents/guards.test.ts` (ликвидирован, объединен с `documentGuards.test.ts`)
+  - `apps/api/src/tests/documents/renderDocument.test.ts` (ликвидирован, объединен с `documents/renderDocument.test.ts`)
+  - `apps/api/src/tests/env/loadServerEnv.test.ts` (ликвидирован, объединен с `env/loadServerEnv.test.ts`)
+  - `apps/api/src/tests/deliveryPolicy.test.ts` (ликвидирован, объединен с `services/communications/deliveryPolicy.test.ts`)
+  - `apps/api/src/tests/visitFlow.test.ts` (ликвидирован, объединен с `tests/ai/visitFlow.test.ts`)
+  - `apps/api/src/tests/services/appointmentReminders.test.ts` (ликвидирован, объединен с `tests/routes/appointmentReminders.test.ts`)
+  - `packages/shared/src/messaging/index.ts` (устранена коллизия реэкспортов TS2308)
+* **Архитектурное решение**:
+  - **Колокация тестовых наборов (Мандат 8s)**:
+    * Исключено параллельное дублирование тестов в общих папках `tests/` при наличии колоквированных тестов рядом с исходным кодом.
+    * Устранена ошибка компилятора TypeScript TS2308 (амбигуити реэкспорта в barrel-файле messaging).
+* **Верификация**: Single-Compiler Gate Exit Code 0, `check:encoding` 0 ошибок.
+
+### Wave 165: Дедупликация тестов web в колоквированные каталоги и ликвидация паразитного блоата
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `5f6536b57`, `812f675a3`, `108584dbc`)
+* **Файлы**:
+  - `apps/web/src/tests/Icd10ClinicalSelector.test.tsx` (ликвидирован, канон: `components/diagnostics/__tests__/Icd10ClinicalSelector.test.tsx`)
+  - `apps/web/src/tests/cashShiftAutonomyAndFiscal54Fz.test.tsx` (ликвидирован, канон: `components/finance/__tests__/cashShiftAutonomyAndFiscal54Fz.test.tsx`)
+  - `apps/web/src/tests/cbctMprWorkspace.test.ts` (ликвидирован, канон: `components/dicom/__tests__/cbctMprWorkspace.test.ts`)
+  - `apps/web/src/tests/patientReliabilityScore.test.ts` (ликвидирован, канон: `components/schedule/__tests__/patientReliabilityScore.test.ts`)
+  - `apps/web/src/tests/scheduleCollisionUtils.test.ts` (ликвидирован, канон: `utils/scheduleCollisionUtils.test.ts`)
+  - `apps/web/src/tests/sickLeaveElnEngine.test.ts` (ликвидирован, канон: `components/documents/sickLeave/__tests__/sickLeaveElnEngine.test.ts`)
+  - `apps/web/src/workspaceUiLabels.test.ts` (перенесен в `apps/web/src/__tests__/workspaceUiLabels.test.ts`)
+  - `apps/web/src/components/payroll/AdvancedDoctorPayrollModal.tsx` (удален мертвый фасад)
+* **Архитектурное решение**:
+  - **Консолидация фронтенд-тестов и снос мертвых фасадов (Мандаты 8s, 8j)**:
+    * Полная ликвидация 7 пар дубликатов тестов в `apps/web/src/tests/` с объединением всех утверждений в колоквированные файлы модулей.
+    * Удален мертвый фасад модалки продвинутого расчета зарплат `AdvancedDoctorPayrollModal.tsx`. Чистая дельта: -2000+ строк паразитного блоата.
+* **Верификация**: Single-Compiler Gate Exit Code 0, `check:encoding` 0 ошибок.
+
+### Wave 166: Ликвидация устаревших стабов радиологии, in-memory мока депозитов и Red Team инквизиция десктопа
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `ede2cb469`, `19bf195e8`, `ba5c2c2b4`, `a3af162f0`)
+* **Файлы**:
+  - `apps/api/src/services/finance/familyDepositService.ts` (ликвидирован устаревший in-memory мок-сервис, -174 строки)
+  - `apps/api/src/db/schema/documents_v2.ts`, `finance_v2.ts` (окончательно удалены пустые фасады)
+  - `apps/web/src/components/radiology/cbctVolumeEngine.ts` (ликвидирован стаб раннего прототипа)
+  - `apps/web/src/components/radiology/panoramicArchSpline.ts` (ликвидирован стаб раннего прототипа)
+  - `apps/web/src/components/radiology/cbctMprTypes.ts` (ликвидирован стаб раннего прототипа)
+  - `apps/web/src/components/emr/protocolGenerator/emrProtocolPresets.ts` (ликвидирован устаревший фасад над shared)
+* **Архитектурное решение**:
+  - **Полный снос стабов радиологии и in-memory моков (Мандаты 8s, 8b, 8e)**:
+    * Ликвидирован старый in-memory мок `familyDepositService.ts` (-174 строки), не имевший связки с СУБД; канонический семейный депозитный учет работает строго через PostgreSQL 18 и Drizzle ORM (`apps/api/src/services/finance/familyAccountService.ts`, `apps/api/src/db/schema/finance.ts`).
+    * Ликвидированы пустые стабы-заглушки ранних прототипов в радиологии (`cbctVolumeEngine.ts`, `panoramicArchSpline.ts`, `cbctMprTypes.ts`); канонический Romexis-стек работает на базе честного MPR-рендерера `apps/web/src/components/dicom/CbctMprViewer.tsx`, `cbctObliqueMath.ts`, `mprWorker.ts` и `packages/shared/src/radiology/`.
+    * Ликвидирован устаревший файл `apps/web/src/components/emr/protocolGenerator/emrProtocolPresets.ts`; SSOT канонических протоколов — `packages/shared/src/emr/emrProtocolPresets.ts`.
+  - **Независимая Red Team инквизиция фронтенда (Мандаты 8d, 8p, 8q)**:
+    * Проведена проверка ключевых десктопных экранов (`ScheduleView`, `AppointmentCard`, `VisitView`, `CashRegisterModal`, `PatientCardModal`) по чек-листу 7 смертных грехов UI: полезная высота $Y \le 160\text{--}180\text{px}$, 1 строка тулбара 32–36px, $\le 2$ кнопок на карточке, контрастность WCAG AAA, автономия врача без заблокированных кнопок, глубина модалок строго 1, ноль эмодзи. Вердикт: `[ПРОВЕРЕНО: ЧИСТО]`.
+* **Верификация**:
+  - Компиляция: Single-Compiler Gate (`@dental/shared`, `@dental/api`, `@dental/web`) Exit Code 0.
+  - Кодировки: `check:encoding` 0 ошибок.
+  - Чистая дельта: -2500+ строк паразитного блоата.
+
+### Wave 167: Ликвидация неиспользуемого messageTemplateCatalogsQuery и глубокий аудит сервисов/маршрутов/shared (Мандаты 8s, 8j)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/api/src/db/messageTemplateCatalogsQuery.ts` (ликвидирован дублирующий неиспользуемый файл запросов, 88 строк)
+  - `docs/competitive-audit/FEATURE_SPECS/коммуникации__справочник_шаблонов_сообщений_тегов.md` (обновлены ссылки на канонический `messageTemplateService.ts`)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (обновлены ссылки на `messageTemplateService.ts`)
+* **Архитектурное решение**:
+  - **Ликвидация мертвого файла запросов каталогов шаблонов (Мандат 8s)**:
+    * `messageTemplateCatalogsQuery.ts` являлся устаревшим промежуточным файлом, содержавшим динамический импорт `messageTemplateService.js` и 3 прямых запроса к `schema.messageTemplateCatalogs`.
+    * Канонический сервис `apps/api/src/services/communications/messageTemplateService.ts` и контроллер `apps/api/src/routes/messageTemplates.ts` полностью реализуют всю функциональность (автосидирование дефолтных шаблонов, извлечение макросов, валидацию по каналам и сценариям, фильтрацию по организациям, рендеринг контекста с пациентом/приемом/клиникой).
+    * `messageTemplateCatalogsQuery.ts` удален через `git rm`. Все доказательства в документации переведены на канонические модули.
+  - **Глубокий аудит сервисов и маршрутов API**:
+    * Просканированы все 95 файлов маршрутов в `apps/api/src/routes`: 93 зарегистрированы напрямую в Fastify-сервере, 2 дочерних маршрута рассрочек и зуботехнических оплат (`cashInstallmentsRoutes.ts`, `cashLabPaymentRoutes.ts`) зарегистрированы в составе кассового модуля `cashbox.ts`. 0 неиспользуемых или мертвых маршрутов.
+    * Просканированы все 169 сервисных файлов в `apps/api/src/services`: 0 неиспользуемых или осиротевших сервисов. Все сервисы подключены к маршрутам, фоновым демонам или воркерам.
+    * Проверен `packages/shared/src`: пресеты `stomxConsentPresetsLegacy.ts` содержат реальные клинические данные и валидируются в составе `STOMX_SPECIALIZED_CONSENT_PRESETS`; дублирующих утилит и мертвых стабов не обнаружено.
+* **Верификация**:
+  - Точечные тесты: `node --import tsx --test apps/api/src/services/communications/messageTemplates.test.ts` (20/20 PASS).
+  - Гейт компилятора выполнит L1 Оркестратор в соответствии с Мандатом 8t.
+
 
