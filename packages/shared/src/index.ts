@@ -334,6 +334,18 @@ export {
 	type AnnotationReportInput,
 	formatAnnotationReportForm043A4,
 	cbctAnnotationEngine,
+	// Wave 136: CBCT Auto Arch Detection & BVH Mesh Slicing Engine
+	archDetectOptionsSchema,
+	cropBoxSchema,
+	clipPlaneParamSchema,
+	bvhNodeSchema,
+	triangleBVHSchema,
+	type TriangleBVH,
+	type BVHNode,
+	archDetectAndSlicingReportParamsSchema,
+	type ArchDetectAndSlicingReportParams,
+	formatArchDetectAndSlicingA4Report,
+	cbctArchDetectSliceEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
@@ -450,6 +462,47 @@ export {
 	type TreatmentDeductionResult,
 	type BatchTreatmentConsumablesResult,
 } from "./warehouse/index.js";
+export * as inventory from "./inventory/index.js";
+export {
+	receiptQualityVerdictSchema,
+	purchaseOrderLineStatusSchema,
+	PURCHASE_ORDER_LINE_STATUS_LABELS_RU,
+	purchaseOrderLineSchema,
+	purchaseReceiptLineSchema,
+	purchaseReceiptSchema,
+	purchaseOrderRecordSchema,
+	ALLOWED_PROCUREMENT_PO_TRANSITIONS,
+	RECEIVABLE_PROCUREMENT_STATUSES,
+	validatePurchaseOrderStatusTransition,
+	transitionPurchaseOrderStatus,
+	computePurchaseOrderLineStatus,
+	createPurchaseOrderRecord,
+	receiveDeliveryBatch,
+	validateThreeWayMatching,
+	formatMaterialReceiptActM7A4,
+	procurementOrderStatusSchema,
+	type ReceiptQualityVerdict,
+	type PurchaseOrderLineStatus,
+	type PurchaseOrderLine,
+	type PurchaseReceiptLine,
+	type PurchaseReceipt,
+	type PurchaseOrderRecord,
+	type ProcurementOrderStatus,
+	type CreatePurchaseOrderLineInput,
+	type CreatePurchaseOrderParams,
+	type DeliveryReceiptLineInput,
+	type ReceiveDeliveryBatchInput,
+	type ReceiveDeliveryBatchOptions,
+	type ReceiveDeliveryBatchResult,
+	type SupplierInvoiceLineInput,
+	type SupplierInvoiceInput,
+	type ThreeWayMatchingOptions,
+	type ThreeWayMatchingVerdict,
+	type ThreeWayMatchingDiscrepancy,
+	type ThreeWayMatchingSummary,
+	type ThreeWayMatchingResult,
+	type FormatMaterialReceiptActM7Options,
+} from "./inventory/index.js";
 export * from "./mobile/index.js";
 export * from "./curator/index.js";
 export * from "./outpatient/index.js";

@@ -303,4 +303,20 @@ export {
 } from "./cbctAnnotationEngine.js";
 export * as cbctAnnotationEngine from "./cbctAnnotationEngine.js";
 
+// Wave 136: CBCT Auto Arch Detection & BVH Mesh Slicing Engine (DenCT Reverse-Engineering)
+export {
+	archDetectOptionsSchema,
+	cropBoxSchema,
+	clipPlaneParamSchema,
+	bvhNodeSchema,
+	triangleBVHSchema,
+	type TriangleBVH,
+	type BVHNode,
+	archDetectAndSlicingReportParamsSchema,
+	type ArchDetectAndSlicingReportParams,
+	formatArchDetectAndSlicingA4Report,
+} from "./cbctArchDetectSliceEngine.js";
+export * as cbctArchDetectSliceEngine from "./cbctArchDetectSliceEngine.js";
+
+
 
