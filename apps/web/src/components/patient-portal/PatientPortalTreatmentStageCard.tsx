@@ -392,7 +392,4 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 	);
 };
 
-/** Backward compatibility alias for patient portal */
-export const TreatmentPlanStageCard = PatientPortalTreatmentStageCard;
-
 export default PatientPortalTreatmentStageCard;

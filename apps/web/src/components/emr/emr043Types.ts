@@ -14,7 +14,10 @@ import type {
 	CpitnIndex,
 	DentalBiteType,
 	OralMucosaStatus,
+	VisitDiaryEntry043,
 } from "@dental/shared";
+
+export type { VisitDiaryEntry043 };
 
 /** Паспортная часть и реквизиты клиники */
 export interface ClinicRequisites043 {
@@ -83,34 +86,6 @@ export interface DentalStatusAndIndices043 {
 	oralMucosaStatus: OralMucosaStatus;
 	xrayFindingsDescription: string; // Описание рентгенологических данных / ОПТГ / КЛКТ
 	xrayRadiationDoseMsv?: number | null; // Суммарная доза облучения (мЗв)
-}
-
-/** Дневниковая запись одного посещения (SOAP формат) */
-export interface VisitDiaryEntry043 {
-	id: string;
-	entryDate: string;
-	entryTime?: string | null;
-	toothNumber?: string | null; // Номер зуба по FDI или область
-	subjectiveComplaints: string; // S: Жалобы и динамика
-	objectiveStatusLocalis: string; // O: Status localis, данные осмотра
-	percussionVertical?: "negative" | "positive_mild" | "positive_sharp";
-	percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp";
-	probingTenderness?: "none" | "along_enamel_dentin_border" | "at_cavity_bottom" | "bleeding_orifice";
-	thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold";
-	eodMicroamperes?: number | null; // ЭОД в мкА
-	probingPocketDepthMm?: number | null; // Глубина зондирования кармана
-	assessmentDiagnosisText: string; // A: Клинический диагноз
-	assessmentIcd10Code: string; // Код МКБ-10
-	procedureProtocol: string; // P: Протокол проведенного лечения
-	anesthesiaDetails?: string | null; // Анестетик, доза, метод
-	appliedMaterials?: string | null; // Пломбировочные, эндодонтические, костные материалы
-	homeCareRecommendations?: string | null; // Рекомендации и назначения на дом
-	prescribedMedications?: string | null; // Выписанные рецепты (Форма 107-1/у)
-	nextVisitDate?: string | null;
-	doctorFullName: string;
-	doctorSpecialty?: string | null;
-	digitalSignatureHash?: string | null; // Хэш УКЭП (ГОСТ Р 34.10 / SHA-256)
-	isSignedWithUkep?: boolean;
 }
 
 /** Эпикриз, результаты лечения и план диспансерного наблюдения */

@@ -1,4 +1,9 @@
 import {
+	computeCrossSection,
+	type Point2,
+	type VolumeSamplingData,
+} from "@dental/shared";
+import {
 	Activity,
 	Camera,
 	ChevronLeft,
@@ -33,6 +38,7 @@ import {
 	type VisiographPresetId,
 	type VisiographWindowPreset,
 } from "../visiograph/VisiographWindowPresets";
+import { autoDetectPanoramicArch } from "./panoramicArch";
 import {
 	type ArchCurvePoint,
 	type CrossSectionSlicePlane,
@@ -43,7 +49,6 @@ import {
 	generateCrossSectionSlicePlanes,
 	synchronizeMprCoordinates,
 } from "./panoramicMprMath";
-import { autoDetectPanoramicArch } from "./panoramicArch";
 import "./panoramicMpr.css";
 
 export interface PanoramicVolumeInput {
@@ -149,11 +154,14 @@ export function PanoramicRendererWindow({
 
 	const currentPreset = VISIOGRAPH_WINDOW_PRESETS[activePreset];
 
-	const [autoDetectedPoints, setAutoDetectedPoints] = useState<Point2D[] | null>(null);
+	const [autoDetectedPoints, setAutoDetectedPoints] = useState<
+		Point2D[] | null
+	>(null);
 
 	// Compute Catmull-Rom Arch and Cross-Section Slice Planes
 	const effectiveControlPoints = useMemo(() => {
-		if (autoDetectedPoints && autoDetectedPoints.length >= 2) return autoDetectedPoints;
+		if (autoDetectedPoints && autoDetectedPoints.length >= 2)
+			return autoDetectedPoints;
 		if (splinePoints && splinePoints.length >= 2) return splinePoints;
 		return createAnatomicalJawControlPoints().map((p) => ({ x: p.x, y: p.y }));
 	}, [autoDetectedPoints, splinePoints]);
@@ -212,6 +220,44 @@ export function PanoramicRendererWindow({
 		}
 	}, [currentPreset]);
 
+	// Construct VolumeSamplingData from CBCT volume for trilinear cross-section sampling
+	const vol = useMemo<VolumeSamplingData | null>(() => {
+		if (!volume || !volume.scalarData || volume.scalarData.length === 0)
+			return null;
+		const [nx, ny, nz] = volume.dimensions;
+		if (nx < 2 || ny < 2 || nz < 1) return null;
+
+		const sliceStride = nx * ny;
+		const scalar = volume.scalarData;
+
+		const invSx = 1 / volume.spacing[0];
+		const invSy = 1 / volume.spacing[1];
+		const invSz = 1 / volume.spacing[2];
+
+		const z0 = volume.origin[2];
+		const z1 = volume.origin[2] + (nz - 1) * volume.spacing[2];
+		const zMin = Math.min(z0, z1);
+		const zMax = Math.max(z0, z1);
+		const vSpacing = Math.abs(volume.spacing[2]);
+
+		return {
+			dims: volume.dimensions,
+			origin: volume.origin,
+			invSx,
+			invSy,
+			invSz,
+			zMin,
+			zMax,
+			vSpacing,
+			getVoxel: (i: number, j: number, k: number) => {
+				if (i < 0 || i >= nx || j < 0 || j >= ny || k < 0 || k >= nz) {
+					return -1024;
+				}
+				return scalar[k * sliceStride + j * nx + i] ?? -1024;
+			},
+		};
+	}, [volume]);
+
 	// Repaint 240x240 cross-sectional slice canvas with metric scale & guidelines
 	const repaintCrossSection = useCallback(() => {
 		const csCanvas = crossSectionCanvasRef.current;
@@ -224,8 +270,10 @@ export function PanoramicRendererWindow({
 		csCanvas.width = width;
 		csCanvas.height = height;
 
-		const raw = rawPixelsRef.current;
-		if (!raw || !activeSlice) {
+		const totalArcLen =
+			crossSections[crossSections.length - 1]?.arcLengthMm || 1;
+
+		if (!vol || !activeSlice || effectiveControlPoints.length < 2) {
 			ctx.fillStyle = "#09090b";
 			ctx.fillRect(0, 0, width, height);
 
@@ -251,38 +299,46 @@ export function PanoramicRendererWindow({
 			return;
 		}
 
-		const totalArcLen =
-			crossSections[crossSections.length - 1]?.arcLengthMm || 1;
-		const centerCol = Math.min(
-			raw.width - 1,
-			Math.max(
-				0,
-				Math.round((activeSlice.arcLengthMm / totalArcLen) * (raw.width - 1)),
-			),
+		const positionNormalized = Math.max(
+			0,
+			Math.min(1, activeSlice.arcLengthMm / totalArcLen),
 		);
+		const widthMm = activeSlice.widthMm > 0 ? activeSlice.widthMm : 32.0;
+		const resolution = widthMm / width;
 
-		const halfSliceCols = Math.max(
-			8,
-			Math.round((sliceThicknessMm / 2) * (raw.width / totalArcLen)),
-		);
-		const csPixels = new Float32Array(width * height);
+		const csResult = computeCrossSection(vol, {
+			controlPoints: effectiveControlPoints.map((p) => [p.x, p.y] as Point2),
+			position: positionNormalized,
+			tiltDeg: 0,
+			widthMm,
+			resolution,
+		});
 
-		for (let y = 0; y < height; y++) {
-			const panY = Math.min(
-				raw.height - 1,
-				Math.max(0, Math.floor((y / height) * raw.height)),
+		if (csResult && csResult.width > 0 && csResult.height > 0) {
+			const offscreen = document.createElement("canvas");
+			paintHuPixelsToCanvas(
+				offscreen,
+				csResult.width,
+				csResult.height,
+				csResult.pixelData,
+				currentPreset,
 			);
-			for (let x = 0; x < width; x++) {
-				const offsetFrac = (x / width - 0.5) * 2;
-				const panX = Math.min(
-					raw.width - 1,
-					Math.max(0, Math.round(centerCol + offsetFrac * halfSliceCols)),
-				);
-				csPixels[y * width + x] = raw.pixels[panY * raw.width + panX] ?? -1024;
-			}
-		}
 
-		paintHuPixelsToCanvas(csCanvas, width, height, csPixels, currentPreset);
+			ctx.fillStyle = "#09090b";
+			ctx.fillRect(0, 0, width, height);
+
+			const scale = Math.min(width / csResult.width, height / csResult.height);
+			const drawW = Math.max(1, Math.round(csResult.width * scale));
+			const drawH = Math.max(1, Math.round(csResult.height * scale));
+			const drawX = Math.round((width - drawW) / 2);
+			const drawY = Math.round((height - drawH) / 2);
+
+			ctx.imageSmoothingEnabled = true;
+			ctx.drawImage(offscreen, drawX, drawY, drawW, drawH);
+		} else {
+			ctx.fillStyle = "#09090b";
+			ctx.fillRect(0, 0, width, height);
+		}
 
 		ctx.save();
 		ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
@@ -301,7 +357,14 @@ export function PanoramicRendererWindow({
 		ctx.textAlign = "right";
 		ctx.fillText(`Слой ${sliceThicknessMm.toFixed(1)} мм`, width - 8, 16);
 		ctx.restore();
-	}, [activeSlice, crossSections, currentPreset, sliceThicknessMm]);
+	}, [
+		vol,
+		activeSlice,
+		crossSections,
+		effectiveControlPoints,
+		currentPreset,
+		sliceThicknessMm,
+	]);
 
 	useEffect(() => {
 		repaint();
@@ -377,7 +440,7 @@ export function PanoramicRendererWindow({
 			blendMode,
 		};
 
-		worker.postMessage(req, [req.scalarData.buffer]);
+		worker.postMessage(req);
 
 		return () => {
 			worker.terminate();
@@ -682,7 +745,9 @@ export function PanoramicRendererWindow({
 
 				{/* Slice Thickness Slider */}
 				<div className="flex items-center gap-1.5 shrink-0">
-					<span className="text-neutral-400 font-medium text-[11px] hidden sm:inline">Толщина:</span>
+					<span className="text-neutral-400 font-medium text-[11px] hidden sm:inline">
+						Толщина:
+					</span>
 					<input
 						type="range"
 						min="0.5"

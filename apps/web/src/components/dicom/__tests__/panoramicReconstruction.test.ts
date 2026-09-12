@@ -8,6 +8,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { autoDetectDentalArch } from "@dental/shared";
+import { autoDetectPanoramicArch } from "../panoramicArch.js";
 import {
 	classifyMischBoneDensity,
 	createAnatomicalJawControlPoints,
@@ -16,7 +17,6 @@ import {
 	type Point3D,
 	synchronizeMprCoordinates,
 } from "../panoramicMprMath.js";
-import { autoDetectPanoramicArch } from "../panoramicArch.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -158,10 +158,16 @@ describe("Panoramic Reconstruction & Cross-Sectional Slicing (Mandates 8s, 8j, 8
 
 		const archPts = autoDetectDentalArch(emptyVol, dims, spacing);
 		assert.ok(Array.isArray(archPts), "Must return Point2[] array");
-		assert.ok(archPts.length >= 7, "Fallback must provide at least 7 anatomical control points");
+		assert.ok(
+			archPts.length >= 7,
+			"Fallback must provide at least 7 anatomical control points",
+		);
 		for (const pt of archPts) {
 			assert.equal(pt.length, 2, "Each point must be [x, y]");
-			assert.ok(Number.isFinite(pt[0]) && Number.isFinite(pt[1]), "Coordinates must be finite");
+			assert.ok(
+				Number.isFinite(pt[0]) && Number.isFinite(pt[1]),
+				"Coordinates must be finite",
+			);
 		}
 
 		// Web helper autoDetectPanoramicArch test
@@ -171,12 +177,21 @@ describe("Panoramic Reconstruction & Cross-Sectional Slicing (Mandates 8s, 8j, 8
 			spacing,
 		});
 		assert.ok(Array.isArray(panoramicPts), "Must return Point2D[] array");
-		assert.ok(panoramicPts.length >= 7, "Must provide >= 7 control points for panoramic unwrap");
-		assert.ok("x" in (panoramicPts[0] ?? {}) && "y" in (panoramicPts[0] ?? {}), "Points must be Point2D objects");
+		assert.ok(
+			panoramicPts.length >= 7,
+			"Must provide >= 7 control points for panoramic unwrap",
+		);
+		assert.ok(
+			"x" in (panoramicPts[0] ?? {}) && "y" in (panoramicPts[0] ?? {}),
+			"Points must be Point2D objects",
+		);
 
 		// Null volume safety check (Mandate 8e: Doctor Autonomy)
 		const nullFallback = autoDetectPanoramicArch(null);
-		assert.ok(nullFallback.length >= 7, "Null volume must gracefully return canonical jaw landmarks");
+		assert.ok(
+			nullFallback.length >= 7,
+			"Null volume must gracefully return canonical jaw landmarks",
+		);
 	});
 
 	it("7. PanoramicRendererWindow contains 1-click 'Авто-дуга' button in the toolbar", () => {
@@ -196,6 +211,23 @@ describe("Panoramic Reconstruction & Cross-Sectional Slicing (Mandates 8s, 8j, 8
 		assert.ok(
 			source.includes("Sparkles"),
 			"PanoramicRendererWindow must use Sparkles icon for 1-click auto-detection",
+		);
+	});
+
+	it("8. PanoramicRendererWindow uses canonical computeCrossSection from @dental/shared for 3D MPR sampling (Mandate 8s)", () => {
+		const source = fs.readFileSync(
+			path.resolve(__dirname, "../PanoramicRendererWindow.tsx"),
+			"utf-8",
+		);
+
+		assert.ok(
+			source.includes("computeCrossSection"),
+			"PanoramicRendererWindow must import and invoke canonical computeCrossSection from @dental/shared",
+		);
+		assert.equal(
+			source.includes("raw.pixels[panY * raw.width + panX]"),
+			false,
+			"PanoramicRendererWindow must NOT use fake 2D panorama pixel column stretching",
 		);
 	});
 });
