@@ -12,6 +12,19 @@ import {
 	isValidFdiToothNumber,
 } from "./util.js";
 import { type EgiszCdaParams, egiszCdaParamsSchema } from "./schema.js";
+import {
+	isValidSnils,
+	normalizeSnils,
+	validateRussianInn,
+	validateRussianOgrn,
+} from "@dental/shared";
+
+export {
+	isValidSnils,
+	normalizeSnils,
+	validateRussianInn,
+	validateRussianOgrn,
+};
 
 /**
  * Validates OID (Object Identifier) syntax according to ITU-T X.660 / ISO 8824.
@@ -31,49 +44,6 @@ export function validateFrmoOid(oid: string): boolean {
 	if (!validateOid(oid)) return false;
 	const trimmed = oid.trim();
 	return trimmed === EGISZ_OIDS.FRMO_MO_ROOT || trimmed.startsWith(`${EGISZ_OIDS.FRMO_MO_ROOT}.`);
-}
-
-/**
- * Normalizes SNILS string to digits only.
- */
-export function normalizeSnils(input: unknown): string {
-	if (typeof input === "number") return String(input).replace(/\D/g, "");
-	if (typeof input !== "string") return "";
-	return input.replace(/\D/g, "");
-}
-
-/**
- * Validates Russian SNILS 11-digit number with checksum algorithm (Resolution 192p).
- */
-export function isValidSnils(input: unknown): boolean {
-	const digits = normalizeSnils(input);
-	if (digits.length !== 11) return false;
-
-	// All identical digits (e.g. "00000000000" or "11111111111") are invalid
-	if (/^(\d)\1{10}$/.test(digits)) return false;
-
-	const numberPart = digits.slice(0, 9);
-	const providedChecksum = Number.parseInt(digits.slice(9, 11), 10);
-
-	// Numbers <= 001-001-998 were issued before checksum verification and are exempt
-	if (Number.parseInt(numberPart, 10) <= 1001998) return true;
-
-	let sum = 0;
-	for (let index = 0; index < 9; index += 1) {
-		sum += Number.parseInt(numberPart.charAt(index), 10) * (9 - index);
-	}
-
-	let expected: number;
-	if (sum < 100) {
-		expected = sum;
-	} else if (sum === 100 || sum === 101) {
-		expected = 0;
-	} else {
-		const remainder = sum % 101;
-		expected = remainder === 100 || remainder === 101 ? 0 : remainder;
-	}
-
-	return expected === providedChecksum;
 }
 
 /**
@@ -106,20 +76,7 @@ export function validateOgrn(ogrn: string): boolean {
 	if (!ogrn || typeof ogrn !== "string") return false;
 	const trimmed = ogrn.trim();
 	if (!/^\d{13}$|^\d{15}$/.test(trimmed)) return false;
-
-	if (trimmed.length === 13) {
-		const num = BigInt(trimmed.slice(0, 12));
-		const check = Number(num % 11n % 10n);
-		return check === Number.parseInt(trimmed.charAt(12), 10);
-	}
-
-	if (trimmed.length === 15) {
-		const num = BigInt(trimmed.slice(0, 14));
-		const check = Number(num % 13n % 10n);
-		return check === Number.parseInt(trimmed.charAt(14), 10);
-	}
-
-	return false;
+	return validateRussianOgrn(trimmed).isValid;
 }
 
 /**
@@ -129,39 +86,7 @@ export function validateInn(inn: string): boolean {
 	if (!inn || typeof inn !== "string") return false;
 	const trimmed = inn.trim();
 	if (!/^\d{10}$|^\d{12}$/.test(trimmed)) return false;
-
-	if (trimmed.length === 10) {
-		const coefficients = [2, 4, 10, 3, 5, 9, 4, 6, 8] as const;
-		let sum = 0;
-		for (let i = 0; i < 9; i++) {
-			const coef = coefficients[i] ?? 0;
-			sum += Number.parseInt(trimmed.charAt(i), 10) * coef;
-		}
-		const check = (sum % 11) % 10;
-		return check === Number.parseInt(trimmed.charAt(9), 10);
-	}
-
-	if (trimmed.length === 12) {
-		const c1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8] as const;
-		let sum1 = 0;
-		for (let i = 0; i < 10; i++) {
-			const coef1 = c1[i] ?? 0;
-			sum1 += Number.parseInt(trimmed.charAt(i), 10) * coef1;
-		}
-		const check1 = (sum1 % 11) % 10;
-		if (check1 !== Number.parseInt(trimmed.charAt(10), 10)) return false;
-
-		const c2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8] as const;
-		let sum2 = 0;
-		for (let i = 0; i < 11; i++) {
-			const coef2 = c2[i] ?? 0;
-			sum2 += Number.parseInt(trimmed.charAt(i), 10) * coef2;
-		}
-		const check2 = (sum2 % 11) % 10;
-		return check2 === Number.parseInt(trimmed.charAt(11), 10);
-	}
-
-	return false;
+	return validateRussianInn(trimmed).isValid;
 }
 
 export interface CdaValidationResult {

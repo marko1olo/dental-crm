@@ -206,5 +206,43 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 		assert.equal(calculateEgiszRetryDelayMs(4), 3_600_000); // 1h
 		assert.equal(calculateEgiszRetryDelayMs(5), 86_400_000); // 24h
 	});
+
+	it("1.9 Verifies unified SNILS, INN, and OGRN validator exports and signature schemas", async () => {
+		const {
+			isValidSnils,
+			normalizeSnils,
+			validateInn,
+			validateOgrn,
+			validateRussianInn,
+			validateRussianOgrn,
+		} = await import("../../services/cda/validator.js");
+		const {
+			detachedSignatureSchema,
+			egiszRemdPackageSchema,
+		} = await import("../../services/cda/signature.js");
+
+		// SNILS normalization & validation
+		assert.equal(normalizeSnils("112-233-445 95"), "11223344595");
+		assert.equal(isValidSnils("11223344595"), true);
+		assert.equal(isValidSnils("00000000000"), false);
+		assert.equal(isValidSnils("123"), false);
+
+		// INN validation
+		assert.equal(validateInn("7707083893"), true);
+		assert.equal(validateInn("500100732259"), true);
+		assert.equal(validateInn("7707083894"), false);
+		assert.equal(validateRussianInn("7707083893").isValid, true);
+
+		// OGRN validation
+		assert.equal(validateOgrn("1027700132195"), true);
+		assert.equal(validateOgrn("304500116000157"), true);
+		assert.equal(validateOgrn("1027700132194"), false);
+		assert.equal(validateRussianOgrn("1027700132195").isValid, true);
+
+		// Signature schemas
+		assert.ok(detachedSignatureSchema);
+		assert.ok(egiszRemdPackageSchema);
+	});
 });
+
 
