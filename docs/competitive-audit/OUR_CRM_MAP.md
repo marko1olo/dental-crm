@@ -3002,3 +3002,22 @@
 - **Файлы**: `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`, `apps/web/src/components/copilot/CopilotActionConfirm.tsx`, `apps/web/src/GuestLabPortal.tsx`, `apps/web/src/components/patients/LostPatientsPanel.tsx`, `apps/web/src/components/sanpin/kraft/KraftPackageBarcodeModal.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/settings/MaterialBomsSettingsPanel.tsx`, `apps/web/src/components/doctor/DoctorShiftCockpitModal.tsx`, `apps/web/src/components/finance/PatientBillingModal.tsx`, `apps/web/src/components/visit/VisitSummaryModal.tsx`, `apps/web/src/components/visit/VisitSoapEditor.tsx`, `apps/web/src/ImagingView.tsx`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/VisitView.tsx`.
 - **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate сохранен (Мандат 8t).
 
+### 2.10.252. Волна 172: Ликвидация несмонтированных фасадов, 1-клик шорткаты пациентов/биллинга и Single-Compiler Gate (Мандаты 8d, 8e, 8p, 8s, 8t)
+- **Идея & Бизнес-эффект**: Искоренение оставшихся несмонтированных компонентов и заброшенных фасадов (`PatientArchiveReasonsAndBlacklistsWidget`, `DentalLabWorkOrderModal`), сжатие переписи компонентов веб-приложения ниже психологического барьера 600 (599 активных компонентов); внедрение 1-клик шорткатов быстрого перехода к Форме 043/у, балансу 54-ФЗ и ближайшему приёму в карточке пациента; очистка кассы и биллинга от жестких цветов оформления с переводом на семантические токены темы; централизованная верификация компилятора по Мандату 8t (Exit Code 0).
+- **Архитектурные механизмы**:
+  1. *Ликвидация мертвого кода и несмонтированных фасадов (Мандат 8s)*:
+     - Физически удален `PatientArchiveReasonsAndBlacklistsWidget.tsx` (142 строки) — заменен на прозрачный реэкспорт канонического `PatientArchiveAndBlacklistWidget.tsx`.
+     - Физически удален `DentalLabWorkOrderModal.tsx` (74 строки) — избыточный фасад над `DentalLabOrderModal.tsx`.
+     - Перепись компонентов сократилась с 601 до 599. Тест `panelsAreMounted.test.ts` (11/11 PASS, 0 несмонтированных сирот).
+  2. *Десктопная эргономика пациентов и биллинга (Studio Clinical HIG / Мандаты 8d, 8e, 8p)*:
+     - Шапка реестра пациентов (`PatientsView.tsx`, `patients-redesign.css`) зафиксирована строго в 1 строку высотой 48–56px с высотой элементов 34px (32–36px) и бюджетом служебной шапки <=88px.
+     - Интегрированы 1-клик шорткаты быстрого доступа: переход в Форму 043/у (`patient-quick-043-btn`), фискальный баланс пациента 54-ФЗ (`patient-quick-balance-btn`), ближайший приём в расписании (`patient-quick-next-appointment-btn` с автоматической навигацией и установкой фильтра даты через `setScheduleDateFilter`).
+     - Защита от переполнения кириллических имен и диагнозов: `truncate`, `min-w-0 flex-1`, нативные всплывающие подсказки `title`.
+     - В `PatientBillingModal.tsx` и `CashRegisterModal.tsx` ликвидированы все хардкодные цвета (`bg-white`, `text-slate-*`, `border-slate-*`, `bg-slate-*`), заменены на токены темы `var(--paper)`, `var(--paper-soft)`, `var(--paper-hover)`, `var(--ink)`, `var(--muted)`, `var(--line)`.
+  3. *Централизованный Single-Compiler Gate (Мандат 8t)*:
+     - Устранены ошибки типизации в `PatientsView.tsx`.
+     - Централизованный прогон `npm run typecheck -w @dental/web` завершен с Exit Code 0 при нулевой перегрузке процессора.
+- **Файлы**: `apps/web/src/components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx` (deleted), `apps/web/src/components/lab/DentalLabWorkOrderModal.tsx` (deleted), `apps/web/src/components/crm/index.ts`, `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/PatientsView.tsx`, `apps/web/src/components/patients/PatientHeaderCard.tsx`, `apps/web/src/styles/patients-redesign.css`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/finance/PatientBillingModal.tsx`.
+- **Тесты**: `npm run typecheck -w @dental/web` (Exit Code 0), `npm run check:encoding` (0 ошибок), `npm run check:css-tokens` (0 ошибок), `panelsAreMounted.test.ts` (11/11 PASS), `patientHeaderCardErgonomics.test.tsx` (3/3 PASS), `cashierAutonomy54Fz.test.ts` (18/18 PASS), `outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 PASS).
+
+

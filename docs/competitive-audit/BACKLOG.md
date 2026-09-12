@@ -4706,6 +4706,38 @@
   * Главный реестр фич: 321/321 в статусе `[ДА]`, проверено `exhaustive_check.js`, 0 ошибок.
   * Проверка кодировки: `npm run check:encoding` (Exit Code 0, 0 ошибок).
 
+### Wave 172: Ликвидация несмонтированных фасадов, 1-клик шорткаты пациентов/биллинга и Single-Compiler Gate (Мандаты 8d, 8e, 8p, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx` (УДАЛЕН per Mandate 8s)
+  - `apps/web/src/components/lab/DentalLabWorkOrderModal.tsx` (УДАЛЕН per Mandate 8s)
+  - `apps/web/src/components/crm/index.ts` (реэкспорт канонического `PatientArchiveAndBlacklistWidget`)
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (сняты заявленные долги, 11/11 PASS, 599 компонентов)
+  - `apps/web/src/PatientsView.tsx` (1-строчный тулбар <=88px, 1-клик шорткаты 043/у, баланса 54-ФЗ и ближайшего визита, truncate min-w-0)
+  - `apps/web/src/components/patients/PatientHeaderCard.tsx` (бейджи диагноза и визита, 2 прямые кнопки действия)
+  - `apps/web/src/styles/patients-redesign.css` (строго 1 строка 48–56px, min-h 34px)
+  - `apps/web/src/components/finance/CashRegisterModal.tsx` и `PatientBillingModal.tsx` (полная очистка от хардкодных цветов, перевод на токены темы)
+* **Архитектурное решение**:
+  - **Ликвидация мертвого кода и несмонтированных фасадов (Мандат 8s)**:
+    * Физически удален `PatientArchiveReasonsAndBlacklistsWidget.tsx` (142 строки), являвшийся устаревшим дубликатом канонического `PatientArchiveAndBlacklistWidget.tsx`.
+    * Физически удален `DentalLabWorkOrderModal.tsx` (74 строки), являвшийся мертвым фасадом над `DentalLabOrderModal.tsx`.
+    * Перепись компонентов в веб-приложении снижена с 601 до 599 (пробит рубеж 600 компонентов).
+    * `panelsAreMounted.test.ts` успешно пройден (11/11 тестов pass, 0 необъясненных несмонтированных сирот).
+  - **Десктопная эргономика пациентов и биллинга (Studio Clinical HIG / Мандаты 8d, 8e, 8p)**:
+    * Тулбар реестра пациентов ужат в 1 строку высотой 48–56px (`patients-header`), служебная высота экрана строго <=88px.
+    * Инпуты и кнопки шапки приведены к эргономической высоте 34px (32–36px).
+    * Внедрен 1-клик доступ: переход в Форму 043/у, проверка баланса 54-ФЗ с переходом в расчеты, ближайший приём в расписании (с автовыбором даты через `setScheduleDateFilter`).
+    * Устранено переполнение длинных ФИО и диагнозов через `min-w-0 truncate` и нативный `title`.
+    * В `PatientBillingModal.tsx` и `CashRegisterModal.tsx` устранены все хардкодные цвета (`slate-*`, `bg-white`), все стили переведены на семантические токены `var(--paper)`, `var(--paper-soft)`, `var(--ink)`, `var(--muted)`, `var(--line)`.
+  - **Централизованный Single-Compiler Gate (Мандат 8t)**:
+    * Устранены ошибки типизации в `PatientsView.tsx` (dashboard, patientBalance, setScheduleDateFilter).
+    * Централизованный запуск `npm run typecheck -w @dental/web` завершен с Exit Code 0 при полной защите хост-машины.
+* **Верификация**:
+  * Компилятор: `npm run typecheck -w @dental/web` (Exit Code 0).
+  * Кодировка: `npm run check:encoding` (Exit Code 0, 6636 файлов проверено).
+  * Дизайн-токены: `npm run check:css-tokens` (Exit Code 0, 169 css-файлов, 0 неразрешенных var).
+  * Юнит-тесты: `panelsAreMounted.test.ts` (11/11 pass), `patientHeaderCardErgonomics.test.tsx` (3/3 pass), `cashierAutonomy54Fz.test.ts` (18/18 pass), `outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 pass).
+
 
 
 
