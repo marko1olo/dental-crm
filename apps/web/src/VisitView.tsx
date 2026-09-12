@@ -2100,8 +2100,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								role="status"
 								aria-live="polite"
 							>
-								В диктовке пока нет текста: нажмите «Голос», «
-								{emptyDictationVoiceActionLabel}» или впишите текст вручную.
+								В диктовке пока нет текста: нажмите «Голос»
+								{emptyDictationVoiceActionLabel ? `, «${emptyDictationVoiceActionLabel}»` : ""} или впишите текст вручную.
 							</div>
 						) : null}
 						{!visitDraftReadyToBuild ? (

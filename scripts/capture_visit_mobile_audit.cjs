@@ -132,25 +132,51 @@ async function capture() {
 		);
 	}, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId, pid: auth.patientId });
 
-	console.log("Loading visit view on mobile 390x844...");
-	await page.goto("http://127.0.0.1:5173/#visit", { waitUntil: "load", timeout: 20000 });
-	await page.waitForTimeout(3000);
+	console.log("Reloading and waiting for workspace-shell...");
+	await page.reload({ waitUntil: "domcontentloaded" });
+
+	await page.waitForFunction(() => {
+		const text = document.body.innerText || "";
+		return !text.includes("Загрузка CRM") && Boolean(document.querySelector(".workspace-shell") || document.querySelector("nav"));
+	}, { timeout: 20000 });
+	await page.waitForTimeout(1500);
+
+	console.log("Navigating to visit view on mobile 390x844...");
+	await page.evaluate((pid) => {
+		window.location.hash = "visit";
+		const navBtn = document.querySelector('button[data-tab="visit"]') || Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Прием'));
+		if (navBtn) navBtn.click();
+	}, auth.patientId);
+
+	await page.waitForFunction(() => {
+		const text = document.body.innerText || "";
+		return !text.includes("Загрузка CRM") && (text.includes("Норма") || text.includes("Завершить") || text.includes("Алексеев") || text.includes("Формула"));
+	}, { timeout: 20000 });
+	await page.waitForTimeout(2000);
 
 	// Light
 	await page.evaluate(() => {
+		window.scrollTo(0, 0);
 		document.documentElement.setAttribute("data-theme", "light");
 		document.documentElement.classList.remove("dark");
 		document.documentElement.classList.add("light");
 		localStorage.setItem("dente_theme_mode", "light");
 	});
+	await page.waitForTimeout(500);
+
 	const lightPath = path.join(outDir, "07_visit_390x844_mobile_light.png");
 	const lightBrain = path.join(brainDir, "07_visit_390x844_mobile_light.png");
 	await page.screenshot({ path: lightPath, fullPage: false });
 	fs.copyFileSync(lightPath, lightBrain);
-	console.log(`Saved: 07_visit_390x844_mobile_light.png (${fs.statSync(lightPath).size} bytes)`);
+	const lightSize = fs.statSync(lightPath).size;
+	console.log(`Saved: 07_visit_390x844_mobile_light.png (${lightSize} bytes)`);
+	if (lightSize < 40000) {
+		throw new Error(`CRITICAL: Screenshot 07_visit_390x844_mobile_light.png is too small (${lightSize} bytes < 40 KB)!`);
+	}
 
 	// Dark
 	await page.evaluate(() => {
+		window.scrollTo(0, 0);
 		document.documentElement.setAttribute("data-theme", "dark");
 		document.documentElement.classList.add("dark");
 		document.documentElement.classList.remove("light");
@@ -162,7 +188,11 @@ async function capture() {
 	const darkBrain = path.join(brainDir, "08_visit_390x844_mobile_dark.png");
 	await page.screenshot({ path: darkPath, fullPage: false });
 	fs.copyFileSync(darkPath, darkBrain);
-	console.log(`Saved: 08_visit_390x844_mobile_dark.png (${fs.statSync(darkPath).size} bytes)`);
+	const darkSize = fs.statSync(darkPath).size;
+	console.log(`Saved: 08_visit_390x844_mobile_dark.png (${darkSize} bytes)`);
+	if (darkSize < 40000) {
+		throw new Error(`CRITICAL: Screenshot 08_visit_390x844_mobile_dark.png is too small (${darkSize} bytes < 40 KB)!`);
+	}
 
 	await browser.close();
 }

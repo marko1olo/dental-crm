@@ -2084,12 +2084,19 @@ details summary:hover {
 .documents-panel,
 .settings-panel,
 .visit-panel,
-.schedule-panel {
+.schedule-panel,
+#patients,
+#documents,
+#settings,
+#visit,
+#schedule,
+#finance {
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 14px;
 	padding: 20px;
 	box-shadow: var(--shadow-1);
+	scroll-margin-top: 68px;
 }
 
 .finance-panel {
