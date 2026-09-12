@@ -337,12 +337,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Публичный портал согласования сметы и финансового плана лечения пациентом по защищенной одноразовой ссылке с подтверждением согласия.",
 	},
 	{
-		file: "components/dicom/CbctMprWorkspace.tsx",
-		name: "CbctMprWorkspace",
-		reason:
-			"Ультра-тонкий прозрачный фасад-делегат в канонический 3D DICOM просмотрщик Cornerstone3DViewer по Закону Единого Неделимого Авторитета (Мандат 8s).",
-	},
-	{
 		file: "components/lab/GuestLabPortalView.tsx",
 		name: "GuestLabPortalView",
 		reason:

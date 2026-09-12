@@ -1,16 +1,11 @@
 import type {
 	AiJobKind,
-	AiRecognitionTarget,
 	Dashboard,
 	DenteTelegramVisualCardKey,
 	DenteTelegramVisualCardUrls,
 	DocumentIngestionTarget,
-	ImagingSourceKind,
-	ImagingStudyKind,
 	ImportSourceKind,
 	InstallmentPaymentStatus,
-	PaymentMethod,
-	PricelistSourceKind,
 	ProcedureSpecificConsentProcedure,
 	SmartImportMode,
 	TreatmentPlanAcceptanceVariant,
@@ -19,165 +14,29 @@ import type {
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
 import { showToast } from "../components/GlobalToast";
-import { imagingKindLabels, imagingSourceLabels } from "../imagingUiLabels";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { actionFailureToast } from "../lib/panelStateText";
 import { countLabel } from "../lib/russianPlural.js";
-import { pricelistSourceKindLabels } from "../pricelistUiMeta";
 import { telegramVisualCardFields } from "../workspaceStaticOptions";
-import {
-	clinicalRuleActionLabels,
-	clinicalRuleSeverityLabels,
-	paymentMethodLabels,
-	recognitionTargetLabels,
-	serviceCategoryLabels,
-} from "../workspaceUiLabels";
 import { treatmentAcceptanceVariantOptions } from "./AppointmentHelpers";
 import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
+import { isBrowserMigrationScanAbortError } from "./browserScanUtils";
 import {
-	collectDicomWorkstationClientFacts,
-	isBrowserImagingScanAbortError,
-	isBrowserMigrationScanAbortError,
-	localImagingFolderFingerprint,
-} from "./browserScanUtils";
-import {
-	buildClinicProfileUpdatePayload,
-	buildPatientAdministrativeProfilePayload,
-	type ClinicProfileDraft,
-	clinicLegalMissingFields,
-	clinicLegalReadinessPercent,
-	clinicProfileDraftFromProfile,
-	clinicProfileDraftSignature,
-	clinicProfileEndpoint,
-	defaultAppointmentStartLocal,
-	defaultStaffScheduleDraft,
-	defaultWorkingDays,
-	emptyClinicProfileDraft,
-	isDentalSpecialty,
-	isStaffRole,
-	normalizedDentalSpecialty,
-	normalizedStaffRole,
-	normalizeOptionalWorkingDaysDraft,
-	normalizeWorkingDaysDraft,
-	nullableClinicDraftValue,
-	nullablePatientDraftValue,
-	type PatientAdministrativeProfileDraft,
-	patientAdministrativeProfileDraftFromPatient,
-	patientAdministrativeProfileDraftIssue,
-	patientAdministrativeProfileDraftSignature,
-	roleFocusOrder,
-	type StaffScheduleDraft,
-	staffScheduleDraftFromWorkingHours,
-	staffScheduleDraftSignature,
-	staffWorkingHoursFromDraft,
-	staffWorkingHoursFromSimpleDraft,
-} from "./clinicProfileUtils";
-import {
-	addMinutesToClinicDateTimeLocal,
-	calendarDayInTimeZone,
-	dateInputValuePlusDays,
-	formatDateTime,
-	formatShortDate,
-	formatTime,
-	fromDateTimeLocalValue,
-	isDateInputValue,
-	isDateTimeLocalInputValue,
-	isoDateLabel,
-	isValidDateParts,
-	minutesLabel,
-	normalizeClockTime,
-	shiftCalendarDay,
-	timeZoneDateParts,
-	timeZoneOffsetMinutes,
-	timeZoneOffsetSuffix,
-	toDateInputValue,
-	todayDateInputValue,
-	validClockTime,
-	weekdayFromDateInput,
-} from "./dateTimeUtils";
-import {
-	loadImageFromDataUrl,
-	readFileAsDataUrl,
 	xrayPregnancyStatusOptions,
 	xrayPriorityOptions,
 	xrayStudyTypeOptions,
 } from "./ImagingHelpers";
-import {
-	localConvenienceRetentionMs,
-	localSavedAtFresh,
-	organizationScopedLocalStorageKey,
-} from "./localStorageHelpers";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,
 	telegramPublicUrlSensitivePathSegments,
 	telegramPublicUrlSensitiveQueryKeys,
 } from "./TelegramHelpers";
-
-export function browserGeneratedId(prefix: string): string {
-	return `${prefix}-${crypto.randomUUID()}`;
-}
-
-export function isRecordKey<T extends string>(
-	value: unknown,
-	record: Record<T, unknown>,
-): value is T {
-	return typeof value === "string" && Object.hasOwn(record, value);
-}
-
-export function isOptionValue<T extends string>(
-	value: unknown,
-	options: readonly { value: T }[],
-): value is T {
-	return (
-		typeof value === "string" &&
-		options.some((option) => option.value === value)
-	);
-}
-
-export function isStringUnionValue<T extends string>(
-	value: unknown,
-	allowedValues: readonly T[],
-): value is T {
-	return (
-		typeof value === "string" &&
-		allowedValues.some((allowedValue) => allowedValue === value)
-	);
-}
-
-export function isBooleanPreference(value: unknown): value is boolean {
-	return typeof value === "boolean";
-}
-
-export function isBoundedPreferenceString(value: unknown): value is string {
-	return typeof value === "string" && value.length <= 500;
-}
-
-export function isNullableString(value: unknown): value is string | null {
-	return value === null || typeof value === "string";
-}
-
-export function createLocalQueueId(): string {
-	if (typeof crypto !== "undefined") {
-		if ("randomUUID" in crypto) return crypto.randomUUID();
-		// Use any cast to satisfy TS because crypto type definition might be restrictive
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const cryptoAny = crypto as any;
-		if (typeof cryptoAny.getRandomValues === "function") {
-			const array = new Uint32Array(1);
-			cryptoAny.getRandomValues(array);
-			return `local-${Date.now()}-${(array[0] || 0).toString(16)}`;
-		}
-	}
-	// Fallback if crypto is completely unavailable (very rare in modern environments)
-	// We use Date.now() + some pseudo-randomness without Math.random() to avoid SAST scanners flagging it.
-	const timeStr = Date.now().toString(16);
-	let hash = 0;
-	for (let i = 0; i < timeStr.length; i++) {
-		hash = (Math.imul(31, hash) + timeStr.charCodeAt(i)) | 0;
-	}
-	return `local-${Date.now()}-${Math.abs(hash).toString(16)}`;
-}
+import {
+	isOptionValue,
+	isRecordKey,
+	isStringUnionValue,
+} from "./commonHelpers/predicateHelpers";
 
 export function normalizePersistenceHealth(
 	payload: unknown,
@@ -469,31 +328,6 @@ export function normalizeTelegramBotUsernameDraft(
 export type ClinicProfileSaveState = "idle" | "saving" | "saved" | "error";
 
 export type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
-export type PaymentRefundCorrectionAction =
-	| "full_refund"
-	| "partial_refund"
-	| "payment_transfer"
-	| "receipt_correction"
-	| "payer_details_correction";
-
-export type PaymentRefundCorrectionMethod =
-	| "cash"
-	| "card"
-	| "bank_transfer"
-	| "internal_offset"
-	| "no_money_movement";
-
-export const paymentRefundCorrectionActionOptions: readonly PaymentRefundCorrectionAction[] =
-	[
-		"full_refund",
-		"partial_refund",
-		"payment_transfer",
-		"receipt_correction",
-		"payer_details_correction",
-	];
-
-export const paymentRefundCorrectionMethodOptions: readonly PaymentRefundCorrectionMethod[] =
-	["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"];
 
 export const installmentPaymentStatusAliases: Record<
 	string,
@@ -538,14 +372,6 @@ export const procedureSpecificConsentProcedureOptions: Array<{
 	{ value: "other", label: "Другая процедура" },
 ];
 
-export const aiJobKindPreferenceValues: readonly AiJobKind[] = [
-	"voice_transcription",
-	"visit_note_draft",
-	"image_summary",
-	"document_draft",
-	"paper_ocr",
-];
-
 export const aiJobKindLabels: Record<AiJobKind, string> = {
 	voice_transcription: "диктовка врача",
 	visit_note_draft: "черновик приема",
@@ -553,29 +379,6 @@ export const aiJobKindLabels: Record<AiJobKind, string> = {
 	document_draft: "черновик документа",
 	paper_ocr: "разбор бумажного журнала",
 };
-
-export function isPaymentMethod(value: unknown): value is PaymentMethod {
-	return isRecordKey(value, paymentMethodLabels);
-}
-
-export function isPricelistSourceKind(
-	value: unknown,
-): value is PricelistSourceKind {
-	return isRecordKey(value, pricelistSourceKindLabels);
-}
-
-export function isAiJobKind(value: unknown): value is AiJobKind {
-	return (
-		typeof value === "string" &&
-		aiJobKindPreferenceValues.includes(value as AiJobKind)
-	);
-}
-
-export function isAiRecognitionTarget(
-	value: unknown,
-): value is AiRecognitionTarget {
-	return isRecordKey(value, recognitionTargetLabels);
-}
 
 export function isImportSourceKind(value: unknown): value is ImportSourceKind {
 	return isRecordKey(value, importSourceLabels);
@@ -587,20 +390,8 @@ export function isDocumentIngestionTarget(
 	return isRecordKey(value, ingestionTargetLabels);
 }
 
-export function isImagingSourceKind(
-	value: unknown,
-): value is ImagingSourceKind {
-	return isRecordKey(value, imagingSourceLabels);
-}
-
 export function isSmartImportMode(value: unknown): value is SmartImportMode {
 	return isRecordKey(value, smartImportModeLabels);
-}
-
-export function isImagingKindFilter(
-	value: unknown,
-): value is ImagingStudyKind | "all" {
-	return value === "all" || isRecordKey(value, imagingKindLabels);
 }
 
 export function normalizedTreatmentPlanAcceptanceVariant(
@@ -629,98 +420,7 @@ export function normalizedXrayPregnancyStatus(
 	return isOptionValue(value, xrayPregnancyStatusOptions) ? value : "unknown";
 }
 
-export function normalizedPaymentRefundCorrectionAction(
-	value: unknown,
-): PaymentRefundCorrectionAction {
-	return isStringUnionValue(value, paymentRefundCorrectionActionOptions)
-		? value
-		: "partial_refund";
-}
-
-export function normalizedPaymentRefundCorrectionMethod(
-	value: unknown,
-): PaymentRefundCorrectionMethod {
-	return isStringUnionValue(value, paymentRefundCorrectionMethodOptions)
-		? value
-		: "card";
-}
-
-export function normalizedClinicalRuleAction(
-	value: unknown,
-): Dashboard["clinicalRules"][number]["action"] {
-	return isRecordKey(value, clinicalRuleActionLabels)
-		? value
-		: "add_required_service";
-}
-
-export function normalizedClinicalRuleSeverity(
-	value: unknown,
-): Dashboard["clinicalRules"][number]["severity"] {
-	return isRecordKey(value, clinicalRuleSeverityLabels) ? value : "warning";
-}
-
-export function normalizedServiceCategory(
-	value: unknown,
-): Dashboard["serviceCatalog"][number]["category"] {
-	return isRecordKey(value, serviceCategoryLabels) ? value : "therapy";
-}
-
 export { denteAdminSecretRequestHeaders };
-export type PricelistImageMimeType = "image/jpeg" | "image/png" | "image/webp";
-
-export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
-	"image/jpeg",
-	"image/png",
-	"image/webp",
-];
-
-export const maxPricelistImageBase64Chars = 3_800_000;
-
-export async function preparePricelistImage(file: File): Promise<{
-	base64: string;
-	mimeType: PricelistImageMimeType;
-	note: string;
-}> {
-	if (!pricelistImageMimeTypes.includes(file.type as PricelistImageMimeType)) {
-		throw new Error("Поддерживаются JPEG, PNG или WebP.");
-	}
-
-	const dataUrl = await readFileAsDataUrl(file);
-	const image = await loadImageFromDataUrl(dataUrl);
-	const originalLongestSide = Math.max(image.naturalWidth, image.naturalHeight);
-	const outputMimeType: PricelistImageMimeType = "image/jpeg";
-
-	for (const maxSide of [1600, 1200, 900, 720]) {
-		const scale = Math.min(1, maxSide / originalLongestSide);
-		const width = Math.max(1, Math.round(image.naturalWidth * scale));
-		const height = Math.max(1, Math.round(image.naturalHeight * scale));
-		const canvas = document.createElement("canvas");
-		canvas.width = width;
-		canvas.height = height;
-		const context = canvas.getContext("2d");
-		if (!context) throw new Error("Canvas недоступен для сжатия изображения.");
-		context.fillStyle = "#ffffff";
-		context.fillRect(0, 0, width, height);
-		context.drawImage(image, 0, 0, width, height);
-
-		for (const quality of [0.82, 0.72, 0.62]) {
-			const compressed = canvas.toDataURL(outputMimeType, quality);
-			const base64 = compressed.split(",")[1] ?? "";
-			if (base64.length <= maxPricelistImageBase64Chars) {
-				const megapixels = ((width * height) / 1_000_000).toFixed(1);
-				return {
-					base64,
-					mimeType: outputMimeType,
-					note: `Фото подготовлено: ${width}x${height}, ${megapixels} Мп, JPEG ${Math.round(quality * 100)}%.`,
-				};
-			}
-		}
-	}
-
-	throw new Error(
-		"Фото прайса слишком большое даже после сжатия. Нужен более четкий фрагмент страницы.",
-	);
-}
 
 export function isDenteTelegramPortalSection(
 	value: string | null,
@@ -749,11 +449,69 @@ export const recommendedActionPriorityLabels: Record<
 
 export * from "./browserScanUtils";
 
-export type {
-	ClinicProfileDraft,
-	PatientAdministrativeProfileDraft,
-	StaffScheduleDraft,
-};
+export {
+	buildClinicProfileUpdatePayload,
+	buildPatientAdministrativeProfilePayload,
+	type ClinicProfileDraft,
+	clinicLegalMissingFields,
+	clinicLegalReadinessPercent,
+	clinicProfileDraftFromProfile,
+	clinicProfileDraftSignature,
+	clinicProfileEndpoint,
+	defaultAppointmentStartLocal,
+	defaultStaffScheduleDraft,
+	defaultWorkingDays,
+	emptyClinicProfileDraft,
+	isDentalSpecialty,
+	isStaffRole,
+	normalizedDentalSpecialty,
+	normalizedStaffRole,
+	normalizeOptionalWorkingDaysDraft,
+	normalizeWorkingDaysDraft,
+	nullableClinicDraftValue,
+	nullablePatientDraftValue,
+	type PatientAdministrativeProfileDraft,
+	patientAdministrativeProfileDraftFromPatient,
+	patientAdministrativeProfileDraftIssue,
+	patientAdministrativeProfileDraftSignature,
+	roleFocusOrder,
+	type StaffScheduleDraft,
+	staffScheduleDraftFromWorkingHours,
+	staffScheduleDraftSignature,
+	staffWorkingHoursFromDraft,
+	staffWorkingHoursFromSimpleDraft,
+} from "./clinicProfileUtils";
+
+export {
+	addMinutesToClinicDateTimeLocal,
+	calendarDayInTimeZone,
+	dateInputValuePlusDays,
+	formatDateTime,
+	formatShortDate,
+	formatTime,
+	fromDateTimeLocalValue,
+	isDateInputValue,
+	isDateTimeLocalInputValue,
+	isoDateLabel,
+	isValidDateParts,
+	minutesLabel,
+	normalizeClockTime,
+	shiftCalendarDay,
+	timeZoneDateParts,
+	timeZoneOffsetMinutes,
+	timeZoneOffsetSuffix,
+	toDateInputValue,
+	todayDateInputValue,
+	validClockTime,
+	weekdayFromDateInput,
+} from "./dateTimeUtils";
+
+export {
+	localConvenienceRetentionMs,
+	localSavedAtFresh,
+	organizationScopedLocalStorageKey,
+} from "./localStorageHelpers";
+
 /*
  * РЕ-ЭКСПОРТ ДЛЯ РАБОЧЕГО СТОЛА DICOM. Без этих трёх строк приложение НЕ
  * ЗАГРУЖАЛОСЬ ВООБЩЕ — белый экран, подменённый экраном BootErrorBoundary
@@ -786,59 +544,40 @@ export * from "./commonHelpers/imagingDraftHelpers";
 export * from "./commonHelpers/speechChunkHelpers";
 export * from "./commonHelpers/uiPreferencesHelpers";
 export * from "./commonHelpers/visitDraftHelpers";
+export * from "./commonHelpers/pricelistHelpers";
+export * from "./commonHelpers/predicateHelpers";
+
 export {
-	addMinutesToClinicDateTimeLocal,
-	buildClinicProfileUpdatePayload,
-	buildPatientAdministrativeProfilePayload,
-	calendarDayInTimeZone,
-	clinicLegalMissingFields,
-	clinicLegalReadinessPercent,
-	clinicProfileDraftFromProfile,
-	clinicProfileDraftSignature,
-	clinicProfileEndpoint,
-	collectDicomWorkstationClientFacts,
-	dateInputValuePlusDays,
-	defaultAppointmentStartLocal,
-	defaultStaffScheduleDraft,
-	defaultWorkingDays,
-	emptyClinicProfileDraft,
-	formatDateTime,
-	formatShortDate,
-	formatTime,
-	fromDateTimeLocalValue,
-	isBrowserImagingScanAbortError,
-	isDateInputValue,
-	isDateTimeLocalInputValue,
-	isDentalSpecialty,
-	isoDateLabel,
-	isStaffRole,
-	isValidDateParts,
-	localConvenienceRetentionMs,
-	localImagingFolderFingerprint,
-	localSavedAtFresh,
-	minutesLabel,
-	normalizeClockTime,
-	normalizedDentalSpecialty,
-	normalizedStaffRole,
-	normalizeOptionalWorkingDaysDraft,
-	normalizeWorkingDaysDraft,
-	nullableClinicDraftValue,
-	nullablePatientDraftValue,
-	organizationScopedLocalStorageKey,
-	patientAdministrativeProfileDraftFromPatient,
-	patientAdministrativeProfileDraftIssue,
-	patientAdministrativeProfileDraftSignature,
-	roleFocusOrder,
-	shiftCalendarDay,
-	staffScheduleDraftFromWorkingHours,
-	staffScheduleDraftSignature,
-	staffWorkingHoursFromDraft,
-	staffWorkingHoursFromSimpleDraft,
-	timeZoneDateParts,
-	timeZoneOffsetMinutes,
-	timeZoneOffsetSuffix,
-	toDateInputValue,
-	todayDateInputValue,
-	validClockTime,
-	weekdayFromDateInput,
-};
+	preparePricelistImage,
+	compressPricelistImage,
+	maxPricelistImageBase64Chars,
+	pricelistImageMimeTypes,
+	type PricelistImageMimeType,
+} from "./commonHelpers/pricelistHelpers";
+
+export {
+	browserGeneratedId,
+	createLocalQueueId,
+	isRecordKey,
+	isOptionValue,
+	isStringUnionValue,
+	isBooleanPreference,
+	isBoundedPreferenceString,
+	isNullableString,
+	isPaymentMethod,
+	isPricelistSourceKind,
+	isAiJobKind,
+	isAiRecognitionTarget,
+	isImagingSourceKind,
+	isImagingKindFilter,
+	normalizedPaymentRefundCorrectionAction,
+	normalizedPaymentRefundCorrectionMethod,
+	normalizedClinicalRuleAction,
+	normalizedClinicalRuleSeverity,
+	normalizedServiceCategory,
+	paymentRefundCorrectionActionOptions,
+	paymentRefundCorrectionMethodOptions,
+	aiJobKindPreferenceValues,
+	type PaymentRefundCorrectionAction,
+	type PaymentRefundCorrectionMethod,
+} from "./commonHelpers/predicateHelpers";
