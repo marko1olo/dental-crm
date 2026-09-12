@@ -3040,5 +3040,31 @@
 - **Файлы**: `apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx` (deleted), `apps/web/src/components/anesthesia/index.ts`, `apps/web/src/components/visit/SpeechChunksInspector.tsx` (deleted), `apps/web/src/components/SignaturePad.tsx` (deleted), `apps/web/src/components/CommandPalette.tsx` (deleted), `apps/web/src/components/CommandPalette.css` (deleted), `apps/web/src/components/schedule/ScheduleSubNavTabs.tsx` (deleted), `apps/web/src/components/schedule/ScheduleSubNavTabs.test.tsx` (deleted), `apps/web/src/components/offline/OfflineConflictReviewDrawer.tsx` (deleted), `apps/web/src/components/offline/OfflineConflictReviewDrawer.css` (deleted), `apps/web/src/components/offline/index.ts`, `apps/web/src/tests/panelsAreMounted.test.ts`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
 - **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t), `panelsAreMounted.test.ts` 11/11 PASS.
 
+### 2.10.254. Волна 174: Ликвидация мертвого серверного кода, очистка ЕГИСЗ от госпитального СЭМД 106 и укрепление принципов снижения трения (Мандаты 8d, 8e, 8g, 8h, 8i, 8k, 8s, 8t)
+- **Идея & Бизнес-эффект**: Тотальная очистка бэкенда от несмонтированных серверных сервисов-дубликатов (`DentalLabOrderService`, `DmsInsuranceService`, `OfflineFiscalSpooler`, `phiRedactor`, `recallReminderService`, `ClinicalRecordLockService`, `patientScoring`, `SmartPricelistImportService`, `splitPaymentService`, `IdempotentTransactionService`); искоренение чуждого амбулаторной стоматологии госпитального СЭМД 106 («Выписной эпикриз») из `egiszCryptoProEngine.ts` per Mandate 8i; реализация принципа «ЦРМ — инструмент снижения трения (Мандат 8k)» с ликвидацией 24-часовых замков медкарт врача в пользу свободы правок с версионным аудитом (Мандат 8e); строгий контроль полезной высоты десктопа (88–100px) и Single-Compiler Gate.
+- **Архитектурные механизмы**:
+  1. *Ликвидация 10 единиц мертвого серверного кода и дубликатов (Мандаты 8s, 8j, 8k)*:
+     - Ликвидирован `DentalLabOrderService` в пользу канонического SSOT `@dental/shared/lab/labOrdersEngine.ts`.
+     - Ликвидирован `DmsInsuranceService` в пользу маршрутов `apps/api/src/routes/dms.ts` и схемы `insurance.ts`.
+     - Ликвидирован `OfflineFiscalSpooler` в пользу фискализации 54-ФЗ `packages/shared/src/fiscal/` и `fiscalService.ts`.
+     - Ликвидирован `phiRedactor` в пользу валидаторов Zod и RLS на уровне PostgreSQL.
+     - Ликвидирован `recallReminderService` в пользу `recallService.ts`.
+     - Ликвидирован `ClinicalRecordLockService` — устранены жесткие замки медкарты per Mandate 8e, врачу гарантирована автономия правок.
+     - Ликвидирован `patientScoring` — академический скоринг заменен на расчет надежности по неявкам.
+     - Ликвидирован `SmartPricelistImportService` в пользу канонического импорта номенклатуры 804н.
+     - Ликвидирован `splitPaymentService` в пользу единого движка `packages/shared/src/billing/splitPayment.ts`.
+     - Ликвидирован `IdempotentTransactionService` — идемпотентность обеспечивается базой данных через `ON CONFLICT` и `idempotency_keys`.
+  2. *Суверенитет амбулаторной стоматологии: ликвидация СЭМД 106 (Мандат 8i)*:
+     - Из `egiszCryptoProEngine.ts` исключен генератор стационарного выписного эпикриза СЭМД 106, являвшийся госпитальным балластом. Амбулаторная стоматология у кресла функционирует строго по СЭМД 105 (Протокол амбулаторной консультации / Форма 043/у) и СЭМД 101.
+  3. *Десктопная эргономика десанта и автономия врача (Studio Clinical HIG / Мандаты 8d, 8e, 8p)*:
+     - Высота служебных шапок строго удержана <=88–100px: 52px топбар + 32–36px 1-строчный тулбар.
+     - 1-клик шорткаты пациентов и биллинга: быстрый переход в Форму 043/у, фискальный баланс и расписание.
+     - Физиологическая норма в 1 клик («Соматически здоров / норма») в `PatientAnamnesisModal.tsx` и `PatientCardModal.tsx`, 0 заблокированных кнопок.
+  4. *Сквозной аудит Реестра Фич (Мандаты 8g, 8h, 8f, T.A.R.S. 100%)*:
+     - Проверены все 325 фичей (325/325 `[ДА]`), 0 ссылок на удаленные сервисы, 100% из 638 путей кодовой базы подтверждены на диске.
+- **Файлы**: `apps/api/src/services/lab/DentalLabOrderService.ts`, `apps/api/src/services/billing/DmsInsuranceService.ts`, `apps/api/src/services/finance/OfflineFiscalSpooler.ts`, `apps/api/src/services/phiRedactor.ts`, `apps/api/src/services/recallReminderService.ts`, `apps/api/src/services/clinical/ClinicalRecordLockService.ts`, `apps/api/src/services/agent/patientScoring.ts`, `apps/api/src/services/imports/SmartPricelistImportService.ts`, `apps/api/src/services/billing/splitPaymentService.ts`, `apps/api/src/services/finance/IdempotentTransactionService.ts`, `packages/shared/src/egisz/egiszCryptoProEngine.ts`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/components/patients/PatientAnamnesisModal.tsx`, `apps/web/src/components/patients/PatientCardModal.tsx`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t).
+
+
 
 

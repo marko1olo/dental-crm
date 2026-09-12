@@ -28,6 +28,5 @@ export * from "./proxyDispatcher.js";
 export * from "./omniGateway.js";
 export * from "./whatsappBridge.js";
 export * from "./b2cTranslator.js";
-export * from "./patientScoring.js";
 export * from "./validatorAgent.js";
 export * from "./semanticRouter.js";

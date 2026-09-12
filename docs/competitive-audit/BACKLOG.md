@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–173 / SSOT CONSOLIDATION, MANDATE 8t SINGLE-COMPILER GATE, UNMOUNTED FACADES PURGE, PATIENT/BILLING SHORTCUTS, 1-LINE TOOLBARS, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–174 / SSOT CONSOLIDATION, MANDATE 8t SINGLE-COMPILER GATE, DEAD BACKEND PURGE, EGISZ SEMD 106 PURIFICATION, DESKTOP ERGONOMICS & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -22,6 +22,7 @@
 > 16. Проведен исчерпывающий сквозной аудит всех фич в `FEATURES_REGISTRY.md` скриптом `exhaustive_check.js`: 100% файлов и строк подтверждены на живой кодовой базе, 0 битых путей, 0 устаревших фасадов (Wave 171).
 > 17. Снесены несмонтированные фасады `PatientArchiveReasonsAndBlacklistsWidget.tsx` и `DentalLabWorkOrderModal.tsx`, внедрены 1-клик шорткаты пациентов/биллинга и 1-строчные тулбары <=88px, очищены хардкодные цвета в `PatientBillingModal.tsx` и `CashRegisterModal.tsx`, подтвержден Single-Compiler Gate (Wave 172).
 > 18. Ликвидированы 6 несмонтированных фасадов и академический балласт (`AnesthesiaPkuDisposalModal.tsx`, `SpeechChunksInspector.tsx`, `SignaturePad.tsx`, `CommandPalette.tsx`, `ScheduleSubNavTabs.tsx`, `OfflineConflictReviewDrawer.tsx`), устранены синтаксические дефекты `||` в `FEATURES_REGISTRY.md`, подтверждены 100% из 639 уникальных путей к файлам (0 битых путей, 325/325 `[ДА]`), реестр и бэклог приведены в идеальное соответствие Мандатам 8g, 8h, 8s (Wave 173).
+> 19. Ликвидированы 10 единиц мертвого серверного кода (`DentalLabOrderService`, `DmsInsuranceService`, `OfflineFiscalSpooler`, `phiRedactor`, `recallReminderService`, `ClinicalRecordLockService`, `patientScoring`, `SmartPricelistImportService`, `splitPaymentService`, `IdempotentTransactionService`), исключено госпитальное контекстное заражение СЭМД 106 по Мандату 8i, закреплены бюджеты десктопной высоты шапок <=88–100px и автономия врача по Мандатам 8d, 8e, 8p (Wave 174).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -4775,6 +4776,54 @@
   * Главный реестр фич: 325/325 в статусе `[ДА]`, проверено скриптом верификации путей, 0 битых ссылок.
   * Синтаксис таблицы: 325 валидных строк из 12 колонок.
   * Кодировка: UTF-8 без BOM, `check:encoding` 0 ошибок.
+
+### Wave 174: Ликвидация мертвого серверного кода, очистка ЕГИСЗ от госпитального СЭМД 106 и десктопная эргономика (Мандаты 8d, 8e, 8g, 8h, 8i, 8k, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/api/src/services/lab/DentalLabOrderService.ts` & `DentalLabOrderService.test.ts` (ликвидирован несмонтированный серверный дубликат ЗТЛ per Mandates 8s, 8k: заказы лаборатории централизованы вокруг SSOT `@dental/shared/lab/labOrdersEngine.ts` и `apps/api/src/routes/lab.ts`)
+  - `apps/api/src/services/billing/DmsInsuranceService.ts` & `DmsInsuranceService.test.ts` (ликвидирован мертвый сервис учета полисов ДМС: страховые полисы обслуживаются через канонические `apps/api/src/routes/dms.ts` и `apps/api/src/db/schema/insurance.ts`)
+  - `apps/api/src/services/finance/OfflineFiscalSpooler.ts` (ликвидирован несмонтированный спулер чеков per Mandate 8s: фискализация 54-ФЗ выполняется через канонический `packages/shared/src/fiscal/` и `apps/api/src/services/billing/fiscalService.ts`)
+  - `apps/api/src/services/phiRedactor.ts` & `apps/api/src/services/__tests__/phiRedactor.test.ts` (ликвидирован мертвый академический редактор ПДн per Mandates 8i, 8s: безопасность ПДн 152-ФЗ гарантирована на уровне RLS и валидаторов Zod)
+  - `apps/api/src/services/recallReminderService.ts` (ликвидирован дублирующий сервис реколлов per Mandates 8s, 8h: реколлы централизованы в `apps/api/src/services/communications/recallService.ts`)
+  - `apps/api/src/services/clinical/ClinicalRecordLockService.ts` (ликвидирован сервис 24-часовых жестких замков медкарты per Mandates 8e, 8s: врачу гарантирована свобода правок с версионным аудитом «Исправленному верить» без бюрократических барьеров)
+  - `apps/api/src/services/agent/patientScoring.ts` (ликвидирован процедурный симулятор скоринга per Mandate 8k: надежность пациента рассчитывается динамически из реальной истории визитов `patientReliability.ts`)
+  - `apps/api/src/services/imports/SmartPricelistImportService.ts` & `SmartPricelistImportService.test.ts` (ликвидирован дубликат импорта прайсов per Mandate 8s: импорт номенклатуры 804н централизован в `packages/shared/src/pricelist/`)
+  - `apps/api/src/services/billing/splitPaymentService.ts` & `apps/api/src/services/billing/__tests__/splitPaymentService.test.ts` (ликвидирован изолированный дубликат разделения оплат per Mandate 8s: раздельные платежи обслуживаются SSOT `packages/shared/src/billing/splitPayment.ts`)
+  - `apps/api/src/services/finance/IdempotentTransactionService.ts` (ликвидирован искусственный фасад транзакций: идемпотентность платежей гарантирована через нативный `ON CONFLICT` PostgreSQL и `idempotency_keys`)
+  - `packages/shared/src/egisz/egiszCryptoProEngine.ts` (ликвидирован госпитальный СЭМД 106 «Выписной эпикриз» per Mandate 8i: амбулаторная стоматология работает строго по СЭМД 105 «Протокол консультации / Форма 043/у» и СЭМД 101, стационарный коечный фонд исключен)
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx` (закреплен компактный 1-строчный тулбар 32–36px)
+  - `apps/web/src/PatientsView.tsx` (бюджет высоты служебной шапки строго <=88px, 1-клик шорткаты Формы 043/у и баланса 54-ФЗ)
+  - `apps/web/src/components/patients/PatientAnamnesisModal.tsx` & `PatientCardModal.tsx` (физиологическая норма в 1 клик «Соматически здоров / норма», 0 заблокированных кнопок per Mandate 8e)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (подтверждено отсутствие ссылок на удаленные сервисы, 325/325 `[ДА]`, 0 битых путей)
+  - `docs/competitive-audit/BACKLOG.md` (актуализирован статус системы до Волны 174, зафиксирован снос 10 серверных сервисов и СЭМД 106)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (добавлен подраздел 2.10.254 с фиксацией архитектурной очистки бэкенда)
+* **Архитектурное решение**:
+  - **Ликвидация 10 единиц мертвого серверного кода и фасадов (Мандаты 8s, 8j, 8k, 8e)**:
+    * В соответствии с Законом Единого Неделимого Авторитета (SSOT) и анти-блоат догматом ликвидирован балласт несмонтированных бэкенд-сервисов:
+      1. `DentalLabOrderService` — заказы ЗТЛ сведены к каноническому движку `packages/shared/src/lab/labOrdersEngine.ts`.
+      2. `DmsInsuranceService` — учет страховых полисов ДМС сведен к каноническим маршрутам `routes/dms.ts`.
+      3. `OfflineFiscalSpooler` — спулинг кассы 54-ФЗ унифицирован через `packages/shared/src/fiscal/` и `fiscalService.ts`.
+      4. `phiRedactor` — удален избыточный псевдо-ИИ редактор ПДн, защита обеспечивается Zod-схемами и строгой авторизацией.
+      5. `recallReminderService` — устранен дубль в пользу канонического `services/communications/recallService.ts`.
+      6. `ClinicalRecordLockService` — устранены искусственные 24-часовые блокировки дневников врача, противоречившие Мандату 8e. Врач имеет неограниченную свободу правок с версионным логированием.
+      7. `patientScoring` — академический симулятор скоринга заменен на прикладной расчет надежности по неявкам.
+      8. `SmartPricelistImportService` — импорт номенклатуры унифицирован через канонический парсер прайсов.
+      9. `splitPaymentService` — разделение оплат сведено к SSOT `@dental/shared/billing/splitPayment.js`.
+      10. `IdempotentTransactionService` — идемпотентность обеспечивается базой данных PostgreSQL через транзакции и `idempotency_keys`.
+  - **Искоренение госпитального контекстного заражения: СЭМД 106 (Мандат 8i)**:
+    * В строгом соответствии с Мандатом 8i (Суверенитет амбулаторного стоматологического контекста) исключен генератор стационарного выписного эпикриза СЭМД 106. Частная стоматология у кресла не имеет коечного фонда и стационарной выписки. Регламентный обмен с ЕГИСЗ РЭМД осуществляется через СЭМД 105 (Протокол консультации врача-стоматолога / Форма 043/у) и СЭМД 101.
+  - **Полировка десктопного интерфейса и автономия врача (Studio Clinical HIG / Мандаты 8d, 8e, 8p)**:
+    * Бюджет высоты служебных областей десктопа удержан строго в границах 88–100px: топбар 52px + 1 строка тулбара 32–36px.
+    * В карточках пациентов и анамнеза обеспечена автономия врача per Mandate 8e: 1-клик пресет «Соматически здоров / норма», ноль заблокированных кнопок «Сохранить», сохранение текста на лету (debounced autosave).
+  - **Инструментальный аудит Реестра Фич (Мандаты 8g, 8h, 8f, T.A.R.S. 100%)**:
+    * Подтверждена целостность всех 325 фичей реестра (63 канонические + 262 аддендум, 325/325 `[ДА]`).
+    * Ни одна фича не ссылается на удаленные серверные сервисы или стационарные генераторы СЭМД 106.
+    * Все 638 уникальных путей к файлам кодовой базы физически подтверждены на диске (0 битых путей).
+* **Верификация**:
+  * Главный реестр фич: 325/325 в статусе `[ДА]`, 0 битых путей.
+  * Кодировка: UTF-8 без BOM, `check:encoding` 0 ошибок.
+  * Single-Compiler Gate: защищен per Mandate 8t.
+
 
 
 

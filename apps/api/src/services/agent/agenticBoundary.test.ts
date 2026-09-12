@@ -11,11 +11,6 @@
  * 2. B2C Medical Translator (b2cTranslator):
  *    - 804n nomenclature translation to patient-friendly Russian.
  *    - Heuristic clinical term and FDI tooth localization translation.
- * 3. Deterministic Patient Scoring (patientScoring):
- *    - Exact LTV and average check calculation.
- *    - No-show and cancellation rate (%).
- *    - Compliance index (0–100).
- *    - 4-tier sentiment status ("🟢 VIP / Лояльный", "🔵 Стандартный", "🟡 Внимание: Риск отмены", "🔴 Осторожно: Требуется строгое ИДС").
  */
 
 import assert from "node:assert";
@@ -27,10 +22,6 @@ import {
 	translateTreatmentPlanToPatientLanguage,
 } from "./b2cTranslator.js";
 import type { AgentContext } from "./context.js";
-import {
-	calculatePatientScoring,
-	type PatientScoringRawData,
-} from "./patientScoring.js";
 import { registerClinicalTools } from "./tools/clinicalTools.js";
 import {
 	calculateTier,
@@ -337,126 +328,3 @@ describe("B2C Medical Translator: translateTreatmentPlanToPatientLanguage", () =
 	});
 });
 
-// ───────────────────────────────────────────────────────────────────────────
-// 3. DETERMINISTIC PATIENT SCORING TESTS
-// ───────────────────────────────────────────────────────────────────────────
-
-describe("Deterministic Patient Scoring & Sentiment Engine", () => {
-	test("identifies 🟢 VIP / Лояльный patient with high LTV, high compliance, and zero debt", () => {
-		const raw: PatientScoringRawData = {
-			patientId: "patient-vip-001",
-			appointments: [
-				{ id: "a1", status: "completed", startsAt: "2026-06-01T10:00:00Z" },
-				{ id: "a2", status: "completed", startsAt: "2026-07-01T10:00:00Z" },
-				{ id: "a3", status: "completed", startsAt: "2026-08-01T10:00:00Z" },
-			],
-			payments: [
-				{ id: "p1", amountRub: 45000, status: "paid", paidAt: "2026-06-01T11:00:00Z" },
-				{ id: "p2", amountRub: 65000, status: "paid", paidAt: "2026-07-01T11:00:00Z" },
-				{ id: "p3", amountRub: 35000, status: "paid", paidAt: "2026-08-01T11:00:00Z" },
-			],
-			visits: [
-				{ id: "v1", status: "signed", createdAt: "2026-06-01T10:30:00Z" },
-				{ id: "v2", status: "signed", createdAt: "2026-07-01T10:30:00Z" },
-			],
-			treatmentPlans: [
-				{ id: "tp1", status: "completed", totalPriceRub: 145000 },
-			],
-			hasSignedConsents: true,
-			outstandingDebtRub: 0,
-		};
-
-		const scoring = calculatePatientScoring(raw);
-
-		// LTV = 45,000 + 65,000 + 35,000 = 145,000 ₽
-		assert.strictEqual(scoring.ltvRub, 145000);
-		assert.strictEqual(scoring.ltvKopecks, 14500000);
-		assert.strictEqual(scoring.metrics.averageCheckRub, 48333.33); // 145000 / 3
-
-		// 0 cancellations -> no-show rate = 0%
-		assert.strictEqual(scoring.noShowRate, 0);
-
-		// Compliance index = 100 + 9 (3 completed) + 5 (1 plan) + 5 (LTV > 50k) = clamped to 100
-		assert.strictEqual(scoring.complianceIndex, 100);
-
-		// Sentiment status
-		assert.strictEqual(scoring.sentimentStatus, "🟢 VIP / Лояльный");
-		assert.strictEqual(scoring.riskFactors.length, 0);
-		assert.ok(scoring.recommendationsForStaff.some((r) => r.includes("персонального куратора") || r.includes("приоритетное бронирование")));
-	});
-
-	test("identifies 🟡 Внимание: Риск отмены when cancellation rate is high", () => {
-		const raw: PatientScoringRawData = {
-			patientId: "patient-cancel-002",
-			appointments: [
-				{ id: "a1", status: "completed", startsAt: "2026-05-01T10:00:00Z" },
-				{ id: "a2", status: "cancelled", startsAt: "2026-06-01T10:00:00Z" },
-				{ id: "a3", status: "cancelled", startsAt: "2026-07-01T10:00:00Z" },
-				{ id: "a4", status: "cancelled", startsAt: "2026-08-01T10:00:00Z" },
-			],
-			payments: [
-				{ id: "p1", amountRub: 5000, status: "paid", paidAt: "2026-05-01T11:00:00Z" },
-			],
-			outstandingDebtRub: 2500,
-		};
-
-		const scoring = calculatePatientScoring(raw);
-
-		// Total evaluated = 1 completed + 3 cancelled = 4
-		// No-show / cancellation rate = (3 / 4) * 100 = 75%
-		assert.strictEqual(scoring.noShowRate, 75);
-
-		// Compliance score = 100 - (3 * 8 cancelled = 24) - (8 debt) = 68
-		assert.strictEqual(scoring.sentimentStatus, "🟡 Внимание: Риск отмены");
-		assert.ok(scoring.riskFactors.some((rf) => rf.includes("75%")));
-		assert.ok(scoring.recommendationsForStaff.some((rec) => rec.includes("звонок-подтверждение")));
-	});
-
-	test("identifies 🔴 Осторожно: Требуется строгое ИДС for high-risk or legal conflict patients", () => {
-		const raw: PatientScoringRawData = {
-			patientId: "patient-risk-003",
-			appointments: [
-				{ id: "a1", status: "no_show", startsAt: "2026-06-01T10:00:00Z" },
-				{ id: "a2", status: "no_show", startsAt: "2026-07-01T10:00:00Z" },
-				{ id: "a3", status: "cancelled", startsAt: "2026-08-01T10:00:00Z" },
-			],
-			payments: [],
-			visits: [
-				{ id: "v1", status: "voided", createdAt: "2026-06-01T11:00:00Z" },
-			],
-			hasLegalConflicts: true,
-			outstandingDebtRub: 15000,
-		};
-
-		const scoring = calculatePatientScoring(raw);
-
-		assert.strictEqual(scoring.sentimentStatus, "🔴 Осторожно: Требуется строгое ИДС");
-		assert.ok(scoring.riskFactors.some((rf) => rf.includes("разногласия")));
-		assert.ok(scoring.recommendationsForStaff.some((rec) => rec.includes("расширенное ИДС")));
-		assert.ok(scoring.recommendationsForStaff.some((rec) => rec.includes("предоплате")));
-	});
-
-	test("identifies 🔵 Стандартный patient with normal attendance", () => {
-		const raw: PatientScoringRawData = {
-			patientId: "patient-standard-004",
-			appointments: [
-				{ id: "a1", status: "completed", startsAt: "2026-07-15T14:00:00Z" },
-				{ id: "a2", status: "completed", startsAt: "2026-08-15T14:00:00Z" },
-			],
-			payments: [
-				{ id: "p1", amountRub: 12000, status: "paid", paidAt: "2026-07-15T15:00:00Z" },
-				{ id: "p2", amountRub: 8000, status: "paid", paidAt: "2026-08-15T15:00:00Z" },
-			],
-			hasSignedConsents: true,
-			outstandingDebtRub: 0,
-		};
-
-		const scoring = calculatePatientScoring(raw);
-
-		assert.strictEqual(scoring.ltvRub, 20000);
-		assert.strictEqual(scoring.noShowRate, 0);
-		assert.strictEqual(scoring.sentimentStatus, "🔵 Стандартный");
-		assert.strictEqual(scoring.metrics.totalAppointmentsCount, 2);
-		assert.strictEqual(scoring.metrics.completedAppointmentsCount, 2);
-	});
-});
