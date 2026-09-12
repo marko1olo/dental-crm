@@ -1105,7 +1105,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 				{/* Navigation Tabs (32px Segmented Control) */}
 				<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0">
-					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)]">
+					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 						<button
 							type="button"
 							onClick={() => setActiveTab("checkout")}
@@ -1151,7 +1151,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						<select
 							value={operationType}
 							onChange={(e) => setOperationType(e.target.value as "income" | "income_return")}
-							className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] outline-none cursor-pointer"
+							className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none cursor-pointer"
 						>
 							<option value="income">Тег 1054: ПРИХОД</option>
 							<option value="income_return">Тег 1054: ВОЗВРАТ ПРИХОДА</option>
@@ -1197,7 +1197,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									Тип плательщика (54-ФЗ Тег 1228):
 								</span>
 							</div>
-							<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)]">
+							<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)]">
 								<button
 									type="button"
 									onClick={() => {
@@ -1319,7 +1319,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<select
 											value={selectedDiscountPreset}
 											onChange={(e) => setSelectedDiscountPreset(e.target.value as LoyaltyDiscountPreset)}
-											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] outline-none cursor-pointer"
+											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none cursor-pointer"
 											data-testid="select-cash-discount"
 										>
 											<option value="none">Без скидки (0%)</option>
@@ -1399,7 +1399,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "discount_3"
 												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
 										}`}
 										data-testid="btn-discount-3"
 										title="Быстрая скидка 3% без запроса мастер-паролей"
@@ -1412,7 +1412,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "discount_5"
 												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
 										}`}
 										data-testid="btn-discount-5"
 										title="Быстрая скидка 5% без запроса мастер-паролей"
@@ -1425,7 +1425,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "discount_10"
 												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
 										}`}
 										data-testid="btn-discount-10"
 										title="Быстрая скидка 10% без запроса мастер-паролей"
@@ -1438,7 +1438,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "pensioner_10"
 												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
 										}`}
 										data-testid="btn-discount-pensioner"
 										title="Пенсионная скидка 10%"
@@ -1478,7 +1478,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "manual_percent"
 												? "bg-amber-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
 										}`}
 										data-testid="btn-discount-manual"
 									>
@@ -1489,8 +1489,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										onClick={() => setSelectedDiscountPreset("none")}
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "none"
-												? "bg-[var(--teal,#0d9488)] text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+												? "bg-[var(--teal)] text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
 										}`}
 										data-testid="btn-discount-none"
 									>
@@ -1623,7 +1623,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								</div>
 
 								{/* 1-Click Fast Presets (Мандаты 8e, 8k, 8n) */}
-								<div className="flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-xs" data-testid="cash-presets-strip">
+								<div className="flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-xs" data-testid="cash-presets-strip">
 									<span className="text-[11px] font-extrabold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1">
 										<Zap className="w-3.5 h-3.5 text-amber-500" />
 										1-Клик Пресеты:
@@ -1750,7 +1750,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "card"
 												? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-400"
-												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
 										}`}
 										data-testid="btn-tender-card"
 									>
@@ -1764,7 +1764,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "sbp"
 												? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
-												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
 										}`}
 										data-testid="btn-tender-sbp"
 									>
@@ -1781,7 +1781,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "cash"
 												? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400"
-												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
 										}`}
 										data-testid="btn-tender-cash"
 									>
@@ -1795,7 +1795,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "family"
 												? "bg-pink-600 text-white shadow-xs ring-2 ring-pink-400"
-												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
 										}`}
 										data-testid="btn-tender-family"
 									>
@@ -1809,7 +1809,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "deposit"
 												? "bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-400"
-												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
 										}`}
 										data-testid="btn-tender-deposit"
 									>
@@ -1823,7 +1823,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "installment"
 												? "bg-amber-600 text-white shadow-xs ring-2 ring-amber-400"
-												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
 										}`}
 										data-testid="btn-tender-installment"
 									>
@@ -1843,7 +1843,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "split"
 												? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
-												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
 										}`}
 										data-testid="btn-tender-split"
 									>
@@ -1956,7 +1956,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 								{/* 6 Кассовых счетов клиники (StomX Bible раздел 6: если счет 1, селектор скрывается по Мандату 8n) */}
 								{cashBoxesList.length > 1 && (
-									<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-xs">
+									<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-xs">
 										<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
 											<Building2 className="w-4 h-4 text-teal-600 shrink-0" />
 											<span>Счет кассы (StomX):</span>
@@ -1989,7 +1989,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								)}
 
 								{/* Статьи ДДС StomX (Приход / Расход) */}
-								<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs">
+								<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
 									<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
 										<Tag className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
 										<span>Статья ДДС:</span>
@@ -2004,7 +2004,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 														selectedReceiptAlias === cat.alias
 															? "bg-teal-600 text-white shadow-2xs"
-															: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
+															: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
 													}`}
 												>
 													{cat.name}
@@ -2013,7 +2013,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											<select
 												value={selectedReceiptAlias}
 												onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
-												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink)] font-medium cursor-pointer"
+												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-medium cursor-pointer"
 												aria-label="Все статьи поступления"
 											>
 												{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
@@ -2033,7 +2033,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 														selectedExpenseAlias === cat.alias
 															? "bg-rose-600 text-white shadow-2xs"
-															: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
+															: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
 													}`}
 												>
 													{cat.name}
@@ -2042,7 +2042,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											<select
 												value={selectedExpenseAlias}
 												onChange={(e) => setSelectedExpenseAlias(e.target.value as StomxExpenseTypeAlias)}
-												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink)] font-medium cursor-pointer"
+												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-medium cursor-pointer"
 												aria-label="Все статьи расходов"
 											>
 												{STOMX_CASH_EXPENSE_CATEGORIES.map((cat) => (
@@ -2092,7 +2092,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
 													onKeyDown={handleInputEnterKeyDown}
 													placeholder={`${totalInvoiceRub} ₽`}
-													className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
+													className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
 												/>
 											</div>
 
@@ -2104,7 +2104,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(totalInvoiceRub)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95"
 														data-testid="btn-cash-exact"
 														style={{ minHeight: "44px" }}
 													>
@@ -2113,7 +2113,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(1000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-1000"
 														style={{ minHeight: "44px" }}
 													>
@@ -2122,7 +2122,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(2000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-2000"
 														style={{ minHeight: "44px" }}
 													>
@@ -2131,7 +2131,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(5000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-5000"
 														style={{ minHeight: "44px" }}
 													>
@@ -2140,7 +2140,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(10000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-10000"
 														style={{ minHeight: "44px" }}
 													>
@@ -2323,7 +2323,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitCardRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
+											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2349,7 +2349,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitCashRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
+											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2375,7 +2375,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitSbpRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
+											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2404,7 +2404,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitDepositRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
+											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2433,7 +2433,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitFamilyRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
+											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 								</div>
@@ -2493,7 +2493,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											setSplitSbpRub(0);
 											setSplitFamilyRub(0);
 										}}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all active:scale-95"
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-all active:scale-95"
 									>
 										50% Карта / 50% Нал
 									</button>
@@ -2568,7 +2568,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								<button
 									type="button"
 									onClick={handleDownloadThermalReceipt}
-									className="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+									className="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 									data-testid="btn-download-thermal-receipt"
 									title="Скачать чек в формате HTML"
 								>
@@ -2633,7 +2633,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintSalesSlip}
-							className="h-10 px-3.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+							className="h-10 px-3.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 							data-testid="btn-print-sales-slip"
 							title="Распечатать товарный чек с реквизитами клиники и кодами 804н без фискализации в ОФД"
 						>
@@ -2644,7 +2644,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer transition-colors"
+							className="h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer transition-colors"
 						>
 							Отмена
 						</button>

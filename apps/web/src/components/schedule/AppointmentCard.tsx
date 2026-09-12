@@ -657,7 +657,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							void handleQuickStatusChange("arrived");
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--good,#16a34a)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Отметить прибытие пациента в клинику (Клавиша 1)"
 						data-testid="appointment-action-arrived-btn"
 					>
@@ -674,7 +674,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Начать приём в кресле (Клавиша 2)"
 						data-testid="appointment-action-in-treatment-btn"
 					>
@@ -698,7 +698,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Пациент в кресле (Клавиша 2)"
 						data-testid="appointment-action-in-treatment-btn"
 					>
@@ -712,7 +712,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							void handleShiftAppointmentTime(15);
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2 py-1 rounded-lg bg-[var(--warn-bg,#fef3c7)] text-[var(--warn-fg,#92400e)] border border-[var(--warn-fg,#f59e0b)]/40 hover:opacity-90 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						className="min-h-[44px] sm:min-h-[36px] px-2 py-1 rounded-lg bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/40 hover:opacity-90 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
 						title="Сдвинуть запись на +15 минут при опоздании"
 						data-testid="appointment-action-delay-btn"
 					>
@@ -733,7 +733,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							void handleQuickStatusChange("completed");
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--ink,#1e293b)] text-[var(--paper,#ffffff)] hover:opacity-90 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Завершить приём (Клавиша 3)"
 						data-testid="appointment-action-complete-btn"
 					>
@@ -754,7 +754,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						title="Открыть дневник приёма 043/у"
 						data-testid="appointment-action-open-visit-btn"
 					>
-						<FileText size={13} className="text-[var(--teal,#0d9488)]" />
+						<FileText size={13} className="text-[var(--teal)]" />
 						<span>Карта 043/у</span>
 					</button>
 				</div>
@@ -774,11 +774,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							useAppStore.getState().setCurrentView("finance");
 							showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--good,#16a34a)]/15 text-[var(--good-fg,#15803d)] border border-[var(--good,#16a34a)]/40 hover:bg-[var(--good,#16a34a)]/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--good-soft)] text-[var(--good-fg)] border border-[var(--good)]/40 hover:bg-[var(--good-surface)] active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Принять оплату по 54-ФЗ"
 						data-testid="appointment-action-billing-btn"
 					>
-						<CreditCard size={13} className="text-[var(--good-fg,#15803d)]" />
+						<CreditCard size={13} className="text-[var(--good-fg)]" />
 						<span>Оплата 54-ФЗ</span>
 					</button>
 					<button
@@ -821,7 +821,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							repeatAppointment(appointment);
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[36px] px-2 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Записать на другое время (Клавиша R)"
 						data-testid="appointment-action-repeat-btn"
 					>
@@ -842,7 +842,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							void handleQuickStatusChange("arrived");
 						}}
-						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--good,#16a34a)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Отметить пациента прибывшим"
 						data-testid="appointment-action-arrived-btn"
 					>
