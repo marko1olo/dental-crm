@@ -92,11 +92,13 @@ import {
 	visitSchema,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
+import type { DomainState } from "../types/domainState.js";
 import {
-	type DomainState,
 	inMemoryDomainState,
 	validScheduleTimeZone,
 } from "../sampleData.js";
+
+export type { DomainState };
 import { staffAuthorityFlags } from "../security/permissions.js";
 import { withTenantCtx } from "./rls.js";
 import { db } from "./client.js";

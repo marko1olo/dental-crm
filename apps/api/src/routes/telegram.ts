@@ -46,7 +46,7 @@ import type {
 	DenteTelegramOutboxRuntimeScope,
 	DenteTelegramOutboxStatusFilter,
 	DomainState,
-} from "../sampleData.js";
+} from "../services/telegram/telegramLegacyMemoryStore.js";
 import { hydrateDomainStateFromDb } from "../db/domainStateHydration.js";
 import {
 	buildDenteTelegramLinkCodeList,
@@ -75,7 +75,7 @@ import {
 	revokeDenteTelegramChatLink as revokeLegacyInMemoryTelegramChatLink,
 	safeDenteTelegramPublicHttpsUrl,
 	updateDenteTelegramBotSettings,
-} from "../sampleData.js";
+} from "../services/telegram/telegramLegacyMemoryStore.js";
 /**
  * СВЯЗКИ TELEGRAM-ЧАТОВ ЧИТАЮТСЯ И ПИШУТСЯ В POSTGRES.
  *

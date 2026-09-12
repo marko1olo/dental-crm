@@ -8,7 +8,7 @@ import {
 	telegramOutboxScheduleState,
 	telegramPhotoSentTextFailedBlockedReason,
 } from "../routes/telegram.js";
-import { denteTelegramOutboxDeliveryReceipts } from "../sampleData.js";
+import { denteTelegramOutboxDeliveryReceipts } from "../services/telegram/telegramLegacyMemoryStore.js";
 import type { TelegramTransportResult } from "../telegramTransport.js";
 
 /**

@@ -13,7 +13,7 @@ import {
 	registerTelegramRoutes,
 	registerTelegramWebhookRoutes,
 } from "../../routes/telegram.js";
-import { denteTelegramChatLinks as inMemoryChatLinks } from "../../sampleData.js";
+import { denteTelegramChatLinks as inMemoryChatLinks } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import {
 	buildDenteTelegramChatLinkList,
 	countActiveDenteTelegramChatLinks,

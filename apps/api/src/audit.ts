@@ -2,7 +2,6 @@ import { db } from "./db/client.js";
 import { auditEvents } from "./db/schema.js";
 import { sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
-import { auditEvents as inMemoryAuditEvents } from "./sampleData.js";
 import { withTenantCtx } from "./db/rls.js";
 
 /**
@@ -58,6 +57,17 @@ import { withTenantCtx } from "./db/rls.js";
  *    Для денежных путей развилка решается иначе и решает её ведущий —
  *    `routes/billing.ts` и `db/billingQuery.ts` вне этой зоны правки.
  */
+const inMemoryAuditEvents: Array<{
+	id: string;
+	organizationId: string;
+	actorUserId: string | null;
+	entityType: string;
+	entityId: string;
+	action: string;
+	reason: string | null;
+	createdAt: string;
+}> = [];
+
 export async function recordAuditEvent(input: {
 	organizationId?: string | null | undefined;
 	actorUserId?: string | null | undefined;

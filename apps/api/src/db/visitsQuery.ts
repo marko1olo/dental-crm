@@ -8,7 +8,7 @@ import type {
 	VisitSaveReceipt,
 } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
-import { activeVisit as inMemoryActiveVisit, visitCloseChecklistFactsFor } from "../sampleData.js";
+import { visitCloseChecklistFactsFor } from "../sampleData.js";
 import { deductMaterialsForVisit } from "../services/inventory/materialDeduction.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";

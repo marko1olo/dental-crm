@@ -8,7 +8,6 @@ import {
 } from "@dental/shared";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { chargeLineKopecks, toKopecks } from "../money/patientDebt.js";
-import { payments as inMemoryPayments } from "../sampleData.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 

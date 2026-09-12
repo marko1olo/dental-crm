@@ -14,7 +14,7 @@ import {
 	patients,
 	users,
 } from "../db/schema.js";
-import { normalizePatientAdministrativeProfile } from "../sampleData.js";
+import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 const leadSchema = z.object({
