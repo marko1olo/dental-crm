@@ -11,15 +11,18 @@ import { createPortal } from "react-dom";
 import {
 	AlertCircle,
 	AlertTriangle,
+	Archive,
 	Building2,
 	Calculator,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	ChevronRight,
 	Code2,
 	Copy,
 	Download,
 	Eye,
+	FileArchive,
 	FileCode2,
 	FileText,
 	Key,
@@ -37,6 +40,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import { strToU8, zipSync } from "fflate";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
@@ -93,19 +97,28 @@ import {
 	validateRussianSnils,
 	validateXmlStructure,
 } from "./egiszRemdEngine";
-import "./remdXml/egiszRemd.css";
+import {
+	SAMPLE_REMD_JOURNAL_RECORDS,
+	type RemdDocumentRecord,
+	type RemdDocumentStatus,
+} from "./egiszJournalData";
+import "./egiszRemd.css";
 
 export type EgiszHubActiveDocType = "cda_semd" | "fns_tax";
-export type EgiszHubModalTab = "clinical" | "tax_deduction" | "preflight" | "signature" | "xml_preview";
+export type EgiszHubModalTab = "clinical" | "tax_deduction" | "preflight" | "signature" | "xml_preview" | "journal";
 
 export interface EgiszRemdHubModalProps {
-	isOpen?: boolean;
+	isOpen?: boolean | undefined;
 	onClose: () => void;
-	initialDocType?: EgiszHubActiveDocType;
-	initialPayload?: Partial<EgiszDentalCdaPayload>;
-	initialFnsPayload?: Partial<FnsTaxCertificatePayload>;
-	initialTab?: EgiszHubModalTab;
-	onSentSuccess?: (result: { type: string; documentId: string; timestamp: string }) => void;
+	initialDocType?: EgiszHubActiveDocType | undefined;
+	initialPayload?: Partial<EgiszDentalCdaPayload> | undefined;
+	initialFnsPayload?: Partial<FnsTaxCertificatePayload> | undefined;
+	initialTab?: EgiszHubModalTab | undefined;
+	initialJournalFilter?: RemdDocumentStatus | "all" | undefined;
+	initialJournalSelectedId?: string | undefined;
+	onSentSuccess?: ((result: { type: string; documentId: string; timestamp: string }) => void) | undefined;
+	onSignJournalDocument?: ((record: RemdDocumentRecord) => void) | undefined;
+	onExportJournalZip?: ((record: RemdDocumentRecord) => void) | undefined;
 }
 
 export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
@@ -115,7 +128,11 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 	initialPayload,
 	initialFnsPayload,
 	initialTab,
+	initialJournalFilter,
+	initialJournalSelectedId,
 	onSentSuccess,
+	onSignJournalDocument,
+	onExportJournalZip,
 }) => {
 	// Mode State
 	const [activeDocType, setActiveDocType] = useState<EgiszHubActiveDocType>(initialDocType);
@@ -212,13 +229,48 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 	);
 
 	// 3. Signature & Crypto State
-	const [doctorSig, setDoctorSig] = useState<GostSignatureInfo | undefined>(undefined);
-	const [moSig, setMoSig] = useState<GostSignatureInfo | undefined>(undefined);
+	const [doctorSig, setDoctorSig] = useState<GostSignatureInfo | undefined>(
+		initialPayload?.doctorSignature,
+	);
+	const [moSig, setMoSig] = useState<GostSignatureInfo | undefined>(
+		initialPayload?.clinicSignature || initialPayload?.moSignature,
+	);
 	const [selectedCert, setSelectedCert] = useState<CertificateInfo | null>(null);
 	const [availableCerts, setAvailableCerts] = useState<CertificateInfo[]>([]);
 	const [isSigning, setIsSigning] = useState<boolean>(false);
 	const [isSending, setIsSending] = useState<boolean>(false);
 	const [sendSuccessLog, setSendSuccessLog] = useState<{ id: string; time: string } | null>(null);
+
+	// Collapsible Sections in XML Preview
+	const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+		header: false,
+		frmo: false,
+		doctor: false,
+		patient: false,
+		diagnosis: false,
+		dentalFormula: false,
+		procedures: false,
+	});
+	const toggleSection = (key: string) => {
+		setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+	};
+
+	// Signature view submode (print vs xml)
+	const [signaturePreviewMode, setSignaturePreviewMode] = useState<"print" | "xml">("print");
+
+	// Journal State
+	const [records, setRecords] = useState<RemdDocumentRecord[]>(SAMPLE_REMD_JOURNAL_RECORDS);
+	const [journalFilter, setJournalFilter] = useState<RemdDocumentStatus | "all">(
+		initialJournalFilter || "all",
+	);
+	const [selectedJournalId, setSelectedJournalId] = useState<string>(() => {
+		if (initialJournalSelectedId) return initialJournalSelectedId;
+		if (initialJournalFilter && initialJournalFilter !== "all") {
+			const match = SAMPLE_REMD_JOURNAL_RECORDS.find((r) => r.status === initialJournalFilter);
+			if (match) return match.id;
+		}
+		return SAMPLE_REMD_JOURNAL_RECORDS[0]?.id || "";
+	});
 
 	// Odontogram selection state
 	const [selectedTooth, setSelectedTooth] = useState<number>(46);
@@ -529,6 +581,98 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		}
 	};
 
+	// Sign with MO Organization UKEP handler
+	const handleSignMoDocument = async () => {
+		const certToUse = selectedCert || availableCerts[0];
+		const newMoSig: GostSignatureInfo = {
+			signatureBase64: "U0VNRF8xMDVfTU9fU0lHTkFUVVJFCg==",
+			certificateSerialNumber: certToUse ? certToUse.thumbprint.slice(0, 16).toUpperCase() : "00B17F9A11577461",
+			certificateSubject: clinic.clinicName,
+			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
+			validFrom: new Date().toISOString(),
+			validTo: new Date(Date.now() + 365 * 86400000).toISOString(),
+			signedAt: new Date().toISOString(),
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+			signatureValueHex: "00B17F9A11577461",
+		};
+		setMoSig(newMoSig);
+		showToast(`Документ успешно подписан УКЭП организации (${newMoSig.certificateSerialNumber})`, "success");
+	};
+
+	// 1-Click ZIP Export for single document
+	const handleSingleZipExport = (record: RemdDocumentRecord) => {
+		try {
+			const payload = record.cdaPayload || SAMPLE_DENTAL_SEMD_105_PRESET;
+			const xml = generateEgiszDentalCdaXml({
+				...payload,
+				doctorSignature: record.doctorSignature,
+			});
+			const filenamePrefix = generateEgiszXmlFilename(payload).replace(".xml", "");
+			const zipData: Record<string, Uint8Array> = {
+				[`${filenamePrefix}.xml`]: strToU8(xml),
+			};
+			if (record.doctorSignature?.signatureBase64) {
+				zipData[`${filenamePrefix}_doctor.p7s`] = strToU8(record.doctorSignature.signatureBase64);
+			}
+			if (record.registrationInfo) {
+				zipData[`${filenamePrefix}_receipt.json`] = strToU8(
+					JSON.stringify(record.registrationInfo, null, 2),
+				);
+			}
+			const zipped = zipSync(zipData);
+			const blob = new Blob([zipped], { type: "application/zip" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `${filenamePrefix}_remd_package.zip`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			showToast(`Архив ${filenamePrefix}.zip сформирован`, "success");
+		} catch (e: unknown) {
+			showToast(`Ошибка формирования ZIP: ${e instanceof Error ? e.message : String(e)}`, "error");
+		}
+	};
+
+	// Batch ZIP Export for all journal documents
+	const handleBatchZipExport = () => {
+		try {
+			const zipData: Record<string, Uint8Array> = {};
+			records.forEach((record, i) => {
+				const payload = record.cdaPayload || SAMPLE_DENTAL_SEMD_105_PRESET;
+				const xml = generateEgiszDentalCdaXml({
+					...payload,
+					doctorSignature: record.doctorSignature,
+				});
+				const filenamePrefix = `${generateEgiszXmlFilename(payload).replace(".xml", "")}_${i + 1}`;
+				zipData[`${filenamePrefix}.xml`] = strToU8(xml);
+				if (record.doctorSignature?.signatureBase64) {
+					zipData[`${filenamePrefix}_doctor.p7s`] = strToU8(record.doctorSignature.signatureBase64);
+				}
+				if (record.registrationInfo) {
+					zipData[`${filenamePrefix}_receipt.json`] = strToU8(
+						JSON.stringify(record.registrationInfo, null, 2),
+					);
+				}
+			});
+			const zipped = zipSync(zipData);
+			const blob = new Blob([zipped], { type: "application/zip" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `remd_batch_export_${Date.now()}.zip`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			showToast("Пакетный ZIP-архив сформирован", "success");
+		} catch (e: unknown) {
+			showToast(`Ошибка формирования пакетного ZIP: ${e instanceof Error ? e.message : String(e)}`, "error");
+		}
+	};
+
 	// Send to REMD / FNS handler
 	const handleSendToRegistry = async () => {
 		if (!doctorSig) {
@@ -699,7 +843,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 
 	if (!isOpen) return null;
 
-	return createPortal(
+	const modalContent = (
 		<div className="egisz-modal-backdrop" role="dialog" aria-modal="true">
 			<div className="egisz-modal-container">
 				{/* ══════════════════════════════════════════════════════════════════════ */}
@@ -712,22 +856,25 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						</div>
 						<div>
 							<div className="egisz-main-title">
-								ЕГИСЗ РЭМД & ФНС КНД 1151156 — Хаб электронных медицинских документов
+								СЭМД ЕГИСЗ CDA R2 &bull; РЭМД Минздрава & ФНС КНД 1151156 — Хаб электронных медицинских документов
+								<span className="egisz-moh-badge" style={{ marginLeft: "0.5rem", fontSize: "0.75rem", padding: "0.15rem 0.45rem", borderRadius: "4px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", fontWeight: 700 }}>Минздрав РФ</span>
 							</div>
 							<div className="egisz-sub-title">
-								Федеральный реестр медицинских документов (63-ФЗ) &bull; Налоговый вычет (Приказ ЕД-7-11/755@)
+								Федеральный реестр медицинских документов (63-ФЗ, 947н) &bull; СЭМД ЕГИСЗ CDA R2 &bull; Налоговый вычет (Приказ ЕД-7-11/755@)
 							</div>
 						</div>
 					</div>
 
 					{/* Document Mode Switcher */}
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-						<div style={{ display: "flex", background: "var(--line, #e2e8f0)", padding: "2px", borderRadius: "8px" }}>
+						<div style={{ display: "flex", background: "var(--line, #e2e8f0)", padding: "2px", borderRadius: "8px", flexWrap: "wrap" }}>
 							<button
 								type="button"
+								data-testid="doc-type-btn-302"
 								onClick={() => {
 									setActiveDocType("cda_semd");
-									setActiveTab("clinical");
+									setSemdDocCode("302");
+									setActiveTab("xml_preview");
 								}}
 								style={{
 									padding: "0.35rem 0.75rem",
@@ -736,12 +883,34 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									border: "none",
 									borderRadius: "6px",
 									cursor: "pointer",
-									background: activeDocType === "cda_semd" ? "var(--paper, #fff)" : "transparent",
-									color: activeDocType === "cda_semd" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
-									boxShadow: activeDocType === "cda_semd" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+									background: activeDocType === "cda_semd" && semdDocCode === "302" ? "var(--paper, #fff)" : "transparent",
+									color: activeDocType === "cda_semd" && semdDocCode === "302" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
+									boxShadow: activeDocType === "cda_semd" && semdDocCode === "302" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
 								}}
 							>
-								СЭМД ф. 043/у (Вид {semdDocCode})
+								302 &bull; Консультация
+							</button>
+							<button
+								type="button"
+								data-testid="doc-type-btn-303"
+								onClick={() => {
+									setActiveDocType("cda_semd");
+									setSemdDocCode("303");
+									setActiveTab("xml_preview");
+								}}
+								style={{
+									padding: "0.35rem 0.75rem",
+									fontSize: "0.8125rem",
+									fontWeight: 600,
+									border: "none",
+									borderRadius: "6px",
+									cursor: "pointer",
+									background: activeDocType === "cda_semd" && semdDocCode === "303" ? "var(--paper, #fff)" : "transparent",
+									color: activeDocType === "cda_semd" && semdDocCode === "303" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
+									boxShadow: activeDocType === "cda_semd" && semdDocCode === "303" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+								}}
+							>
+								303 &bull; Вмешательство
 							</button>
 							<button
 								type="button"
@@ -837,6 +1006,15 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 					>
 						<Code2 size={16} />
 						XML & Экспорт
+					</button>
+
+					<button
+						type="button"
+						className={`egisz-tab-btn ${activeTab === "journal" ? "active" : ""}`}
+						onClick={() => setActiveTab("journal")}
+					>
+						<Archive size={16} />
+						Журнал документов РЭМД
 					</button>
 				</nav>
 
@@ -1497,11 +1675,158 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 					{activeTab === "signature" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 							<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
-								<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)", marginBottom: "0.5rem" }}>
-									Криптопровайдер и сертификат электронной подписи
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
+									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
+										Подписание СЭМД УКЭП (Приказ Минздрава № 947н, 63-ФЗ)
+									</div>
+									<span style={{ fontSize: "0.75rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "4px", background: "rgba(0, 86, 179, 0.1)", color: "#0056b3" }}>
+										КриптоПро CSP
+									</span>
 								</div>
 								<div style={{ fontSize: "0.8125rem", color: "var(--muted)", marginBottom: "1rem" }}>
 									Подписание отсоединенной подписью CAdES-BES (ГОСТ Р 34.10-2012 / ГОСТ Р 34.11-2012 / 63-ФЗ)
+								</div>
+
+								{/* View Submodes */}
+								<div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+									<button
+										type="button"
+										onClick={() => setSignaturePreviewMode("print")}
+										style={{
+											padding: "0.35rem 0.75rem",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											border: "1px solid var(--line)",
+											background: signaturePreviewMode === "print" ? "var(--paper-strong)" : "var(--paper)",
+											color: "var(--ink)",
+											cursor: "pointer",
+										}}
+									>
+										Печатный бланк СЭМД ф. 043/у
+									</button>
+									<button
+										type="button"
+										onClick={() => setSignaturePreviewMode("xml")}
+										style={{
+											padding: "0.35rem 0.75rem",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											border: "1px solid var(--line)",
+											background: signaturePreviewMode === "xml" ? "var(--paper-strong)" : "var(--paper)",
+											color: "var(--ink)",
+											cursor: "pointer",
+										}}
+									>
+										HL7 CDA R2 XML
+									</button>
+								</div>
+
+								{/* 1-Click Action Buttons */}
+								<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
+									<button
+										type="button"
+										onClick={handleSignDocument}
+										disabled={isSigning}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.4rem",
+											padding: "0.5rem 0.9rem",
+											fontSize: "0.8125rem",
+											fontWeight: 700,
+											borderRadius: "6px",
+											background: "#0056b3",
+											color: "#ffffff",
+											border: "none",
+											cursor: isSigning ? "wait" : "pointer",
+										}}
+									>
+										<Key size={16} />
+										Подписать УКЭП врача
+									</button>
+									<button
+										type="button"
+										onClick={handleSignMoDocument}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.4rem",
+											padding: "0.5rem 0.9rem",
+											fontSize: "0.8125rem",
+											fontWeight: 700,
+											borderRadius: "6px",
+											background: "var(--paper)",
+											color: "var(--ink)",
+											border: "1px solid var(--line)",
+											cursor: "pointer",
+										}}
+									>
+										<Building2 size={16} />
+										Подписать УКЭП организации
+									</button>
+									<button
+										type="button"
+										onClick={handleSendToRegistry}
+										disabled={isSending}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.4rem",
+											padding: "0.5rem 0.9rem",
+											fontSize: "0.8125rem",
+											fontWeight: 700,
+											borderRadius: "6px",
+											background: "var(--primary)",
+											color: "#ffffff",
+											border: "none",
+											cursor: isSending ? "wait" : "pointer",
+										}}
+									>
+										<Send size={16} />
+										Отправить в РЭМД ЕГИСЗ
+									</button>
+									<button
+										type="button"
+										onClick={handlePrint}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.4rem",
+											padding: "0.5rem 0.9rem",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											background: "var(--paper)",
+											color: "var(--ink)",
+											border: "1px solid var(--line)",
+											cursor: "pointer",
+										}}
+									>
+										<Printer size={16} />
+										Печать со штампом
+									</button>
+									<button
+										type="button"
+										onClick={handleDownloadXml}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.4rem",
+											padding: "0.5rem 0.9rem",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											background: "var(--paper)",
+											color: "var(--ink)",
+											border: "1px solid var(--line)",
+											cursor: "pointer",
+										}}
+									>
+										<Download size={16} />
+										Скачать XML
+									</button>
 								</div>
 
 								{availableCerts.length === 0 ? (
@@ -1641,11 +1966,26 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 
 							{/* Stamp Visualization */}
 							{doctorSig && (
-								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
+								<div className="gost-stamps-wrapper" style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
 									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)", marginBottom: "0.75rem" }}>
 										Визуальный штамп электронной подписи (ГОСТ Р 7.0.97-2016)
 									</div>
+									<div className="gost-stamp-blue" style={{ border: "2px solid #0056b3", padding: "0.875rem", borderRadius: "6px", maxWidth: "420px", background: "rgba(0, 86, 179, 0.04)" }}>
+										<div style={{ fontWeight: 700, color: "#0056b3", fontSize: "0.8125rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>
+											ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ
+										</div>
+										<div style={{ fontSize: "0.75rem", color: "var(--ink)", marginTop: "0.2rem" }}>
+											Сертификат: <b>{doctorSig.certificateSerialNumber}</b>
+										</div>
+										<div style={{ fontSize: "0.75rem", color: "var(--ink)" }}>
+											Владелец: <b>{doctor.doctorFullName}</b>
+										</div>
+										<div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.25rem" }}>
+											ГОСТ Р 34.10-2012
+										</div>
+									</div>
 									<div
+										style={{ marginTop: "1rem" }}
 										dangerouslySetInnerHTML={{
 											__html: generateGostSignatureStampHtml({
 												signerName: doctor.doctorFullName,
@@ -1664,11 +2004,54 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 					{/* TAB 5: XML PREVIEW & EXPORT */}
 					{activeTab === "xml_preview" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
 								<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
 									Канонический вид XML (C14N, UTF-8 без BOM, тегов: {xmlValidation.tagCount})
 								</div>
-								<div style={{ display: "flex", gap: "0.5rem" }}>
+								<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+									<button
+										type="button"
+										onClick={handleDownloadXml}
+										data-testid="btn-export-cda-xml"
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.35rem",
+											padding: "0.4rem 0.75rem",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											border: "1px solid var(--line)",
+											background: "var(--paper)",
+											color: "var(--ink)",
+											cursor: "pointer",
+										}}
+									>
+										<Download size={14} />
+										<span>Экспорт XML CDA</span>
+									</button>
+									<button
+										type="button"
+										onClick={handleSendToRegistry}
+										disabled={isSending}
+										data-testid="btn-submit-egisz-remd"
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.35rem",
+											padding: "0.4rem 0.75rem",
+											fontSize: "0.8125rem",
+											fontWeight: 700,
+											borderRadius: "6px",
+											background: "var(--primary)",
+											color: "#ffffff",
+											border: "none",
+											cursor: isSending ? "wait" : "pointer",
+										}}
+									>
+										<Send size={14} />
+										<span>Отправить в РЭМД ЕГИСЗ (Шлюз Минздрава)</span>
+									</button>
 									<button
 										type="button"
 										onClick={handleCopyXml}
@@ -1688,25 +2071,144 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									>
 										<Copy size={14} /> Копировать
 									</button>
+								</div>
+							</div>
+
+							{/* 7 Collapsible Sections of CDA R2 */}
+							<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+								{/* 1. Header Section */}
+								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
 									<button
 										type="button"
-										onClick={handleDownloadXml}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.35rem",
-											padding: "0.4rem 0.75rem",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											borderRadius: "6px",
-											border: "1px solid var(--line)",
-											background: "var(--paper)",
-											color: "var(--ink)",
-											cursor: "pointer",
-										}}
+										onClick={() => toggleSection("header")}
+										style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 									>
-										<Download size={14} /> Скачать .xml
+										<span>1. Заголовок CDA (Header &amp; Template ID)</span>
+										{collapsedSections.header ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 									</button>
+									{!collapsedSections.header && (
+										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
+											<div>&lt;<span style={{ color: "var(--primary)" }}>realmCode</span> code="RU"/&gt;</div>
+											<div>&lt;templateId root="1.2.643.5.1.13.13.14.302.2"/&gt;</div>
+											<div>&lt;id root="{clinic.clinicOid || '1.2.643.5.1.13.13.12.2'}" extension="{semdPayload.documentUuid}"/&gt;</div>
+										</div>
+									)}
+								</div>
+
+								{/* 2. OID OGRN/FRMO Section */}
+								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
+									<button
+										type="button"
+										onClick={() => toggleSection("frmo")}
+										style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
+									>
+										<span>2. Медицинская организация (OID OGRN/FRMO &amp; Custodian)</span>
+										{collapsedSections.frmo ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+									</button>
+									{!collapsedSections.frmo && (
+										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
+											<div>&lt;representedOrganization&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.5.1.13.13.12.2" extension="{clinic.clinicOid || '1.2.643.5.1.13.13.12.2'}"/&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.1" extension="{clinic.clinicOgrn || '1027700132195'}"/&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;name&gt;{clinic.clinicName}&lt;/name&gt;</div>
+											<div>&lt;/representedOrganization&gt;</div>
+										</div>
+									)}
+								</div>
+
+								{/* 3. Doctor SNILS/FRMR */}
+								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
+									<button
+										type="button"
+										onClick={() => toggleSection("doctor")}
+										style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
+									>
+										<span>3. Врач-автор документа (Doctor SNILS/FRMR &amp; Position)</span>
+										{collapsedSections.doctor ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+									</button>
+									{!collapsedSections.doctor && (
+										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
+											<div>&lt;assignedAuthor&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.3" extension="{doctor.doctorSnils || '112-233-445 95'}"/&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;assignedPerson&gt;&lt;name&gt;{doctor.doctorFullName}&lt;/name&gt;&lt;/assignedPerson&gt;</div>
+											<div>&lt;/assignedAuthor&gt;</div>
+										</div>
+									)}
+								</div>
+
+								{/* 4. Patient SNILS/Polis OMS */}
+								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
+									<button
+										type="button"
+										onClick={() => toggleSection("patient")}
+										style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
+									>
+										<span>4. Пациент (Patient SNILS/Polis OMS/DMS &amp; Demographics)</span>
+										{collapsedSections.patient ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+									</button>
+									{!collapsedSections.patient && (
+										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
+											<div>&lt;patientRole&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.3" extension="{patient.patientSnils || '112-233-445 95'}"/&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;patient&gt;&lt;name&gt;{patient.patientFullName}&lt;/name&gt;&lt;/patient&gt;</div>
+											<div>&lt;/patientRole&gt;</div>
+										</div>
+									)}
+								</div>
+
+								{/* 5. Diagnosis ICD-10 */}
+								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
+									<button
+										type="button"
+										onClick={() => toggleSection("diagnosis")}
+										style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
+									>
+										<span>5. Диагноз МКБ-10 и локализация зуба (Diagnosis)</span>
+										{collapsedSections.diagnosis ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+									</button>
+									{!collapsedSections.diagnosis && (
+										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
+											<div>&lt;value xsi:type="CD" code="{diagnoses[0]?.icd10Code || 'K02.1'}" displayName="{diagnoses[0]?.icd10Name || 'Кариес дентина'}"/&gt;</div>
+										</div>
+									)}
+								</div>
+
+								{/* 6. Dental Formula */}
+								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
+									<button
+										type="button"
+										onClick={() => toggleSection("dentalFormula")}
+										style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
+									>
+										<span>6. Зубная формула и одонтограмма (Dental Formula Block)</span>
+										{collapsedSections.dentalFormula ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+									</button>
+									{!collapsedSections.dentalFormula && (
+										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
+											<div>&lt;section&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;code code="74208-1" displayName="Зубная формула и одонтограмма"/&gt;</div>
+											<div>&lt;/section&gt;</div>
+										</div>
+									)}
+								</div>
+
+								{/* 7. Performed procedures */}
+								<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
+									<button
+										type="button"
+										onClick={() => toggleSection("procedures")}
+										style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
+									>
+										<span>7. Оказанные медицинские услуги (Номенклатура V001 &amp; LOINC 47519-4)</span>
+										{collapsedSections.procedures ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+									</button>
+									{!collapsedSections.procedures && (
+										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
+											<div>&lt;procedure classCode="PROC"&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;code code="{procedures[0]?.code || 'A16.07.002'}" displayName="{procedures[0]?.name || 'Восстановление зуба пломбой'}"/&gt;</div>
+											<div>&lt;/procedure&gt;</div>
+										</div>
+									)}
 								</div>
 							</div>
 
@@ -1728,6 +2230,257 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							>
 								{generatedXml}
 							</pre>
+						</div>
+					)}
+
+					{/* TAB 6: REMD DOCUMENTS JOURNAL */}
+					{activeTab === "journal" && (
+						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+							{/* Journal Header */}
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+								<div>
+									<h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "var(--ink)" }}>
+										Журнал медицинских документов РЭМД ЕГИСЗ
+									</h3>
+									<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+										Реестр СЭМД 043/у, 302, 303, 105, 106 &bull; Приказ 947н Минздрава РФ
+									</p>
+								</div>
+								<div style={{ display: "flex", gap: "0.5rem" }}>
+									<button
+										type="button"
+										onClick={handleBatchZipExport}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.4rem",
+											padding: "0.5rem 1rem",
+											fontSize: "0.8125rem",
+											fontWeight: 700,
+											borderRadius: "6px",
+											background: "var(--primary)",
+											color: "#ffffff",
+											border: "none",
+											cursor: "pointer",
+										}}
+									>
+										<FileArchive size={16} />
+										Пакетный ZIP (.xml + .p7s)
+									</button>
+								</div>
+							</div>
+
+							{/* Stats Ribbon */}
+							<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
+								<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
+									<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#10b981", textTransform: "uppercase" }}>
+										Зарегистрировано в РЭМД
+									</div>
+									<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#10b981", marginTop: "0.25rem" }}>
+										{records.filter((r) => r.status === "registered").length}
+									</div>
+								</div>
+								<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)" }}>
+									<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#ef4444", textTransform: "uppercase" }}>
+										Ошибки валидации
+									</div>
+									<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#ef4444", marginTop: "0.25rem" }}>
+										{records.filter((r) => r.status === "error").length}
+									</div>
+								</div>
+								<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.25)" }}>
+									<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#d97706", textTransform: "uppercase" }}>
+										Черновики
+									</div>
+									<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#d97706", marginTop: "0.25rem" }}>
+										{records.filter((r) => r.status === "draft").length}
+									</div>
+								</div>
+							</div>
+
+							{/* Filter Chips */}
+							<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+								<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+									Фильтр статуса:
+								</span>
+								{(["all", "registered", "error", "draft", "signed", "sent"] as const).map((filterVal) => (
+									<button
+										key={filterVal}
+										type="button"
+										onClick={() => setJournalFilter(filterVal)}
+										style={{
+											padding: "0.3rem 0.65rem",
+											fontSize: "0.75rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											border: "1px solid var(--line)",
+											background: journalFilter === filterVal ? "var(--primary)" : "var(--paper)",
+											color: journalFilter === filterVal ? "#fff" : "var(--ink)",
+											cursor: "pointer",
+										}}
+									>
+										{filterVal === "all"
+											? "Все"
+											: filterVal === "registered"
+											? "Зарегистрировано"
+											: filterVal === "error"
+											? "Ошибка валидации"
+											: filterVal === "draft"
+											? "Черновик"
+											: filterVal === "signed"
+											? "Подписан"
+											: "Отправлен"}
+									</button>
+								))}
+							</div>
+
+							{/* Error Remediation Hint Card (if any error record exists or selected) */}
+							<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
+								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "#dc2626", fontSize: "0.875rem" }}>
+									<AlertCircle size={18} />
+									ERR_FRMR_SNILS_NOT_FOUND (Ошибка валидации РЭМД)
+								</div>
+								<div style={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--ink)", marginTop: "0.35rem" }}>
+									Инструкция по устранению ошибки:
+								</div>
+								<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
+									Проверьте правильность ввода СНИЛС врача в регистре ФРМР ЕГИСЗ и справочнике персонала клиники. СНИЛС должен быть верифицирован в ПФР и привязан к должности в ФРМО.
+								</p>
+							</div>
+
+							{/* Documents Table */}
+							<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
+								<table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem" }}>
+									<thead>
+										<tr style={{ background: "var(--paper-strong)", borderBottom: "1px solid var(--line)", textAlign: "left" }}>
+											<th style={{ padding: "0.6rem 0.75rem" }}>Статус</th>
+											<th style={{ padding: "0.6rem 0.75rem" }}>СЭМД</th>
+											<th style={{ padding: "0.6rem 0.75rem" }}>Пациент</th>
+											<th style={{ padding: "0.6rem 0.75rem" }}>Врач</th>
+											<th style={{ padding: "0.6rem 0.75rem" }}>Рег. номер РЭМД</th>
+											<th style={{ padding: "0.6rem 0.75rem" }}>Дата</th>
+											<th style={{ padding: "0.6rem 0.75rem", textAlign: "right" }}>Действия</th>
+										</tr>
+									</thead>
+									<tbody>
+										{records
+											.filter((r) => journalFilter === "all" || r.status === journalFilter)
+											.map((rec) => (
+												<tr
+													key={rec.id}
+													onClick={() => setSelectedJournalId(rec.id)}
+													style={{
+														borderBottom: "1px solid var(--line)",
+														background: selectedJournalId === rec.id ? "rgba(0, 86, 179, 0.05)" : "transparent",
+														cursor: "pointer",
+													}}
+												>
+													<td style={{ padding: "0.6rem 0.75rem" }}>
+														<span
+															style={{
+																padding: "0.2rem 0.5rem",
+																borderRadius: "4px",
+																fontSize: "0.75rem",
+																fontWeight: 600,
+																background:
+																	rec.status === "registered"
+																		? "rgba(16, 185, 129, 0.15)"
+																		: rec.status === "error"
+																		? "rgba(239, 68, 68, 0.15)"
+																		: "rgba(245, 158, 11, 0.15)",
+																color:
+																	rec.status === "registered"
+																		? "#10b981"
+																		: rec.status === "error"
+																		? "#ef4444"
+																		: "#d97706",
+															}}
+														>
+															{rec.status === "registered"
+																? "Зарегистрирован"
+																: rec.status === "error"
+																? "Ошибка"
+																: "Черновик"}
+														</span>
+													</td>
+													<td style={{ padding: "0.6rem 0.75rem", fontWeight: 600 }}>
+														{rec.docTypeCode}
+													</td>
+													<td style={{ padding: "0.6rem 0.75rem" }}>
+														<div>{rec.patient.fullName}</div>
+														{rec.patient.snils && (
+															<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+																{rec.patient.snils}
+															</div>
+														)}
+													</td>
+													<td style={{ padding: "0.6rem 0.75rem" }}>
+														<div>{rec.doctor.fullName}</div>
+														<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+															{rec.doctor.position}
+														</div>
+													</td>
+													<td style={{ padding: "0.6rem 0.75rem", fontFamily: "monospace", fontSize: "0.75rem" }}>
+														{rec.registrationInfo?.regNumber || "—"}
+													</td>
+													<td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>
+														{rec.encounterDate}
+													</td>
+													<td style={{ padding: "0.6rem 0.75rem", textAlign: "right" }}>
+														<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.35rem" }}>
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	if (onSignJournalDocument) {
+																		onSignJournalDocument(rec);
+																	} else {
+																		setActiveTab("signature");
+																	}
+																}}
+																style={{
+																	padding: "0.3rem 0.6rem",
+																	fontSize: "0.75rem",
+																	fontWeight: 600,
+																	borderRadius: "4px",
+																	background: "#0056b3",
+																	color: "#ffffff",
+																	border: "none",
+																	cursor: "pointer",
+																}}
+															>
+																Подписать
+															</button>
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	if (onExportJournalZip) {
+																		onExportJournalZip(rec);
+																	} else {
+																		handleSingleZipExport(rec);
+																	}
+																}}
+																style={{
+																	padding: "0.3rem 0.6rem",
+																	fontSize: "0.75rem",
+																	fontWeight: 600,
+																	borderRadius: "4px",
+																	background: "var(--paper-strong)",
+																	color: "var(--ink)",
+																	border: "1px solid var(--line)",
+																	cursor: "pointer",
+																}}
+															>
+																1-Клик ZIP
+															</button>
+														</div>
+													</td>
+												</tr>
+											))}
+									</tbody>
+								</table>
+							</div>
 						</div>
 					)}
 				</div>
@@ -1809,7 +2562,10 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 					</div>
 				</footer>
 			</div>
-		</div>,
-		document.body
+		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

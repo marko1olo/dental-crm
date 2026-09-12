@@ -998,7 +998,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
 	"components/documents/forms/OutpatientForm043Editor.tsx:OutpatientForm043Editor",
 	"components/egisz/EgiszDocumentsJournalModal.tsx:EgiszDocumentsJournalModal",
-	"components/egisz/EgiszRemdHubModal.tsx:EgiszRemdHubModal",
 	"components/egisz/EgiszRemdSigningModal.tsx:EgiszRemdSigningModal",
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
 	"components/endo/EndoQuickProtocolsBar.tsx:EndoQuickProtocolsBar",
@@ -1107,7 +1106,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 117;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 116;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.
