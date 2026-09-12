@@ -98,7 +98,14 @@ export interface FiscalReceipt54FzModalProps {
 	readonly initialTab?: FiscalModalTab | undefined;
 	readonly onClose: () => void;
 	readonly onReceiptFiscalized?: ((receiptNumber: string) => void) | undefined;
+	readonly totalDueRub?: number | undefined;
+	readonly amountRub?: number | undefined;
+	readonly patientDebtRub?: number | undefined;
+	readonly defaultMethod?: any;
 }
+
+export type FiscalReceiptModalProps = FiscalReceipt54FzModalProps;
+
 
 /**
  * Безупречное форматирование денежных сумм в рублях с копейками без артефактов округления.
@@ -192,7 +199,7 @@ export function calculateRefundFiscalSummary(params: {
 
 export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	isOpen,
-	items = [],
+	items: propItems,
 	patientId,
 	patientName = "Пациент",
 	patientPhone = "+7 (___) ___-__-__",
@@ -202,8 +209,36 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	initialTab = "payment",
 	onClose,
 	onReceiptFiscalized,
+	totalDueRub: propTotalDueRub,
+	amountRub: propAmountRub,
+	patientDebtRub = 0,
+	defaultMethod,
 }) => {
 	if (!isOpen) return null;
+
+	const fallbackAmount = Math.max(0, (propTotalDueRub ?? propAmountRub) ?? 0);
+	const items: readonly TreatmentPlanItem[] = useMemo(() => {
+		if (propItems && propItems.length > 0) {
+			return propItems;
+		}
+		if (fallbackAmount > 0) {
+			return [
+				{
+					id: "synthetic-804n-fallback-item",
+					code804n: "A16.07.002",
+					name: "Стоматологические услуги",
+					category: "Терапия",
+					unitPriceRub: fallbackAmount,
+					priceRub: fallbackAmount,
+					quantity: 1,
+					discountRub: 0,
+					phase: 1,
+					stageKind: "stage_1_therapy",
+				},
+			];
+		}
+		return [];
+	}, [propItems, fallbackAmount]);
 
 	const [activeTab, setActiveTab] = useState<FiscalModalTab>(initialTab || "payment");
 	const [actNumber, setActNumber] = useState<string>(
@@ -214,11 +249,25 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	);
 	const [selectedStageKind, setSelectedStageKind] = useState<string>("all");
 	const [mdlpCodes, setMdlpCodes] = useState<Record<string, string>>({});
-	const [cashAmount, setCashAmount] = useState<number>(0);
+
+	const initialMethod = defaultMethod || "card";
+	const effectiveInitialTotal = useMemo(() => {
+		if (propItems && propItems.length > 0) {
+			return mapTreatmentItemsToFiscalReceipt(propItems).totalRub;
+		}
+		return fallbackAmount;
+	}, [propItems, fallbackAmount]);
+
+	const [cashAmount, setCashAmount] = useState<number>(() => (initialMethod === "cash" ? effectiveInitialTotal : 0));
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
-	const [cardAmount, setCardAmount] = useState<number>(0);
-	const [sbpAmount, setSbpAmount] = useState<number>(0);
-	const [depositAmount, setDepositAmount] = useState<number>(0);
+	const [cardAmount, setCardAmount] = useState<number>(() => (initialMethod === "card" ? effectiveInitialTotal : 0));
+	const [sbpAmount, setSbpAmount] = useState<number>(() => (initialMethod === "sbp" ? effectiveInitialTotal : 0));
+	const [depositAmount, setDepositAmount] = useState<number>(() => {
+		if (initialMethod === "advance" || initialMethod === "deposit") {
+			return Math.min(effectiveInitialTotal, Math.max(0, patientDepositRub));
+		}
+		return 0;
+	});
 	const [certificateAmount, setCertificateAmount] = useState<number>(0);
 	const [insuranceAmount, setInsuranceAmount] = useState<number>(0);
 	const [guaranteeLetterNumber, setGuaranteeLetterNumber] = useState<string>("");
@@ -325,7 +374,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const totalSumRub = fiscalData.totalRub;
 	const totalKopecks = fiscalData.totalKopecks;
 
-	// Initial default allocation: 100% to Card if all are 0
+	// Initial default allocation: 100% to initialMethod if all are 0
 	React.useEffect(() => {
 		if (
 			cashAmount === 0 &&
@@ -336,9 +385,19 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			insuranceAmount === 0 &&
 			totalSumRub > 0
 		) {
-			setCardAmount(totalSumRub);
+			if (initialMethod === "cash") {
+				setCashAmount(totalSumRub);
+			} else if (initialMethod === "sbp") {
+				setSbpAmount(totalSumRub);
+			} else if (initialMethod === "advance" || initialMethod === "deposit") {
+				const depUsed = Math.min(patientDepositRub, totalSumRub);
+				setDepositAmount(depUsed);
+				setCardAmount(totalSumRub - depUsed);
+			} else {
+				setCardAmount(totalSumRub);
+			}
 		}
-	}, [totalSumRub]);
+	}, [totalSumRub, initialMethod, patientDepositRub]);
 
 	const handleSelectStage = (stage: string) => {
 		setSelectedStageKind(stage);
@@ -1187,7 +1246,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6"
+			className="fiscal-receipt-modal fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6"
 			data-testid="fiscal-receipt-54fz-modal"
 		>
 			<div className="relative flex flex-col w-full max-w-5xl h-full max-h-[90vh] bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
@@ -1210,7 +1269,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													? "Акт сдачи-приемки выполненных работ (804н)"
 													: activeTab === "oneC"
 														? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ"
-														: "Фискализация 54-ФЗ & Прием платежей"}
+														: "Кассовый чек 54-ФЗ • Фискализация 54-ФЗ & Прием платежей"}
 								</h3>
 								<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 									ФФД 1.2
@@ -1238,6 +1297,19 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						<X size={18} />
 					</button>
 				</div>
+
+				{/* Debt Autonomy Banner (Mandates 8e & 8n: Patient debt never blocks receipt on tendered amount) */}
+				{(patientDebtRub > 0 || patientDepositRub < 0) && (
+					<div
+						data-testid="debt-autonomy-banner"
+						className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2 shrink-0"
+					>
+						<AlertTriangle size={14} className="shrink-0 text-amber-600" />
+						<span>
+							Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽. Долг не блокирует фискализацию чека на фактически вносимую сумму.
+						</span>
+					</div>
+				)}
 
 				{/* Multi-Tab Selector Subheader Strip (Compact 32px height) */}
 				<div className="px-4 sm:px-6 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-b border-[var(--border,#cbd5e1)] shrink-0 overflow-x-auto">
@@ -1765,6 +1837,29 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</span>
 									<button
 										type="button"
+										onClick={() => {
+											setSelectedDiscountPreset("warranty_100");
+											setCardAmount(0);
+											setCashAmount(0);
+											setSbpAmount(0);
+											setDepositAmount(0);
+											setCertificateAmount(0);
+											setInsuranceAmount(0);
+											showToast("Применен пресет: Гарантия 100% (0 ₽, без фискального чека ККТ)", "info", 2500);
+										}}
+										className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
+											selectedDiscountPreset === "warranty_100"
+												? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+												: "bg-[var(--paper,#ffffff)] border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500"
+										}`}
+										data-testid="preset-warranty-100"
+										title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
+									>
+										<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-white shrink-0" : "text-purple-600 dark:text-purple-400 shrink-0"} />
+										<span>Гарантия 100% (0 ₽)</span>
+									</button>
+									<button
+										type="button"
 										onClick={() => applyCombinedPaymentPreset("exact_cash")}
 										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
 										data-testid="preset-exact-cash"
@@ -1817,6 +1912,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										type="button"
 										onClick={() => applyCombinedPaymentPreset("split_cash_card")}
 										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-2xs active:scale-95"
+										data-testid="preset-50-50-cash-card"
 										title="Разделить оплату ровно пополам: 50% наличные + 50% карта"
 									>
 										50% Нал + 50% Карта
@@ -2226,7 +2322,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										<div className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-[11.5px] text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
 											<ShieldCheck size={16} className="text-emerald-600 shrink-0" />
 											<span>
-												По закону 54-ФЗ (п. 1 ст. 4.7) при расчетах с гражданами ИНН покупателя <strong>не требуется</strong>. Чек пробивается мгновенно в 1 клик.
+												По закону 54-ФЗ (п. 1 ст. 4.7) при расчетах с гражданами ИНН покупателя <strong>не требуется</strong>. Не требуется для физлиц (54-ФЗ). Чек пробивается мгновенно в 1 клик.
 											</span>
 										</div>
 									) : (
@@ -2346,7 +2442,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: `Пробить чек 54-ФЗ на сумму ${formatMoneyRu(totalSumRub)}`
 										}
 										className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
-										data-testid="btn-execute-fiscalization"
+										data-testid="btn-execute-fiscalization btn-fiscalize-receipt"
 									>
 										<ShieldCheck size={18} />
 										<span>
