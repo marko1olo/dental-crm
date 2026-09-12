@@ -4298,5 +4298,23 @@
     * Тест: `packages/shared/src/radiology/__tests__/wave133ScanRegistration.test.ts` (25/25 PASS).
 * **Верификация**: 56 тестов Wave 133 (31 patient relationships + 25 scan registration, 100% PASS), `typecheck` Exit 0.
 
+### Wave 135: CBCT 2D/3D аннотации, линейки, ROI и 3D VR пресеты переносных функций
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммит: `4ebae3dc7`)
+* **Файлы**:
+  - `packages/shared/src/radiology/cbctAnnotationEngine.ts`
+  - `packages/shared/src/radiology/__tests__/wave135CbctAnnotation.test.ts`
+  - `packages/shared/src/radiology/index.ts`
+  - `packages/shared/src/index.ts`
+* **Архитектурное решение**:
+  - Модуль 2D/3D аннотаций, линеек, ROI и пресетов объемного рендеринга, адаптированный из DenCT (`annotationLayer.ts` и `volume3DPreset.ts`);
+  - Zod-схемы и строгие типы: `annotationToolTypeSchema` (Length, Angle, Bidirectional, Probe, EllipticalROI, RectangleROI, ArrowAnnotate, FreehandROI), `volume3DQualitySchema` (low, medium, high), `volume3DColormapSchema` (grayscale, cool, warm, spectral, inverted), `annotationMeasureSchema`, `volumeTransferFunctionPresetSchema`;
+  - 6 клинических 3D VR пресетов: Bone (WC: 300, WW: 1500), Tooth (WC: 1200, WW: 2000), Endo (WC: 2000, WW: 3000), SoftTissue (WC: 40, WW: 400), Airway (WC: -600, WW: 800), MIP_Translucent (полупрозрачный рентгеновский вид без окклюзии);
+  - Математический расчет метрик: Euclidean 3D distance, ray vector angle, bidirectional dimensions, probe HU, Newell-Stokes planar polygon area, ellipse area/perimeter, ROI HU densitometry;
+  - Мультисрезовая пространственная фильтрация `filterVisibleAnnotations` для срезов Axial (Z), Sagittal (X), Coronal (Y), CPR и 3D;
+  - Генератор цветовых стопов `getPresetColorMapStops`;
+  - Регламентный протокол лучевых измерений и аннотаций Формы 043/у Минздрава РФ строго без эмодзи (`formatAnnotationReportForm043A4`).
+* **Верификация**: 18 тестов Wave 135 (100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
+
+
 
 
