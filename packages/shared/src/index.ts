@@ -17,6 +17,11 @@ export * from "./perio/index.js";
 export * from "./emr/index.js";
 export type { TimelineCategory } from "./emr/index.js";
 export type { TimelineCategory as ClinicalTimelineCategory } from "./clinical/index.js";
+export { consumableUnitSchema, type ConsumableUnit } from "./inventory/index.js";
+export {
+	consumableUnitSchema as clinicalConsumableUnitSchema,
+	type ConsumableUnit as ClinicalConsumableUnit,
+} from "./clinical/index.js";
 export {
 	type RelationshipType,
 	type PatientRelationship,
@@ -278,6 +283,25 @@ export {
 	formatNativeVolumeA4Protocol,
 	decompressGzipSync,
 	nativeVolumeImportEngine,
+	// Wave 134: CPR Panoramic Reformation & Dental Arch Curve Engine
+	archToothLandmarkSchema,
+	panoramicReformationParamsSchema,
+	paraxialCrossSectionParamsSchema,
+	type ArchToothLandmark,
+	type VolumeSamplingInput,
+	type PanoramicReformationParams,
+	type PanoramicReformationResult,
+	type ParaxialCrossSectionParams,
+	type ParaxialCrossSectionResult,
+	type PanoramicCprReportParams,
+	generateDefaultArchWithLandmarks,
+	trilinearInterpolation,
+	createVolumeSamplingData,
+	buildPanoramicReformation,
+	generatePanoramic,
+	computeParaxialCrossSection,
+	formatPanoramicCprReportA4,
+	cprPanoramicEngine,
 } from "./radiology/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";

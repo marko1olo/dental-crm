@@ -57,4 +57,5 @@ export {
   type PreAppointmentSummaryInput,
   type PreAppointmentSummary,
 } from "./clinicalPlaybooksEngine.js";
+export * from "./treatmentConsumablesEngine.js";
 
