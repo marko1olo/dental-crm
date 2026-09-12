@@ -67,6 +67,7 @@ export {
 	trilinear,
 	type Point2,
 	type VolumeSamplingData,
+	autoDetectDentalArch,
 } from "./cprMath.js";
 
 export * as cprMathEngine from "./cprMath.js";
@@ -181,6 +182,9 @@ export {
 	implantPlaneStrip,
 	sleeveBody,
 	drillSegment,
+	type VirtualImplantParams,
+	type ImplantSliceContour,
+	computeImplantSliceIntersection,
 } from "./implantGeometryEngine.js";
 export * as implantGeometryEngine from "./implantGeometryEngine.js";
 
