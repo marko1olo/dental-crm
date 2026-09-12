@@ -28,7 +28,7 @@ export type MessageKind = "template" | "session" | "interactive";
 
 export type MessageDirection = "outbound" | "inbound";
 
-export type SupportedLocale = "ru" | "es" | "en" | "de" | "fr" | "pt";
+export type SupportedLocale = "ru";
 
 export interface InteractiveButton {
 	id: string;

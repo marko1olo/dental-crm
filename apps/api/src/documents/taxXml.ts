@@ -22,14 +22,17 @@ import type {
 import {
 	buildFnsKnd1151156Xml,
 	cleanDigits,
+	generateFnsFileNameAndId,
 	kopecksToNumericString,
 	parseFio,
 	parseKopecks,
+	preflightValidatePayload,
 	sumKopecks,
 	validateFnsNdflXmlStructure,
-	validateRussianInn,
-	validateRussianKpp,
-	validateRussianOgrn,
+	FNS_ORDER_824_NAME,
+	FNS_XSD_VERSION_501,
+	KND_1151156,
+	KND_1184043,
 } from "@dental/shared";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import { taxPaymentsForDocumentScope } from "./taxPaymentSnapshot.js";
@@ -44,10 +47,17 @@ export type Knd1151156XmlResult =
 	| { ok: true; fileName: string; xml: string; warnings: string[] }
 	| { ok: false; statusCode: 409; error: string };
 
-const KND_1151156_PRINT_FORM_CODE = "1151156";
-const FNS_MEDICAL_EXPENSE_XML_KND = "1184043";
-const FNS_MEDICAL_EXPENSE_XML_VERSION = "5.01";
-const FNS_MEDICAL_EXPENSE_ORDER = "ЕА-7-11/824@";
+export const KND_1151156_PRINT_FORM_CODE = KND_1151156;
+export const FNS_MEDICAL_EXPENSE_XML_KND = KND_1184043;
+export const FNS_MEDICAL_EXPENSE_XML_VERSION = FNS_XSD_VERSION_501;
+export const FNS_MEDICAL_EXPENSE_ORDER = FNS_ORDER_824_NAME;
+
+// Canonical shared engines re-exported per Mandate 8s
+export {
+	buildFnsKnd1151156Xml,
+	generateFnsFileNameAndId,
+	preflightValidatePayload,
+};
 
 function cleanString(str?: string | null): string | undefined {
 	if (!str) return undefined;
@@ -330,6 +340,12 @@ export function buildKnd1151156Xml(
 		},
 	};
 
+	// Предварительная валидация через канонический валидатор shared
+	const preflightIssues = preflightValidatePayload(payload);
+	const preflightWarnings = preflightIssues
+		.filter((issue) => issue.severity === "warning")
+		.map((issue) => `[Предупреждение ФНС]: ${issue.field} — ${issue.message}`);
+
 	const xmlResult = buildFnsKnd1151156Xml(payload);
 	const structureValidation = validateFnsNdflXmlStructure(xmlResult.xmlContent);
 
@@ -348,6 +364,7 @@ export function buildKnd1151156Xml(
 		warnings: [
 			`Внутренняя структурная предпроверка DENTE пройдена: корень <Файл>, КНД ${FNS_MEDICAL_EXPENSE_XML_KND}, ВерсФорм ${FNS_MEDICAL_EXPENSE_XML_VERSION}, Код 1: ${kopecksToNumericString(code1Kopecks)} руб., Код 2: ${kopecksToNumericString(code2Kopecks)} руб.`,
 			`XML собран в строгом соответствии с приказом ФНС РФ № ${FNS_MEDICAL_EXPENSE_ORDER} (XSD UT_SVOPLMEDUSL 5.01).`,
+			...preflightWarnings,
 		],
 	};
 }

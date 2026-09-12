@@ -313,7 +313,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "telegram",
 		intent: "appointment_reminder_24h",
 		templateText:
-			"Здравствуйте, {patient_name}! 🦷\n\nНапоминаем о вашей записи на приём завтра, {appointment_date} в {appointment_time}.\nВрач: {doctor_name} ({doctor_role})\nКабинет: {chair_number}\nКлиника: {clinic_name}, {clinic_address}\n\nПожалуйста, подтвердите визит по ссылке: {portal_link} или ответьте на это сообщение.\nТелефон клиники: {clinic_phone}",
+			"Здравствуйте, {patient_name}!\n\nНапоминаем о вашей записи на приём завтра, {appointment_date} в {appointment_time}.\nВрач: {doctor_name} ({doctor_role})\nКабинет: {chair_number}\nКлиника: {clinic_name}, {clinic_address}\n\nПожалуйста, подтвердите визит по ссылке: {portal_link} или ответьте на это сообщение.\nТелефон клиники: {clinic_phone}",
 		variables: [
 			"patient_name",
 			"appointment_date",
@@ -332,7 +332,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "whatsapp",
 		intent: "appointment_reminder_24h",
 		templateText:
-			"Здравствуйте, *{patient_name}*! 🦷\n\nНапоминаем о вашем визите: *{appointment_date} в {appointment_time}*.\nВрач: {doctor_name} ({doctor_role})\nАдрес: {clinic_name}, {clinic_address}\n\nПодтвердите ваш визит: {portal_link}\nТелефон: {clinic_phone}",
+			"Здравствуйте, *{patient_name}*!\n\nНапоминаем о вашем визите: *{appointment_date} в {appointment_time}*.\nВрач: {doctor_name} ({doctor_role})\nАдрес: {clinic_name}, {clinic_address}\n\nПодтвердите ваш визит: {portal_link}\nТелефон: {clinic_phone}",
 		variables: [
 			"patient_name",
 			"appointment_date",
@@ -350,7 +350,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "max",
 		intent: "appointment_reminder_24h",
 		templateText:
-			"Здравствуйте, {patient_name}! 🦷 Напоминаем о записи на приём: {appointment_date} в {appointment_time} к врачу {doctor_name}. Клиника «{clinic_name}» ({clinic_address}). Подтвердить запись: {portal_link}. Телефон: {clinic_phone}",
+			"Здравствуйте, {patient_name}! Напоминаем о записи на приём: {appointment_date} в {appointment_time} к врачу {doctor_name}. Клиника «{clinic_name}» ({clinic_address}). Подтвердить запись: {portal_link}. Телефон: {clinic_phone}",
 		variables: [
 			"patient_name",
 			"appointment_date",
@@ -383,7 +383,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "telegram",
 		intent: "appointment_confirmation",
 		templateText:
-			"Здравствуйте, {patient_name}! ✅\n\nВы успешно записаны на приём в клинику «{clinic_name}».\n📅 Дата: {appointment_date}\n⏰ Время: {appointment_time}\n👨‍⚕️ Врач: {doctor_name} ({doctor_role})\n📍 Адрес: {clinic_address}, {chair_number}\n\nДетали визита доступны в личном кабинете: {portal_link}\nКонтактный телефон: {clinic_phone}",
+			"Здравствуйте, {patient_name}!\n\nВы успешно записаны на приём в клинику «{clinic_name}».\nДата: {appointment_date}\nВремя: {appointment_time}\nВрач: {doctor_name} ({doctor_role})\nАдрес: {clinic_address}, {chair_number}\n\nДетали визита доступны в личном кабинете: {portal_link}\nКонтактный телефон: {clinic_phone}",
 		variables: [
 			"patient_name",
 			"clinic_name",
@@ -402,7 +402,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "whatsapp",
 		intent: "appointment_confirmation",
 		templateText:
-			"Здравствуйте, *{patient_name}*! ✅\n\nВы успешно записаны на приём в клинику *{clinic_name}*.\nДата и время: *{appointment_date} в {appointment_time}*\nВрач: {doctor_name}\nАдрес: {clinic_address}\n\nЛичный кабинет: {portal_link}\nТелефон: {clinic_phone}",
+			"Здравствуйте, *{patient_name}*!\n\nВы успешно записаны на приём в клинику *{clinic_name}*.\nДата и время: *{appointment_date} в {appointment_time}*\nВрач: {doctor_name}\nАдрес: {clinic_address}\n\nЛичный кабинет: {portal_link}\nТелефон: {clinic_phone}",
 		variables: [
 			"patient_name",
 			"clinic_name",
@@ -434,7 +434,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "telegram",
 		intent: "post_op_checkup_043",
 		templateText:
-			"Здравствуйте, {patient_first_name}! 🩺\n\nВрач {doctor_name} и команда клиники «{clinic_name}» заботятся о вашем самочувствии после недавнего визита.\n\nПожалуйста, ответьте на пару вопросов о вашем состоянии в короткой анкете 043/у: {portal_link}\n\nЕсли вас беспокоит боль, отёк или дискомфорт — сразу свяжитесь с нами: {clinic_phone}.",
+			"Здравствуйте, {patient_first_name}!\n\nВрач {doctor_name} и команда клиники «{clinic_name}» заботятся о вашем самочувствии после недавнего визита.\n\nПожалуйста, ответьте на пару вопросов о вашем состоянии в короткой анкете 043/у: {portal_link}\n\nЕсли вас беспокоит боль, отёк или дискомфорт — сразу свяжитесь с нами: {clinic_phone}.",
 		variables: [
 			"patient_first_name",
 			"doctor_name",
@@ -448,7 +448,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "whatsapp",
 		intent: "post_op_checkup_043",
 		templateText:
-			"Здравствуйте, *{patient_first_name}*! 🩺\n\nКак ваше самочувствие после визита к врачу {doctor_name}?\nПожалуйста, заполните короткий опрос о вашем состоянии: {portal_link}\n\nПри возникновении боли или вопросов звоните нам: {clinic_phone}.\nС заботой, клиника *{clinic_name}*.",
+			"Здравствуйте, *{patient_first_name}*!\n\nКак ваше самочувствие после визита к врачу {doctor_name}?\nПожалуйста, заполните короткий опрос о вашем состоянии: {portal_link}\n\nПри возникновении боли или вопросов звоните нам: {clinic_phone}.\nС заботой, клиника *{clinic_name}*.",
 		variables: [
 			"patient_first_name",
 			"doctor_name",
@@ -462,7 +462,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "telegram",
 		intent: "ztl_ready_alert",
 		templateText:
-			"Здравствуйте, {patient_name}! 🦷✨\n\nВаша ортопедическая конструкция готова и поступила в клинику «{clinic_name}» из зуботехнической лаборатории.\n\nПриглашаем вас на примерку и фиксацию к врачу {doctor_name}.\nЗапишитесь на удобное время онлайн: {portal_link} или по телефону {clinic_phone}.",
+			"Здравствуйте, {patient_name}!\n\nВаша ортопедическая конструкция готова и поступила в клинику «{clinic_name}» из зуботехнической лаборатории.\n\nПриглашаем вас на примерку и фиксацию к врачу {doctor_name}.\nЗапишитесь на удобное время онлайн: {portal_link} или по телефону {clinic_phone}.",
 		variables: [
 			"patient_name",
 			"clinic_name",
@@ -476,7 +476,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "whatsapp",
 		intent: "ztl_ready_alert",
 		templateText:
-			"Здравствуйте, *{patient_name}*! 🦷✨\n\nВаша ортопедическая работа готова и доставлена в клинику *{clinic_name}*.\nЖдём вас на установку к врачу {doctor_name}.\nЗапись на приём: {portal_link} или тел. {clinic_phone}",
+			"Здравствуйте, *{patient_name}*!\n\nВаша ортопедическая работа готова и доставлена в клинику *{clinic_name}*.\nЖдём вас на установку к врачу {doctor_name}.\nЗапись на приём: {portal_link} или тел. {clinic_phone}",
 		variables: [
 			"patient_name",
 			"clinic_name",
@@ -503,7 +503,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "telegram",
 		intent: "retention_recall_6m",
 		templateText:
-			"Здравствуйте, {patient_first_name}! 🪥✨\n\nПрошло 6 месяцев с вашего последнего профилактического визита к врачу {doctor_name} в клинику «{clinic_name}».\n\nРегулярная профессиональная гигиена и осмотр сохраняют здоровье зубов и гарантию на лечение.\n\nЗапишитесь онлайн со скидкой: {portal_link}\nТелефон для записи: {clinic_phone}",
+			"Здравствуйте, {patient_first_name}!\n\nПрошло 6 месяцев с вашего последнего профилактического визита к врачу {doctor_name} в клинику «{clinic_name}».\n\nРегулярная профессиональная гигиена и осмотр сохраняют здоровье зубов и гарантию на лечение.\n\nЗапишитесь онлайн со скидкой: {portal_link}\nТелефон для записи: {clinic_phone}",
 		variables: [
 			"patient_first_name",
 			"doctor_name",
@@ -517,7 +517,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "whatsapp",
 		intent: "retention_recall_6m",
 		templateText:
-			"Здравствуйте, *{patient_first_name}*! 🪥✨\n\nПрошло 6 месяцев с последнего осмотра в клинике *{clinic_name}*. Пора пройти плановый осмотр и профгигиену у врача {doctor_name}.\n\nЗаписаться на удобное время: {portal_link}\nТелефон: {clinic_phone}",
+			"Здравствуйте, *{patient_first_name}*!\n\nПрошло 6 месяцев с последнего осмотра в клинике *{clinic_name}*. Пора пройти плановый осмотр и профгигиену у врача {doctor_name}.\n\nЗаписаться на удобное время: {portal_link}\nТелефон: {clinic_phone}",
 		variables: [
 			"patient_first_name",
 			"clinic_name",
@@ -545,7 +545,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "telegram",
 		intent: "debt_notification",
 		templateText:
-			"Здравствуйте, {patient_name}! 💳\n\nНапоминаем о наличии остатка за оказанные стоматологические услуги в клинике «{clinic_name}».\n\nВы можете быстро и безопасно оплатить счёт без комиссии через Систему Быстрых Платежей (СБП):\n👉 {sbp_payment_link}\n\nПо вопросам расчётов обращайтесь по телефону: {clinic_phone}.\nС уважением, {clinic_name}",
+			"Здравствуйте, {patient_name}!\n\nНапоминаем о наличии остатка за оказанные стоматологические услуги в клинике «{clinic_name}».\n\nВы можете быстро и безопасно оплатить счёт без комиссии через Систему Быстрых Платежей (СБП):\nСсылка для оплаты: {sbp_payment_link}\n\nПо вопросам расчётов обращайтесь по телефону: {clinic_phone}.\nС уважением, {clinic_name}",
 		variables: [
 			"patient_name",
 			"clinic_name",
@@ -558,7 +558,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		channel: "whatsapp",
 		intent: "debt_notification",
 		templateText:
-			"Здравствуйте, *{patient_name}*! 💳\n\nНапоминаем о наличии задолженности за лечение в клинике *{clinic_name}*.\n\nОплатить без комиссии через СБП: {sbp_payment_link}\n\nТелефон для справок: {clinic_phone}",
+			"Здравствуйте, *{patient_name}*!\n\nНапоминаем о наличии задолженности за лечение в клинике *{clinic_name}*.\n\nОплатить без комиссии через СБП: {sbp_payment_link}\n\nТелефон для справок: {clinic_phone}",
 		variables: [
 			"patient_name",
 			"clinic_name",
