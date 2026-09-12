@@ -2,6 +2,7 @@ import {
 	Activity,
 	AlertCircle,
 	AlertTriangle,
+	Check,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
@@ -356,7 +357,7 @@ function RejectionModal({
 												flexShrink: 0,
 											}}
 										>
-											{isSelected && "✓"}
+											{isSelected && <Check size={10} strokeWidth={3} className="text-white" />}
 										</div>
 										<span>{meta.labelRu}</span>
 									</button>

@@ -588,12 +588,17 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</button>
 
 					{/* Индикатор сохранения */}
-					<span className="text-[11px] font-medium text-slate-500 min-w-[70px] text-right">
-						{saveStatus === "saving"
-							? "Запись..."
-							: saveStatus === "saved"
-								? "✓ Сохранено"
-								: ""}
+					<span className="text-[11px] font-medium text-slate-500 min-w-[70px] text-right inline-flex items-center justify-end gap-1">
+						{saveStatus === "saving" ? (
+							"Запись..."
+						) : saveStatus === "saved" ? (
+							<>
+								<Check className="w-3 h-3 text-emerald-600 inline shrink-0" aria-hidden="true" />
+								<span>Сохранено</span>
+							</>
+						) : (
+							""
+						)}
 					</span>
 				</div>
 			</div>
