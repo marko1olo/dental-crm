@@ -24,6 +24,8 @@ import {
 import {
 	isValidSnils,
 	normalizeSnils,
+} from "../utils/snils.js";
+import {
 	validateOgrn,
 	validateInn,
 	validateFrmoOid,

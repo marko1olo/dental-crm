@@ -6,6 +6,24 @@ export * from "./fiscal/index.js";
 export { parseGs1DataMatrix, GS1_FNC1, GS1_GROUP_SEPARATOR } from "./mdlp/index.js";
 export * from "./mdlp/index.js";
 export * from "./utils/index.js";
+
+// Canonical statutory Russian validators & exact money utilities (Mandate 8s)
+export {
+	formatSnils,
+	isValidSnils,
+	normalizeSnils,
+} from "./utils/snils.js";
+export {
+	validateRussianInn,
+	validateRussianOgrn,
+	validateRussianKpp,
+} from "./finance/taxDeduction.js";
+export {
+	formatKopecksRu,
+	moneyRubSchema,
+	nonNegativeMoneyRubSchema,
+	positiveMoneyRubSchema,
+} from "./money.js";
 export * from "./sanpin/index.js";
 export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";

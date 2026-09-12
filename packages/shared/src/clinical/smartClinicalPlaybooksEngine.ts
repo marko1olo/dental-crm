@@ -289,13 +289,9 @@ export type PreAppointmentSummary = z.infer<typeof preAppointmentSummarySchema>;
 
 /**
  * Formats integer kopecks to Russian ruble currency string without floating point drift.
- * Uses shared money utility.
+ * Uses canonical shared money utility per Mandate 8s.
  */
-function formatKopecksRu(kopecks: number): string {
-	return formatMoneyKopecksRu(kopecks);
-}
-
-export const formatPlaybookKopecksRu = formatKopecksRu;
+export const formatPlaybookKopecksRu = formatMoneyKopecksRu;
 
 /**
  * Calculates calendar day difference between two YYYY-MM-DD date strings safely.
@@ -793,6 +789,6 @@ export const smartClinicalPlaybooksEngine = {
 	formatPlaybookForm043A4Protocol,
 	calculateCandidateMatchScore,
 	evaluateDentalPathologyUrgency,
-	formatKopecksRu,
+	formatKopecksRu: formatMoneyKopecksRu,
 	calculateDaysBetween,
 } as const;

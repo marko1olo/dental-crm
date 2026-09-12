@@ -36,3 +36,8 @@ export * from "./generator043_1u.js";
 export * from "./generator.js";
 export * from "./validator.js";
 export * from "./signature.js";
+export {
+	formatSnils,
+	isValidSnils,
+	normalizeSnils,
+} from "../utils/snils.js";
