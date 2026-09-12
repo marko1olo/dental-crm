@@ -337,12 +337,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Вкладка составления поэтапного клинического плана лечения внутри амбулаторного визита пациента с интеграцией классификатора Номенклатуры услуг 804н.",
 	},
 	{
-		file: "components/lab/DentalLabWorkOrderModal.tsx",
-		name: "DentalLabWorkOrderModal",
-		reason:
-			"Модальный наряд-заказ зуботехнической лаборатории (ЗТЛ) со шкалами расцветок Vita Classical, 3D-Master и Bleach для прямого открытия из амбулаторного визита и управления этапами лабораторного производства.",
-	},
-	{
 		file: "components/odontogram/AdultToothChart.tsx",
 		name: "AdultToothChart",
 		reason:
@@ -407,12 +401,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "EgiszSigningCabinetModal",
 		reason:
 			"Модальный кабинет начмеда для пакетного подписания электронных медицинских документов УКЭП КриптоПро перед отправкой в ЕГИСЗ РЭМД (components/cmo/EgiszSigningCabinetModal.tsx:201).",
-	},
-	{
-		file: "components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx",
-		name: "PatientArchiveReasonsAndBlacklistsWidget",
-		reason:
-			"Виджет аудита причин архивации медицинских карт и управления черным списком пациентов (components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx:43). Вызывается из специализированной карточки пациента.",
 	},
 	{
 		file: "components/imaging/MedicalPhotoViewer.tsx",

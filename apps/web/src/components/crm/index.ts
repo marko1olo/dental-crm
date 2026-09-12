@@ -1,4 +1,8 @@
 export * from "./CrmLeakDetectorModal";
-export * from "./PatientArchiveReasonsAndBlacklistsWidget";
+export {
+	PatientArchiveAndBlacklistWidget as PatientArchiveReasonsAndBlacklistsWidget,
+	type ArchiveReasonItem as PatientArchiveRecord,
+} from "../patients/PatientArchiveAndBlacklistWidget";
 export * from "./PatientCommunicationTimelinesWidget";
 export * from "./PatientDuplicateMergeQueuesWidget";
+
