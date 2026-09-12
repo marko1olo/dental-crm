@@ -241,3 +241,30 @@ export {
 } from "./scanRegistrationEngine.js";
 export * as scanRegistrationEngine from "./scanRegistrationEngine.js";
 
+// Wave 134: CPR Panoramic Reformation & Dental Arch Curve Engine
+export {
+	point2Schema,
+	vec3Schema,
+	projectionModeSchema as cprProjectionModeSchema,
+	archToothLandmarkSchema,
+	volumeSamplingInputSchema,
+	panoramicReformationParamsSchema,
+	paraxialCrossSectionParamsSchema,
+	type ProjectionMode,
+	type ArchToothLandmark,
+	type VolumeSamplingInput,
+	type PanoramicReformationParams,
+	type PanoramicReformationResult,
+	type ParaxialCrossSectionParams,
+	type ParaxialCrossSectionResult,
+	type PanoramicCprReportParams,
+	generateDefaultArchWithLandmarks,
+	trilinearInterpolation,
+	createVolumeSamplingData,
+	buildPanoramicReformation,
+	generatePanoramic,
+	computeParaxialCrossSection,
+	formatPanoramicCprReportA4,
+} from "./cprPanoramicEngine.js";
+export * as cprPanoramicEngine from "./cprPanoramicEngine.js";
+
