@@ -496,8 +496,36 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                   </>
                 )}
 
-                {/* Virtual Implant Body */}
+                {/* Virtual Implant Body & 2.0 mm Safety Halo (Buser / ITI Consensus / Mandates 8d, 8p) */}
                 <g transform={`rotate(${angulationDeg}, ${pxEntryX}, ${pxEntryY})`}>
+                  {/* 2.0 mm Safety Halo Envelope (+2.0 mm lateral on each side, +2.0 mm apical) */}
+                  <rect
+                    x={pxEntryX - ((diameterMm + 4.0) * SCALE_PX_PER_MM) / 2}
+                    y={pxEntryY}
+                    width={(diameterMm + 4.0) * SCALE_PX_PER_MM}
+                    height={(lengthMm + 2.0) * SCALE_PX_PER_MM}
+                    rx={6}
+                    fill={isNerveCorridorBreached ? "#ef4444" : "#38bdf8"}
+                    fillOpacity="0.12"
+                    stroke={isNerveCorridorBreached ? "#ef4444" : "#38bdf8"}
+                    strokeWidth="1.5"
+                    strokeDasharray="4 3"
+                    data-testid="implant-safety-halo-2mm"
+                  />
+                  {/* Halo Label */}
+                  <text
+                    x={pxEntryX + ((diameterMm + 4.0) * SCALE_PX_PER_MM) / 2 + 3}
+                    y={pxEntryY + (lengthMm * SCALE_PX_PER_MM) / 2}
+                    fill={isNerveCorridorBreached ? "#ef4444" : "#38bdf8"}
+                    fontSize="8"
+                    fontWeight="bold"
+                    textAnchor="start"
+                    className="select-none pointer-events-none"
+                  >
+                    2.0 мм
+                  </text>
+
+                  {/* Virtual Implant Body */}
                   <rect
                     x={pxEntryX - (diameterMm * SCALE_PX_PER_MM) / 2}
                     y={pxEntryY}
@@ -632,7 +660,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                           <span className="flex items-center gap-1"><Zap size={13} className="text-amber-500 shrink-0" /> {preset.shortLabel}</span>
                           {isCurrent && <CheckCircle2 size={14} className="text-[var(--teal,#0d9488)] shrink-0" />}
                         </div>
-                        <span className="text-[10px] text-[var(--muted)] leading-tight mt-1 truncate">
+                        <span className="text-xs text-[var(--muted)] leading-tight mt-1 truncate">
                           {preset.clinicalIndicationRu}
                         </span>
                       </button>

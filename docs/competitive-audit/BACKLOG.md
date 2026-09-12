@@ -2,8 +2,8 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-12 / WAVES 167–168 / SSOT TEMPLATE ENGINE CONSOLIDATION, MANDATE 8t COMPILER PROTECTION & COMPREHENSIVE DOCUMENTATION VERIFICATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
-> Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8g, 8h:
+> ⚠️ **СТАТУС (2026-09-12 / WAVES 167–169 / SSOT TEMPLATE CONSOLIDATION, MANDATE 8t COMPILER PROTECTION, ERADICATION OF REDUNDANT SHIMS & ANTI-MATRYOSHKA UI OVERHAUL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
 > 3. Консолидированы сервисы CDA API в фасады-делегаты над `@dental/shared/cda` (`913aa0d14`).
@@ -16,7 +16,8 @@
 > 10. Проведена независимая Red Team инквизиция десктопного фронтенда (`ScheduleView`, `AppointmentCard`, `VisitView`, `CashRegisterModal`, `PatientCardModal`) против StomX и IDENT по чек-листу 7 смертных грехов UI и канонам macOS Studio Clinical HIG: вердикт `[ПРОВЕРЕНО: ЧИСТО]`.
 > 11. Ликвидирован дублирующий файл `messageTemplateCatalogsQuery.ts` (Wave 167, коммит `ea5c3f1fe`), маршруты и сервисы шаблонов сведены к SSOT `messageTemplateService.ts`.
 > 12. Формализован Мандат 8t о защите хост-машины и Single-Compiler Gate (Wave 168, коммиты `ca181c35e`, `a389bfa78`), синхронизированы финансовые схемы и тестовые пути в карте CRM.
-> 13. Проведена тотальная инструментальная сверка всех 321 фич в `FEATURES_REGISTRY.md`: все 129 устаревших путей переведены на активные файлы кодовой базы, 0 битых ссылок (инструментально подтверждено по всем 27 446 файлам репозитория).
+> 13. Проведена тотальная инструментальная сверка всех 321 фич в `FEATURES_REGISTRY.md`: все 129 устаревших путей переведены на активные файлы кодовой базы, 0 битых ссылок (инструментально подтверждено по всем 27 446 файлам репозитория, коммит `ae70f04f2`).
+> 14. Снесены устаревшие реэкспорт-шимы и дубликаты компонентов (`MessageTemplatesPanel.tsx`, `FiscalReceiptModal.tsx`, `checkAppointmentResourceCollision.ts`, `visit/surgery/SurgeryVisitCockpit.tsx`, реэкспорт-папки `components/patient`, `components/prosthetics`, `components/treatment`, стабы `sanpin.ts`, `timesheetT13.ts`, `stomxDefectsCatalog.ts`, `mdlpDataMatrix.ts`, коммит `4c94374cc`); ликвидированы 3 матрешки модалок в `DoctorShiftCockpitModal`, `PatientBillingModal`, `VisitSummaryModal` с конвертацией в region-оверлеи (Мандат 8d п. 6); вычищены дублирующие кнопки анамнеза в `VisitView.tsx` (Wave 169).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -4592,6 +4593,44 @@
   * Статус: 321/321 фич в статусе `[ДА]`, 100% паритет.
   * Инструментальная проверка: 0 битых путей в `FEATURES_REGISTRY.md` при сканировании всех 321 строк.
   * Кодировки: UTF-8 без BOM, `check:encoding` 0 ошибок.
+
+### Wave 169: Тотальная ликвидация устаревших реэкспорт-шимов, консолидация дубликатов компонентов и устранение матрешек модалок (Мандаты 8s, 8d, 8e, 8h)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/settings/MessageTemplatesPanel.tsx` (удален дубликат, консолидирован с `SettingsMessageTemplatesTab.tsx`, коммит `4c94374cc`)
+  - `apps/web/src/components/finance/FiscalReceiptModal.tsx` (удален дубликат, консолидирован с `FiscalReceipt54FzModal.tsx`, коммит `4c94374cc`)
+  - `apps/web/src/components/schedule/checkAppointmentResourceCollision.ts` (удален дубликат, консолидирован с `apps/web/src/utils/scheduleCollisionUtils.ts`, коммит `4c94374cc`)
+  - `apps/web/src/components/visit/surgery/SurgeryVisitCockpit.tsx` (удален дубликат, консолидирован с `apps/web/src/components/surgery/SurgeryVisitCockpit.tsx`, коммит `4c94374cc`)
+  - Устаревшие фасады и стабы: `apps/web/src/components/patient/index.ts`, `apps/web/src/components/prosthetics/index.ts`, `apps/web/src/components/treatment/index.ts`, `IncomingCallToast.tsx`, `RadiologyDicomViewerModal.tsx`, `PatientGeneralInfoTab.tsx`, `SanpinRegistersView.tsx`, `VisitDiaryEditor.tsx`, `CreatePatientModal.tsx`, `RadialToothMenu.tsx`, `recallEngine.ts`, `packages/shared/src/sanpin.ts`, `stomxDefectsCatalog.ts`, `timesheetT13.ts`, `mdlpDataMatrix.ts` (ликвидированы через `git rm`, коммит `4c94374cc`)
+  - `apps/web/src/components/doctor/DoctorShiftCockpitModal.tsx` (устранена матрешка: модалка СМС ПЭП 63-ФЗ переведена в `role="region"` aria-label оверлей)
+  - `apps/web/src/components/finance/PatientBillingModal.tsx` (устранена матрешка: QR-код счета на телефон переведен в popover-оверлей)
+  - `apps/web/src/components/visit/VisitSummaryModal.tsx` (устранена матрешка: зум изображений Lightbox переведен в чистый region-оверлей)
+  - `apps/web/src/VisitView.tsx` (вычищены дублирующие кнопки соматики «Шаблоны StomX (448)», «Норма (1-клик)», «Печать 043/у», оставлен компактный индикатор «Аудит соматики ОК»)
+  - `apps/web/src/DocumentsView.tsx` (компактизация сетки быстрой печати бланков до 2 колонок)
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx` (добавлен `truncate` на кнопках этапов для исключения переполнения текста)
+  - `apps/web/src/components/lab/LabWorkOrderConstructorModal.tsx` (применение дизайн-токенов темы)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (строка 192 актуализирована на `apps/web/src/utils/scheduleCollisionUtils.ts`, заголовок синхронизирован с Wave 169)
+* **Архитектурное решение**:
+  - **Тотальная ликвидация устаревших фасадов и реэкспорт-шимов (Мандат 8s)**:
+    * В соответствии с Законом Единого Неделимого Авторитета удалены промежуточные файлы-обертки и дублирующие компоненты, создававшие энтропию и дублирование точек импорта:
+      - `MessageTemplatesPanel.tsx` удален в пользу единого компонента `SettingsMessageTemplatesTab.tsx`.
+      - `FiscalReceiptModal.tsx` удален в пользу канонического `FiscalReceipt54FzModal.tsx`.
+      - `checkAppointmentResourceCollision.ts` удален в пользу `scheduleCollisionUtils.ts` (где уже находилась каноническая реализация коллизий ресурсов).
+      - `visit/surgery/SurgeryVisitCockpit.tsx` удален в пользу единого `surgery/SurgeryVisitCockpit.tsx`.
+      - Полностью очищены директории устаревших реэкспортов `components/patient/`, `components/prosthetics/`, `components/treatment/` и устаревшие модули-стабы.
+  - **Устранение матрешек модальных окон по Закону Анти-Матрёшки (Мандат 8d п. 6, глубина строго 1)**:
+    * В `DoctorShiftCockpitModal.tsx` внутренний диалог подтверждения ПЭП через СМС по 63-ФЗ переведен из `<div role="dialog">` во встроенный контентный оверлей `<div role="region" aria-label="Подтверждение ПЭП через СМС (63-ФЗ)">` с сохранением всех интерактивных элементов ввода кода.
+    * В `PatientBillingModal.tsx` всплывающее окно отправки QR-кода на телефон пациента переведено в поповер с `role="region"`, устраняя вложенную модалку поверх модального окна биллинга.
+    * В `VisitSummaryModal.tsx` модальное окно полноэкранного просмотра снимков (Lightbox Zoom) переведено в полноэкранный overlay с `role="region" aria-label="Просмотр снимка"`, предотвращая конфликт диалоговых слоев в DOM.
+  - **Ликвидация дублей в UI и оптимизация плотности (Мандаты 8c, 8d, 8e)**:
+    * В `VisitView.tsx` из плашки соматического статуса удалены дублирующие кнопки («Шаблоны StomX (448)», «Норма (1-клик)», «Печать 043/у»), которые уже присутствуют в основном 1-строчном тулбаре 32–36px. Заменено на компактный индикатор `<Check /> Аудит соматики ОК`, высвобождая 32px полезной высоты экрана.
+    * В `DocumentsView.tsx` быстрые кнопки печати согласий и договоров перестроены в компактную 2-колоночную сетку без горизонтального скролла.
+    * В `TreatmentPlanPhased4StageView.tsx` добавлены классы `truncate min-w-0` для предотвращения переполнения при длинных названиях клинических этапов.
+* **Верификация**:
+  * Главный реестр фич: 321/321 в статусе `[ДА]`, строка 192 проверена на актуальный путь `scheduleCollisionUtils.ts`, 0 битых путей.
+  * Гейт компилятора: защищен Мандатом 8t (Single-Compiler Gate выполняется централизованно L1 Оркестратором).
+  * Кодировка: UTF-8 без BOM, `npm run check:encoding` 0 ошибок.
+
 
 
 

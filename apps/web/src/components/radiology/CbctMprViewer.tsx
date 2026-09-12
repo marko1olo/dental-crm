@@ -2239,22 +2239,22 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-slate-100 font-sans select-none overflow-hidden"
 			data-testid="cbct-mpr-viewer-modal"
 		>
-			{/* ── TOP CLINICAL HEADER ── */}
-			<header className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800 shrink-0">
-				<div className="flex items-center gap-3">
-					<div className="p-2 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
-						<Volume2 className="w-5 h-5" />
+			{/* ── TOP CLINICAL HEADER (Compact <= 38px desktop height per Mandate 8p) ── */}
+			<header className="flex items-center justify-between px-3 py-1 min-h-[38px] sm:h-10 bg-slate-900 border-b border-slate-800 shrink-0">
+				<div className="flex items-center gap-2.5">
+					<div className="p-1.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
+						<Volume2 className="w-4 h-4" />
 					</div>
 					<div>
 						<div className="flex items-center gap-2">
-							<h1 className="text-sm font-bold text-slate-100">
+							<h1 className="text-xs sm:text-sm font-bold text-slate-100 leading-tight">
 								3D КЛКТ MPR & Панорамная кривая зубной дуги
 							</h1>
-							<span className="px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal)] text-[11px] font-bold">
+							<span className="px-1.5 py-0.2 rounded bg-[var(--teal-surface)] text-[var(--teal)] text-[10px] font-bold">
 								60 FPS Sync
 							</span>
 						</div>
-						<p className="text-xs text-slate-400">
+						<p className="text-[11px] text-slate-400 leading-tight">
 							{study?.patientName ? `Пациент: ${study.patientName} • ` : ""}
 							Координаты среза: X={crosshairMm.x.toFixed(1)} мм, Y={crosshairMm.y.toFixed(1)} мм, Z={crosshairMm.z.toFixed(1)} мм
 						</p>
@@ -2262,11 +2262,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				</div>
 
 				{/* Center: Viewport Mode Switcher */}
-				<div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950 border border-slate-800">
+				<div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-950 border border-slate-800">
 					<button
 						type="button"
 						onClick={() => setActiveTab("mpr")}
-						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+						className={`min-h-[32px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
 							activeTab === "mpr"
 								? "bg-[var(--teal)] text-white shadow-md font-extrabold"
 								: "text-slate-400 hover:text-slate-200"
@@ -2280,7 +2280,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							setActiveTab("panoramic");
 							if (!panoramicResult) handleReconstructPanorama();
 						}}
-						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+						className={`min-h-[32px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
 							activeTab === "panoramic"
 								? "bg-[var(--teal)] text-white shadow-md font-extrabold"
 								: "text-slate-400 hover:text-slate-200"
@@ -2294,7 +2294,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							setActiveTab("cross_sections");
 							if (crossSections.length === 0) handleReconstructPanorama();
 						}}
-						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+						className={`min-h-[32px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
 							activeTab === "cross_sections"
 								? "bg-[var(--teal)] text-white shadow-md font-extrabold"
 								: "text-slate-400 hover:text-slate-200"
@@ -2305,53 +2305,53 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				</div>
 
 				{/* Right: Controls & Close */}
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5">
 					<button
 						type="button"
 						onClick={handleResetViewAndWL}
-						className="flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white hover:border-cyan-500/60 transition-all shadow-sm cursor-pointer"
+						className="flex items-center gap-1 min-h-[32px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white hover:border-cyan-500/60 transition-all shadow-sm cursor-pointer"
 						title="Сброс вида: масштаб 100%, центрирование (0,0), сброс углов осей 0.0° и стандартный контраст (WW 4400 / WL 1300)"
 						data-testid="cbct-btn-reset-view"
 					>
-						<RotateCcw className="w-4 h-4 text-cyan-400" />
-						<span>↺ Сброс вида</span>
+						<RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+						<span>Сброс вида</span>
 					</button>
 					<button
 						type="button"
 						onClick={handleReconstructPanorama}
-						className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold hover:bg-[var(--teal)] hover:text-white transition-all shadow-sm"
+						className="flex items-center gap-1 min-h-[32px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold hover:bg-[var(--teal)] hover:text-white transition-all shadow-sm cursor-pointer"
 						title="Пересчитать панораму и кросс-секции"
 					>
-						<RefreshCw className="w-4 h-4" />
+						<RefreshCw className="w-3.5 h-3.5" />
 						<span>Обновить ОПТГ</span>
 					</button>
 					{onClose && (
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-all"
+							className="flex items-center justify-center min-h-[32px] min-w-[32px] p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-all cursor-pointer"
 							title="Закрыть"
 						>
-							<X className="w-5 h-5" />
+							<X className="w-4 h-4" />
 						</button>
 					)}
 				</div>
 			</header>
 
-			{/* ── TOOLBAR: HOUNSFIELD PRESETS & SLAB THICKNESS ── */}
-			<div className="flex items-center justify-between px-4 py-2 bg-slate-900/90 border-b border-slate-800 gap-4 flex-wrap text-xs">
+			{/* ── TOOLBAR: HOUNSFIELD PRESETS & SLAB THICKNESS (Strictly 1 row <= 36px per Mandate 8p) ── */}
+			<div className="flex items-center justify-between px-3 py-1 h-9 sm:h-9 min-h-[36px] bg-slate-900/95 border-b border-slate-800 gap-2 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0 text-xs select-none" role="toolbar" aria-label="Параметры среза КТ">
 				{/* Presets */}
-				<div className="flex items-center gap-1.5 flex-wrap">
-					<span className="font-semibold text-slate-400 mr-1">Пресет HU:</span>
+				<div className="flex items-center gap-1 shrink-0">
+					<span className="font-semibold text-slate-400 mr-1 text-xs">Пресет HU:</span>
 					{CBCT_HOUNSFIELD_PRESETS.map((preset) => (
 						<button
 							key={preset.id}
 							type="button"
 							onClick={() => handleSelectPreset(preset)}
-							className={`min-h-[44px] px-3 py-1.5 rounded-xl border transition-all ${
+							className={`h-7 sm:h-7 px-2 py-0.5 rounded-lg border text-xs font-medium transition-all shrink-0 cursor-pointer ${
 								activePresetId === preset.id
 									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-sm"
-									: "bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white"
+									: "bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700"
 							}`}
 							title={preset.descriptionRu}
 						>
@@ -2361,13 +2361,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				</div>
 
 				{/* Slab Thickness & Mode */}
-				<div className="flex items-center gap-3">
-					<div className="flex items-center gap-1.5">
-						<span className="font-semibold text-slate-400">Срез (Slab):</span>
+				<div className="flex items-center gap-2 shrink-0">
+					<div className="flex items-center gap-1">
+						<span className="font-semibold text-slate-400 text-xs">Срез (Slab):</span>
 						<select
 							value={slabMode}
 							onChange={(e) => setSlabMode(e.target.value as SlabProjectionMode)}
-							className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-[var(--teal)]"
+							className="h-7 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-[var(--teal)] cursor-pointer"
 						>
 							<option value="single">Одинарный срез (1 мм)</option>
 							<option value="mip">MIP (Макс. интенсивность)</option>
@@ -2377,8 +2377,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					</div>
 
 					{slabMode !== "single" && (
-						<div className="flex items-center gap-2">
-							<span className="text-slate-400">Толщина:</span>
+						<div className="flex items-center gap-1.5 shrink-0">
+							<span className="text-slate-400 text-xs">Толщина:</span>
 							<input
 								type="range"
 								min="1"
@@ -2386,18 +2386,18 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 								step="1"
 								value={slabThicknessMm}
 								onChange={(e) => setSlabThicknessMm(Number(e.target.value))}
-								className="w-24 accent-[var(--teal)]"
+								className="w-20 accent-[var(--teal)] cursor-pointer"
 							/>
-							<span className="font-bold text-[var(--teal)] font-mono">{slabThicknessMm} мм</span>
+							<span className="font-bold text-[var(--teal)] font-mono text-xs">{slabThicknessMm} мм</span>
 						</div>
 					)}
 
 					{/* Jaw Switcher */}
-					<div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+					<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
 						<button
 							type="button"
 							onClick={() => handleSwitchJaw("mandible")}
-							className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+							className={`h-6 px-2 py-0.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
 								activeJaw === "mandible"
 									? "bg-[var(--teal)] text-white"
 									: "text-slate-400 hover:text-slate-200"
@@ -2408,7 +2408,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 						<button
 							type="button"
 							onClick={() => handleSwitchJaw("maxilla")}
-							className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+							className={`h-6 px-2 py-0.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
 								activeJaw === "maxilla"
 									? "bg-[var(--teal)] text-white"
 									: "text-slate-400 hover:text-slate-200"
@@ -2422,11 +2422,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					<button
 						type="button"
 						onClick={handleAutoDetectArch}
-						className="flex items-center gap-1.5 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-purple-950/60 border border-purple-500/70 text-purple-200 text-xs font-bold hover:bg-purple-900 hover:text-white hover:border-purple-400 transition-all shadow-sm cursor-pointer"
+						className="flex items-center gap-1 h-7 sm:h-7 px-2.5 py-0.5 rounded-lg bg-purple-950/60 border border-purple-500/70 text-purple-200 text-xs font-bold hover:bg-purple-900 hover:text-white hover:border-purple-400 transition-all shadow-sm cursor-pointer shrink-0"
 						title="Сгенерировать дугу автоматически по плотности эмали и кортикального гребня"
 						data-testid="cbct-btn-auto-arch"
 					>
-						<Sliders className="w-4 h-4 text-purple-400" />
+						<Sliders className="w-3.5 h-3.5 text-purple-400" />
 						<span>Сгенерировать дугу автоматически</span>
 					</button>
 
@@ -2434,7 +2434,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowDentalArch((prev) => !prev)}
-						className={`flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+						className={`flex items-center gap-1 h-7 sm:h-7 px-2.5 py-0.5 rounded-lg border text-xs font-bold transition-all cursor-pointer shrink-0 ${
 							showDentalArch
 								? "bg-purple-950/40 text-purple-200 border-purple-500/60"
 								: "bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200"
@@ -2442,7 +2442,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 						title="Показать / скрыть анатомическую дугу ОПТГ на аксиальном срезе"
 						data-testid="cbct-toggle-dental-arch"
 					>
-						<Spline className="w-4 h-4 text-purple-400" />
+						<Spline className="w-3.5 h-3.5 text-purple-400" />
 						<span>Дуга ОПТГ</span>
 					</button>
 				</div>
