@@ -15,7 +15,8 @@ import {
 	Layers,
 	FileText,
 	Check,
-	Maximize2
+	Maximize2,
+	Link as LinkIcon,
 } from 'lucide-react';
 import { PhotoProtocolPreset, PhotoSlotRecord, getSlotDefinitionById } from './photoGridPresets';
 import {
@@ -106,6 +107,47 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 			setAfterShade(afterSlotRecord.detectedVitaShade);
 		}
 	}, [beforeSlotRecord.detectedVitaShade, afterSlotRecord.detectedVitaShade]);
+
+	const COMPARISON_PROJECTIONS = useMemo(() => [
+		{ id: 'portrait_smile', labelRu: 'Анфас улыбка' },
+		{ id: 'portrait_rest', labelRu: 'Анфас покой' },
+		{ id: 'intraoral_frontal_occlusion', labelRu: 'Фронтальная окклюзия' },
+		{ id: 'intraoral_maxillary_occlusal', labelRu: 'Окклюзия в/ч' },
+		{ id: 'intraoral_mandibular_occlusal', labelRu: 'Окклюзия н/ч' },
+		{ id: 'intraoral_right_buccal', labelRu: 'Боковой правый' },
+		{ id: 'intraoral_left_buccal', labelRu: 'Боковой левый' },
+		{ id: 'profile_90_smile', labelRu: 'Профиль 90°' },
+		{ id: 'intraoral_overjet', labelRu: 'Сагиттальная щель' },
+	], []);
+
+	const isCurrentPairLinked = Boolean(
+		(beforeSlotRecord.paired_document_id && (beforeSlotRecord.paired_document_id === afterSlotId || beforeSlotRecord.paired_document_id === afterSlotRecord.slotId)) ||
+		(beforeSlotRecord.paired_photo_id && (beforeSlotRecord.paired_photo_id === afterSlotId || beforeSlotRecord.paired_photo_id === afterSlotRecord.slotId))
+	);
+
+	const handlePairCurrent = () => {
+		onUpdateSlotRecord?.(beforeSlotId, {
+			paired_document_id: afterSlotId,
+			paired_photo_id: afterSlotId,
+			stage: 'before',
+		});
+		onUpdateSlotRecord?.(afterSlotId, {
+			paired_document_id: beforeSlotId,
+			paired_photo_id: beforeSlotId,
+			stage: 'after',
+		});
+	};
+
+	const handleUnpairCurrent = () => {
+		onUpdateSlotRecord?.(beforeSlotId, {
+			paired_document_id: null,
+			paired_photo_id: null,
+		});
+		onUpdateSlotRecord?.(afterSlotId, {
+			paired_document_id: null,
+			paired_photo_id: null,
+		});
+	};
 
 	// Wiper Slider Pointer Handlers
 	const handleSplitPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -314,6 +356,90 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 
 	return (
 		<div className="ba-comparison-view" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', alignItems: 'center' }}>
+			{/* 0. 1-Click Projection Selector & DentalPin Pairing Bar */}
+			<div style={{
+				display: 'flex',
+				alignItems: 'center',
+				gap: '8px',
+				flexWrap: 'wrap',
+				width: '100%',
+				maxWidth: '1100px',
+				background: 'var(--paper, #ffffff)',
+				padding: '8px 14px',
+				borderRadius: '12px',
+				border: '1px solid var(--line, #e2e8f0)',
+			}}>
+				<span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+					1-Клик Проекция:
+				</span>
+				<div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', flex: 1 }}>
+					{COMPARISON_PROJECTIONS.map((p) => {
+						const isSelected = beforeSlotId === p.id && afterSlotId === p.id;
+						return (
+							<button
+								key={p.id}
+								type="button"
+								className={`photo-touch-btn ${isSelected ? 'primary' : ''}`}
+								onClick={() => {
+									onBeforeSlotChange?.(p.id);
+									onAfterSlotChange?.(p.id);
+								}}
+								style={{
+									minHeight: '34px',
+									padding: '4px 10px',
+									fontSize: '12px',
+									borderRadius: '6px',
+									fontWeight: isSelected ? 700 : 500,
+								}}
+							>
+								{p.labelRu}
+							</button>
+						);
+					})}
+				</div>
+
+				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+					{isCurrentPairLinked ? (
+						<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+							<span
+								style={{
+									display: 'inline-flex',
+									alignItems: 'center',
+									gap: '4px',
+									fontSize: '11px',
+									fontWeight: 700,
+									padding: '4px 8px',
+									borderRadius: '6px',
+									background: 'rgba(34, 197, 94, 0.15)',
+									color: '#16a34a',
+								}}
+							>
+								<LinkIcon size={12} /> Спарено (DentalPin)
+							</span>
+							<button
+								type="button"
+								className="photo-touch-btn danger"
+								onClick={handleUnpairCurrent}
+								style={{ minHeight: '32px', padding: '3px 8px', fontSize: '11px' }}
+								title="Разорвать связь пары До/После"
+							>
+								Отвязать
+							</button>
+						</div>
+					) : (
+						<button
+							type="button"
+							className="photo-touch-btn"
+							onClick={handlePairCurrent}
+							style={{ minHeight: '32px', padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+							title="Связать выбранные кадры До и После как эталонную пару (paired_document_id)"
+						>
+							<LinkIcon size={12} /> Спарить До/После
+						</button>
+					)}
+				</div>
+			</div>
+
 			{/* 1. Main Controls Toolbar */}
 			<div style={{
 				display: 'flex',
@@ -779,61 +905,115 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 				</div>
 			)}
 
-			{/* Mode B: Side by Side */}
+			{/* Mode B: Side by Side (Synchronous Pair View) */}
 			{comparisonType === 'side_by_side' && (
-				<div style={{
-					display: 'grid',
-					gridTemplateColumns: '1fr 1fr',
-					gap: '16px',
-					width: '100%',
-					maxWidth: '1100px',
-					height: '520px',
-				}}>
-					<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-						{beforeSlotRecord.imageUrl ? (
-							<img src={beforeSlotRecord.imageUrl} alt="До" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-						) : (
-							<div
-								data-testid="side-by-side-before-placeholder"
-								style={{
-									display: 'flex',
-									flexDirection: 'column',
-									alignItems: 'center',
-									justifyContent: 'center',
-									gap: '8px',
-									color: '#64748b',
-								}}
-							>
-								<Camera size={32} style={{ opacity: 0.5 }} />
-								<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «До»</span>
-							</div>
-						)}
-						<div className="ba-pill-tag before" style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.8)', color: '#38bdf8', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
-							ДО ({beforeShade})
-						</div>
+				<div style={{ position: 'relative', width: '100%', maxWidth: '1100px' }}>
+					{/* Synchronous Zoom / Pan Float Bar */}
+					<div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '6px', zIndex: 30 }}>
+						<button
+							type="button"
+							className="photo-touch-btn"
+							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: '#ffffff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
+							onClick={() => setZoomScale(prev => Math.min(2.5, +(prev + 0.2).toFixed(1)))}
+							title="Синхронно увеличить (Zoom In)"
+						>
+							<ZoomIn size={16} />
+						</button>
+						<button
+							type="button"
+							className="photo-touch-btn"
+							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: '#ffffff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
+							onClick={() => setZoomScale(prev => Math.max(1.0, +(prev - 0.2).toFixed(1)))}
+							title="Синхронно уменьшить (Zoom Out)"
+						>
+							<ZoomOut size={16} />
+						</button>
+						<button
+							type="button"
+							className="photo-touch-btn"
+							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: '#ffffff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
+							onClick={resetAlignment}
+							title="Сбросить масштаб 1:1"
+						>
+							<RotateCcw size={16} />
+						</button>
 					</div>
 
-					<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-						{afterSlotRecord.imageUrl ? (
-							<img src={afterSlotRecord.imageUrl} alt="После" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-						) : (
-							<div
-								data-testid="side-by-side-after-placeholder"
-								style={{
-									display: 'flex',
-									flexDirection: 'column',
-									alignItems: 'center',
-									justifyContent: 'center',
-									gap: '8px',
-									color: '#64748b',
-								}}
-							>
-								<Camera size={32} style={{ opacity: 0.5 }} />
-								<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «После»</span>
+					<div style={{
+						display: 'grid',
+						gridTemplateColumns: '1fr 1fr',
+						gap: '16px',
+						width: '100%',
+						height: '520px',
+					}}>
+						<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+							{beforeSlotRecord.imageUrl ? (
+								<img
+									src={beforeSlotRecord.imageUrl}
+									alt="До лечения"
+									style={{
+										width: '100%',
+										height: '100%',
+										objectFit: 'contain',
+										transform: `scale(${zoomScale}) rotate(${beforeRotation}deg) translate(${panOffset.x}px, ${panOffset.y}px)`,
+										transformOrigin: 'center center',
+										transition: 'transform 0.05s linear',
+									}}
+								/>
+							) : (
+								<div
+									data-testid="side-by-side-before-placeholder"
+									style={{
+										display: 'flex',
+										flexDirection: 'column',
+										alignItems: 'center',
+										justifyContent: 'center',
+										gap: '8px',
+										color: '#64748b',
+									}}
+								>
+									<Camera size={32} style={{ opacity: 0.5 }} />
+									<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «До»</span>
+								</div>
+							)}
+							<div className="ba-pill-tag before" style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.85)', color: '#38bdf8', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
+								ДО: {getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До'} ({beforeShade})
 							</div>
-						)}
-						<div className="ba-pill-tag after" style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(15, 23, 42, 0.8)', color: '#4ade80', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
-							ПОСЛЕ ({afterShade})
+						</div>
+
+						<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+							{afterSlotRecord.imageUrl ? (
+								<img
+									src={afterSlotRecord.imageUrl}
+									alt="После лечения"
+									style={{
+										width: '100%',
+										height: '100%',
+										objectFit: 'contain',
+										transform: `scale(${zoomScale}) rotate(${afterRotation}deg) translate(${panOffset.x}px, ${panOffset.y}px)`,
+										transformOrigin: 'center center',
+										transition: 'transform 0.05s linear',
+									}}
+								/>
+							) : (
+								<div
+									data-testid="side-by-side-after-placeholder"
+									style={{
+										display: 'flex',
+										flexDirection: 'column',
+										alignItems: 'center',
+										justifyContent: 'center',
+										gap: '8px',
+										color: '#64748b',
+									}}
+								>
+									<Camera size={32} style={{ opacity: 0.5 }} />
+									<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «После»</span>
+								</div>
+							)}
+							<div className="ba-pill-tag after" style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(15, 23, 42, 0.85)', color: '#4ade80', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
+								ПОСЛЕ: {getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После'} ({afterShade})
+							</div>
 						</div>
 					</div>
 				</div>

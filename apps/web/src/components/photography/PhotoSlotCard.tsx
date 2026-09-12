@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Sliders, Upload, Trash2, FlipHorizontal, RotateCw } from 'lucide-react';
+import { Camera, Sliders, Upload, Trash2, FlipHorizontal, RotateCw, Link as LinkIcon } from 'lucide-react';
 import { PhotoProtocolSlotDefinition, PhotoSlotRecord } from './photoGridPresets';
 
 export interface PhotoSlotCardProps {
@@ -74,6 +74,11 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 							{record.detectedVitaShade && (
 								<span className="photo-mini-badge shade-badge">
 									VITA {record.detectedVitaShade}
+								</span>
+							)}
+							{(record.paired_document_id || record.paired_photo_id) && (
+								<span className="photo-mini-badge paired-badge" title="Снимок спарен для сравнения До/После">
+									<LinkIcon size={10} /> До/После
 								</span>
 							)}
 						</div>

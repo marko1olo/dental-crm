@@ -65,6 +65,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 	const [currentStage, setCurrentStage] = useState<'before' | 'during' | 'after' | 'followup'>(initialStage);
 	const [slotsData, setSlotsData] = useState<Record<string, PhotoSlotRecord>>(() => initialSlots || EMPTY_INITIAL_SLOTS);
 	const [activeViewMode, setActiveViewMode] = useState<'grid' | 'comparison' | 'export'>('grid');
+	const [activeProjectionFilter, setActiveProjectionFilter] = useState<'all' | 'extraoral' | 'intraoral' | 'paired'>('all');
 	const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<string | null>(null);
 	const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
 
@@ -211,6 +212,23 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		return Object.values(slotsData).filter(s => !!s.imageUrl).length;
 	}, [slotsData]);
 
+	const pairedSlotsCount = useMemo(() => {
+		return Object.values(slotsData).filter(s => !!(s.paired_document_id || s.paired_photo_id)).length;
+	}, [slotsData]);
+
+	const visibleSlots = useMemo(() => {
+		if (activeProjectionFilter === 'all') return activePreset.slots;
+		if (activeProjectionFilter === 'extraoral') return activePreset.slots.filter(s => s.category === 'extraoral');
+		if (activeProjectionFilter === 'intraoral') return activePreset.slots.filter(s => s.category === 'intraoral');
+		if (activeProjectionFilter === 'paired') {
+			return activePreset.slots.filter(s => {
+				const rec = slotsData[s.id];
+				return Boolean(rec && (rec.paired_document_id || rec.paired_photo_id));
+			});
+		}
+		return activePreset.slots;
+	}, [activePreset.slots, activeProjectionFilter, slotsData]);
+
 	const selectedSlotDef = selectedSlotForEdit ? getSlotDefinitionById(selectedSlotForEdit) : undefined;
 	const selectedSlotRec = selectedSlotForEdit ? getSlotRecord(selectedSlotForEdit) : undefined;
 
@@ -343,6 +361,54 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 								</div>
 							</div>
 
+							{/* 1-Click Projection Filter Rail */}
+							<div style={{
+								display: 'flex',
+								alignItems: 'center',
+								gap: '8px',
+								flexWrap: 'wrap',
+								padding: '8px 12px',
+								borderRadius: '10px',
+								background: 'var(--surface, #f8fafc)',
+								border: '1px solid var(--line, #e2e8f0)',
+							}}>
+								<span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted, #64748b)' }}>
+									Фильтр проекций:
+								</span>
+								<button
+									type="button"
+									className={`photo-touch-btn ${activeProjectionFilter === 'all' ? 'primary' : ''}`}
+									onClick={() => setActiveProjectionFilter('all')}
+									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
+								>
+									Все ({activePreset.totalSlots})
+								</button>
+								<button
+									type="button"
+									className={`photo-touch-btn ${activeProjectionFilter === 'extraoral' ? 'primary' : ''}`}
+									onClick={() => setActiveProjectionFilter('extraoral')}
+									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
+								>
+									Внеротовые / Лицо ({activePreset.categoryCount.extraoral})
+								</button>
+								<button
+									type="button"
+									className={`photo-touch-btn ${activeProjectionFilter === 'intraoral' ? 'primary' : ''}`}
+									onClick={() => setActiveProjectionFilter('intraoral')}
+									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
+								>
+									Внутриротовые / Окклюзия ({activePreset.categoryCount.intraoral})
+								</button>
+								<button
+									type="button"
+									className={`photo-touch-btn ${activeProjectionFilter === 'paired' ? 'primary' : ''}`}
+									onClick={() => setActiveProjectionFilter('paired')}
+									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
+								>
+									Спаренные До/После ({pairedSlotsCount})
+								</button>
+							</div>
+
 							<div
 								className={`photo-slots-grid ${activePreset.totalSlots === 12 ? 'photo-slots-grid-12' : ''}`}
 								onDragOver={(e) => {
@@ -355,31 +421,37 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 									}
 								}}
 							>
-								{activePreset.slots.map((slotDef) => {
-									const record = getSlotRecord(slotDef.id);
-									return (
-										<PhotoSlotCard
-											key={slotDef.id}
-											slotDef={slotDef}
-											record={record}
-											isDragActive={dragOverSlotId === slotDef.id}
-											onUploadClick={() => triggerUploadForSlot(slotDef.id)}
-											onEditClick={() => setSelectedSlotForEdit(slotDef.id)}
-											onDeleteClick={(e) => handleDeleteImage(slotDef.id, e)}
-											onDragOver={(e) => {
-												e.preventDefault();
-												setDragOverSlotId(slotDef.id);
-											}}
-											onDragLeave={() => setDragOverSlotId(null)}
-											onDrop={(e) => {
-												e.preventDefault();
-												setDragOverSlotId(null);
-												const f = e.dataTransfer.files?.[0];
-												if (f) handleFileUpload(slotDef.id, f);
-											}}
-										/>
-									);
-								})}
+								{visibleSlots.length === 0 ? (
+									<div style={{ gridColumn: '1 / -1', padding: '32px', textAlign: 'center', color: 'var(--muted, #64748b)', fontSize: '13px' }}>
+										Снимков по выбранному фильтру пока нет. Выберите проекцию или выполните загрузку снимка.
+									</div>
+								) : (
+									visibleSlots.map((slotDef) => {
+										const record = getSlotRecord(slotDef.id);
+										return (
+											<PhotoSlotCard
+												key={slotDef.id}
+												slotDef={slotDef}
+												record={record}
+												isDragActive={dragOverSlotId === slotDef.id}
+												onUploadClick={() => triggerUploadForSlot(slotDef.id)}
+												onEditClick={() => setSelectedSlotForEdit(slotDef.id)}
+												onDeleteClick={(e) => handleDeleteImage(slotDef.id, e)}
+												onDragOver={(e) => {
+													e.preventDefault();
+													setDragOverSlotId(slotDef.id);
+												}}
+												onDragLeave={() => setDragOverSlotId(null)}
+												onDrop={(e) => {
+													e.preventDefault();
+													setDragOverSlotId(null);
+													const f = e.dataTransfer.files?.[0];
+													if (f) handleFileUpload(slotDef.id, f);
+												}}
+											/>
+										);
+									})
+								)}
 							</div>
 						</>
 					)}

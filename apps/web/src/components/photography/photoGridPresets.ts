@@ -80,6 +80,11 @@ export interface PhotoSlotRecord {
 	warmth?: number; // -100 to 100
 	detectedVitaShade?: string;
 	landmarks?: Record<string, { x: number; y: number }>;
+	paired_document_id?: string | null;
+	paired_photo_id?: string | null;
+	media_category?: string;
+	media_subtype?: string;
+	media_kind?: string;
 }
 
 // ---------------------------------------------------------------------------
