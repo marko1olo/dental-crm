@@ -584,93 +584,29 @@ export function SeniorNurseKraftUnsealModal({
 						</div>
 					</div>
 
-					{/* Live Camera Viewfinder or Hero Button */}
-					{isCameraActive ? (
-						<div className="snk-camera-section" data-testid="snk-camera-section">
-							<div className="snk-camera-viewfinder">
-								<video
-									ref={videoRef}
-									autoPlay
-									playsInline
-									muted
-									className="snk-camera-video"
-									data-testid="snk-camera-video"
-								/>
-								<div className="snk-camera-overlay">
-									<div className="snk-camera-hint-pill">
-										<Camera size={16} />
-										<span>Наведите 2D DataMatrix крафт-пакета в рамку</span>
-									</div>
-									<div className="snk-scan-target">
-										<div className="snk-scan-corner tl" />
-										<div className="snk-scan-corner tr" />
-										<div className="snk-scan-corner bl" />
-										<div className="snk-scan-corner br" />
-										<div className="snk-scan-laser" />
-									</div>
-									<div className="snk-camera-hint-pill" style={{ opacity: 0.85 }}>
-										<span>60 FPS • Авто-распознавание</span>
-									</div>
-								</div>
-							</div>
-							<div className="snk-camera-controls">
-								{torchSupported && (
-									<button
-										type="button"
-										onClick={handleToggleTorch}
-										className={`snk-camera-ctrl-btn ${isTorchOn ? "active" : ""}`}
-										data-testid="snk-torch-btn"
-									>
-										{isTorchOn ? <FlashlightOff size={18} /> : <Flashlight size={18} />}
-										<span>{isTorchOn ? "Выключить подсветку" : "Фонарик (подсветка)"}</span>
-									</button>
-								)}
-								<button
-									type="button"
-									onClick={stopCamera}
-									className="snk-camera-ctrl-btn"
-									data-testid="snk-stop-camera-btn"
-								>
-									<CameraOff size={18} />
-									<span>Остановить камеру</span>
-								</button>
-							</div>
-						</div>
-					) : cameraError ? (
-						<div className="snk-camera-denied-card" data-testid="snk-camera-denied-card">
-							<div className="snk-denied-head">
-								<CameraOff size={28} className="snk-denied-icon" />
-								<div>
-									<h4 className="snk-denied-title">Доступ к веб-камере не предоставлен</h4>
-									<p className="snk-denied-text">{cameraError}</p>
-								</div>
-							</div>
-							<div className="snk-denied-actions">
-								<button
-									type="button"
-									onClick={startCamera}
-									className="snk-denied-retry-btn"
-									data-testid="snk-camera-retry-btn"
-								>
-									<RefreshCw size={16} />
-									<span>Повторить запрос камеры</span>
-								</button>
-								<span style={{ fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
-									Или введите номер пакета вручную ниже:
-								</span>
-							</div>
-						</div>
-					) : (
-						<button
-							type="button"
-							onClick={handleHeroScanClick}
-							className="snk-scan-button-hero"
-							data-testid="snk-hero-scan-btn"
-						>
-							<Camera size={28} />
-							<span>Включить камеру для сканирования 2D DataMatrix</span>
-						</button>
-					)}
+					{/* 1-Клик фиксация стерилизации по тест-индикатору 5 класса (Норма) без видеокамер */}
+					<button
+						type="button"
+						onClick={() => handleUnsealStandardTray("therapy")}
+						className="snk-scan-button-hero"
+						data-testid="snk-hero-scan-btn"
+						style={{
+							background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)",
+							color: "#ffffff",
+							borderColor: "#0d9488",
+							minHeight: "54px",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "0.6rem",
+							boxShadow: "0 4px 14px rgba(13, 148, 136, 0.35)",
+							cursor: "pointer",
+						}}
+						title="1-Клик фиксация стерилизации крафт-пакета по тест-индикатору 5 класса (Норма) без видеокамер"
+					>
+						<CheckCircle2 size={24} />
+						<span style={{ fontSize: "1rem", fontWeight: 800 }}>Стерилизация проведена / Тест-индикатор 5 класса (Норма)</span>
+					</button>
 
 					{/* Manual Barcode / USB Scanner / 2-3 Digit Input */}
 					<form onSubmit={handleBarcodeSubmit} className="snk-input-row">

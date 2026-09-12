@@ -196,19 +196,7 @@ export const ctPlanningArtifactCommands: CtPlanningArtifactCommand[] = [
 		requiresVolume: true,
 		requiresImplant: false,
 	},
-	{
-		id: "surgical-guide",
-		annotationType: "surgical_guide",
-		tool: "surgical_guide",
-		title: "Шаблон",
-		detail: "Маршрут втулки и передачи плана в лабораторию.",
-		result: "пакет шаблона",
-		projection: "three_d_volume",
-		unit: null,
-		minimumPoints: 2,
-		requiresVolume: true,
-		requiresImplant: true,
-	},
+
 ];
 
 function annotationRole(

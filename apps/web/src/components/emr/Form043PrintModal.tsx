@@ -628,19 +628,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								<span>{copiedToast ? "Скопировано!" : "Копировать"}</span>
 							</button>
 
-							{/* Экспертиза ЭМК (Начмед / ВК) */}
-							<button
-								type="button"
-								className={`emr043-btn ${cmoResolution?.decision === "approved" ? "emr043-btn-approved" : "emr043-btn-secondary"}`}
-								onClick={() => {
-									setIsCmoAuditOpen(true);
-									onOpenCmoAudit?.();
-								}}
-								title="Экспертиза ЭМК (Начмед / ВК) по критериям Приказа Минздрава РФ № 203н"
-							>
-								<ShieldCheck className="w-4 h-4 text-emerald-600" />
-								<span>Экспертиза ЭМК (Начмед / ВК)</span>
-							</button>
 
 							{/* Полноэкранный режим */}
 							<button
@@ -1016,22 +1003,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												<Sparkles className="w-4 h-4" />
 												<span>Сформировать дневник 043/у по МКБ-10 и формуле</span>
 											</button>
-											<button
-												type="button"
-												className="emr043-btn emr043-btn-secondary touch-manipulation"
-												style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-												onClick={() => {
-													if (onOpenCmoAudit) {
-														onClose();
-														onOpenCmoAudit();
-													} else {
-														setIsCmoAuditOpen(true);
-													}
-												}}
-											>
-												<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
-												<span>Экспертиза ЭМК (Начмед / ВК)</span>
-											</button>
 										</div>
 									</div>
 
@@ -1093,18 +1064,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 											<Award className="w-4 h-4 text-sky-600" />
 											5. Эпикриз, результаты лечения и план диспансерного наблюдения
 										</h3>
-										<button
-											type="button"
-											className="emr043-btn emr043-btn-secondary touch-manipulation"
-											style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-											onClick={() => {
-												setIsCmoAuditOpen(true);
-												onOpenCmoAudit?.();
-											}}
-										>
-											<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
-											<span>Экспертиза ЭМК (Начмед / ВК)</span>
-										</button>
 									</div>
 									<div className="emr043-grid-2">
 										<div style={{ gridColumn: "1 / -1" }}>
@@ -1134,43 +1093,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 									</div>
 								</div>
 
-								{/* Экспертиза КЭР и заключение врачебной комиссии */}
-								<div className="emr043-section-card" style={{ border: "1px dashed var(--glass-border)", background: "var(--paper)" }}>
-									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-										<div>
-											<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "13px" }}>
-												<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
-												<span>Заключение врачебной комиссии и службы КЭР (Приказ № 203н)</span>
-											</div>
-											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginTop: "4px" }}>
-												{cmoResolution ? (
-													<span>
-														Статус: <strong>{cmoResolution.decision === "approved" ? "Утверждено без замечаний" : "Возвращено с замечаниями"}</strong> • Эксперт: {cmoResolution.auditorFullName} ({cmoResolution.auditorRole})
-													</span>
-												) : (
-													<span>Карта ожидает экспертного заключения Начмеда / Председателя врачебной комиссии</span>
-												)}
-											</div>
-										</div>
-
-										<button
-											type="button"
-											className="emr043-btn emr043-btn-primary touch-manipulation"
-											style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.88rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-											onClick={() => {
-												if (onOpenCmoAudit) {
-													onClose();
-													onOpenCmoAudit();
-												} else {
-													setIsCmoAuditOpen(true);
-												}
-											}}
-										>
-											<ShieldCheck className="w-4 h-4" />
-											<span>Экспертиза ЭМК (Начмед / ВК)</span>
-										</button>
-									</div>
-								</div>
 							</div>
 						)}
 					</main>

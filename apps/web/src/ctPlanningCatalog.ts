@@ -186,21 +186,7 @@ export const ctPlanningQuickActions: CtPlanningQuickAction[] = [
 		requiresVolume: true,
 		artifactCommandIds: ["density-probe"],
 	},
-	{
-		id: "surgical_guide",
-		title: "Шаблон",
-		detail: "3D-объем, ось и размеры для хирургического шаблона.",
-		toolLabel: "план шаблона",
-		viewLabel: "3D-объем",
-		tool: "surgical_guide",
-		projection: "three_d_volume",
-		windowPreset: "bone",
-		axisDeg: 0,
-		slabMm: 5,
-		sliceFraction: 0.5,
-		requiresVolume: true,
-		artifactCommandIds: ["surgical-guide"],
-	},
+
 	{
 		id: "implant_library",
 		title: "Библиотека",
@@ -320,14 +306,7 @@ export const ctPlanningTools: CtPlanningTool[] = [
 		output: "подсказка плотности",
 		requiresVolume: true,
 	},
-	{
-		key: "surgical_guide",
-		category: "Шаблон",
-		title: "Хирургический шаблон",
-		detail: "Имплант-план, скан-модель, втулка и экспорт в лабораторию.",
-		output: "план шаблона и контрольные размеры",
-		requiresVolume: true,
-	},
+
 ];
 
 export const ctImplantLibrary: CtImplantLibraryItem[] = [

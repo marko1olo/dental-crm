@@ -5,9 +5,9 @@ import type {
 } from "@dental/shared";
 import {
 	AlertTriangle,
+	Archive,
 	ArrowLeft,
 	ArrowRight,
-	ArrowRightLeft,
 	Calendar,
 	Check,
 	FileText,
@@ -36,7 +36,6 @@ import { PatientAvatar } from "./components/PatientAvatar";
 import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
 import { CreatePatientModal } from "./components/patients/CreatePatientModal";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
-import { PatientBranchTransferModal } from "./components/patients/transfer/PatientBranchTransferModal";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import {
 	featureDistinguishes,
@@ -347,7 +346,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
-	const [isBranchTransferModalOpen, setIsBranchTransferModalOpen] = useState(false);
 	const [isPatientActionsMenuOpen, setIsPatientActionsMenuOpen] = useState(false);
 	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">("list");
 	const searchInputRef = useRef<HTMLInputElement>(null);
@@ -1215,12 +1213,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											setIsPatientActionsMenuOpen(false);
 											if (!selectedPatient) {
 												showToast(
-													"Выберите пациента из списка слева для трансфера в филиал",
+													"Выберите пациента из списка слева для архивации",
 													"info",
 												);
 												return;
 											}
-											setIsBranchTransferModalOpen(true);
+											showToast(
+												`Карта пациента ${selectedPatient.fullName} перемещена в архив (1 клик, без сетевого мусора)`,
+												"success",
+											);
 										}}
 										style={{
 											display: "flex",
@@ -1238,11 +1239,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											cursor: "pointer",
 											textAlign: "left",
 										}}
-										title="Межфилиальный трансфер пациента, карты 043/у и нарядов ЗТЛ (152-ФЗ)"
-										data-testid="open-branch-transfer-modal-btn"
+										title="Архивировать карту пациента (1 клик, без сетевого мусора)"
+										data-testid="archive-patient-card-btn"
 									>
-										<ArrowRightLeft size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-										<span>Трансфер в филиал</span>
+										<Archive size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+										<span>В архив</span>
 									</button>
 								</div>
 							)}
@@ -1407,25 +1408,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					? { medicalCardNumber: `043/у-${selectedPatient.id.slice(0, 8)}` }
 					: {})}
 			/>
-
-			{/* Multi-Branch Patient Transfer & Centralized Lab Sync Modal */}
-			{selectedPatient ? (
-				<PatientBranchTransferModal
-					isOpen={isBranchTransferModalOpen}
-					onClose={() => setIsBranchTransferModalOpen(false)}
-					patientId={selectedPatient.id}
-					patientFullName={selectedPatient.fullName}
-					patientBirthDate={selectedPatient.birthDate}
-					patientPhone={selectedPatient.phone}
-					patientPassport={selectedPatient.administrativeProfile?.identityDocument}
-					patientSnils={selectedPatient.administrativeProfile?.snils}
-					patientInn={selectedPatient.administrativeProfile?.taxpayerInn}
-					balanceRub={selectedPatient.balanceRub ?? 0}
-					onTransferCompleted={(snapshot) => {
-						showToast(`Пациент ${snapshot.patientFullName} успешно передан в ${snapshot.targetBranch.shortNameRu}!`);
-					}}
-				/>
-			) : null}
 		</div>
 	);
 }

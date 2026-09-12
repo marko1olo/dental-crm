@@ -268,7 +268,7 @@ export function CtPlanningToolsPanel({
 				<div>
 					<strong>КТ-планирование</strong>
 					<span>
-						ОПТГ, измерения, контуры, импланты, канал, пазуха и шаблон.
+						ОПТГ, измерения, контуры, импланты, канал и пазуха.
 					</span>
 				</div>
 				<span className={canPlan ? "ready" : "locked"}>{readyLabel}</span>

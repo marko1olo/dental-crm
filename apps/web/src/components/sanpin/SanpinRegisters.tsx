@@ -1112,7 +1112,7 @@ export function SanpinRegisters() {
 						</span>
 					</button>
 
-					{/* Сканировать / Вскрыть крафт-пакет (Камера / 2D сканер / 1-клик смотровой лоток) */}
+					{/* Вскрыть крафт-пакет (1-клик фиксация нормы по тест-индикатору 5 класса) */}
 					<button
 						type="button"
 						onClick={() => setIsSeniorNurseUnsealOpen(true)}
@@ -1128,10 +1128,10 @@ export function SanpinRegisters() {
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-scan-kraft-btn"
-						title="Вскрыть / Сканировать крафт-пакет: 1-клик стандартный лоток, экспресс-сканер камеры 2D DataMatrix или допуск по острой боли"
+						title="Вскрыть / Зафиксировать крафт-пакет: 1-клик фиксация «Стерилизация проведена / Тест-индикатор 5 класса (Норма)» без видеокамер"
 					>
-						<Scan size={16} color="var(--brand-primary, #2563eb)" />
-						<span>Вскрыть / Сканировать крафт-пакет</span>
+						<CheckCircle2 size={16} color="#0d9488" />
+						<span>Вскрыть крафт-пакет (Норма 5 кл.)</span>
 					</button>
 
 					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
