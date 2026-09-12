@@ -1,7 +1,6 @@
 @import "./auth.css";
 @import "./modules/modals.css";
 @import "./modules/schedule.css";
-@import "./modules/odontogram.css";
 @import "../components/odontogram/odontogram.css";
 @import "./modules/patient-workspace.css";
 @import "./modules/mobile-touch.css";
