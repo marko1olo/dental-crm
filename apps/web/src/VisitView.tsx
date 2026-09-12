@@ -362,6 +362,66 @@ export function executeApplySomaticNormAutonomy({
 	return { executed: true, normText };
 }
 
+export function executeApplyHygienePresetAutonomy({
+	updateVisitNoteField,
+	visitNoteForm,
+	showToastFn = showToast,
+}: {
+	updateVisitNoteField?: (field: string, val: string) => void;
+	visitNoteForm?: {
+		complaints?: string;
+		objectiveInspection?: string;
+		treatment?: string;
+		recommendations?: string;
+		diagnosis?: string;
+	} | null;
+	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+}) {
+	if (typeof updateVisitNoteField === "function") {
+		if (!visitNoteForm?.diagnosis) {
+			updateVisitNoteField("diagnosis", "K03.6 Отложения [наросты] на зубах (зубной камень, пигментированный налёт)");
+		}
+		if (!visitNoteForm?.complaints) {
+			updateVisitNoteField("complaints", "Жалобы на наличие мягкого и твёрдого зубного налёта, шероховатость зубов, косметический дефект.");
+		}
+		const hygieneObj = "Индекс гигиены OHI-S = 1.8. Обильный пигментированный налёт и наддесневой зубной камень во фронтальном отделе нижней челюсти. Слизистая десны умеренно гиперемирована в области десневых сосочков.";
+		if (!visitNoteForm?.objectiveInspection) {
+			updateVisitNoteField("objectiveInspection", hygieneObj);
+		}
+		const hygieneTreatment = "Проведена комплексная профессиональная гигиена полости рта: ультразвуковое удаление над- и поддесневых зубных отложений (скалер Woodpecker), воздушно-абразивная полировка Air-Flow (порошок на основе глицина), полировка пастой Kerr Cleanic. Антисептическая обработка десневого края 0.05% раствором хлоргексидина. Глубокое фторирование эмали фторлаком Bifluorid 12.";
+		const currentTreatment = visitNoteForm?.treatment || "";
+		updateVisitNoteField("treatment", currentTreatment ? `${currentTreatment}\n\n${hygieneTreatment}` : hygieneTreatment);
+
+		const hygieneRec = "Щадящая чистка зубов мягкой щёткой в течение 2 дней. Исключить красящие продукты (кофе, чай, ягоды) на 48 часов. Контрольный осмотр через 6 месяцев.";
+		if (!visitNoteForm?.recommendations) {
+			updateVisitNoteField("recommendations", hygieneRec);
+		}
+	}
+	showToastFn("Применён протокол: Профгигиена выполнена (1 клик)", "success");
+	return { executed: true };
+}
+
+export function executeApplyAnesthesiaPresetAutonomy({
+	updateVisitNoteField,
+	visitNoteForm,
+	showToastFn = showToast,
+}: {
+	updateVisitNoteField?: (field: string, val: string) => void;
+	visitNoteForm?: { treatment?: string } | null;
+	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+}) {
+	const anesthesiaText = "Анестезия: инфильтрационная / проводниковая Sol. Articaini 4% с эпинефрином 1:100 000 — 1.7 мл (Артикаин). Анестезия наступила через 3 минуты, глубокая, достаточная для безболезненного вмешательства. Без осложнений.";
+	if (typeof updateVisitNoteField === "function") {
+		const current = visitNoteForm?.treatment || "";
+		updateVisitNoteField(
+			"treatment",
+			current ? `${current}\n\n${anesthesiaText}` : anesthesiaText,
+		);
+	}
+	showToastFn("Добавлена стандартная анестезия: Sol. Articaini 4% (1 клик)", "success");
+	return { executed: true, anesthesiaText };
+}
+
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
 	const props = { ...logicContext, ...rawProps } as ReturnType<
@@ -776,6 +836,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			showToastFn: showToast,
 		});
 	}, [propHandleApplySomaticNormQuick, updateVisitNoteField, visitNoteForm]);
+
+	const handleApplyHygienePresetQuick = useCallback(() => {
+		return executeApplyHygienePresetAutonomy({
+			updateVisitNoteField,
+			visitNoteForm,
+			showToastFn: showToast,
+		});
+	}, [updateVisitNoteField, visitNoteForm]);
+
+	const handleApplyAnesthesiaPresetQuick = useCallback(() => {
+		return executeApplyAnesthesiaPresetAutonomy({
+			updateVisitNoteField,
+			visitNoteForm,
+			showToastFn: showToast,
+		});
+	}, [updateVisitNoteField, visitNoteForm]);
 
 	const handlePrintForm043uFast = useCallback(() => {
 		if (typeof window === "undefined") return;
@@ -1274,6 +1350,32 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="hidden 2xl:inline">Соматически здоров / норма</span>
 								<span className="hidden sm:inline 2xl:hidden">Норма 043/у</span>
 								<span className="sm:hidden">Норма</span>
+							</button>
+
+							{/* Кнопка Профгигиена (1-клик) */}
+							<button
+								type="button"
+								onClick={handleApplyHygienePresetQuick}
+								data-testid="btn-hygiene-preset-one-click"
+								className="!hidden md:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1 cursor-pointer shrink-0 transition-all"
+								title="Профгигиена (1-клик): протокол ультразвук + Air-Flow + полировка + фторирование Bifluorid 12"
+								aria-label="Профгигиена (1-клик)"
+							>
+								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+								<span className="hidden xl:inline">Профгигиена</span>
+							</button>
+
+							{/* Кнопка Анестезия (1-клик) */}
+							<button
+								type="button"
+								onClick={handleApplyAnesthesiaPresetQuick}
+								data-testid="btn-anesthesia-preset-one-click"
+								className="!hidden lg:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 items-center gap-1 cursor-pointer shrink-0 transition-all"
+								title="Стандартная анестезия (1-клик): Sol. Articaini 4% 1:100 000 — 1.7 мл без осложнений"
+								aria-label="Анестезия (1-клик)"
+							>
+								<Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
+								<span className="hidden xl:inline">+ Анестезия</span>
 							</button>
 
 							{/* Клинические шаблоны StomX (448 протоколов) — на десктопе */}

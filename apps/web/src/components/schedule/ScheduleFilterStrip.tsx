@@ -511,6 +511,22 @@ export function ScheduleFilterStrip({
 					</div>
 				)}
 
+				{/* 1-Click Instant Patient Search (⌘K / Ctrl+K) */}
+				{onOpenPatientSearch && (
+					<button
+						type="button"
+						onClick={onOpenPatientSearch}
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-0 px-2 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+						title="Мгновенный поиск пациента по телефону или фамилии (⌘K / Ctrl+K)"
+						aria-label="Поиск пациента"
+						data-testid="schedule-search-patient-btn"
+					>
+						<UserSearch size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+						<span className="hidden xl:inline">Поиск</span>
+						<kbd className="hidden lg:inline text-[10px] font-mono px-1 py-0.2 bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--muted)]">⌘K</kbd>
+					</button>
+				)}
+
 				{/* Secondary Actions Overflow Dropdown Menu */}
 				<div className="relative inline-flex items-center" ref={optionsMenuRef}>
 					<button

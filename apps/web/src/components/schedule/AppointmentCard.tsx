@@ -673,6 +673,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							if (appointmentPatient?.id) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
+							if (onOpenVisit) {
+								onOpenVisit();
+							} else {
+								useAppStore.getState().setCurrentView("visit");
+							}
+							showToast("Пациент в кресле: открыта карта 043/у", "success");
 						}}
 						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Начать приём в кресле (Клавиша 2)"
@@ -697,6 +703,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							if (appointmentPatient?.id) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
+							if (onOpenVisit) {
+								onOpenVisit();
+							} else {
+								useAppStore.getState().setCurrentView("visit");
+							}
+							showToast("Пациент в кресле: открыта карта 043/у", "success");
 						}}
 						className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Пациент в кресле (Клавиша 2)"
@@ -881,6 +893,20 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					data-appointment-id={appointment.id}
 					tabIndex={0}
 					onKeyDown={handleCardKeyDown}
+					onDoubleClick={(e) => {
+						e.stopPropagation();
+						if (appointmentPatient?.id) {
+							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+							if (onOpenVisit) {
+								onOpenVisit();
+							} else {
+								useAppStore.getState().setCurrentView("visit");
+							}
+							showToast(`Открыта карта приёма: ${appointmentPatientName}`, "info");
+						} else {
+							openAppointmentEditor(appointment);
+						}
+					}}
 					onMouseEnter={handleCardMouseEnter}
 					onMouseLeave={handleCardMouseLeave}
 					onFocus={handleCardMouseEnter}

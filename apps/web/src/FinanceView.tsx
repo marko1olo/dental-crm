@@ -1,6 +1,6 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
-import { useCallback, useState } from "react";
-import { TrendingUp, Receipt, ChevronDown, FileText } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
@@ -302,6 +302,24 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isPnlOpen, setIsPnlOpen] = useState(false);
 	const [isInvoicesOpen, setIsInvoicesOpen] = useState(false);
 
+	// Desktop Keyboard Navigation: Esc closes open financial sub-modals (Invoices, PnL)
+	useEffect(() => {
+		const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+			if (e.key === "Escape") {
+				if (isInvoicesOpen) {
+					setIsInvoicesOpen(false);
+					return;
+				}
+				if (isPnlOpen) {
+					setIsPnlOpen(false);
+					return;
+				}
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isInvoicesOpen, isPnlOpen]);
+
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
 			<div className="panel-heading">
@@ -313,6 +331,22 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					</p>
 				</div>
 				<div className="finance-header-actions flex items-center flex-wrap gap-2 max-w-full min-w-0">
+					{billingSummary && billingSummary.totalDueRub > 0 && (
+						<button
+							className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/20 active:scale-95 transition-all"
+							type="button"
+							onClick={() => {
+								setPaymentAmount(String(billingSummary.totalDueRub));
+								focusPaymentCapture();
+							}}
+							title={`1-клик оплата остатка долга: ${money(billingSummary.totalDueRub)}`}
+							aria-label="Оплатить долг"
+							data-testid="btn-finance-pay-debt-quick"
+						>
+							<CreditCard size={15} className="shrink-0 text-rose-600 dark:text-rose-400" />
+							<span>Оплатить долг ({money(billingSummary.totalDueRub)})</span>
+						</button>
+					)}
 					<button
 						className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-semibold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer"
 						type="button"

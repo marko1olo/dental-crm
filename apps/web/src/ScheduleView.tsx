@@ -34,6 +34,7 @@ import {
 	QuickBookingDrawer,
 	type QuickBookingSlotInfo,
 } from "./components/schedule/QuickBookingDrawer";
+import { PatientSearchModal } from "./components/schedule/PatientSearchModal";
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
 import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
 import {
@@ -81,6 +82,8 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
+import { useAppStore } from "./store/appStore";
+import { usePatientStore } from "./store/patientStore";
 
 /*
  * Отсюда убраны неиспользуемые ввозы Bot, Mic, useMemo, smartBookingParser,
@@ -1267,10 +1270,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	}, [waitlistOpen, auth]);
 
 	const [useManualSelects, setUseManualSelects] = useState(false);
+	const [isPatientSearchOpen, setIsPatientSearchOpen] = useState(false);
 
-	// ── Reception Keyboard Navigation & Shortcuts (Arrow keys, N, Space, Escape)
+	// ── Reception Keyboard Navigation & Shortcuts (Arrow keys, N, Space, Escape, ⌘K)
 	useEffect(() => {
 		const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+				e.preventDefault();
+				setIsPatientSearchOpen((prev) => !prev);
+				return;
+			}
+
 			const activeEl = document.activeElement;
 			const isInputFocused =
 				activeEl &&
@@ -1280,6 +1290,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					activeEl.getAttribute("contenteditable") === "true");
 
 			if (e.key === "Escape") {
+				if (isPatientSearchOpen) {
+					setIsPatientSearchOpen(false);
+					return;
+				}
 				if (quickBookingOpen) {
 					setQuickBookingOpen(false);
 					return;
@@ -1364,6 +1378,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		window.addEventListener("keydown", handleGlobalKeyDown);
 		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
 	}, [
+		isPatientSearchOpen,
 		quickBookingOpen,
 		modalAppointment,
 		waitlistOpen,
@@ -1932,6 +1947,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				isSmartAiOpen={isSmartAiOpen}
 				onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
 				onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
+				onOpenPatientSearch={() => setIsPatientSearchOpen(true)}
 				onEmergencyCitoBooking={handleEmergencyCitoBooking}
 				onToggleShiftAnalytics={() => setShowShiftAnalytics((prev) => !prev)}
 				showShiftAnalytics={showShiftAnalytics}
@@ -2493,6 +2509,41 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				onClose={() => setIsCalendarSyncModalOpen(false)}
 				dashboard={dashboard}
 				initialDoctorId={scheduleDoctorFilterId}
+			/>
+			<PatientSearchModal
+				isOpen={isPatientSearchOpen}
+				patients={dashboard?.patients ?? []}
+				onClose={() => setIsPatientSearchOpen(false)}
+				onSelectPatientForBooking={(patient) => {
+					setIsPatientSearchOpen(false);
+					setQuickBookingSlot({
+						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+						doctorUserId: scheduleDoctorFilterId || null,
+						chairId: scheduleChairFilterId || null,
+						durationMinutes: 30,
+					});
+					updateNewAppointmentDraft("patientId", patient.id);
+					setQuickBookingOpen(true);
+					showToast(`Выбран пациент: ${patient.fullName}`, "info");
+				}}
+				onOpenPatientCard={(patientId) => {
+					setIsPatientSearchOpen(false);
+					usePatientStore.getState().setSelectedPatientId(patientId);
+					useAppStore.getState().setCurrentView("patients");
+				}}
+				onQuickBookNewPatient={(patient) => {
+					setIsPatientSearchOpen(false);
+					setQuickBookingSlot({
+						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+						doctorUserId: scheduleDoctorFilterId || null,
+						chairId: scheduleChairFilterId || null,
+						durationMinutes: 30,
+					});
+					updateNewAppointmentDraft("patientId", patient.id);
+					setQuickBookingOpen(true);
+					showToast(`Быстрая запись нового пациента: ${patient.fullName}`, "success");
+				}}
+				showToastFn={showToast}
 			/>
 		</div>
 	);

@@ -389,22 +389,72 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		}
 	}, [selectedPatientId, filteredPatients, setSelectedPatientId]);
 
-	// Global shortcut: Ctrl+K or / focuses the search box
+	// Global shortcut: Ctrl+K / ⌘K or / focuses the search box, Esc closes modals or clears search, ArrowDown/Up navigates list
 	useEffect(() => {
 		const handleGlobalKeyDown = (e: KeyboardEvent) => {
 			if (
-				(e.ctrlKey && e.key.toLowerCase() === "k") ||
+				((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") ||
 				(e.key === "/" &&
 					document.activeElement?.tagName !== "INPUT" &&
 					document.activeElement?.tagName !== "TEXTAREA")
 			) {
 				e.preventDefault();
 				searchInputRef.current?.focus();
+				return;
+			}
+			if (e.key === "Escape") {
+				if (isPatientCardModalOpen) {
+					setIsPatientCardModalOpen(false);
+					return;
+				}
+				if (isCreateModalOpen) {
+					setIsCreateModalOpen(false);
+					return;
+				}
+				if (isLoyaltyModalOpen) {
+					setIsLoyaltyModalOpen(false);
+					return;
+				}
+				if (document.activeElement === searchInputRef.current) {
+					if (query) {
+						setQuery("");
+					} else {
+						searchInputRef.current?.blur();
+					}
+					return;
+				}
+			}
+			if (
+				(e.key === "ArrowDown" || e.key === "ArrowUp") &&
+				(document.activeElement === searchInputRef.current || document.activeElement === document.body)
+			) {
+				if (!filteredPatients || filteredPatients.length === 0) return;
+				e.preventDefault();
+				const currentIndex = filteredPatients.findIndex((p) => p.id === selectedPatientId);
+				let nextIndex = 0;
+				if (e.key === "ArrowDown") {
+					nextIndex = currentIndex < 0 ? 0 : Math.min(currentIndex + 1, filteredPatients.length - 1);
+				} else {
+					nextIndex = currentIndex <= 0 ? 0 : currentIndex - 1;
+				}
+				const nextPatient = filteredPatients[nextIndex];
+				if (nextPatient) {
+					handleSelectPatient(nextPatient.id);
+				}
 			}
 		};
 		window.addEventListener("keydown", handleGlobalKeyDown);
 		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-	}, []);
+	}, [
+		isPatientCardModalOpen,
+		isCreateModalOpen,
+		isLoyaltyModalOpen,
+		query,
+		setQuery,
+		filteredPatients,
+		selectedPatientId,
+		handleSelectPatient,
+	]);
 
 	useEffect(() => {
 		const handleOpenCard = (e: Event) => {
@@ -622,7 +672,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						</button>
 					) : null}
 					<span className="patients-search-shortcut-hint hidden sm:inline" aria-hidden="true">
-						Ctrl+K
+						⌘K / Ctrl+K
 					</span>
 				</div>
 
@@ -768,7 +818,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								<button
 									aria-label={`Открыть карточку пациента: ${patient.fullName}`}
 									aria-pressed={patientIsSelected}
-									className="round-link"
+									className="round-link shrink-0"
 									type="button"
 									title={`Открыть карточку пациента: ${patient.fullName}`}
 									onClick={(e) => {
