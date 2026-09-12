@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Stethoscope } from "lucide-react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
-import { DiagnosticDrawer } from "./components/diagnostic/DiagnosticDrawer";
+import { DiagnosticDrawer } from "./components/diagnostics/DiagnosticDrawer";
 import { CopilotGlobalHost } from "./components/copilot/CopilotGlobalHost";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";

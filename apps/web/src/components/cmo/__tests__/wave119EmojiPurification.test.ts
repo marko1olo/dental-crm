@@ -72,7 +72,7 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 	it("5. PatientRecallManagerModal: zero raw emojis, uses Lucide Smartphone & Lightbulb icons", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/recall/PatientRecallManagerModal.tsx",
+			"apps/web/src/components/recalls/PatientRecallManagerModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 

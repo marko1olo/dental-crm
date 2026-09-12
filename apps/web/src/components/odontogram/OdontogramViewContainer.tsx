@@ -45,7 +45,7 @@ import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { RadialToothMenu } from "./RadialToothMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
-import { ToothContextDrawer } from "../diagnostic/ToothContextDrawer";
+import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
 import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
 import { OrthodonticCephTrackerModal } from "../orthodontics/OrthodonticCephTrackerModal";

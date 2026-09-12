@@ -61,7 +61,7 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 	it("3. PatientRecallManagerModal: fallback candidates pool defaults to [] instead of synthetic records", () => {
 		const recallPath = path.join(
 			repoRoot,
-			"apps/web/src/components/recall/PatientRecallManagerModal.tsx",
+			"apps/web/src/components/recalls/PatientRecallManagerModal.tsx",
 		);
 		const recallContent = fs.readFileSync(recallPath, "utf-8");
 

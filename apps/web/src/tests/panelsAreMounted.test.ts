@@ -169,12 +169,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Специализированная шторка разрешения конфликтов оффлайн-синхронизации деактивирована в пользу автоматического детерминированного фонового движка conflictResolver (LWW / CRDT) без отвлечения врача.",
 	},
 	{
-		file: "components/schedule/AppointmentCreationModal.tsx",
-		name: "AppointmentCreationModal",
-		reason:
-			"Модальное окно создания визита из ранней версии расписания; заменено на встроенное инлайн-создание слотов в ScheduleGrid и AppointmentCard без блокирующих многошаговых диалоговых окон по Мандату 8e.",
-	},
-	{
 		file: "components/schedule/AppointmentDrawer.tsx",
 		name: "AppointmentDrawer",
 		reason:
@@ -185,18 +179,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "ChairRosterModal",
 		reason:
 			"Модальное окно ротации врачей по стоматологическим креслам; заменено на прямой выбор кресла и врача в ScheduleFilterStrip и инлайн-расписание ChairScheduleView с бейджами занятости кресел.",
-	},
-	{
-		file: "components/schedule/ScheduleAppointmentModal.tsx",
-		name: "ScheduleAppointmentModal",
-		reason:
-			"Вспомогательный диалог бронирования приёма; объединён с быстрой записью QuickBookingDrawer и 1-клик назначением приёма в сетке расписания ScheduleGrid без избыточных промежуточных подтверждений.",
-	},
-	{
-		file: "components/schedule/ScheduleCalendar.tsx",
-		name: "ScheduleCalendar",
-		reason:
-			"Календарный вид расписания крупной сетки; заменён на высокопроизводительную временную шкалу ScheduleTimeline и специализированную покресельную сетку ChairScheduleView для амбулаторной практики.",
 	},
 	{
 		file: "components/schedule/ScheduleFilterToolbar.tsx",
@@ -479,6 +461,18 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "LabWorkOrderConstructorModal",
 		reason:
 			"Конструктор и визуальный конфигуратор нарядов ортопедических конструкций в зуботехническую лабораторию (components/lab/LabWorkOrderConstructorModal.tsx:198). Альтернативный конструктор заказов ЗТЛ.",
+	},
+	{
+		file: "components/billing/tax/FnsTaxDeductionModal.tsx",
+		name: "FnsTaxDeductionModal",
+		reason:
+			"Автономное модальное окно формирования справки об оплате медицинских услуг для налогового вычета по форме ФНС России (КНД 1151156 / Приказ БВ-7-11/824@). Экспортируется как специализированный налоговый модуль для интеграции в финансовый бэкофис и документы.",
+	},
+	{
+		file: "components/emr/audit/CmoEmrAuditModal.tsx",
+		name: "CmoEmrAuditModal",
+		reason:
+			"Автономное модальное окно ВКК (Врачебной комиссии и аудита медицинских карт начмедом) по Приказу Минздрава РФ № 785н и 043/у. Предоставляется как изолированный аудит-модуль для кабинета главного врача.",
 	},
 ];
 
@@ -1006,7 +1000,7 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/clinical/PostOpCareSheetModal.tsx:PostOpCareSheetModal",
 	"components/clinical/SomaticAnamnesisCard.tsx:SomaticAnamnesisCard",
 	"components/cmo/CmoQualityAuditModal.tsx:CmoQualityAuditModal",
-	"components/diagnostic/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator",
+	"components/diagnostics/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
 	"components/doctor/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
@@ -1030,7 +1024,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
 	"components/imaging/ImagingModal.tsx:ImagingModal",
-	"components/implant/isq/ImplantIsqProtocolModal.tsx:ImplantIsqProtocolModal",
 	"components/insurance/DmsGuaranteeLettersModal.tsx:DmsGuaranteeLettersModal",
 	"components/insurance/DmsInsurersHubModal.tsx:DmsInsurersHubModal",
 	"components/insurance/InsurancePreAuthModal.tsx:InsurancePreAuthModal",
@@ -1083,7 +1076,7 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/radiology/RadiologyViewerModal.tsx:RadiologyViewerModal",
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
 	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx:RadiationDoseSheetModal",
-	"components/recall/PatientRecallManagerModal.tsx:PatientRecallManagerModal",
+	"components/recalls/PatientRecallManagerModal.tsx:PatientRecallManagerModal",
 	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
 	"components/sanpin/autoclave/AutoclaveCycleModal.tsx:AutoclaveCycleModal",
 	"components/sanpin/autoclave/KraftBarcodeLabelSheet.tsx:KraftBarcodeLabelSheet",
@@ -1586,9 +1579,9 @@ test("второго планировщика смет и его очереди 
 	 * и заберёт единственную санкционированную арифметику сметы вместе с ним.
 	 */
 	assert.equal(
-		existsSync(path.join(webSrcRoot, "components/plan/planPricing.ts")),
+		existsSync(path.join(webSrcRoot, "components/treatment-plans/planPricing.ts")),
 		true,
-		"components/plan/planPricing.ts удалён. Это расчёт сметы, который читает " +
+		"components/treatment-plans/planPricing.ts удалён. Это расчёт сметы, который читает " +
 			"components/odontogram/treatmentEstimatorPricing.ts у живого экрана, и он закреплён " +
 			"src/tests/planPricing.test.ts — удалять его вместе с остатками планировщика нельзя.",
 	);

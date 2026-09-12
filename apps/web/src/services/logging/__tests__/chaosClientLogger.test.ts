@@ -3,7 +3,7 @@ import { beforeEach, describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { useOfflineStore } from "../../../store/offlineStore.js";
-import { DiagnosticDrawer } from "../../../components/diagnostic/DiagnosticDrawer.js";
+import { DiagnosticDrawer } from "../../../components/diagnostics/DiagnosticDrawer.js";
 import { clientLogger, MAX_NETWORK_LOGS, MAX_SYSTEM_LOGS } from "../clientLogger.js";
 
 describe("Chaos & Stress Audit: ClientLogger & Diagnostic HUD (DoS / Memory / XSS)", () => {

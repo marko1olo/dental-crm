@@ -39,7 +39,6 @@ import {
 	OrthodonticPhotoProtocolModal,
 } from "../orthodontics";
 import { PediatricMixedDentitionModal } from "../odontogram/PediatricMixedDentitionModal";
-import { ImplantIsqProtocolModal } from "../implant/isq/ImplantIsqProtocolModal";
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import { DentalLabOrdersHubModal } from "../lab/DentalLabOrdersHubModal";
 import { LabTrackingDrawer } from "../lab/LabTrackingDrawer";
@@ -63,7 +62,7 @@ import { ChairsideTabletConsentModal } from "../chairside/ChairsideTabletConsent
 import { AnesthesiaProtocolModal } from "../anesthesia/AnesthesiaProtocolModal";
 import { AnesthesiaSafetyHubModal } from "../anesthesia/AnesthesiaSafetyHubModal";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
-import { ToothAnesthesiaCalculator } from "../diagnostic/ToothAnesthesiaCalculator";
+import { ToothAnesthesiaCalculator } from "../diagnostics/ToothAnesthesiaCalculator";
 import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import { EmergencyRescueModal } from "../emergency/EmergencyRescueModal";
 import { ImagingModal } from "../imaging/ImagingModal";
@@ -142,9 +141,6 @@ export const ClinicalModalsHost: React.FC = () => {
 			)}
 			{activeModal === "ortho_photo" && (
 				<OrthodonticPhotoProtocolModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "implant_isq" && (
-				<ImplantIsqProtocolModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "dental_lab_order" && (
 				<DentalLabOrderModal isOpen={true} onClose={close}  {...({} as any)} />

@@ -152,8 +152,8 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "consents/informedConsent.css", classPattern: ".consent-close-btn" },
 				{ file: "documents/sickLeave/sickLeaveEln.css", classPattern: ".sick-leave-close-btn" },
 				{ file: "documents/egisz/egiszModal.css", classPattern: ".egisz-close-btn" },
-				{ file: "diagnostic/DiagnosticDrawer.css", classPattern: ".dente-diagnostic-close-btn" },
-				{ file: "diagnostic/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
+				{ file: "diagnostics/DiagnosticDrawer.css", classPattern: ".dente-diagnostic-close-btn" },
+				{ file: "diagnostics/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
 				{ file: "PatientPortal.css", classPattern: ".doc-close-btn" },
 				{ file: "LeadsKanbanView.css", classPattern: ".kanban-modal-close" },
 				{ file: "analytics/marketingRoi.css", classPattern: ".marketing-roi-close-btn" },
@@ -238,7 +238,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				path.join(webComponentsDir, "Header.css"),
 				path.join(webComponentsDir, "PatientPortal.css"),
 				path.join(webComponentsDir, "documents/documentNavigation.css"),
-				path.join(webComponentsDir, "diagnostic/ToothContextDrawer.css"),
+				path.join(webComponentsDir, "diagnostics/ToothContextDrawer.css"),
 				path.join(webComponentsDir, "cmo/clinicalQuality.css"),
 			];
 

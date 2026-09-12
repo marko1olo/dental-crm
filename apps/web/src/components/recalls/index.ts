@@ -63,4 +63,12 @@ export {
 export {
 	PatientRecallManagerModal,
 	type PatientRecallManagerModalProps,
-} from "../recall";
+	type PatientRecallItem,
+	type RecallCategoryFilter,
+	type RecallUrgencyLevel,
+	type RecallChannelType,
+	DEFAULT_RECALL_CANDIDATES,
+	buildRecallMessageContent,
+	extractPatientFirstName,
+	cleanPhoneDigits,
+} from "./PatientRecallManagerModal";

@@ -44,7 +44,7 @@ import { CmoQualityAuditModal } from "../cmo/CmoQualityAuditModal";
 import { PatientPortalModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../portal";
 import { PatientWebappPortalModal } from "../patient-portal/PatientWebappPortalModal";
 import { PatientPortalTimelineModal } from "../portal/timeline/PatientPortalTimelineModal";
-import { PatientRecallManagerModal } from "../recall/PatientRecallManagerModal";
+import { PatientRecallManagerModal } from "../recalls/PatientRecallManagerModal";
 import { PatientRecallsHubModal } from "../recalls/PatientRecallsHubModal";
 import { DoctorMobileShiftModal } from "../doctor-portal";
 import { DoctorShiftCockpitModal, DoctorDesktopHeader } from "../doctor";

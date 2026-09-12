@@ -24,8 +24,8 @@ import {
 } from "../PatientRecallManagerModal";
 import {
 	PatientRecallsHubModal,
-} from "../../recalls/PatientRecallsHubModal";
-import type { PatientRecallRecord } from "../../recalls/patientRecallEngine";
+} from "../PatientRecallsHubModal";
+import type { PatientRecallRecord } from "../patientRecallEngine";
 
 interface MockDomNode {
 	nodeType: number;
