@@ -1,5 +1,5 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
-import { Calendar, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Shield, Stethoscope } from "lucide-react";
+import { Calendar, Camera, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Receipt, Shield, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -401,6 +401,60 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 										role="menu"
 										data-testid="patient-docs-dms-dropdown"
 									>
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												if (patientId) {
+													appLogic?.setSelectedPatientId?.(patientId);
+												}
+												window.location.hash = "patients";
+											}}
+											title="Открыть амбулаторную медицинскую карту Форма 043/у"
+											data-testid="patient-workspace-open-043u-btn"
+										>
+											<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
+											<span>Карта пациента (043/у)</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												if (patientId) {
+													appLogic?.setSelectedPatientId?.(patientId);
+												}
+												window.location.hash = "finance";
+											}}
+											title="Открыть счета, акты 804н и кассу 54-ФЗ"
+											data-testid="patient-workspace-open-finance-btn"
+										>
+											<Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<span>Счета и касса (54-ФЗ)</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												if (patientId) {
+													appLogic?.setSelectedPatientId?.(patientId);
+												}
+												window.location.hash = "radiology";
+											}}
+											title="Открыть рентгенологические и КТ исследования"
+											data-testid="patient-workspace-open-radiology-btn"
+										>
+											<Camera className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+											<span>Рентген и КТ снимки</span>
+										</button>
+
 										<button
 											type="button"
 											role="menuitem"

@@ -216,14 +216,14 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}
 	}, [initialValues]);
 
-	// Дебаунс автосохранения (только при активном редактировании)
+	// Дебаунс автосохранения (300ms debounced autosave per Mandate 8e)
 	useEffect(() => {
 		if (saveStatus !== "saving") return;
 		const timer = setTimeout(() => {
 			onChange?.(values);
 			onSave?.(values);
 			setSaveStatus("saved");
-		}, 400);
+		}, 300);
 
 		return () => clearTimeout(timer);
 	}, [values, saveStatus, onChange, onSave]);
@@ -457,18 +457,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			className={`flex flex-col bg-[var(--paper,white)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden shadow-xs ${className}`}
 		>
 			{/* ── ТУЛБАР 1 СТРОКА (ХИК / HIG: 32-36px кнопки) ── */}
-			<div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/50 border-b border-[var(--line,#e2e8f0)] flex-wrap min-h-[36px]">
+			<div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] flex-wrap min-h-[36px]">
 				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
-						<FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+					<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted)]">
+						<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 						<span>Форма 043/у • SOAP</span>
 					</div>
 
 					{/* Селектор целевого зуба */}
-					<div className="flex items-center gap-1 ml-2 pl-2 border-l border-[var(--line,#e2e8f0)]">
+					<div className="flex items-center gap-1 ml-2 pl-2 border-l border-[var(--line)]">
 						<label
 							htmlFor="soap-select-tooth"
-							className="text-xs font-semibold text-[var(--muted,#64748b)]"
+							className="text-xs font-semibold text-[var(--muted)]"
 						>
 							Зуб:
 						</label>
@@ -480,7 +480,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								setSelectedTooth(t);
 								if (t) onSelectActiveTooth?.(t);
 							}}
-							className="h-7 px-2 text-xs font-bold bg-white dark:bg-slate-800 border border-[var(--line,#cbd5e1)] rounded-lg text-teal-700 dark:text-teal-300 focus:outline-none focus:ring-1 focus:ring-teal-500"
+							className="h-7 px-2 text-xs font-bold bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--teal,var(--brand-primary))] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 						>
 							<option value="">Без зуба</option>
 							{ALL_FDI_ADULT_TEETH.map((t) => (
@@ -498,7 +498,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						onChange={(e) => setSelectedSurfaces(e.target.value)}
 						placeholder="Поверхности (MOD, вест...)"
 						aria-label="Поверхности зуба"
-						className="h-7 w-32 px-2 text-xs bg-white dark:bg-slate-800 border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] placeholder:text-slate-400 focus:outline-none"
+						className="h-7 w-32 px-2 text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 					/>
 				</div>
 
@@ -546,7 +546,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						type="button"
 						onClick={handleApplyNorm}
 						data-testid="btn-soap-physio-norm"
-						className="h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 transition-colors"
+						className="h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
 						title="Заполнить физиологической нормой (здоров / жалоб нет)"
 					>
 						<Check className="w-3.5 h-3.5" />
@@ -554,11 +554,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</button>
 
 					{/* Переключение режима отображения */}
-					<div className="flex items-center bg-slate-200 dark:bg-slate-800 p-0.5 rounded-lg">
+					<div className="flex items-center bg-[var(--paper-soft)] border border-[var(--line)] p-0.5 rounded-lg">
 						<button
 							type="button"
 							onClick={() => setActiveViewMode("fields")}
-							className={`h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "fields" ? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs" : "text-slate-600 dark:text-slate-400"}`}
+							className={`h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "fields" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 						>
 							<Edit3 className="w-3 h-3" />
 							<span>Поля</span>
@@ -566,7 +566,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewMode("full_text")}
-							className={`h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "full_text" ? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs" : "text-slate-600 dark:text-slate-400"}`}
+							className={`h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "full_text" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 						>
 							<Eye className="w-3 h-3" />
 							<span>Печать</span>
@@ -577,7 +577,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					<button
 						type="button"
 						onClick={handleCopyFullText}
-						className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+						className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent hover:border-[var(--line)] transition-colors cursor-pointer"
 						title="Скопировать медицинскую запись в буфер обмена"
 					>
 						{copied ? (
@@ -588,7 +588,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</button>
 
 					{/* Индикатор сохранения */}
-					<span className="text-[11px] font-medium text-slate-500 min-w-[70px] text-right inline-flex items-center justify-end gap-1">
+					<span className="text-[11px] font-medium text-[var(--muted)] min-w-[70px] text-right inline-flex items-center justify-end gap-1">
 						{saveStatus === "saving" ? (
 							"Запись..."
 						) : saveStatus === "saved" ? (
@@ -605,18 +605,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 			{/* ── ВЫПАДАЮЩАЯ ПАНЕЛЬ ШАБЛОНОВ STOMX ── */}
 			{isTemplatesOpen && (
-				<div className="bg-slate-50 dark:bg-slate-900 border-b border-[var(--line,#e2e8f0)] p-3 transition-all">
-					<div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200 dark:border-slate-800">
+				<div className="bg-[var(--paper-soft)] border-b border-[var(--line)] p-3 transition-all">
+					<div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[var(--line)]">
 						<div className="flex items-center gap-2">
-							<Sparkles className="w-4 h-4 text-teal-600" />
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
 								Клинические протоколы StomX (448 шаблонов 043/у)
 							</span>
 						</div>
 						<button
 							type="button"
 							onClick={() => setIsTemplatesOpen(false)}
-							className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+							className="p-1 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg cursor-pointer"
 						>
 							<X className="w-4 h-4" />
 						</button>
@@ -627,7 +627,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveSpecialty("all")}
-							className={`h-7 px-2.5 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${activeSpecialty === "all" ? "bg-teal-600 text-white" : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"}`}
+							className={`h-7 px-2.5 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${activeSpecialty === "all" ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
 						>
 							Все протоколы ({STOMX_ALL_448_TEMPLATES_INDEX.length})
 						</button>
@@ -641,7 +641,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									key={spec.id}
 									type="button"
 									onClick={() => setActiveSpecialty(spec.id)}
-									className={`h-7 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${isActive ? "bg-teal-600 text-white" : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"}`}
+									className={`h-7 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${isActive ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
 								>
 									{SPECIALTY_ICONS[spec.id]}
 									<span>{spec.shortLabel}</span>
@@ -653,13 +653,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 					{/* Поисковая строка */}
 					<div className="relative my-2">
-						<Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+						<Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[var(--muted)]" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по диагнозу, протоколу (кариес, пульпит, виниры, имплантация, кюретаж)..."
-							className="w-full h-8 pl-8 pr-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[var(--ink)] placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+							className="w-full h-8 pl-8 pr-3 text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 						/>
 					</div>
 
@@ -668,7 +668,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						{filteredProtocols.map((protocol) => (
 							<div
 								key={protocol.id}
-								className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg flex flex-col justify-between hover:border-teal-500 transition-colors shadow-2xs"
+								className="p-2 bg-[var(--paper)] border border-[var(--line)] rounded-lg flex flex-col justify-between hover:border-[var(--teal,var(--brand-primary))] transition-colors shadow-2xs"
 							>
 								<div>
 									<div className="flex items-center justify-between gap-1 mb-1">
@@ -792,11 +792,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<div className="flex items-center justify-between">
 							<label
 								htmlFor="soap-complaints"
-								className="text-xs font-bold text-slate-700 dark:text-slate-300"
+								className="text-xs font-bold text-[var(--ink)]"
 							>
 								Жалобы (Subjective / Complaints)
 							</label>
-							<span className="text-[10px] text-slate-400">Форма 043/у</span>
+							<span className="text-[10px] text-[var(--muted)]">Форма 043/у</span>
 						</div>
 						<textarea
 							id="soap-complaints"
@@ -804,7 +804,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							value={values.complaint || ""}
 							onChange={(e) => handleFieldChange("complaint", e.target.value)}
 							placeholder="Боль при приеме пищи, ночные боли, выпадение пломбы..."
-							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
 						/>
 					</div>
 
@@ -813,11 +813,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<div className="flex items-center justify-between">
 							<label
 								htmlFor="soap-anamnesis"
-								className="text-xs font-bold text-slate-700 dark:text-slate-300"
+								className="text-xs font-bold text-[var(--ink)]"
 							>
 								Анамнез заболевания и жизни (Anamnesis)
 							</label>
-							<span className="text-[10px] text-slate-400">Аллергоанамнез</span>
+							<span className="text-[10px] text-[var(--muted)]">Аллергоанамнез</span>
 						</div>
 						<textarea
 							id="soap-anamnesis"
@@ -825,7 +825,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							value={values.anamnesis || ""}
 							onChange={(e) => handleFieldChange("anamnesis", e.target.value)}
 							placeholder="Зуб ранее лечен, боли возникли 2 дня назад. Соматически здоров..."
-							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
 						/>
 					</div>
 
@@ -834,11 +834,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<div className="flex items-center justify-between">
 							<label
 								htmlFor="soap-objective"
-								className="text-xs font-bold text-slate-700 dark:text-slate-300"
+								className="text-xs font-bold text-[var(--ink)]"
 							>
 								Объективное исследование (Objective / Status Localis)
 							</label>
-							<span className="text-[10px] text-slate-400">
+							<span className="text-[10px] text-[var(--muted)]">
 								Зондирование, перкуссия, ЭОД, КЛКТ
 							</span>
 						</div>
@@ -850,7 +850,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								handleFieldChange("objectiveStatus", e.target.value)
 							}
 							placeholder="Кариозная полость средней глубины на окклюзионной поверхности, зондирование слабо болезненно..."
-							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
 						/>
 					</div>
 
@@ -859,11 +859,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<div className="flex items-center justify-between">
 							<label
 								htmlFor="soap-diagnosis"
-								className="text-xs font-bold text-slate-700 dark:text-slate-300"
+								className="text-xs font-bold text-[var(--ink)]"
 							>
 								Клинический диагноз по МКБ-10 (Assessment)
 							</label>
-							<span className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold">
+							<span className="text-[10px] text-[var(--teal,var(--brand-primary))] font-semibold">
 								{values.icd10 || "МКБ-10"}
 							</span>
 						</div>
@@ -875,7 +875,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								onChange={(e) => handleFieldChange("icd10", e.target.value)}
 								placeholder="K02.1"
 								aria-label="Код МКБ-10"
-								className="w-24 h-8 px-2 text-xs font-bold text-teal-700 dark:text-teal-300 bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:outline-none"
+								className="w-24 h-8 px-2 text-xs font-bold text-[var(--teal,var(--brand-primary))] bg-[var(--paper)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 							/>
 							<input
 								id="soap-diagnosis"
@@ -883,7 +883,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								value={values.diagnosis || ""}
 								onChange={(e) => handleFieldChange("diagnosis", e.target.value)}
 								placeholder="Клинический диагноз: Кариес дентина зуба 16..."
-								className="flex-1 h-8 px-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+								className="flex-1 h-8 px-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 							/>
 						</div>
 					</div>
@@ -893,11 +893,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<div className="flex items-center justify-between">
 							<label
 								htmlFor="soap-treatment"
-								className="text-xs font-bold text-slate-700 dark:text-slate-300"
+								className="text-xs font-bold text-[var(--ink)]"
 							>
 								Протокол лечения и манипуляции (Plan / Treatment Protocol)
 							</label>
-							<span className="text-[10px] text-slate-400">
+							<span className="text-[10px] text-[var(--muted)]">
 								Анестезия, препарирование, пломба/коронка/удаление
 							</span>
 						</div>
@@ -909,7 +909,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								handleFieldChange("treatmentPlan", e.target.value)
 							}
 							placeholder="Анестезия sol. Articaini 1:200000 1.8 мл. Препарирование кариозной полости, коффердам..."
-							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y font-mono text-[11px]"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y font-mono text-[11px]"
 						/>
 					</div>
 
@@ -917,7 +917,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					<div className="flex flex-col gap-1 md:col-span-2">
 						<label
 							htmlFor="soap-recommendations"
-							className="text-xs font-bold text-slate-700 dark:text-slate-300"
+							className="text-xs font-bold text-[var(--ink)]"
 						>
 							Назначения и рекомендации пациенту (Recommendations)
 						</label>
@@ -929,18 +929,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								handleFieldChange("recommendations", e.target.value)
 							}
 							placeholder="Щадящая диета 2 часа, гигиена полости рта, НПВП при боли..."
-							className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
 						/>
 					</div>
 				</div>
 			) : (
 				/* ── РЕЖИМ ПЕЧАТНОГО ПРЕДПРОСМОТРА 043/У ── */
-				<div className="p-4 bg-white dark:bg-slate-950 font-serif text-slate-900 dark:text-slate-100 text-xs leading-relaxed space-y-3">
-					<div className="border-b-2 border-slate-900 dark:border-slate-100 pb-2 text-center">
+				<div className="p-4 bg-[var(--paper)] font-serif text-[var(--ink)] text-xs leading-relaxed space-y-3 border border-[var(--line)] rounded-xl">
+					<div className="border-b-2 border-[var(--line-strong,var(--ink))] pb-2 text-center">
 						<div className="font-sans font-black text-sm uppercase tracking-wide">
 							МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (Форма № 043/у)
 						</div>
-						<div className="font-sans text-[10px] text-slate-500">
+						<div className="font-sans text-[10px] text-[var(--muted)]">
 							Дневник амбулаторного приема • Зуб:{" "}
 							{selectedTooth ?? "Общий статус"}
 						</div>

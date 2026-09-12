@@ -9,11 +9,13 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Calendar,
+	Camera,
 	Check,
 	FileText,
 	Gift,
 	MoreHorizontal,
 	Plus,
+	Receipt,
 	Search,
 	ShieldCheck,
 	Stethoscope,
@@ -1218,6 +1220,74 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									>
 										<Calendar size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 										<span>Записать в расписание</span>
+									</button>
+
+									<button
+										type="button"
+										className="patient-dropdown-item"
+										onClick={() => {
+											setIsPatientActionsMenuOpen(false);
+											if (selectedPatient?.id) {
+												usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+											}
+											useAppStore.getState().setCurrentView("finance");
+											showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient?.fullName || ""}`, "info");
+										}}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "8px",
+											width: "100%",
+											padding: "8px 12px",
+											minHeight: "36px",
+											fontSize: "13px",
+											fontWeight: 600,
+											border: "none",
+											background: "transparent",
+											color: "var(--ink, #0f172a)",
+											borderRadius: "6px",
+											cursor: "pointer",
+											textAlign: "left",
+										}}
+										title="Счета, акты по 804н и касса 54-ФЗ"
+										data-testid="patient-card-finance-btn"
+									>
+										<Receipt size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+										<span>Счета и касса (54-ФЗ)</span>
+									</button>
+
+									<button
+										type="button"
+										className="patient-dropdown-item"
+										onClick={() => {
+											setIsPatientActionsMenuOpen(false);
+											if (selectedPatient?.id) {
+												usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+											}
+											useAppStore.getState().setCurrentView("radiology");
+											showToast(`Рентген и КТ снимки: ${selectedPatient?.fullName || ""}`, "info");
+										}}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "8px",
+											width: "100%",
+											padding: "8px 12px",
+											minHeight: "36px",
+											fontSize: "13px",
+											fontWeight: 600,
+											border: "none",
+											background: "transparent",
+											color: "var(--ink, #0f172a)",
+											borderRadius: "6px",
+											cursor: "pointer",
+											textAlign: "left",
+										}}
+										title="Рентгенологические и КТ исследования пациента"
+										data-testid="patient-card-radiology-btn"
+									>
+										<Camera size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+										<span>Рентген и КТ снимки</span>
 									</button>
 
 									<button

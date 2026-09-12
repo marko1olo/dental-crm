@@ -51,7 +51,7 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 
 	const patientIndexPath = path.resolve(
 		__dirname,
-		"../../patient/index.ts",
+		"../../patients/index.ts",
 	);
 	const patientIndexSource = fs.readFileSync(patientIndexPath, "utf8");
 
@@ -169,13 +169,13 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		const patientsIndexPath = path.resolve(__dirname, "../../patients/index.ts");
 		const patientsIndexSource = fs.readFileSync(patientsIndexPath, "utf8");
 		assert.ok(
-			patientIndexSource.includes('export * from "../patients";') ||
-				patientIndexSource.includes('export * from "../patients/PatientCardModal";'),
-			"patient/index.ts must export PatientCardModal",
+			patientsIndexSource.includes('export * from "./PatientCardModal";') ||
+				patientsIndexSource.includes('export * from "./PatientCardModal"'),
+			"patients/index.ts must export PatientCardModal",
 		);
 		assert.ok(
-			patientIndexSource.includes('export * from "../patients";') ||
-				patientsIndexSource.includes('export * from "./tabs/PatientGeneralInfoTab";'),
+			patientsIndexSource.includes('export * from "./tabs/PatientGeneralInfoTab";') ||
+				patientsIndexSource.includes('export * from "./tabs/PatientGeneralInfoTab"'),
 			"patients/index.ts must export PatientGeneralInfoTab",
 		);
 	});
