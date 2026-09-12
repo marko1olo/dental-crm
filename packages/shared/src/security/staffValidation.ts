@@ -11,6 +11,7 @@
  */
 
 import { z } from "zod";
+import { isValidSnils } from "../utils/snils.js";
 
 export const staffRoleEnumValues = [
 	"owner",
@@ -76,36 +77,11 @@ export function validateStaffSnils(raw: string | null | undefined): {
 		};
 	}
 
-	// СНИЛС номеров до 001-001-998 не имеют контрольного числа
-	const numberPart = Number.parseInt(digits.slice(0, 9), 10);
-	if (numberPart <= 1001998) {
-		return { isValid: true, formatted: formatStaffSnils(digits) };
-	}
-
-	// Расчет контрольного числа
-	let checkSum = 0;
-	for (let i = 0; i < 9; i++) {
-		const charVal = digits[i];
-		const digitNum = charVal ? Number.parseInt(charVal, 10) : 0;
-		checkSum += digitNum * (9 - i);
-	}
-
-	let expectedCheckDigit = 0;
-	if (checkSum < 100) {
-		expectedCheckDigit = checkSum;
-	} else if (checkSum === 100 || checkSum === 101) {
-		expectedCheckDigit = 0;
-	} else {
-		const rem = checkSum % 101;
-		expectedCheckDigit = rem === 100 || rem === 101 ? 0 : rem;
-	}
-
-	const actualCheckDigit = Number.parseInt(digits.slice(9, 11), 10);
-	if (expectedCheckDigit !== actualCheckDigit) {
+	if (!isValidSnils(digits)) {
 		return {
 			isValid: false,
 			formatted: formatStaffSnils(digits),
-			error: `Неверное контрольное число СНИЛС (ожидалось ${String(expectedCheckDigit).padStart(2, "0")}, указано ${String(actualCheckDigit).padStart(2, "0")})`,
+			error: "Неверное контрольное число СНИЛС",
 		};
 	}
 

@@ -2,8 +2,9 @@
  * documentScannerEngine.ts
  *
  * Core engine for clinical document scanning, mobile camera framing,
- * image binarization/auto-contrast, and statutory Russian ID/Insurance OCR regex parsing.
- */
+ * */
+
+import { isValidSnils } from "@dental/shared";
 
 export type DocumentType =
 	| "passport_rf"
@@ -123,32 +124,10 @@ export interface ExtractedSnilsData {
 
 /**
  * Validates Russian SNILS 11-digit checksum algorithm according to Pension Fund rules.
+ * Delegates to canonical @dental/shared implementation (Mandate 8s).
  */
 export function validateSnilsChecksum(digits: string): boolean {
-	const clean = digits.replace(/\D/g, "");
-	if (clean.length !== 11) return false;
-
-	// SNILS <= 001-001-998 are exempt from checksum validation
-	const num = Number.parseInt(clean.slice(0, 9), 10);
-	if (num <= 1001998) return true;
-
-	let sum = 0;
-	for (let i = 0; i < 9; i++) {
-		sum += Number.parseInt(clean[i]!, 10) * (9 - i);
-	}
-
-	let checkDigit = 0;
-	if (sum < 100) {
-		checkDigit = sum;
-	} else if (sum === 100 || sum === 101) {
-		checkDigit = 0;
-	} else {
-		const rem = sum % 101;
-		checkDigit = rem === 100 || rem === 101 ? 0 : rem;
-	}
-
-	const givenCheck = Number.parseInt(clean.slice(9, 11), 10);
-	return checkDigit === givenCheck;
+	return isValidSnils(digits);
 }
 
 /**

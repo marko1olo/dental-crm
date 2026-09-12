@@ -13,6 +13,7 @@ import { generateQrCodeSvg, generateQrCodeDataUri, type QrSvgOptions } from "../
 import { generateCode128Svg, generateFnsFormKnd1151156BarcodeSvg, type Code128SvgOptions } from "../fiscal/barcodeGenerator.js";
 import { escapeXml } from "../cda/c14n.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
+import { formatSnils, isValidSnils, normalizeSnils } from "../utils/snils.js";
 
 /**
  * Нормативные константы регламента ФНС России № ЕА-7-11/824@
@@ -160,45 +161,21 @@ export function validateRussianOgrn(ogrn: string): { isValid: boolean; errorMess
  * Валидация 11-значного СНИЛС по контрольным суммам ПФР / СФР.
  */
 export function validateRussianSnils(snils: string): { isValid: boolean; normalized?: string; errorMessageRu?: string } {
-	const clean = snils.replace(/\D/g, "");
+	const clean = normalizeSnils(snils);
 	if (clean.length !== 11) {
 		return { isValid: false, errorMessageRu: "СНИЛС должен содержать 11 цифр (XXX-XXX-XXX YY)" };
 	}
 
 	// Запрет на фиктивный СНИЛС из всех нулей
-	if (/^0+$/.test(clean) || clean.slice(0, 9) === "000000000") {
+	if (/^0+$/.test(clean) || clean.slice(0, 9) === "000000000" || /^(\d)\1{10}$/.test(clean)) {
 		return { isValid: false, errorMessageRu: "СНИЛС не может состоять только из нулей" };
 	}
 
-	// СНИЛС до 001-001-998 не проверяется по контрольной сумме
-	const num = Number.parseInt(clean.slice(0, 9), 10);
-	if (num <= 1001998) {
-		const norm = `${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6, 9)} ${clean.slice(9)}`;
-		return { isValid: true, normalized: norm };
+	if (!isValidSnils(clean)) {
+		return { isValid: false, errorMessageRu: "Неверная контрольная сумма СНИЛС" };
 	}
 
-	let sum = 0;
-	for (let i = 0; i < 9; i++) {
-		sum += Number.parseInt(clean[i]!, 10) * (9 - i);
-	}
-
-	let checkDigit = 0;
-	if (sum < 100) {
-		checkDigit = sum;
-	} else if (sum === 100 || sum === 101) {
-		checkDigit = 0;
-	} else {
-		const rem = sum % 101;
-		checkDigit = rem === 100 || rem === 101 ? 0 : rem;
-	}
-
-	const expectedCheck = Number.parseInt(clean.slice(9), 10);
-	if (checkDigit === expectedCheck) {
-		const norm = `${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6, 9)} ${clean.slice(9)}`;
-		return { isValid: true, normalized: norm };
-	}
-
-	return { isValid: false, errorMessageRu: "Неверная контрольная сумма СНИЛС" };
+	return { isValid: true, normalized: formatSnils(clean) };
 }
 
 /**

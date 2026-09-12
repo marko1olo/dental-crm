@@ -5,6 +5,8 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { formatSnils, isValidSnils, normalizeSnils } from "@dental/shared";
+
 /** Поддерживаемые налоговые периоды (текущий и до 3 предыдущих лет). */
 export const SUPPORTED_TAX_YEARS = [2026, 2025, 2024, 2023] as const;
 export type SupportedTaxYear = (typeof SUPPORTED_TAX_YEARS)[number];
@@ -249,7 +251,7 @@ export function validateRussianSnils(snils: string | null | undefined): {
 	}
 
 	// СНИЛС вида 000-000-000 00 не валиден
-	if (/^0{11}$/.test(clean)) {
+	if (/^0{11}$/.test(clean) || /^(\d)\1{10}$/.test(clean)) {
 		return {
 			isValid: false,
 			cleanSnils: clean,
@@ -258,41 +260,18 @@ export function validateRussianSnils(snils: string | null | undefined): {
 		};
 	}
 
-	const formatted = `${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6, 9)} ${clean.slice(9, 11)}`;
-	const numberPart = Number(clean.slice(0, 9));
+	const formatted = formatSnils(clean);
 
-	// Для номеров меньше или равных 001-001-998 проверка контрольной суммы не проводилась
-	if (numberPart <= 1001998) {
-		return { isValid: true, cleanSnils: clean, formatted };
+	if (!isValidSnils(clean)) {
+		return {
+			isValid: false,
+			cleanSnils: clean,
+			formatted,
+			error: `Неверное контрольное число СНИЛС (указано: ${clean.slice(9, 11)})`,
+		};
 	}
 
-	let sum = 0;
-	for (let i = 0; i < 9; i++) {
-		const digit = Number(clean[i]);
-		sum += digit * (9 - i);
-	}
-
-	let checkDigit = 0;
-	if (sum < 100) {
-		checkDigit = sum;
-	} else if (sum === 100 || sum === 101) {
-		checkDigit = 0;
-	} else {
-		const rem = sum % 101;
-		checkDigit = rem === 100 || rem === 101 ? 0 : rem;
-	}
-
-	const actualCheckDigit = Number(clean.slice(9, 11));
-	if (checkDigit === actualCheckDigit) {
-		return { isValid: true, cleanSnils: clean, formatted };
-	}
-
-	return {
-		isValid: false,
-		cleanSnils: clean,
-		formatted,
-		error: `Неверное контрольное число СНИЛС (вычислено: ${String(checkDigit).padStart(2, "0")}, указано: ${clean.slice(9, 11)})`,
-	};
+	return { isValid: true, cleanSnils: clean, formatted };
 }
 
 /**
