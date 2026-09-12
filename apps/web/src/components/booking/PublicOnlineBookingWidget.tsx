@@ -102,34 +102,42 @@ export interface PublicOnlineBookingWidgetProps {
 	/** Embed mode: standalone, iframe, modal, or telegram */
 	readonly embedMode?: "standalone" | "iframe" | "modal" | "telegram";
 	/** Custom branches override */
-	readonly customBranches?: ClinicBranch[];
+	readonly customBranches?: ClinicBranch[] | undefined;
 	/** Custom categories override */
-	readonly customCategories?: ServiceCategory[];
+	readonly customCategories?: ServiceCategory[] | undefined;
 	/** Custom doctors override */
-	readonly customDoctors?: BookingDoctorData[];
+	readonly customDoctors?: BookingDoctorData[] | undefined;
 	/** Initial step (1-5) */
-	readonly initialStep?: number;
+	readonly initialStep?: number | undefined;
 	/** Initial branch ID */
-	readonly initialBranchId?: string;
+	readonly initialBranchId?: string | undefined;
 	/** Initial category ID */
-	readonly initialCategoryId?: string;
+	readonly initialCategoryId?: string | undefined;
 	/** Initial doctor ID */
-	readonly initialDoctorId?: string;
+	readonly initialDoctorId?: string | undefined;
 	/** Callback when booking succeeds */
-	readonly onSuccess?: (booking: BookingConfirmationData) => void;
+	readonly onSuccess?: ((booking: BookingConfirmationData) => void) | undefined;
 	/** Callback when step changes */
-	readonly onStepChange?: (step: number) => void;
+	readonly onStepChange?: ((step: number) => void) | undefined;
 	/** Optional active toast/guidance notification callback */
-	readonly showToast?: (
-		message: string,
-		type?: "info" | "warning" | "error" | "success",
-	) => void;
+	readonly showToast?:
+		| ((
+				message: string,
+				type?: "info" | "warning" | "error" | "success",
+		  ) => void)
+		| undefined;
 	/** Base URL for API fetch */
-	readonly apiBaseUrl?: string;
+	readonly apiBaseUrl?: string | undefined;
 	/** Require SMS verification before booking (clinic settings, default false) */
-	readonly requireSmsVerification?: boolean;
+	readonly requireSmsVerification?: boolean | undefined;
 	/** Additional CSS class */
-	readonly className?: string;
+	readonly className?: string | undefined;
+	/** Pre-filled patient name (e.g. from patient portal / auth session) */
+	readonly initialPatientName?: string | undefined;
+	/** Pre-filled patient phone */
+	readonly initialPatientPhone?: string | undefined;
+	/** Patient ID if already authenticated in patient portal */
+	readonly patientId?: string | undefined;
 }
 
 // ============================================================================
@@ -725,6 +733,9 @@ export const PublicOnlineBookingWidget: React.FC<
 	apiBaseUrl = "/api/public/booking",
 	requireSmsVerification = false,
 	className = "",
+	initialPatientName,
+	initialPatientPhone,
+	patientId,
 }) => {
 	const widgetInstanceId = useId();
 
@@ -786,10 +797,24 @@ export const PublicOnlineBookingWidget: React.FC<
 	const availableSlots = slots;
 
 	// Patient Form
-	const [patientName, setPatientName] = useState("");
-	const [patientPhone, setPatientPhone] = useState("");
+	const [patientName, setPatientName] = useState(initialPatientName || "");
+	const [patientPhone, setPatientPhone] = useState(
+		initialPatientPhone ? formatRussianPhone(initialPatientPhone) : "",
+	);
 	const [patientComment, setPatientComment] = useState("");
 	const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(true);
+
+	useEffect(() => {
+		if (initialPatientName && !patientName) {
+			setPatientName(initialPatientName);
+		}
+	}, [initialPatientName]);
+
+	useEffect(() => {
+		if (initialPatientPhone && !patientPhone) {
+			setPatientPhone(formatRussianPhone(initialPatientPhone));
+		}
+	}, [initialPatientPhone]);
 
 	// SMS Verification (Real Server OTP if requireSmsVerification is configured by clinic)
 	const showSmsVerification = Boolean(requireSmsVerification);
@@ -1262,6 +1287,7 @@ export const PublicOnlineBookingWidget: React.FC<
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						doctorId: selectedDoctor.id,
+						patientId: patientId || undefined,
 						startsAt: activeSlot.startsAt,
 						endsAt: activeSlot.endsAt,
 						patientName: patientName.trim(),

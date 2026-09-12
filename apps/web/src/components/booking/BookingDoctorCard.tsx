@@ -8,11 +8,11 @@ export interface BookingDoctorData {
 	experienceYears: number;
 	rating: number;
 	reviewsCount: number;
-	avatarUrl?: string;
+	avatarUrl?: string | undefined;
 	categoryIds: string[];
-	bio?: string;
-	workDays?: number[]; // 0 = Sun, 1 = Mon, ..., 6 = Sat
-	workHours?: { startHour: number; endHour: number };
+	bio?: string | undefined;
+	workDays?: number[] | undefined; // 0 = Sun, 1 = Mon, ..., 6 = Sat
+	workHours?: { startHour: number; endHour: number } | undefined;
 }
 
 export interface BookingDoctorCardProps {

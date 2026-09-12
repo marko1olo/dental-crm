@@ -1,14 +1,12 @@
 /**
  * Patient Online Booking Autonomy & Solo Doctor Invariants Unit Tests
- * (CONSTITUTION: THE HAMMER, MANDATE 8e DOCTOR AUTONOMY, MANDATE 8n SOLO DOCTOR SOVEREIGNTY)
+ * (CONSTITUTION: THE HAMMER, MANDATE 8e DOCTOR AUTONOMY, MANDATE 8n SOLO DOCTOR SOVEREIGNTY, MANDATE 8s SSOT)
  *
  * Verifies:
- * 1. Solo doctor scenario (doctors.length === 1) automatically selects the doctor,
- *    displays the helpful badge «Приём ведёт: [Doctor Name]», and locks in the selection.
- * 2. Clicking «Выбрать дату и время» with initial empty selection auto-selects fallback
- *    doctor (doctors[0]) and fallback service (services[0]), and advances to Step 2
- *    without being disabled.
- * 3. Step 1 Next button is never disabled when doctors and services exist.
+ * 1. Solo doctor scenario helper (resolveBookingStep1Selection) locks in doctor selection.
+ * 2. Slot resolution helper (resolveBookingStep2Selection) auto-selects available slots.
+ * 3. PatientOnlineBookingModal mounts canonical PublicOnlineBookingWidget (SSOT) cleanly.
+ * 4. Close button, modal overlay, and actionRef programmatic control work as expected.
  */
 
 import assert from "node:assert/strict";
@@ -99,58 +97,9 @@ const TEST_SERVICES: BookingService[] = [
 	},
 ];
 
-describe("PatientOnlineBookingModal — Solo Doctor & Step 1 Autonomy (Mandates 8e & 8n)", () => {
-	describe("1. Solo Doctor Scenario (doctors.length === 1)", () => {
-		it("automatically displays the helpful badge «Приём ведёт: [Doctor Name]»", () => {
-			const html = renderToStaticMarkup(
-				createElement(PatientOnlineBookingModal, {
-					isOpen: true,
-					onClose: () => {},
-					doctors: [SOLO_DOCTOR],
-					services: TEST_SERVICES,
-					branches: [TEST_BRANCH],
-				}),
-			);
-
-			// Assert badge presence and text
-			assert.ok(
-				html.includes('data-testid="solo-doctor-badge"'),
-				"Must render solo doctor badge with data-testid='solo-doctor-badge'",
-			);
-			assert.ok(
-				html.includes("Приём ведёт:"),
-				"Badge must include text 'Приём ведёт:'",
-			);
-			assert.ok(
-				html.includes("Барабаш Сергей Васильевич"),
-				"Badge must display solo doctor's full name",
-			);
-		});
-
-		it("automatically selects and locks in the solo doctor card", () => {
-			const html = renderToStaticMarkup(
-				createElement(PatientOnlineBookingModal, {
-					isOpen: true,
-					onClose: () => {},
-					doctors: [SOLO_DOCTOR],
-					services: TEST_SERVICES,
-					branches: [TEST_BRANCH],
-					initialDoctorId: "",
-				}),
-			);
-
-			// Assert card selection
-			assert.ok(
-				html.includes(`data-testid="doctor-card-${SOLO_DOCTOR.id}"`),
-				"Must render solo doctor card",
-			);
-			assert.ok(
-				html.includes("booking-doctor-card selected"),
-				"Solo doctor card must have 'selected' class automatically",
-			);
-		});
-
-		it("pure helper resolveBookingStep1Selection marks solo doctor as locked", () => {
+describe("PatientOnlineBookingModal — Solo Doctor & Autonomy (Mandates 8e, 8n, 8s)", () => {
+	describe("1. Solo Doctor & Step 1 Selection Resolution", () => {
+		it("pure helper resolveBookingStep1Selection locks in solo doctor and selects service", () => {
 			const result = resolveBookingStep1Selection(
 				[SOLO_DOCTOR],
 				TEST_SERVICES,
@@ -164,151 +113,45 @@ describe("PatientOnlineBookingModal — Solo Doctor & Step 1 Autonomy (Mandates 
 			assert.strictEqual(result.effectiveServiceId, TEST_SERVICES[0]?.id);
 			assert.strictEqual(result.canProceed, true);
 		});
+
+		it("pure helper resolveBookingStep1Selection falls back to first doctor when none selected", () => {
+			const result = resolveBookingStep1Selection(
+				MULTI_DOCTORS,
+				TEST_SERVICES,
+				"",
+				"",
+			);
+
+			assert.strictEqual(result.isSoloDoctor, false);
+			assert.strictEqual(result.soloDoctorName, null);
+			assert.strictEqual(result.effectiveDoctorId, MULTI_DOCTORS[0]?.id);
+			assert.strictEqual(result.effectiveServiceId, TEST_SERVICES[0]?.id);
+			assert.strictEqual(result.canProceed, true);
+		});
+
+		it("pure helper resolveBookingStep1Selection preserves explicit doctor and service selections", () => {
+			const result = resolveBookingStep1Selection(
+				MULTI_DOCTORS,
+				TEST_SERVICES,
+				MULTI_DOCTORS[1]?.id,
+				TEST_SERVICES[1]?.id,
+			);
+
+			assert.strictEqual(result.effectiveDoctorId, MULTI_DOCTORS[1]?.id);
+			assert.strictEqual(result.effectiveServiceId, TEST_SERVICES[1]?.id);
+			assert.strictEqual(result.canProceed, true);
+		});
+
+		it("resolveBookingStep1Selection reports canProceed=false when catalogs are empty", () => {
+			const resNoDocs = resolveBookingStep1Selection([], TEST_SERVICES);
+			assert.strictEqual(resNoDocs.canProceed, false);
+
+			const resNoSrvs = resolveBookingStep1Selection(MULTI_DOCTORS, []);
+			assert.strictEqual(resNoSrvs.canProceed, false);
+		});
 	});
 
-	describe("2. Step 1 Button Autonomy & Fallback Progression", () => {
-		it("button «Выбрать дату и время» is NOT disabled when doctors and services exist, even with initial empty selection", () => {
-			const html = renderToStaticMarkup(
-				createElement(PatientOnlineBookingModal, {
-					isOpen: true,
-					onClose: () => {},
-					doctors: MULTI_DOCTORS,
-					services: TEST_SERVICES,
-					branches: [TEST_BRANCH],
-					initialDoctorId: "",
-					initialServiceId: "",
-				}),
-			);
-
-			// Find button HTML
-			const btnMatch = html.match(/<button[^>]*data-testid="booking-next-to-step-2-btn"[^>]*>/);
-			assert.ok(btnMatch, "Must find booking-next-to-step-2-btn in rendered HTML");
-
-			const btnTag = btnMatch[0];
-			assert.ok(
-				!btnTag.includes('disabled=""'),
-				`Button must NOT be disabled when doctors and services exist. Found: ${btnTag}`,
-			);
-			assert.ok(
-				html.includes("Выбрать дату и время"),
-				"Button must display text 'Выбрать дату и время'",
-			);
-		});
-
-		it("clicking «Выбрать дату и время» with initial empty selection auto-selects fallback doctor/service and proceeds to Step 2", () => {
-			let stepChangedTo: number | null = null;
-			let selectedDocAfterStep: string | null = null;
-			let selectedSrvAfterStep: string | null = null;
-
-			const actionRef = { current: null as any };
-
-			renderToStaticMarkup(
-				createElement(PatientOnlineBookingModal, {
-					isOpen: true,
-					onClose: () => {},
-					doctors: MULTI_DOCTORS,
-					services: TEST_SERVICES,
-					branches: [TEST_BRANCH],
-					initialDoctorId: "",
-					initialServiceId: "",
-					actionRef,
-					onStepChange: (step, docId, srvId) => {
-						stepChangedTo = step;
-						selectedDocAfterStep = docId;
-						selectedSrvAfterStep = srvId;
-					},
-				}),
-			);
-
-			assert.ok(actionRef.current, "Action ref must be populated by modal");
-
-			// Initial state verification before click
-			assert.strictEqual(actionRef.current.getCurrentStep(), 1);
-			assert.strictEqual(actionRef.current.getSelectedDoctorId(), MULTI_DOCTORS[0]?.id);
-			assert.strictEqual(actionRef.current.getSelectedServiceId(), TEST_SERVICES[0]?.id);
-
-			// Simulate patient clicking «Выбрать дату и время» without picking explicitly
-			actionRef.current.proceedToStep2();
-
-			// Verify fallback auto-selection and step advance
-			assert.strictEqual(stepChangedTo, 2, "Must advance to step 2 seamlessly");
-			assert.strictEqual(
-				selectedDocAfterStep,
-				MULTI_DOCTORS[0]?.id,
-				"Must auto-select first available doctor as fallback",
-			);
-			assert.strictEqual(
-				selectedSrvAfterStep,
-				TEST_SERVICES[0]?.id,
-				"Must auto-select first available service as fallback",
-			);
-		});
-
-		it("renders Step 2 summary ribbon with auto-selected doctor and service", () => {
-			const html = renderToStaticMarkup(
-				createElement(PatientOnlineBookingModal, {
-					isOpen: true,
-					onClose: () => {},
-					doctors: MULTI_DOCTORS,
-					services: TEST_SERVICES,
-					branches: [TEST_BRANCH],
-					initialStep: 2,
-					initialDoctorId: "",
-					initialServiceId: "",
-				}),
-			);
-
-			// Assert Step 2 is rendered
-			assert.ok(
-				html.includes('data-testid="booking-step-2-content"'),
-				"Must render step 2 date/time selection content",
-			);
-			assert.ok(
-				html.includes("Смирнова Екатерина Алексеевна"),
-				"Step 2 summary ribbon must show fallback doctor name",
-			);
-			assert.ok(
-				html.includes("Первичная консультация и диагностика (КЛКТ/ОПТГ)"),
-				"Step 2 summary ribbon must show fallback service title",
-			);
-		});
-
-		it("disables button «Выбрать дату и время» only when doctors or services catalog is completely empty", () => {
-			const htmlNoDoctors = renderToStaticMarkup(
-				createElement(PatientOnlineBookingModal, {
-					isOpen: true,
-					onClose: () => {},
-					doctors: [],
-					services: TEST_SERVICES,
-					branches: [TEST_BRANCH],
-				}),
-			);
-
-			const btnMatchNoDocs = htmlNoDoctors.match(/<button[^>]*data-testid="booking-next-to-step-2-btn"[^>]*>/);
-			assert.ok(btnMatchNoDocs, "Must find button");
-			assert.ok(
-				btnMatchNoDocs[0].includes('disabled=""'),
-				"Button must be disabled when doctors array is empty",
-			);
-
-			const htmlNoServices = renderToStaticMarkup(
-				createElement(PatientOnlineBookingModal, {
-					isOpen: true,
-					onClose: () => {},
-					doctors: MULTI_DOCTORS,
-					services: [],
-					branches: [TEST_BRANCH],
-				}),
-			);
-
-			const btnMatchNoSrvs = htmlNoServices.match(/<button[^>]*data-testid="booking-next-to-step-2-btn"[^>]*>/);
-			assert.ok(btnMatchNoSrvs, "Must find button");
-			assert.ok(
-				btnMatchNoSrvs[0].includes('disabled=""'),
-				"Button must be disabled when services array is empty",
-			);
-		});
-
+	describe("2. Step 2 Slot Resolution Autonomy", () => {
 		it("resolveBookingStep2Selection auto-selects first available slot when none is selected", () => {
 			const mockSlots: BookingTimeSlot[] = [
 				{ id: "slot-01", timeRu: "09:00", isOccupied: true, timePeriod: "morning", doctorId: "doc-1", branchId: "b-1", dateIso: "2026-04-10" },
@@ -327,44 +170,89 @@ describe("PatientOnlineBookingModal — Solo Doctor & Step 1 Autonomy (Mandates 
 			assert.strictEqual(resChosen.effectiveTimeRu, "10:00");
 		});
 
-		it("renders Step 2 Next button without disabled attribute when slots exist", () => {
-			const htmlStep2 = renderToStaticMarkup(
+		it("resolveBookingStep2Selection reports canProceed=false when slot list is empty", () => {
+			const resEmpty = resolveBookingStep2Selection([], "", "");
+			assert.strictEqual(resEmpty.canProceed, false);
+			assert.strictEqual(resEmpty.effectiveSlotId, "");
+		});
+	});
+
+	describe("3. Modal Shell & Canonical PublicOnlineBookingWidget Integration (Mandate 8s)", () => {
+		it("renders null when isOpen is false", () => {
+			const html = renderToStaticMarkup(
+				createElement(PatientOnlineBookingModal, {
+					isOpen: false,
+					onClose: () => {},
+				}),
+			);
+			assert.strictEqual(html, "");
+		});
+
+		it("renders modal window, overlay, and canonical booking widget container when isOpen is true", () => {
+			const html = renderToStaticMarkup(
 				createElement(PatientOnlineBookingModal, {
 					isOpen: true,
 					onClose: () => {},
 					doctors: MULTI_DOCTORS,
 					services: TEST_SERVICES,
 					branches: [TEST_BRANCH],
-					initialStep: 2,
 				}),
 			);
 
-			const btnMatch = htmlStep2.match(/<button[^>]*data-testid="booking-next-to-step-3-btn"[^>]*>/);
-			assert.ok(btnMatch, "Must find Step 2 next button");
 			assert.ok(
-				!btnMatch[0].includes('disabled=""'),
-				"Step 2 button must NOT be disabled when slots exist (Mandate 8e)",
+				html.includes('data-testid="patient-online-booking-modal"'),
+				"Must render overlay container",
+			);
+			assert.ok(
+				html.includes('data-testid="booking-modal-window"'),
+				"Must render modal window container",
+			);
+			assert.ok(
+				html.includes('data-testid="close-online-booking-btn"'),
+				"Must render close button",
+			);
+			assert.ok(
+				html.includes("dente-booking-widget"),
+				"Must embed canonical PublicOnlineBookingWidget root container",
 			);
 		});
 
-		it("renders Step 3 Confirm button without disabled attribute for autonomous validation feedback", () => {
-			const htmlStep3 = renderToStaticMarkup(
+		it("populates actionRef with programmatic navigation handlers", () => {
+			let stepChangedTo: number | null = null;
+			const actionRef = { current: null as any };
+
+			renderToStaticMarkup(
 				createElement(PatientOnlineBookingModal, {
 					isOpen: true,
 					onClose: () => {},
 					doctors: MULTI_DOCTORS,
 					services: TEST_SERVICES,
 					branches: [TEST_BRANCH],
-					initialStep: 3,
+					actionRef,
+					onStepChange: (step) => {
+						stepChangedTo = step;
+					},
 				}),
 			);
 
-			const confirmBtnMatch = htmlStep3.match(/<button[^>]*data-testid="booking-confirm-submit-btn"[^>]*>/);
-			assert.ok(confirmBtnMatch, "Must find Step 3 confirm button");
-			assert.ok(
-				!confirmBtnMatch[0].includes('disabled=""'),
-				"Step 3 confirm button must NOT be disabled (Mandate 8e Doctor Autonomy)",
+			assert.ok(actionRef.current, "Action ref must be populated by modal");
+			assert.strictEqual(actionRef.current.getCurrentStep(), 1);
+			assert.strictEqual(
+				actionRef.current.getSelectedDoctorId(),
+				MULTI_DOCTORS[0]?.id,
 			);
+			assert.strictEqual(
+				actionRef.current.getSelectedServiceId(),
+				TEST_SERVICES[0]?.id,
+			);
+
+			// Test proceeding to step 2 programmatically
+			actionRef.current.proceedToStep2();
+			assert.strictEqual(stepChangedTo, 2);
+
+			// Test proceeding to step 3 programmatically
+			actionRef.current.proceedToStep3();
+			assert.strictEqual(stepChangedTo, 3);
 		});
 	});
 });
