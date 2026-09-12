@@ -1,4 +1,8 @@
 import { z } from "zod";
+import type {
+	AnesthesiaDrugKey,
+	AnestheticDrugId,
+} from "../anesthesia/types.js";
 
 // ─── Dental Anesthetic & Medication Types ────────────────────────────────────
 
@@ -31,6 +35,8 @@ export interface DentalAnestheticInfo {
 	readonly storageConditions?: string | undefined;
 	readonly maxCarpulesPerPatient?: number | undefined;
 	readonly notes?: string | undefined;
+	readonly clinicalDrugId?: AnestheticDrugId | undefined;
+	readonly anesthesiaDrugKey?: AnesthesiaDrugKey | undefined;
 }
 
 // ─── Expiration Date Evaluation Types ───────────────────────────────────────

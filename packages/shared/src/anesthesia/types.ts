@@ -7,6 +7,7 @@
 export type AnestheticDrugId =
 	| "articaine_4_epi_100k"
 	| "articaine_4_epi_200k"
+	| "articaine_4_plain"
 	| "mepivacaine_3_plain"
 	| "lidocaine_2_epi_100k"
 	| "lidocaine_2_plain"

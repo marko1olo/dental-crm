@@ -10,6 +10,8 @@ import type {
 	AnesthesiaMethodKey,
 	AnestheticDrugId,
 } from "./types.js";
+import { DENTAL_ANESTHETICS_CATALOG } from "../mdlp/catalog.js";
+import type { DentalAnestheticInfo } from "../mdlp/types.js";
 
 export const HEALTHY_MAX_EPINEPHRINE_MG = 0.20;
 export const CARDIO_MAX_EPINEPHRINE_MG = 0.04;
@@ -82,6 +84,33 @@ export const ANESTHESIA_DRUG_CATALOG: Record<AnestheticDrugId, AnesthesiaDrugSpe
 			"Прием ингибиторов МАО (ИМАО)",
 			"Тяжелый тиреотоксикоз",
 			"Тяжелая сердечно-сосудистая недостаточность (ASA IV)",
+		],
+	},
+
+	articaine_4_plain: {
+		id: "articaine_4_plain",
+		nameRu: "Артикаин 4% без вазоконстриктора",
+		tradeNamesRu: ["Ультракаин Д", "Артикаин 4% чистый"],
+		activeSubstanceRu: "Артикаина гидрохлорид 4% (без вазоконстриктора)",
+		activeConcentrationPercent: 4.0,
+		mgPerMlActive: 40.0,
+		vasoconstrictorNameRu: "Без вазоконстриктора (Адреналин-free)",
+		vasoconstrictorRatio: "none",
+		epinephrineMgPerMl: 0.0,
+		standardCarpuleVolumeMl: 1.7,
+		mgActivePerCarpule: 68.0,
+		mgEpiPerCarpule: 0.0,
+		maxDoseMgPerKgAdult: 4.0,
+		maxDoseMgPerKgPediatric: 4.0,
+		absoluteMaxDoseMgAdult: 300.0,
+		containsSulfites: false,
+		isAdrenalineFree: true,
+		durationPulpalMinutes: 20,
+		durationSoftTissueMinutes: 90,
+		onsetMinutes: 2,
+		clinicalIndicationsRu: "Малоинвазивные манипуляции, препарирование полостей, пациенты с аллергией на сульфиты и тяжелой кардиальной патологией.",
+		contraindicationsRu: [
+			"Аллергия на артикаин и амидные анестетики",
 		],
 	},
 
@@ -199,92 +228,101 @@ export const ANESTHESIA_DRUG_CATALOG: Record<AnestheticDrugId, AnesthesiaDrugSpe
 	},
 };
 
+export const ANESTHESIA_KEY_TO_CLINICAL_ID: Record<AnesthesiaDrugKey, AnestheticDrugId> = {
+	ultracain_ds_forte: "articaine_4_epi_100k",
+	ultracain_ds: "articaine_4_epi_200k",
+	septanest_100: "articaine_4_epi_100k",
+	scandonest_3: "mepivacaine_3_plain",
+	lidocaine_2: "lidocaine_2_plain",
+} as const;
+
+function createDrugDefinition(
+	key: AnesthesiaDrugKey,
+	commercialName: string,
+	spec: AnesthesiaDrugSpec,
+	description: string,
+	overrides?: {
+		readonly activeSubstance?: string;
+		readonly vasoconstrictor?: string;
+	},
+): AnesthesiaDrugDefinition {
+	return {
+		key,
+		commercialName,
+		activeSubstance: overrides?.activeSubstance ?? spec.activeSubstanceRu,
+		concentrationPct: spec.activeConcentrationPercent,
+		vasoconstrictor:
+			overrides?.vasoconstrictor ??
+			(spec.vasoconstrictorRatio === "none"
+				? "Без вазоконстриктора"
+				: spec.vasoconstrictorNameRu),
+		vasoconstrictorRatio:
+			spec.vasoconstrictorRatio === "1:50000"
+				? "1:100000"
+				: spec.vasoconstrictorRatio,
+		epinephrineMgPerCarpule: spec.mgEpiPerCarpule,
+		containsSulfites: spec.containsSulfites,
+		volumeMlPerCarpule: spec.standardCarpuleVolumeMl,
+		mgPerCarpule: spec.mgActivePerCarpule,
+		maxDoseMgPerKg: spec.maxDoseMgPerKgAdult,
+		maxDoseMgPerKgPediatric: spec.maxDoseMgPerKgPediatric,
+		absoluteMaxDoseMg: spec.absoluteMaxDoseMgAdult,
+		isAdrenalineFree: spec.isAdrenalineFree,
+		description,
+	};
+}
+
 export const ANESTHESIA_DRUGS: Record<AnesthesiaDrugKey, AnesthesiaDrugDefinition> = {
-	ultracain_ds_forte: {
-		key: "ultracain_ds_forte",
-		commercialName: "Ультракаин Д-С форте",
-		activeSubstance: "Артикаин 4% + Эпинефрин 1:100 000",
-		concentrationPct: 4,
-		vasoconstrictor: "Эпинефрин 1:100 000",
-		vasoconstrictorRatio: "1:100000",
-		epinephrineMgPerCarpule: 0.017,
-		containsSulfites: true,
-		volumeMlPerCarpule: 1.7,
-		mgPerCarpule: 68,
-		maxDoseMgPerKg: 7.0,
-		maxDoseMgPerKgPediatric: 5.0,
-		absoluteMaxDoseMg: 500,
-		isAdrenalineFree: false,
-		description: "Высокая глубина анестезии. Для травматичных вмешательств, пульпитов, хирургии.",
-	},
-	ultracain_ds: {
-		key: "ultracain_ds",
-		commercialName: "Ультракаин Д-С",
-		activeSubstance: "Артикаин 4% + Эпинефрин 1:200 000",
-		concentrationPct: 4,
-		vasoconstrictor: "Эпинефрин 1:200 000",
-		vasoconstrictorRatio: "1:200000",
-		epinephrineMgPerCarpule: 0.0085,
-		containsSulfites: true,
-		volumeMlPerCarpule: 1.7,
-		mgPerCarpule: 68,
-		maxDoseMgPerKg: 7.0,
-		maxDoseMgPerKgPediatric: 5.0,
-		absoluteMaxDoseMg: 500,
-		isAdrenalineFree: false,
-		description: "Стандартная терапия и препарирование. Оптимальная кардиоваскулярная безопасность.",
-	},
-	septanest_100: {
-		key: "septanest_100",
-		commercialName: "Септанест с адреналином 1:100 000",
-		activeSubstance: "Артикаин 4% + Адреналин 1:100 000",
-		concentrationPct: 4,
-		vasoconstrictor: "Адреналин 1:100 000",
-		vasoconstrictorRatio: "1:100000",
-		epinephrineMgPerCarpule: 0.017,
-		containsSulfites: true,
-		volumeMlPerCarpule: 1.7,
-		mgPerCarpule: 68,
-		maxDoseMgPerKg: 7.0,
-		maxDoseMgPerKgPediatric: 5.0,
-		absoluteMaxDoseMg: 500,
-		isAdrenalineFree: false,
-		description: "Французский артикаиновый анестетик быстрого действия.",
-	},
-	scandonest_3: {
-		key: "scandonest_3",
-		commercialName: "Скандонест 3% (Мепивакаин)",
-		activeSubstance: "Мепивакаин 3%",
-		concentrationPct: 3,
-		vasoconstrictor: "Без вазоконстриктора",
-		vasoconstrictorRatio: "none",
-		epinephrineMgPerCarpule: 0,
-		containsSulfites: false,
-		volumeMlPerCarpule: 1.7,
-		mgPerCarpule: 51,
-		maxDoseMgPerKg: 4.4,
-		maxDoseMgPerKgPediatric: 4.4,
-		absoluteMaxDoseMg: 300,
-		isAdrenalineFree: true,
-		description: "Без адреналина и без сульфитов. Препарат выбора для пациентов с гипертонией, ССЗ, глаукомой, астмой, аллергией на сульфиты.",
-	},
-	lidocaine_2: {
-		key: "lidocaine_2",
-		commercialName: "Лидокаин 2%",
-		activeSubstance: "Лидокаин 2%",
-		concentrationPct: 2,
-		vasoconstrictor: "Без вазоконстриктора",
-		vasoconstrictorRatio: "none",
-		epinephrineMgPerCarpule: 0,
-		containsSulfites: false,
-		volumeMlPerCarpule: 2.0,
-		mgPerCarpule: 40,
-		maxDoseMgPerKg: 4.4,
-		maxDoseMgPerKgPediatric: 4.4,
-		absoluteMaxDoseMg: 300,
-		isAdrenalineFree: true,
-		description: "Классический амидный анестетик без вазоконстриктора и сульфитов для инфильтрации и проводниковой блокады.",
-	},
+	ultracain_ds_forte: createDrugDefinition(
+		"ultracain_ds_forte",
+		"Ультракаин Д-С форте",
+		ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k,
+		"Высокая глубина анестезии. Для травматичных вмешательств, пульпитов, хирургии.",
+		{
+			activeSubstance: "Артикаин 4% + Эпинефрин 1:100 000",
+			vasoconstrictor: "Эпинефрин 1:100 000",
+		},
+	),
+	ultracain_ds: createDrugDefinition(
+		"ultracain_ds",
+		"Ультракаин Д-С",
+		ANESTHESIA_DRUG_CATALOG.articaine_4_epi_200k,
+		"Стандартная терапия и препарирование. Оптимальная кардиоваскулярная безопасность.",
+		{
+			activeSubstance: "Артикаин 4% + Эпинефрин 1:200 000",
+			vasoconstrictor: "Эпинефрин 1:200 000",
+		},
+	),
+	septanest_100: createDrugDefinition(
+		"septanest_100",
+		"Септанест с адреналином 1:100 000",
+		ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k,
+		"Французский артикаиновый анестетик быстрого действия.",
+		{
+			activeSubstance: "Артикаин 4% + Адреналин 1:100 000",
+			vasoconstrictor: "Адреналин 1:100 000",
+		},
+	),
+	scandonest_3: createDrugDefinition(
+		"scandonest_3",
+		"Скандонест 3% (Мепивакаин)",
+		ANESTHESIA_DRUG_CATALOG.mepivacaine_3_plain,
+		"Без адреналина и без сульфитов. Препарат выбора для пациентов с гипертонией, ССЗ, глаукомой, астмой, аллергией на сульфиты.",
+		{
+			activeSubstance: "Мепивакаин 3%",
+			vasoconstrictor: "Без вазоконстриктора",
+		},
+	),
+	lidocaine_2: createDrugDefinition(
+		"lidocaine_2",
+		"Лидокаин 2%",
+		ANESTHESIA_DRUG_CATALOG.lidocaine_2_plain,
+		"Классический амидный анестетик без вазоконстриктора и сульфитов для инфильтрации и проводниковой блокады.",
+		{
+			activeSubstance: "Лидокаин 2%",
+			vasoconstrictor: "Без вазоконстриктора",
+		},
+	),
 };
 
 export const ANESTHESIA_METHODS: Record<
@@ -327,3 +365,49 @@ export const ANESTHESIA_METHODS: Record<
 		typicalOnsetMinutes: 1,
 	},
 };
+
+/**
+ * Mapping between chairside AnesthesiaDrugKey and statutory MDLP catalog identifiers.
+ */
+export const ANESTHESIA_TO_MDLP_MAP: Record<AnesthesiaDrugKey, string> = {
+	ultracain_ds_forte: "ultracain-ds-forte",
+	ultracain_ds: "ultracain-ds",
+	septanest_100: "septanest-1-100000",
+	scandonest_3: "scandonest-3-plain",
+	lidocaine_2: "lidocaine-2-plain",
+} as const;
+
+/**
+ * Retrieves statutory MDLP / Chestny ZNAK info for a chairside AnesthesiaDrugKey.
+ */
+export function getMdlpInfoForAnesthesiaDrug(
+	drugKey: AnesthesiaDrugKey,
+): DentalAnestheticInfo | null {
+	const mdlpId = ANESTHESIA_TO_MDLP_MAP[drugKey];
+	if (!mdlpId) return null;
+	return DENTAL_ANESTHETICS_CATALOG.find((d) => d.id === mdlpId) ?? null;
+}
+
+/**
+ * Retrieves clinical pharmacology specification from an MDLP DataMatrix GTIN barcode.
+ */
+export function getClinicalDrugForMdlpGtin(gtin: string): AnesthesiaDrugSpec | null {
+	const normalizedGtin = gtin.trim();
+	const mdlpDrug = DENTAL_ANESTHETICS_CATALOG.find((d) =>
+		d.gtinMatches.includes(normalizedGtin),
+	);
+	if (!mdlpDrug?.clinicalDrugId) return null;
+	const drugId = mdlpDrug.clinicalDrugId as AnestheticDrugId;
+	return ANESTHESIA_DRUG_CATALOG[drugId] ?? null;
+}
+
+/**
+ * Retrieves clinical pharmacology specification for an MDLP drug identifier.
+ */
+export function getClinicalSpecForMdlp(mdlpId: string): AnesthesiaDrugSpec | null {
+	const mdlpDrug = DENTAL_ANESTHETICS_CATALOG.find((d) => d.id === mdlpId);
+	if (!mdlpDrug?.clinicalDrugId) return null;
+	const drugId = mdlpDrug.clinicalDrugId as AnestheticDrugId;
+	return ANESTHESIA_DRUG_CATALOG[drugId] ?? null;
+}
+

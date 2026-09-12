@@ -6,6 +6,8 @@ import {
 	calculateQueueStats,
 	computeGtinCheckDigit,
 	createCarpuleQueueItem,
+	findAnestheticByDrugKey,
+	findAnestheticsByClinicalId,
 	formatSeniorNurseDisposalActData,
 	generateMdlpSchema10560Payload,
 	generateSeniorNurseDisposalActHtml,
@@ -16,6 +18,13 @@ import {
 	recognizeDentalMedication,
 	sortQueueByFefo,
 } from "../mdlp/index.js";
+import {
+	ANESTHESIA_DRUG_CATALOG,
+	ANESTHESIA_DRUGS,
+	getClinicalDrugForMdlpGtin,
+	getClinicalSpecForMdlp,
+	getMdlpInfoForAnesthesiaDrug,
+} from "../anesthesia/index.js";
 
 describe("MDLP / Chestny Znak Suite (packages/shared/src/tests/mdlp.test.ts)", () => {
 	test("1.1 GTIN Modulo 10 checksum verification", () => {
@@ -110,5 +119,88 @@ describe("MDLP / Chestny Znak Suite (packages/shared/src/tests/mdlp.test.ts)", (
 
 		assert(html.includes("АКТ СПИСАНИЯ ЛЕКАРСТВЕННЫХ ПРЕПАРАТОВ"));
 		assert(html.includes("Ультракаин® Д-С форте"));
+	});
+
+	test("1.7 Bidirectional lookup between clinical Anesthesia and statutory MDLP catalogs", () => {
+		// Look up MDLP entry from clinical key
+		const ultracainMdlp = getMdlpInfoForAnesthesiaDrug("ultracain_ds_forte");
+		assert.ok(ultracainMdlp);
+		assert.strictEqual(ultracainMdlp.id, "ultracain-ds-forte");
+		assert.strictEqual(ultracainMdlp.clinicalDrugId, "articaine_4_epi_100k");
+
+		const scandonestMdlp = getMdlpInfoForAnesthesiaDrug("scandonest_3");
+		assert.ok(scandonestMdlp);
+		assert.strictEqual(scandonestMdlp.id, "scandonest-3-plain");
+		assert.strictEqual(scandonestMdlp.clinicalDrugId, "mepivacaine_3_plain");
+
+		// Look up by clinical drug ID
+		const articaine100kMatches = findAnestheticsByClinicalId("articaine_4_epi_100k");
+		assert.ok(articaine100kMatches.length >= 3);
+		assert.ok(articaine100kMatches.some((d) => d.id === "ultracain-ds-forte"));
+		assert.ok(articaine100kMatches.some((d) => d.id === "septanest-1-100000"));
+		assert.ok(articaine100kMatches.some((d) => d.id === "ubistesin-forte"));
+
+		// Look up by drug key
+		const foundByKey = findAnestheticByDrugKey("septanest_100");
+		assert.ok(foundByKey);
+		assert.strictEqual(foundByKey.id, "septanest-1-100000");
+	});
+
+	test("1.8 SSOT pharmacological parity between ANESTHESIA_DRUG_CATALOG and ANESTHESIA_DRUGS", () => {
+		// Verify ANESTHESIA_DRUGS is strictly synchronized with clinical pharmacology specs
+		assert.strictEqual(
+			ANESTHESIA_DRUGS.ultracain_ds_forte.concentrationPct,
+			ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k.activeConcentrationPercent,
+		);
+		assert.strictEqual(
+			ANESTHESIA_DRUGS.ultracain_ds_forte.mgPerCarpule,
+			ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k.mgActivePerCarpule,
+		);
+		assert.strictEqual(
+			ANESTHESIA_DRUGS.ultracain_ds_forte.epinephrineMgPerCarpule,
+			ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k.mgEpiPerCarpule,
+		);
+		assert.strictEqual(
+			ANESTHESIA_DRUGS.ultracain_ds_forte.maxDoseMgPerKg,
+			ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k.maxDoseMgPerKgAdult,
+		);
+
+		// Scandonest (plain mepivacaine) adrenaline-free verification
+		assert.strictEqual(ANESTHESIA_DRUGS.scandonest_3.isAdrenalineFree, true);
+		assert.strictEqual(ANESTHESIA_DRUGS.scandonest_3.containsSulfites, false);
+		assert.strictEqual(ANESTHESIA_DRUGS.scandonest_3.epinephrineMgPerCarpule, 0);
+		assert.strictEqual(
+			ANESTHESIA_DRUGS.scandonest_3.mgPerCarpule,
+			ANESTHESIA_DRUG_CATALOG.mepivacaine_3_plain.mgActivePerCarpule,
+		);
+	});
+
+	test("1.9 Clinical drug resolution from GTIN DataMatrix barcode and MDLP ID", () => {
+		// Ultracain DS forte GTIN -> Articaine 4% 1:100k spec
+		const specFromGtin = getClinicalDrugForMdlpGtin("03664798000016");
+		assert.ok(specFromGtin);
+		assert.strictEqual(specFromGtin.id, "articaine_4_epi_100k");
+		assert.strictEqual(specFromGtin.activeConcentrationPercent, 4.0);
+
+		// Spec from MDLP ID
+		const specFromId = getClinicalSpecForMdlp("scandonest-3-plain");
+		assert.ok(specFromId);
+		assert.strictEqual(specFromId.id, "mepivacaine_3_plain");
+		assert.strictEqual(specFromId.isAdrenalineFree, true);
+
+		// Non-existent GTIN returns null
+		assert.strictEqual(getClinicalDrugForMdlpGtin("99999999999999"), null);
+	});
+
+	test("1.10 Recognition of Russian registered Lidocaine and Bupivacaine carpules", () => {
+		const lidoPlain = recognizeDentalMedication("04601234567800");
+		assert.ok(lidoPlain);
+		assert.strictEqual(lidoPlain.id, "lidocaine-2-plain");
+		assert.strictEqual(lidoPlain.clinicalDrugId, "lidocaine_2_plain");
+
+		const marcaine = recognizeDentalMedication("07321420000018");
+		assert.ok(marcaine);
+		assert.strictEqual(marcaine.id, "marcaine-adrenaline");
+		assert.strictEqual(marcaine.clinicalDrugId, "bupivacaine_05_epi_200k");
 	});
 });

@@ -1,4 +1,9 @@
 import type { DentalAnestheticInfo } from "./types.js";
+export type { DentalAnestheticInfo };
+import type {
+	AnesthesiaDrugKey,
+	AnestheticDrugId,
+} from "../anesthesia/types.js";
 
 // ─── Recognized Dental Anesthetics Catalog (MDLP) ───────────────────────────
 
@@ -30,6 +35,8 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить в защищенном от света месте при температуре не выше 25°C. Не замораживать.",
 		maxCarpulesPerPatient: 7,
 		notes: "Препарат выбора для инвазивных вмешательств, пульпэктомии, резекции верхушки корня, имплантации и удаления зубов высокой сложности.",
+		clinicalDrugId: "articaine_4_epi_100k",
+		anesthesiaDrugKey: "ultracain_ds_forte",
 	},
 	{
 		id: "ultracain-ds",
@@ -57,6 +64,8 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить в защищенном от света месте при температуре не выше 25°C. Не замораживать.",
 		maxCarpulesPerPatient: 7,
 		notes: "Стандартная инфильтрационная и проводниковая анестезия. Рекомендован для пациентов группы риска (сердечно-сосудистые заболевания в стадии компенсации, пожилой возраст).",
+		clinicalDrugId: "articaine_4_epi_200k",
+		anesthesiaDrugKey: "ultracain_ds",
 	},
 	{
 		id: "ultracain-d",
@@ -81,6 +90,7 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить в защищенном от света месте при температуре не выше 25°C.",
 		maxCarpulesPerPatient: 6,
 		notes: "Не содержит вазоконстриктора и бисульфита натрия. Показан при бронхиальной астме с гиперчувствительностью к сульфитам, тяжелых формах ИБС, закрытоугольной глаукоме.",
+		clinicalDrugId: "articaine_4_plain",
 	},
 	{
 		id: "septanest-1-100000",
@@ -107,6 +117,8 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить в защищенном от света месте при температуре от 15°C до 25°C.",
 		maxCarpulesPerPatient: 7,
 		notes: "Классический французский артикаиновый анестетик для терапевтических и хирургических манипуляций.",
+		clinicalDrugId: "articaine_4_epi_100k",
+		anesthesiaDrugKey: "septanest_100",
 	},
 	{
 		id: "septanest-1-200000",
@@ -133,6 +145,7 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить в защищенном от света месте при температуре от 15°C до 25°C.",
 		maxCarpulesPerPatient: 7,
 		notes: "Мягкая концентрация вазоконстриктора для препарирования кариозных полостей и обработки зубов под ортопедические коронки.",
+		clinicalDrugId: "articaine_4_epi_200k",
 	},
 	{
 		id: "scandonest-3-plain",
@@ -159,6 +172,8 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить при температуре ниже 25°C. Не замораживать.",
 		maxCarpulesPerPatient: 5,
 		notes: "Мепивакаин не обладает выраженным сосудорасширяющим эффектом, обеспечивает эффективную анестезию без добавления адреналина. Препарат выбора для гипертоников, беременных и аллергиков.",
+		clinicalDrugId: "mepivacaine_3_plain",
+		anesthesiaDrugKey: "scandonest_3",
 	},
 	{
 		id: "scandonest-2-special",
@@ -205,6 +220,7 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить при температуре не выше 25°C в оригинальной упаковке для защиты от света.",
 		maxCarpulesPerPatient: 7,
 		notes: "Оригинальный немецкий анестетик 3M ESPE. Быстрое наступление обезболивания (1-3 мин) и минимальная системная токсичность.",
+		clinicalDrugId: "articaine_4_epi_200k",
 	},
 	{
 		id: "ubistesin-forte",
@@ -230,6 +246,7 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить при температуре не выше 25°C в оригинальной упаковке.",
 		maxCarpulesPerPatient: 7,
 		notes: "Форте-версия 3M с адреналином 1:100 000 для сложных хирургических и пародонтологических процедур.",
+		clinicalDrugId: "articaine_4_epi_100k",
 	},
 	{
 		id: "articaine-binergia",
@@ -254,6 +271,7 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить в защищенном от света месте при температуре от 2°C до 25°C.",
 		maxCarpulesPerPatient: 7,
 		notes: "Отечественный стоматологический анестетик Бинергия в карпулах европейского стандарта.",
+		clinicalDrugId: "articaine_4_epi_100k",
 	},
 	{
 		id: "articaine-inibsa",
@@ -278,6 +296,7 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить при температуре ниже 25°C в защищенном от света месте.",
 		maxCarpulesPerPatient: 7,
 		notes: "Испанский карпульный анестетик премиум-класса объемом 1.8 мл.",
+		clinicalDrugId: "articaine_4_epi_100k",
 	},
 	{
 		id: "articaine-generic",
@@ -305,6 +324,7 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить при температуре от 2°C до 25°C в защищенном от света месте.",
 		maxCarpulesPerPatient: 7,
 		notes: "Отечественный карпульный артикаин стандарта GMP. Полный аналог Ультракаина.",
+		clinicalDrugId: "articaine_4_epi_100k",
 	},
 	{
 		id: "primacaine-adrenaline",
@@ -329,6 +349,82 @@ export const DENTAL_ANESTHETICS_CATALOG: readonly DentalAnestheticInfo[] = [
 		storageConditions: "Хранить при температуре от 15°C до 25°C.",
 		maxCarpulesPerPatient: 7,
 		notes: "Французский анестетик Pierre Rolland с высокой степенью очистки действующего вещества.",
+		clinicalDrugId: "articaine_4_epi_100k",
+	},
+	{
+		id: "lidocaine-2-plain",
+		tradeName: "Лидокаин 2% (чистый, карпулы)",
+		tradeNameLatin: "Lidocaine 2% plain",
+		inn: "Лидокаин",
+		innLatin: "Lidocaine",
+		activeSubstance: "Лидокаина гидрохлорид 20 мг/мл (2%), без вазоконстриктора",
+		concentrationPct: 2.0,
+		vasoconstrictor: "none",
+		vasoconstrictorName: "Без вазоконстриктора",
+		carpuleVolumeMl: 2.0,
+		dosageForm: "раствор для инъекций в карпулах 2.0 мл",
+		manufacturer: "ОАО Синтез / Органика, Россия",
+		atxCode: "N01BB02",
+		gtinMatches: [
+			"04601234567800",
+			"04602509000039",
+		],
+		isPrescriptionOnly: true,
+		storageConditions: "Хранить в защищенном от света месте при температуре не выше 25°C.",
+		maxCarpulesPerPatient: 7,
+		notes: "Классический амидный анестетик без вазоконстриктора для кратковременных процедур и пациентов с непереносимостью адреналина.",
+		clinicalDrugId: "lidocaine_2_plain",
+		anesthesiaDrugKey: "lidocaine_2",
+	},
+	{
+		id: "xylonor-special",
+		tradeName: "Ксилонор специальный (Лидокаин 2% с адреналином)",
+		tradeNameLatin: "Xylonor Special (Lidocaine 2% with Adrenaline)",
+		inn: "Лидокаин + Эпинефрин",
+		innLatin: "Lidocaine + Epinephrine",
+		activeSubstance:
+			"Лидокаина гидрохлорид 20 мг/мл (2%), Эпинефрин 0.010 мг/мл (1:100 000)",
+		concentrationPct: 2.0,
+		vasoconstrictor: "1:100000",
+		vasoconstrictorName: "Эпинефрин (Адреналин) 1:100 000",
+		carpuleVolumeMl: 1.7,
+		dosageForm: "раствор для инъекций в картриджах 1.7 мл",
+		manufacturer: "Septodont, Франция",
+		atxCode: "N01BB52",
+		gtinMatches: [
+			"03400930000069",
+			"03660000000063",
+		],
+		isPrescriptionOnly: true,
+		storageConditions: "Хранить при температуре от 15°C до 25°C в защищенном от света месте.",
+		maxCarpulesPerPatient: 8,
+		notes: "Раствор лидокаина с адреналином для инфильтрационной и проводниковой анестезии при непереносимости артикаина.",
+		clinicalDrugId: "lidocaine_2_epi_100k",
+	},
+	{
+		id: "marcaine-adrenaline",
+		tradeName: "Маркаин Дентал 0.5% с адреналином",
+		tradeNameLatin: "Marcaine Dental 0.5% with Adrenaline",
+		inn: "Бупивакаин + Эпинефрин",
+		innLatin: "Bupivacaine + Epinephrine",
+		activeSubstance:
+			"Бупивакаина гидрохлорид 5 мг/мл (0.5%), Эпинефрин 0.005 мг/мл (1:200 000)",
+		concentrationPct: 0.5,
+		vasoconstrictor: "1:200000",
+		vasoconstrictorName: "Эпинефрин (Адреналин) 1:200 000",
+		carpuleVolumeMl: 1.8,
+		dosageForm: "раствор для инъекций в картриджах 1.8 мл",
+		manufacturer: "AstraZeneca AB / Sanofi, Франция",
+		atxCode: "N01BB51",
+		gtinMatches: [
+			"07321420000018",
+			"07321420000025",
+		],
+		isPrescriptionOnly: true,
+		storageConditions: "Хранить при температуре от 2°C до 25°C. Не замораживать.",
+		maxCarpulesPerPatient: 5,
+		notes: "Пролонгированный анестетик длительного действия для многочасовых хирургических вмешательств, имплантации и костной пластики.",
+		clinicalDrugId: "bupivacaine_05_epi_200k",
 	},
 ];
 
@@ -396,3 +492,22 @@ export function findAnestheticsByInn(innPattern: string): DentalAnestheticInfo[]
 export function getAllAnesthetics(): readonly DentalAnestheticInfo[] {
 	return DENTAL_ANESTHETICS_CATALOG;
 }
+
+/**
+ * Returns all MDLP anesthetic entries corresponding to a specific clinical drug identifier.
+ */
+export function findAnestheticsByClinicalId(
+	clinicalDrugId: AnestheticDrugId,
+): DentalAnestheticInfo[] {
+	return DENTAL_ANESTHETICS_CATALOG.filter((d) => d.clinicalDrugId === clinicalDrugId);
+}
+
+/**
+ * Returns the MDLP anesthetic entry corresponding to a chairside anesthesia drug key.
+ */
+export function findAnestheticByDrugKey(
+	drugKey: AnesthesiaDrugKey,
+): DentalAnestheticInfo | null {
+	return DENTAL_ANESTHETICS_CATALOG.find((d) => d.anesthesiaDrugKey === drugKey) ?? null;
+}
+
