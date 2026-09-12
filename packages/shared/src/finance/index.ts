@@ -15,7 +15,17 @@ export * from "./oneCEnterpriseExport.js";
 export * from "./commerceMl209.js";
 export * from "./estimateHtmlRenderer.js";
 export * from "./treatmentPlanStages.js";
-export * from "./expensesEngine.js";
+export {
+	calculateMonthlyExpensesSummary,
+	calculateNetProfitAndMargin,
+	type ExpenseRecord,
+	expenseRecordSchema,
+	expensePeriodicitySchema,
+	expensePaymentMethodSchema,
+	type ExpensePaymentMethod,
+	type MonthlyExpensesSummary,
+	type NetProfitSummary,
+} from "./expensesEngine.js";
 export * from "./splitPayment.js";
 export * from "./partialRefundEngine.js";
 export * from "./installmentScheduleEngine.js";
@@ -32,3 +42,28 @@ export * from "./stomxCashFlowCategories.js";
 export * from "./stomxCashFlowCatalogs.js";
 export * from "./treatmentBudgetEngine.js";
 export * from "./accountingExportEngine.js";
+export {
+	expenseRecurrenceSchema,
+	type ExpenseRecurrence,
+	EXPENSE_RECURRENCE_LABELS_RU,
+	clinicExpenseRecordSchema,
+	type ClinicExpenseRecord,
+	chairHourCostInputSchema,
+	type ChairHourCostInput,
+	chairHourCostResultSchema,
+	type ChairHourCostResult,
+	visitMarginInputSchema,
+	type VisitMarginInput,
+	visitMarginResultSchema,
+	type VisitMarginResult,
+	normalizeExpenseToMonthlyKopecks,
+	aggregateExpensesByCategory,
+	calculateTotalMonthlyExpenses,
+	calculateChairHourCost,
+	createSoloPracticeProfile,
+	calculateSoloDoctorChairCost,
+	calculateVisitMargin,
+	type ClinicExpensesA4ReportParams,
+	formatClinicExpensesAndChairCostA4Report,
+	clinicExpensesEngine,
+} from "./clinicExpensesEngine.js";
