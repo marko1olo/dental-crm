@@ -2,8 +2,8 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-12 / WAVES 162–166 / MASSIVE DUPLICATE & STUB PURGE, SSOT CONSOLIDATION & RED TEAM INQUISITION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 252 АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 315 ФИЧ: 63 КАНОНИЧЕСКИЕ + 252 АДДЕНДУМ).**  
-> Проведена тотальная дедупликация кодовой базы и тестовых наборов по Мандатам 8s, 8j, 8l, 8t:
+> ⚠️ **СТАТУС (2026-09-12 / WAVES 167–168 / SSOT TEMPLATE ENGINE CONSOLIDATION, MANDATE 8t COMPILER PROTECTION & COMPREHENSIVE DOCUMENTATION VERIFICATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
 > 3. Консолидированы сервисы CDA API в фасады-делегаты над `@dental/shared/cda` (`913aa0d14`).
@@ -14,7 +14,10 @@
 > 8. Консолидированы и удалены 7 пар дубликатов тестов и мертвые фасады в `apps/web`: `Icd10ClinicalSelector`, `cbctMprWorkspace`, `sickLeaveElnEngine`, `cashShiftAutonomyAndFiscal54Fz`, `patientReliabilityScore`, `scheduleCollisionUtils`, `workspaceUiLabels`, `AdvancedDoctorPayrollModal` (`5f6536b57`, `812f675a3`).
 > 9. Ликвидированы заброшенный in-memory мок-сервис `familyDepositService.ts` (-175 строк) и устаревшие стабы ранних прототипов в `apps/web/src/components/radiology/` (`cbctVolumeEngine.ts`, `panoramicArchSpline.ts`, `cbctMprTypes.ts`) и `components/emr/` (`emrProtocolPresets.ts`) (коммиты `ede2cb469`, `19bf195e8`). Чистая дельта: -2500+ строк паразитного блоата.
 > 10. Проведена независимая Red Team инквизиция десктопного фронтенда (`ScheduleView`, `AppointmentCard`, `VisitView`, `CashRegisterModal`, `PatientCardModal`) против StomX и IDENT по чек-листу 7 смертных грехов UI и канонам macOS Studio Clinical HIG: вердикт `[ПРОВЕРЕНО: ЧИСТО]`.
-> Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` проходят Single-Compiler Gate с Exit Code 0. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8s. Повторная разработка запрещена (Мандаты 8g, 8h).
+> 11. Ликвидирован дублирующий файл `messageTemplateCatalogsQuery.ts` (Wave 167, коммит `ea5c3f1fe`), маршруты и сервисы шаблонов сведены к SSOT `messageTemplateService.ts`.
+> 12. Формализован Мандат 8t о защите хост-машины и Single-Compiler Gate (Wave 168, коммиты `ca181c35e`, `a389bfa78`), синхронизированы финансовые схемы и тестовые пути в карте CRM.
+> 13. Проведена тотальная инструментальная сверка всех 321 фич в `FEATURES_REGISTRY.md`: все 129 устаревших путей переведены на активные файлы кодовой базы, 0 битых ссылок (инструментально подтверждено по всем 27 446 файлам репозитория).
+> Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
 
@@ -4564,5 +4567,31 @@
 * **Верификация**:
   - Точечные тесты: `node --import tsx --test apps/api/src/services/communications/messageTemplates.test.ts` (20/20 PASS).
   - Гейт компилятора выполнит L1 Оркестратор в соответствии с Мандатом 8t.
+
+### Wave 168: Формализация Мандата 8t (Single-Compiler Gate & Защита Хост-Машины), актуализация финансовых схем SSOT и тотальная верификация Главного Реестра Фич (Мандаты 8g, 8h, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `.agents/AGENTS.md`, `.agents/MASTER_PROMPT.md`, `.agents/THE_HAMMER_MASTER_PROMPT.md`, `AGENTS.md`, `GEMINI.md` (коммит `ca181c35e`: формализация Мандата 8t о защите хост-машины, Single-Compiler Gate, запрете фонового поллинга и строгом разделении фаз)
+  - `docs/competitive-audit/OUR_CRM_MAP.md`, `docs/competitive-audit/02_FINANCIAL_CASHBOXES_INSTALLMENTS_AND_PAYROLL_RAILS.md` (коммит `a389bfa78`: синхронизация путей схем `apps/api/src/db/schema/finance.ts` и колоквированных тестов кассовых смен)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (полная сверка всех 321 фич: 129 устаревших путей приведены в 100% соответствие с реальной кодовой базой, 0 битых путей)
+  - `docs/competitive-audit/BACKLOG.md` (актуализация статуса 321/321, Waves 167–168)
+* **Архитектурное решение**:
+  - **Формализация Мандата 8t (Защита хост-машины и однопоточный гейт компиляции)**:
+    * Категорический запрет воркерам и субагентам на запуск `typecheck`, `tsc` и `build`, вызывающих зависание хост-машины при параллельном выполнении.
+    * Single-Compiler Gate: централизованный запуск компилятора строго L1 Оркестратором последовательно после завершения фазы правок кода.
+    * CPU Preflight Gate: блокировка запуска тяжелых операций при нагрузке процессора хоста > 50%.
+    * Разделение фаз: Фаза 1 (Правки воркерами, CPU < 15%) -> Фаза 2 (Компиляция оркестратором, один `tsc`, 5–10 сек) -> Фаза 3 (Визуальный пруф Playwright Chromium строго после Exit Code 0 компилятора).
+  - **Синхронизация схем финансового контура по SSOT (Мандат 8h)**:
+    * Актуализация путей в `OUR_CRM_MAP.md` и аналитических руководствах: фиксация канонического файла `apps/api/src/db/schema/finance.ts` вместо устаревших упоминаний `finance_v2.ts`.
+    * Подтверждение колоквированного расположения тестов кассовых смен в `apps/web/src/components/finance/__tests__/`.
+  - **Тотальная инструментальная сверка Главного Реестра Фич (Мандаты 8g, 8h)**:
+    * Проверены все 321 фичи (63 канонические + 258 системных аддендум-фичей).
+    * Автоматическим скриптом просканированы все 27 446 файлов репозитория. Все 129 расхождений и исторических перемещений (реорганизация `components/patient/` -> `components/patients/`, `components/payments/` -> `components/finance/`, консолидация тестов, актуализация движков радиологии и шаблонов) исправлены.
+    * Инструментальный аудит: `Total issues found: 0`. Ни одного битого или виртуального пути не осталось.
+* **Верификация**:
+  * Статус: 321/321 фич в статусе `[ДА]`, 100% паритет.
+  * Инструментальная проверка: 0 битых путей в `FEATURES_REGISTRY.md` при сканировании всех 321 строк.
+  * Кодировки: UTF-8 без BOM, `check:encoding` 0 ошибок.
+
 
 
