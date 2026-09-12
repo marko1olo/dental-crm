@@ -318,5 +318,31 @@ export {
 } from "./cbctArchDetectSliceEngine.js";
 export * as cbctArchDetectSliceEngine from "./cbctArchDetectSliceEngine.js";
 
-
-
+// Wave 137: Surgical Guide Assembly & Sleeve Connectivity Engine (DenCT Reverse-Engineering)
+export {
+	MIN_INTER_SLEEVE_DISTANCE_MM,
+	MIN_BASE_WIDTH_MM,
+	MIN_BASE_HEIGHT_MM,
+	DEFAULT_HOUSING_WALL_THICKNESS_MM,
+	DEFAULT_ARCH_PAD_S,
+	DEFAULT_BASE_SAMPLE_COUNT,
+	calculatePolylineLength3,
+	guideImplantInputSchema,
+	type GuideImplantInput,
+	guideBaseParamsSchema,
+	type GuideBaseParams,
+	sleeveHousingGeometrySchema,
+	type SleeveHousingGeometry,
+	interSleeveClearanceSchema,
+	type InterSleeveClearance,
+	guideIntegrityResultSchema,
+	type GuideIntegrityResult,
+	surgicalGuideAssemblyReportParamsSchema,
+	type SurgicalGuideAssemblyReportParams,
+	planBaseCenterline,
+	isHousingConnectedToBase,
+	planSleeveHousings,
+	validateGuideStructuralIntegrity,
+	formatSurgicalGuideAssemblyA4Protocol,
+} from "./guideAssemblyEngine.js";
+export * as guideAssemblyEngine from "./guideAssemblyEngine.js";
