@@ -230,7 +230,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 						</div>
 						<span className="text-xs text-[var(--muted,#64748b)] truncate">
 							{isListening ? (
-								"Диктуйте формулу, диагнозы и манипуляции (например: «46 кариес дентина, ультракаин 1 карпула, коффердам, пломба эстет икс а два»)"
+								"Диктуйте формулу, диагнозы и манипуляции"
 							) : (
 								<>
 									<span className="hidden sm:inline">Голосовое заполнение дневника и зубной формулы по 804н</span>

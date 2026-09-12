@@ -1224,7 +1224,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={28} />
 							<span className="truncate min-w-0 text-sm sm:text-base md:text-lg font-bold text-[var(--ink)]" title={activePatient.fullName}>
-								{activePatient.fullName}
+								<span className="sm:hidden">
+									{(() => {
+										const parts = (activePatient.fullName || "").trim().split(/\s+/);
+										if (parts.length >= 2) {
+											const initials = parts.slice(1).map((p) => (p[0] ? `${p[0]}.` : "")).join("");
+											return `${parts[0]} ${initials}`.trim();
+										}
+										return activePatient.fullName;
+									})()}
+								</span>
+								<span className="hidden sm:inline">{activePatient.fullName}</span>
 							</span>
 							{patientAge && (
 								<span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">
