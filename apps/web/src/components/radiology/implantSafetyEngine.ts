@@ -1249,7 +1249,7 @@ export function computeLiveImplantTelemetry(
 
 	let boneDensity: LiveBoneDensityTelemetry;
 	if (boneSample) {
-		const profile = boneSample.profile ?? getMischProfile(boneSample.bone);
+		const profile = getMischProfile(boneSample.bone);
 		const corticalDesc = profile.corticalDescription;
 		const trabecularDesc = profile.trabecularDescription;
 		const tissueDesc = [corticalDesc, trabecularDesc]

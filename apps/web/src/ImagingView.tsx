@@ -116,7 +116,7 @@ function imagingDescriptionTemplate(
 import { useMemo, useRef, useState } from "react";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
-import { Cornerstone3DViewer } from "./components/visiograph/Cornerstone3DViewer";
+import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";

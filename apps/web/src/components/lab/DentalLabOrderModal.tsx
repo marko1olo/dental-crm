@@ -629,7 +629,7 @@ export function DentalLabOrderModal({
 		try {
 			const safeWorkType = (constructionType as any) || "single_crown";
 			const safeMaterial = (material as any) || "zirconia_multilayer";
-			const synthOrder: LabOrder = {
+			const synthOrder: any = {
 				id: gostOrderNumber,
 				clinicId: "clinic-default",
 				patientId: patientId || "pat-default",

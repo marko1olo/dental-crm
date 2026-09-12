@@ -2,4 +2,4 @@
  * DENTE CRM — Treatment Components Domain Index
  */
 
-export * from "./TreatmentPlanRoadmap";
+export * from "../treatment-plans/TreatmentPlanRoadmap";

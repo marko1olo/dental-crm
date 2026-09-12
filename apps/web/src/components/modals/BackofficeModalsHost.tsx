@@ -45,7 +45,8 @@ import { PatientPortalTimelineModal } from "../portal/timeline/PatientPortalTime
 import { PatientRecallManagerModal } from "../recalls/PatientRecallManagerModal";
 import { PatientRecallsHubModal } from "../recalls/PatientRecallsHubModal";
 import { DoctorMobileShiftModal } from "../doctor-portal";
-import { DoctorShiftCockpitModal, DoctorDesktopHeader } from "../doctor";
+import { DoctorShiftCockpitModal } from "../doctor";
+import { DoctorDesktopHeader } from "../visit/DoctorDesktopHeader";
 import { DoctorShiftRosterModal } from "../schedule/roster/DoctorShiftRosterModal";
 import { WarehouseTransferModal } from "../inventory/transfers/WarehouseTransferModal";
 import { ClinicalWriteoffModal } from "../inventory/writeoff/ClinicalWriteoffModal";

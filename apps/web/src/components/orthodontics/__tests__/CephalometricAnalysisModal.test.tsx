@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CephalometricAnalysisModal } from "../CephalometricAnalysisModal";
+import { CephalometricAnalysisModal } from "../../radiology/CephalometricAnalysisModal";
 import { CephalometricCanvas } from "../CephalometricCanvas";
 import {
 	CEPHALOMETRIC_LANDMARKS,

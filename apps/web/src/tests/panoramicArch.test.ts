@@ -1004,7 +1004,7 @@ describe("panoramicIssueLabels", () => {
 		// literal left inline, and closing the panorama left the green «Панорама
 		// построена…» banner asserting a panorama that was no longer on screen.
 		const viewer = readFileSync(
-			new URL("../components/visiograph/Cornerstone3DViewer.tsx", import.meta.url),
+			new URL("../components/dicom/Cornerstone3DViewer.tsx", import.meta.url),
 			"utf8",
 		);
 		assert.ok(

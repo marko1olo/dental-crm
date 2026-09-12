@@ -1,2 +1,2 @@
 export * from "./DoctorShiftCockpitModal";
-export * from "./DoctorDesktopHeader";
+export * from "../visit/DoctorDesktopHeader";

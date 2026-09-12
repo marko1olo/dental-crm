@@ -8,7 +8,7 @@ import { formatPatientBirthAndAge } from "../PatientHeaderCard";
 import {
 	CANONICAL_ROADMAP_META,
 	translate804nToPatientDescription,
-} from "../../treatment/TreatmentPlanRoadmap";
+} from "../../treatment-plans/TreatmentPlanRoadmap";
 
 describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps", () => {
 	it("1. Computes VIP / Loyal Sentiment for platinum/gold tier and high LTV", () => {

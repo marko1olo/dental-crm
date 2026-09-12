@@ -6,7 +6,7 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
 import { PatientCommunicationTimelinesWidget } from "../crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
-import { LabOrdersPanel } from "../LabOrdersPanel";
+import { LabOrdersPanel } from "./LabOrdersPanel";
 import { PatientWorkspaceView } from "../patient/PatientWorkspaceView";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";

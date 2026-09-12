@@ -16,7 +16,7 @@ import {
 	projectToAxialPlane,
 	resamplePolylineByArcLength,
 	sampleArchCurve,
-} from "../../../utils/math/panoramicArch";
+} from "../../dicom/panoramicArch";
 
 describe("3D Visiograph & DICOM HU Presets Calibration", () => {
 	test("Bone Preset is exactly Window 2000, Level 500", () => {

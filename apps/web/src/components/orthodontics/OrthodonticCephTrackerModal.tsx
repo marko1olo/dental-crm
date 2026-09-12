@@ -13,4 +13,4 @@
 export {
 	CephalometricAnalysisModal as OrthodonticCephTrackerModal,
 	type CephalometricAnalysisModalProps as OrthodonticCephTrackerModalProps,
-} from "./CephalometricAnalysisModal";
+} from "../radiology/CephalometricAnalysisModal";

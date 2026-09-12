@@ -36,7 +36,7 @@ import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
-import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
+import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { OrthodonticVisitProtocolWidget } from "../orthodontics/OrthodonticVisitProtocolWidget";
 
 interface OrthoStage {

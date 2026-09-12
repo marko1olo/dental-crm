@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
-import { CephalometricAnalysisModal } from "../CephalometricAnalysisModal";
+import { CephalometricAnalysisModal } from "../../radiology/CephalometricAnalysisModal";
 import {
 	calculateCephalometrics,
 	CLASS_I_NORMAL_LANDMARKS_PRESET,

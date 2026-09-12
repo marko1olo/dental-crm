@@ -6,7 +6,7 @@ import { CommandPalette } from "../components/CommandPalette";
 import { SberbankTerminalPaymentModal } from "../components/finance/SberbankTerminalPaymentModal";
 import { InventoryConfirmDialog } from "../components/inventory/InventoryConfirmDialog";
 import { EndoCanalLogModal } from "../components/odontogram/EndoCanalLogModal";
-import { CephalometricAnalysisModal } from "../components/orthodontics/CephalometricAnalysisModal";
+import { CephalometricAnalysisModal } from "../components/radiology/CephalometricAnalysisModal";
 import { WaitlistDrawer } from "../components/schedule/WaitlistDrawer";
 import { WaitlistQuickFillModal } from "../components/schedule/WaitlistQuickFillModal";
 import { CryptoProSigner } from "../components/visit/CryptoProSigner";

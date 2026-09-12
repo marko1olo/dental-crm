@@ -28,7 +28,7 @@ function readSource(relativePath: string): string {
  */
 
 test("ссылку строит и разбирает один и тот же путь", () => {
-	const panel = readSource("components/LabOrdersPanel.tsx");
+	const panel = readSource("components/patients/LabOrdersPanel.tsx");
 	assert.ok(
 		panel.includes(`/#${LAB_ORDER_PORTAL_PATH}`),
 		`LabOrdersPanel.tsx больше не строит ссылку по пути ${LAB_ORDER_PORTAL_PATH}. ` +

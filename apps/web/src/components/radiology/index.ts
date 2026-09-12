@@ -28,6 +28,6 @@ export * from "./HotFolderIntakeModal";
 export { RadiologyViewerModal as RadiologyDicomViewerModal } from "./RadiologyViewerModal";
 export { RadiologyViewerModal as RadiologyViewer } from "./RadiologyViewerModal";
 export { MedicalRadiologyDropzone as RadiologyDropzone } from "./MedicalRadiologyDropzone";
-export { CephalometricAnalysisModal as TrgCephalometricsModal } from "../orthodontics/CephalometricAnalysisModal";
+export { CephalometricAnalysisModal as TrgCephalometricsModal, CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
 export { DirectRvgCaptureModal as RvgDirectCaptureModal } from "./DirectRvgCaptureModal";
 export { HotFolderIntakeModal as RadiologyHotFolderModal } from "./HotFolderIntakeModal";

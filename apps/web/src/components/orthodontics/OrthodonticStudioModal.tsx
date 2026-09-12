@@ -50,7 +50,7 @@ import {
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
-import { CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
+import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { OrthoPhotoProtocolModal } from "./OrthoPhotoProtocolModal";
 import { OrthodonticExaminationCard } from "./OrthodonticExaminationCard";
 

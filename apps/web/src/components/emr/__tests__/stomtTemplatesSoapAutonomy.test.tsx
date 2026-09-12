@@ -12,7 +12,7 @@ import {
 import {
 	VisitSoapEditor,
 	resolveProtocolFromTemplate,
-} from "../VisitSoapEditor";
+} from "../../visit/VisitSoapEditor";
 
 describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 	it("1. Verifies completeness of STOMX_ALL_448_TEMPLATES_INDEX (exactly 448 clinical templates)", () => {
