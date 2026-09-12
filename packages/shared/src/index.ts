@@ -14593,6 +14593,9 @@ export * from "./radiology/index.js";
 export * from "./types/pricing.js";
 export * from "./warehouse/index.js";
 export * from "./finance/index.js";
+export * from "./staff/index.js";
+export { staffTaskItemSchema, type StaffTaskItem } from "./staff/index.js";
+
 
 
 
