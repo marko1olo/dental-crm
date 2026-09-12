@@ -4,3 +4,4 @@ export * from "./gs1DataMatrixParser.js";
 export * from "./reorderEngine.js";
 export * from "./treatmentConsumablesSchema.js";
 export * from "./supplierRatingsEngine.js";
+export * from "./purchaseOrdersEngine.js";
