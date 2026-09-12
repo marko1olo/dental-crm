@@ -139,36 +139,7 @@ export interface BeforeAfterComparisonPair {
 	readonly doctorNotesRu?: string | undefined;
 }
 
-export interface SbpBankAppMember {
-	readonly id: string;
-	readonly nameRu: string;
-	readonly schemaPrefix: string;
-	readonly brandColorHex: string;
-	readonly isPopular: boolean;
-}
-
-export interface SbpDynamicQrModel {
-	readonly qrId: string;
-	readonly orderId: string;
-	readonly sumKopecks: number;
-	readonly sumRub: number;
-	readonly sumFormattedRu: string;
-	readonly recipientLegalName: string;
-	readonly recipientInn: string;
-	readonly recipientAccount: string;
-	readonly bankBic: string;
-	readonly paymentPurpose: string;
-	readonly nspkUrl: string;
-	readonly crc16Hex: string;
-	readonly expiresAtIso: string;
-	readonly emvPayload: string;
-	readonly deepLinks: ReadonlyArray<{
-		readonly bankId: string;
-		readonly bankNameRu: string;
-		readonly appUrl: string;
-		readonly brandColor: string;
-	}>;
-}
+export type { SbpBankAppMember, SbpDynamicQrModel } from "@dental/shared";
 
 export interface PepSignatureAuditTrail {
 	readonly verificationMethod: "sms_otp" | "sms_63fz_pep";
@@ -353,26 +324,7 @@ export function calculateSha256(inputString: string): string {
 	return result;
 }
 
-export function calculateCrc16CcittFalse(data: string): string {
-	if (!data) return "FFFF";
-	let crc = 0xffff;
-	const poly = 0x1021;
-	const bytes = new TextEncoder().encode(data);
-
-	for (let i = 0; i < bytes.length; i++) {
-		const byte = bytes[i]!;
-		crc ^= byte << 8;
-		for (let bit = 0; bit < 8; bit++) {
-			if ((crc & 0x8000) !== 0) {
-				crc = ((crc << 1) ^ poly) & 0xffff;
-			} else {
-				crc = (crc << 1) & 0xffff;
-			}
-		}
-	}
-
-	return crc.toString(16).toUpperCase().padStart(4, "0");
-}
+export { calculateCrc16Ccitt as calculateCrc16CcittFalse } from "@dental/shared";
 
 export function kopecksToRubles(kopecks: number): number {
 	return Math.round(kopecks) / 100;
@@ -715,136 +667,7 @@ export function getPresetBeforeAfterGalleries(patientId: string): readonly Befor
 // 6. ОПЛАТА ЧЕРЕЗ СБП (НСПК / ГОСТ Р 56042-2014 & EMVCo)
 // ============================================================================
 
-export const SBP_BANKS_CATALOG: readonly SbpBankAppMember[] = [
-	{
-		id: "sber",
-		nameRu: "СберБанк Онлайн",
-		schemaPrefix: "sberpay://qr/sub?qrId=",
-		brandColorHex: "#21a038",
-		isPopular: true,
-	},
-	{
-		id: "tbank",
-		nameRu: "Т-Банк (Тинькофф)",
-		schemaPrefix: "tinkoffbank://qr?id=",
-		brandColorHex: "#ffdd2d",
-		isPopular: true,
-	},
-	{
-		id: "alfa",
-		nameRu: "Альфа-Банк",
-		schemaPrefix: "alfabank://qr/pay?qrId=",
-		brandColorHex: "#ef3124",
-		isPopular: true,
-	},
-	{
-		id: "vtb",
-		nameRu: "ВТБ Онлайн",
-		schemaPrefix: "vtb://sbp/pay?qrId=",
-		brandColorHex: "#0a2896",
-		isPopular: true,
-	},
-	{
-		id: "raiffeisen",
-		nameRu: "Райффайзенбанк",
-		schemaPrefix: "raiffeisenonline://sbp/qr?qrId=",
-		brandColorHex: "#fee600",
-		isPopular: false,
-	},
-	{
-		id: "nspk_generic",
-		nameRu: "Другой банк (СБП)",
-		schemaPrefix: "https://qr.nspk.ru/",
-		brandColorHex: "#0284c7",
-		isPopular: false,
-	},
-];
-
-function formatEmvTlvTag(tag: string, value: string): string {
-	const len = value.length.toString().padStart(2, "0");
-	return `${tag}${len}${value}`;
-}
-
-export function generateSbpPaymentQrModel(params: {
-	sumKopecks: number;
-	orderId: string;
-	purpose?: string;
-	clinicLegalName?: string;
-	clinicInn?: string;
-	clinicAccount?: string;
-	bankBic?: string;
-	ttlMinutes?: number;
-}): SbpDynamicQrModel {
-	const sumKopecks = Math.round(params.sumKopecks);
-	if (sumKopecks <= 0) {
-		throw new Error(`Сумма оплаты через СБП должна быть строго больше 0 коп. (получено: ${sumKopecks})`);
-	}
-
-	const sumRub = kopecksToRubles(sumKopecks);
-	const orderId = params.orderId.trim() || `ORD-${Date.now().toString(36).toUpperCase()}`;
-	const qrId = `SBP${orderId.replace(/\W/g, "")}${Date.now().toString(36).toUpperCase()}`;
-	const ttl = params.ttlMinutes ?? 30; // 30 минут валидности динамического QR
-	const expiresAtIso = new Date(Date.now() + ttl * 60 * 1000).toISOString();
-
-	const recipientLegalName = params.clinicLegalName || 'ООО "Стоматологическая клиника ДЕНТЕ"';
-	const recipientInn = params.clinicInn || "";
-	const recipientAccount = params.clinicAccount || "40702810938000123456";
-	const bankBic = params.bankBic || "044525225";
-	const paymentPurpose = params.purpose || `Оплата стоматологических услуг по заказу №${orderId} (ИНН ${recipientInn})`;
-
-	// URL стандарта НСПК
-	const baseUrl = `https://qr.nspk.ru/${qrId}?type=02&bank=100000000111&sum=${sumKopecks}&cur=RUB`;
-	const crc16Hex = calculateCrc16CcittFalse(baseUrl);
-	const nspkUrl = `${baseUrl}&crc=${crc16Hex}`;
-
-	// EMVCo Merchant Presented QR
-	const emvWithoutCrc =
-		formatEmvTlvTag("00", "01") +
-		formatEmvTlvTag("01", "12") +
-		formatEmvTlvTag(
-			"26",
-			formatEmvTlvTag("00", "ru.nspk.sbp") +
-			formatEmvTlvTag("01", qrId) +
-			formatEmvTlvTag("02", recipientInn),
-		) +
-		formatEmvTlvTag("52", "8011") + // MCC 8011: Doctors / Medical
-		formatEmvTlvTag("53", "643") +  // RUB
-		formatEmvTlvTag("54", sumRub.toFixed(2)) +
-		formatEmvTlvTag("58", "RU") +
-		formatEmvTlvTag("59", recipientLegalName.slice(0, 25)) +
-		formatEmvTlvTag("60", "MOSCOW") +
-		formatEmvTlvTag("62", formatEmvTlvTag("01", orderId.slice(0, 25)) + formatEmvTlvTag("08", paymentPurpose.slice(0, 25))) +
-		"6304";
-
-	const emvCrc = calculateCrc16CcittFalse(emvWithoutCrc);
-	const emvPayload = `${emvWithoutCrc}${emvCrc}`;
-
-	// Deep links для банковских приложений
-	const deepLinks = SBP_BANKS_CATALOG.map((bank) => ({
-		bankId: bank.id,
-		bankNameRu: bank.nameRu,
-		appUrl: bank.id === "nspk_generic" ? nspkUrl : `${bank.schemaPrefix}${qrId}`,
-		brandColor: bank.brandColorHex,
-	}));
-
-	return {
-		qrId,
-		orderId,
-		sumKopecks,
-		sumRub,
-		sumFormattedRu: formatKopecksToCurrencyRu(sumKopecks),
-		recipientLegalName,
-		recipientInn,
-		recipientAccount,
-		bankBic,
-		paymentPurpose,
-		nspkUrl,
-		crc16Hex,
-		expiresAtIso,
-		emvPayload,
-		deepLinks,
-	};
-}
+export { SBP_BANKS_CATALOG, generateSbpPaymentQrModel } from "@dental/shared";
 
 // ============================================================================
 // 7. ОНЛАЙН-ПОДПИСАНИЕ ИДС И ДОГОВОРА СМС-КОДОМ ПЭП (63-ФЗ)
