@@ -1338,6 +1338,7 @@ export function Cornerstone3DViewer({
 
 			{/* GLASSMORPHISM CLINICAL TOOLBAR (TOUCH TARGETS >= 44x44px) */}
 			<div
+				className="no-scrollbar"
 				style={{
 					position: "absolute",
 					top: "12px",
@@ -1345,10 +1346,12 @@ export function Cornerstone3DViewer({
 					transform: "translateX(-50%)",
 					zIndex: 20,
 					display: "flex",
+					flexWrap: "nowrap",
 					alignItems: "center",
 					gap: "8px",
 					maxWidth: "calc(100% - 24px)",
 					overflowX: "auto",
+					scrollbarWidth: "none",
 					backgroundColor: "rgba(20,20,20,0.85)",
 					backdropFilter: "blur(16px)",
 					WebkitBackdropFilter: "blur(16px)",
@@ -1358,11 +1361,12 @@ export function Cornerstone3DViewer({
 					boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.7)",
 				}}
 			>
-				{/* PRIMARY TOOLS (min-h-[44px]) */}
+				{/* PRIMARY TOOLS (min-h-[44px] touch target, 0 text wrapping) */}
 				<div
 					style={{
 						display: "flex",
 						flexWrap: "nowrap",
+						flexShrink: 0,
 						backgroundColor: "rgba(0,0,0,0.45)",
 						borderRadius: "12px",
 						padding: "3px",
@@ -1374,13 +1378,15 @@ export function Cornerstone3DViewer({
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
-							padding: "8px 14px",
+							padding: "6px 12px",
 							borderRadius: "10px",
 							fontSize: "13px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
 							transition: "all 0.2s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 							backgroundColor:
 								activeTool === cornerstoneTools.CrosshairsTool.toolName
 									? "#2563eb"
@@ -1399,13 +1405,15 @@ export function Cornerstone3DViewer({
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
-							padding: "8px 14px",
+							padding: "6px 12px",
 							borderRadius: "10px",
 							fontSize: "13px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
 							transition: "all 0.2s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 							backgroundColor:
 								activeTool === cornerstoneTools.SplineROITool.toolName
 									? "#2563eb"
@@ -1424,13 +1432,15 @@ export function Cornerstone3DViewer({
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
-							padding: "8px 14px",
+							padding: "6px 12px",
 							borderRadius: "10px",
 							fontSize: "13px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
 							transition: "all 0.2s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 							backgroundColor:
 								activeTool === "Caliper"
 									? "var(--brand-primary, #2563eb)"
@@ -1447,13 +1457,15 @@ export function Cornerstone3DViewer({
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
-							padding: "8px 14px",
+							padding: "6px 12px",
 							borderRadius: "10px",
 							fontSize: "13px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
 							transition: "all 0.2s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 							backgroundColor:
 								activeTool === "NerveTracer"
 									? "var(--warn-fg, #d97706)"
@@ -1474,13 +1486,15 @@ export function Cornerstone3DViewer({
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
-							padding: "8px 14px",
+							padding: "6px 12px",
 							borderRadius: "10px",
 							fontSize: "13px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
 							transition: "all 0.2s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 							backgroundColor:
 								activeTool === cornerstoneTools.LengthTool.toolName
 									? "#2563eb"
@@ -1499,13 +1513,15 @@ export function Cornerstone3DViewer({
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
-							padding: "8px 14px",
+							padding: "6px 12px",
 							borderRadius: "10px",
 							fontSize: "13px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
 							transition: "all 0.2s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 							backgroundColor:
 								activeTool === cornerstoneTools.ProbeTool.toolName
 									? "#2563eb"
@@ -1524,13 +1540,15 @@ export function Cornerstone3DViewer({
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
-							padding: "8px 14px",
+							padding: "6px 12px",
 							borderRadius: "10px",
 							fontSize: "13px",
 							fontWeight: 600,
 							cursor: "pointer",
 							border: "none",
 							transition: "all 0.2s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 							backgroundColor:
 								activeTool === "Implant" ? "#4f46e5" : "transparent",
 							color: activeTool === "Implant" ? "#fff" : "#d4d4d8",
@@ -1545,6 +1563,8 @@ export function Cornerstone3DViewer({
 				<div
 					style={{
 						display: "flex",
+						flexWrap: "nowrap",
+						flexShrink: 0,
 						backgroundColor: "rgba(0,0,0,0.45)",
 						borderRadius: "12px",
 						padding: "3px",
@@ -1571,6 +1591,7 @@ export function Cornerstone3DViewer({
 								color: activePresetId === preset.id ? "#fff" : "#d4d4d8",
 								transition: "all 0.2s",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 							}}
 							onClick={() => applyVoiPreset(preset)}
 							title={preset.description}
@@ -1584,12 +1605,14 @@ export function Cornerstone3DViewer({
 					style={{
 						display: "flex",
 						alignItems: "center",
+						flexShrink: 0,
 						gap: "6px",
 						fontSize: "12px",
 						padding: "0 4px",
+						whiteSpace: "nowrap",
 					}}
 				>
-					<span style={{ color: "#a3a3a3" }}>Слой:</span>
+					<span style={{ color: "#a3a3a3", marginRight: "6px" }}>Срез:</span>
 					<input
 						type="range"
 						min="0"
@@ -1610,6 +1633,7 @@ export function Cornerstone3DViewer({
 					style={{
 						minHeight: "44px",
 						minWidth: "44px",
+						flexShrink: 0,
 						background: "linear-gradient(to right, #2563eb, #4f46e5)",
 						color: "#fff",
 						padding: "8px 16px",
@@ -1637,6 +1661,7 @@ export function Cornerstone3DViewer({
 					style={{
 						minHeight: "44px",
 						minWidth: "44px",
+						flexShrink: 0,
 						backgroundColor: "#047857",
 						color: "#fff",
 						padding: "8px 14px",
@@ -1670,6 +1695,7 @@ export function Cornerstone3DViewer({
 					style={{
 						minHeight: "44px",
 						minWidth: "44px",
+						flexShrink: 0,
 						backgroundColor: "rgba(0,0,0,0.45)",
 						color: "#d4d4d8",
 						padding: "8px 14px",
@@ -1691,6 +1717,7 @@ export function Cornerstone3DViewer({
 					style={{
 						minHeight: "44px",
 						minWidth: "44px",
+						flexShrink: 0,
 						backgroundColor: "rgba(255,255,255,0.1)",
 						color: "#d4d4d8",
 						padding: "8px 12px",
