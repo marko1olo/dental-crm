@@ -338,6 +338,97 @@ export function kabschTransformWithRms(
 	return { matrix, rmsMm, quality };
 }
 
+export interface KabschResultWithRms {
+	matrix: number[];
+	rmsMm: number;
+}
+
+// ── Iterative Closest Point (Surface Refinement) ────────────────
+
+export interface IcpOptions {
+	/** Maximum iterations (default 40). */
+	maxIterations?: number;
+	/** Stop when the RMS improvement between iterations drops below this threshold in mm (default 1e-4). */
+	tolerance?: number;
+	/** Initial source -> target transform (4x4 column-major, default identity). */
+	initial?: number[];
+}
+
+export interface IcpResult {
+	/** Refined source -> target rigid transform (4x4 column-major). */
+	transform: number[];
+	/** Final RMS of each source point to its nearest target point in mm. */
+	rmsMm: number;
+	/** Total iterations executed. */
+	iterations: number;
+}
+
+/** Find nearest target point to point q. */
+export function nearestPoint(target: Vec3[], q: Vec3): Vec3 {
+	let bd = Infinity;
+	let bj = 0;
+	for (let j = 0; j < target.length; j++) {
+		const t = target[j]!;
+		const d = (q[0] - t[0]) ** 2 + (q[1] - t[1]) ** 2 + (q[2] - t[2]) ** 2;
+		if (d < bd) {
+			bd = d;
+			bj = j;
+		}
+	}
+	return target[bj]!;
+}
+
+/** RMS of transformed source points to their nearest target points in mm. */
+export function nearestRms(source: Vec3[], target: Vec3[], m: number[]): number {
+	let sum = 0;
+	for (let i = 0; i < source.length; i++) {
+		const p = source[i]!;
+		const q = applyMat4(m, p);
+		const t = nearestPoint(target, q);
+		sum += (q[0] - t[0]) ** 2 + (q[1] - t[1]) ** 2 + (q[2] - t[2]) ** 2;
+	}
+	return Math.sqrt(sum / source.length);
+}
+
+/**
+ * Point-to-point ICP (Iterative Closest Point):
+ * Refines an initial alignment between source and target point clouds by repeatedly
+ * finding closest-point correspondences and estimating the optimal rigid transform.
+ */
+export function icpAlign(
+	source: Vec3[],
+	target: Vec3[],
+	opts: IcpOptions = {},
+): IcpResult | null {
+	const maxIter = opts.maxIterations ?? 40;
+	const tol = opts.tolerance ?? 1e-4;
+	if (source.length < 3 || target.length < 1) return null;
+
+	let current: number[] = opts.initial ? [...opts.initial] : [...IDENTITY4];
+	let prevRms = Infinity;
+	let iter = 0;
+
+	for (; iter < maxIter; iter++) {
+		const moved = source.map((p) => applyMat4(current, p));
+		const matched = moved.map((m) => nearestPoint(target, m));
+		const delta = kabschTransform(moved, matched);
+		if (!delta) break;
+
+		current = mul4(delta, current);
+		const rms = nearestRms(source, target, current);
+		const improved = prevRms - rms;
+		prevRms = rms;
+
+		if (improved >= 0 && improved < tol) {
+			iter++;
+			break;
+		}
+	}
+
+	const rmsMm = prevRms === Infinity ? nearestRms(source, target, current) : prevRms;
+	return { transform: current, rmsMm, iterations: iter };
+}
+
 // ── Möller–Trumbore Ray-Triangle Picking ─────────────────────────
 
 /**
@@ -445,6 +536,33 @@ export function pickMeshRay(
 		distance: bestT,
 		triangleIndex: bestTriangle,
 	};
+}
+
+/**
+ * Find nearest ray hit against a triangle soup [ax,ay,az, bx,by,bz, cx,cy,cz, ...].
+ * Returns the 3D world hit point, or null if no triangle was hit.
+ */
+export function pickTriangleSoup(
+	orig: Vec3,
+	dir: Vec3,
+	tris: Float32Array | number[],
+): Vec3 | null {
+	let bestT = Infinity;
+	for (let i = 0; i + 8 < tris.length; i += 9) {
+		const a: Vec3 = [tris[i] ?? 0, tris[i + 1] ?? 0, tris[i + 2] ?? 0];
+		const b: Vec3 = [tris[i + 3] ?? 0, tris[i + 4] ?? 0, tris[i + 5] ?? 0];
+		const c: Vec3 = [tris[i + 6] ?? 0, tris[i + 7] ?? 0, tris[i + 8] ?? 0];
+		const t = rayTriangleHit(orig, dir, a, b, c);
+		if (t !== null && t < bestT) {
+			bestT = t;
+		}
+	}
+	if (!Number.isFinite(bestT)) return null;
+	return [
+		orig[0] + dir[0] * bestT,
+		orig[1] + dir[1] * bestT,
+		orig[2] + dir[2] * bestT,
+	];
 }
 
 // ── Prosthetic Tooth Setup (PCA & Backward Planning) ────────────
@@ -766,3 +884,85 @@ export function formatScanRegistrationA4Protocol(
 
 	return lines.join("\n");
 }
+
+// ── Printable Clinical A4 Protocol (Wave 126 Parity, 0 Emojis) ───
+
+export interface RegistrationProtocolInput {
+	landmarkRmsMm: number;
+	icpRmsMm: number;
+	iterations: number;
+	scanPointsCount: number;
+	isClinicallyAcceptable: boolean;
+}
+
+/**
+ * Formats an A4-printable clinical protocol for optical intraoral scan to CBCT registration.
+ * Fully compliant with Mandate 8d item 7: strictly zero cartoon emojis, professional medical terminology.
+ */
+export function formatRegistrationA4Protocol(
+	result: RegistrationProtocolInput,
+	patientName: string,
+	doctorName: string,
+): string {
+	const statusText = result.isClinicallyAcceptable
+		? "[ДОПУЩЕНО К КЛИНИЧЕСКОМУ ИСПОЛЬЗОВАНИЮ]"
+		: "[ВНИМАНИЕ: ТРЕБУЕТСЯ ПОВТОРНАЯ КАЛИБРОВКА]";
+
+	const recommendation = result.isClinicallyAcceptable
+		? "Точность оптико-томографического совмещения находится в пределах клинического допуска (RMS <= 0.500 мм). Данные согласованы для прецизионного моделирования хирургических навигационных шаблонов и позиционирования дентальных имплантатов."
+		: "Среднеквадратическое отклонение превышает допустимый клинический порог (RMS > 0.500 мм). Рекомендуется повторно расставить анатомические ориентиры (минимум 3 не коллинеарные пары реперов на твердых тканях зубов) и исключить участки с артефактами металлоконструкций.";
+
+	const lines = [
+		"================================================================================",
+		"        ПРОТОКОЛ СОПОСТАВЛЕНИЯ КЛКТ И ОПТИЧЕСКОГО ИНТРАОРАЛЬНОГО СКАНИРОВАНИЯ   ",
+		"               (CBCT <-> INTRAORAL OPTICAL SCAN REGISTRATION REPORT)            ",
+		"================================================================================",
+		"",
+		`Пациент: ${patientName.trim() || "Не указан"}`,
+		`Лечащий врач: ${doctorName.trim() || "Не указан"}`,
+		`Дата формирования: ${new Date().toISOString().slice(0, 10)}`,
+		"Стандарт протокола: Форма 043/у / Предоперационное 3D-планирование",
+		"",
+		"--------------------------------------------------------------------------------",
+		"1. ПАРАМЕТРЫ РЕГИСТРАЦИИ И АЛГОРИТМИЧЕСКИЙ АНАЛИЗ",
+		"--------------------------------------------------------------------------------",
+		"Математический метод первичной привязки : Horn Unit-Quaternion Absolute Orientation (Kabsch)",
+		"Математический метод прецизионной доводки : Iterative Closest Point (Point-to-Point ICP)",
+		`Количество обработанных вершин меша    : ${result.scanPointsCount.toLocaleString("ru-RU")}`,
+		`Первичное отклонение по реперам (RMS)  : ${result.landmarkRmsMm.toFixed(4)} мм`,
+		`Финальное отклонение ICP (RMS)         : ${result.icpRmsMm.toFixed(4)} мм`,
+		`Количество выполненных итераций ICP    : ${result.iterations}`,
+		"",
+		"--------------------------------------------------------------------------------",
+		"2. КЛИНИЧЕСКИЙ ВЕРДИКТ И ЗАКЛЮЧЕНИЕ",
+		"--------------------------------------------------------------------------------",
+		`Статус верификации: ${statusText}`,
+		"Клинический допуск: RMS <= 0.500 мм (допустимо для навигационной хирургии)",
+		"",
+		"Заключение:",
+		recommendation,
+		"",
+		"--------------------------------------------------------------------------------",
+		"3. ВЕРИФИКАЦИЯ И ПОДПИСЬ",
+		"--------------------------------------------------------------------------------",
+		"Протокол проверен врачом-стоматологом у кресла в соответствии с клиническими",
+		"рекомендациями Стоматологической Ассоциации России (СтАР).",
+		"",
+		`Врач-стоматолог (подпись): ____________________ / ${doctorName.trim() || "Врач-клиницист"} /`,
+		"",
+		"Подпись ответственного лица: ____________________",
+		"",
+		"М.П. Клиники",
+		"================================================================================",
+	];
+
+	return lines.join("\n");
+}
+
+// ── Canonical Aliases (DenCT / API Parity per Mandate 8s) ────────
+
+export const transformPoint4 = applyMat4;
+export const hornRegistration = kabschTransformWithRms;
+export const mollerTrumborePick = pickMeshRay;
+export const formatRegistrationReport = formatScanRegistrationA4Protocol;
+
