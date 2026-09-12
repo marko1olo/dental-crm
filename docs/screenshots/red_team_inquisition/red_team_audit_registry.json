@@ -1,0 +1,86 @@
+[
+  {
+    "fileName": "patient_card_pc_light.png",
+    "target": "PatientCardModal Desktop Light",
+    "sizeKb": "456.0",
+    "md5": "85b278a89bf9914f1d9b2d8c666c9838",
+    "passSize": true
+  },
+  {
+    "fileName": "patient_card_pc_dark.png",
+    "target": "PatientCardModal Desktop Dark",
+    "sizeKb": "449.8",
+    "md5": "3ad8218ba79c9e88d1ba281dc31ef969",
+    "passSize": true
+  },
+  {
+    "fileName": "appointment_modal_pc_light.png",
+    "target": "AppointmentModal Desktop Light",
+    "sizeKb": "207.3",
+    "md5": "58580b53859630c9d8d39d05a2091922",
+    "passSize": true
+  },
+  {
+    "fileName": "appointment_modal_pc_dark.png",
+    "target": "AppointmentModal Desktop Dark",
+    "sizeKb": "205.8",
+    "md5": "5b3e09ecb5e6b9f56743082ab4ef7ebf",
+    "passSize": true
+  },
+  {
+    "fileName": "tooth_formula_hud_pc_light.png",
+    "target": "Tooth Formula & HUD Desktop Light",
+    "sizeKb": "563.1",
+    "md5": "402dc7b01184dd913d043d47fb9ba361",
+    "passSize": true
+  },
+  {
+    "fileName": "tooth_formula_hud_pc_dark.png",
+    "target": "Tooth Formula & HUD Desktop Dark",
+    "sizeKb": "529.1",
+    "md5": "71671a1edb54db5b11ec360cccfa18e6",
+    "passSize": true
+  },
+  {
+    "fileName": "patient_card_mobile_light.png",
+    "target": "PatientCardModal Mobile Light",
+    "sizeKb": "171.0",
+    "md5": "9a9945993d3715c0c1b7be7466e10228",
+    "passSize": true
+  },
+  {
+    "fileName": "patient_card_mobile_dark.png",
+    "target": "PatientCardModal Mobile Dark",
+    "sizeKb": "168.6",
+    "md5": "92c99de25fa6191625ad6a6430ba0dcd",
+    "passSize": true
+  },
+  {
+    "fileName": "appointment_modal_mobile_light.png",
+    "target": "AppointmentModal Mobile Light",
+    "sizeKb": "125.2",
+    "md5": "a14921db708258df737d1655a4a67756",
+    "passSize": true
+  },
+  {
+    "fileName": "appointment_modal_mobile_dark.png",
+    "target": "AppointmentModal Mobile Dark",
+    "sizeKb": "124.6",
+    "md5": "38920e60bb8d28e34a229a1905e59cbd",
+    "passSize": true
+  },
+  {
+    "fileName": "tooth_formula_hud_mobile_light.png",
+    "target": "Tooth Formula & HUD Mobile Light",
+    "sizeKb": "162.9",
+    "md5": "84907d77151e87abef3ff30c5af89f94",
+    "passSize": true
+  },
+  {
+    "fileName": "tooth_formula_hud_mobile_dark.png",
+    "target": "Tooth Formula & HUD Mobile Dark",
+    "sizeKb": "148.1",
+    "md5": "da1b1a074b4678540e6adf83ebf18741",
+    "passSize": true
+  }
+]
