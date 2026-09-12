@@ -11,8 +11,10 @@ export interface MedicalCardExtract003vuFormProps {
 export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormProps> = React.memo(
 	function MedicalCardExtract003vuForm({ initialPayload, onChange, disabled }) {
 		const defaultDoctor = initialPayload?.attendingDoctorFullName?.trim() || "Врач-стоматолог";
-		const [admissionDiagnosis, setAdmissionDiagnosis] = useState(
-			(initialPayload as any)?.diagnosisOnAdmission ?? "K04.0 Начальный пульпит зуба 2.6",
+		const [initialConsultationDiagnosis, setInitialConsultationDiagnosis] = useState(
+			initialPayload?.initialConsultationDiagnosis ??
+			(initialPayload as any)?.diagnosisOnAdmission ??
+			"K04.0 Начальный пульпит зуба 2.6",
 		);
 		const [clinicalDiagnosis, setClinicalDiagnosis] = useState(
 			initialPayload?.primaryDiagnosisText ?? "K04.0 Хронический фиброзный пульпит зуба 2.6",
@@ -66,12 +68,12 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 					description="Официальная выписка с хроникой этапов лечения, диагностическими данными и рекомендациями"
 				>
 					<div className="form-group" style={{ marginBottom: "12px" }}>
-						<label style={{ fontWeight: 600 }}>Диагноз при первичном осмотре</label>
+						<label style={{ fontWeight: 600 }}>Диагноз первичного осмотра</label>
 						<input
 							type="text"
 							className="form-control"
-							value={admissionDiagnosis}
-							onChange={(e) => setAdmissionDiagnosis(e.target.value)}
+							value={initialConsultationDiagnosis}
+							onChange={(e) => setInitialConsultationDiagnosis(e.target.value)}
 						/>
 					</div>
 

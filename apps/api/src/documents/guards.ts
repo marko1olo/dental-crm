@@ -773,9 +773,10 @@ function structuredPayloadMissingReason(
 	}
 	if (
 		input.kind === "outpatient_medical_card_025u" &&
+		!input.payload?.dentalMedicalCard043u &&
 		!input.payload?.outpatientMedicalCard025u
 	) {
-		return "Для медицинской карты 025/у нужны структурированные данные: организация, пациент, номер карты, период, подписанные врачебные записи, диагнозы, стоматологические строки и подтверждения проверки формы 274н.";
+		return "Для медицинской карты 025/у нужны структурированные данные стоматологической карты (форма 043/у).";
 	}
 	if (
 		input.kind === "dental_medical_card_043u" &&

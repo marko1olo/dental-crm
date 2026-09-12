@@ -17,7 +17,6 @@ import {
 	type MedicalDocumentReleaseReceiptPayload,
 	type MedicalRecordCopyRequestPayload,
 	type MedicalRecordExtractPayload,
-	type OutpatientMedicalCard025uPayload,
 	type Patient,
 	type Payment,
 	type TaxDeductionApplicationPayload,
@@ -570,38 +569,6 @@ export function medicalRecordCopyRequestDatesAreValid(
 	);
 }
 
-function outpatientMedicalCard025uDatesAreValid(
-	payload: OutpatientMedicalCard025uPayload,
-): boolean {
-	const dates = [
-		payload.openedAt,
-		payload.periodStart,
-		payload.periodEnd,
-		payload.patientBirthDate,
-		payload.omsIssuedAt,
-		...payload.chronicDispensaryRegister.map((item) => item.date),
-		...payload.finalDiagnoses.map((item) => item.date),
-		...payload.specialistVisitRecords.map((item) => item.visitDate),
-		...payload.dynamicObservationRecords.map((item) => item.date),
-		...payload.stageEpicrisisRecords.map((item) => item.date),
-		...payload.departmentHeadConsultations.map((item) => item.date),
-		...payload.medicalCommissionRecords.map((item) => item.date),
-		...payload.dispensaryObservationEntries.map((item) => item.date),
-		...payload.hospitalizationRows.map((item) => item.date),
-		...payload.ambulatorySurgeryRows.map((item) => item.date),
-		...payload.xrayDoseRows.map((item) => item.date),
-		...payload.functionalResults.map((item) => item.date),
-		...payload.laboratoryResults.map((item) => item.date),
-	];
-	return (
-		dates.every(documentChainDateIsBlankOrValid) &&
-		documentChainDateRangeIsChronological(
-			payload.periodStart,
-			payload.periodEnd,
-		)
-	);
-}
-
 function dentalMedicalCard043uDatesAreValid(
 	payload: DentalMedicalCard043uPayload,
 ): boolean {
@@ -1065,27 +1032,6 @@ async function medicalRecordExtractSourcesAreValid(
 	);
 }
 
-async function outpatientMedicalCard025uSourcesAreValid(
-	payload: OutpatientMedicalCard025uPayload,
-	document: GeneratedDocument,
-): Promise<boolean> {
-	if (!payload.sourceVisitIds.length || !payload.specialistVisitRecords.length)
-		return false;
-	const sourceIds = new Set(payload.sourceVisitIds);
-	if (
-		payload.specialistVisitRecords.some(
-			(record) => !sourceIds.has(record.sourceVisitId),
-		)
-	)
-		return false;
-	return await signedMedicalSourceVisitsAreValid(
-		payload.sourceVisitIds,
-		document,
-		payload.periodStart,
-		payload.periodEnd,
-	);
-}
-
 function _documentRenderContext(): DocumentRenderContext {
 	return {};
 }
@@ -1195,18 +1141,12 @@ export async function documentIssueChainBlockReason(
 		return "Перед выдачей акта нужно выбрать конкретный уже выданный договор платных медицинских услуг по этому пациенту и визиту.";
 	}
 
-	const card025u = document.payload?.outpatientMedicalCard025u;
-	if (document.kind === "outpatient_medical_card_025u" && card025u) {
-		if (!outpatientMedicalCard025uDatesAreValid(card025u)) {
-			return "Карту 025/у нельзя выдать: даты открытия, периода, записей или результатов указаны в нераспознаваемом формате либо период указан в обратном порядке.";
-		}
-		if (!(await outpatientMedicalCard025uSourcesAreValid(card025u, document))) {
-			return "Карту 025/у нельзя выдать: исходные визиты не найдены, принадлежат другому пациенту, не подписаны врачом, не входят в период карты или запись врача ссылается на отсутствующий источник.";
-		}
-	}
-
 	const card043u = document.payload?.dentalMedicalCard043u;
-	if (document.kind === "dental_medical_card_043u" && card043u) {
+	if (
+		(document.kind === "dental_medical_card_043u" ||
+			document.kind === "outpatient_medical_card_025u") &&
+		card043u
+	) {
 		if (!dentalMedicalCard043uDatesAreValid(card043u)) {
 			return "Карту 043/у нельзя выдать: дата приема, рождения пациента, лицензии или блокировки указаны в нераспознаваемом формате.";
 		}

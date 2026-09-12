@@ -8,7 +8,7 @@ import {
 } from "@dental/shared";
 import { postVisitCarePresets } from "../postVisitCareData";
 
-export type DocumentPackageId = "primary" | "clinical" | "tax" | "hospital";
+export type DocumentPackageId = "primary" | "clinical" | "tax" | "referral" | "hospital";
 
 export interface DocumentPackageItem {
 	kind: DocumentKind;
@@ -203,13 +203,13 @@ export const DOCUMENT_PACKAGES: Record<
 		],
 	},
 
-	hospital: {
-		id: "hospital",
-		title: "Стоматологический пакет направления (043/у, КЛКТ/ОПТГ, 027/у)",
-		shortTitle: "Направление (043/у, 027/у)",
+	referral: {
+		id: "referral",
+		title: "Стоматологический пакет направления и справок (043/у, КЛКТ/ОПТГ, 027/у)",
+		shortTitle: "Направление и справки",
 		description:
 			"Пакет документов для направления и маршрутизации стоматологического пациента: направление на лучевую диагностику (КЛКТ / ОПТГ / ТРГ), выписка из медицинской карты (027/у), стоматологическая медкарта 043/у, справка о посещении и расписка о выдаче документов.",
-		icon: "hospital",
+		icon: "referral",
 		primaryKind: "xray_cbct_referral",
 		documentKinds: [
 			"xray_cbct_referral",
@@ -259,6 +259,17 @@ export const DOCUMENT_PACKAGES: Record<
 		],
 	},
 };
+
+Object.defineProperty(DOCUMENT_PACKAGES, "hospital", {
+	get() {
+		return {
+			...this.referral,
+			id: "hospital",
+		};
+	},
+	enumerable: false,
+	configurable: true,
+});
 
 export const DOCUMENT_PACKAGE_LIST = Object.values(DOCUMENT_PACKAGES);
 
@@ -390,6 +401,7 @@ export function buildDocumentPackageStatePatch(
 			};
 		}
 
+		case "referral":
 		case "hospital": {
 			return {
 				selectedDocumentKind: "xray_cbct_referral" as DocumentKind,
@@ -424,7 +436,14 @@ export function buildDocumentPackageStatePatch(
  * Проверяет, валиден ли идентификатор пакета документов.
  */
 export function isDocumentPackageId(value: unknown): value is DocumentPackageId {
-	return typeof value === "string" && (value === "primary" || value === "clinical" || value === "tax" || value === "hospital");
+	return (
+		typeof value === "string" &&
+		(value === "primary" ||
+			value === "clinical" ||
+			value === "tax" ||
+			value === "referral" ||
+			value === "hospital")
+	);
 }
 
 /**

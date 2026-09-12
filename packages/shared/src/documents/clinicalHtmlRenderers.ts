@@ -1567,7 +1567,7 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
     `;
 	}).join("");
 
-	const discharge = payload.conditionAtDischarge || "Лечение завершено в полном объеме. Жалоб нет. Анатомическая форма и жевательная функция зубов полностью восстановлены. Слизистая оболочка полости рта бледно-розовая, без признаков воспаления. Прикус стабильный.";
+	const discharge = payload.treatmentOutcomeStatus || payload.conditionAtDischarge || "Лечение завершено в полном объеме. Жалоб нет. Анатомическая форма и жевательная функция зубов полностью восстановлены. Слизистая оболочка полости рта бледно-розовая, без признаков воспаления. Прикус стабильный.";
 	const recommendations = payload.followUpRecommendations || "1. Соблюдение индивидуальной гигиены полости рта (щетка средней жесткости, зубная нить/ершики, ирригатор).\n2. Контрольный диспансерный осмотр через 6 месяцев.\n3. Проведение профессиональной гигиены полости рта не реже 2 раз в год.";
 	const warranty = payload.warrantyConditions || "Гарантийный срок на терапевтические пломбы и реставрации — 12 месяцев со дня постановки при условии регулярной гигиены и контрольных осмотров.";
 
@@ -1680,7 +1680,7 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
     </tbody>
   </table>
 
-  <div class="section-title">5. Состояние при завершении лечения / выписке</div>
+  <div class="section-title">5. Клинический исход лечения / состояние при завершении курса</div>
   <p style="margin:4px 0 6px 0; font-size:8.5pt;">${escapeHtml(discharge)}</p>
 
   <div class="section-title">6. Рекомендации и гарантийные обязательства</div>

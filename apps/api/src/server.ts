@@ -87,6 +87,7 @@ import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { registerPatientRoutes } from "./routes/patients.js";
 import { patientPortalRoutes } from "./routes/patientPortal.js";
 import { portalRoutes } from "./routes/portal.js";
+import { portalBudgetRoutes } from "./routes/portalBudgetRoutes.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
 import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
 import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
@@ -774,6 +775,7 @@ export async function createDenteApiApp(
 	await app.register(copilotRoutes);
 	await app.register(portalRoutes, { prefix: "/api/portal" });
 	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
+	await app.register(portalBudgetRoutes, { prefix: "/api/portal" });
 	await app.register(registerExpensesRoutes);
 	await registerCashboxRoutes(app);
 	await registerCrmLeakDetectorRoutes(app);

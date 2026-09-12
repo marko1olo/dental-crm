@@ -8,7 +8,7 @@ import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { outpatientMedicalCard025uPayloadSchema } from "@dental/shared";
+import { dentalMedicalCard043uPayloadSchema } from "@dental/shared";
 import { generateForm036uEntry } from "../../documents/sickLeave/sickLeaveElnEngine.js";
 
 describe("Wave 116: Hospital Bloat & Commission Purification (Mandates 8a–8q)", () => {
@@ -92,7 +92,7 @@ describe("Wave 116: Hospital Bloat & Commission Purification (Mandates 8a–8q)"
 		assert.ok(!JSON.stringify(entry).includes("Кузнецова О.Д."));
 	});
 
-	it("3. Мандат 8i и 8e: схема 025/у помечена как Legacy Hospital Bloat с опциональными комиссионными полями", () => {
+	it("3. Мандат 8i и 8s: схема 025/у полностью ликвидирована в пользу Формы 043/у Минздрава РФ", () => {
 		const sharedIndexPath = path.join(
 			repoRoot,
 			"packages/shared/src/index.ts",
@@ -100,76 +100,65 @@ describe("Wave 116: Hospital Bloat & Commission Purification (Mandates 8a–8q)"
 		const sharedIndexContent = fs.readFileSync(sharedIndexPath, "utf-8");
 
 		assert.ok(
-			sharedIndexContent.includes("LEGACY / HOSPITAL BLOAT: В частной стоматологии используется исключительно Форма 043/у"),
-			"Схема outpatientMedicalCard025uPayloadSchema обязана содержать предупреждение о Мандате 8i",
+			!sharedIndexContent.includes("export const outpatientMedicalCard025uPayloadSchema"),
+			"outpatientMedicalCard025uPayloadSchema должна быть полностью ликвидирована из packages/shared",
+		);
+		assert.ok(
+			sharedIndexContent.includes("ФОРМА 025/у ЛИКВИДИРОВАНА (МАНДАТЫ 8i, 8s)"),
+			"packages/shared должен фиксировать ликвидацию Формы 025/у",
 		);
 
-		// Валидация схемы: поля комиссий теперь необязательны и дефолтятся в []
-		const minimal025u = {
-			formNumber: "025/у" as const,
-			sourceOrderReference: "Приказ Минздрава России от 13.05.2025 N 274н" as const,
-			medicalOrganizationName: "ООО Стоматология",
-			medicalCardNumber: "СТ-1",
-			openedAt: "2026-01-01",
-			periodStart: "2026-01-01",
-			periodEnd: "2026-01-02",
-			sourceVisitIds: ["visit-1"],
-			patientFullName: "Иванов И.И.",
-			patientBirthDate: "1990-01-01",
-			patientSexCode: "1",
-			registrationUrbanRuralCode: "1",
-			stayUrbanRuralCode: "1",
-			omsIssuedAt: "2020-01-01",
-			chronicDispensaryRegister: [],
-			finalDiagnoses: [{
-				date: "2026-01-01",
-				diagnosis: "Кариес эмали",
-				icd10Code: "K02.1",
-				firstOrRepeat: "first" as const,
-				doctorFullName: "Врач В.В.",
-			}],
-			specialistVisitRecords: [{
-				sourceVisitId: "visit-1",
-				visitDate: "2026-01-01",
-				doctorFullName: "Врач В.В.",
-				firstOrRepeat: "first" as const,
-				complaints: "Жалобы на боль",
-				anamnesis: "Боли в течение 2 дней",
-				objectiveData: "Кариозная полость",
-				primaryDiagnosis: "Кариес эмали",
-				primaryDiagnosisIcd10: "K02.1",
-				orders: "Рентгенография",
-				treatmentProvided: "Препарирование и пломбирование",
-				informedConsentOrRefusal: "ИДС подписано",
-				clinicalToothRows: [{
+		// Проверяем каноническую амбулаторную стоматологическую схему Формы 043/у
+		const minimal043u = {
+			formNumber: "043/у" as const,
+			organization: {
+				fullName: "ООО Стоматология",
+				shortName: "ООО Стоматология",
+				address: null,
+				phone: null,
+				ogrn: null,
+				inn: null,
+				licenseNumber: null,
+				licenseIssueDate: null,
+				licenseAuthority: null,
+			},
+			patient: {
+				fullName: "Иванов И.И.",
+				medicalCardNumber: "СТ-1",
+				birthDate: null,
+				sex: null,
+				phone: null,
+				address: null,
+				documentSeriesNumber: null,
+				snils: null,
+			},
+			doctor: {
+				fullName: "Врач В.В.",
+				specialty: null,
+				position: null,
+			},
+			visitDate: "2026-01-01",
+			complaint: "Жалобы на боль в зубе",
+			anamnesis: "Соматически здоров",
+			objectiveStatus: "Кариозная полость",
+			diagnosisText: "Кариес эмали",
+			diagnosisIcd10: "K02.1",
+			clinicalToothRows: [
+				{
 					toothOrArea: "16",
 					surfaces: ["occlusal" as const],
 					status: "completed" as const,
 					diagnosisOrFinding: "Кариес эмали",
 					indication: "Лечение кариеса",
 					plannedAction: "Пломбирование",
-				}],
-			}],
-			dynamicObservationRecords: [],
-			stageEpicrisisRecords: [],
-			dispensaryObservationEntries: [],
-			hospitalizationRows: [],
-			ambulatorySurgeryRows: [],
-			xrayDoseRows: [],
-			functionalResults: [],
-			laboratoryResults: [],
-			preparedFromSignedMedicalRecords: true as const,
-			officialForm274nChecked: true as const,
-			thirdPartyDataChecked: true as const,
-			// departmentHeadConsultations и medicalCommissionRecords НЕ ПЕРЕДАНЫ
+				},
+			],
 		};
 
-		const parsed = outpatientMedicalCard025uPayloadSchema.safeParse(minimal025u);
+		const parsed = dentalMedicalCard043uPayloadSchema.safeParse(minimal043u);
 		assert.ok(
 			parsed.success,
-			`Схема 025/у должна парситься без принудительного заполнения госпитальных комиссий: ${parsed.error?.message}`,
+			`Каноническая стоматологическая схема 043/у должна валидироваться без стационарного блоата: ${parsed.error?.message}`,
 		);
-		assert.deepStrictEqual(parsed.data.departmentHeadConsultations, []);
-		assert.deepStrictEqual(parsed.data.medicalCommissionRecords, []);
 	});
 });

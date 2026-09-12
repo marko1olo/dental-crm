@@ -49,6 +49,8 @@ export const medicalCardExtract003vuPayloadSchema = z.object({
 	// Клинические диагнозы
 	primaryDiagnosisText: z.string().trim().min(1).max(1000),
 	primaryDiagnosisIcd10: z.string().trim().min(1).max(32),
+	initialConsultationDiagnosis: z.string().trim().max(1000).optional(),
+	diagnosisOnAdmission: z.string().trim().max(1000).optional(),
 	concomitantDiagnosisText: z.string().trim().max(1000).nullable().optional(),
 	concomitantDiagnosisIcd10: z.string().trim().max(32).nullable().optional(),
 	// Анамнез и данные обследования
@@ -58,7 +60,7 @@ export const medicalCardExtract003vuPayloadSchema = z.object({
 	treatmentStagesTimeline: z.array(medicalExtractTreatmentStageSchema).default([]),
 	// Состояние при завершении лечения
 	treatmentOutcomeStatus: z.string().trim().max(2000).default("Лечение завершено в полном объеме. Жалоб нет. Анатомическая форма и жевательная функция зубов восстановлены, прикус физиологический. Слизистая оболочка полости рта бледно-розовая, без воспалительных явлений.").optional(),
-	conditionAtDischarge: z.string().trim().min(1).max(2000).default("Лечение завершено в полном объеме. Жалоб нет. Анатомическая форма и жевательная функция зубов восстановлены, прикус физиологический. Слизистая оболочка полости рта бледно-розовая, без воспалительных явлений."),
+	conditionAtDischarge: z.string().trim().max(2000).optional(),
 	// Рекомендации и назначения
 	followUpRecommendations: z.string().trim().min(1).max(2000).default("1. Соблюдение индивидуальной гигиены полости рта (щетка средней жесткости, зубная нить/ершики, ирригатор).\n2. Контрольный осмотр врача-стоматолога через 6 месяцев.\n3. Проведение профессиональной гигиены полости рта 2 раза в год."),
 	warrantyConditions: z.string().trim().max(1000).default("Гарантийный срок на терапевтические реставрации — 12 месяцев при соблюдении условий регулярной гигиены и контрольных осмотров."),

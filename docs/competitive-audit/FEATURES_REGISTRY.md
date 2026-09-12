@@ -1,8 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
->
-> ⚠️ **СТАТУС (2026-09-12 / WAVE 142 / CLONES PURGE & HOSPITAL BLEED EXTERMINATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ (ВСЕГО 321 ФИЧА: 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ). СУБСИСТЕМЫ ВОЛН 134–142 (CBCT CPR ПАНОРАМНАЯ РЕФОРМАЦИЯ CATMULL-ROM, СПИСАНИЕ РАСХОДНИКОВ 804н И МЯГКИЙ ОВЕРДРАФТ, 3-WAY MATCHING ЗАКУПОК, ЛИКВИДАЦИЯ БОЛЬНИЧНОГО И РЕЦЕПТУРНОГО БЛОАТА ПО МАНДАТУ 8i, КОНСОЛИДАЦИЯ КЛОНОВ ФОТОПРОТОКОЛА, НАРЯДОВ ЗТЛ, САНПИН И ПОРТАЛА) ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ В CLINIC MVP.**
+> ⚠️ **СТАТУС (2026-09-12 / WAVE 143 / DENCT CBCT & DENTALPIN ADAPTATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ (ВСЕГО 321 ФИЧА: 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ). СУБСИСТЕМЫ ВОЛН 134–143 (CBCT CPR ПАНОРАМНАЯ РЕФОРМАЦИЯ CATMULL-ROM, СПИСАНИЕ РАСХОДНИКОВ 804н И МЯГКИЙ ОВЕРДРАФТ, 3-WAY MATCHING ЗАКУПОК, ЛИКВИДАЦИЯ БОЛЬНИЧНОГО И РЕЦЕПТУРНОГО БЛОАТА ПО МАНДАТУ 8i, КОНСОЛИДАЦИЯ КЛОНОВ ФОТОПРОТОКОЛА, НАРЯДОВ ЗТЛ, САНПИН И ПОРТАЛА, ДВИЖОК SEPA-ИНДЕКСОВ И КОПЕЕЧНЫХ СКИДОК) ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ В CLINIC MVP.**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |

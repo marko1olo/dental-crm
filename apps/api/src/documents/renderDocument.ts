@@ -16,8 +16,6 @@ import {
 	type MedicalRecordCopyRequestPayload,
 	type MedicalRecordExtractPayload,
 	type MinorLegalRepresentativeConsentPayload,
-	type OutpatientMedicalCard025uPayload,
-	type OutpatientMedicalCard025uSpecialistVisitRecord,
 	type PaidMedicalServicesContractPayload,
 	type Patient,
 	type Payment,
@@ -590,7 +588,6 @@ function documentPayloadBlockReason(
 	}
 	if (
 		document.kind === "outpatient_medical_card_025u" &&
-		!document.payload?.outpatientMedicalCard025u &&
 		!document.payload?.dentalMedicalCard043u
 	) {
 		return "Для выдачи медицинской карты 025/у нужны структурированные данные стоматологической карты (форма 043/у).";
@@ -4508,71 +4505,6 @@ function medicalRecordExtract(document: GeneratedDocument, patient: Patient) {
     ${signatureBlock(signatureParty("Пациент/получатель", payload.recipientFullName), signatureParty("Врач/уполномоченное лицо", payload.doctorFullName))}`;
 }
 
-function outpatientMedicalCard025u(
-	document: GeneratedDocument,
-	patient: Patient,
-): string {
-	let docToRender = document;
-	if (
-		!document.payload?.dentalMedicalCard043u &&
-		document.payload?.outpatientMedicalCard025u
-	) {
-		const p025 = document.payload.outpatientMedicalCard025u;
-		const firstRecord = p025.specialistVisitRecords?.[0];
-		docToRender = {
-			...document,
-			payload: {
-				...document.payload,
-				dentalMedicalCard043u: {
-					formNumber: "043/у",
-					organization: {
-						fullName: p025.medicalOrganizationName,
-						shortName: null,
-						address: p025.medicalOrganizationAddress ?? null,
-						phone: null,
-						ogrn: p025.medicalOrganizationOgrnOrOgrnip ?? null,
-						inn: null,
-						licenseNumber: p025.medicalOrganizationLicense ?? null,
-						licenseIssueDate: null,
-						licenseAuthority: null,
-					},
-					patient: {
-						fullName: p025.patientFullName || patient.fullName,
-						birthDate: p025.patientBirthDate ?? null,
-						sex: null,
-						phone: p025.patientPhone ?? null,
-						address: p025.registrationAddress ?? null,
-						documentSeriesNumber: p025.identityDocumentNumber ?? null,
-						snils: p025.snils ?? null,
-						medicalCardNumber: p025.medicalCardNumber ?? null,
-					},
-					visitDate: firstRecord?.visitDate || p025.openedAt,
-					complaint: firstRecord?.complaints,
-					anamnesis: firstRecord?.anamnesis,
-					objectiveStatus: firstRecord?.objectiveData,
-					diagnosisText: firstRecord?.primaryDiagnosis,
-					diagnosisIcd10: firstRecord?.primaryDiagnosisIcd10,
-					treatmentPlan: firstRecord?.orders,
-					treatmentDescription: firstRecord?.treatmentProvided,
-					doctor: {
-						fullName: firstRecord?.doctorFullName || "Врач-стоматолог",
-						specialty: firstRecord?.doctorSpecialty ?? null,
-						position: firstRecord?.doctorPosition ?? null,
-					},
-					clinicalToothRows: firstRecord?.clinicalToothRows,
-				},
-			},
-		};
-	}
-	const dentalCardHtml = dentalMedicalCard043u(docToRender, patient);
-	return `<div class="dental-sovereignty-notice alert alert-info" style="margin-bottom: 1rem; padding: 0.75rem; border-left: 4px solid #0ea5e9; background: #f0f9ff; font-size: 0.875rem;">
-  <strong>Уведомление амбулаторного стоматологического суверенитета (Мандат 8i):</strong>
-  В частной амбулаторной стоматологии регламентным документом учета является стоматологическая медицинская карта (Форма 043/у, приказ Минздрава СССР № 1030).
-  Стационарная многопрофильная форма 025/у с госпитализациями и коечным фондом перенаправлена в утвержденный стоматологический стандарт DENTE.
-</div>\n${dentalCardHtml}`;
-}
-
-
 function structuredMedicalRecordCopyRequest(
 	document: GeneratedDocument,
 	patient: Patient,
@@ -5211,7 +5143,7 @@ function dentalMedicalCard043u(
 		return renderForm043uHtml(document.payload.fullForm043u);
 	}
 	const payload = document.payload?.dentalMedicalCard043u;
-	const title = "Медицинская карта стоматологического больного (форма 043/у)";
+	const title = "Медицинская карта стоматологического больного (Форма 043/у)";
 	if (!payload) {
 		return `<section><h2>${escapeHtml(title)}</h2><p>Данные формы 043/у не заполнены.</p></section>`;
 	}
@@ -5338,7 +5270,7 @@ export function renderDocumentHtml(
 		medical_record_extract: document.payload?.medicalCardExtract003vu
 			? renderForm003vuHtml(document.payload.medicalCardExtract003vu)
 			: medicalRecordExtract(document, patient),
-		outpatient_medical_card_025u: outpatientMedicalCard025u(document, patient),
+		outpatient_medical_card_025u: dentalMedicalCard043u(document, patient),
 		dental_medical_card_043u: dentalMedicalCard043u(document, patient),
 		orthodontic_medical_card_043_1u: orthodonticMedicalCard043_1u(
 			document,
