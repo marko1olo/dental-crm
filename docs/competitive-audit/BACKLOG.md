@@ -4345,3 +4345,20 @@
   - Ведомость управленческого учета А4 без эмодзи (`formatClinicExpensesAndChairCostA4Report`).
 * **Верификация**: 6 тестов (100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
 
+### Wave 136: CBCT Автоматическая детекция зубной дуги и BVH-слайсинг сеток (DenCT Reverse-Engineering)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `packages/shared/src/radiology/cbctArchDetectSliceEngine.ts`
+  - `packages/shared/src/radiology/__tests__/wave136CbctArchDetectSlice.test.ts`
+  - `packages/shared/src/radiology/index.ts`
+  - `packages/shared/src/index.ts`
+* **Архитектурное решение**:
+  - Математический модуль автоматической детекции зубной дуги и BVH-слайсинга сеток, адаптированный из DenCT (`archDetect.ts`, `meshSlice.ts`, `cropBox.ts`);
+  - Zod-схемы и строгие типы: `archDetectOptionsSchema` (focalWorldZ, slabHalfMm, boneThreshold 400 HU, numControlPoints 9, angularSpanDeg 115), `cropBoxSchema` (min/max 0..1, `clipPlanes` generator), `triangleBVHSchema` и `bvhNodeSchema` (AABB-дерево полигональной сетки);
+  - Алгоритм автоматической детекции контрольных точек дуги `detectArchControlPoints`: MIP аксиального слэба вокруг фокального Z, расчет взвешенного центроида кортикальной кости, радиальный ray marching по передней дуге для поиска пика плотности кортикальной кости/зубов, сглаживание скользящим средним `smoothPolyline` и равномерный ресэмплинг по длине дуги `resampleByArcLength` до N контрольных точек Catmull-Rom;
+  - Аналитический расчет секущих плоскостей VOI `clipPlanes` по конвенции VTK ((point - origin) · normal >= 0);
+  - Построение AABB-дерева полигональной сетки `buildTriangleBVH` с рекурсивным разбиением по медиане центроидов;
+  - Быстрый срез сетки произвольной плоскостью `slicePlaneBVH` с pruning поддеревьев, находящихся строго по одну сторону плоскости;
+  - Официальный протокол детекции зубной дуги и слайсинга Формы 043/у Минздрава РФ строго без эмодзи (`formatArchDetectAndSlicingA4Report`).
+* **Верификация**: 16 тестов (100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
+
