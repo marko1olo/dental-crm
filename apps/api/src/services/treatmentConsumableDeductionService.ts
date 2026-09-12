@@ -15,6 +15,7 @@ import {
 } from "@dental/shared";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
@@ -176,7 +177,7 @@ export class TreatmentConsumableDeductionService {
 		const warnings: TreatmentConsumableDeductionWarning[] = [];
 
 		// 4. Atomic transaction with SELECT ... FOR UPDATE in sorted order (deadlock-free)
-		await db.transaction(async (tx) => {
+		await withTenantCtx(organizationId, async (tx) => {
 			const lockedItems = await tx
 				.select()
 				.from(inventoryItems)

@@ -242,3 +242,229 @@ describe("visits routes integration", () => {
 		assert.strictEqual(JSON.parse(response.body).error, "AuthRequired");
 	});
 });
+
+describe("visits routes - accept visit draft errors", () => {
+	let app: ReturnType<typeof Fastify>;
+	let clinicHeaders: Record<string, string>;
+
+	beforeEach(async () => {
+		process.env.NODE_ENV = "test";
+		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
+
+		clinicHeaders = {
+			"x-dente-clinic-token": signToken(
+				{ organizationId: "123e4567-e89b-12d3-a456-4266141740ff" },
+				TOKEN_SECRET(),
+			),
+		};
+
+		app = Fastify();
+		await app.register(registerVisitRoutes);
+	});
+
+	afterEach(async () => {
+		await app.close();
+		mock.restoreAll();
+	});
+
+	test("accept visit draft visit not found error path", async () => {
+		const fakeUuid = "7f3a91c4-5b2e-4d18-9a06-2c7e845fb013";
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/visits/${fakeUuid}/draft/accept`,
+			headers: clinicHeaders,
+			payload: {
+				visitId: fakeUuid,
+				draft: {
+					complaint: null,
+					anamnesis: null,
+					objectiveStatus: null,
+					diagnosis: null,
+					treatmentPlan: null,
+					warnings: [],
+				},
+			},
+		});
+
+		assert.strictEqual(response.statusCode, 404);
+		assert.deepStrictEqual(response.json(), {
+			error: "VisitNotFound",
+			reason: "visit_not_found",
+			message:
+				"Прием не найден. Обновите рабочий экран и выберите актуальный прием.",
+		});
+	});
+
+	test("apply plan items validation error on empty payload", async () => {
+		const fakeUuid = "7f3a91c4-5b2e-4d18-9a06-2c7e845fb013";
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/visits/${fakeUuid}/apply-plan-items`,
+			headers: clinicHeaders,
+			payload: {},
+		});
+
+		assert.strictEqual(response.statusCode, 400);
+		assert.strictEqual(response.json().error, "ValidationError");
+	});
+
+	test("apply plan items validation error on invalid itemIds", async () => {
+		const fakeUuid = "7f3a91c4-5b2e-4d18-9a06-2c7e845fb013";
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/visits/${fakeUuid}/apply-plan-items`,
+			headers: clinicHeaders,
+			payload: {
+				planId: "7f3a91c4-5b2e-4d18-9a06-2c7e845fb014",
+				itemIds: ["invalid-id"],
+			},
+		});
+
+		assert.strictEqual(response.statusCode, 400);
+		assert.strictEqual(response.json().error, "ValidationError");
+	});
+});
+
+describe("visits routes - охрана каждого маршрута", () => {
+	const zero = "00000000-0000-0000-0000-000000000000";
+	const org = "123e4567-e89b-12d3-a456-4266141740ff";
+	const adminSecret = "test-clinical-admin-secret";
+
+	/** Все маршруты файла. Изменяющие помечены, чтобы список читался как контракт. */
+	const routes = [
+		{
+			method: "POST",
+			url: `/api/appointments/${zero}/visit`,
+			mutating: true,
+			error: "ClinicalAdminSecretRequired",
+		},
+		{
+			method: "GET",
+			url: `/api/visits/${zero}/draft/autosave`,
+			mutating: false,
+			error: "ClinicalReadSecretRequired",
+		},
+		{
+			method: "PUT",
+			url: `/api/visits/${zero}/draft/autosave`,
+			mutating: true,
+			error: "ClinicalAdminSecretRequired",
+		},
+		{
+			method: "POST",
+			url: `/api/visits/${zero}/draft/accept`,
+			mutating: true,
+			error: "ClinicalAdminSecretRequired",
+		},
+		{
+			method: "POST",
+			url: `/api/visits/${zero}/apply-plan-items`,
+			mutating: true,
+			error: "ClinicalAdminSecretRequired",
+		},
+	] as const;
+
+	let app: ReturnType<typeof Fastify>;
+
+	beforeEach(async () => {
+		process.env.NODE_ENV = "test";
+		delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
+		delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+		process.env.DENTE_CLINICAL_ADMIN_SECRET = adminSecret;
+		app = Fastify();
+		await app.register(registerVisitRoutes);
+	});
+
+	afterEach(async () => {
+		await app.close();
+		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+		mock.restoreAll();
+	});
+
+	for (const route of routes) {
+		const label = `${route.method} ${route.url.replace(zero, ":id")}`;
+
+		test(`${label} — без учетных данных вовсе не выполняется`, async () => {
+			const response = await app.inject({
+				method: route.method,
+				url: route.url,
+			});
+			assert.strictEqual(
+				response.statusCode,
+				403,
+				`${label} ответил ${response.statusCode} на запрос без учетных данных`,
+			);
+			assert.strictEqual(response.json().error, route.error);
+		});
+
+		test(`${label} — токен кабинета без секрета администратора не пропускается`, async () => {
+			const response = await app.inject({
+				method: route.method,
+				url: route.url,
+				headers: {
+					"x-dente-clinic-token": signToken(
+						{ organizationId: org },
+						TOKEN_SECRET(),
+					),
+				},
+			});
+			assert.strictEqual(
+				response.statusCode,
+				403,
+				`${label} ответил ${response.statusCode} на запрос без секрета администратора`,
+			);
+			assert.strictEqual(response.json().error, route.error);
+		});
+	}
+
+	test("секрет администратора без токена кабинета не определяет клинику", async () => {
+		for (const route of routes) {
+			const response = await app.inject({
+				method: route.method,
+				url: route.url,
+				headers: { "x-dente-admin-secret": adminSecret },
+			});
+			assert.strictEqual(
+				response.statusCode,
+				401,
+				`${route.method} ${route.url} ответил ${response.statusCode} на запрос без токена кабинета`,
+			);
+			assert.strictEqual(response.json().error, "AuthRequired");
+		}
+	});
+
+	test("оба фактора вместе открывают маршрут — охрана не кирпичная стена", async () => {
+		const headers = {
+			"x-dente-clinic-token": signToken(
+				{ organizationId: org },
+				TOKEN_SECRET(),
+			),
+			"x-dente-admin-secret": adminSecret,
+		};
+		const response = await app.inject({
+			method: "GET",
+			url: `/api/visits/${zero}/draft/autosave`,
+			headers,
+		});
+		assert.strictEqual(response.statusCode, 200);
+		assert.deepStrictEqual(response.json(), { serverDraft: null });
+
+		const rejected = await app.inject({
+			method: "POST",
+			url: `/api/visits/${zero}/draft/accept`,
+			headers: { ...headers, "Content-Type": "application/json" },
+			payload: {},
+		});
+		assert.notStrictEqual(
+			rejected.statusCode,
+			401,
+			"гейт пройден, а ответ 401",
+		);
+		assert.notStrictEqual(
+			rejected.statusCode,
+			403,
+			"гейт пройден, а ответ 403",
+		);
+	});
+});

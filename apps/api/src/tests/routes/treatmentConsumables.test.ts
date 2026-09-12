@@ -13,7 +13,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
@@ -21,6 +21,7 @@ import {
 	inventoryTransactions,
 	organizations,
 	treatmentConsumables,
+	treatmentConsumableDeductions,
 	users,
 } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
@@ -66,7 +67,42 @@ describe("Treatment Consumables & Predictive Reorder Engine API", () => {
 		}
 
 		if (databaseReady) {
+			await db.execute(sql`
+				CREATE TABLE IF NOT EXISTS treatment_consumables (
+					id uuid PRIMARY KEY DEFAULT uuidv7(),
+					organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE cascade,
+					catalog_item_code text NOT NULL,
+					inventory_item_id uuid NOT NULL REFERENCES inventory_items(id) ON DELETE cascade,
+					quantity numeric(12, 4) NOT NULL DEFAULT '1.0000',
+					note text,
+					created_at timestamptz NOT NULL DEFAULT now(),
+					updated_at timestamptz NOT NULL DEFAULT now(),
+					CONSTRAINT treatment_consumables_org_code_item_unique UNIQUE (organization_id, catalog_item_code, inventory_item_id)
+				);
+				CREATE TABLE IF NOT EXISTS treatment_consumable_deductions (
+					id uuid PRIMARY KEY DEFAULT uuidv7(),
+					organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE cascade,
+					treatment_reference_id text NOT NULL,
+					visit_id uuid,
+					doctor_id uuid REFERENCES users(id) ON DELETE set null,
+					status text NOT NULL DEFAULT 'completed',
+					is_overdraft boolean NOT NULL DEFAULT false,
+					deductions jsonb NOT NULL DEFAULT '[]'::jsonb,
+					warnings jsonb NOT NULL DEFAULT '[]'::jsonb,
+					notes text,
+					created_at timestamptz NOT NULL DEFAULT now(),
+					CONSTRAINT treatment_consumable_deductions_org_ref_unique UNIQUE (organization_id, treatment_reference_id)
+				);
+			`);
+
 			await withFixtureTenant(ORG_ID, async () => {
+				await db
+					.delete(treatmentConsumableDeductions)
+					.where(eq(treatmentConsumableDeductions.organizationId, ORG_ID));
+				await db
+					.delete(treatmentConsumables)
+					.where(eq(treatmentConsumables.organizationId, ORG_ID));
+
 				await db.insert(organizations).values({
 					id: ORG_ID,
 					name: "Клиника расходных материалов и предиктивных закупок",
@@ -162,6 +198,16 @@ describe("Treatment Consumables & Predictive Reorder Engine API", () => {
 	after(async () => {
 		await app?.close();
 		if (!databaseReady) return;
+		try {
+			await withFixtureTenant(ORG_ID, async () => {
+				await db
+					.delete(treatmentConsumableDeductions)
+					.where(eq(treatmentConsumableDeductions.organizationId, ORG_ID));
+				await db
+					.delete(treatmentConsumables)
+					.where(eq(treatmentConsumables.organizationId, ORG_ID));
+			});
+		} catch {}
 		await purgeFixtureOrganizations([ORG_ID]);
 	});
 
@@ -381,17 +427,17 @@ describe("Treatment Consumables & Predictive Reorder Engine API", () => {
 		assert.ok(Array.isArray(data.suggestions));
 		assert.ok(data.summary.totalItemsEvaluated >= 3);
 
-		// Gloves: 30 consumed over 90 days -> daily_usage = 0.33, lead_time = 5 -> ROP = ceil(0.33*5) = 2
-		// Available stock was 0 -> suggested = 2 + ceil(0.33*30) - 0 = 12
+		// Gloves: 30 consumed over 90 days + 2 deducted in test 2 = 32 over 90 days -> daily_usage = 0.36, lead_time = 5 -> ROP = ceil(0.36*5) = 2
+		// Available stock was 0 -> suggested = 2 + ceil(0.36*30) - 0 = 13
 		const glovesSuggestion = data.suggestions.find(
 			(s: any) => s.inventoryItemId === ITEM_GLOVES_ID,
 		);
 		assert.ok(glovesSuggestion);
 		assert.strictEqual(glovesSuggestion.needsReorder, true);
-		assert.strictEqual(glovesSuggestion.dailyUsage, 0.33);
+		assert.strictEqual(glovesSuggestion.dailyUsage, 0.36);
 		assert.strictEqual(glovesSuggestion.reorderPoint, 2);
-		assert.strictEqual(glovesSuggestion.coverQuantity, 10);
-		assert.strictEqual(glovesSuggestion.suggestedQuantity, 12);
+		assert.strictEqual(glovesSuggestion.coverQuantity, 11);
+		assert.strictEqual(glovesSuggestion.suggestedQuantity, 13);
 
 		// Composite (minQty = 2, stock = 0) must also need reorder
 		const compositeSuggestion = data.suggestions.find(
@@ -421,5 +467,73 @@ describe("Treatment Consumables & Predictive Reorder Engine API", () => {
 		for (const s of filteredData.suggestions) {
 			assert.strictEqual(s.needsReorder, true);
 		}
+	});
+
+	test("5. Legacy & alternative endpoints validation: /:organizationId/links, /deduct, /check-availability", async () => {
+		if (!databaseReady) return;
+
+		// 5.1 Rejects invalid request body with 400 on link creation
+		const res1 = await app.inject({
+			method: "POST",
+			url: `/api/treatment-consumables/${ORG_ID}/links`,
+			headers: {
+				"x-dente-staff-token": staffToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				serviceId: "",
+				inventoryItemId: "",
+				quantity: -1,
+			},
+		});
+		assert.strictEqual(res1.statusCode, 400);
+		const body1 = JSON.parse(res1.payload);
+		assert.strictEqual(body1.error, "ValidationError");
+
+		// 5.2 Rejects mismatched organization header with 403
+		const otherOrgToken = signToken(
+			{ organizationId: "other-org-id", userId: "usr-admin-2", role: "admin" },
+			authTokenSecret(),
+		);
+		const res2 = await app.inject({
+			method: "GET",
+			url: `/api/treatment-consumables/${ORG_ID}/links`,
+			headers: {
+				"x-dente-staff-token": otherOrgToken,
+			},
+		});
+		assert.strictEqual(res2.statusCode, 403);
+
+		// 5.3 Rejects invalid deduct payload with 400
+		const res3 = await app.inject({
+			method: "POST",
+			url: `/api/treatment-consumables/${ORG_ID}/deduct/visit`,
+			headers: {
+				"x-dente-staff-token": staffToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				visitId: "",
+			},
+		});
+		assert.strictEqual(res3.statusCode, 400);
+		const body3 = JSON.parse(res3.payload);
+		assert.strictEqual(body3.error, "ValidationError");
+
+		// 5.4 Rejects invalid check-availability payload with 400
+		const res4 = await app.inject({
+			method: "POST",
+			url: `/api/treatment-consumables/${ORG_ID}/check-availability`,
+			headers: {
+				"x-dente-staff-token": staffToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				items: [],
+			},
+		});
+		assert.strictEqual(res4.statusCode, 400);
+		const body4 = JSON.parse(res4.payload);
+		assert.strictEqual(body4.error, "ValidationError");
 	});
 });
