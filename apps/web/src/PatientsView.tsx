@@ -635,7 +635,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						title="Показать пациентов без будущих приемов, открытых задач и записей в листе ожидания"
 						style={{
 							backgroundColor: showLostPatientsOnly ? "var(--teal)" : undefined,
-							color: showLostPatientsOnly ? "var(--on-teal, #fff)" : undefined,
+							color: showLostPatientsOnly ? "var(--on-teal, var(--paper))" : undefined,
 							borderColor: showLostPatientsOnly ? "var(--teal)" : undefined,
 							height: "34px",
 							minHeight: "34px",
@@ -724,7 +724,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													style={{
 														backgroundColor:
 															"var(--bad-bg, rgba(239, 68, 68, 0.15))",
-														color: "var(--bad-fg, #ef4444)",
+														color: "var(--bad-fg, var(--danger))",
 														borderColor:
 															"var(--bad-border, rgba(239, 68, 68, 0.3))",
 													}}
@@ -755,7 +755,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												style={{
 													backgroundColor:
 														"var(--bad-bg, rgba(239, 68, 68, 0.15))",
-													color: "var(--bad-fg, #ef4444)",
+													color: "var(--bad-fg, var(--danger))",
 													borderColor:
 														"var(--bad-border, rgba(239, 68, 68, 0.3))",
 												}}
@@ -930,7 +930,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик (Мандат 8e)"
 										data-testid="patient-quick-043-btn"
 									>
-										<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+										<FileText size={13} className="text-[var(--teal)] shrink-0" />
 										<span>Карта 043/у</span>
 									</button>
 
@@ -971,7 +971,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												useAppStore.getState().setCurrentView("schedule");
 												showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
 											}}
-											className="h-8 px-2.5 rounded-lg bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+											className="h-8 px-2.5 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 											title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Нажмите для перехода в расписание`}
 											data-testid="patient-quick-next-appointment-btn"
 										>
@@ -1300,8 +1300,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										zIndex: 100,
 										minWidth: "220px",
 										boxShadow: "var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
-										background: "var(--paper, #ffffff)",
-										border: "1px solid var(--border, var(--line, #cbd5e1))",
+										background: "var(--paper)",
+										border: "1px solid var(--line)",
 										borderRadius: "10px",
 										padding: "4px",
 										display: "flex",
@@ -1328,7 +1328,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											fontWeight: 600,
 											border: "none",
 											background: "transparent",
-											color: "var(--ink, #0f172a)",
+											color: "var(--ink)",
 											borderRadius: "6px",
 											cursor: "pointer",
 											textAlign: "left",
@@ -1362,7 +1362,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											fontWeight: 600,
 											border: "none",
 											background: "transparent",
-											color: "var(--ink, #0f172a)",
+											color: "var(--ink)",
 											borderRadius: "6px",
 											cursor: "pointer",
 											textAlign: "left",
@@ -1396,7 +1396,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											fontWeight: 600,
 											border: "none",
 											background: "transparent",
-											color: "var(--ink, #0f172a)",
+											color: "var(--ink)",
 											borderRadius: "6px",
 											cursor: "pointer",
 											textAlign: "left",
@@ -1426,7 +1426,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											fontWeight: 600,
 											border: "none",
 											background: "transparent",
-											color: "var(--ink, #0f172a)",
+											color: "var(--ink)",
 											borderRadius: "6px",
 											cursor: "pointer",
 											textAlign: "left",
@@ -1466,7 +1466,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											fontWeight: 600,
 											border: "none",
 											background: "transparent",
-											color: "var(--ink, #0f172a)",
+											color: "var(--ink)",
 											borderRadius: "6px",
 											cursor: "pointer",
 											textAlign: "left",

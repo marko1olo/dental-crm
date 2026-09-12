@@ -307,11 +307,11 @@ export function ScheduleFilterStrip({
 				data-testid="schedule-toolbar"
 				role="toolbar"
 			>
-			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px touch targets */}
+			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px touch targets on mobile, 32-36px on desktop (HIG) */}
 			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(-1)}
 					aria-label="Показать предыдущий день"
 					title="День назад"
@@ -325,11 +325,11 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[44px] px-1 sm:px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] sm:w-[115px] text-center tracking-tight"
+					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7.5 px-1 sm:px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] sm:w-[115px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(1)}
 					aria-label="Показать следующий день"
 					title="День вперёд"
@@ -359,7 +359,7 @@ export function ScheduleFilterStrip({
 						title={`Моё дежурное кресло: ${myChair.name}. Нажмите для быстрой фильтрации (1 клик)`}
 						aria-label={`Моё дежурное кресло: ${myChair.name}`}
 						data-testid="schedule-my-chair-btn"
-						style={{ minHeight: "44px", flexShrink: 0, minWidth: "max-content" }}
+						style={{ flexShrink: 0, minWidth: "max-content" }}
 					>
 						<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
 						<span className="whitespace-nowrap shrink-0">
@@ -443,11 +443,10 @@ export function ScheduleFilterStrip({
 				<button
 					type="button"
 					onClick={handleOpenAddChair}
-					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
+					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
 					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
 					aria-label="Добавить кресло в расписание"
 					data-testid="schedule-add-chair-btn"
-					style={{ minHeight: "44px", minWidth: "44px" }}
 				>
 					<span className="whitespace-nowrap font-bold">+ Кресло</span>
 				</button>
@@ -464,7 +463,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("timeline")}
-							className={`min-h-[44px] min-w-[34px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[34px] sm:min-w-0 px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "timeline"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -480,7 +479,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("grid")}
-							className={`min-h-[44px] min-w-[34px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[34px] sm:min-w-0 px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "grid"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -496,7 +495,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("chairs")}
-							className={`min-h-[44px] min-w-[34px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[34px] sm:min-w-0 px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "chairs"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -517,7 +516,7 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-7.5 px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-0 px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
 						title="Дополнительные режимы и списки расписания"
 						aria-label="Опции расписания"
 						aria-expanded={isOptionsMenuOpen}

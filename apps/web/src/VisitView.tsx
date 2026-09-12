@@ -1569,6 +1569,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											? false
 											: safeVisitPrimaryAction.disabled
 									}
+									title={
+										safeVisitPrimaryAction.disabled &&
+										safeVisitPrimaryAction.kind !== "save" &&
+										safeVisitPrimaryAction.kind !== "close" &&
+										safeVisitPrimaryAction.kind !== "review"
+											? safeVisitPrimaryAction.detail || "Действие временно недоступно"
+											: safeVisitPrimaryAction.label
+									}
 									aria-describedby="visit-primary-action-detail"
 									data-testid="visit-primary-action"
 								>
@@ -1978,6 +1986,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								buildDraft();
 							}}
 							disabled={isDraftLoading}
+							title={isDraftLoading ? "Идет сборка нейро-черновика..." : "Собрать нейро-черновик"}
 							aria-describedby={
 								!visitDraftReadyToBuild ? "visit-draft-missing" : undefined
 							}
@@ -2055,9 +2064,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											: undefined
 									}
 									title={
-										speechGatewayStatus?.polishPolicy?.neuralEnabled
-											? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy?.modelName ?? "модель"}`
-											: "Локальная очистка терминов, секций и номеров зубов"
+										isTranscriptPolishing
+											? "Идет аккуратная очистка текста..."
+											: speechGatewayStatus?.polishPolicy?.neuralEnabled
+												? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy?.modelName ?? "модель"}`
+												: "Локальная очистка терминов, секций и номеров зубов"
 									}
 								>
 									<Sparkles aria-hidden="true" />{" "}

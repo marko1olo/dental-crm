@@ -293,7 +293,7 @@ export function VisitEmkTab() {
 		organizationId: dashboard?.activeVisit?.organizationId,
 		visitNoteForm,
 		isLocked,
-		debounceMs: 400,
+		debounceMs: 300,
 		silent: true,
 	});
 

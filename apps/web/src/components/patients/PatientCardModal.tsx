@@ -160,23 +160,23 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 				}}
 			>
 				<div
-					className="patient-card-modal bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+					className="patient-card-modal bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
 					onClick={(e) => e.stopPropagation()}
 				>
 					{/* Modal Header */}
-					<div className="flex items-center justify-between p-4 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 flex-wrap gap-2">
+					<div className="flex items-center justify-between p-4 border-b border-[var(--line)] flex-wrap gap-2">
 						<div className="flex items-center gap-3">
-							<div className="w-10 h-10 rounded-xl bg-[var(--brand-primary,#0d9488)] text-white flex items-center justify-center shrink-0">
+							<div className="w-10 h-10 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shrink-0">
 								<User className="w-5 h-5" />
 							</div>
 							<div>
 								<h2
 									id="patient-card-modal-title"
-									className="text-base font-black text-[var(--ink,#1e293b)] dark:text-white m-0"
+									className="text-base font-black text-[var(--ink)] m-0"
 								>
 									{patientData.fullName || "Медицинская карта пациента"}
 								</h2>
-								<p className="text-xs text-[var(--muted,#64748b)] m-0">
+								<p className="text-xs text-[var(--muted)] m-0">
 									{patientData.phone ? `Тел: ${patientData.phone}` : "Общие сведения и соматический статус"}
 									{patientData.id ? ` • ID: ${patientData.id.slice(0, 8)}` : ""}
 								</p>
@@ -188,7 +188,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
-								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 text-[var(--ink,#1e293b)] dark:text-slate-100 inline-flex items-center gap-1.5 cursor-pointer"
+								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer"
 								title="Печать карты пациента"
 							>
 								<Printer className="w-4 h-4" />
@@ -199,7 +199,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-close-patient-card-modal"
 								onClick={onClose}
-								className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)] dark:hover:text-white cursor-pointer"
+								className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 								aria-label="Закрыть окно"
 							>
 								<X className="w-5 h-5" />
@@ -208,15 +208,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					</div>
 
 					{/* Navigation Tabs */}
-					<div className="flex items-center justify-between px-4 py-2 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-950/40 flex-wrap gap-2">
+					<div className="flex items-center justify-between px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2">
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
 								data-testid="tab-patient-general"
 								className={`min-h-[40px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
 									activeTab === "general"
-										? "bg-[var(--brand-primary,#0d9488)] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)] dark:hover:text-white"
+										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								onClick={() => setActiveTab("general")}
 							>
@@ -229,8 +229,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="tab-patient-anamnesis"
 								className={`min-h-[40px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
 									activeTab === "anamnesis"
-										? "bg-[var(--brand-primary,#0d9488)] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)] dark:hover:text-white"
+										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								onClick={() => setActiveTab("anamnesis")}
 							>
@@ -286,15 +286,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					</div>
 
 					{/* Modal Footer */}
-					<div className="flex items-center justify-between p-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-950/40 flex-wrap gap-2">
-						<span className="text-xs text-[var(--muted,#64748b)]">
+					<div className="flex items-center justify-between p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2">
+						<span className="text-xs text-[var(--muted)]">
 							Автосохранение данных пациента активно • Форма 043/у
 						</span>
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
 								onClick={onClose}
-								className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#1e293b)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 cursor-pointer"
+								className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 							>
 								Закрыть
 							</button>
@@ -302,7 +302,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
-								className="min-h-[44px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--brand-primary,#0d9488)] hover:bg-teal-700 text-white shadow-sm cursor-pointer"
+								className="min-h-[44px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-teal-700 text-white shadow-sm cursor-pointer"
 							>
 								Сохранить
 							</button>

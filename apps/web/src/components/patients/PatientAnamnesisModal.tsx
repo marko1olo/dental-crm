@@ -271,10 +271,10 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 								<Stethoscope className="w-5 h-5" />
 							</div>
 							<div>
-								<h2 id="anamnesis-modal-title" className="text-base font-black text-[var(--ink,#1e293b)] dark:text-white m-0">
+								<h2 id="anamnesis-modal-title" className="text-base font-black text-[var(--ink)] m-0">
 									Анкета здоровья и клинические стоп-факторы
 								</h2>
-								<p className="text-xs text-[var(--muted,#64748b)] m-0">
+								<p className="text-xs text-[var(--muted)] m-0">
 									{patientName ? `Пациент: ${patientName}` : "Клинический опросник и факторы риска"}
 									{patientId ? ` (ID: ${patientId.slice(0, 8)})` : ""}
 								</p>
@@ -304,8 +304,8 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 					</div>
 
 					{/* Quick Presets Bar */}
-					<div className="px-5 py-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-700 flex items-center gap-2 overflow-x-auto">
-						<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider shrink-0 flex items-center gap-1">
+					<div className="px-5 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-2 overflow-x-auto">
+						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider shrink-0 flex items-center gap-1">
 							<Sparkles className="w-3 h-3 text-amber-500" />
 							Пресеты:
 						</span>
@@ -542,10 +542,10 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 
 							{/* Extra details for anticoagulants / bisphosphonates if active */}
 							{(profile.takesAnticoagulants || profile.takesBisphosphonates) && (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 rounded-xl border border-[var(--line,#e2e8f0)]">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 									{profile.takesAnticoagulants && (
 										<div className="flex flex-col gap-1.5">
-											<label className="text-xs font-bold text-[var(--ink,#1e293b)] dark:text-slate-200">
+											<label className="text-xs font-bold text-[var(--ink)]">
 												Препарат антикоагулянта и последнее МНО (INR):
 											</label>
 											<input
@@ -553,13 +553,13 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 												value={profile.anticoagulantName || ""}
 												onChange={(e) => updateField("anticoagulantName", e.target.value)}
 												placeholder="Например: Варфарин 5 мг (МНО 2.1) или Ксарелто 20 мг"
-												className="px-3 py-2 rounded-lg border border-[var(--line,#cbd5e1)] text-xs bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#1e293b)] dark:text-white"
+												className="px-3 py-2 rounded-lg border border-[var(--line)] text-xs bg-[var(--paper)] text-[var(--ink)]"
 											/>
 										</div>
 									)}
 									{profile.takesBisphosphonates && (
 										<div className="flex flex-col gap-1.5">
-											<label className="text-xs font-bold text-[var(--ink,#1e293b)] dark:text-slate-200">
+											<label className="text-xs font-bold text-[var(--ink)]">
 												Препарат бисфосфонатной терапии:
 											</label>
 											<input
@@ -567,7 +567,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 												value={profile.bisphosphonateName || ""}
 												onChange={(e) => updateField("bisphosphonateName", e.target.value)}
 												placeholder="Например: Акласта 5 мг/год или Пролиа 60 мг"
-												className="px-3 py-2 rounded-lg border border-[var(--line,#cbd5e1)] text-xs bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#1e293b)] dark:text-white"
+												className="px-3 py-2 rounded-lg border border-[var(--line)] text-xs bg-[var(--paper)] text-[var(--ink)]"
 											/>
 										</div>
 									)}
@@ -598,7 +598,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 											className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center text-center ${
 												isSelected
 													? "bg-pink-600 text-white border-pink-600 shadow-sm"
-													: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#1e293b)] dark:text-slate-200 border-[var(--line,#e2e8f0)] dark:border-slate-700 hover:border-pink-500"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-pink-500"
 											}`}
 										>
 											{t.label}
@@ -725,7 +725,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						{/* 4. ДОПОЛНИТЕЛЬНЫЕ ЗАМЕТКИ И ГОЛОСОВОЙ ВВОД */}
 						<div className="anamnesis-group">
 							<div className="flex items-center justify-between">
-								<h3 className="anamnesis-group__title text-[var(--ink,#1e293b)] dark:text-slate-200">
+								<h3 className="anamnesis-group__title text-[var(--ink)]">
 									<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 									4. Дополнительные примечания врача и постоянные препараты
 								</h3>
@@ -746,14 +746,14 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 								value={profile.customChronicNotes || ""}
 								onChange={(e) => updateField("customChronicNotes", e.target.value)}
 								placeholder="Индивидуальные особенности, перенесенные операции, принимаемые медикаменты или аллергические реакции в анамнезе..."
-								className="w-full p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900 text-xs text-[var(--ink,#1e293b)] dark:text-slate-100 outline-none focus:border-[var(--teal,var(--brand-primary))] resize-y"
+								className="w-full p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] outline-none focus:border-[var(--teal,var(--brand-primary))] resize-y"
 							/>
 						</div>
 
 						{/* 5. ФОРМА 043/У SOAP СНИППЕТ ДЛЯ ДНЕВНИКА */}
-						<div className="p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-700 flex flex-col gap-2">
+						<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
 							<div className="flex items-center justify-between">
-								<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+								<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
 									Предпросмотр записи для дневника (форма 043/у):
 								</span>
 								<button
@@ -765,7 +765,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 									Скопировать
 								</button>
 							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[11.5px] font-mono text-[var(--ink,#1e293b)] dark:text-slate-300 border border-[var(--line,#e2e8f0)] dark:border-slate-800 whitespace-pre-wrap">
+							<div className="p-2.5 rounded-lg bg-[var(--paper)] text-[11.5px] font-mono text-[var(--ink)] border border-[var(--line)] whitespace-pre-wrap">
 								{evaluation.formattedDiarySection}
 							</div>
 						</div>
