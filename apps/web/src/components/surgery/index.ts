@@ -8,3 +8,4 @@ export * from "./surgeryProtocols";
 export * from "./SurgerySafetyChecklist";
 export * from "./SurgeryCockpitModal";
 export * from "./SurgeryProtocolPanel";
+export * from "./SurgeryVisitCockpit";
