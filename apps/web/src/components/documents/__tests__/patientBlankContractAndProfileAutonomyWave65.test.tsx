@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 import {
 	generateBlankContractFallbackHtml,
 	printBlankMedicalContract,
-} from "../../patient/blankContractPrint.js";
+} from "../../patients/blankContractPrint.js";
 import {
 	buildPatientAdministrativeProfilePayload,
 	patientAdministrativeProfileDraftIssue,

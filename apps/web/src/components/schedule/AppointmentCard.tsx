@@ -43,7 +43,7 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { isTechnicalBreakAppointment } from "./AppointmentModal";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;

@@ -7,7 +7,7 @@ import { usePatientStore } from "../../store/patientStore";
 import { PatientCommunicationTimelinesWidget } from "../crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 import { LabOrdersPanel } from "./LabOrdersPanel";
-import { PatientWorkspaceView } from "../patient/PatientWorkspaceView";
+import { PatientWorkspaceView } from "./PatientWorkspaceView";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
 import { PatientAttachmentsPanel } from "./PatientAttachmentsPanel";
@@ -16,7 +16,7 @@ import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimeli
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
-import { PatientHeaderCard } from "../patient/PatientHeaderCard";
+import { PatientHeaderCard } from "./PatientHeaderCard";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";

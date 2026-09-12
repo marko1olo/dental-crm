@@ -18,7 +18,7 @@ import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppConstants";
 import { appointmentScheduleMissingFields } from "../../AppHelpers";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";

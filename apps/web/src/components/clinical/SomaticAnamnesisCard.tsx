@@ -40,14 +40,14 @@ import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
 	isSomaticProfilePhysiologicalNorm,
-} from "../patient/PatientDetailModal";
+} from "../patients/PatientDetailModal";
 import {
 	type PatientClinicalSafetyProfile,
 	type PregnancyTrimester,
 	evaluatePatientSafetyFlags,
 	formatSafetyProfileToDiaryText,
 	parseSafetyProfileFromText,
-} from "../patient/safetyMath";
+} from "../patients/safetyMath";
 
 export interface SomaticAnamnesisCardProps {
 	readonly initialProfile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined;

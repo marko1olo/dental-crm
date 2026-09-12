@@ -40,9 +40,9 @@ export * from "./patientDraftResetDecision";
 // Branch Transfer
 export * from "./transfer/PatientBranchTransferModal";
 
-// Re-exports of patient workspace & anamnesis components for unified access
-export * from "../patient/PatientHeaderCard";
-export * from "../patient/PatientWorkspaceView";
-export * from "../patient/PatientAnamnesisModal";
-export * from "../patient/PatientDetailModal";
-export * from "../patient/tabs/PatientGeneralInfoTab";
+// Consolidated Patient Components (Mandate 8s)
+export * from "./PatientHeaderCard";
+export * from "./PatientWorkspaceView";
+export * from "./PatientAnamnesisModal";
+export * from "./PatientDetailModal";
+export * from "./tabs/PatientGeneralInfoTab";

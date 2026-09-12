@@ -7,7 +7,7 @@ import {
 	formatSafetyProfileToDiaryText,
 	parseSafetyProfileFromText,
 	type PatientClinicalSafetyProfile,
-} from "../components/patient/safetyMath";
+} from "../components/patients/safetyMath";
 
 describe("Patient Clinical Safety & Anamnesis Engine (safetyMath.ts)", () => {
 	it("catalog contains all critical clinical stop-factors defined by Russian standards", () => {

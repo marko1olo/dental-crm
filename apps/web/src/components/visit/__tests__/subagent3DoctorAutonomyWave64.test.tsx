@@ -146,7 +146,7 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 		// PatientGeneralInfoTab contains 1-click somatic healthy norm
 		const generalInfoTabPath = path.resolve(
 			__dirname,
-			"../../patient/tabs/PatientGeneralInfoTab.tsx",
+			"../../patients/tabs/PatientGeneralInfoTab.tsx",
 		);
 		const generalInfoTabSource = fs.readFileSync(generalInfoTabPath, "utf8");
 		assert.ok(
@@ -158,7 +158,7 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 	it("7. guarantees Reception Autonomy: Blank contract printing (_______) without 403 errors (Mandate 8e item 8)", () => {
 		const adminFormPath = path.resolve(
 			__dirname,
-			"../../patient/PatientAdministrativeForm.tsx",
+			"../../patients/PatientAdministrativeForm.tsx",
 		);
 		const adminFormSource = fs.readFileSync(adminFormPath, "utf8");
 		assert.ok(

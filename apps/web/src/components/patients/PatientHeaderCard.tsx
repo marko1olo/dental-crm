@@ -31,7 +31,7 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
-import { PatientLoyaltyHeader } from "../patients/PatientLoyaltyHeader";
+import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "./PatientSentimentBadge";
 import { printBlankMedicalContract } from "./blankContractPrint";
 

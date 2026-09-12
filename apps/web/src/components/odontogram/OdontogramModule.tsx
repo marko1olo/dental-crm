@@ -25,7 +25,7 @@ import {
 	addWorkingDays,
 	calculateMaterialTotalCostKopecks,
 } from "../lab/labMath";
-import { evaluatePatientSafetyFlags } from "../patient/safetyMath";
+import { evaluatePatientSafetyFlags } from "../patients/safetyMath";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";

@@ -38,7 +38,7 @@ import {
 	type ClinicalTask,
 } from "../../../ClinicalTasksPanel";
 import { WorkspaceContinuityStrip } from "../../../workspaceContinuityStrip";
-import { PatientDetailModal } from "../../patient/PatientDetailModal";
+import { PatientDetailModal } from "../../patients/PatientDetailModal";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 
 const __filename = fileURLToPath(import.meta.url);

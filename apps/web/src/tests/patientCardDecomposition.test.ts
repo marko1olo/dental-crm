@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PatientAdministrativeForm } from "../components/patient/PatientAdministrativeForm";
+import { PatientAdministrativeForm } from "../components/patients/PatientAdministrativeForm";
 import { formatPhoneNumber } from "../utils/inputSanitation";
 
 /**
@@ -194,7 +194,7 @@ describe("реквизиты пациента рисуются целиком", 
 
 	it("телефон представителя приводится к тому же виду, что и телефон пациента", () => {
 		assert.equal(formatPhoneNumber("89123456789"), "+7 (912) 345-67-89");
-		const source = read("components/patient/PatientAdministrativeForm.tsx");
+		const source = read("components/patients/PatientAdministrativeForm.tsx");
 		assert.match(
 			source,
 			/updatePatientAdministrativeProfileDraft\(\s*"legalRepresentativePhone",\s*formatPhoneNumber\(event\.target\.value\)\s*\)/,

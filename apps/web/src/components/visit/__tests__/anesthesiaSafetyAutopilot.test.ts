@@ -17,7 +17,7 @@ import {
 	patientProfileToSomaticRiskProfile,
 	calculatePatientMrdForProfile,
 	parseSafetyProfileFromText,
-} from "../../patient/safetyMath";
+} from "../../patients/safetyMath";
 
 describe("Anesthesia Safety Autopilot — Cardiovascular Epinephrine Limits (0.04 mg)", () => {
 	it("enforces strict 0.04 mg epinephrine limit and assigns «Кардиологический лимит» badge for hypertension", () => {

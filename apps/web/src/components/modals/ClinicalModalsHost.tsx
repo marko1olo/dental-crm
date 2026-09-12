@@ -3,7 +3,7 @@ import { OutpatientForm043Editor } from "../documents/forms/OutpatientForm043Edi
 import { ChildToothChart } from "../odontogram/ChildToothChart";
 import { ToothStatusPalette } from "../odontogram/ToothStatusPalette";
 import { PerioArchGrid } from "../perio/PerioArchGrid";
-import { PatientDetailModal } from "../patient/PatientDetailModal";
+import { PatientDetailModal } from "../patients/PatientDetailModal";
 import { PrescriptionsTab } from "../prescriptions/PrescriptionsTab";
 import { AnesthesiaProtocolSection } from "../visit/AnesthesiaProtocolSection";
 import { DoctorDesktopHeader as VisitDoctorDesktopHeader } from "../visit/DoctorDesktopHeader";

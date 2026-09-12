@@ -38,7 +38,7 @@ import {
 	type ResourceCollisionResult,
 } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { DEFAULT_SOLO_CHAIR, formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
 import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
 export { resolveChairDutyDoctor };

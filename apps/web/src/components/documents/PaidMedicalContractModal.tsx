@@ -36,7 +36,7 @@ import {
 	verifySmsSignOtp,
 } from "./paidContractEngine";
 import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import "./paidMedicalContract.css";
 
 export interface PaidMedicalContractModalProps {

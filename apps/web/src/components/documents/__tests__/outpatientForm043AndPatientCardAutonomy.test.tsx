@@ -45,7 +45,7 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 
 	const generalInfoTabPath = path.resolve(
 		__dirname,
-		"../../patient/tabs/PatientGeneralInfoTab.tsx",
+		"../../patients/tabs/PatientGeneralInfoTab.tsx",
 	);
 	const generalInfoTabSource = fs.readFileSync(generalInfoTabPath, "utf8");
 
@@ -166,13 +166,17 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 	});
 
 	it("6. PatientCardModal & PatientGeneralInfoTab are exported in patient domain index", () => {
+		const patientsIndexPath = path.resolve(__dirname, "../../patients/index.ts");
+		const patientsIndexSource = fs.readFileSync(patientsIndexPath, "utf8");
 		assert.ok(
-			patientIndexSource.includes('export * from "../patients/PatientCardModal";'),
+			patientIndexSource.includes('export * from "../patients";') ||
+				patientIndexSource.includes('export * from "../patients/PatientCardModal";'),
 			"patient/index.ts must export PatientCardModal",
 		);
 		assert.ok(
-			patientIndexSource.includes('export * from "./tabs/PatientGeneralInfoTab";'),
-			"patient/index.ts must export PatientGeneralInfoTab",
+			patientIndexSource.includes('export * from "../patients";') ||
+				patientsIndexSource.includes('export * from "./tabs/PatientGeneralInfoTab";'),
+			"patients/index.ts must export PatientGeneralInfoTab",
 		);
 	});
 

@@ -33,7 +33,7 @@ import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { LoyaltyProgramModal } from "./components/loyalty/program/LoyaltyProgramModal";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
-import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
+import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
 import { CreatePatientModal } from "./components/patients/CreatePatientModal";
 import { PatientCardModal } from "./components/patients/PatientCardModal";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";

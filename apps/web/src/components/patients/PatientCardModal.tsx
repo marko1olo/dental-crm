@@ -13,15 +13,15 @@ import { showToast } from "../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,
 	formatSafetyProfileToDiaryText,
-} from "../patient/safetyMath";
+} from "./safetyMath";
 import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
-} from "../patient/PatientDetailModal";
+} from "./PatientDetailModal";
 import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,
-} from "../patient/tabs/PatientGeneralInfoTab";
+} from "./tabs/PatientGeneralInfoTab";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import {
 	STOMX_REPRESENTATIVE_CATALOG,

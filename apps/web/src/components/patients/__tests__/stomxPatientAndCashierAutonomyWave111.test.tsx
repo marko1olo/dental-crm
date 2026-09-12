@@ -1,5 +1,5 @@
 /**
- * apps/web/src/components/patient/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx
+ * apps/web/src/components/patients/__tests__/stomxPatientAndCashierAutonomyWave111.test.tsx
  *
  * Wave 111 Unit Test Suite:
  * 1. PatientGeneralInfoTab — StomX Marketing Sources & Statutory Legal Representatives (СК РФ ст. 64 / 323-ФЗ ст. 20)

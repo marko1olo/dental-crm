@@ -254,7 +254,7 @@ import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { VisitSoapEditor, type VisitSoapNoteValues } from "./components/visit/VisitSoapEditor";
 import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
-import { PatientAllergySafetyBanner } from "./components/patient/PatientAllergySafetyBanner";
+import { PatientAllergySafetyBanner } from "./components/patients/PatientAllergySafetyBanner";
 import { renderForm043uHtml } from "@dental/shared";
 import {
 	Activity,

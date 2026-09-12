@@ -30,7 +30,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { showToast } from "../GlobalToast";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";

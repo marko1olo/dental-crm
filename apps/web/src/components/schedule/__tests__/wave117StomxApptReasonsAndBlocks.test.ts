@@ -305,7 +305,7 @@ describe("Wave 117: StomX Catalogs Export & Appointment Blocking Intervals", () 
 		});
 
 		it("3.3 PatientGeneralInfoTab.tsx contains chips and IDS signing rights badge (ст. 20 323-ФЗ)", () => {
-			const tabPath = path.resolve(__dirname, "../../patient/tabs/PatientGeneralInfoTab.tsx");
+			const tabPath = path.resolve(__dirname, "../../patients/tabs/PatientGeneralInfoTab.tsx");
 			assert.ok(fs.existsSync(tabPath), "PatientGeneralInfoTab.tsx must exist");
 			const content = fs.readFileSync(tabPath, "utf-8");
 

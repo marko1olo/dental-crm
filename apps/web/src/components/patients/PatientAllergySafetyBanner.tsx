@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
-import { PatientAnamnesisModal } from "../patient/PatientAnamnesisModal";
+import { PatientAnamnesisModal } from "./PatientAnamnesisModal";
 import {
 	type PatientClinicalSafetyProfile,
 	evaluatePatientSafetyFlags,

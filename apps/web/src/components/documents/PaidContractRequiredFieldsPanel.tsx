@@ -4,7 +4,7 @@ import type { PaidContractRequiredFieldsReview } from "./paidContractRequiredFie
 import {
 	printBlankMedicalContract,
 	type BlankContractPatientInfo,
-} from "../patient/blankContractPrint";
+} from "../patients/blankContractPrint";
 
 /**
  * «Чего не хватает договору» — весь перечень до нажатия «Создать».

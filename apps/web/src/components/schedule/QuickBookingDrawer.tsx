@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";

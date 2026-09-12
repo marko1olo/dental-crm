@@ -2,7 +2,7 @@ import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, S
 import React, { type ReactElement, useState, useRef, useEffect, useMemo } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 import type { ChairDoctorShiftAssignment } from "./ScheduleGrid";
 

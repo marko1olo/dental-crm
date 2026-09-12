@@ -12,7 +12,7 @@ import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
 
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
-import { PatientDuplicateAlert } from "../patients/PatientDuplicateAlert";
+import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
 import { printBlankMedicalContract } from "./blankContractPrint";
 
 export interface PatientWorkspaceViewProps {

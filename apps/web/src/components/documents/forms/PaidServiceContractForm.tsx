@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { FileEdit, ShieldCheck, Printer } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
-import { printBlankMedicalContract } from "../../patient/blankContractPrint";
+import { printBlankMedicalContract } from "../../patients/blankContractPrint";
 import { showToast } from "../../GlobalToast";
 import { money } from "../../../utils/financeUtils";
 import { appendChipToText } from "../documentChipText";
