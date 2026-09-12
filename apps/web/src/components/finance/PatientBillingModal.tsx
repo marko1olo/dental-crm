@@ -570,7 +570,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 			data-testid="patient-billing-modal"
 			tabIndex={-1}
 		>
-			<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+			<div className="relative bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
 				{/* Toast Notification */}
 				{toastMsg && (
 					<div className="bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0">
@@ -2049,13 +2049,13 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					</div>
 				</div>
 
-				{/* QR Code Phone Modal */}
+				{/* QR Code Phone Popover Panel (In-modal overlay, zero full-screen modal nesting) */}
 				{isQrOpen && (
 					<div
-						className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in"
+						className="absolute inset-0 z-40 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in rounded-3xl"
 						onClick={() => setIsQrOpen(false)}
-						role="dialog"
-						aria-modal="true"
+						role="region"
+						aria-label="Сохранить счет на телефон"
 						data-testid="billing-phone-qr-modal"
 					>
 						<div

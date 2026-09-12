@@ -1566,29 +1566,29 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				</div>
 			</div>
 
-			{/* 1.1 БЫСТРАЯ 1-КЛИК ПЕЧАТЬ ПАКЕТА ПЕРВИЧНОГО ПРИЁМА И БЛАНКА ДОГОВОРА */}
-			<div className="document-intake-quick-action-bar flex flex-col gap-2">
+			{/* 1.1 БЫСТРАЯ 1-КЛИК ПЕЧАТЬ ПАКЕТА ПЕРВИЧНОГО ПРИЁМА И БЛАНКА ДОГОВОРА (КОМПАКТНАЯ СТРОКА) */}
+			<div className="document-intake-quick-action-bar grid grid-cols-1 sm:grid-cols-2 gap-2">
 				<button
 					type="button"
-					className="document-intake-quick-print-btn"
+					className="document-intake-quick-print-btn !py-2 !px-3"
 					onClick={handleDirectPrintPrimaryIntake}
 					data-testid="btn-quick-print-primary-intake-package"
 					title="Сформировать и напечатать полный пакет первичного приёма (Договор + общий ИДС + согласие на обработку ПД + Анкета) со строками «________» для быстрой ручной подписи на стойке регистрации (без 403-ошибок)"
 				>
-					<div className="flex items-center gap-2.5">
-						<Printer size={18} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)] flex items-center gap-1.5">
-							<Zap size={15} className="text-amber-500 shrink-0" aria-hidden="true" />
-							Сформировать и напечатать пакет первичного приёма (Договор + общий ИДС + согласие на обработку ПД)
+					<div className="flex items-center gap-2 min-w-0">
+						<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<span className="font-extrabold text-xs text-[var(--ink)] flex items-center gap-1.5 truncate">
+							<Zap size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
+							Пакет первичного приёма
 						</span>
 					</div>
-					<span className="document-intake-quick-badge">
-						Со строками «________» для ручной подписи
+					<span className="document-intake-quick-badge !text-xs !py-0.5 shrink-0">
+						Договор + ИДС + ПД
 					</span>
 				</button>
 				<button
 					type="button"
-					className="document-intake-quick-print-btn"
+					className="document-intake-quick-print-btn !py-2 !px-3"
 					onClick={() => {
 						void printBlankMedicalContract(
 							activePatient
@@ -1612,15 +1612,15 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					data-testid="btn-documents-print-blank-contract"
 					title="Распечатать чистый бланк договора со строками _______ для ручного заполнения пациентом до приёма (без 403-ошибок)"
 				>
-					<div className="flex items-center gap-2.5">
-						<Printer size={18} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)] flex items-center gap-1.5">
-							<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-							Печать договора (бланк со строками _______)
+					<div className="flex items-center gap-2 min-w-0">
+						<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<span className="font-extrabold text-xs text-[var(--ink)] flex items-center gap-1.5 truncate">
+							<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							Печать договора со строками _______
 						</span>
 					</div>
-					<span className="document-intake-quick-badge">
-						0 ₽ · До приёма врача · Без 403
+					<span className="document-intake-quick-badge !text-xs !py-0.5 shrink-0">
+						0 ₽ · Без 403
 					</span>
 				</button>
 			</div>

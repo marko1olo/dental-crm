@@ -1402,7 +1402,7 @@ export function ImagingView(props: ImagingViewProps) {
 													style={{
 														display: "flex",
 														flexDirection: "column",
-														gap: "6px",
+														gap: "4px",
 													}}
 												>
 													<textarea
@@ -1411,13 +1411,15 @@ export function ImagingView(props: ImagingViewProps) {
 														onChange={(event) =>
 															setImagingViewerNote(event.target.value)
 														}
-														placeholder="Опишите снимок: что видно, где, какое заключение"
-														rows={3}
+														placeholder="Опишите снимок: что видно, какое заключение..."
+														rows={imagingViewerNote ? 2 : 1}
 														style={{
 															width: "100%",
 															resize: "vertical",
-															minHeight: "72px",
-															lineHeight: 1.45,
+															minHeight: imagingViewerNote ? "56px" : "34px",
+															lineHeight: 1.35,
+															padding: "6px 8px",
+															fontSize: "12px",
 														}}
 													/>
 													<button

@@ -1154,13 +1154,13 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 					)}
 				</div>
 
-				{/* 63-ФЗ SMS PEP Signing Modal (NO BACKDOORS) */}
+				{/* 63-ФЗ SMS PEP Signing Panel (In-modal step/overlay, zero full-screen modal nesting) */}
 				{signingSession && (
 					<div
-						className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+						className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
 						data-testid="doctor-sms-signing-dialog"
-						role="dialog"
-						aria-modal="true"
+						role="region"
+						aria-label="ПЭП СМС-Подтверждение (63-ФЗ)"
 					>
 						<div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100">
 							<div className="flex items-center justify-between">

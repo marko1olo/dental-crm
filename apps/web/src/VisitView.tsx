@@ -1417,38 +1417,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									</span>
 								</div>
 							</div>
-							<div className="flex items-center gap-1.5 shrink-0">
-								<button
-									type="button"
-									onClick={() => setIsSoapTemplatesDrawerOpen((prev) => !prev)}
-									data-testid="btn-open-stomt-templates-strip"
-									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
-									title="Клинические шаблоны StomX (448 протоколов 043/у: Терапия, Ортопедия, Хирургия, Имплантация, Пародонтология)"
-								>
-									<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-									<span>Шаблоны StomX (448)</span>
-								</button>
-								<button
-									type="button"
-									onClick={handleApplySomaticNormQuick}
-									data-testid="btn-somatic-norm-one-click"
-									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
-									title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
-									aria-label="Соматически здоров / норма (1-клик)"
-								>
-									<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-									<span className="hidden sm:inline">Норма (1-клик)</span>
-								</button>
-								<button
-									type="button"
-									onClick={handlePrintForm043uFast}
-									data-testid="btn-visit-fast-print-043u"
-									className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
-									title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
-								>
-									<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-									<span>Печать 043/у</span>
-								</button>
+							<div className="flex items-center gap-2 shrink-0 text-xs text-[var(--muted)]">
+								<span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+									<Check className="w-3 h-3" />
+									Аудит соматики ОК
+								</span>
 							</div>
 						</section>
 

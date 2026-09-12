@@ -398,7 +398,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                           onClick={() => onExecuteStage(cat)}
                           className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-lg font-bold text-xs bg-[var(--paper-soft)] hover:bg-[var(--teal-soft,#ccfbf1)] text-[var(--ink)] hover:text-[var(--teal,#0d9488)] border border-[var(--border,#cbd5e1)] transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-w-0"
                         >
-                          <span className="whitespace-nowrap min-w-0">Приступить к этапу</span>
+                          <span className="truncate min-w-0">Приступить к этапу</span>
                           <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                         </button>
                       )}
@@ -422,7 +422,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               <span className="font-mono text-lg sm:text-xl font-black text-[var(--teal,#0d9488)] whitespace-nowrap">
                 {grandTotalRub.toLocaleString('ru-RU')} ₽
               </span>
-              <span className="text-[11px] text-[var(--muted,#64748b)] font-semibold hidden md:inline">
+              <span className="text-xs text-[var(--muted,#64748b)] font-semibold hidden md:inline">
                 (Приказ 804н / СтАР)
               </span>
             </div>
@@ -439,7 +439,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               title="Оформить рассрочку 0% на этапы лечения"
             >
               <CreditCard size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
-              <span className="whitespace-nowrap min-w-0">Рассрочка</span>
+              <span className="truncate min-w-0">Рассрочка</span>
             </button>
           )}
 
@@ -451,7 +451,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               title="Студия поэтапной оплаты и эскроу"
             >
               <Coins size={14} className="text-amber-500 shrink-0" />
-              <span className="whitespace-nowrap min-w-0">Эскроу</span>
+              <span className="truncate min-w-0">Эскроу</span>
             </button>
           )}
 
@@ -463,7 +463,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               title="Печать договора и сметы"
             >
               <Printer size={14} className="shrink-0" />
-              <span className="whitespace-nowrap min-w-0">Печать договора</span>
+              <span className="truncate min-w-0">Печать договора</span>
             </button>
           )}
 
@@ -475,7 +475,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               data-testid="phased-approve-plan-btn"
             >
               <PenTool size={14} className="shrink-0" />
-              <span className="whitespace-nowrap min-w-0">Утвердить план</span>
+              <span className="truncate min-w-0">Утвердить план</span>
             </button>
           )}
         </div>

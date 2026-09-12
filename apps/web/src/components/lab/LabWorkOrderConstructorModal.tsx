@@ -806,27 +806,27 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 												type="date"
 												value={dueDateIso}
 												onChange={(e) => setDueDateIso(e.target.value)}
-												className="min-h-[40px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+												className="min-h-[40px] px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] outline-none"
 												data-testid="quick-due-date-input"
 											/>
 											<button
 												type="button"
 												onClick={() => setDueDateIso(addBusinessDays(new Date(), 3))}
-												className="min-h-[40px] px-2 text-[11px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-teal-500"
+												className="min-h-[40px] px-2 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 transition-colors"
 											>
 												+3д
 											</button>
 											<button
 												type="button"
 												onClick={() => setDueDateIso(addBusinessDays(new Date(), 5))}
-												className="min-h-[40px] px-2 text-[11px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-teal-500"
+												className="min-h-[40px] px-2 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 transition-colors"
 											>
 												+5д
 											</button>
 											<button
 												type="button"
 												onClick={() => setDueDateIso(addBusinessDays(new Date(), 7))}
-												className="min-h-[40px] px-2 text-[11px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-teal-500"
+												className="min-h-[40px] px-2 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 transition-colors"
 											>
 												+7д
 											</button>

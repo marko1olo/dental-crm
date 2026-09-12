@@ -980,44 +980,43 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						</button>
 					</div>
 				</div>
-			</div>
 
-			{/* Zoom Lightbox Modal */}
-			{zoomImage && (
-				<div
-					className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 no-print"
-					role="dialog"
-					aria-modal="true"
-					aria-label="Просмотр снимка"
-					onClick={() => setZoomImage(null)}
-				>
+				{/* Zoom Lightbox In-Modal Overlay (Zero full-screen viewport nesting) */}
+				{zoomImage && (
 					<div
-						className="relative max-w-4xl max-h-[90vh] bg-neutral-900 border border-neutral-700 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
-						onClick={(e) => e.stopPropagation()}
+						className="absolute inset-0 z-40 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-150 no-print"
+						role="region"
+						aria-label="Просмотр снимка"
+						onClick={() => setZoomImage(null)}
 					>
-						<div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-neutral-950 text-white">
-							<span className="text-sm font-bold truncate">
-								{zoomImage.title || "Рентгенологический снимок (Высокое разрешение)"}
-							</span>
-							<button
-								type="button"
-								onClick={() => setZoomImage(null)}
-								className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
-								aria-label="Закрыть просмотр снимка"
-							>
-								<X className="w-5 h-5" />
-							</button>
-						</div>
-						<div className="flex-1 overflow-auto p-2 bg-black flex items-center justify-center">
-							<img
-								src={zoomImage.url}
-								alt={zoomImage.title || "Снимок"}
-								className="max-w-full max-h-[75vh] object-contain rounded"
-							/>
+						<div
+							className="relative w-full h-full max-h-full bg-neutral-900 border border-neutral-700 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-neutral-950 text-white shrink-0">
+								<span className="text-sm font-bold truncate">
+									{zoomImage.title || "Рентгенологический снимок (Высокое разрешение)"}
+								</span>
+								<button
+									type="button"
+									onClick={() => setZoomImage(null)}
+									className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center cursor-pointer"
+									aria-label="Закрыть просмотр снимка"
+								>
+									<X className="w-5 h-5" />
+								</button>
+							</div>
+							<div className="flex-1 overflow-auto p-2 bg-black flex items-center justify-center min-h-0">
+								<img
+									src={zoomImage.url}
+									alt={zoomImage.title || "Снимок"}
+									className="max-w-full max-h-full object-contain rounded"
+								/>
+							</div>
 						</div>
 					</div>
-				</div>
-			)}
+				)}
+			</div>
 		</div>,
 		document.body,
 	);
