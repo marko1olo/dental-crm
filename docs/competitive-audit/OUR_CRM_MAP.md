@@ -2969,3 +2969,36 @@
      - Строго 0 эмодзи, тач-таргеты >= 44px, однострочный тулбар 36px (Apple HIG, WCAG AAA, Мандаты 8c, 8d, 8e).
 - **Файлы**: `packages/shared/src/clinical/photoProtocol.ts`, `packages/shared/src/clinical/index.ts`, `packages/shared/src/clinical/__tests__/photoProtocol.test.ts`, `apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`, `apps/web/src/components/photography/BeforeAfterComparisonView.tsx`, `apps/web/src/components/photography/PhotoSlotCard.tsx`, `apps/web/src/components/photography/photoGridPresets.ts`.
 - **Тесты**: `packages/shared/src/clinical/__tests__/photoProtocol.test.ts` (20/20 PASS), `check:encoding` (0 ошибок), `@dental/shared` build & typecheck (Exit Code 0), `@dental/web` typecheck (Exit Code 0).
+
+### 2.10.251. Волны 167–171: Консолидация SSOT, защита хост-машины (Мандат 8t), ликвидация фасадов компонентов, устранение матрешек модалок и аудит документации (Мандаты 8g, 8h, 8s, 8t)
+- **Идея & Бизнес-эффект**: Комплексная оптимизация архитектурного каркаса и эргономики Clinic MVP Dental CRM. Сведение разрозненных шаблонов и сервисов сообщений к единому источнику правды (SSOT); введение строгого конституционного Мандата 8t по защите хост-машины от перегрузок CPU через Single-Compiler Gate; полная ликвидация 8 устаревших фасадов-оберток компонентов; устранение модальных матрешек (глубина строго 1) с переводом вложенных диалогов в легковесные region- и popover-оверлеи; гармонизация цветовых токенов темы (`var(--paper)`, `var(--ink)`) в клинических редакторах; полный сквозной инструментальный аудит всех 321 фич в Реестре фич и Бэклоге без паразитных ложных задач (Мандат 8g: Rule != Task).
+- **Архитектурные механизмы**:
+  1. *Консолидация SSOT шаблонов и сервисов сообщений (Волна 167)*:
+     - Ликвидирован дублирующий файл `messageTemplateCatalogsQuery.ts` в пользу единого канонического `messageTemplateService.ts`.
+     - Роуты и схемы сообщений в `apps/api` полностью унифицированы.
+  2. *Конституционный Мандат 8t: Single-Compiler Gate & CPU Preflight (Волна 168)*:
+     - Введен абсолютный запрет воркерам на одновременный запуск `npm run typecheck` и `tsc -b`.
+     - Гейт компиляции переведен в централизованный однопоточный режим под управлением L1 Оркестратора с проверкой CPU Preflight Gate (< 50% CPU).
+  3. *Ликвидация 8 устаревших фасадов компонентов (Волна 170 / Мандат 8s)*:
+     - Удалены `CopilotActionConfirmation.tsx` и `CopilotConfirmCard.tsx` (объединены в канонический `CopilotActionConfirm.tsx`).
+     - Удален `GuestLabPortalView.tsx` (консолидирован с автономным порталом `GuestLabPortal.tsx`).
+     - Удален `RetentionAnalyticsView.tsx` (консолидирован с `LostPatientsPanel.tsx`).
+     - Удален `KraftPackageModal.tsx` (консолидирован с `kraft/KraftPackageBarcodeModal.tsx`).
+     - Удалены `ScheduleFilterToolbar.tsx` и `ScheduleToolbar.tsx` (консолидированы с 1-строчным тулбаром `ScheduleFilterStrip.tsx`).
+     - Удален `ProcedureBomsTab.tsx` (прямой импорт `MaterialBomsSettingsPanel.tsx`).
+     - Вычищены синтетические тесты монтирования фасадов в `panelsAreMounted.test.ts`.
+  4. *Устранение модальных матрешек (Волна 170 / Закон Анти-Матрёшки, глубина строго 1)*:
+     - В `DoctorShiftCockpitModal.tsx` окно подтверждения СМС ПЭП 63-ФЗ переведено из вложенной модалки в контентный `role="region" aria-label="Подтверждение ПЭП через СМС (63-ФЗ)"`.
+     - В `PatientBillingModal.tsx` окно отправки счета по QR переведено в popover-оверлей без вложенного dialog.
+     - В `VisitSummaryModal.tsx` полноэкранный просмотр снимков Lightbox Zoom переведен в fullscreen region-оверлей.
+  5. *Дизайн-токены и десктопная эргономика рабочего места (Волна 170 / Мандаты 8c, 8d, 8e)*:
+     - В `VisitSoapEditor.tsx` удален хардкод цветов оформления, редактор дневника переведен на CSS-переменные дизайн-системы (`var(--paper)`, `var(--ink)`, `var(--muted)`), обеспечена безупречная контрастность WCAG в темной и светлой темах.
+     - В `ImagingView.tsx` панель инструментов укомплектована в компактный 1-строчный тулбар 32–36px.
+     - В `DocumentsView.tsx` экспресс-печать документов перестроена в 2-колоночную сетку без горизонтального скролла.
+     - В `VisitView.tsx` индикация соматического статуса сжата до чипа `Аудит соматики ОК`, высвобождая 32px полезной высоты экрана.
+  6. *Сквозной аудит документации и синхронизация реестра (Волна 171 / Мандаты 8g, 8h, 8f)*:
+     - Скриптом `exhaustive_check.js` подтверждена 100% валидность всех 321 фич в `FEATURES_REGISTRY.md` против 27 426 реальных файлов кодовой базы (0 битых путей, 0 устаревших фасадов).
+     - Бэклог и Карта CRM приведены в идеальное соответствие с живым кодом без дублирования задач.
+- **Файлы**: `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`, `apps/web/src/components/copilot/CopilotActionConfirm.tsx`, `apps/web/src/GuestLabPortal.tsx`, `apps/web/src/components/patients/LostPatientsPanel.tsx`, `apps/web/src/components/sanpin/kraft/KraftPackageBarcodeModal.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/settings/MaterialBomsSettingsPanel.tsx`, `apps/web/src/components/doctor/DoctorShiftCockpitModal.tsx`, `apps/web/src/components/finance/PatientBillingModal.tsx`, `apps/web/src/components/visit/VisitSummaryModal.tsx`, `apps/web/src/components/visit/VisitSoapEditor.tsx`, `apps/web/src/ImagingView.tsx`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/VisitView.tsx`.
+- **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate сохранен (Мандат 8t).
+

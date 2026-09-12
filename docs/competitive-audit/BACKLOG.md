@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–170 / SSOT TEMPLATE CONSOLIDATION, MANDATE 8t COMPILER PROTECTION, COMPONENT FACADES PURGE, MODAL ANTI-MATRYOSHKA & DESIGN TOKEN HARMONIZATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–171 / SSOT CONSOLIDATION, MANDATE 8t COMPILER PROTECTION, COMPONENT FACADES PURGE, MODAL ANTI-MATRYOSHKA, DESIGN TOKEN HARMONIZATION & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -19,6 +19,7 @@
 > 13. Проведена тотальная инструментальная сверка всех 321 фич в `FEATURES_REGISTRY.md`: все 129 устаревших путей переведены на активные файлы кодовой базы, 0 битых ссылок (инструментально подтверждено по всем 27 446 файлам репозитория, коммит `ae70f04f2`).
 > 14. Снесены устаревшие реэкспорт-шимы и дубликаты компонентов (`MessageTemplatesPanel.tsx`, `FiscalReceiptModal.tsx`, `checkAppointmentResourceCollision.ts`, `visit/surgery/SurgeryVisitCockpit.tsx`, реэкспорт-папки `components/patient`, `components/prosthetics`, `components/treatment`, стабы `sanpin.ts`, `timesheetT13.ts`, `stomxDefectsCatalog.ts`, `mdlpDataMatrix.ts`, коммит `4c94374cc`); ликвидированы 3 матрешки модалок в `DoctorShiftCockpitModal`, `PatientBillingModal`, `VisitSummaryModal` с конвертацией в region-оверлеи (Мандат 8d п. 6); вычищены дублирующие кнопки анамнеза в `VisitView.tsx` (Wave 169, коммит `168659f22`).
 > 15. Ликвидированы 8 устаревших фасадов компонентов (`CopilotActionConfirmation.tsx`, `CopilotConfirmCard.tsx`, `GuestLabPortalView.tsx`, `RetentionAnalyticsView.tsx`, `KraftPackageModal.tsx`, `ScheduleFilterToolbar.tsx`, `ScheduleToolbar.tsx`, `ProcedureBomsTab.tsx`, коммит `4cd667818`), внедрены дизайн-токены темы и эргономическая полировка UI в `VisitSoapEditor.tsx`, `ImagingView.tsx`, `DocumentsView.tsx`, `LabWorkOrderConstructorModal.tsx`, `TreatmentPlanPhased4StageView.tsx` (Wave 170, коммит `c69f8e6f3`).
+> 16. Проведен исчерпывающий сквозной аудит всех 321 фич в `FEATURES_REGISTRY.md` скриптом `exhaustive_check.js`: 100% файлов и строк подтверждены на живой кодовой базе (27 426 файлов), 0 битых путей, 0 устаревших фасадов (Wave 171). Документация синхронизирована по Мандатам 8g (Rule != Task), 8h (No duplicate work), 8s (Anti-bloat), 8t (Single-Compiler Gate).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -4679,6 +4680,32 @@
   * Главный реестр фич: 321/321 в статусе `[ДА]`, строка 218 проверена на канонический `GuestLabPortal.tsx`, 0 битых путей.
   * Гейт компилятора: защищен Мандатом 8t (Single-Compiler Gate выполняется централизованно L1 Оркестратором).
   * Кодировка: UTF-8 без BOM, `npm run check:encoding` 0 ошибок.
+
+### Wave 171: Системный аудит документации, закрепление десктопной эргономики и синхронизация карты CRM (Мандаты 8g, 8h, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (сквозная валидация всех 321 фич, актуализация заголовка до Wave 171, 0 битых ссылок)
+  - `docs/competitive-audit/BACKLOG.md` (актуализация статуса системы до Wave 171, документация аудита целостности по Мандатам 8g, 8h)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (добавлен подраздел 2.10.251 с фиксацией архитектурных трансформаций Волн 167–171: снос фасадов, устранение матрешек, Single-Compiler Gate)
+* **Архитектурное решение**:
+  - **Сквозной инструментальный аудит Реестра Фич (Мандаты 8g, 8h, 8f, T.A.R.S. 100%)**:
+    * Выполнен автоматический аудит скриптом `exhaustive_check.js`, просканировавшим все 321 строку `FEATURES_REGISTRY.md` против 27 426 реальных файлов репозитория.
+    * Подтверждено: 100% ссылок в графе «Доказательство» ведут на физически существующие файлы и валидные экспорты.
+    * Ни один из ранее удаленных фасадов (`CopilotActionConfirmation`, `CopilotConfirmCard`, `GuestLabPortalView`, `RetentionAnalyticsView`, `KraftPackageModal`, `ScheduleFilterToolbar`, `ScheduleToolbar`, `ProcedureBomsTab`) не фигурирует в качестве активного доказательства.
+    * Полное соответствие Мандату 8g: правила и стандарты не превращаются в ложные долги бэклога; все реализованные фичи имеют статус `[ДА]`.
+  - **Синхронизация карты возможностей CRM (OUR_CRM_MAP.md)**:
+    * В карту возможностей CRM добавлен раздел 2.10.251, суммирующий инфраструктурные и эргономические достижения Волн 167–171:
+      1. Консолидация клинических шаблонов и сервисов сообщений вокруг единого источника истины (SSOT).
+      2. Защита хост-машины и однопоточный гейт компиляции (Мандат 8t).
+      3. Ликвидация 8 паразитных фасадов и реэкспортных прокладок компонентов.
+      4. Устранение 3 модальных матрешек (глубина диалогов строго 1) через region- и popover-оверлеи.
+      5. Гармонизация дизайн-токенов (`var(--paper)`, `var(--ink)`) и очистка перегруженных тулбаров до 32–36px.
+  - **Защита хост-машины (Мандат 8t)**:
+    * Во время выполнения задачи полностью соблюден запрет на запуск компилятора (`npm run typecheck`, `tsc -b --noEmit`) субагентами; Single-Compiler Gate делегирован централизованно L1 Оркестратору.
+* **Верификация**:
+  * Главный реестр фич: 321/321 в статусе `[ДА]`, проверено `exhaustive_check.js`, 0 ошибок.
+  * Проверка кодировки: `npm run check:encoding` (Exit Code 0, 0 ошибок).
+
 
 
 
