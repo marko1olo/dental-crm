@@ -11,7 +11,8 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { describe, it, test } from "node:test";
-import { validateTelegramWebAppData } from "../../routes/patientPortal.js";
+import Fastify from "fastify";
+import { patientPortalRoutes, validateTelegramWebAppData } from "../../routes/patientPortal.js";
 import { generateTaxCertificateQrSvg } from "@dental/shared";
 
 describe("Patient Portal API & Telemedicine Suite", () => {
@@ -103,5 +104,44 @@ describe("Patient Portal API & Telemedicine Suite", () => {
 		assert.ok(sbpNspkPayloadString.startsWith("https://qr.nspk.ru/"));
 		assert.ok(sbpNspkPayloadString.includes("sum=3500000"));
 		assert.ok(sbpNspkPayloadString.includes("cur=RUB"));
+	});
+
+	test("5. patientPortalRoutes registers unique routes without duplicate OTP/dashboard collisions", async () => {
+		const app = Fastify();
+		await app.register(patientPortalRoutes, { prefix: "/api/portal" });
+
+		// Verify 401 without auth token on unique routes
+		const resPreview = await app.inject({
+			method: "GET",
+			url: "/api/portal/tax-certificate/preview",
+		});
+		assert.strictEqual(resPreview.statusCode, 401);
+
+		const resHtml = await app.inject({
+			method: "GET",
+			url: "/api/portal/tax-certificate/html",
+		});
+		assert.strictEqual(resHtml.statusCode, 401);
+
+		const resForm043 = await app.inject({
+			method: "GET",
+			url: "/api/portal/form-043/html",
+		});
+		assert.strictEqual(resForm043.statusCode, 401);
+
+		// Verify duplicate routes do NOT exist in patientPortalRoutes
+		const resOtpSend = await app.inject({
+			method: "POST",
+			url: "/api/portal/auth/otp/send",
+		});
+		assert.strictEqual(resOtpSend.statusCode, 404);
+
+		const resDashboard = await app.inject({
+			method: "GET",
+			url: "/api/portal/dashboard",
+		});
+		assert.strictEqual(resDashboard.statusCode, 404);
+
+		await app.close();
 	});
 });

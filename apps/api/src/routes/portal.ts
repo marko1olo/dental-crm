@@ -43,8 +43,8 @@ import {
 } from "../utils/cryptoHelper.js";
 
 // Patient portal sessions are short-lived; the patient re-authenticates via OTP.
-const PORTAL_TOKEN_TTL_SECONDS = 60 * 60 * 12;
-const PORTAL_TOKEN_KIND = "portal";
+export const PORTAL_TOKEN_TTL_SECONDS = 60 * 60 * 12;
+export const PORTAL_TOKEN_KIND = "portal";
 
 /*
  * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО (и почему это худшая дыра в проекте)
