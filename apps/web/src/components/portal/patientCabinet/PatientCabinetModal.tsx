@@ -122,7 +122,7 @@ import {
 } from "../../finance/taxDeductionEngine";
 import { MobileSelfCheckinModal } from "../selfCheckin";
 import { PatientFriendlyOdontogram } from "../../patient-portal/PatientFriendlyOdontogram";
-import { TreatmentPlanStageCard } from "../../patient-portal/TreatmentPlanStageCard";
+import { PatientPortalTreatmentStageCard } from "../../patient-portal/PatientPortalTreatmentStageCard";
 import { PatientPlanView } from "../../patient-portal/PatientPlanView";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
 import "./patientCabinet.css";

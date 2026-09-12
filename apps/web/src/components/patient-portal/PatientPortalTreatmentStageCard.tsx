@@ -173,7 +173,7 @@ export function formatDualServiceName(code: string, rawTitle: string): DualServi
 	};
 }
 
-export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
+export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProps> = ({
 	stage,
 	onPaySbp,
 	showDetailedBreakdown = true,
@@ -392,4 +392,7 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 	);
 };
 
-export default TreatmentPlanStageCard;
+/** Backward compatibility alias for patient portal */
+export const TreatmentPlanStageCard = PatientPortalTreatmentStageCard;
+
+export default PatientPortalTreatmentStageCard;

@@ -8,7 +8,7 @@ import { describe, it } from "node:test";
 import {
 	formatDualServiceName,
 	type DualServiceFormatResult,
-} from "../components/patient-portal/TreatmentPlanStageCard.js";
+} from "../components/patient-portal/PatientPortalTreatmentStageCard.js";
 import {
 	CLINIC_GUARANTEE_ITEMS,
 	PATIENT_COMFORT_STANDARDS,

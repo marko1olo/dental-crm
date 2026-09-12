@@ -70,7 +70,7 @@ import {
 	DEFAULT_PATIENT_TEETH,
 	calculateDentalHealthIndex,
 } from "./PatientFriendlyOdontogram.js";
-import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard.js";
+import { PatientPortalTreatmentStageCard } from "./PatientPortalTreatmentStageCard.js";
 
 export interface PatientPlanViewProps {
 	readonly plan?: PatientTreatmentPlan | undefined;
@@ -1128,7 +1128,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				</div>
 
 				{activeStages.map((stage) => (
-					<TreatmentPlanStageCard
+					<PatientPortalTreatmentStageCard
 						key={stage.id}
 						stage={stage}
 						onPaySbp={onPayStageSbp ? () => onPayStageSbp(stage) : undefined}
