@@ -54,7 +54,7 @@
 
 ## 9. Состояние у нас в Dental CRM (Our Status & Code Evidence)
 - **Текущий статус**: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
-- **Доказательство в кодовой базе**: packages/shared/src/documents/ndflXmlGenerator.ts; apps/web/src/components/documents/FnsTaxDeductionModal.tsx
+- **Доказательство в кодовой базе**: packages/shared/src/documents/ndflXmlGenerator.ts; apps/web/src/components/tax/TaxDeductionModal.tsx
 - **Задействованные модули нашего проекта**:
   - Frontend: `apps/web/src/useAppLogic.tsx`, `apps/web/src/Документы View.tsx`
   - Backend: `apps/api/src/routes/`
@@ -63,7 +63,7 @@
 ---
 
 ## 10. Статус внедрения и подтверждение в кодовой базе (Implementation Proof & Status)
-Фича полностью реализована в кодовой базе Dental CRM, протестирована и закрыта в production (packages/shared/src/documents/ndflXmlGenerator.ts; apps/web/src/components/documents/FnsTaxDeductionModal.tsx). Повторная реализация или открытие задач запрещены (Мандаты 8f, 8g, 8h).
+Фича полностью реализована в кодовой базе Dental CRM, протестирована и закрыта в production (packages/shared/src/documents/ndflXmlGenerator.ts; apps/web/src/components/tax/TaxDeductionModal.tsx). Повторная реализация или открытие задач запрещены (Мандаты 8f, 8g, 8h).
 
 ---
 

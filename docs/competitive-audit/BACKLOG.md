@@ -94,7 +94,7 @@
   - Движок Shared: `packages/shared/src/documents/ndflXmlGenerator.ts`
   - Сервис бэкенда: `apps/api/src/services/documents/ndflTaxService.ts`
   - Маршруты API: `apps/api/src/routes/documents/ndflCalculator.ts`, `apps/api/src/routes/documents/taxXml.ts`
-  - Фронтенд: `apps/web/src/components/documents/NdflCalculatorModal.tsx`, `apps/web/src/components/documents/FnsTaxDeductionModal.tsx`
+  - Фронтенд: `apps/web/src/components/documents/NdflCalculatorModal.tsx`, `apps/web/src/components/tax/TaxDeductionModal.tsx`
 
 ---
 
@@ -970,7 +970,7 @@
   2. *Ликвидация блокировки сохранения*: полностью удален барьер `disabled={!isFormValid}` на кнопке `type="submit"` «Записать цикл в Форму 257/у» (`minHeight: 44px`).
   3. *Интеллектуальные fallback-дефолты*: функция `resolveAutoclaveCycleFallbacks()` при сохранении автоматически подставляет ФИО оператора по умолчанию и стандартное описание медизделий при пустых полях, исключая холостые клики и гарантируя строгое соответствие СанПиН 3.3686-21.
 - **Статус**:
-  - Фронтенд: `apps/web/src/components/sanpin/autoclaveLog/AutoclaveNewCycleTab.tsx`, `AutoclaveLog257Modal.tsx` (инициализация shift-записей и `initialTab`), `AutoclaveCycleModal.tsx` (предзаполненная история смены), `apps/web/src/components/autoclave/index.ts` (канонический barrel-экспорт модуля).
+  - Фронтенд: `apps/web/src/components/sanpin/autoclaveLog/AutoclaveNewCycleTab.tsx`, `AutoclaveLog257Modal.tsx` (инициализация shift-записей и `initialTab`), `AutoclaveCycleModal.tsx` (предзаполненная история смены), `apps/web/src/components/sanpin/autoclave/` (канонический модуль автоклавирования).
   - Тесты: `apps/web/src/components/sanpin/__tests__/autoclaveExpressCycle.test.ts`, `sanpinAutoclaveJournal257.test.ts` (100% passing).
 
 ---
@@ -4418,7 +4418,7 @@
   - `packages/shared/src/fiscal/taxDeduction.ts` (ликвидирован дубликат, канонический источник в `finance/`)
   - `packages/shared/src/radiology/guideAssemblyEngine.ts`, `guideExportEngine.ts`, `guideValidationEngine.ts`, `guideValidate.ts`, `surgicalGuideExport.ts`, `surgicalGuideGeom.ts`, `surgicalGuideValidate.ts` (ликвидирован академический блоат 3D CAM шаблонов за пределами CRM)
   - `apps/web/src/components/payments/FastCheckoutModal.tsx`, `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx` (ликвидированы клоны, канон в `components/finance/FastCheckoutModal.tsx`)
-  - `apps/web/src/components/documents/FnsTaxDeductionModal.tsx` (ликвидирован клон, канон в `components/billing/tax/`)
+  - `apps/web/src/components/documents/FnsTaxDeductionModal.tsx` (ликвидирован клон, канон в `apps/web/src/components/tax/TaxDeductionModal.tsx`)
   - `apps/web/src/components/documents/DocumentsView.tsx` (ликвидирован клон, канон в `apps/web/src/DocumentsView.tsx`)
   - `apps/web/src/components/payroll/DoctorPayrollModal.tsx` (ликвидирован клон, канон в `components/finance/payroll/`)
   - `apps/web/src/components/patient/PatientCardModal.tsx` (ликвидирован клон, канон в `components/patients/`)
