@@ -219,6 +219,12 @@ Use these exclusively. Blind terminal navigation is banned.
   4. **Субагент-Пруфмейкер (Playwright Proofmaker):** Поднятие живых серверов (API + Web), сидирование базы реальными пациентами и записями, съемка реальных скриншотов в высоком разрешении (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark). Проверка уникальности MD5-хешей, отбраковка файлов <40 КБ.
 - **Железный принцип разделения властей (Separation of Powers):** Разработчик/верстальщик НИКОГДА не имеет права сам себе подписывать приёмку (`VICTORY`). Инквизитор НИКОГДА не закрывает глаза на «мелочи». Вердикт `[ПРОВЕРЕНО: ЧИСТО]` выносится ТОЛЬКО после того, как CSS-хирург устранил ВСЕ замечания инквизитора, а пруфмейкер переснял чистый скриншот и доказал это пикселями.
 
+**8r. REACTIVE WAKEUP & ABSOLUTE BAN ON TRANSCRIPT POLLING (ЗАПРЕТ НА ЦИКЛИЧЕСКОЕ ЧТЕНИЕ ТРАНСКРИПТОВ И ХОЛОСТОЙ ПЕРЕБОР СУБАГЕНТОВ)**:
+- **Стыд за чтение транскриптов в цикле (The Transcript Polling Shame):** Оркестраторам и агентам всех уровней КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО крутить холостые циклы чтения файлов `transcript.jsonl` или логов работающих субагентов каждые 2–5 секунд. Это выжирает квоты токенов, раздувает контекст и парализует работу. Запрещено симулировать деятельность чтением чужих логов.
+- **Реактивная модель (Reactive Wakeup):** Система пробуждает ведущего агента автоматически, как только субагент завершил работу, прислал отчет через `send_message` или фоновый таск завершился. Циклический поллинг статуса запрещен.
+- **Правило поведения оркестратора (Zero Idle Polling):** Раздал изолированные скоупы субагентам -> обновил документацию проекта -> проверил чистоту git-диффа -> остановил вызовы инструментов (Stop calling tools) и ждешь реактивного пробуждения. Пустые вызовы `Get-Content transcript.jsonl` строго запрещены.
+- **Немедленный синхрон документации:** При получении коммита от субагента — побуквенный отчет без купюр, проверка хэша и обновление бэклогов (`BACKLOG.md`, `FEATURES_REGISTRY.md`).
+
 **9. WORKSPACE HYGIENE & GIT (THE NATIVE-FIRST LAW)**
 - **ZERO CRUTCH SCRIPTS:** You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, etc.) in the project root to edit, append, test, or generate code.
 - You MUST edit source files natively using `replace_file_content`. Any attempt to write a script to edit another file will result in termination.
