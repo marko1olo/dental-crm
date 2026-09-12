@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { parse } from "@babel/parser";
 import { formatKopecksRu, parseKopecks, RU_MONEY_NBSP } from "@dental/shared";
-import type { PlanPriceCatalogItem } from "../plan/planPricing";
+import type { PlanPriceCatalogItem } from "../treatment-plans/planPricing";
 import {
 	calculateTreatmentWarranty,
 	type EstimatorToothInput,

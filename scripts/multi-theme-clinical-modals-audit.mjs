@@ -280,7 +280,6 @@ const MODALS_TO_AUDIT = [
 	{ name: "FastCheckoutModal", testId: "open-fast-checkout-modal-btn", prefix: "fast_checkout" },
 	{ name: "MedicalPrescriptionModal", testId: "open-med-prescription-modal-btn", prefix: "med_prescription" },
 	{ name: "CephalometricAnalysisModal", testId: "open-ceph-modal-btn", prefix: "ceph_trg" },
-	{ name: "ImplantIsqProtocolModal", testId: "open-isq-modal-btn", prefix: "implant_isq" },
 	{ name: "DentalLabOrderModal", testId: "open-lab-order-modal-btn", prefix: "lab_order" },
 	{ name: "ClinicalPhotoProtocolModal", testId: "open-photo-protocol-modal-btn", prefix: "photo_protocol" },
 	{ name: "PatientRecallManagerModal", testId: "open-recall-modal-btn", prefix: "recall_manager" },

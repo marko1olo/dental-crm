@@ -14,7 +14,6 @@ import {
 	formatPhoneDisplay,
 	fuzzyMatchPhone,
 	generateAppointmentConfirmationMessage,
-	generateCallTranscript,
 	generateSmsConfirmationUrl,
 	generateTelegramConfirmationUrl,
 	generateWaveformBars,
@@ -642,32 +641,42 @@ describe("Telephony & Reception Live Hub Suite", () => {
 	});
 
 	describe("8. Speech-to-Text Clinical Transcript & Dialogue Parsing", () => {
-		test("generateCallTranscript returns deterministic utterances with operator and patient speakers", () => {
-			const transcript = generateCallTranscript("test-call-id-99", 45);
+		test("zero-mock fallback: call defaults to undefined transcript and preserves authentic server utterances when provided", () => {
+			const authenticUtterances = [
+				{
+					speaker: "operator" as const,
+					startTimeSeconds: 1,
+					endTimeSeconds: 5,
+					text: "Клиника DENTE, слушаю вас.",
+					confidence: 0.98,
+					sentiment: "positive" as const,
+				},
+				{
+					speaker: "patient" as const,
+					startTimeSeconds: 6,
+					endTimeSeconds: 12,
+					text: "Здравствуйте, хочу подтвердить запись на завтра.",
+					confidence: 0.96,
+					sentiment: "neutral" as const,
+				},
+			];
 
-			assert.ok(Array.isArray(transcript), "Transcript must be an array");
-			assert.ok(transcript.length >= 3, "Transcript must have at least 3 utterances");
+			useTelephonyStore.getState().triggerIncomingCall({
+				callId: "call-with-real-stt",
+				phone: "+79991112233",
+				patientId: null,
+				patientName: "Реальный Пациент",
+				timestamp: new Date().toISOString(),
+				transcript: authenticUtterances,
+			});
 
-			const speakers = new Set(transcript.map((u) => u.speaker));
-			assert.ok(speakers.has("operator"), "Must contain operator utterances");
-			assert.ok(speakers.has("patient"), "Must contain patient utterances");
+			const active = useTelephonyStore.getState().activeCall;
+			assert.ok(active);
+			assert.equal(active.transcript?.length, 2);
+			assert.equal(active.transcript?.[0]?.speaker, "operator");
+			assert.equal(active.transcript?.[1]?.speaker, "patient");
 
-			for (const u of transcript) {
-				assert.ok(u.startTimeSeconds >= 0, "startTimeSeconds must be non-negative");
-				assert.ok(u.endTimeSeconds > u.startTimeSeconds, "endTimeSeconds must be greater than startTimeSeconds");
-				assert.ok(u.text.length > 5, "Utterance text must be realistic");
-				assert.ok(u.confidence >= 0.9 && u.confidence <= 1.0, "Confidence must be between 0.9 and 1.0");
-				assert.ok(["neutral", "positive", "negative"].includes(u.sentiment), "Valid sentiment");
-			}
-		});
-
-		test("generateCallTranscript is deterministic for identical seeds", () => {
-			const t1 = generateCallTranscript("seed-alpha", 60);
-			const t2 = generateCallTranscript("seed-alpha", 60);
-
-			assert.equal(t1.length, t2.length);
-			assert.equal(t1[0]?.text, t2[0]?.text);
-			assert.equal(t1[1]?.speaker, t2[1]?.speaker);
+			useTelephonyStore.getState().dismissCall();
 		});
 
 		test("incoming call trigger does NOT attach transcript while call is ringing", () => {

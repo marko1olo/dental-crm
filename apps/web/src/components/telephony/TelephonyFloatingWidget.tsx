@@ -11,6 +11,7 @@ import {
 	Copy,
 	CreditCard,
 	Delete,
+	FileQuestion,
 	FileText,
 	Headphones,
 	History,
@@ -55,7 +56,6 @@ import {
 	formatPatientInitials,
 	formatPhoneDisplay,
 	generateAppointmentConfirmationMessage,
-	generateCallTranscript,
 	generateWaveformBars,
 	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
@@ -259,11 +259,8 @@ export function TelephonyFloatingWidget({
 	}, [activeCall?.callId, activeCall?.phone]);
 
 	const transcriptUtterances = useMemo(() => {
-		return generateCallTranscript(
-			activeCall?.callId || activeCall?.phone || "sample-rec",
-			audioDuration,
-		);
-	}, [activeCall?.callId, activeCall?.phone, audioDuration]);
+		return activeCall?.transcript || [];
+	}, [activeCall?.transcript]);
 	useEffect(() => {
 		if (!isExpanded) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -1026,7 +1023,7 @@ export function TelephonyFloatingWidget({
 														</span>
 													</button>
 
-													{showTranscript && (
+													{showTranscript && transcriptUtterances.length > 0 && (
 														<button
 															type="button"
 															onClick={handleCopyTranscript}
@@ -1046,7 +1043,13 @@ export function TelephonyFloatingWidget({
 												{/* Expanded Speech Transcript Dialogue Utterances */}
 												{showTranscript && (
 													<div className="space-y-2 max-h-40 overflow-y-auto pr-1 pt-1 animate-fade-in">
-														{transcriptUtterances.map((u) => (
+														{transcriptUtterances.length === 0 ? (
+															<div className="py-6 px-4 text-center rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
+																<FileQuestion size={24} className="text-[var(--muted,#94a3b8)]" />
+																<span className="text-xs font-medium">Транскрипция аудиозаписи отсутствует</span>
+															</div>
+														) : (
+															transcriptUtterances.map((u) => (
 															<div
 																key={`${u.speaker}-${u.startTimeSeconds}`}
 																onClick={() => handleSeekToUtterance(u.startTimeSeconds)}
@@ -1082,7 +1085,7 @@ export function TelephonyFloatingWidget({
 																	{u.text}
 																</p>
 															</div>
-														))}
+														)))}
 													</div>
 												)}
 											</div>

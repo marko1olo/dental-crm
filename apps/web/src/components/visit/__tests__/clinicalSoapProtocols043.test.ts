@@ -50,7 +50,7 @@ import {
 	reconcileAutoSuggestions,
 	type EstimatorToothInput,
 } from "../../odontogram/treatmentEstimatorPricing";
-import type { PlanPriceCatalogItem } from "../../plan/planPricing";
+import type { PlanPriceCatalogItem } from "../../treatment-plans/planPricing";
 import type { DiaryState } from "../../useVisitDiaryLogic";
 
 describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", () => {

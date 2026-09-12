@@ -64,7 +64,7 @@ import {
 	PLAN_SERVICE_RULES,
 	type PlanPriceCatalogItem,
 	type PlanServiceRule,
-} from "../plan/planPricing";
+} from "../treatment-plans/planPricing";
 import type {
 	TreatmentPlanItem,
 	TreatmentPlanStageKind,

@@ -7,19 +7,16 @@
 export * from "./implantQuickPresets";
 export * from "./ImplantPassportCard";
 export * from "./ImplantPassportModal";
+export * from "./implantCatalog";
+export * from "./implantTorqueCatalog";
 
 import {
-	IMPLANT_CATALOG,
 	IMPLANT_BRANDS_METADATA,
 	type ImplantBrand,
 	type BrandMetadata,
 	type PlatformType,
 	getFixturesByBrand,
-} from "../implant/implantCatalog";
-import {
-	IMPLANT_TORQUE_SPECS,
-	getTorqueSpecsByBrand,
-} from "../implant/implantTorqueCatalog";
+} from "./implantCatalog";
 
 // Re-exports from existing catalog for backward compatibility
 export function getImplantBrandById(brand: ImplantBrand): BrandMetadata | undefined {
@@ -31,14 +28,6 @@ export function getImplantPlatformById(brand: ImplantBrand, line?: string): Plat
 	return fix?.platformType;
 }
 
-// Re-exports from existing catalog for backward compatibility
-export {
-	IMPLANT_CATALOG,
-} from "../implant/implantCatalog";
-export {
-	IMPLANT_TORQUE_SPECS,
-	getTorqueSpecsByBrand,
-} from "../implant/implantTorqueCatalog";
 export {
 	ImplantPassportModal as ImplantSurgicalPassportModal,
 } from "./ImplantPassportModal";

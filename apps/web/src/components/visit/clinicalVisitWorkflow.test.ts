@@ -22,7 +22,7 @@ import {
 	type EstimatorToothInput,
 	reconcileAutoSuggestions,
 } from "../odontogram/treatmentEstimatorPricing";
-import type { PlanPriceCatalogItem } from "../plan/planPricing";
+import type { PlanPriceCatalogItem } from "../treatment-plans/planPricing";
 import { DENTAL_FAST_PRESCRIPTION_SETS } from "../prescriptions/PrescriptionPrintModal";
 import type { DiaryState } from "../useVisitDiaryLogic";
 import {

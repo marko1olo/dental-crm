@@ -9,7 +9,7 @@ import {
 	planTotalKopecks,
 	resolvePlanSuggestions,
 	validateDraftPlanRows,
-} from "../components/plan/planPricing.js";
+} from "../components/treatment-plans/planPricing.js";
 
 /*
  * Цены сметы обязаны приходить из прайса клиники.
