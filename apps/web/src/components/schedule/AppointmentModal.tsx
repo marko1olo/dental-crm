@@ -847,12 +847,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
+				e.preventDefault();
 				onClose();
+			} else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+				e.preventDefault();
+				void handleSave();
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, onClose]);
+	}, [isOpen, onClose, handleSave]);
 
 	if (!isOpen || !appointment) return null;
 

@@ -700,6 +700,96 @@ export const OdontogramModule = ({
 		showToast("Клинический статус зубной формулы внесен в Дневник 043/у", "success", 4000);
 	}, [teethData]);
 
+	const handleApplyToothState = useCallback(
+		(state: ToothState) => {
+			if (!menuConfig) return;
+			const num = menuConfig.toothNumber;
+			const targets =
+				selectedTeeth.length > 0 && selectedTeeth.includes(num)
+					? selectedTeeth
+					: [num];
+			void updateToothState(targets, state);
+			try {
+				const toothSurfaces =
+					activeSurfaces.length > 0 ? activeSurfaces : undefined;
+				const findingPayload =
+					toothSurfaces && toothSurfaces.length > 0
+						? {
+								toothNumber: num,
+								state,
+								surfaces: toothSurfaces,
+						  }
+						: { toothNumber: num, state };
+				const soap = generateSoapFromOdontogramFinding(findingPayload);
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							finding: findingPayload,
+							soap,
+							mode: "smart_append",
+							immediate: true,
+						},
+					}),
+				);
+			} catch {
+				// Safe event dispatch fallback
+			}
+			setMenuConfig(null);
+		},
+		[menuConfig, selectedTeeth, updateToothState, activeSurfaces],
+	);
+
+	useEffect(() => {
+		if (!menuConfig) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable)
+			) {
+				return;
+			}
+
+			if (e.key === "Escape") {
+				e.preventDefault();
+				setMenuConfig(null);
+				return;
+			}
+
+			const key = e.key.toLowerCase();
+			if (key === "c" || key === "с") {
+				e.preventDefault();
+				handleApplyToothState("Caries");
+			} else if (key === "p" || key === "п") {
+				e.preventDefault();
+				handleApplyToothState("Pulpitis");
+			} else if (key === "t" || key === "т") {
+				e.preventDefault();
+				handleApplyToothState("Periodontitis");
+			} else if (key === "f" || key === "а") {
+				e.preventDefault();
+				handleApplyToothState("Filled");
+			} else if (key === "k" || key === "к" || key === "r") {
+				e.preventDefault();
+				handleApplyToothState("Crown");
+			} else if (key === "i" || key === "ш") {
+				e.preventDefault();
+				handleApplyToothState("Implant");
+			} else if (key === "x" || key === "ч") {
+				e.preventDefault();
+				handleApplyToothState("Missing");
+			} else if (key === "0" || key === "h" || key === "з") {
+				e.preventDefault();
+				handleApplyToothState("Healthy");
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [menuConfig, handleApplyToothState]);
+
 	useEffect(() => {
 		/* Сначала гидрируем из локального хранилища, если есть сохранённые данные */
 		const cachedTeeth = loadStoredTeethData(patientId);
@@ -1411,7 +1501,12 @@ export const OdontogramModule = ({
 									} as React.CSSProperties
 								}
 								onClick={(e) => e.stopPropagation()}
-								onKeyDown={(e) => e.stopPropagation()}
+								onKeyDown={(e) => {
+									if (e.key === "Escape") {
+										e.preventDefault();
+										setMenuConfig(null);
+									}
+								}}
 							>
 								{/* SVG Caret (Tail) */}
 								{menuConfig.position === "bottom" ? (
@@ -1521,41 +1616,7 @@ export const OdontogramModule = ({
 									<button
 										key={action.state}
 										type="button"
-										onClick={() => {
-											const num = menuConfig.toothNumber;
-											const targets =
-												selectedTeeth.length > 0 && selectedTeeth.includes(num)
-													? selectedTeeth
-													: [num];
-											void updateToothState(targets, action.state);
-											try {
-												const toothSurfaces =
-													activeSurfaces.length > 0 ? activeSurfaces : undefined;
-												const findingPayload =
-													toothSurfaces && toothSurfaces.length > 0
-														? {
-																toothNumber: num,
-																state: action.state,
-																surfaces: toothSurfaces,
-															}
-														: { toothNumber: num, state: action.state };
-												const soap =
-													generateSoapFromOdontogramFinding(findingPayload);
-												window.dispatchEvent(
-													new CustomEvent("dente-apply-soap-protocol", {
-														detail: {
-															finding: findingPayload,
-															soap,
-															mode: "smart_append",
-															immediate: true,
-														},
-													}),
-												);
-											} catch {
-												// Safe event dispatch fallback
-											}
-											setMenuConfig(null);
-										}}
+										onClick={() => handleApplyToothState(action.state)}
 										className={`flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-black text-sm sm:text-base cursor-pointer select-none active:scale-95 text-center leading-tight break-words min-w-0 ${action.className}`}
 									>
 										<span className="min-w-0 break-words text-center leading-tight">{action.label}</span>

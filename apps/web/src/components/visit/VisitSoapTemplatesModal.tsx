@@ -187,13 +187,28 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 		return generateMaterialsDeductionReceipt(activePreset, selectedTooth);
 	}, [activePreset, selectedTooth]);
 
-	if (!isOpen) return null;
-
-	const handleApply = () => {
+	const handleApply = React.useCallback(() => {
 		const effectiveTooth = activePreset.category !== "hygiene" ? (selectedTooth ?? activePreset.defaultTooth ?? 16) : null;
 		onApplyPreset(activePreset, effectiveTooth, applyMode);
 		onClose();
-	};
+	}, [activePreset, selectedTooth, onApplyPreset, applyMode, onClose]);
+
+	React.useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onClose();
+			} else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+				e.preventDefault();
+				handleApply();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose, handleApply]);
+
+	if (!isOpen) return null;
 
 	const getCategoryIcon = (cat: ClinicalPresetCategory) => {
 		switch (cat) {
