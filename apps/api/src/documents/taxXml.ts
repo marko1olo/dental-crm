@@ -21,6 +21,7 @@ import type {
 } from "@dental/shared";
 import {
 	buildFnsKnd1151156Xml,
+	cleanDigits,
 	kopecksToNumericString,
 	parseFio,
 	parseKopecks,
@@ -48,10 +49,6 @@ const FNS_MEDICAL_EXPENSE_XML_KND = "1184043";
 const FNS_MEDICAL_EXPENSE_XML_VERSION = "5.01";
 const FNS_MEDICAL_EXPENSE_ORDER = "ЕА-7-11/824@";
 
-function digits(str?: string | null): string {
-	return str ? str.replace(/\D/g, "") : "";
-}
-
 function cleanString(str?: string | null): string | undefined {
 	if (!str) return undefined;
 	const trimmed = repairMojibakeText(str).trim();
@@ -59,7 +56,11 @@ function cleanString(str?: string | null): string | undefined {
 }
 
 function compactDocumentNumber(doc: GeneratedDocument): string {
-	const raw = digits((doc as unknown as { number?: string; documentNumber?: string }).number || (doc as unknown as { number?: string; documentNumber?: string }).documentNumber || doc.id);
+	const raw = cleanDigits(
+		(doc as unknown as { number?: string; documentNumber?: string }).number ||
+			(doc as unknown as { number?: string; documentNumber?: string }).documentNumber ||
+			doc.id,
+	);
 	return raw.length > 0 ? raw : "1";
 }
 
@@ -116,7 +117,7 @@ export function buildKnd1151156Xml(
 		};
 	}
 
-	const cleanTaxOffice = digits(context.taxOfficeCode);
+	const cleanTaxOffice = cleanDigits(context.taxOfficeCode);
 	if (cleanTaxOffice.length !== 4) {
 		return {
 			ok: false,
@@ -148,7 +149,7 @@ export function buildKnd1151156Xml(
 		licenseDate?: string | null;
 	};
 
-	const clinicInn = digits(clinicProfileAny.inn);
+	const clinicInn = cleanDigits(clinicProfileAny.inn);
 	if (clinicInn.length !== 10 && clinicInn.length !== 12) {
 		return {
 			ok: false,
@@ -277,8 +278,8 @@ export function buildKnd1151156Xml(
 		}),
 	);
 
-	const clinicKpp = digits(clinicProfileAny.kpp) || undefined;
-	const clinicOgrn = digits(clinicProfileAny.ogrn) || "1027700132195";
+	const clinicKpp = cleanDigits(clinicProfileAny.kpp) || undefined;
+	const clinicOgrn = cleanDigits(clinicProfileAny.ogrn) || "1027700132195";
 
 	const firstPaymentAny = firstPayment as unknown as { payerSnils?: string | null };
 

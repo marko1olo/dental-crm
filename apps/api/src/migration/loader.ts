@@ -25,7 +25,7 @@ import {
 	IdentityIndex,
 	naturalKeyFor,
 	rawRowHash,
-} from "./identity.js";
+} from "./recordResolution.js";
 import type { RowIssue, TransformedRow } from "./rowTransform.js";
 import { dateOnlyPart, storedDateTimeToUtc } from "./valueNormalize.js";
 

@@ -8,7 +8,7 @@ import {
 	migrationEntityKindTitles,
 } from "@dental/shared";
 import { maskValueShape, profileTable } from "./columnProfile.js";
-import { naturalKeyFor } from "./identity.js";
+import { naturalKeyFor } from "./recordResolution.js";
 import { mapColumnsWithLlm } from "./llmMapper.js";
 import { loaderFor, recordQuarantine, stageRows } from "./loader.js";
 import {

@@ -28,7 +28,7 @@ import {
 	maskValueShape,
 	profileTable,
 } from "./columnProfile.js";
-import { naturalKeyFor, sourceFingerprint } from "./identity.js";
+import { naturalKeyFor, sourceFingerprint } from "./recordResolution.js";
 import { mapColumnsWithLlm } from "./llmMapper.js";
 import {
 	loaderFor,

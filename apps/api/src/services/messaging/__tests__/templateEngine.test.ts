@@ -55,18 +55,15 @@ describe("Template Engine Unit Tests", () => {
 		assert.ok(ru.bodyText.includes("12.11.2026"));
 		assert.equal(ru.buttons?.length, 2);
 		assert.equal(ru.buttons?.[0]?.id, "APPT_CONFIRM");
+		assert.equal(ru.buttons?.[0]?.title, "Подтверждаю");
+		assert.equal(ru.buttons?.[1]?.id, "APPT_RESCHEDULE");
+		assert.equal(ru.buttons?.[1]?.title, "Перенести");
 
-		// Spanish
-		const es = engine.render("appointment_confirmation", "es", context);
-		assert.ok(es.subject.includes("Confirmación"));
-		assert.ok(es.bodyText.includes("¡Hola, Елена!"));
-		assert.equal(es.buttons?.length, 2);
-		assert.equal(es.buttons?.[0]?.id, "APPT_CONFIRM");
-
-		// English
-		const en = engine.render("appointment_confirmation", "en", context);
-		assert.ok(en.subject.includes("confirmed"));
-		assert.ok(en.bodyText.includes("Hello Елена!"));
+		// Non-ru locale falls back to canonical ru
+		const fallback = engine.render("appointment_confirmation", "es", context);
+		assert.ok(fallback.subject.includes("ДЕНТЕ"));
+		assert.ok(fallback.bodyText.includes("Елена"));
+		assert.equal(fallback.buttons?.[0]?.title, "Подтверждаю");
 	});
 
 	it("renders invoice_payment_link template with formatted amount", () => {
