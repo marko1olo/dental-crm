@@ -31,7 +31,6 @@ import { FnsNdflXmlModal } from "../documents/ndflXml";
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
 import { StaffPayrollLedgerModal } from "../payroll/StaffPayrollLedgerModal";
-import { AdvancedDoctorPayrollModal } from "../payroll/AdvancedDoctorPayrollModal";
 import { FormT13TimesheetModal } from "../payroll/FormT13TimesheetModal";
 import { SickLeaveElnModal } from "../documents/sickLeave/SickLeaveElnModal";
 import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
@@ -207,7 +206,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<StaffPayrollLedgerModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "advanced_doctor_payroll" && (
-				<AdvancedDoctorPayrollModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DoctorPayrollModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "form_t13_timesheet" && (
 				<FormT13TimesheetModal isOpen={true} onClose={close}  {...({} as any)} />

@@ -4,6 +4,7 @@ import {
 	calculateEmployeeTimesheetT13,
 	aggregateTimesheetDays,
 	generateTimesheetT13Csv,
+	renderFormT13Html,
 	getDaysInMonth,
 	TIMESHEET_STATUTORY_CODES,
 	type TimesheetDayRecord,
@@ -125,5 +126,47 @@ describe("Statutory Form T-13 Timesheet Engine (Госкомстат РФ № 1)
 		assert.ok(csv.includes("Смирнов Алексей Петрович"));
 		assert.ok(csv.includes("00142"));
 		assert.ok(csv.includes("Врач-стоматолог терапевт"));
+	});
+
+	it("1.5 Renders statutory Form T-13 A4 HTML print document", () => {
+		const input: EmployeeTimesheetInput = {
+			employeeId: "emp-101",
+			employeeTabNumber: "00142",
+			employeeFullName: "Смирнов Алексей Петрович",
+			positionRu: "Врач-стоматолог терапевт",
+			departmentRu: "Терапевтическое отделение",
+			year: 2026,
+			month: 8,
+			days: [
+				{ dayNumber: 1, primaryCode: "Я", primaryHours: 6.0 },
+				{ dayNumber: 2, primaryCode: "В", primaryHours: 0 },
+			],
+		};
+
+		const summary = calculateEmployeeTimesheetT13(input);
+		const html = renderFormT13Html({
+			organizationLegalName: "ООО «Денте Стоматология»",
+			organizationOkpo: "12345678",
+			departmentName: "Терапевтическое отделение",
+			documentNumber: "Т13-08-2026",
+			compilationDate: "2026-08-31",
+			reportingPeriodStart: "2026-08-01",
+			reportingPeriodEnd: "2026-08-31",
+			year: 2026,
+			month: 8,
+			employees: [summary],
+			responsiblePersonPosition: "Главный врач",
+			responsiblePersonFullName: "Ковалев В. А.",
+			hrOfficerPosition: "Специалист по кадрам",
+			hrOfficerFullName: "Сидорова С. С.",
+			headOfOrganizationPosition: "Генеральный директор",
+			headOfOrganizationFullName: "Иванов И. И.",
+		});
+
+		assert.ok(html.includes("<!DOCTYPE html>"));
+		assert.ok(html.includes("Унифицированная форма № Т-13"));
+		assert.ok(html.includes("ООО «Денте Стоматология»"));
+		assert.ok(html.includes("Смирнов Алексей Петрович"));
+		assert.ok(html.includes("00142"));
 	});
 });
