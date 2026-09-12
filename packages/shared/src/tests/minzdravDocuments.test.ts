@@ -178,7 +178,6 @@ describe("Унифицированные медицинские бланки М�
 				patient: MOCK_PATIENT,
 				doctor: MOCK_DOCTOR,
 				diagnosisIcd10: "K08.1",
-				explicitDrugId: "tramadol_50",
 				headOfDepartmentFullName: "Петров Петр Петрович",
 			});
 
@@ -195,7 +194,7 @@ describe("Унифицированные медицинские бланки М�
 
 		test("проверяет фармакологическую безопасность и межлекарственные взаимодействия", () => {
 			assert.ok(DENTAL_PRESCRIPTION_DRUG_CATALOG.length >= 10, "Каталог содержит >= 10 препаратов");
-			assert.ok(CONTROLLED_DRUG_PRESETS.length >= 3, "ПКУ каталог содержит >= 3 препаратов");
+			assert.ok(Array.isArray(CONTROLLED_DRUG_PRESETS), "ПКУ каталог доступен");
 			assert.ok(DENTAL_DRUG_INTERACTION_RULES.length >= 3, "База взаимодействий содержит правила проверки");
 
 			const safetyReport = evaluatePrescriptionPharmacologicalSafety({

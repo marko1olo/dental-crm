@@ -566,7 +566,7 @@ export function generateForm036uEntry(
 	const vkDecision = isVk
 		? form.vkProtocol?.expertDecision ||
 			`Продлить ЭЛН № ${form.elnNumber} с ${formatDateRu(form.vkProtocol?.extensionDateFrom || firstDate)} по ${formatDateRu(form.vkProtocol?.extensionDateTo || lastDate)}. Повторный осмотр ВК ${formatDateRu(form.vkProtocol?.nextReviewDate || lastDate)}.`
-		: `Выдать ЭЛН № ${form.elnNumber} на срок ${totalDays} дн. с ${formatDateRu(firstDate)} по ${formatDateRu(lastDate)}. Режим: ${form.regimeType === 'ambulatory' ? 'Амбулаторный' : 'Стационарный'}.`;
+		: `Выдать ЭЛН № ${form.elnNumber} на срок ${totalDays} дн. с ${formatDateRu(firstDate)} по ${formatDateRu(lastDate)}. Режим: Амбулаторный.`;
 
 	const chairperson = isVk ? form.vkProtocol?.chairpersonFio || 'Председатель ВК' : form.periods[0]?.doctorFio || 'Лечащий врач';
 	const members = isVk ? form.vkProtocol?.memberFios || [] : [];
@@ -805,7 +805,7 @@ export function generateSickLeavePatientMemoHtml(form: SickLeaveFormState, patie
 						(p) => `<tr>
           <td><strong>с ${formatDateRu(p.dateFrom)} по ${formatDateRu(p.dateTo)}</strong></td>
           <td>${calculateDaysBetween(p.dateFrom, p.dateTo)}</td>
-          <td>${form.regimeType === 'ambulatory' ? 'Амбулаторный' : 'Стационарный'}</td>
+          <td>Амбулаторный</td>
           <td>${escapeXml(p.doctorFio)} (${escapeXml(p.doctorSpecialty)})</td>
           <td>${p.vkProtocolNumber ? `Протокол ВК № ${escapeXml(p.vkProtocolNumber)}` : 'Единолично лечащим врачом'}</td>
         </tr>`
@@ -871,7 +871,7 @@ export function generateEmrDiarySnippet(
 		snippet += `Оформлен ЭЛН № ${form.elnNumber} (Приказ Минздрава РФ № 1089н).\n`;
 	}
 	snippet += `Причина ВН: код ${form.reasonCode} (${form.icd10Code} - ${form.diagnosisText}).\n`;
-	snippet += `Период освобождения от работы: с ${formatDateRu(firstDate)} по ${formatDateRu(lastDate)} (продолжительность: ${totalDays} кал. дн.). Режим: ${form.regimeType === 'ambulatory' ? 'амбулаторный' : 'стационарный'}.\n`;
+	snippet += `Период освобождения от работы: с ${formatDateRu(firstDate)} по ${formatDateRu(lastDate)} (продолжительность: ${totalDays} кал. дн.). Режим: амбулаторный.\n`;
 
 	if (form.isVkRequired && form.vkProtocol) {
 		snippet += `Решение Врачебной комиссии (ВК): Протокол № ${form.vkProtocol.protocolNumber} от ${formatDateRu(form.vkProtocol.protocolDate)}. Обоснование: ${form.vkProtocol.clinicalSubstantiation}. Председатель ВК: ${form.vkProtocol.chairpersonFio}.\n`;

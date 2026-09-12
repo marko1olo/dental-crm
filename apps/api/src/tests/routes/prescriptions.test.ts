@@ -17,7 +17,6 @@ describe("API Prescriptions Routes & Statutory Validity (Order 1094n)", () => {
 		assert.ok(DENTAL_PRESCRIPTION_DRUG_CATALOG.length >= 15);
 		assert.equal(PRESCRIPTION_VALIDITY_RULES["148-1u-88"].defaultValidityPeriod, "15");
 		assert.equal(PRESCRIPTION_VALIDITY_RULES["107-1u"].defaultValidityPeriod, "60");
-		assert.equal(PRESCRIPTION_VALIDITY_RULES["148-1u-04l"].defaultValidityPeriod, "30");
 	});
 
 	it("2. Validates Form 107-1/u standard prescription (60 days)", () => {
@@ -46,7 +45,7 @@ describe("API Prescriptions Routes & Statutory Validity (Order 1094n)", () => {
 			validityDays: "15",
 			patientAddress: "г. Москва, ул. Тверская, д. 12, кв. 34",
 			items: [
-				{ latinName: "Rp.: Tramadoli 50 mg", tradeName: "Трамадол" },
+				{ latinName: "Rp.: Tab. Ketorolaci 10 mg", tradeName: "Кеторолак" },
 			],
 		}, "2026-08-23");
 
@@ -60,7 +59,7 @@ describe("API Prescriptions Routes & Statutory Validity (Order 1094n)", () => {
 			prescriptionDate: "2026-08-23",
 			validityDays: "60",
 			patientAddress: "г. Москва, ул. Тверская, д. 12, кв. 34",
-			items: [{ latinName: "Rp.: Tramadoli 50 mg" }],
+			items: [{ latinName: "Rp.: Tab. Ketorolaci 10 mg" }],
 		});
 		assert.equal(invalidPkuDays.isValid, false);
 		assert.ok(invalidPkuDays.errors.some((e) => e.includes("15 дней")));
@@ -71,40 +70,47 @@ describe("API Prescriptions Routes & Statutory Validity (Order 1094n)", () => {
 			prescriptionDate: "2026-08-23",
 			validityDays: "15",
 			patientAddress: "",
-			items: [{ latinName: "Rp.: Tramadoli 50 mg" }],
+			items: [{ latinName: "Rp.: Tab. Ketorolaci 10 mg" }],
 		});
 		assert.equal(missingAddress.isValid, false);
 		assert.ok(missingAddress.errors.some((e) => e.includes("адреса")));
 	});
 
-	it("4. Validates Form 148-1/u-04(л) Preferential Prescription: SNILS & OMS Policy required", () => {
-		const validPreferential = verifyPrescriptionStatutoryValidity({
-			formType: "148-1u-04l",
+	it("4. Validates Form 107-1/u Chronic Prescription: Special care flag required for 365 days", () => {
+		const validChronic = verifyPrescriptionStatutoryValidity({
+			formType: "107-1u",
 			prescriptionDate: "2026-08-23",
-			validityDays: "30",
-			preferentialDetails: {
-				patientSnils: "123-456-789 00",
-				patientOmsPolicy: "1234567890123456",
-			},
-			items: [{ latinName: "Rp.: Tab. Metformini 1000 mg" }],
+			validityDays: "365",
+			isChronicSpecialCare: true,
+			chronicPeriodicity: "ежемесячно (1 раз в 30 дней)",
+			items: [{ latinName: "Rp.: Nimesulidi 100 mg" }],
 		}, "2026-08-23");
 
-		assert.equal(validPreferential.isValid, true);
-		assert.equal(validPreferential.validityDays, 30);
+		assert.equal(validChronic.isValid, true);
+		assert.equal(validChronic.validityDays, 365);
 
-		// Missing SNILS
-		const missingSnils = verifyPrescriptionStatutoryValidity({
-			formType: "148-1u-04l",
+		// Missing isChronicSpecialCare when 365 days requested
+		const missingSpecialCare = verifyPrescriptionStatutoryValidity({
+			formType: "107-1u",
 			prescriptionDate: "2026-08-23",
-			validityDays: "30",
-			preferentialDetails: {
-				patientSnils: "",
-				patientOmsPolicy: "1234567890123456",
-			},
-			items: [{ latinName: "Rp.: Tab. Metformini 1000 mg" }],
+			validityDays: "365",
+			isChronicSpecialCare: false,
+			items: [{ latinName: "Rp.: Nimesulidi 100 mg" }],
 		});
-		assert.equal(missingSnils.isValid, false);
-		assert.ok(missingSnils.errors.some((e) => e.includes("СНИЛС")));
+		assert.equal(missingSpecialCare.isValid, false);
+		assert.ok(missingSpecialCare.errors.some((e) => e.includes("специальному назначению")));
+
+		// Missing chronicPeriodicity generates warning
+		const missingPeriodicity = verifyPrescriptionStatutoryValidity({
+			formType: "107-1u",
+			prescriptionDate: "2026-08-23",
+			validityDays: "365",
+			isChronicSpecialCare: true,
+			chronicPeriodicity: "",
+			items: [{ latinName: "Rp.: Nimesulidi 100 mg" }],
+		});
+		assert.equal(missingPeriodicity.isValid, true);
+		assert.ok(missingPeriodicity.warnings.some((w) => w.includes("периодичность")));
 	});
 
 	it("5. Calculates expiration date and detects expired / expiring-soon prescriptions", () => {
@@ -117,7 +123,7 @@ describe("API Prescriptions Routes & Statutory Validity (Order 1094n)", () => {
 			prescriptionDate: "2026-08-10",
 			validityDays: "15",
 			patientAddress: "г. Москва, Ленинский пр-кт, 10",
-			items: [{ latinName: "Rp.: Tramadoli 50 mg" }],
+			items: [{ latinName: "Rp.: Tab. Ketorolaci 10 mg" }],
 		}, "2026-08-23");
 
 		assert.equal(expiringSoon.status, "expiring_soon");

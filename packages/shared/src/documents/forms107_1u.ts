@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 
 /** Допустимые типы бланков рецептов */
-export const prescriptionFormTypeSchema = z.enum(["107-1u", "148-1u-88", "148-1u-04l"]);
+export const prescriptionFormTypeSchema = z.enum(["107-1u", "148-1u-88"]);
 export type PrescriptionFormType = z.infer<typeof prescriptionFormTypeSchema>;
 
 /** Сроки действия рецептов согласно Приказу Минздрава России № 1094н */
@@ -634,72 +634,6 @@ export const DENTAL_PRESCRIPTION_DRUG_CATALOG: readonly DentalPrescriptionDrugPr
 		defaultValidityDays: "60",
 	},
 
-	// ── Препараты строгой отчетности (ПКУ) — Форма № 148-1/у-88 ──
-	{
-		id: "tramadol_50",
-		tradeNameRu: "Трамадол (Трамал)",
-		activeSubstanceRu: "Трамадол",
-		category: "controlled_pku",
-		categoryLabel: "Опиоидный анальгетик (ПКУ)",
-		latinRp: "Rp.: Tramadoli 50 mg",
-		formRu: "капсулы",
-		dosageRu: "50 мг",
-		quantityLabel: "N. 10 (капсулы)",
-		dispenseLatin: "D.t.d. N 10 in caps.",
-		signaRu: "S. Внутрь по 1 капсуле (50 мг) при некупируемом выраженном болевом синдроме после травматичной операции, не более 400 мг в сутки.",
-		recommendedForIcd10: ["K08.1", "K04.4", "K10.2"],
-		defaultValidityDays: "15",
-		isPkuStrictAccounting: true,
-	},
-	{
-		id: "zaldiar_375",
-		tradeNameRu: "Залдиар (Трамадол + Парацетамол)",
-		activeSubstanceRu: "Трамадол + Парацетамол",
-		category: "controlled_pku",
-		categoryLabel: "Комбинированный анальгетик (ПКУ)",
-		latinRp: "Rp.: Tab. Tramadoli 37.5 mg + Paracetamoli 325 mg",
-		formRu: "таблетки, покрытые оболочкой",
-		dosageRu: "37.5 мг + 325 мг",
-		quantityLabel: "N. 10 (таблетки)",
-		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1-2 таблетки при сильной боли после челюстно-лицевой операции, интервал между приемами не менее 6 часов.",
-		recommendedForIcd10: ["K08.1", "K10.2"],
-		defaultValidityDays: "15",
-		isPkuStrictAccounting: true,
-	},
-	{
-		id: "diazepam_5",
-		tradeNameRu: "Диазепам (Реланиум / Сибазон)",
-		activeSubstanceRu: "Диазепам",
-		category: "controlled_pku",
-		categoryLabel: "Анксиолитик / Седативное (ПКУ)",
-		latinRp: "Rp.: Tab. Diazepami 0.005",
-		formRu: "таблетки",
-		dosageRu: "5 мг",
-		quantityLabel: "N. 10 (таблетки)",
-		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке (5 мг) на ночь накануне сложной костно-пластической операции при выраженной дентофобии.",
-		recommendedForIcd10: ["Z01.2", "F40.2"],
-		defaultValidityDays: "15",
-		isPkuStrictAccounting: true,
-	},
-	{
-		id: "pregabalin_75",
-		tradeNameRu: "Прегабалин (Лирика)",
-		activeSubstanceRu: "Прегабалин",
-		category: "controlled_pku",
-		categoryLabel: "Нейропатическая боль (ПКУ)",
-		latinRp: "Rp.: Caps. Pregabalini 75 mg",
-		formRu: "капсулы",
-		dosageRu: "75 мг",
-		quantityLabel: "N. 14 (капсулы)",
-		dispenseLatin: "D.t.d. N 14 in caps.",
-		signaRu: "S. Внутрь по 1 капсуле (75 мг) 2 раза в сутки при стойкой тригеминальной невралгии / посттравматической нейропатии нижнеальвеолярного нерва.",
-		recommendedForIcd10: ["G50.0", "K08.1"],
-		defaultValidityDays: "15",
-		isPkuStrictAccounting: true,
-	},
-
 	// ── Антисептики и стоматологические топические средства ──
 	{
 		id: "chlorhexidine_005",
@@ -888,37 +822,6 @@ export const DENTAL_PRESCRIPTION_DRUG_CATALOG: readonly DentalPrescriptionDrugPr
 		defaultValidityDays: "60",
 	},
 
-	// ── Льготные препараты (Форма № 148-1/у-04(л)) ──
-	{
-		id: "metformin_1000",
-		tradeNameRu: "Метформин (Глюкофаж)",
-		activeSubstanceRu: "Метформин",
-		category: "preferential_somatic",
-		categoryLabel: "Гипогликемическое средство (Льгота)",
-		latinRp: "Rp.: Tab. Metformini 1000 mg",
-		formRu: "таблетки, покрытые пленочной оболочкой",
-		dosageRu: "1000 мг",
-		quantityLabel: "N. 60 (таблетки)",
-		dispenseLatin: "D.t.d. N 60 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 2 раза в день во время или после еды, длительно.",
-		recommendedForIcd10: ["E11.9"],
-		defaultValidityDays: "365",
-	},
-	{
-		id: "salbutamol_spray",
-		tradeNameRu: "Сальбутамол (Вентолин)",
-		activeSubstanceRu: "Сальбутамол",
-		category: "preferential_somatic",
-		categoryLabel: "Бронходилататор (Льгота)",
-		latinRp: "Rp.: Aeros. Salbutamoli 100 mcg/dose - 200 doses",
-		formRu: "аэрозоль для ингаляций дозированный",
-		dosageRu: "100 мкг/доза",
-		quantityLabel: "1 баллончик (200 доз)",
-		dispenseLatin: "D.t.d. N 1 in aeros.",
-		signaRu: "S. Ингаляционно по 1-2 дозы при приступах удушья (не более 8 доз в сутки).",
-		recommendedForIcd10: ["J45.0"],
-		defaultValidityDays: "365",
-	},
 	{
 		id: "drotaverine_40",
 		tradeNameRu: "Дротаверин (Но-шпа)",
@@ -1090,44 +993,6 @@ export const DENTAL_DRUG_DOSAGE_LIMITS: Readonly<Record<string, DrugDosageLimit>
 		maxCourseDays: 14,
 		notesRu: "Макролид: препарат выбора при аллергии на пенициллины. Принимать 1 раз в сутки.",
 	},
-	tramadol_50: {
-		drugId: "tramadol_50",
-		activeSubstance: "Трамадол",
-		maxSingleDoseMg: 100,
-		maxDailyDoseMg: 400,
-		unit: "мг",
-		pediatricMinAgeYears: 14,
-		maxCourseDays: 5,
-		notesRu: "Опиоидный анальгетик ПКУ: риск зависимости и угнетения дыхания.",
-	},
-	zaldiar_375: {
-		drugId: "zaldiar_375",
-		activeSubstance: "Трамадол + Парацетамол",
-		maxSingleDoseMg: 75,
-		maxDailyDoseMg: 300,
-		unit: "мг (по трамадолу)",
-		pediatricMinAgeYears: 14,
-		maxCourseDays: 5,
-	},
-	diazepam_5: {
-		drugId: "diazepam_5",
-		activeSubstance: "Диазепам",
-		maxSingleDoseMg: 10,
-		maxDailyDoseMg: 30,
-		unit: "мг",
-		pediatricMinAgeYears: 18,
-		maxCourseDays: 7,
-		notesRu: "Бензодиазепин ПКУ: выраженная седация, не управлять автомобилем.",
-	},
-	pregabalin_75: {
-		drugId: "pregabalin_75",
-		activeSubstance: "Прегабалин",
-		maxSingleDoseMg: 300,
-		maxDailyDoseMg: 600,
-		unit: "мг",
-		pediatricMinAgeYears: 18,
-		maxCourseDays: 30,
-	},
 	tranexamic_acid_500: {
 		drugId: "tranexamic_acid_500",
 		activeSubstance: "Транексамовая кислота",
@@ -1211,7 +1076,7 @@ export const DENTAL_DRUG_INTERACTION_RULES: readonly DrugInteractionRule[] = [
 		severity: "contraindicated",
 		titleRu: "Комбинация опиоида и бензодиазепина (Black Box Warning)",
 		descriptionRu: "Одновременное применение трамадола и диазепама вызывает синергическое угнетение ЦНС, тяжелую седацию, дыхательную депрессию, кому и летальный исход.",
-		clinicalRecommendationRu: "Избегайте совместного назначения, кроме случаев ИВЛ / стационарного мониторинга.",
+		clinicalRecommendationRu: "Категорически запрещено одновременное амбулаторное назначение.",
 	},
 	{
 		drugA: "ciprofloxacin_500",
@@ -1392,12 +1257,6 @@ export const PRESCRIPTION_VALIDITY_RULES = {
 		defaultValidityPeriod: "15",
 		chronicCareAllowed: false,
 	},
-	"148-1u-04l": {
-		maxItemsCount: 3,
-		allowedValidityPeriods: ["15", "30", "60", "365"] as const,
-		defaultValidityPeriod: "30",
-		chronicCareAllowed: true,
-	},
 } as const;
 
 /** Расчет точной даты истечения срока действия рецепта */
@@ -1438,8 +1297,6 @@ export function verifyPrescriptionStatutoryValidity(
 	let form: PrescriptionFormType = "107-1u";
 	if (prescription.formNumber === "148-1/у-88" || prescription.formType === "148-1u-88" || prescription.formType === ("148-1u" as any)) {
 		form = "148-1u-88";
-	} else if (prescription.formNumber === "148-1/у-04(л)" || prescription.formType === "148-1u-04l") {
-		form = "148-1u-04l";
 	}
 
 	const rules = PRESCRIPTION_VALIDITY_RULES[form];
@@ -1471,13 +1328,6 @@ export function verifyPrescriptionStatutoryValidity(
 			if (!prescription.chronicPeriodicity || prescription.chronicPeriodicity.trim().length === 0) {
 				warnings.push("Для рецепта на 1 год рекомендуется указать периодичность отпуска (например, «ежемесячно»).");
 			}
-		}
-	} else if (form === "148-1u-04l") {
-		if (!prescription.preferentialDetails?.patientSnils || prescription.preferentialDetails.patientSnils.length < 11) {
-			errors.push("Для льготного рецепта № 148-1/у-04(л) обязательно указание страхового номера СНИЛС пациента.");
-		}
-		if (!prescription.preferentialDetails?.patientOmsPolicy || prescription.preferentialDetails.patientOmsPolicy.length < 16) {
-			errors.push("Для льготного рецепта № 148-1/у-04(л) обязательно указание номера полиса ОМС (16 знаков).");
 		}
 	}
 
@@ -1636,9 +1486,10 @@ export function generateForm148_1u88Payload(options: {
 		options.customSeriesNumber ||
 		`ПКУ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 
+	const fallbackDrug = CONTROLLED_DRUG_PRESETS[0] || DENTAL_PRESCRIPTION_DRUG_CATALOG[0]!;
 	const drug =
-		DENTAL_PRESCRIPTION_DRUG_CATALOG.find((d) => d.id === options.explicitDrugId) ||
-		CONTROLLED_DRUG_PRESETS[0]!;
+		(options.explicitDrugId ? DENTAL_PRESCRIPTION_DRUG_CATALOG.find((d) => d.id === options.explicitDrugId) : null) ||
+		fallbackDrug;
 
 	const item: PrescriptionDrugItem = {
 		id: `drug-pku-${drug.id}`,

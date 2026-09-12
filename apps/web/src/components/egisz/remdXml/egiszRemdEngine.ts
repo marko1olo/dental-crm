@@ -588,7 +588,7 @@ export function generateEgisz043uCdaXml(payload: Egisz043uPayload): string {
 
 	// 2. Clinical Section: Anamnesis (Анамнез)
 	const anamnesisMorbi = payload.anamnesisMorbi || "Развитие настоящего заболевания без особенностей.";
-	const anamnesisVitae = payload.anamnesisVitae || "Аллергологический анамнез не отягощен, гемотрансфузий не было.";
+	const anamnesisVitae = payload.anamnesisVitae || "Аллергологический анамнез со слов пациента не отягощен. Соматически здоров.";
 	const anamnesisSection = `
 			<!-- Секция 2: Анамнез заболевания и жизни -->
 			<component>

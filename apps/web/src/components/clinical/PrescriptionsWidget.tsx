@@ -249,14 +249,6 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 						<ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
 						Бланк ПКУ (148-1/у-88)
 					</button>
-					<button
-						type="button"
-						onClick={() => handleOpenModal("148-1u-04l")}
-						className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-300 transition-colors"
-					>
-						<FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-						Льготный (148-1/у-04)
-					</button>
 				</div>
 			</div>
 

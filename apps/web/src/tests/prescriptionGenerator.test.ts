@@ -15,7 +15,7 @@ describe("Web Prescription Generator & Form 107/148 Engine (Order 1094n)", () =>
 		assert.ok(ids.includes("amoxiclav_875"));
 		assert.ok(ids.includes("nimesil_100"));
 		assert.ok(ids.includes("chlorhexidine_005"));
-		assert.ok(ids.includes("tramadol_50"));
+		assert.ok(ids.includes("ketorolac_10"));
 		assert.ok(ids.includes("tranexamic_500"));
 
 		for (const med of DENTAL_MEDICATIONS_CATALOG) {
@@ -96,12 +96,12 @@ describe("Web Prescription Generator & Form 107/148 Engine (Order 1094n)", () =>
 			patientMedicalCardNumber: "043/у-15",
 			doctorFullName: "Д-р Смирнов А.П.",
 			doctorSpecialty: "Хирург-стоматолог",
-			selectedMedicationIds: ["tramadol_50"],
+			selectedMedicationIds: ["ketorolac_10"],
 		});
 
 		assert.equal(doc.header.validityPeriodLabelRu, "15 дней (Срочный / ПКУ)");
 		assert.equal(doc.items.length, 1);
-		assert.ok(doc.items[0]?.latinRp.includes("Tramadoli"));
+		assert.ok(doc.items[0]?.latinRp.includes("Ketorolaci"));
 	});
 
 	it("5. Ketorolac 10mg: correctly registered in catalog for express pain relief", () => {

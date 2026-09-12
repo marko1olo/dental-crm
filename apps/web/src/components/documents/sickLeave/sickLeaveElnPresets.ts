@@ -9,13 +9,13 @@
 
 export type IncapacityReasonCode = '01' | '02' | '03' | '05' | '08' | '09' | '10' | '11';
 
-export type IncapacityRegimeType = 'ambulatory' | 'hospital' | 'day_hospital' | 'sanatorium';
+export type IncapacityRegimeType = 'ambulatory';
 
 export type SickLeaveClosingCode = '31' | '32' | '33' | '34' | '36';
 
 export type RegimeViolationCode = '23' | '24' | '25' | '28';
 
-export type MedicalCommissionRole = 'CHAIRPERSON' | 'DEPUTY_CHAIRPERSON' | 'COMMISSION_MEMBER' | 'ATTENDING_DOCTOR' | 'SECRETARY';
+export type MedicalCommissionRole = 'CHAIRPERSON' | 'DEPUTY_CHAIRPERSON' | 'COMMISSION_MEMBER' | 'ATTENDING_DOCTOR';
 
 /**
  * Statutory Reason Codes according to SFR / FSS (Коды причин нетрудоспособности СФР)
@@ -56,7 +56,7 @@ export const INCAPACITY_REASON_CODES: Record<IncapacityReasonCode, IncapacityRea
 		code: '08',
 		titleRu: '08 - Долечивание в санаторно-курортных организациях',
 		descriptionRu: 'Направление на долечивание непосредственно после стационарного лечения',
-		isDentalCommon: true
+		isDentalCommon: false
 	},
 	'09': {
 		code: '09',
@@ -301,7 +301,7 @@ export const DENTAL_CLINICAL_PRESETS: Record<string, DentalClinicalPreset> = {
 		recommendedMaxDays: 15,
 		defaultDays: 14,
 		isVkMandatory: false,
-		clinicalDescriptionRu: 'Амбулаторное долечивание после стационарного хирургического лечения одонтогенной флегмоны околоушно-жевательной области. Гранулирующие раны, ежедневные асептические перевязки.',
+		clinicalDescriptionRu: 'Амбулаторное лечение и реабилитация после одонтогенного воспалительного процесса челюстно-лицевой области. Гранулирующие раны, ежедневные асептические перевязки.',
 		expertJustificationRu: 'Наличие дренированных послеоперационных ран, умеренный тризм, астенический синдром после системной инфекции, необходимость регулярных перевязок.'
 	}
 };

@@ -839,7 +839,7 @@ export function ChairsiderPerspectiveView() {
 									<span>Форма 043/у</span>
 								</span>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--teal,var(--brand-primary))] text-white font-black shrink-0">
-									SOAP
+									043/у: Дневник
 								</span>
 							</div>
 							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 text-left mt-1">

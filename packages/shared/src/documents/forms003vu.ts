@@ -56,7 +56,8 @@ export const medicalCardExtract003vuPayloadSchema = z.object({
 	diagnosticStudiesSummary: z.string().trim().max(2000).default("Прицельная радиовизиография, ОПТГ: очагов периапикальной деструкции не выявлено, пломбирование каналов гомогенное до верхушки"),
 	// Хронология выполненных вмешательств
 	treatmentStagesTimeline: z.array(medicalExtractTreatmentStageSchema).default([]),
-	// Состояние при выписке
+	// Состояние при завершении лечения
+	treatmentOutcomeStatus: z.string().trim().max(2000).default("Лечение завершено в полном объеме. Жалоб нет. Анатомическая форма и жевательная функция зубов восстановлены, прикус физиологический. Слизистая оболочка полости рта бледно-розовая, без воспалительных явлений.").optional(),
 	conditionAtDischarge: z.string().trim().min(1).max(2000).default("Лечение завершено в полном объеме. Жалоб нет. Анатомическая форма и жевательная функция зубов восстановлены, прикус физиологический. Слизистая оболочка полости рта бледно-розовая, без воспалительных явлений."),
 	// Рекомендации и назначения
 	followUpRecommendations: z.string().trim().min(1).max(2000).default("1. Соблюдение индивидуальной гигиены полости рта (щетка средней жесткости, зубная нить/ершики, ирригатор).\n2. Контрольный осмотр врача-стоматолога через 6 месяцев.\n3. Проведение профессиональной гигиены полости рта 2 раза в год."),
@@ -64,6 +65,10 @@ export const medicalCardExtract003vuPayloadSchema = z.object({
 	// Подписи
 	attendingDoctorFullName: z.string().trim().min(1).max(160),
 	attendingDoctorSpecialty: z.string().trim().max(120).default("Врач-стоматолог"),
-	headOfDepartmentFullName: z.string().trim().min(1).max(160).default("Главный врач клиники"),
+	headOfDepartmentFullName: z.string().trim().max(160).default("Главный врач клиники"),
 });
 export type MedicalCardExtract003vuPayload = z.infer<typeof medicalCardExtract003vuPayloadSchema>;
+
+/** Алиас уставной амбулаторной стоматологической выписки из карты 043/у */
+export const medicalCardExtract043uPayloadSchema = medicalCardExtract003vuPayloadSchema;
+export type MedicalCardExtract043uPayload = MedicalCardExtract003vuPayload;

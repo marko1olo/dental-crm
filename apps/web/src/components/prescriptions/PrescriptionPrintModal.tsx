@@ -1,13 +1,10 @@
 import {
 	CONTROLLED_DRUG_PRESETS,
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
-	PREFERENTIAL_BENEFIT_CATEGORIES,
-	PREFERENTIAL_DRUG_PRESETS,
 	PRESCRIPTION_ADMINISTRATION_ROUTES_CATALOG,
 	PRESCRIPTION_DOSAGE_FORMS_CATALOG,
 	type DentalPrescriptionDrugPreset,
 	type Form107_1uPayload,
-	type Form148_1u04lPayload,
 	type Form148_1u88Payload,
 	type PrescriptionDoctorUkep,
 	type PrescriptionDrugItem,
@@ -15,7 +12,6 @@ import {
 	generateForm148_1u88Payload,
 	generatePrescriptionPayloadFromSoap,
 	renderForm107_1uHtml,
-	renderForm148_1u04lHtml,
 	renderForm148_1u88Html,
 	renderPrescriptionUniversalHtml,
 	verifyPrescriptionStatutoryValidity,
@@ -57,7 +53,7 @@ import {
 	parseCryptoProError,
 } from "../../utils/cryptoPro";
 
-export type PrescriptionFormType = "107-1u" | "148-1u-88" | "148-1u-04l";
+export type PrescriptionFormType = "107-1u" | "148-1u-88";
 
 export interface DentalFastPrescriptionSet {
 	readonly id: string;
@@ -370,12 +366,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const [isAddingCustom, setIsAddingCustom] = useState<boolean>(false);
 	const [withStampAndSignature, setWithStampAndSignature] = useState<boolean>(true);
 
-	// Preferential details state (Form 148-1/u-04(l))
-	const [preferentialBenefitCode, setPreferentialBenefitCode] = useState<string>("081");
-	const [preferentialDiscount, setPreferentialDiscount] = useState<number>(100);
+	// Patient identity state
 	const [patientSnils, setPatientSnils] = useState<string>("");
 	const [patientOmsPolicy, setPatientOmsPolicy] = useState<string>("");
-	const [fundingSource, setFundingSource] = useState<"federal" | "regional">("federal");
 
 	// Doctor UKEP state
 	const [isUkepSigned, setIsUkepSigned] = useState<boolean>(false);
@@ -414,14 +407,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		if (activeForm === "107-1u") {
 			setCustomSeriesNumber(`РЕЦ-${year}-${patSuffix}`);
 			setValidityDays("60");
-		} else if (activeForm === "148-1u-88") {
+		} else {
 			setCustomSeriesNumber(`ПКУ-${year}-${patSuffix.padStart(6, "0")}`);
 			setValidityDays("15");
-			setSelectedDrugIds(["tramadol_50"]);
-		} else {
-			setCustomSeriesNumber(`ЛЬГ-${year}-${patSuffix.padStart(6, "0")}`);
-			setValidityDays("30");
-			setSelectedDrugIds(["metformin_1000"]);
+			setSelectedDrugIds(["nimesulide_100"]);
 		}
 
 		setPatientAddress(patient?.address || "");
@@ -452,10 +441,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 	const fullCatalog = useMemo(() => {
 		if (activeForm === "148-1u-88") {
-			return CONTROLLED_DRUG_PRESETS;
-		}
-		if (activeForm === "148-1u-04l") {
-			return PREFERENTIAL_DRUG_PRESETS;
+			return CONTROLLED_DRUG_PRESETS.length > 0 ? CONTROLLED_DRUG_PRESETS : DENTAL_PRESCRIPTION_DRUG_CATALOG;
 		}
 		return DENTAL_PRESCRIPTION_DRUG_CATALOG;
 	}, [activeForm]);
@@ -632,14 +618,14 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				items: activeItems.length > 0 ? [activeItems[0]!] : [
 					{
 						id: "fallback-pku",
-						latinName: "Rp.: Tramadoli 50 mg",
-						tradeName: "Трамадол",
-						form: "капсулы",
-						dosage: "50 мг",
+						latinName: "Rp.: Tab. Ketorolaci 10 mg",
+						tradeName: "Кеторолак (Кетанов)",
+						form: "таблетки",
+						dosage: "10 мг",
 						quantity: "N. 10",
-						dispenseLatin: "D.t.d. N 10 in caps.",
-						signaRussian: "S. По 1 капсуле при выраженном болевом синдроме.",
-						category: "controlled_pku",
+						dispenseLatin: "D.t.d. N 10 in tab.",
+						signaRussian: "S. Внутрь по 1 таблетке при выраженном болевом синдроме, не более 4 дней.",
+						category: "nsaid",
 					},
 				],
 				diagnosisIcd10Code: diary?.diagnosisIcd10 || "K08.1",
@@ -648,53 +634,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			return renderForm148_1u88Html(payload);
 		}
 
-		// Form 148-1/u-04(l) Preferential
-		const prefCat = PREFERENTIAL_BENEFIT_CATEGORIES.find((c) => c.code === preferentialBenefitCode);
-		const payload: Form148_1u04lPayload = {
-			formNumber: "148-1/у-04(л)",
-			clinicLegalName: clinic,
-			clinicAddress: address,
-			clinicPhone: phone,
-			clinicOgrn: ogrn,
-			clinicInn: inn,
-			medicalLicenseNumber: licNum,
-			prescriptionSeriesNumber: customSeriesNumber,
-			prescriptionDate: prescriptionDate,
-			patientFullName: patientName,
-			patientBirthDate: patientBirth,
-			patientAddress: patientAddress,
-			medicalCardNumber: patientCard,
-			preferentialDetails: {
-				preferentialBenefitCode: preferentialBenefitCode,
-				preferentialBenefitNameRu: prefCat?.nameRu || "Инвалиды I группы",
-				preferentialDiscountPercent: preferentialDiscount,
-				patientSnils: patientSnils,
-				patientOmsPolicy: patientOmsPolicy,
-				fundingSource: fundingSource,
-				medicalCardNumber: patientCard,
-			},
-			doctorFullName: docName,
-			doctorSpecialty: docSpecialty,
-			validityDays: validityDays,
-			isChronicSpecialCare,
-			chronicPeriodicity: isChronicSpecialCare ? chronicPeriodicity : undefined,
-			items: activeItems.length > 0 ? activeItems : [
-				{
-					id: "fallback-pref",
-					latinName: "Rp.: Tab. Metformini 1000 mg",
-					tradeName: "Метформин",
-					form: "таблетки",
-					dosage: "1000 мг",
-					quantity: "N. 60",
-					dispenseLatin: "D.t.d. N 60 in tab.",
-					signaRussian: "S. Внутрь по 1 таб. 2 раза в день.",
-					category: "preferential_somatic",
-				},
-			],
-			diagnosisIcd10Code: diary?.diagnosisIcd10 || "K02.1",
-			ukepSignature: isUkepSigned ? ukepSignature : null,
-		};
-		return renderForm148_1u04lHtml(payload);
+		return "";
 	}, [
 		activeForm,
 		clinic,
@@ -709,11 +649,6 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		patientBirth,
 		patientCard,
 		patientAddress,
-		preferentialBenefitCode,
-		preferentialDiscount,
-		patientSnils,
-		patientOmsPolicy,
-		fundingSource,
 		docName,
 		docSpecialty,
 		validityDays,
@@ -980,7 +915,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								onClick={() => {
 									setActiveForm("148-1u-88");
 									setValidityDays("15");
-									setSelectedDrugIds(["tramadol_50"]);
+									setSelectedDrugIds(["ketorolac_10"]);
 									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(6, "0") || "000001";
 									setCustomSeriesNumber(`ПКУ-${new Date().getFullYear()}-${patSuffix}`);
 								}}
@@ -991,23 +926,6 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								}`}
 							>
 								№ 148-1/у-88 (ПКУ)
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setActiveForm("148-1u-04l");
-									setValidityDays("30");
-									setSelectedDrugIds(["metformin_1000"]);
-									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(6, "0") || "000001";
-									setCustomSeriesNumber(`ЛЬГ-${new Date().getFullYear()}-${patSuffix}`);
-								}}
-								className={`min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
-									activeForm === "148-1u-04l"
-										? "bg-emerald-600 text-white shadow-sm"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-							>
-								№ 148-1/у-04(л) (Льгота)
 							</button>
 						</div>
 
@@ -1023,7 +941,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				</div>
 
 				{/* ── Mobile Form Switcher ── */}
-				<div className="md:hidden grid grid-cols-3 p-2 border-b border-[var(--line)] bg-[var(--paper-soft)] gap-1.5 shrink-0">
+				<div className="md:hidden grid grid-cols-2 p-2 border-b border-[var(--line)] bg-[var(--paper-soft)] gap-1.5 shrink-0">
 					<button
 						type="button"
 						onClick={() => setActiveForm("107-1u")}
@@ -1046,17 +964,6 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					>
 						148-88 (ПКУ)
 					</button>
-					<button
-						type="button"
-						onClick={() => setActiveForm("148-1u-04l")}
-						className={`min-h-[44px] px-1 py-1.5 text-[11px] font-bold rounded-xl border text-center transition-all ${
-							activeForm === "148-1u-04l"
-								? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
-						}`}
-					>
-						148-04 (Льгота)
-					</button>
 				</div>
 
 				{/* ── Modal Split Body ── */}
@@ -1069,19 +976,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								<ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
 								<div>
 									<strong>Бланк строгой отчетности (ПКУ):</strong> На форму 148-1/у-88
-									выписывается строго <strong>1 препарат</strong> (опиоиды, психотропы списка III,
-									сильнодействующие). Срок действия рецепта строго 15 дней.
-								</div>
-							</div>
-						)}
-
-						{/* Banner for Form 148-1/u-04(l) */}
-						{activeForm === "148-1u-04l" && (
-							<div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 dark:text-emerald-200 text-xs">
-								<Sparkles className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-								<div>
-									<strong>Льготный отпуск лекарственных препаратов:</strong> Форма № 148-1/у-04(л)
-									требует указания категории льготы, СНИЛС, полиса ОМС и источника финансирования.
+									выписывается строго <strong>1 препарат</strong> (сильнодействующие вещества). Срок действия рецепта строго 15 дней.
 								</div>
 							</div>
 						)}
@@ -1434,61 +1329,6 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</div>
 						)}
 
-						{/* Preferential Requisites Form (For 148-1/u-04(l)) */}
-						{activeForm === "148-1u-04l" && (
-							<div className="p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/5 flex flex-col gap-2.5">
-								<div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-									<Sparkles className="w-3.5 h-3.5" />
-									Реквизиты льготного отпуска
-								</div>
-								<div>
-									<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-										Категория граждан (Код льготы):
-									</label>
-									<select
-										value={preferentialBenefitCode}
-										onChange={(e) => {
-											setPreferentialBenefitCode(e.target.value);
-											const found = PREFERENTIAL_BENEFIT_CATEGORIES.find((c) => c.code === e.target.value);
-											if (found) setPreferentialDiscount(found.discountPercent);
-										}}
-										className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-									>
-										{PREFERENTIAL_BENEFIT_CATEGORIES.map((c) => (
-											<option key={c.code} value={c.code}>
-												{c.code} — {c.nameRu} ({c.discountPercent}% оплаты)
-											</option>
-										))}
-									</select>
-								</div>
-								<div className="grid grid-cols-2 gap-2">
-									<div>
-										<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-											СНИЛС пациента:
-										</label>
-										<input
-											type="text"
-											value={patientSnils}
-											onChange={(e) => setPatientSnils(e.target.value)}
-											placeholder="000-000-000 00"
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-										/>
-									</div>
-									<div>
-										<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-											Полис ОМС:
-										</label>
-										<input
-											type="text"
-											value={patientOmsPolicy}
-											onChange={(e) => setPatientOmsPolicy(e.target.value)}
-											placeholder="16-значный номер"
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-										/>
-									</div>
-								</div>
-							</div>
-						)}
 
 						{/* ── Prescription Requisites & Parameters ── */}
 						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-3">
@@ -1716,9 +1556,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									<div className="font-bold text-[10px] mt-0.5" style={{ color: "#000000" }}>
 										{activeForm === "107-1u"
 											? "Форма бланка № 107-1/у"
-											: activeForm === "148-1u-88"
-												? "Форма бланка № 148-1/у-88"
-												: "Форма бланка № 148-1/у-04(л)"}
+											: "Форма бланка № 148-1/у-88"}
 									</div>
 									<div style={{ color: "#475569" }}>Приказ МЗ РФ № 1094н</div>
 								</div>
@@ -1726,26 +1564,14 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 							{/* Title */}
 							<div className="text-center my-0.5" style={{ color: "#0f172a" }}>
-								<div className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-700" : activeForm === "148-1u-04l" ? "text-emerald-700" : "text-slate-950"}`} style={{ color: activeForm === "148-1u-88" ? "#be123c" : activeForm === "148-1u-04l" ? "#047857" : "#000000" }}>
-									РЕЦЕПТ {activeForm === "148-1u-88" ? "(ПКУ)" : activeForm === "148-1u-04l" ? "(ЛЬГОТНЫЙ)" : ""}
+								<div className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-700" : "text-slate-950"}`} style={{ color: activeForm === "148-1u-88" ? "#be123c" : "#000000" }}>
+									РЕЦЕПТ {activeForm === "148-1u-88" ? "(ПКУ)" : ""}
 								</div>
 								<div className="text-[10px] font-sans" style={{ color: "#334155" }}>
 									Серия: <strong style={{ color: "#000000" }}>{customSeriesNumber}</strong> от{" "}
 									<strong style={{ color: "#000000" }}>{new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}</strong>
 								</div>
 							</div>
-
-							{/* Preferential Strip (for 148-1/u-04(l)) */}
-							{activeForm === "148-1u-04l" && (
-								<div className="border border-slate-400 bg-emerald-50/70 p-1.5 rounded text-[9.5px] font-sans flex flex-col gap-0.5">
-									<div className="flex justify-between">
-										<span>СНИЛС: <strong>{patientSnils}</strong></span>
-										<span>ОМС: <strong>{patientOmsPolicy}</strong></span>
-										<span>Оплата: <strong>{preferentialDiscount}%</strong></span>
-									</div>
-									<div>Код льготы: <strong>{preferentialBenefitCode}</strong> ({fundingSource === "regional" ? "Бюджет субъекта РФ" : "Федеральный бюджет"})</div>
-								</div>
-							)}
 
 							{/* Patient and Doctor Meta */}
 							<div className="border-b border-slate-300 pb-2 flex flex-col gap-0.5 text-[11px] leading-snug">
@@ -1760,7 +1586,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										№ медкарты: <strong>{patientCard}</strong>
 									</span>
 								</div>
-								{(activeForm === "148-1u-88" || activeForm === "148-1u-04l") && (
+								{activeForm === "148-1u-88" && (
 									<div>
 										Адрес проживания: <strong>{patientAddress}</strong>
 									</div>

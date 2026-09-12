@@ -10,6 +10,7 @@ export interface MedicalCardExtract003vuFormProps {
 
 export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormProps> = React.memo(
 	function MedicalCardExtract003vuForm({ initialPayload, onChange, disabled }) {
+		const defaultDoctor = initialPayload?.attendingDoctorFullName?.trim() || "Врач-стоматолог";
 		const [admissionDiagnosis, setAdmissionDiagnosis] = useState(
 			(initialPayload as any)?.diagnosisOnAdmission ?? "K04.0 Начальный пульпит зуба 2.6",
 		);
@@ -29,7 +30,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						diagnosisText: "Пульпит",
 						performedIntervention: "Анестезия Ubistesin 1.7 мл, экстирпация пульпы, медикаментозная обработка 3 каналов, временная обтурация гидроксидом кальция",
 						anesthesiaUsed: "Ubistesin 4% 1.7 мл",
-						attendingDoctorFullName: "Иванов И.И.",
+						attendingDoctorFullName: defaultDoctor,
 					},
 					{
 						treatmentDate: "2026-08-17",
@@ -37,7 +38,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						diagnosisIcd10: "K04.0",
 						diagnosisText: "Пульпит",
 						performedIntervention: "Постоянная обтурация корневых каналов методом латеральной компакции гуттаперчи с силером AH-Plus, реставрация коронковой части светоотверждаемым композитом",
-						attendingDoctorFullName: "Иванов И.И.",
+						attendingDoctorFullName: defaultDoctor,
 					},
 				]
 			);
@@ -53,7 +54,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 					diagnosisIcd10: "K04.0",
 					diagnosisText: clinicalDiagnosis,
 					performedIntervention: "Контрольный осмотр, коррекция окклюзионных контактов",
-					attendingDoctorFullName: "Иванов И.И.",
+					attendingDoctorFullName: defaultDoctor,
 				},
 			]);
 		};
@@ -65,7 +66,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 					description="Официальная выписка с хроникой этапов лечения, диагностическими данными и рекомендациями"
 				>
 					<div className="form-group" style={{ marginBottom: "12px" }}>
-						<label style={{ fontWeight: 600 }}>Диагноз при первичном обращении</label>
+						<label style={{ fontWeight: 600 }}>Диагноз при первичном осмотре</label>
 						<input
 							type="text"
 							className="form-control"
@@ -135,3 +136,5 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 		);
 	},
 );
+
+export const MedicalCardExtract043uForm = MedicalCardExtract003vuForm;
