@@ -17,6 +17,11 @@ import { logger } from "./utils/logger";
 const PublicBookingWidget = React.lazy(() =>
 	import("./pages/PublicBookingWidget").then((m) => ({ default: m.PublicBookingWidget })),
 );
+const PatientBudgetSignView = React.lazy(() =>
+	import("./components/portal/PatientBudgetSignView").then((m) => ({
+		default: m.PatientBudgetSignView,
+	})),
+);
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -103,6 +108,8 @@ if (publicPortalRoute) {
 						<PublicBookingWidget
 							organizationId={publicPortalRoute.organizationId}
 						/>
+					) : publicPortalRoute.kind === "budget" ? (
+						<PatientBudgetSignView token={publicPortalRoute.token} />
 					) : (
 						<GuestLabPortal token={publicPortalRoute.token} />
 					)}

@@ -4,7 +4,8 @@
  * Strict clinical style, 0 emojis, >=44px touch targets, Retina canvas support.
  */
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import * as React from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -58,7 +59,7 @@ export interface PatientBudgetSignViewProps {
 }
 
 function formatRub(value: number): string {
-	return `${Math.round(value).toLocaleString("ru-RU")} \u20BD`;
+	return `${Math.round(value).toLocaleString("ru-RU")} ₽`;
 }
 
 function formatIsoDateTime(isoString?: string | null): string {
@@ -92,6 +93,8 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 			if (qToken) return qToken;
 			const match = window.location.pathname.match(/\/budget\/([a-zA-Z0-9_-]+)/);
 			if (match && match[1]) return match[1];
+			const hashMatch = window.location.hash.match(/\/budget\/([a-zA-Z0-9_-]+)/);
+			if (hashMatch && hashMatch[1]) return hashMatch[1];
 		}
 		return "";
 	});
@@ -119,7 +122,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 		async (tok: string, sToken?: string) => {
 			if (!tok) {
 				setIsLoading(false);
-				setFetchError("\u0422\u043e\u043a\u0435\u043d \u0441\u043c\u0435\u0442\u044b \u043d\u0435 \u0443\u043a\u0430\u0437\u0430\u043d \u0438\u043b\u0438 \u043d\u0435\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043b\u0435\u043d.");
+				setFetchError("Токен сметы не указан или недействителен.");
 				return;
 			}
 
@@ -140,10 +143,10 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 
 				if (!res.ok) {
 					if (res.status === 404) {
-						setFetchError("\u0421\u043c\u0435\u0442\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430 \u0438\u043b\u0438 \u0441\u0440\u043e\u043a \u0435\u0451 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044f \u0438\u0441\u0442\u0451\u043a.");
+						setFetchError("Смета не найдена или срок её действия истёк.");
 					} else {
 						const errJson = await res.json().catch(() => ({}));
-						setFetchError(errJson.message || "\u041e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0435 \u0441\u043c\u0435\u0442\u044b.");
+						setFetchError(errJson.message || "Ошибка при загрузке сметы.");
 					}
 					return;
 				}
@@ -163,7 +166,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 					});
 				}
 			} catch (err) {
-				setFetchError("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0435\u0434\u0438\u043d\u0438\u0442\u044c\u0441\u044f \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u043e\u043c. \u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435.");
+				setFetchError("Не удалось соединиться с сервером. Проверьте подключение.");
 			} finally {
 				setIsLoading(false);
 			}
@@ -230,7 +233,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 
 			const data = await res.json();
 			if (!res.ok || !data.success) {
-				setVerifyError(data.message || "\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u043a\u043e\u0434 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u044f.");
+				setVerifyError(data.message || "Неверный код подтверждения.");
 				return;
 			}
 
@@ -241,7 +244,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				await fetchBudget(activeToken);
 			}
 		} catch {
-			setVerifyError("\u041e\u0448\u0438\u0431\u043a\u0430 \u0441\u0435\u0442\u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0435 \u043a\u043e\u0434\u0430.");
+			setVerifyError("Ошибка сети проверке кода.");
 		} finally {
 			setIsVerifying(false);
 		}
@@ -333,23 +336,28 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 		ctx.fillStyle = "#047857";
 		ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, sans-serif";
 		ctx.textAlign = "center";
-		ctx.fillText("\u041f\u041e\u0414\u041f\u0418\u0421\u0410\u041d\u041e \u0412 \u041f\u041e\u0420\u0422\u0410\u041b\u0415 \u041f\u0410\u0426\u0418\u0415\u041d\u0422\u0410", w / 2, h / 2 - 14);
+		ctx.fillText("ПОДПИСАНО В ПОРТАЛЕ ПАЦИЕНТА", w / 2, h / 2 - 14);
 
 		ctx.fillStyle = "#065f46";
 		ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
-		ctx.fillText("\u041f\u042d\u041f 63-\u0424\u0417 \u0441\u0442. 5 \u2022 \u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u043e \u043f\u0430\u0446\u0438\u0435\u043d\u0442\u043e\u043c", w / 2, h / 2 + 6);
+		ctx.fillText("ПЭП 63-ФЗ ст. 5 • Подтверждено пациентом", w / 2, h / 2 + 6);
 
 		const dateStr = new Date().toLocaleString("ru-RU");
 		ctx.fillStyle = "#64748b";
 		ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
-		ctx.fillText(`${signerName || budget?.patientFirstName || "\u041f\u0430\u0446\u0438\u0435\u043d\u0442"} \u2022 ${dateStr}`, w / 2, h / 2 + 24);
+		ctx.fillText(`${signerName || budget?.patientFirstName || "Пациент"} • ${dateStr}`, w / 2, h / 2 + 24);
 
 		setHasStrokes(true);
 	};
 
 	// Submit signed budget
 	const handleSignSubmit = async () => {
-		if (!activeToken || !canvasRef.current || !hasStrokes) return;
+		if (!activeToken || !canvasRef.current) return;
+
+		// If patient hasn't drawn a manual signature, auto-apply official 1-click PEP stamp (Mandates 8e, 8n)
+		if (!hasStrokes) {
+			handleOneClickPep();
+		}
 
 		setIsSubmittingSign(true);
 		setSignError(null);
@@ -369,13 +377,13 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				headers,
 				body: JSON.stringify({
 					signaturePng,
-					signerName: signerName.trim() || budget?.patientFirstName || "\u041f\u0430\u0446\u0438\u0435\u043d\u0442",
+					signerName: signerName.trim() || budget?.patientFirstName || "Пациент",
 				}),
 			});
 
 			const data = await res.json();
 			if (!res.ok || !data.success) {
-				setSignError(data.message || "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043f\u043e\u0434\u043f\u0438\u0441\u044c \u0441\u043c\u0435\u0442\u044b.");
+				setSignError(data.message || "Не удалось сохранить подпись сметы.");
 				return;
 			}
 
@@ -397,7 +405,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				documentHash: data.documentHash,
 			});
 		} catch {
-			setSignError("\u0421\u0435\u0442\u0435\u0432\u0430\u044f \u043e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u043e\u0442\u043f\u0440\u0430\u0432\u043a\u0435 \u043f\u043e\u0434\u043f\u0438\u0441\u0438.");
+			setSignError("Сетевая ошибка при отправке подписи.");
 		} finally {
 			setIsSubmittingSign(false);
 		}
@@ -408,7 +416,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 			<div className={`patient-budget-container ${className}`}>
 				<div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--muted, #64748b)" }}>
 					<Clock size={32} style={{ margin: "0 auto 1rem", display: "block" }} />
-					<p>\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430 \u0434\u0430\u043d\u043d\u044b\u0445 \u0441\u043c\u0435\u0442\u044b...</p>
+					<p>Загрузка данных сметы...</p>
 				</div>
 			</div>
 		);
@@ -420,10 +428,10 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				<div className="patient-budget-card" style={{ textAlign: "center", padding: "2rem 1rem" }}>
 					<AlertCircle size={40} color="#dc2626" style={{ margin: "0 auto 0.75rem", display: "block" }} />
 					<h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 0.5rem" }}>
-						\u041e\u0448\u0438\u0431\u043a\u0430 \u0434\u043e\u0441\u0442\u0443\u043f\u0430
+						Ошибка доступа
 					</h3>
 					<p style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", margin: 0 }}>
-						{fetchError || "\u0421\u043c\u0435\u0442\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430."}
+						{fetchError || "Смета не найдена."}
 					</p>
 				</div>
 			</div>
@@ -438,11 +446,11 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 			<div className="patient-budget-header">
 				<div>
 					<div className="patient-budget-clinic-title">
-						{budget.clinicName || "\u0421\u0442\u043e\u043c\u0430\u0442\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u043a\u043b\u0438\u043d\u0438\u043a\u0430"}
+						{budget.clinicName || "Стоматологическая клиника"}
 					</div>
 					{budget.doctorName && (
 						<div className="patient-budget-doctor-name">
-							\u0412\u0440\u0430\u0447: {budget.doctorName}
+							Врач: {budget.doctorName}
 						</div>
 					)}
 				</div>
@@ -451,12 +459,12 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 					{isAccepted ? (
 						<span className="patient-budget-status-chip accepted">
 							<CheckCircle2 size={12} />
-							\u0421\u043e\u0433\u043b\u0430\u0441\u043e\u0432\u0430\u043d\u043e
+							Согласовано
 						</span>
 					) : (
 						<span className="patient-budget-status-chip pending">
 							<Clock size={12} />
-							\u041e\u0436\u0438\u0434\u0430\u0435\u0442 \u043f\u043e\u0434\u043f\u0438\u0441\u0438
+							Ожидает подписи
 						</span>
 					)}
 				</div>
@@ -467,19 +475,19 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				<div className="patient-budget-verify-box">
 					<div className="patient-budget-card-title">
 						<Lock size={16} />
-						\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u0434\u043e\u0441\u0442\u0443\u043f\u0430
+						Подтверждение доступа
 					</div>
 					<p style={{ fontSize: "0.8125rem", color: "#64748b", margin: "0 0 0.5rem" }}>
 						{budget.authMethod === "phone_last4"
-							? "\u0414\u043b\u044f \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430 \u043f\u043e\u043b\u043d\u043e\u0433\u043e \u043f\u043b\u0430\u043d\u0430 \u043b\u0435\u0447\u0435\u043d\u0438\u044f \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 4 \u0446\u0438\u0444\u0440\u044b \u0432\u0430\u0448\u0435\u0433\u043e \u043d\u043e\u043c\u0435\u0440\u0430 \u0442\u0435\u043b\u0435\u0444\u043e\u043d\u0430:"
-							: "\u0423\u043a\u0430\u0436\u0438\u0442\u0435 \u0434\u0430\u0442\u0443 \u0440\u043e\u0436\u0434\u0435\u043d\u0438\u044f (\u0414\u0414.\u041c\u041c.\u0413\u0413\u0413\u0413):"}
+							? "Для просмотра полного плана лечения введите последние 4 цифры вашего номера телефона:"
+							: "Укажите дату рождения (ДД.ММ.ГГГГ):"}
 					</p>
 					<form onSubmit={handleVerifySubmit}>
 						<div className="patient-budget-verify-input-group">
 							<input
 								type="text"
 								className="patient-budget-verify-input"
-								placeholder={budget.authMethod === "phone_last4" ? "\u2022\u2022\u2022\u2022" : "\u0414\u0414.\u041c\u041c.\u0413\u0413\u0413\u0413"}
+								placeholder={budget.authMethod === "phone_last4" ? "••••" : "ДД.ММ.ГГГГ"}
 								maxLength={budget.authMethod === "phone_last4" ? 4 : 10}
 								inputMode={budget.authMethod === "phone_last4" ? "numeric" : "text"}
 								value={verifyFactor}
@@ -492,7 +500,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 								disabled={isVerifying || !verifyFactor.trim()}
 							>
 								<ShieldCheck size={16} />
-								{isVerifying ? "..." : "\u0412\u043e\u0439\u0442\u0438"}
+								{isVerifying ? "..." : "Войти"}
 							</button>
 						</div>
 					</form>
@@ -509,12 +517,12 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 			<div className="patient-budget-card">
 				<div className="patient-budget-card-title">
 					<FileText size={16} />
-					\u041f\u043b\u0430\u043d \u043b\u0435\u0447\u0435\u043d\u0438\u044f \u0438 \u0441\u043c\u0435\u0442\u0430 \u0443\u0441\u043b\u0443\u0433
+					План лечения и смета услуг
 				</div>
 
 				{budget.items.length === 0 ? (
 					<p style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
-						\u0421\u043f\u0438\u0441\u043e\u043a \u0443\u0441\u043b\u0443\u0433 \u0443\u0442\u043e\u0447\u043d\u044f\u0435\u0442\u0441\u044f.
+						Список услуг уточняется.
 					</p>
 				) : (
 					budget.items.map((item, idx) => (
@@ -522,12 +530,12 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 							<div className="patient-budget-item-info">
 								{item.toothNumber && (
 									<span className="patient-budget-tooth-badge">
-										\u0417\u0443\u0431 {item.toothNumber}
+										Зуб {item.toothNumber}
 									</span>
 								)}
 								<span className="patient-budget-item-title">{item.title}</span>
 								{item.quantity && item.quantity > 1 && (
-									<span className="patient-budget-item-qty">{item.quantity} \u0448\u0442.</span>
+									<span className="patient-budget-item-qty">{item.quantity} шт.</span>
 								)}
 							</div>
 							<div className="patient-budget-item-price">
@@ -542,17 +550,17 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 					{budget.discountRub > 0 && (
 						<>
 							<div className="patient-budget-total-line">
-								<span>\u0421\u0443\u043c\u043c\u0430 \u043f\u043e \u043f\u0440\u0430\u0439\u0441\u0443:</span>
+								<span>Сумма по прайсу:</span>
 								<span>{formatRub(budget.totalPriceRub)}</span>
 							</div>
 							<div className="patient-budget-total-line" style={{ color: "#059669" }}>
-								<span>\u0421\u043a\u0438\u0434\u043a\u0430 \u043a\u043b\u0438\u043d\u0438\u043a\u0438:</span>
+								<span>Скидка клиники:</span>
 								<span>-{formatRub(budget.discountRub)}</span>
 							</div>
 						</>
 					)}
 					<div className="patient-budget-grand-total">
-						<span>\u0418\u0442\u043e\u0433\u043e \u043a \u043e\u043f\u043b\u0430\u0442\u0435:</span>
+						<span>Итого к оплате:</span>
 						<span className="patient-budget-grand-price">{formatRub(budget.netTotalRub)}</span>
 					</div>
 				</div>
@@ -563,20 +571,20 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				<div className="patient-budget-accepted-card">
 					<CheckCircle2 size={40} color="#166534" style={{ margin: "0 auto" }} />
 					<div className="patient-budget-accepted-title">
-						\u0421\u043c\u0435\u0442\u0430 \u0443\u0441\u043f\u0435\u0448\u043d\u043e \u0441\u043e\u0433\u043b\u0430\u0441\u043e\u0432\u0430\u043d\u0430
+						Смета успешно согласована
 					</div>
-					<p style={{ fontSize: "0.8125rem", color: "#166534", margin: "0 0 0.5rem" }}>
-						\u041f\u043b\u0430\u043d \u043b\u0435\u0447\u0435\u043d\u0438\u044f \u0443\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d \u043f\u0430\u0446\u0438\u0435\u043d\u0442\u043e\u043c:{" "}
-						<strong>{budget.signerName || budget.patientFirstName || "\u041f\u0430\u0446\u0438\u0435\u043d\u0442"}</strong>
+					<p className="patient-budget-accepted-desc">
+						План лечения утверждён пациентом:{" "}
+						<strong>{budget.signerName || budget.patientFirstName || "Пациент"}</strong>
 					</p>
 					{budget.signedAt && (
-						<p style={{ fontSize: "0.75rem", color: "#15803d", margin: "0 0 0.5rem" }}>
-							\u0414\u0430\u0442\u0430 \u0438 \u0432\u0440\u0435\u043c\u044f: {formatIsoDateTime(budget.signedAt)}
+						<p className="patient-budget-accepted-date">
+							Дата и время: {formatIsoDateTime(budget.signedAt)}
 						</p>
 					)}
 					{budget.documentHash && (
 						<div className="patient-budget-hash-box">
-							<strong>SHA-256 \u0446\u0435\u043b\u043e\u0441\u0442\u043d\u043e\u0441\u0442\u0438:</strong>
+							<strong>SHA-256 целостности:</strong>
 							<br />
 							{budget.documentHash}
 						</div>
@@ -587,7 +595,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 						onClick={() => window.print()}
 					>
 						<Printer size={16} />
-						\u0420\u0430\u0441\u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c / \u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u0432 PDF
+						Распечатать / Сохранить в PDF
 					</button>
 				</div>
 			) : budget.isVerified ? (
@@ -595,10 +603,10 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				<div className="patient-budget-card">
 					<div className="patient-budget-card-title">
 						<PenTool size={16} />
-						\u042d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u0430\u044f \u043f\u043e\u0434\u043f\u0438\u0441\u044c \u043f\u0430\u0446\u0438\u0435\u043d\u0442\u0430
+						Электронная подпись пациента
 					</div>
 					<p style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", margin: "0 0 0.5rem" }}>
-						\u0420\u0430\u0441\u043f\u0438\u0448\u0438\u0442\u0435\u0441\u044c \u043f\u0430\u043b\u044c\u0446\u0435\u043c \u0438\u043b\u0438 \u0441\u0442\u0438\u043b\u0443\u0441\u043e\u043c \u0432 \u043f\u043e\u043b\u0435 \u043d\u0438\u0436\u0435:
+						Распишитесь пальцем или стилусом в поле ниже:
 					</p>
 
 					<div className="patient-budget-canvas-wrap">
@@ -613,7 +621,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 						{!hasStrokes && (
 							<div className="patient-budget-canvas-guide">
 								<span className="patient-budget-canvas-guide-text">
-									\u041c\u0435\u0441\u0442\u043e \u0434\u043b\u044f \u0432\u0430\u0448\u0435\u0439 \u0440\u043e\u0441\u043f\u0438\u0441\u0438
+									Место для вашей росписи
 								</span>
 							</div>
 						)}
@@ -626,7 +634,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 							onClick={handleClearCanvas}
 						>
 							<RotateCcw size={14} />
-							\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c
+							Очистить
 						</button>
 
 						<button
@@ -634,23 +642,23 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 							className="patient-budget-clear-btn"
 							style={{ color: "#059669", borderColor: "#059669" }}
 							onClick={handleOneClickPep}
-							title="\u041f\u043e\u0441\u0442\u0430\u0432\u0438\u0442\u044c \u043f\u0435\u0447\u0430\u0442\u044c \u041f\u042d\u041f \u0432 1 \u043a\u043b\u0438\u043a"
+							title="Поставить печать ПЭП в 1 клик"
 						>
 							<ShieldCheck size={14} />
-							1-\u043a\u043b\u0438\u043a \u041f\u042d\u041f
+							1-клик ПЭП
 						</button>
 					</div>
 
 					<input
 						type="text"
 						className="patient-budget-signer-input"
-						placeholder="\u0424\u0418\u041e \u043f\u043e\u0434\u043f\u0438\u0441\u0430\u043d\u0442\u0430 (\u043f\u0430\u0446\u0438\u0435\u043d\u0442\u0430)"
+						placeholder="ФИО подписанта (пациента)"
 						value={signerName}
 						onChange={(e) => setSignerName(e.target.value)}
 					/>
 
 					<div className="patient-budget-legal-text">
-						\u041d\u0430\u0441\u0442\u043e\u044f\u0449\u0438\u043c \u044f \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0430\u044e \u0441\u043e\u0433\u043b\u0430\u0441\u0438\u0435 \u0441 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u043d\u044b\u043c \u043f\u043b\u0430\u043d\u043e\u043c \u043b\u0435\u0447\u0435\u043d\u0438\u044f \u0438 \u0435\u0433\u043e \u0441\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c\u044e. \u0412 \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0438 \u0441 \u0424\u0417 \u211663-\u0424\u0417 «\u041e\u0431 \u044d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u043e\u0439 \u043f\u043e\u0434\u043f\u0438\u0441\u0438» \u043f\u0440\u043e\u0441\u0442\u0430\u044f \u044d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u0430\u044f \u043f\u043e\u0434\u043f\u0438\u0441\u044c (\u041f\u042d\u041f) \u043f\u0440\u0438\u0437\u043d\u0430\u0451\u0442\u0441\u044f \u0440\u0430\u0432\u043d\u043e\u0437\u043d\u0430\u0447\u043d\u043e\u0439 \u0441\u043e\u0431\u0441\u0442\u0432\u0435\u043d\u043d\u043e\u0440\u0443\u0447\u043d\u043e\u0439 \u043f\u043e\u0434\u043f\u0438\u0441\u0438.
+						Настоящим я подтверждаю согласие с предложенным планом лечения и его стоимостью. В соответствии с ФЗ №63-ФЗ «Об электронной подписи» простая электронная подпись (ПЭП) признаётся равнозначной собственноручной подписи.
 					</div>
 
 					{signError && (
@@ -663,11 +671,11 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 					<button
 						type="button"
 						className="patient-budget-submit-btn"
-						disabled={isSubmittingSign || !hasStrokes}
+						disabled={isSubmittingSign}
 						onClick={handleSignSubmit}
 					>
 						<CheckCircle2 size={18} />
-						{isSubmittingSign ? "\u0421\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u0438\u0435 \u043f\u043e\u0434\u043f\u0438\u0441\u0438..." : "\u0421\u043e\u0433\u043b\u0430\u0441\u043e\u0432\u0430\u0442\u044c \u043f\u043b\u0430\u043d \u043b\u0435\u0447\u0435\u043d\u0438\u044f"}
+						{isSubmittingSign ? "Сохранение подписи..." : "Согласовать план лечения"}
 					</button>
 				</div>
 			) : null}

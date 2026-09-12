@@ -41,6 +41,12 @@ export type PublicPortalRoute =
 			 * остаётся публичным (см. ниже).
 			 */
 			readonly organizationId: string | null;
+	  }
+	| {
+			/** Портал согласования сметы пациентом: цифровая подпись ПЭП. */
+			readonly kind: "budget";
+			/** Токен сметы из ссылки. */
+			readonly token: string;
 	  };
 
 /**
@@ -48,6 +54,11 @@ export type PublicPortalRoute =
  * разойдись адрес в двух местах — ссылка снова открывала бы рабочее место.
  */
 export const LAB_ORDER_PORTAL_PATH = "/portal/lab-order/";
+
+/**
+ * Путь согласования сметы пациентом: `#/portal/budget/<токен>`.
+ */
+export const BUDGET_PORTAL_PATH = "/portal/budget/";
 
 /**
  * Путь страницы онлайн-записи: `#/portal/booking/<идентификатор клиники>`.
@@ -123,6 +134,14 @@ export function publicPortalRouteFromHash(
 		};
 	}
 
+	if (path.startsWith(BUDGET_PORTAL_PATH)) {
+		const rawToken =
+			path.slice(BUDGET_PORTAL_PATH.length).split(/[/?#&]/)[0] ?? "";
+		if (!rawToken) return null;
+		const token = decodeSegment(rawToken);
+		return token ? { kind: "budget", token } : null;
+	}
+
 	if (!path.startsWith(LAB_ORDER_PORTAL_PATH)) return null;
 
 	// Хвост после токена отбрасывается: ссылку копируют в мессенджер, и он умеет
@@ -151,5 +170,19 @@ export function buildPublicBookingPortalUrl(
 	const base = origin.trim().replace(/\/$/, "");
 	if (!org || !base) return null;
 	const path = `${PUBLIC_BOOKING_PORTAL_PATH.replace(/\/$/, "")}/${encodeURIComponent(org)}`;
+	return `${base}/#${path}`;
+}
+
+/**
+ * Полный URL страницы согласования сметы пациентом.
+ */
+export function buildBudgetPortalUrl(
+	token: string,
+	origin: string = typeof window !== "undefined" ? window.location.origin : "",
+): string | null {
+	const tok = token.trim();
+	const base = origin.trim().replace(/\/$/, "");
+	if (!tok || !base) return null;
+	const path = `${BUDGET_PORTAL_PATH.replace(/\/$/, "")}/${encodeURIComponent(tok)}`;
 	return `${base}/#${path}`;
 }

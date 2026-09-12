@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import {
+	BUDGET_PORTAL_PATH,
 	LAB_ORDER_PORTAL_PATH,
 	PUBLIC_BOOKING_PORTAL_PATH,
 	publicPortalRouteFromHash,
@@ -191,3 +192,42 @@ test("процентное кодирование снимается, битое
 		token: "%zz",
 	});
 });
+
+test("ссылка согласования сметы пациентом разбирается в токен сметы", () => {
+	const token = "audit-demo-budget-2026";
+
+	assert.deepEqual(
+		publicPortalRouteFromHash(`#${BUDGET_PORTAL_PATH}${token}`),
+		{
+			kind: "budget",
+			token,
+		},
+	);
+	assert.deepEqual(
+		publicPortalRouteFromHash(`${BUDGET_PORTAL_PATH}${token}`),
+		{
+			kind: "budget",
+			token,
+		},
+	);
+	assert.deepEqual(
+		publicPortalRouteFromHash(`#${BUDGET_PORTAL_PATH}${token}?from=whatsapp`),
+		{
+			kind: "budget",
+			token,
+		},
+	);
+});
+
+test("страницу согласования сметы рендерит точка монтирования main.tsx", () => {
+	const entry = readSource("main.tsx");
+	assert.ok(
+		entry.includes("<PatientBudgetSignView"),
+		"main.tsx больше не рендерит PatientBudgetSignView для маршрута сметы.",
+	);
+	assert.ok(
+		entry.includes('kind === "budget"'),
+		"main.tsx больше не различает вид публичного адреса budget.",
+	);
+});
+

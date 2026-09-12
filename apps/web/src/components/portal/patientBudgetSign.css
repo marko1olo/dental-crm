@@ -27,6 +27,7 @@
 	padding-bottom: 1rem;
 	border-bottom: 1px solid var(--border, #e2e8f0);
 	margin-bottom: 1rem;
+	flex-wrap: wrap;
 }
 
 .patient-budget-clinic-title {
@@ -45,12 +46,13 @@
 .patient-budget-status-chip {
 	font-size: 0.75rem;
 	font-weight: 600;
-	padding: 0.25rem 0.5rem;
+	padding: 0.25rem 0.625rem;
 	border-radius: 9999px;
 	display: inline-flex;
 	align-items: center;
-	gap: 0.25rem;
+	gap: 0.35rem;
 	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .patient-budget-status-chip.pending {
@@ -155,16 +157,19 @@
 .patient-budget-grand-total {
 	display: flex;
 	justify-content: space-between;
-	align-items: baseline;
+	align-items: center;
 	margin-top: 0.25rem;
 	font-size: 1.125rem;
 	font-weight: 800;
 	color: var(--ink, #0f172a);
+	gap: 0.5rem;
 }
 
 .patient-budget-grand-price {
 	color: #059669;
 	font-size: 1.25rem;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 /* 2FA Verification Box */
@@ -372,6 +377,18 @@
 	margin-bottom: 0.25rem;
 }
 
+.patient-budget-accepted-desc {
+	font-size: 0.8125rem;
+	color: #166534;
+	margin: 0 0 0.5rem;
+}
+
+.patient-budget-accepted-date {
+	font-size: 0.75rem;
+	color: #15803d;
+	margin: 0 0 0.5rem;
+}
+
 .patient-budget-hash-box {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	font-size: 0.6875rem;
@@ -406,55 +423,196 @@
 	background: #f8fafc;
 }
 
-/* Dark mode overrides */
+/* Desktop responsive elevation & centering */
+@media (min-width: 540px) {
+	.patient-budget-container {
+		max-width: 520px;
+		margin: 2rem auto;
+		min-height: auto;
+		border: 1px solid var(--border, #e2e8f0);
+		border-radius: 1rem;
+		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+		padding: 1.5rem;
+	}
+}
+
+/* Dark mode theme token & component overrides */
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-container {
+	background-color: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-header {
+	border-bottom-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-clinic-title {
+	color: #f8fafc;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-doctor-name {
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-status-chip.pending {
+	background-color: #78350f;
+	color: #fde68a;
+	border: 1px solid #92400e;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-status-chip.accepted {
+	background-color: #064e3b;
+	color: #a7f3d0;
+	border: 1px solid #059669;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-card {
+	background-color: #1e293b;
+	border-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-card-title {
+	color: #f8fafc;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-item-row {
+	border-bottom-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-tooth-badge {
+	background-color: #0c4a6e;
+	color: #7dd3fc;
+	border: 1px solid #0284c7;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-item-title {
+	color: #f8fafc;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-item-price {
+	color: #f8fafc;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-totals {
+	border-top-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-total-line {
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-grand-total {
+	color: #f8fafc;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-grand-price {
+	color: #34d399;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-verify-box {
+	background-color: #1e293b;
+	border-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-verify-input {
+	background-color: #0f172a;
+	color: #f8fafc;
+	border-color: #475569;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-signer-input {
+	background-color: #0f172a;
+	color: #f8fafc;
+	border-color: #475569;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-clear-btn {
+	background-color: transparent;
+	border-color: #475569;
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-clear-btn:hover {
+	background-color: #334155;
+	color: #f8fafc;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-canvas-wrap {
+	background-color: #ffffff; /* Signature ink canvas remains white paper for anatomical ink clarity */
+	border-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-legal-text {
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-card {
+	background-color: #064e3b;
+	border-color: #047857;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-title {
+	color: #ecfdf5;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-desc {
+	color: #a7f3d0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-date {
+	color: #6ee7b7;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-hash-box {
+	background-color: #0f172a;
+	color: #94a3b8;
+	border-color: #334155;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-print-btn {
+	background-color: #1e293b;
+	border-color: #475569;
+	color: #f8fafc;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-print-btn:hover {
+	background-color: #334155;
+}
+
+/* Media query fallback for OS-level dark theme */
 @media (prefers-color-scheme: dark) {
-	[data-theme="dark"] .patient-budget-container {
-		background-color: #0f172a;
-		color: #f8fafc;
+	:root:not([data-theme="light"]) .patient-budget-container {
+		background-color: var(--paper, #0f172a);
+		color: var(--ink, #f8fafc);
+		border-color: #334155;
 	}
-	[data-theme="dark"] .patient-budget-clinic-title {
-		color: #f8fafc;
-	}
-	[data-theme="dark"] .patient-budget-card {
+	:root:not([data-theme="light"]) .patient-budget-card,
+	:root:not([data-theme="light"]) .patient-budget-verify-box {
 		background-color: #1e293b;
 		border-color: #334155;
 	}
-	[data-theme="dark"] .patient-budget-item-title {
-		color: #f8fafc;
-	}
-	[data-theme="dark"] .patient-budget-item-price {
-		color: #f8fafc;
-	}
-	[data-theme="dark"] .patient-budget-grand-total {
-		color: #f8fafc;
-	}
-	[data-theme="dark"] .patient-budget-verify-box {
-		background-color: #1e293b;
-		border-color: #334155;
-	}
-	[data-theme="dark"] .patient-budget-verify-input {
-		background-color: #0f172a;
-		color: #f8fafc;
-		border-color: #475569;
-	}
-	[data-theme="dark"] .patient-budget-signer-input {
-		background-color: #0f172a;
-		color: #f8fafc;
-		border-color: #475569;
-	}
-	[data-theme="dark"] .patient-budget-canvas-wrap {
-		background-color: #ffffff; /* signature canvas remains white paper for clarity */
-	}
-	[data-theme="dark"] .patient-budget-accepted-card {
+	:root:not([data-theme="light"]) .patient-budget-accepted-card {
 		background-color: #064e3b;
 		border-color: #047857;
 	}
-	[data-theme="dark"] .patient-budget-accepted-title {
+	:root:not([data-theme="light"]) .patient-budget-accepted-title {
 		color: #ecfdf5;
 	}
-	[data-theme="dark"] .patient-budget-hash-box {
+	:root:not([data-theme="light"]) .patient-budget-accepted-desc {
+		color: #a7f3d0;
+	}
+	:root:not([data-theme="light"]) .patient-budget-accepted-date {
+		color: #6ee7b7;
+	}
+	:root:not([data-theme="light"]) .patient-budget-hash-box {
 		background-color: #0f172a;
 		color: #94a3b8;
 		border-color: #334155;
+	}
+	:root:not([data-theme="light"]) .patient-budget-print-btn {
+		background-color: #1e293b;
+		border-color: #475569;
+		color: #f8fafc;
 	}
 }
