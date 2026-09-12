@@ -133,7 +133,7 @@ describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Sui
 	});
 
 	test("1.2 Correctly calculates Code 01 (capped at 150 000 ₽) and Code 02 (uncapped) 13% & 15% refunds", () => {
-		const result = buildFnsKnd1151156Xml(validLegalClinicPayload);
+		const result = buildFnsKnd1151156Xml(validLegalClinicPayload, "mock-uuid-test");
 		assert.strictEqual(result.isValidForSubmission, true);
 		assert.strictEqual(result.code1Kopecks, 17000000);
 		assert.strictEqual(result.code2Kopecks, 30000000);
@@ -143,6 +143,8 @@ describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Sui
 		assert.strictEqual(result.totalRub, 470000);
 		assert.strictEqual(result.estimatedTaxRefundRub, 58500);
 		assert.strictEqual(result.estimatedTaxRefund15Rub, 67500);
+		assert.ok(result.fileName.includes("mock-uuid-test"));
+		assert.ok(result.fileId.includes("mock-uuid-test"));
 	});
 
 	test("1.3 Generates XML adhering to FNS KND 1184043 Version 5.01 schema", () => {
@@ -234,29 +236,44 @@ describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Sui
 
 	test("2.1 Service code classifier properly identifies Expensive Treatment (Code 02) per Decree № 458 and 804n", () => {
 		assert.strictEqual(classifyNdflServiceCode("Установка дентального имплантата Nobel Biocare", "A16.07.054.001"), "2");
+		assert.strictEqual(classifyNdflServiceCode("Установка имплантата", "A16.07.054"), "2");
 		assert.strictEqual(classifyNdflServiceCode("Открытый синус-лифтинг с костной аугментацией", "A16.07.055"), "2");
+		assert.strictEqual(classifyNdflServiceCode("Синус-лифтинг закрытый", "A16.07.055"), "2");
 		assert.strictEqual(classifyNdflServiceCode("Костная пластика челюстно-лицевой области", "A16.07.041"), "2");
+		assert.strictEqual(classifyNdflServiceCode("Костная пластика челюсти", "A16.07.041"), "2");
 		assert.strictEqual(classifyNdflServiceCode("Установка скулового имплантата Zygoma", "A16.07.056"), "2");
+		assert.strictEqual(classifyNdflServiceCode("Скуловой имплантат Zygoma", "A16.07.056"), "2");
 		assert.strictEqual(classifyNdflServiceCode("Протезирование на 6 имплантатах All-on-6"), "2");
+		assert.strictEqual(classifyNdflServiceCode("Протезирование All-on-4 на имплантатах", "A16.07.023"), "2");
 		assert.strictEqual(classifyNdflServiceCode("Костная аугментация Bio-Oss и мембрана Bio-Gide"), "2");
+		assert.strictEqual(classifyNdflServiceCode("Био-гайд мембрана и остеопластика"), "2");
 
 		assert.strictEqual(classifyNdflServiceCode("Лечение глубокого кариеса 4.6", "A16.07.002.001"), "1");
+		assert.strictEqual(classifyNdflServiceCode("Лечение кариеса эмали", "A16.07.002"), "1");
 		assert.strictEqual(classifyNdflServiceCode("Профессиональная чистка зубов ультразвуком", "A22.07.002"), "1");
+		assert.strictEqual(classifyNdflServiceCode("Профессиональная гигиена полости рта AirFlow", "A16.07.051"), "1");
 		assert.strictEqual(classifyNdflServiceCode("Ортодонтическая коррекция брекет-системой Damon", "A16.07.048"), "1");
 		assert.strictEqual(classifyNdflServiceCode("Прицельный радиовизиографический снимок 1.1", "A06.07.001"), "1");
+		assert.strictEqual(classifyNdflServiceCode("Эндодонтическое лечение пульпита"), "1");
 	});
 
 	test("2.2 Retail goods filter (Feature #5) excludes non-medical retail items from deduction", () => {
 		assert.strictEqual(isNonMedicalGood("Зубная щетка Curaprox 5460"), true);
 		assert.strictEqual(isNonMedicalGood("Зубная паста Biorepair Total Protection"), true);
+		assert.strictEqual(isNonMedicalGood("Зубная паста Marvis 85мл"), true);
 		assert.strictEqual(isNonMedicalGood("Портативный ирригатор Waterpik WP-450"), true);
+		assert.strictEqual(isNonMedicalGood("Ирригатор Waterpik WP-660"), true);
+		assert.strictEqual(isNonMedicalGood("Зубная нить Oral-B"), true);
 		assert.strictEqual(isNonMedicalGood("Зубная нить Oral-B Pro-Expert"), true);
 		assert.strictEqual(isNonMedicalGood("Ополаскиватель для полости рта Листерин"), true);
 		assert.strictEqual(isNonMedicalGood("Косметический набор для отбеливания"), true);
+		assert.strictEqual(isNonMedicalGood("Набор для домашнего отбеливания"), true);
 		assert.strictEqual(isNonMedicalGood("Любой товар", "goods"), true);
 
 		assert.strictEqual(isNonMedicalGood("Лечение пульпита"), false);
+		assert.strictEqual(isNonMedicalGood("Лечение пульпита зуба 21"), false);
 		assert.strictEqual(isNonMedicalGood("Установка пломбы"), false);
+		assert.strictEqual(isNonMedicalGood("Установка керамической коронки E.max"), false);
 		assert.strictEqual(isNonMedicalGood("Дентальная имплантация"), false);
 	});
 
@@ -264,6 +281,7 @@ describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Sui
 		assert.strictEqual(isDmsInsurancePayment("insurance"), true);
 		assert.strictEqual(isDmsInsurancePayment("dms"), true);
 		assert.strictEqual(isDmsInsurancePayment("card", "Оплата по безналичному расчету по договору ДМС АльфаСтрахование"), true);
+		assert.strictEqual(isDmsInsurancePayment("cash", "Оплата по полису ДМС СОГАЗ"), true);
 		assert.strictEqual(isDmsInsurancePayment("card", "Личная доплата пациента за пломбу"), false);
 		assert.strictEqual(isDmsInsurancePayment("cash", "Оплата наличными"), false);
 		assert.strictEqual(isDmsInsurancePayment("sbp", "Оплата через СБП"), false);
@@ -295,6 +313,10 @@ describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Sui
 	});
 
 	test("5.1 validateFnsFiscalReceiptsChecksums detects kopeck-exact checksum discrepancies down to 1 kopeck", () => {
+		const validCheck = validateFnsFiscalReceiptsChecksums(validLegalClinicPayload);
+		assert.strictEqual(validCheck.isValid, true);
+		assert.strictEqual(validCheck.totalDiscrepancyKopecks, 0);
+
 		const payloadWithDiscrepancy: FnsTaxPayload = {
 			...validLegalClinicPayload,
 			expenses: {
@@ -387,12 +409,18 @@ describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Sui
 
 		const signedHtml = generateFnsNdflPrintHtml(validLegalClinicPayload, signingOpts);
 
+		assert.ok(signedHtml.includes("<!DOCTYPE html>"));
+		assert.ok(signedHtml.includes("КНД 1151156"));
+		assert.ok(signedHtml.includes("Приказ ФНС № ЕА-7-11/824@"));
 		assert.ok(signedHtml.includes("BEGIN_GOST_SIGNATURE_STAMP"));
 		assert.ok(signedHtml.includes("END_GOST_SIGNATURE_STAMP"));
 		assert.ok(signedHtml.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
 		assert.ok(signedHtml.includes("00E4A28B9988776655443322"));
 		assert.ok(signedHtml.includes("ООО &quot;СТОМАТОЛОГИЯ ДЕНТЕ&quot;"));
-		assert.ok(signedHtml.includes("КНД 1151156"));
+		assert.ok(signedHtml.includes("gost-digital-stamp"), "Штамп имеет класс gost-digital-stamp");
+		assert.match(signedHtml, /170[\s\u00A0]000,00[\s\u00A0]₽/); // Код 1
+		assert.match(signedHtml, /300[\s\u00A0]000,00[\s\u00A0]₽/); // Код 2
+		assert.match(signedHtml, /58[\s\u00A0]500,00[\s\u00A0]₽/);  // 13% вычет
 		// Проверяем, что синий штамп нанесен в блоке подписи (.sign-col)
 		assert.ok(signedHtml.includes('<div class="sign-col">\n<!-- BEGIN_GOST_SIGNATURE_STAMP -->'));
 	});

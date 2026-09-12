@@ -155,6 +155,8 @@ describe("54-FZ (FFD 1.2) Offline Fiscal Batch Reconciler & Accounting Exports",
 		assert.equal(shift1.zReport.incomeCashRub, 2500);
 		assert.equal(shift1.zReport.incomeCardRub, 7800);
 		assert.equal(shift1.zReport.incomeSbpRub, 4500);
+		assert.equal(shift1.zReport.incomeElectronicRub, 12300); // 7800 (card) + 4500 (sbp)
+		assert.equal(shift1.zReport.incomeAdvanceOffsetRub, 0);
 		assert.equal(shift1.zReport.netRevenueRub, 14800);
 		assert.equal(shift1.zReport.cashInDrawerRub, 2500);
 		assert.equal(shift1.zReport.isBalanced, true);
@@ -167,12 +169,14 @@ describe("54-FZ (FFD 1.2) Offline Fiscal Batch Reconciler & Accounting Exports",
 		assert.equal(shift2.zReport.incomeCount, 1);
 		assert.equal(shift2.zReport.incomeReturnCount, 1);
 		assert.equal(shift2.zReport.incomeTotalRub, 45000);
+		assert.equal(shift2.zReport.incomeElectronicRub, 30000);
+		assert.equal(shift2.zReport.incomeAdvanceOffsetRub, 15000);
 		assert.equal(shift2.zReport.incomeReturnTotalRub, 5000);
 		assert.equal(shift2.zReport.netRevenueRub, 40000);
 		assert.equal(shift2.zReport.isBalanced, true);
 	});
 
-	it("1.3 Deduplication & Idempotency: duplicate IDs and identical signatures are safely skipped", () => {
+	it("1.3 Deduplication & Idempotency: duplicate IDs, signatures and existing processed IDs are safely skipped", () => {
 		const itemsWithDuplicates: readonly OfflineQueueFiscalItem[] = [
 			sampleQueueItems[0]!,
 			sampleQueueItems[0]!, // Exact duplicate item ID
@@ -187,14 +191,34 @@ describe("54-FZ (FFD 1.2) Offline Fiscal Batch Reconciler & Accounting Exports",
 				id: "q-rec-new-unique",
 				paymentId: "pay-unique-new",
 			},
+			{
+				...sampleQueueItems[3]!,
+				id: "prior-processed-pay-001",
+			},
+			{
+				id: "q-rec-duplicate-sig",
+				patientId: "pat-99",
+				timestampIso: "2026-08-20T10:00:00.000Z",
+				operationType: "income",
+				payloadSignature: "sig-pre-existing-123",
+				items: [{ name: "Осмотр", priceRub: 1000 }],
+				tenders: { cashRub: 1000 },
+			},
 		];
 
-		const result = processOfflineFiscalBatch(itemsWithDuplicates);
-		assert.equal(result.totalItemsCount, 5);
+		const result = processOfflineFiscalBatch(itemsWithDuplicates, {
+			existingProcessedIds: ["prior-processed-pay-001"],
+			existingPayloadSignatures: ["sig-pre-existing-123"],
+		});
+		assert.equal(result.totalItemsCount, 7);
 		assert.equal(result.processedCount, 3);
-		assert.equal(result.duplicateCount, 2);
-		assert.equal(result.skippedDuplicates.length, 2);
+		assert.equal(result.duplicateCount, 4);
+		assert.equal(result.skippedDuplicates.length, 4);
 		assert.equal(result.skippedDuplicates[0]?.status, "skipped_duplicate");
+		assert.equal(result.skippedDuplicates[0]?.reason, "duplicate_id");
+		assert.equal(result.skippedDuplicates[1]?.reason, "duplicate_id");
+		assert.equal(result.skippedDuplicates[2]?.reason, "duplicate_id");
+		assert.equal(result.skippedDuplicates[3]?.reason, "duplicate_signature");
 	});
 
 	it("1.4 Banking Reconciliation (Acquiring & SBP) matches exact kopecks", () => {
@@ -259,6 +283,38 @@ describe("54-FZ (FFD 1.2) Offline Fiscal Batch Reconciler & Accounting Exports",
 		assert.equal(result.reconciliation.isMatched, false);
 		assert.notEqual(result.reconciliation.discrepancyKopecks, 0);
 		assert.ok(result.reconciliation.summaryText.includes("Обнаружено расхождение"));
+	});
+
+	it("1.5b Banking Reconciliation detects positive variance with exact kopeck reporting", () => {
+		const baseDate = new Date("2026-08-20T14:00:00.000Z");
+
+		const queue: readonly OfflineQueueFiscalItem[] = [
+			{
+				id: "item-card-1",
+				patientId: "pat-1",
+				timestampIso: baseDate.toISOString(),
+				operationType: "income",
+				items: [{ name: "Терапия", priceRub: 10000, quantity: 1 }],
+				tenders: { cardRub: 10000 },
+			},
+		];
+
+		// Bank registry has 11500 ₽ (+1500 ₽ discrepancy)
+		const bankRegistry: readonly BankRegistryTransaction[] = [
+			{
+				transactionId: "bank-tx-01",
+				dateIso: baseDate.toISOString(),
+				amountRub: 11500,
+				type: "card",
+			},
+		];
+
+		const result = processOfflineFiscalBatch(queue, { bankRegistry });
+
+		assert.equal(result.reconciliation.isMatched, false);
+		assert.equal(result.reconciliation.status, "discrepancy_detected");
+		assert.equal(result.reconciliation.discrepancyRub, 1500);
+		assert.ok(/Обнаружено расхождение:\s*\+1[\s\u00a0\u202f]?500[,.]00\s*₽/.test(result.reconciliation.summaryText));
 	});
 
 	it("1.6 generateFiscalPeriodStatementHtml — Generates valid A4 Landscape print statement", () => {
@@ -356,5 +412,51 @@ describe("54-FZ (FFD 1.2) Offline Fiscal Batch Reconciler & Accounting Exports",
 		assert.ok(csv.includes("14800.00"));
 		assert.ok(csv.includes("ИТОГО ЗА ПЕРИОД"));
 		assert.ok(csv.includes("РАСШИФРОВКА СВЕРКИ С БАНКОВСКОЙ ВЫПИСКОЙ"));
+	});
+
+	it("1.8 Multi-day partitioning into 3 distinct 24-hour shifts under 54-FZ", () => {
+		const day1 = new Date("2026-08-20T09:00:00.000Z");
+		const day2 = new Date("2026-08-21T11:00:00.000Z"); // 26 hours later (>24h limit)
+		const day3 = new Date("2026-08-23T10:00:00.000Z"); // 2 days later
+
+		const queue: readonly OfflineQueueFiscalItem[] = [
+			{
+				id: "day1-rec",
+				patientId: "pat-1",
+				timestampIso: day1.toISOString(),
+				operationType: "income",
+				items: [{ name: "Пломба", priceRub: 5000, quantity: 1 }],
+				tenders: { cardRub: 5000 },
+			},
+			{
+				id: "day2-rec",
+				patientId: "pat-2",
+				timestampIso: day2.toISOString(),
+				operationType: "income",
+				items: [{ name: "Удаление зуба", priceRub: 3000, quantity: 1 }],
+				tenders: { cashRub: 3000 },
+			},
+			{
+				id: "day3-rec",
+				patientId: "pat-3",
+				timestampIso: day3.toISOString(),
+				operationType: "income",
+				items: [{ name: "Имплантация", priceRub: 40000, quantity: 1 }],
+				tenders: { sbpRub: 40000 },
+			},
+		];
+
+		const result = processOfflineFiscalBatch(queue, {
+			startingShiftNumber: 1,
+		});
+
+		assert.equal(result.processedCount, 3);
+		assert.equal(result.shifts.length, 3);
+		assert.equal(result.shifts[0]?.shiftNumber, 1);
+		assert.equal(result.shifts[0]?.zReport.incomeElectronicRub, 5000);
+		assert.equal(result.shifts[1]?.shiftNumber, 2);
+		assert.equal(result.shifts[1]?.zReport.incomeCashRub, 3000);
+		assert.equal(result.shifts[2]?.shiftNumber, 3);
+		assert.equal(result.shifts[2]?.zReport.incomeElectronicRub, 40000);
 	});
 });
