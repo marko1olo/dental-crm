@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	InvoicesView,
 	type BillingInvoice,
@@ -19,6 +20,11 @@ import {
 	loadStoredInvoices,
 	saveStoredInvoices,
 } from "../../billing/InvoicesView.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const invoicesFilePath = path.resolve(__dirname, "../../billing/InvoicesView.tsx");
+const financeFilePath = path.resolve(__dirname, "../../../FinanceView.tsx");
 
 describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Zero Mocks", () => {
 	const sampleInvoices: BillingInvoice[] = [
@@ -76,10 +82,6 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 
 	describe("1. Zero Mocks & Two-Tier Storage (DEF-01, DEF-03, Mandate 2)", () => {
 		it("InvoicesView source has NO hardcoded DEMO_INVOICES array", () => {
-			const invoicesFilePath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/billing/InvoicesView.tsx",
-			);
 			const source = fs.readFileSync(invoicesFilePath, "utf-8");
 
 			assert.ok(
@@ -147,10 +149,6 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 
 	describe("2. Server Synchronization & Persistence (DEF-03, DEF-04, Mandates 8e, 8n)", () => {
 		it("InvoicesView source wires server fetch with denteAdminSecretRequestHeaders", () => {
-			const invoicesFilePath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/billing/InvoicesView.tsx",
-			);
 			const source = fs.readFileSync(invoicesFilePath, "utf-8");
 
 			assert.ok(
@@ -168,10 +166,6 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 		});
 
 		it("handleCreateInvoice saves new invoice to storage and triggers async sync", () => {
-			const invoicesFilePath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/billing/InvoicesView.tsx",
-			);
 			const source = fs.readFileSync(invoicesFilePath, "utf-8");
 
 			assert.ok(
@@ -185,10 +179,6 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 		});
 
 		it("handleApplyWarranty100 sets status to warranty_100, 0 ₽ total, and saves to storage", () => {
-			const invoicesFilePath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/billing/InvoicesView.tsx",
-			);
 			const source = fs.readFileSync(invoicesFilePath, "utf-8");
 
 			assert.ok(
@@ -208,10 +198,6 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 
 	describe("3. FinanceView Integration (DEF-02, Mandates 8c, 8d, 8e)", () => {
 		it("FinanceView source mounts InvoicesView and renders btn-finance-open-invoices button", () => {
-			const financeFilePath = path.resolve(
-				process.cwd(),
-				"apps/web/src/FinanceView.tsx",
-			);
 			const source = fs.readFileSync(financeFilePath, "utf-8");
 
 			assert.ok(
@@ -244,10 +230,6 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 
 	describe("4. 7 Deadly Sins of UI & Theme Hygiene (DEF-06, Mandate 8d)", () => {
 		it("All status badges include WCAG AAA dark mode border tokens", () => {
-			const invoicesFilePath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/billing/InvoicesView.tsx",
-			);
 			const source = fs.readFileSync(invoicesFilePath, "utf-8");
 
 			assert.ok(

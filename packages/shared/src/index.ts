@@ -6,11 +6,9 @@ export * from "./fiscal/index.js";
 export { parseGs1DataMatrix, GS1_FNC1, GS1_GROUP_SEPARATOR } from "./mdlp/index.js";
 export * from "./mdlp/index.js";
 export * from "./utils/mdlpDataMatrix.js";
-export * from "./sanpin.js";
 export * from "./sanpin/index.js";
 export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
-export * from "./pediatricDentition.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
 export * from "./perio/index.js";
@@ -117,6 +115,7 @@ export * from "./warehouse/index.js";
 export * as inventory from "./inventory/index.js";
 export * from "./curator/index.js";
 export * from "./outpatient/index.js";
+export * from "./documents/index.js";
 export * from "./compliance/decree659Engine.js";
 export {
 	calculateEmployeeTimesheetT13,
@@ -4905,208 +4904,11 @@ export type MedicalRecordExtractPayload = z.infer<
 	typeof medicalRecordExtractPayloadSchema
 >;
 
-const outpatientMedicalCard025uDateSchema = z
-	.string()
-	.trim()
-	.max(40)
-	.nullable()
-	.optional();
-const outpatientMedicalCard025uOptionalTextSchema = z
-	.string()
-	.trim()
-	.max(1200)
-	.nullable()
-	.optional();
-const outpatientMedicalCard025uCodeSchema = z.enum(["1", "2", "unknown"]);
-
-export const outpatientMedicalCard025uDoctorSchema = z.object({
-	fullName: z.string().trim().min(1).max(240),
-	position: z.string().trim().max(160).nullable().optional(),
-	specialty: z.string().trim().max(160).nullable().optional(),
-});
-export type OutpatientMedicalCard025uDoctor = z.infer<
-	typeof outpatientMedicalCard025uDoctorSchema
->;
-
-export const outpatientMedicalCard025uDiagnosisRowSchema = z.object({
-	date: z.string().trim().min(1).max(40),
-	diagnosis: z.string().trim().min(1).max(1000),
-	icd10Code: z.string().trim().max(40).nullable().optional(),
-	firstOrRepeat: z.enum(["first", "repeat", "unknown"]),
-	doctorFullName: z.string().trim().min(1).max(240),
-	doctorPosition: z.string().trim().max(160).nullable().optional(),
-	doctorSpecialty: z.string().trim().max(160).nullable().optional(),
-});
-export type OutpatientMedicalCard025uDiagnosisRow = z.infer<
-	typeof outpatientMedicalCard025uDiagnosisRowSchema
->;
-
-export const outpatientMedicalCard025uTextRecordSchema = z.object({
-	date: outpatientMedicalCard025uDateSchema,
-	title: z.string().trim().max(240).nullable().optional(),
-	text: z.string().trim().min(1).max(2000),
-	doctor: outpatientMedicalCard025uDoctorSchema.nullable().optional(),
-});
-export type OutpatientMedicalCard025uTextRecord = z.infer<
-	typeof outpatientMedicalCard025uTextRecordSchema
->;
-
-export const outpatientMedicalCard025uEventRowSchema = z.object({
-	date: outpatientMedicalCard025uDateSchema,
-	event: z.string().trim().min(1).max(240),
-	result: z.string().trim().max(1200).nullable().optional(),
-	organization: z.string().trim().max(240).nullable().optional(),
-	doctor: outpatientMedicalCard025uDoctorSchema.nullable().optional(),
-});
-export type OutpatientMedicalCard025uEventRow = z.infer<
-	typeof outpatientMedicalCard025uEventRowSchema
->;
-
-export const outpatientMedicalCard025uXrayDoseRowSchema = z.object({
-	date: outpatientMedicalCard025uDateSchema,
-	study: z.string().trim().min(1).max(240),
-	area: z.string().trim().max(240).nullable().optional(),
-	dose: z.string().trim().max(120).nullable().optional(),
-	sourceDocument: z.string().trim().max(240).nullable().optional(),
-});
-export type OutpatientMedicalCard025uXrayDoseRow = z.infer<
-	typeof outpatientMedicalCard025uXrayDoseRowSchema
->;
-
-export const outpatientMedicalCard025uSpecialistVisitRecordSchema = z.object({
-	sourceVisitId: z.string().trim().min(1).max(120),
-	visitDate: z.string().trim().min(1).max(40),
-	location: z.string().trim().max(240).nullable().optional(),
-	doctorFullName: z.string().trim().min(1).max(240),
-	doctorPosition: z.string().trim().max(160).nullable().optional(),
-	doctorSpecialty: z.string().trim().max(160).nullable().optional(),
-	firstOrRepeat: z.enum(["first", "repeat", "unknown"]),
-	complaints: z.string().trim().min(1).max(1200),
-	anamnesis: z.string().trim().min(1).max(1200),
-	objectiveData: z.string().trim().min(1).max(1600),
-	primaryDiagnosis: z.string().trim().min(1).max(1000),
-	primaryDiagnosisIcd10: z.string().trim().max(40).nullable().optional(),
-	complications: outpatientMedicalCard025uOptionalTextSchema,
-	comorbidities: outpatientMedicalCard025uOptionalTextSchema,
-	externalCause: outpatientMedicalCard025uOptionalTextSchema,
-	healthGroup: z.string().trim().max(120).nullable().optional(),
-	dispensaryObservation: outpatientMedicalCard025uOptionalTextSchema,
-	orders: z.string().trim().min(1).max(1600),
-	treatmentProvided: z.string().trim().min(1).max(1600),
-	medicinesAndPhysiotherapy: outpatientMedicalCard025uOptionalTextSchema,
-	sickLeaveOrCertificate: outpatientMedicalCard025uOptionalTextSchema,
-	preferentialPrescriptions: outpatientMedicalCard025uOptionalTextSchema,
-	informedConsentOrRefusal: z.string().trim().min(1).max(800),
-	clinicalToothRows: clinicalToothRowsSchema,
-});
-export type OutpatientMedicalCard025uSpecialistVisitRecord = z.infer<
-	typeof outpatientMedicalCard025uSpecialistVisitRecordSchema
->;
-
-// LEGACY / HOSPITAL BLOAT: В частной стоматологии используется исключительно Форма 043/у Минздрава РФ (Мандат 8i).
-export const outpatientMedicalCard025uPayloadSchema = z.object({
-	formNumber: z.literal("025/у"),
-	sourceOrderReference: z.literal(
-		"Приказ Минздрава России от 13.05.2025 N 274н",
-	),
-	medicalOrganizationName: z.string().trim().min(1).max(300),
-	medicalOrganizationAddress: z.string().trim().max(500).nullable().optional(),
-	medicalOrganizationOgrnOrOgrnip: z
-		.string()
-		.trim()
-		.max(80)
-		.nullable()
-		.optional(),
-	medicalOrganizationLicense: z.string().trim().max(300).nullable().optional(),
-	medicalCardNumber: z.string().trim().min(1).max(120),
-	openedAt: z.string().trim().min(1).max(40),
-	periodStart: z.string().trim().min(1).max(40),
-	periodEnd: z.string().trim().min(1).max(40),
-	sourceVisitIds: z.array(z.string().trim().min(1).max(120)).min(1).max(50),
-	patientFullName: z.string().trim().min(1).max(240),
-	patientBirthDate: outpatientMedicalCard025uDateSchema,
-	patientSexCode: outpatientMedicalCard025uCodeSchema,
-	citizenship: z.string().trim().max(120).nullable().optional(),
-	identityDocument: z.string().trim().max(240).nullable().optional(),
-	identityDocumentSeries: z.string().trim().max(40).nullable().optional(),
-	identityDocumentNumber: z.string().trim().max(80).nullable().optional(),
-	patientPhone: z.string().trim().max(80).nullable().optional(),
-	patientEmail: z.string().trim().max(160).nullable().optional(),
-	registrationAddress: z.string().trim().max(500).nullable().optional(),
-	registrationUrbanRuralCode: outpatientMedicalCard025uCodeSchema,
-	stayAddress: z.string().trim().max(500).nullable().optional(),
-	stayUrbanRuralCode: outpatientMedicalCard025uCodeSchema,
-	omsPolicy: z.string().trim().max(120).nullable().optional(),
-	omsIssuedAt: outpatientMedicalCard025uDateSchema,
-	insurerName: z.string().trim().max(240).nullable().optional(),
-	snils: z.string().trim().max(40).nullable().optional(),
-	socialSupportCode: z.string().trim().max(120).nullable().optional(),
-	healthStatusDisclosureContact: z
-		.string()
-		.trim()
-		.max(300)
-		.nullable()
-		.optional(),
-	employmentCode: z.string().trim().max(120).nullable().optional(),
-	disabilityGroup: z.string().trim().max(120).nullable().optional(),
-	workOrStudyPlace: z.string().trim().max(240).nullable().optional(),
-	// Стационарные и трансфузиологические поля (чужеродный госпитальный блоат, Мандат 8i — помечены как опциональные deprecated)
-	palliativeCareNeedCode: z.string().trim().max(120).nullable().optional(),
-	bloodGroup: z.string().trim().max(40).nullable().optional(),
-	rhFactor: z.string().trim().max(40).nullable().optional(),
-	kellK1: z.string().trim().max(40).nullable().optional(),
-	otherBloodData: z.string().trim().max(300).nullable().optional(),
-	allergyHistory: z.string().trim().max(1000).nullable().optional(),
-	chronicDispensaryRegister: z
-		.array(outpatientMedicalCard025uDiagnosisRowSchema)
-		.max(100),
-	finalDiagnoses: z
-		.array(outpatientMedicalCard025uDiagnosisRowSchema)
-		.min(1)
-		.max(100),
-	specialistVisitRecords: z
-		.array(outpatientMedicalCard025uSpecialistVisitRecordSchema)
-		.min(1)
-		.max(50),
-	dynamicObservationRecords: z
-		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(100),
-	stageEpicrisisRecords: z
-		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(50),
-	// Согласования начмедов и врачебных комиссий стационаров (в стоматологии не используются, Мандат 8e / 8i)
-	departmentHeadConsultations: z
-		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(50)
-		.optional()
-		.default([]),
-	medicalCommissionRecords: z
-		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(50)
-		.optional()
-		.default([]),
-	dispensaryObservationEntries: z
-		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(100),
-	hospitalizationRows: z.array(outpatientMedicalCard025uEventRowSchema).max(50),
-	ambulatorySurgeryRows: z
-		.array(outpatientMedicalCard025uEventRowSchema)
-		.max(50),
-	xrayDoseRows: z.array(outpatientMedicalCard025uXrayDoseRowSchema).max(100),
-	functionalResults: z
-		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(100),
-	laboratoryResults: z
-		.array(outpatientMedicalCard025uTextRecordSchema)
-		.max(100),
-	finalEpicrisis: z.string().trim().max(4000).nullable().optional(),
-	preparedFromSignedMedicalRecords: z.literal(true),
-	officialForm274nChecked: z.literal(true),
-	thirdPartyDataChecked: z.literal(true),
-});
-export type OutpatientMedicalCard025uPayload = z.infer<
-	typeof outpatientMedicalCard025uPayloadSchema
->;
+/**
+ * @deprecated ФОРМА 025/у ЛИКВИДИРОВАНА (МАНДАТЫ 8i, 8s).
+ * В частной амбулаторной стоматологии регламентным документом является Форма 043/у Минздрава РФ.
+ */
+export type OutpatientMedicalCard025uPayload = DentalMedicalCard043uPayload;
 
 /** Structured clinical anamnesis facts (additive; free-text narrative remains supported). */
 export const structuredAnamnesisSchema = z.object({
@@ -5580,7 +5382,7 @@ export const documentPayloadSchema = z
 		medicalDocumentReleaseReceipt:
 			medicalDocumentReleaseReceiptPayloadSchema.optional(),
 		outpatientMedicalCard025u:
-			outpatientMedicalCard025uPayloadSchema.optional(),
+			z.record(z.string(), z.unknown()).optional(),
 		dentalMedicalCard043u: dentalMedicalCard043uPayloadSchema.optional(),
 		fullForm043u: fullForm043uPayloadSchema.optional(),
 		orthodonticCard043_1u: orthodonticCard043_1uPayloadSchema.optional(),
@@ -14168,6 +13970,8 @@ export class DentalInteractionMatrixEngine {
 export * from "./security/index.js";
 export * from "./types/pricing.js";
 export * from "./staff/index.js";
+export * from "./services/periodontalCalculations.js";
+export * from "./utils/money.js";
 
 
 

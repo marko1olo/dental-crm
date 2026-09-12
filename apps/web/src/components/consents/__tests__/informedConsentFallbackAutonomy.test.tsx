@@ -348,7 +348,7 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 		await clickNode(mainConfirmBtn!);
 
 		expect(onConsentSigned).toHaveBeenCalledTimes(1);
-		const payload: SignedConsentPayload = onConsentSigned.mock.calls[0][0];
+		const payload: SignedConsentPayload = onConsentSigned.mock.calls[0]![0];
 		expect(payload.verificationMethod).toBe("paper_physical");
 		expect(payload.paperOriginalStored).toBe(true);
 		expect(payload.attachedToForm043u).toBe(true);
@@ -392,7 +392,7 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 		expect(onPackageSigned).toHaveBeenCalledTimes(1);
 
 		const packagePayloads: SignedConsentPayload[] =
-			onPackageSigned.mock.calls[0][0];
+			onPackageSigned.mock.calls[0]![0];
 		expect(packagePayloads.length).toBe(4);
 		for (const p of packagePayloads) {
 			expect(p.verificationMethod).toBe("paper_physical");

@@ -15,6 +15,7 @@ import {
 	Copy,
 	CreditCard,
 	ExternalLink,
+	FileQuestion,
 	FileText,
 	Forward,
 	Gauge,
@@ -55,13 +56,13 @@ import {
 	formatPatientInitials,
 	formatPhoneDisplay,
 	generateAppointmentConfirmationMessage,
-	generateCallTranscript,
 	generateSmsConfirmationUrl,
 	generateWaveformBars,
 	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
 	openWhatsAppChat,
 	type PlaybackSpeed,
+	type SpeechTranscriptUtterance,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
 	resolvePatientSomaticAlerts,
@@ -83,72 +84,7 @@ export function resolveTelephonyWsUrl(): string {
 	return "ws://localhost:4100/api/ws/schedule";
 }
 
-/**
- * Web Audio API gentle softphone ringtone synthesizer with dynamic compression & volume normalization.
- */
-function playRingtoneChime(audioCtx: AudioContext, volumeLevel = 0.8) {
-	try {
-		const now = audioCtx.currentTime;
 
-		// Master dynamics compressor for normalization
-		const compressor = audioCtx.createDynamicsCompressor();
-		compressor.threshold.setValueAtTime(-24, now);
-		compressor.knee.setValueAtTime(30, now);
-		compressor.ratio.setValueAtTime(12, now);
-		compressor.attack.setValueAtTime(0.003, now);
-		compressor.release.setValueAtTime(0.25, now);
-		compressor.connect(audioCtx.destination);
-
-		const masterGain = audioCtx.createGain();
-		masterGain.gain.setValueAtTime(Math.max(0.01, Math.min(1, volumeLevel)), now);
-		masterGain.connect(compressor);
-
-		const osc1 = audioCtx.createOscillator();
-		const osc2 = audioCtx.createOscillator();
-		const gain = audioCtx.createGain();
-
-		osc1.type = "sine";
-		osc2.type = "triangle";
-
-		osc1.frequency.setValueAtTime(440, now); // A4
-		osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
-
-		osc2.frequency.setValueAtTime(554.37, now); // C#5
-		osc2.frequency.exponentialRampToValueAtTime(1108.73, now + 0.15); // C#6
-
-		gain.gain.setValueAtTime(0.001, now);
-		gain.gain.linearRampToValueAtTime(0.08, now + 0.05);
-		gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-
-		osc1.connect(gain);
-		osc2.connect(gain);
-		gain.connect(masterGain);
-
-		osc1.start(now);
-		osc2.start(now);
-		osc1.stop(now + 0.36);
-		osc2.stop(now + 0.36);
-
-		// Second double chirp after 180ms
-		const osc3 = audioCtx.createOscillator();
-		const gain2 = audioCtx.createGain();
-		osc3.type = "sine";
-		osc3.frequency.setValueAtTime(587.33, now + 0.18); // D5
-		osc3.frequency.exponentialRampToValueAtTime(1174.66, now + 0.32);
-
-		gain2.gain.setValueAtTime(0.001, now + 0.18);
-		gain2.gain.linearRampToValueAtTime(0.08, now + 0.22);
-		gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
-
-		osc3.connect(gain2);
-		gain2.connect(masterGain);
-
-		osc3.start(now + 0.18);
-		osc3.stop(now + 0.46);
-	} catch {
-		// AudioContext suspended or unavailable in headless/silent browser
-	}
-}
 
 /**
  * Call Audio Recording Player with Volume Normalization, Speed Toggles (1.0x, 1.25x, 1.5x, 2.0x)
@@ -158,10 +94,12 @@ export function CallAudioPlayer({
 	recordingUrl,
 	durationSeconds = 45,
 	seed,
+	transcript,
 }: {
 	recordingUrl: string;
 	durationSeconds?: number;
 	seed?: string;
+	transcript?: SpeechTranscriptUtterance[] | undefined;
 }) {
 	const playbackSpeed = useTelephonyStore((s) => s.playbackSpeed);
 	const setPlaybackSpeed = useTelephonyStore((s) => s.setPlaybackSpeed);
@@ -185,8 +123,8 @@ export function CallAudioPlayer({
 	}, [seed, recordingUrl]);
 
 	const transcriptUtterances = useMemo(() => {
-		return generateCallTranscript(seed || recordingUrl, durationSeconds);
-	}, [seed, recordingUrl, durationSeconds]);
+		return transcript || [];
+	}, [transcript]);
 
 	useEffect(() => {
 		if (audioRef.current) {
@@ -433,7 +371,7 @@ export function CallAudioPlayer({
 					<span>{showTranscript ? "Скрыть расшифровку речи" : "Показать расшифровку речи (AI STT)"}</span>
 				</button>
 
-				{showTranscript && (
+				{showTranscript && transcriptUtterances.length > 0 && (
 					<button
 						type="button"
 						onClick={handleCopyTranscript}
@@ -449,7 +387,13 @@ export function CallAudioPlayer({
 			{/* Expanded Speech Transcript Dialogue Utterances */}
 			{showTranscript && (
 				<div className="space-y-2 max-h-48 overflow-y-auto pr-1 pt-1 animate-fade-in">
-					{transcriptUtterances.map((u) => (
+					{transcriptUtterances.length === 0 ? (
+						<div className="py-6 px-4 text-center rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
+							<FileQuestion size={24} className="text-[var(--muted,#94a3b8)]" />
+							<span className="text-xs font-medium">Транскрипция аудиозаписи отсутствует</span>
+						</div>
+					) : (
+						transcriptUtterances.map((u) => (
 						<div
 							key={`${u.speaker}-${u.startTimeSeconds}`}
 							onClick={() => handleSeekToUtterance(u.startTimeSeconds)}
@@ -483,7 +427,7 @@ export function CallAudioPlayer({
 								{u.text}
 							</p>
 						</div>
-					))}
+					)))}
 				</div>
 			)}
 		</div>
@@ -519,9 +463,7 @@ export function IncomingCallPopup() {
 	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background
 	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
 	const isDndActive = agentState === "dnd";
-
 	const isConnected = useTelephonyStore((s) => s.isWsConnected);
-	const audioCtxRef = useRef<AudioContext | null>(null);
 
 	const [whatsappSent, setWhatsappSent] = useState(false);
 	const [smsCopied, setSmsCopied] = useState(false);
@@ -560,61 +502,7 @@ export function IncomingCallPopup() {
 		return () => clearInterval(interval);
 	}, [activeCall]);
 
-	// Ringtone playback loop while active call is ringing (Suppressed for doctors and DND mode)
-	useEffect(() => {
-		if (
-			!activeCall ||
-			activeCall.status === "answered" ||
-			activeCall.status === "connected" ||
-			isMuted ||
-			isDoctorMode ||
-			isDndActive
-		)
-			return;
 
-		let intervalId: ReturnType<typeof setInterval> | null = null;
-		try {
-			if (!audioCtxRef.current) {
-				const AudioCtx =
-					window.AudioContext ||
-					// biome-ignore lint/suspicious/noExplicitAny: webkitAudioContext fallback
-					(window as any).webkitAudioContext;
-				if (AudioCtx) {
-					audioCtxRef.current = new AudioCtx();
-				}
-			}
-			if (audioCtxRef.current) {
-				if (audioCtxRef.current.state === "suspended") {
-					audioCtxRef.current.resume().catch(() => {});
-				}
-				playRingtoneChime(audioCtxRef.current, volumeLevel);
-				intervalId = setInterval(() => {
-					if (audioCtxRef.current) {
-						playRingtoneChime(audioCtxRef.current, volumeLevel);
-					}
-				}, 3200);
-			}
-		} catch {
-			// Web audio blocked by user gesture requirements
-		}
-
-		return () => {
-			if (intervalId) clearInterval(intervalId);
-			if (audioCtxRef.current && audioCtxRef.current.state === "running") {
-				audioCtxRef.current.suspend().catch(() => {});
-			}
-		};
-	}, [activeCall, isMuted, volumeLevel, isDoctorMode, isDndActive]);
-
-	// Clean up AudioContext on component unmount
-	useEffect(() => {
-		return () => {
-			if (audioCtxRef.current) {
-				audioCtxRef.current.close().catch(() => {});
-				audioCtxRef.current = null;
-			}
-		};
-	}, []);
 
 	// Auto-dismiss call after 45 seconds if unhandled and still ringing
 	useEffect(() => {
@@ -1615,6 +1503,7 @@ export function IncomingCallPopup() {
 								recordingUrl={activeCall.recordingUrl}
 								durationSeconds={activeCall.durationSeconds || 45}
 								seed={activeCall.callId || activeCall.phone}
+								transcript={activeCall.transcript}
 							/>
 						)}
 

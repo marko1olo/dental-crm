@@ -37,16 +37,8 @@ import {
 	calculateCpitnIndex,
 	escapeHtml,
 } from "./emr043Math";
-import { dentalBiteTypeLabels, toothStatusCodeShortMap } from "@dental/shared";
-import { CmoEmrAuditModal } from "./audit/CmoEmrAuditModal";
 import { EmrProtocolGeneratorModal } from "./protocolGenerator/EmrProtocolGeneratorModal";
-import {
-	createAuditRecord,
-	runAutomatedEmrAudit,
-	calculateQualityScore,
-	type EmrAuditRecord,
-	type CmoAuditResolution,
-} from "./audit/cmoEmrAuditEngine";
+import { toothStatusCodeShortMap, dentalBiteTypeLabels } from "@dental/shared";
 import "./emr043Styles.css";
 
 
@@ -56,10 +48,7 @@ export interface Form043PrintModalProps {
 	initialData?: Partial<MedicalCardForm043uData>;
 	onSave?: (data: MedicalCardForm043uData) => void;
 	readOnly?: boolean;
-	onOpenCmoAudit?: () => void;
 	onOpenProtocolGenerator?: () => void;
-	cmoAuditorName?: string;
-	cmoAuditorRole?: "chief_medical_officer" | "deputy_cmo_qcr" | "medical_commission_chair";
 	isLocked?: boolean;
 	isDraft?: boolean;
 	status?: "draft" | "signed" | "completed" | "voided" | string;
@@ -215,10 +204,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		initialData,
 		onSave,
 		readOnly,
-		onOpenCmoAudit,
 		onOpenProtocolGenerator,
-		cmoAuditorName,
-		cmoAuditorRole,
 		isLocked,
 		isDraft,
 		status,
@@ -318,66 +304,8 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
 
-		// Состояние модального окна экспертизы КЭР (Начмед / ВК)
-		const [isCmoAuditOpen, setIsCmoAuditOpen] = useState<boolean>(false);
-		const [cmoResolution, setCmoResolution] = useState<CmoAuditResolution | null>(null);
-
 		// Состояние генератора клинических протоколов 043/у
 		const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState<boolean>(false);
-
-
-		// Формирование записи аудита для текущей карты
-		const currentAuditRecord = useMemo<EmrAuditRecord>(() => {
-			const rec = createAuditRecord({
-				cardData: formData,
-				medicalCardId: formData.passport.medicalCardNumber,
-				patientFullName: formData.passport.patientFullName,
-				patientBirthDate: formData.passport.patientBirthDate,
-				patientGender: formData.passport.patientSex,
-				patientPhone: formData.passport.patientPhone,
-				doctorFullName: formData.passport.attendingDoctorFullName,
-				doctorSpecialty: formData.passport.attendingDoctorSpecialty,
-				visitDate: formData.passport.cardOpenedDate,
-				attachedDocuments: [
-					{
-						id: "doc-ids-043",
-						type: "ids_323fz",
-						title: "ИДС на стоматологическое лечение (ст. 20 323-ФЗ)",
-						isSigned: true,
-						signedByPatient: true,
-						signedByDoctorUkep: Boolean(formData.visitDiaries[0]?.isSignedWithUkep),
-					},
-				],
-				completedActItems: formData.visitDiaries.map((vd) => ({
-					serviceCode: "A16.07.002",
-					serviceName: `Лечение зуба ${vd.toothNumber || "16"} (${vd.assessmentDiagnosisText})`,
-					toothNumber: vd.toothNumber || "16",
-					quantity: 1,
-					priceRub: 4500,
-				})),
-				treatmentPlanItems: formData.visitDiaries.map((vd) => ({
-					serviceCode: "A16.07.002",
-					serviceName: `Лечение зуба ${vd.toothNumber || "16"} (${vd.assessmentDiagnosisText})`,
-					toothNumber: vd.toothNumber || "16",
-					stage: "Терапевтический этап",
-				})),
-			});
-			if (cmoResolution) {
-				rec.cmoResolution = cmoResolution;
-				rec.status = cmoResolution.decision;
-			}
-			return rec;
-		}, [formData, cmoResolution]);
-
-		// Автоматический расчет показателей качества по Приказу 203н
-		const auditCheckSummary = useMemo(() => {
-			const audit = runAutomatedEmrAudit(currentAuditRecord);
-			const score = calculateQualityScore(audit.results, currentAuditRecord.cmoRemarks);
-			const passedCount = audit.results.filter((r) => r.passed).length;
-			const totalCount = audit.results.length;
-			const defects = audit.results.filter((r) => !r.passed);
-			return { score, passedCount, totalCount, defects };
-		}, [currentAuditRecord]);
 
 		// Валидация полноты формы
 		const validation = useMemo(() => {
@@ -469,25 +397,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		if (!isOpen) return null;
 
 		// Anti-Matryoshka (Sin 6, Mandate 8d): Render child modals sequentially (depth strictly 1).
-		// When CMO Audit or Protocol Generator is active, do NOT stack dialogs on top of each other.
-		if (isCmoAuditOpen) {
-			return (
-				<CmoEmrAuditModal
-					isOpen={true}
-					onClose={() => setIsCmoAuditOpen(false)}
-					records={[currentAuditRecord]}
-					onApproveRecord={(_recId, resolution) => {
-						setCmoResolution(resolution);
-					}}
-					onRejectRecord={(_recId, resolution) => {
-						setCmoResolution(resolution);
-					}}
-					currentAuditorName={cmoAuditorName || formData.clinic.chiefDoctorFullName || "Главный врач"}
-					currentAuditorRole={cmoAuditorRole || "chief_medical_officer"}
-				/>
-			);
-		}
-
 		if (isProtocolGeneratorOpen) {
 			return (
 				<EmrProtocolGeneratorModal
@@ -558,19 +467,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 									ПОДПИСАНО ВРАЧОМ
 								</span>
 							)}
-							<span
-								className={`px-2.5 py-0.5 rounded border text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 ${
-									cmoResolution?.decision === "approved"
-										? "border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-										: auditCheckSummary.score >= 90
-											? "border-teal-600/40 bg-teal-500/10 text-teal-700 dark:text-teal-300"
-											: "border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-								}`}
-								title={`Экспертиза качества по Приказу Минздрава РФ № 203н: ${auditCheckSummary.score}/100 баллов (${auditCheckSummary.passedCount}/${auditCheckSummary.totalCount} критериев)${cmoResolution ? ` • Статус: ${cmoResolution.decision === "approved" ? "Утверждено ВК" : "Замечания"}` : ""}`}
-							>
-								<ShieldCheck className="w-3 h-3" />
-								203н: {auditCheckSummary.score}/100 б.{cmoResolution?.decision === "approved" ? " (ВК)" : ""}
-							</span>
 							<div>
 								<h2 className="emr043-header-title">
 									Медицинская карта № {formData.passport.medicalCardNumber} (Форма 043/у)
@@ -729,17 +625,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								Не заполнено: {validation.missingFields.map((m) => m.label).join(", ")}
 							</span>
 						)}
-
-						<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
-							<span
-								className={`emr043-cmo-pill ${
-									auditCheckSummary.score >= 90 ? "green" : auditCheckSummary.score >= 70 ? "yellow" : "red"
-								}`}
-								title="Индекс качества по Приказу 203н"
-							>
-								КЭР: <strong>{auditCheckSummary.score}%</strong> ({auditCheckSummary.passedCount}/{auditCheckSummary.totalCount})
-							</span>
-						</div>
 					</div>
 
 					{/* ── Основное содержимое вкладки ── */}
