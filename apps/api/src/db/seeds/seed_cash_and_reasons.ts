@@ -19,7 +19,7 @@ import { organizations } from "../schema/auth.js";
 import {
 	cashBoxes,
 	cashExpenseReasons,
-} from "../schema/finance_v2.js";
+} from "../schema/finance.js";
 import type { TenantDb } from "../rls.js";
 
 export type DbExecutor = TenantDb | Parameters<Parameters<TenantDb["transaction"]>[0]>[0];

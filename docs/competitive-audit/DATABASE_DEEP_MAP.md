@@ -46,8 +46,8 @@ apps/api/src/db/schema/
 ├── imaging.ts            # 13 таблиц: DICOM исследования, серии, 3D планирование, Diagnocat
 ├── inventory.ts          # 13 таблиц: номенклатура склада, склады, партии FEFO, техкарты, МДЛП
 ├── sanpin.ts             # 8 таблиц: стерилизаторы, облучатели, медотходы, генеральные уборки
-├── finance_v2.ts         # 8 таблиц: кассы, смены, расходные ордера, рассрочки, зарплата
-├── documents_v2.ts       # 3 таблицы: шаблоны документов, категории, переменные подстановки
+├── finance.ts            # 8 таблиц: кассы, смены, расходные ордера, рассрочки, зарплата
+├── documents.ts          # 3 таблицы: шаблоны документов, категории, переменные подстановки
 ├── outpatientCore.ts     # 7 таблиц: формула FDI, дефекты зубов, шаблоны дневников 043/у
 ├── communications.ts     # 28 таблиц: омниканальная лента, задачи обзвона, бот Telegram
 ├── crm_leak_detector.ts  # 1 таблица: аудит утечки лидов и пропущенных звонков
@@ -71,8 +71,8 @@ apps/api/src/db/schema/
 | **`imaging.ts`** | **13** | `imaging_studies`, `imaging_series`, `imaging_instances`, `patient_ct_plannings`, `diagnocat_reports`, `bulk_image_operation_logs`, `xray_scans` | Хранение радиовизиографии (RVG), ОПТГ и КЛКТ 3D снимков, интеграция с Diagnocat AI |
 | **`inventory.ts`** | **13** | `inventory_items`, `warehouses`, `stock_batches`, `inventory_transactions`, `procedure_material_rules`, `procedure_tech_cards`, `mdlp_items` | Управление складом материалов, списание по партиям (FEFO), списание карпул в 1 клик, Честный ЗНАК |
 | **`sanpin.ts`** | **8** | `sterilizer_equipments`, `bactericidal_equipments`, `bactericidal_irradiator_logs`, `general_cleaning_logs`, `medical_waste_logs`, `temperature_humidity_logs` | Санитарный контроль СанПиН 3.3686-21: журналы бактерицидных ламп, отходов класса Б, уборки |
-| **`finance_v2.ts`** | **8** | `cash_boxes`, `cash_box_shifts`, `cash_operations`, `installment_contracts`, `installment_tranches`, `doctor_payroll_statements` | Операционные кассы филиалов, инкассация, расходные ордера, расчет сдельной зарплаты врачей |
-| **`documents_v2.ts`** | **3** | `document_templates`, `document_template_categories`, `document_template_variables` | Конструктор юридических документов стоматологии с динамическими переменными |
+| **`finance.ts`** | **8** | `cash_boxes`, `cash_box_shifts`, `cash_operations`, `installment_contracts`, `installment_tranches`, `doctor_payroll_statements` | Операционные кассы филиалов, инкассация, расходные ордера, расчет сдельной зарплаты врачей |
+| **`documents.ts`** | **3** | `document_templates`, `document_template_categories`, `document_template_variables` | Конструктор юридических документов стоматологии с динамическими переменными |
 | **`outpatientCore.ts`**| **7** | `clinical_teeth_catalog`, `patient_tooth_defects`, `mkb_categories`, `outpatient_templates`, `outpatient_verifications` | Международная зубная формула FDI, патологии поверхностей зубов (MOD), аудит версий протоколов |
 | **`communications.ts`**| **28**| `communication_events`, `communication_tasks`, `message_templates`, `outbound_message_queue`, `chat_dialogs`, `chat_messages`, `telegram_bot_configs`, `telegram_link_codes` | Омниканальный инбокс, маршрутизация WhatsApp/Telegram/VK, задачи администраторам |
 | **`crm_leak_detector.ts`**| **1**| `crm_leak_detector_leads` | Реестр упущенных первичных лидов и анализ скорости реакции регистратуры |
