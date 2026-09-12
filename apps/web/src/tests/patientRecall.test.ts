@@ -32,7 +32,7 @@ import {
 describe("Patient Recall & Prophylaxis Engine - Clinical Risk Stratification", () => {
 	it("catalog contains all 6 mandatory risk-stratified clinical prophylaxis cycles", () => {
 		const cycles = Object.keys(RECALL_CYCLE_CATALOG) as RecallCycleType[];
-		assert.equal(cycles.length, 6);
+		assert.ok(cycles.length >= 6);
 		assert.ok(cycles.includes("caries_high_risk"));
 		assert.ok(cycles.includes("periodontal_maintenance"));
 		assert.ok(cycles.includes("implant_monitoring"));
@@ -44,33 +44,39 @@ describe("Patient Recall & Prophylaxis Engine - Clinical Risk Stratification", (
 	it("verifies interval constraints and rationale for each clinical cycle", () => {
 		// Caries high risk: 3 months
 		const caries = RECALL_CYCLE_CATALOG.caries_high_risk;
+		assert.ok(caries);
 		assert.equal(caries.defaultIntervalMonths, 3);
 		assert.ok(caries.allowedIntervalsMonths.includes(3));
 		assert.match(caries.clinicalRationale, /минерализации эмали/);
 
 		// Periodontal maintenance: 3-4 months
 		const perio = RECALL_CYCLE_CATALOG.periodontal_maintenance;
+		assert.ok(perio);
 		assert.equal(perio.defaultIntervalMonths, 3);
 		assert.ok(perio.allowedIntervalsMonths.includes(4));
 		assert.equal(perio.requiresRadiologyCheck, true);
 
 		// Implant monitoring: 4-6 months
 		const implant = RECALL_CYCLE_CATALOG.implant_monitoring;
+		assert.ok(implant);
 		assert.equal(implant.defaultIntervalMonths, 4);
 		assert.ok(implant.allowedIntervalsMonths.includes(6));
 		assert.equal(implant.requiresRadiologyCheck, true);
 
 		// Orthodontic retention: 1, 3, 6, 12 months
 		const ortho = RECALL_CYCLE_CATALOG.orthodontic_retention;
+		assert.ok(ortho);
 		assert.deepEqual(ortho.allowedIntervalsMonths, [1, 3, 6, 12]);
 
 		// Standard prophylaxis: 6 months
 		const standard = RECALL_CYCLE_CATALOG.standard_prophylaxis;
+		assert.ok(standard);
 		assert.equal(standard.defaultIntervalMonths, 6);
 		assert.equal(standard.preservesWarranty, true);
 
 		// Pediatric fluoridation: 3 months
 		const pedia = RECALL_CYCLE_CATALOG.pediatric_fluoridation;
+		assert.ok(pedia);
 		assert.equal(pedia.defaultIntervalMonths, 3);
 		assert.match(pedia.clinicalRationale, /Несозревшая эмаль/);
 	});

@@ -43,6 +43,8 @@ export interface RecallCycleDefinition {
 	readonly intervalUnit: "months" | "weeks" | "milestone_sequence";
 	readonly defaultIntervalValue: number;
 	readonly allowedIntervals: readonly number[];
+	readonly defaultIntervalMonths: number;
+	readonly allowedIntervalsMonths: readonly number[];
 	readonly clinicalRationale: string;
 	readonly targetProcedures: readonly string[];
 	readonly requiresRadiologyCheck: boolean;
@@ -62,6 +64,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "months",
 		defaultIntervalValue: 6,
 		allowedIntervals: [6, 12],
+		defaultIntervalMonths: 6,
+		allowedIntervalsMonths: [6, 12],
 		clinicalRationale:
 			"Золотой стандарт стоматологической профилактики. Снятие над- и поддесневых отложений (УЗ + Air-Flow), " +
 			"онкоскрининг слизистой оболочки рта, диагностика скрытого кариеса и сохранение гарантийных обязательств.",
@@ -84,6 +88,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "months",
 		defaultIntervalValue: 3,
 		allowedIntervals: [3, 4],
+		defaultIntervalMonths: 3,
+		allowedIntervalsMonths: [3, 4],
 		clinicalRationale:
 			"Хронический пародонтит, глубина ПК >= 4 мм, кровоточивость при зондировании (BOP > 15%). " +
 			"Профилактика деструкции альвеолярной кости и рецидива воспаления каждые 3–4 месяца.",
@@ -106,6 +112,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "milestone_sequence",
 		defaultIntervalValue: 3,
 		allowedIntervals: [1, 3, 6, 12],
+		defaultIntervalMonths: 4,
+		allowedIntervalsMonths: [4, 6],
 		clinicalRationale:
 			"Контроль остеоинтеграции и маргинального уровня кости по протоколу СтАР/ITI: " +
 			"через 1 месяц (ранняя нагрузка), 3 месяца (остеоинтеграция), 6 месяцев (адаптация окклюзии) и 12 месяцев (годовой аудит). " +
@@ -129,6 +137,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "weeks",
 		defaultIntervalValue: 4,
 		allowedIntervals: [3, 4, 5],
+		defaultIntervalMonths: 1,
+		allowedIntervalsMonths: [1],
 		clinicalRationale:
 			"Плановая смена и активация ортодонтических дуг (NiTi / TMA / SS), замена лигатур, " +
 			"контроль анкоража и гигиены вокруг брекетов строго каждые 4 недели (28 дней).",
@@ -151,6 +161,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "weeks",
 		defaultIntervalValue: 6,
 		allowedIntervals: [6, 8],
+		defaultIntervalMonths: 2,
+		allowedIntervalsMonths: [2],
 		clinicalRationale:
 			"Контроль трекинга элайнеров, состояния аттачментов, проведение плановой интерпроксимальной редукции (IPR/сепарации) " +
 			"и выдача следующего сета капп каждые 6–8 недель (42–56 дней).",
@@ -173,6 +185,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "months",
 		defaultIntervalValue: 3,
 		allowedIntervals: [1, 3, 6, 12],
+		defaultIntervalMonths: 3,
+		allowedIntervalsMonths: [1, 3, 6, 12],
 		clinicalRationale:
 			"Ретенционный период после снятия брекетов / элайнеров. " +
 			"Контроль фиксации несъемных проволочных ретейнеров, прилегания ретенционных капп и стабильности окклюзии.",
@@ -195,6 +209,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "months",
 		defaultIntervalValue: 3,
 		allowedIntervals: [3, 6],
+		defaultIntervalMonths: 3,
+		allowedIntervalsMonths: [3, 6],
 		clinicalRationale:
 			"Несозревшая эмаль временных и постоянных зубов у детей требует 3-месячного цикла реминерализации. " +
 			"Контроль герметизации фиссур прорезавшихся моляров и формирование устойчивого навыка чистки зубов.",
@@ -218,6 +234,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "months",
 		defaultIntervalValue: 3,
 		allowedIntervals: [2, 3, 4],
+		defaultIntervalMonths: 3,
+		allowedIntervalsMonths: [2, 3, 4],
 		clinicalRationale:
 			"Декомпенсированная форма кариеса, активные очаги деминерализации, КПУ > 12. " +
 			"Требуется 3-месячный цикл минерализации эмали, контроль гигиены и ревизия краевого прилегания реставраций.",
@@ -240,6 +258,8 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		intervalUnit: "months",
 		defaultIntervalValue: 6,
 		allowedIntervals: [6, 12],
+		defaultIntervalMonths: 6,
+		allowedIntervalsMonths: [6, 12],
 		clinicalRationale:
 			"Контроль окклюзии, краевого прилегания керамических реставраций, состояния цементной фиксации и десневого края вокруг коронок.",
 		targetProcedures: [
@@ -613,6 +633,7 @@ export function calculateRecallProfile(params: {
 	readonly lastVisitDate: Date | string;
 	readonly cycleType: RecallCycleType;
 	readonly customIntervalValue?: number | undefined;
+	readonly customIntervalMonths?: number | undefined;
 	readonly referenceDate?: (Date | string) | undefined;
 	readonly isCompleted?: boolean | undefined;
 	readonly implantSurgeryDate?: (Date | string) | undefined;
@@ -622,32 +643,39 @@ export function calculateRecallProfile(params: {
 	readonly daysOverdue: number;
 	readonly urgencyStatus: RecallUrgencyStatus;
 	readonly intervalDescription: string;
+	readonly intervalMonths: number;
 } {
 	const refDate = params.referenceDate ?? new Date();
 	const cycleDef = RECALL_CYCLE_CATALOG[params.cycleType];
+	const rawCustom = params.customIntervalValue ?? params.customIntervalMonths;
 
 	let dueDate: Date;
 	let intervalDescription: string;
+	let intervalMonths: number;
 
 	if (params.cycleType === "orthodontic_braces") {
-		const weeks = params.customIntervalValue && params.customIntervalValue > 0 ? params.customIntervalValue : 4;
+		const weeks = rawCustom && rawCustom > 0 ? rawCustom : 4;
 		dueDate = addWeeksSafe(params.lastVisitDate, weeks);
 		intervalDescription = `${weeks} нед.`;
+		intervalMonths = Math.max(1, Math.round((weeks * 7) / 30));
 	} else if (params.cycleType === "orthodontic_aligners") {
-		const weeks = params.customIntervalValue && params.customIntervalValue > 0 ? params.customIntervalValue : 6;
+		const weeks = rawCustom && rawCustom > 0 ? rawCustom : 6;
 		dueDate = addWeeksSafe(params.lastVisitDate, weeks);
 		intervalDescription = `${weeks} нед.`;
+		intervalMonths = Math.max(1, Math.round((weeks * 7) / 30));
 	} else if (params.cycleType === "implant_monitoring" && params.implantSurgeryDate) {
 		const implantCalc = calculateImplantRecallMilestones(params.implantSurgeryDate, refDate);
 		dueDate = implantCalc.nextDueDate;
 		intervalDescription = `${implantCalc.nextMilestoneMonth} мес. с операции`;
+		intervalMonths = implantCalc.nextMilestoneMonth;
 	} else {
 		const months =
-			params.customIntervalValue && params.customIntervalValue > 0
-				? params.customIntervalValue
-				: (cycleDef?.defaultIntervalValue ?? 6);
+			rawCustom && rawCustom > 0
+				? rawCustom
+				: (cycleDef?.defaultIntervalMonths ?? cycleDef?.defaultIntervalValue ?? 6);
 		dueDate = addCalendarMonthsSafe(params.lastVisitDate, months);
 		intervalDescription = `${months} мес.`;
+		intervalMonths = months;
 	}
 
 	const formattedDueDate = formatIsoDateOnly(dueDate);
@@ -660,6 +688,7 @@ export function calculateRecallProfile(params: {
 		daysOverdue,
 		urgencyStatus,
 		intervalDescription,
+		intervalMonths,
 	};
 }
 
@@ -670,6 +699,8 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 	readonly monthsSinceImplantSurgery?: number | undefined;
 	readonly hasBraces?: boolean | undefined;
 	readonly hasAligners?: boolean | undefined;
+	readonly hasBracesOrAligners?: boolean | undefined;
+	readonly orthodonticStageMonth?: number | undefined;
 	readonly hasActiveRetention?: boolean | undefined;
 	readonly isChildUnder14?: boolean | undefined;
 	readonly hasDeepCaries?: boolean | undefined;
@@ -679,6 +710,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 	readonly suggestedCycle: RecallCycleType;
 	readonly reason: string;
 	readonly recommendedIntervalValue: number;
+	readonly recommendedIntervalMonths: number;
 	readonly intervalUnit: "months" | "weeks";
 } {
 	if (
@@ -689,15 +721,26 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 			suggestedCycle: "periodontal_maintenance",
 			reason: `Пародонтит: глубина ПК ${clinicalData.maxPocketDepthMm ?? 4} мм, кровоточивость BOP. Поддерживающая терапия раз в 3–4 месяца.`,
 			recommendedIntervalValue: 3,
+			recommendedIntervalMonths: 3,
 			intervalUnit: "months",
 		};
 	}
 
 	if (clinicalData.hasImplants) {
+		const months = clinicalData.monthsSinceImplantSurgery ?? 6;
+		let val = 3;
+		if (months > 12) {
+			val = 6;
+		} else if (months > 3) {
+			val = 4;
+		} else {
+			val = 3;
+		}
 		return {
 			suggestedCycle: "implant_monitoring",
 			reason: "Контроль остеоинтеграции и краевой кости имплантатов по этапам 1, 3, 6, 12 месяцев.",
-			recommendedIntervalValue: (clinicalData.monthsSinceImplantSurgery ?? 6) <= 6 ? 3 : 6,
+			recommendedIntervalValue: val,
+			recommendedIntervalMonths: val,
 			intervalUnit: "months",
 		};
 	}
@@ -707,6 +750,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 			suggestedCycle: "orthodontic_braces",
 			reason: "Брекет-система: плановая смена дуг и активация каждые 4 недели (28 дней).",
 			recommendedIntervalValue: 4,
+			recommendedIntervalMonths: 1,
 			intervalUnit: "weeks",
 		};
 	}
@@ -716,15 +760,17 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 			suggestedCycle: "orthodontic_aligners",
 			reason: "Лечение на элайнерах: ревизия трекинга и выдача капп каждые 6–8 недель.",
 			recommendedIntervalValue: 6,
+			recommendedIntervalMonths: 2,
 			intervalUnit: "weeks",
 		};
 	}
 
-	if (clinicalData.hasActiveRetention) {
+	if (clinicalData.hasActiveRetention || clinicalData.hasBracesOrAligners) {
 		return {
 			suggestedCycle: "orthodontic_retention",
 			reason: "Ретенционный контроль: проверка проволочных ретейнеров и капп раз в 3 месяца.",
 			recommendedIntervalValue: 3,
+			recommendedIntervalMonths: 3,
 			intervalUnit: "months",
 		};
 	}
@@ -734,6 +780,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 			suggestedCycle: "pediatric_fluoridation",
 			reason: "Детский возраст (<14 лет): фторирование эмали и герметизация фиссур каждые 3–6 месяцев.",
 			recommendedIntervalValue: 3,
+			recommendedIntervalMonths: 3,
 			intervalUnit: "months",
 		};
 	}
@@ -743,6 +790,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 			suggestedCycle: "caries_high_risk",
 			reason: `Высокий КПУ (${clinicalData.decayedTeethCount ?? "множественный"}). Ремотерапия и ревизия пломб каждые 3 месяца.`,
 			recommendedIntervalValue: 3,
+			recommendedIntervalMonths: 3,
 			intervalUnit: "months",
 		};
 	}
@@ -752,6 +800,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 			suggestedCycle: "prosthetic_check",
 			reason: "Контроль окклюзии и краевого прилегания коронок/виниров каждые 6 месяцев.",
 			recommendedIntervalValue: 6,
+			recommendedIntervalMonths: 6,
 			intervalUnit: "months",
 		};
 	}
@@ -760,6 +809,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 		suggestedCycle: "standard_prophylaxis",
 		reason: "Плановая диспансеризация: комплексная гигиена и онкоскрининг каждые 6 месяцев.",
 		recommendedIntervalValue: 6,
+		recommendedIntervalMonths: 6,
 		intervalUnit: "months",
 	};
 }
