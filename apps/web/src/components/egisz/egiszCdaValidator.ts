@@ -1,4 +1,20 @@
-import { isValidSnils, normalizeSnils, formatSnils } from "../../utils/snils";
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * EGISZ SEMD CDA VALIDATOR & CLIENT EXPORT BUILDER FACADE
+ * Canonical SSOT delegated to @dental/shared/cda (HL7 CDA R2, FZ-63, Order 804n)
+ * Mandate 8s: Single source of truth, elimination of duplicated logic.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+import {
+	canonicalizeCdaXml as sharedCanonicalizeCdaXml,
+	escapeXml,
+	formatHl7DateTime,
+	formatSnils,
+	isValidSnils,
+	normalizeSnils,
+	EGISZ_OIDS,
+} from "@dental/shared/cda";
 
 export const EGISZ_SEMD_DOC_TYPES = {
 	"101": {
@@ -51,22 +67,22 @@ export const EGISZ_SEMD_DOC_TYPES = {
 export type EgiszSemdDocTypeCode = keyof typeof EGISZ_SEMD_DOC_TYPES;
 
 export const EGISZ_STANDARD_OIDS = {
-	FRMO_MO_ROOT: "1.2.643.5.1.13.13.12.2",
-	SNILS: "1.2.643.100.3",
-	OGRN_LEGAL: "1.2.643.100.1",
-	OGRN_IP: "1.2.643.100.5",
-	INN: "1.2.643.100.4",
-	SEMD_TEMPLATE_CONSULTATION: "1.2.643.5.1.13.13.11.1527",
-	GENDER: "1.2.643.5.1.13.13.11.1040",
-	MEDICAL_CARE_TYPE: "1.2.643.5.1.13.13.11.1461",
-	MEDICAL_POSITIONS: "1.2.643.5.1.13.13.11.1002",
-	ICD10: "1.2.643.5.1.13.13.11.1005",
-	DENTAL_TOOTH: "1.2.643.5.1.13.13.11.1466",
-	V001_NOMENKLATURA: "1.2.643.5.1.13.13.11.1070",
-	CONFIDENTIALITY: "2.16.840.1.113883.5.25",
-	LOINC: "2.16.840.1.113883.6.1",
-	GOST_3410_2012_256: "1.2.643.7.1.1.1.1",
-	GOST_3410_2012_512: "1.2.643.7.1.1.1.2",
+	FRMO_MO_ROOT: EGISZ_OIDS.FRMO_MO_ROOT,
+	SNILS: EGISZ_OIDS.SNILS,
+	OGRN_LEGAL: EGISZ_OIDS.OGRN_LEGAL,
+	OGRN_IP: EGISZ_OIDS.OGRN_IP,
+	INN: EGISZ_OIDS.INN,
+	SEMD_TEMPLATE_CONSULTATION: EGISZ_OIDS.SEMD_TEMPLATE_CONSULTATION,
+	GENDER: EGISZ_OIDS.GENDER,
+	MEDICAL_CARE_TYPE: EGISZ_OIDS.MEDICAL_CARE_TYPE,
+	MEDICAL_POSITIONS: EGISZ_OIDS.MEDICAL_POSITIONS,
+	ICD10: EGISZ_OIDS.ICD10,
+	DENTAL_TOOTH: EGISZ_OIDS.DENTAL_TOOTH,
+	V001_NOMENKLATURA: EGISZ_OIDS.ORDER_804N,
+	CONFIDENTIALITY: EGISZ_OIDS.CONFIDENTIALITY,
+	LOINC: EGISZ_OIDS.LOINC,
+	GOST_3410_2012_256: EGISZ_OIDS.GOST_3410_2012_256,
+	GOST_3410_2012_512: EGISZ_OIDS.GOST_3410_2012_512,
 } as const;
 
 export interface CdaExportData {
@@ -130,34 +146,9 @@ export interface SemanticValidationReport {
 	rules: SemanticValidationRuleResult[];
 }
 
-function escapeXml(value: string): string {
-	return value
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&apos;");
-}
-
-function formatHl7DateTime(d: Date, includeTime = true): string {
-	const pad = (n: number) => n.toString().padStart(2, "0");
-	const yyyy = d.getFullYear().toString();
-	const MM = pad(d.getMonth() + 1);
-	const dd = pad(d.getDate());
-	if (!includeTime) return `${yyyy}${MM}${dd}`;
-
-	const HH = pad(d.getHours());
-	const mm = pad(d.getMinutes());
-	const ss = pad(d.getSeconds());
-
-	const offsetMinutes = -d.getTimezoneOffset();
-	const sign = offsetMinutes >= 0 ? "+" : "-";
-	const absOffset = Math.abs(offsetMinutes);
-	const offsetHours = pad(Math.floor(absOffset / 60));
-	const offsetMins = pad(absOffset % 60);
-	const tzStr = `${sign}${offsetHours}${offsetMins}`;
-
-	return `${yyyy}${MM}${dd}${HH}${mm}${ss}${tzStr}`;
+export function canonicalizeXml(xml: string): string {
+	if (!xml || typeof xml !== "string") return "";
+	return sharedCanonicalizeCdaXml(xml, { disallowEnvelopedSignature: false });
 }
 
 export function buildCdaXml(data: CdaExportData): string {
@@ -197,7 +188,6 @@ export function buildCdaXml(data: CdaExportData): string {
 	const diagnosis = data.diagnosisText || "Кариес дентина";
 	const tooth = data.diagnosisTooth ? String(data.diagnosisTooth).trim() : "";
 
-	// Build dental formula XML block if present
 	const toothStates = data.toothStates || {};
 	const toothSurfaces = data.toothSurfaces || {};
 	const teethKeys = Object.keys(toothStates).map(Number).sort((a, b) => a - b);
@@ -219,7 +209,6 @@ export function buildCdaXml(data: CdaExportData): string {
 		}).join("\n");
 
 		dentalFormulaXml = `
-			<!-- Зубная формула и статус полости рта -->
 			<component>
 				<section>
 					<code code="74208-1" codeSystem="${EGISZ_STANDARD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Зубная формула и одонтограмма"/>
@@ -232,14 +221,12 @@ ${observations}
 			</component>`;
 	}
 
-	// Build procedures XML block
 	const proceduresList = data.procedures || [
 		{ code: "A16.07.002", name: "Восстановление зуба пломбой с нарушением формы", tooth },
 		{ code: "A16.07.030", name: "Инструментальная и медикаментозная обработка корневого канала", tooth },
 	];
 
 	const proceduresXml = `
-			<!-- Выполненные медицинские вмешательства по номенклатуре Минздрава V001 -->
 			<component>
 				<section>
 					<code code="47519-4" codeSystem="${EGISZ_STANDARD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Проведенные процедуры и вмешательства"/>
@@ -273,7 +260,6 @@ ${observations}
 	<setId root="${escapeXml(docRoot)}" extension="${escapeXml(data.visitId || docId)}"/>
 	<versionNumber value="${data.documentVersion || 1}"/>
 
-	<!-- Субъект документа / Пациент -->
 	<recordTarget>
 		<patientRole>
 			${data.patientSnils ? `<id root="${EGISZ_STANDARD_OIDS.SNILS}" extension="${escapeXml(normalizeSnils(data.patientSnils))}"/>` : `<id nullFlavor="NI"/>`}
@@ -298,7 +284,6 @@ ${observations}
 		</patientRole>
 	</recordTarget>
 
-	<!-- Автор документа / Врач -->
 	<author>
 		<time value="${effectiveTime}"/>
 		<assignedAuthor>
@@ -323,7 +308,6 @@ ${observations}
 		</assignedAuthor>
 	</author>
 
-	<!-- Организация-хранитель документа (Custodian) -->
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
@@ -335,7 +319,6 @@ ${observations}
 		</assignedCustodian>
 	</custodian>
 
-	<!-- Случай оказания медицинской помощи -->
 	<componentOf>
 		<encompassingEncounter>
 			<id root="${escapeXml(docRoot)}" extension="${escapeXml(data.visitId || docId)}"/>
@@ -346,10 +329,8 @@ ${observations}
 		</encompassingEncounter>
 	</componentOf>
 
-	<!-- Клинический структурированный блок -->
 	<component>
 		<structuredBody>
-			<!-- Диагноз -->
 			<component>
 				<section>
 					<code code="29548-5" codeSystem="${EGISZ_STANDARD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Диагнозы"/>
@@ -369,7 +350,6 @@ ${observations}
 			</component>
 
 			${data.anamnesis ? `
-			<!-- Анамнез -->
 			<component>
 				<section>
 					<code code="10164-2" codeSystem="${EGISZ_STANDARD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Анамнез"/>
@@ -381,7 +361,6 @@ ${observations}
 			</component>` : ""}
 
 			${data.objectiveStatus ? `
-			<!-- Объективный статус -->
 			<component>
 				<section>
 					<code code="29545-1" codeSystem="${EGISZ_STANDARD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Physical findings"/>
@@ -397,7 +376,6 @@ ${observations}
 			${proceduresXml}
 
 			${data.instrumentTrayBarcode ? `
-			<!-- Инструментальный лоток ЦСО -->
 			<component>
 				<section>
 					<code code="46264-8" codeSystem="${EGISZ_STANDARD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Medical device identifier"/>
@@ -412,13 +390,6 @@ ${observations}
 </ClinicalDocument>`;
 }
 
-export function canonicalizeXml(xml: string): string {
-	return xml
-		.replace(/\r\n/g, "\n")
-		.replace(/\r/g, "\n")
-		.trim();
-}
-
 export function validateCdaSemanticRules(
 	data: CdaExportData,
 	xml: string,
@@ -429,15 +400,15 @@ export function validateCdaSemanticRules(
 
 	// 1. Root & realmCode
 	const hasRuRealm = xml.includes('<realmCode code="RU"/>');
-	const hasRoot = xml.includes("<ClinicalDocument") && xml.includes('POCD_HD000040');
+	const hasRoot = xml.includes("<ClinicalDocument") && xml.includes("POCD_HD000040");
 	rules.push({
 		id: "RULE_ROOT_REALM",
 		name: "Корневой элемент CDA R2 и профиль РФ",
 		category: "header",
 		status: hasRuRealm && hasRoot ? "passed" : "failed",
 		message: hasRuRealm && hasRoot
-			? "Корневой элемент <ClinicalDocument> и профиль РФ <realmCode code=\"RU\"/> корректны."
-			: "Отсутствует обязательный корневой элемент или тег realmCode code=\"RU\".",
+			? 'Корневой элемент <ClinicalDocument> и профиль РФ <realmCode code="RU"/> корректны.'
+			: 'Отсутствует обязательный корневой элемент или тег realmCode code="RU".',
 		details: "HL7 CDA R2 (POCD_MT000040.xsd) + ЕГИСЗ РЭМД профиль РФ",
 		xpathOrOid: "ClinicalDocument/realmCode",
 	});
@@ -453,7 +424,7 @@ export function validateCdaSemanticRules(
 		message: hasTemplate
 			? `Задан OID шаблона Минздрава РФ: ${docDef.templateRoot} (СЭМД ${docDef.code})`
 			: `Не найден OID шаблона ${docDef.templateRoot} для СЭМД ${docDef.code}`,
-		details: `Реестр НСИ Минздрава РФ 1.2.643.5.1.13.13.11.1527`,
+		details: "Реестр НСИ Минздрава РФ 1.2.643.5.1.13.13.11.1527",
 		xpathOrOid: `ClinicalDocument/templateId[@root="${docDef.templateRoot}"]`,
 	});
 
@@ -498,7 +469,7 @@ export function validateCdaSemanticRules(
 			? `СНИЛС врача проверен по алгоритму ПФР №192п: ${formatSnils(docSnilsRaw)} (${data.doctorPosition || "Врач-стоматолог"})`
 			: "Не указан или некорректен СНИЛС врача (ФРМР отклонит регистрацию СЭМД без валидной контрольной суммы СНИЛС).",
 		details: `Позиция NSI: ${data.doctorPositionCode || "15"}, СНИЛС: ${docSnilsRaw || "не задан"}`,
-		xpathOrOid: "ClinicalDocument/author/assignedAuthor/id[@root=\"1.2.643.100.3\"]",
+		xpathOrOid: 'ClinicalDocument/author/assignedAuthor/id[@root="1.2.643.100.3"]',
 	});
 
 	// 6. Patient SNILS & Polis OMS
@@ -545,8 +516,8 @@ export function validateCdaSemanticRules(
 		message: isIcd10Valid
 			? `Код МКБ-10: ${data.icd10Code?.toUpperCase()} (${data.diagnosisText || "Диагноз указан"})`
 			: "Диагноз должен содержать валидный код МКБ-10 (например, K02.1, K04.0, K05.3).",
-		details: `МКБ-10 OID: 1.2.643.5.1.13.13.11.1005`,
-		xpathOrOid: "structuredBody//observation/value[@codeSystem=\"1.2.643.5.1.13.13.11.1005\"]",
+		details: "МКБ-10 OID: 1.2.643.5.1.13.13.11.1005",
+		xpathOrOid: 'structuredBody//observation/value[@codeSystem="1.2.643.5.1.13.13.11.1005"]',
 	});
 
 	// 9. Dental localization / Tooth number
@@ -563,7 +534,7 @@ export function validateCdaSemanticRules(
 				? `Прикреплена зубная формула: ${Object.keys(data.toothStates || {}).length} зубов`
 				: "Рекомендуется указать номер причинного зуба по формуле FDI (11–48) для стоматологического СЭМД.",
 		details: "Классификатор зубов 1.2.643.5.1.13.13.11.1466",
-		xpathOrOid: "structuredBody//targetSiteCode[@codeSystem=\"1.2.643.5.1.13.13.11.1466\"]",
+		xpathOrOid: 'structuredBody//targetSiteCode[@codeSystem="1.2.643.5.1.13.13.11.1466"]',
 	});
 
 	// 10. Timestamp & encounter timezone

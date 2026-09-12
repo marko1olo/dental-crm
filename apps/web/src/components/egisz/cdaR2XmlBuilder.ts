@@ -1,83 +1,25 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * EGISZ REMD CDA R2 XML BUILDER & FNS TAX DEDUCTION (КНД 1151156) ENGINE
- * Russian Ministry of Health (ЕГИСЗ РЭМД / 043/у) & Federal Tax Service (ФНС)
- * Compliant with HL7 CDA R2, Order 804n, Order ED-7-11/755@, and Federal Law 63-FZ
+ * EGISZ REMD CDA R2 XML BUILDER & FNS TAX DEDUCTION (КНД 1151156) FACADE
+ * Canonical SSOT delegated to @dental/shared/cda (HL7 CDA R2, FZ-63, Order 804n)
+ * Mandate 8s: Single source of truth, elimination of duplicated logic.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import {
+	canonicalizeCdaXml as sharedCanonicalizeCdaXml,
+	escapeXml,
+	formatHl7DateTime,
+	formatRuDate,
+} from "@dental/shared/cda";
 import {
 	DENTAL_TOOTH_STATUS_DICTIONARY,
 	EGISZ_DENTAL_SEMD_TYPES,
 	EGISZ_REMD_OIDS,
 	type EgiszDentalSemdCode,
-	FRMR_DOCTOR_POSITIONS,
-	validateOidFormat,
-	validateRussianInn,
-	validateRussianOgrn,
-	validateRussianSnils,
 } from "./remdXml/egiszRemdPresets";
 
-/**
- * Escapes characters for safe inclusion in XML elements and attributes.
- */
-export function escapeXml(value: string | number | undefined | null): string {
-	if (value === undefined || value === null) return "";
-	return String(value)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&apos;");
-}
-
-/**
- * Formats date/time to HL7 CDA R2 TS format:
- * - Date only (birthTime): YYYYMMDD
- * - Date with Time & Timezone offset (effectiveTime): YYYYMMDDHHMMSS+ZZZZ
- */
-export function formatHl7DateTime(
-	dateInput: Date | string | number | undefined,
-	includeTime = true
-): string {
-	const d =
-		dateInput instanceof Date
-			? dateInput
-			: dateInput
-			? new Date(dateInput)
-			: new Date();
-	const validDate = Number.isNaN(d.getTime()) ? new Date() : d;
-
-	const pad = (n: number) => n.toString().padStart(2, "0");
-	const yyyy = validDate.getFullYear().toString();
-	const MM = pad(validDate.getMonth() + 1);
-	const dd = pad(validDate.getDate());
-	if (!includeTime) return `${yyyy}${MM}${dd}`;
-
-	const HH = pad(validDate.getHours());
-	const mm = pad(validDate.getMinutes());
-	const ss = pad(validDate.getSeconds());
-
-	const offsetMinutes = -validDate.getTimezoneOffset();
-	const sign = offsetMinutes >= 0 ? "+" : "-";
-	const absOffset = Math.abs(offsetMinutes);
-	const offsetHours = pad(Math.floor(absOffset / 60));
-	const offsetMins = pad(absOffset % 60);
-	const tzStr = `${sign}${offsetHours}${offsetMins}`;
-
-	return `${yyyy}${MM}${dd}${HH}${mm}${ss}${tzStr}`;
-}
-
-/**
- * Formats date into Russian readable DD.MM.YYYY format.
- */
-export function formatRuDate(dateInput: Date | string | undefined): string {
-	if (!dateInput) return "";
-	const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
-	if (Number.isNaN(d.getTime())) return String(dateInput);
-	const pad = (n: number) => n.toString().padStart(2, "0");
-	return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
-}
+export { escapeXml, formatHl7DateTime, formatRuDate };
 
 /**
  * Converts integer kopecks to rubles formatted string "12500.00".
@@ -94,7 +36,7 @@ export function formatKopecksToRubles(kopecks: number): string {
  */
 export function parseRublesToKopecks(rublesInput: string | number): number {
 	if (typeof rublesInput === "number") {
-		return Math.round(rublesInput * 100);
+		return Math.max(0, Math.round(rublesInput * 100));
 	}
 	const clean = String(rublesInput || "").trim().replace(",", ".");
 	const parsed = Number.parseFloat(clean);
@@ -103,15 +45,11 @@ export function parseRublesToKopecks(rublesInput: string | number): number {
 }
 
 /**
- * Canonicalizes XML string to deterministic UTF-8 C14N subset before hashing & signing.
+ * Canonicalizes XML string to deterministic UTF-8 C14N representation.
  */
 export function canonicalizeCdaXml(xml: string): string {
 	if (!xml || typeof xml !== "string") return "";
-	return xml
-		.replace(/^\uFEFF/, "") // Strip BOM
-		.replace(/\r\n/g, "\n")
-		.replace(/\r/g, "\n")
-		.trim();
+	return sharedCanonicalizeCdaXml(xml, { disallowEnvelopedSignature: false });
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -166,6 +104,7 @@ export interface EgiszProcedureItem {
 export interface EgiszDiagnosisItem {
 	icd10Code: string;
 	icd10Name: string;
+	diagnosisName?: string | undefined;
 	isPrimary: boolean;
 	tooth?: number | string | undefined;
 	surfaces?: string[] | undefined;
@@ -206,17 +145,15 @@ export interface EgiszDentalCdaPayload {
 	chiefDoctorSignature?: boolean | undefined;
 	doctorSignature?: GostSignatureInfo | undefined;
 	moSignature?: GostSignatureInfo | undefined;
+	clinicSignature?: GostSignatureInfo | undefined;
 }
 
-/**
- * FNS Tax Deduction Certificate (КНД 1151156 / Приказ ФНС № ЕД-7-11/755@) Payload
- */
 export interface FnsTaxPaymentItem {
 	id?: string | undefined;
 	date: string | Date;
-	serviceCode: "1" | "2"; // 1 - Обычные медицинские услуги, 2 - Дорогостоящее лечение
+	serviceCode: "1" | "2";
 	serviceDescription?: string | undefined;
-	amountKopecks: number; // Целочисленные копейки
+	amountKopecks: number;
 }
 
 export interface FnsTaxCertificatePayload {
@@ -236,20 +173,13 @@ export interface FnsTaxCertificatePayload {
 		inn?: string | undefined;
 		snils?: string | undefined;
 		birthDate?: string | undefined;
-		docTypeCode?: string | undefined; // 21 - Паспорт РФ
+		docTypeCode?: string | undefined;
 		docSeriesNumber?: string | undefined;
 	};
 	patient: {
 		fullName: string;
 		snils?: string | undefined;
 		birthDate?: string | undefined;
-		/**
-		 * Степень родства по Приказу ЕД-7-11/755@:
-		 * 1 - Сам налогоплательщик
-		 * 2 - Супруг (супруга)
-		 * 3 - Родитель
-		 * 4 - Ребенок (включая усыновленного/подопечного до 18/24 лет)
-		 */
 		relationshipCode: "1" | "2" | "3" | "4";
 		relationshipName?: string | undefined;
 	};
@@ -264,7 +194,7 @@ export interface FnsTaxCertificatePayload {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 1. DENTAL CDA R2 XML GENERATOR (СЭМД 105 / 302 / 303 / 043/У)
+ * 1. DENTAL CDA R2 XML GENERATOR (СЭМД 105 / 106 / 302 / 303 / 043/У)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): string {
@@ -282,9 +212,7 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 
 	const now = new Date();
 	const effectiveTime = formatHl7DateTime(now, true);
-	const encounterDate = payload.encounterDate
-		? new Date(payload.encounterDate)
-		: now;
+	const encounterDate = payload.encounterDate ? new Date(payload.encounterDate) : now;
 	const visitTime = formatHl7DateTime(encounterDate, true);
 	const birthTime = formatHl7DateTime(payload.patient.patientBirthDate, false);
 
@@ -295,11 +223,7 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 			? "2"
 			: "0";
 	const genderLabel =
-		genderCode === "1"
-			? "Мужской"
-			: genderCode === "2"
-			? "Женский"
-			: "Не указан";
+		genderCode === "1" ? "Мужской" : genderCode === "2" ? "Женский" : "Не указан";
 
 	const docUuid =
 		payload.documentUuid ||
@@ -308,32 +232,27 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 			: `00000000-0000-4000-8000-${String(Date.now() % 1000000000000).padStart(12, "0")}`);
 	const clinicOid = payload.clinic.clinicOid || EGISZ_REMD_OIDS.FRMO_MO_ROOT;
 
-	// Split Patient FIO
 	const patParts = (payload.patient.patientFullName || "Пациент").trim().split(/\s+/);
 	const patFamily = patParts[0] || "Пациент";
 	const patGiven = patParts[1] || "";
 	const patPatronymic = patParts[2] || "";
 
-	// Split Doctor FIO
 	const docParts = (payload.doctor.doctorFullName || "Врач").trim().split(/\s+/);
 	const docFamily = docParts[0] || "Врач";
 	const docGiven = docParts[1] || "";
 	const docPatronymic = docParts[2] || "";
 
-	const cleanDocSnils = payload.doctor.doctorSnils ? payload.doctor.doctorSnils.replace(/\D/g, "") : "";
-	const cleanPatSnils = payload.patient.patientSnils ? payload.patient.patientSnils.replace(/\D/g, "") : "";
+	const cleanDocSnils = (payload.doctor.doctorSnils || "").replace(/\D/g, "");
+	const cleanPatSnils = (payload.patient.patientSnils || "").replace(/\D/g, "");
 
 	// 1. Complaints
 	const complaintsText = payload.complaints || "Жалобы отсутствуют (профилактический осмотр)";
 	const complaintsSection = `
-			<!-- Секция 1: Жалобы пациента (LOINC 10154-3) -->
 			<component>
 				<section>
 					<code code="${EGISZ_REMD_OIDS.LOINC_COMPLAINTS}" codeSystem="${EGISZ_REMD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Жалобы"/>
 					<title>Жалобы пациента</title>
-					<text>
-						<paragraph>${escapeXml(complaintsText)}</paragraph>
-					</text>
+					<text><paragraph>${escapeXml(complaintsText)}</paragraph></text>
 				</section>
 			</component>`;
 
@@ -341,7 +260,6 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 	const anamnesisMorbi = payload.anamnesisMorbi || "Развитие настоящего заболевания без особенностей.";
 	const anamnesisVitae = payload.anamnesisVitae || "Аллергологический анамнез не отягощен, сопутствующие заболевания отрицает.";
 	const anamnesisSection = `
-			<!-- Секция 2: Анамнез заболевания и жизни (LOINC 10164-2) -->
 			<component>
 				<section>
 					<code code="${EGISZ_REMD_OIDS.LOINC_ANAMNESIS}" codeSystem="${EGISZ_REMD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Анамнез"/>
@@ -353,13 +271,10 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 				</section>
 			</component>`;
 
-	// 3. Tooth Formula / Odontogram (FDI ISO 3950)
+	// 3. Tooth Formula / Odontogram
 	const toothStates = payload.toothStates || {};
 	const toothSurfaces = payload.toothSurfaces || {};
-	const sortedTeeth = Object.keys(toothStates)
-		.map(Number)
-		.filter((n) => !Number.isNaN(n))
-		.sort((a, b) => a - b);
+	const sortedTeeth = Object.keys(toothStates).map(Number).filter((n) => !Number.isNaN(n)).sort((a, b) => a - b);
 
 	let toothObservationsXml = "";
 	let toothFormulaSummary = "";
@@ -368,33 +283,22 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 		toothFormulaSummary = sortedTeeth
 			.map((tNum) => {
 				const rawStatus = toothStates[tNum] || "Healthy";
-				const stObj = DENTAL_TOOTH_STATUS_DICTIONARY[rawStatus] || {
-					labelRu: rawStatus,
-					shortSymbol: "?",
-					egiszCode: "0",
-				};
+				const stObj = DENTAL_TOOTH_STATUS_DICTIONARY[rawStatus] || { labelRu: rawStatus, shortSymbol: "?", egiszCode: "0" };
 				const surfs = toothSurfaces[tNum] || [];
-				const surfsStr = surfs.length > 0 ? ` [${surfs.join("")}]` : "";
-				return `Зуб ${tNum}: ${stObj.labelRu}${surfsStr}`;
+				return `Зуб ${tNum}: ${stObj.labelRu}${surfs.length > 0 ? ` [${surfs.join("")}]` : ""}`;
 			})
 			.join("; ");
 
 		toothObservationsXml = sortedTeeth
 			.map((tNum) => {
 				const rawStatus = toothStates[tNum] || "Healthy";
-				const stObj = DENTAL_TOOTH_STATUS_DICTIONARY[rawStatus] || {
-					labelRu: rawStatus,
-					shortSymbol: "?",
-					egiszCode: "0",
-				};
+				const stObj = DENTAL_TOOTH_STATUS_DICTIONARY[rawStatus] || { labelRu: rawStatus, shortSymbol: "?", egiszCode: "0" };
 				const surfs = toothSurfaces[tNum] || [];
-				const surfsAttr = surfs.length > 0 ? ` surfaces="${surfs.join(",")}"` : "";
-
 				return `\t\t\t\t\t<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<code code="${EGISZ_REMD_OIDS.LOINC_DENTAL_ODONTOGRAM}" codeSystem="${EGISZ_REMD_OIDS.LOINC}" displayName="Статус зуба ${tNum}"/>
 							<statusCode code="completed"/>
-							<value xsi:type="CD" code="${escapeXml(stObj.egiszCode)}" codeSystem="${EGISZ_REMD_OIDS.DENTAL_TOOTH}" displayName="${escapeXml(stObj.labelRu)}"${surfsAttr}/>
+							<value xsi:type="CD" code="${escapeXml(stObj.egiszCode)}" codeSystem="${EGISZ_REMD_OIDS.DENTAL_TOOTH}" displayName="${escapeXml(stObj.labelRu)}"${surfs.length > 0 ? ` surfaces="${surfs.join(",")}"` : ""}/>
 							<targetSiteCode code="${tNum}" codeSystem="${EGISZ_REMD_OIDS.DENTAL_TOOTH}" displayName="Зуб ${tNum}"/>
 						</observation>
 					</entry>`;
@@ -405,39 +309,33 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 	}
 
 	const dentalFormulaSection = `
-			<!-- Секция 3: Зубная формула и статус полости рта (LOINC 74208-1 / FDI ISO 3950) -->
 			<component>
 				<section>
 					<code code="${EGISZ_REMD_OIDS.LOINC_DENTAL_ODONTOGRAM}" codeSystem="${EGISZ_REMD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Зубная формула и одонтограмма"/>
 					<title>Зубная формула (FDI ISO 3950 / Форма 043/у)</title>
-					<text>
-						<paragraph>${escapeXml(toothFormulaSummary)}</paragraph>
-					</text>
+					<text><paragraph>${escapeXml(toothFormulaSummary)}</paragraph></text>
 ${toothObservationsXml}
 				</section>
 			</component>`;
 
-	// 4. Diagnoses (ICD-10)
+	// 4. Diagnoses
 	const diagnosesList =
 		payload.diagnoses && payload.diagnoses.length > 0
 			? payload.diagnoses
 			: [{ icd10Code: "Z01.2", icd10Name: "Стоматологическое обследование", isPrimary: true }];
 
 	const diagnosesEntriesXml = diagnosesList
-		.map((diag) => {
-			return `\t\t\t\t\t<entry>
+		.map((diag) => `\t\t\t\t\t<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<code code="282291009" codeSystem="2.16.840.1.113883.6.96" displayName="${diag.isPrimary ? "Основной клинический диагноз" : "Сопутствующий диагноз"}"/>
 							<statusCode code="completed"/>
 							<value xsi:type="CD" code="${escapeXml(diag.icd10Code)}" codeSystem="${EGISZ_REMD_OIDS.ICD10}" codeSystemName="МКБ-10" displayName="${escapeXml(diag.icd10Name)}"/>
 							${diag.tooth ? `<targetSiteCode code="${escapeXml(String(diag.tooth))}" codeSystem="${EGISZ_REMD_OIDS.DENTAL_TOOTH}" displayName="Зуб ${escapeXml(String(diag.tooth))}"/>` : ""}
 						</observation>
-					</entry>`;
-		})
+					</entry>`)
 		.join("\n");
 
 	const diagnosesSection = `
-			<!-- Секция 4: Клинические диагнозы по МКБ-10 (LOINC 29548-5) -->
 			<component>
 				<section>
 					<code code="${EGISZ_REMD_OIDS.LOINC_DIAGNOSIS_SECTION}" codeSystem="${EGISZ_REMD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Диагнозы"/>
@@ -455,28 +353,20 @@ ${diagnosesEntriesXml}
 	const proceduresList =
 		payload.procedures && payload.procedures.length > 0
 			? payload.procedures
-			: [
-					{
-						code: "B01.065.001",
-						name: "Прием (осмотр, консультация) врача-стоматолога-терапевта первичный",
-					},
-			  ];
+			: [{ code: "B01.065.001", name: "Прием (осмотр, консультация) врача-стоматолога-терапевта первичный" }];
 
 	const proceduresEntriesXml = proceduresList
-		.map((proc) => {
-			return `\t\t\t\t\t<entry>
+		.map((proc) => `\t\t\t\t\t<entry>
 						<procedure classCode="PROC" moodCode="EVN">
 							<code code="${escapeXml(proc.code)}" codeSystem="${EGISZ_REMD_OIDS.NOMENKLATURA_804N}" codeSystemName="Номенклатура медицинских услуг 804н" displayName="${escapeXml(proc.name)}"/>
 							<statusCode code="completed"/>
 							<effectiveTime value="${visitTime}"/>
 							${proc.tooth ? `<targetSiteCode code="${escapeXml(String(proc.tooth))}" codeSystem="${EGISZ_REMD_OIDS.DENTAL_TOOTH}" displayName="Зуб ${escapeXml(String(proc.tooth))}"/>` : ""}
 						</procedure>
-					</entry>`;
-		})
+					</entry>`)
 		.join("\n");
 
 	const proceduresSection = `
-			<!-- Секция 5: Оказанные медицинские услуги по Номенклатуре 804н (LOINC 47519-4) -->
 			<component>
 				<section>
 					<code code="${EGISZ_REMD_OIDS.LOINC_SERVICES_RENDERED}" codeSystem="${EGISZ_REMD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Проведенные процедуры и вмешательства"/>
@@ -495,14 +385,11 @@ ${proceduresEntriesXml}
 	const recommendationsText = payload.recommendations || "Соблюдение индивидуальной гигиены полости рта, контрольный осмотр через 6 месяцев.";
 	const nextVisitStr = payload.nextVisitDate ? ` Дата назначенного приема: ${formatRuDate(payload.nextVisitDate)}.` : "";
 	const recommendationsSection = `
-			<!-- Секция 6: Назначения и рекомендации (LOINC 18776-5) -->
 			<component>
 				<section>
 					<code code="${EGISZ_REMD_OIDS.LOINC_RECOMMENDATIONS}" codeSystem="${EGISZ_REMD_OIDS.LOINC}" codeSystemName="LOINC" displayName="Рекомендации"/>
 					<title>Рекомендации и план дальнейшего ведения</title>
-					<text>
-						<paragraph>${escapeXml(recommendationsText)}${escapeXml(nextVisitStr)}</paragraph>
-					</text>
+					<text><paragraph>${escapeXml(recommendationsText)}${escapeXml(nextVisitStr)}</paragraph></text>
 				</section>
 			</component>`;
 
@@ -521,16 +408,13 @@ ${proceduresEntriesXml}
 	<setId root="${escapeXml(clinicOid)}.100.1.2" extension="${escapeXml(payload.patient.cardNumber || docUuid)}"/>
 	<versionNumber value="${payload.documentVersion || 1}"/>
 
-	<!-- Субъект документа / Пациент -->
 	<recordTarget>
 		<patientRole>
 			${cleanPatSnils ? `<id root="${EGISZ_REMD_OIDS.SNILS}" extension="${escapeXml(cleanPatSnils)}"/>` : ""}
 			<id root="${escapeXml(clinicOid)}.100.2" extension="${escapeXml(payload.patient.cardNumber || payload.patient.patientId)}"/>
 			${payload.patient.patientPolisOms ? `<id root="${EGISZ_REMD_OIDS.POLIS_OMS}" extension="${escapeXml(payload.patient.patientPolisOms.replace(/\s+/g, ""))}"/>` : ""}
 			${payload.patient.patientPassport ? `<id root="${EGISZ_REMD_OIDS.IDENTITY_DOC_TYPE}" extension="${escapeXml(payload.patient.patientPassport)}"/>` : ""}
-			<addr>
-				<streetAddressLine>${escapeXml(payload.patient.patientAddress || payload.clinic.clinicAddress)}</streetAddressLine>
-			</addr>
+			<addr><streetAddressLine>${escapeXml(payload.patient.patientAddress || payload.clinic.clinicAddress)}</streetAddressLine></addr>
 			${payload.patient.patientPhone ? `<telecom value="tel:${escapeXml(payload.patient.patientPhone.replace(/[^\d+]/g, ""))}" use="MC"/>` : ""}
 			${payload.patient.patientEmail ? `<telecom value="mailto:${escapeXml(payload.patient.patientEmail)}" use="WP"/>` : ""}
 			<patient>
@@ -545,7 +429,6 @@ ${proceduresEntriesXml}
 		</patientRole>
 	</recordTarget>
 
-	<!-- Автор документа / Лечащий врач -->
 	<author>
 		<time value="${visitTime}"/>
 		<assignedAuthor>
@@ -565,14 +448,11 @@ ${proceduresEntriesXml}
 				<id root="${EGISZ_REMD_OIDS.INN}" extension="${escapeXml((payload.clinic.clinicInn || "").replace(/\D/g, ""))}"/>
 				<name>${escapeXml(payload.clinic.clinicName)}</name>
 				<telecom value="tel:${escapeXml((payload.clinic.clinicPhone || "").replace(/[^\d+]/g, ""))}" use="WP"/>
-				<addr>
-					<streetAddressLine>${escapeXml(payload.clinic.clinicAddress)}</streetAddressLine>
-				</addr>
+				<addr><streetAddressLine>${escapeXml(payload.clinic.clinicAddress)}</streetAddressLine></addr>
 			</representedOrganization>
 		</assignedAuthor>
 	</author>
 
-	<!-- Хранитель медицинской документации / Медицинская организация (МО) -->
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
@@ -580,14 +460,11 @@ ${proceduresEntriesXml}
 				<id root="${EGISZ_REMD_OIDS.OGRN_LEGAL}" extension="${escapeXml((payload.clinic.clinicOgrn || "").replace(/\D/g, ""))}"/>
 				<name>${escapeXml(payload.clinic.clinicName)}</name>
 				<telecom value="tel:${escapeXml((payload.clinic.clinicPhone || "").replace(/[^\d+]/g, ""))}" use="WP"/>
-				<addr>
-					<streetAddressLine>${escapeXml(payload.clinic.clinicAddress)}</streetAddressLine>
-				</addr>
+				<addr><streetAddressLine>${escapeXml(payload.clinic.clinicAddress)}</streetAddressLine></addr>
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
 
-	<!-- Лицо, имеющее право подписи от имени МО / Главный врач -->
 	<legalAuthenticator>
 		<time value="${effectiveTime}"/>
 		<signatureCode code="S"/>
@@ -608,7 +485,6 @@ ${proceduresEntriesXml}
 		</assignedEntity>
 	</legalAuthenticator>
 
-	<!-- Амбулаторный прием / Случай оказания помощи -->
 	<componentOf>
 		<encompassingEncounter>
 			<id root="${escapeXml(clinicOid)}.100.1.3" extension="${escapeXml(payload.patient.cardNumber || docUuid)}"/>
@@ -620,7 +496,6 @@ ${proceduresEntriesXml}
 		</encompassingEncounter>
 	</componentOf>
 
-	<!-- ТЕЛО ДОКУМЕНТА (Клинические секции ф. 043/у) -->
 	<component>
 		<structuredBody>${complaintsSection}${anamnesisSection}${dentalFormulaSection}${diagnosesSection}${proceduresSection}${recommendationsSection}
 		</structuredBody>
@@ -640,7 +515,6 @@ export function generateFnsTaxCertificateXml(payload: FnsTaxCertificatePayload):
 	const formattedDocDate = formatRuDate(validDocDate);
 	const fileGuid = `UT_SPROPLMED_${(payload.clinic.inn || "0000000000").trim()}_${validDocDate.getFullYear()}${(validDocDate.getMonth() + 1).toString().padStart(2, "0")}${validDocDate.getDate().toString().padStart(2, "0")}_${Date.now()}`;
 
-	// Payments calculation (in exact kopecks)
 	const payments = payload.payments || [];
 	const totalKopecks = payments.reduce((sum, p) => sum + Math.max(0, Math.round(p.amountKopecks || 0)), 0);
 	const code1Kopecks = payments
@@ -654,19 +528,16 @@ export function generateFnsTaxCertificateXml(payload: FnsTaxCertificatePayload):
 	const code1RublesStr = formatKopecksToRubles(code1Kopecks);
 	const code2RublesStr = formatKopecksToRubles(code2Kopecks);
 
-	// Split Taxpayer FIO
 	const tpParts = (payload.taxpayer.fullName || "").trim().split(/\s+/);
 	const tpFamily = tpParts[0] || "Налогоплательщик";
 	const tpGiven = tpParts[1] || "";
 	const tpPatronymic = tpParts[2] || "";
 
-	// Split Patient FIO
 	const patParts = (payload.patient.fullName || "").trim().split(/\s+/);
 	const patFamily = patParts[0] || "Пациент";
 	const patGiven = patParts[1] || "";
 	const patPatronymic = patParts[2] || "";
 
-	// Split Signer FIO
 	const sigParts = (payload.signer.fullName || "").trim().split(/\s+/);
 	const sigFamily = sigParts[0] || "Руководитель";
 	const sigGiven = sigParts[1] || "";
@@ -691,30 +562,21 @@ export function generateFnsTaxCertificateXml(payload: FnsTaxCertificatePayload):
 		.join("\n");
 
 	const rawXml = `<?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-	Справка об оплате медицинских услуг для представления в налоговый орган
-	Форма по КНД 1151156 (Приказ ФНС России от 08.11.2023 № ЕД-7-11/755@)
-	Формат версии 5.01
--->
 <Файл ИдФайл="${escapeXml(fileGuid)}" ВерсФорм="5.01" ВерсПрог="DenteCRM-EGISZ 1.0">
 	<СвУчДок>
 		<СвОрг НаимОрг="${escapeXml(payload.clinic.name)}" ИННЮЛ="${escapeXml(cleanClinicInn)}"${cleanClinicKpp ? ` КПП="${escapeXml(cleanClinicKpp)}"` : ""} ОГРН="${escapeXml(cleanClinicOgrn)}"${payload.clinic.phone ? ` Тел="${escapeXml(payload.clinic.phone)}"` : ""}${payload.clinic.email ? ` E-mail="${escapeXml(payload.clinic.email)}"` : ""}/>
 	</СвУчДок>
 	<Документ КНД="1151156" ДатаДок="${formattedDocDate}" НомДок="${escapeXml(payload.documentNumber || "1")}" НалогПериод="${payload.taxYear}">
-		<!-- Сведения о налогоплательщике -->
 		<СвФЛ${cleanTpInn ? ` ИННФЛ="${escapeXml(cleanTpInn)}"` : ""}${cleanTpSnils ? ` СНИЛС="${escapeXml(cleanTpSnils)}"` : ""}${payload.taxpayer.birthDate ? ` ДатаРожд="${formatRuDate(payload.taxpayer.birthDate)}"` : ""}>
 			<ФИО Фамилия="${escapeXml(tpFamily)}" Имя="${escapeXml(tpGiven)}"${tpPatronymic ? ` Отчество="${escapeXml(tpPatronymic)}"` : ""}/>
 			${payload.taxpayer.docSeriesNumber ? `<УдЛичнФЛ КодВидДок="${escapeXml(payload.taxpayer.docTypeCode || "21")}" СерНомДок="${escapeXml(payload.taxpayer.docSeriesNumber)}"/>` : ""}
 		</СвФЛ>
-		<!-- Сведения о пациенте и степени родства -->
 		<Пациент РодствоКод="${payload.patient.relationshipCode}"${cleanPatSnils ? ` СНИЛС="${escapeXml(cleanPatSnils)}"` : ""}${payload.patient.birthDate ? ` ДатаРожд="${formatRuDate(payload.patient.birthDate)}"` : ""}>
 			<ФИО Фамилия="${escapeXml(patFamily)}" Имя="${escapeXml(patGiven)}"${patPatronymic ? ` Отчество="${escapeXml(patPatronymic)}"` : ""}/>
 		</Пациент>
-		<!-- Сведения о произведенных оплатах (Код 1 - стандарт, Код 2 - дорогостоящее) -->
 		<ОплатаУслуг СуммаКод1="${code1RublesStr}" СуммаКод2="${code2RublesStr}" ИтогоСумма="${totalRublesStr}">
 ${paymentsXml}
 		</ОплатаУслуг>
-		<!-- Подписант справки -->
 		<Подписант ПрПодп="1"${cleanSigSnils ? ` СНИЛС="${escapeXml(cleanSigSnils)}"` : ""}>
 			<ФИО Фамилия="${escapeXml(sigFamily)}" Имя="${escapeXml(sigGiven)}"${sigPatronymic ? ` Отчество="${escapeXml(sigPatronymic)}"` : ""}/>
 			<Должность>${escapeXml(payload.signer.position || "Руководитель медицинской организации")}</Должность>
@@ -737,9 +599,6 @@ export interface XmlStructureValidationResult {
 	docTypeDetected?: "cda_r2" | "fns_knd_1151156" | "unknown";
 }
 
-/**
- * Validates XML structure, well-formedness, tag balancing, and statutory requirements.
- */
 export function validateXmlStructure(xml: string): XmlStructureValidationResult {
 	const errors: string[] = [];
 	const warnings: string[] = [];
@@ -749,19 +608,15 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
 	}
 
 	const cleanXml = xml.trim();
-
-	// 1. Basic XML Declaration Check
 	if (!cleanXml.startsWith("<?xml")) {
-		warnings.push("Отсутствует стандартный XML-пролог <?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+		warnings.push('Отсутствует стандартный XML-пролог <?xml version="1.0" encoding="UTF-8"?>');
 	}
 
-	// 2. Tag Matching & Well-Formedness Check
 	const tagRegex = /<\/?([a-zA-Z0-9_:-]+)(?:\s+[^>]*?)?(\/?)>/g;
 	const tagStack: string[] = [];
 	let match: RegExpExecArray | null = null;
 	let tagCount = 0;
 
-	// Strip comments, CDATA, and processing instructions before tag stack check
 	const strippedXml = cleanXml
 		.replace(/<!--[\s\S]*?-->/g, "")
 		.replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, "")
@@ -777,7 +632,6 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
 		const isClosingTag = fullTag.startsWith("</");
 
 		if (isSelfClosing === "/" || fullTag.endsWith("/>")) {
-			// Self-closing tag (e.g. <id ... />)
 			continue;
 		}
 
@@ -800,13 +654,11 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
 		errors.push(`Обнаружены незакрытые XML-теги: ${tagStack.join(", ")}`);
 	}
 
-	// 3. Document Type & Required Sections Inspection
 	let docTypeDetected: "cda_r2" | "fns_knd_1151156" | "unknown" = "unknown";
 
 	if (cleanXml.includes("<ClinicalDocument") && cleanXml.includes("urn:hl7-org:v3")) {
 		docTypeDetected = "cda_r2";
-		// Check required CDA R2 components
-		if (!cleanXml.includes("<realmCode")) warnings.push("В CDA XML отсутствует тег <realmCode code=\"RU\"/>");
+		if (!cleanXml.includes("<realmCode")) warnings.push('В CDA XML отсутствует тег <realmCode code="RU"/>');
 		if (!cleanXml.includes("<typeId")) errors.push("В CDA XML отсутствует обязательный заголовок <typeId>");
 		if (!cleanXml.includes("<templateId")) errors.push("В CDA XML отсутствует идентификатор шаблона СЭМД <templateId>");
 		if (!cleanXml.includes("<recordTarget")) errors.push("В CDA XML отсутствуют сведения о пациенте <recordTarget>");
@@ -815,7 +667,6 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
 		if (!cleanXml.includes("<structuredBody")) errors.push("В CDA XML отсутствует тело документа <structuredBody>");
 	} else if (cleanXml.includes("<Файл") && cleanXml.includes('КНД="1151156"')) {
 		docTypeDetected = "fns_knd_1151156";
-		// Check required FNS components
 		if (!cleanXml.includes("<СвОрг") && !cleanXml.includes("<СвУчДок")) {
 			errors.push("В XML справки ФНС отсутствуют сведения о медицинской организации <СвОрг>");
 		}
@@ -866,9 +717,6 @@ export function generateGostXmlSignatureBlock(sig: GostSignatureInfo, documentRe
 </ds:Signature>`.trim();
 }
 
-/**
- * Generates an official GOST R 7.0.97-2016 (Section 5.23) electronic signature visual stamp (HTML).
- */
 export function generateGostSignatureStampHtml(params: {
 	signerName: string;
 	certificateNumber: string;
@@ -905,9 +753,6 @@ export function generateGostSignatureStampHtml(params: {
 </div>`.trim();
 }
 
-/**
- * Generates an SVG vector electronic signature stamp for embedding in PDF / print previews.
- */
 export function generateGostSignatureStampSvg(params: {
 	signerName: string;
 	certificateNumber: string;

@@ -86,6 +86,11 @@
 			"import": "./dist/egisz/index.js",
 			"default": "./dist/egisz/index.js"
 		},
+		"./cda": {
+			"types": "./dist/cda/index.d.ts",
+			"import": "./dist/cda/index.js",
+			"default": "./dist/cda/index.js"
+		},
 		"./messaging": {
 			"types": "./dist/messaging/index.d.ts",
 			"import": "./dist/messaging/index.js",
