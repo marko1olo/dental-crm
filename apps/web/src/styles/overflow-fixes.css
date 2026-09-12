@@ -139,6 +139,7 @@
 		flex-direction: column !important;
 		flex-wrap: nowrap !important;
 		align-items: stretch !important;
+		max-height: none !important;
 	}
 
 	.patients-search-box {
@@ -160,6 +161,14 @@
 		flex: 1 1 auto !important;
 		min-width: 0 !important;
 		justify-content: center !important;
+	}
+
+	.patients-main-grid,
+	.patient-list,
+	.patient-row {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		box-sizing: border-box !important;
 	}
 
 	.document-row p,
