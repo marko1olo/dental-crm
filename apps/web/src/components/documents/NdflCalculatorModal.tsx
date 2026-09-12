@@ -1,216 +1,38 @@
-import { formatKopecksRu, parseKopecks } from "@dental/shared";
-import { AlertTriangle, Calculator, FileText, Sparkles, User } from "lucide-react";
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import { actionFailureToast } from "../../lib/panelStateText";
+/**
+ * apps/web/src/components/documents/NdflCalculatorModal.tsx
+ *
+ * DENTE Dental CRM — 1-Click NDFL 13% Tax Calculator (КНД 1151156 / Приказ ФНС ЕА-7-11/824@).
+ * Transparent delegate to canonical TaxDeductionCertificateModal engine.
+ */
+
+import React from "react";
 import { useAppLogic } from "../../useAppLogic";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
+import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
+
+export interface NdflCalculatorModalProps {
+	readonly onClose: () => void;
+	readonly isOpen?: boolean | undefined;
+	readonly initialPatientId?: string | undefined;
+}
 
 export function NdflCalculatorModal({
 	onClose,
+	isOpen = true,
 	initialPatientId,
-}: {
-	onClose: () => void;
-	initialPatientId?: string;
-}) {
-	const { patientId: contextPatientId, auth, dashboard } = useAppLogic();
-	const [targetPatientId, setTargetPatientId] = useState<string>(
-		initialPatientId || contextPatientId || dashboard?.patients?.[0]?.id || "",
+}: NdflCalculatorModalProps) {
+	const { patientId: contextPatientId, dashboard } = useAppLogic();
+	const targetPatientId = initialPatientId || contextPatientId || dashboard?.patients?.[0]?.id || "";
+	const targetPatient = dashboard?.patients?.find((p) => p.id === targetPatientId);
+
+	return (
+		<TaxDeductionCertificateModal
+			isOpen={isOpen}
+			onClose={onClose}
+			patientId={targetPatientId}
+			patientName={targetPatient?.fullName}
+			patientBirthDate={targetPatient?.birthDate}
+		/>
 	);
-	const [startDate, setStartDate] = useState(
-		new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0],
-	);
-	const [endDate, setEndDate] = useState(
-		new Date().toISOString().split("T")[0],
-	);
-
-	const [loading, setLoading] = useState(false);
-	const [result, setResult] = useState<{
-		isBlocked: boolean;
-		debtRub: number;
-		code1TotalRub: number;
-		code2TotalRub: number;
-	} | null>(null);
-
-	const handleCalculate = async () => {
-		if (!targetPatientId) {
-			showToast("Выберите пациента для расчёта справки НДФЛ", "warning");
-			return;
-		}
-		setLoading(true);
-		try {
-			const res = await fetch(
-				`/api/documents/ndfl-calculator?patientId=${encodeURIComponent(targetPatientId)}&startDate=${encodeURIComponent(`${startDate}T00:00:00.000Z`)}&endDate=${encodeURIComponent(`${endDate}T23:59:59.999Z`)}`,
-				{
-					headers:
-						auth && typeof auth.denteClinicalMutationHeaders === "function"
-							? auth.denteClinicalMutationHeaders()
-							: {},
-				},
-			);
-			const data = await res.json().catch(() => null);
-
-			if (!res.ok) {
-				throw new Error(
-					(data && typeof data === "object" && "message" in data
-						? String((data as { message?: unknown }).message)
-						: null) ?? `HTTP ${res.status}`,
-				);
-			}
-			if (
-				!data ||
-				typeof data !== "object" ||
-				typeof (data as { code1TotalRub?: unknown }).code1TotalRub !== "number"
-			) {
-				throw new Error("Сервер вернул расчёт в неизвестном формате");
-			}
-			setResult(data);
-		} catch (error) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(error as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.error(error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const modalContent = (
-		<div className="modal-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-			<div
-				className="modal-content w-full max-w-lg p-6 rounded-3xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 shadow-2xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 space-y-4"
-			>
-				<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
-					<h2 className="text-lg font-bold flex items-center gap-2 m-0 text-[var(--ink,#0f172a)] dark:text-white">
-						<Calculator size={20} className="text-[var(--teal,#0d9488)]" />
-						Справка об оплате мед. услуг (НДФЛ 13%)
-					</h2>
-					<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--teal,#0d9488)] bg-[var(--teal-soft,#f0fdfa)] px-2.5 py-0.5 rounded-full border border-[var(--teal,#0d9488)]/30">
-						КНД 1151156
-					</span>
-				</div>
-
-				{/* Patient Selector if not locked */}
-				{dashboard?.patients && dashboard.patients.length > 0 && (
-					<label className="flex flex-col text-xs font-semibold text-[var(--muted,#64748b)] dark:text-slate-400">
-						Пациент (Налогоплательщик)
-						<select
-							value={targetPatientId}
-							onChange={(e) => {
-								setTargetPatientId(e.target.value);
-								setResult(null);
-							}}
-							className="mt-1 p-2.5 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-[var(--teal,#0d9488)]"
-						>
-							{dashboard.patients.map((p) => (
-								<option key={p.id} value={p.id}>
-									{p.fullName} ({p.phone || "без телефона"})
-								</option>
-							))}
-						</select>
-					</label>
-				)}
-
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
-					<label className="flex flex-col text-xs font-semibold text-[var(--muted,#64748b)] dark:text-slate-400">
-						Начало налогового периода
-						<input
-							type="date"
-							value={startDate}
-							onChange={(e) => setStartDate(e.target.value)}
-							className="mt-1 p-2 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-[var(--teal,#0d9488)]"
-						/>
-					</label>
-					<label className="flex flex-col text-xs font-semibold text-[var(--muted,#64748b)] dark:text-slate-400">
-						Конец периода
-						<input
-							type="date"
-							value={endDate}
-							onChange={(e) => setEndDate(e.target.value)}
-							className="mt-1 p-2 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-[var(--teal,#0d9488)]"
-						/>
-					</label>
-				</div>
-
-				<button
-					type="button"
-					onClick={handleCalculate}
-					disabled={loading}
-					className="w-full min-h-[44px] bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-95 transition-all"
-				>
-					{loading ? "Вычисление фискальных сумм..." : "Рассчитать суммы по чекам 54-ФЗ"}
-				</button>
-
-				{result && (
-					<div className="mt-4 space-y-3">
-						{result.debtRub > 0 && (
-							<div className="p-3.5 rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs space-y-1 shadow-sm">
-								<div className="flex items-center gap-2 font-bold text-xs text-amber-900 dark:text-amber-200">
-									<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
-									Внимание: текущая задолженность пациента
-								</div>
-								<div className="leading-relaxed text-[11px]">
-									У пациента числится задолженность:{" "}
-									<strong className="font-bold">{formatKopecksRu(parseKopecks(result.debtRub))}</strong>. Справка формируется на фактически оплаченные фискальные суммы по ст. 219 НК РФ.
-								</div>
-							</div>
-						)}
-
-						<div className="p-4 rounded-2xl border border-[var(--ok-fg,#059669)]/30 bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] text-xs space-y-3 shadow-sm">
-							<div className="flex items-center justify-between pb-1.5 border-b border-[var(--ok-fg,#059669)]/20">
-								<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ok-fg,#059669)] m-0">
-									Суммы расходов (Приказ ФНС ЕА-7-11/824@):
-								</h3>
-								<span className="text-[10px] font-bold text-[var(--ok-fg,#059669)] bg-[var(--paper,#ffffff)] px-2 py-0.5 rounded">
-									13% возврат
-								</span>
-							</div>
-
-							<div className="flex justify-between items-center py-1 border-b border-[var(--ok-fg,#059669)]/20">
-								<div>
-									<div className="font-semibold text-slate-800 dark:text-slate-200">Код 1 (Обычное лечение):</div>
-									<div className="text-[10px] text-slate-500 dark:text-slate-400">Лимит базы вычета: 150 000 ₽ / год</div>
-								</div>
-								<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
-									{formatKopecksRu(parseKopecks(result.code1TotalRub))}
-								</strong>
-							</div>
-
-							<div className="flex justify-between items-center py-1">
-								<div>
-									<div className="font-semibold text-slate-800 dark:text-slate-200">Код 2 (Дорогостоящее лечение):</div>
-									<div className="text-[10px] text-slate-500 dark:text-slate-400">Имплантация, костная пластика (без лимита)</div>
-								</div>
-								<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
-									{formatKopecksRu(parseKopecks(result.code2TotalRub))}
-								</strong>
-							</div>
-						</div>
-					</div>
-				)}
-
-				<div className="mt-4 flex items-center justify-between gap-3 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-					<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400">
-						XML ФНС формируется по форме КНД 1151156
-					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs cursor-pointer transition-all"
-					>
-						Закрыть
-					</button>
-				</div>
-			</div>
-		</div>
-	);
-
-	return typeof document !== "undefined"
-		? createPortal(modalContent, document.body)
-		: modalContent;
 }
+
+export default NdflCalculatorModal;

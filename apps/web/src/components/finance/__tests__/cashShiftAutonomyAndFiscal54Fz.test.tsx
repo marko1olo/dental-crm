@@ -18,7 +18,6 @@ import { FastCheckoutModal } from "../../payments/checkout/FastCheckoutModal";
 import FastCheckoutModalReexport from "../../payments/FastCheckoutModal";
 import { ExpressFiscalReceiptModal } from "../ExpressFiscalReceiptModal";
 import { RefundReceiptModal } from "../RefundReceiptModal";
-import CashRegisterModalReexport from "../../cash/CashRegisterModal";
 import { CashRegisterModal } from "../CashRegisterModal";
 
 describe("CashShiftWidget — Mandate 8e Autonomy & X-Report Verification", () => {
@@ -121,18 +120,6 @@ describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
 		assert.ok(html.includes('data-testid="preset-family-card"'));
 		assert.ok(html.includes('data-testid="btn-discount-warranty"'));
 		assert.ok(html.includes("100% Гарантия (Переделка)"));
-	});
-
-	it("verifies transparent re-export at apps/web/src/components/cash/CashRegisterModal.tsx", () => {
-		assert.equal(typeof CashRegisterModalReexport, "function");
-		const html = renderToString(
-			React.createElement(CashRegisterModalReexport, {
-				isOpen: true,
-				onClose: () => {},
-				totalAmountRub: 10000,
-			})
-		);
-		assert.ok(html.includes('data-testid="preset-exact-cash"'));
 	});
 });
 

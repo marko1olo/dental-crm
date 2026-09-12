@@ -59,8 +59,13 @@ export interface TaxDeductionCertificateModalProps {
 	readonly patientName?: string | undefined;
 	readonly patientBirthDate?: string | undefined;
 	readonly patientInn?: string | undefined;
+	readonly patientSnils?: string | undefined;
+	readonly payerSnils?: string | undefined;
 	readonly payments?: readonly TaxDeductionPaymentItem[] | undefined;
 	readonly selectedYear?: number | undefined;
+	readonly defaultTaxYear?: number | undefined;
+	readonly patientId?: string | undefined;
+	readonly autoFetchPayments?: boolean | undefined;
 	readonly clinicName?: string | undefined;
 	readonly clinicInn?: string | undefined;
 	readonly clinicKpp?: string | undefined;
@@ -77,8 +82,13 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	patientName = "",
 	patientBirthDate = "",
 	patientInn = "",
+	patientSnils = "",
+	payerSnils: initialPayerSnils = "",
 	payments = [],
 	selectedYear: propSelectedYear,
+	defaultTaxYear,
+	patientId: _patientId,
+	autoFetchPayments: _autoFetchPayments,
 	clinicName = "ООО «Стоматологическая клиника»",
 	clinicInn = "",
 	clinicKpp = "",
@@ -92,6 +102,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	const [activeTab, setActiveTab] = useState<"form" | "checks" | "family" | "xml">("form");
 	const [selectedYear, setSelectedYear] = useState<number>(() => {
 		if (propSelectedYear) return propSelectedYear;
+		if (defaultTaxYear) return defaultTaxYear;
 		if (payments.length > 0) {
 			const paymentYears = payments
 				.map((p) => new Date(p.dateIso).getFullYear())
@@ -106,6 +117,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	const [payerFullName, setPayerFullName] = useState<string>(patientName);
 	const [payerInn, setPayerInn] = useState<string>(patientInn);
 	const [payerBirthDate, setPayerBirthDate] = useState<string>(patientBirthDate);
+	const [payerSnils, setPayerSnils] = useState<string>(initialPayerSnils);
+	const [patientSnilsState, setPatientSnilsState] = useState<string>(patientSnils);
 	const [passportSeries, setPassportSeries] = useState<string>("");
 	const [passportNumber, setPassportNumber] = useState<string>("");
 	const [certificateNumber, setCertificateNumber] = useState<string>("1");
@@ -117,8 +130,12 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			if (patientName) setPayerFullName(patientName);
 			if (patientBirthDate) setPayerBirthDate(patientBirthDate);
 			if (patientInn) setPayerInn(patientInn);
+			if (patientSnils) setPatientSnilsState(patientSnils);
+			if (initialPayerSnils) setPayerSnils(initialPayerSnils);
 			if (propSelectedYear) {
 				setSelectedYear(propSelectedYear);
+			} else if (defaultTaxYear) {
+				setSelectedYear(defaultTaxYear);
 			} else if (payments.length > 0) {
 				const paymentYears = payments
 					.map((p) => new Date(p.dateIso).getFullYear())
@@ -128,7 +145,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 				}
 			}
 		}
-	}, [isOpen, patientName, patientBirthDate, patientInn, propSelectedYear, payments]);
+	}, [isOpen, patientName, patientBirthDate, patientInn, patientSnils, initialPayerSnils, propSelectedYear, defaultTaxYear, payments]);
 
 	const availableYears = useMemo(() => {
 		const baseYears = [currentYear - 2, currentYear - 1, currentYear];
@@ -273,11 +290,13 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			identityDocumentSeries: passportSeries,
 			identityDocumentNumber: passportNumber,
 			relationship: payerRelationship,
+			snils: payerSnils?.trim() || undefined,
 		},
 		patient: {
 			fullName: patientName,
 			birthDate: patientBirthDate,
 			inn: patientInn,
+			snils: patientSnilsState?.trim() || undefined,
 		},
 		payments,
 	});
