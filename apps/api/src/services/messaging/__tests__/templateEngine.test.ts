@@ -6,7 +6,9 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import {
 	formatMoney,
+	interpolateMessageTemplate,
 	interpolateVariables,
+	renderMessageTemplate,
 	TemplateEngine,
 } from "../templateEngine.js";
 
@@ -127,4 +129,26 @@ describe("Template Engine Unit Tests", () => {
 		assert.equal(res.subject, "С Новым Годом от ДЕНТЕ!");
 		assert.equal(res.bodyText, "Дорогой Игорь, поздравляем с праздником!");
 	});
+
+	it("verifies consolidated interpolateMessageTemplate and renderMessageTemplate exports (Mandates 8s, 8j)", () => {
+		const interpolated = interpolateMessageTemplate(
+			"Здравствуйте, {{patient_name}}! Ваш долг: {{total_amount}}.",
+			{ patient_name: "Анна", total_amount: 500000 },
+		);
+		assert.ok(interpolated.includes("Анна"));
+		assert.ok(interpolated.includes("5") && interpolated.includes("000"));
+
+		const rendered = renderMessageTemplate("appointment_reminder", "ru", {
+			patient_name: "Алексей",
+			clinic_name: "ДЕНТЕ",
+			appointment_date: "14.10.2026",
+			appointment_time: "15:00",
+			doctor_name: "Д-р Иванов",
+			clinic_address: "ул. Тверская, 1",
+		});
+		assert.ok(rendered.subject.includes("ДЕНТЕ"));
+		assert.ok(rendered.bodyText.includes("Алексей"));
+		assert.equal(rendered.buttons?.length, 2);
+	});
 });
+
