@@ -29,6 +29,7 @@ export {
 export * from "./patientRelationshipsEngine.js";
 export * from "./perioIndicesEngine.js";
 export * from "./odontogramTreatmentEngine.js";
+export * from "./pediatricDentition.js";
 export * from "./smartClinicalPlaybooksEngine.js";
 export {
   generateMorningDoctorBriefing,

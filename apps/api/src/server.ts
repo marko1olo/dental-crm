@@ -50,7 +50,7 @@ import { registerCryptoProNativeRoutes } from "./routes/cryptoProNativeRoutes.js
 // отвечали 404, то есть функциональность существовала только в исходниках.
 import { registerFilesRoutes } from "./routes/files.js";
 import { registerExpensesRoutes } from "./routes/expenses.js";
-import { registerCashboxV2Routes } from "./routes/cashbox_v2.js";
+import { registerCashboxRoutes } from "./routes/cashbox.js";
 import { registerCrmLeakDetectorRoutes } from "./routes/crmLeakDetector.js";
 import { registerFinancialPnlRoutes } from "./routes/financialPnl.js";
 import { registerPatientRelationshipsRoutes } from "./routes/patientRelationships.js";
@@ -64,9 +64,7 @@ import { registerInsuranceRoutes } from "./routes/insurance.js";
 import { registerInvoiceRoutes } from "./routes/invoices.js";
 import { registerDiagnocatRoutes } from "./routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "./routes/integrations/flexbe.js";
-import registerIntegrationsRoutes from "./routes/integrations.js";
 import { inventoryRoutes } from "./routes/inventory.js";
-import { warehouseRoutes } from "./routes/warehouse/index.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
 import { registerLoyaltyRoutes } from "./routes/loyalty.js";
@@ -83,7 +81,7 @@ import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerPeriodontogramRoutes } from "./routes/periodontogram.js";
 import { registerOrthodonticsRoutes } from "./routes/orthodontics.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
-import { registerOutpatientV2Routes } from "./routes/outpatient_v2.js";
+import { registerOutpatientRoutes } from "./routes/outpatient.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { registerPatientRoutes } from "./routes/patients.js";
@@ -108,7 +106,7 @@ import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSpeechLiveRoutes } from "./routes/speechLive.js";
 import { registerSanpinRoutes } from "./routes/sanpin.js";
 import { registerSterilizationRoutes } from "./routes/sterilization.js";
-import { registerSyncRoutes } from "./routes/sync.js";
+import { registerSyncRoutes } from "./routes/sync/index.js";
 import { registerSystemRoutes } from "./routes/system.js";
 import {
 	registerTelegramRoutes,
@@ -129,7 +127,6 @@ import { registerWaitlistMatchRoutes } from "./routes/waitlistMatches.js";
 import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerWhatsappRoutes } from "./routes/whatsapp.js";
 import { registerWhatsappWebhookRoutes } from "./routes/whatsappWebhook.js";
-import { registerRecallRoutes } from "./routes/recalls.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerYandexCalendarRoutes } from "./routes/yandexCalendar.js";
@@ -677,7 +674,7 @@ export async function createDenteApiApp(
 	await registerOdontogramRoutes(app);
 	await registerPeriodontogramRoutes(app);
 	await registerToothHistoryRoutes(app);
-	await registerOutpatientV2Routes(app);
+	await registerOutpatientRoutes(app);
 	await registerLoyaltyRoutes(app);
 	await registerReferralRoutes(app);
 	await registerAnesthesiaRoutes(app);
@@ -696,7 +693,6 @@ export async function createDenteApiApp(
 	await registerFamilyFinanceRoutes(app);
 	await registerInsuranceRoutes(app);
 	await registerInvoiceRoutes(app);
-	await registerIntegrationsRoutes(app);
 	await registerLabRoutes(app);
 	await registerLeadsRoutes(app);
 	/* registerMaxRoutes и registerWhatsappRoutes навешивают внутри себя
@@ -722,7 +718,6 @@ export async function createDenteApiApp(
 	await registerWaitlistRoutes(app);
 	await app.register(registerWhatsappRoutes);
 	await registerWhatsappWebhookRoutes(app);
-	await app.register(registerRecallRoutes);
 	await registerPatientRoutes(app);
 	await registerOrthodonticsRoutes(app);
 	await registerExportRoutes(app);
@@ -773,7 +768,6 @@ export async function createDenteApiApp(
 	// apps/web обращается к /api/templates, а маршрута не существовало.
 	await registerTemplateRoutes(app);
 	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
-	await app.register(warehouseRoutes, { prefix: "/api/warehouse" });
 	await app.register(treatmentConsumablesRoutes, {
 		prefix: "/api/treatment-consumables",
 	});
@@ -781,7 +775,7 @@ export async function createDenteApiApp(
 	await app.register(portalRoutes, { prefix: "/api/portal" });
 	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
 	await app.register(registerExpensesRoutes);
-	await registerCashboxV2Routes(app);
+	await registerCashboxRoutes(app);
 	await registerCrmLeakDetectorRoutes(app);
 	await registerFinancialPnlRoutes(app);
 	await registerPatientRelationshipsRoutes(app);

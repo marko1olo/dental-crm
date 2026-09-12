@@ -12,7 +12,7 @@
  */
 
 import { isValidFdiToothNumber } from "../emr/emrProtocolEngine.js";
-import { isPrimaryTooth } from "../pediatricDentition.js";
+import { isPrimaryTooth } from "./pediatricDentition.js";
 import type { Order804nServiceRef, BlackCavityClass } from "../emr/emrProtocolPresets.js";
 export type { BlackCavityClass };
 

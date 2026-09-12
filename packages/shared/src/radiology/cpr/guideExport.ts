@@ -15,6 +15,9 @@
  */
 
 import type { Vec3 } from "./guideValidate.js";
+import type { BinarySTLHeaderOptions } from "../guideExportEngine.js";
+
+export type { BinarySTLHeaderOptions };
 
 export interface TriMesh {
 	/** xyz vertex coordinates [x0, y0, z0, x1, y1, z1, ...], length 3 * V */
@@ -230,6 +233,7 @@ export function isClosedOriented(m: TriMesh): boolean {
 
 // ── Binary STL Serializer ──────────────────────────────────────
 
+
 /**
  * Serializes an indexed triangle mesh into pure binary STL format (IEEE 754 float32 Little Endian).
  *
@@ -244,13 +248,23 @@ export function isClosedOriented(m: TriMesh): boolean {
  *      * Uint16: Attribute byte count (0)
  *
  * @param mesh Input indexed triangle mesh
- * @param headerText Optional header ASCII text (truncated to max 79 chars)
+ * @param headerTextOrOptions Optional header ASCII text or options object
  * @returns ArrayBuffer containing valid binary STL stream
  */
 export function triMeshToBinarySTL(
 	mesh: TriMesh,
-	headerText = "Dente Surgical Guide STL 3D Print - ISO 13485",
+	headerTextOrOptions: string | BinarySTLHeaderOptions = "Dente Surgical Guide STL 3D Print - ISO 13485",
 ): ArrayBuffer {
+	let headerText: string;
+	if (typeof headerTextOrOptions === "string") {
+		headerText = headerTextOrOptions;
+	} else if (headerTextOrOptions.title) {
+		headerText = [headerTextOrOptions.title, headerTextOrOptions.software, headerTextOrOptions.patientId]
+			.filter(Boolean)
+			.join(" | ");
+	} else {
+		headerText = headerTextOrOptions.software ?? "Dente Surgical Guide STL 3D Print - ISO 13485";
+	}
 	const idx = mesh.indices;
 	const p = mesh.positions;
 	const nTri = Math.floor(idx.length / 3);
