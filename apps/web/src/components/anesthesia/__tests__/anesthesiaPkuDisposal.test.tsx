@@ -17,7 +17,7 @@ import {
 	generateAnesthesiaPkuDisposalHtml,
 	type AnesthesiaPkuPresetKey,
 } from "@dental/shared";
-import { AnesthesiaPkuDisposalModal } from "../AnesthesiaPkuDisposalModal";
+import { NurseCarpuleDisposalModal } from "../../warehouse/NurseCarpuleDisposalModal";
 
 describe("Anesthesia PKU 1-Click Disposal & Single-Nurse Clearance (Mandate 8e / SanPiN 3.3686-21)", () => {
 	// ── 1. Preset Catalog & Default Values ─────────────────────────────────────
@@ -132,9 +132,9 @@ describe("Anesthesia PKU 1-Click Disposal & Single-Nurse Clearance (Mandate 8e /
 	});
 
 	// ── 3. Component Rendering: Modal & 1-Click UI Presets ────────────────────
-	it("9. AnesthesiaPkuDisposalModal renders 1-click nurse disposal facade over NurseCarpuleDisposalModal", () => {
+	it("9. NurseCarpuleDisposalModal renders 1-click nurse disposal dialog with SanPiN 3.3686-21", () => {
 		const html = renderToString(
-			<AnesthesiaPkuDisposalModal
+			<NurseCarpuleDisposalModal
 				isOpen={true}
 				onClose={() => {}}
 			/>,
@@ -151,9 +151,9 @@ describe("Anesthesia PKU 1-Click Disposal & Single-Nurse Clearance (Mandate 8e /
 		assert.ok(html.includes("Единоличное утверждение медсестрой"), "Single nurse affirmation must be displayed");
 	});
 
-	it("10. AnesthesiaPkuDisposalModal renders nothing when isOpen is false", () => {
+	it("10. NurseCarpuleDisposalModal renders nothing when isOpen is false", () => {
 		const html = renderToString(
-			<AnesthesiaPkuDisposalModal
+			<NurseCarpuleDisposalModal
 				isOpen={false}
 				onClose={() => {}}
 			/>,

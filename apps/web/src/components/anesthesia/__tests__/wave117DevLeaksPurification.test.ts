@@ -19,27 +19,27 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 	const __dirname = path.dirname(__filename);
 	const repoRoot = path.resolve(__dirname, "../../../../../..");
 
-	it("1. AnesthesiaPkuDisposalModal: absence of «Мандат 8e» and presence of pure clinical SanPiN reference", () => {
+	it("1. NurseCarpuleDisposalModal: absence of «Мандат 8e» and presence of pure clinical SanPiN reference", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx",
+			"apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
 		// No dev leak text "Мандат 8e" in UI/labels
 		assert.ok(
 			!content.includes("Мандат 8e"),
-			"AnesthesiaPkuDisposalModal must NOT leak prompt text 'Мандат 8e'",
+			"NurseCarpuleDisposalModal must NOT leak prompt text 'Мандат 8e'",
 		);
 
 		// Clean medical regulatory citations
 		assert.ok(
-			content.includes("1-клик быстрые пресеты списания анестезии и ПКУ (СанПиН 3.3686-21, п. 10)"),
-			"AnesthesiaPkuDisposalModal must use pure regulatory citation (СанПиН 3.3686-21, п. 10)",
+			content.includes("СанПиН 3.3686-21 • Единолично медсестрой (без комиссии из 3 человек)"),
+			"NurseCarpuleDisposalModal must use pure regulatory citation",
 		);
 
 		assert.ok(
-			content.includes("Подпись медсестры / ассистента подтверждена в 1 клик"),
+			content.includes("Единоличное утверждение медсестрой"),
 			"Assistant signature label must be clean without mandate references",
 		);
 	});

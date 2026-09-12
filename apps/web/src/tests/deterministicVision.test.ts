@@ -129,7 +129,6 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ component: "PaidMedicalContractModal", selector: ".paid-contract-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
 				{ component: "EgiszRemdHubModal", selector: ".egisz-btn.sm", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 38 },
 				{ component: "CashShiftClosingModal", selector: ".cash-shift-close-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
-				{ component: "CommandPalette", selector: ".cmd-palette-esc", heightPx: 32, minAllowedPx: 28, maxAllowedPx: 36 },
 			];
 
 			for (const item of desktopToolbars) {
@@ -195,7 +194,6 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				"anesthesia/anesthesia.css",
 				"billing/cashShiftClosing.css",
 				"cmo/clinicalQuality.css",
-				"CommandPalette.css",
 			];
 
 			for (const relPath of mobileMediaCheckedFiles) {

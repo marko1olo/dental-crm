@@ -151,24 +151,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Универсальное модальное окно защиты от случайных и опасных действий ('Защита от дурака' / Foolproof Dialog) с крупными кнопками, двойным подтверждением и понятными текстами для пожилого персонала и медсестер.",
 	},
 	{
-		file: "components/CommandPalette.tsx",
-		name: "CommandPalette",
-		reason:
-			"Полноэкранная палитра команд быстрого доступа (Ctrl+K) деактивирована в пользу унифицированного глобального поиска Omnibar, исключающего конфликт горячих клавиш и дублирование навигационных оверлеев.",
-	},
-	{
-		file: "components/SignaturePad.tsx",
-		name: "SignaturePad",
-		reason:
-			"Устаревший холст рукописной подписи SignaturePad, замененный на ChairsideTabletConsentModal и юридически легитимное подписание информированных согласий на бумажном носителе по Приказу Минздрава РФ.",
-	},
-	{
-		file: "components/offline/OfflineConflictReviewDrawer.tsx",
-		name: "OfflineConflictReviewDrawer",
-		reason:
-			"Специализированная шторка разрешения конфликтов оффлайн-синхронизации деактивирована в пользу автоматического детерминированного фонового движка conflictResolver (LWW / CRDT) без отвлечения врача.",
-	},
-	{
 		file: "components/schedule/AppointmentDrawer.tsx",
 		name: "AppointmentDrawer",
 		reason:
@@ -179,24 +161,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "ChairRosterModal",
 		reason:
 			"Модальное окно ротации врачей по стоматологическим креслам; заменено на прямой выбор кресла и врача в ScheduleFilterStrip и инлайн-расписание ChairScheduleView с бейджами занятости кресел.",
-	},
-	{
-		file: "components/schedule/ScheduleSubNavTabs.tsx",
-		name: "ScheduleSubNavTabs",
-		reason:
-			"Альтернативная модульная панель навигации и вторичных режимов расписания (Закон Миллера: 7±2 элемента с выпадающим меню '⋮ Ещё'). В активном расписании используется объединенная панель фильтрации ScheduleFilterStrip.",
-	},
-	{
-		file: "components/anesthesia/AnesthesiaPkuDisposalModal.tsx",
-		name: "AnesthesiaPkuDisposalModal",
-		reason:
-			"Модальное окно списания и утилизации остатков сильнодействующих анестетиков и ампул предметно-количественного учета (ПКУ) по Приказу Минздрава РФ № 1094н / СанПиН.",
-	},
-	{
-		file: "components/visit/SpeechChunksInspector.tsx",
-		name: "SpeechChunksInspector",
-		reason:
-			"Инженерная панель диагностики и аварийного восстановления чанков диктовки аудиопотока. Вынесена из основного клинического экрана приёма врача в рамках де-блоатинга (Мандаты 8e, 8i, 8k) для устранения захламления рабочего пространства врача техническими таблицами аудио-чанков.",
 	},
 	/*
 	 * OneCCommerceMlModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
@@ -621,7 +585,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 *   «Alt + S — Сохранить план лечения»: altKey во всём apps/web/src — ноль
 	 *     совпадений, сочетания не существует;
 	 *   «Ctrl + F — Поиск пациента»: обработчика нет, а живой глобальный поиск это
-	 *     Ctrl/Cmd + K (components/CommandPalette.tsx:19, components/Omnibar.tsx:68) —
+	 *     Ctrl/Cmd + K (components/Omnibar.tsx:68) —
 	 *     подсказка называла неверную клавишу и умалчивала работающую;
 	 *   «Нажмите кнопку „Сбросить кэш“ в тулбаре»: единственное вхождение этих слов
 	 *     во всём дереве было в самом HelpHUD, кнопки не существует — врача с чёрным

@@ -5,7 +5,6 @@
  * 1. calculate043ClinicalDiff: Section-by-section diff detection (Complaints, Anamnesis, Diagnosis, Treatment, FDI Teeth).
  * 2. mergeClinical043DiariesNonDestructive: Non-destructive text merging, tooth number set unions, doctor/cloud overrides.
  * 3. ClinicalConflictModal: Interactive React rendering, fast 1-click action buttons, live preview.
- * 4. OfflineConflictReviewDrawer: Conflict queue display, priority tags, drawer-to-modal lifecycle.
  */
 
 import assert from "node:assert/strict";
@@ -14,8 +13,6 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import {
 	ClinicalConflictModal,
-	OfflineConflictReviewDrawer,
-	type PendingConflictItem,
 } from "../components/offline/index.js";
 import {
 	calculate043ClinicalDiff,
@@ -143,48 +140,5 @@ describe("Clinical Conflict Resolver & Form 043/u Split-Brain Merge Suite", () =
 		assert.ok(html.includes("Объединить неразрушающе"));
 		assert.ok(html.includes("Д-р Кузнецов А.В."));
 		assert.ok(html.includes("Ассистент Смирнова Е.П."));
-	});
-
-	it("5. OfflineConflictReviewDrawer renders pending conflict cards and empty state", () => {
-		const pendingConflicts: PendingConflictItem[] = [
-			{
-				id: "cfl-1",
-				entityKind: "visit_diary",
-				entityId: "diary-01",
-				patientName: "Петрова Анна Сергеевна",
-				card043Number: "8841",
-				doctorVersion: sampleDoctorVersion,
-				cloudVersion: sampleCloudVersion,
-				conflictReason: "Параллельное редактирование дневника",
-				detectedAt: "2026-08-26T10:15:00.000Z",
-				priority: "high",
-			},
-		];
-
-		const drawerHtml = renderToString(
-			React.createElement(OfflineConflictReviewDrawer, {
-				isOpen: true,
-				onClose: () => {},
-				conflicts: pendingConflicts,
-				onResolveConflict: () => {},
-			}),
-		);
-
-		assert.ok(drawerHtml.includes("Клинические расхождения"));
-		assert.ok(drawerHtml.includes("Петрова Анна Сергеевна"));
-		assert.ok(drawerHtml.includes("Карта 043/у"));
-		assert.ok(drawerHtml.includes("Разрешить расхождение (Side-by-Side)"));
-
-		// Empty state rendering
-		const emptyDrawerHtml = renderToString(
-			React.createElement(OfflineConflictReviewDrawer, {
-				isOpen: true,
-				onClose: () => {},
-				conflicts: [],
-				onResolveConflict: () => {},
-			}),
-		);
-
-		assert.ok(emptyDrawerHtml.includes("Все медицинские записи синхронизированы без расхождений"));
 	});
 });

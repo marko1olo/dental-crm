@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CommandPalette } from "../components/CommandPalette";
 import { SberbankTerminalPaymentModal } from "../components/finance/SberbankTerminalPaymentModal";
 import { InventoryConfirmDialog } from "../components/inventory/InventoryConfirmDialog";
 import { EndoCanalLogModal } from "../components/endo/EndoCanalLogModal";
@@ -79,17 +78,6 @@ describe("Modal Portals & SSR Safety Hardening", () => {
 		);
 		assert.ok(html.includes("Удаление материала"));
 		assert.ok(html.includes("Удалить безвозвратно"));
-	});
-
-	it("CommandPalette renders nothing when closed", () => {
-		const htmlClosed = renderToStaticMarkup(
-			createElement(CommandPalette, {
-				patients: [],
-				onSelectPatient: () => {},
-				onNavigate: () => {},
-			}),
-		);
-		assert.equal(htmlClosed, "");
 	});
 
 	it("EndoCanalLogModal renders SSR-safe static markup when open", () => {

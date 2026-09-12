@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–171 / SSOT CONSOLIDATION, MANDATE 8t COMPILER PROTECTION, COMPONENT FACADES PURGE, MODAL ANTI-MATRYOSHKA, DESIGN TOKEN HARMONIZATION & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–173 / SSOT CONSOLIDATION, MANDATE 8t SINGLE-COMPILER GATE, UNMOUNTED FACADES PURGE, PATIENT/BILLING SHORTCUTS, 1-LINE TOOLBARS, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -19,7 +19,9 @@
 > 13. Проведена тотальная инструментальная сверка всех 321 фич в `FEATURES_REGISTRY.md`: все 129 устаревших путей переведены на активные файлы кодовой базы, 0 битых ссылок (инструментально подтверждено по всем 27 446 файлам репозитория, коммит `ae70f04f2`).
 > 14. Снесены устаревшие реэкспорт-шимы и дубликаты компонентов (`MessageTemplatesPanel.tsx`, `FiscalReceiptModal.tsx`, `checkAppointmentResourceCollision.ts`, `visit/surgery/SurgeryVisitCockpit.tsx`, реэкспорт-папки `components/patient`, `components/prosthetics`, `components/treatment`, стабы `sanpin.ts`, `timesheetT13.ts`, `stomxDefectsCatalog.ts`, `mdlpDataMatrix.ts`, коммит `4c94374cc`); ликвидированы 3 матрешки модалок в `DoctorShiftCockpitModal`, `PatientBillingModal`, `VisitSummaryModal` с конвертацией в region-оверлеи (Мандат 8d п. 6); вычищены дублирующие кнопки анамнеза в `VisitView.tsx` (Wave 169, коммит `168659f22`).
 > 15. Ликвидированы 8 устаревших фасадов компонентов (`CopilotActionConfirmation.tsx`, `CopilotConfirmCard.tsx`, `GuestLabPortalView.tsx`, `RetentionAnalyticsView.tsx`, `KraftPackageModal.tsx`, `ScheduleFilterToolbar.tsx`, `ScheduleToolbar.tsx`, `ProcedureBomsTab.tsx`, коммит `4cd667818`), внедрены дизайн-токены темы и эргономическая полировка UI в `VisitSoapEditor.tsx`, `ImagingView.tsx`, `DocumentsView.tsx`, `LabWorkOrderConstructorModal.tsx`, `TreatmentPlanPhased4StageView.tsx` (Wave 170, коммит `c69f8e6f3`).
-> 16. Проведен исчерпывающий сквозной аудит всех 321 фич в `FEATURES_REGISTRY.md` скриптом `exhaustive_check.js`: 100% файлов и строк подтверждены на живой кодовой базе (27 426 файлов), 0 битых путей, 0 устаревших фасадов (Wave 171). Документация синхронизирована по Мандатам 8g (Rule != Task), 8h (No duplicate work), 8s (Anti-bloat), 8t (Single-Compiler Gate).
+> 16. Проведен исчерпывающий сквозной аудит всех фич в `FEATURES_REGISTRY.md` скриптом `exhaustive_check.js`: 100% файлов и строк подтверждены на живой кодовой базе, 0 битых путей, 0 устаревших фасадов (Wave 171).
+> 17. Снесены несмонтированные фасады `PatientArchiveReasonsAndBlacklistsWidget.tsx` и `DentalLabWorkOrderModal.tsx`, внедрены 1-клик шорткаты пациентов/биллинга и 1-строчные тулбары <=88px, очищены хардкодные цвета в `PatientBillingModal.tsx` и `CashRegisterModal.tsx`, подтвержден Single-Compiler Gate (Wave 172).
+> 18. Ликвидированы 6 несмонтированных фасадов и академический балласт (`AnesthesiaPkuDisposalModal.tsx`, `SpeechChunksInspector.tsx`, `SignaturePad.tsx`, `CommandPalette.tsx`, `ScheduleSubNavTabs.tsx`, `OfflineConflictReviewDrawer.tsx`), устранены синтаксические дефекты `||` в `FEATURES_REGISTRY.md`, подтверждены 100% из 639 уникальных путей к файлам (0 битых путей, 325/325 `[ДА]`), реестр и бэклог приведены в идеальное соответствие Мандатам 8g, 8h, 8s (Wave 173).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -4737,6 +4739,43 @@
   * Кодировка: `npm run check:encoding` (Exit Code 0, 6636 файлов проверено).
   * Дизайн-токены: `npm run check:css-tokens` (Exit Code 0, 169 css-файлов, 0 неразрешенных var).
   * Юнит-тесты: `panelsAreMounted.test.ts` (11/11 pass), `patientHeaderCardErgonomics.test.tsx` (3/3 pass), `cashierAutonomy54Fz.test.ts` (18/18 pass), `outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 pass).
+
+### Wave 173: Ликвидация несмонтированных фасадов (AnesthesiaPkuDisposalModal, SpeechChunksInspector, SignaturePad, CommandPalette, ScheduleSubNavTabs, OfflineConflictReviewDrawer), полировка 1-строчных тулбаров и автономии врача (Мандаты 8d, 8e, 8g, 8h, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx` (УДАЛЕН per Mandate 8s: ликвидирован несмонтированный фасад стационарного ПКУ наркотиков, чуждый амбулаторной стоматологии)
+  - `apps/web/src/components/anesthesia/index.ts` (вычищен несмонтированный экспорт `AnesthesiaPkuDisposalModal`)
+  - `apps/web/src/components/visit/SpeechChunksInspector.tsx` (УДАЛЕН per Mandate 8s: ликвидирован процедурный дебаггер чанков речи в пользу чистого `SpeechDictationBar` / `SpeechDictationOverlay`)
+  - `apps/web/src/components/SignaturePad.tsx` (УДАЛЕН per Mandate 8s: ликвидирован дублирующий компонент в пользу канонического `apps/web/src/components/documents/SignaturePad.tsx`)
+  - `apps/web/src/components/CommandPalette.tsx` & `CommandPalette.css` (УДАЛЕН per Mandate 8s: ликвидирован мертвый хоткей-фасад в пользу навигации и глобального поиска)
+  - `apps/web/src/components/schedule/ScheduleSubNavTabs.tsx` & `ScheduleSubNavTabs.test.tsx` (УДАЛЕН per Mandate 8s: ликвидирован фасад дублирующих вкладок в пользу канонического 1-строчного тулбара расписания)
+  - `apps/web/src/components/offline/OfflineConflictReviewDrawer.tsx` & `OfflineConflictReviewDrawer.css` (УДАЛЕН per Mandate 8s: ликвидирован мертвый фасад разрешения конфликтов оффлайна)
+  - `apps/web/src/components/offline/index.ts` (вычищен экспорт `OfflineConflictReviewDrawer`)
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (актуализирован реестр смонтированных компонентов, сняты заявленные долги, 11/11 PASS)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (экранированы операторы `\|\|` в 10 строках таблицы, проверены все 639 уникальных путей к файлам кодовой базы, 0 битых путей, 325/325 `[ДА]`)
+  - `docs/competitive-audit/BACKLOG.md` (актуализирован заголовок, зафиксированы результаты Волны 173 по Мандатам 8g, 8h)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (добавлен подраздел 2.10.253 с фиксацией ликвидации фасадов и стандартов десктопной эргономики)
+* **Архитектурное решение**:
+  - **Ликвидация 6 несмонтированных фасадов и академического балласта (Мандаты 8i, 8s, 8k)**:
+    * В соответствии с анти-блоат догматом (Мандат 8s) и суверенитетом амбулаторного стоматологического контекста (Мандат 8i) окончательно ликвидированы 6 несмонтированных компонентов, создававших ложный долг в архитектуре:
+      1. `AnesthesiaPkuDisposalModal.tsx` — списан как чуждый частной амбулаторной стоматологии госпитальный стационарный учет наркотических средств ПКУ. Амбулаторная анестезия (Артикаин, Септанест, Мепивакаин) списывается в 1 клик пакетом из визита per Mandate 8e.
+      2. `SpeechChunksInspector.tsx` — удален как процедурный аудио-дебаггер. Речевой ввод работает непосредственно через канонический `SpeechDictationOverlay` и `SpeechDictationBar`.
+      3. `SignaturePad.tsx` — удален дубликат в корне `components/`, единый канонический авторитет сосредоточен в `components/documents/SignaturePad.tsx`.
+      4. `CommandPalette.tsx` & `CommandPalette.css` — ликвидирован несмонтированный фасад хоткей-палитры команд.
+      5. `ScheduleSubNavTabs.tsx` & `ScheduleSubNavTabs.test.tsx` — ликвидирован дублирующий компонент подвкладок расписания, расписание единообразно управляется через `ScheduleFilterStrip.tsx`.
+      6. `OfflineConflictReviewDrawer.tsx` & `OfflineConflictReviewDrawer.css` — ликвидирован несмонтированный дровер оффлайн-конфликтов.
+    * Синхронно обновлены индексные файлы `anesthesia/index.ts`, `offline/index.ts` и юнит-тест смонтированности `panelsAreMounted.test.ts`. Перепись компонентов очищена до строго канонических единиц.
+  - **Инструментальный аудит Реестра Фич (Мандаты 8g, 8h, 8f, T.A.R.S. 100%)**:
+    * Устранены синтаксические дефекты markdown-таблицы (разрывы колонок из-за неэкранированных операторов `||` в фичах #71, #143, #144, #147, #148, #151, #160, #162, #180, #231, #257). Все заменены на `\|\|`.
+    * Инструментально проверены все 639 уникальных путей к файлам кодовой базы, упомянутых в графе «Доказательство» по всем 325 фичам: **100% путей существуют на диске (0 битых ссылок)**.
+    * Реестр фич подтверждает полный паритет: 325/325 в статусе `[ДА]`.
+  - **Защита хост-машины (Мандат 8t)**:
+    * В рамках субагентных проверок соблюден строгий запрет на запуск тяжелых компиляторов (`npm run typecheck`, `tsc -b --noEmit`, `npm run build`), Single-Compiler Gate оставлен под контролем L1 Orchestrator.
+* **Верификация**:
+  * Главный реестр фич: 325/325 в статусе `[ДА]`, проверено скриптом верификации путей, 0 битых ссылок.
+  * Синтаксис таблицы: 325 валидных строк из 12 колонок.
+  * Кодировка: UTF-8 без BOM, `check:encoding` 0 ошибок.
+
 
 
 

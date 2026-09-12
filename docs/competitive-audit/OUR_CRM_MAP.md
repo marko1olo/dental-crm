@@ -3020,4 +3020,25 @@
 - **Файлы**: `apps/web/src/components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx` (deleted), `apps/web/src/components/lab/DentalLabWorkOrderModal.tsx` (deleted), `apps/web/src/components/crm/index.ts`, `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/PatientsView.tsx`, `apps/web/src/components/patients/PatientHeaderCard.tsx`, `apps/web/src/styles/patients-redesign.css`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/finance/PatientBillingModal.tsx`.
 - **Тесты**: `npm run typecheck -w @dental/web` (Exit Code 0), `npm run check:encoding` (0 ошибок), `npm run check:css-tokens` (0 ошибок), `panelsAreMounted.test.ts` (11/11 PASS), `patientHeaderCardErgonomics.test.tsx` (3/3 PASS), `cashierAutonomy54Fz.test.ts` (18/18 PASS), `outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 PASS).
 
+### 2.10.253. Волна 173: Ликвидация несмонтированных фасадов, полировка 1-строчных тулбаров и закрепление стандартов десктопной эргономики (Мандаты 8d, 8e, 8g, 8h, 8s, 8t)
+- **Идея & Бизнес-эффект**: Ликвидация 6 несмонтированных фасадов и академического балласта (`AnesthesiaPkuDisposalModal`, `SpeechChunksInspector`, `SignaturePad`, `CommandPalette`, `ScheduleSubNavTabs`, `OfflineConflictReviewDrawer`), исключение чуждого стоматологии стационарного учета ПКУ наркотиков в пользу 1-клик пакетного списания карпул per Mandate 8e; устранение синтаксических сбоев таблицы в `FEATURES_REGISTRY.md` (экранирование `\|\|`); инструментальное подтверждение 100% из 639 уникальных путей кодовой базы (0 битых ссылок, 325/325 `[ДА]`); актуализация бэклога и карты CRM по Мандатам 8g, 8h без дублирования задач.
+- **Архитектурные механизмы**:
+  1. *Ликвидация 6 несмонтированных фасадов и академического балласта (Мандаты 8i, 8s, 8k)*:
+     - Физически удален `AnesthesiaPkuDisposalModal.tsx` — ликвидирован несмонтированный стационарный фасад комиссионного уничтожения ампул наркотических средств (ПКУ), неприменимый в амбулаторной стоматологии. Врач и ассистент списывают анестетики (Артикаин/Убистезин) в 1 клик прямо из карточки визита.
+     - Физически удален `SpeechChunksInspector.tsx` — процедурный визуализатор аудио-чанков удален в пользу чистых рабочих инструментов диктовки `SpeechDictationBar` и `SpeechDictationOverlay`.
+     - Физически удален корневой `SignaturePad.tsx` — устранен дубликат в пользу канонического `components/documents/SignaturePad.tsx`.
+     - Физически удален `CommandPalette.tsx` и `CommandPalette.css` — несмонтированная палитра хоткеев ликвидирована без ущерба для навигации.
+     - Физически удалены `ScheduleSubNavTabs.tsx` и `ScheduleSubNavTabs.test.tsx` — ликвидирован дублирующий компонент подвкладок расписания, навигация централизована в 1-строчном `ScheduleFilterStrip.tsx`.
+     - Физически удален `OfflineConflictReviewDrawer.tsx` и `OfflineConflictReviewDrawer.css` — несмонтированный фасад оффлайн-конфликтов ликвидирован.
+     - Очищены индексные реэкспорты в `anesthesia/index.ts` и `offline/index.ts`, актуализирован тест монтирования `panelsAreMounted.test.ts` (11/11 PASS).
+  2. *Инструментальный аудит и восстановление синтаксиса Реестра Фич (Мандаты 8g, 8h, 8f, T.A.R.S. 100%)*:
+     - В `FEATURES_REGISTRY.md` экранированы символы пайпов `\|\|` в 10 строках таблицы, предотвратив разрывы колонок в парсерах markdown.
+     - Проведен аудит всех 639 уникальных путей к файлам кодовой базы во всех 325 фичах: 100% путей подтверждены на диске, 0 битых ссылок.
+     - Заголовок и статус синхронизированы: 325 фичей (63 канонические + 262 аддендум), 325/325 со статусом `[ДА]`, 100% паритет.
+  3. *Защита хост-машины (Мандат 8t)*:
+     - Полный запрет на параллельный запуск компиляторов воркерами соблюден, Single-Compiler Gate оставлен под управлением L1 Orchestrator.
+- **Файлы**: `apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx` (deleted), `apps/web/src/components/anesthesia/index.ts`, `apps/web/src/components/visit/SpeechChunksInspector.tsx` (deleted), `apps/web/src/components/SignaturePad.tsx` (deleted), `apps/web/src/components/CommandPalette.tsx` (deleted), `apps/web/src/components/CommandPalette.css` (deleted), `apps/web/src/components/schedule/ScheduleSubNavTabs.tsx` (deleted), `apps/web/src/components/schedule/ScheduleSubNavTabs.test.tsx` (deleted), `apps/web/src/components/offline/OfflineConflictReviewDrawer.tsx` (deleted), `apps/web/src/components/offline/OfflineConflictReviewDrawer.css` (deleted), `apps/web/src/components/offline/index.ts`, `apps/web/src/tests/panelsAreMounted.test.ts`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t), `panelsAreMounted.test.ts` 11/11 PASS.
+
+
 
