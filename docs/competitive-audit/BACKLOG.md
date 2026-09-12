@@ -2,16 +2,18 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-12 / WAVES 162–165 / MASSIVE DUPLICATE PURGE & SSOT CONSOLIDATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 252 АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 315 ФИЧ: 63 КАНОНИЧЕСКИЕ + 252 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-12 / WAVES 162–166 / MASSIVE DUPLICATE & STUB PURGE, SSOT CONSOLIDATION & RED TEAM INQUISITION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 252 АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 315 ФИЧ: 63 КАНОНИЧЕСКИЕ + 252 АДДЕНДУМ).**  
 > Проведена тотальная дедупликация кодовой базы и тестовых наборов по Мандатам 8s, 8j, 8l, 8t:
-> 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммит `d755e0b1c`).
+> 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
 > 3. Консолидированы сервисы CDA API в фасады-делегаты над `@dental/shared/cda` (`913aa0d14`).
 > 4. Messaging `templateEngine.ts` сведен к SSOT над `@dental/shared` (`432be3409`, `2b1877d0a`).
 > 5. Консолидированы и ликвидированы тесты-клоны маршрутов API (`d08edf8c3`).
 > 6. Устранены параллельные тесты НДФЛ и фискального реконсилера в `packages/shared` (`af07281bc`), тесты протоколов EMR сведены в колоквированный путь (`9b957acd5`).
 > 7. Консолидированы и удалены 6 пар дубликатов тестов в `apps/api`: `guards.test.ts`, `renderDocument.test.ts`, `loadServerEnv.test.ts`, `deliveryPolicy.test.ts`, `visitFlow.test.ts`, `appointmentReminders.test.ts` (`caf3dd1f9`).
-> 8. Консолидированы и удалены 7 пар дубликатов тестов и мертвые фасады в `apps/web`: `Icd10ClinicalSelector`, `cbctMprWorkspace`, `sickLeaveElnEngine`, `cashShiftAutonomyAndFiscal54Fz`, `patientReliabilityScore`, `scheduleCollisionUtils`, `workspaceUiLabels`, `AdvancedDoctorPayrollModal` (`5f6536b57`, `812f675a3`). Чистая дельта: -2000+ строк паразитного блоата.
+> 8. Консолидированы и удалены 7 пар дубликатов тестов и мертвые фасады в `apps/web`: `Icd10ClinicalSelector`, `cbctMprWorkspace`, `sickLeaveElnEngine`, `cashShiftAutonomyAndFiscal54Fz`, `patientReliabilityScore`, `scheduleCollisionUtils`, `workspaceUiLabels`, `AdvancedDoctorPayrollModal` (`5f6536b57`, `812f675a3`).
+> 9. Ликвидированы заброшенный in-memory мок-сервис `familyDepositService.ts` (-175 строк) и устаревшие стабы ранних прототипов в `apps/web/src/components/radiology/` (`cbctVolumeEngine.ts`, `panoramicArchSpline.ts`, `cbctMprTypes.ts`) и `components/emr/` (`emrProtocolPresets.ts`) (коммиты `ede2cb469`, `19bf195e8`). Чистая дельта: -2500+ строк паразитного блоата.
+> 10. Проведена независимая Red Team инквизиция десктопного фронтенда (`ScheduleView`, `AppointmentCard`, `VisitView`, `CashRegisterModal`, `PatientCardModal`) против StomX и IDENT по чек-листу 7 смертных грехов UI и канонам macOS Studio Clinical HIG: вердикт `[ПРОВЕРЕНО: ЧИСТО]`.
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` проходят Single-Compiler Gate с Exit Code 0. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8s. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
