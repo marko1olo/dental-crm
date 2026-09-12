@@ -3,14 +3,9 @@ import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
 	Barcode,
-	Camera,
-	CameraOff,
 	CheckCircle2,
-	Flashlight,
-	FlashlightOff,
 	PackageCheck,
 	QrCode,
-	RefreshCw,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
@@ -167,12 +162,6 @@ export function SeniorNurseKraftUnsealModal({
 	}, [availablePackages, selectedPackageId]);
 
 	const [barcodeInput, setBarcodeInput] = useState<string>("");
-	const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
-	const [cameraError, setCameraError] = useState<string | null>(null);
-	const [isTorchOn, setIsTorchOn] = useState<boolean>(false);
-	const [torchSupported, setTorchSupported] = useState<boolean>(false);
-
-	const videoRef = useRef<HTMLVideoElement>(null);
 	const barcodeInputRef = useRef<HTMLInputElement>(null);
 
 	const activePackage = useMemo(() => {
@@ -200,34 +189,10 @@ export function SeniorNurseKraftUnsealModal({
 		}
 	};
 
-	const startCamera = () => {
-		setCameraError(null);
-		setIsCameraActive(true);
-	};
-
-	const stopCamera = () => {
-		hardwareScanner.stopCameraStream();
-		setIsCameraActive(false);
-		setIsTorchOn(false);
-		setTorchSupported(false);
-	};
-
-	// Clean up camera on modal close
+	// 1. Subscribe to physical / USB hardware scanner events when modal is open
 	useEffect(() => {
-		if (!isOpen) {
-			stopCamera();
-			setCameraError(null);
-		}
-	}, [isOpen]);
+		if (!isOpen) return;
 
-	// Live WebRTC Camera Detection Lifecycle
-	useEffect(() => {
-		if (!isCameraActive || !videoRef.current) return;
-
-		let isMounted = true;
-		const videoEl = videoRef.current;
-
-		// 1. Subscribe to hardwareScanner detection events
 		const unsubscribe = hardwareScanner.subscribe((scanResult) => {
 			if (!scanResult.success || !scanResult.rawCode) return;
 			const clean = scanResult.rawCode.trim();
@@ -256,53 +221,12 @@ export function SeniorNurseKraftUnsealModal({
 				}
 				setBarcodeInput(clean);
 			}
-
-			// Turn off camera on successful read
-			stopCamera();
 		});
 
-		// 2. Start progressive WebRTC camera stream
-		hardwareScanner
-			.startCameraStream(videoEl, { facingMode: "environment", targetFps: 60 })
-			.then(() => {
-				if (!isMounted) return;
-				setCameraError(null);
-				setTorchSupported(hardwareScanner.isTorchSupported());
-			})
-			.catch((err) => {
-				if (!isMounted) return;
-				const msg = err instanceof Error ? err.message : "Не удалось получить доступ к видеокамере";
-				setCameraError(msg);
-				setIsCameraActive(false);
-				// Automatically focus manual barcode input for effortless fallback
-				setTimeout(() => {
-					barcodeInputRef.current?.focus();
-				}, 100);
-			});
-
 		return () => {
-			isMounted = false;
 			unsubscribe();
-			hardwareScanner.stopCameraStream();
 		};
-	}, [isCameraActive, availablePackages]);
-
-	const handleToggleTorch = async () => {
-		const nextState = !isTorchOn;
-		const ok = await hardwareScanner.setTorch(nextState);
-		if (ok) {
-			setIsTorchOn(nextState);
-		}
-	};
-
-	// Big Scan Button Trigger
-	const handleHeroScanClick = () => {
-		if (isCameraActive) {
-			stopCamera();
-		} else {
-			startCamera();
-		}
-	};
+	}, [isOpen, availablePackages]);
 
 	// Manual barcode or 2-3 digit tray number submission
 	const handleBarcodeSubmit = (e: React.FormEvent) => {

@@ -13,8 +13,6 @@ import {
 	Award,
 	Barcode,
 	Calendar,
-	Camera,
-	CameraOff,
 	Check,
 	CheckCircle2,
 	Clock,
@@ -231,69 +229,6 @@ export function KraftPackageBarcodeModal({
 
 	// Quick Scanner & Camera State
 	const [scannedInput, setScannedInput] = useState<string>(initialBarcode || "");
-	const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
-	const [cameraError, setCameraError] = useState<string | null>(null);
-	const [isTorchOn, setIsTorchOn] = useState<boolean>(false);
-	const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-	const videoRef = useRef<HTMLVideoElement | null>(null);
-
-	// Start Camera Stream
-	const startCamera = async (camMode: "environment" | "user" = facingMode) => {
-		setCameraError(null);
-		if (!videoRef.current) return;
-		try {
-			await hardwareScanner.startCameraStream(videoRef.current, {
-				continuousFocus: true,
-				facingMode: camMode,
-				targetFps: 60,
-			});
-			setIsCameraActive(true);
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Не удалось запустить аппаратную камеру";
-			setCameraError(msg);
-			setIsCameraActive(false);
-		}
-	};
-
-	// Stop Camera Stream
-	const stopCamera = () => {
-		hardwareScanner.stopCameraStream();
-		setIsCameraActive(false);
-		setIsTorchOn(false);
-	};
-
-	// Toggle Torch / Flashlight
-	const handleToggleTorch = async () => {
-		const nextState = !isTorchOn;
-		const ok = await hardwareScanner.setTorch(nextState);
-		if (ok) {
-			setIsTorchOn(nextState);
-		}
-	};
-
-	// Toggle Camera Facing Mode (Back / Front)
-	const handleToggleFacingMode = async () => {
-		const next = facingMode === "environment" ? "user" : "environment";
-		setFacingMode(next);
-		if (isCameraActive) {
-			await startCamera(next);
-		}
-	};
-
-	// Trigger Native Mobile ML Kit Scanner
-	const handleNativeMlKitScan = async () => {
-		try {
-			const res = await hardwareScanner.scanSingleCode();
-			if (res.success && res.rawCode) {
-				setScannedInput(res.rawCode);
-				showToast(`Крафт-пакет распознан: ${res.rawCode}`, "success");
-			} else if (res.error && !res.error.includes("отменено")) {
-				showToast(res.error, "warning");
-			}
-		} catch {
-			showToast("Ошибка нативного сканера ML Kit", "error");
-		}
-	};
 
 	// Subscribe to HardwareScanner global events (physical USB / Bluetooth barcode scanners)
 	useEffect(() => {
@@ -304,25 +239,10 @@ export function KraftPackageBarcodeModal({
 			}
 		});
 
-		const unsubError = hardwareScanner.onError((err) => {
-			setCameraError(err);
-		});
-
 		return () => {
 			unsubscribe();
-			unsubError();
-			hardwareScanner.stopCameraStream();
 		};
 	}, []);
-
-	// Stop camera if leaving scan tab or modal closes
-	useEffect(() => {
-		if (!isOpen || activeTab !== "scan") {
-			hardwareScanner.stopCameraStream();
-			setIsCameraActive(false);
-			setIsTorchOn(false);
-		}
-	}, [isOpen, activeTab]);
 
 	// Scanned Barcode Validation
 	const parsedScanned = useMemo<ParsedKraftBarcode | null>(() => {
