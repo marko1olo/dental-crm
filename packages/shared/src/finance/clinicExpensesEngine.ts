@@ -45,6 +45,9 @@ export const expenseCategorySchema = z.enum([
 ]);
 export type ExpenseCategory = z.infer<typeof expenseCategorySchema>;
 
+/** Non-colliding export alias for package root exports */
+export const clinicOperatingExpenseCategorySchema = expenseCategorySchema;
+export type ClinicOperatingExpenseCategory = ExpenseCategory;
 
 export const EXPENSE_CATEGORY_LABELS_RU: Record<ExpenseCategory, string> = {
 	rent: "Аренда помещений и кресел",
@@ -61,6 +64,7 @@ export const EXPENSE_CATEGORY_LABELS_RU: Record<ExpenseCategory, string> = {
 
 /** Backward compatibility alias */
 export const EXPENSE_CATEGORY_NAMES_RU = EXPENSE_CATEGORY_LABELS_RU;
+export const CLINIC_EXPENSE_CATEGORY_LABELS_RU = EXPENSE_CATEGORY_LABELS_RU;
 
 export const expenseRecurrenceSchema = z.enum([
 	"one_time",
