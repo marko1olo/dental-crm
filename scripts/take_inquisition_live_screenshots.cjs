@@ -140,7 +140,7 @@ async function runInquisitionCapture() {
     fs.mkdirSync(outDir, { recursive: true });
   }
 
-  const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/6d8b32e4-5895-4535-b761-840423744138");
+  const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/0c8a3973-9585-46de-ba1c-e067303c523c");
   if (!fs.existsSync(brainDir)) {
     fs.mkdirSync(brainDir, { recursive: true });
   }
@@ -339,8 +339,9 @@ async function runInquisitionCapture() {
   await dPage.evaluate(() => { window.location.hash = "visit"; });
   await dPage.waitForTimeout(2000);
   await dPage.waitForFunction(() => {
-    return document.querySelector(".visit-monolithic-header, .visit-panel, .visit-sub-nav-tabs");
-  }, { timeout: 10000 }).catch(() => {});
+    return document.querySelector(".visit-monolithic-header");
+  }, { timeout: 20000 });
+  await dPage.waitForTimeout(1000);
   await takeProof(dPage, "05_visit_desktop_light.png", "Visit", "Desktop Light");
 
   await configurePage(dPage, "dark");
