@@ -225,3 +225,82 @@ function assertWholeKopecks(value: Kopecks): void {
 		throw new Error(`Сумма ${value} копеек выходит за пределы точного целого`);
 	}
 }
+
+/**
+ * Распределяет глобальную скидку (в копейках / центах) между позициями счёта
+ * строго пропорционально их стоимости, без потери ни одной копейки.
+ *
+ * Остаток от округления целочисленного деления (remainder) падает на
+ * последнюю позицию с наибольшей суммой, исключая расхождения в 1 копейку (Мандат 8b).
+ *
+ * @param items Массив позиций с id и стоимостью в копейках (bigint)
+ * @param totalDiscountCents Сумма скидки в копейках (bigint)
+ * @returns Map<string, bigint> соответствие id позиции и приходящейся на неё скидки
+ */
+export function allocateGlobalDiscountCents(
+	items: Array<{ id: string; amountCents: bigint }>,
+	totalDiscountCents: bigint,
+): Map<string, bigint> {
+	const result = new Map<string, bigint>();
+	if (items.length === 0) {
+		return result;
+	}
+
+	for (const item of items) {
+		result.set(item.id, 0n);
+	}
+
+	if (totalDiscountCents <= 0n) {
+		return result;
+	}
+
+	let totalAmountCents = 0n;
+	for (const item of items) {
+		if (item.amountCents > 0n) {
+			totalAmountCents += item.amountCents;
+		}
+	}
+
+	if (totalAmountCents <= 0n) {
+		return result;
+	}
+
+	// Скидка не может превышать общую стоимость позиций
+	const effectiveDiscount =
+		totalDiscountCents > totalAmountCents
+			? totalAmountCents
+			: totalDiscountCents;
+
+	let allocatedTotal = 0n;
+	for (const item of items) {
+		if (item.amountCents <= 0n) {
+			result.set(item.id, 0n);
+			continue;
+		}
+		const share = (effectiveDiscount * item.amountCents) / totalAmountCents;
+		result.set(item.id, share);
+		allocatedTotal += share;
+	}
+
+	const remainder = effectiveDiscount - allocatedTotal;
+	if (remainder > 0n) {
+		// Ищем последнюю позицию с максимальной суммой
+		let maxAmount = -1n;
+		let targetItem: { id: string; amountCents: bigint } | null = null;
+
+		for (const item of items) {
+			if (item.amountCents >= maxAmount) {
+				maxAmount = item.amountCents;
+				targetItem = item;
+			}
+		}
+
+		if (targetItem) {
+			const currentShare = result.get(targetItem.id) ?? 0n;
+			result.set(targetItem.id, currentShare + remainder);
+		}
+	}
+
+	return result;
+}
+
