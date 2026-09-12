@@ -15,6 +15,7 @@ import {
 	enrichDiaryFrom804nServices,
 	anestheticDrugLabels,
 	blackCavityClassLabels,
+	formatStatutorySoapSummary,
 } from "../emr/index.js";
 
 describe("Shared EMR Form 043/u Statutory Protocol Engine (Order № 834n)", () => {
@@ -170,5 +171,24 @@ describe("Shared EMR Form 043/u Statutory Protocol Engine (Order № 834n)", () 
 		// Materials should be merged
 		assert.ok(enriched.appliedMaterials);
 		assert.match(enriched.appliedMaterials!, /Garrison/);
+	});
+
+	it("formats statutory SOAP diary into readable preview text (Order № 834n)", () => {
+		const diary = synthesizeClinicalDiary({
+			toothNumber: 21,
+			icd10Code: "K02.1",
+			surfaces: ["vestibular"],
+			doctorFullName: "Петров П.П.",
+			doctorSpecialty: "Врач-стоматолог-терапевт",
+		});
+
+		const formatted = formatStatutorySoapSummary(diary);
+		assert.match(formatted, /ДНЕВНИК ПРИЁМА ФОРМЫ 043\/у/);
+		assert.match(formatted, /\[Зуб 21\]/);
+		assert.match(formatted, /S \(ЖАЛОБЫ\):/);
+		assert.match(formatted, /O \(STATUS LOCALIS\):/);
+		assert.match(formatted, /A \(ДИАГНОЗ МКБ-10\):/);
+		assert.match(formatted, /P \(ПРОТОКОЛ ВМЕШАТЕЛЬСТВА\):/);
+		assert.match(formatted, /Петров П\.П\./);
 	});
 });

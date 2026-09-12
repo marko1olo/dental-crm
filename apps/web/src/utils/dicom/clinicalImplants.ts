@@ -1,4 +1,60 @@
+import {
+	closestPointsSegmentToSegment3D,
+	closestPointOnSegment3D,
+	distSegmentToSegment3,
+	distPointToSegment3,
+	distSegmentToPolyline3,
+	evaluateNerveClearance,
+	evaluateImplantToNerveCanalSafety,
+	checkImplantSafetyDistances,
+	generateImplantMesh,
+	transformImplantMesh,
+	calculateImplantRadius,
+	type Vec3,
+	type ImplantDimensions,
+	type Implant3DPlacement,
+	type SafetyZoneCheckResult,
+	type ImplantSafetyOptions,
+	type SegmentToSegmentDistanceResult,
+	type NerveCanalSafetyReport,
+} from "@dental/shared";
 import type { Point3D } from "./curvedMprMath";
+
+// Re-export canonical shared radiology primitives per Mandate 8s
+export {
+	closestPointsSegmentToSegment3D,
+	closestPointOnSegment3D,
+	distSegmentToSegment3,
+	distPointToSegment3,
+	distSegmentToPolyline3,
+	evaluateNerveClearance,
+	evaluateImplantToNerveCanalSafety,
+	checkImplantSafetyDistances,
+	generateImplantMesh,
+	transformImplantMesh,
+	calculateImplantRadius,
+	type Vec3,
+	type ImplantDimensions,
+	type Implant3DPlacement,
+	type SafetyZoneCheckResult,
+	type ImplantSafetyOptions,
+	type SegmentToSegmentDistanceResult,
+	type NerveCanalSafetyReport,
+};
+
+/**
+ * Coordinate adapter: Point3D to Vec3
+ */
+export function point3DToVec3(p: Point3D): Vec3 {
+	return [p.x, p.y, p.z];
+}
+
+/**
+ * Coordinate adapter: Vec3 to Point3D
+ */
+export function vec3ToPoint3D(v: Vec3): Point3D {
+	return { x: v[0], y: v[1], z: v[2] };
+}
 
 export interface VirtualImplant {
 	id: string;
@@ -104,6 +160,8 @@ export const ClinicalStore = {
  * Calculates the shortest 3D distance between two finite line segments:
  * Segment 1: [p1, p2] (Implant cylinder axis)
  * Segment 2: [q1, q2] (Nerve canal spline segment)
+ *
+ * Delegates to canonical @dental/shared closestPointsSegmentToSegment3D (Mandate 8s).
  */
 export function distanceSegmentToSegment3D(
 	p1: Point3D,
@@ -111,114 +169,17 @@ export function distanceSegmentToSegment3D(
 	q1: Point3D,
 	q2: Point3D,
 ): { distance: number; pointOnS1: Point3D; pointOnS2: Point3D } {
-	const ux = p2.x - p1.x;
-	const uy = p2.y - p1.y;
-	const uz = p2.z - p1.z;
-
-	const vx = q2.x - q1.x;
-	const vy = q2.y - q1.y;
-	const vz = q2.z - q1.z;
-
-	const wx = p1.x - q1.x;
-	const wy = p1.y - q1.y;
-	const wz = p1.z - q1.z;
-
-	const a = ux * ux + uy * uy + uz * uz; // |u|^2
-	const b = ux * vx + uy * vy + uz * vz; // u . v
-	const c = vx * vx + vy * vy + vz * vz; // |v|^2
-	const d = ux * wx + uy * wy + uz * wz; // u . w0
-	const e = vx * wx + vy * wy + vz * wz; // v . w0
-
-	const EPSILON = 1e-7;
-
-	let sc = 0.0;
-	let tc = 0.0;
-
-	if (a < EPSILON && c < EPSILON) {
-		// Both are single points
-		sc = 0.0;
-		tc = 0.0;
-	} else if (a < EPSILON) {
-		// First segment is a point
-		sc = 0.0;
-		tc = Math.max(0.0, Math.min(1.0, e / c));
-	} else if (c < EPSILON) {
-		// Second segment is a point
-		tc = 0.0;
-		sc = Math.max(0.0, Math.min(1.0, -d / a));
-	} else {
-		const det = a * c - b * b;
-		let sN: number;
-		let sD = det;
-		let tN: number;
-		let tD = det;
-
-		if (det < EPSILON) {
-			// Parallel segments
-			sN = 0.0;
-			sD = 1.0;
-			tN = e;
-			tD = c;
-		} else {
-			// Skew segments
-			sN = b * e - c * d;
-			tN = a * e - b * d;
-
-			if (sN < 0.0) {
-				sN = 0.0;
-				tN = e;
-				tD = c;
-			} else if (sN > sD) {
-				sN = sD;
-				tN = e + b;
-				tD = c;
-			}
-		}
-
-		if (tN < 0.0) {
-			tN = 0.0;
-			if (-d < 0.0) {
-				sN = 0.0;
-			} else if (-d > a) {
-				sN = sD;
-			} else {
-				sN = -d;
-				sD = a;
-			}
-		} else if (tN > tD) {
-			tN = tD;
-			if (-d + b < 0.0) {
-				sN = 0.0;
-			} else if (-d + b > a) {
-				sN = sD;
-			} else {
-				sN = -d + b;
-				sD = a;
-			}
-		}
-
-		sc = Math.abs(sN) < EPSILON ? 0.0 : sN / (sD || 1.0);
-		tc = Math.abs(tN) < EPSILON ? 0.0 : tN / (tD || 1.0);
-	}
-
-	const pointOnS1: Point3D = {
-		x: p1.x + sc * ux,
-		y: p1.y + sc * uy,
-		z: p1.z + sc * uz,
+	const res = closestPointsSegmentToSegment3D(
+		[p1.x, p1.y, p1.z],
+		[p2.x, p2.y, p2.z],
+		[q1.x, q1.y, q1.z],
+		[q2.x, q2.y, q2.z],
+	);
+	return {
+		distance: res.distance,
+		pointOnS1: { x: res.closestPoint1[0], y: res.closestPoint1[1], z: res.closestPoint1[2] },
+		pointOnS2: { x: res.closestPoint2[0], y: res.closestPoint2[1], z: res.closestPoint2[2] },
 	};
-
-	const pointOnS2: Point3D = {
-		x: q1.x + tc * vx,
-		y: q1.y + tc * vy,
-		z: q1.z + tc * vz,
-	};
-
-	const dx = pointOnS1.x - pointOnS2.x;
-	const dy = pointOnS1.y - pointOnS2.y;
-	const dz = pointOnS1.z - pointOnS2.z;
-	const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-	return { distance, pointOnS1, pointOnS2 };
 }
 
 export interface ImplantNerveClearanceResult {
