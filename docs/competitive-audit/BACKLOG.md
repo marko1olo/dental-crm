@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-12 / WAVES 167–169 / SSOT TEMPLATE CONSOLIDATION, MANDATE 8t COMPILER PROTECTION, ERADICATION OF REDUNDANT SHIMS & ANTI-MATRYOSHKA UI OVERHAUL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–170 / SSOT TEMPLATE CONSOLIDATION, MANDATE 8t COMPILER PROTECTION, COMPONENT FACADES PURGE, MODAL ANTI-MATRYOSHKA & DESIGN TOKEN HARMONIZATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 258 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 321 ФИЧА: 63 КАНОНИЧЕСКИЕ + 258 АДДЕНДУМ, 321/321 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -17,7 +17,8 @@
 > 11. Ликвидирован дублирующий файл `messageTemplateCatalogsQuery.ts` (Wave 167, коммит `ea5c3f1fe`), маршруты и сервисы шаблонов сведены к SSOT `messageTemplateService.ts`.
 > 12. Формализован Мандат 8t о защите хост-машины и Single-Compiler Gate (Wave 168, коммиты `ca181c35e`, `a389bfa78`), синхронизированы финансовые схемы и тестовые пути в карте CRM.
 > 13. Проведена тотальная инструментальная сверка всех 321 фич в `FEATURES_REGISTRY.md`: все 129 устаревших путей переведены на активные файлы кодовой базы, 0 битых ссылок (инструментально подтверждено по всем 27 446 файлам репозитория, коммит `ae70f04f2`).
-> 14. Снесены устаревшие реэкспорт-шимы и дубликаты компонентов (`MessageTemplatesPanel.tsx`, `FiscalReceiptModal.tsx`, `checkAppointmentResourceCollision.ts`, `visit/surgery/SurgeryVisitCockpit.tsx`, реэкспорт-папки `components/patient`, `components/prosthetics`, `components/treatment`, стабы `sanpin.ts`, `timesheetT13.ts`, `stomxDefectsCatalog.ts`, `mdlpDataMatrix.ts`, коммит `4c94374cc`); ликвидированы 3 матрешки модалок в `DoctorShiftCockpitModal`, `PatientBillingModal`, `VisitSummaryModal` с конвертацией в region-оверлеи (Мандат 8d п. 6); вычищены дублирующие кнопки анамнеза в `VisitView.tsx` (Wave 169).
+> 14. Снесены устаревшие реэкспорт-шимы и дубликаты компонентов (`MessageTemplatesPanel.tsx`, `FiscalReceiptModal.tsx`, `checkAppointmentResourceCollision.ts`, `visit/surgery/SurgeryVisitCockpit.tsx`, реэкспорт-папки `components/patient`, `components/prosthetics`, `components/treatment`, стабы `sanpin.ts`, `timesheetT13.ts`, `stomxDefectsCatalog.ts`, `mdlpDataMatrix.ts`, коммит `4c94374cc`); ликвидированы 3 матрешки модалок в `DoctorShiftCockpitModal`, `PatientBillingModal`, `VisitSummaryModal` с конвертацией в region-оверлеи (Мандат 8d п. 6); вычищены дублирующие кнопки анамнеза в `VisitView.tsx` (Wave 169, коммит `168659f22`).
+> 15. Ликвидированы 8 устаревших фасадов компонентов (`CopilotActionConfirmation.tsx`, `CopilotConfirmCard.tsx`, `GuestLabPortalView.tsx`, `RetentionAnalyticsView.tsx`, `KraftPackageModal.tsx`, `ScheduleFilterToolbar.tsx`, `ScheduleToolbar.tsx`, `ProcedureBomsTab.tsx`, коммит `4cd667818`), внедрены дизайн-токены темы и эргономическая полировка UI в `VisitSoapEditor.tsx`, `ImagingView.tsx`, `DocumentsView.tsx`, `LabWorkOrderConstructorModal.tsx`, `TreatmentPlanPhased4StageView.tsx` (Wave 170, коммит `c69f8e6f3`).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -2265,10 +2266,10 @@
 - **Объем реализации**:
   1. *1-клик клинические пресеты зубной формулы у кресла (Мандат 8k)*: в `ToothStatusPalette.tsx`, `ToothChart.tsx`, `OdontogramToolbar.tsx` и `OdontogramViewContainer.tsx` реализованы 1-клик пресеты моментального заполнения: «⚡ Санирован / Интактный зубной ряд» (все 32 зуба здоровы Z01.2), «⚡ Без 8-ок» (адентия 18, 28, 38, 48 K08.1), «⚡ Вторичная адентия» (частичная вторичная адентия K08.1 под протезирование), «⚡ Интактный фронт» (13–23, 33–43 норма);
   2. *1-клик пакеты процедур и быстрые штампы*: 1-клик «Профгигиена выполнена» (УЗ-скейлинг + Air-Flow + Bifluorid A16.07.051) и «Быстрая пломба K02.1» с автопереносом в Карту 043/у и смету; быстрый штамп патологий (Кариес К, Пульпит П, Периодонтит Пт, Пломба П, Коронка Кр, Имплант И, Здоров З, Удален Х) с тач-таргетами $\ge 44\text{px}$ для работы в медицинских перчатках;
-  3. *Бесшовный гостевой портал зуботехнической лаборатории (ЗТЛ)*: в `GuestLabPortal.tsx`, `GuestLabPortalView.tsx` и `dentalLabWorkflowEngine.ts` защищенный просмотр и управление нарядом по публичному токену заказа без авторизации в CRM; печатная накладная курьера А4 (`generateDentalLabOrderA4PrintBlank`) со штрихкодом Code128, QR-кодом и блоком подписи передачи курьеру;
+  3. *Бесшовный гостевой портал зуботехнической лаборатории (ЗТЛ)*: в `GuestLabPortal.tsx` и `dentalLabWorkflowEngine.ts` защищенный просмотр и управление нарядом по публичному токену заказа без авторизации в CRM; печатная накладная курьера А4 (`generateDentalLabOrderA4PrintBlank`) со штрихкодом Code128, QR-кодом и блоком подписи передачи курьеру;
   4. *Свободная печать бланков договоров со строками «_______» без 403 Forbidden (Мандат 8e п. 8)*: в `PaidMedicalContractModal.tsx`, `Form043PrintModal.tsx` и `InformedConsentModal.tsx` разрешена печать договора при нулевой сумме (0 ₽) со строками «_______» для ручного заполнения регистратором со штампом «ЧЕРНОВИК (БЛАНК)», а после закрытия визита — «ПОДПИСАНО ВРАЧОМ»;
   5. *Эргономика и гигиена UI (Мандат 8d)*: глубина модальных окон строго 1 (Анти-Матрёшка), ноль мультяшных эмодзи в документах и на бланках (строго векторные Lucide-иконки).
-- **Файлы**: `apps/web/src/components/odontogram/ToothStatusPalette.tsx`, `apps/web/src/components/odontogram/ToothChart.tsx`, `apps/web/src/components/odontogram/OdontogramToolbar.tsx`, `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`, `apps/web/src/components/lab/GuestLabPortalView.tsx`, `apps/web/src/GuestLabPortal.tsx`, `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`, `apps/web/src/components/lab/orders/LabWorkOrderModal.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/patient/InformedConsentModal.tsx`.
+- **Файлы**: `apps/web/src/components/odontogram/ToothStatusPalette.tsx`, `apps/web/src/components/odontogram/ToothChart.tsx`, `apps/web/src/components/odontogram/OdontogramToolbar.tsx`, `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`, `apps/web/src/GuestLabPortal.tsx`, `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`, `apps/web/src/components/lab/orders/LabWorkOrderModal.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/patient/InformedConsentModal.tsx`.
 - **Тесты**: `apps/web/src/components/odontogram/__tests__/odontogramViewContainer.test.ts` (11/11 pass), `apps/web/src/components/lab/__tests__/dentalLabWorkflowEngine.test.ts` (24/24 pass), `apps/web/src/components/patient/__tests__/outpatientAutonomyWave42.test.tsx` (29/29 pass) — коммиты `84fbfa98c`, `1e39b9f04`, `5033e94e3`, `384b64618`, `e990812b8`, `936af047c`.
 
 ### 4.90. Быстрое пакетное закрепление кресел за врачами по графику (2/2, 5/2, чередование смен утро/вечер, StomX/DentalPRO parity) и ликвидация модального оверлея-матрешки в графике сменности (Фича 219)
@@ -4630,6 +4631,55 @@
   * Главный реестр фич: 321/321 в статусе `[ДА]`, строка 192 проверена на актуальный путь `scheduleCollisionUtils.ts`, 0 битых путей.
   * Гейт компилятора: защищен Мандатом 8t (Single-Compiler Gate выполняется централизованно L1 Оркестратором).
   * Кодировка: UTF-8 без BOM, `npm run check:encoding` 0 ошибок.
+
+### Wave 170: Ликвидация фасадов компонентов, устранение матрешек модалок и адаптация UI к дизайн-токенам (Мандаты 8s, 8d, 8e, 8p, 8h)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/copilot/CopilotActionConfirmation.tsx` (удален фасад, консолидирован с `CopilotActionConfirm.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/copilot/CopilotConfirmCard.tsx` (удален фасад, консолидирован с `CopilotActionConfirm.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/lab/GuestLabPortalView.tsx` (удален промежуточный фасад над `GuestLabPortal.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/retention/RetentionAnalyticsView.tsx` (удален фасад, консолидирован с `LostPatientsPanel.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/sanpin/KraftPackageModal.tsx` (удален фасад, консолидирован с `kraft/KraftPackageBarcodeModal.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/schedule/ScheduleFilterToolbar.tsx` (удален фасад над `ScheduleFilterStrip.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/schedule/ScheduleToolbar.tsx` (удален фасад над `ScheduleFilterStrip.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/settings/ProcedureBomsTab.tsx` (удален фасад над `MaterialBomsSettingsPanel.tsx`, коммит `4cd667818`)
+  - `apps/web/src/components/copilot/index.ts` (прямой алиас `CopilotActionConfirm` без промежуточных файлов)
+  - `apps/web/src/components/sanpin/SanpinRegisters.tsx` (прямое использование `KraftPackageBarcodeModal`)
+  - `apps/web/src/SettingsView.tsx` (прямой импорт канонического `MaterialBomsSettingsPanel`)
+  - `apps/web/src/components/schedule/__tests__/scheduleChairsAndShiftsParity.test.tsx` (актуализирован тест на прямое использование `ScheduleFilterStrip`)
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (удалены проверки снесенных фасадов-оберток)
+  - `apps/web/src/components/doctor/DoctorShiftCockpitModal.tsx` (коммит `c69f8e6f3`: развязана вложенная модалка СМС ПЭП 63-ФЗ в region-оверлей)
+  - `apps/web/src/components/finance/PatientBillingModal.tsx` (коммит `c69f8e6f3`: развязана вложенная модалка QR-счета в popover-оверлей)
+  - `apps/web/src/components/visit/VisitSummaryModal.tsx` (коммит `c69f8e6f3`: полноэкранный Lightbox просмотр снимков переведен в чистый region-оверлей)
+  - `apps/web/src/components/visit/VisitSoapEditor.tsx` (коммит `c69f8e6f3`: внедрены дизайн-токены темы `var(--paper)` и `var(--ink)`, исключен хардкод цветов)
+  - `apps/web/src/ImagingView.tsx` (коммит `c69f8e6f3`: очистка и эргономическая полировка панели инструментов)
+  - `apps/web/src/DocumentsView.tsx` (коммит `c69f8e6f3`: компактная 2-колоночная сетка быстрой печати)
+  - `apps/web/src/VisitView.tsx` (коммит `c69f8e6f3`: соматический статус приведен к компактному чипу `Аудит соматики ОК`)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (строка 218 актуализирована на канонический `GuestLabPortal.tsx`, заголовок обновлен до Wave 170)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (удалены упоминания удаленных фасадов `GuestLabPortalView.tsx` и `ScheduleToolbar.tsx`)
+* **Архитектурное решение**:
+  - **Ликвидация 8 устаревших фасадов компонентов (Мандат 8s, Закон Единого Неделимого Авторитета)**:
+    * В соответствии с анти-блоат догматом снесены 8 избыточных файлов-оберток, маскировавших канонические компоненты:
+      - `CopilotActionConfirmation.tsx` и `CopilotConfirmCard.tsx` схлопнуты в единый канонический модуль `CopilotActionConfirm.tsx`.
+      - `GuestLabPortalView.tsx` удален в пользу полнофункционального автономного портала `GuestLabPortal.tsx`.
+      - `RetentionAnalyticsView.tsx` удален в пользу `LostPatientsPanel.tsx`.
+      - `KraftPackageModal.tsx` удален в пользу канонического `KraftPackageBarcodeModal.tsx`.
+      - `ScheduleFilterToolbar.tsx` и `ScheduleToolbar.tsx` удалены в пользу канонического 1-строчного тулбара `ScheduleFilterStrip.tsx`.
+      - `ProcedureBomsTab.tsx` удален в пользу прямого монтирования `MaterialBomsSettingsPanel.tsx`.
+    * Синхронно очищен синтетический тест `panelsAreMounted.test.ts` от проверок искусственных оберток.
+  - **Устранение 3 матрешек модальных окон (Мандат 8d п. 6, глубина строго 1)**:
+    * В `DoctorShiftCockpitModal.tsx` окно СМС ПЭП подтверждения смены по 63-ФЗ переведено в `role="region" aria-label="Подтверждение ПЭП через СМС (63-ФЗ)"`.
+    * В `PatientBillingModal.tsx` окно отправки счета по QR-коду переведено в popover-оверлей без вложенного dialog.
+    * В `VisitSummaryModal.tsx` полноэкранный просмотр снимка (Lightbox Zoom) переведен в fullscreen region-оверлей.
+  - **Дизайн-токены и эргономика рабочего места врача (Мандаты 8c, 8d, 8e, 8p)**:
+    * В `VisitSoapEditor.tsx` удален хардкод цветов оформления, редактор дневника переведен на CSS-переменные дизайн-системы (`var(--paper)`, `var(--ink)`, `var(--muted)`), обеспечена безупречная контрастность WCAG в темной и светлой темах.
+    * В `ImagingView.tsx` тулбар ужат до стандартной компактной высоты 32–36px.
+    * В `DocumentsView.tsx` компактная сетка экспресс-печати исключает появление горизонтального скролла.
+* **Верификация**:
+  * Главный реестр фич: 321/321 в статусе `[ДА]`, строка 218 проверена на канонический `GuestLabPortal.tsx`, 0 битых путей.
+  * Гейт компилятора: защищен Мандатом 8t (Single-Compiler Gate выполняется централизованно L1 Оркестратором).
+  * Кодировка: UTF-8 без BOM, `npm run check:encoding` 0 ошибок.
+
 
 
 
