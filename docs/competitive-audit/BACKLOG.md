@@ -4408,3 +4408,39 @@
     * 4 тира аккредитации (preferred, standard, probation, disqualified) без бюрократических барьеров (Мандаты 8e п. 10, 8n);
     * Оценка рисков снабжения и протокол аудита надежности поставщика А4 строго без эмодзи (`formatSupplierQualityAuditA4Report`).
 * **Верификация**: 45 тестов (24 volume + 21 supplier, 100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
+
+### Wave 148: Тотальная ликвидация дубликатов монорепозитория, академического блоата и Red Team инквизиция эргономики (Мандаты 8s, 8p, 8i, 8k, 8d, 8e)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `72b4b0181`, `e40ce73c2`, `b10587927`, `b5c1227be`, `d8b766c52`, `8baac920b`, `2597d6652`, `201f94ff1`)
+* **Файлы**:
+  - `apps/api/src/services/hardware/localPacsStorageService.ts` (ликвидирован дубликат)
+  - `packages/shared/src/pediatricDentition.ts` (ликвидирован дубликат)
+  - `packages/shared/src/clinical/treatmentConsumablesEngine.ts` (ликвидирован клинический клон, сведен в `warehouse/`)
+  - `packages/shared/src/fiscal/taxDeduction.ts` (ликвидирован дубликат, канонический источник в `finance/`)
+  - `packages/shared/src/radiology/guideAssemblyEngine.ts`, `guideExportEngine.ts`, `guideValidationEngine.ts`, `guideValidate.ts`, `surgicalGuideExport.ts`, `surgicalGuideGeom.ts`, `surgicalGuideValidate.ts` (ликвидирован академический блоат 3D CAM шаблонов за пределами CRM)
+  - `apps/web/src/components/payments/FastCheckoutModal.tsx`, `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx` (ликвидированы клоны, канон в `components/finance/FastCheckoutModal.tsx`)
+  - `apps/web/src/components/documents/FnsTaxDeductionModal.tsx` (ликвидирован клон, канон в `components/billing/tax/`)
+  - `apps/web/src/components/documents/DocumentsView.tsx` (ликвидирован клон, канон в `apps/web/src/DocumentsView.tsx`)
+  - `apps/web/src/components/payroll/DoctorPayrollModal.tsx` (ликвидирован клон, канон в `components/finance/payroll/`)
+  - `apps/web/src/components/patient/PatientCardModal.tsx` (ликвидирован клон, канон в `components/patients/`)
+  - `apps/web/src/components/odontogram/EndoCanalLogModal.tsx` (ликвидирован клон, канон в `components/endo/`)
+  - `apps/web/src/components/egisz/remdXml/egiszRemdEngine.ts` (ликвидирован 1057-строчный клон)
+  - `apps/web/src/mprWorker.ts` (ликвидирован клон, канон в `workers/mprWorker.ts`)
+  - `apps/web/src/utils/toothGeometry.ts` (ликвидирован клон, канон в `utils/math/toothGeometry.ts`)
+  - `apps/web/src/components/visit/VisitEmkTab.tsx` (сокращение каскада шапки с $Y = 470\text{px}$ до $Y \le 220\text{px}$, 1 строка SOAP 36px)
+  - `apps/web/src/components/visit/EmkVoicePilot.tsx` (компактный статус-тулбар 36px)
+  - `apps/web/src/components/finance/CashShiftWidget.tsx` (сокращение частокола из 6 кнопок смены до 3 ключевых + меню `... Отчёты`)
+* **Архитектурное решение**:
+  - **Закон Единого Неделимого Авторитета (Мандат 8s)**:
+    * Ликвидированы все параллельные клоны модальных окон, дублирующие сервисы API и разрозненные движки в `packages/shared`.
+    * Копеечная арифметика и Zod-схемы рублей централизованы в `packages/shared/src/money.ts` с созданием корневого барреля утилит `packages/shared/src/utils/index.ts`.
+  - **Искоренение академического блоата за пределами CRM (Мандаты 8i, 8k)**:
+    * Удалены модули 3D STL слайсинга и CAM-печати хирургических шаблонов; функционал КТ в CRM зафиксирован на канонических задачах врача: срезы MPR/CPR, разметка нижнечелюстного канала и позиционирование имплантата в альвеолярном гребне.
+    * Вырезаны стационарные рудименты Формы 025/у Минздрава (трансфузиология, группы крови, паллиатив).
+  - **Эргономика интерфейса и Закон Слона в комнате (Мандаты 8p, 8e, 8d)**:
+    * Экран Приёма: ликвидирован 8-уровневый каскад шапок, поля «Жалобы» и «Анамнез» подняты в первый экран ($Y \le 220\text{px}$), выигрыш полезной высоты > 120px.
+    * Экран Финансов: устранен частокол из 6 кнопок смены; оставлены 3 прямые кнопки (`+ Внесение`, `- Изъятие`, `Открыть смену`), вторичные отчёты (`Х-отчет`, `Ведомость А4`, `1С`) сгруппированы в выпадающее меню `... Отчёты` с сохранением всех `data-testid`.
+* **Верификация**:
+  - Машинная: `check:encoding` 6702 файлов 0 ошибок, `npm run typecheck -w @dental/shared` Exit 0, `npm run typecheck -w @dental/api` Exit 0, `npm run typecheck -w @dental/web` Exit 0.
+  - Тесты: `npm test -w @dental/shared` (2466 pass, 0 fail), `panelsAreMounted.test.ts` (11 pass, 0 fail), `cashShiftAutonomyAndFiscal54Fz.test.tsx` (12 pass, 0 fail).
+  - Визуальная (Red Team Screenshot Proof): 12 скриншотов PC/Mobile Light/Dark в `docs/screenshots/inquisition_live/` (все $\ge 57.3$ КБ, MD5 уникальны, проверены через `view_file`).
+
