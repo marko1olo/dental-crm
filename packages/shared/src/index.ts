@@ -386,6 +386,33 @@ export {
 	formatSupplierRatingAuditA4Report,
 	supplierRatingsEngine,
 } from "./inventory/index.js";
+export {
+	// Wave 139: Dental Lab Orders & Prosthetic Stages Workflow Engine
+	labWorkTypeSchema,
+	type LabWorkType,
+	LAB_WORK_TYPE_LABELS_RU,
+	prostheticMaterialSchema,
+	type ProstheticMaterial,
+	PROSTHETIC_MATERIAL_LABELS_RU,
+	type VitaShade,
+	type LabOrderStatus,
+	LAB_ORDER_STATUS_LABELS_RU,
+	impressionTypeSchema,
+	type ImpressionType,
+	IMPRESSION_TYPE_LABELS_RU,
+	labOrderStageStatusSchema,
+	type LabOrderStageStatus,
+	labOrderStageSchema,
+	type LabOrderStage,
+	labOrderSchema,
+	type LabOrder,
+	generateDefaultStages,
+	createLabOrder,
+	advanceLabOrderStatus,
+	calculateLabSlaCompliance,
+	formatLabOrderFormZtl1A4Protocol,
+	labOrdersEngine,
+} from "./clinical/index.js";
 export * from "./lab/index.js";
 export type { RecallPriority } from "./communications/index.js";
 export * from "./communications/index.js";
