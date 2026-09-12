@@ -268,3 +268,39 @@ export {
 } from "./cprPanoramicEngine.js";
 export * as cprPanoramicEngine from "./cprPanoramicEngine.js";
 
+// Wave 135: CBCT 2D/3D Annotation Layer & 3D Volume Preset Engine
+export {
+	annotationToolTypeSchema,
+	type AnnotationToolType,
+	volume3DQualitySchema,
+	type Volume3DQuality,
+	volume3DColormapSchema,
+	type Volume3DColormap,
+	sliceViewTypeSchema,
+	type SliceViewType,
+	annotationStatsSchema,
+	type AnnotationStats,
+	annotationMeasureSchema,
+	type AnnotationMeasure,
+	volumeTransferFunctionPresetSchema,
+	type VolumeTransferFunctionPreset,
+	CS_TOOL_KEYS,
+	ANNOTATION_TOOL_NAMES_RU,
+	VOLUME_3D_QUALITY_PRESETS,
+	VOLUME_3D_COLORMAPS,
+	VOLUME_3D_COLORMAP_DEFINITIONS,
+	CLINICAL_3D_VOLUME_PRESETS,
+	type ColorMapStop,
+	getPresetColorMapStops,
+	type CalculateAnnotationStatsParams,
+	calculateAnnotationStats,
+	type FilterAnnotationOptions,
+	filterVisibleAnnotations,
+	type CreateAnnotationParams,
+	createAnnotationMeasure,
+	type AnnotationReportInput,
+	formatAnnotationReportForm043A4,
+} from "./cbctAnnotationEngine.js";
+export * as cbctAnnotationEngine from "./cbctAnnotationEngine.js";
+
+
