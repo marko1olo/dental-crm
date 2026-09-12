@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, Sparkles, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronUp, XCircle, Brain } from 'lucide-react';
 import type { CopilotUiMessage, SlotResult, SelectIdHandler, BookSlotHandler, ConfirmHandler } from './copilotTypes';
 import { CopilotMarkdown } from './CopilotMarkdown';
-import { CopilotConfirmCard } from './CopilotConfirmCard';
+import { CopilotActionConfirm } from './CopilotActionConfirm';
 import { CopilotResultCard } from './CopilotResultCard';
 import { CopilotReactTracker } from './CopilotGenerativeCards';
 import { parseCopilotUiContextHeader } from './CopilotContextSync';
@@ -217,7 +217,7 @@ export const CopilotMessage: React.FC<CopilotMessageProps> = ({
   if (message.kind === 'confirmation') {
     return (
       <div style={{ margin: '8px 0' }}>
-        <CopilotConfirmCard
+        <CopilotActionConfirm
           callId={message.callId}
           name={message.name}
           args={message.args}

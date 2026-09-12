@@ -14,7 +14,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CopilotComposer } from "./CopilotComposer";
-import { CopilotConfirmCard } from "./CopilotConfirmCard";
+import { CopilotActionConfirm } from "./CopilotActionConfirm";
 import { useCopilotContextSync } from "./CopilotContextSync";
 import {
 	ProactiveAlertCardView,
@@ -427,7 +427,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 					>
 						{/* Tool Confirmation Card */}
 						{pending && (
-							<CopilotConfirmCard
+							<CopilotActionConfirm
 								callId={pending.callId}
 								name={pending.name}
 								args={pending.args}

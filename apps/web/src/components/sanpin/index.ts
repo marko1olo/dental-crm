@@ -23,7 +23,7 @@ export { validateSterilizationCycle } from "./sterilizationSanpinEngine";
 export * from "./AutoclaveEquipmentModal";
 export * from "./SterilizerEquipmentModal";
 export * from "./SterilizerFleetManager";
-export * from "./KraftPackageModal";
+export { KraftPackageBarcodeModal as KraftPackageModal } from "./kraft/KraftPackageBarcodeModal";
 export * from "./kraft/kraftPackagePresets";
 export * from "./kraft/kraftPackageEngine";
 export * from "./kraft/chemicalIntegratorsCatalog";

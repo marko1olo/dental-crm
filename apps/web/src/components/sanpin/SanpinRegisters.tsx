@@ -52,7 +52,7 @@ import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab
 import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { SanpinCycleModal } from "./SanpinCycleModal";
-import { KraftPackageModal } from "./KraftPackageModal";
+import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { SterilizerFleetManager } from "./SterilizerFleetManager";
@@ -1815,7 +1815,7 @@ export function SanpinRegisters() {
 			)}
 
 			{/* Kraft Package Barcode Studio Modal (Azov / DGM 1-Click) */}
-			<KraftPackageModal
+			<KraftPackageBarcodeModal
 				isOpen={isKraftModalOpen}
 				onClose={() => setIsKraftModalOpen(false)}
 			/>

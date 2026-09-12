@@ -3,8 +3,12 @@ export * from './useCopilotFormat';
 export * from './useCopilot';
 export * from './CopilotMarkdown';
 export * from './CopilotActionConfirm';
-export * from './CopilotActionConfirmation';
-export * from './CopilotConfirmCard';
+export {
+  CopilotActionConfirm as CopilotActionConfirmation,
+  CopilotActionConfirm as CopilotConfirmCard,
+  type CopilotActionConfirmProps as CopilotActionConfirmationProps,
+  type CopilotActionConfirmProps as CopilotConfirmCardProps,
+} from './CopilotActionConfirm';
 export * from './CopilotPatientCard';
 export * from './CopilotAppointmentCard';
 export * from './CopilotSlotCard';

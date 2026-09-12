@@ -181,18 +181,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Модальное окно ротации врачей по стоматологическим креслам; заменено на прямой выбор кресла и врача в ScheduleFilterStrip и инлайн-расписание ChairScheduleView с бейджами занятости кресел.",
 	},
 	{
-		file: "components/schedule/ScheduleFilterToolbar.tsx",
-		name: "ScheduleFilterToolbar",
-		reason:
-			"Панель фильтров расписания предыдущей ревизии; заменена на компактную полосу ScheduleFilterStrip с чипами врачей, статусов и кресел, укладывающуюся в бюджет высоты экрана до 135px по Мандату 8p.",
-	},
-	{
-		file: "components/schedule/ScheduleToolbar.tsx",
-		name: "ScheduleToolbar",
-		reason:
-			"Верхний тулбар управления сеткой расписания; объединён с унифицированной панелью управления расписанием в ScheduleView во избежание дублирования кнопок и переполнения экрана согласно Мандату 8p.",
-	},
-	{
 		file: "components/schedule/ScheduleSubNavTabs.tsx",
 		name: "ScheduleSubNavTabs",
 		reason:
@@ -337,22 +325,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Публичный портал согласования сметы и финансового плана лечения пациентом по защищенной одноразовой ссылке с подтверждением согласия.",
 	},
 	{
-		file: "components/lab/GuestLabPortalView.tsx",
-		name: "GuestLabPortalView",
-		reason:
-			"Автономная интерфейсная обертка внешнего гостевого портала зуботехнической лаборатории для взаимодействия с техниками по временным токенам заказов.",
-	},
-	{
 		file: "components/odontogram/OdontogramView.tsx",
 		name: "OdontogramView",
 		reason:
 			"Канонический фасадный контейнер мультирежимной интерактивной одонтограммы (3D анатомическая, 6-поверхностная и ГОСТ 043/у) для изолированного тестирования и встраивания.",
-	},
-	{
-		file: "components/retention/RetentionAnalyticsView.tsx",
-		name: "RetentionAnalyticsView",
-		reason:
-			"Изолированное представление аналитики удержания пациентов и когорт диспансерного учета с соблюдением Закона Хика (не более 2 кнопок прямого действия в строке).",
 	},
 	{
 		file: "components/visit/VisitTreatmentPlanTab.tsx",
