@@ -959,7 +959,7 @@
 - **Фронтенд / Движки**:
   - `apps/web/src/components/schedule/patientReliabilityScore.ts`, `apps/web/src/components/schedule/tomorrowRemindersEngine.ts`, `apps/web/src/components/schedule/generateAppointmentWhatsAppMessage.ts`, `apps/web/src/components/schedule/TomorrowRemindersModal.tsx`.
 - **Тесты**:
-  - `apps/web/src/tests/patientReliabilityScore.test.ts`, `apps/web/src/components/schedule/__tests__/tomorrowRemindersEngine.test.ts` (100% passing).
+  - `apps/web/src/components/schedule/__tests__/patientReliabilityScore.test.ts`, `apps/web/src/components/schedule/__tests__/tomorrowRemindersEngine.test.ts` (100% passing).
 
 #### 2.10.98. Ред-Тим: независимый аудит 22-й волны по 7 смертным грехам интерфейса, автономии врача (Мандат 8e) и машинным гейтам (Мандаты 8d, 8e, 8m, 8o / Ред-Тим & Инварианты, Фича #137)
 - **Суть и домен**: Независимый инквизиционный аудит компонентов 22-й волны по 7 смертным грехам интерфейса (Мандат 8d) и суверенитету соло-врача (Мандаты 8e, 8n) (Фича #137):
@@ -1372,7 +1372,7 @@
   2. *1-клик 3-way сплит кассы 54-ФЗ*: в `CashRegisterModal.tsx` добавлен пресет `⚡ Депозит + Карта + Нал` (`preset-three-way`), списывающий личный аванс и семейный счет с распределением остатка поровну на Карту и Наличные с копеечной точностью; в `FastCheckoutModal.tsx` сложение депозита и семейного баланса выполнено аддитивно без затирания.
   3. *1-клик норма пародонтограммы по Закону Хика*: в `PeriodontogramChart.tsx` кнопка экспресс-нормы оформлена как «1-клик: Здоровый пародонт (Норма)» (PSR 0 во всех 6 секстантах, глубина $\le 2\text{ мм}$, BOP 0, протокол в Карту 043/у) с иконкой `ShieldCheck`, тулбар приведен к высоте 36px в 1 строку, все тач-таргеты приведены к $\ge 44\text{px}$.
 - **Фронтенд**: `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/perio/PeriodontogramChart.tsx`.
-- **Тесты**: `apps/web/src/tests/cashShiftAutonomyAndFiscal54Fz.test.tsx`, `emrPerioAutonomyInquisition.test.ts`, `fastCheckoutInvariants.test.ts`, `documentsViewAutonomy.test.tsx` (45 тестов, 100% pass, коммит `db824fb3c`).
+- **Тесты**: `apps/web/src/components/finance/__tests__/cashShiftAutonomyAndFiscal54Fz.test.tsx`, `emrPerioAutonomyInquisition.test.ts`, `fastCheckoutInvariants.test.ts`, `documentsViewAutonomy.test.tsx` (45 тестов, 100% pass, коммит `db824fb3c`).
 
 #### 2.10.143. Сетка расписания и привязка врачей к креслам: двухсменная шапка, автоподстановка дежурного врача в шторку записи и StomX-паритет (Мандаты 8e, 8k, 8n / Расписание, Сетка кресел & Бронирование, Фича #182)
 - **Суть и домен**: Полный паритет со StomX и DentalPRO по управлению креслами и дежурными врачами:

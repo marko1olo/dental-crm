@@ -61,7 +61,7 @@
 
 ---
 
-### 2. РЕЛЬСЫ ВНЕДРЕНИЯ: СХЕМА БД (`apps/api/src/db/schema/finance_v2.ts`)
+### 2. РЕЛЬСЫ ВНЕДРЕНИЯ: СХЕМА БД (`apps/api/src/db/schema/finance.ts`)
 
 - Таблицы: `cash_boxes`, `cash_box_shifts`, `cash_expense_reasons`, `cash_operations`, `installment_contracts`, `installment_tranches`, `doctor_payment_rewards`, `doctor_payroll_statements`.
 - Расширение таблицы `services`: добавление полей `is_expensive`, `salary_price_rub`, `materials_cost_rub`, `contractor_id`, `dose_msv`.
