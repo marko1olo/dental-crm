@@ -6,5 +6,4 @@
 
 export * from "./cmoEmrAuditPresets";
 export * from "./cmoEmrAuditEngine";
-export * from "./CmoEmrAuditModal";
 export * from "./cmoComplianceHubEngine";

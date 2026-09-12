@@ -1,5 +1,4 @@
 import { FiscalReceiptModal } from "../finance/FiscalReceiptModal";
-import { EgiszCdaExportModal as StatutoryEgiszCdaExportModal } from "../documents/egisz/EgiszCdaExportModal";
 import { SignaturePadCanvas } from "../portal/selfCheckin/SignaturePadCanvas";
 import { ExpressFiscalReceiptModal } from "../finance/ExpressFiscalReceiptModal";
 import { RefundReceiptModal } from "../finance/RefundReceiptModal";
@@ -39,7 +38,6 @@ import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { EgiszRemdSigningModal } from "../egisz/EgiszRemdSigningModal";
 import { EgiszDocumentsJournalModal } from "../egisz/EgiszDocumentsJournalModal";
-import { CmoEmrAuditModal } from "../emr/audit/CmoEmrAuditModal";
 import { CmoQualityAuditModal } from "../cmo/CmoQualityAuditModal";
 import { PatientPortalModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../portal";
 import { PatientWebappPortalModal } from "../patient-portal/PatientWebappPortalModal";
@@ -226,9 +224,6 @@ export const BackofficeModalsHost: React.FC = () => {
 			{activeModal === "egisz_documents_journal" && (
 				<EgiszDocumentsJournalModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "cmo_emr_audit" && (
-				<CmoEmrAuditModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
 			{activeModal === "cmo_quality_audit" && (
 				<CmoQualityAuditModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
@@ -337,9 +332,6 @@ export const BackofficeModalsHost: React.FC = () => {
 			)}
 			{activeModal === "fiscal_receipt_modal" && (
 				<FiscalReceiptModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "statutory_egisz_cda_export" && (
-				<StatutoryEgiszCdaExportModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "signature_pad_canvas" && (
 				<SignaturePadCanvas {...({} as any)} />

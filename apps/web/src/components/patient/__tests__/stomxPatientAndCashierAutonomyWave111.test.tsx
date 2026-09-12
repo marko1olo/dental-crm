@@ -160,20 +160,16 @@ test("Wave 111 — Static file verification: Zero synthetic mock patients in pro
 		"ChairsideTabletConsentModal must not contain mock treatmentItems with serviceCode A16.07.002.001",
 	);
 
-	// 2. CmoEmrAuditModal
-	const cmoPath = path.join(webComponentsDir, "emr/audit/CmoEmrAuditModal.tsx");
+	// 2. CmoQualityAuditModal
+	const cmoPath = path.join(webComponentsDir, "cmo/CmoQualityAuditModal.tsx");
 	const cmoContent = fs.readFileSync(cmoPath, "utf-8");
 	assert.ok(
 		!cmoContent.includes("Смирнов Алексей Владимирович"),
-		"CmoEmrAuditModal must not contain synthetic Smirnov Alexey",
+		"CmoQualityAuditModal must not contain synthetic Smirnov Alexey",
 	);
 	assert.ok(
 		!cmoContent.includes("Прохоров Константин Игоревич"),
-		"CmoEmrAuditModal must not contain synthetic Prokhorov Konstantin",
-	);
-	assert.ok(
-		cmoContent.includes("INITIAL_DEMO_RECORDS: EmrAuditRecord[] = []"),
-		"CmoEmrAuditModal must have empty INITIAL_DEMO_RECORDS",
+		"CmoQualityAuditModal must not contain synthetic Prokhorov Konstantin",
 	);
 
 	// 3. PatientRecallsHubModal

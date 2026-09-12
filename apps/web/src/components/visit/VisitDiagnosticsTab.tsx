@@ -11,7 +11,7 @@ import { LabOrdersPanel } from "../LabOrdersPanel";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
-import { RadiologyReferralModal } from "./RadiologyReferralModal";
+import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
 	type ClinicalPhotoAttachment,

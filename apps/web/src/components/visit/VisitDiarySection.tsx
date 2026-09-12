@@ -60,7 +60,7 @@ import { CryptoProSigner } from "./CryptoProSigner";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { KraftPackageQuickScanner } from "../sterilization/KraftPackageQuickScanner";
 import { PrescriptionModal } from "./PrescriptionModal";
-import { RadiologyReferralModal } from "./RadiologyReferralModal";
+import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
 import { realVisitFieldId } from "./visitIdentity";
 import {
 	type RadiologySnapshotItem,

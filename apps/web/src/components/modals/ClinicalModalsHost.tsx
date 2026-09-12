@@ -3,7 +3,6 @@ import { OutpatientForm043Editor } from "../documents/forms/OutpatientForm043Edi
 import { ChildToothChart } from "../odontogram/ChildToothChart";
 import { ToothStatusPalette } from "../odontogram/ToothStatusPalette";
 import { PerioArchGrid } from "../perio/PerioArchGrid";
-import { InformedConsentModal as PatientInformedConsentModal } from "../patient/InformedConsentModal";
 import { PatientDetailModal } from "../patient/PatientDetailModal";
 import { PrescriptionsTab } from "../prescriptions/PrescriptionsTab";
 import { AnesthesiaProtocolSection } from "../visit/AnesthesiaProtocolSection";
@@ -418,9 +417,6 @@ export const ClinicalModalsHost: React.FC = () => {
 			)}
 			{activeModal === "perio_arch_grid" && (
 				<PerioArchGrid arch="upper" teeth={[]}  {...({} as any)} />
-			)}
-			{activeModal === "patient_informed_consent_modal" && (
-				<PatientInformedConsentModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_detail_modal" && (
 				<PatientDetailModal isOpen={true} onClose={close}  {...({} as any)} />

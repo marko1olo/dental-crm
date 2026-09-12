@@ -61,34 +61,43 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	}, [organizationId]);
 
 	const handleSendOtp = async () => {
+		if (!loginPhone.trim()) {
+			setAuthError("Укажите номер телефона");
+			return;
+		}
 		setIsLoading(true);
 		setAuthError(null);
 		try {
 			const res = await fetch("/api/portal/auth/send-otp", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ phone: loginPhone, organizationId: organizationId || "default" }),
+				body: JSON.stringify({ phone: loginPhone.trim(), organizationId: organizationId || "default" }),
 			});
 			if (res.ok || res.status === 202) {
 				setOtpSent(true);
 			} else {
-				setOtpSent(true); // Разрешить демо-вход при тестовом запуске
+				const errJson = await res.json().catch(() => null);
+				setAuthError(errJson?.error || "Не удалось отправить SMS-код подтверждения");
 			}
 		} catch {
-			setOtpSent(true);
+			setAuthError("Сетевая ошибка при отправке SMS-кода");
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
 	const handleVerifyOtp = async () => {
+		if (!otpCode.trim()) {
+			setAuthError("Введите код подтверждения из SMS");
+			return;
+		}
 		setIsLoading(true);
 		setAuthError(null);
 		try {
 			const res = await fetch("/api/portal/auth/verify-otp", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ phone: loginPhone, code: otpCode || "123456", organizationId: organizationId || "default" }),
+				body: JSON.stringify({ phone: loginPhone.trim(), code: otpCode.trim(), organizationId: organizationId || "default" }),
 			});
 			if (res.ok) {
 				const json = await res.json();
@@ -98,12 +107,10 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 					return;
 				}
 			}
-			// Fallback to demo cabinet
-			setPortalToken("demo_token");
-			setIsCabinetModalOpen(true);
+			const errJson = await res.json().catch(() => null);
+			setAuthError(errJson?.error || "Неверный или просроченный SMS-код");
 		} catch {
-			setPortalToken("demo_token");
-			setIsCabinetModalOpen(true);
+			setAuthError("Сетевая ошибка при проверке SMS-кода");
 		} finally {
 			setIsLoading(false);
 		}
@@ -226,7 +233,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 										maxLength={6}
 										value={otpCode}
 										onChange={(e) => setOtpCode(e.target.value)}
-										placeholder="123456"
+										placeholder="000000"
 										className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-base tracking-widest font-mono font-bold text-center focus:ring-2 focus:ring-sky-500 outline-none"
 									/>
 								</div>

@@ -31,12 +31,6 @@ import {
 	generatePrintableHtml043,
 } from "../../emr/emr043Math";
 import {
-	InformedConsentModal,
-	buildAutonomousConsentContext,
-	generateSimpleConsentHash,
-	OUTPATIENT_CONSENT_TEMPLATES,
-} from "../InformedConsentModal";
-import {
 	PatientDetailModal,
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
@@ -65,7 +59,7 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 	const form043Path = path.resolve(__dirname, "../../emr/Form043PrintModal.tsx");
 	const form043Source = fs.readFileSync(form043Path, "utf8");
 
-	const consentPath = path.resolve(__dirname, "../InformedConsentModal.tsx");
+	const consentPath = path.resolve(__dirname, "../../consents/InformedConsentModal.tsx");
 	const consentSource = fs.readFileSync(consentPath, "utf8");
 
 	const patientDetailPath = path.resolve(__dirname, "../PatientDetailModal.tsx");
@@ -191,78 +185,6 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 			assert.ok(!html.includes("data-testid=\"btn-print-043-card\" disabled"));
 			assert.ok(html.includes("ПОДПИСАНО ВРАЧОМ"));
 			assert.ok(html.includes("data-testid=\"badge-043-draft-status\""));
-		});
-	});
-
-	// ─── 2. ТЕСТЫ АВТОНОМИИ ПЕЧАТИ ИДС (МАНДАТ 8e п. 8, МАНДАТ 8n) ───
-	describe("2. Informed Consent (ИДС) Print Autonomy & Blank Lines (Mandates 8e, 8n)", () => {
-		it("2.1. guarantees buildAutonomousConsentContext generates manual underline strings when patient fields are missing", () => {
-			// Empty patient object
-			const context = buildAutonomousConsentContext({}, false);
-
-			assert.strictEqual(context.patientName, "________________________________________");
-			assert.strictEqual(context.passport, "серия ____ № __________, выдан ________________________________");
-			assert.strictEqual(context.snils, "___-___-___ __");
-			assert.strictEqual(context.address, "________________________________________");
-			assert.strictEqual(context.doctorName, "Врач-стоматолог");
-			assert.ok(context.date.length >= 8);
-		});
-
-		it("2.2. guarantees buildAutonomousConsentContext with isBlank=true generates full manual fill lines", () => {
-			const blankContext = buildAutonomousConsentContext(
-				{
-					patientName: "Иванов Иван",
-					doctorName: "Петров Пётр",
-				},
-				true,
-			);
-
-			assert.strictEqual(blankContext.patientName, "________________________________________");
-			assert.strictEqual(blankContext.doctorName, "____________________");
-			assert.strictEqual(blankContext.passport, "серия ____ № __________, выдан ________________________________");
-			assert.strictEqual(blankContext.snils, "___-___-___ __");
-		});
-
-		it("2.3. guarantees generateSimpleConsentHash produces deterministic SHA-256 integrity hash", () => {
-			const hash1 = generateSimpleConsentHash("CONSENT_THERAPY|Иванов|12.01.2026");
-			assert.ok(hash1.startsWith("ids-sha256-"));
-			assert.ok(hash1.length >= 18);
-		});
-
-		it("2.4. guarantees OUTPATIENT_CONSENT_TEMPLATES contains all primary dental consent categories", () => {
-			const keys = OUTPATIENT_CONSENT_TEMPLATES.map((t) => t.key);
-			assert.ok(keys.includes("CONSENT_THERAPY"));
-			assert.ok(keys.includes("CONSENT_SURGERY_IMPLANT"));
-			assert.ok(keys.includes("CONSENT_ANESTHESIA"));
-			assert.ok(keys.includes("CONSENT_ORTHOPEDICS"));
-			assert.ok(keys.includes("CONSENT_HYGIENE_BLEACHING"));
-			assert.ok(keys.includes("CONSENT_PERSONAL_DATA"));
-			assert.ok(keys.includes("CONSENT_INSPECTION_1051N"));
-		});
-
-		it("2.5. renders InformedConsentModal with non-disabled print buttons even with zero passport data", () => {
-			const html = renderToString(
-				React.createElement(InformedConsentModal, {
-					isOpen: true,
-					onClose: () => {},
-					patient: null, // No passport, no SNILS!
-				}),
-			);
-
-			// Check btn-print-blank-consent exists and is NOT disabled
-			assert.ok(html.includes("data-testid=\"btn-print-blank-consent\""));
-			assert.ok(!html.includes("data-testid=\"btn-print-blank-consent\" disabled"));
-
-			// Check btn-print-consent-a4 exists and is NOT disabled
-			assert.ok(html.includes("data-testid=\"btn-print-consent-a4\""));
-			assert.ok(!html.includes("data-testid=\"btn-print-consent-a4\" disabled"));
-
-			// Check 1-click paper confirmation button
-			assert.ok(html.includes("data-testid=\"btn-confirm-consent-paper\""));
-
-			// Check manual underscore lines are present in the output HTML
-			assert.ok(html.includes("серия ____ № __________, выдан ________________________________"));
-			assert.ok(html.includes("___-___-___ __"));
 		});
 	});
 

@@ -31,7 +31,7 @@ describe("Wave 112 - Total Liquidation of Synthetic Character Mocks and Demo OTP
 	const volkovaFiles = [
 		"apps/web/src/components/emr/protocolGenerator/EmrProtocolGeneratorModal.tsx",
 		"apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx",
-		"apps/web/src/components/documents/egisz/EgiszCdaExportModal.tsx",
+		"apps/web/src/components/egisz/EgiszCdaExportModal.tsx",
 		"apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx",
 		"apps/web/src/components/recalls/PatientRecallManagerModal.tsx",
 		"apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx",

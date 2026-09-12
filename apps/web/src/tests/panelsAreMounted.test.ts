@@ -469,10 +469,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Автономное модальное окно формирования справки об оплате медицинских услуг для налогового вычета по форме ФНС России (КНД 1151156 / Приказ БВ-7-11/824@). Экспортируется как специализированный налоговый модуль для интеграции в финансовый бэкофис и документы.",
 	},
 	{
-		file: "components/emr/audit/CmoEmrAuditModal.tsx",
-		name: "CmoEmrAuditModal",
+		file: "components/odontogram/ToothDualView.tsx",
+		name: "ToothDualView",
 		reason:
-			"Автономное модальное окно ВКК (Врачебной комиссии и аудита медицинских карт начмедом) по Приказу Минздрава РФ № 785н и 043/у. Предоставляется как изолированный аудит-модуль для кабинета главного врача.",
+			"Анатомический проекционный рендер зуба в латеральной и окклюзионной проекциях с поддержкой сурфейсов и мостовидных протезов. Специализированный компонент детального отображения одонтограммы.",
 	},
 ];
 
@@ -1004,7 +1004,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
 	"components/doctor/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
-	"components/documents/egisz/EgiszCdaExportModal.tsx:EgiszCdaExportModal",
 	"components/documents/forms/OutpatientForm043Editor.tsx:OutpatientForm043Editor",
 	"components/egisz/EgiszDocumentsJournalModal.tsx:EgiszDocumentsJournalModal",
 	"components/egisz/EgiszRemdHubModal.tsx:EgiszRemdHubModal",
@@ -1045,7 +1044,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/orthopedics/OrthopedicsChairsidePanel.tsx:OrthopedicsChairsidePanel",
 	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
 	"components/patient-portal/PatientWebappPortalModal.tsx:PatientWebappPortalModal",
-	"components/patient/InformedConsentModal.tsx:InformedConsentModal",
 	"components/patient/PatientCardModal.tsx:PatientCardModal",
 	"components/patient/PatientDetailModal.tsx:PatientDetailModal",
 	"components/patient/tabs/PatientGeneralInfoTab.tsx:PatientGeneralInfoTab",
@@ -1071,7 +1069,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/radiology/ImplantCrossSectionPlanner.tsx:ImplantCrossSectionPlanner",
 	"components/radiology/MedicalRadiologyDropzone.tsx:MedicalRadiologyDropzone",
 	"components/radiology/RadiologyModule.tsx:RadiologyModule",
-	"components/radiology/RadiologyReferralModal.tsx:RadiologyReferralModal",
 	"components/radiology/RadiologyStudyList.tsx:RadiologyStudyList",
 	"components/radiology/RadiologyViewerModal.tsx:RadiologyViewerModal",
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
@@ -1122,7 +1119,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 122;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 120;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

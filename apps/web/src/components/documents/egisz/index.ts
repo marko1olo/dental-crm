@@ -4,4 +4,4 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./EgiszCdaExportModal";
+export * from "../../egisz/EgiszCdaExportModal";

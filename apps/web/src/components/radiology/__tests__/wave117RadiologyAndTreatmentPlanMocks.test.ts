@@ -139,8 +139,8 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 		);
 	});
 
-	it("verifies absence of hardcoded Elena Smirnova in documents/egisz/EgiszCdaExportModal.tsx", () => {
-		const egiszPath = path.join(webSrcRoot, "components/documents/egisz/EgiszCdaExportModal.tsx");
+	it("verifies absence of hardcoded Elena Smirnova in egisz/EgiszCdaExportModal.tsx", () => {
+		const egiszPath = path.join(webSrcRoot, "components/egisz/EgiszCdaExportModal.tsx");
 		const egiszContent = fs.readFileSync(egiszPath, "utf8");
 
 		assert.strictEqual(

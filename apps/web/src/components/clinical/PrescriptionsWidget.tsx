@@ -34,6 +34,7 @@ import {
 	type PostOpCareSheetType,
 	PostOpCareSheetModal,
 } from "./PostOpCareSheetModal";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 export interface PrescriptionsWidgetProps {
 	readonly patient: {
@@ -62,17 +63,60 @@ export interface PrescriptionsWidgetProps {
 export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 	patient,
 	diagnosisIcd10 = "K08.1",
-	doctorName = "Д-р Смирнова Анна Сергеевна",
-	doctorSpecialty = "Врач-стоматолог-терапевт",
+	doctorName,
+	doctorSpecialty,
 	doctorSnils,
-	clinicName = "ООО «ДЕНТЕ» / Стоматологическая клиника",
-	clinicAddress = "г. Москва, ул. Клиническая, д. 10",
-	clinicPhone = "",
-	clinicOgrn = "1157746123456",
-	clinicInn = "7701123456",
-	medicalLicenseNumber = "ЛО-77-01-019842",
+	clinicName,
+	clinicAddress,
+	clinicPhone,
+	clinicOgrn,
+	clinicInn,
+	medicalLicenseNumber,
 	initialDrugs = ["nimesulide_100"],
 }) => {
+	const appLogic = useOptionalAppLogicContext();
+	const clinicProfile = appLogic?.dashboard?.clinicSettings?.profile;
+
+	const effectiveDoctorName =
+		doctorName ||
+		appLogic?.activeDoctor?.fullName ||
+		appLogic?.auth?.currentUser?.name ||
+		"Лечащий врач";
+	const effectiveDoctorSpecialty =
+		doctorSpecialty ||
+		appLogic?.activeDoctor?.role ||
+		"Врач-стоматолог";
+	const effectiveDoctorSnils =
+		doctorSnils ||
+		appLogic?.activeDoctor?.snils ||
+		appLogic?.auth?.currentUser?.snils ||
+		null;
+	const effectiveClinicName =
+		clinicName ||
+		clinicProfile?.clinicName ||
+		clinicProfile?.legalName ||
+		"";
+	const effectiveClinicAddress =
+		clinicAddress ||
+		clinicProfile?.address ||
+		"";
+	const effectiveClinicPhone =
+		clinicPhone ||
+		clinicProfile?.phone ||
+		"";
+	const effectiveClinicOgrn =
+		clinicOgrn ||
+		clinicProfile?.ogrn ||
+		"";
+	const effectiveClinicInn =
+		clinicInn ||
+		clinicProfile?.inn ||
+		"";
+	const effectiveMedicalLicenseNumber =
+		medicalLicenseNumber ||
+		clinicProfile?.medicalLicenseNumber ||
+		"";
+
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [activeFormType, setActiveFormType] = useState<PrescriptionFormType>("107-1u");
 
@@ -162,12 +206,12 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 		try {
 			const payload = generatePrescriptionPayloadFromBundle(activeBundleId, {
 				clinic: {
-					fullName: clinicName || "ООО «ДЕНТЕ» / Стоматологическая клиника",
-					address: clinicAddress,
-					phone: clinicPhone,
-					ogrn: clinicOgrn,
-					inn: clinicInn,
-					medicalLicenseNumber,
+					fullName: effectiveClinicName,
+					address: effectiveClinicAddress,
+					phone: effectiveClinicPhone,
+					ogrn: effectiveClinicOgrn,
+					inn: effectiveClinicInn,
+					medicalLicenseNumber: effectiveMedicalLicenseNumber,
 				},
 				patient: {
 					fullName: patient?.fullName || "Пациент (ФИО)",
@@ -176,9 +220,9 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 					address: patient?.address || null,
 				},
 				doctor: {
-					fullName: doctorName || "Д-р Смирнова Анна Сергеевна",
-					specialty: doctorSpecialty || "Врач-стоматолог-терапевт",
-					snils: doctorSnils || null,
+					fullName: effectiveDoctorName,
+					specialty: effectiveDoctorSpecialty,
+					snils: effectiveDoctorSnils || null,
 				},
 				diagnosisIcd10: diagnosisIcd10 || "K08.1",
 				penicillinAllergy,
@@ -424,15 +468,15 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 				diary={{
 					diagnosisIcd10: diagnosisIcd10 ?? null,
 				}}
-				doctorName={doctorName ?? null}
-				doctorSpecialty={doctorSpecialty ?? null}
-				doctorSnils={doctorSnils ?? null}
-				clinicName={clinicName ?? null}
-				clinicAddress={clinicAddress ?? null}
-				clinicPhone={clinicPhone ?? null}
-				clinicOgrn={clinicOgrn ?? null}
-				clinicInn={clinicInn ?? null}
-				medicalLicenseNumber={medicalLicenseNumber ?? null}
+				doctorName={effectiveDoctorName}
+				doctorSpecialty={effectiveDoctorSpecialty}
+				doctorSnils={effectiveDoctorSnils}
+				clinicName={effectiveClinicName}
+				clinicAddress={effectiveClinicAddress}
+				clinicPhone={effectiveClinicPhone}
+				clinicOgrn={effectiveClinicOgrn}
+				clinicInn={effectiveClinicInn}
+				medicalLicenseNumber={effectiveMedicalLicenseNumber}
 			/>
 
 			{/* Post-Op Care Sheet Modal */}
@@ -441,11 +485,11 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 				onClose={() => setIsPostOpModalOpen(false)}
 				defaultSheetType={postOpSheetType}
 				patient={patient}
-				doctorName={doctorName}
-				doctorSpecialty={doctorSpecialty}
-				clinicName={clinicName}
-				clinicAddress={clinicAddress}
-				clinicPhone={clinicPhone}
+				doctorName={effectiveDoctorName}
+				doctorSpecialty={effectiveDoctorSpecialty}
+				clinicName={effectiveClinicName}
+				clinicAddress={effectiveClinicAddress}
+				clinicPhone={effectiveClinicPhone}
 			/>
 		</div>
 	);

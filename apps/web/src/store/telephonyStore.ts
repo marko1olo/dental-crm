@@ -1009,27 +1009,12 @@ export function formatDurationTimer(totalSeconds: number): string {
 }
 
 /**
- * Deterministically generates an array of normalized amplitude bars (0.15 to 1.0)
- * based on a seed string (e.g. callId or recording URL) for audio waveform scrubbing.
+ * Honest flat recording track indicator (normalized level 0.5)
+ * Eliminates fake procedural Math.sin waveform diorama per Core Route item 11 / Mandate 8p.
  */
 export function generateWaveformBars(seed: string | null | undefined, count = 48): number[] {
-	const safeSeed = seed || "dente-audio-waveform-seed";
-	let hash = 0;
-	for (let i = 0; i < safeSeed.length; i++) {
-		hash = (hash << 5) - hash + safeSeed.charCodeAt(i);
-		hash |= 0;
-	}
-
-	const bars: number[] = [];
-	for (let i = 0; i < count; i++) {
-		const t = i / count;
-		const sineFactor = Math.sin(t * Math.PI * 3 + (hash % 10)) * 0.3;
-		const noise = Math.abs(Math.sin((hash + i * 37) * 12.9898) * 43758.5453) % 1;
-		const envelope = Math.sin(t * Math.PI); // tapering edges
-		const amp = Math.max(0.15, Math.min(1.0, 0.2 + (noise * 0.5 + sineFactor) * envelope));
-		bars.push(Math.round(amp * 100) / 100);
-	}
-	return bars;
+	const barCount = Math.max(1, count);
+	return new Array(barCount).fill(0.5);
 }
 
 const initialTransferState: CallTransferState = {
