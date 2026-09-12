@@ -76,16 +76,16 @@ describe("подстановка отметок времени при созда
 
 	it("поле ввода типа date получает вид ГГГГ-ММ-ДД по местному дню", () => {
 		const filled = withDocumentCreationTimestamps({
-			outpatient025uOpenedAt: "",
+			recordExtractPeriodStart: "",
 		});
-		const value = String(filled.outpatient025uOpenedAt);
+		const value = String(filled.recordExtractPeriodStart);
 		assert.match(value, /^\d{4}-\d{2}-\d{2}$/);
 		const now = new Date();
 		const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 		/*
 		 * Сверяется МЕСТНЫЙ день, не UTC. toISOString().slice(0,10) при
 		 * положительном смещении часового пояса вечером даёт уже завтрашнее число:
-		 * в Самаре (+04:00) после 20:00 карта 025/у открывалась бы завтра.
+		 * в Самаре (+04:00) после 20:00 выписка открывалась бы завтра.
 		 */
 		assert.equal(value, expected);
 	});

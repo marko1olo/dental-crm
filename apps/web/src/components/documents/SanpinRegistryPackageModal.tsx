@@ -6,18 +6,14 @@ import {
 } from "@dental/shared";
 import {
 	X,
-	CheckCircle2,
-	Clock,
 	Building,
 	FileText,
-	HeartPulse,
 	Radiation,
 	Sparkles,
 	Layers,
-	ShieldAlert,
 } from "lucide-react";
 
-export interface HospitalSanpinPackageModalProps {
+export interface SanpinRegistryPackageModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly patient: Patient | null;
@@ -29,7 +25,7 @@ export interface HospitalSanpinPackageModalProps {
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
 }
 
-export function HospitalSanpinPackageModal({
+export function SanpinRegistryPackageModal({
 	isOpen,
 	onClose,
 	patient,
@@ -39,7 +35,7 @@ export function HospitalSanpinPackageModal({
 	onOpenEgiszRemd,
 	onCreateDocument,
 	onSelectDocumentKind,
-}: HospitalSanpinPackageModalProps): React.JSX.Element | null {
+}: SanpinRegistryPackageModalProps): React.JSX.Element | null {
 	if (!isOpen) return null;
 
 	const radiationDocs = existingDocuments.filter(
@@ -52,7 +48,7 @@ export function HospitalSanpinPackageModal({
 			className="document-package-modal-overlay"
 			role="dialog"
 			aria-modal="true"
-			aria-labelledby="hospital-package-title"
+			aria-labelledby="sanpin-package-title"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
@@ -62,11 +58,11 @@ export function HospitalSanpinPackageModal({
 					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
 						<Building size={24} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 						<div>
-							<h3 id="hospital-package-title" style={{ margin: 0 }}>
+							<h3 id="sanpin-package-title" style={{ margin: 0 }}>
 								Пакет «СанПиН, ЭЛН и Гос. Реестры»
 							</h3>
 							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-								{patient ? `Пациент: ${patient.fullName}` : "Гос. реестры, СанПиН, ЭЛН и направления в ЧЛХ"}
+								{patient ? `Пациент: ${patient.fullName}` : "Гос. реестры, СанПиН, ЭЛН и регулируемый учёт"}
 							</span>
 						</div>
 					</div>

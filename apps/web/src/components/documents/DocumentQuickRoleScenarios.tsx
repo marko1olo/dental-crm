@@ -7,7 +7,7 @@ export interface DocumentQuickRoleScenariosProps {
 	readonly onOpenClinicalVisit: () => void;
 	readonly onOpenSurgicalPackage?: (() => void) | undefined;
 	readonly onOpenTaxAccounting: () => void;
-	readonly onOpenHospitalSanpin: () => void;
+	readonly onOpenSanpinRegistry: () => void;
 }
 
 export function DocumentQuickRoleScenarios({
@@ -16,7 +16,7 @@ export function DocumentQuickRoleScenarios({
 	onOpenClinicalVisit,
 	onOpenSurgicalPackage,
 	onOpenTaxAccounting,
-	onOpenHospitalSanpin,
+	onOpenSanpinRegistry,
 }: DocumentQuickRoleScenariosProps): React.JSX.Element {
 	return (
 		<section
@@ -145,8 +145,8 @@ export function DocumentQuickRoleScenarios({
 			<button
 				type="button"
 				className="document-scenario-card"
-				onClick={onOpenHospitalSanpin}
-				data-testid="scenario-hospital-sanpin-btn"
+				onClick={onOpenSanpinRegistry}
+				data-testid="scenario-sanpin-registry-btn"
 			>
 				<div className="document-scenario-card-header">
 					<div className="document-scenario-icon-title">

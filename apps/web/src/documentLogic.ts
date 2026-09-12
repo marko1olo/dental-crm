@@ -52,7 +52,6 @@ const DOCUMENT_TIMESTAMP_FIELDS: Array<
 	["copyRequestRequestedAt", "dateTime"],
 	["attendanceIssuedAt", "dateTime"],
 	["releaseDeliveredAt", "dateTime"],
-	["outpatient025uOpenedAt", "isoDate"],
 	["recordExtractPeriodStart", "isoDate"],
 	["recordExtractPeriodEnd", "isoDate"],
 	/*
@@ -83,7 +82,7 @@ export function withDocumentCreationTimestamps(
 	/*
 	 * Календарный день по местному времени. toISOString() отдаёт день по UTC и при
 	 * положительном смещении часового пояса вечером даёт УЖЕ ЗАВТРАШНЮЮ дату:
-	 * в Самаре (+04:00) после 20:00 карта 025/у открывалась бы завтрашним числом.
+	 * в Самаре (+04:00) после 20:00 карта 043/у открывалась бы завтрашним числом.
 	 */
 	const asIsoDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
@@ -398,7 +397,6 @@ export function documentPayloadForKind(
 		xrayRequestedBy,
 		xrayRecipientClinic,
 		xrayDueDate,
-		outpatient025uPayloadValue,
 		dentalMedicalCard043uPayloadValue,
 		recordExtractSourceVisitIds,
 		recordExtractPeriodStart,
@@ -484,16 +482,6 @@ export function documentPayloadForKind(
 		refusalEmergencyCareExplained,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		requiredDocumentField,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		outpatient025uMedicalCardNumberValue,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		outpatient025uOpenedAt,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		outpatient025uSourceVisitIdsValue,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		outpatient025uOfficialForm274nChecked,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		outpatient025uThirdPartyDataChecked,
 	} = state;
 	if (kind === "paid_medical_services_contract") {
 		return {
@@ -1120,11 +1108,6 @@ export function documentPayloadForKind(
 				recipientClinic: xrayRecipientClinic.trim() || null,
 				dueDate: xrayDueDate.trim() || null,
 			},
-		};
-	}
-	if (kind === "outpatient_medical_card_025u") {
-		return {
-			outpatientMedicalCard025u: outpatient025uPayloadValue(),
 		};
 	}
 	if (kind === "dental_medical_card_043u") {

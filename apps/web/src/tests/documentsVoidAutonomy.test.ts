@@ -151,7 +151,6 @@ function createMockAppLogic(overrides: Record<string, unknown> = {}) {
 		minorRepresentativeIdentityDocumentValue: () => "",
 		minorRepresentativePhoneValue: () => "",
 		minorRepresentativeRelationshipValue: () => "",
-		outpatient025uMedicalCardNumberValue: () => "",
 		paidContractTotalRubValue: () => 0,
 		paymentFiscalReceiptLabelForUi: () => "",
 		paymentInvoiceTotalRubValue: () => 0,

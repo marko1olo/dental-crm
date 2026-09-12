@@ -326,7 +326,6 @@ export const structuredPayloadDocumentKinds = new Set<
 	"lab_work_order",
 	"photo_video_consent",
 	"xray_cbct_referral",
-	"outpatient_medical_card_025u",
 	"dental_medical_card_043u",
 	"medical_record_extract",
 	"medical_record_copy_request",

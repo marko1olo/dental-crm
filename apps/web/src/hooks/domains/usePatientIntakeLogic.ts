@@ -3,14 +3,12 @@ import type {
 	ClinicalToothRow,
 	Dashboard,
 	DentalMedicalCard043uPayload,
-	OutpatientMedicalCard025uPayload,
 	Patient,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type {
 	ClinicProfileDraft,
 	MedicalRecordExtractDocumentDraftFields,
-	Outpatient025uDocumentDraftFields,
 	VisitNoteForm,
 } from "../../AppConstants";
 import {
@@ -19,11 +17,8 @@ import {
 	documentPayloadDraftKey,
 	documentTextLines,
 	emptyMedicalRecordExtractDocumentDraftFields,
-	emptyOutpatient025uDocumentDraftFields,
 	loadMedicalRecordExtractDocumentDraft,
-	loadOutpatient025uDocumentDraft,
 	saveMedicalRecordExtractDocumentDraft,
-	saveOutpatient025uDocumentDraft,
 	toDateInputValue,
 } from "../../AppHelpers";
 import { useDocumentStore } from "../../store/documentStore";
@@ -109,76 +104,13 @@ export function usePatientIntakeLogic({
 		setRecordExtractPreparedFromSignedRecords,
 		recordExtractThirdPartyDataChecked,
 		setRecordExtractThirdPartyDataChecked,
-
-		// Outpatient 025/u fields
-		outpatient025uMedicalCardNumber,
-		setOutpatient025uMedicalCardNumber,
-		outpatient025uOpenedAt,
-		setOutpatient025uOpenedAt,
-		outpatient025uPatientSexCode,
-		setOutpatient025uPatientSexCode,
-		outpatient025uCitizenship,
-		setOutpatient025uCitizenship,
-		outpatient025uRegistrationUrbanRuralCode,
-		setOutpatient025uRegistrationUrbanRuralCode,
-		outpatient025uStayUrbanRuralCode,
-		setOutpatient025uStayUrbanRuralCode,
-		outpatient025uOmsIssuedAt,
-		setOutpatient025uOmsIssuedAt,
-		outpatient025uInsurerName,
-		setOutpatient025uInsurerName,
-		outpatient025uSocialSupportCode,
-		setOutpatient025uSocialSupportCode,
-		outpatient025uHealthStatusDisclosureContact,
-		setOutpatient025uHealthStatusDisclosureContact,
-		outpatient025uEmploymentCode,
-		setOutpatient025uEmploymentCode,
-		outpatient025uDisabilityGroup,
-		setOutpatient025uDisabilityGroup,
-		outpatient025uWorkOrStudyPlace,
-		setOutpatient025uWorkOrStudyPlace,
-		outpatient025uPalliativeCareNeedCode,
-		setOutpatient025uPalliativeCareNeedCode,
-		outpatient025uBloodGroup,
-		setOutpatient025uBloodGroup,
-		outpatient025uRhFactor,
-		setOutpatient025uRhFactor,
-		outpatient025uOtherBloodData,
-		setOutpatient025uOtherBloodData,
-		outpatient025uAllergyHistory,
-		setOutpatient025uAllergyHistory,
-		outpatient025uFinalEpicrisis,
-		setOutpatient025uFinalEpicrisis,
-		outpatient025uOfficialForm274nChecked,
-		setOutpatient025uOfficialForm274nChecked,
-		outpatient025uThirdPartyDataChecked,
-		setOutpatient025uThirdPartyDataChecked,
 	} = useDocumentStore();
 
-	const outpatient025uDraftHydratedKeyRef = useRef<string | null>(null);
 	const medicalRecordExtractDraftHydratedKeyRef = useRef<string | null>(null);
 
-	const outpatient025uDraftVisitId = documentPatientMatchesActiveVisit
-		? (dashboard?.activeVisit?.id ?? null)
-		: null;
 	const medicalRecordExtractDraftVisitId = documentPatientMatchesActiveVisit
 		? (dashboard?.activeVisit?.id ?? null)
 		: null;
-
-	const outpatient025uDraftPersistenceKey = useMemo(
-		() =>
-			documentPayloadDraftKey(
-				"outpatient_medical_card_025u",
-				documentLocalPersistenceOrganizationId,
-				documentPatient?.id ?? null,
-				outpatient025uDraftVisitId,
-			),
-		[
-			documentLocalPersistenceOrganizationId,
-			documentPatient?.id,
-			outpatient025uDraftVisitId,
-		],
-	);
 
 	const medicalRecordExtractDraftPersistenceKey = useMemo(
 		() =>
@@ -195,163 +127,7 @@ export function usePatientIntakeLogic({
 		],
 	);
 
-	const currentOutpatient025uDocumentDraftFields =
-		useCallback((): Outpatient025uDocumentDraftFields => {
-			return {
-				recordExtractPeriodStart,
-				recordExtractPeriodEnd,
-				recordExtractSourceVisitIds,
-				recordExtractComplaintAndAnamnesis,
-				recordExtractObjectiveStatus,
-				recordExtractDiagnosis,
-				recordExtractTreatmentProvided,
-				recordExtractRecommendations,
-				recordExtractDoctorFullName,
-				recordExtractPreparedFromSignedRecords,
-				outpatient025uMedicalCardNumber,
-				outpatient025uOpenedAt,
-				outpatient025uPatientSexCode,
-				outpatient025uCitizenship,
-				outpatient025uRegistrationUrbanRuralCode,
-				outpatient025uStayUrbanRuralCode,
-				outpatient025uOmsIssuedAt,
-				outpatient025uInsurerName,
-				outpatient025uSocialSupportCode,
-				outpatient025uHealthStatusDisclosureContact,
-				outpatient025uEmploymentCode,
-				outpatient025uDisabilityGroup,
-				outpatient025uWorkOrStudyPlace,
-				outpatient025uPalliativeCareNeedCode,
-				outpatient025uBloodGroup,
-				outpatient025uRhFactor,
-				outpatient025uOtherBloodData,
-				outpatient025uAllergyHistory,
-				outpatient025uFinalEpicrisis,
-				outpatient025uOfficialForm274nChecked,
-				outpatient025uThirdPartyDataChecked,
-			};
-		}, [
-			recordExtractPeriodStart,
-			recordExtractPeriodEnd,
-			recordExtractSourceVisitIds,
-			recordExtractComplaintAndAnamnesis,
-			recordExtractObjectiveStatus,
-			recordExtractDiagnosis,
-			recordExtractTreatmentProvided,
-			recordExtractRecommendations,
-			recordExtractDoctorFullName,
-			recordExtractPreparedFromSignedRecords,
-			outpatient025uMedicalCardNumber,
-			outpatient025uOpenedAt,
-			outpatient025uPatientSexCode,
-			outpatient025uCitizenship,
-			outpatient025uRegistrationUrbanRuralCode,
-			outpatient025uStayUrbanRuralCode,
-			outpatient025uOmsIssuedAt,
-			outpatient025uInsurerName,
-			outpatient025uSocialSupportCode,
-			outpatient025uHealthStatusDisclosureContact,
-			outpatient025uEmploymentCode,
-			outpatient025uDisabilityGroup,
-			outpatient025uWorkOrStudyPlace,
-			outpatient025uPalliativeCareNeedCode,
-			outpatient025uBloodGroup,
-			outpatient025uRhFactor,
-			outpatient025uOtherBloodData,
-			outpatient025uAllergyHistory,
-			outpatient025uFinalEpicrisis,
-			outpatient025uOfficialForm274nChecked,
-			outpatient025uThirdPartyDataChecked,
-		]);
 
-	const applyOutpatient025uDocumentDraftFields = useCallback(
-		(fields: Outpatient025uDocumentDraftFields): void => {
-			setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
-			setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
-			setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
-			setRecordExtractComplaintAndAnamnesis(
-				fields.recordExtractComplaintAndAnamnesis,
-			);
-			setRecordExtractObjectiveStatus(fields.recordExtractObjectiveStatus);
-			setRecordExtractDiagnosis(fields.recordExtractDiagnosis);
-			setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
-			setRecordExtractRecommendations(fields.recordExtractRecommendations);
-			setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
-			setRecordExtractPreparedFromSignedRecords(
-				fields.recordExtractPreparedFromSignedRecords,
-			);
-			setOutpatient025uMedicalCardNumber(
-				fields.outpatient025uMedicalCardNumber,
-			);
-			setOutpatient025uOpenedAt(fields.outpatient025uOpenedAt);
-			setOutpatient025uPatientSexCode(fields.outpatient025uPatientSexCode);
-			setOutpatient025uCitizenship(fields.outpatient025uCitizenship);
-			setOutpatient025uRegistrationUrbanRuralCode(
-				fields.outpatient025uRegistrationUrbanRuralCode,
-			);
-			setOutpatient025uStayUrbanRuralCode(
-				fields.outpatient025uStayUrbanRuralCode,
-			);
-			setOutpatient025uOmsIssuedAt(fields.outpatient025uOmsIssuedAt);
-			setOutpatient025uInsurerName(fields.outpatient025uInsurerName);
-			setOutpatient025uSocialSupportCode(
-				fields.outpatient025uSocialSupportCode,
-			);
-			setOutpatient025uHealthStatusDisclosureContact(
-				fields.outpatient025uHealthStatusDisclosureContact,
-			);
-			setOutpatient025uEmploymentCode(fields.outpatient025uEmploymentCode);
-			setOutpatient025uDisabilityGroup(fields.outpatient025uDisabilityGroup);
-			setOutpatient025uWorkOrStudyPlace(fields.outpatient025uWorkOrStudyPlace);
-			setOutpatient025uPalliativeCareNeedCode(
-				fields.outpatient025uPalliativeCareNeedCode,
-			);
-			setOutpatient025uBloodGroup(fields.outpatient025uBloodGroup);
-			setOutpatient025uRhFactor(fields.outpatient025uRhFactor);
-			setOutpatient025uOtherBloodData(fields.outpatient025uOtherBloodData);
-			setOutpatient025uAllergyHistory(fields.outpatient025uAllergyHistory);
-			setOutpatient025uFinalEpicrisis(fields.outpatient025uFinalEpicrisis);
-			setOutpatient025uOfficialForm274nChecked(
-				fields.outpatient025uOfficialForm274nChecked,
-			);
-			setOutpatient025uThirdPartyDataChecked(
-				fields.outpatient025uThirdPartyDataChecked,
-			);
-		},
-		[
-			setRecordExtractPeriodStart,
-			setRecordExtractPeriodEnd,
-			setRecordExtractSourceVisitIds,
-			setRecordExtractComplaintAndAnamnesis,
-			setRecordExtractObjectiveStatus,
-			setRecordExtractDiagnosis,
-			setRecordExtractTreatmentProvided,
-			setRecordExtractRecommendations,
-			setRecordExtractDoctorFullName,
-			setRecordExtractPreparedFromSignedRecords,
-			setOutpatient025uMedicalCardNumber,
-			setOutpatient025uOpenedAt,
-			setOutpatient025uPatientSexCode,
-			setOutpatient025uCitizenship,
-			setOutpatient025uRegistrationUrbanRuralCode,
-			setOutpatient025uStayUrbanRuralCode,
-			setOutpatient025uOmsIssuedAt,
-			setOutpatient025uInsurerName,
-			setOutpatient025uSocialSupportCode,
-			setOutpatient025uHealthStatusDisclosureContact,
-			setOutpatient025uEmploymentCode,
-			setOutpatient025uDisabilityGroup,
-			setOutpatient025uWorkOrStudyPlace,
-			setOutpatient025uPalliativeCareNeedCode,
-			setOutpatient025uBloodGroup,
-			setOutpatient025uRhFactor,
-			setOutpatient025uOtherBloodData,
-			setOutpatient025uAllergyHistory,
-			setOutpatient025uFinalEpicrisis,
-			setOutpatient025uOfficialForm274nChecked,
-			setOutpatient025uThirdPartyDataChecked,
-		],
-	);
 
 	const currentMedicalRecordExtractDocumentDraftFields =
 		useCallback((): MedicalRecordExtractDocumentDraftFields => {
@@ -431,57 +207,7 @@ export function usePatientIntakeLogic({
 		],
 	);
 
-	useEffect(() => {
-		if (
-			selectedDocumentKind !== "outpatient_medical_card_025u" ||
-			!outpatient025uDraftPersistenceKey
-		) {
-			outpatient025uDraftHydratedKeyRef.current = null;
-			return;
-		}
-		const storedDraft = loadOutpatient025uDocumentDraft(
-			documentLocalPersistenceOrganizationId,
-			outpatient025uDraftPersistenceKey,
-		);
-		applyOutpatient025uDocumentDraftFields(
-			storedDraft ?? emptyOutpatient025uDocumentDraftFields(),
-		);
-		outpatient025uDraftHydratedKeyRef.current =
-			outpatient025uDraftPersistenceKey;
-	}, [
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		selectedDocumentKind,
-		applyOutpatient025uDocumentDraftFields,
-	]);
 
-	useEffect(() => {
-		if (
-			selectedDocumentKind !== "outpatient_medical_card_025u" ||
-			!documentPatient?.id ||
-			!outpatient025uDraftPersistenceKey
-		)
-			return;
-		if (
-			outpatient025uDraftHydratedKeyRef.current !==
-			outpatient025uDraftPersistenceKey
-		)
-			return;
-		saveOutpatient025uDocumentDraft(
-			documentLocalPersistenceOrganizationId,
-			outpatient025uDraftPersistenceKey,
-			documentPatient.id,
-			outpatient025uDraftVisitId,
-			currentOutpatient025uDocumentDraftFields(),
-		);
-	}, [
-		documentPatient?.id,
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		outpatient025uDraftVisitId,
-		selectedDocumentKind,
-		currentOutpatient025uDocumentDraftFields,
-	]);
 
 	useEffect(() => {
 		if (
@@ -571,30 +297,7 @@ export function usePatientIntakeLogic({
 		);
 	}
 
-	function outpatient025uMedicalCardNumberValue(): string {
-		const explicitNumber = outpatient025uMedicalCardNumber.trim();
-		if (explicitNumber) return explicitNumber;
-		const patientToken =
-			documentPatient?.id.slice(0, 8).toUpperCase() ?? "PATIENT";
-		return `DENTE-${new Date().getFullYear()}-${patientToken}`;
-	}
-
-	function outpatient025uSourceVisitIdsValue(): string[] {
-		const sourceVisitIds = documentTextLines(recordExtractSourceVisitIds);
-		if (sourceVisitIds.length) return sourceVisitIds;
-		return dashboard?.activeVisit?.id ? [dashboard?.activeVisit?.id] : [];
-	}
-
-	function outpatient025uLicenseValue(): string | null {
-		const value = compactDocumentText(
-			clinicProfileDraft.medicalLicenseNumber,
-			clinicProfileDraft.medicalLicenseIssuedAt,
-			clinicProfileDraft.medicalLicenseIssuer,
-		);
-		return value || null;
-	}
-
-	function outpatient025uDoctorValue(): {
+	function dentalMedicalCardDoctorValue(): {
 		fullName: string;
 		position: string;
 		specialty: string;
@@ -607,7 +310,7 @@ export function usePatientIntakeLogic({
 		};
 	}
 
-	function outpatient025uVisitDateValue(): string {
+	function dentalMedicalCardVisitDateValue(): string {
 		return (
 			recordExtractPeriodEnd.trim() ||
 			toDateInputValue(activeAppointment?.startsAt) ||
@@ -644,8 +347,8 @@ export function usePatientIntakeLogic({
 		if (validationError) {
 			throw new Error(validationError);
 		}
-		const doctor = outpatient025uDoctorValue();
-		const visitDate = outpatient025uVisitDateValue();
+		const doctor = dentalMedicalCardDoctorValue();
+		const visitDate = dentalMedicalCardVisitDateValue();
 		const patientProfile = documentPatient?.administrativeProfile;
 		const complaintsAndAnamnesis = recordExtractComplaintAndAnamnesisValue();
 		const complaintText =
@@ -664,7 +367,7 @@ export function usePatientIntakeLogic({
 			visitNoteForm.treatmentPlan.trim() ||
 			recordExtractTreatmentProvidedValue() ||
 			"";
-		const sexRaw = (outpatient025uPatientSexCode ?? "")
+		const sexRaw = ((documentPatient as any)?.sex ?? (documentPatient as any)?.administrativeProfile?.gender ?? (patientProfile as { sex?: string } | null | undefined)?.sex ?? "")
 			.toString()
 			.toLowerCase();
 		const sex =
@@ -747,10 +450,6 @@ export function usePatientIntakeLogic({
 		};
 	}
 
-	function outpatient025uPayloadValue(): OutpatientMedicalCard025uPayload {
-		return dentalMedicalCard043uPayloadValue();
-	}
-
 	return {
 		intakeChiefComplaint,
 		setIntakeChiefComplaint,
@@ -804,51 +503,6 @@ export function usePatientIntakeLogic({
 		recordExtractThirdPartyDataChecked,
 		setRecordExtractThirdPartyDataChecked,
 
-		outpatient025uMedicalCardNumber,
-		setOutpatient025uMedicalCardNumber,
-		outpatient025uOpenedAt,
-		setOutpatient025uOpenedAt,
-		outpatient025uPatientSexCode,
-		setOutpatient025uPatientSexCode,
-		outpatient025uCitizenship,
-		setOutpatient025uCitizenship,
-		outpatient025uRegistrationUrbanRuralCode,
-		setOutpatient025uRegistrationUrbanRuralCode,
-		outpatient025uStayUrbanRuralCode,
-		setOutpatient025uStayUrbanRuralCode,
-		outpatient025uOmsIssuedAt,
-		setOutpatient025uOmsIssuedAt,
-		outpatient025uInsurerName,
-		setOutpatient025uInsurerName,
-		outpatient025uSocialSupportCode,
-		setOutpatient025uSocialSupportCode,
-		outpatient025uHealthStatusDisclosureContact,
-		setOutpatient025uHealthStatusDisclosureContact,
-		outpatient025uEmploymentCode,
-		setOutpatient025uEmploymentCode,
-		outpatient025uDisabilityGroup,
-		setOutpatient025uDisabilityGroup,
-		outpatient025uWorkOrStudyPlace,
-		setOutpatient025uWorkOrStudyPlace,
-		outpatient025uPalliativeCareNeedCode,
-		setOutpatient025uPalliativeCareNeedCode,
-		outpatient025uBloodGroup,
-		setOutpatient025uBloodGroup,
-		outpatient025uRhFactor,
-		setOutpatient025uRhFactor,
-		outpatient025uOtherBloodData,
-		setOutpatient025uOtherBloodData,
-		outpatient025uAllergyHistory,
-		setOutpatient025uAllergyHistory,
-		outpatient025uFinalEpicrisis,
-		setOutpatient025uFinalEpicrisis,
-		outpatient025uOfficialForm274nChecked,
-		setOutpatient025uOfficialForm274nChecked,
-		outpatient025uThirdPartyDataChecked,
-		setOutpatient025uThirdPartyDataChecked,
-
-		currentOutpatient025uDocumentDraftFields,
-		applyOutpatient025uDocumentDraftFields,
 		currentMedicalRecordExtractDocumentDraftFields,
 		applyMedicalRecordExtractDocumentDraftFields,
 
@@ -857,13 +511,9 @@ export function usePatientIntakeLogic({
 		recordExtractDiagnosisValue,
 		recordExtractTreatmentProvidedValue,
 
-		outpatient025uMedicalCardNumberValue,
-		outpatient025uSourceVisitIdsValue,
-		outpatient025uLicenseValue,
-		outpatient025uDoctorValue,
-		outpatient025uVisitDateValue,
+		dentalMedicalCardDoctorValue,
+		dentalMedicalCardVisitDateValue,
 		validateMedicalCardPayload,
 		dentalMedicalCard043uPayloadValue,
-		outpatient025uPayloadValue,
 	};
 }

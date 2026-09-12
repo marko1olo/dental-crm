@@ -3,7 +3,6 @@ import { describe, test } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateOutpatientMedicalCard025U } from "../../../documentValidators";
 
 describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 106)", () => {
 	const __filename = fileURLToPath(import.meta.url);
@@ -95,36 +94,18 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 		);
 	});
 
-	test("3. documentValidators: validateOutpatientMedicalCard025U очищен от госпитальных дефолтов стационара", () => {
+	test("3. documentValidators: validateOutpatientMedicalCard025U ликвидирован в пользу суверенитета 043/у", () => {
 		const docValidatorsPath = path.join(webSrcDir, "documentValidators.ts");
 		const docValidatorsContent = fs.readFileSync(docValidatorsPath, "utf-8");
 
-		// Проверяем отсутствие госпитальных формулировок
 		assert.ok(
-			!docValidatorsContent.includes("Направление в стационар"),
-			"Формулировка 'Направление в стационар' исключена из валидатора",
+			!docValidatorsContent.includes("validateOutpatientMedicalCard025U"),
+			"validateOutpatientMedicalCard025U полностью ликвидирован из documentValidators.ts",
 		);
 		assert.ok(
-			!docValidatorsContent.includes("Санация перед плановой госпитализацией") &&
-			!docValidatorsContent.includes("Санация перед госпитализацией"),
-			"Формулировка о госпитализации исключена из валидатора",
+			!docValidatorsContent.includes("outpatient_medical_card_025u:"),
+			"outpatient_medical_card_025u исключен из реестра documentValidators",
 		);
-		assert.ok(
-			!docValidatorsContent.includes("Плановое наблюдение специалистов стационара"),
-			"Формулировка о наблюдении специалистов стационара исключена из валидатора",
-		);
-
-		// Валидация успешна для стоматологического состояния
-		const validDentalState = {
-			clinicProfileDraft: { clinicName: "DENTE Clinic", legalName: "ООО ДЕНТЕ" },
-			documentPatient: { id: "p-12345", fullName: "Иванов И.И." },
-			recordExtractDoctorFullName: "Д-р Петров П.П.",
-			requiredDocumentField: (val: string, label: string) =>
-				String(val ?? "").trim() ? null : `Заполните поле: ${label}.`,
-		};
-
-		const result = validateOutpatientMedicalCard025U(validDentalState as any);
-		assert.strictEqual(result, null, "Валидация стоматологической карты успешна");
 	});
 
 	test("4. AppointmentCard: кнопка 'Завершить' при открытом визите не блокирует врача ошибкой (Мандат 8e)", () => {

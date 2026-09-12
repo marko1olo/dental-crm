@@ -168,7 +168,7 @@ import {
 import { money, moneyUnknownLabel } from "./financeUtils";
 import { countLabel } from "../lib/russianPlural.js";
 import { logger } from "./logger";
-import { emptyDocumentPaymentSelectionStore, emptyDocumentPayloadDraftStore, sensitiveLocalDraftRetentionMs, normalizeOutpatient025uDocumentDraftFields, normalizeMedicalRecordExtractDocumentDraftFields, isDocumentKindPreference, isRecordKey } from "./CommonHelpers";
+import { emptyDocumentPaymentSelectionStore, emptyDocumentPayloadDraftStore, sensitiveLocalDraftRetentionMs, normalizeMedicalRecordExtractDocumentDraftFields, isDocumentKindPreference, isRecordKey } from "./CommonHelpers";
 
 export const documentPaymentSelectionStorageKey =
 	"dental-crm:document-payment-selection:v1";
@@ -189,41 +189,6 @@ export type DocumentPaymentSelectionStore = {
 	selections: Record<string, DocumentPaymentSelectionEntry>;
 };
 
-export type Outpatient025uDocumentDraftFields = {
-	recordExtractPeriodStart: string;
-	recordExtractPeriodEnd: string;
-	recordExtractSourceVisitIds: string;
-	recordExtractComplaintAndAnamnesis: string;
-	recordExtractObjectiveStatus: string;
-	recordExtractDiagnosis: string;
-	recordExtractTreatmentProvided: string;
-	recordExtractRecommendations: string;
-	recordExtractDoctorFullName: string;
-	recordExtractPreparedFromSignedRecords: boolean;
-	outpatient025uMedicalCardNumber: string;
-	outpatient025uOpenedAt: string;
-	outpatient025uPatientSexCode: "1" | "2" | "unknown";
-	outpatient025uCitizenship: string;
-	outpatient025uRegistrationUrbanRuralCode: "1" | "2" | "unknown";
-	outpatient025uStayUrbanRuralCode: "1" | "2" | "unknown";
-	outpatient025uOmsIssuedAt: string;
-	outpatient025uInsurerName: string;
-	outpatient025uSocialSupportCode: string;
-	outpatient025uHealthStatusDisclosureContact: string;
-	outpatient025uEmploymentCode: string;
-	outpatient025uDisabilityGroup: string;
-	outpatient025uWorkOrStudyPlace: string;
-	outpatient025uPalliativeCareNeedCode: string;
-	outpatient025uBloodGroup: string;
-	outpatient025uRhFactor: string;
-	outpatient025uOtherBloodData: string;
-	outpatient025uAllergyHistory: string;
-	outpatient025uFinalEpicrisis: string;
-	outpatient025uOfficialForm274nChecked: boolean;
-	outpatient025uThirdPartyDataChecked: boolean;
-	legacyDraftFields?: Record<string, unknown>;
-};
-
 export type MedicalRecordExtractDocumentDraftFields = {
 	recordExtractPeriodStart: string;
 	recordExtractPeriodEnd: string;
@@ -242,13 +207,13 @@ export type MedicalRecordExtractDocumentDraftFields = {
 };
 
 export type DocumentPayloadDraftEntry = {
-	kind: "outpatient_medical_card_025u" | "medical_record_extract";
+	kind: "dental_outpatient_card_043u" | "medical_record_extract";
 	patientId: string;
 	visitId: string | null;
 	savedAt: string;
 	fields:
-		| Outpatient025uDocumentDraftFields
-		| MedicalRecordExtractDocumentDraftFields;
+		| MedicalRecordExtractDocumentDraftFields
+		| Record<string, unknown>;
 };
 
 export type DocumentPayloadDraftStore = {
@@ -554,7 +519,7 @@ export function saveDocumentPaymentSelection(
 }
 
 export function documentPayloadDraftKey(
-	kind: "outpatient_medical_card_025u" | "medical_record_extract",
+	kind: "dental_outpatient_card_043u" | "medical_record_extract",
 	organizationId: string | null | undefined,
 	patientId: string | null,
 	visitId: string | null,
@@ -597,7 +562,7 @@ export function loadDocumentPayloadDraftStore(
 			}
 			const entry = rawEntry as Partial<DocumentPayloadDraftEntry>;
 			if (
-				entry.kind !== "outpatient_medical_card_025u" &&
+				entry.kind !== "dental_outpatient_card_043u" &&
 				entry.kind !== "medical_record_extract"
 			) {
 				pruned = true;
@@ -617,8 +582,8 @@ export function loadDocumentPayloadDraftStore(
 				continue;
 			}
 			const fields =
-				entry.kind === "outpatient_medical_card_025u"
-					? normalizeOutpatient025uDocumentDraftFields(entry.fields)
+				entry.kind === "dental_outpatient_card_043u"
+					? (entry.fields ?? {})
 					: normalizeMedicalRecordExtractDocumentDraftFields(entry.fields);
 			if (!fields) {
 				pruned = true;
@@ -692,15 +657,6 @@ export const documentDetectedKindLabels: Record<string, string> = {
 export function documentDetectedKindLabel(kind: string) {
 	return documentDetectedKindLabels[kind] ?? "файл";
 }
-
-export const outpatient025uDemographicCodeOptions = [
-	"1",
-	"2",
-	"unknown",
-] as const;
-
-export type Outpatient025uDemographicCode =
-	(typeof outpatient025uDemographicCodeOptions)[number];
 
 export const taxApplicationRelationshipOptions: Array<{
 	value: TaxDeductionApplicationRelationship;

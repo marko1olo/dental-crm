@@ -52,7 +52,7 @@ import { printBlankMedicalContract } from "./components/patient/blankContractPri
 import { SurgicalPackageModal } from "./components/documents/SurgicalPackageModal";
 import { ClinicalVisitPackageModal } from "./components/documents/ClinicalVisitPackageModal";
 import { TaxAccountingPackageModal } from "./components/documents/TaxAccountingPackageModal";
-import { HospitalSanpinPackageModal } from "./components/documents/HospitalSanpinPackageModal";
+import { SanpinRegistryPackageModal } from "./components/documents/SanpinRegistryPackageModal";
 import {
 	DocumentRegistryFilterBar,
 	type DocumentStatusFilter,
@@ -374,7 +374,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		normalizedDocumentKind,
 		normalizedDocumentVoidReasonCode,
 		normalizedMedicalDocumentReleaseChannel,
-		normalizedOutpatient025uDemographicCode,
 		normalizedPatientIntakePregnancyStatus,
 		normalizedPaymentRefundCorrectionAction,
 		normalizedPaymentRefundCorrectionMethod,
@@ -388,7 +387,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		normalizedXrayPriority,
 		normalizedXrayStudyType,
 		openIssuedDocumentHtml,
-		outpatient025uMedicalCardNumberValue,
 		paidContractTotalRubValue,
 		patientIntakePregnancyStatusOptions,
 		patientName,
@@ -495,13 +493,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		documentVoidStaffFullName,
 		documentVoidStaffRole,
 		documentVoidStatusReviewed,
-		outpatient025uAllergyHistory,
-		outpatient025uDisabilityGroup,
-		outpatient025uEmploymentCode,
-		outpatient025uFinalEpicrisis,
-		outpatient025uOfficialForm274nChecked,
-		outpatient025uThirdPartyDataChecked,
-		outpatient025uWorkOrStudyPlace,
 		paymentFiscalReceiptNumber,
 		paymentPayerFullName,
 		paymentPayerIdentityDocument,
@@ -572,13 +563,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		setDocumentVoidStaffFullName,
 		setDocumentVoidStaffRole,
 		setDocumentVoidStatusReviewed,
-		setOutpatient025uAllergyHistory,
-		setOutpatient025uDisabilityGroup,
-		setOutpatient025uEmploymentCode,
-		setOutpatient025uFinalEpicrisis,
-		setOutpatient025uOfficialForm274nChecked,
-		setOutpatient025uThirdPartyDataChecked,
-		setOutpatient025uWorkOrStudyPlace,
 		setRefundAccountantDecision,
 		setRefundAction,
 		setRefundAmountRub,
@@ -635,7 +619,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	const [isSurgicalPackageOpen, setIsSurgicalPackageOpen] = useState(false);
 	const [isClinicalVisitOpen, setIsClinicalVisitOpen] = useState(false);
 	const [isTaxAccountingOpen, setIsTaxAccountingOpen] = useState(false);
-	const [isHospitalSanpinOpen, setIsHospitalSanpinOpen] = useState(false);
+	const [isSanpinRegistryOpen, setIsSanpinRegistryOpen] = useState(false);
 
 	const handleDirectPrintPrimaryIntake = useCallback(() => {
 		const store = useDocumentStore.getState();
@@ -871,16 +855,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		labTechnicianNotes,
 		labTeethOrArea,
 		labWorkType,
-		outpatient025uCitizenship,
-		outpatient025uHealthStatusDisclosureContact,
-		outpatient025uInsurerName,
-		outpatient025uMedicalCardNumber,
-		outpatient025uOmsIssuedAt,
-		outpatient025uOpenedAt,
-		outpatient025uPatientSexCode,
-		outpatient025uRegistrationUrbanRuralCode,
-		outpatient025uSocialSupportCode,
-		outpatient025uStayUrbanRuralCode,
 		paymentReceiptDate,
 		paymentReceiptFiscalNoticeConfirmed,
 		paymentReceiptIssuedBy,
@@ -969,16 +943,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		setLabTechnicianNotes,
 		setLabTeethOrArea,
 		setLabWorkType,
-		setOutpatient025uCitizenship,
-		setOutpatient025uHealthStatusDisclosureContact,
-		setOutpatient025uInsurerName,
-		setOutpatient025uMedicalCardNumber,
-		setOutpatient025uOmsIssuedAt,
-		setOutpatient025uOpenedAt,
-		setOutpatient025uPatientSexCode,
-		setOutpatient025uRegistrationUrbanRuralCode,
-		setOutpatient025uSocialSupportCode,
-		setOutpatient025uStayUrbanRuralCode,
 		setPaymentReceiptDate,
 		setPaymentReceiptFiscalNoticeConfirmed,
 		setPaymentReceiptIssuedBy,
@@ -1668,7 +1632,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				onOpenSurgicalPackage={() => setIsSurgicalPackageOpen(true)}
 				onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
 				onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
-				onOpenHospitalSanpin={() => setIsHospitalSanpinOpen(true)}
+				onOpenSanpinRegistry={() => setIsSanpinRegistryOpen(true)}
 			/>
 
 			{/* 3. НАВИГАЦИОННЫЕ ВКЛАДКИ ПО КАТЕГОРИЯМ */}
@@ -6432,7 +6396,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 											) : null}
 
 											{document.kind === "dental_medical_card_043u" ||
-											document.kind === "outpatient_medical_card_025u" ||
 											document.kind === "orthodontic_medical_card_043_1u" ||
 											document.kind === "medical_record_extract" ? (
 												<button
@@ -6575,9 +6538,9 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				onOpenFnsXmlModal={() => setIsFnsNdflXmlOpen(true)}
 			/>
 
-			<HospitalSanpinPackageModal
-				isOpen={isHospitalSanpinOpen}
-				onClose={() => setIsHospitalSanpinOpen(false)}
+			<SanpinRegistryPackageModal
+				isOpen={isSanpinRegistryOpen}
+				onClose={() => setIsSanpinRegistryOpen(false)}
 				patient={activePatient ?? null}
 				existingDocuments={typedActiveDocuments ?? []}
 				onOpenSickLeaveEln={() => setIsSickLeaveElnOpen(true)}

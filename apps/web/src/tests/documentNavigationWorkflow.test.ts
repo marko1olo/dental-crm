@@ -19,7 +19,6 @@ import {
 } from "../utils/documentPackages";
 import {
 	validateDentalMedicalCard043U,
-	validateOutpatientMedicalCard025U,
 } from "../documentValidators";
 
 describe("Быстрые пакетные генераторы документов (Quick Document Packages)", () => {
@@ -299,10 +298,6 @@ describe("Быстрые пакетные генераторы документ�
 		assert.equal(state.activeDocumentPackage, "hospital");
 		assert.equal(state.selectedDocumentKind, "xray_cbct_referral");
 
-		// Амбулаторная карта 025/у
-		assert.equal(state.outpatient025uOfficialForm274nChecked, true);
-		assert.equal(state.outpatient025uThirdPartyDataChecked, true);
-
 		// Справка о посещении
 		assert.equal(state.attendanceDiagnosisDisclosureExcluded, true);
 		assert.equal(state.attendanceNotSickLeaveAcknowledged, true);
@@ -443,65 +438,6 @@ describe("Валидаторы документов: Автономия врач
 		};
 		const result = validateDentalMedicalCard043U(blankState);
 		assert.equal(result, null, "allowBlankForPrint должен разрешать печать пустой карты");
-	});
-
-	test("validateOutpatientMedicalCard025U: карта 025/у для стационара валидна без галочек-дисклеймеров и toothRows (Мандат 8i)", () => {
-		const hospitalCardState = {
-			clinicProfileDraft: { clinicName: "DENTE Clinic", legalName: "ООО ДЕНТЕ" },
-			documentPatient: { id: "p-67890", fullName: "Петрова Анна Сергеевна" },
-			outpatient025uMedicalCardNumberValue: () => "025/у-2026-001",
-			outpatient025uOpenedAt: "2026-09-01",
-			recordExtractPeriodStart: "2026-09-01",
-			recordExtractPeriodEnd: "2026-09-07",
-			recordExtractComplaintAndAnamnesisValue: () => "Направление на плановую операцию в ЧЛХ",
-			recordExtractObjectiveStatusValue: () => "Полость рта санирована",
-			recordExtractDiagnosisValue: () => "К00-К14 Осмотр полости рта перед госпитализацией",
-			recordExtractTreatmentProvidedValue: () => "Проведена профгигиена",
-			recordExtractRecommendations: "Рекомендовано наблюдение",
-			recordExtractDoctorFullName: "Д-р Смирнова Е.В.",
-			activeDoctor: { fullName: "Д-р Смирнова Е.В." },
-			// Галочки намеренно false/undefined
-			outpatient025uOfficialForm274nChecked: false,
-			outpatient025uThirdPartyDataChecked: false,
-			recordExtractPreparedFromSignedRecords: false,
-			// Зубные строки и визиты пусты
-			outpatient025uSourceVisitIdsValue: () => [],
-			clinicalToothRowsValue: () => [],
-			requiredDocumentField: (val: string, label: string) =>
-				String(val ?? "").trim() ? null : `Заполните поле: ${label}.`,
-		};
-
-		const result = validateOutpatientMedicalCard025U(hospitalCardState);
-		assert.equal(
-			result,
-			null,
-			"Выписка 025/у для стационара не должна блокироваться при отсутствии бюрократических галочек",
-		);
-	});
-
-	test("validateOutpatientMedicalCard025U: безопасные дефолты при минимальных данных пациента", () => {
-		const minimalState = {
-			clinicProfileDraft: { clinicName: "Клиника" },
-			documentPatient: { id: "p-999", fullName: "Сидоров С.С." },
-			recordExtractDoctorFullName: "Д-р Васильев",
-			requiredDocumentField: (val: string, label: string) =>
-				String(val ?? "").trim() ? null : `Заполните поле: ${label}.`,
-		};
-
-		const result = validateOutpatientMedicalCard025U(minimalState);
-		assert.equal(
-			result,
-			null,
-			"Выписка 025/у должна успешно валидироваться с безопасными дефолтами",
-		);
-	});
-
-	test("validateOutpatientMedicalCard025U: печать пустой карты при allowBlankForPrint возвращает null", () => {
-		const blankState = {
-			allowBlankForPrint: true,
-		};
-		const result = validateOutpatientMedicalCard025U(blankState);
-		assert.equal(result, null, "allowBlankForPrint должен разрешать печать пустой карты 025/у");
 	});
 });
 

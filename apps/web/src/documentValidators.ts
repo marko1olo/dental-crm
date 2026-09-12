@@ -1293,87 +1293,6 @@ export function validateXrayCbctReferral(
 	);
 }
 
-/**
- * @deprecated Форма 025/у является госпитальной поликлинической формой (Приказ 834н/274н) и не применяется в стоматологии (Мандат 8i).
- * В частной амбулаторной стоматологии официальной регламентной формой является исключительно стоматологическая Форма 043/у.
- * Депрекейтировано: очищено от госпитального блоата и переведено на стоматологический регламент (Форма 043/у).
- */
-export function validateOutpatientMedicalCard025U(
-	state: DocumentState,
-): string[] | string | null {
-	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
-	if (allowBlankForPrint) {
-		return null;
-	}
-	const {
-		activeDoctor,
-		recordExtractPeriodStart,
-		recordExtractPeriodEnd,
-		recordExtractComplaintAndAnamnesisValue,
-		recordExtractObjectiveStatusValue,
-		recordExtractDiagnosisValue,
-		recordExtractTreatmentProvidedValue,
-		recordExtractRecommendations,
-		recordExtractDoctorFullName,
-		documentPatient,
-		clinicProfileDraft,
-		requiredDocumentField,
-		outpatient025uMedicalCardNumberValue,
-		outpatient025uOpenedAt,
-	} = state;
-
-	const effectiveOrgName =
-		clinicProfileDraft?.legalName?.trim() ||
-		clinicProfileDraft?.clinicName?.trim() ||
-		"Стоматологическая клиника";
-	const effectiveCardNumber =
-		outpatient025uMedicalCardNumberValue?.() ||
-		(documentPatient?.id ? `043/у-${documentPatient.id.slice(0, 8).toUpperCase()}` : "043/у-Б/Н");
-	const effectiveOpenedAt =
-		outpatient025uOpenedAt?.trim() ||
-		recordExtractPeriodStart?.trim() ||
-		new Date().toISOString().slice(0, 10);
-	const effectivePeriodStart =
-		recordExtractPeriodStart?.trim() || effectiveOpenedAt;
-	const effectivePeriodEnd =
-		recordExtractPeriodEnd?.trim() || effectivePeriodStart;
-	const effectivePatientName =
-		documentPatient?.fullName?.trim() ?? "";
-	const effectiveComplaint =
-		recordExtractComplaintAndAnamnesisValue?.()?.trim() ||
-		"Жалобы на момент осмотра отсутствуют / Плановый стоматологический осмотр";
-	const effectiveObjective =
-		recordExtractObjectiveStatusValue?.()?.trim() ||
-		"Слизистая оболочка полости рта физиологической окраски, зубные ряды без острых воспалительных изменений";
-	const effectiveDiagnosis =
-		recordExtractDiagnosisValue?.()?.trim() ||
-		"К02-К08 Стоматологическое обследование / Санация полости рта";
-	const effectiveTreatment =
-		recordExtractTreatmentProvidedValue?.()?.trim() ||
-		"Амбулаторный стоматологический прием, осмотр полости рта, составление плана санации";
-	const effectiveRecommendations =
-		recordExtractRecommendations?.trim() ||
-		"Индивидуальная гигиена полости рта, контрольный осмотр через 6 месяцев";
-	const effectiveDoctor =
-		recordExtractDoctorFullName?.trim() ||
-		activeDoctor?.fullName?.trim() ||
-		"Лечащий врач-стоматолог";
-
-	return (
-		requiredDocumentField(effectiveOrgName, "карта 043/у, медорганизация") ??
-		requiredDocumentField(effectiveCardNumber, "карта 043/у, номер медицинской карты") ??
-		requiredDocumentField(effectiveOpenedAt, "карта 043/у, дата приема") ??
-		requiredDocumentField(effectivePeriodStart, "карта 043/у, период с") ??
-		requiredDocumentField(effectivePeriodEnd, "карта 043/у, период по") ??
-		requiredDocumentField(effectivePatientName, "карта 043/у, пациент") ??
-		requiredDocumentField(effectiveComplaint, "карта 043/у, жалобы и анамнез") ??
-		requiredDocumentField(effectiveObjective, "карта 043/у, объективный статус") ??
-		requiredDocumentField(effectiveDiagnosis, "карта 043/у, диагноз") ??
-		requiredDocumentField(effectiveTreatment, "карта 043/у, проведенное лечение") ??
-		requiredDocumentField(effectiveRecommendations, "карта 043/у, назначения и рекомендации") ??
-		requiredDocumentField(effectiveDoctor, "карта 043/у, врач")
-	);
-}
 
 export function validateDentalMedicalCard043U(
 	state: DocumentState,
@@ -1919,7 +1838,6 @@ export const documentPayloadValidators: Record<
 	lab_work_order: validateLabWorkOrder,
 	photo_video_consent: validatePhotoVideoConsent,
 	xray_cbct_referral: validateXrayCbctReferral,
-	outpatient_medical_card_025u: validateOutpatientMedicalCard025U,
 	dental_medical_card_043u: validateDentalMedicalCard043U,
 	orthodontic_medical_card_043_1u: validateOrthodonticMedicalCard043_1U,
 	daily_dentist_diary_037u: validateDailyDentistDiary037U,

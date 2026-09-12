@@ -82,9 +82,6 @@ import {
 	documentPayloadDraftLocalKey,
 	loadDocumentPayloadDraftStore,
 	type MedicalRecordExtractDocumentDraftFields,
-	type Outpatient025uDemographicCode,
-	type Outpatient025uDocumentDraftFields,
-	outpatient025uDemographicCodeOptions,
 	taxApplicationRelationshipOptions,
 } from "../DocumentHelpers";
 import {
@@ -253,173 +250,12 @@ export function emptyDocumentPaymentSelectionStore(): DocumentPaymentSelectionSt
 	return { version: 1, selections: {} };
 }
 
-export function emptyOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFields {
-	const today = todayDateInputValue();
-	return {
-		recordExtractPeriodStart: today,
-		recordExtractPeriodEnd: today,
-		recordExtractSourceVisitIds: "",
-		recordExtractComplaintAndAnamnesis: "",
-		recordExtractObjectiveStatus: "",
-		recordExtractDiagnosis: "",
-		recordExtractTreatmentProvided: "",
-		recordExtractRecommendations: "",
-		recordExtractDoctorFullName: "",
-		recordExtractPreparedFromSignedRecords: false,
-		outpatient025uMedicalCardNumber: "",
-		outpatient025uOpenedAt: today,
-		outpatient025uPatientSexCode: "unknown",
-		outpatient025uCitizenship: "",
-		outpatient025uRegistrationUrbanRuralCode: "unknown",
-		outpatient025uStayUrbanRuralCode: "unknown",
-		outpatient025uOmsIssuedAt: "",
-		outpatient025uInsurerName: "",
-		outpatient025uSocialSupportCode: "",
-		outpatient025uHealthStatusDisclosureContact: "",
-		outpatient025uEmploymentCode: "",
-		outpatient025uDisabilityGroup: "",
-		outpatient025uWorkOrStudyPlace: "",
-		outpatient025uPalliativeCareNeedCode: "",
-		outpatient025uBloodGroup: "",
-		outpatient025uRhFactor: "",
-		outpatient025uOtherBloodData: "",
-		outpatient025uAllergyHistory: "",
-		outpatient025uFinalEpicrisis: "",
-		outpatient025uOfficialForm274nChecked: false,
-		outpatient025uThirdPartyDataChecked: false,
-	};
-}
-
 export function emptyDocumentPayloadDraftStore(): DocumentPayloadDraftStore {
 	return { version: 1, drafts: {} };
 }
 
-export function normalizedOutpatient025uCode(
-	value: unknown,
-): "1" | "2" | "unknown" {
-	return value === "1" || value === "2" || value === "unknown"
-		? value
-		: "unknown";
-}
-
 export function localDraftString(value: unknown, maxLength = 1200): string {
 	return typeof value === "string" ? value.slice(0, maxLength) : "";
-}
-
-export function normalizeOutpatient025uDocumentDraftFields(
-	value: unknown,
-): Outpatient025uDocumentDraftFields | null {
-	if (!value || typeof value !== "object") return null;
-	const candidate = value as Partial<
-		Record<keyof Outpatient025uDocumentDraftFields, unknown>
-	>;
-	return {
-		recordExtractPeriodStart: localDraftString(
-			candidate.recordExtractPeriodStart,
-			40,
-		),
-		recordExtractPeriodEnd: localDraftString(
-			candidate.recordExtractPeriodEnd,
-			40,
-		),
-		recordExtractSourceVisitIds: localDraftString(
-			candidate.recordExtractSourceVisitIds,
-			2400,
-		),
-		recordExtractComplaintAndAnamnesis: localDraftString(
-			candidate.recordExtractComplaintAndAnamnesis,
-		),
-		recordExtractObjectiveStatus: localDraftString(
-			candidate.recordExtractObjectiveStatus,
-		),
-		recordExtractDiagnosis: localDraftString(candidate.recordExtractDiagnosis),
-		recordExtractTreatmentProvided: localDraftString(
-			candidate.recordExtractTreatmentProvided,
-		),
-		recordExtractRecommendations: localDraftString(
-			candidate.recordExtractRecommendations,
-		),
-		recordExtractDoctorFullName: localDraftString(
-			candidate.recordExtractDoctorFullName,
-			240,
-		),
-		recordExtractPreparedFromSignedRecords:
-			candidate.recordExtractPreparedFromSignedRecords === true,
-		outpatient025uMedicalCardNumber: localDraftString(
-			candidate.outpatient025uMedicalCardNumber,
-			120,
-		),
-		outpatient025uOpenedAt: localDraftString(
-			candidate.outpatient025uOpenedAt,
-			40,
-		),
-		outpatient025uPatientSexCode: normalizedOutpatient025uCode(
-			candidate.outpatient025uPatientSexCode,
-		),
-		outpatient025uCitizenship: localDraftString(
-			candidate.outpatient025uCitizenship,
-			240,
-		),
-		outpatient025uRegistrationUrbanRuralCode: normalizedOutpatient025uCode(
-			candidate.outpatient025uRegistrationUrbanRuralCode,
-		),
-		outpatient025uStayUrbanRuralCode: normalizedOutpatient025uCode(
-			candidate.outpatient025uStayUrbanRuralCode,
-		),
-		outpatient025uOmsIssuedAt: localDraftString(
-			candidate.outpatient025uOmsIssuedAt,
-			40,
-		),
-		outpatient025uInsurerName: localDraftString(
-			candidate.outpatient025uInsurerName,
-			300,
-		),
-		outpatient025uSocialSupportCode: localDraftString(
-			candidate.outpatient025uSocialSupportCode,
-			120,
-		),
-		outpatient025uHealthStatusDisclosureContact: localDraftString(
-			candidate.outpatient025uHealthStatusDisclosureContact,
-			300,
-		),
-		outpatient025uEmploymentCode: localDraftString(
-			candidate.outpatient025uEmploymentCode,
-			120,
-		),
-		outpatient025uDisabilityGroup: localDraftString(
-			candidate.outpatient025uDisabilityGroup,
-			120,
-		),
-		outpatient025uWorkOrStudyPlace: localDraftString(
-			candidate.outpatient025uWorkOrStudyPlace,
-			300,
-		),
-		outpatient025uPalliativeCareNeedCode: localDraftString(
-			candidate.outpatient025uPalliativeCareNeedCode,
-			120,
-		),
-		outpatient025uBloodGroup: localDraftString(
-			candidate.outpatient025uBloodGroup,
-			80,
-		),
-		outpatient025uRhFactor: localDraftString(
-			candidate.outpatient025uRhFactor,
-			80,
-		),
-		outpatient025uOtherBloodData: localDraftString(
-			candidate.outpatient025uOtherBloodData,
-		),
-		outpatient025uAllergyHistory: localDraftString(
-			candidate.outpatient025uAllergyHistory,
-		),
-		outpatient025uFinalEpicrisis: localDraftString(
-			candidate.outpatient025uFinalEpicrisis,
-		),
-		outpatient025uOfficialForm274nChecked:
-			candidate.outpatient025uOfficialForm274nChecked === true,
-		outpatient025uThirdPartyDataChecked:
-			candidate.outpatient025uThirdPartyDataChecked === true,
-	};
 }
 
 export function emptyMedicalRecordExtractDocumentDraftFields(): MedicalRecordExtractDocumentDraftFields {
@@ -495,61 +331,6 @@ export function normalizeMedicalRecordExtractDocumentDraftFields(
 		recordExtractThirdPartyDataChecked:
 			candidate.recordExtractThirdPartyDataChecked === true,
 	};
-}
-
-export function loadOutpatient025uDocumentDraft(
-	organizationId: string | null | undefined,
-	key: string | null,
-): Outpatient025uDocumentDraftFields | null {
-	if (!key || typeof window === "undefined") return null;
-	const draft = loadDocumentPayloadDraftStore(organizationId).drafts[key];
-	return draft?.kind === "outpatient_medical_card_025u"
-		? (draft.fields as Outpatient025uDocumentDraftFields)
-		: null;
-}
-
-export function saveOutpatient025uDocumentDraft(
-	organizationId: string | null | undefined,
-	key: string | null,
-	patientId: string | null,
-	visitId: string | null,
-	fields: Outpatient025uDocumentDraftFields,
-): void {
-	if (!key || !patientId || typeof window === "undefined") return;
-	try {
-		const store = loadDocumentPayloadDraftStore(organizationId);
-		store.drafts[key] = {
-			kind: "outpatient_medical_card_025u",
-			patientId,
-			visitId,
-			fields:
-				normalizeOutpatient025uDocumentDraftFields(fields) ??
-				emptyOutpatient025uDocumentDraftFields(),
-			savedAt: new Date().toISOString(),
-		};
-		const trimmedDrafts = Object.fromEntries(
-			Object.entries(store.drafts)
-				.sort((left, right) => right[1].savedAt.localeCompare(left[1].savedAt))
-				.slice(0, 60),
-		);
-		safeLocalStorageSetItem(
-			documentPayloadDraftLocalKey(organizationId),
-			JSON.stringify({
-				version: 1,
-				drafts: trimmedDrafts,
-			} satisfies DocumentPayloadDraftStore),
-		);
-	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
-		logger.error("Failed to save outpatient 025u document draft", error);
-		// Payload drafts are recovery data only; document issue still validates all facts server-side.
-	}
 }
 
 export function loadMedicalRecordExtractDocumentDraft(
@@ -1125,14 +906,6 @@ export function normalizedXrayPregnancyStatus(
 	value: unknown,
 ): XrayCbctReferralPregnancyStatus {
 	return isOptionValue(value, xrayPregnancyStatusOptions) ? value : "unknown";
-}
-
-export function normalizedOutpatient025uDemographicCode(
-	value: unknown,
-): Outpatient025uDemographicCode {
-	return isStringUnionValue(value, outpatient025uDemographicCodeOptions)
-		? value
-		: "unknown";
 }
 
 export function normalizedMedicalDocumentReleaseChannel(

@@ -1,4 +1,4 @@
-import type { ClinicalToothRow, DentalMedicalCard043uPayload, OutpatientMedicalCard025uPayload } from "@dental/shared";
+import type { ClinicalToothRow, DentalMedicalCard043uPayload } from "@dental/shared";
 import { useCallback, useMemo } from "react";
 
 export function useDocumentFallbacks(scope: any) {
@@ -83,7 +83,6 @@ export function useDocumentFallbacks(scope: any) {
         recordExtractObjectiveStatus,
         recordExtractDiagnosis,
         recordExtractTreatmentProvided,
-        outpatient025uMedicalCardNumber,
         recordExtractSourceVisitIds,
         clinicProfileDraft,
         recordExtractDoctorFullName,
@@ -552,30 +551,7 @@ export function useDocumentFallbacks(scope: any) {
 		);
 	}
 
-    function outpatient025uMedicalCardNumberValue(): string {
-		const explicitNumber = outpatient025uMedicalCardNumber.trim();
-		if (explicitNumber) return explicitNumber;
-		const patientToken =
-			documentPatient?.id.slice(0, 8).toUpperCase() ?? "PATIENT";
-		return `DENTE-${new Date().getFullYear()}-${patientToken}`;
-	}
-
-    function outpatient025uSourceVisitIdsValue(): string[] {
-		const sourceVisitIds = documentTextLines(recordExtractSourceVisitIds);
-		if (sourceVisitIds.length) return sourceVisitIds;
-		return dashboard?.activeVisit?.id ? [dashboard?.activeVisit?.id] : [];
-	}
-
-    function outpatient025uLicenseValue(): string | null {
-		const value = compactDocumentText(
-			clinicProfileDraft?.medicalLicenseNumber,
-			clinicProfileDraft?.medicalLicenseIssuedAt,
-			clinicProfileDraft?.medicalLicenseIssuer,
-		);
-		return value || null;
-	}
-
-    function outpatient025uDoctorValue(): {
+    function dentalMedicalCardDoctorValue(): {
 		fullName: string;
 		position: string;
 		specialty: string;
@@ -588,7 +564,7 @@ export function useDocumentFallbacks(scope: any) {
 		};
 	}
 
-    function outpatient025uVisitDateValue(): string {
+    function dentalMedicalCardVisitDateValue(): string {
 		return (
 			recordExtractPeriodEnd.trim() ||
 			toDateInputValue(activeAppointment?.startsAt) ||
@@ -655,10 +631,7 @@ export function useDocumentFallbacks(scope: any) {
         recordExtractObjectiveStatusValue,
         recordExtractDiagnosisValue,
         recordExtractTreatmentProvidedValue,
-        outpatient025uMedicalCardNumberValue,
-        outpatient025uSourceVisitIdsValue,
-        outpatient025uLicenseValue,
-        outpatient025uDoctorValue,
-        outpatient025uVisitDateValue,
+        dentalMedicalCardDoctorValue,
+        dentalMedicalCardVisitDateValue,
     };
 }

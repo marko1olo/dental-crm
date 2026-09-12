@@ -2,15 +2,11 @@ import { useEffect, useRef } from "react";
 import {
 	loadDocumentPaymentSelection,
 	saveDocumentPaymentSelection,
-	loadOutpatient025uDocumentDraft,
-	saveOutpatient025uDocumentDraft,
 	loadMedicalRecordExtractDocumentDraft,
 	saveMedicalRecordExtractDocumentDraft,
-	emptyOutpatient025uDocumentDraftFields,
 	emptyMedicalRecordExtractDocumentDraftFields,
 } from "../../AppHelpers";
 import {
-	type Outpatient025uDocumentDraftFields,
 	type MedicalRecordExtractDocumentDraftFields,
 } from "../../AppConstants";
 
@@ -29,16 +25,12 @@ export interface DocumentDraftPersistenceProps {
 	selectedPaymentReceiptIds: string[];
 
 	selectedDocumentKind: string;
-	outpatient025uDraftPersistenceKey: string | null;
-	applyOutpatient025uDocumentDraftFields: (fields: Outpatient025uDocumentDraftFields) => void;
-	documentPatientId: string | undefined;
-	outpatient025uDraftVisitId: string | null;
-	currentOutpatient025uDocumentDraftFields: () => Outpatient025uDocumentDraftFields;
 
 	medicalRecordExtractDraftPersistenceKey: string | null;
 	applyMedicalRecordExtractDocumentDraftFields: (fields: MedicalRecordExtractDocumentDraftFields) => void;
 	medicalRecordExtractDraftVisitId: string | null;
 	currentMedicalRecordExtractDocumentDraftFields: () => MedicalRecordExtractDocumentDraftFields;
+	documentPatientId?: string | null;
 }
 
 export function useDocumentDraftPersistence({
@@ -56,20 +48,15 @@ export function useDocumentDraftPersistence({
 	selectedPaymentReceiptIds,
 
 	selectedDocumentKind,
-	outpatient025uDraftPersistenceKey,
-	applyOutpatient025uDocumentDraftFields,
-	documentPatientId,
-	outpatient025uDraftVisitId,
-	currentOutpatient025uDocumentDraftFields,
 
 	medicalRecordExtractDraftPersistenceKey,
 	applyMedicalRecordExtractDocumentDraftFields,
 	medicalRecordExtractDraftVisitId,
 	currentMedicalRecordExtractDocumentDraftFields,
+	documentPatientId,
 }: DocumentDraftPersistenceProps) {
 	const taxPaymentSelectionHydratedKeyRef = useRef<string | null>(null);
 	const paymentReceiptSelectionHydratedKeyRef = useRef<string | null>(null);
-	const outpatient025uDraftHydratedKeyRef = useRef<string | null>(null);
 	const medicalRecordExtractDraftHydratedKeyRef = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -188,57 +175,7 @@ export function useDocumentDraftPersistence({
 		eligiblePaymentReceiptPayments.map,
 	]);
 
-	useEffect(() => {
-		if (
-			selectedDocumentKind !== "outpatient_medical_card_025u" ||
-			!outpatient025uDraftPersistenceKey
-		) {
-			outpatient025uDraftHydratedKeyRef.current = null;
-			return;
-		}
-		const storedDraft = loadOutpatient025uDocumentDraft(
-			documentLocalPersistenceOrganizationId,
-			outpatient025uDraftPersistenceKey,
-		);
-		applyOutpatient025uDocumentDraftFields(
-			storedDraft ?? emptyOutpatient025uDocumentDraftFields(),
-		);
-		outpatient025uDraftHydratedKeyRef.current =
-			outpatient025uDraftPersistenceKey;
-	}, [
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		selectedDocumentKind,
-		applyOutpatient025uDocumentDraftFields,
-	]);
 
-	useEffect(() => {
-		if (
-			selectedDocumentKind !== "outpatient_medical_card_025u" ||
-			!documentPatientId ||
-			!outpatient025uDraftPersistenceKey
-		)
-			return;
-		if (
-			outpatient025uDraftHydratedKeyRef.current !==
-			outpatient025uDraftPersistenceKey
-		)
-			return;
-		saveOutpatient025uDocumentDraft(
-			documentLocalPersistenceOrganizationId,
-			outpatient025uDraftPersistenceKey,
-			documentPatientId,
-			outpatient025uDraftVisitId,
-			currentOutpatient025uDocumentDraftFields(),
-		);
-	}, [
-		documentPatientId,
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		outpatient025uDraftVisitId,
-		selectedDocumentKind,
-		currentOutpatient025uDocumentDraftFields,
-	]);
 
 	useEffect(() => {
 		if (

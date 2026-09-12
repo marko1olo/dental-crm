@@ -91,8 +91,8 @@ export interface DocumentState {
 	 * ЗАЧЕМ. Этот стор — одно глобальное хранилище примерно на восемьсот полей на
 	 * ВСЕ виды документов, и функции сброса в нём не было вовсе. Пер-пациентный
 	 * черновик заведён ровно у двух видов из тридцати
-	 * (`documentPayloadDraftKey` в AppHelpers.tsx: `outpatient_medical_card_025u`
-	 * и `medical_record_extract`), остальные формы ничего о пациенте не знают:
+	 * (`documentPayloadDraftKey` в AppHelpers.tsx:
+	 * `medical_record_extract`), остальные формы ничего о пациенте не знают:
 	 * `PhotoVideoConsentForm.tsx`, например, не упоминает пациента ни разу.
 	 *
 	 * Что из этого следовало. Администратор заполнял согласие на фото и видео
@@ -316,44 +316,12 @@ export interface DocumentState {
 					prev: DocumentIngestionResponse | null,
 			  ) => DocumentIngestionResponse | null),
 	) => void;
-
-	setOutpatient025uEmploymentCode: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uDisabilityGroup: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uWorkOrStudyPlace: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uPalliativeCareNeedCode: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uBloodGroup: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uRhFactor: (val: string | ((prev: string) => string)) => void;
 	legacyDraftFields?: Record<string, unknown>;
 	setLegacyDraftFields?: (
 		val:
 			| Record<string, unknown>
 			| undefined
 			| ((prev: Record<string, unknown> | undefined) => Record<string, unknown> | undefined),
-	) => void;
-	setOutpatient025uOtherBloodData: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uAllergyHistory: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uFinalEpicrisis: (
-		val: string | ((prev: string) => string),
-	) => void;
-	setOutpatient025uOfficialForm274nChecked: (
-		val: boolean | ((prev: boolean) => boolean),
-	) => void;
-	setOutpatient025uThirdPartyDataChecked: (
-		val: boolean | ((prev: boolean) => boolean),
 	) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setCopyRequestDocumentTypes: (val: any | ((prev: any) => any)) => void;
@@ -510,17 +478,6 @@ export interface DocumentState {
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
 
-	outpatient025uEmploymentCode: string;
-	outpatient025uDisabilityGroup: string;
-	outpatient025uWorkOrStudyPlace: string;
-	outpatient025uPalliativeCareNeedCode: string;
-	outpatient025uBloodGroup: string;
-	outpatient025uRhFactor: string;
-	outpatient025uOtherBloodData: string;
-	outpatient025uAllergyHistory: string;
-	outpatient025uFinalEpicrisis: string;
-	outpatient025uOfficialForm274nChecked: boolean;
-	outpatient025uThirdPartyDataChecked: boolean;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	copyRequestDocumentTypes: any;
 	copyRequestPeriodStart: string;
@@ -1694,56 +1651,6 @@ export interface DocumentState {
 	recordExtractThirdPartyDataChecked: boolean;
 	setRecordExtractThirdPartyDataChecked: (
 		val: boolean | ((prev: boolean) => boolean),
-	) => void;
-	outpatient025uMedicalCardNumber: string;
-	setOutpatient025uMedicalCardNumber: (
-		val: string | ((prev: string) => string),
-	) => void;
-	outpatient025uOpenedAt: string;
-	setOutpatient025uOpenedAt: (val: string | ((prev: string) => string)) => void;
-	outpatient025uPatientSexCode: "1" | "2" | "unknown";
-	setOutpatient025uPatientSexCode: (
-		val:
-			| "1"
-			| "2"
-			| "unknown"
-			| ((prev: "1" | "2" | "unknown") => "1" | "2" | "unknown"),
-	) => void;
-	outpatient025uCitizenship: string;
-	setOutpatient025uCitizenship: (
-		val: string | ((prev: string) => string),
-	) => void;
-	outpatient025uRegistrationUrbanRuralCode: "1" | "2" | "unknown";
-	setOutpatient025uRegistrationUrbanRuralCode: (
-		val:
-			| "1"
-			| "2"
-			| "unknown"
-			| ((prev: "1" | "2" | "unknown") => "1" | "2" | "unknown"),
-	) => void;
-	outpatient025uStayUrbanRuralCode: "1" | "2" | "unknown";
-	setOutpatient025uStayUrbanRuralCode: (
-		val:
-			| "1"
-			| "2"
-			| "unknown"
-			| ((prev: "1" | "2" | "unknown") => "1" | "2" | "unknown"),
-	) => void;
-	outpatient025uOmsIssuedAt: string;
-	setOutpatient025uOmsIssuedAt: (
-		val: string | ((prev: string) => string),
-	) => void;
-	outpatient025uInsurerName: string;
-	setOutpatient025uInsurerName: (
-		val: string | ((prev: string) => string),
-	) => void;
-	outpatient025uSocialSupportCode: string;
-	setOutpatient025uSocialSupportCode: (
-		val: string | ((prev: string) => string),
-	) => void;
-	outpatient025uHealthStatusDisclosureContact: string;
-	setOutpatient025uHealthStatusDisclosureContact: (
-		val: string | ((prev: string) => string),
 	) => void;
 }
 
@@ -3265,96 +3172,8 @@ const createClinicalSlice = (set: any) => ({
 	setXrayRecipientClinic: createSetter(set, "xrayRecipientClinic"),
 	xrayDueDate: "",
 	setXrayDueDate: createSetter(set, "xrayDueDate"),
-	outpatient025uMedicalCardNumber: "",
-	setOutpatient025uMedicalCardNumber: createSetter(
-		set,
-		"outpatient025uMedicalCardNumber",
-	),
-	outpatient025uOpenedAt: "",
-	setOutpatient025uOpenedAt: createSetter(set, "outpatient025uOpenedAt"),
-	outpatient025uPatientSexCode: "unknown",
-	setOutpatient025uPatientSexCode: createSetter(
-		set,
-		"outpatient025uPatientSexCode",
-	),
-	outpatient025uCitizenship: "",
-	setOutpatient025uCitizenship: createSetter(set, "outpatient025uCitizenship"),
-	outpatient025uRegistrationUrbanRuralCode: "unknown",
-	setOutpatient025uRegistrationUrbanRuralCode: createSetter(
-		set,
-		"outpatient025uRegistrationUrbanRuralCode",
-	),
-	outpatient025uStayUrbanRuralCode: "unknown",
-	setOutpatient025uStayUrbanRuralCode: createSetter(
-		set,
-		"outpatient025uStayUrbanRuralCode",
-	),
-	outpatient025uOmsIssuedAt: "",
-	setOutpatient025uOmsIssuedAt: createSetter(set, "outpatient025uOmsIssuedAt"),
-	outpatient025uInsurerName: "",
-	setOutpatient025uInsurerName: createSetter(set, "outpatient025uInsurerName"),
-	outpatient025uSocialSupportCode: "",
-	setOutpatient025uSocialSupportCode: createSetter(
-		set,
-		"outpatient025uSocialSupportCode",
-	),
-	outpatient025uHealthStatusDisclosureContact: "",
-	setOutpatient025uHealthStatusDisclosureContact: createSetter(
-		set,
-		"outpatient025uHealthStatusDisclosureContact",
-	),
-
-	outpatient025uEmploymentCode: "",
-	setOutpatient025uEmploymentCode: createSetter(
-		set,
-		"outpatient025uEmploymentCode",
-	),
-	outpatient025uDisabilityGroup: "",
-	setOutpatient025uDisabilityGroup: createSetter(
-		set,
-		"outpatient025uDisabilityGroup",
-	),
-	outpatient025uWorkOrStudyPlace: "",
-	setOutpatient025uWorkOrStudyPlace: createSetter(
-		set,
-		"outpatient025uWorkOrStudyPlace",
-	),
-	outpatient025uPalliativeCareNeedCode: "",
-	setOutpatient025uPalliativeCareNeedCode: createSetter(
-		set,
-		"outpatient025uPalliativeCareNeedCode",
-	),
-	outpatient025uBloodGroup: "",
-	setOutpatient025uBloodGroup: createSetter(set, "outpatient025uBloodGroup"),
-	outpatient025uRhFactor: "",
-	setOutpatient025uRhFactor: createSetter(set, "outpatient025uRhFactor"),
 	legacyDraftFields: undefined as Record<string, unknown> | undefined,
 	setLegacyDraftFields: createSetter(set, "legacyDraftFields"),
-	outpatient025uOtherBloodData: "",
-	setOutpatient025uOtherBloodData: createSetter(
-		set,
-		"outpatient025uOtherBloodData",
-	),
-	outpatient025uAllergyHistory: "",
-	setOutpatient025uAllergyHistory: createSetter(
-		set,
-		"outpatient025uAllergyHistory",
-	),
-	outpatient025uFinalEpicrisis: "",
-	setOutpatient025uFinalEpicrisis: createSetter(
-		set,
-		"outpatient025uFinalEpicrisis",
-	),
-	outpatient025uOfficialForm274nChecked: false,
-	setOutpatient025uOfficialForm274nChecked: createSetter(
-		set,
-		"outpatient025uOfficialForm274nChecked",
-	),
-	outpatient025uThirdPartyDataChecked: false,
-	setOutpatient025uThirdPartyDataChecked: createSetter(
-		set,
-		"outpatient025uThirdPartyDataChecked",
-	),
 });
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression

@@ -1,52 +1,27 @@
-import type { ClinicalToothRow, DentalMedicalCard043uPayload, OutpatientMedicalCard025uPayload } from "@dental/shared";
+import type { ClinicalToothRow, DentalMedicalCard043uPayload } from "@dental/shared";
 import { useCallback, useMemo } from "react";
 
 export function useDocumentPayloads(scope: any) {
     const {
-        
-    
-    activeTreatmentPlanItems,
+        activeTreatmentPlanItems,
         dashboard,
-        outpatient025uDoctorValue,
-        outpatient025uVisitDateValue,
+        dentalMedicalCardDoctorValue,
+        dentalMedicalCardVisitDateValue,
         documentPatient,
         recordExtractComplaintAndAnamnesisValue,
         visitNoteForm,
         recordExtractObjectiveStatusValue,
         recordExtractDiagnosisValue,
         recordExtractTreatmentProvidedValue,
-        outpatient025uPatientSexCode,
         toDateInputValue,
         clinicProfileDraft,
-        outpatient025uMedicalCardNumberValue,
         activeDoctor,
         clinicalToothRowsValue,
-        outpatient025uSourceVisitIdsValue,
-        outpatient025uLicenseValue,
-        outpatient025uOpenedAt,
         recordExtractPeriodStart,
         recordExtractPeriodEnd,
-        outpatient025uCitizenship,
-        outpatient025uRegistrationUrbanRuralCode,
-        outpatient025uStayUrbanRuralCode,
-        outpatient025uOmsIssuedAt,
-        outpatient025uInsurerName,
-        outpatient025uSocialSupportCode,
-        outpatient025uHealthStatusDisclosureContact,
-        outpatient025uEmploymentCode,
-        outpatient025uDisabilityGroup,
-        outpatient025uWorkOrStudyPlace,
-        outpatient025uPalliativeCareNeedCode,
-        outpatient025uBloodGroup,
-        outpatient025uRhFactor,
-        outpatient025uOtherBloodData,
-        outpatient025uAllergyHistory,
         recordExtractRecommendations,
-        outpatient025uFinalEpicrisis,
         confirmedDocumentLiteral,
         recordExtractPreparedFromSignedRecords,
-        outpatient025uOfficialForm274nChecked,
-        outpatient025uThirdPartyDataChecked,
     } = scope;
 
     function plannedServiceLinesForFinancialPayload() {
@@ -77,8 +52,8 @@ export function useDocumentPayloads(scope: any) {
 	}
 
     function dentalMedicalCard043uPayloadValue(): DentalMedicalCard043uPayload {
-		const doctor = outpatient025uDoctorValue();
-		const visitDate = outpatient025uVisitDateValue();
+		const doctor = dentalMedicalCardDoctorValue();
+		const visitDate = dentalMedicalCardVisitDateValue();
 		const patientProfile = documentPatient?.administrativeProfile;
 		const complaintsAndAnamnesis = recordExtractComplaintAndAnamnesisValue();
 		const complaintText =
@@ -97,7 +72,7 @@ export function useDocumentPayloads(scope: any) {
 			visitNoteForm.treatmentPlan.trim() ||
 			recordExtractTreatmentProvidedValue() ||
 			"";
-		const sexRaw = (outpatient025uPatientSexCode ?? "")
+		const sexRaw = (documentPatient?.sex ?? patientProfile?.sex ?? "")
 			.toString()
 			.toLowerCase();
 		const sex =
@@ -180,13 +155,8 @@ export function useDocumentPayloads(scope: any) {
 		};
 	}
 
-    function outpatient025uPayloadValue(): OutpatientMedicalCard025uPayload {
-		return dentalMedicalCard043uPayloadValue();
-	}
-
     return {
         plannedServiceLinesForFinancialPayload,
         dentalMedicalCard043uPayloadValue,
-        outpatient025uPayloadValue,
     };
 }

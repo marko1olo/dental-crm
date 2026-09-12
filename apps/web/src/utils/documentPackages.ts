@@ -407,8 +407,6 @@ export function buildDocumentPackageStatePatch(
 				selectedDocumentKind: "xray_cbct_referral" as DocumentKind,
 				// Dental Medical Card 043/u
 				dentalMedicalCardOfficialFormChecked: true,
-				outpatient025uOfficialForm274nChecked: true,
-				outpatient025uThirdPartyDataChecked: true,
 				// Attendance Certificate
 				attendanceDiagnosisDisclosureExcluded: true,
 				attendanceNotSickLeaveAcknowledged: true,
