@@ -12,10 +12,10 @@ import {
 	detectRosterConflicts,
 	type DoctorShift,
 } from "../roster/doctorShiftRosterEngine";
-import { ScheduleCalendar } from "../ScheduleCalendar";
+import { ScheduleView } from "../../../ScheduleView";
 import { ChairScheduleView } from "../ChairScheduleView";
 import { ChairRosterModal } from "../ChairRosterModal";
-import { ScheduleAppointmentModal } from "../ScheduleAppointmentModal";
+import { QuickBookingDrawer } from "../QuickBookingDrawer";
 
 describe("Schedule & Chair Roster StomX / IDENT Comprehensive Parity", () => {
 	describe("1. Dental Chair Duty Doctor Shift Resolution (StomX / IDENT Parity)", () => {
@@ -323,9 +323,9 @@ describe("Schedule & Chair Roster StomX / IDENT Comprehensive Parity", () => {
 	});
 
 	describe("4. Canonical Component Exports & Integrity Verification", () => {
-		it("exports ScheduleCalendar and renders safely", () => {
-			assert.ok(ScheduleCalendar, "ScheduleCalendar must be exported");
-			assert.equal(typeof ScheduleCalendar, "function");
+		it("exports ScheduleView and renders safely", () => {
+			assert.ok(ScheduleView, "ScheduleView must be exported");
+			assert.equal(typeof ScheduleView, "function");
 		});
 
 		it("exports ChairScheduleView and renders safely with action bar and chair counters", () => {
@@ -369,9 +369,9 @@ describe("Schedule & Chair Roster StomX / IDENT Comprehensive Parity", () => {
 			assert.equal(typeof ChairRosterModal, "function");
 		});
 
-		it("exports ScheduleAppointmentModal conforming to Mandate 8e (0 disabled buttons)", () => {
-			assert.ok(ScheduleAppointmentModal, "ScheduleAppointmentModal must be exported");
-			assert.equal(typeof ScheduleAppointmentModal, "function");
+		it("exports QuickBookingDrawer conforming to Mandate 8e (0 disabled buttons)", () => {
+			assert.ok(QuickBookingDrawer, "QuickBookingDrawer must be exported");
+			assert.equal(typeof QuickBookingDrawer, "function");
 		});
 
 		it("ensures DEFAULT_SOLO_CHAIR has active=true and resilient fallback room and color", () => {

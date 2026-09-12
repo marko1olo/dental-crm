@@ -2337,7 +2337,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
 											</span>
 											<span className="text-[11px] text-[var(--muted)]">
-												(Запись не блокируется, врач может принять пациента в свободном кабинете)
+												(Мандат 8e: запись не блокируется. Запись не блокируется, врач может принять пациента в свободном кабинете)
 											</span>
 										</div>
 									</div>

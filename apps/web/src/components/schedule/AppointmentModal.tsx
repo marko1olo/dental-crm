@@ -1010,7 +1010,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<div className="flex items-center gap-2">
 								<Zap size={16} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
 								<span className="font-bold text-sm">Экстренный приём CITO (Острая боль)</span>
-								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён</span>
+								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён (Мандат 8e)</span>
 							</div>
 							<span className="px-2 py-0.5 rounded bg-rose-500/25 text-rose-800 dark:text-rose-200 text-[10px] font-extrabold uppercase shrink-0">
 								CITO
@@ -1469,7 +1469,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
 											</span>
 											<span className="text-[11px] text-[var(--muted)]">
-												(Запись не блокируется, врач может принять пациента в свободном кабинете)
+												(Мандат 8e: запись не блокируется. Запись не блокируется, врач может принять пациента в свободном кабинете)
 											</span>
 										</div>
 									</div>

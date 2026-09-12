@@ -364,7 +364,7 @@ export function ScheduleFilterStrip({
 						<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
 						<span className="whitespace-nowrap shrink-0">
 							<span className="sm:hidden">Моё</span>
-							<span className="hidden sm:inline">Моё кресло</span>
+							<span className="hidden sm:inline">Моё кресло ({myChair.name})</span>
 						</span>
 					</button>
 				)}
@@ -443,10 +443,11 @@ export function ScheduleFilterStrip({
 				<button
 					type="button"
 					onClick={handleOpenAddChair}
-					className="schedule-add-chair-chip-btn min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
+					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
 					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
 					aria-label="Добавить кресло в расписание"
 					data-testid="schedule-add-chair-btn"
+					style={{ minHeight: "44px", minWidth: "44px" }}
 				>
 					<span className="whitespace-nowrap font-bold">+ Кресло</span>
 				</button>

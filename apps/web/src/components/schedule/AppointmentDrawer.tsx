@@ -1132,7 +1132,7 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 								data-testid="drawer-solo-doctor-badge"
 							>
 								<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Режим соло-врача: выбор ассистента не требуется</span>
+								<span>Режим соло-врача: ассистент не требуется</span>
 							</div>
 						) : assistants.length > 0 ? (
 							<div className="sm:col-span-2">

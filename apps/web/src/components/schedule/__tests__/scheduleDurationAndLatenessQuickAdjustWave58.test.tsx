@@ -152,6 +152,8 @@ function setupMockDom() {
 			children,
 			childNodes: children,
 			attributes: [],
+			options: [],
+			selectedIndex: 0,
 			ownerDocument: doc,
 			parentNode: null,
 			textContent: "",
