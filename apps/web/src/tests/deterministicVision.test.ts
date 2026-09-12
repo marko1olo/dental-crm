@@ -151,7 +151,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 			const closeButtonCssFiles = [
 				{ file: "consents/informedConsent.css", classPattern: ".consent-close-btn" },
 				{ file: "documents/sickLeave/sickLeaveEln.css", classPattern: ".sick-leave-close-btn" },
-				{ file: "documents/egisz/egiszModal.css", classPattern: ".egisz-close-btn" },
+				{ file: "egisz/egiszRemd.css", classPattern: ".egisz-close-btn" },
 				{ file: "diagnostics/DiagnosticDrawer.css", classPattern: ".dente-diagnostic-close-btn" },
 				{ file: "diagnostics/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
 				{ file: "PatientPortal.css", classPattern: ".doc-close-btn" },
@@ -189,7 +189,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 			const mobileMediaCheckedFiles = [
 				"consents/informedConsent.css",
 				"documents/sickLeave/sickLeaveEln.css",
-				"documents/egisz/egiszModal.css",
+				"egisz/egiszRemd.css",
 				"documents/paidMedicalContract.css",
 				"documents/documentNavigation.css",
 				"anesthesia/anesthesia.css",

@@ -169,7 +169,7 @@ describe("SurgeryCockpitModal & SurgeryProtocolPanel (Surgical Cockpit)", () => 
 		assert.ok(html.includes("anamnesis-anticoagulant-toggle"), "Must have 2. Anticoagulant / hemostasis toggle");
 		assert.ok(html.includes("anamnesis-bisphosphonate-toggle"), "Must have 3. Bisphosphonate / MRONJ toggle");
 		assert.ok(html.includes("anamnesis-diabetes-toggle"), "Must have 4. Diabetes mellitus toggle");
-		assert.ok(html.includes("Мандат 8i"), "Must reference Mandate 8i outpatient profile");
+		assert.ok(html.includes("Амбулаторный профиль"), "Must reference Mandate 8i outpatient profile");
 	});
 
 	it("renders instant print buttons for surgical protocol and IDS package in cockpit and panel (Mandate 8e)", () => {

@@ -17,9 +17,7 @@ import {
 	rublesToKopecks,
 	TemplateEngine,
 	templateEngine,
-	type InteractiveButton,
 	type RenderedTemplate,
-	type SupportedLocale,
 	type TemplateDefinition,
 } from "@dental/shared";
 
@@ -35,9 +33,7 @@ export {
 	rublesToKopecks,
 	TemplateEngine,
 	templateEngine,
-	type InteractiveButton,
 	type RenderedTemplate,
-	type SupportedLocale,
 	type TemplateDefinition,
 };
 
