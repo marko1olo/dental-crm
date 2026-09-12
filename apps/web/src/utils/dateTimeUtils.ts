@@ -1,5 +1,3 @@
-import { toDateTimeLocalValue } from "./dateUtils";
-
 /**
  * Календарный день в виде «ГГГГ-ММ-ДД»: в поясе клиники, если он известен, иначе
  * в местном поясе машины. День по UTC не возвращается никогда — см. разбор у
@@ -242,6 +240,28 @@ export function timeZoneDateParts(
 	} catch {
 		return null;
 	}
+}
+
+export function currentLocalDateTimeInputValue(): string {
+	const now = new Date();
+	const offsetMs = now.getTimezoneOffset() * 60_000;
+	return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+export function toDateTimeLocalValue(
+	value: string | null | undefined,
+	timeZone?: string | null,
+): string {
+	if (!value || typeof value !== "string") return "";
+	if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+	const zoned = timeZoneDateParts(value, timeZone);
+	if (zoned) return zoned;
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return value.slice(0, 16);
+	const local = new Date(
+		parsed.getTime() - parsed.getTimezoneOffset() * 60_000,
+	);
+	return local.toISOString().slice(0, 16);
 }
 
 export function fromDateTimeLocalValue(
