@@ -371,6 +371,20 @@ export {
 	determineReliabilityStatus,
 	buildSupplierRatingSummary,
 	formatSupplierReliabilityA4,
+	// Wave 138: Supplier Ratings & Quality Defect Audit Engine
+	supplierReviewSchema,
+	type SupplierReview,
+	purchaseDeliveryHistoryItemSchema,
+	type PurchaseDeliveryHistoryItem,
+	supplierTierSchema,
+	type SupplierTier,
+	SUPPLIER_TIER_LABELS_RU,
+	supplierMetricsSchema,
+	type SupplierMetrics,
+	computeSupplierMetrics,
+	evaluateSupplyRisk,
+	formatSupplierRatingAuditA4Report,
+	supplierRatingsEngine,
 } from "./inventory/index.js";
 export * from "./lab/index.js";
 export type { RecallPriority } from "./communications/index.js";

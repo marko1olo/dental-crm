@@ -345,3 +345,336 @@ export function formatSupplierReliabilityA4(
 
 	return lines.join("\n");
 }
+
+// ─── 4. WAVE 138: SUPPLIER RATINGS & QUALITY DEFECT AUDIT ENGINE ──────────────
+// Adapted from DentalPin (backend/app/modules/supplier_ratings/):
+// - models.py (SupplierReview)
+// - schemas.py (SupplierReviewCreate, SupplierReviewResponse, SupplierRatingMetrics)
+// - service.py (SupplierRatingsService on-demand delivery/quality calculations)
+
+/**
+ * Review record submitted by clinical staff or inventory manager.
+ */
+export const supplierReviewSchema = z.object({
+	id: z.string().min(1),
+	supplierId: z.string().min(1),
+	supplierName: z.string().min(1),
+	score: z.number().int().min(1).max(5),
+	comment: z.string().nullable().optional(),
+	reviewerName: z.string().nullable().optional(),
+	updatedAt: z.string(),
+});
+export type SupplierReview = z.infer<typeof supplierReviewSchema>;
+
+/**
+ * Single historical purchase delivery from the PO receiving ledger.
+ */
+export const purchaseDeliveryHistoryItemSchema = z.object({
+	poId: z.string().min(1),
+	expectedDate: z.string().nullable().optional(),
+	receivedAt: z.string().nullable().optional(),
+	status: z.string(),
+	totalUnits: z.number().int().nonnegative().default(0),
+	defectiveUnits: z.number().int().nonnegative().default(0),
+});
+export type PurchaseDeliveryHistoryItem = z.infer<typeof purchaseDeliveryHistoryItemSchema>;
+
+/**
+ * Supplier accreditation and risk tier:
+ * - tier_1_preferred: compositeScore >= 85 (Priority strategic vendor)
+ * - tier_2_standard: compositeScore >= 70 (Approved routine vendor)
+ * - tier_3_probation: compositeScore >= 50 (Under observation / probationary)
+ * - tier_4_disqualified: compositeScore < 50 (Disqualified / barred from purchasing)
+ */
+export const supplierTierSchema = z.enum([
+	"tier_1_preferred",
+	"tier_2_standard",
+	"tier_3_probation",
+	"tier_4_disqualified",
+]);
+export type SupplierTier = z.infer<typeof supplierTierSchema>;
+
+export const SUPPLIER_TIER_LABELS_RU: Record<SupplierTier, string> = {
+	tier_1_preferred: "Уровень 1: Приоритетный партнер (Preferred)",
+	tier_2_standard: "Уровень 2: Стандартный поставщик (Standard)",
+	tier_3_probation: "Уровень 3: Испытательный срок (Probation)",
+	tier_4_disqualified: "Уровень 4: Дисквалифицирован (Disqualified)",
+};
+
+/**
+ * Aggregated metrics and computed ratings for procurement audit.
+ */
+export const supplierMetricsSchema = z.object({
+	poCount: z.number().int().nonnegative().default(0),
+	receivedCount: z.number().int().nonnegative().default(0),
+	onTimeCount: z.number().int().nonnegative().default(0),
+	onTimeRate: z.number().min(0).max(1),
+	totalUnitsReceived: z.number().int().nonnegative().default(0),
+	defectiveUnitsCount: z.number().int().nonnegative().default(0),
+	defectRate: z.number().min(0).max(1),
+	averageReviewScore: z.number().min(1).max(5),
+	compositeScore: z.number().min(0).max(100),
+	tier: supplierTierSchema,
+});
+export type SupplierMetrics = z.infer<typeof supplierMetricsSchema>;
+
+/**
+ * Computes on-demand delivery discipline, defect rate, and composite scoring.
+ *
+ * Scoring formula (0..100):
+ * - On-time delivery rate: 40% (0..40 points)
+ * - Quality / absence of defects: 40% (0..40 points)
+ * - Average review score: 20% (0..20 points, where 5.0 = 20 pts)
+ *
+ * Fallbacks:
+ * - If no deliveries with due date, onTimeRate defaults to 1.0 (100%).
+ * - If 0 units received, defectRate defaults to 0.0 (0%).
+ * - If 0 reviews submitted, averageReviewScore defaults to 5.0.
+ */
+export function computeSupplierMetrics(
+	reviews: SupplierReview[],
+	history: PurchaseDeliveryHistoryItem[],
+): SupplierMetrics {
+	const poCount = history.length;
+
+	const receivedItems = history.filter((item) => {
+		const isStatusReceived = item.status.toLowerCase() === "received";
+		const hasReceivedDate =
+			item.receivedAt !== null &&
+			item.receivedAt !== undefined &&
+			item.receivedAt.trim().length > 0;
+		return isStatusReceived || hasReceivedDate;
+	});
+
+	const receivedCount = receivedItems.length;
+
+	const withDueDate = receivedItems.filter(
+		(item) =>
+			item.expectedDate !== null &&
+			item.expectedDate !== undefined &&
+			item.expectedDate.trim().length > 0 &&
+			item.receivedAt !== null &&
+			item.receivedAt !== undefined &&
+			item.receivedAt.trim().length > 0,
+	);
+
+	let onTimeCount = 0;
+	for (const item of withDueDate) {
+		const expectedStr = item.expectedDate!.trim().slice(0, 10);
+		const receivedStr = item.receivedAt!.trim().slice(0, 10);
+		if (receivedStr <= expectedStr) {
+			onTimeCount += 1;
+		}
+	}
+
+	const rawOnTimeRate =
+		withDueDate.length > 0 ? onTimeCount / withDueDate.length : 1.0;
+	const onTimeRate = Math.max(0, Math.min(1, Math.round(rawOnTimeRate * 10000) / 10000));
+
+	let totalUnitsReceived = 0;
+	let defectiveUnitsCount = 0;
+	for (const item of receivedItems) {
+		totalUnitsReceived += Math.max(0, item.totalUnits);
+		defectiveUnitsCount += Math.max(0, item.defectiveUnits);
+	}
+	defectiveUnitsCount = Math.min(defectiveUnitsCount, totalUnitsReceived);
+
+	const rawDefectRate =
+		totalUnitsReceived > 0 ? defectiveUnitsCount / totalUnitsReceived : 0.0;
+	const defectRate = Math.max(0, Math.min(1, Math.round(rawDefectRate * 10000) / 10000));
+
+	let averageReviewScore = 5.0;
+	if (reviews.length > 0) {
+		const sumScore = reviews.reduce(
+			(acc, r) => acc + Math.max(1, Math.min(5, r.score)),
+			0,
+		);
+		averageReviewScore = Math.round((sumScore / reviews.length) * 100) / 100;
+	}
+
+	const rawComposite =
+		onTimeRate * 40 + (1.0 - defectRate) * 40 + (averageReviewScore / 5.0) * 20;
+	const compositeScore = Math.max(0, Math.min(100, Math.round(rawComposite)));
+
+	let tier: SupplierTier;
+	if (compositeScore >= 85) {
+		tier = "tier_1_preferred";
+	} else if (compositeScore >= 70) {
+		tier = "tier_2_standard";
+	} else if (compositeScore >= 50) {
+		tier = "tier_3_probation";
+	} else {
+		tier = "tier_4_disqualified";
+	}
+
+	return {
+		poCount,
+		receivedCount,
+		onTimeCount,
+		onTimeRate,
+		totalUnitsReceived,
+		defectiveUnitsCount,
+		defectRate,
+		averageReviewScore,
+		compositeScore,
+		tier,
+	};
+}
+
+/**
+ * Evaluates clinical disruption and procurement risk (Mandate 8e & Mandate 8n).
+ * Generates actionable alerts for clinical inventory protection.
+ */
+export function evaluateSupplyRisk(metrics: SupplierMetrics): {
+	riskLevel: "low" | "medium" | "high";
+	warnings: string[];
+} {
+	const warnings: string[] = [];
+
+	const isDisqualified = metrics.tier === "tier_4_disqualified";
+	const isSevereDefect = metrics.defectRate >= 0.10;
+	const isSevereDelay = metrics.onTimeRate < 0.60;
+
+	if (isDisqualified || isSevereDefect || isSevereDelay) {
+		if (isDisqualified) {
+			warnings.push(
+				`Поставщик дисквалифицирован (Tier 4, рейтинг ${metrics.compositeScore}/100). Размещение новых заказов заблокировано до проведения претензионной работы.`,
+			);
+		}
+		if (isSevereDefect) {
+			warnings.push(
+				`Критический уровень дефектности продукции: ${(metrics.defectRate * 100).toFixed(1)}% (предел нормы < 5.0%). Угроза безопасности стоматологического лечения (Мандат 8e, СанПиН 3.3686-21).`,
+			);
+		}
+		if (isSevereDelay) {
+			warnings.push(
+				`Систематический срыв сроков поставок: ${(metrics.onTimeRate * 100).toFixed(1)}% вовремя (норма >= 85.0%). Критический риск дефицита расходных материалов.`,
+			);
+		}
+		return { riskLevel: "high", warnings };
+	}
+
+	const isProbation = metrics.tier === "tier_3_probation";
+	const isElevatedDefect = metrics.defectRate >= 0.05;
+	const isModerateDelay = metrics.onTimeRate < 0.85;
+
+	if (isProbation || isElevatedDefect || isModerateDelay) {
+		if (isProbation) {
+			warnings.push(
+				`Поставщик переведен на испытательный срок (Tier 3, рейтинг ${metrics.compositeScore}/100). Необходим 100% сплошной входной контроль каждой входящей партии.`,
+			);
+		}
+		if (isElevatedDefect) {
+			warnings.push(
+				`Повышенная доля брака при входном контроле: ${(metrics.defectRate * 100).toFixed(1)}%. Требуется усиленная проверка стерильности и целостности упаковок.`,
+			);
+		}
+		if (isModerateDelay) {
+			warnings.push(
+				`Дисциплина поставок ниже целевого ориентира: ${(metrics.onTimeRate * 100).toFixed(1)}% вовремя. Рекомендуется поддержание увеличенного страхового запаса на складе.`,
+			);
+		}
+		return { riskLevel: "medium", warnings };
+	}
+
+	return { riskLevel: "low", warnings: [] };
+}
+
+/**
+ * Formats statutory supplier quality audit protocol for Russian clinical procurement.
+ * Strictly 0 emojis in compliance with Mandate 8d item 7.
+ */
+export function formatSupplierRatingAuditA4Report(
+	supplier: { id: string; name: string; inn?: string | undefined },
+	metrics: SupplierMetrics,
+	clinicName?: string | undefined,
+): string {
+	const separator = "=".repeat(76);
+	const subSeparator = "-".repeat(76);
+
+	const safeClinic = clinicName?.trim() || "Медицинская организация DENTE";
+	const safeSupplier = supplier.name.trim() || "Не указан";
+	const innStr = supplier.inn ? `ИНН: ${supplier.inn}` : "ИНН: не указан";
+	const tierLabel = SUPPLIER_TIER_LABELS_RU[metrics.tier];
+	const risk = evaluateSupplyRisk(metrics);
+
+	const riskLabel =
+		risk.riskLevel === "high"
+			? "ВЫСОКИЙ (КРИТИЧЕСКИЙ)"
+			: risk.riskLevel === "medium"
+				? "УМЕРЕННЫЙ (ЗОНА КОНТРОЛЯ)"
+				: "НИЗКИЙ (ШТАТНЫЙ РЕЖИМ)";
+
+	const lines: string[] = [];
+	lines.push(separator);
+	lines.push("ПРОТОКОЛ АУДИТА КАЧЕСТВА И НАДЕЖНОСТИ ПОСТАВЩИКА");
+	lines.push("Оценка соответствия требованиям СанПиН 3.3686-21 и Федерального закона № 323-ФЗ");
+	lines.push(separator);
+	lines.push(`Медицинская организация: ${safeClinic}`);
+	lines.push(`Поставщик: ${safeSupplier} (${innStr}, ID: ${supplier.id})`);
+	lines.push(`Дата проведения аудита: ${new Date().toISOString().split("T")[0]}`);
+	lines.push(subSeparator);
+
+	lines.push("1. ДИСЦИПЛИНА И СВОЕВРЕМЕННОСТЬ ПОСТАВОК (ON-TIME DELIVERY):");
+	lines.push(`- Всего сформировано заказов на закупку (PO): ${metrics.poCount}`);
+	lines.push(`- Фактически принято поставок: ${metrics.receivedCount}`);
+	lines.push(`- Поставок выполнено в срок или досрочно: ${metrics.onTimeCount}`);
+	lines.push(`- Доля своевременных поставок: ${(metrics.onTimeRate * 100).toFixed(1)}%`);
+	lines.push(subSeparator);
+
+	lines.push("2. КАЧЕСТВО И ВХОДНОЙ КОНТРОЛЬ МАТЕРИАЛОВ (REJECT RATE):");
+	lines.push(`- Всего принято единиц продукции (карпулы, расходники, боры): ${metrics.totalUnitsReceived}`);
+	lines.push(`- Отбраковано при входном контроле: ${metrics.defectiveUnitsCount}`);
+	lines.push(`- Процент брака / дефектности: ${(metrics.defectRate * 100).toFixed(1)}%`);
+	lines.push(subSeparator);
+
+	lines.push("3. ЭКСПЕРТНАЯ ОЦЕНКА И КОМПОЗИТНЫЙ РЕЙТИНГ:");
+	lines.push(`- Средняя оценка экспертов клиники: ${metrics.averageReviewScore.toFixed(2)} из 5.00`);
+	lines.push(`- Итоговый композитный балл надежности: ${metrics.compositeScore} из 100`);
+	lines.push(`- Присвоенный статус: ${tierLabel}`);
+	lines.push(subSeparator);
+
+	lines.push("4. ОЦЕНКА РИСКА ЦЕПОЧКИ ПОСТАВОК И ЗАКЛЮЧЕНИЕ:");
+	lines.push(`- Уровень логистического и клинического риска: ${riskLabel}`);
+	if (risk.warnings.length > 0) {
+		lines.push("- Выявленные риски и предписания комиссии:");
+		for (const w of risk.warnings) {
+			lines.push(`  * ${w}`);
+		}
+	} else {
+		lines.push("- Замечаний не выявлено. Поставщик рекомендован для регулярных закупок без ограничений.");
+	}
+	lines.push(subSeparator);
+
+	lines.push("Документ сформирован в медицинской информационной системе DENTE Dental CRM.");
+	lines.push("Ответственный за входной контроль:  ____________________ / ____________________");
+	lines.push("Главная медицинская сестра / Завскладом: ____________________ / ____________________");
+	lines.push("М.П. (Место печати организации)");
+	lines.push(separator);
+
+	return lines.join("\n");
+}
+
+export const supplierRatingsEngine = {
+	// Wave 126
+	reliabilityStatusSchema,
+	RELIABILITY_STATUS_LABELS_RU,
+	supplierRatingMetricsSchema,
+	supplierEvaluationSchema,
+	supplierRatingSummarySchema,
+	computeOnTimeRate,
+	computeRejectRate,
+	computeCompositeScore,
+	determineReliabilityStatus,
+	buildSupplierRatingSummary,
+	formatSupplierReliabilityA4,
+	// Wave 138
+	supplierReviewSchema,
+	purchaseDeliveryHistoryItemSchema,
+	supplierTierSchema,
+	SUPPLIER_TIER_LABELS_RU,
+	supplierMetricsSchema,
+	computeSupplierMetrics,
+	evaluateSupplyRisk,
+	formatSupplierRatingAuditA4Report,
+};
