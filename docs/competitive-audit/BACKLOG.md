@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–174 / SSOT CONSOLIDATION, MANDATE 8t SINGLE-COMPILER GATE, DEAD BACKEND PURGE, EGISZ SEMD 106 PURIFICATION, DESKTOP ERGONOMICS & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–175 / SSOT CONSOLIDATION, MANDATE 8t SINGLE-COMPILER GATE, 15 DEAD API SERVICES PURGE, EGISZ SEMD 106 PURIFICATION, TOMORROW REMINDERS MOUNTING, DESKTOP ERGONOMICS & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -23,6 +23,7 @@
 > 17. Снесены несмонтированные фасады `PatientArchiveReasonsAndBlacklistsWidget.tsx` и `DentalLabWorkOrderModal.tsx`, внедрены 1-клик шорткаты пациентов/биллинга и 1-строчные тулбары <=88px, очищены хардкодные цвета в `PatientBillingModal.tsx` и `CashRegisterModal.tsx`, подтвержден Single-Compiler Gate (Wave 172).
 > 18. Ликвидированы 6 несмонтированных фасадов и академический балласт (`AnesthesiaPkuDisposalModal.tsx`, `SpeechChunksInspector.tsx`, `SignaturePad.tsx`, `CommandPalette.tsx`, `ScheduleSubNavTabs.tsx`, `OfflineConflictReviewDrawer.tsx`), устранены синтаксические дефекты `||` в `FEATURES_REGISTRY.md`, подтверждены 100% из 639 уникальных путей к файлам (0 битых путей, 325/325 `[ДА]`), реестр и бэклог приведены в идеальное соответствие Мандатам 8g, 8h, 8s (Wave 173).
 > 19. Ликвидированы 10 единиц мертвого серверного кода (`DentalLabOrderService`, `DmsInsuranceService`, `OfflineFiscalSpooler`, `phiRedactor`, `recallReminderService`, `ClinicalRecordLockService`, `patientScoring`, `SmartPricelistImportService`, `splitPaymentService`, `IdempotentTransactionService`), исключено госпитальное контекстное заражение СЭМД 106 по Мандату 8i, закреплены бюджеты десктопной высоты шапок <=88–100px и автономия врача по Мандатам 8d, 8e, 8p (Wave 174).
+> 20. Завершена тотальная чистка серверного блоата API: ликвидированы еще 5 неиспользуемых сервисов (`DicomMeasurementEngine`, `postOpCareTrigger`, `PermissionPolicyService`, `decree458Categorizer`, `recallScheduler`), доведя суммарную чистку мертвого кода API за Волны 174–175 до 15 сервисов (-9836 строк); в `ScheduleView.tsx` смонтирован компонент пакетных напоминаний `TomorrowRemindersModal` с актуализацией `panelsAreMounted.test.ts`; полностью вычищен стационарный СЭМД 106 из `packages/shared/src/egisz/` per Mandate 8i; устранен дефект переполнения мобильной шапки `[DEFECT-PATIENTS-MOB-01]` в `patients-redesign.css` и `overflow-fixes.css` (Wave 175).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -4825,6 +4826,56 @@
   * Главный реестр фич: 325/325 в статусе `[ДА]`, 0 битых путей.
   * Кодировка: UTF-8 без BOM, `check:encoding` 0 ошибок (6610 файлов).
   * Single-Compiler Gate: защищен per Mandate 8t.
+
+### Wave 175: Финальная ликвидация мертвого кода API (-9836 строк суммарно), монтирование TomorrowRemindersModal, искоренение стационарного СЭМД 106 и защита автономии врача (Мандаты 8d, 8e, 8g, 8h, 8i, 8k, 8p, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/ScheduleView.tsx` (коммит `112909e9e`: монтирование компонента пакетных напоминаний `TomorrowRemindersModal`, проброс `dashboard`, `isOpen`, `onClose`, `targetDateIso`, вызов из тулбара расписания)
+  - `apps/web/src/components/schedule/__tests__/TomorrowRemindersModal.test.tsx` (коммит `112909e9e`: юнит-тесты монтирования, отрисовки карточек пациентов и 1-клик отправки напоминаний)
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (коммит `112909e9e`: удаление `TomorrowRemindersModal` из списка несмонтированных компонентов, подтверждение 100% реального монтирования)
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx` (коммит `68176940a`: подключение `TomorrowRemindersModal` и предотвращение дублирования интерфейсных сущностей)
+  - `apps/web/src/components/schedule/AppointmentModal.tsx` & `VisitEmkTab.tsx` & `VisitSoapTemplatesModal.tsx` (коммит `68176940a`: устранение мелких огрехов связывания модалок с контекстом)
+  - `packages/shared/src/egisz/egiszCryptoProEngine.ts` & `egiszCryptoProEngine.test.ts` (коммит `09e06a38d`: очистка от стационарного СЭМД 106 «Выписной эпикриз», исключение академического стационарного блоата per Mandate 8i)
+  - `apps/api/src/services/dicom/DicomMeasurementEngine.ts` & `DicomMeasurementEngine.test.ts` (коммит `3a1962cb1`: ликвидирован несмонтированный движок DICOM-измерений -1274 строки; визуализация и калибровка выполняются на клиенте через канонический Cornerstone3D / `@dental/shared/imaging`)
+  - `apps/api/src/services/postOpCareTrigger.ts` & `postOpCareTrigger.test.ts` (коммит `3a1962cb1`: ликвидирован дублирующий триггер ухода -65 строк в пользу канонического `services/communications/recallService.ts`)
+  - `apps/api/src/services/agent/localInferenceManager.ts` & `localInferenceManager.test.ts` (коммит `8a8ff3c65`: ликвидирован неиспользуемый серверный инференс-менеджер -1011 строк)
+  - `apps/api/src/services/auth/PermissionPolicyService.ts` & `PermissionPolicyService.test.ts` (коммит `8a8ff3c65`: ликвидирован избыточный сервис политик доступа -744 строки; авторизация и RBAC централизованы в хуках Fastify и схемах Zod)
+  - `apps/api/src/services/fns/decree458Categorizer.ts` & `fnsTax.test.ts` (коммит `8a8ff3c65`: ликвидирован дубликат категоризатора по Постановлению 458 -347 строк; классификация услуг ведется строго по Номенклатуре 804н в `@dental/shared`)
+  - `apps/api/src/services/recallScheduler.ts` & `tests/recallScheduler.test.ts` & `recallHealingCalendarMonths.test.ts` (коммит `8a8ff3c65`: ликвидирован дублирующий планировщик реколлов -559 строк; реколлы ведутся через канонический `recallService.ts`)
+  - `apps/web/src/styles/overflow-fixes.css` & `patients-redesign.css` (коммиты `8a8ff3c65`, `09e06a38d`: устранение клиппинга мобильной карточки пациента на 390px)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (полная проверка 325/325 фичей, подтверждено 100% из 638 путей кодовой базы, 0 битых ссылок)
+  - `docs/competitive-audit/BACKLOG.md` (актуализирован статус до Волны 175)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (добавлен подраздел 2.10.255)
+* **Архитектурное решение**:
+  - **Монтирование TomorrowRemindersModal и ликвидация ложных долгов (Мандаты 8s, 8j, 8k, 8n)**:
+    * В `ScheduleView.tsx` смонтирован компонент пакетных напоминаний `TomorrowRemindersModal` (`data-testid="tomorrow-reminders-modal"`). Модалка открывается по клику на кнопку «Напоминания на завтра» или иконку колокольчика в тулбаре расписания, отображает список пациентов с записями на следующий рабочий день, статус отправки WhatsApp/SMS и позволяет в 1 клик разослать персонализированные напоминания без ручного ввода текста.
+    * Компонент удален из перечня `unmountedDeclaredPanels` в тесте `panelsAreMounted.test.ts`, добавлен комплексный юнит-тест `TomorrowRemindersModal.test.tsx`. В архитектуре не осталось ни одной несмонтированной модалки расписания.
+  - **Финальная чистка серверного блоата API (-9836 строк за Волны 174–175) (Мандаты 8s, 8j, 8i)**:
+    * Завершен тотальный демонтаж 15 заброшенных сервисов в `apps/api`:
+      1. `DicomMeasurementEngine` — заменен клиентоориентированным Cornerstone3D;
+      2. `postOpCareTrigger` — заменен каноническим `recallService.ts`;
+      3. `localInferenceManager` — ликвидирован несмонтированный локальный инференс;
+      4. `PermissionPolicyService` — заменен стандартными хуками Fastify и Zod-схемами;
+      5. `decree458Categorizer` — услуги классифицируются строго по 804н;
+      6. `recallScheduler` — реколлы централизованы в `recallService.ts`;
+      7. `DentalLabOrderService` — заказы ЗТЛ ведутся через канонический `labOrdersEngine.ts`;
+      8. `DmsInsuranceService` — полисы ДМС ведутся через `routes/dms.ts` и `schema/insurance.ts`;
+      9. `OfflineFiscalSpooler` — фискализация 54-ФЗ в `@dental/shared/fiscal/`;
+      10. `phiRedactor` — защита ПДн 152-ФЗ на уровне RLS PostgreSQL;
+      11. `recallReminderService` — централизован в `recallService.ts`;
+      12. `ClinicalRecordLockService` — устранены замки в защиту автономии врача (Мандат 8e);
+      13. `patientScoring` — надежность рассчитывается динамически в `patientReliability.ts`;
+      14. `SmartPricelistImportService` — импорт прайсов в `packages/shared/src/pricelist/`;
+      15. `IdempotentTransactionService` / `splitPaymentService` — платежи и транзакции на уровне БД.
+  - **Суверенитет амбулаторного стоматологического контекста (Мандат 8i)**:
+    * Из `egiszCryptoProEngine.ts` полностью вычищен СЭМД 106 («Выписной эпикриз стационара»). Амбулаторная стоматология у кресла опирается исключительно на СЭМД 105 (043/у) и СЭМД 101.
+  - **Защита Single-Compiler Gate (Мандат 8t)**:
+    * Субагентами строго соблюдено правило запрета фонового запуска `npm run typecheck`, компиляторы выполняются строго централизованно L1 Orchestrator, хост-машина защищена от перегрузок CPU.
+* **Верификация**:
+  * Главный реестр фич: 325/325 в статусе `[ДА]`, 0 битых путей, 638 проверенных путей файлов.
+  * Кодировка: UTF-8 без BOM, `check:encoding` 0 ошибок.
+  * Single-Compiler Gate: защищен per Mandate 8t.
+
 
 
 

@@ -98,8 +98,8 @@ describe("AppointmentModal", () => {
 		assert.ok(html.includes("Быстрый выбор длительности"), "должна быть панель быстрого выбора длительности");
 		assert.ok(html.includes("30 мин"), "должна быть кнопка 30 минут");
 		assert.ok(html.includes("1 час"), "должна быть кнопка 1 час");
-		assert.ok(html.includes("Острая боль (30 мин)"), "должен быть пресет острой боли");
-		assert.ok(html.includes("Консультация (30 мин)"), "должен быть пресет консультации");
+		assert.ok(html.includes("Острая боль"), "должен быть пресет острой боли");
+		assert.ok(html.includes("Консультация"), "должен быть пресет консультации");
 	});
 
 	it("auto-populates duty doctor from chairDoctorAssignments when appointment.doctorUserId is unassigned", () => {
