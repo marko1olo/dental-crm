@@ -587,7 +587,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
+								<h3 className="text-lg font-bold text-[var(--ink)] break-words m-0 leading-tight">
 									<span className="hidden sm:inline">Акт выполненных работ и Гарантийный талон (А4)</span>
 									<span className="sm:hidden">Акт выполненных работ</span>
 								</h3>
@@ -608,7 +608,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-[var(--line)] shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center border border-[var(--line)] shrink-0"
 						aria-label="Закрыть окно"
 					>
 						<X className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -623,8 +623,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							onClick={() => setActiveTab("friendly")}
 							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "friendly"
-									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
-									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+									? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
 							}`}
 							data-testid="btn-tab-friendly-bill"
 						>
@@ -637,12 +637,12 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							onClick={() => setActiveTab("preview")}
 							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "preview"
-									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
-									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+									? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
 							}`}
 							data-testid="btn-tab-preview-act"
 						>
-							<Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
+							<Eye className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
 							<span className="hidden sm:inline">Официальный бланк А4</span>
 							<span className="sm:hidden">Бланк А4</span>
 						</button>
@@ -651,12 +651,12 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							onClick={() => setActiveTab("details")}
 							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "details"
-									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
-									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+									? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
 							}`}
 							data-testid="btn-tab-details-act"
 						>
-							<Layers className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
+							<Layers className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
 							<span className="hidden sm:inline whitespace-nowrap">Спецификация и гарантии ({summary.items.length} поз.)</span>
 							<span className="sm:hidden whitespace-nowrap">Гарантии</span>
 						</button>
@@ -812,7 +812,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										setCustomDiscountPercent(0);
 										setCustomDiscountRub(0);
 									}}
-									className="min-h-[44px] px-2.5 rounded-xl text-xs font-bold bg-[var(--paper)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--muted)] border border-[var(--border,#cbd5e1)] cursor-pointer inline-flex items-center gap-1"
+									className="min-h-[44px] px-2.5 rounded-xl text-xs font-bold bg-[var(--paper)] hover:bg-[var(--paper-hover)] text-[var(--muted)] border border-[var(--border,#cbd5e1)] cursor-pointer inline-flex items-center gap-1"
 									title="Сбросить скидку"
 									data-testid="btn-discount-reset"
 								>
@@ -927,7 +927,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										<button
 											type="button"
 											onClick={() => setIsQrOpen(true)}
-											className="px-3.5 py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+											className="px-3.5 py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-2 cursor-pointer transition-colors"
 											data-testid="btn-show-bill-qr"
 										>
 											<QrCode className="w-4 h-4" />
@@ -965,7 +965,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 													onClick={() => setIsStageApplied(false)}
 													className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 														!isStageApplied
-															? "bg-slate-700 text-white shadow-xs"
+															? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
 															: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 													}`}
 												>
@@ -1810,7 +1810,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											<div className="space-y-1 flex-1 min-w-0">
 												<div className="flex items-center gap-2">
 													<strong className="text-[var(--teal,#0d9488)] text-xs sm:text-sm">{term.categoryName}</strong>
-													<span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)]">
+													<span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]">
 														{term.teethDisplay}
 													</span>
 												</div>
@@ -1909,14 +1909,14 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
 							label="1С (XML)"
 							variant="secondary"
-							className="min-h-[44px] px-2.5 sm:px-3 text-xs font-bold justify-center whitespace-nowrap shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+							className="min-h-[44px] px-2.5 sm:px-3 text-xs font-bold justify-center whitespace-nowrap shrink-0 bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] border border-[var(--line)] text-[var(--ink)]"
 						/>
 
 						{/* Secondary: Send WhatsApp */}
 						<button
 							type="button"
 							onClick={handleSendWhatsApp}
-							className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-[var(--paper)] border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-footer-send-whatsapp"
 						>
 							<MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1927,7 +1927,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => setIsRefundOpen(true)}
-							className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-[var(--paper)] border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-footer-partial-refund"
 						>
 							<RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -1964,7 +1964,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										}}
 										className="w-full py-2.5 px-3 min-h-[44px] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left"
 									>
-										<Printer className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+										<Printer className="w-4 h-4 text-[var(--muted)]" />
 										<span>Печать бланка А4 (ГОСТ)</span>
 									</button>
 									<button
@@ -2019,9 +2019,9 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						</button>
 
 						{/* PROMINENT TOTAL DUE BLOCK */}
-						<div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-slate-700 dark:text-slate-200 shrink-0 whitespace-nowrap shadow-2xs">
-							<span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Итого к оплате:</span>
-							<strong className="text-sm sm:text-base font-black text-teal-700 dark:text-teal-300 font-mono">
+						<div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/30 text-[var(--ink)] shrink-0 whitespace-nowrap shadow-2xs">
+							<span className="text-[11px] sm:text-xs text-[var(--muted)] font-semibold">Итого к оплате:</span>
+							<strong className="text-sm sm:text-base font-black text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal,#2dd4bf)] font-mono">
 								{friendlyBreakdown.totalAmountRubFormatted}
 							</strong>
 						</div>
@@ -2042,7 +2042,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={onClose}
-							className="hidden sm:flex min-h-[44px] px-3 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors items-center justify-center shrink-0 whitespace-nowrap"
+							className="hidden sm:flex min-h-[44px] px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors items-center justify-center shrink-0 whitespace-nowrap"
 						>
 							Закрыть
 						</button>
@@ -2070,7 +2070,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								<button
 									type="button"
 									onClick={() => setIsQrOpen(false)}
-									className="p-1.5 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+									className="p-1.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer border border-[var(--line)]"
 									aria-label="Закрыть окно"
 								>
 									<X className="w-5 h-5" />
@@ -2078,7 +2078,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							</div>
 
 							<div
-								className="p-3 bg-white border-2 border-slate-900 rounded-2xl shadow-md"
+								className="p-3 bg-white border-2 border-[var(--line-strong)] rounded-2xl shadow-md"
 								dangerouslySetInnerHTML={{
 									__html: generateQrCodeSvg(
 										`https://dente.ru/bill/${summary.actNumber}?sum=${friendlyBreakdown.totalAmountRub}&patient=${encodeURIComponent(actParams.patient.fullName)}`,

@@ -156,9 +156,43 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 		return "";
 	}, [resolvedPatient]);
 
+	const diagnosisText = useMemo(() => {
+		const d =
+			resolvedPatient.diagnosis ||
+			resolvedPatient.primaryDiagnosis ||
+			resolvedPatient.mkb10 ||
+			resolvedPatient.anamnesis?.diagnosis ||
+			"";
+		return typeof d === "string" ? d.trim() : "";
+	}, [resolvedPatient]);
+
+	const nextAppointment = useMemo(() => {
+		if (!resolvedPatient?.id || !dashboard?.appointments) return null;
+		const nowTime = Date.now();
+		const upcoming = (dashboard.appointments as Array<{
+			id: string;
+			patientId?: string;
+			startsAt?: string;
+			status?: string;
+			reason?: string;
+		}>)
+			.filter(
+				(a) =>
+					a.patientId === resolvedPatient.id &&
+					a.status !== "cancelled" &&
+					a.startsAt &&
+					new Date(a.startsAt).getTime() >= nowTime - 60 * 60 * 1000,
+			)
+			.sort(
+				(a, b) =>
+					new Date(a.startsAt!).getTime() - new Date(b.startsAt!).getTime(),
+			);
+		return upcoming[0] || null;
+	}, [resolvedPatient?.id, dashboard?.appointments]);
+
 	return (
 		<div
-			className={`patient-header-card p-4 rounded-2xl bg-[var(--paper-strong,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,rgba(0,0,0,0.08))] dark:border-[var(--line,rgba(255,255,255,0.1))] shadow-xs transition-colors space-y-3 ${className}`}
+			className={`patient-header-card p-4 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs transition-colors space-y-3 ${className}`}
 			data-testid="patient-header-card"
 		>
 			{/* Top Row: Avatar, FIO, Actions, Sentiment & Loyalty */}
@@ -174,7 +208,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 
 					<div className="min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
-							<h2 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)] dark:text-white leading-tight truncate">
+							<h2 className="text-base sm:text-lg font-black text-[var(--ink)] leading-tight truncate">
 								{fullName}
 							</h2>
 							{dashboard?.activeVisit?.patientId === resolvedPatient.id && (
@@ -186,10 +220,31 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									В клинике
 								</span>
 							)}
+							{nextAppointment && (
+								<span
+									className="px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal,#2dd4bf)] border border-[var(--teal,#0d9488)]/30 text-[11px] font-bold inline-flex items-center gap-1 shrink-0"
+									title={`Следующий приём: ${new Date(nextAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`}
+									data-testid="header-next-appointment-badge"
+								>
+									<Clock size={11} className="shrink-0" />
+									<span>
+										Приём: {new Date(nextAppointment.startsAt!).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} {new Date(nextAppointment.startsAt!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+									</span>
+								</span>
+							)}
+							{diagnosisText && (
+								<span
+									className="px-2 py-0.5 rounded-md bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-[11px] font-semibold truncate max-w-[200px]"
+									title={`Диагноз: ${diagnosisText}`}
+									data-testid="header-diagnosis-badge"
+								>
+									{diagnosisText}
+								</span>
+							)}
 						</div>
 
 						{birthDateStr && (
-							<div className="text-xs text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] mt-0.5 flex items-center gap-1.5">
+							<div className="text-xs text-[var(--muted)] mt-0.5 flex items-center gap-1.5">
 								<Calendar size={12} className="shrink-0 opacity-70" />
 								<span>{birthDateStr}</span>
 							</div>
@@ -212,7 +267,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 								? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40"
 								: balance < 0
 									? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40"
-									: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20"
+									: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
 						}`}
 						title={
 							balance > 0

@@ -1096,7 +1096,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center border border-transparent shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center border border-[var(--line)] shrink-0"
 						aria-label="Закрыть кассу"
 					>
 						<X className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -1142,7 +1142,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 							}`}
 							data-testid="tab-cash-thermal"
 						>
-							<Receipt className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+							<Receipt className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
 							<span>Термочек 54-ФЗ</span>
 						</button>
 					</div>
@@ -1489,7 +1489,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										onClick={() => setSelectedDiscountPreset("none")}
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "none"
-												? "bg-slate-700 text-white shadow-2xs"
+												? "bg-[var(--teal,#0d9488)] text-white shadow-2xs"
 												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
 										}`}
 										data-testid="btn-discount-none"

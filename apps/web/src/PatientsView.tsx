@@ -11,6 +11,7 @@ import {
 	Calendar,
 	Camera,
 	Check,
+	Clock,
 	FileText,
 	Gift,
 	MoreHorizontal,
@@ -563,6 +564,34 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		return null;
 	}, [patientCoreDraft?.notes]);
 
+	const patientBalance = Number(
+		selectedPatient?.balanceRub ?? selectedPatient?.balance ?? 0,
+	);
+
+	const nextPatientAppointment = useMemo(() => {
+		if (!selectedPatient?.id || !props?.dashboard?.appointments) return null;
+		const nowTime = Date.now();
+		const upcoming = (props.dashboard.appointments as Array<{
+			id: string;
+			patientId?: string;
+			startsAt?: string;
+			status?: string;
+			reason?: string;
+		}>)
+			.filter(
+				(a) =>
+					a.patientId === selectedPatient.id &&
+					a.status !== "cancelled" &&
+					a.startsAt &&
+					new Date(a.startsAt).getTime() >= nowTime - 60 * 60 * 1000,
+			)
+			.sort(
+				(a, b) =>
+					new Date(a.startsAt!).getTime() - new Date(b.startsAt!).getTime(),
+			);
+		return upcoming[0] || null;
+	}, [selectedPatient?.id, props?.dashboard?.appointments]);
+
 	return (
 		<div className="patients-panel" id="patients">
 			{/* Clean Single-Tier Toolbar Header */}
@@ -607,7 +636,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							backgroundColor: showLostPatientsOnly ? "var(--teal)" : undefined,
 							color: showLostPatientsOnly ? "var(--on-teal, #fff)" : undefined,
 							borderColor: showLostPatientsOnly ? "var(--teal)" : undefined,
-							minHeight: "44px",
+							height: "34px",
+							minHeight: "34px",
+							padding: "0 0.85rem",
+							fontSize: "13px",
 						}}
 					>
 						{isLoadingLost
@@ -622,9 +654,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						onClick={() => setIsCreateModalOpen(true)}
 						title="Зарегистрировать нового пациента"
 						data-testid="open-create-patient-modal-btn"
-						style={{ minHeight: "44px" }}
+						style={{ height: "34px", minHeight: "34px", padding: "0 0.85rem", fontSize: "13px" }}
 					>
-						<Plus size={18} aria-hidden="true" />
+						<Plus size={16} aria-hidden="true" />
 						<span>Создать нового</span>
 					</button>
 				</div>
@@ -671,9 +703,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									}
 								}}
 							>
-								<div>
-									<h3>{patient.fullName}</h3>
-									<p>{patient.phone ?? "Телефон не указан"}</p>
+								<div className="min-w-0 flex-1">
+									<h3 className="truncate" title={patient.fullName}>{patient.fullName}</h3>
+									<p className="truncate">{patient.phone ?? "Телефон не указан"}</p>
+									{patient.notes ? (
+										<p className="truncate text-xs text-[var(--muted)] opacity-75 mt-0.5" title={patient.notes}>
+											{patient.notes}
+										</p>
+									) : null}
 									{insight &&
 									(riskDistinguishes ||
 										nextActionDistinguishes ||
@@ -695,17 +732,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												</span>
 											) : null}
 											{riskDistinguishes ? (
-												<span className="patient-risk-label">
+												<span className="patient-risk-label truncate max-w-[140px]" title={patientInsightRiskLabels[insight.riskLevel]}>
 													{patientInsightRiskLabels[insight.riskLevel]}
 												</span>
 											) : null}
 											{nextActionDistinguishes ? (
-												<strong className="patient-next-action">
+												<strong className="patient-next-action truncate max-w-[180px]" title={insight.nextBestAction}>
 													{insight.nextBestAction}
 												</strong>
 											) : null}
 											{insight.balanceDueRub ? (
-												<span className="patient-row-chip">
+												<span className="patient-row-chip shrink-0">
 													{money(insight.balanceDueRub)}
 												</span>
 											) : null}
@@ -856,7 +893,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							style={{
 								display: "flex",
 								alignItems: "center",
-								gap: "12px",
+								gap: "10px",
+								minWidth: 0,
+								flex: 1,
+								flexWrap: "wrap",
 							}}
 						>
 							{selectedPatient && (
@@ -866,6 +906,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								/>
 							)}
 							<span
+								className="truncate max-w-[260px] sm:max-w-xs md:max-w-md"
+								title={selectedPatient ? selectedPatient.fullName : undefined}
 								style={{
 									fontSize: "16px",
 									fontWeight: 700,
@@ -876,6 +918,81 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									? selectedPatient.fullName
 									: "Карточка пациента"}
 							</span>
+
+							{selectedPatient && (
+								<div className="flex items-center gap-1.5 flex-wrap">
+									{/* 1-Click Medical Card 043/u */}
+									<button
+										type="button"
+										onClick={() => setIsPatientCardModalOpen(true)}
+										className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1.5 cursor-pointer text-xs shrink-0 transition-colors"
+										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик (Мандат 8e)"
+										data-testid="patient-quick-043-btn"
+									>
+										<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+										<span>Карта 043/у</span>
+									</button>
+
+									{/* 1-Click 54-FZ Fiscal Balance */}
+									<button
+										type="button"
+										onClick={() => {
+											usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+											useAppStore.getState().setCurrentView("finance");
+											showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient.fullName}`, "info");
+										}}
+										className={`h-8 px-2.5 rounded-lg text-xs font-mono font-black inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors border ${
+											patientBalance > 0
+												? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40"
+												: patientBalance < 0
+													? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40"
+													: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
+										}`}
+										title="Фискальный баланс по 54-ФЗ. Нажмите для перехода в кассу"
+										data-testid="patient-quick-balance-btn"
+									>
+										<Receipt size={12} className="shrink-0" />
+										<span>
+											{patientBalance > 0
+												? `+${patientBalance.toLocaleString("ru-RU")} ₽`
+												: patientBalance < 0
+													? `-${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
+													: "0 ₽ (54-ФЗ)"}
+										</span>
+									</button>
+
+									{/* 1-Click Next Appointment */}
+									{nextPatientAppointment ? (
+										<button
+											type="button"
+											onClick={() => {
+												useScheduleStore.getState().setSelectedDate(nextPatientAppointment.startsAt?.split("T")[0] || new Date().toISOString().split("T")[0]);
+												useAppStore.getState().setCurrentView("schedule");
+												showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
+											}}
+											className="h-8 px-2.5 rounded-lg bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+											title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Нажмите для перехода в расписание`}
+											data-testid="patient-quick-next-appointment-btn"
+										>
+											<Clock size={12} className="shrink-0" />
+											<span>
+												Приём: {new Date(nextPatientAppointment.startsAt!).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} {new Date(nextPatientAppointment.startsAt!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+											</span>
+										</button>
+									) : (
+										<button
+											type="button"
+											onClick={() => executeBookPatientAppointmentAutonomy({ selectedPatient })}
+											className="h-8 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+											title="Записать пациента в расписание"
+											data-testid="patient-quick-book-appointment-btn"
+										>
+											<Calendar size={12} className="shrink-0" />
+											<span>+ Записать</span>
+										</button>
+									)}
+								</div>
+							)}
 						</div>
 
 						<PatientCardSavePill
