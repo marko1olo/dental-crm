@@ -399,7 +399,7 @@ export interface DetachedSignature {
 export interface EgiszRemdPackage {
 	documentId: string;
 	documentVersion: number;
-	docTypeNsiCode: string;
+	docTypeNsiCode?: string | undefined;
 	xmlCanonicalPayload: string;
 	doctorSignature: DetachedSignature;
 	moSignature?: DetachedSignature | undefined;
@@ -407,7 +407,7 @@ export interface EgiszRemdPackage {
 		patientSnils?: string | undefined;
 		clinicOid: string;
 		clinicOgrn?: string | undefined;
-		docTypeNsiCode: string;
+		docTypeNsiCode?: string | undefined;
 	};
 }
 

@@ -372,9 +372,9 @@ export const detachedSignatureSchema = z.object({
 });
 
 export const egiszRemdPackageSchema = z.object({
-	documentId: z.string(),
+	documentId: z.string().uuid(),
 	documentVersion: z.number().int().positive(),
-	docTypeNsiCode: z.string(),
+	docTypeNsiCode: z.string().optional(),
 	xmlCanonicalPayload: z.string().min(1),
 	doctorSignature: detachedSignatureSchema,
 	moSignature: detachedSignatureSchema.optional(),
@@ -382,7 +382,7 @@ export const egiszRemdPackageSchema = z.object({
 		patientSnils: z.string().optional(),
 		clinicOid: z.string().min(1),
 		clinicOgrn: z.string().optional(),
-		docTypeNsiCode: z.string(),
+		docTypeNsiCode: z.string().optional().default("108"),
 	}),
 });
 
