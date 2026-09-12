@@ -132,12 +132,9 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Баннер готовности к офлайн-работе с индикацией Service Worker, готовности IndexedDB и кнопками 1-клик экспорта зашифрованного резервного архива базы (.dente) и проверки целостности локального кэша.",
 	},
-	{
-		file: "components/schedule/PatientSearchModal.tsx",
-		name: "PatientSearchModal",
-		reason:
-			"Автономное модальное окно быстрого поиска пациентов регистратуры с дебаунсом 150мс, подсветкой совпадений по цифрам телефона, ФИО и номеру карты, отображением баланса и 1-click действиями записи на прием.",
-	},
+	/*
+	 * PatientSearchModal СМОНТИРОВАН в ScheduleView.tsx и доступен в расписании.
+	 */
 	{
 		file: "components/schedule/TomorrowRemindersModal.tsx",
 		name: "TomorrowRemindersModal",
