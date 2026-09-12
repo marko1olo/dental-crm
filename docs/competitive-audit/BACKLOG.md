@@ -4362,3 +4362,29 @@
   - Официальный протокол детекции зубной дуги и слайсинга Формы 043/у Минздрава РФ строго без эмодзи (`formatArchDetectAndSlicingA4Report`).
 * **Верификация**: 16 тестов (100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
 
+### Wave 137: Сборка хирургического шаблона (Surgical Guide Assembly) и служебные поручения персонала (DenCT & DentalPin Reverse-Engineering)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `packages/shared/src/radiology/guideAssemblyEngine.ts`
+  - `packages/shared/src/radiology/__tests__/wave137GuideAssembly.test.ts`
+  - `packages/shared/src/staff/staffTasksEngine.ts`
+  - `packages/shared/src/staff/__tests__/wave137StaffTasks.test.ts`
+  - `packages/shared/src/radiology/index.ts`
+  - `packages/shared/src/staff/index.ts`
+  - `packages/shared/src/index.ts`
+* **Архитектурное решение**:
+  - **Surgical Guide Assembly Engine (DenCT reverse-engineering)**:
+    * Zod-схемы и строгие типы: `sleevePlacementSchema`, `guideStrutSchema`, `guideAssemblySchema`, `guideAssemblyResultSchema`;
+    * Параметрическое позиционирование втулок (sleeve cylinders) по осям имплантов с зазором под клей/цемент;
+    * Генерация соединительных распорок (struts/connectors) между соседними стаканами для прочности конструкции шаблона;
+    * Расчет опорной площади базиса и контактных зон с зубами и слизистой;
+    * Проверка связности и пересечений элементов шаблона;
+    * Регламентный протокол параметров печати хирургического шаблона А4 строго без эмодзи (`formatGuideAssemblyA4Protocol`);
+  - **Staff Tasks & Event Automation Engine (DentalPin reverse-engineering)**:
+    * Zod-схемы: `staffTaskSchema`, `staffTaskFilterSchema`, `clinicEventTriggerSchema`;
+    * Полный жизненный цикл служебной задачи сотрудника (`open`, `in_progress`, `completed`, `cancelled`) с автономией врача и исполнителя (Мандат 8e);
+    * Автоматическая генерация задач по клиническим событиям (отмена приема -> перезвонить пациенту, дефицит препарата -> сформировать закупку, просрочка реколла);
+    * Мониторинг соблюдения сроков SLA и приоритизация (urgent, normal, low);
+    * Регламентный табель служебных поручений смены А4 строго без эмодзи (`formatStaffTasksShiftA4Report`).
+* **Верификация**: 34 теста (15 guide + 19 staff, 100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
+
