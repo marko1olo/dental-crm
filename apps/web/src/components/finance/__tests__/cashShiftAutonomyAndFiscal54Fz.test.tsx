@@ -79,13 +79,31 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 		assert.ok(html.includes('data-testid="btn-checkout-100-card"'), "Must have 100% card button");
 		assert.ok(html.includes('data-testid="btn-checkout-split-three-way"'), "Must have 3-way combined payment button");
 		assert.ok(html.includes("Нал + Карта + Аванс"), "Must have 3-way combined payment label");
+		assert.ok(html.includes('data-testid="btn-checkout-warranty-100"'), "Must have 100% warranty preset button");
+		assert.ok(html.includes("100% Гарантия (0 ₽)"), "Must have 100% warranty preset label");
 
-		// Verify dynamic family deposit display
+		// Verify dynamic family deposit display and additive total (5000 + 10000 = 15000)
 		assert.ok(html.includes("Кузнецов В. П."), "Must display family payer name dynamically without hardcode");
 		assert.ok(
-			html.includes((10000).toLocaleString("ru-RU", { minimumFractionDigits: 2 })),
-			"Must display family balance dynamically with ru-RU formatting"
+			html.includes((15000).toLocaleString("ru-RU", { minimumFractionDigits: 2 })),
+			"Must display combined additive balance (15 000,00 ₽) dynamically with ru-RU formatting"
 		);
+
+		// 54-FZ physical persons never blocked by INN
+		assert.ok(html.includes("54-ФЗ: ИНН с физлиц НЕ требуется"));
+	});
+
+	it("renders 100% warranty button when total due is 0 ₽", () => {
+		const html = renderToString(
+			React.createElement(FastCheckoutModal, {
+				isOpen: true,
+				onClose: () => {},
+				totalBillKop: 0,
+				patientName: "Кузнецов И. В.",
+			})
+		);
+
+		assert.ok(html.includes("Закрыть визит: 100% Гарантия / Скидка (0 ₽)"));
 	});
 
 	it("verifies FastCheckoutModal rendering from canonical finance path", () => {
@@ -102,7 +120,7 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 });
 
 describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
-	it("renders 1-click presets: Без сдачи, 100% карта, Аванс + Карта, Сем. счет + Карта, 100% Гарантия", () => {
+	it("renders 1-click presets: Без сдачи, 100% карта, Аванс + Карта, Сем. счет + Карта, 100% Гарантия, Депозит + Карта + Нал", () => {
 		const html = renderToString(
 			React.createElement(CashRegisterModal, {
 				isOpen: true,
@@ -117,6 +135,8 @@ describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
 		assert.ok(html.includes('data-testid="preset-full-card"'));
 		assert.ok(html.includes('data-testid="preset-deposit-card"'));
 		assert.ok(html.includes('data-testid="preset-family-card"'));
+		assert.ok(html.includes('data-testid="preset-three-way"'));
+		assert.ok(html.includes('data-testid="preset-warranty-100"'));
 		assert.ok(html.includes('data-testid="btn-discount-warranty"'));
 		assert.ok(html.includes("100% Гарантия (Переделка)"));
 	});

@@ -129,6 +129,18 @@ describe("workspaceUiLabels functions", () => {
 		it("returns empty string if no fields are provided", () => {
 			assert.strictEqual(taxPaymentPayerKeyForUi({}), "");
 		});
+
+		it("filters out empty/falsy identity parts", () => {
+			assert.strictEqual(
+				taxPaymentPayerKeyForUi({
+					payerFullName: "Иванов Иван",
+					payerBirthDate: "",
+					payerIdentityDocument: "1234",
+					payerRelationship: "self",
+				} as unknown as Parameters<typeof taxPaymentPayerKeyForUi>[0]),
+				"identity:иванов иван|1234|self",
+			);
+		});
 	});
 
 	describe("paymentFiscalReceiptLabelForUi", () => {
@@ -264,6 +276,20 @@ describe("workspaceUiLabels functions", () => {
 					chainSummary: { paidMedicalServicesContract: {} } as Parameters<
 						typeof completedActContractReferenceForUi
 					>[0]["chainSummary"],
+				}),
+				"Doc Title",
+			);
+		});
+
+		it("returns formatted string fallback to title when no chain summary", () => {
+			assert.strictEqual(
+				completedActContractReferenceForUi({
+					title: "Doc Title",
+					chainSummary: {} as unknown as NonNullable<
+						Parameters<
+							typeof completedActContractReferenceForUi
+						>[0]["chainSummary"]
+					>,
 				}),
 				"Doc Title",
 			);

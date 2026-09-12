@@ -174,4 +174,119 @@ describe("checkAppointmentResourceCollision", () => {
 		);
 		assert.equal(afterResult.hasCollision, false);
 	});
+
+	it("detects assistant overlap collision with exact Russian message", () => {
+		const result = checkAppointmentResourceCollision(
+			{
+				patientId: "patient-2",
+				doctorUserId: "doctor-2",
+				chairId: "chair-2",
+				assistantUserId: "assistant-1",
+				startsAt: "2026-08-21T10:30:00.000Z",
+				endsAt: "2026-08-21T11:30:00.000Z",
+			},
+			[baseAppointment],
+			{
+				staff: mockStaff as Dashboard["clinicSettings"]["staff"],
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+				patients: mockPatients as Dashboard["patients"],
+			},
+		);
+
+		assert.equal(result.hasCollision, true);
+		assert.equal(result.conflictType, "assistant");
+		assert.equal(result.conflictingAppointment?.id, "appt-1");
+		assert.match(result.message ?? "", /Ассистент Асс\. Сидорова уже занят\(а\)/);
+	});
+
+	it("detects boundary collision when overlapping by exactly 1 minute", () => {
+		// End 1 minute overlap (10:59 - 11:30)
+		const overlapEnd1Min = checkAppointmentResourceCollision(
+			{
+				patientId: "patient-2",
+				doctorUserId: "doctor-1",
+				chairId: "chair-2",
+				startsAt: "2026-08-21T10:59:00.000Z",
+				endsAt: "2026-08-21T11:30:00.000Z",
+			},
+			[baseAppointment],
+			{
+				staff: mockStaff as Dashboard["clinicSettings"]["staff"],
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+				patients: mockPatients as Dashboard["patients"],
+			},
+		);
+		assert.equal(overlapEnd1Min.hasCollision, true);
+		assert.equal(overlapEnd1Min.conflictType, "doctor");
+
+		// Start 1 minute overlap (09:30 - 10:01)
+		const overlapStart1Min = checkAppointmentResourceCollision(
+			{
+				patientId: "patient-2",
+				doctorUserId: "doctor-2",
+				chairId: "chair-1",
+				startsAt: "2026-08-21T09:30:00.000Z",
+				endsAt: "2026-08-21T10:01:00.000Z",
+			},
+			[baseAppointment],
+			{
+				staff: mockStaff as Dashboard["clinicSettings"]["staff"],
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+				patients: mockPatients as Dashboard["patients"],
+			},
+		);
+		assert.equal(overlapStart1Min.hasCollision, true);
+		assert.equal(overlapStart1Min.conflictType, "chair");
+	});
+
+	it("detects simultaneous booking of assistant in 2 different cabinets", () => {
+		const assistantCrossCabinetCollision = checkAppointmentResourceCollision(
+			{
+				patientId: "patient-2",
+				doctorUserId: "doctor-2",
+				chairId: "chair-2",
+				assistantUserId: "assistant-1",
+				startsAt: "2026-08-21T10:15:00.000Z",
+				endsAt: "2026-08-21T10:45:00.000Z",
+			},
+			[baseAppointment],
+			{
+				staff: mockStaff as Dashboard["clinicSettings"]["staff"],
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+				patients: mockPatients as Dashboard["patients"],
+			},
+		);
+
+		assert.equal(assistantCrossCabinetCollision.hasCollision, true);
+		assert.equal(assistantCrossCabinetCollision.conflictType, "assistant");
+		assert.match(
+			assistantCrossCabinetCollision.message ?? "",
+			/Ассистент Асс\. Сидорова уже занят\(а\)/,
+		);
+	});
+
+	it("handles invalid or empty data gracefully and returns false", () => {
+		assert.equal(
+			checkAppointmentResourceCollision({}, [baseAppointment]).hasCollision,
+			false,
+		);
+		assert.equal(
+			checkAppointmentResourceCollision(
+				{ startsAt: "invalid", endsAt: "2026-08-21T10:00:00.000Z" },
+				[baseAppointment],
+			).hasCollision,
+			false,
+		);
+		assert.equal(
+			checkAppointmentResourceCollision(
+				{
+					startsAt: "2026-08-21T11:00:00.000Z",
+					endsAt: "2026-08-21T10:00:00.000Z",
+				},
+				[baseAppointment],
+			).hasCollision,
+			false,
+		);
+	});
 });
+
