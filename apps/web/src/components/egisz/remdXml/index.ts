@@ -6,5 +6,5 @@
  */
 
 export * from "./egiszRemdPresets";
-export * from "./egiszRemdEngine";
+export * from "../egiszRemdEngine";
 export * from "./EgiszRemdXmlModal";

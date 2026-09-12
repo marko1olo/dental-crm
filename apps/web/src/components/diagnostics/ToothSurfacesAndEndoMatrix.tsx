@@ -33,7 +33,7 @@ import {
 	getDefaultCanalsForTooth,
 	generateEndoProtocol043,
 	generateEndoCanalsTable043,
-} from "../odontogram/EndoCanalLogModal";
+} from "../endo/EndoCanalLogModal";
 import type { RestorativeMaterialKey } from "../odontogram/anatomicalToothGeometries";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";

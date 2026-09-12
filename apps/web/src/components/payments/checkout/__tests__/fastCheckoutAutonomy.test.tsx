@@ -14,7 +14,7 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { KktLanPrinterService } from "../../../../services/hardware/kktLanPrinter";
 import { showToast } from "../../../GlobalToast";
-import { FastCheckoutModal } from "../FastCheckoutModal";
+import { FastCheckoutModal } from "../../../finance/FastCheckoutModal";
 import {
 	splitStateToCheckoutPayments,
 	validateCheckoutSplit,

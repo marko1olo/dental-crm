@@ -40,7 +40,7 @@ import {
 	type ToothData,
 	type ToothState,
 } from "../odontogram/ToothChart";
-import { EndoCanalLogModal, type EndoToothClinicalData } from "../odontogram/EndoCanalLogModal";
+import { EndoCanalLogModal, type EndoToothClinicalData } from "../endo/EndoCanalLogModal";
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { RadialToothMenu } from "../odontogram/RadialToothMenu";

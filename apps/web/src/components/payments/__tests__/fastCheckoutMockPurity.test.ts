@@ -9,7 +9,7 @@ import { DEFAULT_CLINIC_CREDENTIALS, DEFAULT_DOCTOR_SIGNATURE } from "../../../c
 describe("Wave 109: Fast Checkout, Requisites and Watermark Mock Purity", () => {
 	it("FastCheckoutModal.tsx has eradicated synthetic patient and monetary defaults", () => {
 		const repoRoot = process.cwd().includes("apps") ? path.resolve(process.cwd(), "../..") : process.cwd();
-		const content = fs.readFileSync(path.resolve(repoRoot, "apps/web/src/components/payments/checkout/FastCheckoutModal.tsx"), "utf-8");
+		const content = fs.readFileSync(path.resolve(repoRoot, "apps/web/src/components/finance/FastCheckoutModal.tsx"), "utf-8");
 
 		assert(!content.includes('"Смирнова Екатерина Васильевна"'), "Must not contain mock patient name");
 		assert(!content.includes("patientDepositRub = 85000"), "Must not default to 85000 rub deposit");

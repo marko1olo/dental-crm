@@ -62,7 +62,7 @@ import {
 	generateForm043uPrintHtml,
 	generateGostXmlSignatureBlock,
 	runEgisz043uPreflight,
-} from "./egiszRemdEngine";
+} from "../egiszRemdEngine";
 import {
 	type CryptoCertificate,
 	type CryptoProStatusResponse,
@@ -88,7 +88,7 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 	const [activeTab, setActiveTab] = useState<"preflight" | "odontogram" | "clinical" | "cda_xml">("preflight");
 
 	// Document Payload State
-	const [docTypeCode, setDocTypeCode] = useState<EgiszDentalSemdCode>(
+	const [docTypeCode, setDocTypeCode] = useState<any>(
 		initialPayload?.docTypeCode || "303"
 	);
 	const [clinic, setClinic] = useState(

@@ -39,7 +39,7 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 
 	const patientModalPath = path.resolve(
 		__dirname,
-		"../../patient/PatientCardModal.tsx",
+		"../../patients/PatientCardModal.tsx",
 	);
 	const patientModalSource = fs.readFileSync(patientModalPath, "utf8");
 
@@ -167,7 +167,7 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 
 	it("6. PatientCardModal & PatientGeneralInfoTab are exported in patient domain index", () => {
 		assert.ok(
-			patientIndexSource.includes('export * from "./PatientCardModal";'),
+			patientIndexSource.includes('export * from "../patients/PatientCardModal";'),
 			"patient/index.ts must export PatientCardModal",
 		);
 		assert.ok(

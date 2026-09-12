@@ -14,8 +14,7 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { CashShiftWidget } from "../components/finance/CashShiftWidget";
-import { FastCheckoutModal } from "../components/payments/checkout/FastCheckoutModal";
-import FastCheckoutModalReexport from "../components/payments/FastCheckoutModal";
+import { FastCheckoutModal } from "../components/finance/FastCheckoutModal";
 import { ExpressFiscalReceiptModal } from "../components/finance/ExpressFiscalReceiptModal";
 import { RefundReceiptModal } from "../components/finance/RefundReceiptModal";
 import { CashRegisterModal } from "../components/finance/CashRegisterModal";
@@ -87,10 +86,10 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 		assert.ok(html.includes("Закрыть визит: 100% Гарантия / Скидка (0 ₽)"));
 	});
 
-	it("verifies transparent re-export at apps/web/src/components/payments/FastCheckoutModal.tsx", () => {
-		assert.equal(typeof FastCheckoutModalReexport, "function");
+	it("verifies canonical FastCheckoutModal at apps/web/src/components/finance/FastCheckoutModal.tsx", () => {
+		assert.equal(typeof FastCheckoutModal, "function");
 		const html = renderToString(
-			React.createElement(FastCheckoutModalReexport, {
+			React.createElement(FastCheckoutModal, {
 				isOpen: true,
 				onClose: () => {},
 				totalBillKop: 500000,

@@ -11,5 +11,5 @@ export * from "./PatientSentimentBadge";
 export * from "./PatientHeaderCard";
 export * from "./safetyMath";
 export * from "./blankContractPrint";
-export * from "./PatientCardModal";
+export * from "../patients/PatientCardModal";
 export * from "./tabs/PatientGeneralInfoTab";

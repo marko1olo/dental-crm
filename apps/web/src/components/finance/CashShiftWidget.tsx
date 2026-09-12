@@ -15,6 +15,7 @@ import {
 	Layers,
 	Lock,
 	MinusCircle,
+	MoreHorizontal,
 	PlusCircle,
 	Printer,
 	QrCode,
@@ -106,6 +107,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	const [isZReportModalOpen, setIsZReportModalOpen] = useState<boolean>(false);
 	const [isOfflineBatchModalOpen, setIsOfflineBatchModalOpen] = useState<boolean>(false);
 	const [queuedItems, setQueuedItems] = useState<QueuedFiscalReceiptItem[]>([]);
+	const [isReportsMenuOpen, setIsReportsMenuOpen] = useState<boolean>(false);
 
 	// StomX Cash Flow State (Wave 118: 54-FZ Tag 1054 cash in/out presets)
 	const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState<boolean>(initialCashFlowModalOpen);
@@ -701,8 +703,8 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					)}
 				</div>
 
-				{/* Правая часть: кнопка X-отчета, кнопки внесения/изъятия, кнопка открытия/закрытия, доп. действия */}
-				<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap justify-start sm:justify-end shrink-0">
+				{/* Правая часть: кнопки внесения/изъятия, кнопка смены, меню отчетов (...) по Мандату 8p */}
+				<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap justify-start sm:justify-end shrink-0 relative">
 					<button
 						type="button"
 						onClick={handleOpenCashInModal}
@@ -723,18 +725,6 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					>
 						<MinusCircle size={13} className="shrink-0 text-rose-600" />
 						<span className="hidden sm:inline">Изъятие</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleXReport}
-						disabled={isProcessing}
-						data-testid="btn-print-x-report"
-						className="secondary-button min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
-						title="Печать X-отчета (без гашения)"
-					>
-						<Printer size={13} className="shrink-0" />
-						<span>X-отчет</span>
 					</button>
 
 					<button
@@ -762,26 +752,68 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						)}
 					</button>
 
-					{/* Дополнительные действия: Ведомость А4 и Экспорт в 1С */}
-					<button
-						type="button"
-						onClick={handlePrintAccountingStatement}
-						className="!hidden xl:!inline-flex secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium items-center gap-1 cursor-pointer shrink-0"
-						title="Печать сводной бухгалтерской ведомости А4"
-					>
-						<FileText size={13} className="text-teal-600" />
-						<span>Ведомость А4</span>
-					</button>
+					{/* Выпадающее меню отчетов и выгрузки (...) по Мандату 8p */}
+					<div className="relative inline-block">
+						<button
+							type="button"
+							onClick={() => setIsReportsMenuOpen((prev) => !prev)}
+							data-testid="btn-shift-reports-menu"
+							className="secondary-button min-h-[36px] sm:min-h-[28px] sm:h-7 px-2 py-1 sm:py-0.5 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+							title="Отчёты и экспорт (X-отчет, Ведомость А4, 1С)"
+						>
+							<MoreHorizontal size={14} className="shrink-0" />
+							<span className="hidden md:inline">Отчёты</span>
+						</button>
 
-					<button
-						type="button"
-						onClick={handleExport1cCsv}
-						className="!hidden xl:!inline-flex secondary-button min-h-[28px] h-7 px-2 py-0.5 text-xs font-medium items-center gap-1 cursor-pointer shrink-0"
-						title="Выгрузить данные смены для 1С:Бухгалтерии"
-					>
-						<FileSpreadsheet size={13} className="text-blue-600" />
-						<span>1С</span>
-					</button>
+						<div
+							className={`absolute right-0 top-full mt-1 z-30 min-w-[170px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg p-1 flex flex-col gap-0.5 ${
+								isReportsMenuOpen ? "block" : "hidden"
+							}`}
+						>
+							<button
+								type="button"
+								onClick={() => {
+									setIsReportsMenuOpen(false);
+									handleXReport();
+								}}
+								disabled={isProcessing}
+								data-testid="btn-print-x-report"
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-neutral-200"
+								title="Печать X-отчета (без гашения)"
+							>
+								<Printer size={13} className="shrink-0 text-neutral-500" />
+								<span>X-отчет (промежуточный)</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsReportsMenuOpen(false);
+									handlePrintAccountingStatement();
+								}}
+								data-testid="btn-print-accounting-statement"
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-neutral-200"
+								title="Печать сводной бухгалтерской ведомости А4"
+							>
+								<FileText size={13} className="shrink-0 text-teal-600" />
+								<span>Ведомость А4</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsReportsMenuOpen(false);
+									handleExport1cCsv();
+								}}
+								data-testid="btn-export-1c-csv"
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-neutral-200"
+								title="Выгрузить данные смены для 1С:Бухгалтерии"
+							>
+								<FileSpreadsheet size={13} className="shrink-0 text-blue-600" />
+								<span>Экспорт в 1С (CSV)</span>
+							</button>
+						</div>
+					</div>
 				</div>
 
 				{/* Модальное окно закрытия смены Z-отчетом */}

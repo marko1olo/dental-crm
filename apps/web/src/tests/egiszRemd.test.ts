@@ -33,7 +33,7 @@ import {
 	generateForm043uPrintHtml,
 	generateGostXmlSignatureBlock,
 	runEgisz043uPreflight,
-} from "../components/egisz/remdXml/egiszRemdEngine";
+} from "../components/egisz/egiszRemdEngine";
 
 describe("1. EGISZ Statutory Identifiers & Checksum Validators", () => {
 	it("1.1 Validates Russian SNILS checksum for doctors and patients", () => {

@@ -203,7 +203,7 @@ export function PanoramicRendererWindow({
 		setLoading(true);
 		setError(null);
 
-		const worker = new Worker(new URL("../../mprWorker.ts", import.meta.url), {
+		const worker = new Worker(new URL("../../workers/mprWorker.ts", import.meta.url), {
 			type: "module",
 		});
 		workerRef.current = worker;

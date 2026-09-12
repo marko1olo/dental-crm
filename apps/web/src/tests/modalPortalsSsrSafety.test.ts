@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { CommandPalette } from "../components/CommandPalette";
 import { SberbankTerminalPaymentModal } from "../components/finance/SberbankTerminalPaymentModal";
 import { InventoryConfirmDialog } from "../components/inventory/InventoryConfirmDialog";
-import { EndoCanalLogModal } from "../components/odontogram/EndoCanalLogModal";
+import { EndoCanalLogModal } from "../components/endo/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../components/radiology/CephalometricAnalysisModal";
 import { WaitlistDrawer } from "../components/schedule/WaitlistDrawer";
 import { WaitlistQuickFillModal } from "../components/schedule/WaitlistQuickFillModal";

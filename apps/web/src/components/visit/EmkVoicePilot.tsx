@@ -179,73 +179,65 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 
 	return (
 		<div
-			className={`emk-voice-pilot-hud rounded-2xl border transition-all select-none shadow-md overflow-hidden ${
+			className={`emk-voice-pilot-hud rounded-xl border transition-all select-none shadow-xs overflow-hidden ${
 				isListening
 					? "bg-rose-500/10 border-rose-500/40 dark:bg-rose-950/20"
 					: "bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border-[var(--border,#e2e8f0)] dark:border-zinc-800"
 			} ${className}`.trim()}
 			data-testid="emk-voice-pilot-hud"
 		>
-			{/* Header Bar */}
-			<div className="flex items-center justify-between p-2.5 sm:p-3 border-b border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800 gap-2">
-				<div className="flex items-center gap-2.5 min-w-0">
-					{/* Huge Glove-First Mic Button (>= 48x48px) */}
+			{/* Header Bar — Сверхкомпактный 32–36px тулбар по Мандату 8p */}
+			<div className={`flex items-center justify-between px-2.5 py-1 sm:py-1.5 gap-2 min-h-[36px] ${transcript ? "border-b border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800" : ""}`}>
+				<div className="flex items-center gap-2 min-w-0">
+					{/* Компактная кнопка микрофона (min-h-[32px] h-8 touch-target) */}
 					<button
 						type="button"
 						onClick={handleToggleMic}
-						className={`min-w-[48px] min-h-[48px] w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all cursor-pointer shadow-sm active:scale-95 touch-manipulation ${
+						className={`min-h-[32px] h-8 px-2.5 rounded-lg flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 touch-manipulation shrink-0 ${
 							isListening
-								? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
+								? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/40"
 								: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
 						}`}
 						title={isListening ? "Остановить диктовку (Ctrl+Space)" : "Начать диктовку (Ctrl+Space)"}
 						aria-label={isListening ? "Остановить диктовку" : "Начать диктовку"}
 						aria-pressed={isListening}
 					>
-						{isListening ? <MicOff size={24} /> : <Mic size={24} />}
+						{isListening ? <MicOff size={15} /> : <Mic size={15} />}
+						<span className="hidden sm:inline">{isListening ? "Стоп" : "Диктовка"}</span>
 					</button>
 
-					<div className="flex flex-col min-w-0">
-						<div className="flex items-center gap-2">
-							<span className="text-sm font-black text-[var(--ink,#0f172a)] dark:text-zinc-100 flex items-center gap-1.5 truncate">
-								<Sparkles size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
-								Голосовой AI-Пилот ЭМК
-							</span>
-							<span
-								className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-black uppercase tracking-wider shrink-0 ${
-									isListening
-										? "bg-rose-500 text-white animate-pulse"
-										: "bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 text-[var(--muted,#64748b)]"
-								}`}
-							>
-								{isListening ? (
-									"Слушаю..."
-								) : (
-									<>
-										<span className="hidden sm:inline">Готов к диктовке</span>
-										<span className="sm:hidden">Готов</span>
-									</>
-								)}
-							</span>
-						</div>
-						<span className="text-xs text-[var(--muted,#64748b)] truncate">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<span className="text-xs font-black text-[var(--ink,#0f172a)] dark:text-zinc-100 flex items-center gap-1 shrink-0">
+							<Sparkles size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+							AI-Пилот
+						</span>
+						<span
+							className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 ${
+								isListening
+									? "bg-rose-500 text-white animate-pulse"
+									: "bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 text-[var(--muted,#64748b)]"
+							}`}
+						>
 							{isListening ? (
-								"Диктуйте формулу, диагнозы и манипуляции"
+								"Слушаю..."
 							) : (
 								<>
-									<span className="hidden sm:inline">Голосовое заполнение дневника и зубной формулы по 804н</span>
-									<span className="sm:hidden">Дневник 043/у и формула голосом</span>
+									<span className="hidden sm:inline">Готов к диктовке</span>
+									<span className="sm:hidden">Готов</span>
 								</>
 							)}
+						</span>
+						<span className="text-[11px] text-[var(--muted,#64748b)] truncate hidden xl:inline">
+							{isListening ? "Диктуйте формулу и манипуляции" : "Дневник 043/у и формула голосом"}
 						</span>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0">
 					{/* Live VU meter indicator */}
-					<div className="hidden md:flex items-center gap-1 h-6 px-2 rounded-lg bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 border border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-700">
-						<Volume2 size={13} className={isListening ? "text-rose-500 animate-pulse" : "text-zinc-400"} />
-						<div className="w-12 h-2.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden flex items-center">
+					<div className="hidden md:flex items-center gap-1 h-5 px-1.5 rounded bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 border border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-700">
+						<Volume2 size={12} className={isListening ? "text-rose-500 animate-pulse" : "text-zinc-400"} />
+						<div className="w-10 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden flex items-center">
 							<div
 								className="h-full bg-rose-500 transition-all duration-75 rounded-full"
 								style={{ width: `${vuHeight}%` }}
@@ -257,11 +249,11 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 						<button
 							type="button"
 							onClick={handleClear}
-							className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-zinc-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+							className="min-h-[32px] h-8 w-8 p-1.5 rounded-lg text-zinc-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer flex items-center justify-center"
 							title="Очистить распознанный текст"
 							aria-label="Очистить"
 						>
-							<Trash2 size={18} />
+							<Trash2 size={15} />
 						</button>
 					)}
 
@@ -270,7 +262,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 							type="button"
 							onClick={handleApplyAll}
 							disabled={isApplied}
-							className={`min-h-[48px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition-all cursor-pointer touch-manipulation shadow-sm ${
+							className={`min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation shadow-xs ${
 								isApplied
 									? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
 									: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white hover:scale-[1.02] active:scale-95"
@@ -278,13 +270,13 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 						>
 							{isApplied ? (
 								<>
-									<CheckCheck size={18} />
+									<CheckCheck size={14} />
 									<span>Применено</span>
 								</>
 							) : (
 								<>
-									<Zap size={18} />
-									<span>Заполнить карту и смету</span>
+									<Zap size={14} />
+									<span>Заполнить карту</span>
 								</>
 							)}
 						</button>

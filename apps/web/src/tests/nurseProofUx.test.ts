@@ -17,7 +17,7 @@ import {
 import type { DiaryState } from "../components/useVisitDiaryLogic";
 import { CLINICAL_PRESETS } from "../components/visit/ClinicalQuickPresetsBar";
 import { TOOTH_STATE_LABELS } from "../components/odontogram/ToothChart";
-import { getDefaultCanalsForTooth } from "../components/odontogram/EndoCanalLogModal";
+import { getDefaultCanalsForTooth } from "../components/endo/EndoCanalLogModal";
 import { isValidFdiToothNumber } from "@dental/shared";
 
 describe("NURSE-PROOF & NON-INTRUSIVE CLINICAL UX SUITE («ЗАЩИТА ОТ СОВКОВОЙ БАБУШКИ»)", () => {

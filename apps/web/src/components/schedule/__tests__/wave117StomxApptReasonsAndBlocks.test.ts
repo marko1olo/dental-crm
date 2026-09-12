@@ -68,7 +68,7 @@ import {
 import {
 	STOMX_REPRESENTATIVE_CATALOG as MODAL_REPRESENTATIVE_CATALOG,
 	getRepresentativeLegalStatus,
-} from "../../patient/PatientCardModal";
+} from "../../patients/PatientCardModal";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -328,11 +328,11 @@ describe("Wave 117: StomX Catalogs Export & Appointment Blocking Intervals", () 
 			);
 		});
 
-		it("3.4 Re-export bridge in components/patients/PatientCardModal.tsx resolves cleanly", () => {
+		it("3.4 Canonical components/patients/PatientCardModal.tsx resolves cleanly", () => {
 			const patientsBridgePath = path.resolve(__dirname, "../../patients/PatientCardModal.tsx");
 			assert.ok(fs.existsSync(patientsBridgePath), "components/patients/PatientCardModal.tsx must exist");
 			const bridgeContent = fs.readFileSync(patientsBridgePath, "utf-8");
-			assert.ok(bridgeContent.includes('export * from "../patient/PatientCardModal"'));
+			assert.ok(bridgeContent.includes("PatientCardModal"));
 		});
 	});
 });

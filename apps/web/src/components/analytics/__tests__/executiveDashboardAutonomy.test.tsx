@@ -56,7 +56,7 @@ test("ClinicalRulePanel: React key is stable and deterministic without Math.rand
 });
 
 test("EGISZ REMD and CDA R2: Document UUIDs do NOT use Math.random()", () => {
-	const remdPath = path.join(webSrcRoot, "components/egisz/remdXml/egiszRemdEngine.ts");
+	const remdPath = path.join(webSrcRoot, "components/egisz/egiszRemdEngine.ts");
 	const cdaPath = path.join(webSrcRoot, "components/egisz/cdaR2XmlBuilder.ts");
 
 	const remdCode = readFileSync(remdPath, "utf8");

@@ -58,7 +58,7 @@ import {
 	type DocumentStatusFilter,
 	type DocumentEdsFilter,
 } from "./components/documents/DocumentRegistryFilterBar";
-import type { Egisz043uPayload } from "./components/egisz/remdXml/egiszRemdEngine";
+import type { Egisz043uPayload } from "./components/egisz/egiszRemdEngine";
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,

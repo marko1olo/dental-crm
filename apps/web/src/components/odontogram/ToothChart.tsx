@@ -52,7 +52,7 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 };
 
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
-import type { EndoToothClinicalData } from "./EndoCanalLogModal";
+import type { EndoToothClinicalData } from "../endo/EndoCanalLogModal";
 import { showToast } from "../GlobalToast";
 import { globalDentalVoiceEngine } from "../../services/voice";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";

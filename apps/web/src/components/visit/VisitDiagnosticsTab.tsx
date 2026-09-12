@@ -5,7 +5,7 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
 import { EMPTY_DIARY } from "../useVisitDiaryLogic";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
-import { EndoCanalLogModal } from "../odontogram/EndoCanalLogModal";
+import { EndoCanalLogModal } from "../endo/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { LabOrdersPanel } from "../patients/LabOrdersPanel";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";

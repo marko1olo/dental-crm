@@ -4,7 +4,7 @@ import { ExpressFiscalReceiptModal } from "../finance/ExpressFiscalReceiptModal"
 import { RefundReceiptModal } from "../finance/RefundReceiptModal";
 import { WarehouseManagerModal } from "../inventory/WarehouseManagerModal";
 import { ClinicalConflictModal } from "../offline/ClinicalConflictModal";
-import { PatientCardModal } from "../patient/PatientCardModal";
+import { PatientCardModal } from "../patients/PatientCardModal";
 /**
  * BackofficeModalsHost.tsx — On-demand backoffice modal layer for dental clinic operations.
  * Mounts operational dialogs (54-FZ Cashier, EGISZ, MDLP, Payroll T-13/T-51, CRM Portals, Settings)
@@ -21,7 +21,7 @@ import { CashShiftClosingModal } from "../billing/CashShiftClosingModal";
 import { CashShiftWidget } from "../finance/CashShiftWidget";
 import { FamilyWalletModal } from "../finance/FamilyWalletModal";
 import { PatientInstallmentScheduleModal } from "../finance/PatientInstallmentScheduleModal";
-import { FastCheckoutModal } from "../payments/checkout/FastCheckoutModal";
+import { FastCheckoutModal } from "../finance/FastCheckoutModal";
 import { SberPosTerminalModal } from "../payments/sberPos/SberPosTerminalModal";
 import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal";
 import { PatientOmnichannelHubModal } from "../messaging/PatientOmnichannelHubModal";
@@ -29,7 +29,7 @@ import { ClinicalPnlHubModal } from "../finance/pnl/ClinicalPnlHubModal";
 import { FnsTaxDeductionModal } from "../billing/tax/FnsTaxDeductionModal";
 import { FnsNdflXmlModal } from "../documents/ndflXml";
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
-import { DoctorPayrollModal } from "../payroll/DoctorPayrollModal";
+import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
 import { StaffPayrollLedgerModal } from "../payroll/StaffPayrollLedgerModal";
 import { AdvancedDoctorPayrollModal } from "../payroll/AdvancedDoctorPayrollModal";
 import { FormT13TimesheetModal } from "../payroll/FormT13TimesheetModal";

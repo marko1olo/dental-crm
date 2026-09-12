@@ -54,7 +54,7 @@ import {
 	getAnatomicalWorkingLength,
 	getDefaultCanalsForTooth,
 	STANDARD_ENDO_PRESET,
-} from "./EndoCanalLogModal";
+} from "../endo/EndoCanalLogModal";
 
 export interface EndoCanalMeasurementDrawerProps {
 	readonly isOpen: boolean;

@@ -239,7 +239,7 @@ import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { ClinicalRulePanel as DefaultClinicalRulePanel } from "./ClinicalRulePanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
+import { EndoCanalLogModal } from "./components/endo/EndoCanalLogModal";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
 import { StagePaymentPlanModal } from "./components/treatment-plans/stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";

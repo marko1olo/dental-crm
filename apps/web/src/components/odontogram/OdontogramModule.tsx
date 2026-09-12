@@ -63,13 +63,13 @@ import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import {
 	type EndoToothClinicalData,
 	EndoCanalLogModal,
-} from "./EndoCanalLogModal";
+} from "../endo/EndoCanalLogModal";
 import { PediatricMixedDentitionModal } from "./PediatricMixedDentitionModal";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
-import { FastCheckoutModal } from "../payments/checkout/FastCheckoutModal";
+import { FastCheckoutModal } from "../finance/FastCheckoutModal";
 import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
 import { calculateLiveInvoiceItems } from "./OdontogramLiveInvoice";
 import {

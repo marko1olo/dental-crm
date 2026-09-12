@@ -11,7 +11,7 @@ import React from "react";
 import {
 	DoctorPayrollModal,
 	type DoctorPayrollModalProps,
-} from "./DoctorPayrollModal";
+} from "../finance/payroll/DoctorPayrollModal";
 
 export interface AdvancedDoctorPayrollModalProps {
 	readonly isOpen: boolean;
