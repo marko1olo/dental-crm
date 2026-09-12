@@ -1,5 +1,5 @@
 /**
- * cashbox_v2.ts — High-Precision 6-Account Cash Box, Installments, 12 Expense Reasons & Dental Lab Payments API.
+ * cashbox.ts — High-Precision 6-Account Cash Box, Installments, 12 Expense Reasons & Dental Lab Payments API.
  * 
  * Compliant with 54-FZ, StomX Reverse Engineering Bible (Sections 6, 8, 9), Order 804n, and Form T-51.
  */
@@ -34,7 +34,7 @@ import {
 } from "../db/seeds/seed_cash_and_reasons.js";
 import { getRequestIdentity } from "../security/identity.js";
 
-export async function registerCashboxV2Routes(app: FastifyInstance) {
+export async function registerCashboxRoutes(app: FastifyInstance) {
 	/**
 	 * 1. GET /api/cash/cash-box
 	 * Список 6 кассовых счетов клиники с балансами.
@@ -585,3 +585,6 @@ export async function registerCashboxV2Routes(app: FastifyInstance) {
 		return reply.send({ data: ops, total: ops.length });
 	});
 }
+
+export { registerCashboxRoutes as registerCashboxV2Routes };
+export default registerCashboxRoutes;

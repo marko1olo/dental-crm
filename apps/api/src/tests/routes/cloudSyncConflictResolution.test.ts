@@ -18,7 +18,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
-import { registerSyncRoutes } from "../../routes/sync.js";
+import { registerSyncRoutes } from "../../routes/sync/index.js";
 import { SyncGatewayService } from "../../services/sync/syncGatewayService.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

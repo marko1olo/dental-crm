@@ -14,7 +14,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { seedClinicalCore } from "../../db/seeds/seed_clinical_core.js";
-import { registerOutpatientV2Routes } from "../../routes/outpatient_v2.js";
+import { registerOutpatientRoutes } from "../../routes/outpatient.js";
 
 const TEST_ORG_ID = "11111111-1111-1111-1111-111111111111";
 const TEST_HEADERS = {
@@ -99,7 +99,7 @@ describe("Outpatient v2 & Clinical Core Integration Tests", () => {
 		testVerificationId = verif!.id;
 
 		app = Fastify();
-		await registerOutpatientV2Routes(app);
+		await registerOutpatientRoutes(app);
 	});
 
 	afterEach(async () => {

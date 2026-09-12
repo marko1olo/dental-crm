@@ -25,7 +25,7 @@ import {
 } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 
-export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<void> {
+export async function registerOutpatientRoutes(app: FastifyInstance): Promise<void> {
 	// =========================================================================
 	// 1. КАТАЛОГ 55 СУЩНОСТЕЙ ЗУБНОЙ СИСТЕМЫ (Взрослые, детские, челюсти JU/JL, прикус C)
 	// =========================================================================
@@ -759,3 +759,6 @@ export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<
 		},
 	);
 }
+
+export { registerOutpatientRoutes as registerOutpatientV2Routes };
+export default registerOutpatientRoutes;

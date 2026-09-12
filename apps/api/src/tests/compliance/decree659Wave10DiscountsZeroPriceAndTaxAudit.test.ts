@@ -480,10 +480,10 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 		assert.equal(errDocAnon.error, "Decree659TaxDeductionForbiddenError");
 		console.log("[AUDIT 10.3A PROOF] Документ КНД 1151156 для анонимного пациента заблокирован 422!");
 
-		// 10.3B: GET /api/v1/documents/tax-deduction/preview/:patientId для анонима
+		// 10.3B: GET /api/documents/tax-deduction/preview/:patientId для анонима
 		const resPreviewAnon = await app.inject({
 			method: "GET",
-			url: `/api/v1/documents/tax-deduction/preview/${PATIENT_ANON_ID}?year=2026`,
+			url: `/api/documents/tax-deduction/preview/${PATIENT_ANON_ID}?year=2026`,
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorToken,
@@ -500,10 +500,10 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 		assert.equal(errPreviewAnon.error, "Decree659TaxDeductionForbiddenError");
 		console.log("[AUDIT 10.3B PROOF] Предпросмотр налогового вычета для анонима заблокирован 422!");
 
-		// 10.3C: GET /api/v1/documents/tax-deduction/preview/:patientId для идентифицированного пациента -> 200 OK
+		// 10.3C: GET /api/documents/tax-deduction/preview/:patientId для идентифицированного пациента -> 200 OK
 		const resPreviewIdentified = await app.inject({
 			method: "GET",
-			url: `/api/v1/documents/tax-deduction/preview/${PATIENT_IDENTIFIED_ID}?year=2026`,
+			url: `/api/documents/tax-deduction/preview/${PATIENT_IDENTIFIED_ID}?year=2026`,
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorToken,

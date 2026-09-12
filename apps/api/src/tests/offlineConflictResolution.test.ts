@@ -17,7 +17,7 @@ import {
 } from "../db/schema.js";
 import { registerOdontogramRoutes } from "../routes/odontogram.js";
 import { registerScheduleRoutes } from "../routes/schedule.js";
-import { registerSyncRoutes } from "../routes/sync.js";
+import { registerSyncRoutes } from "../routes/sync/index.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import {

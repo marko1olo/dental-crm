@@ -12,9 +12,8 @@
  * 3. Return Receipt 54-FZ (Чек «Возврат прихода», operationType: income_return, Тег 1054 = 2):
  *    - Запрет на закрытие долга через возврат и жесткий контроль лимита возвращаемого аванса (OverRefundExceeded).
  * 4. Absolute Tax Exemption Shield for Anonymous Patients (UUID_ANON):
- *    - GET /api/documents/tax-deduction/preview/:patientId и GET /api/billing/tax-deduction/preview/:patientId -> isBlocked: true.
- *    - POST /api/documents/tax-deduction/xml и POST /api/billing/tax-deduction/xml -> 422 Decree659TaxDeductionForbiddenError.
- *    - POST /api/billing/tax-deduction -> 422 Decree659TaxDeductionForbiddenError.
+ *    - GET /api/documents/tax-deduction/preview/:patientId -> isBlocked: true.
+ *    - POST /api/documents/tax-deduction/xml -> 422 Decree659TaxDeductionForbiddenError.
  *    - POST /api/documents (kind: 'tax_deduction_certificate') -> 422 Decree659TaxDeductionForbiddenError.
  */
 
@@ -488,7 +487,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 	// АУДИТ 8.4: ЗАПРЕТ СПРАВОК КНД 1151156 ДЛЯ АНОНИМНЫХ ПАЦИЕНТОВ (PREVIEW)
 	// =========================================================================
 
-	it("AUDIT 8.4: Запрет справки для налогового вычета КНД 1151156 для анонимов в GET /api/documents/tax-deduction/preview и /api/billing/tax-deduction", async (t) => {
+	it("AUDIT 8.4: Запрет справки для налогового вычета КНД 1151156 для анонимов в GET /api/documents/tax-deduction/preview", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		// 1. Проверка через /api/documents/tax-deduction/preview/:patientId
@@ -505,20 +504,6 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 		const docPreview = JSON.parse(previewDocRes.body);
 		assert.equal(docPreview.error, "Decree659TaxDeductionForbiddenError");
 		assert.ok(docPreview.message?.includes("анонимных карт"), "Причина блокировки указывает на запрет анонимных вычетов");
-
-		// 2. Проверка через /api/billing/tax-deduction/preview/:patientId
-		const previewBillingRes = await app.inject({
-			method: "GET",
-			url: `/api/billing/tax-deduction/preview/${ANON_PATIENT_ID}?year=2026`,
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": adminToken,
-			},
-		});
-
-		assert.equal(previewBillingRes.statusCode, 422, "Предпросмотр вычета в биллинге для анонима ОБЯЗАН блокироваться 422");
-		const billingPreview = JSON.parse(previewBillingRes.body);
-		assert.equal(billingPreview.error, "Decree659TaxDeductionForbiddenError");
 		console.log("[TAX DEDUCTION PREVIEW PROOF] Запрет предпросмотра КНД 1151156 для анонима подтвержден!");
 	});
 
@@ -526,7 +511,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 	// АУДИТ 8.5: ЗАПРЕТ ГЕНЕРАЦИИ XML КНД 1184043 / 1151156 ДЛЯ АНОНИМА
 	// =========================================================================
 
-	it("AUDIT 8.5: Запрет генерации XML КНД 1184043 для анонима через /api/documents/tax-deduction/xml и /api/billing/tax-deduction/xml (422)", async (t) => {
+	it("AUDIT 8.5: Запрет генерации XML КНД 1184043 для анонима через /api/documents/tax-deduction/xml (422)", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const anonXmlPayload = {
@@ -577,46 +562,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 		console.log("\n[DEBUG AUDIT 8.5]", docXmlRes.statusCode, docXmlRes.body);
 		assert.equal(docXmlRes.statusCode, 422, "Генерация XML на анонима обязана отклоняться со статусом 422");
 		assert.equal(docXmlRes.json()?.error, "Decree659TaxDeductionForbiddenError");
-
-		// 2. Через /api/billing/tax-deduction/xml
-		const billingXmlRes = await app.inject({
-			method: "POST",
-			url: "/api/billing/tax-deduction/xml",
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": adminToken,
-			},
-			payload: anonXmlPayload,
-		});
-
-		assert.equal(billingXmlRes.statusCode, 422, "Генерация XML в биллинге на анонима обязана отклоняться 422");
-		assert.equal(billingXmlRes.json()?.error, "Decree659TaxDeductionForbiddenError");
 		console.log("[TAX DEDUCTION XML PROOF] Генерация XML КНД 1184043 для анонима заблокирована со статусом 422!");
-	});
-
-	// =========================================================================
-	// АУДИТ 8.6: ЗАПРЕТ ЭНДПОИНТА /api/billing/tax-deduction ДЛЯ АНОНИМОВ
-	// =========================================================================
-
-	it("AUDIT 8.6: POST /api/billing/tax-deduction для анонимного пациента блокируется со статусом 422", async (t) => {
-		if (!databaseReady) return t.skip("База данных недоступна");
-
-		const billingTaxRes = await app.inject({
-			method: "POST",
-			url: "/api/billing/tax-deduction",
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": adminToken,
-			},
-			payload: {
-				patientId: ANON_PATIENT_ID,
-				year: 2026,
-			},
-		});
-
-		assert.equal(billingTaxRes.statusCode, 422, "POST /api/billing/tax-deduction для анонима обязан возвращать 422");
-		assert.equal(billingTaxRes.json()?.error, "Decree659TaxDeductionForbiddenError");
-		console.log("[BILLING TAX DEDUCTION ENDPOINT PROOF] Запрос в /api/billing/tax-deduction заблокирован!");
 	});
 
 	// =========================================================================

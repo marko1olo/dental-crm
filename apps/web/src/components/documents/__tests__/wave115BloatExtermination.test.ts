@@ -88,7 +88,7 @@ describe("Wave 115: Bloat & CMO Lock Exterminator (Mandates 8a–8q)", () => {
 	it("3. Мандат 8e: Автономия врача и ликвидация 24-часовых замков в lock-status", () => {
 		const outpatientRoutesPath = path.join(
 			repoRoot,
-			"apps/api/src/routes/outpatient_v2.ts",
+			"apps/api/src/routes/outpatient.ts",
 		);
 		const routesContent = fs.readFileSync(outpatientRoutesPath, "utf-8");
 

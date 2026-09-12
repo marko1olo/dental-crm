@@ -152,3 +152,5 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 		return reply.code(200).send(result);
 	});
 }
+
+export default registerSyncRoutes;

@@ -1,5 +1,5 @@
 /**
- * cashbox_v2.test.ts — Comprehensive Integration Tests for Cash Box V2, Installments, 12 Expense Reasons & Installed Locks.
+ * cashbox.test.ts — Comprehensive Integration Tests for Cash Box, Installments, 12 Expense Reasons & Installed Locks.
  */
 
 import { strict as assert } from "node:assert";
@@ -15,13 +15,13 @@ import {
 } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
-import { registerCashboxV2Routes } from "./cashbox_v2.js";
+import { registerCashboxRoutes } from "./cashbox.js";
 import { registerLabRoutes } from "./lab.js";
 
 async function buildTestApp() {
 	process.env.NODE_ENV = "test";
 	const app = Fastify();
-	await registerCashboxV2Routes(app);
+	await registerCashboxRoutes(app);
 	await registerLabRoutes(app);
 	await app.ready();
 	return app;

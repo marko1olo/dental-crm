@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
-	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
 import { requireOrganizationId } from "../../security/identity.js";
@@ -65,7 +64,6 @@ export async function register(app: FastifyInstance) {
 		}
 	};
 
-	app.get("/api/v1/documents/tax-deduction/preview/:patientId", handlePreview);
 	app.get("/api/documents/tax-deduction/preview/:patientId", handlePreview);
 
 	// 2. POST /api/v1/documents/tax-deduction/xml (Feature #33)
@@ -132,132 +130,6 @@ export async function register(app: FastifyInstance) {
 		}
 	};
 
-	// 4. POST /api/billing/tax-deduction (decree 659 & 54-FZ tax deduction generation endpoint)
-	const handleTaxDeduction = async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "tax deduction create")))
-			return;
-		const organizationId = requireOrganizationId(request, reply);
-		if (!organizationId) return;
-
-		const body = request.body as Record<string, unknown> | null | undefined;
-		const patientId = typeof body?.patientId === "string" ? body.patientId : null;
-
-		if (patientId) {
-			try {
-				const preview = await NdflTaxService.calculatePreview(organizationId, patientId);
-				if (preview && (preview.patientFullName?.startsWith("UUID_ANON") || preview.isBlocked)) {
-					return reply.code(422).send({
-						error: "Decree659TaxDeductionForbiddenError",
-						message:
-							"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справок для налогового вычета по форме КНД 1151156 для анонимных пациентов категорически запрещено.",
-					});
-				}
-			} catch (err: unknown) {
-				if (
-					err &&
-					typeof err === "object" &&
-					"code" in err &&
-					(err as { code?: string }).code === "Decree659TaxDeductionForbiddenError"
-				) {
-					return reply.code(422).send({
-						error: "Decree659TaxDeductionForbiddenError",
-						message:
-							err instanceof Error
-								? err.message
-								: String((err as { message?: unknown }).message ?? "Отказ в выдаче справки для налогового вычета"),
-					});
-				}
-			}
-		}
-
-		return reply.code(400).send({
-			error: "TaxDeductionInvalidRequest",
-			message: "Укажите корректные параметры налогового вычета.",
-		});
-	};
-
-	app.get("/api/billing/tax-deduction/preview/:patientId", handlePreview);
-	app.get("/api/billing/tax-deduction/:patientId", handlePreview);
-
-	app.post("/api/v1/documents/tax-deduction/xml", handleGenerateXml);
+	// 2. POST /api/documents/tax-deduction/xml (Feature #33 - Каноническая генерация XML)
 	app.post("/api/documents/tax-deduction/xml", handleGenerateXml);
-	app.post("/api/billing/tax-deduction/xml", handleGenerateXml);
-	app.post("/api/billing/tax-deduction", handleTaxDeduction);
-
-	// 3. Legacy GET /api/documents/ndfl-calculator (backward compatibility)
-	app.get("/api/documents/ndfl-calculator", async (request, reply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "document read")))
-			return;
-		const organizationId = requireOrganizationId(request, reply);
-		if (!organizationId) return;
-
-		const parsed = ndflQuerySchema.safeParse(request.query);
-		if (!parsed.success || !parsed.data.patientId) {
-			return reply.code(400).send({
-				error: "NdflQueryValidationError",
-				message: "Проверьте параметры запроса: требуется идентификатор пациента (patientId).",
-			});
-		}
-		const query = parsed.data;
-		const targetPatientId = query.patientId;
-		if (!targetPatientId) {
-			return reply.code(400).send({
-				error: "NdflQueryValidationError",
-				message: "Проверьте параметры запроса: требуется идентификатор пациента (patientId).",
-			});
-		}
-
-		const options: {
-			taxYear?: number;
-			startDate?: string;
-			endDate?: string;
-		} = {};
-		if (query.year !== undefined) options.taxYear = query.year;
-		if (query.startDate !== undefined) options.startDate = query.startDate;
-		if (query.endDate !== undefined) options.endDate = query.endDate;
-
-		const orgId = organizationId as string;
-		const patientIdStr = targetPatientId as string;
-
-		try {
-			const preview = await NdflTaxService.calculatePreview(
-				orgId,
-				patientIdStr,
-				options,
-			);
-
-
-			return {
-				isBlocked: preview.isBlocked,
-				debtRub: preview.debtRub,
-				blockReason: preview.blockReason,
-				code1TotalRub: preview.code1TotalRub,
-				code2TotalRub: preview.code2TotalRub,
-				totalEligibleRub: preview.totalEligibleRub,
-				estimatedRefund13Rub: preview.estimatedRefund13Rub,
-				estimatedRefund15Rub: preview.estimatedRefund15Rub,
-				excludedNonMedicalGoodsRub: preview.excludedNonMedicalGoodsRub,
-				excludedDmsInsuranceRub: preview.excludedDmsInsuranceRub,
-			};
-		} catch (err: unknown) {
-			if (
-				err &&
-				typeof err === "object" &&
-				"code" in err &&
-				(err as { code?: string }).code === "Decree659TaxDeductionForbiddenError"
-			) {
-				return reply.code(422).send({
-					error: "Decree659TaxDeductionForbiddenError",
-					message:
-						(err as { message?: string }).message ??
-						"Отказ по Постановлению Правительства РФ №659 от 30.05.2026: формирование справки для анонимных карт запрещено.",
-				});
-			}
-			const msg = err instanceof Error ? err.message : "Ошибка расчета вычета";
-			return reply.status(404).send({
-				error: "PatientNotFound",
-				message: msg,
-			});
-		}
-	});
 }
