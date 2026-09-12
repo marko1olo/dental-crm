@@ -35,6 +35,8 @@ import {
 	applyAnatomicalWorkingLengths,
 	getDefaultCanalsForTooth,
 	generateEndoProtocol043,
+	getIsoEndoColorInfo,
+	QUICK_LENGTH_PRESETS,
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
@@ -378,8 +380,22 @@ export const VisitEndoProtocolWidget: React.FC<VisitEndoProtocolWidgetProps> = (
 									<div className="font-medium text-slate-800 dark:text-slate-200">
 										{c.referencePoint || "Репер"}
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">
-										{c.masterApicalFile || "ISO 25"} • {c.taper || ".06"}
+									<div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+										{(() => {
+											const isoColor = getIsoEndoColorInfo(c.masterApicalFile);
+											return isoColor ? (
+												<span
+													className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 border ${
+														isoColor.borderClass || "border-slate-300 dark:border-slate-600"
+													}`}
+													style={{ backgroundColor: isoColor.hex }}
+													title={`${isoColor.labelRu} (${isoColor.colorRu})`}
+												/>
+											) : null;
+										})()}
+										<span>{c.masterApicalFile || "ISO 25"}</span>
+										<span>•</span>
+										<span>{c.taper || ".06"}</span>
 									</div>
 								</div>
 							</div>
@@ -412,7 +428,7 @@ export const VisitEndoProtocolWidget: React.FC<VisitEndoProtocolWidgetProps> = (
 
 								{/* Быстрые чипы длины */}
 								<div className="hidden sm:flex items-center gap-1">
-									{[19, 20, 21, 21.5, 22].map((len) => (
+									{QUICK_LENGTH_PRESETS.slice(0, 5).map((len) => (
 										<button
 											key={len}
 											type="button"

@@ -36,6 +36,12 @@ import {
 	RETREATMENT_ENDO_PRESET,
 	STANDARD_ENDO_PRESET,
 	TAPER_OPTIONS,
+	ISO_ENDO_COLORS,
+	ISO_ENDO_COLORS_MAP,
+	getIsoEndoColorInfo,
+	ALL_ISO_ENDO_OPTIONS,
+	EXTENDED_MAF_ISO_OPTIONS,
+	formatEndoPatientMemo,
 } from "./endoProtocolEngine.js";
 
 describe("endoProtocolEngine — 1-Click Mandate 8e, 8k, 8n Protocols", () => {
@@ -191,3 +197,112 @@ describe("endoProtocolEngine — Form 043/y Table & Output Standards", () => {
 		assert.ok(table.includes("RVG: каналы гомогенно обтурированы"));
 	});
 });
+
+describe("endoProtocolEngine — ISO 3630-1 Color Coding (ISO_ENDO_COLORS)", () => {
+	test("ISO_ENDO_COLORS содержит полную линейку ISO 06..140", () => {
+		assert.equal(ISO_ENDO_COLORS.length, 21);
+		const sizes = ISO_ENDO_COLORS.map((c) => c.size);
+		assert.deepEqual(sizes, [
+			6, 8, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 100, 110, 120, 130, 140,
+		]);
+	});
+
+	test("Скаут-файлы 06, 08, 10 имеют нормативные цвета по ISO 3630-1 (розовый, серый, фиолетовый)", () => {
+		const iso06 = getIsoEndoColorInfo(6);
+		const iso08 = getIsoEndoColorInfo(8);
+		const iso10 = getIsoEndoColorInfo(10);
+
+		assert.equal(iso06?.colorRu, "розовый");
+		assert.equal(iso06?.colorEn, "Pink");
+		assert.equal(iso06?.code, "06");
+
+		assert.equal(iso08?.colorRu, "серый");
+		assert.equal(iso08?.colorEn, "Gray");
+		assert.equal(iso08?.code, "08");
+
+		assert.equal(iso10?.colorRu, "фиолетовый");
+		assert.equal(iso10?.colorEn, "Purple");
+		assert.equal(iso10?.code, "10");
+	});
+
+	test("Основной 6-цветный цикл (белый, жёлтый, красный, синий, зелёный, чёрный) соблюден на всех уровнях", () => {
+		// Цикл 1: 15..40
+		assert.equal(getIsoEndoColorInfo(15)?.colorRu, "белый");
+		assert.equal(getIsoEndoColorInfo(20)?.colorRu, "жёлтый");
+		assert.equal(getIsoEndoColorInfo(25)?.colorRu, "красный");
+		assert.equal(getIsoEndoColorInfo(30)?.colorRu, "синий");
+		assert.equal(getIsoEndoColorInfo(35)?.colorRu, "зелёный");
+		assert.equal(getIsoEndoColorInfo(40)?.colorRu, "чёрный");
+
+		// Цикл 2: 45..80
+		assert.equal(getIsoEndoColorInfo(45)?.colorRu, "белый");
+		assert.equal(getIsoEndoColorInfo(50)?.colorRu, "жёлтый");
+		assert.equal(getIsoEndoColorInfo(55)?.colorRu, "красный");
+		assert.equal(getIsoEndoColorInfo(60)?.colorRu, "синий");
+		assert.equal(getIsoEndoColorInfo(70)?.colorRu, "зелёный");
+		assert.equal(getIsoEndoColorInfo(80)?.colorRu, "чёрный");
+
+		// Цикл 3: 90..140
+		assert.equal(getIsoEndoColorInfo(90)?.colorRu, "белый");
+		assert.equal(getIsoEndoColorInfo(100)?.colorRu, "жёлтый");
+		assert.equal(getIsoEndoColorInfo(110)?.colorRu, "красный");
+		assert.equal(getIsoEndoColorInfo(120)?.colorRu, "синий");
+		assert.equal(getIsoEndoColorInfo(130)?.colorRu, "зелёный");
+		assert.equal(getIsoEndoColorInfo(140)?.colorRu, "чёрный");
+	});
+
+	test("getIsoEndoColorInfo извлекает цвет по строкам 'ISO 25', '25', '#25 красный'", () => {
+		const byStringNumber = getIsoEndoColorInfo("25");
+		const byIsoLabel = getIsoEndoColorInfo("ISO 25 (#25 красный)");
+		const byShortIso = getIsoEndoColorInfo("ISO 25");
+
+		assert.equal(byStringNumber?.size, 25);
+		assert.equal(byIsoLabel?.size, 25);
+		assert.equal(byShortIso?.size, 25);
+		assert.equal(byIsoLabel?.colorRu, "красный");
+	});
+
+	test("ALL_ISO_ENDO_OPTIONS содержит все 21 опцию для селекторов", () => {
+		assert.equal(ALL_ISO_ENDO_OPTIONS.length, 21);
+		assert.ok(ALL_ISO_ENDO_OPTIONS.some((o) => o.includes("ISO 06")));
+		assert.ok(ALL_ISO_ENDO_OPTIONS.some((o) => o.includes("ISO 25")));
+		assert.ok(ALL_ISO_ENDO_OPTIONS.some((o) => o.includes("ISO 140")));
+	});
+});
+
+describe("endoProtocolEngine — formatEndoPatientMemo (Mandate 8e, 8k, 8n)", () => {
+	test("формирует структурированную памятку без эмодзи для постоянной обтурации", () => {
+		const memo = formatEndoPatientMemo({
+			clinicName: "Стоматологическая клиника DENTE",
+			clinicPhone: "+7 (495) 123-45-67",
+			patientName: "Иванова А.А.",
+			doctorName: "Д-р Петров П.П.",
+			toothNumber: 16,
+			toothAnatomicalNameRu: "Первый моляр верхней челюсти",
+			isPermanentObturation: true,
+		});
+
+		assert.ok(memo.includes("Памятка пациенту после эндодонтического лечения корневых каналов"));
+		assert.ok(memo.includes("Стоматологическая клиника DENTE"));
+		assert.ok(memo.includes("+7 (495) 123-45-67"));
+		assert.ok(memo.includes("Постоянная трёхмерная обтурация"));
+		assert.ok(memo.includes("Не принимайте пищу в течение 2 часов"));
+		assert.doesNotMatch(memo, /[\u{1F300}-\u{1F9FF}]/u);
+	});
+
+	test("формирует структурированную памятку для временного вложения Ca(OH)2", () => {
+		const memo = formatEndoPatientMemo({
+			clinicName: "DENTE",
+			clinicPhone: "+7 (999) 000-00-00",
+			patientName: "Сидоров С.С.",
+			doctorName: "Д-р Смирнов",
+			toothNumber: 46,
+			isTemporaryCaOh2: true,
+			isPermanentObturation: false,
+		});
+
+		assert.ok(memo.includes("временное пломбирование гидроксидом кальция Ca(OH)2"));
+		assert.doesNotMatch(memo, /[\u{1F300}-\u{1F9FF}]/u);
+	});
+});
+

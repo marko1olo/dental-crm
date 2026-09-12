@@ -50,6 +50,16 @@ export {
 	SITES_PER_TOOTH,
 	DEEP_POCKET_THRESHOLD_MM,
 	ALL_FDI_TEETH,
+	type IsoEndoSize,
+	type IsoEndoColorInfo,
+	ISO_ENDO_COLORS,
+	ISO_ENDO_COLORS_MAP,
+	getIsoEndoColorInfo,
+	ALL_ISO_ENDO_OPTIONS,
+	EXTENDED_MAF_ISO_OPTIONS,
+	QUICK_LENGTH_PRESETS,
+	type EndoPatientMemoParams,
+	formatEndoPatientMemo,
 } from "./clinical/index.js";
 export {
 	type MischBoneClass,
@@ -13943,6 +13953,7 @@ export * from "./types/pricing.js";
 export * from "./staff/index.js";
 export * from "./services/periodontalCalculations.js";
 export * from "./utils/money.js";
+export * from "./anesthesia/index.js";
 
 
 

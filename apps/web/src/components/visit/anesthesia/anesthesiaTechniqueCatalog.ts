@@ -11,6 +11,10 @@ import {
 	NeedleSpecification,
 	TechniqueSpecification,
 } from './anesthesiaTechniqueTypes';
+import {
+	DENTAL_ANESTHETICS,
+	type AnestheticDrugInfo,
+} from '../../anesthesia/anesthesiaCatalog';
 
 // ---------------------------------------------------------------------------
 // 1. Dental Needle Catalog
@@ -93,83 +97,33 @@ export const DENTAL_NEEDLE_CATALOG: Record<NeedleGaugeId, NeedleSpecification> =
 // 2. Anesthetic Drugs Catalog
 // ---------------------------------------------------------------------------
 
+function toDrugSpec(d: AnestheticDrugInfo, drugId: AnestheticDrugKey): AnestheticDrugSpec {
+	return {
+		drugId,
+		tradeNamesRu: d.tradeNamesRu,
+		activeSubstanceRu: d.activeSubstanceRu,
+		activeConcentrationPercent: d.activeConcentrationPercent,
+		mgPerMlActive: d.mgPerMlActive,
+		vasoconstrictorRatio: d.vasoconstrictorRatio,
+		vasoconstrictorNameRu: d.vasoconstrictorNameRu,
+		epinephrineMgPerMl: d.epinephrineMgPerMl,
+		standardCarpuleVolumeMl: d.carpuleVolumeMl,
+		maxDoseMgPerKgAdult: d.maxDoseMgPerKgAdult,
+		absoluteMaxDoseMgAdult: d.absoluteMaxDoseMgAdult,
+		isAdrenalineFree: d.isAdrenalineFree,
+		containsSulfites: d.containsSulfites,
+	};
+}
+
 export const ANESTHETIC_DRUGS_CATALOG: Record<AnestheticDrugKey, AnestheticDrugSpec> = {
-	articaine_1_100k: {
-		drugId: 'articaine_1_100k',
-		tradeNamesRu: ['Ультракаин Д-С форте', 'Септонест 1:100 000', 'Убистезин форте', 'Брилокаин форте'],
-		activeSubstanceRu: 'Артикаина гидрохлорид 4% + Эпинефрин 1:100 000',
-		activeConcentrationPercent: 4.0,
-		mgPerMlActive: 40.0,
-		vasoconstrictorRatio: '1:100000',
-		vasoconstrictorNameRu: 'Эпинефрин 1:100 000',
-		epinephrineMgPerMl: 0.01,
-		standardCarpuleVolumeMl: 1.7,
-		maxDoseMgPerKgAdult: 7.0,
-		absoluteMaxDoseMgAdult: 500.0,
-		isAdrenalineFree: false,
-		containsSulfites: true,
-	},
-	articaine_1_200k: {
-		drugId: 'articaine_1_200k',
-		tradeNamesRu: ['Ультракаин Д-С', 'Убистезин', 'Септонест 1:200 000', 'Артифрин'],
-		activeSubstanceRu: 'Артикаина гидрохлорид 4% + Эпинефрин 1:200 000',
-		activeConcentrationPercent: 4.0,
-		mgPerMlActive: 40.0,
-		vasoconstrictorRatio: '1:200000',
-		vasoconstrictorNameRu: 'Эпинефрин 1:200 000',
-		epinephrineMgPerMl: 0.005,
-		standardCarpuleVolumeMl: 1.7,
-		maxDoseMgPerKgAdult: 7.0,
-		absoluteMaxDoseMgAdult: 500.0,
-		isAdrenalineFree: false,
-		containsSulfites: true,
-	},
-	mepivacaine_plain_3: {
-		drugId: 'mepivacaine_plain_3',
-		tradeNamesRu: ['Скандонест 3%', 'Мепивастезин 3%', 'Мепивакаин-Бинергия 3%'],
-		activeSubstanceRu: 'Мепивакаина гидрохлорид 3% (без вазоконстриктора)',
-		activeConcentrationPercent: 3.0,
-		mgPerMlActive: 30.0,
-		vasoconstrictorRatio: 'none',
-		vasoconstrictorNameRu: 'Без вазоконстриктора',
-		epinephrineMgPerMl: 0.0,
-		standardCarpuleVolumeMl: 1.7,
-		maxDoseMgPerKgAdult: 4.4,
-		absoluteMaxDoseMgAdult: 300.0,
-		isAdrenalineFree: true,
-		containsSulfites: false,
-	},
-	lidocaine_2_100k: {
-		drugId: 'lidocaine_2_100k',
-		tradeNamesRu: ['Ксилонор 2%', 'Лидокаин-Адреналин', 'Лидокаин 2% карпульный'],
-		activeSubstanceRu: 'Лидокаина гидрохлорид 2% + Эпинефрин 1:100 000',
-		activeConcentrationPercent: 2.0,
-		mgPerMlActive: 20.0,
-		vasoconstrictorRatio: '1:100000',
-		vasoconstrictorNameRu: 'Эпинефрин 1:100 000',
-		epinephrineMgPerMl: 0.01,
-		standardCarpuleVolumeMl: 1.8,
-		maxDoseMgPerKgAdult: 4.4,
-		absoluteMaxDoseMgAdult: 300.0,
-		isAdrenalineFree: false,
-		containsSulfites: true,
-	},
-	bupivacaine_05: {
-		drugId: 'bupivacaine_05',
-		tradeNamesRu: ['Маркаин 0.5%', 'Бупивакаин Гриндекс'],
-		activeSubstanceRu: 'Бупивакаина гидрохлорид 0.5% + Эпинефрин 1:200 000',
-		activeConcentrationPercent: 0.5,
-		mgPerMlActive: 5.0,
-		vasoconstrictorRatio: '1:200000',
-		vasoconstrictorNameRu: 'Эпинефрин 1:200 000',
-		epinephrineMgPerMl: 0.005,
-		standardCarpuleVolumeMl: 1.8,
-		maxDoseMgPerKgAdult: 2.0,
-		absoluteMaxDoseMgAdult: 90.0,
-		isAdrenalineFree: false,
-		containsSulfites: true,
-	},
+	articaine_1_100k: toDrugSpec(DENTAL_ANESTHETICS.articaine_1_100k, 'articaine_1_100k'),
+	articaine_1_200k: toDrugSpec(DENTAL_ANESTHETICS.articaine_1_200k, 'articaine_1_200k'),
+	mepivacaine_plain_3: toDrugSpec(DENTAL_ANESTHETICS.mepivacaine_plain, 'mepivacaine_plain_3'),
+	lidocaine_2_100k: toDrugSpec(DENTAL_ANESTHETICS.lidocaine_1_100k, 'lidocaine_2_100k'),
+	bupivacaine_05: toDrugSpec(DENTAL_ANESTHETICS.bupivacaine_05, 'bupivacaine_05'),
 };
+
+export { DENTAL_ANESTHETICS, type AnestheticDrugInfo };
 
 // ---------------------------------------------------------------------------
 // 3. Conduction & Infiltration Techniques Catalog

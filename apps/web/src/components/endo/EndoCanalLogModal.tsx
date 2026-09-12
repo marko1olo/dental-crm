@@ -14,13 +14,21 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	type EndoCanalData,
 	type EndoToothClinicalData,
 	type EndoProtocolPreset,
+	type EndoPatientMemoParams,
+	formatEndoPatientMemo,
+	type IsoEndoSize,
+	type IsoEndoColorInfo,
+	ISO_ENDO_COLORS,
+	ISO_ENDO_COLORS_MAP,
+	getIsoEndoColorInfo,
+	ALL_ISO_ENDO_OPTIONS,
+	EXTENDED_MAF_ISO_OPTIONS,
 	CANAL_NAME_OPTIONS,
 	REFERENCE_POINT_OPTIONS,
 	MAF_ISO_OPTIONS,
@@ -62,8 +70,21 @@ import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 
 // Re-export for complete backward compatibility across existing views & tests
-export type { EndoCanalData, EndoToothClinicalData, EndoProtocolPreset };
+export type {
+	EndoCanalData,
+	EndoToothClinicalData,
+	EndoProtocolPreset,
+	EndoPatientMemoParams,
+	IsoEndoSize,
+	IsoEndoColorInfo,
+};
 export {
+	formatEndoPatientMemo,
+	ISO_ENDO_COLORS,
+	ISO_ENDO_COLORS_MAP,
+	getIsoEndoColorInfo,
+	ALL_ISO_ENDO_OPTIONS,
+	EXTENDED_MAF_ISO_OPTIONS,
 	CANAL_NAME_OPTIONS,
 	REFERENCE_POINT_OPTIONS,
 	MAF_ISO_OPTIONS,
@@ -99,55 +120,6 @@ export {
 	generateEndoProtocol043,
 	formatEndoCanalsTable043,
 };
-
-export interface EndoPatientMemoParams {
-	readonly clinicName: string;
-	readonly clinicPhone: string;
-	readonly patientName: string;
-	readonly doctorName: string;
-	readonly toothNumber: number;
-	readonly toothAnatomicalNameRu?: string | undefined;
-	readonly isTemporaryCaOh2?: boolean | undefined;
-	readonly isPermanentObturation?: boolean | undefined;
-	readonly nextVisitDays?: number | string | undefined;
-	readonly date?: string | undefined;
-}
-
-export function formatEndoPatientMemo(params: EndoPatientMemoParams): string {
-	const clinicName = params.clinicName.trim() || "Стоматологическая клиника DENTE";
-	const clinicPhone = params.clinicPhone ? params.clinicPhone.trim() : "";
-	const patientName = params.patientName.trim() || "Пациент";
-	const doctorName = params.doctorName.trim() || "Врач-стоматолог-терапевт (эндодонтист)";
-	const date = params.date || new Date().toLocaleDateString("ru-RU");
-	const toothName = params.toothAnatomicalNameRu
-		? `${params.toothNumber} (${params.toothAnatomicalNameRu})`
-		: `зуб ${params.toothNumber}`;
-	const stage = params.isPermanentObturation
-		? "Постоянная трёхмерная обтурация корневых каналов гуттаперчей с герметиком"
-		: "Антисептическая обработка каналов и временное пломбирование гидроксидом кальция Ca(OH)2";
-	const nextVisit = params.nextVisitDays
-		? `${params.nextVisitDays}`
-		: params.isPermanentObturation
-			? "через 10-14 дней (контрольный снимок и постоянная реставрация/коронка)"
-			: "через 10-14 дней для замены лекарства или постоянной пломбировки каналов";
-
-	return [
-		`Памятка пациенту после эндодонтического лечения корневых каналов (клиника «${clinicName}»):`,
-		`Пациент: ${patientName}`,
-		`Лечащий врач: ${doctorName}`,
-		`Дата приёма: ${date}`,
-		`Пролеченный зуб: ${toothName}`,
-		`Этап лечения: ${stage}`,
-		`Памятка и правила ухода:`,
-		`1. Не принимайте пищу в течение 2 часов до полного затвердевания временной пломбы.`,
-		`2. Не нагружайте зуб твёрдой или липкой пищей (сухари, орехи, ириски) во избежание скола стенок зуба до покрытия коронкой.`,
-		`3. Умеренная болезненность при накусывании в течение 2–5 дней является естественной реакцией тканей периодонта на механическую и медикаментозную обработку. При дискомфорте примите назначенное врачом обезболивающее средство (Парацетамол / Ибупрофен).`,
-		`4. Срок следующего визита: ${nextVisit}.`,
-		clinicPhone
-			? `5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой: ${clinicPhone}.`
-			: `5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой.`,
-	].join("\n");
-}
 
 export interface EndoCanalLogModalProps {
 	readonly isOpen: boolean;
@@ -1006,24 +978,42 @@ export function EndoCanalLogModal({
 
 											{/* Master Apical File (MAF) */}
 											<td className="py-2.5 px-3">
-												<select
-													aria-label={`Мастер-апикальный файл для канала ${c.canalName}`}
-													value={c.masterApicalFile}
-													onChange={(e) =>
-														handleCanalChange(
-															c.id,
-															"masterApicalFile",
-															e.target.value,
-														)
-													}
-													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-semibold"
-												>
-													{MAF_ISO_OPTIONS.map((opt) => (
-														<option key={opt} value={opt}>
-															{opt}
-														</option>
-													))}
-												</select>
+												<div className="flex items-center gap-2">
+													{(() => {
+														const isoColor = getIsoEndoColorInfo(c.masterApicalFile);
+														return (
+															<span
+																className={`inline-block h-4 w-4 rounded-full shrink-0 border ${
+																	isoColor?.borderClass || "border-slate-300 dark:border-slate-600"
+																}`}
+																style={{ backgroundColor: isoColor?.hex || "#94a3b8" }}
+																title={
+																	isoColor
+																		? `${isoColor.labelRu} (${isoColor.colorRu})`
+																		: "ISO цвет не определён"
+																}
+															/>
+														);
+													})()}
+													<select
+														aria-label={`Мастер-апикальный файл для канала ${c.canalName}`}
+														value={c.masterApicalFile}
+														onChange={(e) =>
+															handleCanalChange(
+																c.id,
+																"masterApicalFile",
+																e.target.value,
+															)
+														}
+														className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-semibold"
+													>
+														{MAF_ISO_OPTIONS.map((opt) => (
+															<option key={opt} value={opt}>
+																{opt}
+															</option>
+														))}
+													</select>
+												</div>
 											</td>
 
 											{/* Taper */}

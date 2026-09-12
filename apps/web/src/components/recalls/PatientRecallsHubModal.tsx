@@ -50,7 +50,7 @@ import {
 	type RecallUrgencyStatus,
 } from "./patientRecallEngine";
 import { CLINICAL_CALLING_SCRIPTS } from "./recallTemplates";
-import "./patientRecalls.css";
+import "./recalls.css";
 
 export interface PatientRecallsHubModalProps {
 	readonly isOpen?: boolean | undefined;

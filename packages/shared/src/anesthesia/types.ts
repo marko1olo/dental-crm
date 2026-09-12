@@ -13,7 +13,7 @@ export type AnestheticDrugId =
 	| "lidocaine_2_plain"
 	| "bupivacaine_05_epi_200k";
 
-// Visit / Chairside Drug Keys
+// Visit / Commercial Drug Keys
 export type AnesthesiaDrugKey =
 	| "ultracain_ds_forte"
 	| "ultracain_ds"
@@ -21,7 +21,18 @@ export type AnesthesiaDrugKey =
 	| "scandonest_3"
 	| "lidocaine_2";
 
-/** @deprecated Use AnestheticDrugId or AnesthesiaDrugKey instead */
+// Chairside & Clinical Procedure Drug Keys (Unified SSOT across web and shared)
+export type ChairsideAnestheticDrugId =
+	| "articaine_1_100k"
+	| "articaine_1_200k"
+	| "mepivacaine_plain"
+	| "mepivacaine_plain_3"
+	| "lidocaine_1_100k"
+	| "lidocaine_2_100k"
+	| "lidocaine_plain"
+	| "bupivacaine_05";
+
+/** @deprecated Use AnestheticDrugId or AnesthesiaDrugKey or ChairsideAnestheticDrugId instead */
 export type LegacyAnestheticDrugKey = AnestheticDrugId;
 
 export type VasoconstrictorRatio = "1:100000" | "1:200000" | "1:50000" | "none";

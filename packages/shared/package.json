@@ -135,6 +135,11 @@
 			"types": "./dist/mobile/index.d.ts",
 			"import": "./dist/mobile/index.js",
 			"default": "./dist/mobile/index.js"
+		},
+		"./anesthesia": {
+			"types": "./dist/anesthesia/index.d.ts",
+			"import": "./dist/anesthesia/index.js",
+			"default": "./dist/anesthesia/index.js"
 		}
 	},
 	"scripts": {

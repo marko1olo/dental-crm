@@ -193,6 +193,10 @@
 	gap: 8px;
 	width: 100%;
 	max-width: 100%;
+	height: 36px;
+	min-height: 34px;
+	max-height: 36px;
+	box-sizing: border-box;
 	overflow-x: auto;
 	overflow-y: hidden;
 	flex-wrap: nowrap;
@@ -223,6 +227,7 @@
 
 .odontogram-treatment-area {
 	flex: 1;
+	width: 100%;
 	min-width: 320px;
 	max-width: 480px;
 	display: flex;
@@ -383,13 +388,6 @@
 	display: flex;
 	align-items: center;
 	gap: 6px;
-}
-
-.odontogram-toolbar {
-	height: 36px;
-	min-height: 34px;
-	max-height: 36px;
-	box-sizing: border-box;
 }
 
 .tooth-chart-arch-container {
@@ -710,12 +708,6 @@
 
 .furcation-marker-group:hover {
 	transform: scale(1.25);
-}
-
-.odontogram-treatment-area {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
 }
 
 .tooth-radial-menu {

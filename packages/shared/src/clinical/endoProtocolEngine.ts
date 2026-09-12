@@ -93,6 +93,321 @@ export const REFERENCE_POINT_OPTIONS = [
 	"Бугор клыка (Canine cusp)",
 ] as const;
 
+/**
+ * Цветовая кодировка эндодонтических инструментов по стандарту ISO 3630-1
+ * Размеры от ISO 06 до ISO 140:
+ * - 06: розовый
+ * - 08: серый
+ * - 10: фиолетовый
+ * Затем повторяющийся цикл из 6 цветов (белый, жёлтый, красный, синий, зелёный, чёрный):
+ * - 15 (белый), 20 (жёлтый), 25 (красный), 30 (синий), 35 (зелёный), 40 (чёрный)
+ * - 45 (белый), 50 (жёлтый), 55 (красный), 60 (синий), 70 (зелёный), 80 (чёрный)
+ * - 90 (белый), 100 (жёлтый), 110 (красный), 120 (синий), 130 (зелёный), 140 (чёрный)
+ */
+export type IsoEndoSize =
+	| 6
+	| 8
+	| 10
+	| 15
+	| 20
+	| 25
+	| 30
+	| 35
+	| 40
+	| 45
+	| 50
+	| 55
+	| 60
+	| 70
+	| 80
+	| 90
+	| 100
+	| 110
+	| 120
+	| 130
+	| 140;
+
+export interface IsoEndoColorInfo {
+	readonly size: IsoEndoSize;
+	readonly code: string;
+	readonly colorRu: string;
+	readonly colorEn: string;
+	readonly hex: string;
+	readonly textHex: string;
+	readonly bgClass: string;
+	readonly borderClass: string;
+	readonly labelRu: string;
+}
+
+export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
+	{
+		size: 6,
+		code: "06",
+		colorRu: "розовый",
+		colorEn: "Pink",
+		hex: "#f472b6",
+		textHex: "#831843",
+		bgClass: "bg-pink-400",
+		borderClass: "border-pink-500",
+		labelRu: "ISO 06 (#06 розовый)",
+	},
+	{
+		size: 8,
+		code: "08",
+		colorRu: "серый",
+		colorEn: "Gray",
+		hex: "#9ca3af",
+		textHex: "#1f2937",
+		bgClass: "bg-slate-400",
+		borderClass: "border-slate-500",
+		labelRu: "ISO 08 (#08 серый)",
+	},
+	{
+		size: 10,
+		code: "10",
+		colorRu: "фиолетовый",
+		colorEn: "Purple",
+		hex: "#a855f7",
+		textHex: "#ffffff",
+		bgClass: "bg-purple-500",
+		borderClass: "border-purple-600",
+		labelRu: "ISO 10 (#10 фиолетовый)",
+	},
+	{
+		size: 15,
+		code: "15",
+		colorRu: "белый",
+		colorEn: "White",
+		hex: "#ffffff",
+		textHex: "#0f172a",
+		bgClass: "bg-white",
+		borderClass: "border-slate-300 dark:border-slate-600",
+		labelRu: "ISO 15 (#15 белый)",
+	},
+	{
+		size: 20,
+		code: "20",
+		colorRu: "жёлтый",
+		colorEn: "Yellow",
+		hex: "#eab308",
+		textHex: "#713f12",
+		bgClass: "bg-yellow-400",
+		borderClass: "border-yellow-500",
+		labelRu: "ISO 20 (#20 жёлтый)",
+	},
+	{
+		size: 25,
+		code: "25",
+		colorRu: "красный",
+		colorEn: "Red",
+		hex: "#ef4444",
+		textHex: "#ffffff",
+		bgClass: "bg-red-500",
+		borderClass: "border-red-600",
+		labelRu: "ISO 25 (#25 красный)",
+	},
+	{
+		size: 30,
+		code: "30",
+		colorRu: "синий",
+		colorEn: "Blue",
+		hex: "#3b82f6",
+		textHex: "#ffffff",
+		bgClass: "bg-blue-600",
+		borderClass: "border-blue-700",
+		labelRu: "ISO 30 (#30 синий)",
+	},
+	{
+		size: 35,
+		code: "35",
+		colorRu: "зелёный",
+		colorEn: "Green",
+		hex: "#22c55e",
+		textHex: "#ffffff",
+		bgClass: "bg-emerald-600",
+		borderClass: "border-emerald-700",
+		labelRu: "ISO 35 (#35 зелёный)",
+	},
+	{
+		size: 40,
+		code: "40",
+		colorRu: "чёрный",
+		colorEn: "Black",
+		hex: "#0f172a",
+		textHex: "#ffffff",
+		bgClass: "bg-slate-900",
+		borderClass: "border-slate-950",
+		labelRu: "ISO 40 (#40 чёрный)",
+	},
+	{
+		size: 45,
+		code: "45",
+		colorRu: "белый",
+		colorEn: "White",
+		hex: "#ffffff",
+		textHex: "#0f172a",
+		bgClass: "bg-white",
+		borderClass: "border-slate-300 dark:border-slate-600",
+		labelRu: "ISO 45 (#45 белый)",
+	},
+	{
+		size: 50,
+		code: "50",
+		colorRu: "жёлтый",
+		colorEn: "Yellow",
+		hex: "#eab308",
+		textHex: "#713f12",
+		bgClass: "bg-yellow-400",
+		borderClass: "border-yellow-500",
+		labelRu: "ISO 50 (#50 жёлтый)",
+	},
+	{
+		size: 55,
+		code: "55",
+		colorRu: "красный",
+		colorEn: "Red",
+		hex: "#ef4444",
+		textHex: "#ffffff",
+		bgClass: "bg-red-500",
+		borderClass: "border-red-600",
+		labelRu: "ISO 55 (#55 красный)",
+	},
+	{
+		size: 60,
+		code: "60",
+		colorRu: "синий",
+		colorEn: "Blue",
+		hex: "#3b82f6",
+		textHex: "#ffffff",
+		bgClass: "bg-blue-600",
+		borderClass: "border-blue-700",
+		labelRu: "ISO 60 (#60 синий)",
+	},
+	{
+		size: 70,
+		code: "70",
+		colorRu: "зелёный",
+		colorEn: "Green",
+		hex: "#22c55e",
+		textHex: "#ffffff",
+		bgClass: "bg-emerald-600",
+		borderClass: "border-emerald-700",
+		labelRu: "ISO 70 (#70 зелёный)",
+	},
+	{
+		size: 80,
+		code: "80",
+		colorRu: "чёрный",
+		colorEn: "Black",
+		hex: "#0f172a",
+		textHex: "#ffffff",
+		bgClass: "bg-slate-900",
+		borderClass: "border-slate-950",
+		labelRu: "ISO 80 (#80 чёрный)",
+	},
+	{
+		size: 90,
+		code: "90",
+		colorRu: "белый",
+		colorEn: "White",
+		hex: "#ffffff",
+		textHex: "#0f172a",
+		bgClass: "bg-white",
+		borderClass: "border-slate-300 dark:border-slate-600",
+		labelRu: "ISO 90 (#90 белый)",
+	},
+	{
+		size: 100,
+		code: "100",
+		colorRu: "жёлтый",
+		colorEn: "Yellow",
+		hex: "#eab308",
+		textHex: "#713f12",
+		bgClass: "bg-yellow-400",
+		borderClass: "border-yellow-500",
+		labelRu: "ISO 100 (#100 жёлтый)",
+	},
+	{
+		size: 110,
+		code: "110",
+		colorRu: "красный",
+		colorEn: "Red",
+		hex: "#ef4444",
+		textHex: "#ffffff",
+		bgClass: "bg-red-500",
+		borderClass: "border-red-600",
+		labelRu: "ISO 110 (#110 красный)",
+	},
+	{
+		size: 120,
+		code: "120",
+		colorRu: "синий",
+		colorEn: "Blue",
+		hex: "#3b82f6",
+		textHex: "#ffffff",
+		bgClass: "bg-blue-600",
+		borderClass: "border-blue-700",
+		labelRu: "ISO 120 (#120 синий)",
+	},
+	{
+		size: 130,
+		code: "130",
+		colorRu: "зелёный",
+		colorEn: "Green",
+		hex: "#22c55e",
+		textHex: "#ffffff",
+		bgClass: "bg-emerald-600",
+		borderClass: "border-emerald-700",
+		labelRu: "ISO 130 (#130 зелёный)",
+	},
+	{
+		size: 140,
+		code: "140",
+		colorRu: "чёрный",
+		colorEn: "Black",
+		hex: "#0f172a",
+		textHex: "#ffffff",
+		bgClass: "bg-slate-900",
+		borderClass: "border-slate-950",
+		labelRu: "ISO 140 (#140 чёрный)",
+	},
+]);
+
+export const ISO_ENDO_COLORS_MAP: Readonly<Record<string, IsoEndoColorInfo>> = Object.freeze(
+	Object.fromEntries(
+		ISO_ENDO_COLORS.flatMap((info) => [
+			[String(info.size), info],
+			[info.code, info],
+			[info.labelRu, info],
+		]),
+	),
+);
+
+/**
+ * Получить каноническую информацию о цвете эндо-файла по его размеру или названию ISO (ISO 3630-1)
+ */
+export function getIsoEndoColorInfo(
+	sizeOrLabel: number | string | undefined | null,
+): IsoEndoColorInfo | undefined {
+	if (sizeOrLabel === undefined || sizeOrLabel === null) return undefined;
+	const str = String(sizeOrLabel).trim();
+	if (ISO_ENDO_COLORS_MAP[str]) return ISO_ENDO_COLORS_MAP[str];
+	const match = str.match(/\b(?:ISO\s*)?(\d+)\b/i);
+	if (match && match[1]) {
+		const num = Number(match[1]);
+		return ISO_ENDO_COLORS.find((c) => c.size === num) || ISO_ENDO_COLORS_MAP[match[1]];
+	}
+	return undefined;
+}
+
+/** Все размеры файлов ISO по стандарту ISO 3630-1 (от ISO 06 до ISO 140) */
+export const ALL_ISO_ENDO_OPTIONS: readonly string[] = Object.freeze(
+	ISO_ENDO_COLORS.map((c) => c.labelRu),
+);
+
+/** Мастер-апикальный файл (Master Apical File, расширенный список ISO 06–140 по стандарту ISO 3630-1) */
+export const EXTENDED_MAF_ISO_OPTIONS: readonly string[] = ALL_ISO_ENDO_OPTIONS;
+
 /** Мастер-апикальный файл (Master Apical File, ISO 15–50) */
 export const MAF_ISO_OPTIONS = [
 	"ISO 15 (#15 белый)",
@@ -839,3 +1154,60 @@ export function generateEndoProtocol043(params: {
 		`Рентгенологический контроль: ${radiology}`,
 	].join("\n");
 }
+
+// ─── 1-КЛИК ПАМЯТКА ПАЦИЕНТУ ПОСЛЕ ЛЕЧЕНИЯ КАНАЛОВ (МАНДАТЫ 8e, 8k, 8n) ───────
+
+export interface EndoPatientMemoParams {
+	readonly clinicName: string;
+	readonly clinicPhone: string;
+	readonly patientName: string;
+	readonly doctorName: string;
+	readonly toothNumber: number;
+	readonly toothAnatomicalNameRu?: string | undefined;
+	readonly isTemporaryCaOh2?: boolean | undefined;
+	readonly isPermanentObturation?: boolean | undefined;
+	readonly nextVisitDays?: number | string | undefined;
+	readonly date?: string | undefined;
+}
+
+/**
+ * 1-клик генерация структурированной памятки пациенту после эндодонтического лечения (Мандаты 8e, 8k, 8n)
+ * Для мессенджеров (WhatsApp / Telegram) и печати А4.
+ * Строго официальный тон без мультяшных эмодзи (Мандат 8d п. 7).
+ */
+export function formatEndoPatientMemo(params: EndoPatientMemoParams): string {
+	const clinicName = params.clinicName.trim() || "Стоматологическая клиника DENTE";
+	const clinicPhone = params.clinicPhone ? params.clinicPhone.trim() : "";
+	const patientName = params.patientName.trim() || "Пациент";
+	const doctorName = params.doctorName.trim() || "Врач-стоматолог-терапевт (эндодонтист)";
+	const date = params.date || new Date().toLocaleDateString("ru-RU");
+	const toothName = params.toothAnatomicalNameRu
+		? `${params.toothNumber} (${params.toothAnatomicalNameRu})`
+		: `зуб ${params.toothNumber}`;
+	const stage = params.isPermanentObturation
+		? "Постоянная трёхмерная обтурация корневых каналов гуттаперчей с герметиком"
+		: "Антисептическая обработка каналов и временное пломбирование гидроксидом кальция Ca(OH)2";
+	const nextVisit = params.nextVisitDays
+		? `${params.nextVisitDays}`
+		: params.isPermanentObturation
+			? "через 10-14 дней (контрольный снимок и постоянная реставрация/коронка)"
+			: "через 10-14 дней для замены лекарства или постоянной пломбировки каналов";
+
+	return [
+		`Памятка пациенту после эндодонтического лечения корневых каналов (клиника «${clinicName}»):`,
+		`Пациент: ${patientName}`,
+		`Лечащий врач: ${doctorName}`,
+		`Дата приёма: ${date}`,
+		`Пролеченный зуб: ${toothName}`,
+		`Этап лечения: ${stage}`,
+		`Памятка и правила ухода:`,
+		`1. Не принимайте пищу в течение 2 часов до полного затвердевания временной пломбы.`,
+		`2. Не нагружайте зуб твёрдой или липкой пищей (сухари, орехи, ириски) во избежание скола стенок зуба до покрытия коронкой.`,
+		`3. Умеренная болезненность при накусывании в течение 2–5 дней является естественной реакцией тканей периодонта на механическую и медикаментозную обработку. При дискомфорте примите назначенное врачом обезболивающее средство (Парацетамол / Ибупрофен).`,
+		`4. Срок следующего визита: ${nextVisit}.`,
+		clinicPhone
+			? `5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой: ${clinicPhone}.`
+			: `5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой.`,
+	].join("\n");
+}
+

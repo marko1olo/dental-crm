@@ -26,7 +26,7 @@ import { SberPosTerminalModal } from "../payments/sberPos/SberPosTerminalModal";
 import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal";
 import { PatientOmnichannelHubModal } from "../messaging/PatientOmnichannelHubModal";
 import { ClinicalPnlHubModal } from "../finance/pnl/ClinicalPnlHubModal";
-import { FnsTaxDeductionModal } from "../billing/tax/FnsTaxDeductionModal";
+import { TaxDeductionModal as FnsTaxDeductionModal } from "../tax/TaxDeductionModal";
 import { FnsNdflXmlModal } from "../documents/ndflXml";
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";

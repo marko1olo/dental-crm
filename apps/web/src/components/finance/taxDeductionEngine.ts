@@ -139,3 +139,20 @@ export function renderTaxDeductionCertificateHtml(params: TaxDeductionCertificat
 export function renderTaxDeductionBatchCertificateHtml(batch: TaxDeductionBatchParams): string {
 	return renderOfficialTaxCertificateBatchKnd1151156Html(batch);
 }
+
+/**
+ * Opens a print dialog with the official A4 form of the KND 1151156 Certificate.
+ */
+export function printTaxCertificateKnd1151156(params: TaxDeductionCertificateParams): void {
+	const html = renderOfficialTaxCertificateKnd1151156Html(params);
+	const win = window.open("", "_blank");
+	if (win) {
+		win.document.write(html);
+		win.document.close();
+		win.focus();
+		setTimeout(() => {
+			win.print();
+		}, 300);
+	}
+}
+

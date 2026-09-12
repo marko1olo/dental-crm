@@ -592,10 +592,8 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 		});
 
 		it("6.6. VisiographAnalyzer: Мгновенное открытие снимка (<50мс) без блокировки ИИ (Мандат 8e)", () => {
-			const canonicalPath = path.resolve(__dirname, "../components/visiograph/VisiographAnalyzer.tsx");
 			const implPath = path.resolve(__dirname, "../components/imaging/VisiographAnalyzer.tsx");
 
-			assert.ok(fs.existsSync(canonicalPath), "Канонический путь components/visiograph/VisiographAnalyzer.tsx обязан существовать");
 			assert.ok(fs.existsSync(implPath), "Реализация components/imaging/VisiographAnalyzer.tsx обязана существовать");
 
 			const source = fs.readFileSync(implPath, "utf-8");

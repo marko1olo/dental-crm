@@ -9,6 +9,7 @@ import type {
 	AnesthesiaDrugSpec,
 	AnesthesiaMethodKey,
 	AnestheticDrugId,
+	ChairsideAnestheticDrugId,
 } from "./types.js";
 import { DENTAL_ANESTHETICS_CATALOG } from "../mdlp/catalog.js";
 import type { DentalAnestheticInfo } from "../mdlp/types.js";
@@ -235,6 +236,29 @@ export const ANESTHESIA_KEY_TO_CLINICAL_ID: Record<AnesthesiaDrugKey, Anesthetic
 	scandonest_3: "mepivacaine_3_plain",
 	lidocaine_2: "lidocaine_2_plain",
 } as const;
+
+/**
+ * Mapping between chairside component keys and canonical clinical pharmacopeia specs (SSOT)
+ */
+export const CHAIRSIDE_KEY_TO_CLINICAL_ID: Record<ChairsideAnestheticDrugId, AnestheticDrugId> = {
+	articaine_1_100k: "articaine_4_epi_100k",
+	articaine_1_200k: "articaine_4_epi_200k",
+	mepivacaine_plain: "mepivacaine_3_plain",
+	mepivacaine_plain_3: "mepivacaine_3_plain",
+	lidocaine_1_100k: "lidocaine_2_epi_100k",
+	lidocaine_2_100k: "lidocaine_2_epi_100k",
+	lidocaine_plain: "lidocaine_2_plain",
+	bupivacaine_05: "bupivacaine_05_epi_200k",
+} as const;
+
+/**
+ * Retrieves clinical pharmacology specification for a chairside drug key.
+ */
+export function getClinicalSpecForChairsideDrug(drugKey: string): AnesthesiaDrugSpec | null {
+	const clinicalId = CHAIRSIDE_KEY_TO_CLINICAL_ID[drugKey as ChairsideAnestheticDrugId];
+	if (!clinicalId) return null;
+	return ANESTHESIA_DRUG_CATALOG[clinicalId] ?? null;
+}
 
 function createDrugDefinition(
 	key: AnesthesiaDrugKey,
