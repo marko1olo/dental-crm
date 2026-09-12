@@ -403,3 +403,38 @@ export {
 } from "./boneQualityEngine.js";
 export * as cbctBoneQualityEngine from "./boneQualityEngine.js";
 
+// DenCT 3D CBCT CPR & Surgical Guide Adapter
+export * as cpr from "./cpr/index.js";
+export {
+	hermiteSpline,
+	hermiteTangent,
+	catmullRom,
+	catmullRomTangent,
+	computeCurveTangents,
+	computeCurveNormals,
+	generateDefaultArchCurve,
+	offsetCurve,
+	solveParabola3Points,
+	fitParabolaLeastSquares,
+	ransacParabolicArchFit,
+	type ParabolaFitResult,
+	computePanoramicCPR,
+	type PanoramicReformationParams as CprPanoramicReformationParams,
+	MIN_INTER_IMPLANT_CLEARANCE_MM,
+	MIN_NERVE_SAFETY_MM,
+	MIN_SINUS_SAFETY_MM,
+	MIN_CORTICAL_PLATE_MM,
+	validateGuide,
+	type GuideIssue,
+	type GuideCheckImplant,
+	type GuideCheckInput,
+	type GuideParams,
+	type AnatomyMarker,
+	type TriMesh,
+	cylinderMesh,
+	sweptBarMesh,
+	meshVolume,
+	isClosedOriented,
+	triMeshToBinarySTL,
+} from "./cpr/index.js";
+

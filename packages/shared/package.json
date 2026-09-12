@@ -46,6 +46,11 @@
 			"import": "./dist/radiology/index.js",
 			"default": "./dist/radiology/index.js"
 		},
+		"./radiology/cpr": {
+			"types": "./dist/radiology/cpr/index.d.ts",
+			"import": "./dist/radiology/cpr/index.js",
+			"default": "./dist/radiology/cpr/index.js"
+		},
 		"./hardware": {
 			"types": "./dist/hardware/index.d.ts",
 			"import": "./dist/hardware/index.js",

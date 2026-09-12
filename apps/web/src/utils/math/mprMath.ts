@@ -416,8 +416,39 @@ export interface PanoramicWorkerRequest {
 }
 
 export type PanoramicWorkerResponse =
-	| { success: true; width: number; height: number; pixels: Float32Array }
-	| { success: false; error: string };
+	| { success: true; width: number; height: number; pixels: Float32Array; type?: "panoramic" }
+	| { success: false; error: string; type?: "panoramic" };
+
+export interface CrossSectionWorkerRequest {
+	type: "crossSection" | "cross_section";
+	scalarData: Float32Array | Uint16Array | Int16Array;
+	dimensions: [number, number, number];
+	origin: [number, number, number];
+	spacing: [number, number, number];
+	controlPoints: [number, number][];
+	position: number; // 0..1 normalized along arch
+	tiltDeg: number; // degrees ±30
+	widthMm: number; // slice width in mm
+	resolution: number; // mm per pixel
+}
+
+export type CrossSectionWorkerResponse =
+	| {
+			success: true;
+			type: "crossSection";
+			width: number;
+			height: number;
+			horizontalSpacing: number;
+			verticalSpacing: number;
+			pixelData: Float32Array;
+	  }
+	| { success: false; type: "crossSection"; error: string };
+
+export type MprWorkerRequest =
+	| (PanoramicWorkerRequest & { type?: "panoramic" })
+	| CrossSectionWorkerRequest;
+
+export type MprWorkerResponse = PanoramicWorkerResponse | CrossSectionWorkerResponse;
 
 /**
  * Expand a cornerstone 3x3 column/row-major `Mat3` (9 elements) into the
