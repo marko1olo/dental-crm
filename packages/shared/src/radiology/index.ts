@@ -373,3 +373,33 @@ export {
 	formatVolume3DVisualizationA4Report,
 } from "./volume3DPresetEngine.js";
 export * as volume3DPresetEngine from "./volume3DPresetEngine.js";
+
+// Wave 139: CBCT Bone Quality & Osteotomy Assessment Engine (DenCT Reverse-Engineering)
+export {
+	mischBoneClassSchema,
+	lekholmZarbTypeSchema,
+	type LekholmZarbType,
+	boneSamplingConfigSchema,
+	type BoneSamplingConfig,
+	osteotomyDrillProtocolSchema,
+	type OsteotomyDrillProtocol,
+	primaryStabilityExpectedSchema,
+	type PrimaryStabilityExpected,
+	osteotomyRecommendationSchema,
+	type OsteotomyRecommendation,
+	boneSiteAssessmentSchema,
+	type BoneSiteAssessment,
+	type MischClassificationInfo,
+	MISCH_CLASSIFICATION_INFO,
+	type LekholmZarbInfo,
+	LEKHOLM_ZARB_INFO,
+	classifyMischBone,
+	classifyLekholmZarb,
+	calculateCorticalThickness,
+	determineOsteotomyProtocol,
+	type SampleImplantSiteBoneQualityParams,
+	sampleImplantSiteBoneQuality,
+	formatBoneQualityForm043A4Protocol,
+} from "./boneQualityEngine.js";
+export * as cbctBoneQualityEngine from "./boneQualityEngine.js";
+
