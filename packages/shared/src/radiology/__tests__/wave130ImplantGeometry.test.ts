@@ -36,8 +36,65 @@ import {
 	type SleeveSpec,
 	type Vec3,
 } from "../implantGeometryEngine.js";
-import { isClosedOriented, meshVolume } from "../surgicalGuideGeom.js";
 import type { Point2 } from "../cprMath.js";
+
+/** Helper for testing 2-manifold closed property */
+function isClosedOriented(m: { indices: Uint32Array }): boolean {
+	const idx = m.indices;
+	if (idx.length === 0 || idx.length % 3 !== 0) return false;
+	const seen = new Map<string, number>();
+
+	for (let t = 0; t < idx.length; t += 3) {
+		const a = idx[t]!;
+		const b = idx[t + 1]!;
+		const c = idx[t + 2]!;
+		const edges: [number, number][] = [
+			[a, b],
+			[b, c],
+			[c, a],
+		];
+		for (const [u, v] of edges) {
+			const k = `${u}_${v}`;
+			seen.set(k, (seen.get(k) ?? 0) + 1);
+		}
+	}
+
+	for (const [key, count] of seen) {
+		if (count !== 1) return false;
+		const sep = key.indexOf("_");
+		const u = key.slice(0, sep);
+		const v = key.slice(sep + 1);
+		const revKey = `${v}_${u}`;
+		if (seen.get(revKey) !== 1) return false;
+	}
+
+	return true;
+}
+
+/** Helper for testing mesh volume via Ostrogradsky-Gauss divergence theorem */
+function meshVolume(m: { positions: Float32Array; indices: Uint32Array }): number {
+	const p = m.positions;
+	const idx = m.indices;
+	let vol = 0;
+	for (let t = 0; t < idx.length; t += 3) {
+		const a = (idx[t] ?? 0) * 3;
+		const b = (idx[t + 1] ?? 0) * 3;
+		const c = (idx[t + 2] ?? 0) * 3;
+		const ax = p[a] ?? 0;
+		const ay = p[a + 1] ?? 0;
+		const az = p[a + 2] ?? 0;
+		const bx = p[b] ?? 0;
+		const by = p[b + 1] ?? 0;
+		const bz = p[b + 2] ?? 0;
+		const cx = p[c] ?? 0;
+		const cy = p[c + 1] ?? 0;
+		const cz = p[c + 2] ?? 0;
+		vol +=
+			(ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) /
+			6;
+	}
+	return vol;
+}
 
 describe("Wave 130: CBCT 3D Implant Geometry & Mesh Generator Engine", () => {
 	const standardDims: ImplantDimensions = {

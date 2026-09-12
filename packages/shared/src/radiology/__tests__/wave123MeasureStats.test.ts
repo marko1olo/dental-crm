@@ -27,7 +27,7 @@ import {
 	type RoiStats,
 	type ImplantBedDensitometry,
 	type Vec3,
-} from "../measureStats.js";
+} from "../measureStatsEngine.js";
 import type { VolumeSamplingData } from "../cprMath.js";
 import { AIR_HU } from "../cprMath.js";
 
@@ -309,10 +309,10 @@ describe("Wave 123: CBCT Measure Stats, HU Line Profile & Densitometry Engine", 
 	// ── 5. Zero Emojis Compliance ────────────────────────────────
 
 	describe("5. Zero Emojis Compliance (Mandate 8d item 7)", () => {
-		it("verifies 100% absence of cartoon emojis in measureStats.ts source code", () => {
+		it("verifies 100% absence of cartoon emojis in measureStatsEngine.ts source code", () => {
 			const sourcePath = resolve(
 				import.meta.dirname,
-				"../measureStats.ts",
+				"../measureStatsEngine.ts",
 			);
 			const source = readFileSync(sourcePath, "utf8");
 

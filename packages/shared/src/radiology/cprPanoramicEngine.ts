@@ -708,3 +708,93 @@ export function formatPanoramicCprReportA4(params: PanoramicCprReportParams): st
 
   return lines.join("\n");
 }
+
+export interface CPRResult {
+  pixelData: Float32Array;
+  width: number;
+  height: number;
+  horizontalSpacing: number;
+  verticalSpacing: number;
+  zMin: number;
+  zMax: number;
+}
+
+export interface PanoramicSamplingParams {
+  controlPoints: Point2[];
+  resolutionMm: number;
+  slabWidthMm: number;
+  projection?: "THIN" | "MIP" | "AVERAGE" | "Average" | "MinIP" | undefined;
+}
+
+export function computePanoramicCPR(
+  vol: VolumeSamplingData,
+  params: PanoramicSamplingParams,
+): CPRResult | null {
+  const roughCurve = interpolateArchCurve(params.controlPoints, 10);
+  const arcEstimate = totalArcLength(roughCurve);
+  const targetWidth = Math.max(50, Math.round(arcEstimate / params.resolutionMm));
+
+  const { curve, normals, arcLen } = buildUniformCurve(params.controlPoints, targetWidth);
+  if (curve.length < 2) return null;
+
+  const width = curve.length;
+  const height = Math.max(1, Math.round((vol.zMax - vol.zMin) / vol.vSpacing));
+  const hSpacing = arcLen / Math.max(1, width - 1);
+
+  const halfSlab = params.slabWidthMm / 2;
+  const SLAB_STEP_MM = 1.0;
+  const numSlab = params.projection === "THIN" || params.slabWidthMm <= 1.0
+    ? 1
+    : Math.max(1, Math.round(params.slabWidthMm / SLAB_STEP_MM));
+  const isMIP = params.projection === "MIP";
+
+  const pixelData = new Float32Array(width * height);
+
+  for (let x = 0; x < width; x++) {
+    const curPt = curve[x] ?? [0, 0];
+    const curNorm = normals[x] ?? [0, 1];
+    const cx = curPt[0];
+    const cy = curPt[1];
+    const nx = curNorm[0];
+    const ny = curNorm[1];
+
+    for (let y = 0; y < height; y++) {
+      const wz = vol.zMax - y * vol.vSpacing;
+
+      if (numSlab <= 1) {
+        const ci = (cx - vol.origin[0]) * vol.invSx;
+        const cj = (cy - vol.origin[1]) * vol.invSy;
+        const ck = (wz - vol.origin[2]) * vol.invSz;
+        pixelData[y * width + x] = trilinearInterpolation(vol.getVoxel, vol.dims, ci, cj, ck);
+      } else {
+        let acc = isMIP ? -Infinity : 0;
+        for (let s = 0; s < numSlab; s++) {
+          const offset = -halfSlab + (s / (numSlab - 1)) * params.slabWidthMm;
+          const wx = cx + nx * offset;
+          const wy = cy + ny * offset;
+          const ci = (wx - vol.origin[0]) * vol.invSx;
+          const cj = (wy - vol.origin[1]) * vol.invSy;
+          const ck = (wz - vol.origin[2]) * vol.invSz;
+          const val = trilinearInterpolation(vol.getVoxel, vol.dims, ci, cj, ck);
+          if (isMIP) {
+            if (val > acc) acc = val;
+          } else {
+            acc += val;
+          }
+        }
+        if (!isMIP) acc /= numSlab;
+        pixelData[y * width + x] = acc;
+      }
+    }
+  }
+
+  return {
+    pixelData,
+    width,
+    height,
+    horizontalSpacing: hSpacing,
+    verticalSpacing: vol.vSpacing,
+    zMin: vol.zMin,
+    zMax: vol.zMax,
+  };
+}

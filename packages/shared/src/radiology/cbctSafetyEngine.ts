@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { buildUniformCurve, type Point2 } from "./panoramicCprMath.js";
+import { buildUniformCurve, type Point2 } from "./cprMath.js";
 
 export type Vec3 = [number, number, number];
 

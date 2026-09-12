@@ -22,7 +22,7 @@
  */
 
 import type { Point2, VolumeSamplingData } from "./cprMath.js";
-import { resampleByArcLength } from "./panoramicCprMath.js";
+import { resampleByArcLength } from "./cprPanoramicEngine.js";
 
 /** Configuration options for automatic dental arch detection */
 export interface ArchDetectOptions {

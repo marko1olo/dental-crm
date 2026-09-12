@@ -16,7 +16,8 @@ import {
 	computeCurveNormals,
 	totalArcLength,
 	resampleByArcLength,
-} from "./panoramicCprMath.js";
+	buildUniformCurve,
+} from "./cprPanoramicEngine.js";
 
 export type Point2 = [number, number];
 export type Vec3 = [number, number, number];
@@ -110,41 +111,7 @@ export function trilinear(
 	);
 }
 
-// ── Uniform Curve Construction ─────────────────────────────────
-
-/**
- * Build a dense, arc-length-uniform curve with orthogonal unit normals from 2D control points.
- * Employs Catmull-Rom spline interpolation followed by arc-length reparameterization.
- */
-export function buildUniformCurve(
-	controlPoints: Point2[],
-	numSamples: number,
-): {
-	curve: Point2[];
-	normals: Point2[];
-	arcLen: number;
-} {
-	if (controlPoints.length === 0) {
-		return { curve: [], normals: [], arcLen: 0 };
-	}
-
-	const numSegments = Math.max(1, controlPoints.length - 1);
-	const subsPerSeg = Math.max(10, Math.ceil(numSamples / numSegments) * 2);
-	const rawCurve = interpolateArchCurve(controlPoints, subsPerSeg);
-
-	const curve = resampleByArcLength(rawCurve, numSamples);
-	if (curve.length === 0) {
-		return { curve, normals: [], arcLen: 0 };
-	}
-
-	// Degenerate case (e.g., coincident control points): ensure >= 2 points
-	const first = curve[0] ?? [0, 0];
-	const safeCurve = curve.length < 2 ? [first, first] : curve;
-	const normals = computeCurveNormals(safeCurve);
-	const arcLen = totalArcLength(safeCurve);
-
-	return { curve: safeCurve, normals, arcLen };
-}
+export { buildUniformCurve };
 
 // ── Cross-Section Resection Sampling ───────────────────────────
 

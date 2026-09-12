@@ -18,7 +18,7 @@
 
 import { buildUniformCurve, type Point2, type Vec3 } from "./cprMath.js";
 import { distPointToSegment3, distSegmentToPolyline3 } from "./implantSafetyClearance.js";
-import { getMischBoneClinicalGuidance, type BoneClass } from "./boneQuality.js";
+import { getMischBoneClinicalGuidance, type BoneClass } from "./boneQualityEngine.js";
 
 // ── Vector Math Primitives ─────────────────────────────────────
 

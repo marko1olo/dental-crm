@@ -9,16 +9,9 @@ export * from "./rvgTwainEngine.js";
 export * from "./hotFolderWatcher.js";
 export * from "./radiologyFilterEngine.js";
 export * from "./hotFolderSyncEngine.js";
-export * from "./panoramicCprMath.js";
 export * from "./cbctSafetyEngine.js";
-export * from "./mischBoneDensity.js";
 export * from "./cbctScanMeshEngine.js";
 export * from "./cbctCropBox.js";
-export * from "./surgicalGuideGeom.js";
-export * from "./surgicalGuideValidate.js";
-export * from "./surgicalGuideExport.js";
-export * from "./guideValidationEngine.js";
-export * as guideValidationEngine from "./guideValidationEngine.js";
 export {
 	dot3,
 	sub3,
@@ -28,7 +21,6 @@ export {
 	type Vec3,
 } from "./implantSafetyClearance.js";
 export * from "./implantSafetyClearance.js";
-export * from "./boneQualityClassification.js";
 export * from "./nerveCanalSpline.js";
 
 // Wave 120: CBCT Bone Quality & CPR Math Adapter
@@ -37,7 +29,20 @@ export {
 	type MischGuidance,
 	getMischBoneClinicalGuidance,
 	MISCH_CLINICAL_GUIDANCE,
-} from "./boneQuality.js";
+	type MischDensityProfile,
+	MISCH_BONE_PROFILES,
+	getMischProfile,
+	type BoneSample,
+	sampleImplantBoneHU,
+	type BoneClass,
+	type MischBoneClass,
+	classifyBone,
+	type MischBoneConfig,
+	type MischBoneAssessment,
+	MISCH_BONE_CONFIGS,
+	classifyMischBoneDensity,
+	getMischClassConfig,
+} from "./boneQualityEngine.js";
 
 export {
 	buildUniformCurve,
@@ -48,10 +53,11 @@ export {
 	crossSectionFrame,
 	computeCrossSection,
 	AIR_HU,
+	trilinear,
 } from "./cprMath.js";
 
 export * as cprMathEngine from "./cprMath.js";
-export * as boneQualityEngine from "./boneQuality.js";
+export * as boneQualityEngine from "./boneQualityEngine.js";
 
 // Wave 124: CBCT Auto Arch Detection Engine
 export {
@@ -71,7 +77,7 @@ export {
 	lineProfileHU,
 	angleDeg,
 	calculateImplantBedDensitometry,
-} from "./measureStats.js";
+} from "./measureStatsEngine.js";
 
 // Wave 129: CBCT Measure Stats & HU Profile Engine
 export {
@@ -134,9 +140,6 @@ export {
 
 export * as cbctRegistrationEngine from "./cbctRegistrationEngine.js";
 
-// Wave 128: CBCT Mesh Slice & Surgical Guide STL Export Engine
-export * from "./guideExportEngine.js";
-export * as guideExportEngine from "./guideExportEngine.js";
 
 // Wave 130: CBCT 3D Implant Geometry & Mesh Generator Engine
 export {
@@ -265,6 +268,14 @@ export {
 	generatePanoramic,
 	computeParaxialCrossSection,
 	formatPanoramicCprReportA4,
+	catmullRom,
+	interpolateArchCurve,
+	computeCurveNormals,
+	totalArcLength,
+	resampleByArcLength,
+	generateDefaultArchCurve,
+	offsetCurve,
+	computePanoramicCPR,
 } from "./cprPanoramicEngine.js";
 export * as cprPanoramicEngine from "./cprPanoramicEngine.js";
 
@@ -317,35 +328,6 @@ export {
 	formatArchDetectAndSlicingA4Report,
 } from "./cbctArchDetectSliceEngine.js";
 export * as cbctArchDetectSliceEngine from "./cbctArchDetectSliceEngine.js";
-
-// Wave 137: Surgical Guide Assembly & Sleeve Connectivity Engine (DenCT Reverse-Engineering)
-export {
-	MIN_INTER_SLEEVE_DISTANCE_MM,
-	MIN_BASE_WIDTH_MM,
-	MIN_BASE_HEIGHT_MM,
-	DEFAULT_HOUSING_WALL_THICKNESS_MM,
-	DEFAULT_ARCH_PAD_S,
-	DEFAULT_BASE_SAMPLE_COUNT,
-	calculatePolylineLength3,
-	guideImplantInputSchema,
-	type GuideImplantInput,
-	guideBaseParamsSchema,
-	type GuideBaseParams,
-	sleeveHousingGeometrySchema,
-	type SleeveHousingGeometry,
-	interSleeveClearanceSchema,
-	type InterSleeveClearance,
-	guideIntegrityResultSchema,
-	type GuideIntegrityResult,
-	surgicalGuideAssemblyReportParamsSchema,
-	type SurgicalGuideAssemblyReportParams,
-	planBaseCenterline,
-	isHousingConnectedToBase,
-	planSleeveHousings,
-	validateGuideStructuralIntegrity,
-	formatSurgicalGuideAssemblyA4Protocol,
-} from "./guideAssemblyEngine.js";
-export * as guideAssemblyEngine from "./guideAssemblyEngine.js";
 
 // Wave 138: CBCT 3D Volume Presets & Transfer Function Engine (DenCT Reverse-Engineering)
 export {

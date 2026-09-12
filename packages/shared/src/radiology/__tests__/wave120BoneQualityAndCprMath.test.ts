@@ -20,7 +20,7 @@ import {
 	sampleImplantBoneHU,
 	MISCH_CLINICAL_GUIDANCE,
 	type BoneClass,
-} from "../boneQuality.js";
+} from "../boneQualityEngine.js";
 import {
 	trilinear,
 	buildUniformCurve,

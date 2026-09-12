@@ -18,7 +18,7 @@ import {
 	detectArchControlPoints,
 	smoothPolyline,
 	type ArchDetectOptions,
-} from "../archDetect.js";
+} from "../archDetectEngine.js";
 import {
 	AIR_HU,
 	type Point2,
