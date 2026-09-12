@@ -17,7 +17,12 @@ import {
 	totalArcLength,
 	resampleByArcLength,
 	buildUniformCurve,
+	generateDefaultArchCurve,
 } from "./cprPanoramicEngine.js";
+import {
+	detectArchControlPoints,
+	type ArchDetectOptions,
+} from "./archDetectEngine.js";
 
 export type Point2 = [number, number];
 export type Vec3 = [number, number, number];
@@ -227,4 +232,63 @@ export function computeCrossSection(
 		zMin: vol.zMin,
 		zMax: vol.zMax,
 	};
+}
+
+/**
+ * Automatically detects the dental arch Catmull-Rom control points from CBCT volumetric data.
+ *
+ * Samples an axial slab around mid-Z using Maximum Intensity Projection (MIP), computes
+ * the weighted bone centroid, and performs a radial sweep across the anterior dental arc.
+ *
+ * Fallback: If bone density is insufficient or geometry is degenerate, returns the
+ * canonical default anatomical dental arch curve (Mandates 8e, 8k, 8n - Zero Dead-Ends).
+ */
+export function autoDetectDentalArch(
+	volumeData: Float32Array | Int16Array,
+	dims: [number, number, number],
+	spacing: [number, number, number],
+	options?: ArchDetectOptions,
+): Point2[] {
+	const [nx, ny, nz] = dims;
+	if (nx < 4 || ny < 4 || nz < 1) {
+		const center: Point2 = [(nx * spacing[0]) / 2, (ny * spacing[1]) / 2];
+		const size: Point2 = [nx * spacing[0], ny * spacing[1]];
+		return generateDefaultArchCurve(center, size);
+	}
+
+	const sliceStride = nx * ny;
+	const invSx = 1 / spacing[0];
+	const invSy = 1 / spacing[1];
+	const invSz = 1 / spacing[2];
+	const zMin = 0;
+	const zMax = (nz - 1) * Math.abs(spacing[2]);
+	const vSpacing = Math.abs(spacing[2]);
+
+	const vol: VolumeSamplingData = {
+		dims,
+		origin: [0, 0, 0],
+		invSx,
+		invSy,
+		invSz,
+		zMin,
+		zMax,
+		vSpacing,
+		getVoxel: (i: number, j: number, k: number) => {
+			if (i < 0 || i >= nx || j < 0 || j >= ny || k < 0 || k >= nz) {
+				return AIR_HU;
+			}
+			const idx = k * sliceStride + j * nx + i;
+			return volumeData[idx] ?? AIR_HU;
+		},
+	};
+
+	const detected = detectArchControlPoints(vol, options);
+	if (detected && detected.length >= 7) {
+		return detected;
+	}
+
+	// Canonical fallback: default dental arch curve scaled to the volume FOV
+	const center: Point2 = [(nx * spacing[0]) / 2, (ny * spacing[1]) / 2];
+	const size: Point2 = [nx * spacing[0], ny * spacing[1]];
+	return generateDefaultArchCurve(center, size);
 }

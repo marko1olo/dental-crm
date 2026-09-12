@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { autoDetectDentalArch } from "@dental/shared";
 import {
 	classifyMischBoneDensity,
 	createAnatomicalJawControlPoints,
@@ -15,6 +16,7 @@ import {
 	type Point3D,
 	synchronizeMprCoordinates,
 } from "../panoramicMprMath.js";
+import { autoDetectPanoramicArch } from "../panoramicArch.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -145,6 +147,55 @@ describe("Panoramic Reconstruction & Cross-Sectional Slicing (Mandates 8s, 8j, 8
 		assert.ok(
 			source.includes("activeCrossSectionIdx"),
 			"PanoramicRendererWindow must display active cross-section index",
+		);
+	});
+
+	it("6. autoDetectDentalArch and autoDetectPanoramicArch adapt MIP ray-tracing with Zero Dead-Ends fallback", () => {
+		// Degenerate/empty volume fallback test
+		const emptyVol = new Float32Array(32 * 32 * 8);
+		const dims: [number, number, number] = [32, 32, 8];
+		const spacing: [number, number, number] = [0.5, 0.5, 0.5];
+
+		const archPts = autoDetectDentalArch(emptyVol, dims, spacing);
+		assert.ok(Array.isArray(archPts), "Must return Point2[] array");
+		assert.ok(archPts.length >= 7, "Fallback must provide at least 7 anatomical control points");
+		for (const pt of archPts) {
+			assert.equal(pt.length, 2, "Each point must be [x, y]");
+			assert.ok(Number.isFinite(pt[0]) && Number.isFinite(pt[1]), "Coordinates must be finite");
+		}
+
+		// Web helper autoDetectPanoramicArch test
+		const panoramicPts = autoDetectPanoramicArch({
+			scalarData: emptyVol,
+			dimensions: dims,
+			spacing,
+		});
+		assert.ok(Array.isArray(panoramicPts), "Must return Point2D[] array");
+		assert.ok(panoramicPts.length >= 7, "Must provide >= 7 control points for panoramic unwrap");
+		assert.ok("x" in (panoramicPts[0] ?? {}) && "y" in (panoramicPts[0] ?? {}), "Points must be Point2D objects");
+
+		// Null volume safety check (Mandate 8e: Doctor Autonomy)
+		const nullFallback = autoDetectPanoramicArch(null);
+		assert.ok(nullFallback.length >= 7, "Null volume must gracefully return canonical jaw landmarks");
+	});
+
+	it("7. PanoramicRendererWindow contains 1-click 'Авто-дуга' button in the toolbar", () => {
+		const source = fs.readFileSync(
+			path.resolve(__dirname, "../PanoramicRendererWindow.tsx"),
+			"utf-8",
+		);
+
+		assert.ok(
+			source.includes("handleAutoDetectArch"),
+			"PanoramicRendererWindow must include handleAutoDetectArch handler",
+		);
+		assert.ok(
+			source.includes("Авто-дуга"),
+			"PanoramicRendererWindow must contain 'Авто-дуга' button in the toolbar",
+		);
+		assert.ok(
+			source.includes("Sparkles"),
+			"PanoramicRendererWindow must use Sparkles icon for 1-click auto-detection",
 		);
 	});
 });

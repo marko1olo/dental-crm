@@ -9,6 +9,7 @@ import {
 	Maximize2,
 	RefreshCw,
 	Sliders,
+	Sparkles,
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -42,6 +43,7 @@ import {
 	generateCrossSectionSlicePlanes,
 	synchronizeMprCoordinates,
 } from "./panoramicMprMath";
+import { autoDetectPanoramicArch } from "./panoramicArch";
 import "./panoramicMpr.css";
 
 export interface PanoramicVolumeInput {
@@ -147,11 +149,32 @@ export function PanoramicRendererWindow({
 
 	const currentPreset = VISIOGRAPH_WINDOW_PRESETS[activePreset];
 
+	const [autoDetectedPoints, setAutoDetectedPoints] = useState<Point2D[] | null>(null);
+
 	// Compute Catmull-Rom Arch and Cross-Section Slice Planes
 	const effectiveControlPoints = useMemo(() => {
+		if (autoDetectedPoints && autoDetectedPoints.length >= 2) return autoDetectedPoints;
 		if (splinePoints && splinePoints.length >= 2) return splinePoints;
 		return createAnatomicalJawControlPoints().map((p) => ({ x: p.x, y: p.y }));
-	}, [splinePoints]);
+	}, [autoDetectedPoints, splinePoints]);
+
+	const handleAutoDetectArch = useCallback(() => {
+		try {
+			const detected = autoDetectPanoramicArch(volume);
+			setAutoDetectedPoints(detected);
+			showToast(
+				`Авто-дуга построена: ${detected.length} опорных точек`,
+				"success",
+			);
+		} catch {
+			const fallback = createAnatomicalJawControlPoints().map((p) => ({
+				x: p.x,
+				y: p.y,
+			}));
+			setAutoDetectedPoints(fallback);
+			showToast("Использована анатомическая норма зубной дуги", "info");
+		}
+	}, [volume]);
 
 	const archCurve = useMemo<ArchCurvePoint[]>(() => {
 		return generateCatmullRomArch(effectiveControlPoints, 0.5);
@@ -541,6 +564,18 @@ export function PanoramicRendererWindow({
 
 				{/* ACTIONS */}
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={handleAutoDetectArch}
+						disabled={loading}
+						aria-label="Автоматическое определение зубной дуги"
+						className="mpr-btn-touch text-xs font-bold bg-indigo-600/80 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg border border-indigo-500/50 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+						title="Автоматическое определение зубной дуги по MIP срезу КЛКТ"
+					>
+						<Sparkles className="w-4 h-4 text-amber-300" />
+						<span>Авто-дуга</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={handleExportTo043}
