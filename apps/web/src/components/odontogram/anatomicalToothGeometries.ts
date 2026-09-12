@@ -1851,6 +1851,7 @@ export interface BridgeSpanInfo {
 
 export function isToothAbutment(tooth?: ToothData | null): boolean {
 	if (!tooth) return false;
+	if (tooth.bridgeRole === "pillar") return true;
 	if (tooth.state === "Crown") return true;
 	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
 	if (
@@ -1867,6 +1868,7 @@ export function isToothAbutment(tooth?: ToothData | null): boolean {
 
 export function isToothPontic(tooth?: ToothData | null): boolean {
 	if (!tooth) return false;
+	if (tooth.bridgeRole === "pontic") return true;
 	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
 	if (
 		cData &&
@@ -1921,53 +1923,52 @@ export function detectBridgeSpans(
 
 			while (j < archTeeth.length) {
 				const curNum = archTeeth[j];
-				if (!curNum) break;
+				if (!curNum) {
+					j++;
+					continue;
+				}
 				const curTooth = dataMap.get(curNum);
 
 				if (isToothAbutment(curTooth)) {
-					// We reached another abutment
+					candidateAbutments.push(curNum);
 					if (candidatePontics.length > 0) {
-						candidateAbutments.push(curNum);
-						const allSpanTeeth = archTeeth.slice(i, j + 1);
-						const endToothNum = curNum;
-						const isTopArch =
-							startToothNum < 30 ||
-							(startToothNum >= 51 && startToothNum <= 65);
-
-						// Determine material from abutments or default to zirconia
-						let mat: RestorativeMaterialKey = "zirconia";
-						for (const abNum of candidateAbutments) {
-							const abTooth = dataMap.get(abNum);
-							if (abTooth?.material) {
-								mat = abTooth.material;
-								break;
-							}
-						}
+						// We found a bridge: Abutment -> [Pontics] -> Abutment
+						const allTeethInSpan = [
+							...candidateAbutments.slice(0, 1),
+							...candidatePontics,
+							...candidateAbutments.slice(1),
+						];
+						const arch = archTeeth[0] && archTeeth[0] <= 28 ? "upper" : "lower";
+						const startT = allTeethInSpan[0]!;
+						const endT = allTeethInSpan[allTeethInSpan.length - 1]!;
+						const primaryAbutment = dataMap.get(startT);
+						const material = primaryAbutment?.material ?? "zirconia";
 
 						spans.push({
-							id: `bridge-${startToothNum}-${endToothNum}`,
-							arch: isTopArch ? "upper" : "lower",
-							material: mat,
-							teeth: allSpanTeeth,
-							abutments: candidateAbutments,
+							id: `bridge-${startT}-${endT}`,
+							arch,
+							material,
+							teeth: allTeethInSpan,
+							abutments: [...candidateAbutments],
 							pontics: [...candidatePontics],
-							startTooth: startToothNum,
-							endTooth: endToothNum,
+							startTooth: startT,
+							endTooth: endT,
 						});
 
+						// Move pointer to the last abutment so it can potentially start another span
 						i = j;
 						break;
 					}
 					// Adjacent abutments with no pontics in between
+					candidateAbutments.length = 0;
 					candidateAbutments.push(curNum);
-					j++;
 				} else if (isToothPontic(curTooth)) {
 					candidatePontics.push(curNum);
-					j++;
 				} else {
-					// Intact tooth or other state interrupts the bridge span
+					// Non-bridge tooth breaks the sequence
 					break;
 				}
+				j++;
 			}
 
 			if (j >= archTeeth.length || candidatePontics.length === 0) {
@@ -1995,4 +1996,12 @@ export function isToothPonticInBridge(
 	return spans.some((s) => s.pontics.includes(toothNumber));
 }
 
-
+// Re-export DentalPin quadrant napkin unfolding symmetry and canal obturation clip helpers
+export {
+	getToothTransform,
+	getNapkinUnfoldingTransform,
+	NAPKIN_SYMMETRY_CONFIG,
+	getCanalObturationClipConfig,
+	PERIAPICAL_LESION_SIZES,
+	type CanalObturationClipConfig,
+} from "./ToothSVGPaths";

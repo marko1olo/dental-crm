@@ -98,6 +98,11 @@ export interface ToothData {
 	canalCount?: number;
 	notes?: string;
 	clinicalData?: EndoToothClinicalData | Record<string, unknown>;
+	bridgeRole?: "pillar" | "pontic" | null;
+	canalObturationLevel?: "full" | "two_thirds" | "half";
+	periapicalLesionSize?: "small" | "medium" | "large" | 6 | 10 | 16;
+	hasFracture?: boolean;
+	hasApicoectomy?: boolean;
 }
 
 export type OdontogramQuadrantId =

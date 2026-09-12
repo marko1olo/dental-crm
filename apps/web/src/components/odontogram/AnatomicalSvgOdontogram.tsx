@@ -38,6 +38,11 @@ import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
 } from "./ClassicGostOdontogram";
+import {
+	GlobalTreatmentsStrip,
+	type GlobalTreatmentItem,
+} from "./GlobalTreatmentsStrip";
+import { PERIAPICAL_LESION_SIZES } from "./ToothSVGPaths";
 
 const TOP_TEETH = [
 	18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
@@ -295,6 +300,10 @@ const AnatomicalToothSVG = React.memo(({
 	rootResorptionStage,
 	rootResorption,
 	pocketDepth,
+	canalObturationLevel,
+	periapicalLesionSize,
+	hasFracture,
+	hasApicoectomy,
 	isSelected,
 	onClick,
 	onQuickStateChange,
@@ -312,6 +321,10 @@ const AnatomicalToothSVG = React.memo(({
 	isPontic?: boolean | undefined;
 	bridgeMaterial?: RestorativeMaterialKey | undefined;
 	canalObturation?: CanalObturationMaterial | undefined;
+	canalObturationLevel?: "full" | "two_thirds" | "half" | undefined;
+	periapicalLesionSize?: "small" | "medium" | "large" | 6 | 10 | 16 | undefined;
+	hasFracture?: boolean | undefined;
+	hasApicoectomy?: boolean | undefined;
 	hasPost?: boolean | undefined;
 	postType?: PostCoreType | undefined;
 	boneLossLevel?: number | undefined;
@@ -349,7 +362,25 @@ const AnatomicalToothSVG = React.memo(({
 		(number >= 71 && number <= 75);
 	const transform = `scaleX(${isRightSide ? -1 : 1})`;
 
-	const isPeriodontitis = state === "Periodontitis" || periapicalLesion;
+	const isPeriodontitis = state === "Periodontitis" || periapicalLesion || periapicalLesionSize !== undefined;
+	const lesionRadius =
+		typeof periapicalLesionSize === "number"
+			? periapicalLesionSize
+			: periapicalLesionSize
+				? PERIAPICAL_LESION_SIZES[periapicalLesionSize] ?? 6
+				: 15;
+
+	const canalClipRect = React.useMemo(() => {
+		if (!canalObturationLevel || canalObturationLevel === "full") return null;
+		const vb = geom.viewBox;
+		if (isTop) {
+			const offset = canalObturationLevel === "half" ? vb.height * 0.45 : vb.height * 0.25;
+			return { x: vb.x, y: vb.y + offset, width: vb.width, height: vb.height - offset };
+		} else {
+			const height = canalObturationLevel === "half" ? vb.height * 0.55 : vb.height * 0.75;
+			return { x: vb.x, y: vb.y, width: vb.width, height };
+		}
+	}, [canalObturationLevel, geom.viewBox, isTop]);
 	const isEndoTreated = canalObturation !== undefined && canalObturation !== "unfilled";
 	const effectiveObturation: CanalObturationMaterial =
 		canalObturation ?? "unfilled";
@@ -509,15 +540,27 @@ const AnatomicalToothSVG = React.memo(({
 			}`}
 		>
 			<title>{`Схема зуба ${number}`}</title>
+			{canalClipRect && (
+				<defs>
+					<clipPath id={`canal-obturation-clip-${number}`}>
+						<rect
+							x={canalClipRect.x}
+							y={canalClipRect.y}
+							width={canalClipRect.width}
+							height={canalClipRect.height}
+						/>
+					</clipPath>
+				</defs>
+			)}
 			<g className="tooth-group-standard">
 				{/* Periapical Inflammatory Granuloma / Cyst Halo at Root Apex */}
 				{showPeriapicalHalos &&
 					isPeriodontitis &&
 					geom.apexHalos?.map((pt, idx) => (
 						<g key={`halo-${idx}`} className="periapical-halo-group" filter="url(#periapical-feather-blur)">
-							<circle cx={pt.x} cy={pt.y} r="15" fill="url(#periapical-lesion-gradient)" />
-							<circle cx={pt.x} cy={pt.y} r="7.5" fill="#ea580c" opacity="0.75" />
-							<circle cx={pt.x} cy={pt.y} r="3" fill="#fef08a" opacity="0.9" />
+							<circle cx={pt.x} cy={pt.y} r={lesionRadius} fill="url(#periapical-lesion-gradient)" />
+							<circle cx={pt.x} cy={pt.y} r={Math.round(lesionRadius * 0.5)} fill="#ea580c" opacity="0.75" />
+							<circle cx={pt.x} cy={pt.y} r={Math.max(2, Math.round(lesionRadius * 0.2))} fill="#fef08a" opacity="0.9" />
 						</g>
 					))}
 
@@ -694,6 +737,37 @@ const AnatomicalToothSVG = React.memo(({
 							strokeWidth="1.6"
 							strokeLinecap="round"
 							opacity="0.9"
+						/>
+					</g>
+				)}
+
+				{/* Crown Fracture Zigzag Crack Line */}
+				{hasFracture && (
+					<g className="crown-fracture-layer">
+						<path
+							d={isTop ? "M 46 110 L 52 118 L 48 126 L 54 134 L 50 142" : "M 46 20 L 52 28 L 48 36 L 54 44 L 50 52"}
+							fill="none"
+							stroke="#dc2626"
+							strokeWidth="2.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className="tooth-fracture-line"
+						/>
+					</g>
+				)}
+
+				{/* Apicoectomy Root Apex Resection Line */}
+				{hasApicoectomy && !isPontic && (
+					<g className="apicoectomy-resection-layer">
+						<line
+							x1="32"
+							y1={isTop ? 22 : 138}
+							x2="68"
+							y2={isTop ? 22 : 138}
+							stroke="#dc2626"
+							strokeWidth="3.2"
+							strokeLinecap="round"
+							className="apicoectomy-resection-line"
 						/>
 					</g>
 				)}
@@ -923,7 +997,10 @@ const AnatomicalToothSVG = React.memo(({
 
 				{/* Root Canal Obturation / Post-and-Core */}
 				{resorptionGeom.showCanals && effectiveCanals.length > 0 && isEndoTreated && (
-					<g className="root-canal-obturation-layer">
+					<g
+						className="root-canal-obturation-layer"
+						clipPath={canalClipRect ? `url(#canal-obturation-clip-${number})` : undefined}
+					>
 						{/* Fiber Glass Post */}
 						{hasPost && postType === "fiber" ? (
 							<g filter="url(#dente-glow-indigo)">
@@ -1191,6 +1268,11 @@ function areToothDataEqual(prev: ToothData, next: ToothData): boolean {
 	if (prev.pocketDepth !== next.pocketDepth) return false;
 	if (prev.pocketDepthMm !== next.pocketDepthMm) return false;
 	if (prev.maxPocketDepth !== next.maxPocketDepth) return false;
+	if (prev.bridgeRole !== next.bridgeRole) return false;
+	if (prev.canalObturationLevel !== next.canalObturationLevel) return false;
+	if (prev.periapicalLesionSize !== next.periapicalLesionSize) return false;
+	if (prev.hasFracture !== next.hasFracture) return false;
+	if (prev.hasApicoectomy !== next.hasApicoectomy) return false;
 	if (!areSurfacesEqual(prev.surfaces, next.surfaces)) return false;
 	if (!areSurfacesEqual(prev.bopSites, next.bopSites)) return false;
 	if (!areSurfacesEqual(prev.suppurationSites, next.suppurationSites)) return false;
@@ -1571,6 +1653,10 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 				isPontic={isPontic}
 				bridgeMaterial={bridgeMaterial}
 				canalObturation={canalObturation}
+				canalObturationLevel={tooth.canalObturationLevel}
+				periapicalLesionSize={tooth.periapicalLesionSize}
+				hasFracture={tooth.hasFracture}
+				hasApicoectomy={tooth.hasApicoectomy}
 				hasPost={hasPost}
 				postType={postType}
 				boneLossLevel={boneLossLevel}
@@ -1639,6 +1725,8 @@ export interface AnatomicalSvgOdontogramProps {
 	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
 	hideQuadrantSwitcher?: boolean | undefined;
 	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
+	globalTreatments?: GlobalTreatmentItem[] | undefined;
+	onGlobalTreatmentsChange?: ((items: GlobalTreatmentItem[]) => void) | undefined;
 	className?: string | undefined;
 }
 
@@ -1663,12 +1751,17 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	showPeriodontalBoneLoss = true,
 	activeQuadrant: controlledQuadrant,
 	onQuadrantChange,
+	globalTreatments,
+	onGlobalTreatmentsChange,
 	className = "",
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const archContainerRef = useRef<HTMLDivElement>(null);
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
+	const [hoveredArch, setHoveredArch] = useState<"upper" | "lower" | null>(null);
+	const [internalGlobals, setInternalGlobals] = useState<GlobalTreatmentItem[]>([]);
+	const currentGlobals = globalTreatments ?? internalGlobals;
 
 	const effectiveDentition = dentitionMode ?? (mixedDentition ? "mixed" : pediatricMode ? "pediatric" : "adult");
 	const isPediatricEffective = effectiveDentition === "pediatric";
@@ -1854,15 +1947,17 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		spans: readonly BridgeSpanInfo[],
 	) => {
 		const span = getBridgeSpanForTooth(num, spans);
+		const toothItem = (teethData ?? []).find((t) => t.toothNumber === num);
+		const isPonticByRole = toothItem?.bridgeRole === "pontic";
 		if (!span) {
 			return {
-				isPontic: false,
-				bridgeMaterial: undefined,
+				isPontic: isPonticByRole,
+				bridgeMaterial: isPonticByRole ? (toothItem?.material ?? "zirconia") : undefined,
 				hasLeftBridgeConnector: false,
 				hasRightBridgeConnector: false,
 			};
 		}
-		const isPontic = span.pontics.includes(num);
+		const isPontic = isPonticByRole || span.pontics.includes(num);
 		const archIdx = archTeethList.indexOf(num);
 		const prevNum = archIdx > 0 ? archTeethList[archIdx - 1] : undefined;
 		const nextNum =
@@ -2049,6 +2144,22 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 				</div>
 			)}
 
+			<div className="mb-2">
+				<GlobalTreatmentsStrip
+					treatments={currentGlobals}
+					onArchHover={setHoveredArch}
+					onQuickAdd={(item) => {
+						const newItem: GlobalTreatmentItem = {
+							...item,
+							id: `gt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+						};
+						const next = [...currentGlobals, newItem];
+						setInternalGlobals(next);
+						onGlobalTreatmentsChange?.(next);
+					}}
+				/>
+			</div>
+
 			<div className="tooth-chart-arch-container" ref={archContainerRef}>
 				{isQuadrantView ? (
 					/* Focused Single Quadrant Large Mobile View (8 teeth with touch hit targets >= 48x48px) */
@@ -2085,7 +2196,11 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							</button>
 						</div>
 
-						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row`}>
+						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row ${
+							(isTopQuadrant && hoveredArch === "upper") || (!isTopQuadrant && hoveredArch === "lower")
+								? "ring-2 ring-blue-400/80 shadow-lg shadow-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 rounded-xl transition-all duration-300"
+								: ""
+						}`}>
 							<div className="tooth-quadrant-group focused-quadrant-group">
 								{(Array.isArray(activeQuadrantTeeth) ? activeQuadrantTeeth : []).map((num) => {
 									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
@@ -2131,7 +2246,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						}}
 					>
 						{/* Upper Arch (Maxilla) */}
-						<div className="teeth-row top-row">
+						<div className={`teeth-row top-row ${hoveredArch === "upper" ? "ring-2 ring-blue-400/80 shadow-lg shadow-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 rounded-xl transition-all duration-300" : ""}`}>
 							<div className="tooth-quadrant-group top-left-quad">
 								{topSplit.left.map((num) => {
 									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
@@ -2203,7 +2318,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						</div>
 
 						{/* Lower Arch (Mandible) */}
-						<div className="teeth-row bottom-row">
+						<div className={`teeth-row bottom-row ${hoveredArch === "lower" ? "ring-2 ring-blue-400/80 shadow-lg shadow-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 rounded-xl transition-all duration-300" : ""}`}>
 							<div className="tooth-quadrant-group bottom-left-quad">
 								{bottomSplit.left.map((num) => {
 									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
