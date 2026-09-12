@@ -2,6 +2,7 @@ import { z } from "zod";
 import { curatorFunnelStageSchema } from "./curator/index.js";
 
 export * from "./money.js";
+export * from "./moneyWordsRu.js";
 export * from "./fiscal/index.js";
 export { parseGs1DataMatrix, GS1_FNC1, GS1_GROUP_SEPARATOR } from "./mdlp/index.js";
 export * from "./mdlp/index.js";
