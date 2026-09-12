@@ -56,8 +56,8 @@ describe("Portal Budget Routes & Digital Signature Adapter", () => {
 					name: "Комплексная терапия зубов 16, 26",
 					title: "Комплексная терапия зубов 16, 26",
 					status: "Draft",
-					totalPriceRub: 25000,
-					discountRub: 2500,
+					totalPriceRub: "25000",
+					planDiscountRub: 2500,
 				});
 			});
 
