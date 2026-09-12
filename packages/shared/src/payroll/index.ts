@@ -10,5 +10,4 @@
  * - Statutory Form T-13 timesheet calculation and A4 landscape printable HTML / CSV export.
  */
 
-export * from "./advancedDoctorPayrollEngine.js";
 export * from "./formT13TimesheetEngine.js";
