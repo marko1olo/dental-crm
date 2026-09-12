@@ -1,25 +1,17 @@
+/**
+ * apps/api/src/services/cda/signature.ts
+ *
+ * Facade delegating CDA/EGISZ signature operations to canonical @dental/shared/cda per Mandate 8s.
+ */
+
+export * from "@dental/shared/cda";
 import {
 	canonicalizeCdaXml,
-	detachedSignatureSchema,
 	egiszRemdPackageSchema,
 	type DetachedSignature,
-	type EgiszRemdPackage as SharedEgiszRemdPackage,
-} from "@dental/shared";
+	type EgiszRemdPackage,
+} from "@dental/shared/cda";
 
-export {
-	canonicalizeCdaXml,
-	detachedSignatureSchema,
-	egiszRemdPackageSchema,
-	type DetachedSignature,
-} from "@dental/shared";
-
-export type EgiszRemdPackage = Omit<SharedEgiszRemdPackage, "docTypeNsiCode"> & {
-	docTypeNsiCode?: string | undefined;
-};
-
-/**
- * Валидирует и формирует канонический пакет СЭМД РЭМД ЕГИСЗ с двойной отсоединенной подписью CAdES-BES.
- */
 export function buildEgiszRemdSubmissionPackage(params: {
 	documentId: string;
 	documentVersion: number;
@@ -31,14 +23,12 @@ export function buildEgiszRemdSubmissionPackage(params: {
 	clinicOgrn?: string | undefined;
 	docTypeNsiCode?: string | undefined;
 }): EgiszRemdPackage {
-	const canonicalXml = canonicalizeCdaXml(params.rawXml);
 	const docType = params.docTypeNsiCode ?? "108";
-
-	const pkg = {
+	return egiszRemdPackageSchema.parse({
 		documentId: params.documentId,
 		documentVersion: params.documentVersion,
 		docTypeNsiCode: docType,
-		xmlCanonicalPayload: canonicalXml,
+		xmlCanonicalPayload: canonicalizeCdaXml(params.rawXml),
 		doctorSignature: params.doctorSignature,
 		moSignature: params.moSignature,
 		metadata: {
@@ -47,8 +37,5 @@ export function buildEgiszRemdSubmissionPackage(params: {
 			clinicOgrn: params.clinicOgrn,
 			docTypeNsiCode: docType,
 		},
-	};
-
-	return egiszRemdPackageSchema.parse(pkg);
+	});
 }
-
