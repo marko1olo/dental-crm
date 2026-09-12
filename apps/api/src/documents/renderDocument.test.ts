@@ -19,6 +19,10 @@ import {
 import { isReceptionistAllowedPrimaryDoc } from "../routes/documents/query.js";
 
 describe("documentHasUnresolvedPlaceholders", () => {
+	test("returns false for empty string", () => {
+		assert.strictEqual(documentHasUnresolvedPlaceholders(""), false);
+	});
+
 	test("returns false for HTML without placeholders", () => {
 		const html = "<p>This is a normal document without placeholders.</p>";
 		assert.strictEqual(documentHasUnresolvedPlaceholders(html), false);
@@ -95,6 +99,13 @@ describe("documentHasUnresolvedPlaceholders", () => {
       </div>
     `;
 		assert.strictEqual(documentHasUnresolvedPlaceholders(html), true);
+	});
+
+	test("returns true for html with separated placeholder markers", () => {
+		assert.strictEqual(
+			documentHasUnresolvedPlaceholders("<p>[[{</p> <p>}]]</p>"),
+			true,
+		);
 	});
 });
 

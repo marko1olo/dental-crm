@@ -174,9 +174,20 @@ describe("автоматические напоминания о приёме", 
 	});
 
 	test("врач называется фамилией с инициалами", () => {
-		assert.equal(shortDoctorName("Иванов Иван Иванович"), "Иванов И. И.");
-		assert.equal(shortDoctorName("Иванов Иван"), "Иванов И.");
+		assert.equal(shortDoctorName(""), "");
+		assert.equal(shortDoctorName("   "), "");
 		assert.equal(shortDoctorName("Иванов"), "Иванов");
+		assert.equal(shortDoctorName("Иванов Иван"), "Иванов И.");
+		assert.equal(shortDoctorName("Иванов Иван Иванович"), "Иванов И. И.");
+		assert.equal(
+			shortDoctorName("Салтыков-Щедрин Михаил Евграфович Писатель"),
+			"Салтыков-Щедрин М. Е.",
+		);
+		assert.equal(
+			shortDoctorName("  Иванов   Иван    Иванович  "),
+			"Иванов И. И.",
+		);
+		assert.equal(shortDoctorName("иванов иван иванович"), "иванов И. И.");
 	});
 
 	test("напоминания нельзя включить без шаблона", async (context) => {

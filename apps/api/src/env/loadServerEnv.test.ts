@@ -2,7 +2,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, test } from "node:test";
+import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import {
 	getLoadedServerEnvFiles,
 	loadAdditionalServerEnv,
@@ -58,6 +58,7 @@ describe("loadAdditionalServerEnv", () => {
 			}
 		}
 		process.cwd = originalCwd;
+		mock.restoreAll();
 		fs.rmSync(TEST_DIR, { recursive: true, force: true });
 	});
 
@@ -121,6 +122,50 @@ describe("loadAdditionalServerEnv", () => {
 	test("ignores missing files without erroring", () => {
 		const loaded = loadAdditionalServerEnv();
 		assert.strictEqual(Array.isArray(loaded), true);
+	});
+
+	test("handles read errors gracefully without throwing and logs warning", () => {
+		const errorEnvPath = path.join(TEST_DIR, "errorDir.env");
+		fs.mkdirSync(errorEnvPath);
+
+		const warnMock = mock.method(console, "warn", () => {});
+
+		process.env.DENTAL_ENV_FILE = errorEnvPath;
+
+		const loaded = loadAdditionalServerEnv();
+
+		assert.strictEqual(
+			loaded.includes(path.resolve(errorEnvPath)),
+			false,
+			"The error directory should not be included in loaded files",
+		);
+
+		assert.ok(
+			warnMock.mock.calls.length > 0,
+			"Console warn should be called",
+		);
+		const firstWarn = warnMock.mock.calls[0];
+		assert.ok(firstWarn);
+		assert.ok(
+			firstWarn.arguments[0].includes(
+				"[env] Failed to load optional env file",
+			),
+		);
+	});
+
+	test("trims whitespace and deduplicates comma-separated extra files", () => {
+		const envA = path.join(TEST_DIR, "test-a.env");
+		const envB = path.join(TEST_DIR, "test-b.env");
+		fs.writeFileSync(envA, "VAR_A=1\n");
+		fs.writeFileSync(envB, "VAR_B=2\n");
+
+		process.env.DENTAL_EXTRA_ENV_FILES = ` ${envA} , ${envB} , ${envA} `;
+		const loaded = loadAdditionalServerEnv();
+
+		assert.strictEqual(process.env.VAR_A, "1");
+		assert.strictEqual(process.env.VAR_B, "2");
+		assert.strictEqual(loaded.filter((f) => f === path.resolve(envA)).length, 1);
+		assert.strictEqual(loaded.filter((f) => f === path.resolve(envB)).length, 1);
 	});
 });
 

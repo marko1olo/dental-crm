@@ -261,6 +261,30 @@ describe("runVisitFlow Orchestrator", () => {
 		assert.strictEqual(result.overallStatus, "success");
 	});
 
+	test("runVisitFlow - skips disabled steps including documents based on orchestratorConfig", async () => {
+		mockFetch({
+			draft: { complaint: "Осмотр" },
+		});
+
+		const result = await runVisitFlow({
+			patientId: "00000000-0000-0000-0000-000000000000",
+			transcript: "Осмотр",
+			specialty: "universal",
+			orchestratorConfig: {
+				enablePlan: false,
+				enableRecommendations: false,
+				enableDocuments: false,
+			},
+		});
+
+		// Черновик формируется всегда, отключаются только последующие шаги.
+		assert.strictEqual(result.draft.status, "success");
+		assert.strictEqual(result.plan.status, "skipped");
+		assert.strictEqual(result.recommendations.status, "skipped");
+		assert.strictEqual(result.documents.status, "skipped");
+		assert.strictEqual(result.overallStatus, "success");
+	});
+
 	test("runVisitFlow - generates documents correctly", async () => {
 		mockFetch({
 			draft: { complaint: "Жалоба", treatmentPlan: "План" },
