@@ -912,7 +912,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					onFocus={handleCardMouseEnter}
 					onBlur={handleCardMouseLeave}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-3 mb-2 shadow-xs transition-all focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 max-w-full relative ${
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-3 mb-2 shadow-xs transition-all focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 max-w-full relative select-none ${
 						patientBalance !== null && patientBalance < 0 ? "border-l-4 border-l-rose-500" : ""
 					} ${
 						isCito

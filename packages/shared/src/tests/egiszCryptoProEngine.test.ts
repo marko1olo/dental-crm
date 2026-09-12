@@ -31,7 +31,6 @@ import {
 	createInitialSemdLifecycleRecord,
 	formatRemdDiagnosticSummary,
 	generateSemd105Xml,
-	generateSemd106Xml,
 	getNextSemdState,
 	initializeDualUkepSigningSession,
 	lookupRemdErrorCode,
@@ -47,7 +46,6 @@ import {
 	buildRemdRestSubmissionPayload,
 	REMD_ERROR_CATALOG,
 	type CdaSemd105Params,
-	type CdaSemd106Params,
 	type ParsedX509Certificate,
 } from "../egisz/index.js";
 import { canonicalizeCdaXml, computeCdaSha256Hex } from "../cda/c14n.js";
@@ -432,8 +430,8 @@ describe("EGISZ CryptoPro & REMD Statutory Signing Engine (Wave 15)", () => {
 		});
 	});
 
-	// ─── 5. Генерация и подписание СЭМД 105 (Консультация) и СЭМД 106 (Эпикриз)
-	describe("5. Statutory SEMD 105 (Consultation) & SEMD 106 (Epicrisis) CDA R2 Generation & Signing", () => {
+	// ─── 5. Генерация и подписание СЭМД 105 (Амбулаторная консультация)
+	describe("5. Statutory SEMD 105 (Consultation) CDA R2 Generation & Signing", () => {
 		it("генерирует и подписывает СЭМД 105: Протокол консультации амбулаторный", () => {
 			const params105: CdaSemd105Params = {
 				docKind: "105",
@@ -485,33 +483,6 @@ describe("EGISZ CryptoPro & REMD Statutory Signing Engine (Wave 15)", () => {
 				clinicCert,
 			);
 			assert.equal(signedSession.status, "FULLY_SIGNED");
-		});
-
-		it("генерирует и подписывает СЭМД 106: Эпикриз (этапный / выписной)", () => {
-			const params106: CdaSemd106Params = {
-				docKind: "106",
-				documentId: "DOC-SEMD106-002",
-				visitDate: new Date("2026-08-25T14:00:00+03:00"),
-				admissionDate: new Date("2026-08-10T09:00:00+03:00"),
-				dischargeDate: new Date("2026-08-25T14:00:00+03:00"),
-				patient: TEST_PATIENT,
-				doctor: TEST_DOCTOR,
-				clinic: TEST_CLINIC,
-				dischargeDiagnoses: [
-					{ icd10Code: "K04.5", diagnosisText: "Хронический апикальный периодонтит", tooth: 36, isPrimary: true },
-				],
-				surgeryProtocol: "Проведена резекция верхушки корня зуба 36 с ретроградным пломбированием МТА.",
-				epicrisisText: "Этап эндодонтического и микрохирургического лечения завершен успешно. Воспалительные явления купированы.",
-				outcomeCode: "improvement",
-				outcomeName: "Улучшение клинического состояния",
-			};
-
-			const xml = generateSemd106Xml(params106);
-
-			assert.ok(xml.includes(GOST_CRYPTO_OIDS.SEMD_TEMPLATE_106_EPICRISIS), "Должен содержать OID шаблона СЭМД 106");
-			assert.ok(xml.includes("резекция верхушки корня"));
-			assert.ok(xml.includes("Улучшение клинического состояния"));
-			assert.ok(xml.includes("K04.5"));
 		});
 	});
 

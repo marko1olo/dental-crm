@@ -1357,12 +1357,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleApplyHygienePresetQuick}
 								data-testid="btn-hygiene-preset-one-click"
-								className="!hidden md:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1 cursor-pointer shrink-0 transition-all"
+								className="!hidden md:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1 cursor-pointer shrink-0 transition-all"
 								title="Профгигиена (1-клик): протокол ультразвук + Air-Flow + полировка + фторирование Bifluorid 12"
 								aria-label="Профгигиена (1-клик)"
 							>
 								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-								<span className="hidden xl:inline">Профгигиена</span>
+								<span className="hidden 2xl:inline">Профгигиена</span>
 							</button>
 
 							{/* Кнопка Анестезия (1-клик) */}
@@ -1375,7 +1375,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								aria-label="Анестезия (1-клик)"
 							>
 								<Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
-								<span className="hidden xl:inline">+ Анестезия</span>
+								<span className="hidden 2xl:inline">+ Анестезия</span>
 							</button>
 
 							{/* Клинические шаблоны StomX (448 протоколов) — на десктопе */}
@@ -1383,12 +1383,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleOpenStomxTemplatesFromHeader}
 								data-testid="btn-open-stomt-templates-header"
-								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1.5 cursor-pointer shrink-0"
+								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1 cursor-pointer shrink-0"
 								title="Клинические шаблоны StomX (448 протоколов 043/у по 5 специальностям)"
 							>
 								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-								<span className="hidden 2xl:inline">Шаблоны StomX (448)</span>
-								<span className="hidden xl:inline 2xl:hidden">Шаблоны</span>
+								<span className="hidden 2xl:inline">Шаблоны (448)</span>
 							</button>
 
 							{/* Печать Формы 043/у (Мандат 8e) — на десктопе */}
@@ -1400,7 +1399,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-								<span className="hidden xl:inline">Печать 043/у</span>
+								<span className="hidden 2xl:inline">Печать 043/у</span>
 							</button>
 
 							{/* Статус приема: только на широких экранах */}

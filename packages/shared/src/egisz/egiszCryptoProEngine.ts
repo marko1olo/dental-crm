@@ -8,7 +8,7 @@
  * 2. X.509 Certificate parser and validator (SNILS 11 digits, OGRN 13/15 digits, validity dates, thumbprints).
  * 3. Detached CAdES-BES (PKCS#7 / .p7s) digital signature generator and verifier.
  * 4. Dual UKEP signing protocol (Лечащий врач + Медицинская организация / Главный врач).
- * 5. SEMD 105 (Протокол консультации) and SEMD 106 (Эпикриз) CDA R2/R3 generators.
+ * 5. SEMD 105 (Протокол консультации амбулаторный) CDA R2/R3 generator.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -78,9 +78,8 @@ export const GOST_CRYPTO_OIDS = {
 	PKCS9_SIGNING_TIME: "1.2.840.113549.1.9.5",
 	CADES_SIGNING_CERTIFICATE_V2: "1.2.840.113549.1.9.16.2.47",
 
-	// Справочники СЭМД
+	// Справочники СЭМД (Амбулаторная стоматология)
 	SEMD_TEMPLATE_105_CONSULTATION: "1.2.643.5.1.13.13.11.105",
-	SEMD_TEMPLATE_106_EPICRISIS: "1.2.643.5.1.13.13.11.106",
 } as const;
 
 export const CADESCOM_CONSTANTS = {
@@ -870,7 +869,7 @@ export function verifyDualUkepSession(
 	};
 }
 
-// ─── 7. Генераторы СЭМД 105 (Консультация) и СЭМД 106 (Эпикриз) ─────────────
+// ─── 7. Генератор СЭМД 105 (Протокол консультации амбулаторный) ─────────────
 
 export interface CdaSemd105Params {
 	docKind?: "105" | undefined;
@@ -895,36 +894,6 @@ export interface CdaSemd105Params {
 	complications?: string | undefined;
 	comorbidities?: string | undefined;
 	instrumentTrayBarcode?: string | undefined;
-}
-
-export interface CdaSemd106Params {
-	docKind?: "106" | undefined;
-	documentId: string;
-	documentVersion?: number | undefined;
-	documentTime?: Date | string | undefined;
-	visitDate: Date | string;
-	admissionDate?: Date | string | undefined;
-	dischargeDate?: Date | string | undefined;
-	encounterId?: string | undefined;
-	patient: PatientCdaInfo;
-	doctor: DoctorCdaInfo;
-	clinic: ClinicCdaInfo;
-	legalAuthenticator?: LegalAuthenticatorCdaInfo | undefined;
-	admissionDiagnoses?: DiagnosisItem[] | undefined;
-	dischargeDiagnoses: DiagnosisItem[];
-	anamnesis?: string | undefined;
-	clinicalCourse?: string | undefined;
-	surgeryProtocol?: string | undefined;
-	anesthesiaProtocol?: string | undefined;
-	servicesRendered?: ServiceRenderedItem[] | undefined;
-	initialDentalStatus?: DentalStatusItem[] | undefined;
-	finalDentalStatus?: DentalStatusItem[] | undefined;
-	radiologyStudiesSummary?: string | undefined;
-	epicrisisText: string;
-	outcomeCode?: "recovery" | "improvement" | "unchanged" | undefined;
-	outcomeName?: string | undefined;
-	recommendations?: string[] | string | undefined;
-	nextFollowupDate?: Date | string | undefined;
 }
 
 /**
@@ -1063,76 +1032,3 @@ ${diagEntries}
 </ClinicalDocument>`;
 }
 
-/**
- * Генерирует стандартный СЭМД 106: Эпикриз стационарный / этапный (HL7 CDA R2)
- */
-export function generateSemd106Xml(params: CdaSemd106Params): string {
-	const docTime = params.documentTime
-		? typeof params.documentTime === "string"
-			? new Date(params.documentTime)
-			: params.documentTime
-		: undefined;
-	const visDate = typeof params.visitDate === "string" ? new Date(params.visitDate) : params.visitDate;
-
-	const headerXml = generateClinicalDocumentHeader({
-		docKind: "106",
-		docTypeNsiCode: "106",
-		docTitle: "Эпикриз (этапный / выписной)",
-		templateOids: [
-			GOST_CRYPTO_OIDS.SEMD_TEMPLATE_106_EPICRISIS,
-			EGISZ_OIDS.SEMD_TEMPLATE_BASE_CONSULTATION,
-		],
-		documentId: params.documentId,
-		documentVersion: params.documentVersion ?? 1,
-		documentTime: docTime,
-		visitDate: visDate,
-		encounterId: params.encounterId,
-		patient: params.patient,
-		doctor: params.doctor,
-		clinic: params.clinic,
-		legalAuthenticator: params.legalAuthenticator,
-	});
-
-	// Диагнозы при выписке
-	const dischargeItems = params.dischargeDiagnoses.map((d) => {
-		const prefix = d.isPrimary ? "[Основной выписной] " : "[Сопутствующий] ";
-		const toothStr = d.tooth ? ` (зуб ${escapeXml(String(d.tooth))})` : "";
-		return `<item>${prefix}${escapeXml(d.icd10Code)} — ${escapeXml(d.diagnosisText)}${toothStr}</item>`;
-	}).join("\n\t\t\t\t\t\t\t");
-
-	const diagSection = `
-			<!-- Секция 1: Клинический диагноз -->
-			<component>
-				<section>
-					<code code="${EGISZ_OIDS.LOINC_DIAGNOSIS_SECTION}" codeSystem="${EGISZ_OIDS.LOINC}" displayName="Диагнозы"/>
-					<title>Заключительный диагноз</title>
-					<text><list>${dischargeItems}</list></text>
-				</section>
-			</component>`;
-
-	// Проведенное лечение и хирургия
-	const surgeryText = params.surgeryProtocol ? `<paragraph><strong>Хирургический протокол:</strong> ${escapeXml(params.surgeryProtocol)}</paragraph>` : "";
-	const epicrisisSection = `
-			<!-- Секция 2: Выписной эпикриз -->
-			<component>
-				<section>
-					<code code="${EGISZ_OIDS.LOINC_EPICRISIS}" codeSystem="${EGISZ_OIDS.LOINC}" displayName="Эпикриз"/>
-					<title>Эпикриз и заключение</title>
-					<text>
-						<paragraph><strong>Исход:</strong> ${escapeXml(params.outcomeName || "Улучшение")}</paragraph>
-						<paragraph>${escapeXml(params.epicrisisText)}</paragraph>
-						${surgeryText}
-					</text>
-				</section>
-			</component>`;
-
-	return `${headerXml}
-
-	<component>
-		<structuredBody>
-			${diagSection}
-			${epicrisisSection}
-		</structuredBody>
-	</component>
-</ClinicalDocument>`;
-}

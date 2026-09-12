@@ -196,13 +196,13 @@ export function PatientSearchModal({
 			onClick={onClose}
 		>
 			<div
-				className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-150"
+				className="bg-[var(--paper)] w-full max-w-2xl rounded-2xl shadow-2xl border border-[var(--line)] flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-150"
 				data-testid="patient-search-modal"
 				onClick={(e) => e.stopPropagation()}
 				onKeyDown={handleKeyDown}
 			>
 				{/* Search Input Bar */}
-				<div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50">
+				<div className="p-3 border-b border-[var(--line)] flex items-center gap-3 bg-[var(--paper-soft)]">
 					<Search className="w-5 h-5 text-[var(--teal,var(--brand-primary))] shrink-0 ml-1" />
 					<input
 						ref={inputRef}
@@ -210,14 +210,14 @@ export function PatientSearchModal({
 						value={rawQuery}
 						onChange={(e) => setRawQuery(e.target.value)}
 						placeholder="Поиск по телефону (916, +7 925), фамилии (Иван, Смир) или карте..."
-						className="flex-1 bg-transparent text-slate-900 dark:text-slate-100 text-sm font-semibold placeholder:text-slate-400 outline-none border-none"
+						className="flex-1 bg-transparent text-[var(--ink)] text-sm font-semibold placeholder:text-[var(--muted)] outline-none border-none"
 						data-testid="patient-search-input"
 					/>
 					{rawQuery && (
 						<button
 							type="button"
 							onClick={() => setRawQuery("")}
-							className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 rounded-xl hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+							className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-[var(--muted)] hover:text-[var(--ink)] rounded-xl hover:bg-[var(--paper)] transition-colors cursor-pointer shrink-0"
 							title="Очистить"
 							aria-label="Очистить поиск"
 						>
@@ -227,7 +227,7 @@ export function PatientSearchModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shadow-2xs shrink-0"
+						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center px-3 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer shadow-2xs shrink-0"
 						aria-label="Закрыть окно поиска (Esc)"
 						title="Закрыть (Esc)"
 					>
@@ -300,7 +300,7 @@ export function PatientSearchModal({
 									value={quickPhone}
 									onChange={(e) => setQuickPhone(e.target.value)}
 									placeholder="+7 (___) ___-__-__"
-									className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500"
+									className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]"
 								/>
 							</div>
 						</div>
@@ -309,14 +309,14 @@ export function PatientSearchModal({
 								type="button"
 								data-testid="quick-patient-cancel-action-btn"
 								onClick={() => setIsInlineQuickCreate(false)}
-								className="h-9 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+								className="h-9 px-3 text-xs font-semibold text-[var(--muted)] hover:bg-[var(--paper-soft)] rounded-xl transition-colors cursor-pointer"
 							>
 								Отмена
 							</button>
 							<button
 								type="submit"
 								data-testid="quick-patient-submit-btn"
-								className="h-9 px-4 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+								className="h-9 px-4 text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
 							>
 								<CalendarPlus className="w-4 h-4" />
 								<span>+ Создать и записать на приём</span>
@@ -326,15 +326,15 @@ export function PatientSearchModal({
 				)}
 
 				{/* Results Header / Count */}
-				<div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/60 bg-slate-100/50 dark:bg-slate-950/30 flex items-center justify-between text-xs text-slate-500 font-medium">
+				<div className="px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-xs text-[var(--muted)] font-medium">
 					<span>
-						Найдено пациентов: <strong className="text-slate-800 dark:text-slate-200">{searchResults.length}</strong>
+						Найдено пациентов: <strong className="text-[var(--ink)]">{searchResults.length}</strong>
 					</span>
 					<span className="text-[11px] opacity-75">↑↓ навигация · Enter выбор</span>
 				</div>
 
 				{/* Search Results List */}
-				<div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 p-1">
+				<div className="flex-1 overflow-y-auto divide-y divide-[var(--line)] p-1">
 					{searchResults.length === 0 ? (
 						<div className="py-12 px-4 text-center text-slate-400 space-y-3">
 							<UserX className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
@@ -381,14 +381,14 @@ export function PatientSearchModal({
 									className={`p-3 rounded-xl transition-all cursor-pointer flex flex-wrap items-center justify-between gap-3 ${
 										isSelected
 											? "bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs"
-											: "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+											: "hover:bg-[var(--paper-soft)]"
 									}`}
 									data-testid={`patient-search-result-${patient.id}`}
 								>
 									{/* Patient Info */}
 									<div className="space-y-1 min-w-0 flex-1">
 										<div className="flex items-center gap-2 flex-wrap">
-											<span className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
+											<span className="text-sm font-bold text-[var(--ink)] flex items-center gap-1.5 truncate">
 												<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 												<RenderHighlightedParts parts={item.fullNameHighlights} />
 											</span>
@@ -421,7 +421,7 @@ export function PatientSearchModal({
 											) : null}
 										</div>
 
-										<div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+										<div className="flex items-center gap-3 text-xs text-[var(--muted)] flex-wrap">
 											{patient.phone ? (
 												<span className="font-mono flex items-center gap-1">
 													<Phone className="w-3 h-3 text-slate-400 shrink-0" />

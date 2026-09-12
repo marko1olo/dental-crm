@@ -523,7 +523,7 @@ export function ScheduleFilterStrip({
 					>
 						<UserSearch size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<span className="hidden xl:inline">Поиск</span>
-						<kbd className="hidden lg:inline text-[10px] font-mono px-1 py-0.2 bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--muted)]">⌘K</kbd>
+						<kbd className="hidden lg:inline text-[10px] font-mono px-1 py-[1px] bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--muted)]">⌘K</kbd>
 					</button>
 				)}
 

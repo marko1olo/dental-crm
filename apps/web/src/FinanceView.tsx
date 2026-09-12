@@ -17,6 +17,7 @@ import {
 } from "./FinancePlanning";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
+import { rubAmountForInput } from "./components/payments/cashDeskAmounts.js";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -336,7 +337,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 							className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/20 active:scale-95 transition-all"
 							type="button"
 							onClick={() => {
-								setPaymentAmount(String(billingSummary.totalDueRub));
+								setPaymentAmount(rubAmountForInput(billingSummary.totalDueRub));
 								focusPaymentCapture();
 							}}
 							title={`1-клик оплата остатка долга: ${money(billingSummary.totalDueRub)}`}
