@@ -212,6 +212,9 @@ async function runInquisitionCapture() {
           document.documentElement.classList.remove("dark");
           document.documentElement.classList.add("light");
         }
+        if (window.__useThemeStore) {
+          window.__useThemeStore.getState().setThemeMode(th);
+        }
       },
       {
         ct: auth.clinicToken,
@@ -320,58 +323,47 @@ async function runInquisitionCapture() {
   await addAuthInitScript(desktopContext);
   const dPage = await desktopContext.newPage();
   await dPage.goto("http://127.0.0.1:5173/", { waitUntil: "domcontentloaded", timeout: 60000 });
+  await dPage.waitForSelector(".boot-state", { state: "detached", timeout: 30000 });
+  await dPage.waitForSelector(".app-shell", { timeout: 20000 });
 
   // 1A. Schedule Desktop Light & Dark
   await configurePage(dPage, "light");
   await dPage.evaluate(() => { window.location.hash = "schedule"; });
-  await dPage.waitForTimeout(2000);
-  await dPage.waitForFunction(() => {
-    return document.querySelector(".schedule-filter-strip, .schedule-calendar-grid, .timeline-wrapper");
-  }, { timeout: 10000 }).catch(() => {});
+  await dPage.waitForSelector(".schedule-filter-strip", { timeout: 20000 });
   await takeProof(dPage, "01_schedule_desktop_light.png", "Schedule", "Desktop Light");
 
   await configurePage(dPage, "dark");
-  await dPage.waitForTimeout(1200);
+  await dPage.waitForTimeout(1000);
   await takeProof(dPage, "02_schedule_desktop_dark.png", "Schedule", "Desktop Dark");
 
   // 1B. Visit Desktop Light & Dark
   await configurePage(dPage, "light");
   await dPage.evaluate(() => { window.location.hash = "visit"; });
-  await dPage.waitForTimeout(2000);
-  await dPage.waitForFunction(() => {
-    return document.querySelector(".visit-monolithic-header");
-  }, { timeout: 20000 });
-  await dPage.waitForTimeout(1000);
+  await dPage.waitForSelector(".visit-monolithic-header", { timeout: 20000 });
   await takeProof(dPage, "05_visit_desktop_light.png", "Visit", "Desktop Light");
 
   await configurePage(dPage, "dark");
-  await dPage.waitForTimeout(1200);
+  await dPage.waitForTimeout(1000);
   await takeProof(dPage, "06_visit_desktop_dark.png", "Visit", "Desktop Dark");
 
   // 1C. Patients Desktop Light & Dark
   await configurePage(dPage, "light");
   await dPage.evaluate(() => { window.location.hash = "patients"; });
-  await dPage.waitForTimeout(2000);
-  await dPage.waitForFunction(() => {
-    return document.querySelector(".patients-panel, .patients-search-box, .patient-card");
-  }, { timeout: 10000 }).catch(() => {});
+  await dPage.waitForSelector(".patients-search-box", { timeout: 20000 });
   await takeProof(dPage, "09_patients_desktop_light.png", "Patients", "Desktop Light");
 
   await configurePage(dPage, "dark");
-  await dPage.waitForTimeout(1200);
+  await dPage.waitForTimeout(1000);
   await takeProof(dPage, "10_patients_desktop_dark.png", "Patients", "Desktop Dark");
 
   // 1D. Finance Desktop Light & Dark
   await configurePage(dPage, "light");
   await dPage.evaluate(() => { window.location.hash = "finance"; });
-  await dPage.waitForTimeout(2000);
-  await dPage.waitForFunction(() => {
-    return document.querySelector(".finance-panel, .finance-header-actions, .kassa-wrapper");
-  }, { timeout: 10000 }).catch(() => {});
+  await dPage.waitForSelector(".finance-header-actions", { timeout: 20000 });
   await takeProof(dPage, "13_finance_desktop_light.png", "Finance", "Desktop Light");
 
   await configurePage(dPage, "dark");
-  await dPage.waitForTimeout(1200);
+  await dPage.waitForTimeout(1000);
   await takeProof(dPage, "14_finance_desktop_dark.png", "Finance", "Desktop Dark");
 
   await desktopContext.close();
@@ -389,57 +381,47 @@ async function runInquisitionCapture() {
   await addAuthInitScript(mobileContext);
   const mPage = await mobileContext.newPage();
   await mPage.goto("http://127.0.0.1:5173/", { waitUntil: "domcontentloaded", timeout: 60000 });
+  await mPage.waitForSelector(".boot-state", { state: "detached", timeout: 30000 });
+  await mPage.waitForSelector(".app-shell", { timeout: 20000 });
 
   // 2A. Schedule Mobile Light & Dark
   await configurePage(mPage, "light");
   await mPage.evaluate(() => { window.location.hash = "schedule"; });
-  await mPage.waitForTimeout(2000);
-  await mPage.waitForFunction(() => {
-    return document.querySelector(".schedule-filter-strip, .schedule-calendar-grid");
-  }, { timeout: 10000 }).catch(() => {});
+  await mPage.waitForSelector(".schedule-filter-strip", { timeout: 20000 });
   await takeProof(mPage, "03_schedule_mobile_light.png", "Schedule", "Mobile Light");
 
   await configurePage(mPage, "dark");
-  await mPage.waitForTimeout(1200);
+  await mPage.waitForTimeout(1000);
   await takeProof(mPage, "04_schedule_mobile_dark.png", "Schedule", "Mobile Dark");
 
   // 2B. Visit Mobile Light & Dark
   await configurePage(mPage, "light");
   await mPage.evaluate(() => { window.location.hash = "visit"; });
-  await mPage.waitForTimeout(2000);
-  await mPage.waitForFunction(() => {
-    return document.querySelector(".visit-monolithic-header, .visit-panel");
-  }, { timeout: 10000 }).catch(() => {});
+  await mPage.waitForSelector(".visit-monolithic-header, .visit-panel", { timeout: 20000 });
   await takeProof(mPage, "07_visit_mobile_light.png", "Visit", "Mobile Light");
 
   await configurePage(mPage, "dark");
-  await mPage.waitForTimeout(1200);
+  await mPage.waitForTimeout(1000);
   await takeProof(mPage, "08_visit_mobile_dark.png", "Visit", "Mobile Dark");
 
   // 2C. Patients Mobile Light & Dark
   await configurePage(mPage, "light");
   await mPage.evaluate(() => { window.location.hash = "patients"; });
-  await mPage.waitForTimeout(2000);
-  await mPage.waitForFunction(() => {
-    return document.querySelector(".patients-panel, .patients-search-box");
-  }, { timeout: 10000 }).catch(() => {});
+  await mPage.waitForSelector(".patients-search-box", { timeout: 20000 });
   await takeProof(mPage, "11_patients_mobile_light.png", "Patients", "Mobile Light");
 
   await configurePage(mPage, "dark");
-  await mPage.waitForTimeout(1200);
+  await mPage.waitForTimeout(1000);
   await takeProof(mPage, "12_patients_mobile_dark.png", "Patients", "Mobile Dark");
 
   // 2D. Finance Mobile Light & Dark
   await configurePage(mPage, "light");
   await mPage.evaluate(() => { window.location.hash = "finance"; });
-  await mPage.waitForTimeout(2000);
-  await mPage.waitForFunction(() => {
-    return document.querySelector(".finance-panel, .finance-header-actions");
-  }, { timeout: 10000 }).catch(() => {});
+  await mPage.waitForSelector(".finance-header-actions", { timeout: 20000 });
   await takeProof(mPage, "15_finance_mobile_light.png", "Finance", "Mobile Light");
 
   await configurePage(mPage, "dark");
-  await mPage.waitForTimeout(1200);
+  await mPage.waitForTimeout(1000);
   await takeProof(mPage, "16_finance_mobile_dark.png", "Finance", "Mobile Dark");
 
   await mobileContext.close();
