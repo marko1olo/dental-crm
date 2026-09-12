@@ -258,7 +258,7 @@ export const DOCUMENT_PACKAGES: Record<
 			},
 		],
 	},
-};
+} as unknown as Record<DocumentPackageId, DocumentPackageDefinition>;
 
 Object.defineProperty(DOCUMENT_PACKAGES, "hospital", {
 	get() {

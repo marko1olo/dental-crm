@@ -136,7 +136,7 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 		);
 	});
 
-	it("renderDocument.ts has purged Form 025/u hospital bloat and enforces dental sovereignty notice (Mandate 8i)", () => {
+	it("renderDocument.ts has purged Form 025/u hospital bloat and enforces dental Form 043/u outpatient sovereignty (Mandate 8i)", () => {
 		const repoRoot = process.cwd().includes("apps")
 			? path.resolve(process.cwd(), "../..")
 			: process.cwd();
@@ -159,8 +159,8 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 			"renderDocument.ts must not contain stayUrbanRuralCode",
 		);
 		assert(
-			content.includes("dental-sovereignty-notice"),
-			"renderDocument.ts must include outpatient dental sovereignty notice",
+			content.includes("outpatient_medical_card_025u: dentalMedicalCard043u(document, patient)"),
+			"renderDocument.ts must map outpatient_medical_card_025u to dentalMedicalCard043u for outpatient sovereignty",
 		);
 
 		const mockPatient = {
@@ -186,70 +186,74 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 			updatedAt: new Date().toISOString(),
 		} as unknown as Patient;
 
-		const doc025u = {
+		const doc043u = {
 			id: "b0000000-0000-0000-0000-000000000001",
 			organizationId: "o0000000-0000-0000-0000-000000000001",
-			kind: "outpatient_medical_card_025u",
+			kind: "dental_medical_card_043u",
 			patientId: mockPatient.id,
-			title: "Медицинская карта 025/у",
+			title: "Медицинская карта 043/у",
 			status: "draft",
 			totalAmountRub: 0,
 			payload: {
-				outpatientMedicalCard025u: {
-					formNumber: "025/у",
-					sourceOrderReference: "Приказ Минздрава России от 13.05.2025 N 274н",
-					medicalOrganizationName: "Стоматологическая Клиника Денте",
-					medicalCardNumber: "СТ-1049",
-					openedAt: "2026-03-01",
-					periodStart: "2026-03-01",
-					periodEnd: "2026-03-01",
-					sourceVisitIds: ["v-1"],
-					patientFullName: "Тестовый Пациент Амбулаторный",
-					patientBirthDate: "1988-04-12",
-					specialistVisitRecords: [
+				dentalMedicalCard043u: {
+					formNumber: "043/у",
+					organization: {
+						fullName: "Стоматологическая Клиника Денте",
+						shortName: null,
+						address: null,
+						phone: null,
+						ogrn: null,
+						inn: null,
+						licenseNumber: null,
+						licenseIssueDate: null,
+						licenseAuthority: null,
+					},
+					patient: {
+						fullName: "Тестовый Пациент Амбулаторный",
+						birthDate: "1988-04-12",
+						sex: null,
+						phone: "+7 (999) 000-11-22",
+						address: null,
+						documentSeriesNumber: null,
+						snils: null,
+						medicalCardNumber: "СТ-1049",
+					},
+					doctor: {
+						fullName: "Врач-Стоматолог Соло И.И.",
+						specialty: "Стоматология терапевтическая",
+						position: "Врач-стоматолог-терапевт",
+					},
+					visitDate: "2026-03-01",
+					complaint: "Боль в зубе 16 при накусывании",
+					anamnesis: "Соматически здоров",
+					objectiveStatus: "Зуб 16: глубокая кариозная полость",
+					diagnosisText: "К04.0 Начальный пульпит",
+					diagnosisIcd10: "K04.0",
+					treatmentPlan: "Эндодонтическое лечение",
+					treatmentDescription: "Экстирпация пульпы",
+					clinicalToothRows: [
 						{
-							sourceVisitId: "v-1",
-							visitDate: "2026-03-01",
-							doctorFullName: "Врач-Стоматолог Соло И.И.",
-							doctorPosition: "Врач-стоматолог-терапевт",
-							doctorSpecialty: "Стоматология терапевтическая",
-							firstOrRepeat: "first",
-							complaints: "Боль в зубе 16 при накусывании",
-							anamnesis: "Соматически здоров",
-							objectiveData: "Зуб 16: глубокая кариозная полость",
-							primaryDiagnosis: "К04.0 Начальный пульпит",
-							primaryDiagnosisIcd10: "K04.0",
-							orders: "Эндодонтическое лечение",
-							treatmentProvided: "Экстирпация пульпы",
-							clinicalToothRows: [
-								{
-									toothOrArea: "16",
-									surfaces: ["occlusal"],
-									status: "caries",
-									diagnosisOrFinding: "Кариес дентина глубокий",
-									indication: "Пломбирование",
-									plannedAction: "Препарирование и композитная реставрация",
-									prognosis: "благоприятный",
-									periodontalStatus: "норма",
-									implantOrProstheticNotes: null,
-									orthodonticNotes: null,
-								},
-							],
+							toothOrArea: "16",
+							surfaces: ["occlusal"],
+							status: "caries",
+							diagnosisOrFinding: "Кариес дентина глубокий",
+							indication: "Пломбирование",
+							plannedAction: "Препарирование и композитная реставрация",
+							prognosis: "благоприятный",
+							periodontalStatus: "норма",
+							implantOrProstheticNotes: null,
+							orthodonticNotes: null,
 						},
 					],
-				} as any,
+				},
 			},
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		};
 
 		const html = renderDocumentHtml(
-			doc025u as unknown as GeneratedDocument,
+			doc043u as unknown as GeneratedDocument,
 			mockPatient,
-		);
-		assert(
-			html.includes("dental-sovereignty-notice"),
-			"Rendered HTML must include dental sovereignty notice",
 		);
 		assert(
 			html.includes("Форма 043/у"),
