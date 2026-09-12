@@ -106,6 +106,15 @@ describe("54-FZ Fast Checkout Invariants (Mandates 8e, 8b, 8n)", () => {
 		assert.equal(twCard?.amountKop, 100000); // 1 000.00 ₽
 		assert.equal(twCash?.amountKop, 100000); // 1 000.00 ₽
 		assert.equal(twDep.amountKop + twCard.amountKop + twCash.amountKop, totalBillKop);
+
+		// Preset "warranty_100" (100% Гарантия / 0 ₽)
+		const presetWarranty = applyQuickCheckoutPreset({
+			totalBillKop,
+			preset: "warranty_100",
+			availableDepositKop: combinedDepositKop,
+		});
+		assert.equal(presetWarranty.payments.length, 0);
+		assert.equal(presetWarranty.cashTenderedKop, 0);
 	});
 
 	it("3. Doctor discount autonomy up to 100% (warranty and colleague rework) with zero kopeck drift", () => {
