@@ -350,7 +350,7 @@
 ## 40. `зарплата_кадры::табель_учета_рабочего_времени_т13_с_однострочным_тулбаром` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e & APPLE HIG)
 - **Идея**: Приведение табеля Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) к канонам Apple Studio HIG и Закону Хика (ровно 1 строка тулбара 32–36px). Защита от сбоев при выборе сотрудника (`activeEmployee` guard), компактные переключатели расчетных периодов, полиграфическая точность формы Т-13 Госкомстата РФ с автоматическим учетом явок, ночных смен и невыходов врачей и ассистентов.
 - **Статус**: 
-  - Фронтенд: `apps/web/src/components/payroll/FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`, `apps/web/src/components/payroll/advancedPayroll.css`, `timesheetT13.css` (коммит `ff2dbb9c7`).
+  - Фронтенд: `apps/web/src/components/payroll/FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`, `timesheetT13.css` (коммиты `ff2dbb9c7`, `74dbcc6d8`).
   - Валидация: 0 ошибок линтеров, ликвидация многоэтажного частокола кнопок, полное соответствие трудовому учету РФ.
 
 ---
