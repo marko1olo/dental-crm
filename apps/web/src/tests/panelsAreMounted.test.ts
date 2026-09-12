@@ -340,7 +340,7 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		file: "components/dicom/CbctMprWorkspace.tsx",
 		name: "CbctMprWorkspace",
 		reason:
-			"Изолированное рабочее пространство 3D КЛКТ MPR-реконструкции томографических срезов и позиционирования осей дентальных имплантатов. Подключено через прямое модальное окно CbctMpr3DStudioModal.",
+			"Ультра-тонкий прозрачный фасад-делегат в канонический 3D DICOM просмотрщик Cornerstone3DViewer по Закону Единого Неделимого Авторитета (Мандат 8s).",
 	},
 	{
 		file: "components/lab/GuestLabPortalView.tsx",
@@ -1185,7 +1185,8 @@ function registeredAppViews(): string[] {
 	if (!declaration) {
 		const utilsSource = readSource("utils/routeUtils.ts");
 		declaration =
-			/export const appViews = \[([^\]]*)\] as const;/.exec(utilsSource)?.[1] ?? "";
+			/export const appViews = \[([^\]]*)\] as const;/.exec(utilsSource)?.[1] ??
+			"";
 	}
 	assert.ok(
 		declaration,
@@ -1572,7 +1573,9 @@ test("второго планировщика смет и его очереди 
 	 * и заберёт единственную санкционированную арифметику сметы вместе с ним.
 	 */
 	assert.equal(
-		existsSync(path.join(webSrcRoot, "components/treatment-plans/planPricing.ts")),
+		existsSync(
+			path.join(webSrcRoot, "components/treatment-plans/planPricing.ts"),
+		),
 		true,
 		"components/treatment-plans/planPricing.ts удалён. Это расчёт сметы, который читает " +
 			"components/odontogram/treatmentEstimatorPricing.ts у живого экрана, и он закреплён " +

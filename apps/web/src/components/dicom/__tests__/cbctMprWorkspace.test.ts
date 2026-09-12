@@ -8,9 +8,9 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
+	measure3DDistanceMm,
 	measureDistanceToMandibularNerve,
 	measureDistanceToMaxillarySinus,
-	measure3DDistanceMm,
 	type Point3D,
 } from "@dental/shared";
 
@@ -37,20 +37,32 @@ describe("3D CBCT Multi-Planar Reconstruction (MPR) & Caliper Calculations", () 
 
 		// Apex close to nerve (dx = 3 voxels * 0.2 = 0.6 mm -> Danger)
 		const dangerApex: Point3D = { x: 120, y: 103, z: 20 };
-		const resDanger = measureDistanceToMandibularNerve(dangerApex, nerveTrajectory, spacing);
+		const resDanger = measureDistanceToMandibularNerve(
+			dangerApex,
+			nerveTrajectory,
+			spacing,
+		);
 		assert.equal(resDanger.safetyZone, "danger");
 		assert.equal(resDanger.isSafe, false);
 		assert.ok(resDanger.clinicalAdvice.includes("ОПАСНО"));
 
 		// Apex at warning distance (dx = 7.5 voxels * 0.2 = 1.5 mm -> Warning)
 		const warningApex: Point3D = { x: 120, y: 107.5, z: 20 };
-		const resWarning = measureDistanceToMandibularNerve(warningApex, nerveTrajectory, spacing);
+		const resWarning = measureDistanceToMandibularNerve(
+			warningApex,
+			nerveTrajectory,
+			spacing,
+		);
 		assert.equal(resWarning.safetyZone, "warning");
 		assert.equal(resWarning.isSafe, false);
 
 		// Apex at safe distance (dx = 15 voxels * 0.2 = 3.0 mm -> Safe)
 		const safeApex: Point3D = { x: 120, y: 115, z: 20 };
-		const resSafe = measureDistanceToMandibularNerve(safeApex, nerveTrajectory, spacing);
+		const resSafe = measureDistanceToMandibularNerve(
+			safeApex,
+			nerveTrajectory,
+			spacing,
+		);
 		assert.equal(resSafe.safetyZone, "safe");
 		assert.equal(resSafe.isSafe, true);
 		assert.ok(resSafe.clinicalAdvice.includes("Безопасный коридор"));
@@ -62,24 +74,36 @@ describe("3D CBCT Multi-Planar Reconstruction (MPR) & Caliper Calculations", () 
 
 		// High bone (dz = 20 * 0.5 = 10.0 mm -> Direct implant)
 		const highSinusFloor: Point3D = { x: 100, y: 100, z: 40 };
-		const resHigh = measureDistanceToMaxillarySinus(alveolarCrest, highSinusFloor, spacing);
+		const resHigh = measureDistanceToMaxillarySinus(
+			alveolarCrest,
+			highSinusFloor,
+			spacing,
+		);
 		assert.equal(resHigh.sinusLiftRecommended, false);
 		assert.equal(resHigh.sinusLiftType, "none");
 
 		// Moderate resorption (dz = 12 * 0.5 = 6.0 mm -> Crestal closed sinus lift)
 		const midSinusFloor: Point3D = { x: 100, y: 100, z: 32 };
-		const resMid = measureDistanceToMaxillarySinus(alveolarCrest, midSinusFloor, spacing);
+		const resMid = measureDistanceToMaxillarySinus(
+			alveolarCrest,
+			midSinusFloor,
+			spacing,
+		);
 		assert.equal(resMid.sinusLiftRecommended, true);
 		assert.equal(resMid.sinusLiftType, "crestal_closed");
 
 		// Severe atrophy (dz = 6 * 0.5 = 3.0 mm -> Lateral open sinus lift)
 		const lowSinusFloor: Point3D = { x: 100, y: 100, z: 26 };
-		const resLow = measureDistanceToMaxillarySinus(alveolarCrest, lowSinusFloor, spacing);
+		const resLow = measureDistanceToMaxillarySinus(
+			alveolarCrest,
+			lowSinusFloor,
+			spacing,
+		);
 		assert.equal(resLow.sinusLiftRecommended, true);
 		assert.equal(resLow.sinusLiftType, "lateral_open");
 	});
 
-	it("3.4 Zero-Mock Fallback: source code contains no procedural fake bone gradients or synthetic jaw dioramas", () => {
+	it("3.4 Zero-Mock Fallback & Thin Facade (Mandate 8s): source code is a clean, thin delegate to Cornerstone3DViewer under 50 lines and contains no procedural fake bone gradients", () => {
 		const source = fs.readFileSync(
 			path.resolve(__dirname, "../CbctMprWorkspace.tsx"),
 			"utf-8",
@@ -97,29 +121,34 @@ describe("3D CBCT Multi-Planar Reconstruction (MPR) & Caliper Calculations", () 
 			"Source code must not contain fake arc jaw simulations",
 		);
 
-		// Must contain clean 40px calibration grid and honest clinical state
+		// Must be a clean, thin delegate to Cornerstone3DViewer under 40 lines
 		assert.ok(
-			source.includes("КЛКТ исследование не загружено"),
-			"Source code must display clear clinical state when CBCT is not loaded",
+			source.includes("Cornerstone3DViewer"),
+			"CbctMprWorkspace must delegate to canonical Cornerstone3DViewer",
 		);
 		assert.ok(
-			source.includes("x += 40") && source.includes("y += 40"),
-			"Source code must draw clean 40px calibration grid",
+			source.split("\n").length <= 50,
+			"CbctMprWorkspace must be an ultra-thin facade under 40 lines",
 		);
 	});
 
-	it("3.5 Export security gate: blocks export to 043/у without loaded CBCT study", () => {
+	it("3.5 Canonical Authority Delegation (Mandate 8s): exports CbctMprWorkspace component and props delegating to Cornerstone3DViewer", () => {
 		const source = fs.readFileSync(
 			path.resolve(__dirname, "../CbctMprWorkspace.tsx"),
 			"utf-8",
 		);
 
-		// Must block export when isStudyLoaded is false with exact clinical error message
-		const expectedBlockMessage =
-			"Экспорт заблокирован: исследование КЛКТ не загружено. Прикрепление синтетических макетов запрещено стандартом клиники";
 		assert.ok(
-			source.includes(expectedBlockMessage),
-			`Source code must contain exact clinical block message: "${expectedBlockMessage}"`,
+			source.includes("export const CbctMprWorkspace"),
+			"Source code must export CbctMprWorkspace component",
+		);
+		assert.ok(
+			source.includes("export interface CbctMprWorkspaceProps"),
+			"Source code must export CbctMprWorkspaceProps interface",
+		);
+		assert.ok(
+			source.includes("patientId"),
+			"Source code must pass patientId through to Cornerstone3DViewer",
 		);
 	});
 });

@@ -26,18 +26,18 @@ import {
 	exportSnapshotToClinicalRecord,
 } from "../visiograph/VisiographExportService";
 import {
-	type VisiographPresetId,
-	type VisiographWindowPreset,
+	huToGrayscale,
 	VISIOGRAPH_PRESETS_LIST,
 	VISIOGRAPH_WINDOW_PRESETS,
-	huToGrayscale,
+	type VisiographPresetId,
+	type VisiographWindowPreset,
 } from "../visiograph/VisiographWindowPresets";
 import {
 	type ArchCurvePoint,
 	type CrossSectionSlicePlane,
-	type ExtendedMischClass,
 	classifyMischBoneDensity,
 	createAnatomicalJawControlPoints,
+	type ExtendedMischClass,
 	generateCatmullRomArch,
 	generateCrossSectionSlicePlanes,
 	synchronizeMprCoordinates,
@@ -189,9 +189,101 @@ export function PanoramicRendererWindow({
 		}
 	}, [currentPreset]);
 
+	// Repaint 240x240 cross-sectional slice canvas with metric scale & guidelines
+	const repaintCrossSection = useCallback(() => {
+		const csCanvas = crossSectionCanvasRef.current;
+		if (!csCanvas) return;
+		const ctx = csCanvas.getContext("2d");
+		if (!ctx) return;
+
+		const width = 240;
+		const height = 240;
+		csCanvas.width = width;
+		csCanvas.height = height;
+
+		const raw = rawPixelsRef.current;
+		if (!raw || !activeSlice) {
+			ctx.fillStyle = "#09090b";
+			ctx.fillRect(0, 0, width, height);
+
+			ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+			ctx.lineWidth = 1;
+			for (let x = 0; x <= width; x += 40) {
+				ctx.beginPath();
+				ctx.moveTo(x, 0);
+				ctx.lineTo(x, height);
+				ctx.stroke();
+			}
+			for (let y = 0; y <= height; y += 40) {
+				ctx.beginPath();
+				ctx.moveTo(0, y);
+				ctx.lineTo(width, y);
+				ctx.stroke();
+			}
+
+			ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+			ctx.font = "11px sans-serif";
+			ctx.textAlign = "center";
+			ctx.fillText("Ожидание КЛКТ...", width / 2, height / 2);
+			return;
+		}
+
+		const totalArcLen =
+			crossSections[crossSections.length - 1]?.arcLengthMm || 1;
+		const centerCol = Math.min(
+			raw.width - 1,
+			Math.max(
+				0,
+				Math.round((activeSlice.arcLengthMm / totalArcLen) * (raw.width - 1)),
+			),
+		);
+
+		const halfSliceCols = Math.max(
+			8,
+			Math.round((sliceThicknessMm / 2) * (raw.width / totalArcLen)),
+		);
+		const csPixels = new Float32Array(width * height);
+
+		for (let y = 0; y < height; y++) {
+			const panY = Math.min(
+				raw.height - 1,
+				Math.max(0, Math.floor((y / height) * raw.height)),
+			);
+			for (let x = 0; x < width; x++) {
+				const offsetFrac = (x / width - 0.5) * 2;
+				const panX = Math.min(
+					raw.width - 1,
+					Math.max(0, Math.round(centerCol + offsetFrac * halfSliceCols)),
+				);
+				csPixels[y * width + x] = raw.pixels[panY * raw.width + panX] ?? -1024;
+			}
+		}
+
+		paintHuPixelsToCanvas(csCanvas, width, height, csPixels, currentPreset);
+
+		ctx.save();
+		ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+		ctx.setLineDash([3, 3]);
+		ctx.beginPath();
+		ctx.moveTo(width / 2, 0);
+		ctx.lineTo(width / 2, height);
+		ctx.moveTo(0, height / 2);
+		ctx.lineTo(width, height / 2);
+		ctx.stroke();
+
+		ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+		ctx.font = "bold 11px monospace";
+		ctx.textAlign = "left";
+		ctx.fillText(`${activeSlice.widthMm}x${activeSlice.heightMm} мм`, 8, 16);
+		ctx.textAlign = "right";
+		ctx.fillText(`Слой ${sliceThicknessMm.toFixed(1)} мм`, width - 8, 16);
+		ctx.restore();
+	}, [activeSlice, crossSections, currentPreset, sliceThicknessMm]);
+
 	useEffect(() => {
 		repaint();
-	}, [repaint]);
+		repaintCrossSection();
+	}, [repaint, repaintCrossSection]);
 
 	// Worker unwrap execution
 	useEffect(() => {
@@ -203,9 +295,12 @@ export function PanoramicRendererWindow({
 		setLoading(true);
 		setError(null);
 
-		const worker = new Worker(new URL("../../workers/mprWorker.ts", import.meta.url), {
-			type: "module",
-		});
+		const worker = new Worker(
+			new URL("../../workers/mprWorker.ts", import.meta.url),
+			{
+				type: "module",
+			},
+		);
 		workerRef.current = worker;
 
 		const depthWorld = volume.dimensions[2] * volume.spacing[2];
@@ -236,6 +331,7 @@ export function PanoramicRendererWindow({
 					currentPreset,
 				);
 			}
+			repaintCrossSection();
 			setLoading(false);
 		};
 
@@ -273,6 +369,7 @@ export function PanoramicRendererWindow({
 		zEndWorld,
 		zStepWorld,
 		currentPreset,
+		repaintCrossSection,
 	]);
 
 	// Cleanup worker and raw Float32Array pixel buffers on unmount
@@ -285,11 +382,23 @@ export function PanoramicRendererWindow({
 			rawPixelsRef.current = null;
 			if (canvasRef.current) {
 				const ctx = canvasRef.current.getContext("2d");
-				if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+				if (ctx)
+					ctx.clearRect(
+						0,
+						0,
+						canvasRef.current.width,
+						canvasRef.current.height,
+					);
 			}
 			if (crossSectionCanvasRef.current) {
 				const ctx = crossSectionCanvasRef.current.getContext("2d");
-				if (ctx) ctx.clearRect(0, 0, crossSectionCanvasRef.current.width, crossSectionCanvasRef.current.height);
+				if (ctx)
+					ctx.clearRect(
+						0,
+						0,
+						crossSectionCanvasRef.current.width,
+						crossSectionCanvasRef.current.height,
+					);
 			}
 		};
 	}, []);
@@ -394,7 +503,10 @@ export function PanoramicRendererWindow({
 	const screenW = isClient ? window.innerWidth : 900;
 	const screenH = isClient ? window.innerHeight : 650;
 	const initialWidth = Math.min(960, Math.max(340, screenW - 32));
-	const initialHeight = Math.min(520, Math.max(300, Math.round(screenH * 0.65)));
+	const initialHeight = Math.min(
+		520,
+		Math.max(300, Math.round(screenH * 0.65)),
+	);
 	const minW = Math.min(420, Math.max(280, screenW - 16));
 
 	return (
@@ -496,7 +608,9 @@ export function PanoramicRendererWindow({
 				{/* Cross-Section Stepper (Step 1.0 - 2.0 mm) */}
 				{crossSections.length > 0 && (
 					<div className="flex items-center gap-2 mpr-slice-stepper">
-						<span className="text-neutral-400 font-bold text-xs">Кросс-срез:</span>
+						<span className="text-neutral-400 font-bold text-xs">
+							Кросс-срез:
+						</span>
 						<button
 							type="button"
 							onClick={() =>
@@ -549,7 +663,7 @@ export function PanoramicRendererWindow({
 			</div>
 
 			{/* MAIN VIEWPORT BODY */}
-			<div className="flex-1 relative bg-black flex items-center justify-center p-2 min-h-0 overflow-hidden">
+			<div className="flex-1 relative bg-black flex flex-row items-center justify-center p-2 min-h-0 overflow-hidden">
 				{loading && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-20">
 						<div className="w-10 h-10 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin"></div>
@@ -566,13 +680,35 @@ export function PanoramicRendererWindow({
 				)}
 
 				{/* PANORAMIC REFORMAT CANVAS */}
-				<canvas
-					ref={canvasRef}
-					width={800}
-					height={300}
-					onMouseMove={handleCanvasMouseMove}
-					className="w-full h-full object-contain cursor-crosshair"
-				/>
+				<div className="flex-1 h-full relative flex items-center justify-center min-w-0">
+					<canvas
+						ref={canvasRef}
+						width={800}
+						height={300}
+						onMouseMove={handleCanvasMouseMove}
+						className="w-full h-full object-contain cursor-crosshair"
+					/>
+				</div>
+
+				{/* CROSS-SECTION SLICE VIEWPORT (240x240px) */}
+				<div className="w-[240px] h-[240px] shrink-0 ml-2 relative rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden flex flex-col shadow-lg z-10">
+					<div className="bg-neutral-900/90 px-2.5 py-1 border-b border-neutral-800 flex items-center justify-between">
+						<span className="text-xs font-bold text-blue-400 flex items-center gap-1">
+							<span>Кросс-срез #{activeCrossSectionIdx + 1}</span>
+						</span>
+						<span className="text-[11px] font-mono font-bold text-neutral-300">
+							{activeSlice?.arcLengthMm.toFixed(1)} мм
+						</span>
+					</div>
+					<div className="flex-1 relative flex items-center justify-center bg-black">
+						<canvas
+							ref={crossSectionCanvasRef}
+							width={240}
+							height={240}
+							className="w-full h-full object-contain"
+						/>
+					</div>
+				</div>
 
 				{/* REAL-TIME MISCH BONE QUALITY DENSITY METER (HUD) */}
 				{boneRecommendation && (
