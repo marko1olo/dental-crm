@@ -135,12 +135,9 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	/*
 	 * PatientSearchModal СМОНТИРОВАН в ScheduleView.tsx и доступен в расписании.
 	 */
-	{
-		file: "components/schedule/TomorrowRemindersModal.tsx",
-		name: "TomorrowRemindersModal",
-		reason:
-			"Интерактивное модальное окно пакетной рассылки напоминаний о завтрашних приемах через WhatsApp и SMS с автоподстановкой клинических инструкций, предупреждений об аллергиях, поиском пациентов и 1-click копированием буфера для регистратора.",
-	},
+	/*
+	 * TomorrowRemindersModal СМОНТИРОВАН в ScheduleView.tsx и доступен в расписании по кнопке «Напомнить на завтра».
+	 */
 	{
 		file: "components/common/FoolproofConfirmDialog.tsx",
 		name: "FoolproofConfirmDialog",

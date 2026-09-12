@@ -58,6 +58,7 @@ import {
 	shiftDayKey,
 } from "./components/schedule/scheduleDayGrouping";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
+import { TomorrowRemindersModal } from "./components/schedule/TomorrowRemindersModal";
 import {
 	DoctorShiftRosterModal,
 	type DoctorShift,
@@ -429,6 +430,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
 	const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
 	const [isCalendarSyncModalOpen, setIsCalendarSyncModalOpen] = useState(false);
+	const [isTomorrowRemindersOpen, setIsTomorrowRemindersOpen] = useState(false);
 	const [isSmartAiOpen, setIsSmartAiOpen] = useState(false);
 
 	/**
@@ -1961,6 +1963,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
 				showClipboardPanel={showClipboardPanel}
 				onOpenCalendarSync={() => setIsCalendarSyncModalOpen(true)}
+				onOpenTomorrowReminders={() => setIsTomorrowRemindersOpen(true)}
 				onOpenAddChair={() => setIsQuickAddChairOpen(true)}
 				onAddChair={handleAddChairFromSchedule}
 				onQuickBooking={() => {
@@ -2545,6 +2548,14 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				}}
 				showToastFn={showToast}
 			/>
+			{dashboard && (
+				<TomorrowRemindersModal
+					dashboard={dashboard}
+					isOpen={isTomorrowRemindersOpen}
+					onClose={() => setIsTomorrowRemindersOpen(false)}
+					targetDateIso={scheduleDateFilter || undefined}
+				/>
+			)}
 		</div>
 	);
 }
