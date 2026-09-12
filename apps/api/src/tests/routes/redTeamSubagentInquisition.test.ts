@@ -14,7 +14,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { registerAnesthesiaRoutes } from "../../routes/anesthesia.js";
-import { registerLabOrderRoutes } from "../../routes/labOrders.js";
+import { registerLabOrderRoutes } from "../../routes/lab.js";
 import { registerPrescriptionRoutes } from "../../routes/prescriptions.js";
 import { createDemonstrationGostCmsSignature } from "@dental/shared";
 import { authTokenSecret } from "../../security/authSecret.js";

@@ -599,3 +599,112 @@ export function formatStaffTasksDailyLogA4(
 
 	return lines.join("\n");
 }
+
+// ============================================================================
+// 7. LEGACY / DENTALPIN ADAPTERS & STATUS TRANSITION HELPERS
+// ============================================================================
+
+export const staffRoleSchema = z.enum([
+	"doctor",
+	"administrator",
+	"assistant",
+	"nurse",
+	"coordinator",
+	"technician",
+	"management",
+]);
+export type StaffRole = z.infer<typeof staffRoleSchema>;
+
+export const taskPrioritySchema = z.enum(["urgent", "normal", "low"]);
+export type TaskPriority = z.infer<typeof taskPrioritySchema>;
+
+export const taskStatusSchema = z.enum([
+	"pending",
+	"in_progress",
+	"completed",
+	"cancelled",
+]);
+export type TaskStatus = z.infer<typeof taskStatusSchema>;
+
+export interface LegacyStaffTaskItem {
+	id?: string | undefined;
+	organizationId: string;
+	clinicId?: string | null | undefined;
+	title: string;
+	description?: string | null | undefined;
+	patientId?: string | null | undefined;
+	patientFullName?: string | null | undefined;
+	assignedStaffId?: string | null | undefined;
+	assignedStaffName?: string | null | undefined;
+	assignedRole?: StaffRole | null | undefined;
+	priority: TaskPriority;
+	status: TaskStatus;
+	dueDate?: string | null | undefined;
+	completedAt?: string | null | undefined;
+	createdByStaffId?: string | null | undefined;
+	createdAt?: string | undefined;
+	updatedAt?: string | undefined;
+}
+
+export interface StaffTaskFilters {
+	readonly role?: StaffRole | undefined;
+	readonly staffId?: string | undefined;
+	readonly status?: TaskStatus | undefined;
+	readonly priority?: TaskPriority | undefined;
+	readonly overdueOnly?: boolean | undefined;
+	readonly patientId?: string | undefined;
+}
+
+/**
+ * Validates allowed state transitions for clinic staff tasks (DentalPin compatibility).
+ */
+export function canTransitionStaffTaskStatus(
+	current: TaskStatus,
+	target: TaskStatus,
+): boolean {
+	if (current === target) return true;
+
+	const transitions: Record<TaskStatus, TaskStatus[]> = {
+		pending: ["in_progress", "completed", "cancelled"],
+		in_progress: ["completed", "cancelled", "pending"],
+		completed: ["pending"], // Re-opening
+		cancelled: ["pending"],
+	};
+
+	return transitions[current]?.includes(target) ?? false;
+}
+
+/**
+ * Determines whether a staff task is overdue relative to a reference date.
+ */
+export function isStaffTaskOverdue(
+	task: LegacyStaffTaskItem | StaffTaskItem,
+	now: Date = new Date(),
+): boolean {
+	if ("status" in task && (task.status === "completed" || task.status === "cancelled" || task.status === "done")) {
+		return false;
+	}
+	if (!task.dueDate) return false;
+
+	const todayIso = now.toISOString().slice(0, 10);
+	return task.dueDate < todayIso;
+}
+
+/**
+ * Filters and sorts staff tasks according to clinic operational criteria.
+ */
+export function filterStaffTasks(
+	tasks: readonly LegacyStaffTaskItem[],
+	filters: StaffTaskFilters = {},
+	now: Date = new Date(),
+): LegacyStaffTaskItem[] {
+	return tasks.filter((task) => {
+		if (filters.status && task.status !== filters.status) return false;
+		if (filters.priority && task.priority !== filters.priority) return false;
+		if (filters.role && task.assignedRole !== filters.role) return false;
+		if (filters.staffId && task.assignedStaffId !== filters.staffId) return false;
+		if (filters.patientId && task.patientId !== filters.patientId) return false;
+		if (filters.overdueOnly && !isStaffTaskOverdue(task, now)) return false;
+		return true;
+	});
+}

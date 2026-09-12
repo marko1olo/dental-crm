@@ -91,10 +91,10 @@
 			"import": "./dist/portal/index.js",
 			"default": "./dist/portal/index.js"
 		},
-		"./recall": {
-			"types": "./dist/recall/index.d.ts",
-			"import": "./dist/recall/index.js",
-			"default": "./dist/recall/index.js"
+		"./recalls": {
+			"types": "./dist/recalls/index.d.ts",
+			"import": "./dist/recalls/index.js",
+			"default": "./dist/recalls/index.js"
 		},
 		"./treatment-plans": {
 			"types": "./dist/treatment-plans/index.d.ts",

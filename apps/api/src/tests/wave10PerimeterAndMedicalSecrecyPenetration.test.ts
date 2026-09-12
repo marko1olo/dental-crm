@@ -32,7 +32,7 @@ import { registerClinicalRoutes } from "../routes/clinical.js";
 import { registerDicomwebRoutes } from "../routes/dicomweb.js";
 import { registerDocumentRoutes } from "../routes/documents.js";
 import { registerFilesRoutes } from "../routes/files.js";
-import { registerLabOrderRoutes } from "../routes/labOrders.js";
+import { registerLabOrderRoutes } from "../routes/lab.js";
 import { registerPrescriptionRoutes } from "../routes/prescriptions.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { registerMedicalSecrecyPayloadStripping } from "../security/medicalSecrecyWarden.js";

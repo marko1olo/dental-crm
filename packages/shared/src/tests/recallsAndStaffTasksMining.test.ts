@@ -11,8 +11,8 @@ import {
 	canTransitionStaffTaskStatus,
 	filterStaffTasks,
 	isStaffTaskOverdue,
-	type StaffTaskItem,
-} from "../tasks/staffTasksEngine.js";
+	type LegacyStaffTaskItem as StaffTaskItem,
+} from "../staff/staffTasksEngine.js";
 
 describe("Dentalpin Mining: Recalls & Preventive Checkup Engine", () => {
 	test("calculates next recall date for various clinical cadences", () => {

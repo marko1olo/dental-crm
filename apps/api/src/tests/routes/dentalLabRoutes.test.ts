@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	calculateBusinessDaysDueDate,
 	CANONICAL_DENTAL_LAB_PRESETS,
-} from "../../routes/dentalLab.js";
+} from "../../routes/lab.js";
 
 describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 	it("contains standard 1-click preset for ZrO2 crown (5 business days, A2, anatomical shape)", () => {
