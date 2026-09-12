@@ -17,6 +17,7 @@ import {
 	RotateCcw,
 	ShieldCheck,
 } from "lucide-react";
+import type { PublicAuthMethod } from "@dental/shared";
 import "./patientBudgetSign.css";
 
 export interface BudgetItem {
@@ -43,7 +44,7 @@ export interface BudgetPortalData {
 	currency: string;
 	items: BudgetItem[];
 	requiresVerification: boolean;
-	authMethod: "phone_last4" | "dob" | "manual_code" | "none";
+	authMethod: PublicAuthMethod;
 	isVerified: boolean;
 	viewedAt?: string | null;
 	signedAt?: string | null;

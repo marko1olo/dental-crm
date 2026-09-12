@@ -17,17 +17,12 @@ import {
 	Clock,
 	Download,
 	FileCheck,
-	FileText,
-	HelpCircle,
 	Lock,
 	PenTool,
 	Phone,
-	QrCode,
-	Shield,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
-	User,
 	X,
 	XCircle,
 } from "lucide-react";
@@ -38,6 +33,14 @@ import type {
 	PublicEstimateMeta,
 	PublicRejectionReason,
 } from "@dental/shared";
+
+export type {
+	PublicAuthMethod,
+	PublicEstimateDetail,
+	PublicEstimateItem,
+	PublicEstimateMeta,
+	PublicRejectionReason,
+};
 
 export type PublicEstimateDetailWithPatient = PublicEstimateDetail & {
 	readonly patientName?: string | null | undefined;
