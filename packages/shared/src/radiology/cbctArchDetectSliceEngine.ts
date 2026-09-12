@@ -25,42 +25,25 @@ import { z } from "zod";
 
 // ── 1. Geometric Primitive Types & Schemas ─────────────────────────────────
 
-export const point2Schema = z.tuple([z.number(), z.number()]);
-export type Point2 = z.infer<typeof point2Schema>;
-
 export const vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
 export type Vec3 = z.infer<typeof vec3Schema>;
 
-/** Minimal volume descriptor required for volumetric sampling */
-export interface VolumeSamplingData {
-	readonly dims: [number, number, number];
-	readonly origin: [number, number, number];
-	readonly getVoxel: (i: number, j: number, k: number) => number;
-	readonly invSx: number;
-	readonly invSy: number;
-	readonly invSz: number;
-	readonly zMin: number;
-	readonly zMax: number;
-	readonly vSpacing: number;
-}
+// Re-exported from archDetectEngine (Single Source of Truth, Wave 124/136 SSOT)
+export {
+	point2Schema,
+	type Point2,
+	type VolumeSamplingData,
+	archDetectOptionsSchema,
+	type ArchDetectInputOptions,
+	type ArchDetectOptions,
+	type ArchDetectResolvedOptions,
+	smoothPolyline,
+	detectArchControlPoints,
+	autoDetectDentalArch,
+} from "./archDetectEngine.js";
 
-// ── 2. Arch Detection Options & Schemas ────────────────────────────────────
-
-export const archDetectOptionsSchema = z.object({
-	/** World Z of the axial slab centre in mm (LPS). Default: volume mid-Z */
-	focalWorldZ: z.number().optional(),
-	/** Half-thickness of the projected axial slab in mm. Default: 6 mm */
-	slabHalfMm: z.number().positive().optional().default(6),
-	/** Bone density threshold in HU/GV. Default: 400 HU (cortical bone/teeth) */
-	boneThreshold: z.number().optional().default(400),
-	/** Number of Catmull-Rom control points to emit. Default: 9 */
-	numControlPoints: z.number().int().min(3).max(64).optional().default(9),
-	/** Angular half-span of the swept arc from anterior in degrees. Default: 115 */
-	angularSpanDeg: z.number().min(10).max(180).optional().default(115),
-});
-export type ArchDetectInputOptions = z.input<typeof archDetectOptionsSchema>;
-export type ArchDetectOptions = z.input<typeof archDetectOptionsSchema>;
-export type ArchDetectResolvedOptions = z.output<typeof archDetectOptionsSchema>;
+// Re-exported from cprPanoramicEngine (Single Source of Truth)
+export { resampleByArcLength } from "./cprPanoramicEngine.js";
 
 // ── 3. Crop Box Schemas & Analytical Clipping Planes ───────────────────────
 
@@ -342,175 +325,7 @@ export function slicePlaneBVH(
 	return segs;
 }
 
-// ── 5. Smoothing & Arc-Length Resampling Helpers ───────────────────────────
-
-/**
- * Symmetric moving-average smoothing of a 2D polyline.
- * Radius is expressed in integer number of adjacent samples.
- */
-export function smoothPolyline(pts: Point2[], radius = 2): Point2[] {
-	const n = pts.length;
-	if (radius < 1 || n < 3) return [...pts];
-
-	const out: Point2[] = [];
-	for (let i = 0; i < n; i++) {
-		let sx = 0, sy = 0, c = 0;
-		for (let k = -radius; k <= radius; k++) {
-			const idx = i + k;
-			if (idx >= 0 && idx < n) {
-				const pt = pts[idx];
-				if (pt) {
-					sx += pt[0];
-					sy += pt[1];
-					c++;
-				}
-			}
-		}
-		out.push([sx / c, sy / c]);
-	}
-	return out;
-}
-
-/**
- * Resamples a polyline so that vertices are uniformly spaced by cumulative arc length.
- * Eliminates spatial clustering and geometric distortion along the dental arch curve.
- */
-export function resampleByArcLength(curve: Point2[], numSamples: number): Point2[] {
-	if (curve.length < 2 || numSamples < 2) return [...curve];
-
-	const firstPt = curve[0] ?? [0, 0];
-	const cumLen: number[] = [0];
-	for (let i = 1; i < curve.length; i++) {
-		const pCurr = curve[i] ?? firstPt;
-		const pPrev = curve[i - 1] ?? firstPt;
-		const lastLen = cumLen[i - 1] ?? 0;
-		cumLen.push(lastLen + Math.hypot(pCurr[0] - pPrev[0], pCurr[1] - pPrev[1]));
-	}
-	const total = cumLen[cumLen.length - 1] ?? 0;
-	if (total === 0) return [firstPt];
-
-	const result: Point2[] = [];
-	let seg = 0;
-
-	for (let s = 0; s < numSamples; s++) {
-		const target = (s / (numSamples - 1)) * total;
-		while (seg < curve.length - 2 && (cumLen[seg + 1] ?? 0) < target) {
-			seg++;
-		}
-		const segStart = cumLen[seg] ?? 0;
-		const segNext = cumLen[seg + 1] ?? segStart;
-		const segLen = segNext - segStart;
-		const t = segLen > 0 ? (target - segStart) / segLen : 0;
-		const ptA = curve[seg] ?? firstPt;
-		const ptB = curve[seg + 1] ?? ptA;
-		result.push([ptA[0] + t * (ptB[0] - ptA[0]), ptA[1] + t * (ptB[1] - ptA[1])]);
-	}
-
-	return result;
-}
-
-// ── 6. Automatic Dental Arch Detection Algorithm ───────────────────────────
-
-/**
- * Automatically estimates the Catmull-Rom dental arch control points from a CBCT volume.
- *
- * Method:
- * 1. Max-intensity projection (MIP) of an axial slab around focalWorldZ (+/- slabHalfMm)
- * 2. Weighted centroid of cortical bone voxels (> boneThreshold)
- * 3. Radial ray tracing across the anterior arc [-angularSpanDeg..+angularSpanDeg]
- *    to find the peak bone/teeth radius
- * 4. Moving-average smoothing and uniform arc-length resampling to numControlPoints
- *
- * Returns world coordinates (LPS mm) ordered: Patient Right (-X) -> Anterior (-Y) -> Patient Left (+X).
- * Returns null if the volume/slab has insufficient bone density or degenerate dimensions.
- */
-export function detectArchControlPoints(
-	vol: VolumeSamplingData,
-	opts?: ArchDetectOptions,
-): Point2[] | null {
-	const parsed = archDetectOptionsSchema.parse(opts ?? {});
-	const { slabHalfMm, boneThreshold, numControlPoints, angularSpanDeg } = parsed;
-
-	const [nx, ny, nz] = vol.dims;
-	const [ox, oy, oz] = vol.origin;
-	const sx = 1 / vol.invSx, sy = 1 / vol.invSy, sz = 1 / vol.invSz;
-
-	if (nx < 4 || ny < 4 || nz < 1) return null;
-
-	const focalZ = parsed.focalWorldZ ?? (vol.zMin + vol.zMax) / 2;
-	const kCenter = Math.round((focalZ - oz) / sz);
-	const kHalf = Math.max(0, Math.round(slabHalfMm / Math.abs(sz)));
-	const kLo = Math.max(0, kCenter - kHalf);
-	const kHi = Math.min(nz - 1, kCenter + kHalf);
-	if (kLo > kHi) return null;
-
-	// 1. Max-intensity projection over the slab -> M(i, j)
-	const M = new Float32Array(nx * ny);
-	for (let k = kLo; k <= kHi; k++) {
-		for (let j = 0; j < ny; j++) {
-			const row = j * nx;
-			for (let i = 0; i < nx; i++) {
-				const v = vol.getVoxel(i, j, k);
-				if (v > (M[row + i] ?? 0)) M[row + i] = v;
-			}
-		}
-	}
-
-	// 2. Bone centroid (index space, weighted over the mask)
-	let sumI = 0, sumJ = 0, count = 0;
-	for (let j = 0; j < ny; j++) {
-		const row = j * nx;
-		for (let i = 0; i < nx; i++) {
-			if ((M[row + i] ?? 0) > boneThreshold) {
-				sumI += i; sumJ += j; count++;
-			}
-		}
-	}
-
-	if (count < Math.max(50, nx * ny * 0.002)) return null;
-
-	const ci = sumI / count, cj = sumJ / count;
-	const cxw = ox + ci * sx, cyw = oy + cj * sy;
-
-	const sampleM = (fi: number, fj: number): number => {
-		if (fi < 0 || fj < 0 || fi > nx - 1 || fj > ny - 1) return 0;
-		const i0 = Math.floor(fi), j0 = Math.floor(fj);
-		const i1 = Math.min(nx - 1, i0 + 1), j1 = Math.min(ny - 1, j0 + 1);
-		const ti = fi - i0, tj = fj - j0;
-		const a = M[j0 * nx + i0] ?? 0, b = M[j0 * nx + i1] ?? 0;
-		const c = M[j1 * nx + i0] ?? 0, d = M[j1 * nx + i1] ?? 0;
-		return (a * (1 - ti) + b * ti) * (1 - tj) + (c * (1 - ti) + d * ti) * tj;
-	};
-
-	// 3. Radial ray tracing across the anterior arc
-	const spanRad = (angularSpanDeg * Math.PI) / 180;
-	const stepRad = (1.5 * Math.PI) / 180;
-	const rMin = 4; // mm
-	const rMax = 0.48 * Math.min(nx * sx, ny * sy); // mm
-	const rStep = Math.max(0.5, Math.min(sx, sy)); // mm
-	const band: Point2[] = [];
-
-	for (let phi = -spanRad; phi <= spanRad + 1e-6; phi += stepRad) {
-		const dx = Math.sin(phi), dy = -Math.cos(phi);
-		let bestR = -1, bestV = boneThreshold;
-
-		for (let r = rMin; r <= rMax; r += rStep) {
-			const wx = cxw + r * dx, wy = cyw + r * dy;
-			const v = sampleM((wx - ox) / sx, (wy - oy) / sy);
-			if (v > bestV) { bestV = v; bestR = r; }
-		}
-
-		if (bestR > 0) band.push([cxw + bestR * dx, cyw + bestR * dy]);
-	}
-
-	if (band.length < 5) return null;
-
-	const smoothed = smoothPolyline(band, 2);
-	const cps = resampleByArcLength(smoothed, numControlPoints);
-	return cps.length === numControlPoints ? cps : null;
-}
-
-// ── 7. Regulatory Russian Form 043/u A4 Clinical Protocol ─────────────────
+// ── 5. Regulatory Russian Form 043/u A4 Clinical Protocol ─────────────────
 
 export const archDetectAndSlicingReportParamsSchema = z.object({
 	patientFullName: z.string().min(1),

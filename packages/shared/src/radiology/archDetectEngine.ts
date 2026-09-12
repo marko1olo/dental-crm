@@ -17,26 +17,41 @@
  *    control points ordered patient-right -> anterior -> patient-left in LPS mm.
  * 6. Safe fallbacks returning null if bone density or geometry is insufficient or degenerate.
  *
- * Adapted from DenCT / Dental-CBCT-Viewer core/archDetect.ts (Wave 124).
+ * Single Source of Truth (SSOT) for arch detection (Wave 124 & Wave 136 consolidation).
  * Pure TypeScript, zero DOM/Cornerstone dependencies, 100% unit-testable.
  */
 
+import { z } from "zod";
 import type { Point2, VolumeSamplingData } from "./cprMath.js";
-import { resampleByArcLength } from "./cprPanoramicEngine.js";
+import {
+	AIR_HU,
+	generateDefaultArchCurve,
+	resampleByArcLength,
+} from "./cprPanoramicEngine.js";
 
-/** Configuration options for automatic dental arch detection */
-export interface ArchDetectOptions {
-	/** World Z of the slab centre (e.g. the axial focal point in mm). Default: mid-Z. */
-	focalWorldZ?: number;
-	/** Half-thickness of the projected slab in mm. Default: 6. */
-	slabHalfMm?: number;
-	/** Bone threshold in stored HU/GV. Default: 400 (alveolar cortical bone / teeth). */
-	boneThreshold?: number;
-	/** Number of Catmull-Rom control points to emit. Default: 9. */
-	numControlPoints?: number;
-	/** Angular half-span of the swept arc from anterior, in degrees. Default: 115. */
-	angularSpanDeg?: number;
-}
+// ── 1. Geometric Primitive Types & Schemas ─────────────────────────────────
+
+export const point2Schema = z.tuple([z.number(), z.number()]);
+export type { Point2, VolumeSamplingData };
+
+// ── 2. Arch Detection Options & Schemas ────────────────────────────────────
+
+export const archDetectOptionsSchema = z.object({
+	/** World Z of the slab centre in mm (LPS). Default: volume mid-Z */
+	focalWorldZ: z.number().optional(),
+	/** Half-thickness of the projected axial slab in mm. Default: 6 mm */
+	slabHalfMm: z.number().positive().optional().default(6),
+	/** Bone density threshold in HU/GV. Default: 400 HU (cortical bone/teeth) */
+	boneThreshold: z.number().optional().default(400),
+	/** Number of Catmull-Rom control points to emit. Default: 9 */
+	numControlPoints: z.number().int().min(3).max(64).optional().default(9),
+	/** Angular half-span of the swept arc from anterior in degrees. Default: 115 */
+	angularSpanDeg: z.number().min(10).max(180).optional().default(115),
+});
+
+export type ArchDetectInputOptions = z.input<typeof archDetectOptionsSchema>;
+export type ArchDetectOptions = z.input<typeof archDetectOptionsSchema>;
+export type ArchDetectResolvedOptions = z.output<typeof archDetectOptionsSchema>;
 
 /**
  * Symmetric moving-average smoothing of a 2D polyline (radius in samples).
@@ -80,12 +95,14 @@ export function detectArchControlPoints(
 	vol: VolumeSamplingData,
 	opts: ArchDetectOptions = {},
 ): Point2[] | null {
+	const parsed = archDetectOptionsSchema.safeParse(opts ?? {});
+	if (!parsed.success) return null;
 	const {
-		slabHalfMm = 6,
-		boneThreshold = 400,
-		numControlPoints = 9,
-		angularSpanDeg = 115,
-	} = opts;
+		slabHalfMm,
+		boneThreshold,
+		numControlPoints,
+		angularSpanDeg,
+	} = parsed.data;
 
 	const [nx, ny, nz] = vol.dims;
 	const [ox, oy, oz] = vol.origin;
@@ -96,7 +113,7 @@ export function detectArchControlPoints(
 	if (nx < 4 || ny < 4 || nz < 1) return null;
 
 	// Slab index range around the focal Z
-	const focalZ = opts.focalWorldZ ?? (vol.zMin + vol.zMax) / 2;
+	const focalZ = parsed.data.focalWorldZ ?? (vol.zMin + vol.zMax) / 2;
 	const kCenter = Math.round((focalZ - oz) / sz);
 	const kHalf = Math.max(0, Math.round(slabHalfMm / Math.abs(sz)));
 	const kLo = Math.max(0, kCenter - kHalf);
@@ -204,4 +221,62 @@ export function detectArchControlPoints(
 	const cps = resampleByArcLength(smoothed, numControlPoints);
 
 	return cps.length === numControlPoints ? cps : null;
+}
+
+/**
+ * Convenience entry point for automatic dental arch detection from raw volume data array.
+ * Samples an axial slab around mid-Z using Maximum Intensity Projection (MIP), computes
+ * the weighted bone centroid, and performs a radial sweep across the anterior dental arc.
+ *
+ * Fallback: If bone density is insufficient or geometry is degenerate, returns the
+ * canonical default anatomical dental arch curve (Mandates 8e, 8k, 8n - Zero Dead-Ends).
+ */
+export function autoDetectDentalArch(
+	volumeData: Float32Array | Int16Array,
+	dims: [number, number, number],
+	spacing: [number, number, number],
+	options?: ArchDetectOptions,
+): Point2[] {
+	const [nx, ny, nz] = dims;
+	if (nx < 4 || ny < 4 || nz < 1) {
+		const center: Point2 = [(nx * spacing[0]) / 2, (ny * spacing[1]) / 2];
+		const size: Point2 = [nx * spacing[0], ny * spacing[1]];
+		return generateDefaultArchCurve(center, size);
+	}
+
+	const sliceStride = nx * ny;
+	const invSx = 1 / spacing[0];
+	const invSy = 1 / spacing[1];
+	const invSz = 1 / spacing[2];
+	const zMin = 0;
+	const zMax = (nz - 1) * Math.abs(spacing[2]);
+	const vSpacing = Math.abs(spacing[2]);
+
+	const vol: VolumeSamplingData = {
+		dims,
+		origin: [0, 0, 0],
+		invSx,
+		invSy,
+		invSz,
+		zMin,
+		zMax,
+		vSpacing,
+		getVoxel: (i: number, j: number, k: number) => {
+			if (i < 0 || i >= nx || j < 0 || j >= ny || k < 0 || k >= nz) {
+				return AIR_HU;
+			}
+			const idx = k * sliceStride + j * nx + i;
+			return volumeData[idx] ?? AIR_HU;
+		},
+	};
+
+	const detected = detectArchControlPoints(vol, options);
+	if (detected && detected.length >= 7) {
+		return detected;
+	}
+
+	// Canonical fallback: default dental arch curve scaled to the volume FOV
+	const center: Point2 = [(nx * spacing[0]) / 2, (ny * spacing[1]) / 2];
+	const size: Point2 = [nx * spacing[0], ny * spacing[1]];
+	return generateDefaultArchCurve(center, size);
 }
