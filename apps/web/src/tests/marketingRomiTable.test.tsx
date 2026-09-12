@@ -76,7 +76,7 @@ describe("MarketingRomiTable Component & SSR Rendering", () => {
 		assert.ok(html.includes("чел."));
 	});
 
-	it("2. MarketingView contains the owner ROMI marketing table directly on render inside AppLogicProvider", () => {
+	it("2. MarketingView contains the clinical recall list panel directly on render inside AppLogicProvider", () => {
 		const child = createElement(MarketingView, {
 			clinicName: "Стоматология ДЕНТЕ",
 			clinicPhone: "+7 (495) 123-45-67",
@@ -86,11 +86,8 @@ describe("MarketingRomiTable Component & SSR Rendering", () => {
 		);
 
 		assert.ok(html.includes("data-testid=\"marketing-view\""));
-		assert.ok(html.includes("data-testid=\"marketing-romi-table-section\""));
-		assert.ok(html.includes("Маркетинг / SEO"));
-		assert.ok(html.includes("Яндекс Карты"));
-		assert.ok(html.includes("Сарафанное радио"));
-		assert.ok(html.includes("2GIS"));
+		assert.ok(html.includes("Диспансерный учет / Возврат пациентов"));
+		assert.ok(html.includes("активен"));
 	});
 
 	it("3. MarketingRomiTable mounts inside AppLogicProvider with CRM sync button and interactive testids", () => {

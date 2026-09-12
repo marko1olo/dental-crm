@@ -252,12 +252,12 @@ export function TemperatureHumidityRegisterTab() {
 							measurementPeriod: period,
 							temperatureCelsius: isFridge ? 4.2 : 21.5,
 							relativeHumidityPercent: isFridge ? undefined : 48,
-							notes: `⚡ 1-Клик норма смены (${period}): СанПиН 3.3686-21`,
+							notes: `1-Клик норма смены (${period}): СанПиН 3.3686-21`,
 						}),
 					});
 					if (fRes.ok) logged++;
 				}
-				showToast(`⚡ Норма зафиксирована для ${logged} объектов`, "success");
+				showToast(`Норма зафиксирована для ${logged} объектов`, "success");
 				await fetchAll();
 			}
 		} catch (e) {
@@ -395,7 +395,7 @@ export function TemperatureHumidityRegisterTab() {
 						data-testid="temp-shift-autopilot-btn"
 					>
 						<Sparkles size={16} />
-						<span>{isLoggingShift ? "Фиксация..." : "⚡ 1-Клик норма смены"}</span>
+						<span>{isLoggingShift ? "Фиксация..." : "1-Клик норма смены"}</span>
 					</button>
 					<button
 						type="button"
@@ -488,7 +488,7 @@ export function TemperatureHumidityRegisterTab() {
 						title="Подключить типовое оснащение: фармацевтический холодильник Pozis ХФ-250 (+2..+8°C) и Кабинет терапевтической стоматологии №1 с гигрометром ВИТ-2 (+15..+25°C, влажность 30..65%)"
 					>
 						<Sparkles size={17} />
-						<span>⚡ Подключить типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2)</span>
+						<span>Подключить типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2)</span>
 					</button>
 				</div>
 			)}

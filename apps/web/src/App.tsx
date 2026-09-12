@@ -43,8 +43,7 @@ import { showToast } from "./components/GlobalToast";
 import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardModal";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { Omnibar } from "./components/Omnibar";
-import { ClinicalModalsHost } from "./components/modals/ClinicalModalsHost";
-import { BackofficeModalsHost } from "./components/modals/BackofficeModalsHost";
+
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
@@ -3415,8 +3414,6 @@ export function App() {
 						}}
 					/>
 					<Omnibar />
-					<ClinicalModalsHost />
-					<BackofficeModalsHost />
 				</section>
 				<nav className="dnt-bottom-nav" aria-label="Мобильная навигация">
 					{(["shift", "schedule", "patients", "visit"] as const).map((view) => (

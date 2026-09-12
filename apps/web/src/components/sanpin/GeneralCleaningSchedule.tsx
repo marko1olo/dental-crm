@@ -96,7 +96,7 @@ export function GeneralCleaningSchedule({
 			if (res.ok) {
 				const data = await res.json().catch(() => ({}));
 				showToast(
-					`⚡ График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по нормам СанПиН 3.3686-21, шаг 7 дней)`,
+					`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по нормам СанПиН 3.3686-21, шаг 7 дней)`,
 					"success",
 				);
 				onScheduleUpdated?.();
@@ -232,7 +232,7 @@ export function GeneralCleaningSchedule({
 					<span>
 						{isAutopilotLoading
 							? "Формирование графика..."
-							: "⚡ Заполнить график генеральных уборок на месяц (по СанПиН каждые 7 дней)"}
+							: "Заполнить график генеральных уборок на месяц (по СанПиН каждые 7 дней)"}
 					</span>
 				</button>
 			</div>

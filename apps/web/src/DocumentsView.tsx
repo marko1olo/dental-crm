@@ -4067,49 +4067,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						</article>
 					) : null}
 
-					{selectedDocumentKind === "outpatient_medical_card_025u" ? (
-						<article className="document-payload-card">
-							<div
-								style={{
-									background: "var(--paper-soft, #f8fafc)",
-									border: "1px solid var(--line, #e2e8f0)",
-									borderRadius: "8px",
-									padding: "16px",
-								}}
-							>
-								<h3 style={{ margin: "0 0 8px 0", fontSize: "16px" }}>
-									Форма 025/у исключена из амбулаторного стоматологического регламента
-								</h3>
-								<p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "var(--muted, #64748b)" }}>
-									В соответствии с амбулаторным стоматологическим регламентом РФ форма 025/у является общей поликлинической/госпитальной формой и не применяется в частной стоматологии. Врач-стоматолог заполняет исключительно Форму 043/у («Медицинская карта стоматологического больного»). Для пациента также доступны официальная справка об осмотре полости рта или выписка из карты 043/у.
-								</p>
-								<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-									<button
-										type="button"
-										className="primary-button"
-										onClick={() => setSelectedDocumentKind("dental_medical_card_043u")}
-									>
-										Форма 043/у (Стоматологическая карта)
-									</button>
-									<button
-										type="button"
-										className="secondary-button"
-										onClick={() => setSelectedDocumentKind("visit_attendance_certificate")}
-									>
-										Справка об осмотре полости рта
-									</button>
-									<button
-										type="button"
-										className="secondary-button"
-										onClick={() => setSelectedDocumentKind("medical_record_extract")}
-									>
-										Выписка из карты 043/у
-									</button>
-								</div>
-							</div>
-						</article>
-					) : null}
-
 					{selectedDocumentKind === "dental_medical_card_043u" ? (
 						<>
 							<DentalMedicalCard043uForm />

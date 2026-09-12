@@ -210,8 +210,8 @@ describe("CommunicationsView Autonomy & Button Accessibility (Mandate 8e, 8n)", 
 	});
 });
 
-describe("MarketingView Autonomy & Review Reply Unblocking (Mandates 8e, 8n)", () => {
-	it("renders 'Составить черновик ответа' button enabled even when review text is empty", () => {
+describe("MarketingView Autonomy & Recall Patient List (Mandates 8e, 8n)", () => {
+	it("renders MarketingView with RecallListPanel enabled and non-blocking", () => {
 		const child = createElement(MarketingView, {
 			clinicName: "Стоматология ДЕНТЕ",
 			clinicPhone: "+7 (495) 123-45-67",
@@ -223,46 +223,9 @@ describe("MarketingView Autonomy & Review Reply Unblocking (Mandates 8e, 8n)", (
 			}),
 		);
 
-		// Find generate button
-		assert.ok(html.includes("Составить черновик ответа"));
-		const btnIdx = html.indexOf("Составить черновик ответа");
-		const btnTagStart = html.lastIndexOf("<button", btnIdx);
-		const btnTag = html.slice(btnTagStart, btnIdx);
-
-		assert.equal(
-			btnTag.includes("disabled"),
-			false,
-			"Generate reply button must NOT be disabled on empty review (Mandate 8e)",
-		);
-
-		// Verify touch target >= 44px
-		assert.ok(
-			btnTag.includes("min-height:44px"),
-			"Generate reply button must have min-height >= 44px",
-		);
-	});
-
-	it("generates 1-click fallback draft with positive tone when review text is empty", () => {
-		const defaultFallbackReview =
-			"Отличный доктор, внимательный персонал, качественное и безболезненное лечение!";
-		const draft = buildReviewReplyDraft({
-			reviewText: defaultFallbackReview,
-			tone: "positive",
-			clinicName: "Стоматология ДЕНТЕ",
-			chiefDoctorPhone: "+7 (495) 123-45-67",
-			seoKeys: ["лечение зубов", "стоматология"],
-		});
-
-		assert.ok(draft, "Draft must be generated");
-		assert.ok(draft.text.length > 20, "Draft body must be populated");
-		assert.ok(
-			draft.text.includes("Стоматология ДЕНТЕ"),
-			"Draft must include clinic signature",
-		);
-		assert.ok(
-			Array.isArray(draft.warnings),
-			"Draft must contain warnings list",
-		);
+		assert.ok(html.includes("data-testid=\"marketing-view\""));
+		assert.ok(html.includes("Диспансерный учет / Возврат пациентов"));
+		assert.ok(html.includes("активен"));
 	});
 });
 

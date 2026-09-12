@@ -80,13 +80,16 @@ export interface ClinicalProtocolSoap {
 	readonly diagnosisIcd10: string;
 	readonly diagnosisIcd10Label: string;
 	readonly diagnosisTooth: string;
-	readonly anamnesis: string; // S
-	readonly statusLocalis: string; // O
-	readonly treatmentDescription: string; // P
+	readonly anamnesis: string; // Жалобы и анамнез (Форма 043/у)
+	readonly statusLocalis: string; // Данные объективного исследования / Status localis (Форма 043/у)
+	readonly treatmentDescription: string; // Дневник проведенного лечения / План лечения (Форма 043/у)
 	readonly recommendations?: string; // Рекомендации пациенту
 	readonly complications?: string;
 	readonly comorbidities?: string;
 }
+
+/** Алиас протокола дневника Формы 043/у */
+export type ClinicalProtocol043 = ClinicalProtocolSoap;
 
 export type MergeStrategy = "smart_append" | "fill_blanks_only" | "replace";
 
@@ -1601,7 +1604,7 @@ export function evaluateAnesthesiaRisk(
 	const isWarningTriggered = hasHypertensionRisk && detectedAnestheticWithAdrenaline;
 
 	const warningMessage = isWarningTriggered
-		? "⚠️ Внимание: У пациента в анамнезе зафиксирована гипертония / риск ССЗ. Применение анестетика с адреналином требует осторожности (макс. 0.04 мг адреналина / 2 карпулы). Рекомендуется Мепивакаин (Скандонест) 3% без вазоконстриктора."
+		? "Внимание: У пациента в анамнезе зафиксирована гипертония / риск ССЗ. Применение анестетика с адреналином требует осторожности (макс. 0.04 мг адреналина / 2 карпулы). Рекомендуется Мепивакаин (Скандонест) 3% без вазоконстриктора."
 		: undefined;
 
 	return {
@@ -1848,13 +1851,13 @@ export function generatePatientMemoText(
 	const dateStr = options?.visitDate || new Date().toLocaleDateString("ru-RU");
 
 	const lines = [
-		`📌 ${memo.title.toUpperCase()}${toothStr}`,
+		`${memo.title.toUpperCase()}${toothStr}`,
 		`Дата: ${dateStr} • Клиника: ${clinic}`,
 		"",
 		"КЛЮЧЕВЫЕ ПРАВИЛА И РЕКОМЕНДАЦИИ:",
 		...memo.keyRules.map((r, i) => `${i + 1}. ${r}`),
 		"",
-		"⚠️ СРОЧНО СВЯЗАТЬСЯ С КЛИНИКОЙ ПРИ:",
+		"СРОЧНО СВЯЗАТЬСЯ С КЛИНИКОЙ ПРИ:",
 		...memo.urgentTriggers.map((t) => `• ${t}`),
 		"",
 		`Телефон экстренной связи клиники: ${phone}`,
@@ -1948,7 +1951,7 @@ export function renderPatientMemoPrintHtml(
 
 	<div style="margin-bottom: 16px; padding: 10px 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; page-break-inside: avoid; break-inside: avoid;">
 		<div style="font-size: 11px; font-weight: 900; color: #9f1239; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-			<span>⚠️ СРОЧНО СВЯЗАТЬСЯ С КЛИНИКОЙ (${phone}) ПРИ:</span>
+			<span>СРОЧНО СВЯЗАТЬСЯ С КЛИНИКОЙ (${phone}) ПРИ:</span>
 		</div>
 		<ul style="margin: 0; padding-left: 18px; font-size: 11px; color: #881337; line-height: 1.4;">
 			${memo.urgentTriggers.map((t) => `<li>${t}</li>`).join("")}

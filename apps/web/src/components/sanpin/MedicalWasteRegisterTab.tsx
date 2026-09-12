@@ -155,7 +155,7 @@ export function MedicalWasteRegisterTab() {
 
 			if (res.ok) {
 				showToast(
-					"⚡ Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
+					"Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
 					"success",
 				);
 				await fetchLogs();
@@ -315,7 +315,7 @@ export function MedicalWasteRegisterTab() {
 						data-testid="nurse-waste-quick-shift-tab-btn"
 					>
 						<Sparkles size={16} />
-						<span>{isQuickShiftLoading ? "Списание отходов..." : "⚡ 1-Клик отходы смены (Класс Б)"}</span>
+						<span>{isQuickShiftLoading ? "Списание отходов..." : "1-Клик отходы смены (Класс Б)"}</span>
 					</button>
 
 					<button

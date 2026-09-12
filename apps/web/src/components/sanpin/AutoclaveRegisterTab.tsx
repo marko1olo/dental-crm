@@ -663,7 +663,7 @@ export function AutoclaveRegisterTab() {
 						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в Форму 257/у"
 					>
 						<Sparkles size={18} />
-						<span>⚡ Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин)</span>
+						<span>Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин)</span>
 					</button>
 				</div>
 			</div>
@@ -761,7 +761,7 @@ export function AutoclaveRegisterTab() {
 							title="1-Клик печать пачки из 10 наклеек крафт-пакетов (срок 30 дней для запечатанных пакетов по СанПиН 3.3686-21) без блокирующих окон"
 							data-testid="autoclave-quick-batch-labels-btn"
 						>
-							<Printer size={16} /> <span>⚡ Печать наклеек (10 шт. / 30 дн.)</span>
+							<Printer size={16} /> <span>Печать наклеек (10 шт. / 30 дн.)</span>
 						</button>
 
 						{/* Action: + Зафиксировать цикл */}

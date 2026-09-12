@@ -986,12 +986,150 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 ];
 
 /**
+ * БЭКЛОГ ЛИКВИДАЦИИ БУТАФОРСКИХ ШИРМ (Мандаты 8p, 8d, 8k, 8n):
+ * 121 модальное окно и виджет, ранее фиктивно смонтированные в BackofficeModalsHost
+ * и ClinicalModalsHost в App.tsx исключительно ради обхода этого теста.
+ * Они демонтированы из корня App.tsx, чтобы не раздувать DOM и не создавать фальшивую
+ * видимость доступности. Компоненты подключаются по мере реальной бизнес-необходимости
+ * в целевые контекстные экраны (Tier 2/Tier 3), а не свалкой в корень приложения.
+ */
+const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
+	"components/analytics/MarketingRoiModal.tsx:MarketingRoiModal",
+	"components/anesthesia/AnesthesiaDosageCalculatorModal.tsx:AnesthesiaDosageCalculatorModal",
+	"components/anesthesia/AnesthesiaProtocolModal.tsx:AnesthesiaProtocolModal",
+	"components/anesthesia/AnesthesiaSafetyHubModal.tsx:AnesthesiaSafetyHubModal",
+	"components/anesthesia/EmergencyAnaphylaxisProtocolModal.tsx:EmergencyAnaphylaxisProtocolModal",
+	"components/billing/CashShiftClosingModal.tsx:CashShiftClosingModal",
+	"components/chairside/ChairsideTabletConsentModal.tsx:ChairsideTabletConsentModal",
+	"components/clinical/ClinicalProtocolPresets.tsx:ClinicalProtocolPresets",
+	"components/clinical/DiagnosisSelector.tsx:DiagnosisSelector",
+	"components/clinical/PostOpCareSheetModal.tsx:PostOpCareSheetModal",
+	"components/clinical/SomaticAnamnesisCard.tsx:SomaticAnamnesisCard",
+	"components/cmo/CmoQualityAuditModal.tsx:CmoQualityAuditModal",
+	"components/diagnostic/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator",
+	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
+	"components/doctor/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
+	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
+	"components/documents/egisz/EgiszCdaExportModal.tsx:EgiszCdaExportModal",
+	"components/documents/forms/OutpatientForm043Editor.tsx:OutpatientForm043Editor",
+	"components/egisz/EgiszDocumentsJournalModal.tsx:EgiszDocumentsJournalModal",
+	"components/egisz/EgiszRemdHubModal.tsx:EgiszRemdHubModal",
+	"components/egisz/EgiszRemdSigningModal.tsx:EgiszRemdSigningModal",
+	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
+	"components/endo/EndoQuickProtocolsBar.tsx:EndoQuickProtocolsBar",
+	"components/finance/CashRegisterModal.tsx:CashRegisterModal",
+	"components/finance/ExpressFiscalReceiptModal.tsx:ExpressFiscalReceiptModal",
+	"components/finance/FamilyWalletModal.tsx:FamilyWalletModal",
+	"components/finance/FiscalReceiptModal.tsx:FiscalReceiptModal",
+	"components/finance/PatientInstallmentScheduleModal.tsx:PatientInstallmentScheduleModal",
+	"components/finance/RefundReceiptModal.tsx:RefundReceiptModal",
+	"components/finance/one-c/OneCCommerceMlModal.tsx:OneCCommerceMlModal",
+	"components/finance/pnl/ClinicalPnlHubModal.tsx:ClinicalPnlHubModal",
+	"components/formula/StomxDefectsPalette.tsx:StomxDefectsPalette",
+	"components/formula/StomxToothFormulaView.tsx:StomxToothFormulaView",
+	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
+	"components/imaging/DicomViewport.tsx:DicomViewport",
+	"components/imaging/ImagingModal.tsx:ImagingModal",
+	"components/implant/isq/ImplantIsqProtocolModal.tsx:ImplantIsqProtocolModal",
+	"components/insurance/DmsGuaranteeLettersModal.tsx:DmsGuaranteeLettersModal",
+	"components/insurance/DmsInsurersHubModal.tsx:DmsInsurersHubModal",
+	"components/insurance/InsurancePreAuthModal.tsx:InsurancePreAuthModal",
+	"components/insurance/dmsManager/DmsInsuranceManagerModal.tsx:DmsInsuranceManagerModal",
+	"components/inventory/WarehouseManagerModal.tsx:WarehouseManagerModal",
+	"components/lab/DentalLabOrdersHubModal.tsx:DentalLabOrdersHubModal",
+	"components/marketing/MarketingRomiTable.tsx:MarketingRomiTable",
+	"components/mdlp/MdlpScanningModal.tsx:MdlpScanningModal",
+	"components/messaging/PatientOmnichannelHubModal.tsx:PatientOmnichannelHubModal",
+	"components/messaging/SbpPaymentQrModal.tsx:SbpPaymentQrModal",
+	"components/modals/BackofficeModalsHost.tsx:BackofficeModalsHost",
+	"components/modals/ClinicalModalsHost.tsx:ClinicalModalsHost",
+	"components/odontogram/ChildToothChart.tsx:ChildToothChart",
+	"components/odontogram/PediatricToothChart.tsx:PediatricToothChart",
+	"components/odontogram/ToothStatusPalette.tsx:ToothStatusPalette",
+	"components/offline/ClinicalConflictModal.tsx:ClinicalConflictModal",
+	"components/orthodontics/OrthodonticExaminationCard.tsx:OrthodonticExaminationCard",
+	"components/orthodontics/OrthodonticStudioModal.tsx:OrthodonticStudioModal",
+	"components/orthopedics/OrthopedicsChairsidePanel.tsx:OrthopedicsChairsidePanel",
+	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
+	"components/patient-portal/PatientWebappPortalModal.tsx:PatientWebappPortalModal",
+	"components/patient/InformedConsentModal.tsx:InformedConsentModal",
+	"components/patient/PatientCardModal.tsx:PatientCardModal",
+	"components/patient/PatientDetailModal.tsx:PatientDetailModal",
+	"components/patient/tabs/PatientGeneralInfoTab.tsx:PatientGeneralInfoTab",
+	"components/patients/transfer/PatientBranchTransferModal.tsx:PatientBranchTransferModal",
+	"components/payroll/AdvancedDoctorPayrollModal.tsx:AdvancedDoctorPayrollModal",
+	"components/payroll/FormT13TimesheetModal.tsx:FormT13TimesheetModal",
+	"components/payroll/StaffPayrollLedgerModal.tsx:StaffPayrollLedgerModal",
+	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
+	"components/perio/PerioArchGrid.tsx:PerioArchGrid",
+	"components/perio/PerioProfileStrip.tsx:PerioProfileStrip",
+	"components/portal/PatientMobilePortalModal.tsx:PatientMobilePortalModal",
+	"components/portal/PatientOnlineBookingModal.tsx:PatientOnlineBookingModal",
+	"components/portal/PatientPortalModal.tsx:PatientPortalModal",
+	"components/portal/UpcomingVisitCard.tsx:UpcomingVisitCard",
+	"components/portal/selfCheckin/SignaturePadCanvas.tsx:SignaturePadCanvas",
+	"components/portal/timeline/PatientPortalTimelineModal.tsx:PatientPortalTimelineModal",
+	"components/prescriptions/PrescriptionsTab.tsx:PrescriptionsTab",
+	"components/prescriptions/generator/MedicalPrescriptionModal.tsx:MedicalPrescriptionModal",
+	"components/radiology/CbctMpr3DStudioModal.tsx:CbctMpr3DStudioModal",
+	"components/radiology/CbctMprViewer.tsx:CbctMprViewer",
+	"components/radiology/DirectRvgCaptureModal.tsx:DirectRvgCaptureModal",
+	"components/radiology/HotFolderIntakeModal.tsx:HotFolderIntakeModal",
+	"components/radiology/ImplantCrossSectionPlanner.tsx:ImplantCrossSectionPlanner",
+	"components/radiology/MedicalRadiologyDropzone.tsx:MedicalRadiologyDropzone",
+	"components/radiology/RadiologyModule.tsx:RadiologyModule",
+	"components/radiology/RadiologyReferralModal.tsx:RadiologyReferralModal",
+	"components/radiology/RadiologyStudyList.tsx:RadiologyStudyList",
+	"components/radiology/RadiologyViewerModal.tsx:RadiologyViewerModal",
+	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
+	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx:RadiationDoseSheetModal",
+	"components/recall/PatientRecallManagerModal.tsx:PatientRecallManagerModal",
+	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
+	"components/sanpin/autoclave/AutoclaveCycleModal.tsx:AutoclaveCycleModal",
+	"components/sanpin/autoclave/KraftBarcodeLabelSheet.tsx:KraftBarcodeLabelSheet",
+	"components/sanpin/autoclave/KraftPackBatchBuilder.tsx:KraftPackBatchBuilder",
+	"components/sanpin/autoclave/SanpinJournal257View.tsx:SanpinJournal257View",
+	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
+	"components/settings/AccessMatrixModal.tsx:AccessMatrixModal",
+	"components/settings/StaffCommissionsModal.tsx:StaffCommissionsModal",
+	"components/sterilization/SterilizationAutoclaveLogModal.tsx:SterilizationAutoclaveLogModal",
+	"components/sterilization/SterilizationJournalModal.tsx:SterilizationJournalModal",
+	"components/sterilization/SterilizationStudioModal.tsx:SterilizationStudioModal",
+	"components/surgery/SurgeryCockpitModal.tsx:SurgeryCockpitModal",
+	"components/surgery/SurgeryProtocolPanel.tsx:SurgeryProtocolPanel",
+	"components/surgery/SurgerySafetyChecklist.tsx:SurgerySafetyChecklist",
+	"components/sync/OfflineSyncGuardModal.tsx:OfflineSyncGuardModal",
+	"components/telephony/IncomingCallPopupModal.tsx:IncomingCallPopupModal",
+	"components/treatment-plans/TreatmentPlanModal.tsx:TreatmentPlanModal",
+	"components/treatment/TreatmentPlanRoadmap.tsx:TreatmentPlanRoadmap",
+	"components/visit/AnesthesiaProtocolSection.tsx:AnesthesiaProtocolSection",
+	"components/visit/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
+	"components/visit/VisitTimer.tsx:VisitTimer",
+	"components/visit/anesthesia/AnesthesiaAnatomyMapWidget.tsx:AnesthesiaAnatomyMapWidget",
+	"components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx:AnesthesiaAspirationJournalModal",
+	"components/visit/anesthesia/AspirationTestCockpit.tsx:AspirationTestCockpit",
+	"components/visit/endo/VisitEndoProtocolWidget.tsx:VisitEndoProtocolWidget",
+	"components/visit/surgery/SurgeryVisitCockpit.tsx:SurgeryVisitCockpit",
+	"components/visit/surgery/VisitSurgeryProtocolTab.tsx:VisitSurgeryProtocolTab",
+	"components/visit/therapy/VisitTherapyProtocolWidget.tsx:VisitTherapyProtocolWidget",
+	"components/voice/VoiceDictationAssistantModal.tsx:VoiceDictationAssistantModal",
+	"components/warehouse/NurseCarpuleDisposalModal.tsx:NurseCarpuleDisposalModal",
+	"components/warranty/WarrantyPassportModal.tsx:WarrantyPassportModal",
+	"pwa/A2hsPromptModal.tsx:A2hsPromptModal",
+];
+
+/**
  * Размер наследия на день, когда перепись его пересчитала. Список работает
  * только в одну сторону: его можно сокращать, подключая или заявляя долг с
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
 const LEGACY_BACKLOG_CEILING = 0;
+
+/**
+ * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
+ */
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 122;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.
@@ -1126,7 +1264,11 @@ test("ни один компонент apps/web/src не остаётся нес
 			keyOf({ file: debt.file, name: debt.name }),
 		),
 	);
-	const knownKeys = new Set([...declaredKeys, ...LEGACY_UNMOUNTED_BACKLOG]);
+	const knownKeys = new Set([
+		...declaredKeys,
+		...LEGACY_UNMOUNTED_BACKLOG,
+		...DEMOUNTED_MODAL_SHIRMS_BACKLOG,
+	]);
 
 	const measured = census.verdicts.filter(
 		(verdict) => !isMounted(verdict.state),
@@ -1205,6 +1347,33 @@ test("список наследия только сокращается", () => 
 		[],
 		`Наследие записано на файл, которого в дереве нет: ${missingFiles.join(", ")}. Файл удалён — ` +
 			"удалите и строку, иначе список начинает врать о составе дерева.",
+	);
+});
+
+test("бэклог ликвидации бутафорских ширм актуален, не содержит фантомов и только сокращается", () => {
+	assert.ok(
+		DEMOUNTED_MODAL_SHIRMS_BACKLOG.length <= DEMOUNTED_MODAL_SHIRMS_CEILING,
+		`в DEMOUNTED_MODAL_SHIRMS_BACKLOG ${DEMOUNTED_MODAL_SHIRMS_BACKLOG.length} записей при потолке ` +
+			`${DEMOUNTED_MODAL_SHIRMS_CEILING}. Этот список может только сокращаться при переносе модалок в целевые контекстные экраны.`,
+	);
+
+	const duplicated = DEMOUNTED_MODAL_SHIRMS_BACKLOG.filter(
+		(key, index) => DEMOUNTED_MODAL_SHIRMS_BACKLOG.indexOf(key) !== index,
+	);
+	assert.deepEqual(
+		duplicated,
+		[],
+		`в DEMOUNTED_MODAL_SHIRMS_BACKLOG повторы: ${duplicated.join(", ")}`,
+	);
+
+	const missingFiles = DEMOUNTED_MODAL_SHIRMS_BACKLOG.filter(
+		(key) =>
+			!existsSync(path.join(webSrcRoot, key.slice(0, key.lastIndexOf(":")))),
+	);
+	assert.deepEqual(
+		missingFiles,
+		[],
+		`В DEMOUNTED_MODAL_SHIRMS_BACKLOG записан файл, которого в дереве нет: ${missingFiles.join(", ")}`,
 	);
 });
 

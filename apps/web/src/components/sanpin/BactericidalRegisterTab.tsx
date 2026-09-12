@@ -24,6 +24,7 @@ import {
 	Wind,
 	X,
 	XCircle,
+	Zap,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
@@ -357,12 +358,12 @@ export function BactericidalRegisterTab() {
 						sessionEndTime: `${String(8 + durationHours).padStart(2, "0")}:00`,
 						durationMinutes,
 						operatingMode: "continuous_presence",
-						notes: `⚡ Авто-учет смены (${durationHours} ч) по Р 3.5.1904-04`,
+						notes: `Авто-учет смены (${durationHours} ч) по Р 3.5.1904-04`,
 					}),
 				});
 				if (fRes.ok) updatedCount++;
 			}
-			showToast(`⚡ Наработка ламп обновлена (+${durationHours} ч) для ${updatedCount} аппаратов`, "success");
+			showToast(`Наработка ламп обновлена (+${durationHours} ч) для ${updatedCount} аппаратов`, "success");
 			await fetchAll();
 		}
 	};
@@ -403,7 +404,7 @@ export function BactericidalRegisterTab() {
 				durationMinutes,
 				date: new Date().toISOString().slice(0, 10),
 				operatingMode: "pre_op_preparation",
-				notes: "⚡ Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21",
+				notes: "Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21",
 			}),
 		});
 
@@ -411,8 +412,8 @@ export function BactericidalRegisterTab() {
 			const data = await res.json();
 			showToast(
 				equipmentId
-					? "⚡ Включение баклампы на 30 мин перед сменой зафиксировано!"
-					: `⚡ Включение всех бакламп на 30 мин перед сменой зафиксировано (${data.results?.length ?? currentEquips.length} аппаратов)!`,
+					? "Включение баклампы на 30 мин перед сменой зафиксировано!"
+					: `Включение всех бакламп на 30 мин перед сменой зафиксировано (${data.results?.length ?? currentEquips.length} аппаратов)!`,
 				"success",
 			);
 			await fetchAll();
@@ -435,12 +436,12 @@ export function BactericidalRegisterTab() {
 						sessionEndTime: "08:00",
 						durationMinutes: 30,
 						operatingMode: "pre_op_preparation",
-						notes: "⚡ Включение баклампы перед сменой (30 мин) по СанПиН 3.3686-21",
+						notes: "Включение баклампы перед сменой (30 мин) по СанПиН 3.3686-21",
 					}),
 				});
 				if (fRes.ok) updatedCount++;
 			}
-			showToast(`⚡ Сеанс 30 мин перед сменой зафиксирован для ${updatedCount} аппаратов`, "success");
+			showToast(`Сеанс 30 мин перед сменой зафиксирован для ${updatedCount} аппаратов`, "success");
 			await fetchAll();
 		}
 	};
@@ -730,7 +731,7 @@ export function BactericidalRegisterTab() {
 						title="Открыть утреннюю смену (бактерицидная обработка 30 мин + норма): зафиксировать предсменное обеззараживание воздуха по СанПиН 3.3686-21 для всех аппаратов"
 					>
 						<Sun size={17} />
-						<span>⚡ Открыть утреннюю смену (кварцевание 30 мин + норма)</span>
+						<span>Открыть утреннюю смену (кварцевание 30 мин + норма)</span>
 					</button>
 
 					<button
@@ -758,7 +759,7 @@ export function BactericidalRegisterTab() {
 						title="Закрыть вечернюю смену (финальная дезинфекция): фиксирует дневную смену 6 ч + заключительное обеззараживание 30 мин без ручного счета"
 					>
 						<Moon size={17} />
-						<span>⚡ Закрыть вечернюю смену (финальная дезинфекция)</span>
+						<span>Закрыть вечернюю смену (финальная дезинфекция)</span>
 					</button>
 				</div>
 			</div>
@@ -916,7 +917,7 @@ export function BactericidalRegisterTab() {
 						title="Подключить типовой рециркулятор: Дезар-4 (ОРУБн-3-3-«КРОНТ») для Кабинета терапевтической стоматологии №1 (V=45 м³, 8000 ч ресурс ламп)"
 					>
 						<Sparkles size={17} />
-						<span>⚡ Подключить типовой рециркулятор (Дезар-4, Кабинет №1)</span>
+						<span>Подключить типовой рециркулятор (Дезар-4, Кабинет №1)</span>
 					</button>
 				</div>
 			)}
@@ -1003,7 +1004,7 @@ export function BactericidalRegisterTab() {
 									title="Включить этот аппарат на 30 мин перед сменой (предоперационная подготовка по СанПиН)"
 									data-testid={`bactericidal-card-quick-30min-${eq.id}`}
 								>
-									<Sparkles size={15} /> ⚡ 30 мин перед сменой
+									<Zap size={15} /> 30 мин перед сменой
 								</button>
 								<button
 									type="button"
@@ -1252,7 +1253,7 @@ export function BactericidalRegisterTab() {
 											setLogStartTime("07:30");
 											setLogEndTime("08:00");
 											setLogMode("pre_op_preparation");
-											setLogNotes("⚡ Включение баклампы перед сменой (30 мин) — норма СанПиН 3.3686-21");
+											setLogNotes("Включение баклампы перед сменой (30 мин) — норма СанПиН 3.3686-21");
 										}}
 										className="sanpin-btn sanpin-btn-secondary"
 										style={{
@@ -1268,7 +1269,7 @@ export function BactericidalRegisterTab() {
 										}}
 										data-testid="log-modal-prefill-30min-btn"
 									>
-										<Sparkles size={14} /> ⚡ 30 мин перед сменой (норма СанПиН)
+										<Zap size={14} /> 30 мин перед сменой (норма СанПиН)
 									</button>
 								</div>
 

@@ -149,7 +149,7 @@ export function GeneralCleaningRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("⚡ Уборка по норме СанПиН успешно зафиксирована (Аламинол 5%, 60 мин, УФ 120 мин)", "success");
+				showToast("Уборка по норме СанПиН успешно зафиксирована (Аламинол 5%, 60 мин, УФ 120 мин)", "success");
 				await fetchLogs();
 			} else {
 				const err = await res.json().catch(() => ({}));
@@ -377,7 +377,7 @@ export function GeneralCleaningRegisterTab() {
 						<span>
 							{isAutopilotLoading
 								? "Формирование графика..."
-								: "⚡ Заполнить график уборок на месяц (7 дн.)"}
+								: "Заполнить график уборок на месяц (7 дн.)"}
 						</span>
 					</button>
 
