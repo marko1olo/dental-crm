@@ -316,3 +316,39 @@ export function formatLabOrderPrescriptionA4(
 		"================================================================================",
 	].join("\n");
 }
+
+export const formatLabOrderFormZtl1A4Protocol = (
+	order: any,
+	clinicName?: string,
+): string => {
+	if (!order) return "";
+	const safeWorkType: any = ["crown", "bridge", "denture", "implant", "veneer", "orthodontic", "repair", "other"].includes(order.workType)
+		? order.workType
+		: "other";
+	return formatLabOrderPrescriptionA4(
+		{
+			id: typeof order.id === "string" && order.id.length === 36 ? order.id : undefined,
+			patientId: String(order.patientId || "patient-1"),
+			patientName: String(order.patientFullName || order.patientName || "Пациент"),
+			labName: String(order.labName || "Зуботехническая лаборатория"),
+			labContactId: String(order.labId || order.labContactId || "lab-default"),
+			workType: safeWorkType,
+			toothReference: Array.isArray(order.toothNumbers) ? order.toothNumbers.join(", ") : (order.toothReference || undefined),
+			antagonistInfo: order.antagonistInfo || undefined,
+			impressionType: "digital_scan",
+			sentDate: order.sentDate || new Date().toISOString().split("T")[0],
+			expectedDate: order.expectedDate || undefined,
+			receivedDate: order.receivedDate || undefined,
+			status: "sent",
+			priceRub: typeof order.labCostKopecks === "number" ? Math.round(order.labCostKopecks / 100) : (order.priceRub || undefined),
+			notes: order.notes || undefined,
+		},
+		clinicName || "Стоматологическая клиника DENTE",
+		String(order.doctorFullName || "Лечащий врач-ортопед")
+	);
+};
+
+export const labOrdersEngine = {
+	formatLabOrderPrescriptionA4,
+	formatLabOrderFormZtl1A4Protocol,
+};

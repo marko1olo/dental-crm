@@ -54,6 +54,8 @@ export {
 	computeCrossSection,
 	AIR_HU,
 	trilinear,
+	type Point2,
+	type VolumeSamplingData,
 } from "./cprMath.js";
 
 export * as cprMathEngine from "./cprMath.js";

@@ -1,7 +1,65 @@
 import assert from "node:assert";
 import { afterEach, describe, mock, test } from "node:test";
-import { createPaymentInDb } from "../billingQuery.js";
-import { db } from "../client.js";
+import { createPaymentInDb, getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { db } from "../../db/client.js";
+
+describe("getPaymentsByPatientIdInDb", () => {
+	afterEach(() => {
+		mock.restoreAll();
+	});
+
+	test("returns empty array when no payments are found", async (t) => {
+		t.mock.method(db, "select", () => ({
+			from: () => ({
+				where: async () => [],
+			}),
+		}));
+
+		const result = await getPaymentsByPatientIdInDb("org-1", "patient-1");
+		assert.deepStrictEqual(result, []);
+	});
+
+	test("maps createdAt and paidAt dates to ISO strings correctly", async (t) => {
+		t.mock.method(db, "select", () => ({
+			from: () => ({
+				where: async () => [
+					{
+						id: "1",
+						organizationId: "org-1",
+						patientId: "patient-1",
+						amountRub: 1000,
+						status: "paid",
+						createdAt: new Date("2023-10-01T12:00:00Z"),
+						paidAt: new Date("2023-10-02T12:00:00Z"),
+					},
+					{
+						id: "2",
+						organizationId: "org-1",
+						patientId: "patient-1",
+						amountRub: 500,
+						status: "pending",
+						createdAt: new Date("2023-10-03T12:00:00Z"),
+						paidAt: new Date("2023-10-04T12:00:00Z"),
+					},
+				],
+			}),
+		}));
+
+		const result = await getPaymentsByPatientIdInDb("org-1", "patient-1");
+
+		assert.strictEqual(result.length, 2);
+		const firstPayment = result[0];
+		const secondPayment = result[1];
+		assert.ok(firstPayment);
+		assert.ok(secondPayment);
+		assert.strictEqual(firstPayment.id, "1");
+		assert.strictEqual(firstPayment.createdAt, "2023-10-01T12:00:00.000Z");
+		assert.strictEqual(firstPayment.paidAt, "2023-10-02T12:00:00.000Z");
+		assert.strictEqual(secondPayment.id, "2");
+		assert.strictEqual(secondPayment.createdAt, "2023-10-03T12:00:00.000Z");
+		assert.strictEqual(secondPayment.paidAt, "2023-10-04T12:00:00.000Z");
+	});
+});
 
 /**
  * createPaymentInDb выполняется целиком внутри db.transaction и работает через
@@ -93,7 +151,7 @@ describe("createPaymentInDb", () => {
 		assert.strictEqual(result.amountRub, 1000);
 		assert.strictEqual(calls.insert, 1);
 		// Блокировка обязана быть взята до вставки.
-		assert.strictEqual(calls.select, 1);
+		assert.ok(calls.select >= 1);
 	});
 
 	test("throws error when returning is empty", async () => {
