@@ -127,10 +127,13 @@ import { PatientPlanView } from "../../patient-portal/PatientPlanView";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
 import "./patientCabinet.css";
 
+export type PatientCabinetTab = "overview" | "invoices" | "plans" | "documents" | "appointments" | "care" | "passport";
+
 export interface PatientCabinetModalProps {
 	readonly isOpen?: boolean | undefined;
 	readonly onClose?: (() => void) | undefined;
 	readonly initialData?: PatientPersonalCabinetData | undefined;
+	readonly initialTab?: PatientCabinetTab | undefined;
 	readonly initialSigningConsent?: PatientStatutoryConsent | null | undefined;
 	readonly initialConsentSignMode?: ("sms_otp" | "cabinet_pep") | undefined;
 	readonly onInvoicePaid?: ((invoice: PatientInvoiceItem) => void) | undefined;
@@ -252,6 +255,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	isOpen = true,
 	onClose,
 	initialData,
+	initialTab,
 	initialSigningConsent = null,
 	initialConsentSignMode = "sms_otp",
 	onInvoicePaid,
@@ -262,7 +266,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [data, setData] = useState<PatientPersonalCabinetData>(initialData || DEMO_PATIENT_CABINET);
 
 	// Активный таб
-	const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "plans" | "documents" | "appointments" | "care" | "passport">("overview");
+	const [activeTab, setActiveTab] = useState<PatientCabinetTab>(initialTab || "overview");
 
 	// Режим отображения счетов: понятный (без латыни) или стандартный
 	const [billingViewMode, setBillingViewMode] = useState<"friendly" | "standard">("friendly");
@@ -331,6 +335,13 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 			setData(initialData);
 		}
 	}, [initialData]);
+
+	// Синхронизация таба при смене initialTab
+	useEffect(() => {
+		if (initialTab) {
+			setActiveTab(initialTab);
+		}
+	}, [initialTab]);
 
 	// Таймер обратного отсчета SMS OTP
 	useEffect(() => {
