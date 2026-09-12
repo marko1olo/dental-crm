@@ -4385,6 +4385,26 @@
     * Полный жизненный цикл служебной задачи сотрудника (`open`, `in_progress`, `completed`, `cancelled`) с автономией врача и исполнителя (Мандат 8e);
     * Автоматическая генерация задач по клиническим событиям (отмена приема -> перезвонить пациенту, дефицит препарата -> сформировать закупку, просрочка реколла);
     * Мониторинг соблюдения сроков SLA и приоритизация (urgent, normal, low);
-    * Регламентный табель служебных поручений смены А4 строго без эмодзи (`formatStaffTasksShiftA4Report`).
-* **Верификация**: 34 теста (15 guide + 19 staff, 100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
 
+### Wave 138: 3D Пресеты объема КЛКТ и Входной контроль качества поставок со скорингом SLA (DenCT & DentalPin Reverse-Engineering)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Коммиты: `123e5981a`, `175d136db`)
+* **Файлы**:
+  - `packages/shared/src/radiology/volume3DPresetEngine.ts`
+  - `packages/shared/src/radiology/__tests__/wave138Volume3DPreset.test.ts`
+  - `packages/shared/src/inventory/supplierRatingsEngine.ts`
+  - `packages/shared/src/inventory/__tests__/wave138SupplierRatings.test.ts`
+  - `packages/shared/src/radiology/index.ts`
+  - `packages/shared/src/inventory/index.ts`
+  - `packages/shared/src/index.ts`
+* **Архитектурное решение**:
+  - **CBCT 3D Volume Transfer Functions & Presets Engine (DenCT reverse-engineering)**:
+    * Zod-схемы и строгие типы: `volumePresetTypeSchema`, `renderQualitySchema`, `colormapTypeSchema`, `transferFunctionStopSchema`, `volume3DPresetConfigSchema`, `rayMarchingBudgetSchema`;
+    * Кусочно-линейные функции непрозрачности (PiecewiseFunction) и раздельные цветовые карты RGB (ColorTransferFunction) для 6 анатомических режимов (CT-Bone, Tooth-Enamel, Endo-Guttapercha, Soft-Tissue, Inverted-Airway, X-Ray MIP с потолком 0.08);
+    * Расчет шага трассировки лучей (sampling step: Low 0.8мм, Med 0.4мм, High 0.2мм, Ultra 0.15мм) и бюджета шагов рей-марчинга;
+    * Регламентный протокол 3D объемной визуализации Формы 043/у Минздрава РФ А4 строго без эмодзи (`formatVolume3DPresetA4Protocol`);
+  - **Supplier Ratings & Defect Quality Audit Engine (DentalPin reverse-engineering)**:
+    * Zod-схемы: `deliveryIncidentSchema`, `supplierBatchAuditSchema`, `supplierRatingScoreSchema`, `supplierAccreditationTierSchema`;
+    * Входной контроль дефектуры партий и своевременности поставок (SLA 40% + Качество 40% + Экспертная оценка 20%);
+    * 4 тира аккредитации (preferred, standard, probation, disqualified) без бюрократических барьеров (Мандаты 8e п. 10, 8n);
+    * Оценка рисков снабжения и протокол аудита надежности поставщика А4 строго без эмодзи (`formatSupplierQualityAuditA4Report`).
+* **Верификация**: 45 тестов (24 volume + 21 supplier, 100% PASS), `npm run typecheck:tests -w @dental/shared` Exit 0, `npm run build -w @dental/shared` Exit 0, `check:encoding` Exit 0.
