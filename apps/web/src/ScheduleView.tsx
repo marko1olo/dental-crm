@@ -771,6 +771,25 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [modalAppointment, setModalAppointment] =
 		useState<Appointment | null>(null);
 
+	useEffect(() => {
+		const handleOpenApptModal = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			const list = dashboard?.appointments ?? sortedAppointments ?? [];
+			const targetAppt =
+				(detail?.appointmentId
+					? list.find((a) => a.id === detail.appointmentId)
+					: null) ||
+				list[0] ||
+				null;
+			if (targetAppt) {
+				setModalAppointment(targetAppt);
+			}
+		};
+		window.addEventListener("dente-open-appointment-modal", handleOpenApptModal);
+		return () =>
+			window.removeEventListener("dente-open-appointment-modal", handleOpenApptModal);
+	}, [dashboard?.appointments, sortedAppointments]);
+
 	/** Быстрое добавление и редактирование кресла прямо из расписания (StomX / DentalPRO parity) */
 	const [isQuickAddChairOpen, setIsQuickAddChairOpen] = useState(false);
 	const [editingChairData, setEditingChairData] = useState<QuickAddChairData | null>(null);

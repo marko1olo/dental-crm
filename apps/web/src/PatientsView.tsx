@@ -35,6 +35,7 @@ import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
 import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
 import { CreatePatientModal } from "./components/patients/CreatePatientModal";
+import { PatientCardModal } from "./components/patients/PatientCardModal";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import {
@@ -346,6 +347,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
+	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
 	const [isPatientActionsMenuOpen, setIsPatientActionsMenuOpen] = useState(false);
 	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">("list");
 	const searchInputRef = useRef<HTMLInputElement>(null);
@@ -398,6 +400,31 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		};
 		window.addEventListener("keydown", handleGlobalKeyDown);
 		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+	}, []);
+
+	useEffect(() => {
+		const handleOpenCard = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			if (detail?.patientId) {
+				handleSelectPatient(detail.patientId);
+			}
+			setIsPatientCardModalOpen(true);
+		};
+		const handleBackofficeModal = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			if (detail?.modalId === "patient_card") {
+				if (detail?.patientId) {
+					handleSelectPatient(detail.patientId);
+				}
+				setIsPatientCardModalOpen(true);
+			}
+		};
+		window.addEventListener("dente-open-patient-card-modal", handleOpenCard);
+		window.addEventListener("dente-open-backoffice-modal", handleBackofficeModal);
+		return () => {
+			window.removeEventListener("dente-open-patient-card-modal", handleOpenCard);
+			window.removeEventListener("dente-open-backoffice-modal", handleBackofficeModal);
+		};
 	}, []);
 
 	/*
@@ -1104,6 +1131,23 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<Stethoscope size={16} aria-hidden="true" />
 							<span>Открыть приём</span>
 						</button>
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={() => setIsPatientCardModalOpen(true)}
+							disabled={false}
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
+							title="Открыть полную амбулаторную медицинскую карту Форма 043/у (Мандат 8e)"
+							data-testid="open-patient-card-modal-btn"
+						>
+							<FileText size={16} aria-hidden="true" />
+							<span>Амбулаторная карта 043/у</span>
+						</button>
 						<div className="relative inline-block" style={{ position: "relative" }}>
 							<button
 								type="button"
@@ -1407,6 +1451,19 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				{...(selectedPatient?.id
 					? { medicalCardNumber: `043/у-${selectedPatient.id.slice(0, 8)}` }
 					: {})}
+			/>
+
+			{/* Ambulatory Patient Card 043/u Modal (Mandates 8e, 8n) */}
+			<PatientCardModal
+				isOpen={isPatientCardModalOpen}
+				onClose={() => setIsPatientCardModalOpen(false)}
+				patient={{
+					id: selectedPatient?.id,
+					fullName: selectedPatient?.fullName || patientCoreDraft?.fullName,
+					phone: selectedPatient?.phone || patientCoreDraft?.phone,
+					birthDate: selectedPatient?.birthDate || patientCoreDraft?.birthDate,
+					notes: selectedPatient?.notes || patientCoreDraft?.notes,
+				}}
 			/>
 		</div>
 	);

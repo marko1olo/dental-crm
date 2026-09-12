@@ -326,7 +326,17 @@ export const BackofficeModalsHost: React.FC = () => {
 				<ClinicalConflictModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_card" && (
-				<PatientCardModal isOpen={true} onClose={close}  {...({} as any)} />
+				<PatientCardModal
+					isOpen={true}
+					onClose={close}
+					patient={{
+						id: patientId,
+						fullName: patientName,
+						phone: patientPhone,
+						birthDate: (modalData as any)?.patientBirthDate,
+					}}
+					{...({} as any)}
+				/>
 			)}
 			{activeModal === "finance_fast_checkout" && (
 				<FastCheckoutModal isOpen={true} onClose={close}  {...({} as any)} />

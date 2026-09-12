@@ -843,6 +843,17 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		}
 	};
 
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
+
 	if (!isOpen || !appointment) return null;
 
 	const isTechnicalBreak = isTechnicalBreakAppointment({ reason, comment });
@@ -896,17 +907,17 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<button
 								type="button"
 								onClick={handleConvertToCito}
-								className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="min-h-[44px] px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 								title="Пациент обратился с острой болью: перевести в CITO, разрешить овербукинг и включить CITO-подсветку в расписании"
 								data-testid="convert-to-cito-btn"
 							>
 								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
-								<span className="hidden sm:inline">Перевести в CITO (Острая боль)</span>
+								<span className="hidden sm:inline">В CITO (Острая боль)</span>
 								<span className="sm:hidden">CITO</span>
 							</button>
 						) : (
 							<div
-								className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs sm:text-sm font-extrabold flex items-center gap-1.5"
+								className="min-h-[44px] px-3 rounded-xl border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 shrink-0"
 								data-testid="appointment-cito-active-badge"
 							>
 								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
@@ -918,7 +929,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						<button
 							type="button"
 							onClick={() => repeatAppointment(appointment)}
-							className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] dark:text-slate-100 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 							title="Повторить прием"
 						>
 							<Repeat size={15} />
@@ -929,7 +940,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<button
 								type="button"
 								onClick={() => copyAppointmentToBuffer(appointment)}
-								className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] dark:text-slate-100 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 								title="Скопировать в буфер"
 							>
 								<Copy size={15} />
@@ -949,19 +960,20 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									},
 								);
 							}}
-							className="min-h-[44px] px-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 							title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
 							data-testid="appointment-modal-print-blank-contract-btn"
 						>
 							<FileText size={15} className="text-amber-600 dark:text-amber-400" />
-							<span className="hidden sm:inline">Бланк договора (_______)</span>
+							<span className="hidden sm:inline whitespace-nowrap">Бланк договора</span>
 							<span className="sm:hidden">Договор</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+							className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 							aria-label="Закрыть"
+							data-testid="appointment-modal-close-btn"
 						>
 							<X size={20} />
 						</button>

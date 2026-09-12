@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	CheckCircle2,
 	FileText,
@@ -103,6 +104,18 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...initialSafetyProfile };
 		});
 
+		useEffect(() => {
+			if (initialPatient) {
+				setPatientData((prev) => ({ ...prev, ...initialPatient }));
+			}
+		}, [initialPatient]);
+
+		useEffect(() => {
+			if (initialSafetyProfile) {
+				setSafetyProfile((prev) => ({ ...prev, ...initialSafetyProfile }));
+			}
+		}, [initialSafetyProfile]);
+
 		const handleUpdatePatientField = useCallback((field: keyof PatientGeneralInfo, value: string) => {
 			setPatientData((prev) => ({
 				...prev,
@@ -134,8 +147,9 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 		}, [patientData, safetyProfile, onSavePatient, onClose]);
 
 		if (!isOpen) return null;
+		if (typeof document === "undefined") return null;
 
-		return (
+		return createPortal(
 			<div
 				className="anamnesis-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
 				role="dialog"
@@ -174,7 +188,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
-								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800 text-[var(--ink,#1e293b)] dark:text-slate-200 inline-flex items-center gap-1.5 cursor-pointer"
+								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 text-[var(--ink,#1e293b)] dark:text-slate-100 inline-flex items-center gap-1.5 cursor-pointer"
 								title="Печать карты пациента"
 							>
 								<Printer className="w-4 h-4" />
@@ -280,7 +294,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								onClick={onClose}
-								className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#1e293b)] dark:text-slate-200 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-slate-800 cursor-pointer"
+								className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#1e293b)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 cursor-pointer"
 							>
 								Закрыть
 							</button>
@@ -295,7 +309,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						</div>
 					</div>
 				</div>
-			</div>
+			</div>,
+			document.body,
 		);
 	},
 );

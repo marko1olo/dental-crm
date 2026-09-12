@@ -998,7 +998,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/clinical/ClinicalProtocolPresets.tsx:ClinicalProtocolPresets",
 	"components/clinical/DiagnosisSelector.tsx:DiagnosisSelector",
 	"components/clinical/PostOpCareSheetModal.tsx:PostOpCareSheetModal",
-	"components/clinical/SomaticAnamnesisCard.tsx:SomaticAnamnesisCard",
 	"components/cmo/CmoQualityAuditModal.tsx:CmoQualityAuditModal",
 	"components/diagnostics/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
@@ -1043,9 +1042,7 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/orthopedics/OrthopedicsChairsidePanel.tsx:OrthopedicsChairsidePanel",
 	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
 	"components/patient-portal/PatientWebappPortalModal.tsx:PatientWebappPortalModal",
-	"components/patients/PatientCardModal.tsx:PatientCardModal",
 	"components/patient/PatientDetailModal.tsx:PatientDetailModal",
-	"components/patient/tabs/PatientGeneralInfoTab.tsx:PatientGeneralInfoTab",
 	"components/patients/transfer/PatientBranchTransferModal.tsx:PatientBranchTransferModal",
 	"components/payroll/AdvancedDoctorPayrollModal.tsx:AdvancedDoctorPayrollModal",
 	"components/payroll/FormT13TimesheetModal.tsx:FormT13TimesheetModal",
@@ -1118,7 +1115,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 120;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 117;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.
