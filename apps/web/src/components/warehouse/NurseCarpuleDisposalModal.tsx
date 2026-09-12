@@ -79,7 +79,7 @@ export const COMMON_ANESTHETICS: readonly AnestheticDrugOption[] = [
 export interface NurseCarpuleDisposalModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly onDisposalConfirmed?: (payload: {
+	readonly onDisposalConfirmed?: ((payload: {
 		drugId: string;
 		drugName: string;
 		carpulesCount: number;
@@ -89,10 +89,11 @@ export interface NurseCarpuleDisposalModalProps {
 		actNumber: string;
 		actDate: string;
 		isOverdraft: boolean;
-	}) => void | Promise<void>;
-	readonly initialNurseName?: string;
-	readonly initialDoctorName?: string;
-	readonly currentStockAvailable?: number;
+	}) => void | Promise<void>) | undefined;
+	readonly initialNurseName?: string | undefined;
+	readonly initialDoctorName?: string | undefined;
+	readonly currentStockAvailable?: number | undefined;
+	readonly initialDate?: string | undefined;
 }
 
 export function NurseCarpuleDisposalModal({
@@ -102,9 +103,10 @@ export function NurseCarpuleDisposalModal({
 	initialNurseName = "Дежурная медсестра",
 	initialDoctorName = "Лечащий врач",
 	currentStockAvailable = 0,
+	initialDate,
 }: NurseCarpuleDisposalModalProps) {
 	const now = new Date();
-	const dateIso = now.toISOString().slice(0, 10);
+	const dateIso = initialDate || now.toISOString().slice(0, 10);
 
 	const [selectedDrugId, setSelectedDrugId] = useState<string>("articaine_100k");
 	const [carpulesCount, setCarpulesCount] = useState<number>(1);

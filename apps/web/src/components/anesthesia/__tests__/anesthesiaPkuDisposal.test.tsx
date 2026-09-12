@@ -132,7 +132,7 @@ describe("Anesthesia PKU 1-Click Disposal & Single-Nurse Clearance (Mandate 8e /
 	});
 
 	// ── 3. Component Rendering: Modal & 1-Click UI Presets ────────────────────
-	it("9. AnesthesiaPkuDisposalModal renders 1-click presets panel and action buttons", () => {
+	it("9. AnesthesiaPkuDisposalModal renders 1-click nurse disposal facade over NurseCarpuleDisposalModal", () => {
 		const html = renderToString(
 			<AnesthesiaPkuDisposalModal
 				isOpen={true}
@@ -140,31 +140,15 @@ describe("Anesthesia PKU 1-Click Disposal & Single-Nurse Clearance (Mandate 8e /
 			/>,
 		);
 
-		// Panel must be present
-		assert.ok(html.includes('data-testid="pku-quick-presets-panel"'), "Presets panel must be rendered");
+		// Modal title and SanPiN 1-click clearance
+		assert.ok(html.includes("1-Клик списание пустых карпул анестетиков"), "Modal title must be rendered");
+		assert.ok(html.includes("СанПиН 3.3686-21 • Единолично медсестрой (без комиссии из 3 человек)"), "Single nurse SanPiN text must be rendered");
 
-		// All 4 preset buttons must be rendered
-		assert.ok(html.includes('data-testid="btn-preset-ultracain"'), "Ultracain preset button must exist");
-		assert.ok(html.includes('data-testid="btn-instant-ultracain"'), "Ultracain instant 1-click button must exist");
+		// 1-click clinical writeoff packet button
+		assert.ok(html.includes('data-testid="btn-writeoff-anesthesia-packet"'), "Standard anesthesia packet button must exist");
 
-		assert.ok(html.includes('data-testid="btn-preset-septanest"'), "Septanest preset button must exist");
-		assert.ok(html.includes('data-testid="btn-instant-septanest"'), "Septanest instant 1-click button must exist");
-
-		assert.ok(html.includes('data-testid="btn-preset-scandonest"'), "Scandonest preset button must exist");
-		assert.ok(html.includes('data-testid="btn-instant-scandonest"'), "Scandonest instant 1-click button must exist");
-
-		assert.ok(html.includes('data-testid="btn-preset-damaged-broken"'), "Damaged carpule preset button must exist");
-		assert.ok(html.includes('data-testid="btn-instant-damaged-broken"'), "Damaged carpule instant 1-click button must exist");
-
-		// Single nurse confirmation checkbox and mandate 8e badge
-		assert.ok(html.includes('data-testid="chk-assistant-signature"'), "Single nurse signature checkbox must exist");
-		assert.ok(html.includes("Без комиссии из 3 человек"), "Mandate 8e non-commission badge must be displayed");
-
-		// Primary save button
-		assert.ok(html.includes('data-testid="btn-save-pku-record"'), "Primary save button must exist");
-
-		// Shift batch disposal button
-		assert.ok(html.includes('data-testid="btn-pku-quick-batch-dispose-banner"'), "Shift disposal button must exist");
+		// Single nurse affirmation
+		assert.ok(html.includes("Единоличное утверждение медсестрой"), "Single nurse affirmation must be displayed");
 	});
 
 	it("10. AnesthesiaPkuDisposalModal renders nothing when isOpen is false", () => {
