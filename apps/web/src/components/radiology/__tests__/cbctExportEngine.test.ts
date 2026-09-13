@@ -584,7 +584,7 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 			huSampling: mockHuSampling,
 		});
 
-		assert.ok(defaultAudit.form043DiaryText.includes("Пациент: Барабаш С.В. | Клиника: Стоматологический центр DENTE"));
+		assert.ok(defaultAudit.form043DiaryText.includes("Пациент: Пациент | Клиника: Стоматологический центр DENTE"));
 		assert.ok(!defaultAudit.form043DiaryText.includes("Барабаш клиники"));
 
 		// Custom names
@@ -716,7 +716,7 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		});
 
 		const defaultHtml = renderCbctReportHtml(defaultReport);
-		assert.ok(defaultHtml.includes("Врач-стоматолог-хирург-имплантолог: Барабаш С.В."));
+		assert.ok(defaultHtml.includes("Врач-стоматолог-хирург-имплантолог"));
 
 		// Case B: Custom doctorName passed in props
 		const customReport = buildCbctReportData({
@@ -747,7 +747,7 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		});
 		const defaultHtml = renderCbctReportHtml(defaultReport);
 		assert.ok(!defaultHtml.includes("Врач: <b>Врач"));
-		assert.ok(defaultHtml.includes("Врач: <b>Барабаш С.В.</b>") || defaultHtml.includes("Врач: <b>стоматолог-хирург-имплантолог: Барабаш С.В.</b>"));
+		assert.ok(defaultHtml.includes("Врач: <b>стоматолог-хирург-имплантолог</b>"));
 
 		// Case 2: doctorName starting with 'Врач-стоматолог-хирург: Барабаш С.В.'
 		const reportWithDoctorTitle = buildCbctReportData({
