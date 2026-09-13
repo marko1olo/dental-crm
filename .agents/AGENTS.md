@@ -96,7 +96,7 @@ Use these exclusively. Blind terminal navigation is banned.
   * **Strict Ban on 4+ Tiers & Junk-Drawer Bloat:** Tier 2 and Tier 3 must NEVER be merged into a single cluttered dumping ground. Max modal nesting depth is strictly 1.
 - **Dominant Workspace Scale (Анти-мелочь):** Primary interactive objects must dominate screen space. Micro-fonts ($\le 11\text{px}$) on buttons and pills are banned. Primary action text is $\ge 13\text{--}14\text{px}$ bold.
 - **1-Click Popups & Zero Surface Bloat:** Fast 1-tap state selection. Giant multi-surface selector diagrams must never block the screen by default.
-- **Touch-First Over Hotkeys:** Gloved/touch operation standard. Rely on prominent interactive touch targets ($\ge 44\times 44\text{ px}$), not obscure keyboard shortcuts.
+- **Плотная десктопная эргономика и адаптивный тач (Anti-Mobile Bloat):** На десктопе с мышью — приоритет плотной профессиональной клинической сетки (высота кнопок, инпутов и строк 28–36px, `h-7`/`h-8`/`h-9`, как в панели пилота / StomX / IDENT). Категорически ЗАПРЕЩЕНО раздувать десктоп искусственными гигантскими кнопками 44x44px. Мобильные устройства и планшеты у кресла (`pointer: coarse`) адаптируют тач-таргеты индивидуально без разрушения десктопной сетки.
 - **No Card-in-Card Nesting:** Modals and screens are clean, monolithic panels. No cards inside cards or nested boxes.
 - **Premium Documents Typography:** Outpatient records (043/у), informed consents, completed treatment acts, and bills must render in magazine-grade print typography with live field customization.
 - **Interactive State Visual Audit:** Screenshots must audit open Hover HUDs, open radial context menus, and modals. Check for long Russian text overflow (`min-w-0`, `truncate`, `break-words`).
