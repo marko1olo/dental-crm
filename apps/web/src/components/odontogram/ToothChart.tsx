@@ -2990,7 +2990,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						onClick={handleMarkIntactDentition}
 						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
-						data-testid="mark-intact-dentition-btn"
+						data-testid="mark-intact-dentition-btn tooth-chart-mark-intact-btn"
 					>
 						<Zap size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Санирован / Интактный</span>
@@ -3024,7 +3024,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							onClick={handleMarkWisdomTeethMissing}
 							className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
-							data-testid="mark-wisdom-missing-btn"
+							data-testid="mark-wisdom-missing-btn tooth-chart-mark-wisdom-missing-btn"
 						>
 							<Zap size={14} className="text-zinc-500 shrink-0" />
 							<span>Без 8-ок (18, 28, 38, 48)</span>

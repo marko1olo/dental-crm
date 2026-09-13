@@ -140,7 +140,10 @@ async function runInquisitionCapture() {
     fs.mkdirSync(outDir, { recursive: true });
   }
 
-  const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/0c8a3973-9585-46de-ba1c-e067303c523c");
+  const brainDir = path.resolve(
+    process.env.BRAIN_DIR ||
+      "C:/Users/Admin/.gemini/antigravity/brain/b0211abe-fa07-4302-a768-4d0e87438251"
+  );
   if (!fs.existsSync(brainDir)) {
     fs.mkdirSync(brainDir, { recursive: true });
   }
@@ -156,74 +159,98 @@ async function runInquisitionCapture() {
 
   const capturedRegistry = [];
 
-  // Helper to inject tokens and preferences
+  // Helper to inject tokens and preferences with retry
   async function configurePage(page, theme) {
-    await page.evaluate(
-      ({ ct, st, uid, pid, th }) => {
-        localStorage.setItem("dente_clinic_token", ct);
-        localStorage.setItem("dente_staff_token", st);
-        localStorage.setItem("dente_active_role", "owner");
-        localStorage.setItem("dente_theme_mode", th);
-        localStorage.setItem(
-          "dente_ui_preferences_v1",
-          JSON.stringify({
-            onboardingDismissed: true,
-            onboardingStep: "done",
-            version: 1,
-          })
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await page.waitForLoadState("domcontentloaded");
+        await page.evaluate(
+          ({ ct, st, uid, pid, th }) => {
+            localStorage.setItem("dente_clinic_token", ct);
+            localStorage.setItem("dente_staff_token", st);
+            localStorage.setItem("dente_active_role", "owner");
+            localStorage.setItem("dente_theme_mode", th);
+            localStorage.setItem("dente_onboarding_completed", "true");
+            localStorage.setItem(
+              "dente_ui_preferences_v1",
+              JSON.stringify({
+                onboardingDismissed: true,
+                onboardingStep: "done",
+                version: 1,
+              })
+            );
+            localStorage.setItem(
+              "dental-crm:onboarding:v1",
+              JSON.stringify({
+                dismissed: true,
+                step: "done",
+                completed: true,
+                onboardingDismissed: true,
+                onboardingStep: "done",
+                version: 1,
+              })
+            );
+            localStorage.setItem(
+              "dental-crm:web-ui-preferences:v1",
+              JSON.stringify({
+                version: 1,
+                uiLanguage: "ru",
+                selectedWorkspaceRole: "owner",
+                selectedPatientId: pid,
+                onboardingDismissed: true,
+                onboardingStep: "done",
+              })
+            );
+            localStorage.setItem(
+              "dente-workspace-profile",
+              JSON.stringify({
+                state: {
+                  clinicName: "Стоматология ДЕНТЕ Премиум",
+                  currentDoctor: { id: uid, fullName: "Д-р Воронов А. В.", role: "owner" },
+                  flags: { disableTour: true },
+                },
+              })
+            );
+            document.documentElement.setAttribute("data-theme", th);
+            if (th === "dark") {
+              document.documentElement.classList.add("dark");
+              document.documentElement.classList.remove("light");
+            } else {
+              document.documentElement.classList.remove("dark");
+              document.documentElement.classList.add("light");
+            }
+            if (window.__useThemeStore) {
+              window.__useThemeStore.getState().setThemeMode(th);
+            }
+          },
+          {
+            ct: auth.clinicToken,
+            st: auth.staffToken,
+            uid: auth.ownerUserId,
+            pid: auth.patientId,
+            th: theme,
+          }
         );
-        localStorage.setItem(
-          "dental-crm:onboarding:v1",
-          JSON.stringify({
-            dismissed: true,
-            step: "done",
-            completed: true,
-            onboardingDismissed: true,
-            onboardingStep: "done",
-            version: 1,
-          })
-        );
-        localStorage.setItem(
-          "dental-crm:web-ui-preferences:v1",
-          JSON.stringify({
-            version: 1,
-            uiLanguage: "ru",
-            selectedWorkspaceRole: "owner",
-            selectedPatientId: pid,
-            onboardingDismissed: true,
-            onboardingStep: "done",
-          })
-        );
-        localStorage.setItem(
-          "dente-workspace-profile",
-          JSON.stringify({
-            state: {
-              clinicName: "Стоматология ДЕНТЕ Премиум",
-              currentDoctor: { id: uid, fullName: "Д-р Воронов А. В.", role: "owner" },
-              flags: { disableTour: true },
-            },
-          })
-        );
-        document.documentElement.setAttribute("data-theme", th);
-        if (th === "dark") {
-          document.documentElement.classList.add("dark");
-          document.documentElement.classList.remove("light");
-        } else {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.classList.add("light");
-        }
-        if (window.__useThemeStore) {
-          window.__useThemeStore.getState().setThemeMode(th);
-        }
-      },
-      {
-        ct: auth.clinicToken,
-        st: auth.staffToken,
-        uid: auth.ownerUserId,
-        pid: auth.patientId,
-        th: theme,
+        break;
+      } catch (err) {
+        if (attempt === 3) throw err;
+        await page.waitForTimeout(1000);
       }
-    );
+    }
+  }
+
+  async function navigateView(page, hash, selector) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await page.evaluate((h) => { window.location.hash = h; }, hash);
+        await page.waitForSelector(selector, { timeout: 20000 });
+        await page.waitForTimeout(1200);
+        break;
+      } catch (err) {
+        if (attempt === 3) throw err;
+        await page.waitForTimeout(1000);
+      }
+    }
   }
 
   async function takeProof(page, fileName, viewName, modeName) {
@@ -322,14 +349,15 @@ async function runInquisitionCapture() {
   });
   await addAuthInitScript(desktopContext);
   const dPage = await desktopContext.newPage();
-  await dPage.goto("http://127.0.0.1:5173/", { waitUntil: "domcontentloaded", timeout: 60000 });
-  await dPage.waitForSelector(".boot-state", { state: "detached", timeout: 30000 });
-  await dPage.waitForSelector(".app-shell", { timeout: 20000 });
+  await dPage.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 60000 });
+  await dPage.waitForSelector(".boot-state", { state: "detached", timeout: 60000 });
+  await dPage.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
+  await dPage.waitForSelector(".schedule-filter-strip", { state: "visible", timeout: 30000 });
+  await dPage.waitForTimeout(2000);
 
   // 1A. Schedule Desktop Light & Dark
   await configurePage(dPage, "light");
-  await dPage.evaluate(() => { window.location.hash = "schedule"; });
-  await dPage.waitForSelector(".schedule-filter-strip", { timeout: 20000 });
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
   await takeProof(dPage, "01_schedule_desktop_light.png", "Schedule", "Desktop Light");
 
   await configurePage(dPage, "dark");
@@ -338,8 +366,7 @@ async function runInquisitionCapture() {
 
   // 1B. Visit Desktop Light & Dark
   await configurePage(dPage, "light");
-  await dPage.evaluate(() => { window.location.hash = "visit"; });
-  await dPage.waitForSelector(".visit-monolithic-header", { timeout: 20000 });
+  await navigateView(dPage, "visit", ".visit-monolithic-header, .visit-panel, .visit-workspace");
   await takeProof(dPage, "05_visit_desktop_light.png", "Visit", "Desktop Light");
 
   await configurePage(dPage, "dark");
@@ -348,8 +375,7 @@ async function runInquisitionCapture() {
 
   // 1C. Patients Desktop Light & Dark
   await configurePage(dPage, "light");
-  await dPage.evaluate(() => { window.location.hash = "patients"; });
-  await dPage.waitForSelector(".patients-search-box", { timeout: 20000 });
+  await navigateView(dPage, "patients", ".patients-search-box, .patients-container");
   await takeProof(dPage, "09_patients_desktop_light.png", "Patients", "Desktop Light");
 
   await configurePage(dPage, "dark");
@@ -358,8 +384,7 @@ async function runInquisitionCapture() {
 
   // 1D. Finance Desktop Light & Dark
   await configurePage(dPage, "light");
-  await dPage.evaluate(() => { window.location.hash = "finance"; });
-  await dPage.waitForSelector(".finance-header-actions", { timeout: 20000 });
+  await navigateView(dPage, "finance", ".finance-header-actions, .finance-container");
   await takeProof(dPage, "13_finance_desktop_light.png", "Finance", "Desktop Light");
 
   await configurePage(dPage, "dark");
@@ -380,14 +405,15 @@ async function runInquisitionCapture() {
   });
   await addAuthInitScript(mobileContext);
   const mPage = await mobileContext.newPage();
-  await mPage.goto("http://127.0.0.1:5173/", { waitUntil: "domcontentloaded", timeout: 60000 });
-  await mPage.waitForSelector(".boot-state", { state: "detached", timeout: 30000 });
-  await mPage.waitForSelector(".app-shell", { timeout: 20000 });
+  await mPage.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 60000 });
+  await mPage.waitForSelector(".boot-state", { state: "detached", timeout: 60000 });
+  await mPage.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
+  await mPage.waitForSelector(".schedule-filter-strip", { state: "visible", timeout: 30000 });
+  await mPage.waitForTimeout(2000);
 
   // 2A. Schedule Mobile Light & Dark
   await configurePage(mPage, "light");
-  await mPage.evaluate(() => { window.location.hash = "schedule"; });
-  await mPage.waitForSelector(".schedule-filter-strip", { timeout: 20000 });
+  await navigateView(mPage, "schedule", ".schedule-filter-strip");
   await takeProof(mPage, "03_schedule_mobile_light.png", "Schedule", "Mobile Light");
 
   await configurePage(mPage, "dark");
@@ -396,8 +422,7 @@ async function runInquisitionCapture() {
 
   // 2B. Visit Mobile Light & Dark
   await configurePage(mPage, "light");
-  await mPage.evaluate(() => { window.location.hash = "visit"; });
-  await mPage.waitForSelector(".visit-monolithic-header, .visit-panel", { timeout: 20000 });
+  await navigateView(mPage, "visit", ".visit-monolithic-header, .visit-panel, .visit-workspace");
   await takeProof(mPage, "07_visit_mobile_light.png", "Visit", "Mobile Light");
 
   await configurePage(mPage, "dark");
@@ -406,8 +431,7 @@ async function runInquisitionCapture() {
 
   // 2C. Patients Mobile Light & Dark
   await configurePage(mPage, "light");
-  await mPage.evaluate(() => { window.location.hash = "patients"; });
-  await mPage.waitForSelector(".patients-search-box", { timeout: 20000 });
+  await navigateView(mPage, "patients", ".patients-search-box, .patients-container");
   await takeProof(mPage, "11_patients_mobile_light.png", "Patients", "Mobile Light");
 
   await configurePage(mPage, "dark");
@@ -416,8 +440,7 @@ async function runInquisitionCapture() {
 
   // 2D. Finance Mobile Light & Dark
   await configurePage(mPage, "light");
-  await mPage.evaluate(() => { window.location.hash = "finance"; });
-  await mPage.waitForSelector(".finance-header-actions", { timeout: 20000 });
+  await navigateView(mPage, "finance", ".finance-header-actions, .finance-container");
   await takeProof(mPage, "15_finance_mobile_light.png", "Finance", "Mobile Light");
 
   await configurePage(mPage, "dark");

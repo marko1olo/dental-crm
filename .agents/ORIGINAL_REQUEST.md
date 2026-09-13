@@ -488,3 +488,49 @@ Any detected defect must be immediately corrected in CSS/TSX with automated re-c
 - [ ] Red Team Inquisitor reviews every screen via `view_file` and logs verbatim pixel evidence for all 7 deadly sins.
 - [ ] Clean conventional commits with exact per-file `git add`.
 
+## Follow-up — 2026-09-13T14:56:08Z
+
+Total bloat and dead code eradication (inpatient hospital procedures, procedure simulators, artificial duplicate facades, fake test-shirms) and desktop/mobile clinical ergonomics enhancement (Apple Studio Clinical HIG, Hick's Law 1-row toolbar 32-36px, Mandate 8e doctor autonomy) in Dental CRM.
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Bloat & Dead Code Eradication (Mandates 8i, 8k, 8s)
+- Identify and eliminate obsolete duplicate facade files and folders across `apps/web/src/components/` and `apps/api/src/`.
+- Purge procedure simulators, general hospital inpatient artifacts (bed-days, transfusion, general medical forms like 025/u), keeping only outpatient dental workflow (Form 043/u, Nomenclature 804n, SanPiN, 54-FZ).
+- Remove fake test-shirms in `panelsAreMounted.test.ts` and sync all real imports.
+
+### R2. Desktop & Mobile UI Ergonomics & Doctor Autonomy (Mandates 8d, 8e, 8p, 8n)
+- Enforce Hick's Law: primary toolbars strictly 1 row (32–36px), secondary actions in popover menu `...`.
+- Total header budget $\le 160\text{--}180\text{px}$ on desktop (1440x900).
+- Zero disabled buttons without explanation; 1-click physiological norm default ("Соматически здоров / норма"); 54-FZ checkout without mandatory citizen INN.
+- Mobile touch targets $\ge 44\times 44\text{px}$ on iPhone 390x844 with sticky footer `flex-col-reverse`.
+
+### R3. Rigorous Verification & Red-Team Audit
+- Multi-state visual inspection: capture and review real PNG screenshots (Desktop 1440x900 and Mobile 390x844, Light and Dark themes).
+- 7 Deadly Sins UI Checklist: no clipped text, no overflow, no emojis in official forms, WCAG AAA contrast.
+- Centralized Single-Compiler Gate: Exit code 0 on `npm run check:encoding` and `npm run typecheck`.
+
+### R4. Dynamic Documentation & Backlog Sync (Mandate 8h)
+- Synchronize all changes into `docs/competitive-audit/BACKLOG.md`, `OUR_CRM_MAP.md`, and `FEATURES_REGISTRY.md` with exact commit hashes and file references.
+
+## Acceptance Criteria
+
+### Bloat Eradication & Code Integrity
+- [ ] No unreferenced facade wrappers or dead component files remain in active routes.
+- [ ] Zero hospital/inpatient general medicine bloat polluting dental workflows.
+- [ ] `npm run check:encoding` passes with 0 errors across all repository files.
+- [ ] `npm run typecheck -w @dental/web` and `npm run typecheck -w @dental/api` pass with Exit Code 0.
+
+### Ergonomics & Doctor Autonomy
+- [ ] Schedule, Visit, Patients, and Finance desktop views maintain $\le 180\text{px}$ total header height.
+- [ ] Primary toolbars feature strictly 1 row with at most 1–2 primary action buttons; secondary items grouped in `...`.
+- [ ] 0 disabled buttons on clinical hot paths; 1-click somatic norm available on visits.
+- [ ] Cash register accepts payment without requiring physical citizen INN.
+
+### Visual Proof & Documentation
+- [ ] Real PNG screenshots verified via visual inspection (`view_file`), sizes $\ge 40\text{ KB}$, unique MD5 hashes.
+- [ ] `BACKLOG.md` and `OUR_CRM_MAP.md` updated with exact commit references and clean git log.
+

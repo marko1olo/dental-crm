@@ -159,8 +159,8 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	 * через точку входа #clinical-modals-studio?modal=cash_shift_closing.
 	 */
 	/*
-	 * PatientPortalModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
-	 * через точку входа #clinical-modals-studio.
+	 * PatientPortalModal УДАЛЁН per Mandate 8s как устаревший фасад-обертка.
+	 * Канонический экспорт PatientPortalModal в components/portal/index.ts указывает на PatientCabinetModal.
 	 */
 	/*
 	 * ComparativePlannerDashboard УДАЛЁН, поэтому записи долга здесь больше нет — и
@@ -956,7 +956,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/perio/PerioProfileStrip.tsx:PerioProfileStrip",
 	"components/portal/PatientMobilePortalModal.tsx:PatientMobilePortalModal",
 	"components/portal/PatientOnlineBookingModal.tsx:PatientOnlineBookingModal",
-	"components/portal/PatientPortalModal.tsx:PatientPortalModal",
 	"components/portal/UpcomingVisitCard.tsx:UpcomingVisitCard",
 	"components/portal/selfCheckin/SignaturePadCanvas.tsx:SignaturePadCanvas",
 	"components/portal/timeline/PatientPortalTimelineModal.tsx:PatientPortalTimelineModal",
@@ -1018,7 +1017,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 114;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 113;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

@@ -1372,7 +1372,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="hidden sm:inline-flex secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
@@ -1380,7 +1380,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</button>
 
 							{/* Статус приема: только на широких экранах */}
-							<span className="hidden xl:inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
+							<span className="!hidden xl:!inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
 								Черновик
 							</span>
 

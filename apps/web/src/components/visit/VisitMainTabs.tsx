@@ -89,7 +89,7 @@ export function VisitMainTabs({
 			>
 				<Stethoscope size={14} className="shrink-0" />
 				<span className="whitespace-nowrap flex-shrink-0">
-					<span className="sm:hidden">План</span>
+					<span className="sm:hidden">Анамнез</span>
 					<span className="hidden sm:inline">Анамнез и Жалобы</span>
 				</span>
 			</button>

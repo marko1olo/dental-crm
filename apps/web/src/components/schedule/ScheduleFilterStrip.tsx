@@ -325,7 +325,7 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7.5 px-1 sm:px-1.5 text-[11px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[96px] min-w-[96px] sm:w-[135px] sm:min-w-[135px] text-center tracking-tight"
+					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7.5 px-1 sm:px-1.5 text-[11px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[82px] min-w-[82px] sm:w-[135px] sm:min-w-[135px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
@@ -1003,7 +1003,7 @@ export function ScheduleFilterStrip({
 						data-testid="schedule-toolbar-primary-quick-booking-btn"
 					>
 						<Plus size={14} className="shrink-0" />
-						<span className="hidden sm:inline whitespace-nowrap">+ Запись</span>
+						<span className="hidden sm:inline whitespace-nowrap">Запись</span>
 					</button>
 				)}
 			</div>

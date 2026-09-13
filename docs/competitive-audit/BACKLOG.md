@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–189b / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–190 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 114, EMOJI TEST PURIFICATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -47,6 +47,7 @@
 > 41. Эргономика радиологии и визиографии (Wave 189, Мандаты 8c, 8d, 8e, 8i, 8k, 8p, 8t): подтверждено мгновенное открытие 2D визиограмм <50мс без задержек на ИИ (Мандат 8e п. 11); гарантирован запрет на автоперезапись зубной формулы ИИ без подтверждения врача; шапки просмотрщиков `RadiologyViewerModal.tsx` и `CbctMprViewer.tsx` сжаты в строго 1 компактную строку высотой 32–36px (`h-9 min-h-[36px] max-h-[36px]`) с выносом вторичных инструментов (протоколы, лист доз, 3D MPR, направления, аннотации HUD, сведения) в поповер меню `...` (`radiology-more-tools-btn`) по Мандатам 8d п. 2, 8p; подтвержден специализированный амбулаторный контекст (Мандат 8i, ноль стационарного МРТ/КТ мусора); повышен порог безопасности нижнечелюстного нерва (IAN clearance) до >= 1.5 мм в `implantSafetyEngine.ts`, `CbctMprViewer.tsx`, `CbctMprImplantStudioModal.tsx`, `ImplantCrossSectionPlanner.tsx`; интерактивные элементы приведены к тач-таргетам >= 44px (`CbctViewportHud.tsx`, `RvgFiltersToolbar.tsx`, `CbctMprImplantStudioModal.tsx`, коммит `a83905344`).
 > 42. Анатомическая палитра одонтограммы, штампы Формы 043/у и договоров без 403, мобильная адаптация планов лечения 390x844, копеечно-точный биллинг и ликвидация мусорных скриптов (Wave 189, коммит `1ef45e22a`, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8p, 8s, 8t): внедрена каноническая анатомическая палитра зубной формулы (кариес `#f59e0b`, пульпит `#ef4444`, периодонтит `#f97316`, пломба `#3b82f6`, коронка `#eab308`, имплантат `#6366f1`) в `AnatomicalSvgOdontogram.tsx`, `ToothChart.tsx`, `ToothStatusPalette.tsx`, `ToothRadialMenu.tsx`; добавлен 1-клик штамп имплантата в `OdontogramViewContainer.tsx` (`stamp-implant-btn`), тач-таргеты $\ge 44\times 44\text{px}$ на всех кнопках зубов и анатомических поверхностей коронки (MOD/MO/OD/O/M/D/V/L/K/A); регламентные водяные знаки «ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП» и «ПОДПИСАНО ВРАЧОМ» при печати Формы 043/у, 043-1/у и пакетов согласий ИДС (`DentalMedicalCard043uForm.tsx`, `PremiumDocumentPrintSheet.tsx`, `clinicalHtmlRenderers.ts`, `consentTemplates.ts`); автономия регистратуры: 1-клик печать бланка договора со строками `________` без 403-ошибок и без обязательного ИНН с физлиц (`PatientAdministrativeForm.tsx`); 1-клик соматическая норма («Соматически здоров / норма») в карточке пациента без `disabled` блокировок (`PatientGeneralInfoTab.tsx`, `PatientCardModal.tsx`); мобильная адаптация планов лечения под экраны 390x844: липкие футеры `flex-col-reverse` с кнопками на полную ширину в `TreatmentPlanPresenterModal.tsx`, `TreatmentPlanStageCard.tsx`, `planComparator.css`, `treatmentPlans.css`; копеечно-точный расчет смет без потери точности через `Math.round(val * 100) / 100` в `TreatmentPlanModule.tsx`; неблокирующий баннер актуальности плана старше 30 дней без препятствий врачу в ЗТЛ и кассе (Мандат 8e п. 7); тач-таргеты $\ge 44\text{px}$ на всех кнопках действий в `PatientsView.tsx` и `touch-targets.css`; ликвидированы мусорные скрипты `scratch-test.mjs`, `testParser.ts`, `test-parsers.ts` по Мандату 8s и Core Route п. 6.
 > 43. Ликвидация устаревшей фасадной директории formula/ по Мандату 8s и инструментальный Red Team фикс эргономики UI: тулбар расписания, тулбар счетов и мобильные тач-таргеты (Wave 189b, коммиты `f4f61e684`, `a94d24a61`, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8p, 8s, 8t): полная ликвидация устаревшей фасадной директории `apps/web/src/components/formula/` (-6 файлов, -565 строк, -16 828 байт) в пользу канонического `OdontogramModule` и `ToothStatusPalette` по Вселенскому анти-блоат догмату и Закону Единого Неделимого Авторитета (Мандат 8s), `ClinicalModalsHost.tsx` переключен напрямую на SSOT, удалены бутафорские ширмы из `panelsAreMounted.test.ts`; инструментальный фикс эргономики UI: добавление кнопки прямого действия `[+ Запись]` (`schedule-toolbar-primary-quick-booking-btn`) на тулбар расписания `ScheduleFilterStrip.tsx` по Закону Хика (ровно 1 главная кнопка создания записи на лицевой панели), устранение вертикального переполнения тулбара счетов `InvoicesView.tsx` со сжатием контролов до компактных 28px/h-7 на десктопе в рамках норматива высоты 32–36px по Мандату 8p, и обеспечение нормативных тач-таргетов $\ge 44\times 44\text{px}$ на мобильных устройствах в `VisitView.tsx` (`visit-header-more-actions-btn`), `FinanceView.tsx` (`finance-toolbar-options-btn`) и `InvoicesView.tsx`.
+> 44. Ликвидация искусственных дубликатов-фасадов и чистка бутафорских ширм тестов по Мандату 8s (Wave 190, коммит `8fb839b3a`, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t): полное удаление `apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx` (-30 строк бутафорского фасада) с переключением `BackofficeModalsHost.tsx` и `dmsModalsAndRegistry.test.ts` напрямую на канонический `DmsGuaranteeLetterModal.tsx`; консолидация `PatientPortalModal` в `apps/web/src/components/portal/index.ts` и `BackofficeModalsHost.tsx` с прямым монтированием канонического `PatientCabinetModal`; чистка бутафорских ширм в `panelsAreMounted.test.ts` со снижением потолка несмонтированных ширм со 115 до 114; санитаризация мета-теста `wave119EmojiPurification.test.ts` на канонический `DmsGuaranteeLetterModal.tsx`.
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5467,8 +5468,70 @@
   - Single-Compiler Gate защищен per Mandate 8t;
   - Все затронутые файлы соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
 
+---
 
+## 338. Волна 190: Ликвидация искусственных дубликатов-фасадов по Мандату 8s (DmsGuaranteeLettersModal -> DmsGuaranteeLetterModal, PatientPortalModal -> PatientCabinetModal), чистка бутафорских ширм в тестах (потолок 114) и эргономика десктопа (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t) [РЕАЛИЗОВАНО]
+* **Статус**: `[РЕАЛИЗОВАНО]`
+* **Коммит**: `8fb839b3a` (HEAD)
+* **Затронутые файлы**:
+  - `apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx` (удален по Мандату 8s — ликвидация искусственного дубликата-фасада)
+  - `apps/web/src/components/insurance/index.ts`
+  - `apps/web/src/components/insurance/dmsModalsAndRegistry.test.ts`
+  - `apps/web/src/components/modals/BackofficeModalsHost.tsx`
+  - `apps/web/src/components/portal/index.ts`
+  - `apps/web/src/tests/panelsAreMounted.test.ts`
+  - `apps/web/src/components/cmo/__tests__/wave119EmojiPurification.test.ts`
+* **Архитектурное решение**:
+  - **Ликвидация искусственного дубликата DmsGuaranteeLettersModal (Мандат 8s, коммит `8fb839b3a`)**:
+    * В соответствии с Вселенским анти-блоат догматом и Законом Единого Неделимого Авторитета (Мандат 8s: «Для КАЖДОЙ задачи — СТРОГО ОДИН канонический мастер-компонент, роут и сервис») полностью ликвидирован искусственный фасад-дубликат `apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx` (-30 строк), который являлся бутафорской оберткой-делегатом над каноническим модалом `DmsGuaranteeLetterModal.tsx`;
+    * Из реэкспортов `apps/web/src/components/insurance/index.ts` удален реэкспорт устаревшего компонента, в кодовой базе закреплен единственный неделимый авторитет гарантийных писем ДМС — `DmsGuaranteeLetterModal.tsx`;
+    * В модальном хосте бэкофиса `apps/web/src/components/modals/BackofficeModalsHost.tsx` модальный ключ `activeModal === "dms_guarantee_letters"` переключен на прямое монтирование канонического `DmsGuaranteeLetterModal` без промежуточных слоев;
+    * В тесте `apps/web/src/components/insurance/dmsModalsAndRegistry.test.ts` импорты и описания `describe` переведены на канонический `DmsGuaranteeLetterModal.js`.
+  - **Консолидация PatientPortalModal на базе канонического PatientCabinetModal (Мандат 8s, коммит `8fb839b3a`)**:
+    * В `apps/web/src/components/portal/index.ts` ликвидирован импорт устаревшего дубликата: экспорт `PatientPortalModal` и дефолтный экспорт перенаправлены напрямую на канонический `PatientCabinetModal` из поддиректории `./patientCabinet`;
+    * В `BackofficeModalsHost.tsx` модальный ключ `activeModal === "patient_portal"` переключен на прямое монтирование канонического `PatientCabinetModal` из `../portal`.
+  - **Сокращение бэклога бутафорских ширм в panelsAreMounted.test.ts (Мандат 8s, коммит `8fb839b3a`)**:
+    * В `apps/web/src/tests/panelsAreMounted.test.ts` из реестра `DEMOUNTED_MODAL_SHIRMS_BACKLOG` вычеркнута удаленная ширма `components/insurance/DmsGuaranteeLettersModal.tsx:DmsGuaranteeLettersModal`;
+    * Потолок бэклога несмонтированных ширм `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен со 115 до 114 в соответствии с правилом «может только сокращаться».
+  - **Санитаризация мета-тестов wave119EmojiPurification.test.ts (Мандат 8s, коммит `8fb839b3a`)**:
+    * В `apps/web/src/components/cmo/__tests__/wave119EmojiPurification.test.ts` тестовый сценарий валидации чистоты эмодзи переведен с удаленного файла на канонический `DmsGuaranteeLetterModal.tsx`.
+* **Верификация**:
+  - `scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5169 файлов проверено);
+  - Single-Compiler Gate защищен per Mandate 8t;
+  - Все затронутые файлы соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
 
+---
 
-
-
+## 339. Волна 191: Ликвидация устаревшего дубликата-фасада PatientPortalModal (Мандат 8s), сокращение реестра бутафорских ширм (потолок 113), автономия ЭМР и полировка расписания (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t) [РЕАЛИЗОВАНО]
+* **Статус**: `[РЕАЛИЗОВАНО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/portal/PatientPortalModal.tsx` (удален по Мандату 8s — ликвидация устаревшего дубликата-фасада)
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (потолок понижен со 114 до 113)
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx` (1-клик пресет нормы пародонта)
+  - `apps/web/src/components/odontogram/ToothChart.tsx` (алиасы testid для интактности)
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx` (ликвидация дублирования плюса)
+  - `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts` (синхронизация тестовых инвариантов автономии)
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Архитектурное решение**:
+  - **Ликвидация устаревшего дубликата PatientPortalModal (Мандат 8s)**:
+    * В соответствии с Вселенским анти-блоат догматом и Законом Единого Неделимого Авторитета (Мандат 8s) удален файл `apps/web/src/components/portal/PatientPortalModal.tsx` (-28 строк);
+    * Единственным каноническим компонентом личного кабинета пациента закреплен `PatientCabinetModal.tsx`.
+  - **Строгое сокращение реестра бутафорских ширм в panelsAreMounted.test.ts (Мандат 8s)**:
+    * Из массива `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалена строка `components/portal/PatientPortalModal.tsx:PatientPortalModal`;
+    * Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен со 114 до 113;
+    * Тестовый набор успешно пройден (11/11 PASS).
+  - **Автономия врача и точность клинических пресетов (Мандат 8e)**:
+    * В `PeriodontogramChart.tsx` кнопка переведена в канонический формат `1-клик: Здоровый пародонт (Норма)`;
+    * В `ToothChart.tsx` добавлены алиасы data-testid `tooth-chart-mark-intact-btn` и `tooth-chart-mark-wisdom-missing-btn`;
+    * В `emrPerioAutonomyInquisition.test.ts` инварианты автономии проверены (46/46 PASS).
+  - **Эргономический фикс тулбара расписания (Мандаты 8d, 8p)**:
+    * В `ScheduleFilterStrip.tsx` ликвидирован паразитный плюс перед словом «Запись» (`+ + Запись` -> `Запись` с Lucide `Plus`).
+* **Верификация**:
+  - `npm run check:encoding`: 0 ошибок (UTF-8, 5169 файлов проверено);
+  - `npm run typecheck -w @dental/web`: 0 ошибок (`tsc -b --noEmit`);
+  - `npm run typecheck -w @dental/api`: 0 ошибок (`tsc -p tsconfig.json --noEmit`);
+  - `node --import tsx --test apps/web/src/tests/panelsAreMounted.test.ts`: 11/11 PASS;
+  - `node --import tsx --test apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`: 46/46 PASS;
+  - 16/16 live-скриншотов 1440x900 и 390x844 Light/Dark проверены мультимодальным зрением (100% уникальные MD5, все > 40 KB).

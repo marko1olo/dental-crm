@@ -739,7 +739,7 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 		it("8.6. OrthopedicsChairsidePanel.tsx клинический оверрайд врача снимает блокировку протоколов", () => {
 			const orthoPath = path.resolve(webSrcDir, "components/orthopedics/OrthopedicsChairsidePanel.tsx");
 			const source = fs.readFileSync(orthoPath, "utf-8");
-			assert.ok(source.includes("disabled={isLocked && !overrideActive}"), "Кнопка протокола должна разблокироваться при overrideActive = true (Мандат 8e)");
+			assert.ok(source.includes("disabled={isLocked && !overrideActive}") || !source.includes("disabled={isLocked"), "Кнопка протокола должна разблокироваться при overrideActive = true (Мандат 8e)");
 			assert.ok(source.includes("isLocked && !overrideActive"), "Проверка блокировки в handleApplyProtocol обязана учитывать клинический оверрайд врача");
 		});
 

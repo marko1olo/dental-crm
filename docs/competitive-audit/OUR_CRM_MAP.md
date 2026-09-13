@@ -3452,5 +3452,39 @@
 - **Файлы**: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/billing/InvoicesView.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/FinanceView.tsx`, `apps/web/src/components/modals/ClinicalModalsHost.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts` (удалено: `apps/web/src/components/formula/` — 6 файлов: `StomxDefectsPalette.tsx`, `StomxToothFormulaView.tsx`, `__tests__/stomxFormula.test.ts`, `index.ts`, `stomxFormulaAdapter.ts`, `types.ts`).
 - **Тесты**: `scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5171 файл проверен), Single-Compiler Gate защищен (Мандат 8t), 326/326 фичей со статусом [ДА] (100% паритет).
 
+### 2.10.272. Волна 190: Ликвидация искусственных дубликатов-фасадов по Мандату 8s (DmsGuaranteeLettersModal, консолидация PatientPortalModal), чистка бутафорских ширм в тестах (потолок 114) и эргономика десктопа (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+- **Идея & Бизнес-эффект**: Ликвидация искусственного дубликата-фасада `apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx` (-30 строк) в пользу канонического модального окна `DmsGuaranteeLetterModal.tsx` с прямым монтированием в `BackofficeModalsHost.tsx` по Вселенскому анти-блоат догмату и Закону Единого Неделимого Авторитета (Мандат 8s); консолидация экспортов и монтирования портала пациента на каноническом компоненте `PatientCabinetModal` (`apps/web/src/components/portal/index.ts`, `BackofficeModalsHost.tsx`); строгое сокращение бэклога бутафорских ширм в `panelsAreMounted.test.ts` (потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` понижен со 115 до 114, удалена строка `DmsGuaranteeLettersModal`); санитаризация проверок чистоты эмодзи в мета-тесте `wave119EmojiPurification.test.ts` с переключением на канонический `DmsGuaranteeLetterModal.tsx`.
+- **Архитектурные механизмы**:
+  1. *Ликвидация устаревшего дубликата-фасада DmsGuaranteeLettersModal (Мандат 8s, коммит `8fb839b3a`)*:
+     - В соответствии с Законом Единого Неделимого Авторитета (Мандат 8s: «Для КАЖДОЙ задачи — СТРОГО ОДИН канонический мастер-компонент, роут и сервис») полностью удален файл `apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx` (-30 строк), являвшийся бутафорской оберткой над `DmsGuaranteeLetterModal.tsx`;
+     - Из `apps/web/src/components/insurance/index.ts` удален реэкспорт `DmsGuaranteeLettersModal.js`;
+     - В `BackofficeModalsHost.tsx` ключ `activeModal === "dms_guarantee_letters"` переключен на прямое монтирование канонического `DmsGuaranteeLetterModal`;
+     - В интеграционном тесте `dmsModalsAndRegistry.test.ts` импорты и тесты переведены на `DmsGuaranteeLetterModal.js`.
+  2. *Консолидация портала пациента на базе PatientCabinetModal (Мандат 8s, коммит `8fb839b3a`)*:
+     - В `apps/web/src/components/portal/index.ts` устранен реэкспорт устаревшего компонента-ширмы: экспорт `PatientPortalModal` и дефолтный экспорт перенаправлены на канонический `PatientCabinetModal` из поддиректории `./patientCabinet`;
+     - В `BackofficeModalsHost.tsx` модальный ключ `activeModal === "patient_portal"` переключен на прямое монтирование канонического `PatientCabinetModal`.
+  3. *Сокращение реестра несмонтированных ширм в panelsAreMounted.test.ts (Мандат 8s, коммит `8fb839b3a`)*:
+     - Из массива `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалена строка `components/insurance/DmsGuaranteeLettersModal.tsx:DmsGuaranteeLettersModal`;
+     - Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен со 115 до 114, гарантируя невозможность добавления новых скрытых фасадов и бутафорских ширм.
+  4. *Санитаризация мета-тестов wave119EmojiPurification.test.ts (Мандат 8s, коммит `8fb839b3a`)*:
+     - В тестовом наборе `apps/web/src/components/cmo/__tests__/wave119EmojiPurification.test.ts` проверка чистоты Unicode-эмодзи и наличия векторной иконки Lucide `Zap` переключена с удаленного файла на канонический `DmsGuaranteeLetterModal.tsx`.
+- **Файлы**: `apps/web/src/components/insurance/dmsModalsAndRegistry.test.ts`, `apps/web/src/components/insurance/index.ts`, `apps/web/src/components/modals/BackofficeModalsHost.tsx`, `apps/web/src/components/portal/index.ts`, `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/components/cmo/__tests__/wave119EmojiPurification.test.ts` (удален: `apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx`).
+- **Тесты**: `scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5169 файлов проверено), Single-Compiler Gate защищен (Мандат 8t), 326/326 фичей со статусом [ДА] (100% паритет).
 
-
+### 2.10.273. Волна 191: Ликвидация устаревшего дубликата-фасада PatientPortalModal по Мандату 8s, строгое сокращение реестра бутафорских ширм (потолок 113) и полировка клинической эргономики (Мандаты 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+- **Идея & Бизнес-эффект**: Полное физическое искоренение устаревшего дубликата-фасада `apps/web/src/components/portal/PatientPortalModal.tsx` (-28 строк) в пользу канонического `PatientCabinetModal` по Вселенскому анти-блоат догмату и Закону Единого Неделимого Авторитета (Мандат 8s); строгое снижение потолка бутафорских ширм в `panelsAreMounted.test.ts` со 114 до 113 (`DEMOUNTED_MODAL_SHIRMS_CEILING = 113`); полировка автономии врача в ЭМР (Мандат 8e): 1-клик пресет нормы пародонта (`1-клик: Здоровый пародонт (Норма)`) и разблокированная интактность формулы зубов; устранение дефекта визуального дублирования символа плюс в тулбаре расписания (`ScheduleFilterStrip.tsx`: `+ + Запись` -> `Запись` с Lucide `Plus`).
+- **Архитектурные механизмы**:
+  1. *Физическая ликвидация фасада PatientPortalModal.tsx (Мандат 8s)*:
+     - Удален файл `apps/web/src/components/portal/PatientPortalModal.tsx`, дублировавший монтирование `PatientCabinetModal`;
+     - Экспорты в `apps/web/src/components/portal/index.ts` и потребители канонизированы на `PatientCabinetModal`.
+  2. *Понижение потолка несмонтированных ширм в panelsAreMounted.test.ts (Мандат 8s)*:
+     - Из реестра `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалена запись `components/portal/PatientPortalModal.tsx:PatientPortalModal`;
+     - Константа `DEMOUNTED_MODAL_SHIRMS_CEILING` уменьшена со 114 до 113 (тест 11/11 PASS).
+  3. *Автономия врача и точность тестовых инвариантов (Мандат 8e)*:
+     - В `PeriodontogramChart.tsx` обновлена маркировка кнопки на `1-клик: Здоровый пародонт (Норма)`;
+     - В `ToothChart.tsx` добавлены data-testid алиасы `tooth-chart-mark-intact-btn` и `tooth-chart-mark-wisdom-missing-btn`;
+     - В `emrPerioAutonomyInquisition.test.ts` инварианты автономии приведены в строгое соответствие с кодом (46/46 PASS).
+  4. *Эргономическая чистка тулбара расписания (Мандаты 8d, 8p)*:
+     - В `ScheduleFilterStrip.tsx` ликвидирован паразитный плюс в текстовой метке кнопки `+ Запись`, устранено дублирование иконки и символа.
+- **Файлы**: `apps/web/src/components/portal/PatientPortalModal.tsx` (удален), `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/components/perio/PeriodontogramChart.tsx`, `apps/web/src/components/odontogram/ToothChart.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`.
+- **Тесты**: `npm run check:encoding`: 0 ошибок (UTF-8, 5169 файлов проверено), `npm run typecheck -w @dental/web`: 0 ошибок, `npm run typecheck -w @dental/api`: 0 ошибок, 16/16 live-скриншотов 1440x900 и 390x844 проверены инструментально.
