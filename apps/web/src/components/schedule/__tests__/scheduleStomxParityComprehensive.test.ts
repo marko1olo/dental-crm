@@ -14,6 +14,7 @@ import {
 } from "../roster/doctorShiftRosterEngine";
 import { ScheduleView } from "../../../ScheduleView";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
+import { ChairScheduleView } from "../ChairScheduleView";
 
 describe("Schedule & Chair Roster StomX / IDENT Comprehensive Parity", () => {
 	describe("1. Dental Chair Duty Doctor Shift Resolution (StomX / IDENT Parity)", () => {

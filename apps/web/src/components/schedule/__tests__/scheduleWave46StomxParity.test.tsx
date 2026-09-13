@@ -19,6 +19,10 @@ import {
 } from "../QuickAddChairModal";
 import { ChairScheduleView } from "../ChairScheduleView";
 import {
+	ScheduleGrid,
+	type ChairDoctorShiftAssignment,
+} from "../ScheduleGrid";
+import {
 	rotateWeekShifts,
 	copyWeekShiftsToTargetWeek,
 	getMondayOfWeekIso,

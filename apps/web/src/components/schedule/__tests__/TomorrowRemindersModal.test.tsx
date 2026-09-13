@@ -11,7 +11,7 @@ describe("TomorrowRemindersModal Component Suite", () => {
 	const mockDashboard: Dashboard = {
 		clinicSettings: {
 			profile: {
-				name: "Стоматология «ДЕНТЕ Плюс»",
+				clinicName: "Стоматология «ДЕНТЕ Плюс»",
 				address: "Москва, ул. Ленина, 25",
 				phone: "+7 (495) 777-88-99",
 				timezone: "Europe/Moscow",
@@ -49,7 +49,7 @@ describe("TomorrowRemindersModal Component Suite", () => {
 				reason: "Лечение кариеса",
 			} as unknown as Appointment,
 		],
-	};
+	} as unknown as Dashboard;
 
 	it("renders nothing when isOpen is false", () => {
 		const html = renderToStaticMarkup(
