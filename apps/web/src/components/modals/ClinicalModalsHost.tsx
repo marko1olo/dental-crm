@@ -366,8 +366,8 @@ export const ClinicalModalsHost: React.FC = () => {
 			)}
 			{activeModal === "stomx_formula" && (
 				<>
-					<StomxToothFormulaView  {...({} as any)} />
-					<StomxDefectsPalette  {...({} as any)} />
+					<StomxToothFormulaView patientId={patientId} {...({} as any)} />
+					<StomxDefectsPalette {...({} as any)} />
 				</>
 			)}
 			{activeModal === "orthodontic_studio" && (
