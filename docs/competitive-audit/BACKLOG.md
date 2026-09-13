@@ -5575,7 +5575,44 @@
     * В `FEATURES_REGISTRY.md` (фича 93) путь актуализирован на канонический `SterilizationAutoclaveLogModal.tsx`.
 * **Верификация**:
   - `node --import tsx --test apps/web/src/tests/panelsAreMounted.test.ts`: 11/11 PASS;
-  - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5169 файлов проверено);
+  - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5167 файлов проверено);
   - Single-Compiler Gate защищен per Mandate 8t;
   - Все затронутые файлы соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
+---
+
+## 341. Волна 192 (Финал): Автономия врача в дневнике визита (Мандат 8e), Debounced Autosave, доминантная одонтограмма Tier 1 (мин. 140px) и анатомическая палитра (Мандаты 8c, 8d, 8e, 8p, 8n)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Коммиты**: `d3dac05ca`, `21a90c710`
+* **Затронутые файлы**:
+  - `apps/web/src/components/visit/VisitSoapEditor.tsx` (debounced autosave 300мс + localStorage, 0 disabled кнопок, меню «...», двухрежимный водяной знак 043/у)
+  - `apps/web/src/components/visit/VisitDiarySection.tsx` (авто-ревизия ensureRevisingIfLocked на ввод/фокус, ликвидация disabled={isSaving}, Perio тач-таргеты)
+  - `apps/web/src/VisitView.tsx` (эффективный водяной знак «ЧЕРНОВИК / БЕЗ ЭЦП», сокрытие вкладок без размонтирования)
+  - `apps/web/src/components/odontogram/ToothChart.tsx` (minScale=0.95 -> высота зуба >= 142.5px, каноническая анатомическая палитра, тач-таргеты 44px)
+  - `apps/web/src/components/odontogram/odontogram.css` (teeth-row min-height: 140px)
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx` (PerioToothCard min-h-[140px], тач-таргеты 44px)
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx` (горячая лента штампов, MOD аккордеон Warm Context)
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx` (0-клик проброс активного штампа)
+  - `apps/web/src/components/odontogram/ToothRadialMenu.tsx` (анатомические цвета: кариес #f59e0b, пульпит #ef4444, пломба #3b82f6, коронка #10b981, имплант #6366f1, удален #64748b)
+  - `apps/web/src/components/odontogram/ToothStatusPalette.tsx` (1-клик кнопки нормы и штампы 44px)
+  - `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx` (синхронизация SVG-палитры)
+* **Архитектурные механизмы**:
+  - **Автономия врача и защита от потери данных (Мандат 8e, коммит `d3dac05ca`)**:
+    * В `VisitSoapEditor.tsx` и `VisitDiarySection.tsx` полностью ликвидированы мертвые серые кнопки: 0 disabled кнопок «Сохранить», «Печать 043/у», «Норма» и протоколов;
+    * Механизм `ensureRevisingIfLocked()`: фокус, клик или ввод в закрытом визите автоматически открывает режим ревизии («Исправленному верить») без бюрократических барьеров начмедов;
+    * Debounced autosave (300 мс) сопряжен с синхронной записью в `localStorage`, защищая врача от потери данных при звонках телефонии и перезагрузке;
+    * Внедрен двухрежимный печатный штамп Формы 043/у: «ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП» при открытом приёме и «ПОДПИСАНО ВРАЧОМ» при закрытом.
+  - **Доминантная одонтограмма и эргономика Tier 1 (Мандаты 8c, 8d, 8p, коммит `21a90c710`)**:
+    * Интерактивная зубная дуга зафиксирована на высоте не менее 140–160px (`min-height: 140px`, `minScale = 0.95` в `ToothChart.tsx`);
+    * 0-клик штампы патологий на тулбаре наносятся на зубы без блокирующих окон;
+    * Селектор поверхностей MOD убран в Warm Context аккордеон без перекрытия зубной дуги;
+    * Стандартизирована каноническая анатомическая палитра: кариес `#f59e0b`, пульпит `#ef4444`, пломба `#3b82f6`, коронка `#10b981`, имплант `#6366f1`, удален `#64748b`;
+    * Кнопки «Интактный» и «Без 8-ок» санируют формулу в 1 клик без подтверждений;
+    * Все интерактивные кнопки на мобильных вьюпортах (390px) имеют тач-таргеты $\ge 44\times 44\text{px}$.
+* **Верификация**:
+  - `npm run check:encoding`: 0 ошибок (5167 файлов проверено);
+  - `npm run typecheck -w @dental/web`: Exit Code 0;
+  - `npm run typecheck -w @dental/api`: Exit Code 0;
+  - 16/16 live-скриншотов (Desktop 1440x900 & Mobile 390x844 Light/Dark) подтверждены мультимодальным зрением [ПРОВЕРЕНО: ЧИСТО];
+  - Точечные тесты визита (36 тестов) и одонтограммы (38 тестов) пройдены со 100% успехом.
 
