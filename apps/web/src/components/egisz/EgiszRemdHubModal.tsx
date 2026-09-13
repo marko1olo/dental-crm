@@ -105,13 +105,14 @@ import {
 import "./egiszRemd.css";
 
 export type EgiszHubActiveDocType = "cda_semd" | "fns_tax";
-export type EgiszHubModalTab = "clinical" | "tax_deduction" | "preflight" | "signature" | "xml_preview" | "journal";
+export type EgiszHubModalTab = "clinical" | "tax_deduction" | "preflight" | "signature" | "xml_preview" | "journal" | "xml" | "signing";
 
 export interface EgiszRemdHubModalProps {
 	isOpen?: boolean | undefined;
 	onClose: () => void;
 	initialDocType?: EgiszHubActiveDocType | undefined;
 	initialPayload?: Partial<EgiszDentalCdaPayload> | undefined;
+	initialXmlPayload?: any | undefined;
 	initialFnsPayload?: Partial<FnsTaxCertificatePayload> | undefined;
 	initialTab?: EgiszHubModalTab | undefined;
 	initialJournalFilter?: RemdDocumentStatus | "all" | undefined;
@@ -126,6 +127,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 	onClose,
 	initialDocType = "cda_semd",
 	initialPayload,
+	initialXmlPayload,
 	initialFnsPayload,
 	initialTab,
 	initialJournalFilter,
@@ -136,53 +138,58 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 }) => {
 	// Mode State
 	const [activeDocType, setActiveDocType] = useState<EgiszHubActiveDocType>(initialDocType);
-	const [activeTab, setActiveTab] = useState<EgiszHubModalTab>(
-		initialTab || (initialDocType === "fns_tax" ? "tax_deduction" : "clinical")
-	);
+	const normalizedInitialTab = useMemo<EgiszHubModalTab>(() => {
+		if (initialTab === "xml") return "xml_preview";
+		if (initialTab === "signing") return "signature";
+		return initialTab || (initialDocType === "fns_tax" ? "tax_deduction" : "clinical");
+	}, [initialTab, initialDocType]);
+	const [activeTab, setActiveTab] = useState<EgiszHubModalTab>(normalizedInitialTab);
+
+	const effectivePayload = (initialPayload || initialXmlPayload) as Partial<EgiszDentalCdaPayload> | undefined;
 
 	// 1. Dental SEMD Payload State
 	const [semdDocCode, setSemdDocCode] = useState<EgiszDentalSemdCode>(
-		(initialPayload?.docTypeCode as EgiszDentalSemdCode) || "105"
+		(effectivePayload?.docTypeCode as EgiszDentalSemdCode) || "105"
 	);
 	const [clinic, setClinic] = useState<EgiszClinicInfo>(
-		initialPayload?.clinic || DEFAULT_EGISZ_CLINIC_PRESET
+		effectivePayload?.clinic || DEFAULT_EGISZ_CLINIC_PRESET
 	);
 	const [doctor, setDoctor] = useState<EgiszDoctorInfo>(
-		initialPayload?.doctor || DEFAULT_EGISZ_DOCTOR_PRESET
+		effectivePayload?.doctor || DEFAULT_EGISZ_DOCTOR_PRESET
 	);
 	const [patient, setPatient] = useState<EgiszPatientInfo>(
-		initialPayload?.patient || SAMPLE_043U_PATIENT_PRESET
+		effectivePayload?.patient || SAMPLE_043U_PATIENT_PRESET
 	);
 
 	const [complaints, setComplaints] = useState<string>(
-		initialPayload?.complaints || SAMPLE_DENTAL_SEMD_105_PRESET.complaints
+		effectivePayload?.complaints || SAMPLE_DENTAL_SEMD_105_PRESET.complaints
 	);
 	const [anamnesisMorbi, setAnamnesisMorbi] = useState<string>(
-		initialPayload?.anamnesisMorbi || SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisMorbi || ""
+		effectivePayload?.anamnesisMorbi || SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisMorbi || ""
 	);
 	const [anamnesisVitae, setAnamnesisVitae] = useState<string>(
-		initialPayload?.anamnesisVitae || SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisVitae || ""
+		effectivePayload?.anamnesisVitae || SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisVitae || ""
 	);
 	const [toothStates, setToothStates] = useState<Record<number, string>>(
-		initialPayload?.toothStates || SAMPLE_DENTAL_SEMD_105_PRESET.toothStates
+		effectivePayload?.toothStates || SAMPLE_DENTAL_SEMD_105_PRESET.toothStates
 	);
 	const [toothSurfaces, setToothSurfaces] = useState<Record<number, string[]>>(
-		initialPayload?.toothSurfaces || SAMPLE_DENTAL_SEMD_105_PRESET.toothSurfaces || {}
+		effectivePayload?.toothSurfaces || SAMPLE_DENTAL_SEMD_105_PRESET.toothSurfaces || {}
 	);
 	const [diagnoses, setDiagnoses] = useState<EgiszDiagnosisItem[]>(
-		initialPayload?.diagnoses || SAMPLE_DENTAL_SEMD_105_PRESET.diagnoses
+		effectivePayload?.diagnoses || SAMPLE_DENTAL_SEMD_105_PRESET.diagnoses
 	);
 	const [procedures, setProcedures] = useState<EgiszProcedureItem[]>(
-		initialPayload?.procedures || SAMPLE_DENTAL_SEMD_105_PRESET.procedures
+		effectivePayload?.procedures || SAMPLE_DENTAL_SEMD_105_PRESET.procedures
 	);
 	const [treatmentDesc, setTreatmentDesc] = useState<string>(
-		initialPayload?.treatmentProtocolDescription || SAMPLE_DENTAL_SEMD_105_PRESET.treatmentProtocolDescription || ""
+		effectivePayload?.treatmentProtocolDescription || SAMPLE_DENTAL_SEMD_105_PRESET.treatmentProtocolDescription || ""
 	);
 	const [recommendations, setRecommendations] = useState<string>(
-		initialPayload?.recommendations || SAMPLE_DENTAL_SEMD_105_PRESET.recommendations
+		effectivePayload?.recommendations || SAMPLE_DENTAL_SEMD_105_PRESET.recommendations
 	);
 	const [nextVisitDate, setNextVisitDate] = useState<string>(
-		initialPayload?.nextVisitDate ? String(initialPayload.nextVisitDate) : "2027-02-28"
+		effectivePayload?.nextVisitDate ? String(effectivePayload.nextVisitDate) : "2027-02-28"
 	);
 
 	// 2. FNS Tax Deduction Payload State

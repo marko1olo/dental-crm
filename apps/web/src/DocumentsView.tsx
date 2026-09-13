@@ -37,7 +37,7 @@ import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 import { appendChipToText } from "./components/documents/documentChipText";
 import { TaxDeductionCertificateModal } from "./components/finance/TaxDeductionCertificateModal";
-import { EgiszRemdXmlModal } from "./components/egisz/remdXml/EgiszRemdXmlModal";
+import { EgiszRemdHubModal } from "./components/egisz/EgiszRemdHubModal";
 import { SickLeaveElnModal } from "./components/documents/sickLeave/SickLeaveElnModal";
 import { AutoclaveLog257Modal } from "./components/sanpin/autoclaveLog/AutoclaveLog257Modal";
 import "./components/documents/documentNavigation.css";
@@ -6564,10 +6564,11 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			)}
 
 			{isEgiszRemdOpen && (
-				<EgiszRemdXmlModal
+				<EgiszRemdHubModal
 					isOpen={isEgiszRemdOpen}
 					onClose={() => setIsEgiszRemdOpen(false)}
-					initialPayload={egiszInitialPayload}
+					initialTab="xml"
+					initialXmlPayload={egiszInitialPayload}
 				/>
 			)}
 

@@ -913,8 +913,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/diagnostics/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
 	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
-	"components/egisz/EgiszDocumentsJournalModal.tsx:EgiszDocumentsJournalModal",
-	"components/egisz/EgiszRemdSigningModal.tsx:EgiszRemdSigningModal",
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
 	"components/endo/EndoQuickProtocolsBar.tsx:EndoQuickProtocolsBar",
 	"components/finance/CashRegisterModal.tsx:CashRegisterModal",
@@ -944,7 +942,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/orthodontics/OrthodonticExaminationCard.tsx:OrthodonticExaminationCard",
 	"components/orthodontics/OrthodonticStudioModal.tsx:OrthodonticStudioModal",
 	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
-	"components/patient-portal/PatientWebappPortalModal.tsx:PatientWebappPortalModal",
 	"components/patients/PatientDetailModal.tsx:PatientDetailModal",
 	"components/patients/transfer/PatientBranchTransferModal.tsx:PatientBranchTransferModal",
 	"components/payroll/FormT13TimesheetModal.tsx:FormT13TimesheetModal",
@@ -952,14 +949,12 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
 	"components/perio/PerioArchGrid.tsx:PerioArchGrid",
 	"components/perio/PerioProfileStrip.tsx:PerioProfileStrip",
-	"components/portal/PatientMobilePortalModal.tsx:PatientMobilePortalModal",
 	"components/portal/PatientOnlineBookingModal.tsx:PatientOnlineBookingModal",
 	"components/portal/UpcomingVisitCard.tsx:UpcomingVisitCard",
 	"components/portal/selfCheckin/SignaturePadCanvas.tsx:SignaturePadCanvas",
 	"components/portal/timeline/PatientPortalTimelineModal.tsx:PatientPortalTimelineModal",
 	"components/prescriptions/PrescriptionsTab.tsx:PrescriptionsTab",
 	"components/prescriptions/generator/MedicalPrescriptionModal.tsx:MedicalPrescriptionModal",
-	"components/radiology/CbctMpr3DStudioModal.tsx:CbctMpr3DStudioModal",
 	"components/radiology/CbctMprViewer.tsx:CbctMprViewer",
 	"components/radiology/DirectRvgCaptureModal.tsx:DirectRvgCaptureModal",
 	"components/radiology/HotFolderIntakeModal.tsx:HotFolderIntakeModal",
@@ -1013,7 +1008,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 104;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 99;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

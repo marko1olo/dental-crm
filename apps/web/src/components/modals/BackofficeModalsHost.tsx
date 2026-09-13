@@ -33,12 +33,8 @@ import { StaffPayrollLedgerModal } from "../payroll/StaffPayrollLedgerModal";
 import { FormT13TimesheetModal } from "../payroll/FormT13TimesheetModal";
 import { SickLeaveElnModal } from "../documents/sickLeave/SickLeaveElnModal";
 import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
-import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
-import { EgiszRemdSigningModal } from "../egisz/EgiszRemdSigningModal";
-import { EgiszDocumentsJournalModal } from "../egisz/EgiszDocumentsJournalModal";
 import { CmoQualityAuditModal } from "../cmo/CmoQualityAuditModal";
-import { PatientCabinetModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../portal";
-import { PatientWebappPortalModal } from "../patient-portal/PatientWebappPortalModal";
+import { PatientCabinetModal, PatientOnlineBookingModal } from "../portal";
 import { PatientPortalTimelineModal } from "../portal/timeline/PatientPortalTimelineModal";
 import { PatientRecallManagerModal } from "../recalls/PatientRecallManagerModal";
 import { PatientRecallsHubModal } from "../recalls/PatientRecallsHubModal";
@@ -217,13 +213,13 @@ export const BackofficeModalsHost: React.FC = () => {
 				<EgiszRemdHubModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "egisz_cda_export" && (
-				<EgiszCdaExportModal isOpen={true} onClose={close}  {...({} as any)} />
+				<EgiszRemdHubModal isOpen={true} onClose={close} initialTab="xml" />
 			)}
 			{activeModal === "egisz_remd_signing" && (
-				<EgiszRemdSigningModal isOpen={true} onClose={close}  {...({} as any)} />
+				<EgiszRemdHubModal isOpen={true} onClose={close} initialTab="signing" />
 			)}
 			{activeModal === "egisz_documents_journal" && (
-				<EgiszDocumentsJournalModal isOpen={true} onClose={close}  {...({} as any)} />
+				<EgiszRemdHubModal isOpen={true} onClose={close} initialTab="journal" />
 			)}
 			{activeModal === "cmo_quality_audit" && (
 				<CmoQualityAuditModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -232,13 +228,13 @@ export const BackofficeModalsHost: React.FC = () => {
 				<PatientCabinetModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_mobile_portal" && (
-				<PatientMobilePortalModal isOpen={true} onClose={close}  {...({} as any)} />
+				<PatientCabinetModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_online_booking" && (
 				<PatientOnlineBookingModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_webapp_portal" && (
-				<PatientWebappPortalModal isOpen={true} onClose={close}  {...({} as any)} />
+				<PatientCabinetModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_portal_timeline" && (
 				<PatientPortalTimelineModal isOpen={true} onClose={close}  {...({} as any)} />

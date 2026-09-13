@@ -11,15 +11,8 @@ import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { strToU8, zipSync } from "fflate";
-import {
-	EgiszRemdSigningModal,
-	type EgiszRemdSigningModalProps,
-} from "../EgiszRemdSigningModal";
-import {
-	EgiszDocumentsJournalModal,
-	type EgiszDocumentsJournalModalProps,
-	SAMPLE_REMD_JOURNAL_RECORDS,
-} from "../EgiszDocumentsJournalModal";
+import { EgiszRemdHubModal } from "../EgiszRemdHubModal";
+import { SAMPLE_REMD_JOURNAL_RECORDS } from "../egiszJournalData";
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
@@ -32,12 +25,13 @@ import {
 	runEgisz043uPreflight,
 } from "../egiszRemdEngine";
 
-describe("1. EgiszRemdSigningModal (Order 947n and 63-FZ UKEP Signing Studio)", () => {
+describe("1. EgiszRemdHubModal — UKEP Signing Studio (Order 947n and 63-FZ)", () => {
 	it("1.1 does not render markup when isOpen is false", () => {
 		const html = renderToStaticMarkup(
-			createElement(EgiszRemdSigningModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: false,
 				onClose: () => {},
+				initialTab: "signature",
 			}),
 		);
 		assert.equal(html, "");
@@ -45,10 +39,11 @@ describe("1. EgiszRemdSigningModal (Order 947n and 63-FZ UKEP Signing Studio)", 
 
 	it("1.2 renders modal with header, CryptoPro status, and Order 947n title when isOpen is true", () => {
 		const html = renderToStaticMarkup(
-			createElement(EgiszRemdSigningModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: true,
 				onClose: () => {},
-				payload: SAMPLE_DENTAL_SEMD_105_PRESET,
+				initialTab: "signature",
+				initialPayload: SAMPLE_DENTAL_SEMD_105_PRESET,
 			}),
 		);
 
@@ -76,10 +71,11 @@ describe("1. EgiszRemdSigningModal (Order 947n and 63-FZ UKEP Signing Studio)", 
 
 	it("1.3 renders 1-click action buttons (Doctor UKEP, MO UKEP, REMD Gateway, Print)", () => {
 		const html = renderToStaticMarkup(
-			createElement(EgiszRemdSigningModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: true,
 				onClose: () => {},
-				payload: SAMPLE_DENTAL_SEMD_105_PRESET,
+				initialTab: "signature",
+				initialPayload: SAMPLE_DENTAL_SEMD_105_PRESET,
 			}),
 		);
 
@@ -113,10 +109,11 @@ describe("1. EgiszRemdSigningModal (Order 947n and 63-FZ UKEP Signing Studio)", 
 		);
 
 		const html = renderToStaticMarkup(
-			createElement(EgiszRemdSigningModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: true,
 				onClose: () => {},
-				payload: {
+				initialTab: "signature",
+				initialPayload: {
 					...SAMPLE_DENTAL_SEMD_105_PRESET,
 					doctor: {
 						...DEFAULT_EGISZ_DOCTOR_PRESET,
@@ -151,12 +148,13 @@ describe("1. EgiszRemdSigningModal (Order 947n and 63-FZ UKEP Signing Studio)", 
 	});
 });
 
-describe("2. EgiszDocumentsJournalModal (REMD Document Registry and Remediation)", () => {
+describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and Remediation)", () => {
 	it("2.1 does not render markup when isOpen is false", () => {
 		const html = renderToStaticMarkup(
-			createElement(EgiszDocumentsJournalModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: false,
 				onClose: () => {},
+				initialTab: "journal",
 			}),
 		);
 		assert.equal(html, "");
@@ -164,9 +162,10 @@ describe("2. EgiszDocumentsJournalModal (REMD Document Registry and Remediation)
 
 	it("2.2 renders modal with header, stats ribbon and filter tabs when isOpen is true", () => {
 		const html = renderToStaticMarkup(
-			createElement(EgiszDocumentsJournalModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: true,
 				onClose: () => {},
+				initialTab: "journal",
 			}),
 		);
 
@@ -194,9 +193,10 @@ describe("2. EgiszDocumentsJournalModal (REMD Document Registry and Remediation)
 
 	it("2.3 displays document records with patient, doctor, status and action buttons", () => {
 		const html = renderToStaticMarkup(
-			createElement(EgiszDocumentsJournalModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: true,
 				onClose: () => {},
+				initialTab: "journal",
 			}),
 		);
 
@@ -227,11 +227,12 @@ describe("2. EgiszDocumentsJournalModal (REMD Document Registry and Remediation)
 
 	it("2.4 displays actionable remediation instructions for validation errors (e.g. FRMR SNILS missing)", () => {
 		const html = renderToStaticMarkup(
-			createElement(EgiszDocumentsJournalModal, {
+			createElement(EgiszRemdHubModal, {
 				isOpen: true,
 				onClose: () => {},
-				initialFilter: "error",
-				initialSelectedId: "REMD-REC-002",
+				initialTab: "journal",
+				initialJournalFilter: "error",
+				initialJournalSelectedId: "REMD-REC-002",
 			}),
 		);
 

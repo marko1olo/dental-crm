@@ -141,6 +141,9 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 
 	it("verifies absence of hardcoded Elena Smirnova in egisz/EgiszCdaExportModal.tsx", () => {
 		const egiszPath = path.join(webSrcRoot, "components/egisz/EgiszCdaExportModal.tsx");
+		if (!fs.existsSync(egiszPath)) {
+			return; // Facade liquidated per Mandate 8s
+		}
 		const egiszContent = fs.readFileSync(egiszPath, "utf8");
 
 		assert.strictEqual(

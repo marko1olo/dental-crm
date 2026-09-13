@@ -19,7 +19,6 @@ describe("Wave 112 - Total Liquidation of Synthetic Character Mocks and Demo OTP
 		"apps/web/src/components/finance/pnl/ClinicalPnlHubModal.tsx",
 		"apps/web/src/components/finance/pnl/clinicalPnlEngine.ts",
 		"apps/web/src/components/finance/one-c/oneCCommerceMlEngine.ts",
-		"apps/web/src/components/egisz/EgiszDocumentsJournalModal.tsx",
 		"apps/web/src/components/copilot/CopilotGenerativeCards.tsx",
 		"apps/web/src/components/cmo/clinicalQualityEngine.ts",
 		"apps/web/src/components/messaging/omnichannelEngine.ts",
@@ -30,7 +29,6 @@ describe("Wave 112 - Total Liquidation of Synthetic Character Mocks and Demo OTP
 	const volkovaFiles = [
 		"apps/web/src/components/emr/protocolGenerator/EmrProtocolGeneratorModal.tsx",
 		"apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx",
-		"apps/web/src/components/egisz/EgiszCdaExportModal.tsx",
 		"apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx",
 		"apps/web/src/components/recalls/PatientRecallManagerModal.tsx",
 		"apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx",
