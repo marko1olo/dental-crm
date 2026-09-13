@@ -164,20 +164,21 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 		);
 	});
 
-	it("6. AnesthesiaProtocolModal.tsx: nurseFullName default is neutral 'Ассистент' without 'Смирнова А. В.'", () => {
-		const filePath = path.join(
+	it("6. Anesthesia cluster: AnesthesiaProtocolModal is eradicated, AnesthesiaQuickBar has zero synthetic nurse leaks", () => {
+		const modalPath = path.join(
 			repoRoot,
 			"apps/web/src/components/anesthesia/AnesthesiaProtocolModal.tsx",
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
+		assert.ok(!fs.existsSync(modalPath), "AnesthesiaProtocolModal.tsx must be eradicated (Wave 197)");
 
-		assert.ok(
-			!content.includes("nurseFullName = 'Смирнова А. В.'"),
-			"AnesthesiaProtocolModal.tsx must not default to 'Смирнова А. В.'",
+		const quickBarPath = path.join(
+			repoRoot,
+			"apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx",
 		);
+		const content = fs.readFileSync(quickBarPath, "utf-8");
 		assert.ok(
-			content.includes("nurseFullName = 'Ассистент'"),
-			"AnesthesiaProtocolModal.tsx must default to neutral 'Ассистент'",
+			!content.includes("Смирнова А. В."),
+			"AnesthesiaQuickBar.tsx must not leak synthetic nurse 'Смирнова А. В.'",
 		);
 	});
 

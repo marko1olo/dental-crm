@@ -351,3 +351,44 @@ export function generateAnesthesiaDiaryEntry(params: {
 
 	return `Проведена местная ${tech.nameRu.toLowerCase()} анестезия${toothPart}. Препарат: ${params.drug.tradeNamesRu[0]} (${params.drug.activeSubstanceRu})${batchText}, объем ${params.injectedVolumeMl} мл (${params.carpulesCount} карп., ${params.injectedActiveMg} мг действующего вещества${epiText}).${vitalsText} Игла: ${needle.nameRu}. ${aspText} Анестезия наступила через ${params.drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.${nurseText}`;
 }
+
+// ---------------------------------------------------------------------------
+// 4. Patient Anesthesia Memo Formatter for Messengers (Feature 242)
+// ---------------------------------------------------------------------------
+
+export interface AnesthesiaPatientMemoParams {
+	readonly clinicName: string;
+	readonly clinicPhone: string;
+	readonly patientName: string;
+	readonly doctorName: string;
+	readonly drugTradeName: string;
+	readonly carpulesCount: number;
+	readonly targetArea: string | number;
+	readonly expectedDurationHours?: string | undefined;
+	readonly date?: string | undefined;
+}
+
+export function formatAnesthesiaPatientMemo(params: AnesthesiaPatientMemoParams): string {
+	const clinicName = params.clinicName.trim() || "Стоматологическая клиника DENTE";
+	const clinicPhone = params.clinicPhone ? params.clinicPhone.trim() : "";
+	const patientName = params.patientName.trim() || "Пациент";
+	const doctorName = params.doctorName.trim() || "Лечащий врач-стоматолог";
+	const date = params.date || new Date().toLocaleDateString("ru-RU");
+	const duration = params.expectedDurationHours || "2–3 часа";
+
+	return [
+		`Памятка пациенту после проведения местной анестезии (клиника «${clinicName}»):`,
+		`Пациент: ${patientName}`,
+		`Лечащий врач: ${doctorName}`,
+		`Дата процедуры: ${date}`,
+		`Применённый препарат: ${params.drugTradeName} (введено ${params.carpulesCount} карп.)`,
+		`Область анестезии: ${params.targetArea}`,
+		`Ожидаемая длительность онемения: ${duration}`,
+		`Правила безопасности после анестезии:`,
+		`1. Не принимайте горячую пищу и напитки до полного восстановления чувствительности (риск незаметного термического ожога слизистой).`,
+		`2. Не прикусывайте онемевшую губу, щёку или язык.`,
+		`3. Не массируйте и не согревайте место инъекции.`,
+		`4. При сохранении выраженного онемения более 6 часов или аллергических реакциях немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
+	].join("\n");
+}
+

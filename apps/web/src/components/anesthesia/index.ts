@@ -1,11 +1,7 @@
 export * from './anesthesiaCatalog';
 export * from './anesthesiaEngine';
 export * from './emergencyProtocols';
-export * from './AnesthesiaProtocolModal';
-export * from './AnesthesiaDosageCalculatorModal';
-export * from './AnesthesiaSafetyHubModal';
 export * from './AnesthesiaQuickBar';
-export * from './EmergencyAnaphylaxisProtocolModal';
 export * from '../visit/anesthesiaMrdMath';
 export { resolveClinicalDefaultWeightKg } from './anesthesiaEngine';
 export {

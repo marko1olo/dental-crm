@@ -19,10 +19,10 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
-	AnesthesiaDosageCalculatorModal,
+	AnesthesiaQuickBar,
 	formatAnesthesiaPatientMemo,
 	type AnesthesiaPatientMemoParams,
-} from "../AnesthesiaDosageCalculatorModal";
+} from "../AnesthesiaQuickBar";
 
 describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient Memo", () => {
 	describe("1. Pure Function: formatAnesthesiaPatientMemo", () => {
@@ -87,78 +87,79 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 		});
 	});
 
-	describe("2. UI Rendering and 1-Click Action Buttons in Footer", () => {
-		it("renders copy patient memo button and print protocol button when modal is open", () => {
+	describe("2. UI Rendering and 1-Click Action Buttons in QuickBar", () => {
+		it("renders quick presets and 1-click carpule buttons in AnesthesiaQuickBar", () => {
 			const html = renderToString(
-				<AnesthesiaDosageCalculatorModal
-					isOpen={true}
-					onClose={() => {}}
-					initialToothNumber={16}
-					patientName="Кузнецов А.А."
-					doctorName="Врач Сидоров С.С."
+				<AnesthesiaQuickBar
+					targetToothNumberFdi={16}
+					patientWeightKg={70}
+					onApplyAnesthesia={() => {}}
 				/>,
 			);
 
 			assert.ok(
-				html.includes('data-testid="anesthesia-copy-patient-memo-btn"'),
-				"Must render anesthesia-copy-patient-memo-btn in footer",
+				html.includes('data-testid="anesthesia-quick-bar"'),
+				"Must render anesthesia-quick-bar container",
 			);
 			assert.ok(
-				html.includes('data-testid="anesthesia-print-protocol-btn"'),
-				"Must render anesthesia-print-protocol-btn in footer",
+				html.includes('data-testid="anesthesia-dose-norm-preset"'),
+				"Must render anesthesia-dose-norm-preset button",
 			);
 			assert.ok(
-				html.includes("Скопировать для пациента"),
-				"Must show copy patient memo label",
+				html.includes("Норма: Артикаин 1:100k"),
+				"Must show standard norm preset label",
 			);
 			assert.ok(
-				html.includes("Печать протокола (А4)"),
-				"Must show print protocol label",
+				html.includes("МДД по массе тела 70 кг"),
+				"Must show weight-adjusted MRD label",
 			);
 		});
 
-		it("renders null when isOpen is false", () => {
+		it("renders disabled state cleanly when disabled prop is set", () => {
 			const html = renderToString(
-				<AnesthesiaDosageCalculatorModal
-					isOpen={false}
-					onClose={() => {}}
+				<AnesthesiaQuickBar
+					disabled={true}
+					onApplyAnesthesia={() => {}}
 				/>,
 			);
-			assert.equal(html, "");
+			assert.ok(html.includes("disabled"), "Buttons must receive disabled attribute");
 		});
 
-		it("renders diary entry copy button with upgraded touch target (min-height: 44px)", () => {
+		it("renders 1-click carpule buttons with compliant touch target (min-height >= 44px)", () => {
 			const html = renderToString(
-				<AnesthesiaDosageCalculatorModal
-					isOpen={true}
-					onClose={() => {}}
-					initialToothNumber={24}
+				<AnesthesiaQuickBar
+					targetToothNumberFdi={24}
+					onApplyAnesthesia={() => {}}
 				/>,
 			);
 
 			assert.ok(
-				html.includes('data-testid="btn-copy-diary"'),
-				"Must render btn-copy-diary",
+				html.includes('data-testid="anesthesia-dose-1carp"'),
+				"Must render anesthesia-dose-1carp button",
 			);
 			assert.ok(
-				html.includes("min-height:44px") || html.includes("min-height: 44px"),
-				"Diary copy button must have min-height >= 44px for gloved/touch operation",
+				html.includes("min-h-[44px]") || html.includes("min-height: 44px"),
+				"1-carpule button must have min-height >= 44px for gloved/touch operation",
 			);
 		});
 	});
 
 	describe("3. Touch Target and Ergonomic Standards (Mandate 8c, 8d)", () => {
-		it("footer action buttons have min-height 48px", () => {
+		it("emergency shock action button has min-height 48px", () => {
 			const html = renderToString(
-				<AnesthesiaDosageCalculatorModal
-					isOpen={true}
-					onClose={() => {}}
+				<AnesthesiaQuickBar
+					onOpenEmergencyProtocol={() => {}}
+					onApplyAnesthesia={() => {}}
 				/>,
 			);
 
 			assert.ok(
-				html.includes("min-height:48px") || html.includes("min-height: 48px"),
-				"Footer action buttons must enforce min-height: 48px",
+				html.includes('data-testid="btn-anesthesia-quick-emergency"'),
+				"Must render emergency shock button",
+			);
+			assert.ok(
+				html.includes("min-h-[48px]") || html.includes("min-height: 48px"),
+				"Emergency button must enforce min-height: 48px",
 			);
 		});
 	});

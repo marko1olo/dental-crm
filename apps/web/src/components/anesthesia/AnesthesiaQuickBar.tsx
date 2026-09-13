@@ -22,10 +22,18 @@ import {
 import {
 	calculateAnesthesiaSafety,
 	resolveClinicalDefaultWeightKg,
+	formatAnesthesiaPatientMemo,
+	type AnesthesiaPatientMemoParams,
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
 } from "./anesthesiaEngine";
 import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocols043";
+import "./anesthesia.css";
+
+export {
+	formatAnesthesiaPatientMemo,
+	type AnesthesiaPatientMemoParams,
+};
 
 export interface AnesthesiaQuickBarProps {
 	patientWeightKg?: number | undefined;
@@ -35,7 +43,7 @@ export interface AnesthesiaQuickBarProps {
 	hasBronchialAsthma?: boolean | undefined;
 	isPregnantOrLactating?: boolean | undefined;
 	targetToothNumberFdi?: number | string | undefined;
-	onApplyAnesthesia: (diaryText: string, result: AnesthesiaCalculationResult) => void;
+	onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	onDisposalCarpules?: ((carpulesCount: number, drugId: AnestheticDrugId) => void) | undefined;
 	onOpenEmergencyProtocol?: (() => void) | undefined;
 	onOpenAspirationJournal?: (() => void) | undefined;
@@ -43,6 +51,7 @@ export interface AnesthesiaQuickBarProps {
 }
 
 export const WEIGHT_QUICK_PRESETS: readonly number[] = [15, 30, 50, 70, 85, 100];
+export const WEIGHT_PRESETS: readonly number[] = WEIGHT_QUICK_PRESETS;
 
 export const PRIMARY_ANESTHETIC_DRUGS: readonly {
 	id: AnestheticDrugId;
@@ -198,7 +207,7 @@ export function AnesthesiaQuickBar({
 			? `${result.diaryEntryRu} (Введено по врачебному решению)`
 			: result.diaryEntryRu;
 
-		onApplyAnesthesia(diaryEntry, result);
+		onApplyAnesthesia?.(diaryEntry, result);
 		setActiveToastMessage(
 			`Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
 		);
@@ -251,7 +260,7 @@ export function AnesthesiaQuickBar({
 		});
 
 		const normDiaryText = `Инфильтрационная/проводниковая анестезия: ${STANDARD_ANESTHESIA_NORM_PRESET_RU}`;
-		onApplyAnesthesia(normDiaryText, result);
+		onApplyAnesthesia?.(normDiaryText, result);
 		setActiveToastMessage("Норма анестезии внесена в протокол в 1 клик!");
 		setTimeout(() => setActiveToastMessage(null), 3500);
 	};
@@ -283,7 +292,7 @@ export function AnesthesiaQuickBar({
 
 		const diaryText =
 			"Комбинированная мандибулярная проводниковая и инфильтрационная анестезия: Ультракаин Д-С Форте 1:100 000 (1.7 мл). Двухплоскостная аспирация отрицательная. Обезболивание глубокое, онемение половины нижней губы и языка.";
-		onApplyAnesthesia(diaryText, result);
+		onApplyAnesthesia?.(diaryText, result);
 		setActiveToastMessage("Мандибулярная + инфильтрационная (Ультракаин Форте 1.7 мл) внесена в 1 клик!");
 		setTimeout(() => setActiveToastMessage(null), 3500);
 	};
@@ -315,7 +324,7 @@ export function AnesthesiaQuickBar({
 
 		const diaryText =
 			"Инфильтрационная наднадкостничная анестезия: Септанест 1:100 000 (1.7 мл). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.";
-		onApplyAnesthesia(diaryText, result);
+		onApplyAnesthesia?.(diaryText, result);
 		setActiveToastMessage("Инфильтрационная анестезия Септанест (1.7 мл) внесена в 1 клик!");
 		setTimeout(() => setActiveToastMessage(null), 3500);
 	};
@@ -338,7 +347,7 @@ export function AnesthesiaQuickBar({
 			<div className="anesthesia-quick-bar-header">
 				<div className="anesthesia-quick-bar-title">
 					<Syringe size={16} className="anesthesia-icon-accent shrink-0" />
-					<span className="font-bold text-xs sm:text-sm">Анестезия (МДД по массе тела {patientWeightKg} кг):</span>
+					<span className="font-bold text-xs sm:text-sm">{`Анестезия (МДД по массе тела ${patientWeightKg} кг):`}</span>
 					{hasCardiovascularRisk && (
 						<span className="anesthesia-cardio-tag" title="Кардиоваскулярный риск: лимит адреналина 0.04 мг">
 							<Heart size={12} className="text-amber-500" />
@@ -585,7 +594,7 @@ export function AnesthesiaQuickBar({
 				<div className="flex items-center gap-2 flex-wrap text-xs text-[var(--muted)] font-medium shrink-0">
 					<Activity size={14} className="text-[var(--teal)]" />
 					<span>
-						МДД для {patientWeightKg} кг:{" "}
+						{`МДД для ${patientWeightKg} кг: `}
 						<strong className="text-[var(--ink)] font-bold">
 							до {maxSafeCarpules} карп. ({(maxSafeCarpules * 1.7).toFixed(1)} мл)
 						</strong>

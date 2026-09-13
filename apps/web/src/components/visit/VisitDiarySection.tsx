@@ -49,7 +49,6 @@ import {
 	VisitDiaryPhotoUpload,
 } from "../VisitDiaryPhotoUpload";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
-import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import { DENTAL_ANESTHETICS } from "../anesthesia/anesthesiaCatalog";
 import { calculateAge } from "@dental/shared";
 import {

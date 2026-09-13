@@ -3,8 +3,8 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { STANDARD_ANESTHESIA_PRESETS } from "../anesthesiaCatalog";
-import { AnesthesiaProtocolModal } from "../AnesthesiaProtocolModal";
-import { EmergencyAnaphylaxisProtocolModal } from "../EmergencyAnaphylaxisProtocolModal";
+import { AnesthesiaQuickBar } from "../AnesthesiaQuickBar";
+import { EmergencyRescueModal } from "../../emergency/EmergencyRescueModal";
 import { OrthodonticVisitProtocolWidget } from "../../orthodontics/OrthodonticVisitProtocolWidget";
 import { OrthodonticStudioModal } from "../../orthodontics/OrthodonticStudioModal";
 
@@ -18,46 +18,47 @@ describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k,
 			assert.equal(preset.techniqueId, "infiltration");
 		});
 
-		it("AnesthesiaProtocolModal renders 1-click ultracain_ds_forte preset button", () => {
+		it("AnesthesiaQuickBar renders 1-click anesthesia presets and carpule buttons", () => {
 			const html = renderToString(
-				<AnesthesiaProtocolModal
-					isOpen={true}
-					onClose={() => {}}
-					toothNumber={16}
-					patientName="Иванов И.И."
+				<AnesthesiaQuickBar
+					targetToothNumberFdi={16}
+					patientWeightKg={70}
+					onApplyAnesthesia={() => {}}
 				/>,
 			);
 			assert.ok(
-				html.includes('data-testid="btn-anesthesia-preset-ultracain-ds-forte"'),
-				"Must render data-testid btn-anesthesia-preset-ultracain-ds-forte",
+				html.includes('data-testid="anesthesia-dose-norm-preset"') ||
+				html.includes('data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"'),
+				"Must render 1-click anesthesia preset buttons",
 			);
 			assert.ok(
-				html.includes("Ультракаин Д-С Форте 1.7 мл"),
+				html.includes("Артикаин") || html.includes("Ультракаин"),
 				"Must show preset label",
 			);
 		});
 
-		it("EmergencyAnaphylaxisProtocolModal renders 1-click anaphylaxis combo buttons in header and quick grid", () => {
+		it("EmergencyRescueModal renders 1-click resuscitation and anaphylaxis protocols", () => {
 			const html = renderToString(
-				<EmergencyAnaphylaxisProtocolModal
+				<EmergencyRescueModal
 					isOpen={true}
 					onClose={() => {}}
-					patientName="Тестовый Пациент"
-					patientAge={35}
-					patientWeightKg={70}
+					initialPatientName="Тестовый Пациент"
+					initialPatientAgeYears={35}
+					initialPatientWeightKg={70}
+					defaultScenarioId="anaphylactic_shock"
 				/>,
 			);
 			assert.ok(
-				html.includes('data-testid="header-1click-anaphylaxis-btn"'),
-				"Header 1-click anaphylaxis button must be rendered",
+				html.includes("Адреналин 0.1% (Эпинефрин)"),
+				"Adrenaline 1st line resuscitation card must be rendered",
 			);
 			assert.ok(
-				html.includes('data-testid="btn-emergency-1click-anaphylaxis-combo"'),
-				"Grid 1-click anaphylaxis combo button must be rendered",
+				html.includes("Преднизолон"),
+				"Prednisolone 2nd line resuscitation card must be rendered",
 			);
 			assert.ok(
-				html.includes("1-Клик Анафилаксия"),
-				"Must display 1-Клик Анафилаксия text in header",
+				html.includes("Анафилактический шок"),
+				"Must display Anaphylaxis protocol title",
 			);
 		});
 	});

@@ -831,7 +831,7 @@
 	cursor: pointer;
 }
 
-/* Drug Selection & Carpule Stepper Controls (AnesthesiaSafetyHubModal) */
+/* Drug Selection & Carpule Stepper Controls (AnesthesiaQuickBar) */
 .drug-selection-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

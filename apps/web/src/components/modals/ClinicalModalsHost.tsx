@@ -6,7 +6,6 @@ import { PerioArchGrid } from "../perio/PerioArchGrid";
 import { PatientAnamnesisModal } from "../patients/PatientAnamnesisModal";
 import { PrescriptionsTab } from "../prescriptions/PrescriptionsTab";
 import { DoctorDesktopHeader as VisitDoctorDesktopHeader } from "../visit/DoctorDesktopHeader";
-import { AnesthesiaDosageCalculatorModal } from "../anesthesia/AnesthesiaDosageCalculatorModal";
 import { ClinicalProtocolPresets } from "../clinical/ClinicalProtocolPresets";
 import { PostOpCareSheetModal } from "../clinical/PostOpCareSheetModal";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
@@ -17,7 +16,6 @@ import { OrthodonticStudioModal } from "../orthodontics/OrthodonticStudioModal";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtocolWidget";
 import { PerioProfileStrip } from "../perio/PerioProfileStrip";
-import { RadiologyModule } from "../radiology/RadiologyModule";
 import { RadiationDoseSheetModal } from "../radiology/doseSheet/RadiationDoseSheetModal";
 import { AutoclaveCycleModal } from "../sanpin/autoclave/AutoclaveCycleModal";
 import { TreatmentPlanModal } from "../treatment-plans/TreatmentPlanModal";
@@ -43,7 +41,7 @@ import { BeforeAfterComparisonView } from "../photography/BeforeAfterComparisonV
 import { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { KraftPackageBarcodeModal } from "../sanpin/kraft/KraftPackageBarcodeModal";
 import { MedicalWasteJournalModal } from "../sanpin/waste/MedicalWasteJournalModal";
-import { InsurancePreAuthModal } from "../insurance/InsurancePreAuthModal";
+import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
 import { TreatmentPlanComparatorModal } from "../treatment-plans/comparator/TreatmentPlanComparatorModal";
 import { TreatmentPlan3TierComparison } from "../treatment-plans/TreatmentPlan3TierComparison";
 import { TreatmentPlanPhased4StageView } from "../treatment-plans/TreatmentPlanPhased4StageView";
@@ -51,18 +49,13 @@ import { TreatmentPlanPresenterModal } from "../treatment-plans/TreatmentPlanPre
 import { TreatmentPlanPriceValidatorModal } from "../treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { InformedConsentModal } from "../consents/InformedConsentModal";
 import { ChairsideTabletConsentModal } from "../chairside/ChairsideTabletConsentModal";
-import { AnesthesiaProtocolModal } from "../anesthesia/AnesthesiaProtocolModal";
-import { AnesthesiaSafetyHubModal } from "../anesthesia/AnesthesiaSafetyHubModal";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
-import { ToothAnesthesiaCalculator } from "../diagnostics/ToothAnesthesiaCalculator";
-import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import { EmergencyRescueModal } from "../emergency/EmergencyRescueModal";
 import { DicomViewerModal } from "../imaging/DicomViewerModal";
 import { DicomViewport } from "../imaging/DicomViewport";
 import { DirectRvgCaptureModal } from "../radiology/DirectRvgCaptureModal";
 import { HotFolderIntakeModal } from "../radiology/HotFolderIntakeModal";
 import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
-import { RadiologyViewerModal } from "../radiology/RadiologyViewerModal";
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
 import { ImplantCrossSectionPlanner } from "../radiology/ImplantCrossSectionPlanner";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
@@ -170,7 +163,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<KraftPackageBarcodeModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "insurance_preauth" && (
-				<InsurancePreAuthModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DmsGuaranteeLetterModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "plan_comparator" && (
 				<TreatmentPlanComparatorModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -202,23 +195,24 @@ export const ClinicalModalsHost: React.FC = () => {
 				<ChairsideTabletConsentModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "anesthesia_protocol" && (
-				<AnesthesiaProtocolModal isOpen={true} onClose={close}  {...({} as any)} />
+				<AnesthesiaQuickBar {...({} as any)} />
 			)}
 			{activeModal === "anesthesia_safety_hub" && (
-				<AnesthesiaSafetyHubModal isOpen={true} onClose={close}  {...({} as any)} />
+				<AnesthesiaQuickBar {...({} as any)} />
 			)}
 			{activeModal === "anesthesia_quick_bar" && (
 				<AnesthesiaQuickBar {...({} as any)} />
 			)}
 			{activeModal === "tooth_anesthesia_calc" && (
-				<ToothAnesthesiaCalculator  {...({} as any)} />
+				<AnesthesiaQuickBar {...({} as any)} />
 			)}
 			{activeModal === "emergency_anaphylaxis" && (
-				<EmergencyAnaphylaxisProtocolModal
+				<EmergencyRescueModal
 					isOpen={true}
 					onClose={close}
-					patientName={patientName}
-					doctorName={doctorFullName}
+					initialPatientName={patientName}
+					doctorFullName={doctorFullName}
+					defaultScenarioId="anaphylactic_shock"
 				 {...({} as any)} />
 			)}
 			{activeModal === "emergency_rescue" && (
@@ -248,7 +242,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<RadiologyReferralModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "radiology_viewer" && (
-				<RadiologyViewerModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DicomViewerModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "cbct_3d_studio" && (
 				<CbctMprImplantStudioModal isOpen={true} onClose={close} />
@@ -337,8 +331,8 @@ export const ClinicalModalsHost: React.FC = () => {
 				<Form043PrintModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 		
-			{activeModal === "anesthesia_dosage" && (
-				<AnesthesiaDosageCalculatorModal isOpen={true} onClose={close} patientWeightKg={70}  {...({} as any)} />
+			{(activeModal === "anesthesia_dosage" || activeModal === "anesthesia_dosage_calculator") && (
+				<AnesthesiaQuickBar patientWeightKg={70} {...({} as any)} />
 			)}
 			{activeModal === "clinical_protocol_presets" && (
 				<ClinicalProtocolPresets {...({} as any)} />
@@ -374,7 +368,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<PerioProfileStrip  {...({} as any)} />
 			)}
 			{activeModal === "radiology_module" && (
-				<RadiologyModule  {...({} as any)} />
+				<RadiologyReferralModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "radiation_dose_sheet" && (
 				<RadiationDoseSheetModal isOpen={true} onClose={close}  {...({} as any)} />

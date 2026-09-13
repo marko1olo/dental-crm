@@ -4,7 +4,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { ToothContextDrawer, TOOTH_EXPRESS_ANESTHESIA_OPTIONS } from "../ToothContextDrawer.js";
 import { ToothSurfacesAndEndoMatrix, BLACK_MACROS } from "../ToothSurfacesAndEndoMatrix.js";
-import { ToothAnesthesiaCalculator, WEIGHT_PRESETS } from "../ToothAnesthesiaCalculator.js";
+import { AnesthesiaQuickBar, WEIGHT_PRESETS } from "../../anesthesia/AnesthesiaQuickBar.js";
 import { ToothSanpinKraftBinding } from "../ToothSanpinKraftBinding.js";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail.js";
 import { ToothFamilyLoyaltyAccordion } from "../ToothFamilyLoyaltyAccordion.js";
@@ -95,21 +95,22 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("Вставить протокол эндодонтии в карту 043/у"), "043/u protocol export action should be present");
 	});
 
-	it("ToothAnesthesiaCalculator calculates safe carpule limits by patient weight", () => {
+	it("AnesthesiaQuickBar calculates safe carpule limits by patient weight", () => {
 		const html = renderToString(
-			<ToothAnesthesiaCalculator
-				toothNumber={16}
-				initialWeightKg={70}
-				initialAgeYears={30}
-				hasCardioRisk={false}
+			<AnesthesiaQuickBar
+				targetToothNumberFdi={16}
+				patientWeightKg={70}
+				patientAgeYears={30}
+				hasCardiovascularRisk={false}
+				onApplyAnesthesia={() => {}}
 			/>,
 		);
 
-		assert.ok(html.includes("tooth-anesthesia-calculator"), "Anesthesia tool should render");
+		assert.ok(html.includes("anesthesia-quick-bar"), "Anesthesia tool should render");
 		assert.ok(html.includes("70 кг"), "Weight preset should be displayed");
 		assert.ok(html.includes("Ультракаин Д-С"), "Standard articaine option should be present");
 		assert.ok(html.includes("Скандонест 3%"), "Plain mepivacaine option should be present");
-		assert.ok(html.includes("БЕЗОПАСНО"), "Safe dosage badge should be ok for standard dose");
+		assert.ok(html.includes("безопасно"), "Safe dosage badge should be ok for standard dose");
 	});
 
 	it("ToothSanpinKraftBinding renders Kraft autoclave packages and expiration safety check", () => {

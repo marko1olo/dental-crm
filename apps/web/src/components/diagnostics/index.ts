@@ -5,7 +5,6 @@ export * from "./OrthodonticPhotoProtocolModal";
 export * from "./DiagnosticDrawer";
 export * from "./ToothContextDrawer";
 export * from "./ToothSurfacesAndEndoMatrix";
-export * from "./ToothAnesthesiaCalculator";
 export * from "./ToothSanpinKraftBinding";
 export * from "./ToothRvgThumbnail";
 export * from "./ToothFamilyLoyaltyAccordion";

@@ -92,7 +92,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ component: "PatientPortal", selector: ".doc-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "LeadsKanbanView", selector: ".kanban-modal-close", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "MarketingRoiModal", selector: ".marketing-roi-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
-				{ component: "AnesthesiaSafetyHubModal", selector: ".hub-btn-close", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
+				{ component: "AnesthesiaQuickBar", selector: ".anesthesia-quick-bar", minWidthPx: 44, minHeightPx: 44, targetCategory: "primary_action" },
 				{ component: "CashShiftClosingModal", selector: ".cash-shift-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "CmoQualityAuditModal", selector: ".cmo-btn-close", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "SanpinRegistryPackageModal", selector: ".document-package-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
