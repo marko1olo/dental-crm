@@ -248,7 +248,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 						onClick={fetchThread}
 						disabled={loading}
 						title="Обновить переписку"
-						className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--glass-border)] text-[var(--muted)] hover:bg-[var(--glass-panel)] hover:text-[var(--ink)] transition-colors"
+						className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--glass-border)] text-[var(--muted)] hover:bg-[var(--glass-panel)] hover:text-[var(--ink)] transition-colors"
 					>
 						<RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
 					</button>
@@ -256,7 +256,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 						<button
 							type="button"
 							onClick={onOpenSettings}
-							className="rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
+							className="min-h-[44px] inline-flex items-center rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
 						>
 							Шлюз
 						</button>
@@ -270,7 +270,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("reminder")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="Напоминание о визите завтра"
 				>
 					<Calendar className="h-3 w-3 text-amber-600" />
@@ -279,7 +279,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("confirmation")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="Подтверждение записи"
 				>
 					<Sparkles className="h-3 w-3 text-emerald-600" />
@@ -288,7 +288,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("route")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="Адрес и схема проезда"
 				>
 					<MapPin className="h-3 w-3 text-rose-500" />
@@ -297,7 +297,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("xray")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="Назначен снимок КТ / ОПТГ"
 				>
 					<Scan className="h-3 w-3 text-cyan-600" />
@@ -306,7 +306,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("treatment_plan")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="План лечения готов"
 				>
 					<ClipboardList className="h-3 w-3 text-indigo-600" />
@@ -315,7 +315,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("hygiene_6m")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="Контрольный осмотр и профгигиена через 6 месяцев"
 				>
 					<HeartPulse className="h-3 w-3 text-teal-600" />
@@ -324,7 +324,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("post_op")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="Рекомендации после приёма"
 				>
 					<FileText className="h-3 w-3 text-blue-600" />
@@ -333,7 +333,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("invoice")}
-					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					className="min-h-[44px] inline-flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
 					title="Ссылка на оплату счёта"
 				>
 					<Receipt className="h-3 w-3 text-purple-600" />
@@ -415,7 +415,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 					<button
 						type="submit"
 						disabled={sending}
-						className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors shrink-0 shadow-sm cursor-pointer"
+						className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors shrink-0 shadow-sm cursor-pointer"
 						title="Отправить через шлюз WhatsApp WABA"
 					>
 						{sending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

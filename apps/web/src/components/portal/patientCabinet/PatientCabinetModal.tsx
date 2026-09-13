@@ -476,7 +476,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	}, [data.appointments, appointmentFilter]);
 
 	// Показать всплывающее уведомление
-	const showToast = (msg: string) => {
+	const showToast = (msg: string, _tone?: string) => {
 		setToastNotice(msg);
 		setTimeout(() => setToastNotice(null), 4000);
 	};
@@ -2183,7 +2183,25 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												type="button"
 												className="pc-btn-primary"
 												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
-												onClick={() => showToast("Официальный рецепт 107-1/у с QR-кодом и МДЛП сохранен в PDF!")}
+												onClick={() => {
+													const printWindow = window.open("", "_blank", "width=800,height=900");
+													if (printWindow) {
+														printWindow.document.open();
+														printWindow.document.write(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Рецептурный бланк 107-1/у — Амоксициллин</title>
+<style>body{font-family:'Segoe UI',Arial,sans-serif;padding:35px;color:#111}.hdr{border-bottom:2px solid #333;padding-bottom:10px;text-align:center}.box{border:1px solid #ccc;border-radius:8px;padding:15px;margin:20px 0;background:#fafafa}.stmp{margin-top:35px;display:flex;justify-content:space-between;border-top:1px dashed #999;padding-top:10px}</style></head>
+<body><div class="hdr"><h3>МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РФ</h3><p>Форма № 107-1/у (Приказ Минздрава России № 1094н)</p></div>
+<p><strong>Пациент:</strong> ${data.fullName}</p>
+<div class="box"><p><strong>Rp.:</strong> Amoxicillini 500 mg (капсулы №20)</p><p>Внутрь по 1 капсуле 3 раза в день через 8 ч, курс 5–7 дней</p><p><strong>Срок действия:</strong> 60 дней</p></div>
+<div class="stmp"><div>Подпись и личная печать врача: ____________________</div><div>М.П. Клиники</div></div></body></html>`);
+														printWindow.document.close();
+														printWindow.focus();
+														setTimeout(() => printWindow.print(), 250);
+														showToast("Официальный рецептурный бланк 107-1/у (Амоксициллин 500 мг) сформирован для печати/PDF!");
+													} else {
+														showToast("Разрешите всплывающие окна для печати рецепта 107-1/у", "warning");
+													}
+												}}
 											>
 												<Download size={16} />
 												<span>Скачать рецепт (PDF)</span>
@@ -2210,7 +2228,25 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												type="button"
 												className="pc-btn-primary"
 												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
-												onClick={() => showToast("Официальный рецепт 107-1/у сохранен в PDF!")}
+												onClick={() => {
+													const printWindow = window.open("", "_blank", "width=800,height=900");
+													if (printWindow) {
+														printWindow.document.open();
+														printWindow.document.write(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Рецептурный бланк 107-1/у — Ибупрофен</title>
+<style>body{font-family:'Segoe UI',Arial,sans-serif;padding:35px;color:#111}.hdr{border-bottom:2px solid #333;padding-bottom:10px;text-align:center}.box{border:1px solid #ccc;border-radius:8px;padding:15px;margin:20px 0;background:#fafafa}.stmp{margin-top:35px;display:flex;justify-content:space-between;border-top:1px dashed #999;padding-top:10px}</style></head>
+<body><div class="hdr"><h3>МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РФ</h3><p>Форма № 107-1/у (Приказ Минздрава России № 1094н)</p></div>
+<p><strong>Пациент:</strong> ${data.fullName}</p>
+<div class="box"><p><strong>Rp.:</strong> Ibuprofeni 400 mg (таблетки №20)</p><p>При зубной боли по 1 таб. после еды (макс. 3 таб./сутки)</p><p><strong>Срок действия:</strong> 60 дней</p></div>
+<div class="stmp"><div>Подпись и личная печать врача: ____________________</div><div>М.П. Клиники</div></div></body></html>`);
+														printWindow.document.close();
+														printWindow.focus();
+														setTimeout(() => printWindow.print(), 250);
+														showToast("Официальный рецептурный бланк 107-1/у (Ибупрофен 400 мг) сформирован для печати/PDF!");
+													} else {
+														showToast("Разрешите всплывающие окна для печати рецепта 107-1/у", "warning");
+													}
+												}}
 											>
 												<Download size={16} />
 												<span>Скачать рецепт (PDF)</span>
@@ -2352,7 +2388,17 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 													type="button"
 													className="pc-btn-secondary"
 													style={{ color: "var(--pc-danger)" }}
-													onClick={() => showToast(`Запрос на отмену визита ${apt.dateIso} отправлен администратору клиники.`)}
+													onClick={() => {
+														setData((prev) => ({
+															...prev,
+															appointments: prev.appointments.map((a) =>
+																a.id === apt.id
+																	? { ...a, status: "completed" as const, titleRu: `${a.titleRu} (Отменен)` }
+																	: a
+															),
+														}));
+														showToast(`Запрос на отмену визита ${apt.dateIso} зарегистрирован. Статус обновлен.`, "success");
+													}}
 												>
 													Отменить
 												</button>

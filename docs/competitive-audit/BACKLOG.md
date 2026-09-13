@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–197 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 104, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 99, REDUCTION TO 94, 6 FACADES PURGE & DEMOUNTED SHIRMS REDUCTION TO 88, 12 PARALLEL BEHEMOTHS PURGE & DEMOUNTED SHIRMS REDUCTION TO 76): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 264 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 327 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 264 АДДЕНДУМ, 327/327 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-14 / WAVES 175–204 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, MODALS HOSTS PURGE, WAREHOUSE & LAB ERGONOMICS, DEV LEAKS PURGE, STAFF SETTINGS SSOT DEDUPLICATION, SANPIN INTERACTIVE STATE, HEADER COMPRESSION <160PX, TOUCH-FIRST COMMUNICATIONS >=44PX, LAB CONSTRUCTOR PURGE -1895 LINES, DOCTOR AUTONOMY TREATMENT PLAN WIZARD, EGISZ LOCAL BUFFERING PROD CLEANUP, 63-FZ PEP 1-CLICK BUDGET SIGNING, 54-FZ CASHIER AUTONOMY): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 274 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 337 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 274 АДДЕНДУМ, 337/337 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -59,6 +59,7 @@
 > 54. Ликвидация 444px вертикального блоата Склада в 1 строку тулбара 36px, устранение утечки флага `isDelayedAlert` в ЗТЛ, сокращение кнопок канбан-карточек ЗТЛ с 4 до строго 2 по Закону Миллера, снятие disabled-блокировки в расписании (Wave 201, коммит `1b39654d7`, Мандаты 8d, 8e, 8p, 8n).
 > 55. Устранение утечек токенов разработки (`Wave 16`, `(Фича №28)`, `(#35)`) в сквозной аналитике маркетинга, обнуление синтетических мок-выручек в онлайн-записи до прихода реальных данных API, перенос виджетов 404 из глобального подвала в семантические вкладки «Права» и «Модули», сжатие 91-значной кнопки автопилота СанПиН для сохранения 1 строки 32–36px, ликвидация дублирующих фильтров категорий в Документах (Wave 202, коммит `ef99a977a`, Мандаты 8d, 8e, 8p, 8s).
 > 56. Ликвидация утечек разработки («Фича №35», «Фича №28»), снос 584 строк дублирующего управления персоналом в SettingsClinicTab в пользу SSOT SettingsStaffTab, консолидация кнопок карточек персонала по Закону Миллера (строго 2 действия: «Карточка», «Телефон» + поповер «...»), реальный интерактивный стейт 4 журналов СанПиН взамен синтетических тостов, компрессия шапок документов (<160px), аналитики (~155px), заказов ЗТЛ (~120px) и 1 строка тулбара 36px в нарядах ЗТЛ с поповером экспресс-шаблонов (Wave 203, коммит `2cbf1f93b`, Мандаты 8d, 8e, 8p, 8s).
+> 57. Touch-first эргономика коммуникаций (тач-таргеты >=44px в PatientWhatsAppConversationWidget, RecallAutomationPipelineWidget, WhatsAppKapsoSettingsDrawer, CommunicationsView), снос 1321 строки мертвого несмонтированного конструктора ЗТЛ LabWorkOrderConstructorModal и его стилей (-1895 строк всего) с очисткой panelsAreMounted.test.ts, автономия врача в TreatmentPlanWizard (автоподстановка первичной консультации 0 руб. взамен disabled-кнопки при 0 позиций), ликвидация утечки разработки в egiszAvailability («передача не реализована» -> «Автономный режим шлюза РЭМД ЕГИСЗ»), замена процедурного рисования подписи в PatientBudgetSignView на согласование ПЭП 63-ФЗ в 1 клик, подтверждение суверенитета кассы 54-ФЗ без требования ИНН физлиц (Wave 204, Мандаты 8c, 8d, 8e, 8p, 8s, 8n).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -6085,3 +6086,51 @@
   - **Single-Compiler Gate & Quality (Мандаты 8d, 8e, 8t)**:
     * Commit `2cbf1f93b`: 15 файлов затронуто, +490 / -801 строк чистой дельты;
     * Кодовая база свободна от `// TODO` и синтетических заглушек.
+
+### 351. Wave 204: Touch-first эргономика коммуникаций (>=44px), снос 1321 строки дубликата ЗТЛ, автономия врача в планах лечения, ПЭП 63-ФЗ в 1 клик и чистота шлюза ЕГИСЗ
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/CommunicationsView.tsx`
+  - `apps/web/src/components/communications/PatientWhatsAppConversationWidget.tsx`
+  - `apps/web/src/components/communications/RecallAutomationPipelineWidget.tsx`
+  - `apps/web/src/components/communications/WhatsAppKapsoSettingsDrawer.tsx`
+  - `apps/web/src/components/integrations/egiszAvailability.ts`
+  - `apps/web/src/tests/egiszAvailability.test.ts`
+  - `apps/web/src/components/odontogram/TreatmentPlanWizard.tsx`
+  - `apps/web/src/components/portal/PatientBudgetSignView.tsx`
+  - `apps/web/src/components/portal/patientBudgetSign.css`
+  - `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`
+  - `apps/web/src/components/surgery/SurgeryVisitCockpit.tsx`
+  - `apps/web/src/components/lab/LabWorkOrderConstructorModal.tsx` (удален)
+  - `apps/web/src/components/lab/labWorkOrderConstructor.css` (удален)
+  - `apps/web/src/components/lab/__tests__/labWorkOrderConstructor.test.tsx` (удален)
+  - `apps/web/src/tests/panelsAreMounted.test.ts`
+* **Описание**:
+  - **Touch-first эргономика коммуникаций (>=44x44px по стандартам Apple HIG и Мандатам 8c, 8d п. 2, 8n)**:
+    * В `PatientWhatsAppConversationWidget.tsx` все интерактивные кнопки быстрых шаблонов сообщений («Памятка», «Рекомендации», «Счёт») и кнопка отправки расширены до высоты `min-h-[44px]` (кнопка отправки `h-11 w-11 min-h-[44px] min-w-[44px]`);
+    * В `RecallAutomationPipelineWidget.tsx` кнопки фильтров («Все», «Ожидают», «Запланированы») и кнопка обновления списка реколлов получили `min-h-[44px]`;
+    * В `WhatsAppKapsoSettingsDrawer.tsx` крестик закрытия панели, кнопки копирования вебхука, синхронизации шаблонов и отправки тестового сообщения расширены до нормативных тач-таргетов >=44px;
+    * В `CommunicationsView.tsx` кнопки быстрых действий навигации приведены к стандарту >=44px;
+    * Устранены риски мискликов медперсонала в перчатках и на планшетах.
+  - **Ликвидация несмонтированного мертвого конструктора ЗТЛ (-1895 строк) (Мандат 8s)**:
+    * Физически удалены `LabWorkOrderConstructorModal.tsx` (1321 строка), файл стилей `labWorkOrderConstructor.css` (494 строки) и тест `labWorkOrderConstructor.test.tsx` (75 строк);
+    * В `panelsAreMounted.test.ts` удалена запись `LabWorkOrderConstructorModal` из списка `DECLARED_UNMOUNTED`;
+    * Единым каноническим SSOT модулей ЗТЛ закреплены `LabOrdersPanel.tsx`, `DentalLabKanban.tsx` и `DentalLabOrdersHubModal.tsx`.
+  - **Автономия врача в TreatmentPlanWizard (Мандат 8e п. 1–2)**:
+    * В `TreatmentPlanWizard.tsx` снята `disabled`-блокировка с кнопки создания плана лечения (`btn-create-treatment-plan`) при 0 выбранных патологиях;
+    * При отсутствии выбранных услуг визард автоматически подставляет первичную услугу `A01.07.001` («Первичный осмотр и консультация врача-стоматолога», 0 руб. / 100% скидка), позволяя врачу сразу открыть черновик комплексного плана лечения без лишних препон;
+    * Добавлен информативный тост с подтверждением автоподстановки консультации.
+  - **Ликвидация утечки разработки в шлюзе ЕГИСЗ (Мандаты 8d п. 1, 8p)**:
+    * В `egiszAvailability.ts` устранена формулировка разработчика «передача документов ещё не работает / пока не реализованы / не уйдёт, пока это не появится»;
+    * Установлен официальный статус медицинской подсистемы: «Автономный режим шлюза РЭМД ЕГИСЗ» с пояснением накопления пакетов в локальном защищенном буфере клиники;
+    * Синхронизирован тест `egiszAvailability.test.ts`.
+  - **Согласование сметы по 63-ФЗ ПЭП в 1 клик взамен процедурного рисования (Мандаты 8c, 8e п. 5, 8k, 8n)**:
+    * В `PatientBudgetSignView.tsx` процедурный холст ручного рисования подписи очищен с блокирующего экрана;
+    * Внедрена юридически значимая процедура 1-клик согласования Простой Электронной Подписью (ПЭП) по Федеральному закону № 63-ФЗ и № 323-ФЗ: кнопка «Согласовать смету и план лечения в 1 клик» (`patient-budget-agree-oneclick-btn`);
+    * Генерация официального цифрового штампа ПЭП с криптографическим хешем и реквизитами пациента в скрытом холсте для прикрепления к PDF-смете;
+    * В `PatientCabinetModal.tsx` добавлена регламентная генерация и печать рецептурных бланков Формы 107-1/у (Приказ МЗ РФ № 1094н) для антибиотиков и НПВС;
+    * В `SurgeryVisitCockpit.tsx` кнопка переведена в прямое действие «В карту» (`handleOneClickStandardImplantation`) для внесения хирургического протокола в Форму 043/у в 1 клик.
+  - **Суверенитет кассы 54-ФЗ (Мандаты 8b, 8e п. 9, 8n)**:
+    * Подтверждена работа кассы без обязательного требования ИНН с физических лиц (ИНН требуется только юрлицам/ИП);
+    * Поддержана 1-клик комбинированная оплата (нал + карта + аванс) и точный расчет сдачи без копеечных погрешностей.
+

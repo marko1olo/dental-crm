@@ -7,6 +7,7 @@ import {
 	Award,
 	Calculator,
 	Check,
+	ChevronDown,
 	Clock,
 	Coins,
 	CreditCard,
@@ -18,6 +19,7 @@ import {
 	Layers,
 	MoreVertical,
 	PenTool,
+	Percent,
 	Printer,
 	Receipt,
 	RefreshCw,
@@ -931,162 +933,224 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				</div>
 			</div>
 
-			{/* Financial Adjustments Bar: Discounts & Loyalty Bonus Points */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs">
-				{/* Quick Discounts */}
-				<div className="flex items-center gap-2">
-					<span className="font-semibold text-[var(--muted,#64748b)]">Скидка:</span>
-					<div className="flex items-center gap-1 flex-wrap">
-						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
-							<button
-								key={pct}
-								type="button"
-								onClick={() => setDiscountPercent(pct)}
-								title={
-									pct === 100
-										? "100% скидка: гарантийные переделки и персонал (без паролей и согласований)"
-										: `Применить скидку ${pct}%`
-								}
-								className={`px-2.5 py-1 min-h-[44px] sm:min-h-[32px] inline-flex items-center justify-center rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
-									discountPercent === pct
-										? pct === 100
-											? "bg-emerald-600 text-white shadow-xs"
-											: "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: pct === 100
-											? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 border border-emerald-500/30"
-											: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
-								}`}
-							>
-								{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
-							</button>
-						))}
-						{discountPercent === 100 && (
-							<span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 ml-1">
-								0 ₽ (Гарантия / Персонал)
-							</span>
-						)}
-					</div>
-				</div>
-
-				{/* Loyalty Points / Patient Deposit */}
-				<div className="flex items-center gap-3">
-					<div className="flex items-center gap-1.5">
-						<Coins size={14} className="text-amber-500" />
-						<span className="text-[var(--muted,#64748b)]">
-							Баланс/Бонусы:{" "}
-							<strong className="font-mono text-[var(--ink,#0f172a)]">
-								{patientBalanceRub.toLocaleString("ru-RU")} ₽
-							</strong>
-						</span>
-					</div>
-
-					{patientBalanceRub > 0 && (
-						<div className="flex items-center gap-1.5">
-							<input
-								type="number"
-								min={0}
-								max={patientBalanceRub}
-								value={bonusPointsToUseRub || ""}
-								onChange={(e) => {
-									const val = Math.max(0, Math.min(patientBalanceRub, Number(e.target.value) || 0));
-									setBonusPointsToUseRub(val);
-								}}
-								placeholder="Списать ₽"
-								className="w-24 min-h-[44px] sm:min-h-[32px] px-2 py-1 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-							/>
+			{/* Service Area: Collapsible Toolbars (Mandates 8p, 8d — Screen Height Budget <= 160-180px) */}
+			<div className="flex flex-col gap-2">
+				{/* Financial Adjustments Bar: Discounts & Loyalty Bonus Points */}
+				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs overflow-hidden transition-all">
+					<summary className="cursor-pointer text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
+						<div className="flex items-center gap-2 flex-wrap">
+							<Percent size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<span>Скидки и бонусы пациента</span>
+							{discountPercent > 0 && (
+								<span className="px-2 py-0.5 rounded-full font-mono font-bold text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+									-{discountPercent}%
+								</span>
+							)}
 							{bonusPointsToUseRub > 0 && (
-								<button
-									type="button"
-									onClick={() => setBonusPointsToUseRub(0)}
-									className="min-h-[44px] sm:min-h-0 px-2 py-1 text-[11px] text-rose-500 hover:underline cursor-pointer inline-flex items-center"
-								>
-									Сбросить
-								</button>
+								<span className="px-2 py-0.5 rounded-full font-mono font-bold text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+									-{bonusPointsToUseRub.toLocaleString("ru-RU")} ₽
+								</span>
 							)}
 						</div>
-					)}
-				</div>
-			</div>
-
-			{/* AI Copilot Clinical Assistant Bar */}
-			<div className="flex flex-col gap-2.5 p-4 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs shadow-xs">
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-					<div className="flex items-center gap-2 flex-wrap">
-						<div className="inline-flex items-center gap-1.5 font-bold text-[var(--teal-dark,var(--teal))]">
-							<Sparkles size={16} className="text-amber-500" />
-							<span>AI Copilot (Ассистент врача):</span>
+						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
+							<Coins size={13} className="text-amber-500 shrink-0" />
+							<span className="font-mono">{patientBalanceRub.toLocaleString("ru-RU")} ₽</span>
+							<ChevronDown size={14} className="transition-transform group-open:rotate-180" />
+						</div>
+					</summary>
+					<div className="p-3.5 pt-1.5 border-t border-[var(--border,#cbd5e1)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+						{/* Quick Discounts */}
+						<div className="flex items-center gap-2">
+							<span className="font-semibold text-[var(--muted,#64748b)]">Скидка:</span>
+							<div className="flex items-center gap-1 flex-wrap">
+								{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
+									<button
+										key={pct}
+										type="button"
+										onClick={() => setDiscountPercent(pct)}
+										title={
+											pct === 100
+												? "100% скидка: гарантийные переделки и персонал (без паролей и согласований)"
+												: `Применить скидку ${pct}%`
+										}
+										className={`px-2.5 py-1 min-h-[44px] sm:min-h-[32px] inline-flex items-center justify-center rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
+											discountPercent === pct
+												? pct === 100
+													? "bg-emerald-600 text-white shadow-xs"
+													: "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+												: pct === 100
+													? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 border border-emerald-500/30"
+													: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
+										}`}
+									>
+										{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
+									</button>
+								))}
+								{discountPercent === 100 && (
+									<span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 ml-1">
+										0 ₽ (Гарантия / Персонал)
+									</span>
+								)}
+							</div>
 						</div>
 
-						{COPILOT_PRESET_ACTIONS.map((action) => (
-							<button
-								key={action.id}
-								type="button"
-								disabled={isCopilotExecuting}
-								onClick={() => handleExecuteCopilot(action.id)}
-								className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px] inline-flex items-center justify-center touch-manipulation"
-								title={action.description}
-								data-testid={`module-copilot-btn-${action.id}`}
-							>
-								{action.title}
-							</button>
-						))}
+						{/* Loyalty Points / Patient Deposit */}
+						<div className="flex items-center gap-3">
+							<div className="flex items-center gap-1.5">
+								<Coins size={14} className="text-amber-500" />
+								<span className="text-[var(--muted,#64748b)]">
+									Баланс/Бонусы:{" "}
+									<strong className="font-mono text-[var(--ink,#0f172a)]">
+										{patientBalanceRub.toLocaleString("ru-RU")} ₽
+									</strong>
+								</span>
+							</div>
 
-						<button
-							type="button"
-							onClick={() => setIsPresenterModalOpen(true)}
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-all shadow-2xs text-[11px] inline-flex items-center justify-center gap-1.5 touch-manipulation"
-							title="Запустить клиническую валидацию СтАР, проверку анатомии FDI и генерацию объяснения для пациента"
-							data-testid="module-copilot-ai-audit-btn"
-						>
-							<Bot size={13} className="text-amber-600 dark:text-amber-400" />
-							<span>ИИ-Аудит & Презентация</span>
-						</button>
+							{patientBalanceRub > 0 && (
+								<div className="flex items-center gap-1.5">
+									<input
+										type="number"
+										min={0}
+										max={patientBalanceRub}
+										value={bonusPointsToUseRub || ""}
+										onChange={(e) => {
+											const val = Math.max(0, Math.min(patientBalanceRub, Number(e.target.value) || 0));
+											setBonusPointsToUseRub(val);
+										}}
+										placeholder="Списать ₽"
+										className="w-24 min-h-[44px] sm:min-h-[32px] px-2 py-1 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+									/>
+									{bonusPointsToUseRub > 0 && (
+										<button
+											type="button"
+											onClick={() => setBonusPointsToUseRub(0)}
+											className="min-h-[44px] sm:min-h-0 px-2 py-1 text-[11px] text-rose-500 hover:underline cursor-pointer inline-flex items-center"
+										>
+											Сбросить
+										</button>
+									)}
+								</div>
+							)}
+						</div>
 					</div>
+				</details>
 
-					<div className="flex items-center gap-2 shrink-0">
-						{customStages && (
-							<button
-								type="button"
-								onClick={() => {
-									setCustomStages(null);
-									setCopilotFeedback(null);
-									showToast("План сброшен к исходной одонтограмме", "info");
-								}}
-								className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer inline-flex items-center justify-center touch-manipulation"
-								title="Сбросить все ручные правки и AI модификации"
-								data-testid="copilot-reset-plan-btn"
+				{/* AI Copilot Clinical Assistant Bar */}
+				<details className="group rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs shadow-xs overflow-hidden transition-all">
+					<summary className="cursor-pointer text-xs font-bold text-[var(--teal-dark,var(--teal))] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
+						<div className="flex items-center gap-2 flex-wrap">
+							<Sparkles size={15} className="text-amber-500 shrink-0" />
+							<span>AI Copilot (Ассистент врача & Аудит)</span>
+							{customStages && (
+								<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
+									AI-модификации
+								</span>
+							)}
+							{copilotFeedback && (
+								<span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 border border-indigo-500/20 truncate max-w-[240px]">
+									{copilotFeedback}
+								</span>
+							)}
+						</div>
+						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
+							<span className="hidden sm:inline">Пресеты СтАР, Оптимизация, Аудит</span>
+							<ChevronDown size={14} className="transition-transform group-open:rotate-180 text-[var(--ink,#0f172a)]" />
+						</div>
+					</summary>
+					<div className="p-3.5 pt-1.5 border-t border-[var(--border,#cbd5e1)] flex flex-col gap-2.5">
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+							<div className="flex items-center gap-2 flex-wrap">
+								{COPILOT_PRESET_ACTIONS.map((action) => (
+									<button
+										key={action.id}
+										type="button"
+										disabled={isCopilotExecuting}
+										onClick={() => handleExecuteCopilot(action.id)}
+										className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px] inline-flex items-center justify-center touch-manipulation"
+										title={action.description}
+										data-testid={`module-copilot-btn-${action.id}`}
+									>
+										{action.title}
+									</button>
+								))}
+
+								<button
+									type="button"
+									onClick={() => setIsPresenterModalOpen(true)}
+									className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-all shadow-2xs text-[11px] inline-flex items-center justify-center gap-1.5 touch-manipulation"
+									title="Запустить клиническую валидацию СтАР, проверку анатомии FDI и генерацию объяснения для пациента"
+									data-testid="module-copilot-ai-audit-btn"
+								>
+									<Bot size={13} className="text-amber-600 dark:text-amber-400" />
+									<span>ИИ-Аудит & Презентация</span>
+								</button>
+							</div>
+
+							<div className="flex items-center gap-2 shrink-0">
+								{customStages && (
+									<button
+										type="button"
+										onClick={() => {
+											setCustomStages(null);
+											setCopilotFeedback(null);
+											showToast("План сброшен к исходной одонтограмме", "info");
+										}}
+										className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer inline-flex items-center justify-center touch-manipulation"
+										title="Сбросить все ручные правки и AI модификации"
+										data-testid="copilot-reset-plan-btn"
+									>
+										Сбросить к исходному
+									</button>
+								)}
+							</div>
+						</div>
+
+						{copilotFeedback && (
+							<div
+								className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-950 dark:text-indigo-100 text-xs mt-1"
+								data-testid="module-copilot-feedback"
 							>
-								Сбросить к исходному
-							</button>
+								<div className="flex items-center gap-2">
+									<Bot size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+									<span>{copilotFeedback}</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => setCopilotFeedback(null)}
+									className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-4 shrink-0"
+								>
+									Скрыть
+								</button>
+							</div>
 						)}
 					</div>
-				</div>
+				</details>
 
-				{copilotFeedback && (
-					<div
-						className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-950 dark:text-indigo-100 text-xs mt-1"
-						data-testid="module-copilot-feedback"
-					>
+				{/* Turnkey Clinical Packages 1-Click Panel (Mandate 8e, 8p) */}
+				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs overflow-hidden transition-all">
+					<summary className="cursor-pointer text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
 						<div className="flex items-center gap-2">
-							<Bot size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-							<span>{copilotFeedback}</span>
+							<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<span>Готовые клинические пакеты «под ключ» (8 пакетов)</span>
+							<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+								1 клик
+							</span>
 						</div>
-						<button
-							type="button"
-							onClick={() => setCopilotFeedback(null)}
-							className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-4 shrink-0"
-						>
-							Скрыть
-						</button>
+						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
+							<span className="hidden sm:inline font-mono">Приказ МЗ РФ №804н</span>
+							<ChevronDown size={14} className="transition-transform group-open:rotate-180" />
+						</div>
+					</summary>
+					<div className="p-2 border-t border-[var(--border,#cbd5e1)]">
+						<ClinicalBundlesPanel
+							compact={true}
+							onApplyBundle={handleApplyClinicalBundle}
+							initialToothNumber={orthopedicTeeth[0] || 16}
+							className="border-0 shadow-none p-2"
+						/>
 					</div>
-				)}
+				</details>
 			</div>
-
-			{/* Turnkey Clinical Packages 1-Click Panel (Mandate 8e) */}
-			<ClinicalBundlesPanel
-				onApplyBundle={handleApplyClinicalBundle}
-				initialToothNumber={orthopedicTeeth[0] || 16}
-			/>
 
 			{/* Main Content Area */}
 			{activeViewTab === "3tier" ? (
@@ -1218,7 +1282,21 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onClose={() => setIsPriceValidatorModalOpen(false)}
 					planPayload={validationPayload}
 					stages={stages}
-					catalogPricelist={catalog as any}
+					catalogPricelist={(catalog as any) || []}
+					onExportWorkOrder={(order) => {
+						showToast(
+							`Наряд-заказ №${order.orderNumber} на сумму ${order.totalPayableRub.toLocaleString("ru-RU")} ₽ выписан!`,
+							"success",
+							5000,
+						);
+					}}
+					onExportCompletedAct={(act) => {
+						showToast(
+							`Акт выполненных работ №${act.orderNumber} на сумму ${act.totalPayableRub.toLocaleString("ru-RU")} ₽ сформирован!`,
+							"success",
+							5000,
+						);
+					}}
 				/>
 			)}
 
@@ -1399,29 +1477,6 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				/>
 			)}
 
-			{/* Price Validation & 804n Catalogue Lock Studio Modal (Feature #41) */}
-			{isPriceValidatorModalOpen && (
-				<TreatmentPlanPriceValidatorModal
-					isOpen={isPriceValidatorModalOpen}
-					onClose={() => setIsPriceValidatorModalOpen(false)}
-					planPayload={validationPayload}
-					catalogPricelist={(catalog as any) || []}
-					onExportWorkOrder={(order) => {
-						showToast(
-							`Наряд-заказ №${order.orderNumber} на сумму ${order.totalPayableRub.toLocaleString("ru-RU")} ₽ выписан!`,
-							"success",
-							5000,
-						);
-					}}
-					onExportCompletedAct={(act) => {
-						showToast(
-							`Акт выполненных работ №${act.orderNumber} на сумму ${act.totalPayableRub.toLocaleString("ru-RU")} ₽ сформирован!`,
-							"success",
-							5000,
-						);
-					}}
-				/>
-			)}
 
 			{/* Bank Installment QR Financing Modal */}
 			{isInstallmentModalOpen && selectedInstallmentStage && (

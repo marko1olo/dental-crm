@@ -235,7 +235,7 @@ export const WhatsAppKapsoSettingsDrawer: React.FC<WhatsAppKapsoSettingsDrawerPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-[var(--glass-panel)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+						className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg hover:bg-[var(--glass-panel)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
 					>
 						<X className="h-5 w-5" />
 					</button>
@@ -409,7 +409,7 @@ export const WhatsAppKapsoSettingsDrawer: React.FC<WhatsAppKapsoSettingsDrawerPr
 							<button
 								type="button"
 								onClick={handleCopyWebhook}
-								className="flex h-9 items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-3 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
+								className="min-h-[44px] inline-flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-3 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
 							>
 								{copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
 								{copied ? "Скопировано" : "Копировать"}
@@ -432,7 +432,7 @@ export const WhatsAppKapsoSettingsDrawer: React.FC<WhatsAppKapsoSettingsDrawerPr
 								type="button"
 								onClick={handleSyncTemplates}
 								disabled={syncing}
-								className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
+								className="min-h-[44px] inline-flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
 							>
 								<RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
 								Синхронизировать
@@ -490,7 +490,7 @@ export const WhatsAppKapsoSettingsDrawer: React.FC<WhatsAppKapsoSettingsDrawerPr
 						<button
 							type="submit"
 							disabled={testing}
-							className="flex items-center justify-center gap-2 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-4 py-2 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] disabled:opacity-50 transition-colors w-full cursor-pointer"
+							className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-4 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] disabled:opacity-50 transition-colors w-full cursor-pointer"
 						>
 							<Send className="h-3.5 w-3.5" />
 							{testing ? "Отправка..." : "Отправить тестовое сообщение"}

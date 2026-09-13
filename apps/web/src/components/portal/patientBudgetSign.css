@@ -359,6 +359,16 @@
 	box-shadow: none;
 }
 
+/* 63-FZ PEP Stamp Preview */
+.patient-budget-pep-stamp-preview {
+	background-color: #f0fdf4;
+	border: 2px solid #059669;
+	border-radius: 0.5rem;
+	padding: 1rem;
+	text-align: center;
+	margin-bottom: 0.75rem;
+}
+
 /* Accepted Card */
 .patient-budget-accepted-card {
 	background-color: #f0fdf4;

@@ -172,12 +172,13 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 
 					<button
 						type="button"
-						onClick={() => showToast("Хирургический протокол формы 043/у", "info")}
+						onClick={handleOneClickStandardImplantation}
 						className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 shadow-2xs"
 						data-testid="btn-cockpit-full"
+						title="Внести хирургический протокол имплантации в карту 043/у"
 					>
 						<Sparkles size={14} />
-						<span>Кокпит</span>
+						<span>В карту</span>
 					</button>
 				</div>
 			</div>

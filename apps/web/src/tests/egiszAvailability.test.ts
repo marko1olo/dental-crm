@@ -168,7 +168,7 @@ test("настроенный шлюз без реализованной пере
 	assert.equal(state.kind, "transmission_unavailable");
 	assert.equal(state.canTransmit, false);
 	assert.notEqual(state.transmitBlockedReason, "");
-	assert.match(state.detail, /не уйдёт/);
+	assert.match(state.detail, /буфере/);
 	assertNoLatinOnScreen(state, "transmission_unavailable");
 });
 

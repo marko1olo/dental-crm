@@ -151,14 +151,25 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 	};
 
 	const handleCreateDraftPlan = useCallback(async () => {
-		if (activeItems.length === 0) {
-			showToast("Нет выбранных позиций для создания плана", "warning", 3000);
-			return;
-		}
-
 		setIsSubmitting(true);
 		try {
-			const planItemsForApi = activeItems.map((item, idx) => {
+			// Mandate 8e: if no items are selected from pathologies, automatically include
+			// standard initial consultation service (0 руб. / 100% скидка) so the doctor is never blocked
+			const effectiveItems: LiveInvoiceItem[] =
+				activeItems.length > 0
+					? activeItems
+					: [
+							{
+								toothNumber: 0,
+								code: "A01.07.001",
+								title: "Первичный осмотр и консультация врача-стоматолога",
+								category: "Терапия",
+								price: 0,
+								quantity: 1,
+							},
+						];
+
+			const planItemsForApi = effectiveItems.map((item, idx) => {
 				const lineGrossRub = item.price * item.quantity;
 				const lineDiscRub = Math.round((lineGrossRub * doctorDiscountPercent) / 100);
 				return {
@@ -182,6 +193,13 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 				};
 			});
 
+			const effectiveTotalKopecks = effectiveItems.reduce((acc, it) => {
+				const grossKop = Math.round(it.price * it.quantity * 100);
+				const discKop = Math.round((grossKop * doctorDiscountPercent) / 100);
+				return acc + Math.max(0, grossKop - discKop);
+			}, 0);
+			const effectiveTotalRub = Math.round(effectiveTotalKopecks / 100);
+
 			if (patientId) {
 				const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
 					method: "POST",
@@ -203,16 +221,24 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 
 				const result = await res.json().catch(() => null);
 				const createdId = result?.planId || result?.plan?.id || `plan_${Date.now()}`;
-				onPlanCreated?.(createdId, totalRub);
+				onPlanCreated?.(createdId, effectiveTotalRub);
 			}
 
 			// Play audio feedback & show success toast
 			SoundFeedbackService.getInstance().playActionSuccess();
-			showToast(
-				`Черновик плана лечения успешно создан: ${activeItems.length} услуг на сумму ${totalRub.toLocaleString("ru-RU")} ₽`,
-				"success",
-				5000,
-			);
+			if (activeItems.length === 0) {
+				showToast(
+					"Создан базовый план лечения с первичным осмотром и консультацией врача-стоматолога (0 ₽)",
+					"success",
+					5000,
+				);
+			} else {
+				showToast(
+					`Черновик плана лечения успешно создан: ${activeItems.length} услуг на сумму ${effectiveTotalRub.toLocaleString("ru-RU")} ₽`,
+					"success",
+					5000,
+				);
+			}
 
 			// Dispatch reload event for connected modules
 			if (typeof window !== "undefined") {
@@ -230,7 +256,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [activeItems, doctorDiscountPercent, patientId, planTitle, totalRub, onPlanCreated, onClose]);
+	}, [activeItems, doctorDiscountPercent, patientId, planTitle, onPlanCreated, onClose]);
 
 	const handlePrintEstimate = () => {
 		if (typeof window !== "undefined") {
@@ -498,7 +524,8 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 						<button
 							type="button"
 							onClick={handleCreateDraftPlan}
-							disabled={isSubmitting || activeItems.length === 0}
+							disabled={isSubmitting}
+							title="Создать черновик комплексного плана лечения"
 							className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[38px] px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
 							data-testid="btn-create-treatment-plan"
 						>

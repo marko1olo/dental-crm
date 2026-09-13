@@ -279,7 +279,7 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 					<button
 						type="button"
 						onClick={() => setActiveFilter("all")}
-						className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+						className={`min-h-[44px] inline-flex items-center rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
 							activeFilter === "all"
 								? "bg-[var(--accent)] text-white shadow-sm"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-panel)]"
@@ -290,7 +290,7 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 					<button
 						type="button"
 						onClick={() => setActiveFilter("pending")}
-						className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+						className={`min-h-[44px] inline-flex items-center rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
 							activeFilter === "pending"
 								? "bg-[var(--accent)] text-white shadow-sm"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-panel)]"
@@ -301,7 +301,7 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 					<button
 						type="button"
 						onClick={() => setActiveFilter("scheduled")}
-						className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+						className={`min-h-[44px] inline-flex items-center rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
 							activeFilter === "scheduled"
 								? "bg-[var(--accent)] text-white shadow-sm"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-panel)]"
@@ -316,7 +316,7 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 						type="button"
 						onClick={fetchRecalls}
 						disabled={loading}
-						className="flex items-center gap-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
+						className="min-h-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
 					>
 						<RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
 						Обновить

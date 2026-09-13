@@ -568,7 +568,7 @@ export function CommunicationsView(
 					<button
 						type="button"
 						onClick={() => setIsRecallsHubOpen(true)}
-						className="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
 						data-testid="communications-recalls-hub-btn"
 						title="Профосмотры и реколлы: диспансерный учет и удержание"
 					>
@@ -578,7 +578,7 @@ export function CommunicationsView(
 					<button
 						type="button"
 						onClick={() => setIsOmnichannelHubOpen(true)}
-						className="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
 						data-testid="communications-omnichannel-hub-btn"
 						title="Омниканальный чат с пациентом (WhatsApp / Telegram / SMS)"
 					>

@@ -1210,7 +1210,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									key={p.percent}
 									type="button"
 									onClick={() => applyDiscountPreset(p.percent, p.reason)}
-									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+									className={`min-h-[44px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 										isActive ? activeClass : inactiveClass
 									}`}
 									data-testid={p.testId}
@@ -1230,7 +1230,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<button
 							type="button"
 							onClick={applyWarranty100Preset}
-							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+							className={`min-h-[44px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 								isWarranty100
 									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
 									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
@@ -1253,7 +1253,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							<button
 								type="button"
 								onClick={applyExactCashPreset}
-								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									activeMethod === "cash" && cashChange.isExact
 										? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
@@ -1266,7 +1266,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							<button
 								type="button"
 								onClick={applySpendAllDepositBonusPreset}
-								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
 										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
@@ -1280,7 +1280,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							<button
 								type="button"
 								onClick={apply5050CashCardPreset}
-								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
 										? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
@@ -1294,7 +1294,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							<button
 								type="button"
 								onClick={applyThreeWayCashCardAdvancePreset}
-								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
 										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
@@ -1308,7 +1308,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							<button
 								type="button"
 								onClick={applyFullCardPreset}
-								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									activeMethod === "card_terminal"
 										? "bg-blue-600 text-white border-blue-600 shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
@@ -1322,7 +1322,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								<button
 									type="button"
 									onClick={applyDepositPlusCardPreset}
-									className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 										activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
 											? "bg-purple-600 text-white border-purple-600 shadow-2xs"
 											: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
@@ -1336,7 +1336,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setActiveMethod("sbp_qr")}
-								className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+								className="min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 								data-testid="preset-sbp-qr"
 								title="Сформировать QR СБП для быстрой оплаты пациентом"
 							>
@@ -1790,7 +1790,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(totalDueRub)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 truncate"
+											className="min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 truncate"
 											data-testid="btn-cash-exact"
 											title="Внесено ровно сумма счета без сдачи"
 										>
@@ -1801,7 +1801,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 												key={denom.amount}
 												type="button"
 												onClick={() => setReceivedCashRub(denom.amount)}
-												className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
+												className="min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 												data-testid={denom.testId}
 												title={`Внесено ${denom.label}`}
 											>
@@ -1815,7 +1815,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 												key={addBtn.amount}
 												type="button"
 												onClick={() => setReceivedCashRub((prev) => prev + addBtn.amount)}
-												className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
+												className="min-h-[44px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
 												data-testid={addBtn.testId}
 												title={`Добавить ${addBtn.label.replace("+", "")} к внесенной сумме`}
 											>
@@ -1825,7 +1825,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(totalDueRub)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-700 hover:bg-blue-100 text-blue-800 dark:text-blue-200 cursor-pointer transition-all active:scale-95 truncate flex items-center justify-center gap-1"
+											className="min-h-[44px] rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-700 hover:bg-blue-100 text-blue-800 dark:text-blue-200 cursor-pointer transition-all active:scale-95 truncate flex items-center justify-center gap-1"
 											data-testid="btn-cash-exact-rounded"
 											title="Внести ровно без сдачи"
 										>

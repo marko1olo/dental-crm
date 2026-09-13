@@ -359,12 +359,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Дропзона и селектор пакетной загрузки дентальных фотографий ортодонтического и хирургического протокола (components/imaging/PhotoProtocolDropzone.tsx:52). Модуль загрузки в фотопротокол.",
 	},
 	{
-		file: "components/lab/LabWorkOrderConstructorModal.tsx",
-		name: "LabWorkOrderConstructorModal",
-		reason:
-			"Конструктор и визуальный конфигуратор нарядов ортопедических конструкций в зуботехническую лабораторию (components/lab/LabWorkOrderConstructorModal.tsx:198). Альтернативный конструктор заказов ЗТЛ.",
-	},
-	{
 		file: "components/odontogram/ToothDualView.tsx",
 		name: "ToothDualView",
 		reason:

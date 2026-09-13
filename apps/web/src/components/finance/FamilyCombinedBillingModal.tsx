@@ -586,7 +586,7 @@ ${certs
 										<button
 											type="button"
 											onClick={() => setAdditionalPaymentMethod("sbp")}
-											className={`flex-1 min-h-[40px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+											className={`flex-1 min-h-[44px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
 												additionalPaymentMethod === "sbp"
 													? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30"
 													: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -598,7 +598,7 @@ ${certs
 										<button
 											type="button"
 											onClick={() => setAdditionalPaymentMethod("card")}
-											className={`flex-1 min-h-[40px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+											className={`flex-1 min-h-[44px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
 												additionalPaymentMethod === "card"
 													? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30"
 													: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -610,7 +610,7 @@ ${certs
 										<button
 											type="button"
 											onClick={() => setAdditionalPaymentMethod("cash")}
-											className={`flex-1 min-h-[40px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+											className={`flex-1 min-h-[44px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
 												additionalPaymentMethod === "cash"
 													? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
 													: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -763,7 +763,7 @@ ${certs
 														<button
 															type="button"
 															onClick={() => setCashReceivedRub(billingResult.defaultSplit.remainingDueRub)}
-															className="px-2.5 py-1 rounded-lg text-xs font-bold border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] cursor-pointer"
+															className="min-h-[44px] inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] cursor-pointer"
 														>
 															Без сдачи ({billingResult.defaultSplit.remainingDueRub} ₽)
 														</button>
@@ -772,7 +772,7 @@ ${certs
 																key={preset}
 																type="button"
 																onClick={() => setCashReceivedRub(preset)}
-																className="px-2 py-1 rounded-lg text-xs font-mono font-semibold border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] cursor-pointer"
+																className="min-h-[44px] inline-flex items-center px-2 py-1 rounded-lg text-xs font-mono font-semibold border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] cursor-pointer"
 															>
 																{preset.toLocaleString("ru-RU")} ₽
 															</button>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
 	Activity,
 	AlertTriangle,
@@ -11,6 +11,7 @@ import {
 	FileText,
 	FlaskConical,
 	Layers,
+	MoreVertical,
 	Package,
 	Shield,
 	Sparkles,
@@ -59,6 +60,34 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
 	const [showMaterials, setShowMaterials] = useState<boolean>(false);
 	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
+	const [isStageMenuOpen, setIsStageMenuOpen] = useState<boolean>(false);
+	const stageMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!isStageMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (stageMenuRef.current && !stageMenuRef.current.contains(e.target as Node)) {
+				setIsStageMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isStageMenuOpen]);
+
+	const isLabOrderEligible =
+		stage.stageKind === "stage_3_orthopedics" ||
+		stage.stageNumber === 3 ||
+		stage.items.some(
+			(it) =>
+				it.category === "Ортопедия" ||
+				it.category === "Детская ортопедия" ||
+				/коронк|мост|протез|винир|вкладк|абатмент|бюгел/i.test(it.name),
+		);
+
+	const hasSecondaryActions = Boolean(
+		(onOpenInstallment && stage.totalRub > 0) ||
+		(onOneClickLabOrder && isLabOrderEligible),
+	);
 
 	const materialSummary = useMemo(() => {
 		return calculateStageMaterialRequirements(stage, inventoryItems);
@@ -429,64 +458,26 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						</div>
 
 						<div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
-							{onOpenInstallment && stage.totalRub > 0 && (
+							{/* Prominent Action 1: Lab Work Order (Orthopedics) */}
+							{onOpenLabOrder && isLabOrderEligible && (
 								<button
 									type="button"
-									onClick={() => onOpenInstallment(stage)}
-									className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors w-full sm:w-auto"
-									title={`Оформить беспроцентную банковскую рассрочку (Сбер / Т-Банк / Подели) на этап №${stage.stageNumber}`}
-									data-testid={`stage-${stage.stageNumber}-installment-btn`}
+									onClick={() => {
+										const stageTeeth = stage.items
+											.map((it) => it.toothNumber)
+											.filter((t): t is number => typeof t === "number" && t > 0);
+										onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
+									}}
+									className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors w-full sm:w-auto"
+									title="Оформить наряд-заказ в зуботехническую лабораторию"
+									data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
 								>
-									<CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Оформить рассрочку на этап</span>
+									<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Наряд-заказ в ЗТЛ</span>
 								</button>
 							)}
 
-							{onOpenLabOrder &&
-								(stage.stageKind === "stage_3_orthopedics" ||
-									stage.stageNumber === 3 ||
-									stage.items.some(
-										(it) =>
-											it.category === "Ортопедия" ||
-											it.category === "Детская ортопедия" ||
-											/коронк|мост|протез|винир|вкладк|абатмент|бюгел/i.test(it.name),
-									)) && (
-									<>
-										<button
-											type="button"
-											onClick={() => {
-												const stageTeeth = stage.items
-													.map((it) => it.toothNumber)
-													.filter((t): t is number => typeof t === "number" && t > 0);
-												onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
-											}}
-											className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors w-full sm:w-auto"
-											title="Оформить наряд-заказ в зуботехническую лабораторию"
-											data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
-										>
-											<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))]" />
-											<span>Наряд-заказ в зуботехническую лабораторию</span>
-										</button>
-										{onOneClickLabOrder && (
-											<button
-												type="button"
-												onClick={() => {
-													const stageTeeth = stage.items
-														.map((it) => it.toothNumber)
-														.filter((t): t is number => typeof t === "number" && t > 0);
-													onOneClickLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
-												}}
-												className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer transition-colors shadow-2xs w-full sm:w-auto"
-												title="Оформить наряд в ЗТЛ в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
-												data-testid={`stage-${stage.stageNumber}-lab-order-one-click-btn`}
-											>
-												<Zap size={13} className="text-amber-600 dark:text-amber-400" />
-												<span>1-клик ЗТЛ (Цирконий A2, +7 дн.)</span>
-											</button>
-										)}
-									</>
-								)}
-
+							{/* Prominent Action 2: Write-off materials & completed act */}
 							{onExecuteWriteOffStage && stage.items.length > 0 && (
 								<button
 									type="button"
@@ -497,6 +488,67 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<Package size={13} />
 									<span>Акт и списание ТМЦ</span>
 								</button>
+							)}
+
+							{/* Secondary Actions Overflow Menu [...] (Miller's Law, Mandate 8d) */}
+							{hasSecondaryActions && (
+								<div className="relative inline-flex items-center" ref={stageMenuRef}>
+									<button
+										type="button"
+										onClick={() => setIsStageMenuOpen((prev) => !prev)}
+										className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1 shrink-0 shadow-xs transition-colors touch-manipulation"
+										title="Дополнительные действия этапа"
+										aria-label="Дополнительные действия этапа"
+										aria-expanded={isStageMenuOpen}
+										data-testid={`stage-${stage.stageNumber}-menu-btn`}
+									>
+										<MoreVertical size={14} className="text-[var(--muted,#64748b)]" />
+									</button>
+
+									{isStageMenuOpen && (
+										<div
+											className="absolute right-0 bottom-full mb-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[240px] text-xs animate-in fade-in zoom-in-95 duration-100"
+											role="menu"
+										>
+											{onOpenInstallment && stage.totalRub > 0 && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														onOpenInstallment(stage);
+													}}
+													className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+													title={`Оформить беспроцентную банковскую рассрочку (Сбер / Т-Банк / Подели) на этап №${stage.stageNumber}`}
+													data-testid={`stage-${stage.stageNumber}-installment-btn`}
+													role="menuitem"
+												>
+													<CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+													<span>Оформить рассрочку на этап</span>
+												</button>
+											)}
+
+											{onOneClickLabOrder && isLabOrderEligible && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														const stageTeeth = stage.items
+															.map((it) => it.toothNumber)
+															.filter((t): t is number => typeof t === "number" && t > 0);
+														onOneClickLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
+													}}
+													className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/15 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+													title="Оформить наряд в ЗТЛ в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
+													data-testid={`stage-${stage.stageNumber}-lab-order-one-click-btn`}
+													role="menuitem"
+												>
+													<Zap size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+													<span>1-клик ЗТЛ (Цирконий A2)</span>
+												</button>
+											)}
+										</div>
+									)}
+								</div>
 							)}
 						</div>
 					</div>
