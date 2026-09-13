@@ -80,16 +80,16 @@ export function AppointmentHoverHud({
 
 	return (
 		<div
-			className="appointment-patient-hover-preview absolute left-0 top-full mt-1.5 w-[340px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-100 text-xs text-[var(--ink)] z-50 pointer-events-auto"
+			className="appointment-patient-hover-preview absolute left-0 top-full mt-1.5 w-[380px] sm:w-[400px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-100 text-xs text-[var(--ink)] z-50 pointer-events-auto"
 			data-testid="appointment-patient-hover-preview"
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onClose}
 		>
 			{/* 1. Крупное ФИО пациента + Статус 54-ФЗ (Баланс / Долг / Аванс) */}
 			<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
-				<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate min-w-0">
+				<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 min-w-0 flex-1">
 					<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-					<span className="truncate" title={appointmentPatientName || "Пациент"}>
+					<span className="break-words leading-tight" title={appointmentPatientName || "Пациент"}>
 						{appointmentPatientName || "Пациент"}
 					</span>
 				</span>
