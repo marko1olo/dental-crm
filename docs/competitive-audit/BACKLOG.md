@@ -5237,4 +5237,38 @@
   - `npm run check:encoding`: 0 ошибок (UTF-8);
   - Single-Compiler Gate защищен per Mandate 8t.
 
+## 333. Волна 186: Унификация складского домена, очистка финансовых движков от блоата и оптимизация кассовых модулей (Мандаты 8c, 8d, 8e, 8n, 8s, 8t) [РЕАЛИЗОВАНО]
+* **Статус**: `[РЕАЛИЗОВАНО]`
+* **Коммит**: `HEAD`
+* **Затронутые файлы**:
+  - `apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx`
+  - `apps/web/src/components/inventory/WarehousePackageWriteOffBar.tsx`
+  - `apps/web/src/components/inventory/warehousePackageWriteOffEngine.ts`
+  - `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`
+  - `apps/web/src/components/warehouse/WarehousePackageWriteOffBar.tsx`
+  - `apps/web/src/components/warehouse/warehousePackageWriteOffEngine.ts`
+  - `packages/shared/src/finance/commerceMl209.ts`
+  - `packages/shared/src/finance/multiCurrency.ts`
+  - `apps/web/src/components/finance/CashRegisterModal.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+* **Архитектурное решение**:
+  - **Унификация складского домена и централизация наряда списания (Мандаты 8s, 8e, 8n)**:
+    * Ликвидировано структурное раздвоение между компонентами `components/warehouse/` и `components/inventory/`: директория `components/inventory/` утверждена в качестве единственного канонического SSOT для всех складских операций, нарядов списания и утилизации пустых карпул анестетиков;
+    * Устаревшие компоненты в `components/warehouse/` (`WarehouseCarpuleDisposalModal.tsx`, `WarehouseWasteModal.tsx`) преобразованы в ультра-легковесные фасады-делегаты (10–20 строк), реэкспортирующие канонические сущности без дублирования бизнес-логики;
+    * Реализовано списание карпул медсестрой в 1 клик без бюрократических комиссий, с мягким овердрафтом (предупреждение вместо блокировки приёма) в строгом соответствии с Мандатом 8e и 8n.
+  - **Очистка финансовых ядер от процедурного блоата (Мандаты 8s, 8t)**:
+    * В модуле `packages/shared/src/finance/commerceMl209.ts` вычищен процедурный блоат и спекулятивные конструкции, нормализована сериализация и валидация коммерческих документов стандарта 1C CommerceML 2.09;
+    * В модуле `packages/shared/src/finance/multiCurrency.ts` зафиксирована копеечно-точная целочисленная арифметика для мультивалютных расчетов и конверсий по курсам ЦБ РФ с защитой от ошибок вычислений с плавающей точкой IEEE 754;
+    * Сохранена 100% обратная совместимость интерфейсов, типов и схем валидации.
+  - **Эргономическая оптимизация кассы 54-ФЗ и сохранение автономии врача (Мандаты 8c, 8d, 8e, 8n)**:
+    * В `CashRegisterModal.tsx` и `PaymentModal.tsx` оптимизирована верстка, устранен частокол избыточных контролов, тулбар приведен к однострочному формату высотой 32–36px, соблюден лимит глубины модалок <= 1;
+    * Гарантирован 100% запрет на требование обязательного ИНН с физических лиц при оплате наличными или картой (согласно 54-ФЗ ИНН обязателен только для расчетов с ЮЛ и ИП);
+    * Обеспечена 1-клик комбинированная оплата (нал + карта + аванс / бонусы / семейный кошелек) и свободные скидки врача до 100% на переделки и персонал без блокировок и паролей администратора.
+* **Верификация**:
+  - `scratch/verify_registry.mjs`: 326/326 фичей [ДА] (100% паритет), ссылки валидны;
+  - `check:encoding`: 0 ошибок (UTF-8);
+  - Single-Compiler Gate защищен per Mandate 8t (отсутствие несогласованных запусков tsc/build).
+
+
 
