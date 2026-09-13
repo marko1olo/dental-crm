@@ -44,7 +44,8 @@
 > 38. Фиксация тулбара приёма `VisitView.tsx` в строгую 1 строку высотой 36px с выносом вторичных действий (печать Формы 043/у, смена и журнал врача, Price Lock, график рассрочки платежей) в выпадающее меню «...» по Мандатам 8d п. 2–3, 8p; 100% автономия врача: отмена блокировок на главной кнопке приёма (`disabled={false}`) по Мандату 8e; тач-таргеты >= 44px на всех кнопках SOAP-редактора `VisitSoapEditor.tsx` (Wave 188, коммит `1ca8b6f1e`).
 > 39. Тотальный снос устаревшей фасадной директории `apps/web/src/components/warehouse/` (-6 файлов, -493 строки мертвого кода) с утверждением единственного канонического SSOT `apps/web/src/components/inventory/` и переносом тестов в `components/inventory/__tests__/` по Мандатам 8i, 8k, 8s (Wave 188, коммит `eef4897a9`).
 > 40. Очистка компонентов ВКК и ЕГИСЗ `CmoQualityAuditModal.tsx` и `EgiszSigningCabinetModal.tsx` от архаичных госпитальных стационарных терминов («начмед», «очередь начмеда») с переводом на регламентную амбулаторную терминологию («контроль качества (ВКК)», «эксперт качества», «база ЭМК клиники») по Мандатам 8i, 8n (Wave 188, коммит `cdfdc903d`).
-> 41. Эргономика радиологии и визиографии (Wave 189, Мандаты 8c, 8d, 8e, 8i, 8k, 8p, 8t): подтверждено мгновенное открытие 2D визиограмм <50мс без задержек на ИИ (Мандат 8e п. 11); гарантирован запрет на автоперезапись зубной формулы ИИ без подтверждения врача; шапки просмотрщиков `RadiologyViewerModal.tsx` и `CbctMprViewer.tsx` сжаты в строго 1 компактную строку высотой 32–36px (`h-9 min-h-[36px] max-h-[36px]`) с выносом вторичных инструментов (протоколы, лист доз, 3D MPR, направления, аннотации HUD, сведения) в поповер меню `...` (`radiology-more-tools-btn`) по Мандатам 8d п. 2, 8p; подтвержден специализированный амбулаторный контекст (Мандат 8i, ноль стационарного МРТ/КТ мусора); повышен порог безопасности нижнечелюстного нерва (IAN clearance) до >= 1.5 мм в `implantSafetyEngine.ts`, `CbctMprViewer.tsx`, `CbctMprImplantStudioModal.tsx`, `ImplantCrossSectionPlanner.tsx`; интерактивные элементы приведены к тач-таргетам >= 44px (`CbctViewportHud.tsx`, `RvgFiltersToolbar.tsx`, `CbctMprImplantStudioModal.tsx`).
+> 41. Эргономика радиологии и визиографии (Wave 189, Мандаты 8c, 8d, 8e, 8i, 8k, 8p, 8t): подтверждено мгновенное открытие 2D визиограмм <50мс без задержек на ИИ (Мандат 8e п. 11); гарантирован запрет на автоперезапись зубной формулы ИИ без подтверждения врача; шапки просмотрщиков `RadiologyViewerModal.tsx` и `CbctMprViewer.tsx` сжаты в строго 1 компактную строку высотой 32–36px (`h-9 min-h-[36px] max-h-[36px]`) с выносом вторичных инструментов (протоколы, лист доз, 3D MPR, направления, аннотации HUD, сведения) в поповер меню `...` (`radiology-more-tools-btn`) по Мандатам 8d п. 2, 8p; подтвержден специализированный амбулаторный контекст (Мандат 8i, ноль стационарного МРТ/КТ мусора); повышен порог безопасности нижнечелюстного нерва (IAN clearance) до >= 1.5 мм в `implantSafetyEngine.ts`, `CbctMprViewer.tsx`, `CbctMprImplantStudioModal.tsx`, `ImplantCrossSectionPlanner.tsx`; интерактивные элементы приведены к тач-таргетам >= 44px (`CbctViewportHud.tsx`, `RvgFiltersToolbar.tsx`, `CbctMprImplantStudioModal.tsx`, коммит `a83905344`).
+> 42. Анатомическая палитра одонтограммы, штампы Формы 043/у и договоров без 403, мобильная адаптация планов лечения 390x844, копеечно-точный биллинг и ликвидация мусорных скриптов (Wave 189, коммит `1ef45e22a`, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8p, 8s, 8t): внедрена каноническая анатомическая палитра зубной формулы (кариес `#f59e0b`, пульпит `#ef4444`, периодонтит `#f97316`, пломба `#3b82f6`, коронка `#eab308`, имплантат `#6366f1`) в `AnatomicalSvgOdontogram.tsx`, `ToothChart.tsx`, `ToothStatusPalette.tsx`, `ToothRadialMenu.tsx`; добавлен 1-клик штамп имплантата в `OdontogramViewContainer.tsx` (`stamp-implant-btn`), тач-таргеты $\ge 44\times 44\text{px}$ на всех кнопках зубов и анатомических поверхностей коронки (MOD/MO/OD/O/M/D/V/L/K/A); регламентные водяные знаки «ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП» и «ПОДПИСАНО ВРАЧОМ» при печати Формы 043/у, 043-1/у и пакетов согласий ИДС (`DentalMedicalCard043uForm.tsx`, `PremiumDocumentPrintSheet.tsx`, `clinicalHtmlRenderers.ts`, `consentTemplates.ts`); автономия регистратуры: 1-клик печать бланка договора со строками `________` без 403-ошибок и без обязательного ИНН с физлиц (`PatientAdministrativeForm.tsx`); 1-клик соматическая норма («Соматически здоров / норма») в карточке пациента без `disabled` блокировок (`PatientGeneralInfoTab.tsx`, `PatientCardModal.tsx`); мобильная адаптация планов лечения под экраны 390x844: липкие футеры `flex-col-reverse` с кнопками на полную ширину в `TreatmentPlanPresenterModal.tsx`, `TreatmentPlanStageCard.tsx`, `planComparator.css`, `treatmentPlans.css`; копеечно-точный расчет смет без потери точности через `Math.round(val * 100) / 100` в `TreatmentPlanModule.tsx`; неблокирующий баннер актуальности плана старше 30 дней без препятствий врачу в ЗТЛ и кассе (Мандат 8e п. 7); тач-таргеты $\ge 44\text{px}$ на всех кнопках действий в `PatientsView.tsx` и `touch-targets.css`; ликвидированы мусорные скрипты `scratch-test.mjs`, `testParser.ts`, `test-parsers.ts` по Мандату 8s и Core Route п. 6.
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5363,6 +5364,74 @@
   - Таргетированные тесты: 11/11 tests PASS в `visitViewAutonomyInquisition.test.tsx`, 21/21 tests PASS в `nurseCarpuleDisposal.test.ts` и `warehouseSoftOverdraftAndWriteOffAutonomyWave64.test.tsx`, 2/2 tests PASS в тестах настроек Telegram;
   - Single-Compiler Gate защищен per Mandate 8t (отсутствие несогласованных запусков tsc/build);
   - Все затронутые файлы приведены в строгое соответствие со стандартами macOS Studio Clinical HIG и Конституцией THE HAMMER.
+
+## 336. Волна 189: Анатомическая палитра одонтограммы, штампы Формы 043/у и договоров без 403, мобильная эргономика планов лечения 390x844, копеечно-точный расчет смет и ликвидация мусорных скриптов (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
+* **Статус**: `[РЕАЛИЗОВАНО]`
+* **Коммиты**: `a83905344`, `1ef45e22a` (HEAD)
+* **Затронутые файлы**:
+  - `apps/api/scratch-test.mjs` (удален по Мандату 8s)
+  - `apps/web/temp_tests/testParser.ts` (удален по Мандату 8s)
+  - `apps/web/test-parsers.ts` (удален по Мандату 8s)
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/components/consents/consentTemplates.ts`
+  - `apps/web/src/components/documents/DocumentsOutpatientArchive.tsx`
+  - `apps/web/src/components/documents/PremiumDocumentPrintSheet.tsx`
+  - `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`
+  - `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/odontogram/OdontogramToolbar.tsx`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/odontogram/ToothRadialMenu.tsx`
+  - `apps/web/src/components/odontogram/ToothStatusPalette.tsx`
+  - `apps/web/src/components/patients/PatientAdministrativeForm.tsx`
+  - `apps/web/src/components/patients/PatientCardModal.tsx`
+  - `apps/web/src/components/patients/tabs/PatientGeneralInfoTab.tsx`
+  - `apps/web/src/components/treatment-plans/ClinicalBundlesPanel.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModal.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`
+  - `apps/web/src/components/treatment-plans/comparator/planComparator.css`
+  - `apps/web/src/components/treatment-plans/treatmentPlans.css`
+  - `apps/web/src/styles/touch-targets.css`
+  - `packages/shared/src/documents/clinicalHtmlRenderers.ts`
+  - `apps/web/src/components/radiology/RadiologyViewerModal.tsx`
+  - `apps/web/src/components/radiology/CbctMprViewer.tsx`
+  - `apps/web/src/components/radiology/CbctViewportHud.tsx`
+  - `apps/web/src/components/radiology/RvgFiltersToolbar.tsx`
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`
+  - `apps/web/src/components/radiology/ImplantCrossSectionPlanner.tsx`
+  - `apps/web/src/components/radiology/implantSafetyEngine.ts`
+* **Архитектурное решение**:
+  - **Форма 043/у, согласия и медицинская документация (Мандаты 8d п. 7, 8e п. 5, 8e п. 8, 8n, коммит `1ef45e22a`)**:
+    * В `DentalMedicalCard043uForm.tsx`, `PremiumDocumentPrintSheet.tsx`, `clinicalHtmlRenderers.ts` и `consentTemplates.ts` внедрены канонические регламентные штампы: для незакрытых/черновых документов выводится строгий юридический штамп `ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП`, для подписанных — `ПОДПИСАНО ВРАЧОМ`, для отредактированных — `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)` в соответствии с законодательством РФ и Мандатом 8e п. 4–5;
+    * В `PatientAdministrativeForm.tsx` реализована 1-клик печать чистого договора со строками `________` для ручного заполнения на приёме (`admin-form-print-blank-contract-btn`) без обязательного требования ИНН физлиц и без 403-ошибок (Мандат 8e п. 8–9, 8n);
+    * В `PatientGeneralInfoTab.tsx` и `PatientCardModal.tsx` кнопка установки соматической нормы («Соматически здоров / норма») сделана неблокируемой (`disabled={false}`), позволяя врачу и регистратору мгновенно проставить физиологическую норму без заполнения сотен пунктов соматического опросника (Мандат 8e п. 3);
+    * Все интерактивные кнопки навигации по разделам 043/у (Формула FDI, Индексы CPITN, Анамнез и СОПР, Норма 043/у, Печать бланка, Печать 043/у) приведены к touch-friendly высоте `minHeight: 44px`.
+  - **Зубная формула и одонтограмма (Мандаты 8c Tier 1, 8d, 8e, коммит `1ef45e22a`)**:
+    * В `AnatomicalSvgOdontogram.tsx`, `ToothChart.tsx`, `ToothStatusPalette.tsx` и `ToothRadialMenu.tsx` внедрена единая анатомическая палитра цветов клинических статусов: кариес (`#f59e0b`), пульпит (`#ef4444` — анатомически красный, Мандат 8c), периодонтит (`#f97316`), пломба (`#3b82f6`), коронка (`#eab308`), имплантат (`#6366f1`), норма (`#10b981`), отсутствующий (`#71717a`);
+    * В `OdontogramViewContainer.tsx` выведена быстрая кнопка 1-клик штампа дентального имплантата (`stamp-implant-btn`), позволяющая врачу маркировать имплантацию в один клик без перехода во вложенные подменю;
+    * Все кнопки зубов постоянного и молочного прикуса, а также переключатели поверхностей коронки зуба (MOD/MO/OD/O/M/D/V/L/K/A) получили гарантированные габариты `min-h-[44px] min-w-[44px]` с CSS-классом `touch-manipulation`, предотвращающим двойной зум на мобильных устройствах и планшетах врача.
+  - **Планы лечения и карточка пациента: мобильная эргономика 390x844 и копеечный расчет смет (Мандаты 8c, 8d, 8e п. 7, 8n, коммит `1ef45e22a`)**:
+    * В `TreatmentPlanModule.tsx` расчет стоимостей строк плана, промежуточных итогов этапов и общей сметы переведен на строго целочисленную копеечную арифметику через `Math.round(val * 100) / 100`, исключающую погрешности чисел с плавающей точкой IEEE-754 при расчете скидок и бонусов;
+    * В соответствии с Мандатом 8e п. 7 истечение 30 дней с момента составления плана лечения больше не блокирует создание заказ-нарядов ЗТЛ, оказание услуг или фискальную оплату: в шапке плана выводится ненавязчивый информационный бейдж «Смета составлена >30 дней назад (актуальна / продлена)»;
+    * В `TreatmentPlanPresenterModal.tsx`, `TreatmentPlanStageCard.tsx`, `planComparator.css` и `treatmentPlans.css` подвал действий этапов и модалок переведен в адаптивный контейнер `flex-col-reverse sm:flex-row items-stretch sm:items-center` с кнопками на 100% ширины экрана и тач-таргетами $\ge 44\text{px}$ (`min-h-[44px]`), устраняя случайные мисклики и горизонтальное смещение на экранах 390x844;
+    * В `PatientsView.tsx` все кнопки быстрых действий (открытие 043/у, переход в счета и кассу 54-ФЗ, переход в расписание, запись на прием, соматическая норма) приведены к тач-таргету $\ge 44\text{px}$ (`min-h-[44px] sm:min-h-0 sm:h-8`), обеспечен перехват клика строки при вызове меню «...».
+  - **Радиология, визиография и 3D КЛКТ (Мандаты 8c, 8d, 8e п. 11, 8i, 8k, 8p, 8t, коммит `a83905344`)**:
+    * Подтверждено мгновенное открытие 2D визиограмм <50мс без задержек на ИИ (Мандат 8e п. 11);
+    * Исключена автоперезапись зубной формулы ИИ без ведома врача: ИИ-сегментация носит исключительно рекомендательный характер;
+    * Шапки просмотрщиков `RadiologyViewerModal.tsx` и `CbctMprViewer.tsx` сжаты в строгую 1 компактную строку высотой 32–36px (`h-9 min-h-[36px] max-h-[36px]`) с группировкой второстепенных действий в поповер меню «...» (`radiology-more-tools-btn`) по Мандатам 8d п. 2, 8p;
+    * Порог безопасного клиренса до нижнечелюстного нерва IAN clearance зафиксирован на уровне $\ge 1.5\text{ мм}$ в `implantSafetyEngine.ts`, `CbctMprViewer.tsx`, `CbctMprImplantStudioModal.tsx`, `ImplantCrossSectionPlanner.tsx`.
+  - **Ликвидация мусорных скриптов по Мандату 8s и Core Route п. 6 (коммит `1ef45e22a`)**:
+    * Физически удалены `apps/api/scratch-test.mjs`, `apps/web/temp_tests/testParser.ts` и `apps/web/test-parsers.ts`;
+    * Кодовая база очищена от временных тестовых зондов, обеспечена чистота и гигиена репозитория.
+* **Верификация**:
+  - `scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5180+ файлов проверено);
+  - Single-Compiler Gate защищен per Mandate 8t (отсутствие несогласованных запусков tsc/build);
+  - Все затронутые файлы приведены в строгое соответствие со стандартами macOS Studio Clinical HIG, Законом Хика, Законом Миллера и Высшей Конституцией THE HAMMER.
+
 
 
 
