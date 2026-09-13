@@ -913,7 +913,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/diagnostics/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
 	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
-	"components/documents/forms/OutpatientForm043Editor.tsx:OutpatientForm043Editor",
 	"components/egisz/EgiszDocumentsJournalModal.tsx:EgiszDocumentsJournalModal",
 	"components/egisz/EgiszRemdSigningModal.tsx:EgiszRemdSigningModal",
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
@@ -939,7 +938,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/messaging/SbpPaymentQrModal.tsx:SbpPaymentQrModal",
 	"components/modals/BackofficeModalsHost.tsx:BackofficeModalsHost",
 	"components/modals/ClinicalModalsHost.tsx:ClinicalModalsHost",
-	"components/odontogram/ChildToothChart.tsx:ChildToothChart",
 	"components/odontogram/PediatricToothChart.tsx:PediatricToothChart",
 	"components/odontogram/ToothStatusPalette.tsx:ToothStatusPalette",
 	"components/offline/ClinicalConflictModal.tsx:ClinicalConflictModal",
@@ -1015,7 +1013,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 111;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 104;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

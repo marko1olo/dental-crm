@@ -1,6 +1,6 @@
 import { DiagnosisSelector } from "../clinical/DiagnosisSelector";
-import { OutpatientForm043Editor } from "../documents/forms/OutpatientForm043Editor";
-import { ChildToothChart } from "../odontogram/ChildToothChart";
+import { DentalMedicalCard043uForm } from "../documents/forms/DentalMedicalCard043uForm";
+import { PediatricToothChart } from "../odontogram/PediatricToothChart";
 import { ToothStatusPalette } from "../odontogram/ToothStatusPalette";
 import { PerioArchGrid } from "../perio/PerioArchGrid";
 import { PatientDetailModal } from "../patients/PatientDetailModal";
@@ -404,10 +404,10 @@ export const ClinicalModalsHost: React.FC = () => {
 				<DiagnosisSelector {...({} as any)} />
 			)}
 			{activeModal === "outpatient_form_043_editor" && (
-				<OutpatientForm043Editor  {...({} as any)} />
+				<DentalMedicalCard043uForm  {...({} as any)} />
 			)}
 			{activeModal === "child_tooth_chart" && (
-				<ChildToothChart  {...({} as any)} />
+				<PediatricToothChart  {...({} as any)} />
 			)}
 			{activeModal === "tooth_status_palette" && (
 				<ToothStatusPalette selectedTooth={16}  {...({} as any)} />

@@ -31,12 +31,6 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 	);
 	const form043Source = fs.readFileSync(form043Path, "utf8");
 
-	const editorPath = path.resolve(
-		__dirname,
-		"../forms/OutpatientForm043Editor.tsx",
-	);
-	const editorSource = fs.readFileSync(editorPath, "utf8");
-
 	const patientModalPath = path.resolve(
 		__dirname,
 		"../../patients/PatientCardModal.tsx",
@@ -139,14 +133,19 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		);
 	});
 
-	it("4. OutpatientForm043Editor re-exports DentalMedicalCard043uForm cleanly", () => {
-		assert.ok(
-			editorSource.includes("DentalMedicalCard043uForm"),
-			"OutpatientForm043Editor must import and export DentalMedicalCard043uForm",
+	it("4. DentalMedicalCard043uForm is canonical form and OutpatientForm043Editor facade is eliminated (Mandate 8s)", () => {
+		const editorFacadePath = path.resolve(
+			__dirname,
+			"../forms/OutpatientForm043Editor.tsx",
+		);
+		assert.strictEqual(
+			fs.existsSync(editorFacadePath),
+			false,
+			"OutpatientForm043Editor facade must be eliminated in favor of DentalMedicalCard043uForm",
 		);
 		assert.ok(
-			editorSource.includes("export const OutpatientForm043Editor"),
-			"Must export OutpatientForm043Editor component",
+			form043Source.includes("export const DentalMedicalCard043uForm"),
+			"Must export canonical DentalMedicalCard043uForm component",
 		);
 	});
 
@@ -225,7 +224,6 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const filesToCheck = [
 			{ name: "DentalMedicalCard043uForm.tsx", content: form043Source },
-			{ name: "OutpatientForm043Editor.tsx", content: editorSource },
 			{ name: "PatientCardModal.tsx", content: patientModalSource },
 			{ name: "PatientGeneralInfoTab.tsx", content: generalInfoTabSource },
 			{ name: "useVisitDiaryLogic.ts", content: diaryLogicSource },
