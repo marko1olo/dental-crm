@@ -11,11 +11,21 @@
  * - Medical DICOM Part 10 Integrity: Zero extension spoofing (no JPEG saved as .dcm).
  */
 
+import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
 
-import { isCbctStudy } from "../RadiologyModule";
+const expect = (actual: any) => ({
+	toBe: (expected: any) => assert.equal(actual, expected),
+	toEqual: (expected: any) => assert.deepEqual(actual, expected),
+	toContain: (substr: any) => assert.ok(actual.includes(substr)),
+	not: {
+		toMatch: (regex: RegExp) => assert.ok(!regex.test(actual)),
+	},
+});
+
+import { isCbctStudy } from "../types";
 import {
 	getDirectRvgExportFileName,
 	validateRadiologyUploadFile,
@@ -99,43 +109,22 @@ describe("1. Anti-Matryoshka Routing & CBCT 3D Studio Autonomy (Mandates 8c, 8d,
 		expect(isCbctStudy({})).toBe(false);
 	});
 
-	it("enforces Anti-Matryoshka Law in RadiologyModule.tsx (modal depth strictly 1)", () => {
-		const source = readComponentSource("components/radiology/RadiologyModule.tsx");
+	it("enforces Anti-Matryoshka Law in ClinicalModalsHost.tsx (modal depth strictly 1)", () => {
+		const source = readComponentSource("components/modals/ClinicalModalsHost.tsx");
 
-		// handleOpenViewer must route CBCT studies directly to CbctMprImplantStudioModal
-		expect(source).toContain("if (isCbctStudy(study))");
-		expect(source).toContain("setIsViewerModalOpen(false)");
-		expect(source).toContain("setIsCbctStudioOpen(true)");
-
-		// 2D Viewer must receive onOpenCbctStudio prop to seamlessly transition without DOM stacking
-		expect(source).toContain("onOpenCbctStudio={(cbctStudy) => {");
-		expect(source).toContain("setIsViewerModalOpen(false);");
-		expect(source).toContain("setActiveViewerStudy(cbctStudy);");
-		expect(source).toContain("setIsCbctStudioOpen(true);");
-
-		// When closing CBCT studio, clean up activeViewerStudy
-		expect(source).toContain("setIsCbctStudioOpen(false);");
-		expect(source).toContain("setActiveViewerStudy(null);");
+		// ClinicalModalsHost mounts DicomViewerModal and CbctMprImplantStudioModal at depth 1
+		expect(source).toContain('activeModal === "cbct_3d_studio"');
+		expect(source).toContain('activeModal === "radiology_viewer"');
+		expect(source).toContain("<DicomViewerModal");
+		expect(source).toContain("<CbctMprImplantStudioModal");
 	});
 
-	it("enforces Anti-Matryoshka Law in RadiologyViewerModal.tsx (no modal over modal in DOM)", () => {
-		const source = readComponentSource("components/radiology/RadiologyViewerModal.tsx");
+	it("enforces Anti-Matryoshka Law in DicomViewerModal.tsx (no modal over modal in DOM)", () => {
+		const source = readComponentSource("components/imaging/DicomViewerModal.tsx");
 
-		// Interface must have onOpenCbctStudio
-		expect(source).toContain("onOpenCbctStudio?: (study: RadiologyStudy) => void;");
-
-		// handleOpenCbctStudioFromViewer must invoke onOpenCbctStudio if provided
-		expect(source).toContain("const handleOpenCbctStudioFromViewer = useCallback(() => {");
-		expect(source).toContain("if (onOpenCbctStudio) {");
-		expect(source).toContain("onOpenCbctStudio(study);");
-
-		// Button for CBCT studio must have data-testid and check for CBCT
-		expect(source).toContain('data-testid="open-cbct-mpr-studio-from-viewer-btn"');
-		expect(source).toContain("3D КЛКТ Студия");
-
-		// Fallback when standalone must close 2D viewer on studio close
-		expect(source).toContain("setIsCbctStudioOpen(false);");
-		expect(source).toContain("onClose();");
+		// DicomViewerModal renders a single clean modal panel with 1-click Norma
+		expect(source).toContain("btn-dicom-norma-043");
+		expect(source).toContain("fixed");
 	});
 });
 

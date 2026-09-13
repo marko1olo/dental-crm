@@ -41,7 +41,7 @@ import {
 	FDI_TOOTH_NAMES,
 	formatRadiationDose,
 } from "./radiologyMath";
-import { SAMPLE_PATIENT_RVG_URL } from "./MedicalRadiologyDropzone";
+import { SAMPLE_PATIENT_RVG_URL } from "./types";
 import type { RadiologyStudy } from "./types";
 import "./hotFolderIntake.css";
 

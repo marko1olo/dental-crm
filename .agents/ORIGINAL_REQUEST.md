@@ -662,3 +662,76 @@ Integrity mode: development
 - [ ] Atomic git commit created with Conventional Commits.
 - [ ] Verbatim subagent reports presented without censorship.
 
+## Follow-up — 2026-09-13T17:49:37Z
+
+Use a very large team of agents (орда специализированных субагентов-хирургов, инквизиторов Ред Тим и стражей под Конституцией THE_HAMMER_MASTER_PROMPT.md и Мандатами 8a–8t).
+
+Eradicate 12 parallel duplicate behemoths, synthetic mock modules, and dead viewers across `apps/web/src/components/`, rewire all callers to canonical Best-of-Breed SSOT implementations, reduce `DEMOUNTED_MODAL_SHIRMS_CEILING` in `panelsAreMounted.test.ts` from 88 down to 76, enforce clinical ergonomics and doctor autonomy (Mandates 8d, 8e, 8n, 8p), execute Red Team adversarial inquisition, and dynamically sync documentation under CTO Supremacy (`THE_HAMMER_MASTER_PROMPT.md`).
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Eradicate DMS Insurance Cluster (4,649 LOC)
+1. **`components/insurance/DmsInsuranceManagerModal.tsx`** (1,960 LOC) — parallel unmounted DMS management suite. Rewire consumers in `BackofficeModalsHost.tsx` to canonical `InsuranceContractsPanel.tsx` / `DmsGuaranteeLetterModal.tsx`, remove via `git rm`.
+2. **`components/insurance/DmsInsurersHubModal.tsx`** (1,642 LOC) — duplicate registry of insurers. Rewire consumers in `BackofficeModalsHost.tsx` to `InsuranceContractsPanel.tsx`, remove via `git rm`.
+3. **`components/insurance/InsurancePreAuthModal.tsx`** (1,047 LOC) — duplicate pre-authorization modal. Rewire `ClinicalModalsHost.tsx` to `DmsGuaranteeLetterModal.tsx`, remove via `git rm`.
+
+### R2. Eradicate Anesthesia Redundancy Cluster (5,388 LOC)
+1. **`components/anesthesia/AnesthesiaDosageCalculatorModal.tsx`** (1,690 LOC) — procedural calculator. Rewire `ClinicalModalsHost.tsx` to canonical `AnesthesiaQuickBar.tsx`, remove via `git rm`.
+2. **`components/anesthesia/AnesthesiaSafetyHubModal.tsx`** (1,511 LOC) — parallel 3-tab hub. Rewire `ClinicalModalsHost.tsx` to `AnesthesiaQuickBar.tsx`, remove via `git rm`.
+3. **`components/anesthesia/AnesthesiaProtocolModal.tsx`** (911 LOC) — duplicate protocol picker. Rewire `ClinicalModalsHost.tsx` to `AnesthesiaQuickBar.tsx`, remove via `git rm`.
+4. **`components/anesthesia/EmergencyAnaphylaxisProtocolModal.tsx`** (959 LOC) — dead import in `VisitDiarySection.tsx`. Rewire/remove via `git rm`.
+5. **`components/diagnostics/ToothAnesthesiaCalculator.tsx`** (317 LOC) — unmounted calculator widget. Remove via `git rm`.
+
+### R3. Eradicate Dead Radiology Suite (4,161 LOC)
+1. **`components/radiology/RadiologyModule.tsx`** (778 LOC) — dead unmounted radiology dashboard. Rewire/remove via `git rm`.
+2. **`components/radiology/RadiologyStudyList.tsx`** (438 LOC) — internal child of `RadiologyModule`. Remove via `git rm`.
+3. **`components/radiology/RadiologyViewerModal.tsx`** (2,657 LOC) — massive parallel viewer. Rewire consumers to canonical `DicomViewerModal.tsx` (1,266 LOC), remove via `git rm`.
+4. **`components/radiology/MedicalRadiologyDropzone.tsx`** (288 LOC) — internal dropzone of `RadiologyViewerModal`. Remove via `git rm`.
+
+### R4. Lower Shirm Backlog Ceiling to 76 (Mandate 8s)
+- In `apps/web/src/tests/panelsAreMounted.test.ts`:
+  - Remove all 12 deleted entries from `DEMOUNTED_MODAL_SHIRMS_BACKLOG`.
+  - Strictly lower `DEMOUNTED_MODAL_SHIRMS_CEILING` from **88 down to 76**.
+  - Verify `panelsAreMounted.test.ts` passes 11/11 tests.
+
+### R5. Red Team Adversarial Inquisition (Mandates 8m, 8d, 8e, 8p, 8n)
+- Independent Red Team audit of UI and code:
+  - Useful height budget $\le 160\text{--}180\text{px}$.
+  - 1-row toolbar (32–36px), zero button landfills.
+  - $\le 2$ primary actions per card.
+  - Doctor autonomy: 0 disabled buttons without reason, 1-click norm, 54-FZ without mandatory citizen INN, zero emojis in official medical/financial forms.
+  - Zero developer note leaks or clown copy.
+
+### R6. Centralized Single-Compiler Gate (Mandate 8t)
+- Subagents do NOT run global `typecheck` or build.
+- L1 orchestrator runs sequential centralized `npm run check:encoding` and `npm run typecheck` (Exit Code 0).
+- Run targeted test suites across affected domains.
+
+### R7. Dynamic Documentation Sync (Mandate 8h)
+- Update `docs/competitive-audit/BACKLOG.md` (Section 346 for Wave 197).
+- Update `docs/competitive-audit/OUR_CRM_MAP.md` (Section 2.10.280).
+- Update `docs/competitive-audit/FEATURES_REGISTRY.md`.
+
+## Acceptance Criteria
+
+### Bloat Eradication
+- [ ] All 12 listed duplicate files physically deleted via `git rm`.
+- [ ] All consumers rewired to canonical SSOT components without regression.
+- [ ] `DEMOUNTED_MODAL_SHIRMS_CEILING` lowered from 88 to 76 in `panelsAreMounted.test.ts`.
+- [ ] `panelsAreMounted.test.ts` passes 11/11 tests.
+
+### Compiler & Gate Integrity
+- [ ] `npm run check:encoding` passes with 0 errors (UTF-8 clean).
+- [ ] `npm run typecheck -w @dental/web` passes with Exit Code 0.
+- [ ] `npm run typecheck -w @dental/api` passes with Exit Code 0.
+- [ ] All pre-commit Iron Gate hooks pass.
+
+### Documentation & Reporting
+- [ ] `BACKLOG.md`, `OUR_CRM_MAP.md`, and `FEATURES_REGISTRY.md` synchronized.
+- [ ] Atomic git commit created with Conventional Commits.
+- [ ] Verbatim subagent reports presented without censorship.
+
+

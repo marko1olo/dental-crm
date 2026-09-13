@@ -900,17 +900,12 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  */
 const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/analytics/MarketingRoiModal.tsx:MarketingRoiModal",
-	"components/anesthesia/AnesthesiaDosageCalculatorModal.tsx:AnesthesiaDosageCalculatorModal",
-	"components/anesthesia/AnesthesiaProtocolModal.tsx:AnesthesiaProtocolModal",
-	"components/anesthesia/AnesthesiaSafetyHubModal.tsx:AnesthesiaSafetyHubModal",
-	"components/anesthesia/EmergencyAnaphylaxisProtocolModal.tsx:EmergencyAnaphylaxisProtocolModal",
 	"components/billing/CashShiftClosingModal.tsx:CashShiftClosingModal",
 	"components/chairside/ChairsideTabletConsentModal.tsx:ChairsideTabletConsentModal",
 	"components/clinical/ClinicalProtocolPresets.tsx:ClinicalProtocolPresets",
 	"components/clinical/DiagnosisSelector.tsx:DiagnosisSelector",
 	"components/clinical/PostOpCareSheetModal.tsx:PostOpCareSheetModal",
 	"components/cmo/CmoQualityAuditModal.tsx:CmoQualityAuditModal",
-	"components/diagnostics/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
 	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
@@ -922,9 +917,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/finance/pnl/ClinicalPnlHubModal.tsx:ClinicalPnlHubModal",
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
-	"components/insurance/DmsInsurersHubModal.tsx:DmsInsurersHubModal",
-	"components/insurance/InsurancePreAuthModal.tsx:InsurancePreAuthModal",
-	"components/insurance/DmsInsuranceManagerModal.tsx:DmsInsuranceManagerModal",
 	"components/inventory/WarehouseManagerModal.tsx:WarehouseManagerModal",
 	"components/lab/DentalLabOrdersHubModal.tsx:DentalLabOrdersHubModal",
 	"components/marketing/MarketingRomiTable.tsx:MarketingRomiTable",
@@ -953,10 +945,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/radiology/DirectRvgCaptureModal.tsx:DirectRvgCaptureModal",
 	"components/radiology/HotFolderIntakeModal.tsx:HotFolderIntakeModal",
 	"components/radiology/ImplantCrossSectionPlanner.tsx:ImplantCrossSectionPlanner",
-	"components/radiology/MedicalRadiologyDropzone.tsx:MedicalRadiologyDropzone",
-	"components/radiology/RadiologyModule.tsx:RadiologyModule",
-	"components/radiology/RadiologyStudyList.tsx:RadiologyStudyList",
-	"components/radiology/RadiologyViewerModal.tsx:RadiologyViewerModal",
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
 	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx:RadiationDoseSheetModal",
 	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
@@ -997,7 +985,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 88;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 76;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

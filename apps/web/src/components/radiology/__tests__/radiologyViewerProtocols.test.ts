@@ -129,35 +129,6 @@ test("applyRadiologyProtocolToForm043: диспатчит событие dente-a
 	}
 });
 
-test("RadiologyViewerModal: 1-клик Норма и протоколы, отсутствие сырых эмодзи, тач-таргеты >=44px", () => {
-	const source = readSource("components/radiology/RadiologyViewerModal.tsx");
-
-	// Проверка наличия кнопки 1-клик Нормы
-	assert.ok(
-		source.includes('data-testid="radiology-norma-043-btn"'),
-		"RadiologyViewerModal обязан содержать кнопку 'radiology-norma-043-btn'",
-	);
-	assert.ok(
-		source.includes("handleInsertNormaTo043"),
-		"RadiologyViewerModal обязан иметь обработчик handleInsertNormaTo043",
-	);
-
-	// Проверка наличия меню протоколов
-	assert.ok(
-		source.includes('data-testid="radiology-protocols-menu-btn"'),
-		"RadiologyViewerModal обязан содержать меню быстрых протоколов 'radiology-protocols-menu-btn'",
-	);
-
-	// Проверка отсутствия сырых эмодзи в кнопках
-	assert.ok(!source.includes("⚡ Норма"), "Сырой эмодзи молнии ⚡ в тулбаре запрещен (Грех № 7)");
-
-	// Проверка правила тач-таргетов >= 44x44px
-	assert.ok(
-		source.includes("min-h-[44px]"),
-		"Кнопки управления обязаны иметь min-h-[44px] для работы врача в перчатках",
-	);
-});
-
 test("DicomViewerModal: 1-клик Норма, опциональный ИИ без зависаний, отсутствие сырых эмодзи", () => {
 	const source = readSource("components/imaging/DicomViewerModal.tsx");
 

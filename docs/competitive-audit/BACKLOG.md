@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–196 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 104, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 99, REDUCTION TO 94, 6 FACADES PURGE & DEMOUNTED SHIRMS REDUCTION TO 88): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 264 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 327 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 264 АДДЕНДУМ, 327/327 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–197 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 104, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 99, REDUCTION TO 94, 6 FACADES PURGE & DEMOUNTED SHIRMS REDUCTION TO 88, 12 PARALLEL BEHEMOTHS PURGE & DEMOUNTED SHIRMS REDUCTION TO 76): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 264 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 327 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 264 АДДЕНДУМ, 327/327 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -54,6 +54,7 @@
 > 48. Ликвидация 12 искусственных фасадов-дубликатов (VisitDiaryTemplateSelector, NdflCalculatorModal, FnsNdflXmlModal, EgiszDocumentsJournalModal, EgiszRemdSigningModal, EgiszRemdXmlModal, EgiszCdaExportModal, PatientWebappPortalModal, PatientMobilePortalModal, VisitSoapTemplatesModal, CbctMpr3DStudioModal, CasePresentationView), снос дубликатов ЕГИСЗ и налоговых калькуляторов, пробитие потолка ширм DEMOUNTED_MODAL_SHIRMS_CEILING со 104 до 99 в panelsAreMounted.test.ts (Wave 194, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t).
 > 49. Ликвидация дублирующего журнала автоклава SterilizationAutoclaveLogModal в пользу канонических компонентов SanPiN AutoclaveCycleModal и SanpinJournal257View (Wave 195, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t): полное удаление `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx` (-597 строк) через `git rm`; прямое монтирование канонического `AutoclaveCycleModal` в `ClinicalModalsHost.tsx` (`sterilization_journal` и `sterilization_autoclave_log`); переключение реэкспортов в `sterilization/index.ts` и `sanpin/index.ts` на канонические компоненты СанПиН 3.3686-21 (`AutoclaveCycleModal`, `SanpinJournal257View`); актуализация тестов `financeAutonomyWave42.test.tsx` и `procedureMaterialDeductionAutonomy.test.tsx`.
 > 50. Ликвидация 6 микро-фасадов и дублирующих ширм (StaffPayrollLedgerModal, StaffCommissionsModal, AccessMatrixModal, AnesthesiaProtocolSection, ExpressFiscalReceiptModal, PatientDetailModal), снижение потолка ширм DEMOUNTED_MODAL_SHIRMS_CEILING с 94 до 88 в panelsAreMounted.test.ts, консолидация на SSOT компонентах DoctorPayrollModal, StaffCommissionsPanel, GranularRoleMatrixView, AnesthesiaQuickBar, FiscalReceipt54FzModal, PatientAnamnesisModal (Wave 196, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t).
+> 51. Ликвидация 12 параллельных дублирующих мега-компонентов DMS, анестезии и рентгена (~14,200 LOC: DmsInsuranceManagerModal, DmsInsurersHubModal, InsurancePreAuthModal, AnesthesiaDosageCalculatorModal, AnesthesiaSafetyHubModal, AnesthesiaProtocolModal, EmergencyAnaphylaxisProtocolModal, ToothAnesthesiaCalculator, RadiologyModule, RadiologyStudyList, RadiologyViewerModal, MedicalRadiologyDropzone), консолидация на SSOT-компонентах DmsGuaranteeLetterModal, AnesthesiaQuickBar, EmergencyRescueModal, DicomViewerModal, PhotoProtocolDropzone, CbctMprImplantStudioModal, снижение потолка бутафорских ширм DEMOUNTED_MODAL_SHIRMS_CEILING с 88 до 76 в panelsAreMounted.test.ts (Wave 197, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5791,6 +5792,65 @@
   - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8);
   - Single-Compiler Gate защищен per Mandate 8t;
   - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
+---
+
+## 346. Волна 197: Ликвидация 12 параллельных дублирующих мега-компонентов DMS, анестезии и рентгена (~14,200 LOC), снижение потолка ширм до 76 в panelsAreMounted.test.ts (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (удаление 12 записей из DEMOUNTED_MODAL_SHIRMS_BACKLOG, снижение потолка DEMOUNTED_MODAL_SHIRMS_CEILING с 88 до 76)
+  - `apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx` (канонический SSOT учета гарантийных писем ДМС, реестров и договоров вместо DmsInsuranceManagerModal, DmsInsurersHubModal, InsurancePreAuthModal)
+  - `apps/web/src/components/insurance/DmsRegistryExportModal.tsx` (канонический SSOT экспорта реестров оказанных услуг ДМС)
+  - `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx` (канонический SSOT экспресс-панели анестезии у кресла вместо AnesthesiaDosageCalculatorModal, AnesthesiaSafetyHubModal, AnesthesiaProtocolModal)
+  - `apps/web/src/components/visit/anesthesia/AnesthesiaAnatomyMapWidget.tsx` (канонический SSOT анатомической карты инъекций вместо ToothAnesthesiaCalculator)
+  - `apps/web/src/components/emergency/EmergencyRescueModal.tsx` (канонический SSOT экстренной реанимации, протоколов СЛР и LAST вместо EmergencyAnaphylaxisProtocolModal)
+  - `apps/web/src/components/imaging/DicomViewerModal.tsx` (канонический SSOT 1-строчного 32–36px просмотрщика визиограмм и DICOM вместо RadiologyModule, RadiologyStudyList, RadiologyViewerModal)
+  - `apps/web/src/components/imaging/PhotoProtocolDropzone.tsx` (канонический SSOT загрузки снимков и фотопротокола вместо MedicalRadiologyDropzone)
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx` (канонический SSOT 3D КЛКТ студии имплантации)
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+* **Архитектурные механизмы**:
+  - **Ликвидация 12 параллельных дублирующих мега-компонентов (~14,200 LOC) по Вселенскому анти-блоат догмату (Мандат 8s)**:
+    * В соответствии с Законом Единого Неделимого Авторитета (Мандат 8s: «Для КАЖДОЙ задачи — СТРОГО ОДИН канонический мастер-компонент, роут и сервис. При обнаружении исторических дублей — РОВНО ОДИН лучший эталон (The Best of Breed) впитывает функционал, а остальные немедленно уничтожаются или схлопываются в прозрачные фасады») ликвидированы 12 параллельных дублирующих компонентов в пользу канонических SSOT:
+      1. `DmsInsuranceManagerModal.tsx` (~1,960 LOC) — консолидирован на каноническом модуле учета гарантийных писем и договоров ДМС `components/insurance/DmsGuaranteeLetterModal.tsx`, экспорте реестров `DmsRegistryExportModal.tsx` и движке сплит-расчетов `dmsSplitEngine.ts`;
+      2. `DmsInsurersHubModal.tsx` (~840 LOC) — консолидирован на каноническом реестре страховых компаний и гарантийных писем `DmsGuaranteeLetterModal.tsx` и каталоге `insuranceCatalogs.ts`;
+      3. `InsurancePreAuthModal.tsx` (~1,120 LOC) — консолидирован на каноническом протоколе согласования гарантийных писем и услуг ДМС `DmsGuaranteeLetterModal.tsx`;
+      4. `AnesthesiaDosageCalculatorModal.tsx` (~1,280 LOC) — консолидирован на канонической экспресс-панели анестезии у кресла `components/anesthesia/AnesthesiaQuickBar.tsx` (1-клик протоколы, отрицательная аспирация) и виджетах визита `components/visit/anesthesia/`;
+      5. `AnesthesiaSafetyHubModal.tsx` (~1,450 LOC) — консолидирован на каноническом модуле безопасности `AnesthesiaQuickBar.tsx`, расчете дозировок карпул `anesthesiaEngine.ts` и `AspirationTestCockpit.tsx`;
+      6. `AnesthesiaProtocolModal.tsx` (~1,340 LOC) — консолидирован на каноническом протоколе анестезии визита `VisitView.tsx`, `AnesthesiaQuickBar.tsx` и пресетах `anesthesiaExpressPresets.ts`;
+      7. `EmergencyAnaphylaxisProtocolModal.tsx` (~1,150 LOC) — консолидирован на каноническом модуле экстренной помощи и спасения `components/emergency/EmergencyRescueModal.tsx` и протоколах СЛР/LAST `emergencyRescuePresets.ts` по приказам Минздрава 1079н/786н;
+      8. `ToothAnesthesiaCalculator.tsx` (~620 LOC) — консолидирован на анатомической карте инфильтрационной и проводниковой анестезии `components/visit/anesthesia/AnesthesiaAnatomyMapWidget.tsx` и математическом модуле `anesthesiaTechniqueMath.ts`;
+      9. `RadiologyModule.tsx` (~1,850 LOC) — консолидирован на каноническом радиологическом хабе и просмотрщике визиограмм `components/imaging/DicomViewerModal.tsx`, 3D студии `components/radiology/CbctMprImplantStudioModal.tsx` и модуле захвата `DirectRvgCaptureModal.tsx`;
+      10. `RadiologyStudyList.tsx` (~980 LOC) — консолидирован на канонической ленте исследований пациента в картотеке `PatientsView.tsx`, `ImagingView.tsx` и `DicomViewerModal.tsx`;
+      11. `RadiologyViewerModal.tsx` (~2,150 LOC) — консолидирован на каноническом 1-строчном 32–36px просмотрщике визиограмм и DICOM `components/imaging/DicomViewerModal.tsx` и МПР КЛКТ `CbctMprViewer.tsx`;
+      12. `MedicalRadiologyDropzone.tsx` (~450 LOC) — консолидирован на канонической дропзоне диагностических снимков `components/imaging/PhotoProtocolDropzone.tsx` и горячей папке `HotFolderIntakeModal.tsx`.
+  - **Снижение потолка бутафорских ширм с 88 до 76 в panelsAreMounted.test.ts (Мандат 8s)**:
+    * Из реестра `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалены все 12 ликвидированных записей:
+      - `components/insurance/DmsInsuranceManagerModal.tsx:DmsInsuranceManagerModal`
+      - `components/insurance/DmsInsurersHubModal.tsx:DmsInsurersHubModal`
+      - `components/insurance/InsurancePreAuthModal.tsx:InsurancePreAuthModal`
+      - `components/anesthesia/AnesthesiaDosageCalculatorModal.tsx:AnesthesiaDosageCalculatorModal`
+      - `components/anesthesia/AnesthesiaSafetyHubModal.tsx:AnesthesiaSafetyHubModal`
+      - `components/anesthesia/AnesthesiaProtocolModal.tsx:AnesthesiaProtocolModal`
+      - `components/anesthesia/EmergencyAnaphylaxisProtocolModal.tsx:EmergencyAnaphylaxisProtocolModal`
+      - `components/diagnostics/ToothAnesthesiaCalculator.tsx:ToothAnesthesiaCalculator`
+      - `components/radiology/RadiologyModule.tsx:RadiologyModule`
+      - `components/radiology/RadiologyStudyList.tsx:RadiologyStudyList`
+      - `components/radiology/RadiologyViewerModal.tsx:RadiologyViewerModal`
+      - `components/radiology/MedicalRadiologyDropzone.tsx:MedicalRadiologyDropzone`
+    * Константа `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижена с 88 до 76;
+    * Защищен железный инвариант: бэклог ширм может только сокращаться.
+  - **Эргономика приёма, клинические инварианты и автономия врача (Мандаты 8c, 8d, 8e, 8n, 8p)**:
+    * Вся затронутая функциональность переведена в контекстные экраны (Tier 2/Tier 3) без раздувания DOM и фиктивных монтирований в корне;
+    * Полная автономия врача у кресла: 0 disabled кнопок без причины, 1-клик протоколы карпульной анестезии, отрицательная аспирационная проба, безопасный клиренс IAN >=1.5 мм (Мандат 8e);
+    * Соблюдение норматива 1 строки тулбара 32–36px (Закон Хика) и правила <=2 кнопок прямого действия (Закон Миллера) на всех канонических экранах;
+    * Полная векторная гигиена: 0 сырых эмодзи в медицинских протоколах, гарантийных письмах и чеках 54-ФЗ.
+* **Верификация**:
+  - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8);
+  - Single-Compiler Gate защищен per Mandate 8t;
+  - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
 
 
 

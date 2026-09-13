@@ -10,7 +10,7 @@ import {
 const webSrcRoot = path.join(import.meta.dirname, "../../..");
 
 const TARGET_FILES = [
-	"components/radiology/RadiologyModule.tsx",
+	"components/imaging/DicomViewerModal.tsx",
 	"components/radiology/doseSheet/radiationDoseEngine.ts",
 	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx",
 	"components/photography/ClinicalPhotoProtocolModal.tsx",

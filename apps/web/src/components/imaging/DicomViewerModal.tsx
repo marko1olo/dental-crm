@@ -22,8 +22,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { actionFailureToast } from "../../lib/panelStateText.js";
 import { usePatientStore } from "../../store/patientStore.js";

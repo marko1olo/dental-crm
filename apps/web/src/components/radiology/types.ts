@@ -275,3 +275,33 @@ export interface RadiologyViewerState {
 	isCalibrating: boolean;
 	calibratedMmPerPixel: number; // по умолчанию 0.1 мм/пиксель
 }
+
+/** Тестовый снимок радиовизиографии (образец зуба 16) */
+export const SAMPLE_PATIENT_RVG_URL = "/radiology/sample_rvg_tooth16.jpg";
+
+/** Поддерживаемые расширения файлов лучевой диагностики */
+export const SUPPORTED_RADIOLOGY_EXTENSIONS = [
+	".dcm",
+	".dicom",
+	".tif",
+	".tiff",
+	".png",
+	".jpg",
+	".jpeg",
+	".webp",
+	".heic",
+	".heif",
+];
+
+/**
+ * Helper to identify 3D CBCT imaging studies (Mandate 8c: Tier 3 Studio vs 2D Viewer).
+ */
+export function isCbctStudy(
+	study: Partial<RadiologyStudy> | null | undefined,
+): boolean {
+	if (!study) return false;
+	if (study.modality === "cbct_3d") return true;
+	if (typeof study.studyType === "string" && study.studyType.startsWith("cbct"))
+		return true;
+	return false;
+}

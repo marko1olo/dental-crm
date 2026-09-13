@@ -1,10 +1,7 @@
 export { getTissueNameFromHU, formatHuProbe } from "./cbctMprMath";
 export * from "./doseSheet";
 export * from "./radiologyMath";
-export * from "./RadiologyModule";
 export * from "./RadiologyReferralModal";
-export * from "./RadiologyStudyList";
-export * from "./RadiologyViewerModal";
 export * from "./types";
 export * from "./cbctCaliperNerveMath";
 export * from "./boneDensityMischMath";
@@ -18,15 +15,11 @@ export * from "./ImplantCrossSectionPlanner";
 export * from "./CbctMprImplantStudioModal";
 export * from "./CbctViewportHud";
 export * from "./CbctLeftToolDock";
-export * from "./MedicalRadiologyDropzone";
 export * from "./DirectRvgCaptureModal";
 export * from "./RvgFiltersToolbar";
 export * from "./HotFolderIntakeModal";
 
 // Convenient aliases for UI modules
-export { RadiologyViewerModal as RadiologyDicomViewerModal } from "./RadiologyViewerModal";
-export { RadiologyViewerModal as RadiologyViewer } from "./RadiologyViewerModal";
-export { MedicalRadiologyDropzone as RadiologyDropzone } from "./MedicalRadiologyDropzone";
 export { CephalometricAnalysisModal as TrgCephalometricsModal, CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
 export { DirectRvgCaptureModal as RvgDirectCaptureModal } from "./DirectRvgCaptureModal";
 export { HotFolderIntakeModal as RadiologyHotFolderModal } from "./HotFolderIntakeModal";

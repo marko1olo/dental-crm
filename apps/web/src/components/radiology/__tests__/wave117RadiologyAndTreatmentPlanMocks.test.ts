@@ -46,14 +46,14 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 		);
 	});
 
-	it("verifies absence of 'Смирнова Е. В.' in RadiologyViewerModal.tsx", () => {
-		const viewerPath = path.join(webSrcRoot, "components/radiology/RadiologyViewerModal.tsx");
+	it("verifies absence of 'Смирнова Е. В.' in DicomViewerModal.tsx", () => {
+		const viewerPath = path.join(webSrcRoot, "components/imaging/DicomViewerModal.tsx");
 		const viewerContent = fs.readFileSync(viewerPath, "utf8");
 
 		assert.strictEqual(
 			viewerContent.includes("Смирнова Е. В."),
 			false,
-			"RadiologyViewerModal.tsx must not contain 'Смирнова Е. В.'",
+			"DicomViewerModal.tsx must not contain 'Смирнова Е. В.'",
 		);
 	});
 
@@ -95,14 +95,12 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 		);
 	});
 
-	it("verifies absence of 'Др. Смирнов А.В.' in RadiologyReferralModal, RadiologyModule, and RadiationDoseSheet", () => {
+	it("verifies absence of 'Др. Смирнов А.В.' in RadiologyReferralModal and RadiationDoseSheet", () => {
 		const referralPath = path.join(webSrcRoot, "components/radiology/RadiologyReferralModal.tsx");
-		const radiologyModulePath = path.join(webSrcRoot, "components/radiology/RadiologyModule.tsx");
 		const doseModalPath = path.join(webSrcRoot, "components/radiology/doseSheet/RadiationDoseSheetModal.tsx");
 		const doseEnginePath = path.join(webSrcRoot, "components/radiology/doseSheet/radiationDoseEngine.ts");
 
 		const referralContent = fs.readFileSync(referralPath, "utf8");
-		const moduleContent = fs.readFileSync(radiologyModulePath, "utf8");
 		const doseModalContent = fs.readFileSync(doseModalPath, "utf8");
 		const doseEngineContent = fs.readFileSync(doseEnginePath, "utf8");
 
@@ -110,11 +108,6 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 			referralContent.includes("Др. Смирнов А.В."),
 			false,
 			"RadiologyReferralModal.tsx must not contain 'Др. Смирнов А.В.'",
-		);
-		assert.strictEqual(
-			moduleContent.includes("Др. Смирнов А.В."),
-			false,
-			"RadiologyModule.tsx must not contain 'Др. Смирнов А.В.'",
 		);
 		assert.strictEqual(
 			doseModalContent.includes("Др. Смирнов А.В."),

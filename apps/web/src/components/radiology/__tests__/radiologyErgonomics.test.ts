@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, it } from "node:test";
 import {
 	ADULT_FDI_TEETH,
@@ -104,10 +106,8 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		const {
 			SUPPORTED_RADIOLOGY_EXTENSIONS,
 			SAMPLE_PATIENT_RVG_URL,
-			MedicalRadiologyDropzone,
-		} = await import("../MedicalRadiologyDropzone");
+		} = await import("../types");
 
-		assert.ok(typeof MedicalRadiologyDropzone === "function");
 		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".dcm"), "Must support DICOM .dcm");
 		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".dicom"), "Must support DICOM .dicom");
 		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".tif"), "Must support TIFF .tif");
@@ -117,16 +117,12 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.equal(SAMPLE_PATIENT_RVG_URL, "/radiology/sample_rvg_tooth16.jpg");
 	});
 
-	it("verifies zero vector SVG mock teeth remain in radiology exports", async () => {
-		const radiologyExports = await import("../index");
+	it("verifies zero vector SVG mock teeth remain in radiology exports", () => {
+		const source = readFileSync(path.join(import.meta.dirname, "../index.ts"), "utf8");
 		assert.strictEqual(
-			(radiologyExports as Record<string, unknown>).TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
-			undefined,
+			source.includes("TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI"),
+			false,
 			"TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI must be eradicated from exports",
-		);
-		assert.ok(
-			radiologyExports.MedicalRadiologyDropzone,
-			"MedicalRadiologyDropzone must be exported",
 		);
 	});
 
@@ -191,97 +187,40 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(header.windowWidth > 0);
 	});
 
-	it("renders RadiologyViewerModal with non-truncated WW/WL presets bar and min-w-max buttons", async () => {
-		const { RadiologyViewerModal } = await import("../RadiologyViewerModal");
+	it("renders DicomViewerModal with patient header and touch targets", async () => {
+		const { DicomViewerModal } = await import("../../imaging/DicomViewerModal");
 		const { createElement } = await import("react");
 		const { renderToStaticMarkup } = await import("react-dom/server");
 
-		const testStudy: import("../types").RadiologyStudy = {
-			id: "study-101",
-			patientName: "Смирнова Елена Васильевна",
-			doctorName: "Д-р Барабаш С.В.",
-			studyDate: "2026-08-15 14:30",
-			studyType: "intraoral_radiovisiography",
-			status: "completed",
-			effectiveDoseMsv: 0.0035,
-			modality: "intraoral_rvg",
-			modalityLabel: "Радиовизиография",
-			anatomicalArea: "Зуб 16 (Верхний моляр)",
-			teethFdi: ["16"],
-			imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-			effectiveDoseMicrosv: 3.5,
-			measurements: [],
-			landmarks: [],
-			calipers: [],
-			nerves: [],
-			metadata: { pixelSpacingMm: 0.05 },
-		};
-
 		const html = renderToStaticMarkup(
-			createElement(RadiologyViewerModal, {
+			createElement(DicomViewerModal, {
 				isOpen: true,
 				onClose: () => {},
-				study: testStudy,
+				patientName: "Смирнова Елена Васильевна",
+				toothFdiCode: "16",
+				studyDate: "2026-08-15 14:30",
 			}),
 		);
 
-		// 1. Presets bar structure & test ID
-		assert.ok(html.includes('data-testid="viewer-presets-bar"'), "Contains presets bar container");
-		assert.ok(
-			html.includes("overflow-x-auto") && html.includes("flex-nowrap"),
-			"Presets bar has overflow-x-auto flex-nowrap to prevent button clipping",
-		);
-
-		// 2. Buttons with min-w-max and full non-truncated Russian labels
-		assert.ok(html.includes("Инверсия"), "Contains full 'Инверсия' label");
-		assert.ok(html.includes("Кость / Эндодонтия"), "Contains full 'Кость / Эндодонтия' label");
-		assert.ok(html.includes("Эмаль / Дентин"), "Contains full 'Эмаль / Дентин' label");
-		assert.ok(html.includes("Импланты / Металл"), "Contains full 'Импланты / Металл' label");
-		assert.ok(html.includes("min-w-max"), "Preset buttons contain min-w-max class");
-
-		// 3. Tooth 16 complete anatomical label
-		assert.ok(
-			html.includes("Зуб 16 (Верхний моляр)"),
-			"Renders full tooth anatomical description without truncation",
-		);
+		assert.ok(html.includes("Смирнова Елена Васильевна"), "Renders patient name");
+		assert.ok(html.includes("Зуб 16"), "Renders tooth FDI code");
+		assert.ok(html.includes("btn-dicom-norma-043"), "Contains 1-click Norma button");
 	});
 
-	it("synchronizes studyDate from reception / props when omitted in DICOM / study", async () => {
-		const { RadiologyViewerModal } = await import("../RadiologyViewerModal");
+	it("synchronizes studyDate in DicomViewerModal header", async () => {
+		const { DicomViewerModal } = await import("../../imaging/DicomViewerModal");
 		const { createElement } = await import("react");
 		const { renderToStaticMarkup } = await import("react-dom/server");
 
-		const testStudyWithoutDate: import("../types").RadiologyStudy = {
-			id: "study-102",
-			patientName: "Иванов Иван",
-			doctorName: "Д-р Барабаш С.В.",
-			studyDate: "", // empty / omitted in DICOM
-			studyType: "cbct_full_maxillofacial_15x15",
-			status: "completed",
-			effectiveDoseMsv: 0.025,
-			modality: "cbct_3d",
-			modalityLabel: "3D КЛКТ",
-			anatomicalArea: "Челюстно-лицевая область",
-			teethFdi: ["16", "26"],
-			imageUrl: "/radiology/sample.jpg",
-			effectiveDoseMicrosv: 25.0,
-			measurements: [],
-			landmarks: [],
-			calipers: [],
-			nerves: [],
-		};
-
 		const html = renderToStaticMarkup(
-			createElement(RadiologyViewerModal, {
+			createElement(DicomViewerModal, {
 				isOpen: true,
 				onClose: () => {},
-				study: testStudyWithoutDate,
-				currentReceptionDate: "2026-08-28 15:30",
+				studyDate: "28.08.2026 15:30",
 			}),
 		);
 
-		// Synchronized formatted date from reception prop
-		assert.ok(html.includes("28.08.2026 15:30"), "Synchronized reception date into formatted study header");
+		assert.ok(html.includes("28.08.2026 15:30"), "Synchronized studyDate into header");
 	});
 
 	it("renders CbctMprImplantStudioModal with disabled unselected nerve node delete and strict vector icons (DEF-R2-02)", async () => {
