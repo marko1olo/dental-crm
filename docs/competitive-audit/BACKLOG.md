@@ -5042,13 +5042,33 @@
   * `check:encoding` 0 ошибок (UTF-8);
   * Single-Compiler Gate защищен per Mandate 8t.
 
+---
 
+## 327. Волна 180: Декомпозиция sliceIntersectionMath по Правилу 1.1 (<800 строк) в sliceClippingMath и ликвидация клиппинга на мобильных экранах 390px (Мандаты 8c, 8d, 8e, 8p, 8t, Engineering Rule 1.1) [РЕАЛИЗОВАНО]
 
-
-
-
-
-
-
-
-
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммит `5e15482e9`)
+* **Файлы**:
+  - `apps/web/src/components/dicom/sliceClippingMath.ts` [NEW]
+  - `apps/web/src/components/dicom/sliceIntersectionMath.ts`
+  - `apps/web/src/components/dicom/index.ts`
+  - `apps/web/src/components/radiology/radiologyMath.ts`
+  - `apps/web/src/workspaceShell.tsx`
+  - `apps/web/src/VisitView.tsx`
+* **Архитектурное решение**:
+  - **Декомпозиция модуля математики срезов КТ по Инженерному Правилу 1.1**:
+    * Модуль `apps/web/src/components/dicom/sliceIntersectionMath.ts` разросся до 940 строк. Произведена чистая декомпозиция с выносом 3D/2D векторных типов, утилит ортогонального базиса и алгоритмов клиппинга Лианга-Барски (2D/3D) в отдельный легковесный модуль `apps/web/src/components/dicom/sliceClippingMath.ts` (291 строка);
+    * Размер `sliceIntersectionMath.ts` снижен до 690 строк (гарантирован порог <800 строк по Правилу 1.1);
+    * Полная обратная совместимость через прозрачный реэкспорт в `index.ts` и устранение коллизии символов `Vec3` / `AxialCutLines` в `radiologyMath.ts`.
+  - **Ликвидация клиппинга бренда клиники на мобильных вьюпортах 390px (Defect B)**:
+    * В `apps/web/src/workspaceShell.tsx` устранено обрезание многоточием названия клиники в топбаре на мобильных экранах (390x844): внедрено адаптивное отображение `<span className="sm:hidden">{shortBrand}</span><span className="hidden sm:inline">{fullBrand}</span>` («ДЕНТЕ» на мобильных, «Стоматология ДЕНТЕ Премиум» на десктопе);
+    * Ноль обрезаний, 100% разборчивость бренда в компактном тулбаре.
+  - **Защита клинических кнопок в заголовке визита на 390px (Defect C, Мандат 8e)**:
+    * В `apps/web/src/VisitView.tsx` контейнеру имени пациента задано ограничение `max-w-[110px] sm:max-w-none truncate`, исключающее выдавливание кнопок «Норма» и «Готово» за пределы экрана при длинных ФИО пациентов («Константинопольский К. В.»).
+* **Верификация**:
+  * `npm run check:encoding`: 0 ошибок;
+  * `panelsAreMounted.test.ts`: 11/11 pass;
+  * `sliceIntersectionMath.test.ts`: 13/13 pass;
+  * `panoramicReconstruction.test.ts`: 15/15 pass;
+  * `npm run typecheck -w @dental/web`: Exit Code 0;
+  * `npm run typecheck -w @dental/api`: Exit Code 0;
+  * Single-Compiler Gate защищен per Mandate 8t.
