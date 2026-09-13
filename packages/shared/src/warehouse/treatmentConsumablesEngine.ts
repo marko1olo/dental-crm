@@ -366,15 +366,12 @@ export const CONSUMABLE_CATEGORY_LABELS: Record<ConsumableCategory, string> = {
 	other: "Прочие расходные материалы",
 };
 
-export const consumableUnitSchema = z.enum([
-	"карпула",
-	"шприц_гр",
-	"ампула",
-	"шт",
-	"метр",
-	"упак",
-]);
-export type ConsumableUnit = z.infer<typeof consumableUnitSchema>;
+import {
+	consumableUnitSchema,
+	type ConsumableUnit,
+} from "../inventory/procedureBomEngine.js";
+
+export { consumableUnitSchema, type ConsumableUnit };
 
 export const CONSUMABLE_UNIT_LABELS: Record<ConsumableUnit, string> = {
 	карпула: "карпула",
@@ -383,6 +380,14 @@ export const CONSUMABLE_UNIT_LABELS: Record<ConsumableUnit, string> = {
 	шт: "шт.",
 	метр: "м",
 	упак: "упак.",
+	pcs: "шт.",
+	carpule: "карпула",
+	gram: "г",
+	ml: "мл",
+	pack: "упак.",
+	tube: "туба",
+	dose: "доза",
+	cm: "см",
 };
 
 /**

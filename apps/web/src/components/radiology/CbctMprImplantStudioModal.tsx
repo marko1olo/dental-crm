@@ -5052,6 +5052,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						title="Режим общей 3D диагностики (панель свернута)"
 					>
 						<Search className="w-3.5 h-3.5 text-cyan-400" />
+						<span>Диагностика</span>
+					</button>
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("implant")}

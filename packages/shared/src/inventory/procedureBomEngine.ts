@@ -24,9 +24,11 @@ export const procedureCategorySchema = z.enum([
 export type ProcedureCategory = z.infer<typeof procedureCategorySchema>;
 
 /**
- * Unit of measurement for medical and dental consumables.
+ * Unit of measurement for medical and dental consumables (Unified SSOT).
+ * Supports both standard international keys and statutory Russian warehouse labels.
  */
 export const consumableUnitSchema = z.enum([
+	// International units (804n technological maps)
 	"pcs",       // штук
 	"carpule",   // карпула (1.7 - 1.8 мл)
 	"gram",      // грамм (композит)
@@ -35,6 +37,13 @@ export const consumableUnitSchema = z.enum([
 	"tube",      // туба
 	"dose",      // разовая доза
 	"cm",        // сантиметр (лента, шовник)
+	// Russian warehouse stock units
+	"карпула",
+	"шприц_гр",
+	"ампула",
+	"шт",
+	"метр",
+	"упак",
 ]);
 
 export type ConsumableUnit = z.infer<typeof consumableUnitSchema>;
