@@ -15,7 +15,6 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { CashShiftWidget } from "../CashShiftWidget";
 import { FastCheckoutModal } from "../FastCheckoutModal";
-import { ExpressFiscalReceiptModal } from "../ExpressFiscalReceiptModal";
 import { FiscalReceipt54FzModal } from "../FiscalReceipt54FzModal";
 import { CashRegisterModal } from "../CashRegisterModal";
 
@@ -142,10 +141,10 @@ describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
 	});
 });
 
-describe("ExpressFiscalReceiptModal & FiscalReceipt54FzModal Refund Mode (Mandates 8e, 8b, 8n)", () => {
-	it("renders ExpressFiscalReceiptModal and synthesizes 804n clinical service when total is passed without line items", () => {
+describe("FiscalReceipt54FzModal Refund Mode (Mandates 8e, 8b, 8n)", () => {
+	it("renders FiscalReceipt54FzModal and synthesizes 804n clinical service when total is passed without line items", () => {
 		const html = renderToString(
-			React.createElement(ExpressFiscalReceiptModal, {
+			React.createElement(FiscalReceipt54FzModal, {
 				isOpen: true,
 				onClose: () => {},
 				totalBillRub: 7500,

@@ -47,7 +47,7 @@ import {
 	type StomxReceiptTypeAlias,
 	type StomxExpenseTypeAlias,
 } from "@dental/shared";
-import type { TreatmentPlanItem } from "../treatment-plans/types";
+import type { TreatmentPlanItem, TreatmentPlanStageKind } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
 import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
@@ -75,7 +75,26 @@ import {
 	type LoyaltyDiscountPreset,
 	calculateRoundToHundredsDiscountRub,
 	roundToHundredsRub,
+	type FiscalItemDraft,
 } from "./fiscal/fiscal54fzEngine";
+
+export type FlexibleFiscalItem =
+	| FiscalItemDraft
+	| TreatmentPlanItem
+	| {
+			id: string;
+			name: string;
+			priceRub: number;
+			quantity?: number | undefined;
+			unitPriceRub?: number | undefined;
+			code804n?: string | null | undefined;
+			toothNumber?: number | undefined;
+			toothFdiNumber?: number | null | undefined;
+			discountRub?: number | undefined;
+			category?: string | undefined;
+			stageKind?: string | undefined;
+			phase?: number | undefined;
+	  };
 
 export type FiscalModalTab =
 	| "payment"
@@ -88,18 +107,23 @@ export type FiscalModalTab =
 
 export interface FiscalReceipt54FzModalProps {
 	readonly isOpen: boolean;
-	readonly items?: readonly TreatmentPlanItem[] | undefined;
-	readonly patientId: string;
+	readonly items?: readonly (TreatmentPlanItem | FlexibleFiscalItem)[] | undefined;
+	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly familyPayerName?: string | undefined;
 	readonly cashierFullName?: string | undefined;
 	readonly clinicName?: string | undefined;
+	readonly clinicInn?: string | undefined;
 	readonly initialTab?: FiscalModalTab | undefined;
 	readonly onClose: () => void;
 	readonly onReceiptFiscalized?: ((receiptNumber: string) => void) | undefined;
 	readonly totalDueRub?: number | undefined;
 	readonly amountRub?: number | undefined;
+	readonly totalBillRub?: number | undefined;
+	readonly totalBillKop?: number | undefined;
 	readonly patientDebtRub?: number | undefined;
 	readonly defaultMethod?: any;
 }
@@ -200,34 +224,65 @@ export function calculateRefundFiscalSummary(params: {
 export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	isOpen,
 	items: propItems,
-	patientId,
+	patientId = "00000000-0000-0000-0000-000000000001",
 	patientName = "Пациент",
 	patientPhone = "+7 (___) ___-__-__",
-	patientDepositRub = 0,
+	patientDepositRub: rawDeposit = 0,
+	patientFamilyBalanceRub = 0,
+	familyPayerName: _familyPayerName,
 	cashierFullName = "Кассир-администратор",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+	clinicInn: _clinicInn,
 	initialTab = "payment",
 	onClose,
 	onReceiptFiscalized,
 	totalDueRub: propTotalDueRub,
 	amountRub: propAmountRub,
+	totalBillRub,
+	totalBillKop,
 	patientDebtRub = 0,
 	defaultMethod,
 }) => {
 	if (!isOpen) return null;
 
-	const fallbackAmount = Math.max(0, (propTotalDueRub ?? propAmountRub) ?? 0);
+	const patientDepositRub = (rawDeposit || 0) + (patientFamilyBalanceRub || 0);
+
+	const fallbackAmount = Math.max(
+		0,
+		(propTotalDueRub ?? propAmountRub ?? totalBillRub ?? (totalBillKop ? totalBillKop / 100 : undefined)) ?? 0,
+	);
 	const items: readonly TreatmentPlanItem[] = useMemo(() => {
 		if (propItems && propItems.length > 0) {
-			return propItems;
+			return propItems.map((item, idx) => {
+				const candidate = item as Partial<FiscalItemDraft> & Partial<TreatmentPlanItem>;
+				const qty = candidate.quantity ?? 1;
+				const price = candidate.priceRub ?? candidate.unitPriceRub ?? 0;
+				const unitPrice = candidate.unitPriceRub ?? (qty > 0 ? price / qty : price);
+				return {
+					id: candidate.id || `item-${idx + 1}`,
+					name: candidate.name || "Стоматологическая медицинская услуга",
+					code804n: candidate.code804n || "A16.07.002",
+					toothNumber: candidate.toothFdiNumber ?? candidate.toothNumber ?? undefined,
+					quantity: qty,
+					unitPriceRub: unitPrice,
+					priceRub: price,
+					discountRub: candidate.discountRub ?? 0,
+					category: candidate.taxDeductionCategory === "2" ? "implantology" : (candidate.category || "therapy"),
+					phase: typeof candidate.phase === "number" ? candidate.phase : 1,
+					stageKind:
+						candidate.stageKind && candidate.stageKind !== ("all" as string)
+							? (candidate.stageKind as TreatmentPlanStageKind)
+							: "stage_1_therapy",
+				};
+			});
 		}
 		if (fallbackAmount > 0) {
 			return [
 				{
 					id: "synthetic-804n-fallback-item",
 					code804n: "A16.07.002",
-					name: "Стоматологические услуги",
-					category: "Терапия",
+					name: "Стоматологические медицинские услуги (клинический прием)",
+					category: "therapy",
 					unitPriceRub: fallbackAmount,
 					priceRub: fallbackAmount,
 					quantity: 1,
@@ -252,11 +307,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	const initialMethod = defaultMethod || "card";
 	const effectiveInitialTotal = useMemo(() => {
-		if (propItems && propItems.length > 0) {
-			return mapTreatmentItemsToFiscalReceipt(propItems).totalRub;
+		if (items && items.length > 0) {
+			return mapTreatmentItemsToFiscalReceipt(items).totalRub;
 		}
 		return fallbackAmount;
-	}, [propItems, fallbackAmount]);
+	}, [items, fallbackAmount]);
 
 	const [cashAmount, setCashAmount] = useState<number>(() => (initialMethod === "cash" ? effectiveInitialTotal : 0));
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);

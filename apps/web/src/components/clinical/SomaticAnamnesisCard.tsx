@@ -37,15 +37,13 @@ import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
-	DEFAULT_SOMATIC_HEALTHY_NORM,
-	createHealthySomaticNormProfile,
-	isSomaticProfilePhysiologicalNorm,
-} from "../patients/PatientDetailModal";
-import {
 	type PatientClinicalSafetyProfile,
 	type PregnancyTrimester,
+	DEFAULT_SOMATIC_HEALTHY_NORM,
+	createHealthySomaticNormProfile,
 	evaluatePatientSafetyFlags,
 	formatSafetyProfileToDiaryText,
+	isSomaticProfilePhysiologicalNorm,
 	parseSafetyProfileFromText,
 } from "../patients/safetyMath";
 

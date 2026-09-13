@@ -31,13 +31,13 @@ import {
 	generatePrintableHtml043,
 } from "../../emr/emr043Math";
 import {
-	PatientDetailModal,
+	PatientAnamnesisModal,
+} from "../PatientAnamnesisModal";
+import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
-	isSomaticProfilePhysiologicalNorm,
-} from "../PatientDetailModal";
-import {
 	evaluatePatientSafetyFlags,
+	isSomaticProfilePhysiologicalNorm,
 } from "../safetyMath";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,9 +61,6 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 
 	const consentPath = path.resolve(__dirname, "../../consents/InformedConsentModal.tsx");
 	const consentSource = fs.readFileSync(consentPath, "utf8");
-
-	const patientDetailPath = path.resolve(__dirname, "../PatientDetailModal.tsx");
-	const patientDetailSource = fs.readFileSync(patientDetailPath, "utf8");
 
 	const anamnesisPath = path.resolve(__dirname, "../PatientAnamnesisModal.tsx");
 	const anamnesisSource = fs.readFileSync(anamnesisPath, "utf8");
@@ -237,7 +234,7 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 			assert.strictEqual(evalResult.activeFlags.length, 0);
 		});
 
-		it("3.3. guarantees PatientAnamnesisModal and PatientDetailModal contain 1-click button btn-somatic-healthy-norm", () => {
+		it("3.3. guarantees PatientAnamnesisModal contains 1-click button btn-somatic-healthy-norm", () => {
 			assert.ok(
 				anamnesisSource.includes('data-testid="btn-somatic-healthy-norm"'),
 				"PatientAnamnesisModal must contain data-testid='btn-somatic-healthy-norm'",
@@ -252,9 +249,9 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 			);
 		});
 
-		it("3.4. renders PatientDetailModal and displays 1-click somatic norm preset button", () => {
+		it("3.4. renders PatientAnamnesisModal and displays 1-click somatic norm preset button", () => {
 			const html = renderToString(
-				React.createElement(PatientDetailModal, {
+				React.createElement(PatientAnamnesisModal, {
 					isOpen: true,
 					onClose: () => {},
 					patientId: "pat-autonomy-001",

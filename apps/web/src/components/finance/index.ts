@@ -24,4 +24,4 @@ export * from "./PaymentModal";
 export * from "./InvoiceGenerationModal";
 export * from "./invoiceEngine";
 export * from "./cashboxOperations";
-export * from "./ExpressFiscalReceiptModal";
+export type { FlexibleFiscalItem } from "./FiscalReceipt54FzModal.js";

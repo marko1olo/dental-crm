@@ -37,10 +37,8 @@ import {
 import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
-	isSomaticProfilePhysiologicalNorm,
-} from "../../patients/PatientDetailModal";
-import {
 	evaluatePatientSafetyFlags,
+	isSomaticProfilePhysiologicalNorm,
 } from "../../patients/safetyMath";
 
 const __filename = fileURLToPath(import.meta.url);

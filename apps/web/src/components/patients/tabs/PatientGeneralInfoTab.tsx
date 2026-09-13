@@ -23,12 +23,10 @@ import {
 import { showToast } from "../../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,
-	evaluatePatientSafetyFlags,
-} from "../safetyMath";
-import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
-} from "../PatientDetailModal";
+	evaluatePatientSafetyFlags,
+} from "../safetyMath";
 
 export interface PatientGeneralInfo {
 	id?: string | null | undefined;

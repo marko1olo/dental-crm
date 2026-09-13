@@ -43,5 +43,4 @@ export * from "./transfer/PatientBranchTransferModal";
 export * from "./PatientHeaderCard";
 export * from "./PatientWorkspaceView";
 export * from "./PatientAnamnesisModal";
-export * from "./PatientDetailModal";
 export * from "./tabs/PatientGeneralInfoTab";

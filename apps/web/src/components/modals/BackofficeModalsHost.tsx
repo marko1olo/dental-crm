@@ -1,5 +1,4 @@
 import { SignaturePadCanvas } from "../portal/selfCheckin/SignaturePadCanvas";
-import { ExpressFiscalReceiptModal } from "../finance/ExpressFiscalReceiptModal";
 import { WarehouseManagerModal } from "../inventory/WarehouseManagerModal";
 import { ClinicalConflictModal } from "../offline/ClinicalConflictModal";
 import { PatientCardModal } from "../patients/PatientCardModal";
@@ -27,7 +26,6 @@ import { ClinicalPnlHubModal } from "../finance/pnl/ClinicalPnlHubModal";
 import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
-import { StaffPayrollLedgerModal } from "../payroll/StaffPayrollLedgerModal";
 import { TimesheetT13Modal } from "../payroll/TimesheetT13Modal";
 import { SickLeaveElnModal } from "../documents/sickLeave/SickLeaveElnModal";
 import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
@@ -48,8 +46,9 @@ import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricel
 import { DmsInsuranceManagerModal } from "../insurance/DmsInsuranceManagerModal";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
 import { DmsInsurersHubModal } from "../insurance/DmsInsurersHubModal";
-import { AccessMatrixModal } from "../settings/AccessMatrixModal";
-import { StaffCommissionsModal } from "../settings/StaffCommissionsModal";
+import { GranularRoleMatrixView } from "../settings/GranularRoleMatrixView";
+import { StaffCommissionsPanel } from "../settings/StaffCommissionsPanel";
+import { Calculator, ShieldCheck, X } from "lucide-react";
 import { AuditTrailHubModal } from "../security/AuditTrailHubModal";
 import { OfflineSyncGuardModal } from "../sync/OfflineSyncGuardModal";
 import { OfflineBackupVaultPanel } from "../settings/OfflineBackupVaultPanel";
@@ -92,6 +91,17 @@ export const BackofficeModalsHost: React.FC = () => {
 		setActiveModal(null);
 		setModalData(null);
 	};
+
+	useEffect(() => {
+		if (!activeModal) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				close();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [activeModal]);
 
 	if (!activeModal) return null;
 
@@ -195,7 +205,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<DoctorPayrollModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "staff_payroll_ledger" && (
-				<StaffPayrollLedgerModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DoctorPayrollModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "advanced_doctor_payroll" && (
 				<DoctorPayrollModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -279,10 +289,95 @@ export const BackofficeModalsHost: React.FC = () => {
 				<DmsInsurersHubModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "access_matrix" && (
-				<AccessMatrixModal isOpen={true} onClose={close}  {...({} as any)} />
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="settings-access-modal-container"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) close();
+					}}
+				>
+					<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl p-3 sm:p-5 overflow-hidden max-h-[94vh] flex flex-col min-w-0">
+						{/* Compact Modal Header (38px height) */}
+						<div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800 mb-2 shrink-0 gap-3 min-w-0">
+							<div className="flex items-center gap-2 min-w-0 flex-1">
+								<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shrink-0">
+									<ShieldCheck className="w-4 h-4" />
+								</div>
+								<div className="min-w-0 flex-1 flex items-center gap-2.5 flex-wrap">
+									<h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0 break-words leading-none">
+										Ролевая матрица доступа (RBAC 152-ФЗ)
+									</h3>
+									<span className="text-[11px] px-2 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 font-mono">
+										8 ролей · 22 права
+									</span>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={close}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center shrink-0 cursor-pointer touch-manipulation"
+								data-testid="close-settings-access-modal-btn"
+								aria-label="Закрыть матрицу доступа"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+
+						{/* Monolithic Role Matrix Area (Occupies >= 80% modal viewport with pb-20 bottom frame clearance) */}
+						<div className="flex-1 overflow-y-auto min-w-0 pr-0.5 pb-20 sm:pb-8" data-testid="settings-access-modal-scroll-body">
+							<GranularRoleMatrixView
+								initialRole={(modalData as any)?.initialRole}
+								initialModuleFilter={(modalData as any)?.initialModuleFilter}
+							/>
+						</div>
+					</div>
+				</div>
 			)}
 			{activeModal === "staff_commissions" && (
-				<StaffCommissionsModal isOpen={true} onClose={close}  {...({} as any)} />
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="settings-staff-commissions-modal-container"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) close();
+					}}
+				>
+					<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col min-w-0">
+						{/* High-contrast Modal Header with WCAG AAA typography (>= 15:1) */}
+						<div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4 shrink-0 gap-3 min-w-0">
+							<div className="flex items-center gap-2.5 min-w-0 flex-1">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shrink-0">
+									<Calculator className="w-5 h-5" />
+								</div>
+								<div className="min-w-0 flex-1">
+									<h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0 break-words leading-tight">
+										Ставки и комиссии врачей (Номенклатура 804н)
+									</h3>
+									<p className="text-xs text-slate-600 dark:text-slate-400 m-0 mt-0.5 break-words">
+										Настройка процентов сдельной оплаты и удержаний за лабораторные этапы (ЗТЛ)
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={close}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center shrink-0 cursor-pointer touch-manipulation"
+								data-testid="close-settings-staff-commissions-modal-btn"
+								aria-label="Закрыть модальное окно ставок"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+
+						{/* Monolithic Content Area without card-in-card nesting */}
+						<div className="flex-1 overflow-y-auto min-w-0 pr-1">
+							<StaffCommissionsPanel isModalView={true} />
+						</div>
+					</div>
+				</div>
 			)}
 			{activeModal === "audit_trail_hub" && (
 				<AuditTrailHubModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -304,7 +399,7 @@ export const BackofficeModalsHost: React.FC = () => {
 			)}
 		
 			{activeModal === "express_fiscal_receipt" && (
-				<ExpressFiscalReceiptModal isOpen={true} onClose={close}  {...({} as any)} />
+				<FiscalReceipt54FzModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "refund_receipt" && (
 				<FiscalReceipt54FzModal

@@ -29,7 +29,6 @@ describe("Wave 14: Advanced Doctor Payroll & Form T-13 Timesheet", () => {
 		assert.ok(PayrollExports.AdvancedDoctorPayrollModal, "AdvancedDoctorPayrollModal must be exported");
 		assert.ok(PayrollExports.DoctorPayrollModal, "DoctorPayrollModal must be exported");
 		assert.ok(PayrollExports.TimesheetT13Modal, "TimesheetT13Modal must be exported");
-		assert.ok(PayrollExports.StaffPayrollLedgerModal, "StaffPayrollLedgerModal must be exported");
 		assert.ok(PayrollExports.calculateDoctorStaffPayroll, "calculateDoctorStaffPayroll must be exported");
 		assert.ok(PayrollExports.calculateAssistantStaffPayroll, "calculateAssistantStaffPayroll must be exported");
 		assert.ok(PayrollExports.calculateConsolidatedStaffPayroll, "calculateConsolidatedStaffPayroll must be exported");

@@ -17,7 +17,7 @@
  *    - Allows 1-click forced sync and queue flushing even when effectiveOnline is false.
  *    - Supports onClearMutations 1-click action.
  *
- * 3. PatientDetailModal:
+ * 3. PatientAnamnesisModal:
  *    - Guarantees 1-click somatic healthy norm button («Соматически здоров / норма») without 50 manual checkboxes.
  *
  * Mandates: 8d (Burden of Proof), 8e (Doctor Autonomy), 8k (CRM != Reality Simulator), 8n (Solo Doctor Sovereignty).
@@ -38,7 +38,7 @@ import {
 	type ClinicalTask,
 } from "../../../ClinicalTasksPanel";
 import { WorkspaceContinuityStrip } from "../../../workspaceContinuityStrip";
-import { PatientDetailModal } from "../../patients/PatientDetailModal";
+import { PatientAnamnesisModal } from "../../patients/PatientAnamnesisModal";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -287,10 +287,10 @@ describe("Wave 41 — Clinical Tasks Presets, Non-Blocking Sync & Somatic Norm A
 		});
 	});
 
-	describe("3. PatientDetailModal Somatic Healthy Norm (Mandates 8e, 8k, 8n)", () => {
-		it("renders PatientDetailModal with 1-click 'Соматически здоров / норма' button", () => {
+	describe("3. PatientAnamnesisModal Somatic Healthy Norm (Mandates 8e, 8k, 8n)", () => {
+		it("renders PatientAnamnesisModal with 1-click 'Соматически здоров / норма' button", () => {
 			const html = renderToString(
-				<PatientDetailModal
+				<PatientAnamnesisModal
 					isOpen={true}
 					onClose={() => {}}
 					patientId="pat-wave41"

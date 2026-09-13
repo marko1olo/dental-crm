@@ -3,9 +3,8 @@ import { DentalMedicalCard043uForm } from "../documents/forms/DentalMedicalCard0
 import { PediatricToothChart } from "../odontogram/PediatricToothChart";
 import { ToothStatusPalette } from "../odontogram/ToothStatusPalette";
 import { PerioArchGrid } from "../perio/PerioArchGrid";
-import { PatientDetailModal } from "../patients/PatientDetailModal";
+import { PatientAnamnesisModal } from "../patients/PatientAnamnesisModal";
 import { PrescriptionsTab } from "../prescriptions/PrescriptionsTab";
-import { AnesthesiaProtocolSection } from "../visit/AnesthesiaProtocolSection";
 import { DoctorDesktopHeader as VisitDoctorDesktopHeader } from "../visit/DoctorDesktopHeader";
 import { AnesthesiaDosageCalculatorModal } from "../anesthesia/AnesthesiaDosageCalculatorModal";
 import { ClinicalProtocolPresets } from "../clinical/ClinicalProtocolPresets";
@@ -411,13 +410,13 @@ export const ClinicalModalsHost: React.FC = () => {
 				<PerioArchGrid arch="upper" teeth={[]}  {...({} as any)} />
 			)}
 			{activeModal === "patient_detail_modal" && (
-				<PatientDetailModal isOpen={true} onClose={close}  {...({} as any)} />
+				<PatientAnamnesisModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "prescriptions_tab" && (
 				<PrescriptionsTab  {...({} as any)} />
 			)}
 			{activeModal === "anesthesia_protocol_section" && (
-				<AnesthesiaProtocolSection  {...({} as any)} />
+				<AnesthesiaQuickBar  {...({} as any)} />
 			)}
 			{activeModal === "visit_doctor_desktop_header" && (
 				<VisitDoctorDesktopHeader  {...({} as any)} />

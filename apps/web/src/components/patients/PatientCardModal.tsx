@@ -12,12 +12,10 @@ import {
 import { showToast } from "../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,
-	formatSafetyProfileToDiaryText,
-} from "./safetyMath";
-import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
-} from "./PatientDetailModal";
+	formatSafetyProfileToDiaryText,
+} from "./safetyMath";
 import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,

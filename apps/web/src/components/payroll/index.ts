@@ -10,4 +10,3 @@ export * from "./TimesheetT13Modal.js";
 export * from "../finance/payroll/payrollEngine.js";
 export * from "../finance/payroll/payrollPresets.js";
 export * from "./staffPayrollEngine.js";
-export * from "./StaffPayrollLedgerModal.js";

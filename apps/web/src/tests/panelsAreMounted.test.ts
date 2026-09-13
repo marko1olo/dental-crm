@@ -916,7 +916,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
 	"components/endo/EndoQuickProtocolsBar.tsx:EndoQuickProtocolsBar",
 	"components/finance/CashRegisterModal.tsx:CashRegisterModal",
-	"components/finance/ExpressFiscalReceiptModal.tsx:ExpressFiscalReceiptModal",
 	"components/finance/FamilyWalletModal.tsx:FamilyWalletModal",
 	"components/finance/PatientInstallmentScheduleModal.tsx:PatientInstallmentScheduleModal",
 	"components/finance/one-c/OneCCommerceMlModal.tsx:OneCCommerceMlModal",
@@ -940,9 +939,7 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/orthodontics/OrthodonticExaminationCard.tsx:OrthodonticExaminationCard",
 	"components/orthodontics/OrthodonticStudioModal.tsx:OrthodonticStudioModal",
 	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
-	"components/patients/PatientDetailModal.tsx:PatientDetailModal",
 	"components/patients/transfer/PatientBranchTransferModal.tsx:PatientBranchTransferModal",
-	"components/payroll/StaffPayrollLedgerModal.tsx:StaffPayrollLedgerModal",
 	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
 	"components/perio/PerioArchGrid.tsx:PerioArchGrid",
 	"components/perio/PerioProfileStrip.tsx:PerioProfileStrip",
@@ -968,8 +965,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/sanpin/autoclave/KraftPackBatchBuilder.tsx:KraftPackBatchBuilder",
 	"components/sanpin/autoclave/SanpinJournal257View.tsx:SanpinJournal257View",
 	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
-	"components/settings/AccessMatrixModal.tsx:AccessMatrixModal",
-	"components/settings/StaffCommissionsModal.tsx:StaffCommissionsModal",
 	"components/surgery/SurgeryCockpitModal.tsx:SurgeryCockpitModal",
 	"components/surgery/SurgeryProtocolPanel.tsx:SurgeryProtocolPanel",
 	"components/surgery/SurgerySafetyChecklist.tsx:SurgerySafetyChecklist",
@@ -977,7 +972,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/telephony/IncomingCallPopupModal.tsx:IncomingCallPopupModal",
 	"components/treatment-plans/TreatmentPlanModal.tsx:TreatmentPlanModal",
 	"components/treatment-plans/TreatmentPlanRoadmap.tsx:TreatmentPlanRoadmap",
-	"components/visit/AnesthesiaProtocolSection.tsx:AnesthesiaProtocolSection",
 	"components/visit/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	"components/visit/VisitTimer.tsx:VisitTimer",
 	"components/visit/anesthesia/AnesthesiaAnatomyMapWidget.tsx:AnesthesiaAnatomyMapWidget",
@@ -1003,7 +997,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 94;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 88;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.
