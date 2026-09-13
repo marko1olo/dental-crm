@@ -38,6 +38,7 @@ export interface AutoclaveCycleModalProps {
 	operatorName?: string;
 	initialCycleId?: AutoclaveCycleId;
 	initialAutoclaveId?: string;
+	initialTab?: ModalTab;
 }
 
 type ModalTab = 'live_cycle' | 'batch_packs' | 'label_print' | 'journal_257';
@@ -48,9 +49,10 @@ export function AutoclaveCycleModal({
 	onCycleCompleted,
 	operatorName = 'Дежурная медицинская сестра',
 	initialCycleId = 'cycle_134_wrapped',
-	initialAutoclaveId = 'AUTO-MELAG-01'
+	initialAutoclaveId = 'AUTO-MELAG-01',
+	initialTab = 'live_cycle'
 }: AutoclaveCycleModalProps) {
-	const [activeTab, setActiveTab] = useState<ModalTab>('live_cycle');
+	const [activeTab, setActiveTab] = useState<ModalTab>(initialTab);
 	const [selectedCycleId, setSelectedCycleId] = useState<AutoclaveCycleId>(initialCycleId);
 	const [selectedAutoclaveId, setSelectedAutoclaveId] = useState<string>(initialAutoclaveId);
 	const [cycleNumber, setCycleNumber] = useState<number>(42);
@@ -128,7 +130,7 @@ export function AutoclaveCycleModal({
 	if (!isOpen) return null;
 
 	return (
-		<div className="autoclave-modal-overlay">
+		<div className="autoclave-modal-overlay" data-testid="autoclave-cycle-modal">
 			<div className="autoclave-modal-container">
 				{/* Modal Header */}
 				<div className="autoclave-modal-header">
@@ -155,6 +157,7 @@ export function AutoclaveCycleModal({
 							type="button"
 							className={`autoclave-tab-btn ${activeTab === 'live_cycle' ? 'active' : ''}`}
 							onClick={() => setActiveTab('live_cycle')}
+							data-testid="tab-live-cycle"
 						>
 							<Flame size={16} />
 							1. Цикл стерилизации (Live)
@@ -163,6 +166,7 @@ export function AutoclaveCycleModal({
 							type="button"
 							className={`autoclave-tab-btn ${activeTab === 'batch_packs' ? 'active' : ''}`}
 							onClick={() => setActiveTab('batch_packs')}
+							data-testid="tab-batch-packs"
 						>
 							<Layers size={16} />
 							2. Партия крафт-пакетов ({packs.length})
@@ -171,6 +175,7 @@ export function AutoclaveCycleModal({
 							type="button"
 							className={`autoclave-tab-btn ${activeTab === 'label_print' ? 'active' : ''}`}
 							onClick={() => setActiveTab('label_print')}
+							data-testid="tab-label-print"
 						>
 							<Printer size={16} />
 							3. Печать этикеток (QR/Штрихкод)
@@ -179,6 +184,7 @@ export function AutoclaveCycleModal({
 							type="button"
 							className={`autoclave-tab-btn ${activeTab === 'journal_257' ? 'active' : ''}`}
 							onClick={() => setActiveTab('journal_257')}
+							data-testid="tab-journal-257"
 						>
 							<FileSpreadsheet size={16} />
 							4. Журнал Форма 257/у
@@ -296,7 +302,8 @@ export function AutoclaveCycleModal({
 									<button
 										type="button"
 										onClick={handleRegisterCycle}
-										className="autoclave-btn autoclave-btn-primary"
+										className="autoclave-btn autoclave-btn-primary btn-confirm-autoclave-batch"
+										data-testid="btn-confirm-autoclave-batch"
 									>
 										<CheckCircle2 size={16} />
 										Зафиксировать цикл #{cycleNumber} в журнале ф. 257/у

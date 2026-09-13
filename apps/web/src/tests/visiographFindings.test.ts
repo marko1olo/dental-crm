@@ -221,9 +221,8 @@ test("Мандат 8e: снимок визиографа открывается 
 	);
 });
 
-test("Мандат 8e: DicomViewerModal, ImagingModal и RadiologyViewerModal поддерживают 1-клик Норму в 043/у", () => {
+test("Мандат 8e: DicomViewerModal и RadiologyViewerModal поддерживают 1-клик Норму в 043/у", () => {
 	const dicomModal = readSource("components/imaging/DicomViewerModal.tsx");
-	const imagingModal = readSource("components/imaging/ImagingModal.tsx");
 	const radiologyModal = readSource("components/radiology/RadiologyViewerModal.tsx");
 
 	assert.ok(
@@ -233,11 +232,6 @@ test("Мандат 8e: DicomViewerModal, ImagingModal и RadiologyViewerModal п
 	assert.ok(
 		dicomModal.includes("handleInsertNormaTo043"),
 		"DicomViewerModal обязан иметь функцию handleInsertNormaTo043",
-	);
-
-	assert.ok(
-		imagingModal.includes("ImagingModal"),
-		"ImagingModal должен быть экспортирован и оборачивать просмотр снимков",
 	);
 
 	assert.ok(

@@ -1,7 +1,5 @@
-import { FiscalReceiptModal } from "../finance/FiscalReceipt54FzModal";
 import { SignaturePadCanvas } from "../portal/selfCheckin/SignaturePadCanvas";
 import { ExpressFiscalReceiptModal } from "../finance/ExpressFiscalReceiptModal";
-import { RefundReceiptModal } from "../finance/RefundReceiptModal";
 import { WarehouseManagerModal } from "../inventory/WarehouseManagerModal";
 import { ClinicalConflictModal } from "../offline/ClinicalConflictModal";
 import { PatientCardModal } from "../patients/PatientCardModal";
@@ -30,13 +28,12 @@ import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificate
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
 import { StaffPayrollLedgerModal } from "../payroll/StaffPayrollLedgerModal";
-import { FormT13TimesheetModal } from "../payroll/FormT13TimesheetModal";
+import { TimesheetT13Modal } from "../payroll/TimesheetT13Modal";
 import { SickLeaveElnModal } from "../documents/sickLeave/SickLeaveElnModal";
 import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
 import { CmoQualityAuditModal } from "../cmo/CmoQualityAuditModal";
 import { PatientCabinetModal, PatientOnlineBookingModal } from "../portal";
 import { PatientPortalTimelineModal } from "../portal/timeline/PatientPortalTimelineModal";
-import { PatientRecallManagerModal } from "../recalls/PatientRecallManagerModal";
 import { PatientRecallsHubModal } from "../recalls/PatientRecallsHubModal";
 import { DoctorMobileShiftModal } from "../doctor-portal";
 import { DoctorShiftCockpitModal } from "../doctor";
@@ -204,7 +201,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<DoctorPayrollModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "form_t13_timesheet" && (
-				<FormT13TimesheetModal isOpen={true} onClose={close}  {...({} as any)} />
+				<TimesheetT13Modal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "sick_leave_eln" && (
 				<SickLeaveElnModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -239,10 +236,7 @@ export const BackofficeModalsHost: React.FC = () => {
 			{activeModal === "patient_portal_timeline" && (
 				<PatientPortalTimelineModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "patient_recall_manager" && (
-				<PatientRecallManagerModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "patient_recalls_hub" && (
+			{(activeModal === "patient_recall_manager" || activeModal === "patient_recalls_hub") && (
 				<PatientRecallsHubModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "doctor_mobile_shift" && (
@@ -313,7 +307,16 @@ export const BackofficeModalsHost: React.FC = () => {
 				<ExpressFiscalReceiptModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "refund_receipt" && (
-				<RefundReceiptModal isOpen={true} onClose={close}  {...({} as any)} />
+				<FiscalReceipt54FzModal
+					isOpen={true}
+					onClose={close}
+					items={[]}
+					patientId={patientId}
+					patientName={patientName}
+					patientDepositRub={0}
+					initialTab="refund"
+					{...({} as any)}
+				/>
 			)}
 			{activeModal === "warehouse_manager" && (
 				<WarehouseManagerModal isOpen={true} onClose={close}  {...({} as any)} />

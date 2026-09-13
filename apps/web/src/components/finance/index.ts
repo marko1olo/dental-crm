@@ -25,4 +25,3 @@ export * from "./InvoiceGenerationModal";
 export * from "./invoiceEngine";
 export * from "./cashboxOperations";
 export * from "./ExpressFiscalReceiptModal";
-export * from "./RefundReceiptModal";

@@ -58,22 +58,20 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 		);
 	});
 
-	it("3. PatientRecallManagerModal: fallback candidates pool defaults to [] instead of synthetic records", () => {
+	it("3. PatientRecallsHubModal: fallback candidates pool defaults to [] instead of synthetic records", () => {
 		const recallPath = path.join(
 			repoRoot,
-			"apps/web/src/components/recalls/PatientRecallManagerModal.tsx",
+			"apps/web/src/components/recalls/PatientRecallsHubModal.tsx",
 		);
 		const recallContent = fs.readFileSync(recallPath, "utf-8");
 
 		assert.ok(
-			recallContent.includes("initialCandidates && initialCandidates.length > 0\n\t\t\t? initialCandidates\n\t\t\t: [],") ||
-			recallContent.includes("initialCandidates && initialCandidates.length > 0 ? initialCandidates : []") ||
-			recallContent.includes("? initialCandidates\n\t\t\t: [],"),
-			"PatientRecallManagerModal must default candidates state to [] when initialCandidates is empty or missing",
+			recallContent.includes("initialCandidates ?? []"),
+			"PatientRecallsHubModal must default candidates state to [] when initialCandidates is empty or missing",
 		);
 		assert.ok(
-			!recallContent.includes(": DEFAULT_RECALL_CANDIDATES,"),
-			"PatientRecallManagerModal must not fall back to DEFAULT_RECALL_CANDIDATES in state initializer",
+			!recallContent.includes("DEFAULT_RECALL_CANDIDATES"),
+			"PatientRecallsHubModal must not use synthetic DEFAULT_RECALL_CANDIDATES",
 		);
 	});
 

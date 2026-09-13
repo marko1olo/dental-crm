@@ -20,7 +20,7 @@ import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtoco
 import { PerioProfileStrip } from "../perio/PerioProfileStrip";
 import { RadiologyModule } from "../radiology/RadiologyModule";
 import { RadiationDoseSheetModal } from "../radiology/doseSheet/RadiationDoseSheetModal";
-import { SterilizationAutoclaveLogModal } from "../sterilization/SterilizationAutoclaveLogModal";
+import { AutoclaveCycleModal } from "../sanpin/autoclave/AutoclaveCycleModal";
 import { TreatmentPlanModal } from "../treatment-plans/TreatmentPlanModal";
 import { VisitTimer } from "../visit/VisitTimer";
 import { VisitEndoProtocolWidget } from "../visit/endo/VisitEndoProtocolWidget";
@@ -41,7 +41,6 @@ import { LabTrackingDrawer } from "../lab/LabTrackingDrawer";
 import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { BeforeAfterComparisonView } from "../photography/BeforeAfterComparisonView";
-import { AutoclaveCycleModal } from "../sanpin/autoclave/AutoclaveCycleModal";
 import { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { KraftPackageBarcodeModal } from "../sanpin/kraft/KraftPackageBarcodeModal";
 import { MedicalWasteJournalModal } from "../sanpin/waste/MedicalWasteJournalModal";
@@ -59,7 +58,6 @@ import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
 import { ToothAnesthesiaCalculator } from "../diagnostics/ToothAnesthesiaCalculator";
 import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import { EmergencyRescueModal } from "../emergency/EmergencyRescueModal";
-import { ImagingModal } from "../imaging/ImagingModal";
 import { DicomViewerModal } from "../imaging/DicomViewerModal";
 import { DicomViewport } from "../imaging/DicomViewport";
 import { DirectRvgCaptureModal } from "../radiology/DirectRvgCaptureModal";
@@ -167,7 +165,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<MedicalWasteJournalModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "sterilization_journal" && (
-				<SterilizationAutoclaveLogModal isOpen={true} onClose={close} />
+				<AutoclaveCycleModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "sterilization_studio" && (
 				<KraftPackageBarcodeModal isOpen={true} onClose={close} />
@@ -228,11 +226,10 @@ export const ClinicalModalsHost: React.FC = () => {
 				<EmergencyRescueModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "imaging" && (
-				<ImagingModal
+				<DicomViewerModal
 					isOpen={true}
 					onClose={close}
 					patientName={patientName}
-					modality="RVG"
 					toothFdiCode={String(activeTooth)}
 				 {...({} as any)} />
 			)}
@@ -384,7 +381,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<RadiationDoseSheetModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "sterilization_autoclave_log" && (
-				<SterilizationAutoclaveLogModal isOpen={true} onClose={close}  {...({} as any)} />
+				<AutoclaveCycleModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "treatment_plan_modal" && (
 				<TreatmentPlanModal isOpen={true} onClose={close}  {...({} as any)} />

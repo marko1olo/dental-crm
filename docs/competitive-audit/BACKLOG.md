@@ -52,6 +52,7 @@
 > 46. Ликвидация устаревших дубликатов-фасадов стерилизации SterilizationJournalModal и SterilizationStudioModal по Мандату 8s, прямое монтирование канонических модалов в ClinicalModalsHost и снижение потолка бутафорских ширм до 111 (Wave 192, коммит `2ad597a8f`, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t): полное удаление устаревших фасадов `apps/web/src/components/sterilization/SterilizationJournalModal.tsx` (-49 строк) и `SterilizationStudioModal.tsx` (-48 строк); прямое монтирование канонических `SterilizationAutoclaveLogModal` и `KraftPackageBarcodeModal` в `ClinicalModalsHost.tsx`; вычищение устаревших экспортов в `sterilization/index.ts` и переключение `sanpin/index.ts` и `financeAutonomyWave42.test.tsx` на канонический `SterilizationAutoclaveLogModal`; строгое снижение потолка несмонтированных ширм в `panelsAreMounted.test.ts` со 113 до 111 (удалены 2 записи ширм, 11/11 PASS).
 > 47. Ликвидация 7 искусственных фасадов по Мандату 8s, удаление папки tax/, исправление бага потери пропсов расписания в App.tsx и снижение потолка бутафорских ширм со 111 до 104 в panelsAreMounted.test.ts (Wave 193, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t): ликвидация искусственных фасадов ChairsiderPerspectiveView.tsx, PediatricPerspectiveView.tsx, FrontdeskPerspectiveView.tsx, OrthoPhotoProtocolModal.tsx, OrthodonticCephTrackerModal.tsx, TaxDeductionModal.tsx, OutpatientForm043Editor.tsx, ChildToothChart.tsx; полное удаление устаревшей папки apps/web/src/components/tax/ в пользу канонического components/finance/TaxDeductionCertificateModal.tsx; устранение бага потери пропсов расписания в App.tsx с прямым пробросом полного набора пропсов в канонический ScheduleView; строгое сокращение реестра DEMOUNTED_MODAL_SHIRMS_BACKLOG со снижением потолка DEMOUNTED_MODAL_SHIRMS_CEILING со 111 до 104 в panelsAreMounted.test.ts.
 > 48. Ликвидация 12 искусственных фасадов-дубликатов (VisitDiaryTemplateSelector, NdflCalculatorModal, FnsNdflXmlModal, EgiszDocumentsJournalModal, EgiszRemdSigningModal, EgiszRemdXmlModal, EgiszCdaExportModal, PatientWebappPortalModal, PatientMobilePortalModal, VisitSoapTemplatesModal, CbctMpr3DStudioModal, CasePresentationView), снос дубликатов ЕГИСЗ и налоговых калькуляторов, пробитие потолка ширм DEMOUNTED_MODAL_SHIRMS_CEILING со 104 до 99 в panelsAreMounted.test.ts (Wave 194, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t).
+> 49. Ликвидация дублирующего журнала автоклава SterilizationAutoclaveLogModal в пользу канонических компонентов SanPiN AutoclaveCycleModal и SanpinJournal257View (Wave 195, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t): полное удаление `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx` (-597 строк) через `git rm`; прямое монтирование канонического `AutoclaveCycleModal` в `ClinicalModalsHost.tsx` (`sterilization_journal` и `sterilization_autoclave_log`); переключение реэкспортов в `sterilization/index.ts` и `sanpin/index.ts` на канонические компоненты СанПиН 3.3686-21 (`AutoclaveCycleModal`, `SanpinJournal257View`); актуализация тестов `financeAutonomyWave42.test.tsx` и `procedureMaterialDeductionAutonomy.test.tsx`.
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -397,9 +398,9 @@
 ---
 
 ## 40. `зарплата_кадры::табель_учета_рабочего_времени_т13_с_однострочным_тулбаром` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e & APPLE HIG)
-- **Идея**: Приведение табеля Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) к канонам Apple Studio HIG и Закону Хика (ровно 1 строка тулбара 32–36px). Защита от сбоев при выборе сотрудника (`activeEmployee` guard), компактные переключатели расчетных периодов, полиграфическая точность формы Т-13 Госкомстата РФ с автоматическим учетом явок, ночных смен и невыходов врачей и ассистентов.
+- **Идея**: Приведение табеля Т-13 (`TimesheetT13Modal.tsx`) к канонам Apple Studio HIG и Закону Хика (ровно 1 строка тулбара 32–36px). Защита от сбоев при выборе сотрудника (`activeEmployee` guard), компактные переключатели расчетных периодов, полиграфическая точность формы Т-13 Госкомстата РФ с автоматическим учетом явок, ночных смен и невыходов врачей и ассистентов.
 - **Статус**: 
-  - Фронтенд: `apps/web/src/components/payroll/FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`, `timesheetT13.css` (коммиты `ff2dbb9c7`, `74dbcc6d8`).
+  - Фронтенд: `apps/web/src/components/payroll/TimesheetT13Modal.tsx`, `timesheetT13.css` (коммиты `ff2dbb9c7`, `74dbcc6d8`).
   - Валидация: 0 ошибок линтеров, ликвидация многоэтажного частокола кнопок, полное соответствие трудовому учету РФ.
 
 ---
@@ -2066,11 +2067,11 @@
 ### 4.67. Цифровые журналы автоклавирования (257/у), контроль ПСО (366/у) и 1-клик мега-пресет стерилизации по СанПиН 3.3686-21 (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 196)
 - **Статус**: `[РЕАЛИЗОВАНО]`
 - **Объем реализации**:
-  1. *Цифровые журналы СанПиН 3.3686-21*: в `SterilizationAutoclaveLogModal.tsx` реализованы электронный журнал работы автоклавов (Форма № 257/у) и журнал контроля предстерилизационной очистки ПСО (Форма № 366/у, азопирамовая и фенолфталеиновая пробы);
+  1. *Цифровые журналы СанПиН 3.3686-21*: в канонических `AutoclaveCycleModal.tsx` и `SanpinJournal257View.tsx` реализованы электронный журнал работы автоклавов (Форма № 257/у) и журнал контроля предстерилизационной очистки ПСО (Форма № 366/у, азопирамовая и фенолфталеиновая пробы);
   2. *1-клик мега-пресет*: кнопка «Автоклавирование выполнено (1 клик)» мгновенно фиксирует канонические параметры (134°C, 2.1 bar, вакуум, отрицательные пробы ПСО, 5 класс индикаторов) под Мандаты 8e и 8k;
   3. *Мгновенная привязка крафт-пакета к 043/у*: генерация и связывание штрихкода лотка с протоколом амбулаторного приёма;
   4. *Эргономика и Закон 7 смертных грехов*: 1-строчный тулбар 32-36px, модальная глубина строго 1 (вкладки вместо вложенных модалок), векторные Lucide-иконки без эмодзи, тач-таргеты $\ge 44\text{px}$.
-- **Файлы**: `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx`, `apps/web/src/components/sterilization/index.ts`.
+- **Файлы**: `apps/web/src/components/sanpin/autoclave/AutoclaveCycleModal.tsx`, `apps/web/src/components/sanpin/autoclave/SanpinJournal257View.tsx`, `apps/web/src/components/sterilization/index.ts`.
 - **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12 тестов, 100% pass, коммит `88ee4bb06`).
 
 ### 4.68. Ликвидация процедурных симуляторов карманов, 4 возрастных пресета детского прикуса и очистка от эмодзи (Мандаты 8d, 8e, 8i, 8k, 8n / Фича 197)
@@ -5705,4 +5706,46 @@
   - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8);
   - Single-Compiler Gate защищен per Mandate 8t;
   - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
+---
+
+## 344. Волна 195: Ликвидация 5 фасадов и дублирующих ширм (FormT13TimesheetModal, ImagingModal, RefundReceiptModal, PatientRecallManagerModal, SterilizationAutoclaveLogModal), снижение потолка ширм до 94 в panelsAreMounted.test.ts, аудит десктопной эргономики (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (удаление 5 записей из DEMOUNTED_MODAL_SHIRMS_BACKLOG, снижение потолка DEMOUNTED_MODAL_SHIRMS_CEILING с 99 до 94)
+  - `apps/web/src/components/payroll/TimesheetT13Modal.tsx` (канонический SSOT табеля учета рабочего времени Т-13 вместо ликвидированного FormT13TimesheetModal)
+  - `apps/web/src/components/imaging/DicomViewerModal.tsx` (канонический SSOT просмотрщика снимков DICOM/RVG вместо ликвидированного ImagingModal)
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx` (канонический SSOT фискальных чеков и возвратов 54-ФЗ вместо ликвидированного RefundReceiptModal)
+  - `apps/web/src/components/recalls/PatientRecallsHubModal.tsx` (канонический SSOT диспансерного учета и реколлов вместо ликвидированного PatientRecallManagerModal)
+  - `apps/web/src/components/sanpin/autoclave/SanpinJournal257View.tsx` (канонический SSOT электронного журнала автоклавирования Форма 257/у СанПиН вместо ликвидированного SterilizationAutoclaveLogModal)
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+* **Архитектурные механизмы**:
+  - **Ликвидация 5 фасадов и дублирующих ширм по Вселенскому анти-блоат догмату (Мандат 8s)**:
+    * В соответствии с Законом Единого Неделимого Авторитета (Мандат 8s: «Для КАЖДОЙ задачи — СТРОГО ОДИН канонический мастер-компонент, роут и сервис») осуществлена консолидация на канонических SSOT компонентах:
+      1. `FormT13TimesheetModal.tsx` — консолидирован на каноническом модуле табеля Т-13 `components/payroll/TimesheetT13Modal.tsx` (унифицированная форма Госкомстата РФ № 1, экспорт в CSV, печать формата А4);
+      2. `ImagingModal.tsx` — консолидирован на каноническом просмотрщике радиовизиографических и КТ исследований `components/imaging/DicomViewerModal.tsx` (фильтры резкости, инверсия, измерение плотности, 1 строка тулбара 32–36px);
+      3. `RefundReceiptModal.tsx` — консолидирован на каноническом модуле фискализации `components/finance/FiscalReceipt54FzModal.tsx` (1-клик чек возврата прихода тег 1054 по 54-ФЗ, возврат аванса/депозита, семейный кошелек);
+      4. `PatientRecallManagerModal.tsx` — консолидирован на каноническом хабе диспансеризации `components/recalls/PatientRecallsHubModal.tsx` (7 категорий сервисных звонков StomX, неблокирующие кнопки связи по WhatsApp/Telegram/SMS, пресеты профилактики);
+      5. `SterilizationAutoclaveLogModal.tsx` — консолидирован на каноническом электронном журнале стерилизации `components/sanpin/autoclave/SanpinJournal257View.tsx` (Форма 257/у и контроль ПСО Форма 366/у по СанПиН 3.3686-21, 1-клик экспресс-цикл, привязка крафт-пакета).
+  - **Снижение потолка бутафорских ширм с 99 до 94 в panelsAreMounted.test.ts (Мандат 8s)**:
+    * Из реестра `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалены 5 записей:
+      - `components/finance/RefundReceiptModal.tsx:RefundReceiptModal`
+      - `components/imaging/ImagingModal.tsx:ImagingModal`
+      - `components/payroll/FormT13TimesheetModal.tsx:FormT13TimesheetModal`
+      - `components/recalls/PatientRecallManagerModal.tsx:PatientRecallManagerModal`
+      - `components/sterilization/SterilizationAutoclaveLogModal.tsx:SterilizationAutoclaveLogModal`
+    * Константа `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижена с 99 до 94;
+    * Защищен инвариант: реестр ширм может только сокращаться.
+  - **Аудит десктопной эргономики и автономия соло-врача (Мандаты 8c, 8d, 8e, 8n, 8p)**:
+    * Тулбары рабочих областей сжаты в строгую 1 строку 32–36px (Закон Хика, Мандат 8d п. 2);
+    * В карточках сущностей сохранено не более 1–2 кнопок прямого действия, редкие действия убраны в выпадающие меню `...` (Закон Миллера, Мандат 8d п. 3);
+    * Полная автономия врача: 0 disabled кнопок без причины, касса без обязательного ИНН физлиц, debounced autosave (Мандат 8e);
+    * Полная векторная гигиена: 0 сырых эмодзи в медицинских, финансовых и нормативных формах (Мандат 8d п. 7).
+* **Верификация**:
+  - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8);
+  - Single-Compiler Gate защищен per Mandate 8t;
+  - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
 

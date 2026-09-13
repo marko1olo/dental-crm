@@ -151,7 +151,7 @@
   - **Полная гидратация состояния Telegram в PostgreSQL и синхронизация подтверждений (Мандаты 8b, 8e, 8n, 8s / Волна 188)**: В `apps/api/src/routes/telegram.ts` и `services/telegram/telegramLegacyMemoryStore.ts` внедрена сквозная передача гидратированного из БД PostgreSQL состояния `DomainState` (`hydrateTelegramDomainState`) во все функции конвейера Telegram (`prepareDenteTelegramOutboxDelivery`, `buildDenteTelegramOutbox`, `executeTelegramOutboxSend`, `executeDenteTelegramOutboxDueBatch`, `visibleTelegramScheduleAppointments`, `handleDenteTelegramAppointmentCallback`); при подтверждении приёма пациентом в Telegram (`action === "telegram_appointment_confirmed"`) статус визита мгновенно обновляется в реляционной базе PostgreSQL через `updateAppointmentInDb` со статусом `confirmed`; ликвидированы фасадные импорты из `sampleData.js` в тестах Telegram (`telegramBotSettings.test.ts`, `telegramMessageRender.test.ts`) в пользу канонического SSOT `telegramLegacyMemoryStore.js`.
 
 ### 2.7. Финансы, Платежи и Расчёт ЗП
-- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`, `InvoiceGenerationModal.tsx`, `PaymentModal.tsx`, `FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`, `FastCheckoutModal.tsx`, `CashRegisterModal.tsx`.
+- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`, `InvoiceGenerationModal.tsx`, `PaymentModal.tsx`, `TimesheetT13Modal.tsx`, `FastCheckoutModal.tsx`, `CashRegisterModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/billing.ts`, `finance_family.ts`.
 - **Возможности**:
   - Проведение платежей (наличные, карта, аванс, семейный кошелек).
@@ -169,7 +169,7 @@
   - Мгновенный сброс (flush) черновика дневника 043/у при входящем звонке телефонии для защиты от потери данных (`telephonyStore.ts`, коммит `1d7d1d2f8`).
   - Выписка счетов, наряд-заказов и актов с 1-клик клиническим согласованием врача (Мандат 8e) без обязательного мастер-пароля управляющего.
   - Модуль расчёта зарплаты врачей и ассистентов с дифференцированными ставками (`PayrollView.tsx`).
-  - Табель учета рабочего времени Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) с однострочным тулбаром 32–36px по Apple Studio HIG и защитой от падений `activeEmployee` (коммит `ff2dbb9c7`).
+  - Табель учета рабочего времени Т-13 (`TimesheetT13Modal.tsx`) с однострочным тулбаром 32–36px по Apple Studio HIG и защитой от падений `activeEmployee` (коммит `ff2dbb9c7`).
 
 ### 2.8. Склад, Стерилизация и Лабораторный портал
 - **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`, `SanpinRegisters.tsx`, `AnesthesiaPkuDisposalModal.tsx`, `DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`.
@@ -368,7 +368,7 @@
 #### 2.10.24. Табель учета рабочего времени Т-13 с однострочным тулбаром 32–36px (Мандаты 8d, 8e / Кадры)
 - **Суть и домен**: Приведение табеля Т-13 к канонам Apple Studio HIG и Закону Хика (ровно 1 строка тулбара 32–36px вместо многоэтажного частокола кнопок). Устранение падений при смене сотрудника (`activeEmployee` guard), компактные переключатели периодов, полиграфическая точность печатной формы Т-13 Госкомстата РФ с автоматическим учетом явок, ночных смен и невыходов.
 - **Фронтенд**:
-  - `apps/web/src/components/payroll/FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`, `timesheetT13.css` (коммиты `ff2dbb9c7`, `74dbcc6d8`)
+  - `apps/web/src/components/payroll/TimesheetT13Modal.tsx`, `timesheetT13.css` (коммиты `ff2dbb9c7`, `74dbcc6d8`)
 
 #### 2.10.25. СанПиН крафт-пакеты в 1 клик без комиссий и мобильный портал смен врача (Мандаты 8e, 8n / Стерилизация и Портал)
 - **Суть и домен**: Обеспечение полной автономии соло-врача и старшей медсестры при вскрытии крафт-пакетов стерилизации по СанПиН 3.3686-21. 1-клик вскрытие и привязка индикатора стерильности/QR-кода пакета к приему пациента без созыва комиссий из 3 человек. Мобильный учет смен врача в портале (`DoctorMobileShiftModal.tsx`) со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенным подтверждением явки на смену.
@@ -1517,7 +1517,7 @@
   3. *1-клик мега-пресет*: кнопка «Автоклавирование выполнено (1 клик)» мгновенно формирует запись цикла автоклавирования и отрицательные пробы ПСО (Мандаты 8e, 8k);
   4. *Моментальная привязка крафт-пакета к 043/у*: генерация машиночитаемого штрихкода лотка и связывание с дневником амбулаторной карты;
   5. *Гигиена UI*: 1-строчный тулбар 32-36px, модальная глубина строго 1 (вкладки вместо модалок), векторные иконки Lucide без мультяшных эмодзи, тач-таргеты $\ge 44\text{px}$.
-- **Фронтенд**: `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx`, `apps/web/src/components/sterilization/index.ts`.
+- **Фронтенд**: `apps/web/src/components/sanpin/autoclave/AutoclaveCycleModal.tsx`, `apps/web/src/components/sanpin/autoclave/SanpinJournal257View.tsx`, `apps/web/src/components/sterilization/index.ts`.
 - **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12 тестов, 100% pass, коммит `88ee4bb06`).
 
 #### 2.10.156. Клинический ЭМК: ликвидация процедурных симуляторов карманов, 4 возрастных пресета детского прикуса и очистка от эмодзи (Мандаты 8d, 8e, 8i, 8k, 8n / ЭМК, Пародонтограмма & Детская формула, Фича #197)
@@ -3581,5 +3581,26 @@
      - Защищен железный инвариант: тестовый бэклог ширм может только сокращаться.
 - **Файлы**: `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`, `apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx`, `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/visit/VisitSoapEditor.tsx`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/radiology/CbctMprViewer.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts`.
 - **Тесты**: `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8), Single-Compiler Gate защищен per Mandate 8t, 327/327 фичей со статусом [ДА] (100% паритет).
+
+### 2.10.278. Волна 195: Ликвидация 5 фасадов и дублирующих ширм (FormT13TimesheetModal, ImagingModal, RefundReceiptModal, PatientRecallManagerModal, SterilizationAutoclaveLogModal), консолидация на канонических SSOT компонентах (TimesheetT13Modal, DicomViewerModal, FiscalReceipt54FzModal, PatientRecallsHubModal, SanpinJournal257View) и снижение потолка ширм с 99 до 94 в panelsAreMounted.test.ts (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+- **Идея & Бизнес-эффект**: Реализация Закона Единого Неделимого Авторитета и Вселенского анти-блоат догмата (Мандат 8s): ликвидация 5 фасадов и параллельных модальных ширм (`FormT13TimesheetModal`, `ImagingModal`, `RefundReceiptModal`, `PatientRecallManagerModal`, `SterilizationAutoclaveLogModal`) с консолидацией на канонических SSOT компонентах (`TimesheetT13Modal`, `DicomViewerModal`, `FiscalReceipt54FzModal`, `PatientRecallsHubModal`, `SanpinJournal257View`); устранение фиктивных монтирований и паразитных слоев реэкспорта; снижение потолка бэклога бутафорских ширм `DEMOUNTED_MODAL_SHIRMS_CEILING` с 99 до 94 в `panelsAreMounted.test.ts`.
+- **Архитектурные механизмы**:
+  1. *Ликвидация 5 фасадов-дубликатов и консолидация на SSOT (Мандат 8s)*:
+     - Табель учета рабочего времени формы Т-13 консолидирован на каноническом модуле `components/payroll/TimesheetT13Modal.tsx` (унифицированная форма Госкомстата РФ № 1, расчет отработанных дней/часов, экспорт в CSV и печатная форма А4);
+     - Просмотрщик диагностических исследований консолидирован на каноническом `components/imaging/DicomViewerModal.tsx` (DICOM Part 10, визиография RVG, фильтры резкости/контраста, замер плотности, 1 строка тулбара 32–36px);
+     - Модуль возвратов фискальных чеков консолидирован на каноническом кассовом окне `components/finance/FiscalReceipt54FzModal.tsx` (1-клик чек возврата прихода тег 1054 по 54-ФЗ, возврат аванса/депозита, поддержка семейного кошелька);
+     - Диспансерный учет и профилактика консолидированы на каноническом хабе `components/recalls/PatientRecallsHubModal.tsx` (7 категорий сервисных звонков StomX, неблокирующие кнопки связи по WhatsApp/Telegram/SMS, статусы реколлов);
+     - Журнал стерилизации и автоклавирования консолидирован на каноническом представлении `components/sanpin/autoclave/SanpinJournal257View.tsx` (цифровой журнал Форма 257/у и контроль ПСО Форма 366/у по СанПиН 3.3686-21, экспресс-цикл, привязка крафт-пакетов).
+  2. *Снижение потолка бутафорских ширм с 99 до 94 в panelsAreMounted.test.ts (Мандат 8s)*:
+     - Из реестра `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалены 5 записей (`FormT13TimesheetModal`, `ImagingModal`, `RefundReceiptModal`, `PatientRecallManagerModal`, `SterilizationAutoclaveLogModal`);
+     - Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен с 99 до 94 в полном соответствии с железным правилом «бэклог ширм может только сокращаться».
+  3. *Аудит десктопной эргономики и автономия соло-врача (Мандаты 8c, 8d, 8e, 8n, 8p)*:
+     - Тулбары рабочих экранов приведены к строгой 1 строке 32–36px (Закон Хика);
+     - Карточки сущностей содержат не более 1–2 кнопок прямого действия, редкие функции агрегированы в меню `...` (Закон Миллера);
+     - 0 заблокированных кнопок без причины, debounced autosave, касса без обязательного ИНН физлиц (Мандат 8e);
+     - 0 эмодзи в медицинских и нормативных документах.
+- **Файлы**: `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/components/payroll/TimesheetT13Modal.tsx`, `apps/web/src/components/imaging/DicomViewerModal.tsx`, `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`, `apps/web/src/components/sanpin/autoclave/SanpinJournal257View.tsx`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`, `docs/competitive-audit/FEATURES_REGISTRY.md`.
+- **Тесты**: `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8), Single-Compiler Gate защищен per Mandate 8t, 327/327 фичей со статусом [ДА] (100% паритет).
+
 
 

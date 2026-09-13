@@ -3,7 +3,7 @@
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
 ## Mission
-Comprehensive deep-code reverse-engineering of clinical, financial, and CBCT modules from external goldmines (DenCT & DentalPin) into packages/shared/, coupled with an adversarial Red Team visual and ergonomic audit across desktop (1440x900) and mobile (390x844) viewports under Mandates 8d, 8e, 8m, 8p, and 8o.
+Wave 195: Eradicate 5 artificial duplicate facades across apps/web/src/components/, rewire all callers to canonical Best-of-Breed SSOT implementations, reduce DEMOUNTED_MODAL_SHIRMS_CEILING in panelsAreMounted.test.ts from 99 down to 94, enforce desktop clinical ergonomics (Mandate 8p: header budget <= 160-180px, Hick's 1-row toolbar 32-36px, Mandate 8e: zero disabled buttons, 54-FZ without mandatory citizen INN), and dynamically sync documentation under CTO Supremacy (THE_HAMMER_MASTER_PROMPT.md).
 
 ## 🔒 My Identity
 - Archetype: sentinel
@@ -19,12 +19,12 @@ Comprehensive deep-code reverse-engineering of clinical, financial, and CBCT mod
 - Full multi-agent engineering team with adversarial clinical critics
 
 ## User Context
-- **Last user request**: Deep-code reverse-engineering of clinical, financial, and CBCT modules from external goldmines (DenCT & DentalPin) into packages/shared/, plus adversarial Red Team live screenshot pipeline and 7 Deadly Sins visual/ergonomic inspection on desktop and mobile.
+- **Last user request**: Eradicate 5 duplicate facades, rewire to canonical SSOT components, lower shirm ceiling to 94, run single-compiler gate and targeted tests, sync documentation.
 - **Pending clarifications**: none
-- **Delivered results**: Non-DICOM volume importers (Galileos + OneVolume), Smart Clinical Playbooks & Gap Recovery Engine, 16 live screenshots with 100% unique MD5 hashes, multimodal inspection across 4 views x 4 states under 7 Deadly Sins.
+- **Delivered results**: 5 duplicate facades eradicated via git rm, all callers rewired to canonical SSOT, panelsAreMounted.test.ts ceiling lowered to 94 (11/11 tests pass), 79 targeted tests pass (0 fail), single-compiler gate exit 0 on web and api, docs synchronized (BACKLOG Section 344, OUR_CRM_MAP Section 2.10.278, FEATURES_REGISTRY), committed as c36f031b1.
 
 ## Project Status
-- **Phase**: complete (ready for handoff)
+- **Phase**: complete
 
 ## Victory Audit Status
 - **Triggered**: yes
@@ -34,7 +34,6 @@ Comprehensive deep-code reverse-engineering of clinical, financial, and CBCT mod
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — user intent record
 - C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md — Master prompt authority
-- C:\Clinic_MVP\dental-crm\.agents\sentinel_r65\BRIEFING.md — Sentinel persistent working memory
-- C:\Clinic_MVP\dental-crm\.agents\sentinel_r65\handoff.md — Sentinel handoff report
-- C:\Clinic_MVP\dental-crm\scripts\take_inquisition_live_screenshots.cjs — Playwright live screenshot runner
-- C:\Clinic_MVP\dental-crm\docs\screenshots\inquisition_live\ — 16 verified live screenshots
+- C:\Clinic_MVP\dental-crm\apps\web\src\tests\panelsAreMounted.test.ts — mount guard with lowered ceiling 94
+- C:\Clinic_MVP\dental-crm\docs\competitive-audit\BACKLOG.md — Section 344 Wave 195 record
+- C:\Clinic_MVP\dental-crm\docs\competitive-audit\OUR_CRM_MAP.md — Section 2.10.278

@@ -1,50 +1,57 @@
-# Handoff Report — Swarm Wave 61 (Feature 250 / Mandates 2, 8c, 8d, 8e, 8h, 8i, 8k, 8n)
+# Handoff Report — Swarm Wave 195 (5 Duplicate Facades Eradicated & Shirm Ceiling 94 / Mandates 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-CURRENT HEAD: 8d8e2a431 (Wave 61)
-PREVIOUS HEAD: 92b262880 (Wave 60)
+CURRENT HEAD: c36f031b1 (Wave 195)
 
 ## 1. Observation & Scope
-Dynamic documentation synchronization and codebase implementation for Feature 250 (Wave 61):
-- **Feature 250 (`фин_счета_акты::серверная_синхронизация_счетов_интеграция_с_finance_view_и_ликвидация_demo_invoices`)**:
-  - `InvoicesView.tsx`:
-    - Полностью ликвидирован 56-строчный массив захардкоженных `DEMO_INVOICES` (Zero Mocks);
-    - Реализовано двухслойное хранилище с ключом `dente_billing_invoices` (`loadStoredInvoices`, `saveStoredInvoices`);
-    - Добавлена серверная синхронизация через `GET /api/invoices${patientId ? ... : ""}` с заголовками `denteAdminSecretRequestHeaders()`;
-    - Мягкий офлайн-фоллбэк: ошибки сети логируются, но не прерывают работу кассира и врача с локальными счетами;
-    - Создание счета `handleCreateInvoice` сохраняет данные в `localStorage` и асинхронно синхронизирует с бэкендом `POST /api/invoices/generate-from-plan`;
-    - Применение гарантии 100% (`handleApplyWarranty100`) и закрытие через `PaymentModal` вызывают `saveStoredInvoices` (сохранение статусов при F5);
-    - Добавлен `data-testid="btn-invoices-close"` на кнопку закрытия тулбара;
-    - Бейджи статусов дополнены токенами темных рамок WCAG AAA (`dark:border-emerald-800`, `dark:border-purple-800`, `dark:border-amber-800`);
-  - `FinanceView.tsx`:
-    - В тулбар внедрена кнопка `btn-finance-open-invoices` («Счета и акты (804н)», иконка `Receipt`);
-    - Смонтирован модальный контейнер `modal-finance-invoices` глубины ровно 1 с пробросом активного пациента (`documentPatient`).
+Eradication of 5 artificial duplicate facades across `apps/web/src/components/`, rewiring callers to canonical SSOT components, and reducing shirm backlog ceiling in `panelsAreMounted.test.ts`:
+- **5 Facades Eradicated via `git rm`**:
+  1. `apps/web/src/components/payroll/FormT13TimesheetModal.tsx` (52 LOC) -> rewired to `TimesheetT13Modal.tsx`
+  2. `apps/web/src/components/imaging/ImagingModal.tsx` (77 LOC) -> rewired to `DicomViewerModal.tsx`
+  3. `apps/web/src/components/finance/RefundReceiptModal.tsx` (94 LOC) -> rewired to `FiscalReceipt54FzModal.tsx` (with `initialTab="refund"`)
+  4. `apps/web/src/components/recalls/PatientRecallManagerModal.tsx` (361 LOC) -> rewired to `PatientRecallsHubModal.tsx`
+  5. `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx` (597 LOC) -> rewired to `sanpin/autoclave/SanpinJournal257View.tsx` & `AutoclaveCycleModal.tsx`
+- **Mount Guard Backlog & Ceiling Lowering**:
+  - In `apps/web/src/tests/panelsAreMounted.test.ts`, all 5 entries purged from `DEMOUNTED_MODAL_SHIRMS_BACKLOG`.
+  - `DEMOUNTED_MODAL_SHIRMS_CEILING` lowered from **99 down to 94**.
 
-## 2. Synchronized Registries & Backlogs
-1. `docs/competitive-audit/FEATURES_REGISTRY.md`:
-   - Зарегистрирована фича 250 со статусом `[ДА]`, ценностью 5 и ссылками на реализацию и тесты.
-   - Всего в реестре: 250 фич (63 канонические + 187 аддендум), все 250 (100%) имеют статус `[ДА]`.
-2. `docs/competitive-audit/BACKLOG.md`:
-   - Статусный баннер обновлен до Wave 61 (250 фич: 63 канонические + 187 аддендум).
-   - Добавлен раздел 187 (Фича 250) со статусом `[РЕАЛИЗОВАНО]`.
-   - Сводный реестр Части III обновлен до 187 аддендум-фич (Wave 15..61, фичи 64..250).
-3. `docs/competitive-audit/OUR_CRM_MAP.md`:
-   - Добавлен подраздел 2.10.209 (Фича 250).
-4. `.agents/handoff.md`:
-   - Зафиксировано текущее состояние Wave 61 и актуальный HEAD `8d8e2a431`.
+## 2. Synchronized Registries & Backlogs (Mandate 8h)
+1. `docs/competitive-audit/BACKLOG.md`:
+   - Added Section 344 for Wave 195 with status `[ЕСТЬ] / [ЗАКРЫТО]`.
+2. `docs/competitive-audit/OUR_CRM_MAP.md`:
+   - Added Subsection 2.10.278 documenting Wave 195 architectural SSOT consolidation.
+3. `docs/competitive-audit/FEATURES_REGISTRY.md`:
+   - Updated and confirmed all features registered and active.
 
-## 3. Machine Verification & Test Proof (Wave 61)
-- `apps/web/src/components/finance/__tests__/invoicesViewServerSyncAndFinanceIntegrationWave61.test.tsx`: **12/12 passed (100%) in 38ms**.
-- Пакетный регрессионный прогон Waves 55..61 (5 тестовых файлов, 40 тестов): **40/40 passed (100%) in 1600ms**.
-- Full web typecheck (`npm run typecheck -w @dental/web`): **100% PASS (Exit Code 0)**.
-- Full api typecheck (`npm run typecheck -w @dental/api`): **100% PASS (Exit Code 0)**.
-- `npm run check:encoding`: проверено 5114 файлов, 0 ошибок (строгий UTF-8 без BOM).
-- Pre-commit Iron Gates: **100% OK**.
+## 3. Machine Verification & Test Proof (Wave 195)
+- **Targeted Test Suites (Node test runner with tsx)**:
+  - `apps/web/src/tests/panelsAreMounted.test.ts`: **11/11 passed (100%)**.
+  - `apps/web/src/components/recalls/__tests__/patientRecallAutonomy.test.tsx`: **5/5 passed (100%)**.
+  - `apps/web/src/components/finance/__tests__/cashShiftAutonomyAndFiscal54Fz.test.tsx`: **13/13 passed (100%)**.
+  - `apps/web/src/components/payroll/__tests__/advancedPayrollComponents.test.ts`: **5/5 passed (100%)**.
+  - `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx`: **12/12 passed (100%)**.
+  - `apps/web/src/tests/visiographFindings.test.ts`: **11/11 passed (100%)**.
+  - `apps/web/src/components/cmo/__tests__/wave116MockAndEmojiPurification.test.ts`: **passed**.
+  - `apps/web/src/components/cmo/__tests__/wave119EmojiPurification.test.ts`: **passed**.
+  - `apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts`: **passed**.
+  - Total targeted tests: **79/79 passed (100%)**.
+- **Centralized Single-Compiler Gate (Mandate 8t)**:
+  - `npm run check:encoding`: **5140 files checked, 0 errors**.
+  - `npm run typecheck -w @dental/web`: **Exit code 0 (0 TS errors)**.
+  - `npm run typecheck -w @dental/api`: **Exit code 0 (0 TS errors)**.
+- **Pre-commit Iron Gate (5/5 checks)**:
+  - gitleaks: OK (0 secrets)
+  - check:encoding: OK
+  - check:stub-overrides: OK (827 properties, 27 modules)
+  - check:fetch-response: OK (1584 files)
+  - check:dynamic-imports: OK (3063 files, 148 dynamic imports)
 
 ## 4. Definition of Done (DoD)
-- [x] Строго изолированная область работы.
-- [x] Zero TODO / Zero Mocks / Zero Emojis.
-- [x] Полная синхронизация ключевых файлов документации по Мандату 8h.
-- [x] Кодировка UTF-8 без BOM (`npm run check:encoding` = 0 ошибок).
-- [x] Пофайловый `git add <file>` для всех коммитов.
+- [x] All 5 duplicate facades physically deleted via `git rm`.
+- [x] All consumers and callers rewired to canonical SSOT components without regression.
+- [x] `DEMOUNTED_MODAL_SHIRMS_CEILING` lowered from 99 to 94 in `panelsAreMounted.test.ts`.
+- [x] Single-compiler gate sequential exit 0 (encoding, web typecheck, api typecheck).
+- [x] Zero emojis in official medical/financial forms.
+- [x] Documentation synchronized per Mandate 8h.
+- [x] Clean atomic commit with Conventional Commits (`HEAD: c36f031b1`).

@@ -919,12 +919,10 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/finance/ExpressFiscalReceiptModal.tsx:ExpressFiscalReceiptModal",
 	"components/finance/FamilyWalletModal.tsx:FamilyWalletModal",
 	"components/finance/PatientInstallmentScheduleModal.tsx:PatientInstallmentScheduleModal",
-	"components/finance/RefundReceiptModal.tsx:RefundReceiptModal",
 	"components/finance/one-c/OneCCommerceMlModal.tsx:OneCCommerceMlModal",
 	"components/finance/pnl/ClinicalPnlHubModal.tsx:ClinicalPnlHubModal",
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
-	"components/imaging/ImagingModal.tsx:ImagingModal",
 	"components/insurance/DmsInsurersHubModal.tsx:DmsInsurersHubModal",
 	"components/insurance/InsurancePreAuthModal.tsx:InsurancePreAuthModal",
 	"components/insurance/DmsInsuranceManagerModal.tsx:DmsInsuranceManagerModal",
@@ -944,7 +942,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
 	"components/patients/PatientDetailModal.tsx:PatientDetailModal",
 	"components/patients/transfer/PatientBranchTransferModal.tsx:PatientBranchTransferModal",
-	"components/payroll/FormT13TimesheetModal.tsx:FormT13TimesheetModal",
 	"components/payroll/StaffPayrollLedgerModal.tsx:StaffPayrollLedgerModal",
 	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
 	"components/perio/PerioArchGrid.tsx:PerioArchGrid",
@@ -965,7 +962,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/radiology/RadiologyViewerModal.tsx:RadiologyViewerModal",
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
 	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx:RadiationDoseSheetModal",
-	"components/recalls/PatientRecallManagerModal.tsx:PatientRecallManagerModal",
 	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
 	"components/sanpin/autoclave/AutoclaveCycleModal.tsx:AutoclaveCycleModal",
 	"components/sanpin/autoclave/KraftBarcodeLabelSheet.tsx:KraftBarcodeLabelSheet",
@@ -974,7 +970,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
 	"components/settings/AccessMatrixModal.tsx:AccessMatrixModal",
 	"components/settings/StaffCommissionsModal.tsx:StaffCommissionsModal",
-	"components/sterilization/SterilizationAutoclaveLogModal.tsx:SterilizationAutoclaveLogModal",
 	"components/surgery/SurgeryCockpitModal.tsx:SurgeryCockpitModal",
 	"components/surgery/SurgeryProtocolPanel.tsx:SurgeryProtocolPanel",
 	"components/surgery/SurgerySafetyChecklist.tsx:SurgerySafetyChecklist",
@@ -1008,7 +1003,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 99;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 94;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

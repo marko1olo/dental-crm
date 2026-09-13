@@ -534,3 +534,65 @@ Integrity mode: development
 - [ ] Real PNG screenshots verified via visual inspection (`view_file`), sizes $\ge 40\text{ KB}$, unique MD5 hashes.
 - [ ] `BACKLOG.md` and `OUR_CRM_MAP.md` updated with exact commit references and clean git log.
 
+## Follow-up — 2026-09-13T16:53:18Z
+
+Use a very large team of agents (специализированная толпа субагентов-хирургов, инквизиторов и стражей документации под Мандатами 8a–8t).
+
+Eradicate 5 artificial duplicate facades, parallel managers, and dead wrappers across `apps/web/src/components/`, rewire all callers to canonical Best-of-Breed SSOT implementations, reduce `DEMOUNTED_MODAL_SHIRMS_CEILING` in `panelsAreMounted.test.ts` from 99 down to 94, enforce desktop clinical ergonomics (Mandate 8p: header budget $\le 160\text{--}180\text{px}$, Hick's 1-row toolbar 32–36px, Mandate 8e: zero disabled buttons, 54-FZ without mandatory citizen INN), and dynamically sync documentation under CTO Supremacy (`THE_HAMMER_MASTER_PROMPT.md`).
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Eradicate 5 Duplicate Facades & Redundant Shirms (Mandate 8s — SSOT Law)
+1. **`FormT13TimesheetModal.tsx`** (52 LOC) — duplicate forwarding wrapper over `TimesheetT13Modal`. Rewire `BackofficeModalsHost.tsx`, `components/payroll/index.ts`, and test files directly to canonical `TimesheetT13Modal`, remove via `git rm`.
+2. **`ImagingModal.tsx`** (77 LOC) — duplicate forwarding wrapper importing and mounting `DicomViewerModal`. Rewire `ClinicalModalsHost.tsx`, `components/imaging/index.ts`, and `visiographFindings.test.ts` directly to canonical `DicomViewerModal`, remove via `git rm`.
+3. **`RefundReceiptModal.tsx`** (94 LOC) — duplicate wrapper importing from `ExpressFiscalReceiptModal`. Rewire `BackofficeModalsHost.tsx`, `components/finance/index.ts`, and `cashShiftAutonomyAndFiscal54Fz.test.tsx` directly to canonical `FiscalReceipt54FzModal` / `ExpressFiscalReceiptModal`, remove via `git rm`.
+4. **`PatientRecallManagerModal.tsx`** (361 LOC) — duplicate parallel recall manager alongside canonical 1,182 LOC `PatientRecallsHubModal.tsx`. Rewire `BackofficeModalsHost.tsx`, `components/recalls/index.ts`, and test files to canonical `PatientRecallsHubModal`, remove via `git rm`.
+5. **`SterilizationAutoclaveLogModal.tsx`** (597 LOC) — duplicate autoclave log alongside canonical `sanpin/autoclave/SanpinJournal257View.tsx` and `AutoclaveCycleModal.tsx` (SanPiN 3.3686-21). Rewire `ClinicalModalsHost.tsx`, `components/sterilization/index.ts`, and test files to canonical SanPiN autoclave components, remove via `git rm`.
+
+### R2. Lower Shirm Backlog Ceiling to 94 (Mandate 8s)
+- In `apps/web/src/tests/panelsAreMounted.test.ts`:
+  - Remove deleted shirms from `DEMOUNTED_MODAL_SHIRMS_BACKLOG`:
+    - `components/payroll/FormT13TimesheetModal.tsx:FormT13TimesheetModal`
+    - `components/imaging/ImagingModal.tsx:ImagingModal`
+    - `components/finance/RefundReceiptModal.tsx:RefundReceiptModal`
+    - `components/recalls/PatientRecallManagerModal.tsx:PatientRecallManagerModal`
+    - `components/sterilization/SterilizationAutoclaveLogModal.tsx:SterilizationAutoclaveLogModal`
+  - Strictly lower `DEMOUNTED_MODAL_SHIRMS_CEILING` from **99 down to 94**.
+
+### R3. Desktop Front-End & Clinical Ergonomics (Mandates 8d, 8e, 8p, 8n)
+- Verify 7 Deadly Sins UI checklist across core desktop screens (Schedule, Visit 043/u, Finance 54-FZ, Patients).
+- Strict 1-row toolbar (32–36px), useful height budget $\le 160\text{--}180\text{px}$.
+- 0 disabled buttons without reason, 1-click physiological norm default, 54-FZ checkout without mandatory citizen INN.
+- Zero emojis in official medical/financial forms.
+
+### R4. Verification & Single-Compiler Gate (Mandate 8t)
+- Subagents do NOT run global `typecheck` or build.
+- L1 orchestrator runs sequential centralized `npm run check:encoding` and `npm run typecheck` (Exit Code 0).
+- Run targeted test suites: `panelsAreMounted.test.ts`, `advancedPayrollComponents.test.ts`, `patientRecallAutonomy.test.tsx`, `procedureMaterialDeductionAutonomy.test.tsx`.
+
+### R5. Dynamic Documentation Sync (Mandate 8h)
+- Update `docs/competitive-audit/BACKLOG.md` (Section 344 for Wave 195).
+- Update `docs/competitive-audit/OUR_CRM_MAP.md` (Section 2.10.278).
+- Update `docs/competitive-audit/FEATURES_REGISTRY.md`.
+
+## Acceptance Criteria
+
+### Bloat Eradication
+- [ ] All 5 listed facade files physically deleted via `git rm`.
+- [ ] All consumers and callers rewired to canonical SSOT components without regression.
+- [ ] `DEMOUNTED_MODAL_SHIRMS_CEILING` lowered from 99 to 94 in `panelsAreMounted.test.ts`.
+- [ ] `panelsAreMounted.test.ts` passes 11/11 tests.
+
+### Compiler & Gate Integrity
+- [ ] `npm run check:encoding` passes with 0 errors (UTF-8 clean).
+- [ ] `npm run typecheck -w @dental/web` passes with Exit Code 0.
+- [ ] `npm run typecheck -w @dental/api` passes with Exit Code 0.
+- [ ] All pre-commit Iron Gate hooks pass.
+
+### Documentation & Reporting
+- [ ] `BACKLOG.md`, `OUR_CRM_MAP.md`, and `FEATURES_REGISTRY.md` synchronized.
+- [ ] Atomic git commit created with Conventional Commits.
+- [ ] Verbatim subagent reports presented without censorship.

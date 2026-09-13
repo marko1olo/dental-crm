@@ -69,21 +69,21 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(content.includes("<Zap"), "DmsGuaranteeLetterModal must render Lucide Zap vector icon");
 	});
 
-	it("5. PatientRecallManagerModal: zero raw emojis, uses Lucide Smartphone & Lightbulb icons", () => {
+	it("5. PatientRecallsHubModal: zero raw emojis, uses Lucide Phone & Lightbulb icons", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/recalls/PatientRecallManagerModal.tsx",
+			"apps/web/src/components/recalls/PatientRecallsHubModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("🦷"), "PatientRecallManagerModal must not contain raw 🦷 emoji");
-		assert.ok(!content.includes("📱"), "PatientRecallManagerModal must not contain raw 📱 emoji");
-		assert.ok(!content.includes("💡"), "PatientRecallManagerModal must not contain raw 💡 emoji");
-		assert.ok(!content.includes("✨"), "PatientRecallManagerModal must not contain raw ✨ emoji");
-		assert.ok(!content.includes("📅"), "PatientRecallManagerModal must not contain raw 📅 emoji");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "PatientRecallManagerModal must be free of raw emojis");
-		assert.ok(content.includes("<Smartphone"), "PatientRecallManagerModal must render Lucide Smartphone icon");
-		assert.ok(content.includes("<Lightbulb"), "PatientRecallManagerModal must render Lucide Lightbulb icon");
+		assert.ok(!content.includes("🦷"), "PatientRecallsHubModal must not contain raw 🦷 emoji");
+		assert.ok(!content.includes("📱"), "PatientRecallsHubModal must not contain raw 📱 emoji");
+		assert.ok(!content.includes("💡"), "PatientRecallsHubModal must not contain raw 💡 emoji");
+		assert.ok(!content.includes("✨"), "PatientRecallsHubModal must not contain raw ✨ emoji");
+		assert.ok(!content.includes("📅"), "PatientRecallsHubModal must not contain raw 📅 emoji");
+		assert.ok(!RAW_EMOJI_REGEX.test(content), "PatientRecallsHubModal must be free of raw emojis");
+		assert.ok(content.includes("<Phone"), "PatientRecallsHubModal must render Lucide Phone icon");
+		assert.ok(content.includes("<Lightbulb"), "PatientRecallsHubModal must render Lucide Lightbulb icon");
 	});
 
 	it("6. OfflineBackupVaultPanel: zero raw emojis, uses Lucide AlertTriangle and XCircle icons", () => {

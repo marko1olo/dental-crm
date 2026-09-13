@@ -16,7 +16,7 @@ import { renderToString } from "react-dom/server";
 import { CashShiftWidget } from "../CashShiftWidget";
 import { FastCheckoutModal } from "../FastCheckoutModal";
 import { ExpressFiscalReceiptModal } from "../ExpressFiscalReceiptModal";
-import { RefundReceiptModal } from "../RefundReceiptModal";
+import { FiscalReceipt54FzModal } from "../FiscalReceipt54FzModal";
 import { CashRegisterModal } from "../CashRegisterModal";
 
 describe("CashShiftWidget — Mandate 8e Autonomy & X-Report Verification", () => {
@@ -142,7 +142,7 @@ describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
 	});
 });
 
-describe("ExpressFiscalReceiptModal & RefundReceiptModal (Mandates 8e, 8b, 8n)", () => {
+describe("ExpressFiscalReceiptModal & FiscalReceipt54FzModal Refund Mode (Mandates 8e, 8b, 8n)", () => {
 	it("renders ExpressFiscalReceiptModal and synthesizes 804n clinical service when total is passed without line items", () => {
 		const html = renderToString(
 			React.createElement(ExpressFiscalReceiptModal, {
@@ -162,13 +162,15 @@ describe("ExpressFiscalReceiptModal & RefundReceiptModal (Mandates 8e, 8b, 8n)",
 		assert.ok(html.includes("Алексеева О. М."));
 	});
 
-	it("renders RefundReceiptModal in 54-FZ Income Return mode for advance refund (no line items)", () => {
+	it("renders FiscalReceipt54FzModal in 54-FZ Income Return mode for advance refund (no line items)", () => {
 		const html = renderToString(
-			React.createElement(RefundReceiptModal, {
+			React.createElement(FiscalReceipt54FzModal, {
 				isOpen: true,
 				onClose: () => {},
+				patientId: "pat-refund-test-1",
 				patientDepositRub: 4000,
 				patientName: "Сидоров Н. К.",
+				initialTab: "refund",
 			})
 		);
 
@@ -177,19 +179,26 @@ describe("ExpressFiscalReceiptModal & RefundReceiptModal (Mandates 8e, 8b, 8n)",
 		assert.ok(html.includes('data-testid="refund-advance-container"'));
 	});
 
-	it("renders RefundReceiptModal in 54-FZ Income Return mode for line items with 1-click select all", () => {
+	it("renders FiscalReceipt54FzModal in 54-FZ Income Return mode for line items with 1-click select all", () => {
 		const html = renderToString(
-			React.createElement(RefundReceiptModal, {
+			React.createElement(FiscalReceipt54FzModal, {
 				isOpen: true,
 				onClose: () => {},
+				patientId: "pat-refund-test-2",
 				patientName: "Сидоров Н. К.",
+				initialTab: "refund",
 				items: [
 					{
 						id: "refund-srv-1",
 						name: "Лечение кариеса эмали",
 						priceRub: 4500,
+						unitPriceRub: 4500,
 						quantity: 1,
 						code804n: "A16.07.002",
+						discountRub: 0,
+						category: "therapy",
+						phase: 1,
+						stageKind: "stage_1_therapy",
 					},
 				],
 			})

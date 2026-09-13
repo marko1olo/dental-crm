@@ -27,7 +27,6 @@ import * as PayrollExports from "../index.js";
 describe("Wave 14: Advanced Doctor Payroll & Form T-13 Timesheet", () => {
 	it("1.1 Re-exports all required payroll modals and engines from index.ts", () => {
 		assert.ok(PayrollExports.AdvancedDoctorPayrollModal, "AdvancedDoctorPayrollModal must be exported");
-		assert.ok(PayrollExports.FormT13TimesheetModal, "FormT13TimesheetModal must be exported");
 		assert.ok(PayrollExports.DoctorPayrollModal, "DoctorPayrollModal must be exported");
 		assert.ok(PayrollExports.TimesheetT13Modal, "TimesheetT13Modal must be exported");
 		assert.ok(PayrollExports.StaffPayrollLedgerModal, "StaffPayrollLedgerModal must be exported");
