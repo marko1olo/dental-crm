@@ -7,6 +7,8 @@ export * from "./BoneQualityPanel";
 export * from "./DicomArchiveUploader";
 export * from "./panoramicMprMath";
 export * from "./ctPlanningPersistence";
+export * from "./dicomMeasurementMath";
+export * from "./implantCatalog";
 export type { Cornerstone3DViewerProps, ImplantData } from "./Cornerstone3DViewer";
 export {
 	Cornerstone3DViewer,

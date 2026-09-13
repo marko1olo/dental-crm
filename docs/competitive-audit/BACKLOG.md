@@ -4905,9 +4905,9 @@
 
 ---
 
-## 258. Волна 177: Математика CPR-панорамы (Catmull-Rom сплайн и нормали), классификация плотности кости по Misch (D1..D5 HU), клиренс нижнечелюстного нерва IAN (1.5 мм), ликвидация 5 параллельных перспектив по Мандату 8s и десктопная эргономика расписания 1440x900 (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
+## 258. Волна 177: Математика CPR-панорамы (Catmull-Rom сплайн и нормали), классификация плотности кости по Misch (D1..D5 HU), клиренс нижнечелюстного нерва IAN (1.5 мм), электронные калиперы альвеолярного гребня, ликвидация 5 параллельных перспектив (-4685 строк) по Мандату 8s, вынос AppointmentHoverHud и десктопная эргономика расписания 1440x900 (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
 
-* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммиты `671f8fd1b`, `9617c20e3`, `bfeb5023e`, `019e19a03`)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммиты `861e7d415`, `9f370a955`, `6ff4ff9d5`, `010cc3ac1`)
 * **Файлы**:
   - `packages/shared/src/radiology/cprMath.ts`
   - `packages/shared/src/radiology/cprPanoramicEngine.ts`
@@ -4919,13 +4919,26 @@
   - `packages/shared/src/radiology/cbctSafetyEngine.ts`
   - `packages/shared/src/radiology/implantSafetyClearance.ts`
   - `apps/web/src/components/dicom/ctPlanningPersistence.ts`
+  - `apps/web/src/components/radiology/cbctCaliperNerveMath.ts`
+  - `packages/shared/src/radiology/measureStatsEngine.ts`
+  - `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`
+  - `apps/web/src/components/schedule/AppointmentHoverHud.tsx`
+  - `apps/web/src/components/schedule/AppointmentCard.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/styles/patients-redesign.css`
   - `apps/web/src/App.tsx`
   - `apps/web/src/workspaceShell.tsx`
   - `apps/web/src/store/perspectiveStore.ts`
+  - `apps/web/src/components/perspectives/CasePresentationView.tsx`
+  - `apps/web/src/components/perspectives/ChairsiderPerspectiveView.tsx`
+  - `apps/web/src/components/perspectives/FrontdeskPerspectiveView.tsx`
+  - `apps/web/src/components/perspectives/OrthodonticPerspectiveView.tsx`
+  - `apps/web/src/components/perspectives/PediatricPerspectiveView.tsx`
   - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
   - `apps/web/src/ScheduleView.tsx`
   - `packages/shared/src/tests/cbctSafetyAndMisch.test.ts`
   - `apps/web/src/components/dicom/__tests__/panoramicReconstruction.test.ts`
+  - `apps/web/src/components/dicom/__tests__/cbctMprWorkspace.test.ts`
 * **Архитектурное решение**:
   - **Математическое ядро CPR (Curved Planar Reformation) и нормали зубной дуги**:
     * В `cprMath.ts`, `cprPanoramicEngine.ts`, `panoramicMprMath.ts`, `panoramicArch.ts` внедрена Catmull-Rom сплайн-интерполяция зубной дуги по 7–9 анатомическим ориентирам челюсти (`condyle_right`, `angle_right`, `molar_right`, `canine_right`, `incisors`, `canine_left`, `molar_left`, `angle_left`, `condyle_left`);
@@ -4942,14 +4955,20 @@
   - **Валидация безопасного клиренса до нижнечелюстного нерва (IAN safety clearance >=1.5 мм)**:
     * В `cbctSafetyEngine.ts`, `implantSafetyClearance.ts` и `ctPlanningPersistence.ts` реализован аналитический расчет расстояния от верхушки виртуального имплантата до ломаной канала нижнеальвеолярного нерва (Inferior Alveolar Nerve, IAN);
     * Установлен канонический буфер безопасности 1.5 мм: при расстоянии >=1.5 мм статус `safe`, при сближении <1.5 мм выдается предупреждение `warning` в HUD, при пересечении <=0 мм — статус `collision` без блокировки работы хирурга (Мандат 8e).
-  - **Ликвидация 5 параллельных перспектив по Закону Единого Авторитета (Мандат 8s)**:
-    * В `App.tsx`, `workspaceShell.tsx` и `perspectiveStore.ts` устранено дублирование параллельных экранов (`ChairsiderPerspectiveView`, `FrontdeskPerspectiveView`, `CasePresentationView`, `OrthodonticPerspectiveView`, `PediatricPerspectiveView`);
+  - **Электронные калиперы альвеолярного гребня и протокол замеров**:
+    * В `cbctCaliperNerveMath.ts`, `measureStatsEngine.ts`, `Cornerstone3DViewer.tsx` реализован электронный штангенциркуль альвеолярного гребня (`AlveolarRidgeCaliperMeasurement`): калиброванное измерение вертикальной высоты кости (мм) от гребня до дна гайморовой пазухи или крыши нижнечелюстного канала, а также поперечной толщины кости на трех ключевых уровнях: вершина гребня (crestal width 1–2 мм), средняя треть (mid-body 5 мм) и основание (basal width 10 мм);
+    * Автоматическая оценка пригодности к имплантации (`implantFeasibility`): определение допустимости установки стандартных имплантатов Ø3.5–Ø5.0 мм либо необходимости костной пластики (НКР / GBR, открытый/закрытый синус-лифтинг, расщепление гребня ridge split);
+    * Формирование официального печатного А4-протокола диагностических измерений КЛКТ в строгом соответствии с Мандатом 8d (ноль мультяшных эмодзи, только медицинские данные).
+  - **Ликвидация 5 параллельных перспектив по Закону Единого Авторитета (Мандаты 8s, 8i, 8k)**:
+    * В коммите `6ff4ff9d5` устранено **-4685 строк дублирующего кода**: параллельные клоны экранов (`CasePresentationView.tsx`, `ChairsiderPerspectiveView.tsx`, `FrontdeskPerspectiveView.tsx`, `OrthodonticPerspectiveView.tsx`, `PediatricPerspectiveView.tsx`) схлопнуты в тонкие прозрачные фасады;
     * Все клинические и административные сценарии сведены к единым каноническим экранам (`ScheduleView`, `VisitView`, `PatientsView`, `FinanceView`), устраняя фрагментацию логики.
-  - **Эргономика тулбара расписания на десктопе 1440x900**:
-    * В `ScheduleFilterStrip.tsx` и `ScheduleView.tsx` устранен клиппинг текста и перенос строк: тулбар зафиксирован в строгую 1 строку `sm:h-9 sm:max-h-9` с `max-w-full overflow-hidden shrink-0 select-none`, предотвращая выпадение элементов за пределы экрана при любых разрешениях десктопа.
+  - **Модуляризация Hover HUD и десктопная эргономика расписания и пациентов**:
+    * В коммите `9f370a955` вынесен отдельный компонент `AppointmentHoverHud.tsx` (308 строк) из монолитного `AppointmentCard.tsx`, устраняя тяжелый инлайн-рендеринг в горячем цикле сетки;
+    * В `ScheduleFilterStrip.tsx` и `ScheduleView.tsx` устранен клиппинг текста и перенос строк: тулбар зафиксирован в строгую 1 строку `sm:h-9 sm:max-h-9` с `max-w-full overflow-hidden shrink-0 select-none`, предотвращая выпадение элементов за пределы экрана при любых разрешениях десктопа;
+    * В `PatientsView.tsx` и `patients-redesign.css` отполирована эргономика модального окна карточки пациента на 1440x900.
 * **Верификация**:
   * Реестр фич: 325/325 со статусом `[ДА]`, 100% паритет;
-  * Тесты: `cbctSafetyAndMisch.test.ts` PASS, `panoramicReconstruction.test.ts` PASS;
+  * Тесты: `cbctSafetyAndMisch.test.ts` PASS, `panoramicReconstruction.test.ts` PASS, `cbctMprWorkspace.test.ts` PASS;
   * Single-Compiler Gate защищен per Mandate 8t.
 
 

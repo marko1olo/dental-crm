@@ -46,6 +46,37 @@ import {
 	validatePlanSafety,
 	type WorldPoint3,
 } from "./ctPlanningPersistence.js";
+import {
+	angleDeg2D,
+	angleDeg3D,
+	circleAreaMm2,
+	circleRadiusMm,
+	computeRoiStats,
+	ellipseAreaMm2,
+	euclideanDistance2D,
+	euclideanDistance3D,
+	formatAngleRu,
+	formatAreaRu,
+	formatDensityRu,
+	formatDimensions2DRu,
+	formatDistanceRu,
+	polylineLength2D,
+	polylineLength3D,
+	rectangleAreaMm2,
+} from "./dicomMeasurementMath.js";
+import {
+	DENTIUM_SYSTEM,
+	formatImplantSpecRu,
+	getAllImplantSystems,
+	getAvailableDiameters,
+	getAvailableLengths,
+	getImplantSystem,
+	getPlatformForDiameter,
+	NOBEL_BIOCARE_SYSTEM,
+	OSSTEM_SYSTEM,
+	STRAUMANN_SYSTEM,
+	validateImplantDimensions,
+} from "./implantCatalog.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -545,5 +576,148 @@ describe("Panoramic Reconstruction, CPR Math & Implant Safety Engine (Mandates 8
 		assert.ok(restoredText.includes("1 точка дуги"));
 		assert.ok(restoredText.includes("2 точки канала"));
 		assert.ok(restoredText.includes("1 имплантат"));
+	});
+
+	it("13. Evaluates 2D/3D Euclidean caliper distance, angles, ROI areas, and HU profile stats", () => {
+		// 2D distance with isotropic spacing
+		const d2dIso = euclideanDistance2D([0, 0], [3, 4], [1, 1]);
+		assert.equal(d2dIso, 5.0);
+
+		// 2D distance with anisotropic spacing: 3px * 0.5mm = 1.5mm, 4px * 0.5mm = 2.0mm -> hypot(1.5, 2.0) = 2.5mm
+		const d2dAniso = euclideanDistance2D({ x: 0, y: 0 }, { x: 3, y: 4 }, [
+			0.5, 0.5,
+		]);
+		assert.equal(d2dAniso, 2.5);
+
+		// 3D distance: [0, 0, 0] to [2, 3, 6] -> hypot(2, 3, 6) = sqrt(4+9+36) = sqrt(49) = 7.0
+		const d3d = euclideanDistance3D([0, 0, 0], [2, 3, 6], [1, 1, 1]);
+		assert.equal(d3d, 7.0);
+
+		// 2D Caliper angle: 90 degrees
+		const rightAngle = angleDeg2D([0, 10], [0, 0], [10, 0]);
+		assert.ok(Math.abs(rightAngle - 90.0) < 1e-4);
+
+		// 2D Collinear angle: 180 degrees
+		const flatAngle = angleDeg2D([-10, 0], [0, 0], [10, 0]);
+		assert.ok(Math.abs(flatAngle - 180.0) < 1e-4);
+
+		// 3D Spatial angle: perpendicular vectors
+		const spatialAngle = angleDeg3D([10, 0, 0], [0, 0, 0], [0, 10, 0]);
+		assert.ok(Math.abs(spatialAngle - 90.0) < 1e-4);
+
+		// Polyline cumulative lengths
+		const poly2d = polylineLength2D([
+			[0, 0],
+			[10, 0],
+			[10, 10],
+		]);
+		assert.equal(poly2d, 20.0);
+
+		const poly3d = polylineLength3D([
+			[0, 0, 0],
+			[0, 0, 10],
+			[0, 10, 10],
+		]);
+		assert.equal(poly3d, 20.0);
+
+		// 2D ROI areas
+		const rectArea = rectangleAreaMm2([0, 0], [10, 5], [1, 1]);
+		assert.equal(rectArea, 50.0);
+
+		const circArea = circleAreaMm2(10);
+		assert.ok(Math.abs(circArea - Math.PI * 100) < 1e-4);
+
+		const ellArea = ellipseAreaMm2([-10, -5], [10, 5], [1, 1]);
+		assert.ok(Math.abs(ellArea - Math.PI * 10 * 5) < 1e-4);
+
+		const radius = circleRadiusMm([0, 0], [0, 10]);
+		assert.equal(radius, 10.0);
+
+		// ROI statistics
+		const stats = computeRoiStats([100, 200, 300, 400, 500]);
+		assert.ok(stats !== null);
+		assert.equal(stats.count, 5);
+		assert.equal(stats.mean, 300);
+		assert.equal(stats.min, 100);
+		assert.equal(stats.max, 500);
+		assert.ok(Math.abs(stats.stdDev - 141.4) < 0.2);
+
+		// Clinical localized readouts
+		assert.equal(formatDistanceRu(12.4), "12.4 мм");
+		assert.equal(formatAngleRu(45.2), "45.2°");
+		assert.equal(formatAreaRu(82.36), "82.4 мм²");
+		assert.equal(formatDimensions2DRu(10.2, 8.5), "10.2 × 8.5 мм");
+		assert.equal(formatDensityRu(850), "850 HU");
+		assert.equal(formatDensityRu(NaN), "— HU");
+	});
+
+	it("14. Validates canonical implant catalogs (Nobel, Straumann, Osstem, Dentium) and platform color coding", () => {
+		const allSystems = getAllImplantSystems();
+		assert.ok(allSystems.length >= 4);
+
+		// Nobel Biocare specification
+		const nobel = getImplantSystem("nobel");
+		assert.equal(nobel.brand, "Nobel Biocare");
+		assert.equal(nobel.line, "NobelActive");
+		assert.ok(nobel.diameters.includes(3.5));
+		assert.ok(nobel.diameters.includes(4.3));
+		assert.ok(nobel.lengths.includes(11.5));
+
+		const nobelNP = getPlatformForDiameter("nobel", 3.5);
+		assert.equal(nobelNP.code, "NP");
+		assert.equal(nobelNP.hexColor, "#e11d48");
+
+		const nobelRP = getPlatformForDiameter("nobel", 4.3);
+		assert.equal(nobelRP.code, "RP");
+		assert.equal(nobelRP.hexColor, "#f59e0b");
+
+		// Straumann specification
+		const straumann = getImplantSystem("straumann");
+		assert.equal(straumann.brand, "Straumann");
+		const straumannNC = getPlatformForDiameter("straumann", 3.5);
+		assert.equal(straumannNC.code, "NC");
+		const straumannRC = getPlatformForDiameter("straumann", 4.0);
+		assert.equal(straumannRC.code, "RC");
+		assert.equal(straumannRC.hexColor, "#a855f7");
+
+		// Osstem specification
+		const osstem = getImplantSystem("osstem");
+		assert.equal(osstem.brand, "Osstem");
+		assert.equal(osstem.sleeveDiameterMm, 5.0);
+		const osstemMini = getPlatformForDiameter("osstem", 3.5);
+		assert.equal(osstemMini.code, "Mini");
+		const osstemReg = getPlatformForDiameter("osstem", 4.0);
+		assert.equal(osstemReg.code, "Regular");
+		assert.equal(osstemReg.hexColor, "#16a34a");
+
+		// Dentium specification
+		const dentium = getImplantSystem("dentium");
+		assert.equal(dentium.brand, "Dentium");
+		const dentiumReg = getPlatformForDiameter("dentium", 4.3);
+		assert.equal(dentiumReg.code, "Regular");
+
+		// Dimension validation & normalization
+		const validCheck = validateImplantDimensions("osstem", 4.0, 10.0);
+		assert.equal(validCheck.valid, true);
+		assert.equal(validCheck.normalizedDiameter, 4.0);
+		assert.equal(validCheck.normalizedLength, 10.0);
+		assert.equal(validCheck.platform.code, "Regular");
+
+		// Out-of-catalog dimension normalization (e.g. non-standard Ø4.1, length 9.6)
+		const invalidCheck = validateImplantDimensions("osstem", 4.1, 9.6);
+		assert.equal(invalidCheck.valid, false);
+		assert.equal(invalidCheck.normalizedDiameter, 4.0);
+		assert.equal(invalidCheck.normalizedLength, 10.0);
+
+		// Clinical label formatting
+		const osstemLabel = formatImplantSpecRu("osstem", 4.0, 10.0);
+		assert.ok(osstemLabel.includes("Osstem"));
+		assert.ok(osstemLabel.includes("Ø4.0 × 10.0 мм"));
+		assert.ok(osstemLabel.includes("Regular"));
+
+		const nobelLabel = formatImplantSpecRu("nobel", 4.3, 11.5);
+		assert.ok(nobelLabel.includes("Nobel Biocare"));
+		assert.ok(nobelLabel.includes("Ø4.3 × 11.5 мм"));
+		assert.ok(nobelLabel.includes("RP"));
 	});
 });
