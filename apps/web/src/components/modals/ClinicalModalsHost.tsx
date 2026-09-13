@@ -2,23 +2,20 @@ import { DiagnosisSelector } from "../clinical/DiagnosisSelector";
 import { DentalMedicalCard043uForm } from "../documents/forms/DentalMedicalCard043uForm";
 import { PediatricToothChart } from "../odontogram/PediatricToothChart";
 import { ToothStatusPalette } from "../odontogram/ToothStatusPalette";
-import { PerioArchGrid } from "../perio/PerioArchGrid";
+import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import { PatientAnamnesisModal } from "../patients/PatientAnamnesisModal";
 import { PrescriptionsTab } from "../prescriptions/PrescriptionsTab";
-import { DoctorDesktopHeader as VisitDoctorDesktopHeader } from "../visit/DoctorDesktopHeader";
 import { ClinicalProtocolPresets } from "../clinical/ClinicalProtocolPresets";
 import { PostOpCareSheetModal } from "../clinical/PostOpCareSheetModal";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { BoneQualityPanel } from "../dicom/BoneQualityPanel";
 import { EndoQuickProtocolsBar } from "../endo/EndoQuickProtocolsBar";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
-import { OrthodonticStudioModal } from "../orthodontics/OrthodonticStudioModal";
+import { OrthodonticVisitProtocolWidget } from "../orthodontics/OrthodonticVisitProtocolWidget";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtocolWidget";
-import { PerioProfileStrip } from "../perio/PerioProfileStrip";
 import { RadiationDoseSheetModal } from "../radiology/doseSheet/RadiationDoseSheetModal";
-import { AutoclaveCycleModal } from "../sanpin/autoclave/AutoclaveCycleModal";
-import { TreatmentPlanModal } from "../treatment-plans/TreatmentPlanModal";
+import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VisitTimer } from "../visit/VisitTimer";
 import { VisitEndoProtocolWidget } from "../visit/endo/VisitEndoProtocolWidget";
 import { VisitTherapyProtocolWidget } from "../visit/therapy/VisitTherapyProtocolWidget";
@@ -29,6 +26,7 @@ import { VisitTherapyProtocolWidget } from "../visit/therapy/VisitTherapyProtoco
  */
 
 import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { PediatricMixedDentitionModal } from "../odontogram/PediatricMixedDentitionModal";
@@ -63,7 +61,6 @@ import { SurgeryCockpitModal } from "../surgery/SurgeryCockpitModal";
 import { SurgeryProtocolPanel } from "../surgery/SurgeryProtocolPanel";
 import { SurgeryVisitCockpit } from "../surgery/SurgeryVisitCockpit";
 import { VisitSurgeryProtocolTab } from "../visit/surgery/VisitSurgeryProtocolTab";
-import { AnesthesiaAspirationJournalModal } from "../visit/anesthesia/AnesthesiaAspirationJournalModal";
 import { NurseCarpuleDisposalModal } from "../inventory/NurseCarpuleDisposalModal";
 import { WarrantyPassportModal } from "../warranty/WarrantyPassportModal";
 import { PatientMemoPrintModal } from "../visit/PatientMemoPrintModal";
@@ -144,10 +141,9 @@ export const ClinicalModalsHost: React.FC = () => {
 			{activeModal === "before_after" && (
 				<BeforeAfterComparisonView beforePhotoUrl="" afterPhotoUrl=""  {...({} as any)} />
 			)}
-			{activeModal === "autoclave_cycle" && (
-				<AutoclaveCycleModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "autoclave_log257" && (
+			{(activeModal === "autoclave_cycle" ||
+				activeModal === "autoclave_log257" ||
+				activeModal === "autoclave_journal") && (
 				<AutoclaveLog257Modal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "kraft_barcode" && (
@@ -157,13 +153,13 @@ export const ClinicalModalsHost: React.FC = () => {
 				<MedicalWasteJournalModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "sterilization_journal" && (
-				<AutoclaveCycleModal isOpen={true} onClose={close} />
+				<AutoclaveLog257Modal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "sterilization_studio" && (
 				<KraftPackageBarcodeModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "insurance_preauth" && (
-				<DmsGuaranteeLetterModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DmsGuaranteeLetterModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "plan_comparator" && (
 				<TreatmentPlanComparatorModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -194,17 +190,44 @@ export const ClinicalModalsHost: React.FC = () => {
 			{activeModal === "chairside_consent" && (
 				<ChairsideTabletConsentModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "anesthesia_protocol" && (
-				<AnesthesiaQuickBar {...({} as any)} />
-			)}
-			{activeModal === "anesthesia_safety_hub" && (
-				<AnesthesiaQuickBar {...({} as any)} />
-			)}
-			{activeModal === "anesthesia_quick_bar" && (
-				<AnesthesiaQuickBar {...({} as any)} />
-			)}
-			{activeModal === "tooth_anesthesia_calc" && (
-				<AnesthesiaQuickBar {...({} as any)} />
+			{(activeModal === "anesthesia_aspiration" ||
+				activeModal === "anesthesia_protocol" ||
+				activeModal === "anesthesia_safety_hub" ||
+				activeModal === "anesthesia_quick_bar" ||
+				activeModal === "anesthesia_dosage" ||
+				activeModal === "anesthesia_dosage_calculator" ||
+				activeModal === "anesthesia_protocol_section" ||
+				activeModal === "tooth_anesthesia_calc") && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="anesthesia-quick-bar-modal-container"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) close();
+					}}
+				>
+					<div className="relative w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-6 text-slate-100">
+						<div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-700">
+							<h3 className="text-base font-bold text-slate-100">
+								Анестезия и расчет карпул (канонический пульт)
+							</h3>
+							<button
+								type="button"
+								onClick={close}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors flex items-center justify-center"
+								aria-label="Закрыть"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<AnesthesiaQuickBar
+							patientWeightKg={70}
+							targetToothNumberFdi={String(activeTooth)}
+							onApplyAnesthesia={() => close()}
+						/>
+					</div>
+				</div>
 			)}
 			{activeModal === "emergency_anaphylaxis" && (
 				<EmergencyRescueModal
@@ -213,10 +236,10 @@ export const ClinicalModalsHost: React.FC = () => {
 					initialPatientName={patientName}
 					doctorFullName={doctorFullName}
 					defaultScenarioId="anaphylactic_shock"
-				 {...({} as any)} />
+				/>
 			)}
 			{activeModal === "emergency_rescue" && (
-				<EmergencyRescueModal isOpen={true} onClose={close}  {...({} as any)} />
+				<EmergencyRescueModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "imaging" && (
 				<DicomViewerModal
@@ -224,25 +247,25 @@ export const ClinicalModalsHost: React.FC = () => {
 					onClose={close}
 					patientName={patientName}
 					toothFdiCode={String(activeTooth)}
-				 {...({} as any)} />
+				/>
 			)}
 			{activeModal === "dicom_viewer" && (
-				<DicomViewerModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DicomViewerModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "dicom_viewport" && (
-				<DicomViewport  {...({} as any)} />
+				<DicomViewport {...({} as any)} />
 			)}
 			{activeModal === "rvg_capture" && (
-				<DirectRvgCaptureModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DirectRvgCaptureModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "hot_folder" && (
-				<HotFolderIntakeModal isOpen={true} onClose={close}  {...({} as any)} />
+				<HotFolderIntakeModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "radiology_referral" && (
-				<RadiologyReferralModal isOpen={true} onClose={close}  {...({} as any)} />
+				<RadiologyReferralModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "radiology_viewer" && (
-				<DicomViewerModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DicomViewerModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "cbct_3d_studio" && (
 				<CbctMprImplantStudioModal isOpen={true} onClose={close} />
@@ -289,14 +312,6 @@ export const ClinicalModalsHost: React.FC = () => {
 					activeTooth={activeTooth}
 				 {...({} as any)} />
 			)}
-			{activeModal === "anesthesia_aspiration" && (
-				<AnesthesiaAspirationJournalModal
-					isOpen={true}
-					onClose={close}
-					initialPatientFullName={patientName}
-					initialToothNumber={String(activeTooth)}
-				 {...({} as any)} />
-			)}
 			{activeModal === "nurse_carpule_disposal" && (
 				<NurseCarpuleDisposalModal
 					isOpen={true}
@@ -330,10 +345,6 @@ export const ClinicalModalsHost: React.FC = () => {
 			{activeModal === "form_043_print" && (
 				<Form043PrintModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-		
-			{(activeModal === "anesthesia_dosage" || activeModal === "anesthesia_dosage_calculator") && (
-				<AnesthesiaQuickBar patientWeightKg={70} {...({} as any)} />
-			)}
 			{activeModal === "clinical_protocol_presets" && (
 				<ClinicalProtocolPresets {...({} as any)} />
 			)}
@@ -356,7 +367,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				</>
 			)}
 			{activeModal === "orthodontic_studio" && (
-				<OrthodonticStudioModal isOpen={true} onClose={close}  {...({} as any)} />
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={close} patientId={patientId} patientName={patientName} {...({} as any)} />
 			)}
 			{activeModal === "orthopedics_chairside" && (
 				<OrthopedicsChairsidePanel  {...({} as any)} />
@@ -365,7 +376,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<VisitPediatricProtocolWidget  {...({} as any)} />
 			)}
 			{activeModal === "perio_profile" && (
-				<PerioProfileStrip  {...({} as any)} />
+				<PeriodontogramChart patientId={patientId} patientName={patientName} {...({} as any)} />
 			)}
 			{activeModal === "radiology_module" && (
 				<RadiologyReferralModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -374,10 +385,39 @@ export const ClinicalModalsHost: React.FC = () => {
 				<RadiationDoseSheetModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "sterilization_autoclave_log" && (
-				<AutoclaveCycleModal isOpen={true} onClose={close}  {...({} as any)} />
+				<AutoclaveLog257Modal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "treatment_plan_modal" && (
-				<TreatmentPlanModal isOpen={true} onClose={close}  {...({} as any)} />
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="treatment-plan-module-modal-container"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) close();
+					}}
+				>
+					<div className="relative w-full max-w-6xl max-h-[90vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-6 text-slate-100 overflow-y-auto">
+						<div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-700">
+							<h3 className="text-base font-bold text-slate-100">
+								План лечения
+							</h3>
+							<button
+								type="button"
+								onClick={close}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors flex items-center justify-center"
+								aria-label="Закрыть"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<TreatmentPlanModule
+							patientId={patientId}
+							patientName={patientName}
+							teethData={[]}
+						/>
+					</div>
+				</div>
 			)}
 			{activeModal === "visit_timer" && (
 				<VisitTimer  {...({} as any)} />
@@ -401,19 +441,13 @@ export const ClinicalModalsHost: React.FC = () => {
 				<ToothStatusPalette selectedTooth={16}  {...({} as any)} />
 			)}
 			{activeModal === "perio_arch_grid" && (
-				<PerioArchGrid arch="upper" teeth={[]}  {...({} as any)} />
+				<PeriodontogramChart patientId={patientId} patientName={patientName} {...({} as any)} />
 			)}
 			{activeModal === "patient_detail_modal" && (
 				<PatientAnamnesisModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "prescriptions_tab" && (
 				<PrescriptionsTab  {...({} as any)} />
-			)}
-			{activeModal === "anesthesia_protocol_section" && (
-				<AnesthesiaQuickBar  {...({} as any)} />
-			)}
-			{activeModal === "visit_doctor_desktop_header" && (
-				<VisitDoctorDesktopHeader  {...({} as any)} />
 			)}
 		</>
 	);

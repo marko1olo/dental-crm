@@ -1,21 +1,10 @@
 /**
- * perioProfileStrip.test.tsx — Тесты анатомического профиля пародонтальных карманов
- * PerioProfileStrip, скоростной таблицы ввода PerioArchGrid и математики perioProfileMath.
- * (Мандаты 8a-8q, Supreme Law, THE HAMMER).
+ * perioProfileStrip.test.tsx — Тесты анатомической геометрии пародонтальных карманов
+ * и математики perioProfileMath (Мандаты 8a-8q, Supreme Law, THE HAMMER).
  */
 
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
-import React from "react";
-import { renderToString } from "react-dom/server";
-import {
-	createDefaultPerioTeeth,
-	type FurcationGrade,
-	type MobilityGrade,
-	PERIO_LOWER_ARCH_TEETH,
-	PERIO_UPPER_ARCH_TEETH,
-	type PerioToothRecord,
-} from "@dental/shared";
 import {
 	buildBandPolygonPath,
 	buildGridlines,
@@ -30,8 +19,6 @@ import {
 	siteX,
 	TOOTH_LATERAL_GEOMETRIES,
 } from "../perioProfileMath";
-import { PerioProfileStrip } from "../PerioProfileStrip";
-import { PerioArchGrid } from "../PerioArchGrid";
 
 describe("1. perioProfileMath: геометрические расчеты профиля карманов", () => {
 	test("1.1. getStripDirection: корректные направления для челюстей и поверхностей", () => {
@@ -175,140 +162,3 @@ describe("1. perioProfileMath: геометрические расчеты пр�
 	});
 });
 
-describe("2. PerioProfileStrip: SVG компонент визуализации карманов", () => {
-	const mockTeeth: PerioToothRecord[] = PERIO_UPPER_ARCH_TEETH.map((num, i) => ({
-		toothNumber: num,
-		isMissing: num === 18, // 18 зуб удален
-		isImplant: num === 14, // 14 зуб — имплантат
-		mobility: (num === 16 ? 1 : 0) as 0 | 1 | 2 | 3,
-		furcation: 0 as 0 | 1 | 2 | 3,
-		distoBuccal: { probingDepthMm: i % 2 === 0 ? 3 : 5, gingivalMarginMm: 0, bleedingOnProbing: i % 3 === 0, plaque: false, suppuration: false, calculus: false },
-		midBuccal: { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
-		mesioBuccal: { probingDepthMm: 4, gingivalMarginMm: 1, bleedingOnProbing: true, plaque: false, suppuration: false, calculus: false },
-		distoLingual: { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
-		midLingual: { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
-		mesioLingual: { probingDepthMm: 3, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
-	}));
-
-	test("2.1. Рендеринг SVG с фиксированной высотой (120-140px) и нулевым CLS", () => {
-		const html = renderToString(
-			<PerioProfileStrip
-				teeth={mockTeeth}
-				arch="upper"
-				aspect="buccal"
-				height={130}
-				columnWidth={60}
-			/>
-		);
-
-		// Габариты и нулевой сдвиг макета (CLS)
-		assert.ok(html.includes('height:130px') || html.includes('height="130"'));
-		assert.ok(html.includes('viewBox="0 0 960 130"'), "viewBox должен быть 960x130 (16 зубов * 60px)");
-	});
-
-	test("2.2. Наличие миллиметровой сетки и базовой линии 0 мм (CEJ)", () => {
-		const html = renderToString(
-			<PerioProfileStrip teeth={mockTeeth} arch="upper" aspect="buccal" />
-		);
-
-		assert.ok(html.includes("perio-grid-layer"), "Слой сетки должен присутствовать");
-		assert.ok(html.includes("0 (CEJ)"), "Подпись CEJ должна присутствовать");
-		assert.ok(html.includes("5 mm"), "Подпись 5 мм должна присутствовать");
-		assert.ok(html.includes("10 mm"), "Подпись 10 мм должна присутствовать");
-		assert.ok(html.includes("15 mm"), "Подпись 15 мм должна присутствовать");
-	});
-
-	test("2.3. Наличие полупрозрачного кармана bandPath с var(--danger) и альфой 0.25", () => {
-		const html = renderToString(
-			<PerioProfileStrip teeth={mockTeeth} arch="upper" aspect="buccal" />
-		);
-
-		assert.ok(html.includes("perio-pocket-band"), "Класс perio-pocket-band должен присутствовать");
-		assert.ok(html.includes('fill="var(--danger,#ef4444)"'), "Заливка кармана токеном var(--danger)");
-		assert.ok(html.includes('fill-opacity="0.25"'), "Альфа кармана строго 0.25");
-	});
-
-	test("2.4. Наличие синей линии края десны (GM) и красной линии дна карманов (PD)", () => {
-		const html = renderToString(
-			<PerioProfileStrip teeth={mockTeeth} arch="upper" aspect="buccal" />
-		);
-
-		assert.ok(html.includes("perio-gm-line"), "Линия GM должна присутствовать");
-		assert.ok(html.includes("perio-pd-line"), "Линия PD должна присутствовать");
-		assert.ok(html.includes('stroke="var(--primary,#0284c7)"'), "GM линия окрашена в синий");
-		assert.ok(html.includes('stroke="var(--danger,#ef4444)"'), "PD линия окрашена в красный");
-	});
-
-	test("2.5. Рендеринг имплантата с витками резьбы и отсутствующего зуба", () => {
-		const html = renderToString(
-			<PerioProfileStrip teeth={mockTeeth} arch="upper" aspect="buccal" />
-		);
-
-		assert.ok(html.includes("implant-screw"), "Тело имплантата с резьбой должно присутствовать для зуба 14");
-		assert.ok(html.includes("stroke-dasharray"), "Отсутствующий зуб 18 должен рендериться пунктиром");
-	});
-
-	test("2.6. Святость медицинских бланков: ноль мультяшных эмодзи (Мандат 8d)", () => {
-		const html = renderToString(
-			<PerioProfileStrip teeth={mockTeeth} arch="upper" aspect="buccal" />
-		);
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		assert.ok(!emojiRegex.test(html), "Компонент PerioProfileStrip не должен содержать мультяшных эмодзи");
-	});
-});
-
-describe("3. PerioArchGrid: скоростная таблица ввода и 1-клик пресеты", () => {
-	const defaultTeeth = createDefaultPerioTeeth(2);
-
-	test("3.1. Рендеринг таблицы со всеми 16 зубами дуги и колонками", () => {
-		const html = renderToString(
-			<PerioArchGrid teeth={defaultTeeth} arch="upper" />
-		);
-
-		assert.ok(html.includes("perio-arch-table"), "Таблица perio-arch-table должна рендериться");
-		// Проверяем наличие всех 16 номеров зубов
-		for (const num of PERIO_UPPER_ARCH_TEETH) {
-			assert.ok(html.includes(`>${num}<`), `Зуб ${num} должен быть в шапке`);
-		}
-	});
-
-	test("3.2. Наличие кнопки 1-клик пресета «Физиологическая норма» (Мандат 8e)", () => {
-		const html = renderToString(
-			<PerioArchGrid teeth={defaultTeeth} arch="upper" />
-		);
-
-		assert.ok(html.includes("Физиологическая норма"), "Кнопка «Физиологическая норма» должна быть на экране");
-		assert.ok(!html.includes('disabled="" title="Установить норму'), "Кнопка нормы не должна быть disabled");
-	});
-
-	test("3.3. Наличие числовых полей ввода зондирования (PD) и края десны (GM)", () => {
-		const html = renderToString(
-			<PerioArchGrid teeth={defaultTeeth} arch="upper" />
-		);
-
-		assert.ok(html.includes('type="number"'), "Должны быть input type=number");
-		assert.ok(html.includes("Зондирование (PD)"), "Метка Зондирование (PD) присутствует");
-		assert.ok(html.includes("Край десны (GM)"), "Метка Край десны (GM) присутствует");
-		assert.ok(html.includes("Кровоточивость (BOP)"), "Метка Кровоточивость (BOP) присутствует");
-		assert.ok(html.includes("Налёт (PLQ)"), "Метка Налёт (PLQ) присутствует");
-	});
-
-	test("3.4. Рендеринг нижней челюсти (48..38)", () => {
-		const html = renderToString(
-			<PerioArchGrid teeth={defaultTeeth} arch="lower" />
-		);
-
-		assert.ok(html.includes("Нижняя челюсть (48..38)"));
-		for (const num of PERIO_LOWER_ARCH_TEETH) {
-			assert.ok(html.includes(`>${num}<`), `Зуб ${num} должен быть в шапке нижней челюсти`);
-		}
-	});
-
-	test("3.5. Отсутствие эмодзи в интерфейсе (Мандат 8d)", () => {
-		const html = renderToString(
-			<PerioArchGrid teeth={defaultTeeth} arch="upper" />
-		);
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		assert.ok(!emojiRegex.test(html), "Компонент PerioArchGrid не должен содержать мультяшных эмодзи");
-	});
-});

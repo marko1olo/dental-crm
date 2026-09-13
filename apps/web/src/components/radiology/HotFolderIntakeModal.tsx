@@ -1,5 +1,4 @@
-import type React from "react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	Activity,
@@ -41,8 +40,7 @@ import {
 	FDI_TOOTH_NAMES,
 	formatRadiationDose,
 } from "./radiologyMath";
-import { SAMPLE_PATIENT_RVG_URL } from "./types";
-import type { RadiologyStudy } from "./types";
+import { SAMPLE_PATIENT_RVG_URL, type RadiologyStudy } from "./types";
 import "./hotFolderIntake.css";
 
 export type HotFolderSource =
@@ -625,7 +623,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 	const doseInfo = formatRadiationDose(activeItem?.detectedModality === "optg_panoramic" ? 18.0 : 3.0);
 
-	return createPortal(
+	const modalContent = (
 		<div
 			className="hfi-modal-overlay"
 			role="dialog"
@@ -1244,7 +1242,8 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 					</aside>
 				</div>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

@@ -5851,6 +5851,60 @@
   - Single-Compiler Gate защищен per Mandate 8t;
   - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
 
+---
+
+## 347. Волна 198: Ликвидация 17 параллельных дублирующих компонентов SanPin, перио, ортодонтии, 1С, PnL и симуляторов аспирации (-10 362 LOC), снижение потолка ширм с 76 до 56 (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (удаление 17 записей из DEMOUNTED_MODAL_SHIRMS_BACKLOG, снижение потолка DEMOUNTED_MODAL_SHIRMS_CEILING с 76 до 56)
+  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx` (канонический SSOT электронного журнала стерилизации Форма 257/у СанПиН)
+  - `apps/web/src/components/sanpin/kraft/KraftPackageBarcodeModal.tsx` (канонический SSOT маркировки и крафт-пакетов стерилизации)
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx` (канонический SSOT пародонтограммы без симуляции 192 точек)
+  - `apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx` (канонический SSOT фотопротокола ортодонтии)
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx` (канонический SSOT кассы 54-ФЗ и интеграции CommerceML 2.09)
+  - `apps/web/src/components/analytics/DirectorExecutiveDashboard.tsx` (канонический SSOT дашборда руководителя и отчета PnL)
+  - `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx` (канонический SSOT входящих звонков телефонии)
+  - `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx` (канонический SSOT 1-клик протоколов анестезии у кресла и отрицательной аспирации)
+  - `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx` (канонический SSOT графика сменности врачей)
+  - `apps/web/src/VisitView.tsx` (канонический 1-строчный 32–36px заголовок врача и рабочее место приёма)
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx` (канонический SSOT комплексных планов лечения)
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+* **Архитектурные механизмы**:
+  - **Ликвидация 17 параллельных дублирующих компонентов (-10 362 LOC) по Вселенскому анти-блоат догмату (Мандат 8s)**:
+    * В соответствии с Законом Единого Неделимого Авторитета (Мандат 8s: «Для КАЖДОЙ задачи — СТРОГО ОДИН канонический мастер-компонент, роут и сервис. При обнаружении исторических дублей — РОВНО ОДИН лучший эталон (The Best of Breed) впитывает функционал, а остальные немедленно уничтожаются или схлопываются в прозрачные фасады») ликвидированы 17 параллельных дублирующих компонентов в пользу канонических SSOT:
+      1. `AutoclaveCycleModal.tsx` — консолидирован на каноническом электронном журнале стерилизации Форма 257/у СанПиН `components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx` и `components/sanpin/kraft/KraftPackageBarcodeModal.tsx`;
+      2. `KraftBarcodeLabelSheet.tsx` — консолидирован на канонической печати этикеток крафт-пакетов и штрихкодирования СанПиН `components/sanpin/kraft/KraftPackageBarcodeModal.tsx`;
+      3. `KraftPackBatchBuilder.tsx` — консолидирован на каноническом мастере формирования партий крафт-пакетов `components/sanpin/kraft/KraftPackageBarcodeModal.tsx`;
+      4. `SanpinJournal257View.tsx` — консолидирован на каноническом электронном журнале стерилизации Форма 257/у СанПиН 3.3686-21 `components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx`;
+      5. `PerioArchGrid.tsx` — консолидирован на канонической интерактивной пародонтограмме `components/perio/PeriodontogramChart.tsx` и `PeriodontalChartingModal.tsx` (1-клик норма, пресеты тяжелого пародонтита без ручного замера 192 точек по Мандату 8k);
+      6. `PerioProfileStrip.tsx` — консолидирован на канонической экспресс-полосе статуса пародонта `components/perio/PeriodontogramChart.tsx`;
+      7. `OrthodonticStudioModal.tsx` — консолидирован на каноническом фотопротоколе ортодонтии `components/diagnostics/OrthodonticPhotoProtocolModal.tsx` и ТРГ-анализе `components/radiology/CephalometricAnalysisModal.tsx`;
+      8. `OrthodonticExaminationCard.tsx` — консолидирован на канонических протоколах визита `components/visit/therapy/VisitTherapyProtocolWidget.tsx`;
+      9. `OneCCommerceMlModal.tsx` — консолидирован на каноническом движке выгрузки 1C CommerceML 2.09 `packages/shared/src/finance/commerceMl209.ts` и кассе 54-ФЗ `components/finance/FiscalReceipt54FzModal.tsx`;
+      10. `ClinicalPnlHubModal.tsx` — консолидирован на каноническом дашборде PnL руководителя `components/analytics/DirectorExecutiveDashboard.tsx` и `ExecutiveOverviewTab.tsx`;
+      11. `IncomingCallPopupModal.tsx` — консолидирован на каноническом виджете входящего звонка телефонии `components/telephony/TelephonyFloatingWidget.tsx` и `IncomingCallPopup.tsx`;
+      12. `AnesthesiaAspirationJournalModal.tsx` — консолидирован на канонической экспресс-панели анестезии `components/anesthesia/AnesthesiaQuickBar.tsx` (1-клик протоколы инфильтрации/проводниковой анестезии, отрицательная аспирация по СанПиН без псевдонаучных процедурных симуляторов по Мандату 8k);
+      13. `AspirationTestCockpit.tsx` — консолидирован на канонической экспресс-отметке аспирационной пробы в `components/anesthesia/AnesthesiaQuickBar.tsx`;
+      14. `AnesthesiaAnatomyMapWidget.tsx` — консолидирован на анатомических протоколах анестезии `components/anesthesia/AnesthesiaQuickBar.tsx` и модуле `anesthesiaTechniqueMath.ts`;
+      15. `DoctorShiftCockpitModal.tsx` — консолидирован на каноническом графике сменности врачей `components/schedule/roster/DoctorShiftRosterModal.tsx` и `ChairScheduleView.tsx`;
+      16. `DoctorDesktopHeader.tsx` — консолидирован на канонической 1-строчной 32–36px шапке врача в `VisitView.tsx` и `ScheduleFilterStrip.tsx`;
+      17. `TreatmentPlanModal.tsx` — консолидирован на каноническом модуле планов лечения `components/treatment-plans/TreatmentPlanModule.tsx` и презентере `TreatmentPlanPresenterModal.tsx`.
+  - **Снижение потолка бутафорских ширм с 76 до 56 в panelsAreMounted.test.ts (Мандат 8s)**:
+    * Из тестового бэклога `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалены все 17 записей ликвидированных компонентов;
+    * Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен с 76 до 56;
+    * Защищен железный инвариант: бэклог ширм может только сокращаться.
+  - **Клиническая эргономика, автономия врача и защита хоста (Мандаты 8c, 8d, 8e, 8n, 8p, 8t)**:
+    * Вся затронутая функциональность переведена в контекстные экраны (Tier 2/Tier 3) без раздувания DOM и фиктивных монтирований в корне;
+    * Полная автономия врача у кресла: 0 disabled кнопок без причины, 1-клик соматическая и пародонтальная норма, касса 54-ФЗ без обязательного ИНН физлиц (Мандат 8e);
+    * Соблюдение норматива 1 строки тулбара 32–36px (Закон Хика) и правила <=2 кнопок прямого действия (Закон Миллера) на всех канонических экранах;
+    * Полная векторная гигиена: 0 сырых эмодзи в медицинских протоколах, планах лечения и чеках 54-ФЗ.
+* **Верификация**:
+  - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8);
+  - Single-Compiler Gate защищен per Mandate 8t;
+  - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
 
 
 

@@ -6,4 +6,3 @@
 export * from './anesthesiaTechniqueMath';
 export * from './aspirationSafetyEngine';
 export * from './anesthesiaExpressPresets';
-export * from './AnesthesiaAspirationJournalModal';

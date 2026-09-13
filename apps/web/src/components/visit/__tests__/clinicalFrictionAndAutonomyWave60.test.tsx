@@ -29,13 +29,13 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 	const usePatientLogicPath = path.resolve(__dirname, '../../../hooks/domains/usePatientLogic.ts');
 	const visiographAnalyzerPath = path.resolve(__dirname, '../../imaging/VisiographAnalyzer.tsx');
 	const visitDiagnosticsTabPath = path.resolve(__dirname, '../VisitDiagnosticsTab.tsx');
-	const anesthesiaModalPath = path.resolve(__dirname, '../anesthesia/AnesthesiaAspirationJournalModal.tsx');
+	const anesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/AnesthesiaQuickBar.tsx');
 
 	const clinicProfileUtilsCode = fs.readFileSync(clinicProfileUtilsPath, 'utf8');
 	const usePatientLogicCode = fs.readFileSync(usePatientLogicPath, 'utf8');
 	const visiographAnalyzerCode = fs.readFileSync(visiographAnalyzerPath, 'utf8');
 	const visitDiagnosticsTabCode = fs.readFileSync(visitDiagnosticsTabPath, 'utf8');
-	const anesthesiaModalCode = fs.readFileSync(anesthesiaModalPath, 'utf8');
+	const anesthesiaQuickBarCode = fs.readFileSync(anesthesiaQuickBarPath, 'utf8');
 
 	describe('1. Patient Administrative Profile Unblocking (Mandates 8e, 8n)', () => {
 		const baseDraft = patientAdministrativeProfileDraftFromPatient(null);
@@ -174,93 +174,47 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 	});
 
 	describe('3. Anesthesia Friction Reduction & Autonomy (Mandates 8e, 8k, 8n)', () => {
-		it('eliminates fictitious patient defaults from props defaults', () => {
-			assert.strictEqual(
-				anesthesiaModalCode.includes("initialPatientFullName = 'Смирнова Екатерина Васильевна'"),
-				false,
-				'AnesthesiaAspirationJournalModal must NOT default to fake patient Smirnova',
-			);
-			assert.strictEqual(
-				anesthesiaModalCode.includes("initialMedCardNumber = '043/у-2026/891'"),
-				false,
-				'AnesthesiaAspirationJournalModal must NOT default to fake med card number',
-			);
-			assert.strictEqual(
-				anesthesiaModalCode.includes("initialToothNumber = '46'"),
-				false,
-				'AnesthesiaAspirationJournalModal must NOT default to tooth 46',
-			);
-		});
-
-		it('implements 1-click standard norm preset (Articaine 1:200 000, 1.7 ml, negative aspiration)', () => {
+		it('implements 1-click standard norm preset and safety calculation', () => {
 			assert.ok(
-				ANESTHETIC_DRUGS_CATALOG.articaine_1_200k,
-				'Catalog must define articaine_1_200k drug key',
+				anesthesiaQuickBarCode.includes('STANDARD_ANESTHESIA_NORM_PRESET_RU'),
+				'AnesthesiaQuickBar must import STANDARD_ANESTHESIA_NORM_PRESET_RU',
 			);
 			assert.ok(
-				anesthesiaModalCode.includes('handleApplyStandardNormPreset'),
-				'AnesthesiaAspirationJournalModal must implement handleApplyStandardNormPreset',
-			);
-			assert.ok(
-				anesthesiaModalCode.includes('data-testid="btn-anesthesia-standard-norm-preset"'),
-				'AnesthesiaAspirationJournalModal must render btn-anesthesia-standard-norm-preset',
-			);
-			assert.ok(
-				anesthesiaModalCode.includes("setDrugKey('articaine_1_200k')"),
-				'Standard norm preset must set drug key to articaine_1_200k',
-			);
-			assert.ok(
-				anesthesiaModalCode.includes("setAspirationStatus('negative_safe')"),
-				'Standard norm preset must set aspirationStatus to negative_safe',
-			);
-		});
-
-		it('removes disabled={isLocked} blocking on diary insert and quick norm apply (Doctor Autonomy Mandate 8e)', () => {
-			assert.strictEqual(
-				anesthesiaModalCode.includes('disabled={isLocked}'),
-				false,
-				'AnesthesiaAspirationJournalModal must NOT contain disabled={isLocked}',
-			);
-			assert.ok(
-				anesthesiaModalCode.includes('handleApplyToDiary'),
-				'handleApplyToDiary must remain operational for unblocked saving to Form 043/u',
-			);
-			assert.ok(
-				anesthesiaModalCode.includes('handleApplyQuickNormAndClose'),
-				'handleApplyQuickNormAndClose must remain operational for unblocked 1-click apply',
+				anesthesiaQuickBarCode.includes('data-testid="anesthesia-dose-norm-preset"'),
+				'AnesthesiaQuickBar must render anesthesia-dose-norm-preset',
 			);
 		});
 
 		it('strictly complies with design tokens (var(--paper), var(--line), var(--ink)) with zero --border', () => {
 			assert.strictEqual(
-				anesthesiaModalCode.includes('var(--border'),
+				anesthesiaQuickBarCode.includes('var(--border'),
 				false,
-				'AnesthesiaAspirationJournalModal must NOT use undefined var(--border)',
+				'AnesthesiaQuickBar must NOT use undefined var(--border)',
 			);
 			assert.ok(
-				anesthesiaModalCode.includes('var(--paper'),
-				'AnesthesiaAspirationJournalModal must use var(--paper)',
+				anesthesiaQuickBarCode.includes('var(--paper)'),
+				'AnesthesiaQuickBar must use var(--paper)',
 			);
 			assert.ok(
-				anesthesiaModalCode.includes('var(--line'),
-				'AnesthesiaAspirationJournalModal must use var(--line)',
+				anesthesiaQuickBarCode.includes('var(--line)'),
+				'AnesthesiaQuickBar must use var(--line)',
 			);
 		});
 
 		it('complies with 44x44px touch targets and zero cartoon emojis (Mandates 8c, 8d UI Sin #7)', () => {
 			// Touch targets
 			assert.ok(
-				anesthesiaModalCode.includes('min-h-[44px]'),
+				anesthesiaQuickBarCode.includes('min-h-[44px]') || anesthesiaQuickBarCode.includes('min-h-[48px]'),
 				'Interactive buttons must enforce min-h-[44px] touch target',
 			);
 
 			// Zero emojis in JSX markup
-			const jsxWithoutComments = anesthesiaModalCode.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+			const jsxWithoutComments = anesthesiaQuickBarCode.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
 			const emojiPattern = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
 			assert.strictEqual(
 				emojiPattern.test(jsxWithoutComments),
 				false,
-				'AnesthesiaAspirationJournalModal JSX must contain ZERO cartoon emojis (Mandate 8d Sin #7)',
+				'AnesthesiaQuickBar JSX must contain ZERO cartoon emojis (Mandate 8d Sin #7)',
 			);
 		});
 	});

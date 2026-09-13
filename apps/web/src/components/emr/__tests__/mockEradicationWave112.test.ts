@@ -16,7 +16,6 @@ describe("Wave 112 - Total Liquidation of Synthetic Character Mocks and Demo OTP
 		"apps/web/src/components/radiology/implantSafetyEngine.ts",
 		"apps/web/src/components/security/auditTrailEngine.ts",
 		"apps/web/src/components/analytics/LostPatientsPanel.tsx",
-		"apps/web/src/components/finance/pnl/ClinicalPnlHubModal.tsx",
 		"apps/web/src/components/finance/pnl/clinicalPnlEngine.ts",
 		"apps/web/src/components/finance/one-c/oneCCommerceMlEngine.ts",
 		"apps/web/src/components/copilot/CopilotGenerativeCards.tsx",
@@ -34,7 +33,6 @@ describe("Wave 112 - Total Liquidation of Synthetic Character Mocks and Demo OTP
 		"apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx",
 		"apps/web/src/components/emr/audit/cmoComplianceHubEngine.ts",
 		"apps/web/src/components/security/auditTrailEngine.ts",
-		"apps/web/src/components/finance/pnl/ClinicalPnlHubModal.tsx",
 		"apps/web/src/components/messaging/omnichannelEngine.ts",
 	];
 

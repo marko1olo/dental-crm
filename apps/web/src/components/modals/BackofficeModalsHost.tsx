@@ -11,7 +11,6 @@ import { PatientCardModal } from "../patients/PatientCardModal";
 import React, { useState, useEffect } from "react";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { Billing1CExportModal } from "../finance/Billing1CExportModal";
-import { OneCCommerceMlModal } from "../finance/one-c/OneCCommerceMlModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
 import { CashRegisterModal } from "../finance/CashRegisterModal";
 import { CashShiftClosingModal } from "../billing/CashShiftClosingModal";
@@ -22,7 +21,7 @@ import { FastCheckoutModal } from "../finance/FastCheckoutModal";
 import { SberPosTerminalModal } from "../payments/sberPos/SberPosTerminalModal";
 import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal";
 import { PatientOmnichannelHubModal } from "../messaging/PatientOmnichannelHubModal";
-import { ClinicalPnlHubModal } from "../finance/pnl/ClinicalPnlHubModal";
+import { ManagerialPnlDashboardModal } from "../finance/pnl/ManagerialPnlDashboardModal";
 import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
@@ -34,8 +33,6 @@ import { PatientCabinetModal, PatientOnlineBookingModal } from "../portal";
 import { PatientPortalTimelineModal } from "../portal/timeline/PatientPortalTimelineModal";
 import { PatientRecallsHubModal } from "../recalls/PatientRecallsHubModal";
 import { DoctorMobileShiftModal } from "../doctor-portal";
-import { DoctorShiftCockpitModal } from "../doctor";
-import { DoctorDesktopHeader } from "../visit/DoctorDesktopHeader";
 import { DoctorShiftRosterModal } from "../schedule/roster/DoctorShiftRosterModal";
 import { WarehouseTransferModal } from "../inventory/transfers/WarehouseTransferModal";
 import { ClinicalWriteoffModal } from "../inventory/writeoff/ClinicalWriteoffModal";
@@ -52,7 +49,6 @@ import { AuditTrailHubModal } from "../security/AuditTrailHubModal";
 import { OfflineSyncGuardModal } from "../sync/OfflineSyncGuardModal";
 import { OfflineBackupVaultPanel } from "../settings/OfflineBackupVaultPanel";
 import { VoiceDictationAssistantModal } from "../voice/VoiceDictationAssistantModal";
-import { IncomingCallPopupModal } from "../telephony/IncomingCallPopupModal";
 import { TelephonyFloatingWidget } from "../telephony/TelephonyFloatingWidget";
 import { CbctMprWorkspace } from "../dicom/CbctMprWorkspace";
 import { PanoramicRendererWindow } from "../dicom/PanoramicRendererWindow";
@@ -123,7 +119,9 @@ export const BackofficeModalsHost: React.FC = () => {
 					patientDepositRub={0}
 				 {...({} as any)} />
 			)}
-			{activeModal === "billing_1c_export" && (
+			{(activeModal === "billing_1c_export" ||
+				activeModal === "onec_commerceml" ||
+				activeModal === "one_c_export") && (
 				<Billing1CExportModal
 					isOpen={true}
 					onClose={close}
@@ -133,9 +131,6 @@ export const BackofficeModalsHost: React.FC = () => {
 					patientPhone={patientPhone}
 					doctorName={doctorFullName}
 				 {...({} as any)} />
-			)}
-			{activeModal === "onec_commerceml" && (
-				<OneCCommerceMlModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_billing" && (
 				<PatientBillingModal
@@ -188,8 +183,9 @@ export const BackofficeModalsHost: React.FC = () => {
 			{activeModal === "omnichannel_hub" && (
 				<PatientOmnichannelHubModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "clinical_pnl" && (
-				<ClinicalPnlHubModal isOpen={true} onClose={close}  {...({} as any)} />
+			{(activeModal === "clinical_pnl" ||
+				activeModal === "clinical_pnl_hub") && (
+				<ManagerialPnlDashboardModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "fns_tax_deduction" && (
 				<TaxDeductionCertificateModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -248,14 +244,8 @@ export const BackofficeModalsHost: React.FC = () => {
 			{(activeModal === "patient_recall_manager" || activeModal === "patient_recalls_hub") && (
 				<PatientRecallsHubModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "doctor_mobile_shift" && (
+			{(activeModal === "doctor_mobile_shift" || activeModal === "doctor_shift_cockpit") && (
 				<DoctorMobileShiftModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "doctor_shift_cockpit" && (
-				<DoctorShiftCockpitModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "doctor_desktop_header" && (
-				<DoctorDesktopHeader doctorId={appLogic?.activeDoctor?.id ?? "doc-1"} doctorName={doctorFullName}  {...({} as any)} />
 			)}
 			{activeModal === "doctor_shift_roster" && (
 				<DoctorShiftRosterModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -279,10 +269,10 @@ export const BackofficeModalsHost: React.FC = () => {
 				<ServicePricelistManagerModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "dms_insurance_manager" && (
-				<DmsGuaranteeLetterModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DmsGuaranteeLetterModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "dms_guarantee_letters" && (
-				<DmsGuaranteeLetterModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DmsGuaranteeLetterModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "dms_insurers_hub" && (
 				<div
@@ -428,10 +418,7 @@ export const BackofficeModalsHost: React.FC = () => {
 			{activeModal === "voice_dictation_assistant" && (
 				<VoiceDictationAssistantModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "incoming_call_popup" && (
-				<IncomingCallPopupModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "telephony_floating_widget" && (
+			{(activeModal === "incoming_call_popup" || activeModal === "telephony_floating_widget") && (
 				<TelephonyFloatingWidget  {...({} as any)} />
 			)}
 		

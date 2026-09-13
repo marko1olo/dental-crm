@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { DoctorDesktopHeader } from "../../visit/DoctorDesktopHeader";
+import { DoctorShiftControlBar } from "../../shift/DoctorShiftControlBar";
 import { DoctorMobileShiftModal } from "../DoctorMobileShiftModal";
 import { VisitTimer } from "../../visit/VisitTimer";
 import {
@@ -12,37 +12,33 @@ import {
 } from "@dental/shared";
 
 describe("Doctor Shift Cockpit & Header Integration (THE HAMMER Standards)", () => {
-	it("DoctorDesktopHeader: renders doctor bio, chair, live piece-rate earnings in exact integer kopecks", () => {
+	it("DoctorShiftControlBar: renders shift admission, piece-rate earnings summary without barriers", () => {
 		const html = renderToString(
-			<DoctorDesktopHeader
-				doctorId="doc-1"
-				doctorName="Д-р Смирнов Алексей Петрович"
-				doctorSpecialty="Терапевт-ортопед"
-				chairName="Кресло 1 (Терапия)"
-				shiftDateIso="2026-08-29"
-				appointments={SAMPLE_DOCTOR_SHIFT_APPOINTMENTS}
-				onOpenCockpit={() => {}}
-				onInitiateBatchSign={() => {}}
+			<DoctorShiftControlBar
+				isShiftOpen={true}
+				onToggleShift={() => {}}
+				onOpenPayrollModal={() => {}}
+				shiftStats={{
+					totalAppointments: 8,
+					completedCount: 5,
+					inProgressCount: 1,
+					totalRevenueRub: 45000,
+					doctorCommissionPct: 25,
+					estimatedDoctorPayoutRub: 11250,
+					hasActiveOvertime: false,
+				}}
 			/>,
 		);
 
 		// 1. Verify component mounted and rendered
-		assert.ok(html.includes('data-testid="doctor-desktop-header"'));
-		assert.ok(html.includes("Д-р Смирнов Алексей Петрович"));
-		assert.ok(html.includes("Терапевт-ортопед"));
-		assert.ok(html.includes("Кресло 1 (Терапия)"));
+		assert.ok(html.includes("doctor-shift-control-bar"));
+		assert.ok(html.includes("Рабочая смена врача открыта"));
+		assert.ok(html.includes("Пациенты за смену"));
 
 		// 2. Verify financial metrics block
-		assert.ok(html.includes("Заработано (сделка %)"));
-		assert.ok(html.includes('data-testid="doctor-header-earned-deal"'));
-		assert.ok(html.includes("Выручка:"));
-		assert.ok(html.includes("Вычет ЗТЛ/Мат:"));
+		assert.ok(html.includes("Гонорар врача"));
 
-		// 3. Verify action triggers
-		assert.ok(html.includes('data-testid="doctor-header-cockpit-trigger-btn"'));
-		assert.ok(html.includes("Рабочий стол врача"));
-
-		// 4. Verify no cartoon emojis
+		// 3. Verify no cartoon emojis
 		assert.ok(!html.includes("🔥"));
 		assert.ok(!html.includes("👑"));
 		assert.ok(!html.includes("✨"));
@@ -60,6 +56,7 @@ describe("Doctor Shift Cockpit & Header Integration (THE HAMMER Standards)", () 
 				initialDoctorName="Д-р Смирнов Алексей Петрович"
 				initialDoctorSpecialty="Терапевт-ортопед"
 				initialShiftDateIso="2026-08-29"
+				initialAppointments={SAMPLE_DOCTOR_SHIFT_APPOINTMENTS}
 			/>,
 		);
 

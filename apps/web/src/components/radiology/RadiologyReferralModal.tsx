@@ -19,8 +19,7 @@ import {
 	Target,
 	X,
 } from "lucide-react";
-import type React from "react";
-import { useEffect, useId, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { ADULT_FDI_TEETH, FDI_TOOTH_NAMES, formatRadiationDose } from "./radiologyMath";
 import { RADIOLOGY_MODALITIES } from "./types";
@@ -282,7 +281,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		}
 	};
 
-	return createPortal(
+	const modalContent = (
 		<div
 			id={modalId}
 			className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
@@ -732,7 +731,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 					</div>
 				</footer>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

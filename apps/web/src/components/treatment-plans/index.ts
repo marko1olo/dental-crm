@@ -18,5 +18,4 @@ export * from "./TreatmentPlanModule";
 export * from "./CuratorPlanAssignmentModal";
 export * from "./treatmentPlanBundlesEngine";
 export * from "./ClinicalBundlesPanel";
-export * from "./TreatmentPlanModal";
 export * from "./planPricing";

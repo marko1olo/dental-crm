@@ -6,7 +6,6 @@ import { STANDARD_ANESTHESIA_PRESETS } from "../anesthesiaCatalog";
 import { AnesthesiaQuickBar } from "../AnesthesiaQuickBar";
 import { EmergencyRescueModal } from "../../emergency/EmergencyRescueModal";
 import { OrthodonticVisitProtocolWidget } from "../../orthodontics/OrthodonticVisitProtocolWidget";
-import { OrthodonticStudioModal } from "../../orthodontics/OrthodonticStudioModal";
 
 describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k, 8n)", () => {
 	describe("1. Anesthesia & Emergency Protocols 1-Click Autonomy", () => {
@@ -75,28 +74,6 @@ describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k,
 			assert.ok(
 				html.includes('aria-label="Размер эластиков"'),
 				"Elastic size select must be present",
-			);
-			const selectMatch = html.match(
-				/<select[^>]*aria-label="Размер эластиков"[^>]*>/,
-			);
-			assert.ok(selectMatch, "Select element found");
-			assert.ok(
-				!selectMatch[0].includes("disabled"),
-				"Select must not have disabled attribute",
-			);
-		});
-
-		it("OrthodonticStudioModal elastic size select is not disabled when scheme is none", () => {
-			const html = renderToString(
-				<OrthodonticStudioModal
-					isOpen={true}
-					onClose={() => {}}
-					patientId="pat-102"
-				/>,
-			);
-			assert.ok(
-				html.includes('aria-label="Размер эластиков"'),
-				"Elastic size select must be present in OrthodonticStudioModal",
 			);
 			const selectMatch = html.match(
 				/<select[^>]*aria-label="Размер эластиков"[^>]*>/,

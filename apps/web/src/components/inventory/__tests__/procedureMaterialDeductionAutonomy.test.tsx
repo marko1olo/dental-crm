@@ -21,8 +21,7 @@ import {
 	CANONICAL_WAREHOUSE_PRESETS,
 } from "../index.js";
 import {
-	AutoclaveCycleModal,
-	SanpinJournal257View,
+	AutoclaveLog257Modal,
 	STANDARD_TRAY_OPTIONS,
 	createStandardSterileTrayBarcode,
 	createQuickAutoclaveCycle,
@@ -195,23 +194,19 @@ describe("Sterilization & Autoclave Journal Autonomy (SanPiN 3.3686-21 & Mandate
 		assert.strictEqual(ph.isApproved, true);
 	});
 
-	it("3. AutoclaveCycleModal renders tabs, statutory presets and Form 257/u without emojis", () => {
+	it("3. AutoclaveLog257Modal renders tabs, statutory presets and Form 257/u without emojis", () => {
 		const html = renderToStaticMarkup(
-			createElement(AutoclaveCycleModal, {
+			createElement(AutoclaveLog257Modal, {
 				isOpen: true,
 				onClose: () => {},
-				initialTab: "live_cycle",
+				initialTab: "new_cycle",
 			})
 		);
 
-		assert.ok(html.includes("data-testid=\"autoclave-cycle-modal\""));
-		assert.ok(html.includes("data-testid=\"tab-live-cycle\""));
-		assert.ok(html.includes("data-testid=\"tab-batch-packs\""));
-		assert.ok(html.includes("data-testid=\"tab-label-print\""));
-		assert.ok(html.includes("data-testid=\"tab-journal-257\""));
-		assert.ok(html.includes("btn-confirm-autoclave-batch"));
-		assert.ok(html.includes("Цикл стерилизации (Live)"));
-		assert.ok(html.includes("Журнал Форма 257/у"));
+		assert.ok(html.includes("autoclave-log-modal-container"));
+		assert.ok(html.includes("Новый цикл стерилизации"));
+		assert.ok(html.includes("Реестр Журнала 257/у"));
+		assert.ok(html.includes("Журнал работы стерилизаторов (Форма № 257/у)"));
 		assert.ok(html.includes("СанПиН 3.3686-21"));
 
 		// Anti-Emoji Law: No emojis
@@ -220,22 +215,9 @@ describe("Sterilization & Autoclave Journal Autonomy (SanPiN 3.3686-21 & Mandate
 		assert.ok(!html.includes("🔥"));
 	});
 
-	it("4. SanpinJournal257View renders statutory form 257/u print sheet and stamp", () => {
+	it("4. AutoclaveLog257Modal returns empty markup when isOpen is false", () => {
 		const html = renderToStaticMarkup(
-			createElement(SanpinJournal257View, {
-				entries: [],
-			})
-		);
-
-		assert.ok(html.includes("Журнал контроля работы стерилизаторов (Форма № 257/у)"));
-		assert.ok(html.includes("ЖУРНАЛ РАБОТЫ СТЕРИЛИЗАТОРОВ (ФОРМА № 257/у)"));
-		assert.ok(html.includes("Паровой автоклав (Class B)"));
-		assert.ok(html.includes("Печать журнала (Форма 257/у)"));
-	});
-
-	it("5. AutoclaveCycleModal returns empty markup when isOpen is false", () => {
-		const html = renderToStaticMarkup(
-			createElement(AutoclaveCycleModal, {
+			createElement(AutoclaveLog257Modal, {
 				isOpen: false,
 				onClose: () => {},
 			})

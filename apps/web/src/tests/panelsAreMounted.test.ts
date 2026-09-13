@@ -151,8 +151,8 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	 * Актуальный функционал ростера смонтирован в DoctorShiftRosterModal и ChairScheduleView.
 	 */
 	/*
-	 * OneCCommerceMlModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
-	 * через точку входа #clinical-modals-studio.
+	 * OneCCommerceMlModal УДАЛЁН per Mandate 8s (Wave 198) как параллельный дубликат.
+	 * Канонический SSOT: Billing1CExportModal (смонтирован в OneCExportButton, InvoicesView и BackofficeModalsHost).
 	 */
 	/*
 	 * CashShiftClosingModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
@@ -907,14 +907,11 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/clinical/PostOpCareSheetModal.tsx:PostOpCareSheetModal",
 	"components/cmo/CmoQualityAuditModal.tsx:CmoQualityAuditModal",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
-	"components/doctor/DoctorShiftCockpitModal.tsx:DoctorShiftCockpitModal",
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
 	"components/endo/EndoQuickProtocolsBar.tsx:EndoQuickProtocolsBar",
 	"components/finance/CashRegisterModal.tsx:CashRegisterModal",
 	"components/finance/FamilyWalletModal.tsx:FamilyWalletModal",
 	"components/finance/PatientInstallmentScheduleModal.tsx:PatientInstallmentScheduleModal",
-	"components/finance/one-c/OneCCommerceMlModal.tsx:OneCCommerceMlModal",
-	"components/finance/pnl/ClinicalPnlHubModal.tsx:ClinicalPnlHubModal",
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
 	"components/inventory/WarehouseManagerModal.tsx:WarehouseManagerModal",
@@ -928,13 +925,9 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/odontogram/PediatricToothChart.tsx:PediatricToothChart",
 	"components/odontogram/ToothStatusPalette.tsx:ToothStatusPalette",
 	"components/offline/ClinicalConflictModal.tsx:ClinicalConflictModal",
-	"components/orthodontics/OrthodonticExaminationCard.tsx:OrthodonticExaminationCard",
-	"components/orthodontics/OrthodonticStudioModal.tsx:OrthodonticStudioModal",
 	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
 	"components/patients/transfer/PatientBranchTransferModal.tsx:PatientBranchTransferModal",
 	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
-	"components/perio/PerioArchGrid.tsx:PerioArchGrid",
-	"components/perio/PerioProfileStrip.tsx:PerioProfileStrip",
 	"components/portal/PatientOnlineBookingModal.tsx:PatientOnlineBookingModal",
 	"components/portal/UpcomingVisitCard.tsx:UpcomingVisitCard",
 	"components/portal/selfCheckin/SignaturePadCanvas.tsx:SignaturePadCanvas",
@@ -948,23 +941,13 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
 	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx:RadiationDoseSheetModal",
 	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
-	"components/sanpin/autoclave/AutoclaveCycleModal.tsx:AutoclaveCycleModal",
-	"components/sanpin/autoclave/KraftBarcodeLabelSheet.tsx:KraftBarcodeLabelSheet",
-	"components/sanpin/autoclave/KraftPackBatchBuilder.tsx:KraftPackBatchBuilder",
-	"components/sanpin/autoclave/SanpinJournal257View.tsx:SanpinJournal257View",
 	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
 	"components/surgery/SurgeryCockpitModal.tsx:SurgeryCockpitModal",
 	"components/surgery/SurgeryProtocolPanel.tsx:SurgeryProtocolPanel",
 	"components/surgery/SurgerySafetyChecklist.tsx:SurgerySafetyChecklist",
 	"components/sync/OfflineSyncGuardModal.tsx:OfflineSyncGuardModal",
-	"components/telephony/IncomingCallPopupModal.tsx:IncomingCallPopupModal",
-	"components/treatment-plans/TreatmentPlanModal.tsx:TreatmentPlanModal",
 	"components/treatment-plans/TreatmentPlanRoadmap.tsx:TreatmentPlanRoadmap",
-	"components/visit/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	"components/visit/VisitTimer.tsx:VisitTimer",
-	"components/visit/anesthesia/AnesthesiaAnatomyMapWidget.tsx:AnesthesiaAnatomyMapWidget",
-	"components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx:AnesthesiaAspirationJournalModal",
-	"components/visit/anesthesia/AspirationTestCockpit.tsx:AspirationTestCockpit",
 	"components/visit/endo/VisitEndoProtocolWidget.tsx:VisitEndoProtocolWidget",
 	"components/visit/surgery/VisitSurgeryProtocolTab.tsx:VisitSurgeryProtocolTab",
 	"components/visit/therapy/VisitTherapyProtocolWidget.tsx:VisitTherapyProtocolWidget",
@@ -985,7 +968,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 76;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 56;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

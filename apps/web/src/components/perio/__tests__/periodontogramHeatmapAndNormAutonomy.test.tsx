@@ -40,8 +40,6 @@ import {
 	createDefaultPerioTeeth,
 } from "../perioMath";
 import { PeriodontogramChart } from "../PeriodontogramChart";
-import { PerioArchGrid } from "../PerioArchGrid";
-import { PerioProfileStrip } from "../PerioProfileStrip";
 import type { PerioToothRecord } from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -429,61 +427,6 @@ describe("WAVE 108: DentalPin Calm Heatmap & 1-Click Healthy Gingiva Norm Autono
 				"Must enforce touch target >= 44px for gloved operation",
 			);
 		});
-
-		it("PerioArchGrid renders 1-click norm button and applies physiological norm on click", async () => {
-			const { doc } = setupMockDom();
-			const container = doc.createElement("div");
-			doc.body.appendChild(container);
-
-			let updatedResult: PerioToothRecord[] | null = null;
-			const initialTeeth = createDefaultPerioTeeth(2);
-
-			const root: Root = createRoot(container as unknown as HTMLElement);
-			await act(async () => {
-				root.render(
-					<PerioArchGrid
-						teeth={initialTeeth}
-						arch="upper"
-						onChange={(updated) => {
-							updatedResult = updated;
-						}}
-					/>,
-				);
-			});
-
-			const normBtn = findNodeByTestId(container, "perio-preset-norm-btn");
-			assert.ok(normBtn, "Must render perio-preset-norm-btn in PerioArchGrid");
-
-			await clickNode(normBtn);
-
-			assert.ok(updatedResult, "onChange must be called with updated teeth");
-			assert.strictEqual((updatedResult as PerioToothRecord[]).length, 16);
-
-			for (const tooth of (updatedResult as PerioToothRecord[])) {
-				assert.strictEqual(tooth.distoBuccal?.probingDepthMm, 2);
-				assert.strictEqual(tooth.midBuccal?.probingDepthMm, 2);
-				assert.strictEqual(tooth.mesioBuccal?.probingDepthMm, 2);
-				assert.strictEqual(tooth.distoBuccal?.bleedingOnProbing, false);
-				assert.strictEqual(tooth.distoBuccal?.plaque, false);
-			}
-
-			await act(async () => {
-				root.unmount();
-			});
-		});
-
-		it("PerioProfileStrip renders SVG probe points with probingDepthHex colors", () => {
-			const teeth = createDefaultPerioTeeth(2);
-			const html = renderToString(
-				<PerioProfileStrip teeth={teeth.slice(0, 16)} arch="upper" aspect="buccal" />,
-			);
-
-			// Normal depth (2 mm) maps to #34d399 in DentalPin calm heatmap
-			assert.ok(
-				html.includes("#34d399"),
-				"SVG must render probe depth circles filled with calm heatmap hex color #34d399",
-			);
-		});
 	});
 
 	describe("5. 7 Deadly Sins & Mandate 8d Compliance", () => {
@@ -491,8 +434,6 @@ describe("WAVE 108: DentalPin Calm Heatmap & 1-Click Healthy Gingiva Norm Autono
 			const perioFiles = [
 				"perioHeatmap.ts",
 				"PeriodontogramChart.tsx",
-				"PerioProfileStrip.tsx",
-				"PerioArchGrid.tsx",
 			];
 
 			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
