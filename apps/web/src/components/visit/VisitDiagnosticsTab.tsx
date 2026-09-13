@@ -449,11 +449,11 @@ export function VisitDiagnosticsTab(props?: {
 			) : null}
 
 			{/* Diagnostics Actions Bar */}
-			<div className="flex items-center gap-2 flex-wrap">
+			<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full">
 				<button
 					type="button"
 					onClick={() => setIsCbctModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-teal-300 border border-teal-500/40 cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-teal-300 border border-teal-500/40 cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0"
 					data-testid="btn-open-cbct-studio-modal"
 				>
 					<Activity size={16} className="text-teal-400" />
@@ -462,7 +462,7 @@ export function VisitDiagnosticsTab(props?: {
 				<button
 					type="button"
 					onClick={() => setIsRadiologyModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0"
 					data-testid="btn-open-radiology-referral-modal"
 				>
 					<Scan size={16} />
@@ -471,7 +471,7 @@ export function VisitDiagnosticsTab(props?: {
 				<button
 					type="button"
 					onClick={() => setIsEndoLogModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0"
 					data-testid="btn-open-endo-canal-modal"
 				>
 					<Layers size={16} />
@@ -480,7 +480,7 @@ export function VisitDiagnosticsTab(props?: {
 				<button
 					type="button"
 					onClick={() => setIsDirectRvgModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0"
 					data-testid="btn-open-direct-rvg-modal"
 				>
 					<Camera size={16} />
@@ -489,7 +489,7 @@ export function VisitDiagnosticsTab(props?: {
 				<button
 					type="button"
 					onClick={() => setIsDicomViewerModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-sky-600 hover:bg-sky-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-sky-600 hover:bg-sky-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0"
 					data-testid="btn-open-dicom-viewer-modal"
 				>
 					<ImageIcon size={16} />
@@ -498,7 +498,7 @@ export function VisitDiagnosticsTab(props?: {
 				<button
 					type="button"
 					onClick={() => setIsHotFolderModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-violet-600 hover:bg-violet-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-violet-600 hover:bg-violet-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0"
 					data-testid="btn-open-hot-folder-modal"
 				>
 					<FolderInput size={16} />

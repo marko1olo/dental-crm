@@ -2411,7 +2411,7 @@ export function VisitEmkTab() {
 														updateVisitNoteField("treatmentPlan", appendClinicalText(curr, endoText, "\n\n"));
 														showToast(`Эндо-протокол (Канал ${selectedEndoCanalKey}, ${endoWorkingLengthMm} мм) внесен в карту`, "success", 3000);
 													}}
-													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
+													className="min-h-[44px] sm:min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
 													data-testid="btn-apply-endo-to-plan"
 												>
 													<Zap className="w-4 h-4" />
@@ -2790,9 +2790,9 @@ export function VisitEmkTab() {
 							Официальный экспорт медицинского документа CDA R2 XML и выписка рецептурных бланков
 						</p>
 					</div>
-					<div className="flex items-center gap-2 flex-wrap">
+					<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full">
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))]"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0"
 							type="button"
 							onClick={() => setIsSoapTemplatesModalOpen(true)}
 							data-testid="btn-open-soap-templates-modal"
@@ -2802,7 +2802,7 @@ export function VisitEmkTab() {
 							Шаблоны 043/у (МКБ-10 + 804н + Склад)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer border-[var(--line)] hover:border-indigo-400"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer border-[var(--line)] hover:border-indigo-400 shrink-0"
 							type="button"
 							onClick={() => setIsForm043ModalOpen(true)}
 							data-testid="btn-print-visit-note-043"
@@ -2812,7 +2812,7 @@ export function VisitEmkTab() {
 							<span>Печать 043/у {isSignedVisit ? "(Подписано)" : "(Черновик)"}</span>
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--ok-fg)] border-[var(--ok-fg)]/30 hover:bg-[var(--ok-bg)]"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--ok-fg)] border-[var(--ok-fg)]/30 hover:bg-[var(--ok-bg)] shrink-0"
 							type="button"
 							onClick={() => setIsInformedConsentModalOpen(true)}
 							data-testid="btn-print-informed-consent-1051n"
@@ -2822,7 +2822,7 @@ export function VisitEmkTab() {
 							Печать ИДС (Приказ № 1051н)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer shrink-0"
 							type="button"
 							onClick={() => setIsPrescriptionModalOpen(true)}
 							data-testid="btn-open-prescription-modal"
@@ -2831,7 +2831,7 @@ export function VisitEmkTab() {
 							Рецепт (Форма 107-1/у)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))]"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0"
 							type="button"
 							onClick={() => {
 								setSelectedMemoIdForPrint("surgery_extraction");
@@ -2844,7 +2844,7 @@ export function VisitEmkTab() {
 							Памятка пациенту (А4/А5)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))]"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0"
 							type="button"
 							onClick={() => setIsBillingActModalOpen(true)}
 							data-testid="btn-open-billing-act-modal"
@@ -2854,7 +2854,7 @@ export function VisitEmkTab() {
 							Акт и гарантийный талон (А4)
 						</button>
 						<button
-							className="primary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] rounded-xl shadow-xs touch-manipulation cursor-pointer"
+							className="primary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] rounded-xl shadow-xs touch-manipulation cursor-pointer shrink-0"
 							type="button"
 							onClick={() => setIsEgiszModalOpen(true)}
 							data-testid="btn-open-egisz-cda-modal"
@@ -2863,7 +2863,7 @@ export function VisitEmkTab() {
 							СЭМД ЕГИСЗ (Валидатор & Экспорт)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer shrink-0"
 							type="button"
 							onClick={handleDownloadCdaXml}
 							disabled={isExportingCda}
@@ -2876,8 +2876,8 @@ export function VisitEmkTab() {
 				</div>
 
 				{/* 1-клик быстрые кнопки печати послеоперационных памяток */}
-				<div className="flex items-center gap-2 flex-wrap pt-2.5 border-t border-[var(--line)]/70 mb-2">
-					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1">
+				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2.5 border-t border-[var(--line)]/70 mb-2">
+					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
 						<Printer className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 						1-клик печать памятки пациенту:
 					</span>
@@ -2887,7 +2887,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("surgery_extraction");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-memo-surgery"
 					>
 						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -2899,7 +2899,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("anesthesia_caries");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-memo-caries"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -2911,7 +2911,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("endodontics");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-memo-endo"
 					>
 						<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -2920,8 +2920,8 @@ export function VisitEmkTab() {
 				</div>
 
 				{/* 1-клик быстрые кнопки выписки рецептов (Форма № 107-1/у) */}
-				<div className="flex items-center gap-2 flex-wrap pt-2.5 border-t border-[var(--line)]/70 mb-2">
-					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1">
+				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2.5 border-t border-[var(--line)]/70 mb-2">
+					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
 						<Pill className="w-3.5 h-3.5 text-rose-500" />
 						1-клик выписка рецепта (Форма 107-1/у):
 					</span>
@@ -2931,7 +2931,7 @@ export function VisitEmkTab() {
 							setSelectedPrescriptionDrugIds(["amoxiclav_875_125", "nimesulide_100", "suprastin_25"]);
 							setIsPrescriptionModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-rx-post-surgery"
 					>
 						<Pill className="w-3.5 h-3.5 text-rose-500 shrink-0" />
@@ -2943,7 +2943,7 @@ export function VisitEmkTab() {
 							setSelectedPrescriptionDrugIds(["ibuprofen_400", "chlorhexidine_005"]);
 							setIsPrescriptionModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-rx-anti-inflammatory"
 					>
 						<Pill className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -2955,7 +2955,7 @@ export function VisitEmkTab() {
 							setSelectedPrescriptionDrugIds(["miramistin_001", "stomatophyt_100"]);
 							setIsPrescriptionModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-rx-antiseptic"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />

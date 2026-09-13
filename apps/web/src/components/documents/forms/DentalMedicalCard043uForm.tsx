@@ -572,16 +572,18 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 							justifyContent: "space-between",
 							alignItems: "center",
 							marginBottom: "16px",
-							flexWrap: "wrap",
+							overflowX: "auto",
+							whiteSpace: "nowrap",
 							gap: "8px",
+							paddingBottom: "4px",
 						}}
 					>
-						<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+						<div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
 							<button
 								type="button"
 								className={`btn btn-secondary ${activeTab === "formula" ? "active" : ""}`}
 								onClick={() => setActiveTab("formula")}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "44px", flexShrink: 0 }}
 							>
 								Зубная формула FDI и КПУ
 							</button>
@@ -589,7 +591,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								type="button"
 								className={`btn btn-secondary ${activeTab === "indices" ? "active" : ""}`}
 								onClick={() => setActiveTab("indices")}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "44px", flexShrink: 0 }}
 							>
 								Индексы и Пародонт (CPITN)
 							</button>
@@ -597,12 +599,12 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								type="button"
 								className={`btn btn-secondary ${activeTab === "anamnesis" ? "active" : ""}`}
 								onClick={() => setActiveTab("anamnesis")}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "44px", flexShrink: 0 }}
 							>
 								Анамнез, СОПР и План
 							</button>
 						</div>
-						<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+						<div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
 							<button
 								type="button"
 								data-testid="btn-043-global-norm-1click"
