@@ -340,7 +340,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
               } catch {}
             }}
             className={`chip-button ${isAudioEnabled ? "active" : ""}`}
-            title="Звуковой сигнал опасности при сближении с нервом < 1.0 мм (по умолчанию выключен)"
+            title="Звуковой сигнал опасности при сближении с нервом < 1.5 мм (по умолчанию выключен)"
           >
             {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             <span>{isAudioEnabled ? "Звук включен" : "Звук выключен"}</span>
@@ -906,7 +906,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
               data-testid="add-implant-to-plan-btn"
               title={
                 audit.nerveSafety.isDangerous
-                  ? "Внимание: клиренс до нижнечелюстного канала < 1.0 мм. Добавить в план по клиническому решению врача"
+                  ? "Внимание: клиренс до нижнечелюстного канала < 1.5 мм. Добавить в план по клиническому решению врача"
                   : undefined
               }
             >

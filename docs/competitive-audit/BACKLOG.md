@@ -39,8 +39,11 @@
 > 33. Устранены 5 визуальных дефектов верстки Red Team: клиппинг даты в шапке десктопа `workspaceShell.tsx` и `dente-redesign.css` (`ВОСКРЕСЕНЬЕ · 13 СЕНТЯБРЯ 2026`), сдвоенный плюс `+ +` в кнопке склада `InventoryView.tsx`, обрезка кнопок действий таблицы склада, перенос слогов в отчествах пациентов `Станиславов / ич` в `PatientsView.tsx` и `patients-redesign.css`, жесткий срез фильтров расписания с добавлением fade-маски в `ScheduleFilterStrip.tsx`; сделано 20 новых валидных пруфов 1440x900 и 390x844 Light/Dark (Wave 186, коммит `bf197f0a4`).
 > 34. Разблокирована уставная валидация `documentId` в пакетах РЭМД ЕГИСЗ (`packages/shared/src/cda/schemas.ts`) и синхронизированы категории фасетов таймлайна пациента (`packages/shared/src/clinical/__tests__/wave123PatientTimeline.test.ts`), обеспечив 100% прохождение всех 2 494 тестов тестового пакета `@dental/shared` без единой ошибки (Wave 187, коммит `4de404e0f`).
 > 35. Обновлены исторические пути в мета-тестах `wave117DevLeaksPurification.test.ts` и `mockEradicationWave112.test.ts` с устаревшего фасада `warehouse/` на канонический `inventory/NurseCarpuleDisposalModal.tsx` по Мандату 8s (Wave 187, коммит `198d11f42`).
-> 36. Полная гидратация доменного состояния Telegram в `apps/api/src/routes/telegram.ts` и `apps/api/src/services/telegram/telegramLegacyMemoryStore.ts` с передачей актуального `domainState` в пайплайн доставки outbox и обратных вызовов, а также прямая синхронизация подтверждений приёмов пациентами в PostgreSQL через вызов `updateAppointmentInDb` со статусом `confirmed`; ликвидация фасадных импортов из `sampleData.js` в тестах Telegram (`telegramBotSettings.test.ts`, `telegramMessageRender.test.ts`) в пользу канонического SSOT `services/telegram/telegramLegacyMemoryStore.js` по Мандату 8s (Wave 188).
+> 36. Полная гидратация доменного состояния Telegram в `apps/api/src/routes/telegram.ts` и `apps/api/src/services/telegram/telegramLegacyMemoryStore.ts` с передачей актуального `domainState` в пайплайн доставки outbox и обратных вызовов, а также прямая синхронизация подтверждений приёмов пациентами в PostgreSQL через вызов `updateAppointmentInDb` со статусом `confirmed`; ликвидация фасадных импортов из `sampleData.js` в тестах Telegram (`telegramBotSettings.test.ts`, `telegramMessageRender.test.ts`) в пользу канонического SSOT `services/telegram/telegramLegacyMemoryStore.js` по Мандату 8s (Wave 188, коммит `cdfdc903d`).
 > 37. Устранение разрыва мобильной эргономики на экранах 390x844 по стандартам Apple HIG (Мандаты 8c, 8d, 8e, 8n): увеличение тач-таргетов до >= 44px на всех кнопках и полях ввода `FastCheckoutModal.tsx`, `CashRegisterModal.tsx` и `QuickBookingDrawer.tsx`, внедрение адаптивного липкого футера `flex-col-reverse` с кнопками на полную ширину экрана и предотвращение горизонтального скролла; мобильная адаптация сетки расписания `ScheduleGrid.tsx` и `ScheduleFilterStrip.tsx` (коммит `938bc4ebc`): ликвидация жесткого хардкода `min-w-[700px]`, адаптивная сетка соло-врача на 100% ширины экрана 390px, тач-таргеты >= 40–44px на всех 22 кнопках меню опций, ограничение ширины поповеров `max-w-[calc(100vw-32px)]` от вылета за экран (Wave 188).
+> 38. Фиксация тулбара приёма `VisitView.tsx` в строгую 1 строку высотой 36px с выносом вторичных действий (печать Формы 043/у, смена и журнал врача, Price Lock, график рассрочки платежей) в выпадающее меню «...» по Мандатам 8d п. 2–3, 8p; 100% автономия врача: отмена блокировок на главной кнопке приёма (`disabled={false}`) по Мандату 8e; тач-таргеты >= 44px на всех кнопках SOAP-редактора `VisitSoapEditor.tsx` (Wave 188, коммит `1ca8b6f1e`).
+> 39. Тотальный снос устаревшей фасадной директории `apps/web/src/components/warehouse/` (-6 файлов, -493 строки мертвого кода) с утверждением единственного канонического SSOT `apps/web/src/components/inventory/` и переносом тестов в `components/inventory/__tests__/` по Мандатам 8i, 8k, 8s (Wave 188, коммит `eef4897a9`).
+> 40. Очистка компонентов ВКК и ЕГИСЗ `CmoQualityAuditModal.tsx` и `EgiszSigningCabinetModal.tsx` от архаичных госпитальных стационарных терминов («начмед», «очередь начмеда») с переводом на регламентную амбулаторную терминологию («контроль качества (ВКК)», «эксперт качества», «база ЭМК клиники») по Мандатам 8i, 8n (Wave 188, коммит `cdfdc903d`).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -168,9 +171,9 @@
 ## 13. `склад::1_клик_списание_карпул_медсестрой_без_комиссии` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТ 8e)
 - **Идея**: Единоличная утилизация использованных пустых карпул анестетиков медсестрой в 1 клик по СанПиН 3.3686-21 без сбора комиссии из трех человек и бумажных актов.
 - **Статус**: 
-  - Фронтенд: `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx` (`Списание ${carpulesCount} пустых карпул выполнено единолично в 1 клик... по СанПиН 3.3686-21 без созыва комиссии`)
+  - Фронтенд: `apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx` (`Списание ${carpulesCount} пустых карпул выполнено единолично в 1 клик... по СанПиН 3.3686-21 без созыва комиссии`, в Волна 188 устаревший фасад `components/warehouse/` полностью снесён по Мандату 8s)
   - Маршруты API и сервисы: `apps/api/src/routes/warehouse/index.ts` (`/api/warehouse/:orgId/quick-carpule-disposal`), `apps/api/src/services/treatmentConsumablesService.ts`
-  - Тесты: `apps/web/src/components/warehouse/__tests__/nurseCarpuleDisposal.test.ts`
+  - Тесты: `apps/web/src/components/inventory/__tests__/nurseCarpuleDisposal.test.ts`
 
 ---
 
@@ -180,7 +183,7 @@
   - Сервис бэкенда: `apps/api/src/services/treatmentConsumablesService.ts` (`isOverdraft: true`, `transactionType: "emergency_overdraft"`)
   - Миграция PostgreSQL 18: `apps/api/drizzle/0198_stock_warehouses_fefo_batches_and_bom.sql`
   - Фронтенд проведения акта сдачи-приемки: `apps/web/src/components/treatment-plans/TreatmentPlanCompletedActPrint.tsx` (снята блокировка disabled={isExecuting || hasDeficit}, кнопка трансформируется в мягкий овердрафт с бейджем и подсказкой)
-  - Складские модальные окна: `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`
+  - Складские модальные окна: `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx`
   - Тесты: `apps/web/src/components/treatment-plans/__tests__/softWarehouseOverdraft.test.ts` (5 pass), `apps/web/src/tests/clinicalWriteoff.test.ts`, `apps/web/src/tests/inventoryDeduction.test.ts`
 
 ---
@@ -807,8 +810,8 @@
   3. *Единоличное списание карпул медсестрой*: утилизация пустых ампул анестетиков в 1 клик по СанПиН 3.3686-21 без созыва комиссий.
 - **Статус**:
   - Бэкенд и Shared: `apps/api/src/routes/treatmentConsumables.ts`, `apps/api/src/services/treatmentConsumablesService.ts`, `packages/shared/src/inventory/consumables.ts` (`deductBatchStockWithSoftOverdraft`), `packages/shared/src/mdlp/nurseDisposalAct.ts` (дефолтная автономия медсестры без комиссии)
-  - Фронтенд: `apps/web/src/components/InventoryView.tsx`, `useInventoryLogic.ts`, `NurseCarpuleDisposalModal.tsx`, `packages/shared/src/anesthesia/pkuDisposal.ts`, `apps/web/src/components/warehouse/index.ts`
-  - Тесты: `apps/web/src/components/inventory/__tests__/clinical804nWriteoff.test.ts`, `nurseCarpuleDisposal.test.ts`, `nurseDisposalAct.test.ts`, `packages/shared/src/tests/inventoryFifoTracking.test.ts` (100% passing).
+  - Фронтенд: `apps/web/src/components/InventoryView.tsx`, `useInventoryLogic.ts`, `NurseCarpuleDisposalModal.tsx` (`apps/web/src/components/inventory/`), `packages/shared/src/anesthesia/pkuDisposal.ts` (фасады `warehouse/` полностью ликвидированы в Волна 188)
+  - Тесты: `apps/web/src/components/inventory/__tests__/clinical804nWriteoff.test.ts`, `apps/web/src/components/inventory/__tests__/nurseCarpuleDisposal.test.ts`, `nurseDisposalAct.test.ts`, `packages/shared/src/tests/inventoryFifoTracking.test.ts` (100% passing).
 
 ---
 
@@ -2193,14 +2196,14 @@
   2. *1-клик суммы тендера без сдачи и сплит-платежи*: в `FastCheckoutModal.tsx` и `CashRegisterModal.tsx` внедрены 1-клик кнопки «Ровно без сдачи» (`preset-exact-cash`), круглые купюры (`+500 ₽`, `+1000 ₽`, `+5000 ₽`), комбинированная сплит-оплата (Нал + Карта + Депозит/Бонусы) и аддитивное сложение семейного кошелька с копеечной точностью (`kopecksToRub`);
   3. *Мягкий овердрафт склада для медсестры и врача (Мандат 8e п. 10, Мандат 8n)*: в `ClinicalWriteoffModal.tsx`, `WarehouseManagerModal.tsx`, `NurseCarpuleDisposalModal.tsx` и `MdlpDisposalQueueModal.tsx` задержка накладной или нулевой остаток больше не блокируют оказание помощи и списание анестетиков — операция проводится со статусом `isOverdraft: true` / `emergency_overdraft` и предупреждающим бейджем вместо жесткого падения (`disabled={false}`);
   4. *Эргономика и Apple HIG*: 1 строка тулбара 32–36px, отсутствие слепящих рамок в тёмной теме, модальная глубина строго 1 (Закон Анти-Матрёшки), все сенсорные тач-таргеты кнопок оплаты и списания $\ge 44\times 44\text{px}$.
-- **Файлы**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/patient/PatientAdministrativeForm.tsx`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/api/src/services/treatmentConsumablesService.ts`.
+- **Файлы**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/patient/PatientAdministrativeForm.tsx`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/api/src/services/treatmentConsumablesService.ts`.
 - **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (11 тестов), `cashierAutonomy54Fz.test.ts` (14 тестов), `cashShiftAutonomyAndFiscal54Fz.test.tsx` (12 тестов) — 37/37 pass, коммиты `d5fb509de`, `88ee4bb06`.
 
 ### 4.81. Печать пустых бланков договоров со строками «_______» без 403-ошибок и печать ИДС/043/у в любой момент (Мандаты 8c, 8d, 8e п. 5, 8e п. 8, 8k, 8n / Фича 210)
 - **Статус**: `[РЕАЛИЗОВАНО]`
 - **Объем реализации**:
   1. *Печать чистых бланков договоров со строками «_______» до приёма (Мандат 8e п. 8)*: в `PaidMedicalContractModal.tsx` регистратор и соло-врач имеют право распечатать пустой договор со строками `_______` для ручного заполнения при сумме 0 ₽ без 403 Forbidden ошибок (Мандат 8e п. 8) со штампом «ЧЕРНОВИК (БЛАНК)», а после завершения — «ПОДПИСАНО ВРАЧОМ»;
-  2. *Мгновенная печать Формы 043/у в любой момент (Мандат 8e п. 5)*: в `VisitView.tsx` внедрена прямая кнопка быстрой печати `btn-visit-fast-print-043u` (`handlePrintForm043uFast`) в шапке приёма: если приём не закрыт — печатается мгновенно с водяным знаком «ЧЕРНОВИК», если закрыт — со штампом «ПОДПИСАНО ВРАЧОМ»; в `emr043Math.ts` сформирован защищенный рендерер водяных знаков `watermark-draft` / `watermark-signed`;
+  2. *Мгновенная печать Формы 043/у в любой момент (Мандат 8e п. 5)*: в `VisitView.tsx` печать Формы 043/у консолидирована в меню дополнительных действий «...» (`visit-more-action-print-043u`, `handlePrintForm043uFast`) в шапке приёма при строгом сохранении 1 строки тулбара 36px (Мандат 8d п. 2, 8p): если приём не закрыт — печатается мгновенно с водяным знаком «ЧЕРНОВИК», если закрыт — со штампом «ПОДПИСАНО ВРАЧОМ»; в `emr043Math.ts` сформирован защищенный рендерер водяных знаков `watermark-draft` / `watermark-signed`;
   3. *Печать ИДС и пустой карты 043/у без бюрократии*: в `DentalMedicalCard043uForm.tsx` кнопка `btn-043-print-blank` позволяет распечатать пустой бланк стоматологической карты 043/у Минздрава РФ; в `InformedConsentModal.tsx` печать согласий доступна в 1 клик на любом этапе без обязательного предварительного утверждения сметы;
   4. *Святость официальных документов (Мандат 8d п. 7)*: полный запрет эмодзи в печатных формах, журнальная типографика А4, векторные Lucide-иконки, адаптивные тач-таргеты $\ge 44\text{px}$.
 - **Файлы**: `apps/web/src/VisitView.tsx`, `apps/web/src/components/emr/emr043Math.ts`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`, `apps/web/src/components/documents/InformedConsentModal.tsx`, `apps/web/src/components/documents/RadiologyReferralModal.tsx`, `apps/web/src/utils/documentPackages.ts`.
@@ -2397,7 +2400,7 @@
   5. *1-клик пакетное списание пустых карпул анестетиков*: в `NurseCarpuleDisposalModal.tsx` и `MdlpDisposalQueueModal.tsx` медсестра списывает использованные карпулы в 1 клик без создания комиссии из 3 человек;
   6. *Печать пустых договоров со строками «_______» без 403 при 0 ₽*: в `PaidMedicalContractModal.tsx` регистратор может распечатать бланк договора до приёма;
   7. *Мобильная адаптивность от 390px*: адаптивная вёрстка кассовых окон без горизонтального скролла, тач-таргеты $\ge 44\times 44\text{px}$, ноль эмодзи в фискальных чеках (Мандат 8d п. 7).
-- **Файлы**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/finance/cashboxOperations.ts`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`.
+- **Файлы**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/finance/cashboxOperations.ts`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`.
 - **Тесты**: `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (11/11 pass), `apps/web/src/components/finance/__tests__/financeAutonomyWave42.test.tsx` (11/11 pass), `apps/web/src/components/finance/__tests__/cashShiftAutonomyAndFiscal54Fz.test.tsx` (pass), `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (pass), `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (pass) — коммиты `401148263`, `d5fb509de`, `88ee4bb06`, `384b64618`, `936af047c`.
 
 ---
@@ -5296,35 +5299,67 @@
   - `check:encoding`: 0 ошибок (UTF-8);
   - Single-Compiler Gate защищен (Мандат 8t).
 
-## 335. Волна 188: Гидратация Telegram в PostgreSQL, мобильная эргономика расписания и кассы 54-ФЗ (390x844) и ликвидация фасадных импортов (Мандаты 8c, 8d, 8e, 8h, 8n, 8s, 8t) [РЕАЛИЗОВАНО]
+## 335. Волна 188: Гидратация Telegram в PostgreSQL, 1-строчный тулбар и автономия VisitView, снос фасадов warehouse/ и мобильная эргономика 390x844 (Мандаты 8c, 8d, 8e, 8h, 8i, 8k, 8n, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
 * **Статус**: `[РЕАЛИЗОВАНО]`
-* **Коммит**: `938bc4ebc`, `HEAD`
+* **Коммиты**: `938bc4ebc`, `bd61c16de`, `eef4897a9`, `1ca8b6f1e`, `cdfdc903d` (HEAD)
 * **Затронутые файлы**:
   - `apps/api/src/routes/telegram.ts`
   - `apps/api/src/services/telegram/telegramLegacyMemoryStore.ts`
   - `apps/api/src/tests/telegramBotSettings.test.ts`
   - `apps/api/src/tests/telegramMessageRender.test.ts`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/components/visit/VisitSoapEditor.tsx`
+  - `apps/web/src/components/visit/__tests__/visitViewAutonomyInquisition.test.tsx`
+  - `apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx`
+  - `apps/web/src/components/inventory/WarehousePackageWriteOffBar.tsx`
+  - `apps/web/src/components/inventory/__tests__/nurseCarpuleDisposal.test.ts`
+  - `apps/web/src/components/inventory/__tests__/warehouseSoftOverdraftAndWriteOffAutonomyWave64.test.tsx`
+  - `apps/web/src/components/warehouse/` (удалено 6 файлов: `NurseCarpuleDisposalModal.tsx`, `WarehousePackageWriteOffBar.tsx`, `index.ts`, `warehousePackageWriteOffEngine.ts`, `nurseCarpuleDisposal.test.ts`, `warehouseSoftOverdraftAndWriteOffAutonomyWave64.test.tsx`)
   - `apps/web/src/components/finance/CashRegisterModal.tsx`
   - `apps/web/src/components/finance/FastCheckoutModal.tsx`
   - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
   - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
   - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+  - `apps/web/src/components/schedule/AppointmentModal.tsx`
+  - `apps/web/src/components/schedule/__tests__/soloDoctorScheduleAutonomy.test.tsx`
+  - `apps/web/src/components/cmo/CmoQualityAuditModal.tsx`
+  - `apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx`
+  - `apps/web/src/components/egisz/egiszRemdEngine.ts`
+  - `apps/web/src/components/egisz/__tests__/egiszRemdEngine.test.ts`
+  - `apps/web/src/components/lab/LabWorkOrderConstructorModal.tsx`
+  - `apps/web/src/components/lab/__tests__/labWorkOrderConstructor.test.tsx`
+  - `apps/web/src/components/schedule/__tests__/emergencyCitoBookingWave47.test.tsx`
 * **Архитектурное решение**:
-  - **Полная гидратация Telegram и прямая синхронизация подтверждений в PostgreSQL (Мандаты 8b, 8e, 8n)**:
+  - **Полная гидратация Telegram и прямая синхронизация подтверждений в PostgreSQL (Мандаты 8b, 8e, 8n, коммит `cdfdc903d`)**:
     * В `apps/api/src/routes/telegram.ts` и `apps/api/src/services/telegram/telegramLegacyMemoryStore.ts` выполнена сквозная передача гидратированного состояния `DomainState` из БД PostgreSQL (`hydrateTelegramDomainState`) во все функции конвейера: `prepareDenteTelegramOutboxDelivery`, `buildDenteTelegramOutbox`, `executeTelegramOutboxSend`, `executeDenteTelegramOutboxDueBatch`, `visibleTelegramScheduleAppointments` и `handleDenteTelegramAppointmentCallback`;
     * При обработке callback-запроса подтверждения приёма пациентом из Telegram (`action === "telegram_appointment_confirmed"`) внедрен прямой вызов `updateAppointmentInDb(runtime.organizationId, appointmentCallbackResult.appointmentId, { status: "confirmed" })`, гарантирующий мгновенную фиксацию подтвержденного статуса визита в реляционной базе PostgreSQL;
     * В тестах `telegramBotSettings.test.ts` и `telegramMessageRender.test.ts` ликвидированы устаревшие фасадные импорты из `sampleData.js` в пользу прямого канонического импорта из SSOT `services/telegram/telegramLegacyMemoryStore.js` по Мандату 8s.
-  - **Мобильная эргономика расписания соло-врача и сетка без скролла (Мандаты 8c, 8d, 8e, 8n)**:
+  - **1-строчный тулбар 36px в VisitView, меню дополнительных действий «...» и 100% автономия врача (Мандаты 8d п. 2–3, 8e п. 2, 8p, коммит `1ca8b6f1e`)**:
+    * В шапке приёма `VisitView.tsx` тулбар зафиксирован строго в 1 строку высотой 36px, соблюден бюджет полезной высоты экрана $\le 160\text{--}180\text{px}$ по Мандату 8p без съедания рабочей зоны одонтограммы и дневника Формы 043/у;
+    * Все вторичные действия вынесены в компактное выпадающее поповер-меню «...» (`data-testid="visit-header-more-actions-btn"` / `data-testid="visit-header-more-actions-dropdown"`), агрегирующее: печать Формы 043/у (`visit-more-action-print-043u`) со штампом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ», смену и журнал врача (`visit-more-action-doctor-shift`), проверку прайса Price Lock (`visit-more-action-price-lock`) и график оплаты с рассрочкой (`visit-more-action-stage-payment`), соблюдая закон Миллера ($\le 1\text{--}2$ кнопок прямого действия на карточке/шапке);
+    * Автономия врача по Мандату 8e п. 2: главная кнопка приёма (`data-testid="visit-primary-action"`) сделана абсолютно неблокируемой (`disabled={false}`), исключая зависания и серые кнопки сохранения и завершения визита;
+    * В `VisitSoapEditor.tsx` все интерактивные кнопки (соматическая норма в 1 клик, каталог 448 шаблонов 043/у из StomX, переключение режима исправлений «Исправленному верить», переключатели «Поля»/«Печать», копирование в буфер) приведены к мобильному тач-таргету $\ge 44\text{px}$ (`min-h-[44px] sm:min-h-0 sm:h-8`);
+    * В `visitViewAutonomyInquisition.test.tsx` добавлены интеграционные сценарии 10 и 11, верифицирующие однострочный тулбар 32–36px и отсутствие блокировок `disabled={false}` на главной кнопке приёма (11/11 tests pass).
+  - **Снос устаревшей директории `components/warehouse/` и консолидация складского SSOT (Мандаты 8i, 8k, 8s, коммит `eef4897a9`)**:
+    * Полностью ликвидирована устаревшая фасадная директория `apps/web/src/components/warehouse/` (-6 файлов, -493 строки): удалены `NurseCarpuleDisposalModal.tsx`, `WarehousePackageWriteOffBar.tsx`, `index.ts`, `warehousePackageWriteOffEngine.ts`, `nurseCarpuleDisposal.test.ts`, `warehouseSoftOverdraftAndWriteOffAutonomyWave64.test.tsx`;
+    * Единственный канонический SSOT закреплен в `apps/web/src/components/inventory/` (`NurseCarpuleDisposalModal.tsx`, `WarehousePackageWriteOffBar.tsx`), а тесты перемещены в `apps/web/src/components/inventory/__tests__/`;
+    * Очищены и перенаправлены на SSOT устаревшие импорты в `PatientsView.tsx`, `CmoQualityAuditModal.tsx`, `EgiszSigningCabinetModal.tsx`, `egiszRemdEngine.ts`, `LabWorkOrderConstructorModal.tsx`, `AppointmentModal.tsx`, `ScheduleFilterStrip.tsx` и смежных тестах;
+    * Полное соблюдение Вселенского анти-блоат догмата (Мандат 8s: Закон Единого Неделимого Авторитета — никаких параллельных папок-близнецов и бутафорских фасадов).
+  - **Мобильная эргономика расписания, кассы 54-ФЗ и дровера записи на экранах 390x844 (Мандаты 8c, 8d, 8e, 8n, коммиты `938bc4ebc`, `cdfdc903d`)**:
     * В `ScheduleGrid.tsx` устранен жесткий хардкод `min-w-[700px]`, вызывавший горизонтальное выталкивание на мобильных экранах 390x844;
     * Реализована адаптивная сетка: для соло-врача и 1 кресла (`effectiveChairs.length === 1`) расписание занимает 100% ширины экрана (`gridTemplateColumns: clamp(64px, 15vw, 76px) repeat(1, minmax(200px, 1fr))`) без горизонтального скролла; для нескольких кресел динамический расчет `minWidth: Math.max(260, 72 + effectiveChairs.length * 180)px`;
     * В `ScheduleFilterStrip.tsx` все 22 кнопки выпадающего меню опций приведены к мобильному тач-таргету >= 40–44px (`min-h-[40px] sm:min-h-0 py-2.5 sm:py-1.5`);
-    * В `ScheduleGrid.tsx` поповеры статусов, контекстного меню и техобслуживания кресла ограничены по ширине правилом `max-w-[calc(100vw-32px)]` с `truncate` для предотвращения вылета за пределы мобильного экрана 390px.
-  - **Мобильная эргономика кассы 54-ФЗ и дровера записи (Apple HIG, Мандаты 8c, 8d, 8e, 8n)**:
+    * В `ScheduleGrid.tsx` поповеры статусов, контекстного меню и техобслуживания кресла ограничены по ширине правилом `max-w-[calc(100vw-32px)]` с `truncate` для предотвращения вылета за пределы мобильного экрана 390px;
     * В `FastCheckoutModal.tsx` и `CashRegisterModal.tsx` обеспечены тач-таргеты >= 44px на всех интерактивных кнопках (пресеты скидок, выбор физлицо/юрлицо, кнопки распределения остатка, печать товарного и фискального чека) и полях ввода (`min-h-[44px] sm:min-h-0`);
     * В подвале кассовых модалок и дровера быстрой записи `QuickBookingDrawer.tsx` внедрен адаптивный липкий футер `flex flex-col-reverse sm:flex-row items-stretch sm:items-center`, где кнопки подтверждения и отмены растягиваются на полную ширину на мобильных устройствах, предотвращая случайные мисклики и горизонтальное смещение;
     * Сохранена 100% автономия врача: 0 обязательных полей ИНН для физлиц, 1-клик сплит-платежи, свободные скидки до 100% на переделки и персонал, debounced autosave.
+  - **Очистка от госпитальных стационарных терминов по амбулаторному Мандату 8i (коммит `cdfdc903d`)**:
+    * В `CmoQualityAuditModal.tsx` госпитальный архаизм «начмед» / «очередь начмеда» / «утверждение начмедом» заменен на регламентную амбулаторную терминологию: «контроль качества (ВКК)», «эксперт качества», «утверждено контролем качества» по Приказам Минздрава РФ № 785н и № 834н;
+    * В `EgiszSigningCabinetModal.tsx` формулировки синхронизированы с амбулаторной стоматологической практикой: «Документ 043/у сохранен в локальной базе ЭМК клиники», добавлена обязательная проверка наличия подписи врача (`doctorSignature`) перед отправкой через облачные шлюзы в РЭМД ЕГИСЗ.
 * **Верификация**:
-  - `scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5187 файлов проверено);
+  - `scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5183 файла проверено);
+  - Таргетированные тесты: 11/11 tests PASS в `visitViewAutonomyInquisition.test.tsx`, 21/21 tests PASS в `nurseCarpuleDisposal.test.ts` и `warehouseSoftOverdraftAndWriteOffAutonomyWave64.test.tsx`, 2/2 tests PASS в тестах настроек Telegram;
   - Single-Compiler Gate защищен per Mandate 8t (отсутствие несогласованных запусков tsc/build);
   - Все затронутые файлы приведены в строгое соответствие со стандартами macOS Studio Clinical HIG и Конституцией THE HAMMER.
 

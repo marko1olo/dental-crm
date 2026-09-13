@@ -347,7 +347,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 						type="button"
 						onClick={() => handleToggle("invert")}
 						disabled={disabled}
-						className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+						className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
 							filters.invert
 								? "bg-teal-600 border-teal-500 text-white shadow-sm"
 								: "bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700"
@@ -362,7 +362,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 						type="button"
 						onClick={() => handleToggle("denoise")}
 						disabled={disabled}
-						className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+						className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
 							filters.denoise
 								? "bg-teal-600 border-teal-500 text-white shadow-sm"
 								: "bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700"
@@ -378,7 +378,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 							type="button"
 							onClick={() => onToggleSplitCompare(!isSplitCompare)}
 							disabled={disabled}
-							className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
 								isSplitCompare
 									? "bg-cyan-600 border-cyan-500 text-white shadow-sm"
 									: "bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700"

@@ -247,12 +247,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onResetAngle?.();
 						}}
-						className="px-2 py-0.5 rounded bg-[#0f172a]/95 hover:bg-slate-900 backdrop-blur-sm text-[10px] font-mono font-bold border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
+						className="min-h-[44px] px-2.5 py-1.5 rounded-lg bg-[#0f172a]/95 hover:bg-slate-900 backdrop-blur-sm text-xs font-mono font-bold border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
 						title={`Угол наклона: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}° (Нажмите для сброса в 0.0°)`}
 						data-testid={`cbct-reset-angle-badge-${viewportType}`}
 					>
 						<span>∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°</span>
-						<span className="text-[9px] text-slate-400 hover:text-white font-bold ml-0.5">↺ 0°</span>
+						<span className="text-[10px] text-slate-400 hover:text-white font-bold ml-0.5">↺ 0°</span>
 					</button>
 				)}
 
@@ -263,12 +263,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onToggleMaximize();
 						}}
-						className="w-6 h-6 rounded bg-[#0f172a]/92 backdrop-blur-sm hover:bg-slate-900 text-slate-400 hover:text-slate-100 border border-slate-800 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
+						className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg bg-[#0f172a]/92 backdrop-blur-sm hover:bg-slate-900 text-slate-400 hover:text-slate-100 border border-slate-800 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
 						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
 						data-testid={`cbct-maximize-${viewportType}-btn`}
 						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
 					>
-						{isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+						{isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
 					</button>
 				)}
 			</div>

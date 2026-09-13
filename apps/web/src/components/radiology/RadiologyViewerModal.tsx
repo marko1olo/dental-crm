@@ -22,6 +22,7 @@ import {
 	Layers,
 	Maximize2,
 	Minus,
+	MoreHorizontal,
 	Move,
 	Pin,
 	Plus,
@@ -172,6 +173,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [isProtocolsDropdownOpen, setIsProtocolsDropdownOpen] = useState<boolean>(false);
 	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
 	const protocolsDropdownRef = useRef<HTMLDivElement>(null);
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+	const moreMenuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		setIsNormaApplied(false);
@@ -191,6 +194,20 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [isProtocolsDropdownOpen]);
+
+	useEffect(() => {
+		if (!isMoreMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				moreMenuRef.current &&
+				!moreMenuRef.current.contains(e.target as Node)
+			) {
+				setIsMoreMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isMoreMenuOpen]);
 
 	const activeImageUrl = loadedImageUrl !== null ? loadedImageUrl : (study?.imageUrl || "");
 	const isImageLoaded = Boolean(activeImageUrl) && !isDropzoneOpen;
@@ -780,77 +797,66 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			data-testid="radiology-viewer-modal"
 		>
 			{/* ═══════════════════════════════════════════════════════════════════
-			    1. TOP CYBER HUD BAR (Ergonomic Header)
+			    1. TOP CYBER HUD BAR (1-Row 32-36px Header per Mandates 8c, 8d, 8p)
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<header className="flex items-center justify-between px-4 py-2.5 bg-[var(--paper-soft,#0f172a)] border-b border-[var(--line,#334155)] backdrop-blur-md z-30 shrink-0 text-[var(--ink,#f8fafc)]">
+			<header className="h-9 min-h-[36px] max-h-[36px] px-3 py-0.5 bg-[var(--paper-soft,#0f172a)] border-b border-[var(--line,#334155)] backdrop-blur-md z-30 shrink-0 flex items-center justify-between text-[var(--ink,#f8fafc)] gap-2">
 				{/* Слева: название исследования, модальность и данные пациента */}
-				<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+				<div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:border-[var(--teal-soft)] active:scale-95 transition-all shrink-0"
+						className="flex items-center justify-center h-7 w-7 min-w-[28px] rounded-lg bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:border-[var(--teal-soft)] active:scale-95 transition-all shrink-0 cursor-pointer"
 						title="Закрыть просмотрщик (Esc)"
 						data-testid="radiology-viewer-close-btn"
 					>
-						<ArrowLeft className="w-5 h-5" />
+						<ArrowLeft className="w-4 h-4" />
 					</button>
 
-					<div className="flex flex-col min-w-0 flex-1">
-						<div className="flex items-center gap-2 flex-wrap min-w-0">
-							<span className="whitespace-nowrap text-[11px] px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] font-bold uppercase tracking-wide shrink-0">
-								{modalityLabel}
-							</span>
-							<h1 className="text-xs sm:text-sm md:text-base font-bold text-[var(--ink,#f8fafc)] min-w-0 break-words leading-tight sm:truncate">
-								{studyTitle}
-							</h1>
-						</div>
-						<div className="flex items-center gap-2 sm:gap-3 text-xs text-[var(--muted,#94a3b8)] min-w-0 flex-wrap mt-0.5">
-							<span className="font-semibold text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0">
-								Пациент: {patientName}
-							</span>
-							<span className="hidden xs:inline text-[var(--line,#475569)]">•</span>
-							<span className="hidden sm:inline whitespace-nowrap">Врач: {doctorName}</span>
-							<span className="hidden md:inline text-[var(--line,#475569)]">•</span>
-							<span className="hidden md:inline font-bold text-[var(--teal)] whitespace-nowrap">
-								Дата: {studyDateFormatted}
-							</span>
-						</div>
+					<div className="flex items-center gap-2 min-w-0 overflow-hidden">
+						<span className="whitespace-nowrap text-[10px] px-2 py-0.5 rounded bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] font-bold uppercase tracking-wide shrink-0">
+							{modalityLabel}
+						</span>
+						<h1 className="text-xs font-bold text-[var(--ink,#f8fafc)] truncate">
+							{studyTitle}
+						</h1>
+						<span className="hidden md:inline text-[11px] text-[var(--muted,#94a3b8)] truncate shrink-0">
+							Пациент: {patientName} • {studyDateFormatted}
+						</span>
 					</div>
 				</div>
 
 				{/* По центру: высококонтрастный бейдж дозы облучения и зубы FDI */}
-				<div className="hidden lg:flex items-center gap-3">
+				<div className="hidden lg:flex items-center gap-2 shrink-0">
 					{study?.teethFdi && study.teethFdi.length > 0 && (
-						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] shadow-sm">
-							<Target className="w-4 h-4 text-[var(--teal)] shrink-0" />
-							<span className="text-xs font-medium text-[var(--muted,#cbd5e1)]">Зубы FDI:</span>
-							<span className="text-sm font-bold text-[var(--teal)]">
+						<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs">
+							<Target className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+							<span className="font-bold text-[var(--teal)]">
 								{study.teethFdi.map((t) => (FDI_TOOTH_NAMES[t] ? `Зуб ${t} (${FDI_TOOTH_NAMES[t]})` : `Зуб ${t}`)).join(", ")}
 							</span>
 						</div>
 					)}
 
-					{/* Radiation Dose Badge (>= 13-14px bold per mandate) */}
+					{/* Radiation Dose Badge */}
 					<div
-						className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border shadow-sm ${doseInfo.badgeClass}`}
+						className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border text-xs shadow-xs ${doseInfo.badgeClass}`}
 						title="Эффективная эквивалентная доза по СанПиН"
 						data-testid="radiation-dose-hud-badge"
 					>
-						<Activity className="w-4 h-4" />
-						<span className="text-xs uppercase font-medium">Доза:</span>
-						<span className="text-sm font-bold tracking-wide">
+						<Activity className="w-3.5 h-3.5" />
+						<span className="text-[10px] uppercase font-medium">Доза:</span>
+						<span className="text-xs font-bold tracking-wide">
 							{doseInfo.fullText}
 						</span>
 					</div>
 				</div>
 
-				{/* Right: Action Buttons (>= 44x44px touch targets) */}
-				<div className="flex items-center gap-2">
+				{/* Справа: Первичные инструменты (Hot Path) + Меню вторичных инструментов «...» */}
+				<div className="flex items-center gap-1.5 shrink-0">
 					{/* 1-Click Norma Button (Mandate 8e) */}
 					<button
 						type="button"
 						onClick={handleInsertNormaTo043}
-						className={`flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer ${
+						className={`flex items-center justify-center gap-1.5 h-7 px-2.5 py-1 rounded-lg text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer ${
 							isNormaApplied
 								? "bg-emerald-600/20 border border-emerald-500 text-emerald-400"
 								: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-emerald-500 text-[var(--ink,#cbd5e1)] hover:text-emerald-400"
@@ -859,159 +865,195 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						data-testid="radiology-norma-043-btn"
 					>
 						{isNormaApplied ? (
-							<CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
 						) : (
-							<Zap className="w-4 h-4 text-amber-400 shrink-0" />
+							<Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
 						)}
 						<span className="hidden sm:inline">
 							{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}
 						</span>
 					</button>
 
-					{/* 1-Click Protocols Menu Dropdown (Mandate 8e, 8i, 8k) */}
-					<div className="relative" ref={protocolsDropdownRef}>
+					{/* 3D MPR / ОПТГ Quick Toggle */}
+					<button
+						type="button"
+						onClick={() => setIsMprViewerOpen(true)}
+						className="flex items-center justify-center gap-1.5 h-7 px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+						title="Открыть 3D MPR мультипланарную реконструкцию и панораму зубной дуги"
+						data-testid="open-mpr-viewer-modal-btn"
+					>
+						<Layers className="w-3.5 h-3.5" />
+						<span className="hidden sm:inline">3D MPR</span>
+					</button>
+
+					{/* ВТОРИЧНЫЕ ИНСТРУМЕНТЫ В ПОПОВЕР МЕНЮ «...» (Mandate 8p, ровно 1 строка тулбара 32–36px) */}
+					<div className="relative" ref={moreMenuRef}>
 						<button
 							type="button"
-							onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
-							className={`flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer ${
-								isProtocolsDropdownOpen
-									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)]"
+							onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+							className={`flex items-center justify-center h-7 w-7 rounded-lg transition-all shadow-xs shrink-0 cursor-pointer ${
+								isMoreMenuOpen
+									? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal)]"
 									: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal-soft)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)]"
 							}`}
-							title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
-							aria-label="Выбрать рентгенологический протокол"
-							data-testid="radiology-protocols-menu-btn"
+							title="Дополнительные инструменты исследования (...)"
+							aria-label="Дополнительные инструменты"
+							data-testid="radiology-more-tools-btn"
 						>
-							<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
-							<span className="hidden xl:inline">Протоколы 043/у</span>
-							<ChevronDown
-								className={`w-3.5 h-3.5 transition-transform duration-200 ${
-									isProtocolsDropdownOpen ? "rotate-180" : ""
-								}`}
-							/>
+							<MoreHorizontal className="w-4 h-4" />
 						</button>
 
-						{isProtocolsDropdownOpen && (
+						{isMoreMenuOpen && (
 							<div
 								className="absolute right-0 top-full mt-1.5 z-50 w-72 sm:w-80 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-2 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
 								role="menu"
 								aria-orientation="vertical"
 							>
 								<div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 flex items-center justify-between">
-									<span>Протоколы (Форма 043/у)</span>
-									<span className="text-[10px] text-teal-400 font-mono">1 клик</span>
+									<span>Инструменты исследования</span>
+									<span className="text-[10px] text-teal-400 font-mono">DENTE</span>
 								</div>
-								{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
+
+								{/* 1. Протоколы 043/у */}
+								<div className="relative" ref={protocolsDropdownRef}>
 									<button
-										key={preset.id}
 										type="button"
-										onClick={() => handleApplyProtocol(preset)}
-										className={`w-full min-h-[44px] text-left p-2 rounded-xl transition-all flex flex-col justify-center gap-0.5 cursor-pointer ${
-											appliedProtocolId === preset.id
-												? "bg-teal-950/80 border border-teal-500 text-teal-300"
-												: "hover:bg-slate-800 text-slate-200"
-										}`}
-										title={preset.text}
-										data-testid={`btn-apply-protocol-${preset.id}`}
+										onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
+										className="w-full text-left p-2 rounded-xl transition-all flex items-center justify-between hover:bg-slate-800 text-slate-200 text-xs font-bold cursor-pointer"
+										title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
+										data-testid="radiology-protocols-menu-btn"
 									>
-										<div className="flex items-center justify-between text-xs font-bold">
-											<span className="flex items-center gap-1.5">
-												<Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-												{preset.titleRu}
-											</span>
-											{appliedProtocolId === preset.id && (
-												<Check className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-											)}
-										</div>
-										<p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-											{preset.text}
-										</p>
+										<span className="flex items-center gap-2">
+											<FileText className="w-4 h-4 text-teal-400" />
+											Протоколы (Форма 043/у)
+										</span>
+										<ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isProtocolsDropdownOpen ? "rotate-180" : ""}`} />
 									</button>
-								))}
+
+									{isProtocolsDropdownOpen && (
+										<div className="p-1 mt-1 rounded-xl bg-slate-950 border border-slate-800 flex flex-col gap-1">
+											{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
+												<button
+													key={preset.id}
+													type="button"
+													onClick={() => {
+														handleApplyProtocol(preset);
+														setIsMoreMenuOpen(false);
+													}}
+													className={`w-full text-left p-2 rounded-lg transition-all flex flex-col justify-center gap-0.5 cursor-pointer ${
+														appliedProtocolId === preset.id
+															? "bg-teal-950/80 border border-teal-500 text-teal-300"
+															: "hover:bg-slate-800 text-slate-200"
+													}`}
+													title={preset.text}
+													data-testid={`btn-apply-protocol-${preset.id}`}
+												>
+													<div className="flex items-center justify-between text-xs font-bold">
+														<span className="flex items-center gap-1.5">
+															<Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+															{preset.titleRu}
+														</span>
+														{appliedProtocolId === preset.id && (
+															<Check className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+														)}
+													</div>
+													<p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+														{preset.text}
+													</p>
+												</button>
+											))}
+										</div>
+									)}
+								</div>
+
+								{/* 2. Аннотации HUD toggle */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsHudVisible((prev) => !prev);
+										setIsMoreMenuOpen(false);
+									}}
+									className="w-full text-left p-2 rounded-xl transition-all flex items-center justify-between hover:bg-slate-800 text-slate-200 text-xs font-bold cursor-pointer"
+									title={isHudVisible ? "Скрыть аннотации" : "Показать аннотации"}
+									data-testid="toggle-annotations-hud-btn"
+								>
+									<span className="flex items-center gap-2">
+										{isHudVisible ? <Eye className="w-4 h-4 text-teal-400" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
+										{isHudVisible ? "Скрыть аннотации" : "Показать аннотации"}
+									</span>
+									<span className="text-[10px] text-slate-400 font-mono">{isHudVisible ? "ВКЛ" : "ВЫКЛ"}</span>
+								</button>
+
+								{/* 3. Направление на дообследование */}
+								{onOpenReferralModal && study && (
+									<button
+										type="button"
+										onClick={() => {
+											onOpenReferralModal(study);
+											setIsMoreMenuOpen(false);
+										}}
+										className="w-full text-left p-2 rounded-xl transition-all flex items-center gap-2 hover:bg-slate-800 text-slate-200 text-xs font-bold cursor-pointer"
+										title="Оформить направление на дообследование"
+									>
+										<FileText className="w-4 h-4 text-teal-400" />
+										<span>Направление на дообследование</span>
+									</button>
+								)}
+
+								{/* 4. 3D КЛКТ Студия */}
+								{(study?.modality === "cbct_3d" ||
+									(typeof study?.studyType === "string" && study.studyType.startsWith("cbct"))) && (
+									<button
+										type="button"
+										onClick={() => {
+											handleOpenCbctStudioFromViewer();
+											setIsMoreMenuOpen(false);
+										}}
+										className="w-full text-left p-2 rounded-xl transition-all flex items-center gap-2 hover:bg-slate-800 text-teal-300 text-xs font-bold cursor-pointer"
+										title="Открыть 3D КЛКТ Студию имплант-планирования"
+										data-testid="open-cbct-mpr-studio-from-viewer-btn"
+									>
+										<Box className="w-4 h-4 text-teal-400" />
+										<span>3D КЛКТ Студия имплантации</span>
+									</button>
+								)}
+
+								{/* 5. Лист доз СанПиН */}
+								{onOpenDoseSheetModal && study && (
+									<button
+										type="button"
+										onClick={() => {
+											onOpenDoseSheetModal(study);
+											setIsMoreMenuOpen(false);
+										}}
+										className="w-full text-left p-2 rounded-xl transition-all flex items-center gap-2 hover:bg-slate-800 text-slate-200 text-xs font-bold cursor-pointer"
+										title="Лист учета дозовых нагрузок (СанПиН)"
+									>
+										<Activity className="w-4 h-4 text-teal-400" />
+										<span>Лист учета дозовых нагрузок</span>
+									</button>
+								)}
+
+								{/* 6. Сведения об исследовании (Инфо) */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsSideDrawerOpen((prev) => !prev);
+										setIsMoreMenuOpen(false);
+									}}
+									className="w-full text-left p-2 rounded-xl transition-all flex items-center justify-between hover:bg-slate-800 text-slate-200 text-xs font-bold cursor-pointer border-t border-slate-800 pt-2"
+									title="Сведения об исследовании и заключение"
+									data-testid="toggle-side-drawer-btn"
+								>
+									<span className="flex items-center gap-2">
+										<Info className="w-4 h-4 text-teal-400" />
+										Сведения об исследовании
+									</span>
+									<span className="text-[10px] text-slate-400 font-mono">{isSideDrawerOpen ? "Открыто" : "Скрыто"}</span>
+								</button>
 							</div>
 						)}
 					</div>
-
-					<button
-						type="button"
-						onClick={() => setIsHudVisible((prev) => !prev)}
-						className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
-							isHudVisible
-								? "bg-[var(--teal-surface)] border-[var(--teal-soft)] text-[var(--teal)]"
-								: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink)]"
-						}`}
-						title={isHudVisible ? "Скрыть аннотации" : "Показать аннотации"}
-						aria-label={isHudVisible ? "Скрыть аннотации" : "Показать аннотации"}
-						data-testid="toggle-annotations-hud-btn"
-					>
-						{isHudVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-					</button>
-
-					{onOpenReferralModal && study && (
-						<button
-							type="button"
-							onClick={() => onOpenReferralModal(study)}
-							className="hidden sm:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal-soft)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] text-xs font-bold transition-all"
-							title="Оформить направление на дообследование"
-						>
-							<FileText className="w-4 h-4 text-[var(--teal)]" />
-							<span>Направление</span>
-						</button>
-					)}
-
-					<button
-						type="button"
-						onClick={() => setIsMprViewerOpen(true)}
-						className="flex items-center justify-center gap-2 min-h-[44px] min-w-[44px] px-2.5 sm:px-3.5 py-2.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer"
-						title="Открыть 3D MPR мультипланарную реконструкцию и панораму зубной дуги"
-						data-testid="open-mpr-viewer-modal-btn"
-					>
-						<Layers className="w-4 h-4" />
-						<span className="hidden sm:inline">3D MPR / ОПТГ</span>
-					</button>
-
-					{(study?.modality === "cbct_3d" ||
-						(typeof study?.studyType === "string" && study.studyType.startsWith("cbct"))) && (
-						<button
-							type="button"
-							onClick={handleOpenCbctStudioFromViewer}
-							className="flex items-center justify-center gap-2 min-h-[44px] min-w-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
-							title="Открыть 3D КЛКТ Студию имплант-планирования"
-							data-testid="open-cbct-mpr-studio-from-viewer-btn"
-						>
-							<Box className="w-4 h-4" />
-							<span>3D КЛКТ Студия</span>
-						</button>
-					)}
-
-					{onOpenDoseSheetModal && study && (
-						<button
-							type="button"
-							onClick={() => onOpenDoseSheetModal(study)}
-							className="hidden md:flex items-center justify-center gap-2 min-h-[44px] min-w-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal-soft)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] text-xs font-bold transition-all shrink-0 cursor-pointer"
-							title="Лист учета дозовых нагрузок (СанПиН)"
-						>
-							<Activity className="w-4 h-4 text-[var(--teal)]" />
-							<span>Лист доз</span>
-						</button>
-					)}
-
-					{/* Mobile/Desktop Sidebar Toggle (Collapsed by default on <768px with compact "Инфо" button) */}
-					<button
-						type="button"
-						onClick={() => setIsSideDrawerOpen((prev) => !prev)}
-						className={`flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2.5 rounded-xl border transition-all shrink-0 cursor-pointer ${
-							isSideDrawerOpen
-								? "bg-[var(--teal-surface)] border-[var(--teal-soft)] text-[var(--teal)]"
-								: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft,#0f172a)]"
-						}`}
-						title="Сведения об исследовании и заключение"
-						data-testid="toggle-side-drawer-btn"
-					>
-						<Info className="w-4 h-4 text-[var(--teal)]" />
-						<span className="text-xs font-bold sm:hidden">Инфо</span>
-						<span className="hidden sm:inline text-xs font-bold">Сведения</span>
-					</button>
 				</div>
 			</header>
 

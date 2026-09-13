@@ -64,7 +64,7 @@ import {
 } from "./cbctMprMath";
 import { soundFeedback } from "../../services/audio/SoundFeedbackService";
 
-export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.0;
+export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.5;
 
 export const MIN_BUCCAL_BONE_WALL_MM = 1.5;
 export const MIN_LINGUAL_BONE_WALL_MM = 1.0;
@@ -368,7 +368,7 @@ export function auditMandibularNerveSafety(
 		if (netClearanceWall <= 0) {
 			message = "КРИТИЧЕСКАЯ ОШИБКА: ПЕРФОРАЦИЯ НИЖНЕЧЕЛЮСТНОГО КАНАЛА! Немедленно измените длину или наклон имплантата!";
 		} else {
-			message = "КРИТИЧЕСКИЙ РИСК: Дистанция до нерва " + netClearanceWall.toFixed(1) + " мм (< 1.0 мм). Высокий риск нейропатии и парестезии губы!";
+			message = "КРИТИЧЕСКИЙ РИСК: Дистанция до нерва " + netClearanceWall.toFixed(1) + " мм (< 1.5 мм). Высокий риск нейропатии и парестезии губы!";
 		}
 	} else if (netClearanceWall < MANDIBULAR_NERVE_SAFETY_MARGIN_MM) {
 		status = "warning";

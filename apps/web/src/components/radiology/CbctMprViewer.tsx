@@ -316,7 +316,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		}
 
 		const safetyStatus: "safe" | "warning" | "danger" =
-			nerveClearanceMm < 1.0
+			nerveClearanceMm < 1.5
 				? "danger"
 				: nerveClearanceMm < 2.0
 					? "warning"
@@ -2239,8 +2239,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-slate-100 font-sans select-none overflow-hidden"
 			data-testid="cbct-mpr-viewer-modal"
 		>
-			{/* ── TOP CLINICAL HEADER (Compact <= 38px desktop height per Mandate 8p) ── */}
-			<header className="flex items-center justify-between px-3 py-1 min-h-[38px] sm:h-10 bg-slate-900 border-b border-slate-800 shrink-0">
+			{/* ── TOP CLINICAL HEADER (Strictly 1 row 32-36px height per Mandates 8c, 8p) ── */}
+			<header className="flex items-center justify-between px-3 py-0.5 h-9 min-h-[36px] max-h-[36px] bg-slate-900 border-b border-slate-800 shrink-0">
 				<div className="flex items-center gap-2.5">
 					<div className="p-1.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
 						<Volume2 className="w-4 h-4" />

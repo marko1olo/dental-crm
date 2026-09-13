@@ -5722,7 +5722,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											}
 										}}
 										disabled={nervePoints.length === 0}
-										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
 										data-testid="cbct-delete-nerve-node-btn"
 										title="Удалить выбранный или последний узел (Backspace)"
 									>
@@ -5738,7 +5738,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											showToast("Трасса канала IAN сброшена", "info");
 										}}
 										disabled={nervePoints.length === 0}
-										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
 										data-testid="cbct-reset-nerve-trace-btn"
 										title="Очистить все точки канала нерва"
 									>
@@ -5790,7 +5790,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 														? "bg-zinc-900 text-zinc-400 border-zinc-800"
 														: displayNerveClearanceMm >= 2.0
 															? "bg-emerald-950/70 text-emerald-300 border-emerald-500/60"
-															: displayNerveClearanceMm >= 1.0
+															: displayNerveClearanceMm >= 1.5
 																? "bg-amber-950/70 text-amber-300 border-amber-500/60"
 																: "bg-rose-950/70 text-rose-300 border-rose-500/60"
 												}`}
@@ -5800,9 +5800,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											</span>
 										</div>
 										<span className="text-[10px] text-zinc-500 font-mono shrink-0">
-											{displayNerveClearanceMm !== null && displayNerveClearanceMm < 2.0
-												? "Внимание (< 2.0 мм)"
-												: "Норма (>= 2.0 мм)"}
+											{displayNerveClearanceMm !== null && displayNerveClearanceMm < 1.5
+												? "Опасно (< 1.5 мм)"
+												: displayNerveClearanceMm !== null && displayNerveClearanceMm < 2.0
+													? "Внимание (< 2.0 мм)"
+													: "Норма (>= 2.0 мм)"}
 										</span>
 									</div>
 
