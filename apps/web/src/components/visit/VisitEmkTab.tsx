@@ -55,7 +55,7 @@ import {
 	type ClinicalServiceBundle,
 } from "./CompletedServicesChecklist";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
-import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
+import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
 import { AppointmentModal } from "../schedule/AppointmentModal";
 import { type Appointment, calculateAge, generateQrCodeSvg } from "@dental/shared";
 import { PrescriptionModal } from "./PrescriptionModal";
@@ -3064,25 +3064,10 @@ export function VisitEmkTab() {
 				/>
 
 				{/* Модальное окно валидатора и экспорта СЭМД ЕГИСЗ */}
-				<EgiszCdaExportModal
+				<EgiszRemdHubModal
 					isOpen={isEgiszModalOpen}
 					onClose={() => setIsEgiszModalOpen(false)}
-					visitId={realVisitFieldId(dashboard?.activeVisit?.id) || "00000000-0000-0000-0000-000000000000"}
-					patientId={activePatient?.id || ""}
-					patientName={activePatient?.fullName}
-					patientSnils={activePatient?.administrativeProfile?.snils}
-					patientBirthDate={activePatient?.birthDate}
-					patientGender={activePatient?.administrativeProfile?.gender || (activePatient?.gender as any)}
-					patientPolisOms={activePatient?.administrativeProfile?.omsPolis}
-					doctorName={appLogic?.activeDoctor?.fullName || appLogic?.auth?.currentUser?.name || "Врач-стоматолог"}
-					doctorSnils={appLogic?.activeDoctor?.snils || appLogic?.activeDoctor?.uiPreferences?.snils || appLogic?.auth?.currentUser?.snils}
-					doctorPosition={appLogic?.activeDoctor?.specialties?.[0] || "Врач-стоматолог"}
-					diagnosisText={noteForm?.diagnosis || dashboard?.activeVisit?.diagnosis}
-					icd10Code={noteForm?.diagnosis?.match(/[A-Z]\d{2}(\.\d{1,4})?/i)?.[0] || dashboard?.activeVisit?.diagnosis?.match(/[A-Z]\d{2}(\.\d{1,4})?/i)?.[0]}
-					anamnesis={noteForm?.anamnesis || noteForm?.complaint}
-					objectiveStatus={noteForm?.objectiveStatus}
-					treatmentDescription={noteForm?.treatmentPlan}
-					{...(linkedBarcode || trayBarcode ? { instrumentTrayBarcode: linkedBarcode || trayBarcode } : {})}
+					initialTab="xml"
 				/>
 
 				<div className="mb-4">
@@ -3514,7 +3499,7 @@ export function VisitEmkTab() {
 				isOpen={isSoapTemplatesModalOpen}
 				onClose={() => setIsSoapTemplatesModalOpen(false)}
 				initialToothNumber={activeSelectedTooth}
-				doctorFullName={activeDoctor?.fullName}
+				doctorFullName={appLogic?.activeDoctor?.fullName || dashboard?.activeVisit?.doctorName || appLogic?.currentUser?.fullName}
 				patientFullName={activePatient?.fullName}
 				onApplyDiary={(result) => {
 					const matchedPreset =

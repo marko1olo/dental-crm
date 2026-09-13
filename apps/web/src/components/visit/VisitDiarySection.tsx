@@ -57,7 +57,7 @@ import {
 } from "../odontogram/pediatricDentitionEngine";
 import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
 import { CryptoProSigner } from "./CryptoProSigner";
-import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
+import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
 import { KraftPackageQuickScanner } from "../sterilization/KraftPackageQuickScanner";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
@@ -2062,30 +2062,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			/>
 
 			{/* ── EGISZ SEMD CDA Export Modal ── */}
-			<EgiszCdaExportModal
+			<EgiszRemdHubModal
 				isOpen={showEgiszModal}
 				onClose={() => setShowEgiszModal(false)}
-				visitId={realVisitFieldId(visitId) || "00000000-0000-0000-0000-000000000000"}
-				patientId={patientId || ""}
-				patientName={patientFullName}
-				patientSnils={(activePatient as any)?.administrativeProfile?.snils}
-				patientBirthDate={patientBirthDate}
-				patientGender={(activePatient as any)?.administrativeProfile?.gender || (activePatient as any)?.gender}
-				patientPolisOms={(activePatient as any)?.administrativeProfile?.omsPolis}
-				doctorName={doctorName}
-				doctorSnils={(activeDoctor as any)?.snils || (activeDoctor as any)?.uiPreferences?.snils}
-				doctorPosition={doctorSpecialty || "Врач-стоматолог"}
-				diagnosisText={icdEntry ? `${diary.diagnosisIcd10} ${icdEntry.label}` : diary.diagnosisIcd10}
-				icd10Code={diary.diagnosisIcd10}
-				diagnosisTooth={diary.diagnosisTooth}
-				anamnesis={diary.anamnesis}
-				objectiveStatus={diary.statusLocalis}
-				treatmentDescription={diary.treatmentDescription}
-				complications={diary.complications}
-				comorbidities={diary.comorbidities}
-				instrumentTrayBarcode={trayBarcode || undefined}
-				toothStates={activeTeeth.reduce((acc, t) => ({ ...acc, [t.toothNumber]: t.state }), {})}
-				documentVersion={revisionCount + 1}
+				initialTab="xml"
 			/>
 
 			{/* ── 1-Click Clinical Protocols & Templates Modal ── */}
