@@ -3559,3 +3559,27 @@
 - **Файлы**: `apps/web/src/App.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`, `apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx`, `apps/web/src/components/radiology/CephalometricAnalysisModal.tsx`, `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`, `apps/web/src/components/odontogram/PediatricToothChart.tsx` (ликвидированы: `ChairsiderPerspectiveView.tsx`, `PediatricPerspectiveView.tsx`, `FrontdeskPerspectiveView.tsx`, `OrthoPhotoProtocolModal.tsx`, `OrthodonticCephTrackerModal.tsx`, `TaxDeductionModal.tsx`, `OutpatientForm043Editor.tsx`, `ChildToothChart.tsx`, папка `apps/web/src/components/tax/`).
 - **Тесты**: `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8), Single-Compiler Gate защищен per Mandate 8t, 327/327 фичей со статусом [ДА] (100% паритет).
 
+### 2.10.277. Волна 194: Ликвидация 12 искусственных фасадов-дубликатов (VisitDiaryTemplateSelector, NdflCalculatorModal, FnsNdflXmlModal, EgiszDocumentsJournalModal, EgiszRemdSigningModal, EgiszRemdXmlModal, EgiszCdaExportModal, PatientWebappPortalModal, PatientMobilePortalModal, VisitSoapTemplatesModal, CbctMpr3DStudioModal, CasePresentationView), снос дубликатов ЕГИСЗ и налоговых калькуляторов, пробитие потолка ширм DEMOUNTED_MODAL_SHIRMS_CEILING со 104 до 99 в panelsAreMounted.test.ts (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+- **Идея & Бизнес-эффект**: Масштабная санитаризация монорепозитория по Вселенскому анти-блоат догмату и Закону Единого Неделимого Авторитета (Мандат 8s): выявление и ликвидация 12 искусственных фасадов и параллельных компонентов-дубликатов (`VisitDiaryTemplateSelector`, `NdflCalculatorModal`, `FnsNdflXmlModal`, `EgiszDocumentsJournalModal`, `EgiszRemdSigningModal`, `EgiszRemdXmlModal`, `EgiszCdaExportModal`, `PatientWebappPortalModal`, `PatientMobilePortalModal`, `VisitSoapTemplatesModal`, `CbctMpr3DStudioModal`, `CasePresentationView`); централизация ЕГИСЗ (РЭМД) на каноническом кабинете подписания `EgiszSigningCabinetModal.tsx`, а налоговых расчетов вычета 13% НДФЛ — на каноническом `TaxDeductionCertificateModal.tsx` в домене финансов; строгое сокращение бэклога бутафорских ширм с понижением потолка `DEMOUNTED_MODAL_SHIRMS_CEILING` со 104 до 99 в `panelsAreMounted.test.ts`.
+- **Архитектурные механизмы**:
+  1. *Ликвидация искусственных фасадов дневника визита и SOAP-шаблонов (Мандат 8s)*:
+     - Компоненты `VisitDiaryTemplateSelector.tsx` и `VisitSoapTemplatesModal.tsx` консолидированы на каноническом дневнике приёма `VisitDiarySection.tsx`, редакторе `VisitSoapEditor.tsx` и каталоге протоколов `visit/clinicalSoapPresets.ts`;
+     - Исключена фрагментация клинических протоколов приёма, обеспечена 100% автономия врача (Мандат 8e).
+  2. *Снос дубликатов налоговых калькуляторов НДФЛ (Мандат 8s)*:
+     - Модальные окна `NdflCalculatorModal.tsx` и `FnsNdflXmlModal.tsx` консолидированы на едином каноническом модуле `components/finance/TaxDeductionCertificateModal.tsx`;
+     - Гарантирован строгий расчет 13% НДФЛ (КНД 1151156, приказ ФНС РФ № БВ-7-11/824@ / ЕД-7-11/755@) с генерацией печатных форм и выгрузкой XML для ЭДО из единой точки правды.
+  3. *Консолидация подсистемы ЕГИСЗ / РЭМД (Мандаты 8i, 8s)*:
+     - Модули `EgiszDocumentsJournalModal.tsx`, `EgiszRemdSigningModal.tsx`, `EgiszRemdXmlModal.tsx` и `EgiszCdaExportModal.tsx` консолидированы на каноническом кабинете подписания `components/cmo/EgiszSigningCabinetModal.tsx` и движке `@dental/shared/cda`;
+     - Исключено дублирование логики валидации CDA R2/R3 и отправки документов Формы 043/у.
+  4. *Консолидация личного кабинета пациента и КЛКТ (Мандат 8s)*:
+     - Модальные окна `PatientWebappPortalModal.tsx` и `PatientMobilePortalModal.tsx` консолидированы на каноническом кабинете пациента `components/portal/patientCabinet/PatientCabinetModal.tsx`;
+     - `CbctMpr3DStudioModal.tsx` консолидирован на канонической студии `CbctMprImplantStudioModal.tsx` и просмотрщике `CbctMprViewer.tsx`;
+     - `CasePresentationView.tsx` консолидирован на каноническом презентере планов `TreatmentPlanPresenterModal.tsx`.
+  5. *Пробитие потолка бутафорских ширм со 104 до 99 в panelsAreMounted.test.ts (Мандат 8s)*:
+     - Из реестра `DEMOUNTED_MODAL_SHIRMS_BACKLOG` устранены записи фасадных ширм (`EgiszDocumentsJournalModal`, `EgiszRemdSigningModal`, `PatientWebappPortalModal`, `PatientMobilePortalModal`, `CbctMpr3DStudioModal`);
+     - Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен со 104 до 99;
+     - Защищен железный инвариант: тестовый бэклог ширм может только сокращаться.
+- **Файлы**: `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`, `apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx`, `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/visit/VisitSoapEditor.tsx`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/radiology/CbctMprViewer.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts`.
+- **Тесты**: `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8), Single-Compiler Gate защищен per Mandate 8t, 327/327 фичей со статусом [ДА] (100% паритет).
+
+
