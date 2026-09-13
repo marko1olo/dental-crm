@@ -260,8 +260,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		[dashboard?.clinicSettings?.chairs],
 	);
 	const isSoloDoctor =
+		dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ||
 		dashboard?.clinicSettings?.profile?.mode === "one_chair" ||
-		(doctors.length <= 1 && chairs.length <= 1);
+		(dashboard?.clinicSettings?.profile?.mode as string) === "solo_practice" ||
+		(doctors.length <= 1 && chairs.length <= 1) ||
+		doctors.length <= 1;
 	const activePatients = useMemo(
 		() => (dashboard?.patients ?? []).filter((p) => p.status === "active"),
 		[dashboard?.patients],

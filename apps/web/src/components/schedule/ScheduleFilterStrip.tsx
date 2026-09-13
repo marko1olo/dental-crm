@@ -311,7 +311,7 @@ export function ScheduleFilterStrip({
 			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(-1)}
 					aria-label="Показать предыдущий день"
 					title="День назад"
@@ -325,11 +325,11 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7.5 px-1 sm:px-1.5 text-[11px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[82px] min-w-[82px] sm:w-[135px] sm:min-w-[135px] text-center tracking-tight"
+					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7 px-1 sm:px-1.5 text-[11px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[82px] min-w-[82px] sm:w-[135px] sm:min-w-[135px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(1)}
 					aria-label="Показать следующий день"
 					title="День вперёд"
@@ -542,7 +542,7 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-0 px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
 						title="Дополнительные режимы и списки расписания"
 						aria-label="Опции расписания"
 						aria-expanded={isOptionsMenuOpen}
@@ -992,18 +992,20 @@ export function ScheduleFilterStrip({
 						</div>
 				</div>
 
-				{/* 1 Primary Action Button: [+ Запись] (Hick's Law: strictly 1 primary action button on toolbar face) */}
+				{/* 1 Primary Action Button: [+ ЗАПИСЬ] (Hick's Law: strictly 1 primary action button on toolbar face) */}
 				{onQuickBooking && (
 					<button
 						type="button"
 						onClick={onQuickBooking}
-						className="schedule-primary-quick-booking-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 px-2.5 sm:px-3 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] hover:brightness-110 active:scale-95 text-white transition-all cursor-pointer flex items-center justify-center gap-1 shrink-0 shadow-2xs select-none"
+						className="schedule-primary-quick-booking-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg text-xs font-black bg-[var(--teal,var(--brand-primary))] hover:brightness-110 active:scale-95 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs select-none"
 						title="Новая запись пациента на прием (N)"
-						aria-label="Новая запись на прием"
+						aria-label="Новая запись на прием: + ЗАПИСЬ"
 						data-testid="schedule-toolbar-primary-quick-booking-btn"
 					>
-						<Plus size={14} className="shrink-0" />
-						<span className="hidden sm:inline whitespace-nowrap">Запись</span>
+						<Plus size={14} className="shrink-0 stroke-[3]" aria-hidden="true" />
+						<span className="whitespace-nowrap font-black uppercase tracking-wider text-xs">
+							Запись
+						</span>
 					</button>
 				)}
 			</div>
