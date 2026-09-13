@@ -3488,3 +3488,27 @@
      - В `ScheduleFilterStrip.tsx` ликвидирован паразитный плюс в текстовой метке кнопки `+ Запись`, устранено дублирование иконки и символа.
 - **Файлы**: `apps/web/src/components/portal/PatientPortalModal.tsx` (удален), `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/components/perio/PeriodontogramChart.tsx`, `apps/web/src/components/odontogram/ToothChart.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`.
 - **Тесты**: `npm run check:encoding`: 0 ошибок (UTF-8, 5169 файлов проверено), `npm run typecheck -w @dental/web`: 0 ошибок, `npm run typecheck -w @dental/api`: 0 ошибок, 16/16 live-скриншотов 1440x900 и 390x844 проверены инструментально.
+
+### 2.10.274. Волна 192: Ликвидация устаревших дубликатов-фасадов стерилизации SterilizationJournalModal и SterilizationStudioModal по Мандату 8s, прямое монтирование канонических модалов в ClinicalModalsHost и снижение потолка бутафорских ширм до 111 (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+- **Идея & Бизнес-эффект**: Тотальная ликвидация устаревших дубликатов-фасадов стерилизации `apps/web/src/components/sterilization/SterilizationJournalModal.tsx` (-49 строк) и `apps/web/src/components/sterilization/SterilizationStudioModal.tsx` (-48 строк) по Вселенскому анти-блоат догмату и Закону Единого Неделимого Авторитета (Мандат 8s); прямое монтирование канонических компонентов `SterilizationAutoclaveLogModal` и `KraftPackageBarcodeModal` в `ClinicalModalsHost.tsx` без промежуточных слоев и избыточных фасадов; санитаризация реэкспортов в `sterilization/index.ts` и `sanpin/index.ts`; обновление тестовых импортов в `financeAutonomyWave42.test.tsx`; строгое сокращение бэклога бутафорских ширм в `panelsAreMounted.test.ts` со снижением потолка `DEMOUNTED_MODAL_SHIRMS_CEILING` со 113 до 111 (удалены 2 записи ширм, тест 11/11 PASS).
+- **Архитектурные механизмы**:
+  1. *Физическая ликвидация устаревших фасадов стерилизации (Мандат 8s, коммит `2ad597a8f`)*:
+     - Удален файл `SterilizationJournalModal.tsx` (-49 строк), являвшийся бутафорской оберткой над каноническим журналом автоклавирования `SterilizationAutoclaveLogModal.tsx` (СанПиН 3.3686-21, Форма 257/у, контроль ПСО Форма 366/у, крафт-пакеты);
+     - Удален файл `SterilizationStudioModal.tsx` (-48 строк), являвшийся бутафорской оберткой над каноническим модалом штрихкодирования крафт-пакетов `KraftPackageBarcodeModal.tsx`;
+     - Из `apps/web/src/components/sterilization/index.ts` удалены устаревшие реэкспорты `SterilizationStudioModal` и `SterilizationJournalModal`;
+     - В `apps/web/src/components/sanpin/index.ts` реэкспорт переведен на канонический `SterilizationAutoclaveLogModal`.
+  2. *Прямое монтирование канонических модалов в ClinicalModalsHost (Мандат 8s, коммит `2ad597a8f`)*:
+     - В `apps/web/src/components/modals/ClinicalModalsHost.tsx` модальный ключ `activeModal === "sterilization_journal"` переключен на прямое монтирование `<SterilizationAutoclaveLogModal isOpen={true} onClose={close} />`;
+     - Модальный ключ `activeModal === "sterilization_studio"` переключен на прямое монтирование `<KraftPackageBarcodeModal isOpen={true} onClose={close} />`;
+     - Ликвидированы устаревшие импорты фасадов.
+  3. *Строгое сокращение реестра бутафорских ширм в panelsAreMounted.test.ts (Мандат 8s, коммит `2ad597a8f`)*:
+     - Из массива `DEMOUNTED_MODAL_SHIRMS_BACKLOG` удалены 2 записи:
+       * `components/sterilization/SterilizationJournalModal.tsx:SterilizationJournalModal`
+       * `components/sterilization/SterilizationStudioModal.tsx:SterilizationStudioModal`
+     - Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен со 113 до 111 (тест 11/11 PASS);
+     - Защищен железный инвариант: реестр ширм может только сокращаться.
+  4. *Санитаризация тестов (Мандат 8s, коммит `2ad597a8f`)*:
+     - В `apps/web/src/components/finance/__tests__/financeAutonomyWave42.test.tsx` импорт и рендеринг переведены с удаленного `SterilizationJournalModal` на канонический `SterilizationAutoclaveLogModal`.
+- **Файлы**: `apps/web/src/components/modals/ClinicalModalsHost.tsx`, `apps/web/src/components/sanpin/index.ts`, `apps/web/src/components/sterilization/index.ts`, `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/components/finance/__tests__/financeAutonomyWave42.test.tsx` (удалены: `apps/web/src/components/sterilization/SterilizationJournalModal.tsx`, `apps/web/src/components/sterilization/SterilizationStudioModal.tsx`).
+- **Тесты**: `node --import tsx --test apps/web/src/tests/panelsAreMounted.test.ts`: 11/11 PASS, `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8), Single-Compiler Gate защищен per Mandate 8t, 327/327 фичей со статусом [ДА] (100% паритет).
+
