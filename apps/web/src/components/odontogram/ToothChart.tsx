@@ -3621,6 +3621,5 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 };
 
 export { ToothSVG, splitArchAtMidline, type RootResorptionStage };
-export * from "./AdultToothChart";
 export * from "./ToothRadialMenu";
 export * from "./OdontogramToolbar";

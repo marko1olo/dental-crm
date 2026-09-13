@@ -112,12 +112,9 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	 * SberbankTerminalPaymentModal УДАЛЁН per Mandate 8s (Wave 175) как несмонтированный 501-стаб.
 	 * В приложении смонтирована аппаратная POS-интеграция SberPosTerminalModal (Pilot-NT / Arcus-D).
 	 */
-	{
-		file: "components/clinical/PrescriptionsWidget.tsx",
-		name: "PrescriptionsWidget",
-		reason:
-			"Клинический микровиджет выписки электронных рецептов по Приказу Минздрава РФ № 1094н (Форма 107-1/у, 148-1/у-88 ПКУ, 148-1/у-04(л) льготный). Интегрирует автоматический фармакологический аудит безопасности (контроль ВРД/ВСД, матрица DDI межлекарственных взаимодействий, возрастные противопоказания и дублирование групп НПВП).",
-	},
+	/*
+	 * PrescriptionsWidget УДАЛЁН per Mandate 8s как несмонтированный дубликат (канонические SSOT: PrescriptionPrintModal.tsx и PrescriptionModal.tsx).
+	 */
 	{
 		file: "components/offline/OfflineContinuityStrip.tsx",
 		name: "OfflineContinuityStrip",
@@ -288,12 +285,9 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Вкладка составления поэтапного клинического плана лечения внутри амбулаторного визита пациента с интеграцией классификатора Номенклатуры услуг 804н.",
 	},
-	{
-		file: "components/odontogram/AdultToothChart.tsx",
-		name: "AdultToothChart",
-		reason:
-			"Анатомическая зубная формула постоянного прикуса взрослых пациентов (FDI 11..48) для изолированного рендеринга и модульных тестов одонтограммы, используемая внутри родительского модуля OdontogramModule.tsx.",
-	},
+	/*
+	 * AdultToothChart УДАЛЁН per Mandate 8s как мёртвый дубликат (канонические SSOT: ToothChart.tsx и AnatomicalSvgOdontogram.tsx).
+	 */
 	{
 		file: "components/odontogram/OdontogramToolbar.tsx",
 		name: "OdontogramToolbar",
@@ -1396,4 +1390,23 @@ test("бутафорских модальных хостов ClinicalModalsHost 
 		);
 	}
 });
+
+test("несмонтированного PrescriptionsWidget и мертвого дубликата AdultToothChart в дереве больше нет", () => {
+	/*
+	 * Mandate 8s: Ликвидация мертвого кода и несмонтированных дубликатов.
+	 * 1. PrescriptionsWidget.tsx -> канонические SSOT: PrescriptionPrintModal.tsx и PrescriptionModal.tsx
+	 * 2. AdultToothChart.tsx -> канонические SSOT: ToothChart.tsx и AnatomicalSvgOdontogram.tsx
+	 */
+	for (const removed of [
+		"components/clinical/PrescriptionsWidget.tsx",
+		"components/odontogram/AdultToothChart.tsx",
+	]) {
+		assert.equal(
+			existsSync(path.join(webSrcRoot, removed)),
+			false,
+			`${removed} вернулся в дерево. Модуль ликвидирован per Mandate 8s; используйте канонический SSOT.`,
+		);
+	}
+});
+
 
