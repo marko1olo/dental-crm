@@ -928,7 +928,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
 	"components/imaging/ImagingModal.tsx:ImagingModal",
-	"components/insurance/DmsGuaranteeLettersModal.tsx:DmsGuaranteeLettersModal",
 	"components/insurance/DmsInsurersHubModal.tsx:DmsInsurersHubModal",
 	"components/insurance/InsurancePreAuthModal.tsx:InsurancePreAuthModal",
 	"components/insurance/DmsInsuranceManagerModal.tsx:DmsInsuranceManagerModal",
@@ -1019,7 +1018,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 115;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 114;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

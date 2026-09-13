@@ -29,7 +29,7 @@ import {
 	COMMON_DENTAL_ICD10_DIAGNOSES,
 	FDI_ADULT_TEETH_UPPER,
 	FDI_ADULT_TEETH_LOWER,
-} from "./DmsGuaranteeLettersModal.js";
+} from "./DmsGuaranteeLetterModal.js";
 
 describe("DmsInsurersHubModal — Statutory Insurance Contracts Catalog", () => {
 	it("1.1 Contains top Russian insurance companies with contract numbers and franchise rates", () => {
@@ -210,7 +210,7 @@ const TEST_PATIENT_GUARANTEE_LETTERS: readonly PatientGuaranteeLetter[] = [
 	},
 ];
 
-describe("DmsGuaranteeLettersModal — Guarantee Letters, FDI Formula & Diagnoses", () => {
+describe("DmsGuaranteeLetterModal — Guarantee Letters, FDI Formula & Diagnoses", () => {
 	it("3.1 Validates default patient guarantee letters and limit thresholds", () => {
 		assert.ok(TEST_PATIENT_GUARANTEE_LETTERS.length >= 2);
 

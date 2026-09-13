@@ -38,7 +38,7 @@ import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { EgiszRemdSigningModal } from "../egisz/EgiszRemdSigningModal";
 import { EgiszDocumentsJournalModal } from "../egisz/EgiszDocumentsJournalModal";
 import { CmoQualityAuditModal } from "../cmo/CmoQualityAuditModal";
-import { PatientPortalModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../portal";
+import { PatientCabinetModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../portal";
 import { PatientWebappPortalModal } from "../patient-portal/PatientWebappPortalModal";
 import { PatientPortalTimelineModal } from "../portal/timeline/PatientPortalTimelineModal";
 import { PatientRecallManagerModal } from "../recalls/PatientRecallManagerModal";
@@ -54,7 +54,7 @@ import { MarketingRoiModal } from "../analytics/MarketingRoiModal";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
 import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
 import { DmsInsuranceManagerModal } from "../insurance/DmsInsuranceManagerModal";
-import { DmsGuaranteeLettersModal } from "../insurance/DmsGuaranteeLettersModal";
+import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
 import { DmsInsurersHubModal } from "../insurance/DmsInsurersHubModal";
 import { AccessMatrixModal } from "../settings/AccessMatrixModal";
 import { StaffCommissionsModal } from "../settings/StaffCommissionsModal";
@@ -230,7 +230,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<CmoQualityAuditModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_portal" && (
-				<PatientPortalModal isOpen={true} onClose={close}  {...({} as any)} />
+				<PatientCabinetModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "patient_mobile_portal" && (
 				<PatientMobilePortalModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -284,7 +284,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<DmsInsuranceManagerModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "dms_guarantee_letters" && (
-				<DmsGuaranteeLettersModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DmsGuaranteeLetterModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "dms_insurers_hub" && (
 				<DmsInsurersHubModal isOpen={true} onClose={close}  {...({} as any)} />

@@ -6,7 +6,7 @@
 export * from "./patientCabinet";
 export * from "./selfCheckin";
 export * from "./timeline";
-export * from "./PatientPortalModal";
+export { PatientCabinetModal as PatientPortalModal } from "./patientCabinet";
 export * from "./PatientMobilePortalModal";
 export * from "./PatientOnlineBookingModal";
 export * from "./UpcomingVisitCard";
@@ -15,4 +15,4 @@ export * from "./patientPortalPresets";
 export * from "./patientPortalTypes";
 export { generateQrCodeSvg, generateSha256 } from "./patientCabinet";
 export * from "./PatientBudgetSignView";
-export { PatientPortalModal as default } from "./PatientPortalModal";
+export { default } from "./patientCabinet";

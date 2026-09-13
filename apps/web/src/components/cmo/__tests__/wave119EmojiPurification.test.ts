@@ -44,16 +44,16 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(content.includes("<Zap"), "DmsInsuranceManagerModal must render Lucide Zap vector icon");
 	});
 
-	it("3. DmsGuaranteeLettersModal: zero raw emojis, uses Lucide Zap vector icon", () => {
+	it("3. DmsGuaranteeLetterModal: zero raw emojis, uses Lucide Zap vector icon", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/DmsGuaranteeLettersModal.tsx",
+			"apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("⚡"), "DmsGuaranteeLettersModal must not contain raw ⚡ emoji");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsGuaranteeLettersModal must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "DmsGuaranteeLettersModal must render Lucide Zap vector icon");
+		assert.ok(!content.includes("⚡"), "DmsGuaranteeLetterModal must not contain raw ⚡ emoji");
+		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsGuaranteeLetterModal must be free of raw emojis");
+		assert.ok(content.includes("<Zap"), "DmsGuaranteeLetterModal must render Lucide Zap vector icon");
 	});
 
 	it("4. DmsGuaranteeLetterModal: zero raw emojis, uses Lucide Zap vector icon", () => {
