@@ -65,6 +65,7 @@ import {
 	rectangleAreaMm2,
 } from "./dicomMeasurementMath.js";
 import {
+	ASTRA_TECH_SYSTEM,
 	DENTIUM_SYSTEM,
 	formatImplantSpecRu,
 	getAllImplantSystems,
@@ -716,6 +717,37 @@ describe("Panoramic Reconstruction, CPR Math & Implant Safety Engine (Mandates 8
 		assert.equal(invalidCheck.valid, false);
 		assert.equal(invalidCheck.normalizedDiameter, 4.0);
 		assert.equal(invalidCheck.normalizedLength, 10.0);
+
+		// Astra Tech specification
+		const astra = getImplantSystem("astra");
+		assert.equal(astra.brand, "Astra Tech");
+		assert.equal(astra.line, "OsseoSpeed EV");
+		assert.ok(astra.diameters.includes(3.0));
+		assert.ok(astra.diameters.includes(3.6));
+		assert.ok(astra.diameters.includes(4.2));
+		assert.ok(astra.diameters.includes(4.8));
+		assert.ok(astra.diameters.includes(5.4));
+		assert.ok(astra.lengths.includes(11.0));
+		assert.ok(astra.lengths.includes(13.0));
+
+		const astraGreen = getPlatformForDiameter("astra", 3.0);
+		assert.equal(astraGreen.code, "Green");
+		assert.equal(astraGreen.hexColor, "#10b981");
+
+		const astraYellow = getPlatformForDiameter("astra", 4.2);
+		assert.equal(astraYellow.code, "Yellow");
+		assert.equal(astraYellow.hexColor, "#f59e0b");
+
+		const astraValid = validateImplantDimensions("astra", 4.2, 11.0);
+		assert.equal(astraValid.valid, true);
+		assert.equal(astraValid.normalizedDiameter, 4.2);
+		assert.equal(astraValid.normalizedLength, 11.0);
+		assert.equal(astraValid.platform.code, "Yellow");
+
+		const astraLabel = formatImplantSpecRu("astra", 4.2, 11.0);
+		assert.ok(astraLabel.includes("Astra Tech"));
+		assert.ok(astraLabel.includes("Ø4.2 × 11.0 мм"));
+		assert.ok(astraLabel.includes("Yellow"));
 
 		// Clinical label formatting
 		const osstemLabel = formatImplantSpecRu("osstem", 4.0, 10.0);
