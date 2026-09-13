@@ -17,7 +17,7 @@ import {
 	generateAnesthesiaPkuDisposalHtml,
 	type AnesthesiaPkuPresetKey,
 } from "@dental/shared";
-import { NurseCarpuleDisposalModal } from "../../warehouse/NurseCarpuleDisposalModal";
+import { NurseCarpuleDisposalModal } from "../../inventory/NurseCarpuleDisposalModal";
 
 describe("Anesthesia PKU 1-Click Disposal & Single-Nurse Clearance (Mandate 8e / SanPiN 3.3686-21)", () => {
 	// ── 1. Preset Catalog & Default Values ─────────────────────────────────────

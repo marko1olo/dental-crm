@@ -28,7 +28,7 @@ import {
 } from "../fiscal/fiscal54fzEngine";
 import {
 	handleOneClickPackageWriteOff,
-} from "../../warehouse/warehousePackageWriteOffEngine";
+} from "../../inventory/warehousePackageWriteOffEngine";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

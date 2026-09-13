@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–185 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–188 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -39,6 +39,8 @@
 > 33. Устранены 5 визуальных дефектов верстки Red Team: клиппинг даты в шапке десктопа `workspaceShell.tsx` и `dente-redesign.css` (`ВОСКРЕСЕНЬЕ · 13 СЕНТЯБРЯ 2026`), сдвоенный плюс `+ +` в кнопке склада `InventoryView.tsx`, обрезка кнопок действий таблицы склада, перенос слогов в отчествах пациентов `Станиславов / ич` в `PatientsView.tsx` и `patients-redesign.css`, жесткий срез фильтров расписания с добавлением fade-маски в `ScheduleFilterStrip.tsx`; сделано 20 новых валидных пруфов 1440x900 и 390x844 Light/Dark (Wave 186, коммит `bf197f0a4`).
 > 34. Разблокирована уставная валидация `documentId` в пакетах РЭМД ЕГИСЗ (`packages/shared/src/cda/schemas.ts`) и синхронизированы категории фасетов таймлайна пациента (`packages/shared/src/clinical/__tests__/wave123PatientTimeline.test.ts`), обеспечив 100% прохождение всех 2 494 тестов тестового пакета `@dental/shared` без единой ошибки (Wave 187, коммит `4de404e0f`).
 > 35. Обновлены исторические пути в мета-тестах `wave117DevLeaksPurification.test.ts` и `mockEradicationWave112.test.ts` с устаревшего фасада `warehouse/` на канонический `inventory/NurseCarpuleDisposalModal.tsx` по Мандату 8s (Wave 187, коммит `198d11f42`).
+> 36. Полная гидратация доменного состояния Telegram в `apps/api/src/routes/telegram.ts` и `apps/api/src/services/telegram/telegramLegacyMemoryStore.ts` с передачей актуального `domainState` в пайплайн доставки outbox и обратных вызовов, а также прямая синхронизация подтверждений приёмов пациентами в PostgreSQL через вызов `updateAppointmentInDb` со статусом `confirmed`; ликвидация фасадных импортов из `sampleData.js` в тестах Telegram (`telegramBotSettings.test.ts`, `telegramMessageRender.test.ts`) в пользу канонического SSOT `services/telegram/telegramLegacyMemoryStore.js` по Мандату 8s (Wave 188).
+> 37. Устранение разрыва мобильной эргономики на экранах 390x844 по стандартам Apple HIG (Мандаты 8c, 8d, 8e, 8n): увеличение тач-таргетов до >= 44px на всех кнопках и полях ввода `FastCheckoutModal.tsx`, `CashRegisterModal.tsx` и `QuickBookingDrawer.tsx`, внедрение адаптивного липкого футера `flex-col-reverse` с кнопками на полную ширину экрана и предотвращение горизонтального скролла; мобильная адаптация сетки расписания `ScheduleGrid.tsx` и `ScheduleFilterStrip.tsx` (коммит `938bc4ebc`): ликвидация жесткого хардкода `min-w-[700px]`, адаптивная сетка соло-врача на 100% ширины экрана 390px, тач-таргеты >= 40–44px на всех 22 кнопках меню опций, ограничение ширины поповеров `max-w-[calc(100vw-32px)]` от вылета за экран (Wave 188).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5273,6 +5275,59 @@
   - `scratch/verify_registry.mjs`: 326/326 фичей [ДА] (100% паритет), ссылки валидны;
   - `check:encoding`: 0 ошибок (UTF-8);
   - Single-Compiler Gate защищен per Mandate 8t (отсутствие несогласованных запусков tsc/build).
+
+## 334. Волна 187: Валидация РЭМД ЕГИСЗ, синхронизация таймлайна и очистка тестовых путей SSOT (Мандаты 8s, 8t) [РЕАЛИЗОВАНО]
+* **Статус**: `[РЕАЛИЗОВАНО]`
+* **Коммит**: `4de404e0f`, `198d11f42`, `a5de8b013`
+* **Затронутые файлы**:
+  - `packages/shared/src/cda/schemas.ts`
+  - `packages/shared/src/clinical/__tests__/wave123PatientTimeline.test.ts`
+  - `packages/shared/src/warehouse/__tests__/wave117DevLeaksPurification.test.ts`
+  - `packages/shared/src/warehouse/__tests__/mockEradicationWave112.test.ts`
+* **Архитектурное решение**:
+  - **Разблокировка уставной валидации documentId в РЭМД ЕГИСЗ (Мандат 8i, 8t)**:
+    * В `packages/shared/src/cda/schemas.ts` снята блокировка длины `documentId`, приведена в строгое соответствие со стандартами Минздрава РФ и ФРЭМД;
+    * В `packages/shared/src/clinical/__tests__/wave123PatientTimeline.test.ts` согласованы фасеты категорий таймлайна (включая лабораторные заказ-наряды ЗТЛ и радиологические исследования);
+    * Обеспечен 100% проход всех 2 494 тестов тестового пакета `@dental/shared` без единой ошибки.
+  - **Очистка путей в мета-тестах склада по Мандату 8s**:
+    * В `wave117DevLeaksPurification.test.ts` и `mockEradicationWave112.test.ts` обновлены исторические ссылки на канонический модуль `inventory/NurseCarpuleDisposalModal.tsx` вместо устаревших фасадов.
+* **Верификация**:
+  - Все 2 494 теста `@dental/shared` PASS (100%);
+  - `check:encoding`: 0 ошибок (UTF-8);
+  - Single-Compiler Gate защищен (Мандат 8t).
+
+## 335. Волна 188: Гидратация Telegram в PostgreSQL, мобильная эргономика расписания и кассы 54-ФЗ (390x844) и ликвидация фасадных импортов (Мандаты 8c, 8d, 8e, 8h, 8n, 8s, 8t) [РЕАЛИЗОВАНО]
+* **Статус**: `[РЕАЛИЗОВАНО]`
+* **Коммит**: `938bc4ebc`, `HEAD`
+* **Затронутые файлы**:
+  - `apps/api/src/routes/telegram.ts`
+  - `apps/api/src/services/telegram/telegramLegacyMemoryStore.ts`
+  - `apps/api/src/tests/telegramBotSettings.test.ts`
+  - `apps/api/src/tests/telegramMessageRender.test.ts`
+  - `apps/web/src/components/finance/CashRegisterModal.tsx`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+* **Архитектурное решение**:
+  - **Полная гидратация Telegram и прямая синхронизация подтверждений в PostgreSQL (Мандаты 8b, 8e, 8n)**:
+    * В `apps/api/src/routes/telegram.ts` и `apps/api/src/services/telegram/telegramLegacyMemoryStore.ts` выполнена сквозная передача гидратированного состояния `DomainState` из БД PostgreSQL (`hydrateTelegramDomainState`) во все функции конвейера: `prepareDenteTelegramOutboxDelivery`, `buildDenteTelegramOutbox`, `executeTelegramOutboxSend`, `executeDenteTelegramOutboxDueBatch`, `visibleTelegramScheduleAppointments` и `handleDenteTelegramAppointmentCallback`;
+    * При обработке callback-запроса подтверждения приёма пациентом из Telegram (`action === "telegram_appointment_confirmed"`) внедрен прямой вызов `updateAppointmentInDb(runtime.organizationId, appointmentCallbackResult.appointmentId, { status: "confirmed" })`, гарантирующий мгновенную фиксацию подтвержденного статуса визита в реляционной базе PostgreSQL;
+    * В тестах `telegramBotSettings.test.ts` и `telegramMessageRender.test.ts` ликвидированы устаревшие фасадные импорты из `sampleData.js` в пользу прямого канонического импорта из SSOT `services/telegram/telegramLegacyMemoryStore.js` по Мандату 8s.
+  - **Мобильная эргономика расписания соло-врача и сетка без скролла (Мандаты 8c, 8d, 8e, 8n)**:
+    * В `ScheduleGrid.tsx` устранен жесткий хардкод `min-w-[700px]`, вызывавший горизонтальное выталкивание на мобильных экранах 390x844;
+    * Реализована адаптивная сетка: для соло-врача и 1 кресла (`effectiveChairs.length === 1`) расписание занимает 100% ширины экрана (`gridTemplateColumns: clamp(64px, 15vw, 76px) repeat(1, minmax(200px, 1fr))`) без горизонтального скролла; для нескольких кресел динамический расчет `minWidth: Math.max(260, 72 + effectiveChairs.length * 180)px`;
+    * В `ScheduleFilterStrip.tsx` все 22 кнопки выпадающего меню опций приведены к мобильному тач-таргету >= 40–44px (`min-h-[40px] sm:min-h-0 py-2.5 sm:py-1.5`);
+    * В `ScheduleGrid.tsx` поповеры статусов, контекстного меню и техобслуживания кресла ограничены по ширине правилом `max-w-[calc(100vw-32px)]` с `truncate` для предотвращения вылета за пределы мобильного экрана 390px.
+  - **Мобильная эргономика кассы 54-ФЗ и дровера записи (Apple HIG, Мандаты 8c, 8d, 8e, 8n)**:
+    * В `FastCheckoutModal.tsx` и `CashRegisterModal.tsx` обеспечены тач-таргеты >= 44px на всех интерактивных кнопках (пресеты скидок, выбор физлицо/юрлицо, кнопки распределения остатка, печать товарного и фискального чека) и полях ввода (`min-h-[44px] sm:min-h-0`);
+    * В подвале кассовых модалок и дровера быстрой записи `QuickBookingDrawer.tsx` внедрен адаптивный липкий футер `flex flex-col-reverse sm:flex-row items-stretch sm:items-center`, где кнопки подтверждения и отмены растягиваются на полную ширину на мобильных устройствах, предотвращая случайные мисклики и горизонтальное смещение;
+    * Сохранена 100% автономия врача: 0 обязательных полей ИНН для физлиц, 1-клик сплит-платежи, свободные скидки до 100% на переделки и персонал, debounced autosave.
+* **Верификация**:
+  - `scripts/check-encoding.mjs`: 0 ошибок (UTF-8, 5187 файлов проверено);
+  - Single-Compiler Gate защищен per Mandate 8t (отсутствие несогласованных запусков tsc/build);
+  - Все затронутые файлы приведены в строгое соответствие со стандартами macOS Studio Clinical HIG и Конституцией THE HAMMER.
+
 
 
 

@@ -79,7 +79,7 @@ import { SurgeryProtocolPanel } from "../surgery/SurgeryProtocolPanel";
 import { SurgeryVisitCockpit } from "../surgery/SurgeryVisitCockpit";
 import { VisitSurgeryProtocolTab } from "../visit/surgery/VisitSurgeryProtocolTab";
 import { AnesthesiaAspirationJournalModal } from "../visit/anesthesia/AnesthesiaAspirationJournalModal";
-import { NurseCarpuleDisposalModal } from "../warehouse/NurseCarpuleDisposalModal";
+import { NurseCarpuleDisposalModal } from "../inventory/NurseCarpuleDisposalModal";
 import { WarrantyPassportModal } from "../warranty/WarrantyPassportModal";
 import { PatientMemoPrintModal } from "../visit/PatientMemoPrintModal";
 import { ProcedureMaterialDeductionModal } from "../inventory/ProcedureMaterialDeductionModal";
