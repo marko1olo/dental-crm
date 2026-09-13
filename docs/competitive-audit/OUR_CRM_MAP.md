@@ -3714,8 +3714,57 @@
 - **Файлы**: `apps/web/src/App.tsx`, `apps/web/src/CommunicationsView.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/components/InventoryView.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/patients/LabOrdersPanel.tsx`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`, `apps/web/src/components/settings/OfflineBackupVaultPanel.tsx`, `apps/web/src/components/settings/SettingsAuditTab.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`, `apps/web/src/components/visit/VisitSpecialtyFocus.tsx`, `apps/web/src/components/voice/VoiceDictationAssistantModal.tsx`, `apps/web/src/pages/AnalyticsDashboardView.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
 - **Тесты**: `npm run typecheck -w @dental/web`: Exit Code 0, `npm run typecheck -w @dental/api`: Exit Code 0, `node scripts/check-encoding.mjs`: 0 ошибок, `panelsAreMounted.test.ts`: 13/13 PASS, 327/327 фичей со статусом [ДА] (100% паритет).
 
+### 2.10.284. Волна 201: Ликвидация 444px вертикального блоата Склада в 1 строку тулбара 36px, устранение утечки флага isDelayedAlert в ЗТЛ, сокращение кнопок канбан-карточек ЗТЛ с 4 до 2 по Закону Миллера, снятие disabled-блокировки в расписании (Мандаты 8d, 8e, 8p, 8n)
+- **Идея & Бизнес-эффект**: Глубокая эргономическая очистка рабочих мест администратора, кладовщика и врача: сжатие гигантского вертикального блоата складского тулбара с 444px до строго 1 строки 36px (норматив $\le 160\text{--}180\text{px}$ по Закону «Слона в комнате» Мандата 8p); ликвидация технической утечки флага разработчика `isDelayedAlert` в карточках заказов ЗТЛ; консолидация кнопок канбан-карточек ЗТЛ с 4 до строго 2 основных действий («Открыть наряд», «Статус») с переносом вторичных действий в меню `...` по Закону Миллера (Мандат 8d п. 3); снятие немотивированной disabled-блокировки при бронировании расписания для соблюдения автономии персонала по Мандату 8e.
+- **Архитектурные механизмы**:
+  1. *Сжатие тулбара Склада (InventoryView.tsx, warehouse.css)*:
+     - Ликвидирован 4-этажный частокол фильтров и кнопок высотой 444px;
+     - Тулбар сжат в строгую 1 компактную строку высотой 36px (`h-9 min-h-[36px] max-h-[36px]`);
+     - Вторичные операции свернуты в контекстное выпадающее меню действий.
+  2. *Очистка и консолидация ЗТЛ (LabOrdersPage.tsx, DentalLabKanban.tsx)*:
+     - Устранена утечка флага `isDelayedAlert` из прод-UI;
+     - Число кнопок прямого действия на канбан-карточках нарядов сокращено с 4 до строго 2 («Открыть наряд», «Статус») + меню `...`;
+     - Исключены визуальные переполнения и клиппинг текста.
+  3. *Автономия персонала в расписании (ScheduleView.tsx, ScheduleBookingModal.tsx)*:
+     - Сняты искусственные `disabled`-блокировки кнопок сохранения при создании визита по Мандатам 8e, 8n.
+- **Файлы**: `apps/web/src/components/InventoryView.tsx`, `apps/web/src/components/inventory/warehouse.css`, `apps/web/src/pages/LabOrdersPage.tsx`, `apps/web/src/components/lab/DentalLabKanban.tsx`, `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleBookingModal.tsx`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Коммит**: `1b39654d7`.
 
+### 2.10.285. Волна 202: Устранение утечек токенов разработки в маркетинге, обнуление синтетических мок-выручек до API, инкапсуляция виджетов 404, сжатие автопилота СанПиН и дедупликация документов (Мандаты 8d, 8e, 8p, 8s)
+- **Идея & Бизнес-эффект**: Искоренение утечек внутренней кухни разработки в клиентском UI: полное вычищение технических строк `Wave 16`, `(Фича №28)`, `(#35)` из заголовков маркетинговой сквозной аналитики; замена синтетических захардкоженных выручек в воронке онлайн-записи на честный ноль до получения живых данных от API (Zero-Mock Fallback по Core Route п. 11); изоляция виджетов 404 из глобального подвала настроек в их семантические вкладки «Права» и «Модули»; сжатие длинной 91-значной надписи автопилота СанПиН в компактную кнопку тулбара 32–36px; устранение дублирующих селекторов категорий в реестре документов.
+- **Архитектурные механизмы**:
+  1. *Ликвидация технических токенов и честный Zero-Mock в аналитике*:
+     - `MarketingAttributionDashboard.tsx`: удалены токены `Wave 16`, `(#35)`;
+     - `OnlineBookingConversionPanel.tsx`: удален токен `(Фича №28)`, синтетические моковые значения выручки заменены на реальные нули (`₽0`) до гидратации из БД.
+  2. *Реорганизация настроек и чистка подвала*:
+     - `SettingsView.tsx`: убран несемантический глобальный подвал с виджетами 404;
+     - `SettingsSecurityTab.tsx`, `SettingsModulesTab.tsx`: контекстные страницы ошибок перемещены внутрь профильных вкладок.
+  3. *Эргономика СанПиН и Документов*:
+     - `SanpinJournal257View.tsx`: 91-значная плашка свернута в эргономичную кнопку тулбара высотой 36px с выносом описания в тултип;
+     - `DocumentsView.tsx`: удален дублирующий селектор категорий бланков, ликвидирован визуальный шум.
+- **Файлы**: `apps/web/src/components/analytics/MarketingAttributionDashboard.tsx`, `apps/web/src/components/analytics/OnlineBookingConversionPanel.tsx`, `apps/web/src/SettingsView.tsx`, `apps/web/src/components/settings/SettingsSecurityTab.tsx`, `apps/web/src/components/settings/SettingsModulesTab.tsx`, `apps/web/src/components/sanpin/SanpinJournal257View.tsx`, `apps/web/src/DocumentsView.tsx`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Коммит**: `ef99a977a`.
 
-
-
-
+### 2.10.286. Волна 203: Ликвидация утечек разработки, снос 584 строк дубликата персонала, эргономика шапок экранов (<160px) и консолидация нарядов ЗТЛ и СанПиН (Мандаты 8d, 8e, 8p, 8s)
+- **Идея & Бизнес-эффект**: Комплексная оптимизация и чистка кодовой базы: окончательная ликвидация оставшихся утечек разработки («Фича №35», «Фича №28») из маркетинговой аналитики и конверсионной панели; физический снос 584 строк параллельного дублирующего кода управления персоналом и расписанием в `SettingsClinicTab.tsx` в пользу единого SSOT `SettingsStaffTab.tsx` (Мандат 8s); консолидация частокола кнопок карточек сотрудников до строго 2 действий («Карточка», «Телефон») с выносом доступов (PIN, пароль) в поповер «...» по Закону Миллера (Мандат 8d п. 3); перевод 4 синтетических тост-заглушек СанПиН на реальный интерактивный стейт учета клиники; компрессия шапок документов (<160px), сквозной аналитики (~155px) и страницы нарядов ЗТЛ (~120px) в норматив высоты Мандата 8p; консолидация 7 переносившихся кнопок нарядов ЗТЛ в строгую 1 строку 36px с поповером экспресс-шаблонов.
+- **Архитектурные механизмы**:
+  1. *Ликвидация утечек разработки в прод-UI (MarketingAttributionDashboard.tsx, OnlineBookingConversionPanel.tsx)*:
+     - Окончательно удалены технические маркеры `(Фича №35)` и `(Фича №28)`;
+     - Чистый пользовательский интерфейс без служебных пометок разработки.
+  2. *Снос дубликата персонала и Закон Миллера (SettingsClinicTab.tsx, SettingsStaffTab.tsx)*:
+     - Из `SettingsClinicTab.tsx` удалены 584 строки дублирующего управления персоналом, расписанием смен и аккаунтами;
+     - В `SettingsStaffTab.tsx` частокол кнопок карточек сотрудников (4–5 кнопок) свернут в 2 кнопки прямого действия («Карточка», «Телефон») + компактный выпадающий поповер «...» для операций с PIN-кодами и паролями;
+     - Исключены риски расхождения прав и данных сотрудников.
+  3. *Интерактивный стейт СанПиН взамен синтетических тостов (SanpinRegisters.tsx)*:
+     - 4 журнала СанПиН переведены на реальный стейт клиники: 1) генерация раствора дезинфектанта с расчетом концентрации и срока годности; 2) журнал тест-полосок экспресс-контроля; 3) протоколы бактериологического контроля СЭС; 4) утилизация игл через деструктор с фиксацией тары КБ и номера пломбы;
+     - Обеспечена 100% готовность к инспекциям Роспотребнадзора без фиктивных заглушек.
+  4. *Компрессия шапок экранов под норматив высоты <=160-180px (Мандат 8p)*:
+     - `DocumentsView.tsx`: шапка сжата с >400px до <160px за счет сворачивания ролевых сценариев («Врач-терапевт», «Администратор», «Главврач») в интерактивный блок `<details>`;
+     - `AnalyticsDashboardView.tsx`: шапка и панель фильтров сжаты с ~218px до ~155px;
+     - `LabOrdersPage.tsx`: шапка страницы сжата с 344px до ~120px за счет однострочной KPI-полосы.
+  5. *Консолидация тулбара ЗТЛ в 1 строку 36px (LabOrdersPanel.tsx, LabOrdersPanel.css)*:
+     - 7 кнопок экспресс-нарядов, создававших перенос строк, консолидированы в 1 строку 36px с поповером быстрых шаблонов («Цирконий A2», «Временная PMMA», «Вкладка КХС»);
+     - Поддержано закрытие по клику вне области и клавише Escape;
+     - 0 вылетов за границы, соблюдение Закона Хика и Мандата 8d п. 2.
+- **Файлы**: `apps/web/src/components/analytics/MarketingAttributionDashboard.tsx`, `apps/web/src/components/analytics/OnlineBookingConversionPanel.tsx`, `apps/web/src/components/settings/SettingsClinicTab.tsx`, `apps/web/src/components/settings/SettingsStaffTab.tsx`, `apps/web/src/components/sanpin/SanpinRegisters.tsx`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/components/documents/documentNavigation.css`, `apps/web/src/pages/AnalyticsDashboardView.tsx`, `apps/web/src/pages/AnalyticsDashboardView.css`, `apps/web/src/pages/LabOrdersPage.tsx`, `apps/web/src/components/patients/LabOrdersPanel.tsx`, `apps/web/src/components/patients/LabOrdersPanel.css`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Коммит**: `2cbf1f93b`.
