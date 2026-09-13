@@ -49,11 +49,25 @@ export const INVERSE_RELATIONSHIP_TYPE: Record<RelationshipType, RelationshipTyp
 	other: "other",
 };
 
+export const INVERSE_RELATIONSHIP_MAP: Record<string, string> = {
+	parent: "child",
+	child: "parent",
+	guardian: "ward",
+	ward: "guardian",
+	spouse: "spouse",
+	sibling: "sibling",
+	grandparent: "grandchild",
+	grandchild: "grandparent",
+	payer: "other",
+	trustee: "ward",
+	other: "other",
+};
+
 /**
  * Returns the reciprocal / inverse relationship type from the counterparty's perspective.
  */
-export function getInverseRelationshipType(type: RelationshipType): RelationshipType {
-	return INVERSE_RELATIONSHIP_TYPE[type] ?? "other";
+export function getInverseRelationshipType(type: RelationshipType | string): RelationshipType {
+	return (INVERSE_RELATIONSHIP_MAP[type] as RelationshipType) ?? "other";
 }
 
 /**
@@ -70,6 +84,39 @@ export function isRelationshipType(value: unknown): value is RelationshipType {
 		(RELATIONSHIP_TYPES as readonly string[]).includes(value)
 	);
 }
+
+export const PATIENT_RELATIONSHIP_TYPES = [
+	"parent",
+	"child",
+	"spouse",
+	"guardian",
+	"payer",
+	"other",
+] as const;
+
+export const patientRelationshipTypeSchema = z.enum(PATIENT_RELATIONSHIP_TYPES);
+export type PatientRelationshipType = z.infer<typeof patientRelationshipTypeSchema>;
+
+export const PATIENT_RELATIONSHIP_LABELS_RU: Record<PatientRelationshipType, string> = {
+	parent: "Родитель",
+	child: "Ребенок",
+	spouse: "Супруг / Супруга",
+	guardian: "Опекун / Законный представитель",
+	payer: "Основной плательщик / Спонсор лечения",
+	other: "Родственник",
+};
+
+export const PATIENT_INVERSE_RELATIONSHIP_TYPE: Record<
+	PatientRelationshipType,
+	PatientRelationshipType
+> = {
+	parent: "child",
+	child: "parent",
+	guardian: "child",
+	spouse: "spouse",
+	payer: "other",
+	other: "other",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. FAMILY GUARANTOR PERMISSIONS & RECORD SCHEMAS
@@ -140,15 +187,34 @@ export const RELATIONSHIP_LABELS_RU: Record<RelationshipType, string> = {
 	other: "Связанное лицо / Другой представитель",
 };
 
+export const EMR_RELATIONSHIP_LABELS_RU: Record<string, { direct: string; inverse: string }> = {
+	parent: { direct: "Родитель (Отец/Мать)", inverse: "Ребёнок (Сын/Дочь)" },
+	child: { direct: "Ребёнок (Сын/Дочь)", inverse: "Родитель (Отец/Мать)" },
+	guardian: { direct: "Опекун / Законный представитель", inverse: "Подопечный" },
+	ward: { direct: "Подопечный", inverse: "Опекун / Законный представитель" },
+	spouse: { direct: "Супруг / Супруга", inverse: "Супруг / Супруга" },
+	sibling: { direct: "Брат / Сестра", inverse: "Брат / Сестра" },
+	grandparent: { direct: "Дедушка / Бабушка", inverse: "Внук / Внучка" },
+	grandchild: { direct: "Внук / Внучка", inverse: "Дедушка / Бабушка" },
+	other: { direct: "Другой родственник / Представитель", inverse: "Связанный пациент" },
+};
+
 /**
  * Returns human-readable Russian statutory nomenclature for a relationship type.
- * If isInverse is true, returns the label from the counterparty's perspective.
+ * Supports boolean isInverse (Wave 124) or "direct" | "inverse" string perspective (EMR).
  */
 export function getRelationshipLabelRu(
-	type: RelationshipType,
-	isInverse: boolean = false,
+	type: RelationshipType | string,
+	isInverseOrPerspective: boolean | "direct" | "inverse" = false,
 ): string {
-	const effectiveType = isInverse ? getInverseRelationshipType(type) : type;
+	if (typeof isInverseOrPerspective === "string") {
+		const emrLabel = EMR_RELATIONSHIP_LABELS_RU[type];
+		if (emrLabel) {
+			return isInverseOrPerspective === "inverse" ? emrLabel.inverse : emrLabel.direct;
+		}
+	}
+	const isInverse = isInverseOrPerspective === true || isInverseOrPerspective === "inverse";
+	const effectiveType = isInverse ? getInverseRelationshipType(type) : (type as RelationshipType);
 	return RELATIONSHIP_LABELS_RU[effectiveType] ?? "Связанное лицо";
 }
 
@@ -159,23 +225,33 @@ export function getRelationshipLabelRu(
  * From 15 years of age, pediatric patients have legal capacity to sign ИДС themselves.
  */
 export const RF_STATUTORY_CONSENT_AGE_THRESHOLD = 15;
+export const PEDIATRIC_LEGAL_CONSENT_AGE_THRESHOLD = 15;
+export const MAJORITY_AGE_THRESHOLD = 18;
+
+export function isPediatricGuardianRequired(patientAgeYears: number): boolean {
+	return patientAgeYears < PEDIATRIC_LEGAL_CONSENT_AGE_THRESHOLD;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. LEGACY SCHEMAS & INTERFACES (Wave 124 Compatibility)
+// 4. LEGACY SCHEMAS & INTERFACES (Wave 124 & EMR Compatibility)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const patientRelationshipSchema = z.object({
 	id: z.string().uuid("Некорректный UUID записи родства"),
+	clinicId: z.string().uuid().optional(),
 	patientId: z.string().uuid("Некорректный UUID пациента"),
 	relatedPatientId: z.string().uuid("Некорректный UUID связанного лица"),
-	relatedPatientName: z.string().min(1, "ФИО связанного лица обязательно"),
-	relationshipType: relationshipTypeSchema,
-	inverseType: relationshipTypeSchema,
-	canSignConsent: z.boolean(),
-	isFinancialPayer: z.boolean(),
-	isEmergencyContact: z.boolean(),
+	relatedPatientName: z.string().min(1, "ФИО связанного лица обязательно").optional().default("Связанное лицо"),
+	relationshipType: z.string(),
+	inverseType: z.string().optional(),
+	isLegalGuardian: z.boolean().optional().default(false),
+	canShareBalance: z.boolean().optional().default(false),
+	canSignConsent: z.boolean().optional().default(false),
+	isFinancialPayer: z.boolean().optional().default(false),
+	isEmergencyContact: z.boolean().optional().default(true),
 	notes: z.string().nullable().optional(),
-	createdAt: z.string(),
+	createdAt: z.string().optional(),
+	updatedAt: z.string().optional(),
 });
 
 export type PatientRelationship = z.infer<typeof patientRelationshipSchema>;
@@ -183,28 +259,123 @@ export type PatientRelationship = z.infer<typeof patientRelationshipSchema>;
 export const createRelationshipInputSchema = z.object({
 	id: z.string().uuid().optional(),
 	inverseId: z.string().uuid().optional(),
-	patientId: z.string().uuid("Некорректный UUID пациента"),
+	clinicId: z.string().uuid().optional(),
+	patientId: z.string().uuid("Некорректный UUID пациента").optional(),
 	patientName: z.string().optional(),
 	relatedPatientId: z.string().uuid("Некорректный UUID связанного лица"),
-	relatedPatientName: z.string().min(1, "ФИО связанного лица обязательно"),
-	relationshipType: relationshipTypeSchema,
-	canSignConsent: z.boolean().optional(),
-	isFinancialPayer: z.boolean().optional(),
-	isEmergencyContact: z.boolean().optional(),
+	relatedPatientName: z.string().min(1, "ФИО связанного лица обязательно").optional().default("Связанное лицо"),
+	relationshipType: z.enum([
+		"parent",
+		"child",
+		"spouse",
+		"sibling",
+		"guardian",
+		"ward",
+		"payer",
+		"other",
+	]),
+	canSignConsent: z.boolean().optional().default(false),
+	isFinancialPayer: z.boolean().optional().default(false),
+	isEmergencyContact: z.boolean().optional().default(true),
+	isPrimaryPayer: z.boolean().optional().default(false),
+	canViewRecords: z.boolean().optional().default(true),
+	canSignConsents: z.boolean().optional().default(false),
 	notes: z.string().nullable().optional(),
 	createdAt: z.string().optional(),
 });
 
 export type CreateRelationshipInput = z.infer<typeof createRelationshipInputSchema>;
+export const createPatientRelationshipSchema = createRelationshipInputSchema;
+export type CreatePatientRelationshipInput = CreateRelationshipInput;
 
 export const updateRelationshipInputSchema = z.object({
+	relationshipType: z.string().optional(),
 	canSignConsent: z.boolean().optional(),
+	canSignConsents: z.boolean().optional(),
 	isFinancialPayer: z.boolean().optional(),
+	isPrimaryPayer: z.boolean().optional(),
+	canViewRecords: z.boolean().optional(),
 	isEmergencyContact: z.boolean().optional(),
+	isLegalGuardian: z.boolean().optional(),
+	canShareBalance: z.boolean().optional(),
 	notes: z.string().nullable().optional(),
 });
 
 export type UpdateRelationshipInput = z.infer<typeof updateRelationshipInputSchema>;
+export const updatePatientRelationshipSchema = updateRelationshipInputSchema;
+export type UpdatePatientRelationshipInput = UpdateRelationshipInput;
+
+export const familyMemberSchema = z.object({
+	patientId: z.string().uuid(),
+	fullName: z.string().min(1),
+	dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+	ageYears: z.number().int().min(0).max(130).optional(),
+	relationshipToHead: z.string(),
+	balanceKopecks: z.number().int().default(0),
+	isHeadOfFamily: z.boolean().default(false),
+	isMinor: z.boolean().default(false),
+	canUseSharedDeposit: z.boolean().default(true),
+});
+export type FamilyMember = z.infer<typeof familyMemberSchema>;
+
+export const familyGroupSchema = z.object({
+	id: z.string().uuid(),
+	clinicId: z.string().uuid(),
+	familyName: z.string().min(1).max(200),
+	headPatientId: z.string().uuid(),
+	members: z.array(familyMemberSchema).min(1),
+	sharedDepositBalanceKopecks: z.number().int().default(0),
+	notes: z.string().max(2000).nullable().optional().default(null),
+	createdAt: z.string().datetime().optional(),
+});
+export type FamilyGroup = z.infer<typeof familyGroupSchema>;
+
+export const pediatricGuardianValidationSchema = z.object({
+	isMinor: z.boolean(),
+	requiresGuardianForConsent: z.boolean(),
+	hasValidGuardian: z.boolean(),
+	guardianPatientId: z.string().uuid().nullable(),
+	guardianFullName: z.string().nullable(),
+	guardianRelationshipType: z.string().nullable(),
+	validationMessageRu: z.string().nullable(),
+});
+export type PediatricGuardianValidation = z.infer<typeof pediatricGuardianValidationSchema>;
+
+export const patientFamilyRelationshipRecordSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	patientId: z.string().uuid(),
+	relatedPatientId: z.string().uuid(),
+	relationshipType: patientRelationshipTypeSchema,
+	isPrimaryPayer: z.boolean().default(false),
+	canViewRecords: z.boolean().default(true),
+	canSignConsents: z.boolean().default(false),
+	notes: z.string().nullable().optional(),
+	createdAt: z.string().optional(),
+	updatedAt: z.string().optional(),
+});
+export type PatientFamilyRelationshipRecord = z.infer<
+	typeof patientFamilyRelationshipRecordSchema
+>;
+
+export const patientFamilyTreeMemberSchema = z.object({
+	id: z.string().uuid(),
+	fullName: z.string().default("—"),
+	phone: z.string().nullable().optional(),
+	birthDate: z.string().nullable().optional(),
+	isMinor: z.boolean().default(false),
+	relationshipId: z.string().uuid(),
+	relationshipType: patientRelationshipTypeSchema,
+	relationshipLabelRu: z.string(),
+	isPrimaryPayer: z.boolean().default(false),
+	canViewRecords: z.boolean().default(true),
+	canSignConsents: z.boolean().default(false),
+	notes: z.string().nullable().optional(),
+	isInverse: z.boolean().default(false),
+});
+export type PatientFamilyTreeMember = z.infer<
+	typeof patientFamilyTreeMemberSchema
+>;
 
 export interface AuthorizedSignersResolution {
 	requiresRepresentative: boolean;
@@ -767,3 +938,310 @@ export function formatKinshipSummaryA4(
 
 	return lines.join("\n");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. FAMILY DEPOSITS, GUARDIAN VALIDATION & WALLET ARITHMETIC (SSOT CONSOLIDATION)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Evaluates whether a guardian relationship is legally authorized to sign medical consent
+ * under FZ-323 Art. 20 and Art. 54.
+ */
+export function validateGuardianForMinor(
+	patientAgeYears: number,
+	relationships: readonly {
+		relatedPatientId: string;
+		relatedPatientName?: string;
+		relationshipType: RelationshipType | string;
+		isLegalGuardian?: boolean;
+		canSignConsent?: boolean;
+	}[],
+): PediatricGuardianValidation {
+	const isMinor = patientAgeYears < MAJORITY_AGE_THRESHOLD;
+	const requiresGuardianForConsent = patientAgeYears < PEDIATRIC_LEGAL_CONSENT_AGE_THRESHOLD;
+
+	if (!requiresGuardianForConsent) {
+		return {
+			isMinor,
+			requiresGuardianForConsent: false,
+			hasValidGuardian: true,
+			guardianPatientId: null,
+			guardianFullName: null,
+			guardianRelationshipType: null,
+			validationMessageRu: "Пациент вправе подписывать ИДС и медицинские согласия самостоятельно (≥ 15 лет).",
+		};
+	}
+
+	const validGuardian = relationships.find(
+		(r) =>
+			r.isLegalGuardian ||
+			r.canSignConsent ||
+			r.relationshipType === "parent" ||
+			r.relationshipType === "guardian",
+	);
+
+	if (validGuardian) {
+		return {
+			isMinor: true,
+			requiresGuardianForConsent: true,
+			hasValidGuardian: true,
+			guardianPatientId: validGuardian.relatedPatientId,
+			guardianFullName: validGuardian.relatedPatientName ?? null,
+			guardianRelationshipType: validGuardian.relationshipType,
+			validationMessageRu: `Законный представитель подтвержден: ${getRelationshipLabelRu(validGuardian.relationshipType as RelationshipType)}.`,
+		};
+	}
+
+	return {
+		isMinor: true,
+		requiresGuardianForConsent: true,
+		hasValidGuardian: false,
+		guardianPatientId: null,
+		guardianFullName: null,
+		guardianRelationshipType: null,
+		validationMessageRu: "ВНИМАНИЕ: Пациент младше 15 лет. Требуется прикрепить родителя или опекуна для подписания ИДС (ФЗ-323).",
+	};
+}
+
+/**
+ * Calculates combined aggregate balance across all family members and the shared deposit pool.
+ */
+export function calculateCombinedFamilyBalance(familyGroup: {
+	members: readonly { balanceKopecks?: number }[];
+	sharedDepositBalanceKopecks?: number;
+}): {
+	individualTotalKopecks: number;
+	sharedDepositKopecks: number;
+	grandTotalKopecks: number;
+} {
+	const individualTotal = familyGroup.members.reduce(
+		(acc, m) => acc + (m.balanceKopecks || 0),
+		0,
+	);
+	const sharedDeposit = familyGroup.sharedDepositBalanceKopecks || 0;
+	return {
+		individualTotalKopecks: individualTotal,
+		sharedDepositKopecks: sharedDeposit,
+		grandTotalKopecks: individualTotal + sharedDeposit,
+	};
+}
+
+export interface RelationshipLinkEdge {
+	readonly patientId: string;
+	readonly relatedPatientId: string;
+	readonly relationshipType?: string;
+}
+
+/**
+ * Validates whether a new relationship can be established without self-linking,
+ * direct duplicate edges, or circular hierarchy cycles.
+ */
+export function validateRelationshipLink(
+	patientId: string,
+	relatedPatientId: string,
+	existingLinks: readonly RelationshipLinkEdge[],
+	newType?: string,
+): { isValid: boolean; error?: string } {
+	if (!patientId || !relatedPatientId) {
+		return { isValid: false, error: "ID обоих пациентов обязательны для создания связи" };
+	}
+
+	if (patientId === relatedPatientId) {
+		return {
+			isValid: false,
+			error: "Пациент не может быть связан сам с собой",
+		};
+	}
+
+	const alreadyLinked = existingLinks.some(
+		(link) =>
+			(link.patientId === patientId && link.relatedPatientId === relatedPatientId) ||
+			(link.patientId === relatedPatientId && link.relatedPatientId === patientId),
+	);
+
+	if (alreadyLinked) {
+		return {
+			isValid: false,
+			error: "Связь между этими пациентами уже существует в базе данных",
+		};
+	}
+
+	if (newType === "parent" || newType === "guardian") {
+		const visited = new Set<string>();
+		const queue: string[] = [relatedPatientId];
+
+		while (queue.length > 0) {
+			const current = queue.shift()!;
+			if (current === patientId) {
+				return {
+					isValid: false,
+					error: "Обнаружен циклический конфликт в семейном древе (запрет рекурсивного родства)",
+				};
+			}
+
+			if (!visited.has(current)) {
+				visited.add(current);
+				for (const link of existingLinks) {
+					if (
+						link.patientId === current &&
+						(link.relationshipType === "parent" || link.relationshipType === "guardian")
+					) {
+						queue.push(link.relatedPatientId);
+					}
+				}
+			}
+		}
+	}
+
+	return { isValid: true };
+}
+
+export interface PayerResolutionCandidate {
+	readonly patientId: string;
+	readonly relatedPatientId: string;
+	readonly relationshipType: string;
+	readonly isPrimaryPayer: boolean;
+}
+
+/**
+ * Identifies the designated paying guarantor for minors or dependent family members.
+ * Returns the payer patient ID, relationship type, and whether the patient is self-paying.
+ */
+export function resolveFamilyPrimaryPayer(
+	patientId: string,
+	relationships: readonly PayerResolutionCandidate[],
+	familyHeadId?: string | null,
+): {
+	payerPatientId: string;
+	payerRelationshipType?: string;
+	isSelfPaying: boolean;
+} {
+	const explicitPayer = relationships.find(
+		(r) => r.patientId === patientId && r.isPrimaryPayer,
+	);
+	if (explicitPayer) {
+		return {
+			payerPatientId: explicitPayer.relatedPatientId,
+			payerRelationshipType: explicitPayer.relationshipType,
+			isSelfPaying: false,
+		};
+	}
+
+	const parentOrGuardianPayer = relationships.find(
+		(r) =>
+			r.patientId === patientId &&
+			(r.relationshipType === "payer" ||
+				r.relationshipType === "parent" ||
+				r.relationshipType === "guardian"),
+	);
+	if (parentOrGuardianPayer) {
+		return {
+			payerPatientId: parentOrGuardianPayer.relatedPatientId,
+			payerRelationshipType: parentOrGuardianPayer.relationshipType,
+			isSelfPaying: false,
+		};
+	}
+
+	if (familyHeadId && familyHeadId !== patientId) {
+		return {
+			payerPatientId: familyHeadId,
+			payerRelationshipType: "payer",
+			isSelfPaying: false,
+		};
+	}
+
+	return {
+		payerPatientId: patientId,
+		isSelfPaying: true,
+	};
+}
+
+export interface DepositDeductionAuthParams {
+	readonly spenderPatientId: string;
+	readonly accountOwnerPatientId: string;
+	readonly requiredAmountKopecks: number;
+	readonly currentDepositBalanceKopecks: number;
+	readonly relationship?: {
+		readonly isPrimaryPayer?: boolean;
+		readonly canViewRecords?: boolean;
+		readonly relationshipType?: string;
+	} | null;
+	readonly isFamilyHead?: boolean;
+}
+
+export interface DepositDeductionAuthResult {
+	readonly isAuthorized: boolean;
+	readonly remainingBalanceKopecks: number;
+	readonly failureReason?: string;
+}
+
+/**
+ * Verifies if a family member is authorized to charge a shared or parent's deposit account,
+ * and validates sufficient balance in kopecks.
+ */
+export function authorizeFamilyDepositDeduction(
+	params: DepositDeductionAuthParams,
+): DepositDeductionAuthResult {
+	const {
+		spenderPatientId,
+		accountOwnerPatientId,
+		requiredAmountKopecks,
+		currentDepositBalanceKopecks,
+		relationship,
+		isFamilyHead,
+	} = params;
+
+	if (requiredAmountKopecks <= 0) {
+		return {
+			isAuthorized: false,
+			remainingBalanceKopecks: currentDepositBalanceKopecks,
+			failureReason: "Сумма списания должна быть строго больше нуля",
+		};
+	}
+
+	if (spenderPatientId === accountOwnerPatientId) {
+		if (currentDepositBalanceKopecks < requiredAmountKopecks) {
+			return {
+				isAuthorized: false,
+				remainingBalanceKopecks: currentDepositBalanceKopecks,
+				failureReason: `Недостаточно средств на депозите (требуется ${requiredAmountKopecks} коп., доступно ${currentDepositBalanceKopecks} коп.)`,
+			};
+		}
+
+		return {
+			isAuthorized: true,
+			remainingBalanceKopecks: currentDepositBalanceKopecks - requiredAmountKopecks,
+		};
+	}
+
+	const isGuarantor =
+		isFamilyHead ||
+		relationship?.isPrimaryPayer === true ||
+		relationship?.relationshipType === "parent" ||
+		relationship?.relationshipType === "guardian" ||
+		relationship?.relationshipType === "spouse" ||
+		relationship?.relationshipType === "payer";
+
+	if (!isGuarantor) {
+		return {
+			isAuthorized: false,
+			remainingBalanceKopecks: currentDepositBalanceKopecks,
+			failureReason:
+				"Пациент не имеет полномочий плательщика на списание средств с семейного депозита данного лица",
+		};
+	}
+
+	if (currentDepositBalanceKopecks < requiredAmountKopecks) {
+		return {
+			isAuthorized: false,
+			remainingBalanceKopecks: currentDepositBalanceKopecks,
+			failureReason: `Недостаточно средств на семейном депозите (требуется ${requiredAmountKopecks} коп., доступно ${currentDepositBalanceKopecks} коп.)`,
+		};
+	}
+
+	return {
+		isAuthorized: true,
+		remainingBalanceKopecks: currentDepositBalanceKopecks - requiredAmountKopecks,
+	};
+}
+

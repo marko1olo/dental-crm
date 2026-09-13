@@ -32,9 +32,37 @@ export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";
-export type { TimelineCategory } from "./emr/index.js";
 export { consumableUnitSchema, type ConsumableUnit } from "./inventory/index.js";
 export {
+	type TimelineCategory,
+	type TimelineCategory as ClinicalTimelineCategory,
+	CLINICAL_TIMELINE_CATEGORIES,
+	TIMELINE_CATEGORY_LABELS_RU,
+	PATIENT_TIMELINE_EVENT_TYPES,
+	type PatientTimelineEvent,
+	type TimelineFilter,
+	type TimelineQueryResult,
+	createTimelineEvent,
+	filterAndPaginateTimeline,
+	formatTimelineA4Summary,
+	formatPatientTimelineChronology,
+	isTimelineCategory,
+	TIMELINE_CATEGORIES,
+	TIMELINE_EVENT_TYPES,
+	type TimelineEventType,
+	timelineCategorySchema,
+	timelineEventTypeSchema,
+	patientTimelineEntrySchema,
+	type PatientTimelineEntry,
+	createPatientTimelineEntrySchema,
+	type CreatePatientTimelineEntryInput,
+	patientTimelineFilterSchema,
+	type PatientTimelineFilter,
+	type TimelineGroupedByDate,
+	type TimelineCategoryMetadata,
+	TIMELINE_CATEGORY_META,
+	groupTimelineEntriesByDate,
+	filterTimelineEntries,
 	type RelationshipType,
 	type PatientRelationship,
 	type CreateRelationshipInput,
@@ -66,7 +94,7 @@ export {
 	interpolateNerveSpline3D,
 	parseGalileosHeader,
 } from "./radiology/index.js";
-export { INVERSE_RELATIONSHIP_MAP } from "./patients/index.js";
+export { INVERSE_RELATIONSHIP_MAP } from "./clinical/index.js";
 export {
 	PURCHASE_ORDER_STATUS_LABELS_RU,
 	type PurchaseOrderStatus,
