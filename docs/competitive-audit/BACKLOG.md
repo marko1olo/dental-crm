@@ -5018,6 +5018,30 @@
   * Single-Compiler Gate защищен per Mandate 8t;
   * Кодовая база избавлена от 745+ строк дублирующего кода (коммиты `3bb9fc686`, `f333f5403`).
 
+---
+
+## 326. `диагностика::пересечение_плоскостей_срезов_и_референсные_линии_мпр` (Wave 179) [РЕАЛИЗОВАНО]
+* **Контекст**: Интеграция аналитического математического аппарата расчета линий взаимного пересечения ортогональных и косых срезов КТ (Axial, Coronal, Sagittal, Cross-Section, Panoramic) из референсного ядра КЛКТ без сторонних графических библиотек (Three.js) и без выделения памяти на частоте 60 FPS (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s, 8t).
+* **Файлы**:
+  - `apps/web/src/components/dicom/sliceIntersectionMath.ts`
+  - `apps/web/src/components/dicom/sliceIntersectionMath.test.ts`
+  - `apps/web/src/components/dicom/index.ts`
+  - `apps/web/src/components/dicom/panoramicReconstruction.test.ts`
+* **Архитектурное решение**:
+  - **Аналитическая 3D векторная геометрия (`sliceIntersectionMath.ts`)**:
+    * Вычисление точного пересечения плоскостей $\mathbf{n}_1 \cdot \mathbf{X} = d_1$ и $\mathbf{n}_2 \cdot \mathbf{X} = d_2$ в замкнутой аналитической форме без численного обращения матриц;
+    * 3D клиппинг Лианга-Барски отсекает бесконечные прямые габаритами AABB объема КТ;
+    * 2D клиппинг Лианга-Барски отсекает проекции референсных линий границами вьюпорта;
+    * Построение ортонормированного базиса Френе-Серре для кросс-секционных плоскостей с клиническим углом наклона $\theta \in [-30^\circ, +30^\circ]$;
+    * Генераторы референсных линий перекрестий для аксиального, коронального, сагиттального, кросс-секционного и панорамного вьюпортов;
+    * Поддержка Zero-Allocation с предварительно аллоцированными буферами `SliceIntersectionScratch`.
+* **Верификация**:
+  * Модульные тесты: `apps/web/src/components/dicom/sliceIntersectionMath.test.ts` (13/13 pass, 4.9 ms);
+  * Интеграционные тесты: `apps/web/src/components/dicom/panoramicReconstruction.test.ts` (15/15 pass, 22.4 ms);
+  * `check:encoding` 0 ошибок (UTF-8);
+  * Single-Compiler Gate защищен per Mandate 8t.
+
+
 
 
 

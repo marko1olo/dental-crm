@@ -139,26 +139,40 @@
 		flex-direction: column !important;
 		flex-wrap: nowrap !important;
 		align-items: stretch !important;
+		height: auto !important;
+		min-height: auto !important;
 		max-height: none !important;
+		overflow: visible !important;
+		padding: 0.625rem 0.75rem !important;
+		gap: 0.5rem !important;
 	}
 
 	.patients-search-box {
-		flex: 1 1 100%;
-		max-width: 100%;
-		min-width: 0;
+		flex: 1 1 100% !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+		width: 100% !important;
+	}
+
+	.patients-search-box input {
+		height: 38px !important;
+		min-height: 38px !important;
+		padding: 6px 36px 6px 32px !important;
+		font-size: 0.875rem !important;
+		box-sizing: border-box !important;
 	}
 
 	.patients-header-actions {
 		width: 100% !important;
 		display: flex !important;
 		flex-direction: row !important;
-		flex-wrap: wrap !important;
+		flex-wrap: nowrap !important;
 		gap: 8px !important;
 		justify-content: stretch !important;
 	}
 
 	.patients-header-actions > button {
-		flex: 1 1 auto !important;
+		flex: 1 1 0 !important;
 		min-width: 0 !important;
 		justify-content: center !important;
 	}

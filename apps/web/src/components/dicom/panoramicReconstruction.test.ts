@@ -77,6 +77,13 @@ import {
 	STRAUMANN_SYSTEM,
 	validateImplantDimensions,
 } from "./implantCatalog.js";
+import {
+	computeAxialIntersections,
+	computeCrossSectionViewIntersections,
+	intersectPlanes3D,
+	type CrossSectionPlaneSpec,
+	type OrthogonalSliceCoordinates,
+} from "./sliceIntersectionMath.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -719,5 +726,68 @@ describe("Panoramic Reconstruction, CPR Math & Implant Safety Engine (Mandates 8
 		assert.ok(nobelLabel.includes("Nobel Biocare"));
 		assert.ok(nobelLabel.includes("Ø4.3 × 11.5 мм"));
 		assert.ok(nobelLabel.includes("RP"));
+	});
+
+	it("15. Evaluates analytical 2D/3D slice intersection math and reference cut lines across all viewports", () => {
+		const box = {
+			xMin: -100,
+			xMax: 100,
+			yMin: -100,
+			yMax: 100,
+			zMin: -50,
+			zMax: 50,
+		};
+
+		const coords: OrthogonalSliceCoordinates = {
+			axialZ: 10,
+			coronalY: 20,
+			sagittalX: -15,
+		};
+
+		const csSpec: CrossSectionPlaneSpec = {
+			point: [0, 20],
+			normal: [0, 1],
+			tangent: [1, 0],
+			tiltDeg: 0,
+			widthMm: 24,
+			zMin: -40,
+			zMax: 40,
+		};
+
+		// 1. Analytical 3D plane-plane intersection
+		const rayPt = [0, 0, 0] as [number, number, number];
+		const rayDir = [0, 0, 0] as [number, number, number];
+		const hasIntersect = intersectPlanes3D(
+			[0, 0, 1], // Axial
+			10,
+			[0, 1, 0], // Coronal
+			20,
+			rayPt,
+			rayDir,
+		);
+		assert.equal(hasIntersect, true);
+		assert.equal(Math.abs(rayDir[0]), 1);
+		assert.equal(rayPt[1], 20);
+		assert.equal(rayPt[2], 10);
+
+		// 2. Axial viewport intersections
+		const axialLines = computeAxialIntersections(coords, box, csSpec);
+		assert.ok(axialLines.coronalLine !== null);
+		assert.equal(axialLines.coronalLine.y1, 20);
+		assert.equal(axialLines.coronalLine.y2, 20);
+		assert.ok(axialLines.sagittalLine !== null);
+		assert.equal(axialLines.sagittalLine.x1, -15);
+		assert.equal(axialLines.sagittalLine.x2, -15);
+		assert.ok(axialLines.crossSectionLine !== null);
+		assert.equal(axialLines.crossSectionLine.x1, 0);
+		assert.equal(axialLines.crossSectionLine.x2, 0);
+
+		// 3. Cross-section viewport intersections
+		const csLines = computeCrossSectionViewIntersections(csSpec, coords);
+		assert.equal(csLines.archCenterLine.x1, 0);
+		assert.equal(csLines.archCenterLine.x2, 0);
+		assert.ok(csLines.axialLine !== null);
+		assert.equal(csLines.axialLine.y1, 10);
+		assert.equal(csLines.axialLine.y2, 10);
 	});
 });

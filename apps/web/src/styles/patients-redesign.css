@@ -189,22 +189,36 @@
 		flex-direction: column;
 		flex-wrap: nowrap;
 		align-items: stretch;
-		padding: 0.75rem 1rem;
-		gap: 0.75rem;
-		max-height: none;
-		min-height: auto;
+		padding: 0.625rem 0.75rem;
+		gap: 0.5rem;
+		height: auto !important;
+		min-height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
 	}
 	.patients-search-box {
 		max-width: none;
 		flex: 0 0 auto;
 		width: 100%;
 	}
+	.patients-search-box input {
+		height: 38px;
+		font-size: 0.875rem;
+		padding: 6px 36px 6px 32px;
+	}
+	.patients-search-clear-btn {
+		right: 8px;
+	}
 	.patients-header-actions {
 		width: 100%;
 		justify-content: stretch;
+		display: flex;
+		flex-direction: row;
+		gap: 8px;
 	}
 	.patients-header-actions > button {
-		flex: 1;
+		flex: 1 1 0;
+		min-width: 0;
 		justify-content: center;
 	}
 }
@@ -373,9 +387,8 @@
 	font-weight: 700;
 	color: var(--ink);
 	line-height: 1.3;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	word-break: break-word;
+	overflow-wrap: break-word;
 }
 
 .patient-row p {

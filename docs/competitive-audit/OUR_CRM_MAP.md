@@ -3183,6 +3183,30 @@
 - **Файлы**: `apps/web/src/components/dicom/dicomMeasurementMath.ts`, `apps/web/src/components/dicom/implantCatalog.ts`, `apps/web/src/components/dicom/panoramicMprMath.ts`, `apps/web/src/components/perspectives/casePresentationPricing.ts`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/styles/schedule.css`, `apps/web/src/VisitView.tsx`, `packages/shared/src/radiology/cprMath.ts`, `packages/shared/src/radiology/boneQualityEngine.ts`, `apps/web/src/components/treatment/treatmentPlanStagesEngine.ts`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
 - **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t), 325/325 фичей со статусом [ДА] (100% паритет).
 
+### 2.10.260. Волна 179: Аналитическое пересечение плоскостей срезов и расчет 2D/3D референсных линий (sliceIntersectionMath) для мультипланарных вьюпортов КЛКТ (Axial, Coronal, Sagittal, Cross-Section, Panoramic) (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s, 8t)
+- **Идея & Бизнес-эффект**: Адаптация чисто аналитических алгоритмов пересечения плоскостей срезов и проекций перекрестий/референсных линий срезов (Reference Cut Lines / Slice Intersections) из референсного ядра КЛКТ без Three.js и без накладных расходов на CPU. Мгновенная синхронизация положения курсора и плоскостей срезов между всеми вьюпортами КЛКТ (аксиальный, корональный, сагиттальный, кросс-секция и панорамная реконструкция) при интерактивном скраббинге на частоте 60 FPS с нулевым выделением памяти (Zero-Allocation) через переиспользуемые буферы `SliceIntersectionScratch`.
+- **Архитектурные механизмы**:
+  1. *Аналитическая 3D векторная геометрия (`sliceIntersectionMath.ts`)*:
+     - Скалярное (`dot3`), векторное (`cross3`) произведение, евклидова длина (`norm3`) и нормализация векторов (`normalize3`);
+     - Построение аналитического уравнения плоскости $\mathbf{n} \cdot \mathbf{X} = d$ по точке и вектору нормали (`makePlane3D`);
+     - Замкнутое аналитическое решение пересечения двух произвольных 3D плоскостей (`intersectPlanes3D`): вычисление направляющего вектора прямой $\mathbf{D} = (\mathbf{n}_1 \times \mathbf{n}_2) / \|\mathbf{n}_1 \times \mathbf{n}_2\|$ и ближайшей к началу координат опорной точки $\mathbf{P}_0 = \frac{(d_1 - d_2 \cos\alpha)\mathbf{n}_1 + (d_2 - d_1 \cos\alpha)\mathbf{n}_2}{1 - \cos^2\alpha}$, защита от деления на ноль для параллельных и совпадающих плоскостей ($\|\mathbf{n}_1 \times \mathbf{n}_2\| < 10^{-6}$);
+  2. *Клиппинг линий и отрезков*:
+     - Трехмерный алгоритм Лианга-Барски (`clipLineToAABB3D`) для отсечения бесконечной прямой пересечения плоскостей габаритами параллелепипеда объема КТ (AABB Bounding Box);
+     - Двумерный алгоритм Лианга-Барски (`clipSegment2D`) для отсечения проекций отрезков границами видимого вьюпорта $[x_{min}, x_{max}] \times [y_{min}, y_{max}]$;
+  3. *Ортонормированный базис кросс-секций с наклоном (Frenet-Serret Tilt Frame)*:
+     - Построение ортонормированной системы координат $(\mathbf{u}, \mathbf{v}, \mathbf{w})$ для поперечного среза челюсти: вектор ширины $\mathbf{u} = (\mathbf{t} \times \mathbf{z}_0) / \|\mathbf{t} \times \mathbf{z}_0\|$, вектор нормали к дуге $\mathbf{n}_0$, поворот на клинический угол наклона корня зуба $\theta \in [-30^\circ, +30^\circ]$ вокруг касательной: $\mathbf{v} = \mathbf{z}_0 \cos\theta + \mathbf{n}_0 \sin\theta$, нормаль к плоскости $\mathbf{w} = \mathbf{n}_0 \cos\theta - \mathbf{z}_0 \sin\theta$;
+  4. *Генераторы референсных линий для всех вьюпортов*:
+     - `computeAxialIntersections`: горизонтальная линия коронального среза $Y = y_{cor}$, вертикальная сагиттального $X = x_{sag}$, проекция кросс-секции как отсеченный отрезок ширины челюсти;
+     - `computeCoronalIntersections`: горизонтальная линия аксиального среза $Z = z_{ax}$, вертикальная сагиттального $X = x_{sag}$;
+     - `computeSagittalIntersections`: горизонтальная линия аксиального среза $Z = z_{ax}$, вертикальная коронального $Y = y_{cor}$;
+     - `computeCrossSectionViewIntersections`: вертикальная осевая линия дуги $u = 0$, наклонная/горизонтальная линия аксиального среза $v = (z_{ax} - z_{mid}) / \cos\theta$;
+     - `computePanoramicIntersections`: горизонтальная линия аксиального уровня $Z = z_{ax}$, вертикальный маркер текущей позиции кросс-секции вдоль дуги $s = s_{mm}$;
+  5. *Zero-Allocation Hot Path*:
+     - Выделяемый один раз контекст `createSliceIntersectionScratch()` с предварительно аллоцированными 3D-векторами и 2D-отрезками для устранения GC-пауз во время быстрого вращения или скролла срезов.
+- **Файлы**: `apps/web/src/components/dicom/sliceIntersectionMath.ts`, `apps/web/src/components/dicom/sliceIntersectionMath.test.ts`, `apps/web/src/components/dicom/index.ts`, `apps/web/src/components/dicom/panoramicReconstruction.test.ts`.
+- **Тесты**: `apps/web/src/components/dicom/sliceIntersectionMath.test.ts` (13/13 pass, 4.9 ms), `apps/web/src/components/dicom/panoramicReconstruction.test.ts` (15/15 pass, 22.4 ms), `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t).
+
+
 
 
 

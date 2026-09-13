@@ -699,7 +699,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						data-testid="open-create-patient-modal-btn"
 					>
 						<Plus size={15} aria-hidden="true" className="shrink-0" />
-						<span className="truncate">Создать нового</span>
+						<span className="whitespace-nowrap">Создать нового</span>
 					</button>
 				</div>
 			</header>
@@ -746,7 +746,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								}}
 							>
 								<div className="min-w-0 flex-1">
-									<h3 className="truncate" title={patient.fullName}>{patient.fullName}</h3>
+									<h3 className="break-words leading-tight" title={patient.fullName}>{patient.fullName}</h3>
 									<p className="truncate">{patient.phone ?? "Телефон не указан"}</p>
 									{patient.notes ? (
 										<p className="truncate text-xs text-[var(--muted)] opacity-75 mt-0.5" title={patient.notes}>
@@ -948,7 +948,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								/>
 							)}
 							<span
-								className="truncate max-w-[260px] sm:max-w-xs md:max-w-md"
+								className="break-words min-w-0 max-w-full sm:max-w-md leading-tight"
 								title={selectedPatient ? selectedPatient.fullName : undefined}
 								style={{
 									fontSize: "16px",
