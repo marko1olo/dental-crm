@@ -32,6 +32,7 @@ export interface PatientMemoPrintModalProps {
 	readonly doctorName?: string | null | undefined;
 	readonly doctorSpecialty?: string | null | undefined;
 	readonly clinicName?: string | null | undefined;
+	readonly clinicAddress?: string | null | undefined;
 	readonly clinicPhone?: string | null | undefined;
 	readonly toothNumber?: string | number | null | undefined;
 	readonly onApplyToSoap?: ((memoText: string) => void) | undefined;

@@ -302,20 +302,20 @@ export function detectPrescriptionAllergyConflicts(
 export interface PrescriptionPrintModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patient: {
-		readonly id?: string | null;
-		readonly fullName?: string | null;
-		readonly birthDate?: string | null;
-		readonly cardNumber?: string | null;
-		readonly medicalCardNumber?: string | null;
-		readonly passport?: string | null;
-		readonly address?: string | null;
-		readonly phone?: string | null;
-		readonly gender?: string | null;
-		readonly snils?: string | null;
-		readonly omsPolicy?: string | null;
+	readonly patient?: {
+		readonly id?: string | null | undefined;
+		readonly fullName?: string | null | undefined;
+		readonly birthDate?: string | null | undefined;
+		readonly cardNumber?: string | null | undefined;
+		readonly medicalCardNumber?: string | null | undefined;
+		readonly passport?: string | null | undefined;
+		readonly address?: string | null | undefined;
+		readonly phone?: string | null | undefined;
+		readonly gender?: string | null | undefined;
+		readonly snils?: string | null | undefined;
+		readonly omsPolicy?: string | null | undefined;
 		readonly allergies?: readonly string[] | string[] | string | null | undefined;
-	} | null;
+	} | null | undefined;
 	readonly allergies?: readonly string[] | string[] | string | null | undefined;
 	readonly diary?: DiaryState | {
 		readonly diagnosisIcd10?: string | null;
@@ -877,9 +877,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					presetMatch?.activeSubstanceRu ||
 					catalogMatch?.activeSubstanceRu ||
 					item.tradeName,
-				category: presetMatch?.category || (item.category as any) || "other",
+				category: (presetMatch?.category || (item.category as any) || "other") as any,
 				categoryLabelRu:
-					presetMatch?.categoryLabelRu || catalogMatch?.categoryLabelRu || "Препарат",
+					presetMatch?.categoryLabelRu || (catalogMatch as any)?.categoryLabelRu || (catalogMatch as any)?.categoryLabel || "Препарат",
 				latinRp: item.latinName,
 				formRu: presetMatch?.formRu || item.form,
 				dosageRu: presetMatch?.dosageRu || item.dosage,
@@ -887,7 +887,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				dispenseLatin: item.dispenseLatin,
 				signaRu: presetMatch?.signaRu || item.signaRussian,
 				validityDays:
-					presetMatch?.validityDays || (catalogMatch?.validityDays as any) || 60,
+					(presetMatch?.validityDays || (catalogMatch as any)?.validityDays || 60) as any,
 			};
 		});
 

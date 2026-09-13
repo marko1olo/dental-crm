@@ -57,8 +57,8 @@ export type PaymentMethodTab = "card_terminal" | "sberpay_qr" | "biometry" | "ca
 
 export interface PaymentModalProps {
 	readonly isOpen: boolean;
-	readonly patientId: string;
-	readonly patientName: string;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
 	readonly amountKopecks?: number | undefined;
 	readonly amountRub?: number | undefined;
 	readonly invoiceId?: string | undefined;
@@ -329,8 +329,8 @@ const CASH_ADD_BUTTONS = [
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
 	isOpen,
-	patientId,
-	patientName,
+	patientId = "pat-walkin",
+	patientName = "Пациент",
 	amountKopecks,
 	amountRub: propAmountRub,
 	invoiceId,

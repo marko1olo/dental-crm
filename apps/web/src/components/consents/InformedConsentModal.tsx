@@ -53,14 +53,14 @@ export interface InformedConsentModalProps {
 	initialTemplateKey?: ConsentTemplateKey;
 	initialVerificationMethod?: "tablet_stylus" | "sms_otp" | "paper_physical";
 	patient?: {
-		fullName?: string | null;
-		birthDate?: string | null;
-		passport?: string | null;
-		phone?: string | null;
-		snils?: string | null;
-		address?: string | null;
-		cardNumber?: string | null;
-	} | null;
+		fullName?: string | null | undefined;
+		birthDate?: string | null | undefined;
+		passport?: string | null | undefined;
+		phone?: string | null | undefined;
+		snils?: string | null | undefined;
+		address?: string | null | undefined;
+		cardNumber?: string | null | undefined;
+	} | null | undefined;
 	doctorName?: string | null;
 	doctorSpecialty?: string | null;
 	clinicName?: string | null;

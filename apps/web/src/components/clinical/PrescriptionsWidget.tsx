@@ -170,11 +170,11 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 		setActiveBundleId(bundleId);
 		setUseAlternative(false);
 		if (bundleId === "surgical") {
-			setPostOpSheetType("surgical");
+			setPostOpSheetType("surgery_extraction");
 		} else if (bundleId === "endo-pain") {
-			setPostOpSheetType("endo");
+			setPostOpSheetType("endodontics");
 		} else if (bundleId === "perio") {
-			setPostOpSheetType("hygiene");
+			setPostOpSheetType("anesthesia_caries");
 		}
 	};
 
@@ -186,15 +186,15 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 		}
 	};
 
-	const handleOpenPostOpCare = (sheetType?: PostOpCareSheetType) => {
+	const handleOpenPostOpCare = (sheetType?: PostOpMemoId) => {
 		if (sheetType) {
 			setPostOpSheetType(sheetType);
 		} else if (activeBundleId === "surgical") {
-			setPostOpSheetType("surgical");
+			setPostOpSheetType("surgery_extraction");
 		} else if (activeBundleId === "endo-pain") {
-			setPostOpSheetType("endo");
+			setPostOpSheetType("endodontics");
 		} else if (activeBundleId === "perio") {
-			setPostOpSheetType("hygiene");
+			setPostOpSheetType("anesthesia_caries");
 		}
 		setIsPostOpModalOpen(true);
 	};
