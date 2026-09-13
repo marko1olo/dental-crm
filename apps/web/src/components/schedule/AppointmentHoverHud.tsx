@@ -3,6 +3,7 @@ import type { Appointment, DentalSpecialty } from "@dental/shared";
 import {
 	AlertTriangle,
 	CalendarCheck,
+	Check,
 	Clock,
 	Copy,
 	MessageSquare,
@@ -42,6 +43,7 @@ export interface AppointmentHoverHudProps {
 	appointmentPatientName?: string;
 	patientBalance: number | null;
 	allergyAlert?: string | null;
+	somaticAlert?: string | null;
 	appointmentDoctor?: any;
 	appointmentAssistant?: any;
 	appointmentChair?: any;
@@ -55,7 +57,7 @@ export interface AppointmentHoverHudProps {
 }
 
 /**
- * macOS HIG Hover HUD & Progressive Disclosure (<100ms delay, CLS = 0).
+ * macOS HIG Hover HUD & Progressive Disclosure (<120ms delay, CLS = 0).
  * Displays rich context on hover: FIO, 54-FZ fiscal balance, phone/WhatsApp,
  * somatic alerts, teeth, doctor/chair, and 1-click status transitions.
  */
@@ -65,6 +67,7 @@ export function AppointmentHoverHud({
 	appointmentPatientName,
 	patientBalance,
 	allergyAlert,
+	somaticAlert,
 	appointmentDoctor,
 	appointmentAssistant,
 	appointmentChair,
@@ -81,6 +84,7 @@ export function AppointmentHoverHud({
 	return (
 		<div
 			className="appointment-patient-hover-preview absolute left-0 top-full mt-1.5 w-[380px] sm:w-[400px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-100 text-xs text-[var(--ink)] z-50 pointer-events-auto"
+			style={{ contain: "layout style", willChange: "transform, opacity" }}
 			data-testid="appointment-patient-hover-preview"
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onClose}
@@ -180,9 +184,22 @@ export function AppointmentHoverHud({
 
 			{/* 3. Яркий янтарный алерт аллергий / противопоказаний */}
 			{allergyAlert && (
-				<div className="p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2 shadow-xs">
+				<div className="p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2 shadow-xs" data-testid="hud-allergy-alert">
 					<AlertTriangle size={15} className="text-amber-600 shrink-0 animate-bounce" />
 					<span>{allergyAlert}</span>
+				</div>
+			)}
+
+			{/* 3.1 Соматический статус (Мандаты 8e, 8n: норма в 1 клик или явный алерт рисков) */}
+			{somaticAlert ? (
+				<div className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-900 dark:text-purple-200 text-xs font-bold flex items-center gap-1.5 shadow-xs" data-testid="hud-somatic-alert">
+					<Stethoscope size={14} className="text-purple-600 shrink-0" />
+					<span>{somaticAlert}</span>
+				</div>
+			) : (
+				<div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[11px] font-medium flex items-center gap-1.5" data-testid="hud-somatic-norm">
+					<Check size={12} className="text-emerald-600 shrink-0" />
+					<span>Соматический статус: норма (1 клик)</span>
 				</div>
 			)}
 

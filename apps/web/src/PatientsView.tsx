@@ -15,6 +15,7 @@ import {
 	FileText,
 	Gift,
 	MoreHorizontal,
+	Phone,
 	Plus,
 	Receipt,
 	Search,
@@ -41,6 +42,7 @@ import { PatientCreationModal, PatientCreationModal as CreatePatientModal } from
 import { PatientCardModal } from "./components/patients/PatientCardModal";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
+import { printBlankMedicalContract } from "./components/patients/blankContractPrint";
 import {
 	featureDistinguishes,
 	patientListFeatureSalience,
@@ -382,12 +384,69 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	const triggerToast = showToastProp ?? showToast;
 
+	const [showLostPatientsOnly, setShowLostPatientsOnly] = useState(false);
+	const [lostPatientIds, setLostPatientIds] = useState<Set<string> | null>(null);
+	const [isLoadingLost, setIsLoadingLost] = useState(false);
+	const [rowMenuPatientId, setRowMenuPatientId] = useState<string | null>(null);
+	const rowMenuRef = useRef<HTMLDivElement>(null);
+
+	const toggleLostPatients = () => {
+		if (showLostPatientsOnly) {
+			setShowLostPatientsOnly(false);
+			return;
+		}
+		setIsLoadingLost(true);
+		fetch("/api/analytics/lost-patients-filters")
+			.then((res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				return res.json();
+			})
+			.then((data: Array<{ id: string }>) => {
+				const ids = new Set((data || []).map((item) => item.id));
+				setLostPatientIds(ids);
+				setShowLostPatientsOnly(true);
+			})
+			.catch((err) => {
+				showToast(
+					actionFailureToast(
+						"Не удалось загрузить фильтры потерянных пациентов",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				setLostPatientIds(new Set());
+				setShowLostPatientsOnly(true);
+			})
+			.finally(() => {
+				setIsLoadingLost(false);
+			});
+	};
+
+	const displayPatients = useMemo(() => {
+		if (!showLostPatientsOnly || !lostPatientIds) return filteredPatients ?? [];
+		return (filteredPatients ?? []).filter((p) => lostPatientIds.has(p.id));
+	}, [filteredPatients, showLostPatientsOnly, lostPatientIds]);
+
 	useEffect(() => {
-		const firstPatient = (filteredPatients ?? [])[0];
+		const handleClickOutside = (e: MouseEvent) => {
+			if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) {
+				setRowMenuPatientId(null);
+			}
+		};
+		if (rowMenuPatientId) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [rowMenuPatientId]);
+
+	useEffect(() => {
+		const firstPatient = (displayPatients ?? [])[0];
 		if (!selectedPatientId && firstPatient?.id) {
 			setSelectedPatientId(firstPatient.id);
 		}
-	}, [selectedPatientId, filteredPatients, setSelectedPatientId]);
+	}, [selectedPatientId, displayPatients, setSelectedPatientId]);
 
 	// Global shortcut: Ctrl+K / ⌘K or / focuses the search box, Esc closes modals or clears search, ArrowDown/Up navigates list
 	useEffect(() => {
@@ -403,6 +462,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				return;
 			}
 			if (e.key === "Escape") {
+				if (rowMenuPatientId) {
+					setRowMenuPatientId(null);
+					return;
+				}
 				if (isPatientCardModalOpen) {
 					setIsPatientCardModalOpen(false);
 					return;
@@ -424,22 +487,29 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					return;
 				}
 			}
+			const targetTag = (document.activeElement?.tagName || "").toLowerCase();
+			const isOtherInput =
+				(targetTag === "input" && document.activeElement !== searchInputRef.current) ||
+				targetTag === "textarea" ||
+				targetTag === "select";
 			if (
-				(e.key === "ArrowDown" || e.key === "ArrowUp") &&
-				(document.activeElement === searchInputRef.current || document.activeElement === document.body)
+				!isOtherInput &&
+				(e.key === "ArrowDown" || e.key === "ArrowUp")
 			) {
-				if (!filteredPatients || filteredPatients.length === 0) return;
+				if (!displayPatients || displayPatients.length === 0) return;
 				e.preventDefault();
-				const currentIndex = filteredPatients.findIndex((p) => p.id === selectedPatientId);
+				const currentIndex = displayPatients.findIndex((p) => p.id === selectedPatientId);
 				let nextIndex = 0;
 				if (e.key === "ArrowDown") {
-					nextIndex = currentIndex < 0 ? 0 : Math.min(currentIndex + 1, filteredPatients.length - 1);
+					nextIndex = currentIndex < 0 ? 0 : Math.min(currentIndex + 1, displayPatients.length - 1);
 				} else {
 					nextIndex = currentIndex <= 0 ? 0 : currentIndex - 1;
 				}
-				const nextPatient = filteredPatients[nextIndex];
+				const nextPatient = displayPatients[nextIndex];
 				if (nextPatient) {
 					handleSelectPatient(nextPatient.id);
+					const el = document.querySelector(`[data-patient-id="${nextPatient.id}"]`);
+					el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
 				}
 			}
 		};
@@ -449,9 +519,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		isPatientCardModalOpen,
 		isCreateModalOpen,
 		isLoyaltyModalOpen,
+		rowMenuPatientId,
 		query,
 		setQuery,
-		filteredPatients,
+		displayPatients,
 		selectedPatientId,
 		handleSelectPatient,
 	]);
@@ -497,49 +568,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			}),
 		[patientInsightById, patientInsightRiskLabels],
 	);
-
-	const [showLostPatientsOnly, setShowLostPatientsOnly] = useState(false);
-	const [lostPatientIds, setLostPatientIds] = useState<Set<string> | null>(
-		null,
-	);
-	const [isLoadingLost, setIsLoadingLost] = useState(false);
-
-	const toggleLostPatients = () => {
-		if (showLostPatientsOnly) {
-			setShowLostPatientsOnly(false);
-			return;
-		}
-		setIsLoadingLost(true);
-		fetch("/api/analytics/lost-patients-filters")
-			.then((res) => {
-				if (!res.ok) throw new Error(`HTTP ${res.status}`);
-				return res.json();
-			})
-			.then((data: Array<{ id: string }>) => {
-				const ids = new Set((data || []).map((item) => item.id));
-				setLostPatientIds(ids);
-				setShowLostPatientsOnly(true);
-			})
-			.catch((err) => {
-				showToast(
-					actionFailureToast(
-						"Не удалось загрузить фильтры потерянных пациентов",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				setLostPatientIds(new Set());
-				setShowLostPatientsOnly(true);
-			})
-			.finally(() => {
-				setIsLoadingLost(false);
-			});
-	};
-
-	const displayPatients = useMemo(() => {
-		if (!showLostPatientsOnly || !lostPatientIds) return filteredPatients ?? [];
-		return (filteredPatients ?? []).filter((p) => lostPatientIds.has(p.id));
-	}, [filteredPatients, showLostPatientsOnly, lostPatientIds]);
 
 	const patientCoreNameMissing =
 		(patientCoreDraft?.fullName ?? "").trim().length === 0;
@@ -736,6 +764,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<article
 								className={`patient-row ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
 								key={patient.id}
+								data-patient-id={patient.id}
+								tabIndex={0}
 								aria-label={`Карточка пациента: ${patient.fullName}`}
 								onClick={() => handleSelectPatient(patient.id)}
 								onKeyDown={(e) => {
@@ -806,19 +836,120 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										</div>
 									) : null}
 								</div>
-								<button
-									aria-label={`Открыть карточку пациента: ${patient.fullName}`}
-									aria-pressed={patientIsSelected}
-									className="round-link shrink-0"
-									type="button"
-									title={`Открыть карточку пациента: ${patient.fullName}`}
-									onClick={(e) => {
-										e.stopPropagation();
-										handleSelectPatient(patient.id);
-									}}
-								>
-									<ArrowRight aria-hidden="true" />
-								</button>
+								<div className="patient-row-actions flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+									{/* Direct Action 1: «В карту» */}
+									<button
+										type="button"
+										className="patient-row-action-btn patient-row-chart-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+										title={`Открыть приём и карту 043/у: ${patient.fullName}`}
+										data-testid={`patient-row-chart-btn-${patient.id}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleSelectPatient(patient.id);
+											executeOpenPatientVisitAutonomy({ selectedPatient: patient });
+										}}
+									>
+										<FileText size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+										<span className="hidden sm:inline">В карту</span>
+									</button>
+
+									{/* Direct Action 2: «Запись» */}
+									<button
+										type="button"
+										className="patient-row-action-btn patient-row-book-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal,var(--brand-primary))] hover:opacity-90 active:scale-95 text-white inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+										title={`Записать на приём в расписание: ${patient.fullName}`}
+										data-testid={`patient-row-book-btn-${patient.id}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleSelectPatient(patient.id);
+											executeBookPatientAppointmentAutonomy({ selectedPatient: patient });
+										}}
+									>
+										<Calendar size={13} className="shrink-0" />
+										<span className="hidden sm:inline">Запись</span>
+									</button>
+
+									{/* Secondary Actions Dropdown Menu «...» (Miller's Law) */}
+									<div className="relative inline-flex items-center" ref={rowMenuPatientId === patient.id ? rowMenuRef : null}>
+										<button
+											type="button"
+											className="patient-row-more-btn min-h-[36px] min-w-[32px] p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
+											title="Дополнительные действия с пациентом"
+											aria-label={`Меню действий для ${patient.fullName}`}
+											aria-expanded={rowMenuPatientId === patient.id}
+											data-testid={`patient-row-more-btn-${patient.id}`}
+											onClick={(e) => {
+												e.stopPropagation();
+												setRowMenuPatientId(rowMenuPatientId === patient.id ? null : patient.id);
+											}}
+										>
+											<MoreHorizontal size={14} className="text-[var(--ink)]" />
+										</button>
+
+										{rowMenuPatientId === patient.id && (
+											<div
+												className="patient-row-menu-dropdown absolute right-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[210px] text-xs animate-in fade-in zoom-in-95 duration-100"
+												role="menu"
+												data-testid="patient-row-actions-dropdown"
+												onClick={(e) => e.stopPropagation()}
+											>
+												<button
+													type="button"
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+													role="menuitem"
+													onClick={() => {
+														setRowMenuPatientId(null);
+														handleSelectPatient(patient.id);
+														setIsPatientCardModalOpen(true);
+													}}
+												>
+													<UserCheck size={14} className="text-[var(--teal)] shrink-0" />
+													<span>Паспортная карточка</span>
+												</button>
+												<button
+													type="button"
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+													role="menuitem"
+													onClick={() => {
+														setRowMenuPatientId(null);
+														handleSelectPatient(patient.id);
+														useAppStore.getState().setCurrentView("finance");
+														showToast(`Касса 54-ФЗ: расчёт ${patient.fullName}`, "info");
+													}}
+												>
+													<Receipt size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+													<span>Касса 54-ФЗ / Оплата</span>
+												</button>
+												<button
+													type="button"
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+													role="menuitem"
+													onClick={() => {
+														setRowMenuPatientId(null);
+														void printBlankMedicalContract(patient);
+													}}
+												>
+													<FileText size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+													<span>Печать бланка договора (____)</span>
+												</button>
+												{patient.phone && (
+													<button
+														type="button"
+														className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+														role="menuitem"
+														onClick={() => {
+															setRowMenuPatientId(null);
+															window.location.href = `tel:${patient.phone}`;
+														}}
+													>
+														<Phone size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+														<span>Позвонить ({patient.phone})</span>
+													</button>
+												)}
+											</div>
+										)}
+									</div>
+								</div>
 							</article>
 						);
 					})}

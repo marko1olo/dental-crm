@@ -369,6 +369,15 @@
 	white-space: nowrap;
 	min-width: max-content;
 }
+.schedule-filter-chips {
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+.schedule-filter-chips::-webkit-scrollbar {
+	display: none;
+}
 .schedule-my-chair-chip,
 .schedule-auto-call-chip,
 .schedule-doctor-chip {

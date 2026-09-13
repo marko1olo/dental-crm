@@ -332,7 +332,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		}
 		hoverTimeoutRef.current = setTimeout(() => {
 			setIsHoverPreviewOpen(true);
-		}, 100);
+		}, 80);
 	};
 
 	const handleCardMouseLeave = () => {
@@ -375,6 +375,22 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			document.removeEventListener("keydown", handleKeyDown);
 		};
 	}, [isCardMenuOpen, isMobileSheetOpen, isHoverPreviewOpen]);
+
+	const cardTeeth = useMemo(() => extractTeethList(appointment), [appointment]);
+
+	const somaticAlert = useMemo(() => {
+		const anamnesis = (appointmentPatient as any)?.anamnesis;
+		const chronic = anamnesis?.chronicDiseases || (appointmentPatient as any)?.chronicDiseases;
+		if (chronic && typeof chronic === "string" && chronic.trim()) {
+			return `Соматика: ${chronic.trim()}`;
+		}
+		const notes = appointmentPatient?.notes || "";
+		const match = notes.match(/(диабет|гипертони[яеи]|астм[аеы]|онколог|кардио|сердечн|гепатит|эпилепси)[^.;\n]*/i);
+		if (match) {
+			return `Соматика: ${match[0].trim()}`;
+		}
+		return null;
+	}, [appointmentPatient]);
 
 	const allergyAlert = useMemo(() => {
 		const rawAllergies =
@@ -939,7 +955,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						boxSizing: "border-box",
 					}}
 				>
-					{/* macOS Hover HUD с задержкой <100ms без сдвига сетки (Apple HIG Progressive Disclosure) */}
+					{/* macOS Hover HUD с задержкой <120ms без сдвига сетки (Apple HIG Progressive Disclosure) */}
 					{isHoverPreviewOpen && !appointmentEditing && (
 						<AppointmentHoverHud
 							appointment={appointment}
@@ -947,6 +963,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							appointmentPatientName={appointmentPatientName}
 							patientBalance={patientBalance}
 							allergyAlert={allergyAlert}
+							somaticAlert={somaticAlert}
+							teeth={cardTeeth}
 							appointmentDoctor={appointmentDoctor}
 							appointmentAssistant={appointmentAssistant}
 							appointmentChair={appointmentChair}
@@ -1437,6 +1455,20 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							className="text-base font-semibold break-words leading-snug whitespace-normal cursor-pointer hover:text-[var(--teal)] transition-colors"
 							style={{ color: "var(--ink)", minWidth: 0, maxWidth: "100%" }}
 							title={`Пациент: ${appointmentPatientName}${appointmentDoctor?.fullName ? ` · Врач: ${appointmentDoctor.fullName}` : ""}${appointmentChair?.name ? ` · Кресло: ${appointmentChair.name}` : ""}`}
+							onDoubleClick={(e) => {
+								e.stopPropagation();
+								if (appointmentPatient?.id) {
+									usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+									if (onOpenVisit) {
+										onOpenVisit();
+									} else {
+										useAppStore.getState().setCurrentView("visit");
+									}
+									showToast(`Открыта карта приёма: ${appointmentPatientName}`, "info");
+								} else {
+									openAppointmentEditor(appointment);
+								}
+							}}
 							onClick={(e) => {
 								if (typeof window !== "undefined" && window.innerWidth < 768) {
 									e.stopPropagation();
@@ -1446,7 +1478,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						>
 							{formatPatientDisplayFio(appointmentPatientName)}
 						</h3>
-						<div className="flex items-center gap-1.5 min-w-0 max-w-full mt-0.5">
+						<div className="flex items-center gap-1.5 min-w-0 max-w-full mt-0.5 flex-wrap">
 							<span
 								className="chip chip-reason text-xs font-medium text-[var(--muted)] max-w-full min-w-0 inline-flex items-center justify-start text-left"
 								title={appointment?.reason || "Консультация"}
@@ -1455,6 +1487,34 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									{appointment?.reason || "Консультация"}
 								</span>
 							</span>
+							{cardTeeth.length > 0 && (
+								<span
+									className="px-1.5 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)]/30 text-[11px] font-bold font-mono shrink-0"
+									title={`Зубы: ${cardTeeth.join(", ")}`}
+									data-testid="appointment-teeth-badge"
+								>
+									Зуб {cardTeeth.join(", ")}
+								</span>
+							)}
+							{allergyAlert && (
+								<span
+									className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-[11px] font-black flex items-center gap-1 shrink-0"
+									title={allergyAlert}
+									data-testid="appointment-card-allergy-badge"
+								>
+									<AlertTriangle size={11} className="text-amber-600 shrink-0" />
+									<span className="truncate max-w-[160px]">{allergyAlert}</span>
+								</span>
+							)}
+							{somaticAlert && (
+								<span
+									className="px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-800 dark:text-purple-200 border border-purple-500/30 text-[11px] font-bold shrink-0"
+									title={somaticAlert}
+									data-testid="appointment-somatic-badge"
+								>
+									<span className="truncate max-w-[160px]">{somaticAlert}</span>
+								</span>
+							)}
 						</div>
 					</div>
 

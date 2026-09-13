@@ -339,7 +339,14 @@ export function ScheduleFilterStrip({
 			</div>
 
 			{/* Center: 1-line horizontal scrollable doctor & chair filters */}
-			<div className="schedule-filter-chips flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0">
+			<div
+				className="schedule-filter-chips flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0"
+				onWheel={(e) => {
+					if (e.deltaY !== 0) {
+						e.currentTarget.scrollLeft += e.deltaY;
+					}
+				}}
+			>
 				{/* "Все записи" filter chip */}
 				<button
 					type="button"
@@ -370,7 +377,7 @@ export function ScheduleFilterStrip({
 					);
 				})()}
 
-				{/* 1-Click "📞 Автодозвон" confirmation panel chip (Mandates 8d, 8p, 8n) */}
+				{/* 1-Click "Автодозвон" confirmation panel chip (Mandates 8d, 8p, 8n) */}
 				{onToggleConfirmations && (
 					<button
 						type="button"
@@ -381,7 +388,7 @@ export function ScheduleFilterStrip({
 						data-testid="schedule-auto-call-chip-btn"
 					>
 						<PhoneCall size={13} className="shrink-0 text-current" aria-hidden="true" />
-						<span className="whitespace-nowrap shrink-0">Автодозвон</span>
+						<span className="whitespace-nowrap shrink-0 flex-shrink-0">Автодозвон</span>
 					</button>
 				)}
 

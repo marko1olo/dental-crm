@@ -346,4 +346,64 @@ describe("AppointmentCard Suite", () => {
 
 		assert.ok(html.includes("appointment-context-menu-btn"), "должна присутствовать кнопка контекстного меню");
 	});
+
+	it("renders medical markers: tooth number badge, allergy alert, and somatic status", () => {
+		const allergyPatient: Patient = {
+			...debtorPatient,
+			id: "pat-allergy",
+			fullName: "Соколова Елена Викторовна",
+			notes: "Аллергия на пенициллин; диабет 2 типа",
+		};
+
+		const appointmentWithTeeth: any = {
+			...baseAppointment,
+			id: "app-medical",
+			patientId: "pat-allergy",
+			reason: "Лечение кариеса зуба 26 и 27",
+		};
+
+		const dashboardWithAllergy: any = {
+			...mockDashboard,
+			patients: [allergyPatient],
+		};
+
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentCard, {
+				appointment: appointmentWithTeeth,
+				dashboard: dashboardWithAllergy as Dashboard,
+				visibleScheduleSuggestions: [],
+				appointmentReadinessById: new Map(),
+				appointmentLabels: mockAppointmentLabels,
+				appointmentDraft: {},
+				appointmentSaveState: "idle",
+				appointmentSaveError: null,
+				appointmentDirty: false,
+				appointmentEditing: false,
+				appointmentHasOpenVisit: false,
+				appointmentActiveVisitStatusLocked: false,
+				appointmentMissingSteps: [],
+				appointmentReadyToSave: true,
+				openScheduleSuggestion: () => {},
+				formatTime: () => "10:00",
+				patientName: () => "Соколова Елена Викторовна",
+				openAppointmentEditor: () => {},
+				repeatAppointment: () => {},
+				closeAppointmentEditor: () => {},
+				updateAppointmentScheduleDraft: () => {},
+				saveAppointmentSchedule: async () => true,
+				normalizedAppointmentStatus: (v: any) => v,
+				toDateTimeLocalValue: (v: string) => v,
+				fromDateTimeLocalValue: (v: string) => v,
+				useManualSelects: false,
+				activeVisitLockedAppointmentStatuses: activeVisitLockedStatuses,
+			})
+		);
+
+		assert.ok(html.includes("data-testid=\"appointment-teeth-badge\""), "должен отображаться бейдж зубов");
+		assert.ok(html.includes("Зуб 26, 27"), "должны быть извлечены номера зубов 26, 27");
+		assert.ok(html.includes("data-testid=\"appointment-card-allergy-badge\""), "должен отображаться бейдж аллергии");
+		assert.ok(html.includes("Внимание: Аллергия на пенициллин"), "должен содержать текст аллергии");
+		assert.ok(html.includes("data-testid=\"appointment-somatic-badge\""), "должен отображаться бейдж соматического риска");
+		assert.ok(html.includes("диабет"), "должен содержать соматический статус диабета");
+	});
 });

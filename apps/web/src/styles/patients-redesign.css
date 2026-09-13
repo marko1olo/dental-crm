@@ -434,6 +434,209 @@
 	color: var(--ink);
 }
 
+/* Patient Row Direct Actions (Miller's Law <= 1-2 buttons) */
+.patient-row-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+.patient-row-action-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 8px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	cursor: pointer;
+}
+
+.patient-row-chart-btn {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.patient-row-chart-btn:hover {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	border-color: var(--teal-ring);
+}
+
+.patient-row-book-btn {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border: 1px solid var(--teal);
+}
+
+.patient-row-book-btn:hover {
+	background: var(--teal-dark, var(--teal));
+	opacity: 0.95;
+}
+
+.patient-row-more-btn {
+	height: 32px;
+	width: 32px;
+	min-height: 32px;
+	min-width: 32px;
+	padding: 0;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.patient-row-more-btn:hover {
+	border-color: var(--teal);
+	background: var(--paper);
+}
+
+.patient-row-menu-dropdown {
+	position: absolute;
+	right: 0;
+	top: calc(100% + 4px);
+	z-index: 60;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 12px;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
+	min-width: 210px;
+	padding: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.patient-row-menu-dropdown button {
+	width: 100%;
+	text-align: left;
+	padding: 6px 10px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--ink);
+	background: transparent;
+	border: none;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: background-color 0.12s ease;
+}
+
+.patient-row-menu-dropdown button:hover {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+/* Accessible Focus States & Keyboard Navigation (WCAG AAA) */
+.patient-row:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+	border-color: var(--teal);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.patient-row-action-btn,
+	.patient-row-more-btn {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}
+
+/* High Contrast & Dark Theme Invariants (WCAG AAA >= 7:1) */
+[data-theme="dark"] .patient-row,
+[data-theme="night"] .patient-row,
+[data-theme="contrast"] .patient-row,
+[data-theme="cyber_xray"] .patient-row {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+}
+
+[data-theme="dark"] .patient-row:hover,
+[data-theme="night"] .patient-row:hover,
+[data-theme="contrast"] .patient-row:hover,
+[data-theme="cyber_xray"] .patient-row:hover {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--teal, #2dd4bf);
+}
+
+[data-theme="dark"] .patient-row.selected,
+[data-theme="night"] .patient-row.selected,
+[data-theme="contrast"] .patient-row.selected,
+[data-theme="cyber_xray"] .patient-row.selected {
+	background: rgba(20, 184, 166, 0.15);
+	border-color: var(--teal, #2dd4bf);
+	box-shadow: 0 0 0 1px var(--teal, #2dd4bf);
+}
+
+[data-theme="dark"] .patient-row-meta .patient-risk-label,
+[data-theme="night"] .patient-row-meta .patient-risk-label,
+[data-theme="contrast"] .patient-row-meta .patient-risk-label,
+[data-theme="cyber_xray"] .patient-row-meta .patient-risk-label {
+	background: rgba(20, 184, 166, 0.2);
+	color: #5eead4;
+	border: 1px solid rgba(20, 184, 166, 0.4);
+}
+
+[data-theme="dark"] .patient-row-meta .patient-row-chip,
+[data-theme="night"] .patient-row-meta .patient-row-chip,
+[data-theme="contrast"] .patient-row-meta .patient-row-chip,
+[data-theme="cyber_xray"] .patient-row-meta .patient-row-chip {
+	background: rgba(20, 184, 166, 0.15);
+	color: #2dd4bf;
+	border: 1px solid rgba(20, 184, 166, 0.35);
+}
+
+[data-theme="dark"] .patient-row-chart-btn,
+[data-theme="night"] .patient-row-chart-btn,
+[data-theme="contrast"] .patient-row-chart-btn,
+[data-theme="cyber_xray"] .patient-row-chart-btn {
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.18));
+}
+
+[data-theme="dark"] .patient-row-chart-btn:hover,
+[data-theme="night"] .patient-row-chart-btn:hover,
+[data-theme="contrast"] .patient-row-chart-btn:hover,
+[data-theme="cyber_xray"] .patient-row-chart-btn:hover {
+	background: rgba(20, 184, 166, 0.2);
+	color: #5eead4;
+	border-color: var(--teal, #2dd4bf);
+}
+
+[data-theme="dark"] .patient-row-menu-dropdown,
+[data-theme="night"] .patient-row-menu-dropdown,
+[data-theme="contrast"] .patient-row-menu-dropdown,
+[data-theme="cyber_xray"] .patient-row-menu-dropdown {
+	background: var(--paper, #0f172a);
+	border-color: var(--line-strong, rgba(255, 255, 255, 0.2));
+	box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .patient-row-menu-dropdown button:hover,
+[data-theme="night"] .patient-row-menu-dropdown button:hover,
+[data-theme="contrast"] .patient-row-menu-dropdown button:hover,
+[data-theme="cyber_xray"] .patient-row-menu-dropdown button:hover {
+	background: rgba(20, 184, 166, 0.18);
+	color: #5eead4;
+}
+
 /* Detailed Patient Panel */
 .patient-admin-panel {
 	background: var(--paper);
