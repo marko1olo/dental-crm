@@ -476,6 +476,9 @@ export function ScheduleFilterStrip({
 				>
 					<span className="whitespace-nowrap font-bold">+ Кресло</span>
 				</button>
+
+				{/* Active filter summary & shift warning chips integrated directly into single-row filter strip (Mandates 8d, 8p) */}
+				{activeFilterSummary}
 			</div>
 
 			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}

@@ -386,8 +386,8 @@ describe("8. Printable HTML Forms & Standard File Names", () => {
 		assert.ok(htmlDraft.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (ФОРМА № 043/У)"));
 		assert.ok(htmlDraft.includes("ЗУБНАЯ ФОРМУЛА (FDI / ISO 3950)"));
 		assert.ok(htmlDraft.includes("K02.1"));
-		assert.ok(htmlDraft.includes("ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП (МАНДАТ 8E)"));
-		assert.ok(htmlDraft.includes("ШТАМП: ЧЕРНОВИК (МАНДАТ 8E)"));
+		assert.ok(htmlDraft.includes("ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП"));
+		assert.ok(htmlDraft.includes("ШТАМП: ЧЕРНОВИК"));
 
 		const signedPayload = {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,

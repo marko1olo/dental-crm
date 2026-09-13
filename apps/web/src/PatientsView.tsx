@@ -1099,7 +1099,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										type="button"
 										onClick={() => setIsPatientCardModalOpen(true)}
 										className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1.5 cursor-pointer text-xs shrink-0 transition-colors"
-										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик (Мандат 8e)"
+										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
 										data-testid="patient-quick-043-btn"
 									>
 										<FileText size={13} className="text-[var(--teal)] shrink-0" />
@@ -1434,7 +1434,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								gap: "6px",
 								minHeight: "36px",
 							}}
-							title="Открыть полную амбулаторную медицинскую карту Форма 043/у (Мандат 8e)"
+							title="Открыть полную амбулаторную медицинскую карту Форма 043/у"
 							data-testid="open-patient-card-modal-btn"
 						>
 							<FileText size={16} aria-hidden="true" />

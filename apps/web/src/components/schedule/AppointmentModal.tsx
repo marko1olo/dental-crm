@@ -909,7 +909,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								data-testid="convert-to-cito-btn"
 							>
 								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
-								<span className="hidden sm:inline">В CITO (Острая боль)</span>
+								<span className="hidden sm:inline">Перевести в CITO (Острая боль)</span>
 								<span className="sm:hidden">CITO</span>
 							</button>
 						) : (
@@ -1019,7 +1019,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<div className="flex items-center gap-2">
 								<Zap size={16} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
 								<span className="font-bold text-sm">Экстренный приём CITO (Острая боль)</span>
-								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён (Мандат 8e)</span>
+								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён</span>
 							</div>
 							<span className="px-2 py-0.5 rounded bg-rose-500/25 text-rose-800 dark:text-rose-200 text-[10px] font-extrabold uppercase shrink-0">
 								CITO

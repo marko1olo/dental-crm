@@ -1048,7 +1048,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 											<div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "8px", background: "rgba(14, 165, 233, 0.08)", border: "1px solid rgba(14, 165, 233, 0.25)", color: "#0369a1", fontSize: "0.8125rem" }}>
 												<Cloud size={20} color="#0ea5e9" style={{ flexShrink: 0 }} />
 												<div>
-													<strong>Облачная передача без плагинов браузера и USB-токенов (Мандаты 8e, 8n).</strong>
+													<strong>Облачная передача без плагинов браузера и USB-токенов.</strong>
 													<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
 														СЭМД валидируется по XSD-схемам Минздрава РФ и передается напрямую в РЭМД ЕГИСЗ через аккредитованный облачный шлюз.
 													</div>
@@ -1298,7 +1298,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 														<div className="egisz-warning-banner" style={{ padding: "0.6rem 0.8rem", fontSize: "0.8125rem" }}>
 															<AlertCircle size={16} />
 															<span>
-																КриптоПро CSP обнаружен, но в хранилище не найдено сертификатов. Вы можете нажать «Подписать» для автономного подписания (Мандат 8e) или использовать Облачный шлюз.
+																КриптоПро CSP обнаружен, но в хранилище не найдено сертификатов. Вы можете нажать «Подписать» для автономного подписания или использовать Облачный шлюз.
 															</span>
 														</div>
 													)}

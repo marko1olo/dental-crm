@@ -466,7 +466,7 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 				"Banner must state emergency appointment clearly",
 			);
 			assert.ok(
-				html.includes("Мягкий овербукинг разрешён (Мандат 8e)"),
+				html.includes("Мягкий овербукинг разрешён"),
 				"Banner must confirm soft overbooking permission",
 			);
 		});
