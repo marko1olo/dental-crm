@@ -1,1 +1,1 @@
-export * from "./VisitEndoProtocolWidget";
+export {};

@@ -68,7 +68,7 @@ import {
 	FAST_TOOTH_PRESETS,
 	applyFastCariesK021Protocol,
 	applyFastProHygieneProtocol,
-} from "../components/odontogram/ToothStatusPalette.js";
+} from "../components/odontogram/ToothChart.js";
 import {
 	calculatePediatricPhysiologicalNorm,
 	CANONICAL_PEDIATRIC_AGE_PRESETS,

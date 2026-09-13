@@ -900,13 +900,8 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  */
 const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/analytics/MarketingRoiModal.tsx:MarketingRoiModal",
-	"components/chairside/ChairsideTabletConsentModal.tsx:ChairsideTabletConsentModal",
-	"components/clinical/ClinicalProtocolPresets.tsx:ClinicalProtocolPresets",
-	"components/clinical/DiagnosisSelector.tsx:DiagnosisSelector",
-	"components/clinical/PostOpCareSheetModal.tsx:PostOpCareSheetModal",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
-	"components/endo/EndoQuickProtocolsBar.tsx:EndoQuickProtocolsBar",
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
 	"components/inventory/WarehouseManagerModal.tsx:WarehouseManagerModal",
@@ -917,21 +912,15 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/messaging/SbpPaymentQrModal.tsx:SbpPaymentQrModal",
 	"components/modals/BackofficeModalsHost.tsx:BackofficeModalsHost",
 	"components/modals/ClinicalModalsHost.tsx:ClinicalModalsHost",
-	"components/odontogram/PediatricToothChart.tsx:PediatricToothChart",
-	"components/odontogram/ToothStatusPalette.tsx:ToothStatusPalette",
 	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
-	"components/prescriptions/PrescriptionsTab.tsx:PrescriptionsTab",
-	"components/prescriptions/generator/MedicalPrescriptionModal.tsx:MedicalPrescriptionModal",
 	"components/radiology/DirectRvgCaptureModal.tsx:DirectRvgCaptureModal",
 	"components/radiology/HotFolderIntakeModal.tsx:HotFolderIntakeModal",
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
 	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
 	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
-	"components/surgery/SurgeryProtocolPanel.tsx:SurgeryProtocolPanel",
 	"components/sync/OfflineSyncGuardModal.tsx:OfflineSyncGuardModal",
 	"components/treatment-plans/TreatmentPlanRoadmap.tsx:TreatmentPlanRoadmap",
 	"components/visit/VisitTimer.tsx:VisitTimer",
-	"components/visit/endo/VisitEndoProtocolWidget.tsx:VisitEndoProtocolWidget",
 	"components/visit/surgery/VisitSurgeryProtocolTab.tsx:VisitSurgeryProtocolTab",
 	"components/visit/therapy/VisitTherapyProtocolWidget.tsx:VisitTherapyProtocolWidget",
 	"components/voice/VoiceDictationAssistantModal.tsx:VoiceDictationAssistantModal",
@@ -951,7 +940,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 39;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 28;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.

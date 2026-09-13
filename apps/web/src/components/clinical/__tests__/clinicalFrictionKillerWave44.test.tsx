@@ -21,16 +21,19 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 
 import {
-	ClinicalProtocolPresets,
-	FAST_CLINICAL_BUNDLES,
-	findBundleBy804n,
-	findBundleByIcd10,
-	getFastClinicalBundle,
-} from "../ClinicalProtocolPresets";
+	ClinicalQuickPresetsBar,
+} from "../../visit/ClinicalQuickPresetsBar";
 import {
-	DENTAL_ICD10_CATALOG,
-	DiagnosisSelector,
-} from "../DiagnosisSelector";
+	CLINICAL_SOAP_PRESETS,
+	getPresetById,
+} from "../../visit/clinicalSoapPresets";
+import {
+	Icd10ClinicalSelector,
+} from "../../diagnostics/Icd10ClinicalSelector";
+import {
+	DENTAL_ICD10_MAP,
+	TOP_12_AMBULATORY_PRESETS,
+} from "../../diagnostics/icd10DentalCatalog";
 import {
 	SomaticAnamnesisCard,
 } from "../SomaticAnamnesisCard";
@@ -56,10 +59,10 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 	const somaticCardPath = path.resolve(__dirname, "../SomaticAnamnesisCard.tsx");
 	const somaticCardSource = fs.readFileSync(somaticCardPath, "utf8");
 
-	const presetsPath = path.resolve(__dirname, "../ClinicalProtocolPresets.tsx");
+	const presetsPath = path.resolve(__dirname, "../../visit/ClinicalQuickPresetsBar.tsx");
 	const presetsSource = fs.readFileSync(presetsPath, "utf8");
 
-	const selectorPath = path.resolve(__dirname, "../DiagnosisSelector.tsx");
+	const selectorPath = path.resolve(__dirname, "../../diagnostics/Icd10ClinicalSelector.tsx");
 	const selectorSource = fs.readFileSync(selectorPath, "utf8");
 
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -131,112 +134,52 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 	// Suite 2: Fast Express Presets "ICD-10 + 804n" in 1 Click (Mandate 8k Friction-Killer Law)
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("2. Fast 1-Click Bundles: ICD-10 + 804n (Mandate 8k Friction-Killer Law)", () => {
-		it("2.1. FAST_CLINICAL_BUNDLES defines all required canonical pairs with exact codes including physiological norm", () => {
-			assert.equal(FAST_CLINICAL_BUNDLES.length, 6);
+		it("2.1. ClinicalProtocolPresets and DiagnosisSelector are eradicated per Mandate 8s & Wave 199", () => {
+			const oldPresetsPath = path.resolve(__dirname, "../ClinicalProtocolPresets.tsx");
+			assert.equal(fs.existsSync(oldPresetsPath), false, "ClinicalProtocolPresets.tsx must be eradicated");
 
-			// 1. Кариес дентина -> К02.1 + A16.07.002.010
-			const caries = getFastClinicalBundle("caries_dentin");
+			const oldSelectorPath = path.resolve(__dirname, "../DiagnosisSelector.tsx");
+			assert.equal(fs.existsSync(oldSelectorPath), false, "DiagnosisSelector.tsx must be eradicated");
+		});
+
+		it("2.2. CLINICAL_SOAP_PRESETS defines canonical presets for core clinical workflows", () => {
+			const caries = getPresetById("caries_medium");
 			assert.ok(caries);
-			assert.equal(caries.title, "Кариес дентина");
-			assert.equal(caries.icd10Code, "K02.1");
-			assert.equal(caries.order804nCode, "A16.07.002.010");
-			assert.ok(caries.defaultPriceKopecks > 0);
+			assert.equal(caries.icd10, "K02.1");
 
-			// 2. Пульпит острый -> К04.0 + A16.07.010
-			const pulpitis = getFastClinicalBundle("pulpitis_acute");
+			const pulpitis = getPresetById("pulpitis_acute");
 			assert.ok(pulpitis);
-			assert.equal(pulpitis.title, "Пульпит острый");
-			assert.equal(pulpitis.icd10Code, "K04.0");
-			assert.equal(pulpitis.order804nCode, "A16.07.010");
-			assert.ok(pulpitis.defaultPriceKopecks > 0);
+			assert.equal(pulpitis.icd10, "K04.0");
 
-			// 3. Периодонтит -> К04.4 + A16.07.030
-			const periodontitis = getFastClinicalBundle("periodontitis");
-			assert.ok(periodontitis);
-			assert.equal(periodontitis.title, "Периодонтит");
-			assert.equal(periodontitis.icd10Code, "K04.4");
-			assert.equal(periodontitis.order804nCode, "A16.07.030");
-			assert.ok(periodontitis.defaultPriceKopecks > 0);
-
-			// 4. Профгигиена / УЗ-чистка -> К05.0 + A16.07.051
-			const hygiene = getFastClinicalBundle("hygiene_ultrasound");
-			assert.ok(hygiene);
-			assert.equal(hygiene.title, "Профгигиена / УЗ-чистка");
-			assert.equal(hygiene.icd10Code, "K05.0");
-			assert.equal(hygiene.order804nCode, "A16.07.051");
-			assert.ok(hygiene.defaultPriceKopecks > 0);
-
-			// 5. Удаление зуба простое -> К08.8 + A16.07.001
-			const extraction = getFastClinicalBundle("extraction_simple");
+			const extraction = getPresetById("surgery_extraction_simple");
 			assert.ok(extraction);
-			assert.equal(extraction.title, "Удаление зуба простое");
-			assert.equal(extraction.icd10Code, "K08.8");
-			assert.equal(extraction.order804nCode, "A16.07.001");
-			assert.ok(extraction.defaultPriceKopecks > 0);
-
-			// 6. Осмотр / Здоров (Норма) -> Z01.2 + A01.07.001
-			const normCheckup = getFastClinicalBundle("norm_checkup");
-			assert.ok(normCheckup);
-			assert.equal(normCheckup.title, "Осмотр / Здоров (Норма)");
-			assert.equal(normCheckup.icd10Code, "Z01.2");
-			assert.equal(normCheckup.order804nCode, "A01.07.001");
-			assert.ok(normCheckup.defaultPriceKopecks > 0);
 		});
 
-		it("2.2. lookup helper functions find bundles by ICD-10 code and 804n code", () => {
-			const b1 = findBundleByIcd10("K02.1");
-			assert.equal(b1?.id, "caries_dentin");
-
-			const b2 = findBundleBy804n("A16.07.010");
-			assert.equal(b2?.id, "pulpitis_acute");
-
-			const b3 = findBundleByIcd10("K04.4");
-			assert.equal(b3?.id, "periodontitis");
-
-			const b4 = findBundleBy804n("A16.07.051");
-			assert.equal(b4?.id, "hygiene_ultrasound");
-
-			const b5 = findBundleByIcd10("K08.8");
-			assert.equal(b5?.id, "extraction_simple");
-
-			const b6 = findBundleByIcd10("Z01.2");
-			assert.equal(b6?.id, "norm_checkup");
+		it("2.3. renders ClinicalQuickPresetsBar with all bundle action buttons", () => {
+			const html = renderToString(<ClinicalQuickPresetsBar onSelectPreset={() => {}} activeTooth={16} />);
+			assert.equal(html.includes('data-testid="clinical-quick-presets-bar"'), true);
+			assert.equal(html.includes("Клинические протоколы СтАР"), true);
+			assert.equal(html.includes("16"), true);
 		});
 
-		it("2.3. renders ClinicalProtocolPresets with all bundle action buttons", () => {
-			const html = renderToString(<ClinicalProtocolPresets selectedBundleId="caries_dentin" />);
-			assert.equal(html.includes('data-testid="clinical-protocol-presets-container"'), true);
-			assert.equal(html.includes('data-testid="bundle-btn-caries_dentin"'), true);
-			assert.equal(html.includes('data-testid="bundle-btn-pulpitis_acute"'), true);
-			assert.equal(html.includes('data-testid="bundle-btn-periodontitis"'), true);
-			assert.equal(html.includes('data-testid="bundle-btn-hygiene_ultrasound"'), true);
-			assert.equal(html.includes('data-testid="bundle-btn-extraction_simple"'), true);
-			assert.equal(html.includes('data-testid="bundle-btn-norm_checkup"'), true);
-		});
-
-		it("2.4. renders DiagnosisSelector embedding express presets and ICD-10 catalog", () => {
+		it("2.4. renders Icd10ClinicalSelector embedding top 12 presets and search", () => {
 			const html = renderToString(
-				<DiagnosisSelector
-					selectedIcd10="K02.1"
-					selected804nCode="A16.07.002.010"
-					toothNumber={16}
+				<Icd10ClinicalSelector
+					selectedCode="K02.1"
+					selectedTooth={16}
+					onSelect={() => {}}
 				/>,
 			);
-			assert.equal(html.includes('data-testid="diagnosis-selector"'), true);
-			assert.equal(html.includes('data-testid="selected-diagnosis-banner"'), true);
+			assert.equal(html.includes("icd10-selector-container"), true);
 			assert.equal(html.includes("K02.1"), true);
-			assert.equal(html.includes("A16.07.002.010"), true);
-			assert.equal(html.includes("Зуб #16"), true);
 		});
 
-		it("2.5. DENTAL_ICD10_CATALOG covers primary outpatient diagnoses and physiological norm", () => {
-			const codes = DENTAL_ICD10_CATALOG.map((d) => d.icd10Code);
-			assert.ok(codes.includes("K02.1"));
-			assert.ok(codes.includes("K04.0"));
-			assert.ok(codes.includes("K04.4"));
-			assert.ok(codes.includes("K05.0"));
-			assert.ok(codes.includes("K08.8"));
-			assert.ok(codes.includes("Z01.2"));
+		it("2.5. DENTAL_ICD10_MAP covers primary outpatient diagnoses", () => {
+			assert.ok(DENTAL_ICD10_MAP.has("K02.1"));
+			assert.ok(DENTAL_ICD10_MAP.has("K04.0"));
+			assert.ok(DENTAL_ICD10_MAP.has("K04.4"));
+			assert.ok(DENTAL_ICD10_MAP.has("K05.0"));
+			assert.ok(DENTAL_ICD10_MAP.has("K08.8"));
 		});
 	});
 
@@ -255,25 +198,25 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 			);
 		});
 
-		it("3.2. guarantees NO action buttons are disabled in ClinicalProtocolPresets", () => {
-			const html = renderToString(<ClinicalProtocolPresets />);
+		it("3.2. guarantees NO action buttons are disabled in ClinicalQuickPresetsBar", () => {
+			const html = renderToString(<ClinicalQuickPresetsBar onSelectPreset={() => {}} />);
 			const disabledButtonMatches = html.match(/<button[^>]*disabled[^>]*>/gi);
 			assert.equal(
 				disabledButtonMatches,
 				null,
-				`No buttons should be disabled in ClinicalProtocolPresets. Found: ${disabledButtonMatches?.join(", ")}`,
+				`No buttons should be disabled in ClinicalQuickPresetsBar. Found: ${disabledButtonMatches?.join(", ")}`,
 			);
 		});
 
-		it("3.3. guarantees NO action buttons are disabled in DiagnosisSelector", () => {
+		it("3.3. guarantees NO action buttons are disabled in Icd10ClinicalSelector", () => {
 			const html = renderToString(
-				<DiagnosisSelector selectedIcd10="K04.0" selected804nCode="A16.07.010" />,
+				<Icd10ClinicalSelector onSelect={() => {}} />,
 			);
 			const disabledButtonMatches = html.match(/<button[^>]*disabled[^>]*>/gi);
 			assert.equal(
 				disabledButtonMatches,
 				null,
-				`No buttons should be disabled in DiagnosisSelector. Found: ${disabledButtonMatches?.join(", ")}`,
+				`No buttons should be disabled in Icd10ClinicalSelector. Found: ${disabledButtonMatches?.join(", ")}`,
 			);
 		});
 	});
@@ -296,33 +239,33 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 			);
 		});
 
-		it("4.2. guarantees ZERO cartoon emojis in ClinicalProtocolPresets source and HTML", () => {
+		it("4.2. guarantees ZERO cartoon emojis in ClinicalQuickPresetsBar source and HTML", () => {
 			assert.equal(
 				hasCartoonEmojis(presetsSource),
 				false,
-				"ClinicalProtocolPresets source contains forbidden cartoon emojis",
+				"ClinicalQuickPresetsBar source contains forbidden cartoon emojis",
 			);
-			const html = renderToString(<ClinicalProtocolPresets />);
+			const html = renderToString(<ClinicalQuickPresetsBar onSelectPreset={() => {}} />);
 			assert.equal(
 				hasCartoonEmojis(html),
 				false,
-				"ClinicalProtocolPresets rendered HTML contains forbidden cartoon emojis",
+				"ClinicalQuickPresetsBar rendered HTML contains forbidden cartoon emojis",
 			);
 		});
 
-		it("4.3. guarantees ZERO cartoon emojis in DiagnosisSelector source and HTML", () => {
+		it("4.3. guarantees ZERO cartoon emojis in Icd10ClinicalSelector source and HTML", () => {
 			assert.equal(
 				hasCartoonEmojis(selectorSource),
 				false,
-				"DiagnosisSelector source contains forbidden cartoon emojis",
+				"Icd10ClinicalSelector source contains forbidden cartoon emojis",
 			);
 			const html = renderToString(
-				<DiagnosisSelector selectedIcd10="K02.1" selected804nCode="A16.07.002.010" />,
+				<Icd10ClinicalSelector onSelect={() => {}} />,
 			);
 			assert.equal(
 				hasCartoonEmojis(html),
 				false,
-				"DiagnosisSelector rendered HTML contains forbidden cartoon emojis",
+				"Icd10ClinicalSelector rendered HTML contains forbidden cartoon emojis",
 			);
 		});
 	});

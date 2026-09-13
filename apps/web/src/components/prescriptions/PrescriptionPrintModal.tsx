@@ -23,6 +23,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
+	Copy,
 	FileCheck,
 	FileText,
 	Filter,
@@ -46,6 +47,8 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
+import { formatPatientPrescriptionMemo, normalizeDrugId } from "./generator/prescriptionEngine";
+import { DENTAL_MEDICATIONS_CATALOG, type DentalMedicationPreset } from "./generator/prescriptionPresets";
 import type { DiaryState } from "../useVisitDiaryLogic";
 import {
 	getPersonalCertificates,
@@ -330,6 +333,8 @@ export interface PrescriptionPrintModalProps {
 	readonly clinicInn?: string | null | undefined;
 	readonly medicalLicenseNumber?: string | null | undefined;
 	readonly initialSelectedDrugIds?: readonly string[] | undefined;
+	readonly patientName?: string | null | undefined;
+	readonly disablePortal?: boolean | undefined;
 	readonly onPrescriptionCreated?: ((prescription: any) => void) | undefined;
 	readonly onInsertToDiary?: ((diaryText: string) => void) | undefined;
 }
@@ -338,6 +343,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	isOpen,
 	onClose,
 	patient,
+	patientName: patientNameProp,
 	allergies,
 	diary,
 	doctorName,
@@ -350,6 +356,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	clinicInn,
 	medicalLicenseNumber = "ЛО41-01137-77/00368421",
 	initialSelectedDrugIds,
+	disablePortal = false,
 	onPrescriptionCreated,
 	onInsertToDiary,
 }) => {
@@ -388,7 +395,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		const today = new Date().toISOString().slice(0, 10);
 		setPrescriptionDate(today);
 
-		if (initialSelectedDrugIds && initialSelectedDrugIds.length > 0) {
+		if (initialSelectedDrugIds !== undefined) {
 			setSelectedDrugIds([...initialSelectedDrugIds]);
 		} else {
 			const icd = (diary?.diagnosisIcd10 || "K02.1").toUpperCase();
@@ -426,7 +433,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, initialSelectedDrugIds, onClose]);
 
-	const patientName = patient?.fullName || "";
+	const patientName = patient?.fullName || patientNameProp || "";
 	const patientBirth = patient?.birthDate || "";
 	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "";
 	const docName = doctorName || "Лечащий врач";
@@ -848,9 +855,66 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		handleInsertToDiary(presetItems);
 	};
 
-	if (!isOpen || typeof document === "undefined") return null;
+	const [isMemoCopied, setIsMemoCopied] = useState<boolean>(false);
 
-	return createPortal(
+	const handleCopyPatientMemo = useCallback(() => {
+		if (activeItems.length === 0) {
+			showToast("Выберите хотя бы один препарат", "warning", 3000);
+			return;
+		}
+
+		const selectedPresets: DentalMedicationPreset[] = activeItems.map((item) => {
+			const rawId = item.id.replace(/^item-\d+-/, "");
+			const normId = normalizeDrugId(rawId);
+			const presetMatch = DENTAL_MEDICATIONS_CATALOG.find(
+				(m) => m.id === rawId || m.id === normId,
+			);
+			const catalogMatch = fullCatalog.find((d) => d.id === rawId);
+			return {
+				id: item.id,
+				tradeNameRu: presetMatch?.tradeNameRu || item.tradeName,
+				activeSubstanceRu:
+					presetMatch?.activeSubstanceRu ||
+					catalogMatch?.activeSubstanceRu ||
+					item.tradeName,
+				category: presetMatch?.category || (item.category as any) || "other",
+				categoryLabelRu:
+					presetMatch?.categoryLabelRu || catalogMatch?.categoryLabelRu || "Препарат",
+				latinRp: item.latinName,
+				formRu: presetMatch?.formRu || item.form,
+				dosageRu: presetMatch?.dosageRu || item.dosage,
+				quantityLabel: item.quantity,
+				dispenseLatin: item.dispenseLatin,
+				signaRu: presetMatch?.signaRu || item.signaRussian,
+				validityDays:
+					presetMatch?.validityDays || (catalogMatch?.validityDays as any) || 60,
+			};
+		});
+
+		const memoText = formatPatientPrescriptionMemo({
+			clinicName: clinic,
+			clinicPhone: phone,
+			patientName: patientName || "Пациент",
+			doctorName: docName,
+			prescriptionDate: prescriptionDate || new Date().toISOString().slice(0, 10),
+			medications: selectedPresets,
+		});
+
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(memoText).catch(() => {});
+		}
+		setIsMemoCopied(true);
+		setTimeout(() => setIsMemoCopied(false), 2000);
+		showToast(
+			"Схема приёма лекарств скопирована для отправки пациенту в мессенджер",
+			"success",
+			3000,
+		);
+	}, [activeItems, fullCatalog, clinic, phone, patientName, docName, prescriptionDate]);
+
+	if (!isOpen) return null;
+
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200"
 			role="dialog"
@@ -1732,6 +1796,16 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						</button>
 						<button
 							type="button"
+							onClick={handleCopyPatientMemo}
+							className="min-h-[44px] min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+							data-testid="med-rx-copy-patient-btn"
+							title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
+						>
+							<Copy className="w-4 h-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
+							<span>{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}</span>
+						</button>
+						<button
+							type="button"
 							onClick={() => handleInsertToDiary()}
 							className="min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
 							data-testid="insert-to-diary-btn"
@@ -1751,7 +1825,12 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 				</div>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	if (disablePortal || typeof document === "undefined") {
+		return modalContent;
+	}
+
+	return createPortal(modalContent, document.body);
 };

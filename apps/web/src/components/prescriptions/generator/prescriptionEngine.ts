@@ -137,3 +137,53 @@ export function generateForm107Prescription(input: Form107PrescriptionInput): Fo
 		...(input.chronicPeriodicity ? { chronicPeriodicity: input.chronicPeriodicity } : {}),
 	};
 }
+
+export interface PatientPrescriptionMemoParams {
+	clinicName: string;
+	clinicPhone: string;
+	patientName: string;
+	doctorName: string;
+	prescriptionDate?: string | undefined;
+	medications: readonly DentalMedicationPreset[];
+}
+
+export function formatPatientPrescriptionMemo(
+	params: PatientPrescriptionMemoParams,
+): string {
+	const {
+		clinicName,
+		clinicPhone,
+		patientName,
+		doctorName,
+		prescriptionDate,
+		medications,
+	} = params;
+
+	const dateStr = prescriptionDate || new Date().toLocaleDateString("ru-RU");
+
+	const medsList = medications.map((med, idx) => {
+		const cleanSigna = med.signaRu
+			.replace(/^(?:D\.?\s*)?S[.:]?\s*/i, "")
+			.trim();
+		return `${idx + 1}. ${med.tradeNameRu} (${med.activeSubstanceRu}, ${med.formRu}):\n   Способ применения: ${cleanSigna}`;
+	});
+
+	const lines = [
+		`Схема приёма лекарственных препаратов (клиника «${clinicName}»):`,
+		`Пациент: ${patientName}`,
+		`Лечащий врач: ${doctorName}`,
+		`Дата назначения: ${dateStr}`,
+		"Назначенные препараты:",
+		...medsList,
+		`Памятка: строго соблюдайте назначенную дозировку и график приёма. Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
+	];
+
+	return lines.join("\n");
+}
+
+export const normalizeDrugId = (id: string): string => {
+	if (id === "amoxiclav_875_125") return "amoxiclav_875";
+	if (id === "nimesulide_100") return "nimesil_100";
+	if (id === "cholisal_gel") return "holisal_gel";
+	return id;
+};

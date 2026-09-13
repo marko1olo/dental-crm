@@ -28,10 +28,8 @@ import {
 } from "@dental/shared";
 
 import { PrescriptionsWidget } from "../PrescriptionsWidget";
-import {
-	PostOpCareSheetModal,
-	POST_OP_CARE_SHEETS,
-} from "../PostOpCareSheetModal";
+import { PatientMemoPrintModal } from "../../visit/PatientMemoPrintModal";
+import { POST_OP_PATIENT_MEMOS } from "../../../lib/clinicalProtocols043";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -224,33 +222,34 @@ describe("Wave 45: Dental Prescription Express Bundles & Post-Op Care (Feature 2
 		});
 	});
 
-	describe("3. PostOpCareSheetModal: Post-Operative Memos & Patient Care (Mandates 8e, 8k)", () => {
-		it("3.1. POST_OP_CARE_SHEETS defines 4 key outpatient sheets", () => {
-			assert.equal(POST_OP_CARE_SHEETS.length, 4);
-			const sheetIds = POST_OP_CARE_SHEETS.map((s) => s.id);
-			assert.deepEqual(sheetIds, ["surgical", "anesthesia", "endo", "hygiene"]);
+	describe("3. PatientMemoPrintModal: Post-Operative Memos & Patient Care (Mandates 8e, 8k)", () => {
+		it("3.1. POST_OP_PATIENT_MEMOS defines key outpatient sheets", () => {
+			assert.ok(POST_OP_PATIENT_MEMOS.length >= 3);
+			const sheetIds = POST_OP_PATIENT_MEMOS.map((s) => s.id);
+			assert.ok(sheetIds.includes("surgery_extraction"));
+			assert.ok(sheetIds.includes("anesthesia_caries"));
+			assert.ok(sheetIds.includes("endodontics"));
 		});
 
-		it("3.2. renders PostOpCareSheetModal when isOpen is true with all 4 category tabs", () => {
+		it("3.2. renders PatientMemoPrintModal when isOpen is true with category tabs", () => {
 			const html = renderCleanHtml(
-				React.createElement(PostOpCareSheetModal, {
+				React.createElement(PatientMemoPrintModal, {
 					isOpen: true,
 					onClose: () => {},
 					patient: mockPatient,
-					defaultSheetType: "surgical",
+					initialMemoId: "surgery_extraction",
 				}),
 			);
 
-			assert.ok(html.includes('data-testid="post-op-care-modal"'), "Must render post-op-care-modal");
-			assert.ok(html.includes('data-testid="post-op-tab-surgical"'), "Must render post-op-tab-surgical");
-			assert.ok(html.includes('data-testid="post-op-tab-anesthesia"'), "Must render post-op-tab-anesthesia");
-			assert.ok(html.includes('data-testid="post-op-tab-endo"'), "Must render post-op-tab-endo");
-			assert.ok(html.includes('data-testid="post-op-tab-hygiene"'), "Must render post-op-tab-hygiene");
+			assert.ok(html.includes("surgery_extraction"), "Must render surgery_extraction memo");
+			assert.ok(html.includes("btn-memo-tab-surgery_extraction"), "Must render surgery memo tab");
+			assert.ok(html.includes("btn-memo-tab-anesthesia_caries"), "Must render anesthesia memo tab");
+			assert.ok(html.includes("btn-memo-tab-endodontics"), "Must render endodontics memo tab");
 		});
 
-		it("3.3. renders 1-click WhatsApp copy, Print, and SOAP buttons with 0 disabled states", () => {
+		it("3.3. renders 1-click Copy, Print, and SOAP buttons with 0 disabled states", () => {
 			const html = renderCleanHtml(
-				React.createElement(PostOpCareSheetModal, {
+				React.createElement(PatientMemoPrintModal, {
 					isOpen: true,
 					onClose: () => {},
 					patient: mockPatient,
@@ -259,16 +258,16 @@ describe("Wave 45: Dental Prescription Express Bundles & Post-Op Care (Feature 2
 			);
 
 			assert.ok(
-				html.includes('data-testid="btn-copy-post-op-wa"'),
-				"Must render btn-copy-post-op-wa for 1-click WhatsApp copy",
+				html.includes('data-testid="btn-copy-memo-text"'),
+				"Must render btn-copy-memo-text for 1-click copy",
 			);
 			assert.ok(
-				html.includes('data-testid="btn-print-post-op"'),
-				"Must render btn-print-post-op for printing",
+				html.includes('data-testid="btn-print-active-memo"'),
+				"Must render btn-print-active-memo for printing",
 			);
 			assert.ok(
-				html.includes('data-testid="btn-apply-post-op-soap"'),
-				"Must render btn-apply-post-op-soap for inserting into SOAP diary",
+				html.includes('data-testid="btn-apply-memo-soap"'),
+				"Must render btn-apply-memo-soap for inserting into SOAP diary",
 			);
 
 			// Verify no disabled buttons
@@ -277,13 +276,18 @@ describe("Wave 45: Dental Prescription Express Bundles & Post-Op Care (Feature 2
 
 		it("3.4. does not render modal when isOpen is false", () => {
 			const html = renderCleanHtml(
-				React.createElement(PostOpCareSheetModal, {
+				React.createElement(PatientMemoPrintModal, {
 					isOpen: false,
 					onClose: () => {},
 				}),
 			);
 
 			assert.equal(html, "", "Modal must render nothing when isOpen is false");
+		});
+
+		it("3.5. PostOpCareSheetModal is eradicated per Mandate 8s & Wave 199", () => {
+			const oldPath = path.resolve(__dirname, "../PostOpCareSheetModal.tsx");
+			assert.equal(fs.existsSync(oldPath), false, "PostOpCareSheetModal.tsx must be eradicated");
 		});
 	});
 
@@ -303,7 +307,7 @@ describe("Wave 45: Dental Prescription Express Bundles & Post-Op Care (Feature 2
 
 		it("4.2. Anti-Matryoshka Law (Mandate 8d п. 6): modal depth is strictly 1 (no nested overlays)", () => {
 			const modalHtml = renderCleanHtml(
-				React.createElement(PostOpCareSheetModal, {
+				React.createElement(PatientMemoPrintModal, {
 					isOpen: true,
 					onClose: () => {},
 					patient: mockPatient,
@@ -319,13 +323,13 @@ describe("Wave 45: Dental Prescription Express Bundles & Post-Op Care (Feature 2
 			);
 		});
 
-		it("4.3. Desktop Density & Touch Targets: quick buttons have min-h-[44px] and sm:h-8 (32px)", () => {
-			const sourcePath = path.resolve(__dirname, "../PostOpCareSheetModal.tsx");
+		it("4.3. Desktop Density & Touch Targets: quick buttons have min-h-[48px]", () => {
+			const sourcePath = path.resolve(__dirname, "../../visit/PatientMemoPrintModal.tsx");
 			const source = fs.readFileSync(sourcePath, "utf8");
 
 			assert.ok(
-				source.includes("min-h-[44px] sm:min-h-[32px] sm:h-8"),
-				"Post-Op tabs must have min-h-[44px] on mobile and sm:h-8 on desktop",
+				source.includes("min-h-[48px]"),
+				"PatientMemoPrintModal tabs must have min-h-[48px]",
 			);
 		});
 
@@ -340,19 +344,19 @@ describe("Wave 45: Dental Prescription Express Bundles & Post-Op Care (Feature 2
 			);
 		});
 
-		it("4.5. Zero Cartoon Emojis (Mandate 8d п. 7): source code contains 0 cartoon emojis in PostOpCareSheetModal", () => {
-			const sourcePath = path.resolve(__dirname, "../PostOpCareSheetModal.tsx");
+		it("4.5. Zero Cartoon Emojis (Mandate 8d п. 7): source code contains 0 cartoon emojis in PatientMemoPrintModal", () => {
+			const sourcePath = path.resolve(__dirname, "../../visit/PatientMemoPrintModal.tsx");
 			const source = fs.readFileSync(sourcePath, "utf8");
 
 			assert.equal(
 				hasCartoonEmojis(source),
 				false,
-				"PostOpCareSheetModal source must contain ZERO cartoon emojis",
+				"PatientMemoPrintModal source must contain ZERO cartoon emojis",
 			);
 		});
 
 		it("4.6. Lucide Vector Icons only: imports vector icons from lucide-react", () => {
-			const sourcePath = path.resolve(__dirname, "../PostOpCareSheetModal.tsx");
+			const sourcePath = path.resolve(__dirname, "../../visit/PatientMemoPrintModal.tsx");
 			const source = fs.readFileSync(sourcePath, "utf8");
 
 			assert.ok(

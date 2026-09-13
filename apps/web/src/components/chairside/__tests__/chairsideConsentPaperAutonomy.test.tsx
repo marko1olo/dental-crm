@@ -8,10 +8,46 @@
  * 4. Doctor is NEVER blocked if SMS fails, cell signal is lost, or patient has no phone
  */
 
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+
+const vi = {
+	fn: (impl?: any) => {
+		const f: any = (...args: any[]) => {
+			f.mock.calls.push(args);
+			return impl?.(...args);
+		};
+		f.mock = { calls: [] };
+		return f;
+	},
+};
+
+const expect = (val: any) => {
+	const notObj = {
+		toBeNull: () => assert.notStrictEqual(val, null),
+		toContain: (str: string) => assert.ok(!String(val).includes(str), `Expected ${val} not to contain ${str}`),
+	};
+	return {
+		not: notObj,
+		toBe: (expected: any) => assert.strictEqual(val, expected),
+		toEqual: (expected: any) => assert.deepStrictEqual(val, expected),
+		toBeDefined: () => assert.ok(val !== undefined && val !== null),
+		toBeNull: () => assert.strictEqual(val, null),
+		toMatch: (regex: RegExp) => assert.match(String(val), regex),
+		toContain: (str: string) => assert.ok(String(val).includes(str), `Expected ${val} to contain ${str}`),
+		toHaveBeenCalled: () => assert.ok((val as any)?.mock?.calls?.length > 0),
+		toHaveBeenCalledTimes: (times: number) => assert.strictEqual((val as any)?.mock?.calls?.length, times),
+	};
+};
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import {
 	createChairsideConsentPackage,
 	sendChairsideSmsOtpToPatient,
@@ -21,7 +57,7 @@ import {
 	type ChairsidePatientProfile,
 	type ChairsideTreatmentItem,
 } from "../chairsideConsentEngine.js";
-import { ChairsideTabletConsentModal } from "../ChairsideTabletConsentModal.js";
+import { InformedConsentModal } from "../../consents/InformedConsentModal.js";
 
 interface MockDomNode {
 	nodeType: number;
@@ -332,181 +368,80 @@ describe("Chairside Tablet Consent Paper Autonomy Suite (Mandates 8e, 8i, 8k, 8n
 		expect(signedPkg.signature?.integrityHash).toMatch(/^[a-f0-9]{64}$/);
 	});
 
-	it("2. chairside-print-package-btn and chairside-paper-confirm-btn render in ChairsideTabletConsentModal", () => {
-		const html = renderToString(
-			<ChairsideTabletConsentModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={mockPatient}
-				doctor={mockDoctor}
-				treatmentItems={mockItems}
-			/>,
-		);
+	it("2. btn-confirm-paper-signed renders in InformedConsentModal (SSOT)", () => {
+		const prevDoc = (globalThis as any).document;
+		delete (globalThis as any).document;
+		try {
+			const html = renderToString(
+				<InformedConsentModal
+					isOpen={true}
+					onClose={() => {}}
+					patient={mockPatient}
+					initialMode="single"
+				/>,
+			);
 
-		// A4 print button
-		expect(html).toContain('data-testid="chairside-print-package-btn"');
-		expect(html).toContain("Печать А4");
-
-		// Paper confirmation button in both footer and SMS step
-		expect(html).toContain('data-testid="chairside-paper-confirm-btn"');
-		expect(html).toContain("Подтвердить на бумаге (1 клик)");
+			// Paper confirmation button
+			expect(html).toContain('data-testid="btn-confirm-paper-signed"');
+			expect(html).toContain("Подтвердить подписание на бумаге");
+		} finally {
+			if (prevDoc) (globalThis as any).document = prevDoc;
+		}
 	});
 
-	it("3. clicking chairside-paper-confirm-btn confirms package without requiring 4-digit SMS OTP", async () => {
+	it("3. clicking btn-confirm-paper-signed confirms package without requiring SMS OTP", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
 
-		const onConsentPackageSigned = vi.fn();
-		const onConsentConfirmed = vi.fn();
+		const onConsentSigned = vi.fn();
 		const onClose = vi.fn();
 
 		await act(async () => {
 			root.render(
-				<ChairsideTabletConsentModal
+				<InformedConsentModal
 					isOpen={true}
 					onClose={onClose}
 					patient={mockPatient}
-					doctor={mockDoctor}
-					treatmentItems={mockItems}
-					onConsentPackageSigned={onConsentPackageSigned}
-					onConsentConfirmed={onConsentConfirmed}
+					initialMode="single"
+					onConsentSigned={onConsentSigned}
 				/>,
 			);
 		});
 
-		// Find paper confirmation buttons
-		const paperBtns = findAllNodesByTestId(doc.body, "chairside-paper-confirm-btn");
-		expect(paperBtns.length >= 1).toBe(true);
+		const paperBtn = findNodeByTestId(doc.body, "btn-confirm-paper-signed");
+		expect(paperBtn).not.toBeNull();
 
-		// Click the 1-click paper confirmation button
-		if (paperBtns[0]) {
-			await clickNode(paperBtns[0]);
+		if (paperBtn) {
+			await clickNode(paperBtn);
 		}
 
-		// Verify onConsentPackageSigned was called with paper_physical package
-		expect(onConsentPackageSigned).toHaveBeenCalledTimes(1);
-		const signedResult = onConsentPackageSigned.mock.calls[0][0] as ChairsideConsentPackage;
-		expect(signedResult.status).toBe("signed");
-		expect(signedResult.signature?.verificationMethod).toBe("paper_physical");
-		expect(signedResult.signature?.legalStampText).toContain(
-			"ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАГЕ (ст. 20 323-ФЗ, 152-ФЗ, ПП РФ № 736)",
-		);
-
-		// Verify onConsentConfirmed was called with exact integrity hash and patient card
-		expect(onConsentConfirmed).toHaveBeenCalledTimes(1);
-		const confirmedPayload = onConsentConfirmed.mock.calls[0][0] as {
-			form043uCard: string;
-			integrityHash: string;
-		};
-		expect(confirmedPayload.form043uCard).toBe("043/у-5514");
-		expect(confirmedPayload.integrityHash).toMatch(/^[a-f0-9]{64}$/);
+		expect(onConsentSigned).toHaveBeenCalledTimes(1);
+		const payload = onConsentSigned.mock.calls[0][0];
+		expect(payload.verificationMethod).toBe("paper_physical");
+		expect(payload.paperOriginalStored).toBe(true);
 	});
 
-	it("4. A4 print button triggers print without errors", async () => {
-		const { doc, win } = setupMockDom();
-		const root: Root = createRoot(doc.body as unknown as HTMLElement);
+	it("4. ChairsideTabletConsentModal is eradicated per Mandate 8s & Wave 199", () => {
+		const modalPath = path.resolve(__dirname, "../ChairsideTabletConsentModal.tsx");
+		expect(fs.existsSync(modalPath)).toBe(false);
+	});
 
-		await act(async () => {
-			root.render(
-				<ChairsideTabletConsentModal
+	it("5. Doctor autonomy is preserved: zero disabled action buttons on paper signing path (Mandate 8e)", () => {
+		const prevDoc = (globalThis as any).document;
+		delete (globalThis as any).document;
+		try {
+			const html = renderToString(
+				<InformedConsentModal
 					isOpen={true}
 					onClose={() => {}}
 					patient={mockPatient}
-					doctor={mockDoctor}
-					treatmentItems={mockItems}
+					initialMode="single"
 				/>,
 			);
-		});
-
-		const printBtn = findNodeByTestId(doc.body, "chairside-print-package-btn");
-		expect(printBtn).not.toBeNull();
-
-		if (printBtn) {
-			await clickNode(printBtn);
-			expect(win.print).toHaveBeenCalledTimes(1);
+			expect(html).toContain('data-testid="btn-confirm-paper-signed"');
+			expect(html).not.toContain('disabled=""');
+		} finally {
+			if (prevDoc) (globalThis as any).document = prevDoc;
 		}
-	});
-
-	it("5. OTP confirmation button is NOT disabled when otpInput is empty or < 4 digits, and clicking sets otpError with paper fallback instructions (Mandate 8e)", async () => {
-		const { doc } = setupMockDom();
-		const root: Root = createRoot(doc.body as unknown as HTMLElement);
-
-		const pkgWithOtp = sendChairsideSmsOtpToPatient(
-			createChairsideConsentPackage({
-				patient: mockPatient,
-				doctor: mockDoctor,
-				treatmentItems: mockItems,
-			}),
-			mockPatient.phone || "+7 (926) 333-22-11",
-			"5566",
-		);
-
-		await act(async () => {
-			root.render(
-				<ChairsideTabletConsentModal
-					isOpen={true}
-					onClose={() => {}}
-					initialPackage={pkgWithOtp}
-					patient={mockPatient}
-					doctor={mockDoctor}
-					treatmentItems={mockItems}
-				/>,
-			);
-		});
-
-		// 1. Verify OTP confirmation button is NOT disabled when otpInput is empty (0 digits)
-		const otpConfirmBtn = findNodeByTestId(doc.body, "chairside-otp-confirm-btn");
-		expect(otpConfirmBtn).not.toBeNull();
-
-		// Check both React internal props and DOM element property
-		// biome-ignore lint/suspicious/noExplicitAny: access React internal props
-		const reactProps = (otpConfirmBtn as any)[
-			Object.keys(otpConfirmBtn!).find((k) => k.startsWith("__reactProps$")) || ""
-		];
-		expect(reactProps?.disabled).toBe(false);
-		expect(Boolean(otpConfirmBtn?.disabled)).toBe(false);
-		expect(otpConfirmBtn?.getAttribute?.("disabled")).toBeNull();
-
-		// Also verify footer OTP confirm button is NOT disabled
-		const footerOtpBtn = findNodeByTestId(doc.body, "chairside-otp-confirm-footer-btn");
-		expect(footerOtpBtn).not.toBeNull();
-		// biome-ignore lint/suspicious/noExplicitAny: access React internal props
-		const footerReactProps = (footerOtpBtn as any)[
-			Object.keys(footerOtpBtn!).find((k) => k.startsWith("__reactProps$")) || ""
-		];
-		expect(footerReactProps?.disabled).toBe(false);
-		expect(Boolean(footerOtpBtn?.disabled)).toBe(false);
-
-		// 2. Click with empty input -> verify helpful error directs to paper confirmation fallback
-		if (otpConfirmBtn) {
-			await clickNode(otpConfirmBtn);
-		}
-
-		const errorNode = findNodeByTestId(doc.body, "chairside-otp-error");
-		expect(errorNode).not.toBeNull();
-		const errorText = getNodeText(errorNode);
-		expect(errorText).toContain("Введите 4-значный код из СМС или нажмите «Подтвердить на бумаге (1 клик)»");
-
-		// 3. Verify OTP confirmation button is STILL NOT disabled when input has < 4 digits (e.g. 2 digits)
-		const inputNode = findNodeById(doc.body, "chairside-otp-input");
-		expect(inputNode).not.toBeNull();
-		if (inputNode) {
-			await changeInput(inputNode, "12");
-		}
-
-		// biome-ignore lint/suspicious/noExplicitAny: access React internal props
-		const updatedProps = (otpConfirmBtn as any)[
-			Object.keys(otpConfirmBtn!).find((k) => k.startsWith("__reactProps$")) || ""
-		];
-		expect(updatedProps?.disabled).toBe(false);
-		expect(Boolean(otpConfirmBtn?.disabled)).toBe(false);
-
-		// Click again with partial input -> sets helpful error directing to paper fallback
-		if (otpConfirmBtn) {
-			await clickNode(otpConfirmBtn);
-		}
-		const errorNode2 = findNodeByTestId(doc.body, "chairside-otp-error");
-		expect(errorNode2).not.toBeNull();
-		expect(getNodeText(errorNode2)).toContain("Подтвердить на бумаге (1 клик)");
 	});
 });

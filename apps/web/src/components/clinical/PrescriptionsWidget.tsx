@@ -29,11 +29,8 @@ import {
 	type PrescriptionFormType,
 	PrescriptionPrintModal,
 } from "../prescriptions/PrescriptionPrintModal";
-import {
-	POST_OP_CARE_SHEETS,
-	type PostOpCareSheetType,
-	PostOpCareSheetModal,
-} from "./PostOpCareSheetModal";
+import { PatientMemoPrintModal } from "../visit/PatientMemoPrintModal";
+import type { PostOpMemoId } from "../../lib/clinicalProtocols043";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 export interface PrescriptionsWidgetProps {
@@ -127,7 +124,7 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 
 	// Post-Op Care sheet modal state
 	const [isPostOpModalOpen, setIsPostOpModalOpen] = useState<boolean>(false);
-	const [postOpSheetType, setPostOpSheetType] = useState<PostOpCareSheetType>("surgical");
+	const [postOpSheetType, setPostOpSheetType] = useState<PostOpMemoId>("surgery_extraction");
 
 	const activeBundle = useMemo(
 		() => getDentalPrescriptionExpressBundle(activeBundleId),
@@ -479,11 +476,11 @@ export const PrescriptionsWidget: React.FC<PrescriptionsWidgetProps> = ({
 				medicalLicenseNumber={effectiveMedicalLicenseNumber}
 			/>
 
-			{/* Post-Op Care Sheet Modal */}
-			<PostOpCareSheetModal
+			{/* Patient Memo Print Modal (SSOT) */}
+			<PatientMemoPrintModal
 				isOpen={isPostOpModalOpen}
 				onClose={() => setIsPostOpModalOpen(false)}
-				defaultSheetType={postOpSheetType}
+				initialMemoId={postOpSheetType}
 				patient={patient}
 				doctorName={effectiveDoctorName}
 				doctorSpecialty={effectiveDoctorSpecialty}

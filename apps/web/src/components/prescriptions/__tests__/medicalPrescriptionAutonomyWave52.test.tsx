@@ -15,19 +15,24 @@
  */
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import {
 	formatPatientPrescriptionMemo,
-	MedicalPrescriptionModal,
 	type PatientPrescriptionMemoParams,
-} from "../generator/MedicalPrescriptionModal";
+} from "../generator/prescriptionEngine.js";
+import {
+	PrescriptionPrintModal as MedicalPrescriptionModal,
+	PrescriptionPrintModal,
+} from "../PrescriptionPrintModal.js";
 import {
 	DENTAL_MEDICATIONS_CATALOG,
 	type DentalMedicationPreset,
-} from "../generator/prescriptionPresets";
+} from "../generator/prescriptionPresets.js";
 
 // ============================================================================
 // Cartoon Emoji Validator per Mandate 8d pt 7
@@ -363,6 +368,8 @@ async function clickNode(node: MockDomNode) {
 // ============================================================================
 
 describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messengers (Order 1094n Form 107-1/u)", () => {
+	setupMockDom();
+
 	describe("1. SSR Structure, Touch Targets & Zero-Emoji Mandate (Mandates 8c, 8d)", () => {
 		it("renders med-rx-copy-patient-btn in modal footer with touch target >= 44px", () => {
 			const html = renderToString(
@@ -373,6 +380,7 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 					doctorName="Д-р Воронова Е.А."
 					clinicName="ООО «Денте Стоматология»"
 					clinicPhone="+7 (495) 123-45-67"
+					disablePortal={true}
 				/>,
 			);
 
@@ -404,6 +412,7 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 					patientName="Иванова Светлана Владимировна"
 					doctorName="Д-р Смирнов А.П."
 					clinicName="Стоматологическая клиника «DENTE»"
+					disablePortal={true}
 				/>,
 			);
 
@@ -416,7 +425,7 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 
 		it("modal does not render when isOpen=false", () => {
 			const html = renderToString(
-				<MedicalPrescriptionModal isOpen={false} onClose={() => {}} />,
+				<MedicalPrescriptionModal isOpen={false} onClose={() => {}} disablePortal={true} />,
 			);
 
 			assert.strictEqual(html, "", "Modal must return null when isOpen=false");
@@ -607,6 +616,8 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 						doctorName="Д-р Смирнов Алексей Петрович"
 						clinicName="ООО «Денте Стоматология»"
 						clinicPhone="+7 (495) 999-00-11"
+						disablePortal={true}
+						initialSelectedDrugIds={["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"]}
 					/>,
 				);
 			});
@@ -665,6 +676,8 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 						onClose={() => {}}
 						patientName="Соло Врач Пациент"
 						doctorName="Д-р Соло В.В."
+						disablePortal={true}
+						initialSelectedDrugIds={["amoxiclav_875_125"]}
 					/>,
 				);
 			});
@@ -688,33 +701,12 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 						isOpen={true}
 						onClose={() => {}}
 						patientName="Тестовый Пациент"
+						disablePortal={true}
+						initialSelectedDrugIds={[]}
 					/>,
 				);
 			});
 
-			// Find and toggle off initially selected 3 drugs
-			// Default selection is nimesil_100, chlorhexidine_005, amoxiclav_875
-			// In container, find buttons that toggle these
-			const buttons = (container?.children || []).flatMap(function collect(
-				node: MockDomNode,
-			): MockDomNode[] {
-				const list = node.tagName === "BUTTON" ? [node] : [];
-				return list.concat((node.children || []).flatMap(collect));
-			});
-
-			// Deselect the 3 initial medications
-			for (const btn of buttons) {
-				const text = btn.textContent || "";
-				if (
-					text.includes("Нимесил") ||
-					text.includes("Хлоргексидин") ||
-					text.includes("Амоксиклав")
-				) {
-					await clickNode(btn);
-				}
-			}
-
-			// Clear previous clipboard text
 			mockDom.reset();
 
 			const copyBtn = findNodeByTestId(container, "med-rx-copy-patient-btn");
@@ -734,6 +726,24 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 				mockDom.getClipboardText(),
 				"",
 				"Clipboard must not be written when no drugs are selected",
+			);
+		});
+	});
+
+	describe("4. Eradication of Legacy Duplicate Component (Wave 199)", () => {
+		it("confirms MedicalPrescriptionModal.tsx is physically eradicated", () => {
+			const targetPath = path.resolve(
+				process.cwd(),
+				"src/components/prescriptions/generator/MedicalPrescriptionModal.tsx",
+			);
+			const targetPathAlt = path.resolve(
+				process.cwd(),
+				"apps/web/src/components/prescriptions/generator/MedicalPrescriptionModal.tsx",
+			);
+			assert.strictEqual(
+				fs.existsSync(targetPath) || fs.existsSync(targetPathAlt),
+				false,
+				"MedicalPrescriptionModal.tsx must be physically deleted from filesystem",
 			);
 		});
 	});

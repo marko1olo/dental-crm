@@ -24,12 +24,12 @@ const __dirname = path.dirname(__filename);
 
 import { OdontogramViewContainer } from "../OdontogramViewContainer";
 import {
+	ToothChart,
 	createDefaultAdultTeethData,
 	type ToothData,
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
 } from "../ToothChart";
-import { PediatricToothChart } from "../PediatricToothChart";
 import { TreatmentPlanWizard } from "../TreatmentPlanWizard";
 import { ToothCardModal } from "../ToothCardModal";
 import { calculateLiveInvoiceItems } from "../OdontogramLiveInvoice";
@@ -50,22 +50,28 @@ describe("PARITY-01: 1-Click Adult / Pediatric Dentition Switch (FDI 11..48 <-> 
 		assert.ok(html.includes("data-testid=\"toolbar-dentition-mixed\""), "Must contain mixed dentition button");
 	});
 
-	it("renders PediatricToothChart with 20 pediatric teeth (51..85) correctly", () => {
+	it("renders ToothChart with 20 pediatric teeth (51..85) correctly in pediatricMode", () => {
 		const pedTeeth: ToothData[] = [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH].map((num) => ({
 			toothNumber: num,
 			state: "Healthy",
 		}));
 
 		const html = renderToString(
-			<PediatricToothChart
+			<ToothChart
 				teethData={pedTeeth}
+				pediatricMode={true}
 				onToothClick={() => {}}
 			/>,
 		);
 
-		assert.ok(html.includes("pediatric-tooth-chart"), "PediatricToothChart must render container with class");
+		assert.ok(html.includes("tooth-chart"), "ToothChart must render container with class");
 		assert.ok(html.includes("55"), "Must include tooth 55");
 		assert.ok(html.includes("85"), "Must include tooth 85");
+	});
+
+	it("PediatricToothChart is eradicated per Mandate 8s & Wave 199", () => {
+		const pedPath = path.resolve(__dirname, "..", "PediatricToothChart.tsx");
+		assert.equal(fs.existsSync(pedPath), false, "PediatricToothChart.tsx must be eradicated");
 	});
 });
 
@@ -314,7 +320,7 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 		const files = [
 			"TreatmentPlanWizard.tsx",
 			"ToothCardModal.tsx",
-			"PediatricToothChart.tsx",
+			"ToothChart.tsx",
 			"OdontogramViewContainer.tsx",
 		];
 

@@ -1,15 +1,13 @@
-import { DiagnosisSelector } from "../clinical/DiagnosisSelector";
+import { Icd10ClinicalSelector } from "../diagnostics/Icd10ClinicalSelector";
 import { DentalMedicalCard043uForm } from "../documents/forms/DentalMedicalCard043uForm";
-import { PediatricToothChart } from "../odontogram/PediatricToothChart";
-import { ToothStatusPalette } from "../odontogram/ToothStatusPalette";
+import { ToothChart } from "../odontogram/ToothChart";
 import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import { PatientAnamnesisModal } from "../patients/PatientAnamnesisModal";
-import { PrescriptionsTab } from "../prescriptions/PrescriptionsTab";
-import { ClinicalProtocolPresets } from "../clinical/ClinicalProtocolPresets";
-import { PostOpCareSheetModal } from "../clinical/PostOpCareSheetModal";
+import { PrescriptionModal } from "../visit/PrescriptionModal";
+import { ClinicalQuickPresetsBar } from "../visit/ClinicalQuickPresetsBar";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { BoneQualityPanel } from "../dicom/BoneQualityPanel";
-import { EndoQuickProtocolsBar } from "../endo/EndoQuickProtocolsBar";
+import { EndoCanalLogModal } from "../endo/EndoCanalLogModal";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { OrthodonticVisitProtocolWidget } from "../orthodontics/OrthodonticVisitProtocolWidget";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
@@ -17,7 +15,6 @@ import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtoco
 import { RadiationDoseSheetForm } from "../documents/forms/RadiationDoseSheetForm";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VisitTimer } from "../visit/VisitTimer";
-import { VisitEndoProtocolWidget } from "../visit/endo/VisitEndoProtocolWidget";
 import { VisitTherapyProtocolWidget } from "../visit/therapy/VisitTherapyProtocolWidget";
 /**
  * ClinicalModalsHost.tsx — On-demand clinical modal layer for dental chairside and specialty care.
@@ -46,7 +43,6 @@ import { TreatmentPlanPhased4StageView } from "../treatment-plans/TreatmentPlanP
 import { TreatmentPlanPresenterModal } from "../treatment-plans/TreatmentPlanPresenterModal";
 import { TreatmentPlanPriceValidatorModal } from "../treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { InformedConsentModal } from "../consents/InformedConsentModal";
-import { ChairsideTabletConsentModal } from "../chairside/ChairsideTabletConsentModal";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
 import { EmergencyRescueModal } from "../emergency/EmergencyRescueModal";
 import { DicomViewerModal } from "../imaging/DicomViewerModal";
@@ -56,8 +52,6 @@ import { HotFolderIntakeModal } from "../radiology/HotFolderIntakeModal";
 import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
-import { SurgeryCockpitModal } from "../surgery/SurgeryCockpitModal";
-import { SurgeryProtocolPanel } from "../surgery/SurgeryProtocolPanel";
 import { SurgeryVisitCockpit } from "../surgery/SurgeryVisitCockpit";
 import { VisitSurgeryProtocolTab } from "../visit/surgery/VisitSurgeryProtocolTab";
 import { NurseCarpuleDisposalModal } from "../inventory/NurseCarpuleDisposalModal";
@@ -183,11 +177,8 @@ export const ClinicalModalsHost: React.FC = () => {
 			{activeModal === "plan_validator" && (
 				<TreatmentPlanPriceValidatorModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "informed_consent" && (
+			{(activeModal === "informed_consent" || activeModal === "chairside_consent") && (
 				<InformedConsentModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "chairside_consent" && (
-				<ChairsideTabletConsentModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{(activeModal === "anesthesia_aspiration" ||
 				activeModal === "anesthesia_protocol" ||
@@ -293,20 +284,7 @@ export const ClinicalModalsHost: React.FC = () => {
 					initialTooth={activeTooth}
 				 {...({} as any)} />
 			)}
-			{activeModal === "surgery_cockpit" && (
-				<SurgeryCockpitModal
-					isOpen={true}
-					onClose={close}
-					patientName={patientName}
-					patientId={patientId}
-					doctorName={doctorFullName}
-					initialTooth={activeTooth}
-				 {...({} as any)} />
-			)}
-			{activeModal === "surgery_protocol_panel" && (
-				<SurgeryProtocolPanel patientName={patientName} toothFdi={activeTooth}  {...({} as any)} />
-			)}
-			{activeModal === "surgery_visit_cockpit" && (
+			{(activeModal === "surgery_cockpit" || activeModal === "surgery_visit_cockpit") && (
 				<SurgeryVisitCockpit
 					patientName={patientName}
 					patientId={patientId}
@@ -314,7 +292,7 @@ export const ClinicalModalsHost: React.FC = () => {
 					activeTooth={activeTooth}
 				 {...({} as any)} />
 			)}
-			{activeModal === "surgery_protocol_tab" && (
+			{(activeModal === "surgery_protocol_panel" || activeModal === "surgery_protocol_tab") && (
 				<VisitSurgeryProtocolTab
 					patientName={patientName}
 					patientId={patientId}
@@ -356,10 +334,10 @@ export const ClinicalModalsHost: React.FC = () => {
 				<Form043PrintModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "clinical_protocol_presets" && (
-				<ClinicalProtocolPresets {...({} as any)} />
+				<ClinicalQuickPresetsBar onSelectPreset={() => {}} {...({} as any)} />
 			)}
 			{activeModal === "post_op_care_sheet" && (
-				<PostOpCareSheetModal isOpen={true} onClose={close}  {...({} as any)} />
+				<PatientMemoPrintModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "somatic_anamnesis" && (
 				<SomaticAnamnesisCard patientId={patientId}  {...({} as any)} />
@@ -368,13 +346,10 @@ export const ClinicalModalsHost: React.FC = () => {
 				<BoneQualityPanel  {...({} as any)} />
 			)}
 			{activeModal === "endo_quick_protocols" && (
-				<EndoQuickProtocolsBar {...({} as any)} />
+				<EndoCanalLogModal isOpen={true} onClose={close} toothNumber={activeTooth ?? 16} {...({} as any)} />
 			)}
 			{activeModal === "stomx_formula" && (
-				<>
-					<OdontogramModule patientId={patientId} />
-					<ToothStatusPalette />
-				</>
+				<OdontogramModule patientId={patientId} />
 			)}
 			{activeModal === "orthodontic_studio" && (
 				<OrthodonticVisitProtocolWidget isOpen={true} onClose={close} patientId={patientId} patientName={patientName} {...({} as any)} />
@@ -458,22 +433,22 @@ export const ClinicalModalsHost: React.FC = () => {
 				<VisitTimer  {...({} as any)} />
 			)}
 			{activeModal === "visit_endo_protocol" && (
-				<VisitEndoProtocolWidget  {...({} as any)} />
+				<EndoCanalLogModal isOpen={true} onClose={close} toothNumber={activeTooth ?? 16} {...({} as any)} />
 			)}
 			{activeModal === "visit_therapy_protocol" && (
 				<VisitTherapyProtocolWidget  {...({} as any)} />
 			)}
 			{activeModal === "diagnosis_selector" && (
-				<DiagnosisSelector {...({} as any)} />
+				<Icd10ClinicalSelector onSelect={() => {}} {...({} as any)} />
 			)}
 			{activeModal === "outpatient_form_043_editor" && (
 				<DentalMedicalCard043uForm  {...({} as any)} />
 			)}
 			{activeModal === "child_tooth_chart" && (
-				<PediatricToothChart  {...({} as any)} />
+				<ToothChart pediatricMode={true} teethData={[]} onToothClick={() => {}} {...({} as any)} />
 			)}
 			{activeModal === "tooth_status_palette" && (
-				<ToothStatusPalette selectedTooth={16}  {...({} as any)} />
+				<OdontogramModule patientId={patientId} />
 			)}
 			{activeModal === "perio_arch_grid" && (
 				<PeriodontogramChart patientId={patientId} patientName={patientName} {...({} as any)} />
@@ -482,7 +457,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<PatientAnamnesisModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "prescriptions_tab" && (
-				<PrescriptionsTab  {...({} as any)} />
+				<PrescriptionModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 		</>
 	);
