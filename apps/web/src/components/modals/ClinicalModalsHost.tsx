@@ -66,7 +66,7 @@ import { DirectRvgCaptureModal } from "../radiology/DirectRvgCaptureModal";
 import { HotFolderIntakeModal } from "../radiology/HotFolderIntakeModal";
 import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
 import { RadiologyViewerModal } from "../radiology/RadiologyViewerModal";
-import { CbctMpr3DStudioModal } from "../radiology/CbctMpr3DStudioModal";
+import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
 import { ImplantCrossSectionPlanner } from "../radiology/ImplantCrossSectionPlanner";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import { SurgeryCockpitModal } from "../surgery/SurgeryCockpitModal";
@@ -255,7 +255,7 @@ export const ClinicalModalsHost: React.FC = () => {
 				<RadiologyViewerModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "cbct_3d_studio" && (
-				<CbctMpr3DStudioModal isOpen={true} onClose={close}  {...({} as any)} />
+				<CbctMprImplantStudioModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "implant_cross_section" && (
 				<ImplantCrossSectionPlanner  {...({} as any)} />

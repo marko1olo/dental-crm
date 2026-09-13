@@ -73,7 +73,7 @@ import {
 	WorkspaceSidebar,
 	WorkspaceTopbar,
 } from "./workspaceShell";
-import { CasePresentationView } from "./components/perspectives/CasePresentationView";
+import { TreatmentPlanModule } from "./components/treatment-plans/TreatmentPlanModule";
 import { OrthodonticPerspectiveView } from "./components/perspectives/OrthodonticPerspectiveView";
 import { usePerspectiveStore } from "./store/perspectiveStore";
 
@@ -594,6 +594,7 @@ export function App() {
 		openOnboardingGuide,
 		openScheduleWarning,
 		organizeLocalImagingSources,
+		patientId,
 		patientName,
 		pendingSpeechChunkCount,
 		pendingVisitSaveCount,
@@ -2486,7 +2487,11 @@ export function App() {
 										{perspective === "orthodontic" ? (
 											<OrthodonticPerspectiveView />
 										) : perspective === "presentation" ? (
-											<CasePresentationView />
+											<TreatmentPlanModule
+												patientId={patientId || "anonymous"}
+												patientName={activePatient?.fullName || "Пациент"}
+												teethData={[]}
+											/>
 										) : (
 											<VisitView />
 										)}

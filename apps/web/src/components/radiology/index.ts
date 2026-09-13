@@ -16,7 +16,6 @@ export * from "./CbctMprViewer";
 export * from "./implantSafetyEngine";
 export * from "./ImplantCrossSectionPlanner";
 export * from "./CbctMprImplantStudioModal";
-export * from "./CbctMpr3DStudioModal";
 export * from "./CbctViewportHud";
 export * from "./CbctLeftToolDock";
 export * from "./MedicalRadiologyDropzone";

@@ -69,12 +69,11 @@ import {
 	ClinicalQuickPresetsBar,
 	type ClinicalQuickPreset,
 } from "./ClinicalQuickPresetsBar";
-import {
-	VisitSoapTemplatesModal,
-} from "./VisitSoapTemplatesModal";
+import { ClinicalDiaryTemplatesModal } from "../emr/templates/ClinicalDiaryTemplatesModal";
 import {
 	CLINICAL_SOAP_PRESETS,
 	type ClinicalSoapPreset,
+	getPresetById,
 } from "./clinicalSoapPresets";
 import {
 	CARPULE_ANESTHESIA_PRESETS,
@@ -3511,12 +3510,59 @@ export function VisitEmkTab() {
 			)}
 
 			{/* Форма 043/у Каталог Клинических Протоколов со списанием и услугами 804н */}
-			<VisitSoapTemplatesModal
+			<ClinicalDiaryTemplatesModal
 				isOpen={isSoapTemplatesModalOpen}
 				onClose={() => setIsSoapTemplatesModalOpen(false)}
-				onApplyPreset={handleApplyClinicalSoapPreset}
-				activeTooth={activeSelectedTooth}
-				isLocked={isLocked}
+				initialToothNumber={activeSelectedTooth}
+				doctorFullName={activeDoctor?.fullName}
+				patientFullName={activePatient?.fullName}
+				onApplyDiary={(result) => {
+					const matchedPreset =
+						getPresetById(result.templateId) ||
+						CLINICAL_SOAP_PRESETS.find((p) => result.templateId.startsWith(p.id)) ||
+						CLINICAL_SOAP_PRESETS.find((p) => p.icd10 === result.icd10Code) ||
+						CLINICAL_SOAP_PRESETS[0];
+
+					const targetTooth =
+						result.toothNumber ?? activeSelectedTooth ?? matchedPreset?.defaultTooth ?? 16;
+					const effectivePreset: ClinicalSoapPreset = matchedPreset
+						? {
+								...matchedPreset,
+								complaint: result.subjectiveComplaints || matchedPreset.complaint,
+								anamnesis: result.anamnesisMorbi || matchedPreset.anamnesis,
+								statusLocalis: result.objectiveStatusLocalis || matchedPreset.statusLocalis,
+								treatmentDescription:
+									result.procedureProtocol || matchedPreset.treatmentDescription,
+							}
+						: {
+								id: result.templateId,
+								title: result.title,
+								shortBadge: result.icd10Code,
+								category: "therapy",
+								icd10: result.icd10Code,
+								icd10Label: `${result.icd10Code} ${result.title}`,
+								complaint: result.subjectiveComplaints,
+								anamnesis: result.anamnesisMorbi,
+								statusLocalis: result.objectiveStatusLocalis,
+								treatmentDescription: result.procedureProtocol,
+								toothState: "Caries",
+								defaultTooth: targetTooth,
+								service804n: {
+									code804n: result.order804nServices?.[0]?.code || "A16.07.002.001",
+									title: result.order804nServices?.[0]?.nameRu || result.title,
+									basePriceRub: 4500,
+									category: "therapy",
+								},
+								materialsToDeduct: [],
+								recommendations:
+									result.homeCareRecommendations || "Соблюдение гигиены полости рта",
+								warrantyMonths: 12,
+								serviceLifeMonths: 24,
+							};
+
+					handleApplyClinicalSoapPreset(effectivePreset, targetTooth, "clean_replace");
+					setIsSoapTemplatesModalOpen(false);
+				}}
 			/>
 
 			{/* ── ПЕЧАТНАЯ ВЕРСИЯ КАРТЫ 043/У И ДНЕВНИКА ПРИЁМА ДЛЯ А4 ── */}
