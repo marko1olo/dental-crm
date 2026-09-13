@@ -7,8 +7,6 @@
  */
 
 export * from "./KraftPackageQuickScanner";
-export * from "./SterilizationStudioModal";
-export * from "./SterilizationJournalModal";
 export * from "./SterilizationAutoclaveLogModal";
 export * from "./sterilizationPresets";
 

@@ -18,7 +18,7 @@ import { validateBuyerInn54Fz } from "../cashboxOperations";
 import { PaymentModal } from "../PaymentModal";
 import { FiscalReceiptModal } from "../FiscalReceipt54FzModal";
 import { ProcedureMaterialDeductionModal } from "../../inventory/ProcedureMaterialDeductionModal";
-import { SterilizationJournalModal } from "../../sterilization/SterilizationJournalModal";
+import { SterilizationAutoclaveLogModal } from "../../sterilization/SterilizationAutoclaveLogModal";
 import {
 	generateKraftBarcode,
 	calculateKraftSterilityExpiration,
@@ -190,9 +190,9 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 	});
 
 	describe("5. SanPiN 3.3686-21 Autoclave Batch Confirmation & Kraft Serial Tracking", () => {
-		it("Renders 1-click batch autoclave confirmation button in SterilizationJournalModal", () => {
+		it("Renders 1-click batch autoclave confirmation button in SterilizationAutoclaveLogModal", () => {
 			const html = renderToString(
-				<SterilizationJournalModal
+				<SterilizationAutoclaveLogModal
 					isOpen={true}
 					onClose={() => {}}
 					initialTab="form257"

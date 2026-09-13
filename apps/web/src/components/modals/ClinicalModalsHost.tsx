@@ -47,8 +47,6 @@ import { AutoclaveCycleModal } from "../sanpin/autoclave/AutoclaveCycleModal";
 import { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { KraftPackageBarcodeModal } from "../sanpin/kraft/KraftPackageBarcodeModal";
 import { MedicalWasteJournalModal } from "../sanpin/waste/MedicalWasteJournalModal";
-import { SterilizationJournalModal } from "../sterilization/SterilizationJournalModal";
-import { SterilizationStudioModal } from "../sterilization/SterilizationStudioModal";
 import { InsurancePreAuthModal } from "../insurance/InsurancePreAuthModal";
 import { TreatmentPlanComparatorModal } from "../treatment-plans/comparator/TreatmentPlanComparatorModal";
 import { TreatmentPlan3TierComparison } from "../treatment-plans/TreatmentPlan3TierComparison";
@@ -171,10 +169,10 @@ export const ClinicalModalsHost: React.FC = () => {
 				<MedicalWasteJournalModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "sterilization_journal" && (
-				<SterilizationJournalModal isOpen={true} onClose={close}  {...({} as any)} />
+				<SterilizationAutoclaveLogModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "sterilization_studio" && (
-				<SterilizationStudioModal isOpen={true} onClose={close}  {...({} as any)} />
+				<KraftPackageBarcodeModal isOpen={true} onClose={close} />
 			)}
 			{activeModal === "insurance_preauth" && (
 				<InsurancePreAuthModal isOpen={true} onClose={close}  {...({} as any)} />
