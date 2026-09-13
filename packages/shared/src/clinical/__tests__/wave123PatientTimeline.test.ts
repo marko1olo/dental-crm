@@ -390,15 +390,19 @@ describe("Wave 123: Patient Timeline Engine (DentalPin Adaptation)", () => {
 	describe("Category Counts (Facets)", () => {
 		const events = createSampleEventCollection();
 
-		it("calculates accurate counts for all 6 categories across full event set", () => {
+		it("calculates accurate counts across full event set", () => {
 			const result = filterAndPaginateTimeline(events, {});
 			assert.deepStrictEqual(result.categoryCounts, {
-				clinical: 2,
+				visit: 0,
+				treatment: 0,
 				financial: 1,
+				clinical: 2,
+				diagnostic: 0,
+				legal: 0,
+				communication: 1,
 				administrative: 1,
 				imaging: 1,
 				lab: 1,
-				communication: 1,
 			});
 		});
 
@@ -416,12 +420,16 @@ describe("Wave 123: Patient Timeline Engine (DentalPin Adaptation)", () => {
 		it("initializes all category counts to zero for empty collections", () => {
 			const result = filterAndPaginateTimeline([], {});
 			assert.deepStrictEqual(result.categoryCounts, {
-				clinical: 0,
+				visit: 0,
+				treatment: 0,
 				financial: 0,
+				clinical: 0,
+				diagnostic: 0,
+				legal: 0,
+				communication: 0,
 				administrative: 0,
 				imaging: 0,
 				lab: 0,
-				communication: 0,
 			});
 		});
 	});
