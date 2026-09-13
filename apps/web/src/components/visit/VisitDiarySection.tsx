@@ -8,6 +8,7 @@ import {
 	Clock,
 	FileText,
 	Lock,
+	MoreHorizontal,
 	Palette,
 	Pill,
 	Plus,
@@ -178,6 +179,20 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [showEgiszModal, setShowEgiszModal] = useState(false);
 	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
 	const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+	const [isExtraActionsOpen, setIsExtraActionsOpen] = useState(false);
+	const moreActionsRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!isExtraActionsOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (moreActionsRef.current && !moreActionsRef.current.contains(e.target as Node)) {
+				setIsExtraActionsOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isExtraActionsOpen]);
+
 	const [isTier3PerioModalOpen, setIsTier3PerioModalOpen] = useState(false);
 	const [showPerioPathologyMenu, setShowPerioPathologyMenu] = useState(false);
 	const perioMenuRef = useRef<HTMLDivElement>(null);
@@ -757,56 +772,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</button>
 					<button
 						type="button"
-						data-testid="diary-summary-btn"
-						onClick={() => setShowSummaryModal(true)}
-						className="vde-043__btn"
-						title="Открыть клиническую сводку приёма"
-					>
-						<FileText className="w-4 h-4 text-[var(--teal)]" />
-						Сводка
-					</button>
-					<button
-						type="button"
-						data-testid="open-prescription-btn"
-						onClick={() => setShowPrescriptionModal(true)}
-						className="vde-043__btn"
-						title="Выписать рецептурный бланк (Форма № 107-1/у по Приказу 1094н)"
-					>
-						<Pill className="w-4 h-4 text-blue-500" />
-						Рецепт (107-1/у)
-					</button>
-					<button
-						type="button"
-						data-testid="open-radiology-referral-btn"
-						onClick={() => setShowRadiologyReferralModal(true)}
-						className="vde-043__btn"
-						title="Сформировать направление на КЛКТ / ОПТГ / ТРГ"
-					>
-						<Scan className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-						Направление КЛКТ/ОПТГ
-					</button>
-					<button
-						type="button"
-						data-testid="open-egisz-semd-btn"
-						onClick={() => setShowEgiszModal(true)}
-						className="vde-043__btn"
-						title="Экспорт и валидация СЭМД ЕГИСЗ (HL7 CDA R2)"
-					>
-						<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)]" />
-						СЭМД ЕГИСЗ
-					</button>
-					<button
-						type="button"
-						data-testid="open-branding-customizer-btn"
-						onClick={() => setShowBrandingCustomizer(true)}
-						className="vde-043__btn"
-						title="Настроить фирменный бланк клиники, цвета, логотип и реквизиты"
-					>
-						<Palette className="w-4 h-4 text-amber-500" />
-						Бланк и стиль
-					</button>
-					<button
-						type="button"
 						id="diary-print-btn"
 						data-testid="diary-print-043"
 						onClick={() => setShowPreview(true)}
@@ -815,6 +780,86 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					>
 						<Printer className="w-4 h-4" /> Печать 043/у
 					</button>
+					<div className="relative inline-block" ref={moreActionsRef} style={{ position: "relative" }}>
+						<button
+							type="button"
+							data-testid="diary-more-actions-btn"
+							className="vde-043__btn"
+							onClick={() => setIsExtraActionsOpen((v) => !v)}
+							title="Дополнительные документы и бланки"
+							aria-label="Дополнительные действия дневника"
+							aria-expanded={isExtraActionsOpen}
+						>
+							<MoreHorizontal className="w-4 h-4" />
+						</button>
+						{isExtraActionsOpen && (
+							<div
+								className="absolute right-0 top-full mt-1 z-50 min-w-[210px] p-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs"
+								style={{ minWidth: "210px" }}
+							>
+								<button
+									type="button"
+									data-testid="diary-summary-btn"
+									onClick={() => {
+										setIsExtraActionsOpen(false);
+										setShowSummaryModal(true);
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
+									<span>Клиническая сводка</span>
+								</button>
+								<button
+									type="button"
+									data-testid="open-prescription-btn"
+									onClick={() => {
+										setIsExtraActionsOpen(false);
+										setShowPrescriptionModal(true);
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<Pill className="w-4 h-4 text-blue-500 shrink-0" />
+									<span>Рецепт (107-1/у)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="open-radiology-referral-btn"
+									onClick={() => {
+										setIsExtraActionsOpen(false);
+										setShowRadiologyReferralModal(true);
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<Scan className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<span>Направление КЛКТ/ОПТГ</span>
+								</button>
+								<button
+									type="button"
+									data-testid="open-egisz-semd-btn"
+									onClick={() => {
+										setIsExtraActionsOpen(false);
+										setShowEgiszModal(true);
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
+									<span>СЭМД ЕГИСЗ</span>
+								</button>
+								<button
+									type="button"
+									data-testid="open-branding-customizer-btn"
+									onClick={() => {
+										setIsExtraActionsOpen(false);
+										setShowBrandingCustomizer(true);
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<Palette className="w-4 h-4 text-amber-500 shrink-0" />
+									<span>Бланк и стиль</span>
+								</button>
+							</div>
+						)}
+					</div>
 					{isLocked && (
 						isRevising ? (
 							<span className="vde-043__badge vde-043__badge--revise">

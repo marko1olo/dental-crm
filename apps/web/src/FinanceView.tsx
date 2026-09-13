@@ -1,6 +1,6 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { useCallback, useEffect, useState } from "react";
-import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard } from "lucide-react";
+import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard, MoreHorizontal } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
@@ -302,11 +302,16 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 	const [isPnlOpen, setIsPnlOpen] = useState(false);
 	const [isInvoicesOpen, setIsInvoicesOpen] = useState(false);
+	const [isFinanceOptionsOpen, setIsFinanceOptionsOpen] = useState(false);
 
-	// Desktop Keyboard Navigation: Esc closes open financial sub-modals (Invoices, PnL)
+	// Desktop Keyboard Navigation: Esc closes open financial sub-modals (Invoices, PnL, options popover)
 	useEffect(() => {
 		const handleKeyDown = (e: globalThis.KeyboardEvent) => {
 			if (e.key === "Escape") {
+				if (isFinanceOptionsOpen) {
+					setIsFinanceOptionsOpen(false);
+					return;
+				}
 				if (isInvoicesOpen) {
 					setIsInvoicesOpen(false);
 					return;
@@ -319,22 +324,23 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isInvoicesOpen, isPnlOpen]);
+	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen]);
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
-			<div className="panel-heading">
-				<div>
-					<h2>Оплаты, план лечения и вычет</h2>
-					<p className="eyebrow finance-scope-label">
-						Сводка по пациенту:{" "}
-						{documentPatient?.fullName ?? "пациент не выбран"}
-					</p>
+			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-2 px-2.5 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 flex-nowrap overflow-hidden shrink-0 select-none">
+				<div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+					<span className="truncate text-xs sm:text-sm font-bold text-[var(--ink)]">
+						Оплаты и план
+					</span>
+					<span className="text-xs text-[var(--muted)] truncate shrink-0 hidden sm:inline" title={documentPatient?.fullName ?? "пациент не выбран"}>
+						· {documentPatient?.fullName ?? "пациент не выбран"}
+					</span>
 				</div>
-				<div className="finance-header-actions flex items-center flex-wrap gap-2 max-w-full min-w-0">
+				<div className="finance-header-actions flex items-center gap-1.5 shrink-0 flex-nowrap">
 					{billingSummary && billingSummary.totalDueRub > 0 && (
 						<button
-							className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/20 active:scale-95 transition-all"
+							className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 inline-flex items-center gap-1 font-bold text-xs px-2 sm:px-2.5 py-0 cursor-pointer bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/20 active:scale-95 transition-all rounded-lg shrink-0"
 							type="button"
 							onClick={() => {
 								setPaymentAmount(rubAmountForInput(billingSummary.totalDueRub));
@@ -344,38 +350,66 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 							aria-label="Оплатить долг"
 							data-testid="btn-finance-pay-debt-quick"
 						>
-							<CreditCard size={15} className="shrink-0 text-rose-600 dark:text-rose-400" />
-							<span>Оплатить долг ({money(billingSummary.totalDueRub)})</span>
+							<CreditCard size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
+							<span className="truncate">Оплатить долг ({money(billingSummary.totalDueRub)})</span>
 						</button>
 					)}
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-semibold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 inline-flex items-center gap-1 font-semibold text-xs px-2 sm:px-2.5 py-0 cursor-pointer rounded-lg shrink-0"
 						type="button"
 						onClick={() => setIsInvoicesOpen(true)}
 						aria-label="Счета и акты (804н)"
 						data-testid="btn-finance-open-invoices"
 					>
-						<Receipt size={15} className="shrink-0" />
-						<span>Счета и акты (804н)</span>
+						<Receipt size={13} className="shrink-0" />
+						<span className="truncate">Счета и акты (804н)</span>
 					</button>
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-semibold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer"
-						type="button"
-						onClick={() => setIsPnlOpen(true)}
-						aria-label="Управленческий P&L отчет"
-					>
-						<TrendingUp size={15} className="shrink-0" />
-						<span>Управленческий P&L</span>
-					</button>
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 font-semibold text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 cursor-pointer"
-						type="button"
-						onClick={onGoToDocuments}
-						aria-label="Перейти к документам"
-					>
-						<FileText size={15} className="shrink-0" />
-						<span>Документы</span>
-					</button>
+
+					{/* Поповер вторичных действий: P&L и Документы */}
+					<div className="relative shrink-0">
+						<button
+							type="button"
+							onClick={() => setIsFinanceOptionsOpen((prev) => !prev)}
+							data-testid="finance-toolbar-options-btn"
+							className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 w-8 sm:w-7 p-0 flex items-center justify-center shrink-0 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+							title="Дополнительные финансовые отчеты и документы"
+							aria-label="Дополнительные действия"
+							aria-expanded={isFinanceOptionsOpen}
+						>
+							<MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+						</button>
+						{isFinanceOptionsOpen && (
+							<div
+								className="absolute right-0 top-full mt-1 w-52 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
+								role="menu"
+							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsFinanceOptionsOpen(false);
+										setIsPnlOpen(true);
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+								>
+									<TrendingUp size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+									<span>Управленческий P&L</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsFinanceOptionsOpen(false);
+										onGoToDocuments();
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+								>
+									<FileText size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
+									<span>Документы</span>
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 
@@ -575,7 +609,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					aria-label="Счета и акты по номенклатуре 804н"
 					data-testid="modal-finance-invoices"
 				>
-					<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line,#e2e8f0)] flex flex-col bg-[var(--paper,#ffffff)]">
+					<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line)] flex flex-col bg-[var(--paper)]">
 						<InvoicesView
 							currentDoctorName="Врач-стоматолог"
 							patientId={documentPatient?.id}

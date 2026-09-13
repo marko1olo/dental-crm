@@ -676,10 +676,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					</span>
 				</div>
 
-				<div className="patients-header-actions">
+				<div className="patients-header-actions shrink-0">
 					<button
 						type="button"
-						className={`secondary-button ${showLostPatientsOnly ? "active" : ""}`}
+						className={`secondary-button ${showLostPatientsOnly ? "active" : ""} shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg font-medium inline-flex items-center justify-center`}
 						onClick={toggleLostPatients}
 						disabled={isLoadingLost}
 						title="Показать пациентов без будущих приемов, открытых задач и записей в листе ожидания"
@@ -687,28 +687,25 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							backgroundColor: showLostPatientsOnly ? "var(--teal)" : undefined,
 							color: showLostPatientsOnly ? "var(--on-teal, var(--paper))" : undefined,
 							borderColor: showLostPatientsOnly ? "var(--teal)" : undefined,
-							height: "34px",
-							minHeight: "34px",
-							padding: "0 0.85rem",
-							fontSize: "13px",
 						}}
 					>
-						{isLoadingLost
-							? "Загрузка..."
-							: showLostPatientsOnly
-								? "Показаны потерянные"
-								: "Потерянные"}
+						<span className="truncate">
+							{isLoadingLost
+								? "Загрузка..."
+								: showLostPatientsOnly
+									? "Показаны потерянные"
+									: "Потерянные"}
+						</span>
 					</button>
 					<button
 						type="button"
-						className="primary-button patients-new-patient-btn"
+						className="primary-button patients-new-patient-btn shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg font-semibold inline-flex items-center justify-center gap-1.5"
 						onClick={() => setIsCreateModalOpen(true)}
 						title="Зарегистрировать нового пациента"
 						data-testid="open-create-patient-modal-btn"
-						style={{ height: "34px", minHeight: "34px", padding: "0 0.85rem", fontSize: "13px" }}
 					>
-						<Plus size={16} aria-hidden="true" />
-						<span>Создать нового</span>
+						<Plus size={15} aria-hidden="true" className="shrink-0" />
+						<span className="truncate">Создать нового</span>
 					</button>
 				</div>
 			</header>

@@ -302,7 +302,7 @@ export function ScheduleFilterStrip({
 	return (
 		<>
 			<section
-				className="schedule-filter-strip min-h-[44px] sm:min-h-[36px] sm:h-9 flex items-center justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
+				className="schedule-filter-strip min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
 				aria-label="Сохраненные фильтры расписания"
 				data-testid="schedule-toolbar"
 				role="toolbar"
@@ -443,7 +443,7 @@ export function ScheduleFilterStrip({
 				<button
 					type="button"
 					onClick={handleOpenAddChair}
-					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
+					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
 					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
 					aria-label="Добавить кресло в расписание"
 					data-testid="schedule-add-chair-btn"

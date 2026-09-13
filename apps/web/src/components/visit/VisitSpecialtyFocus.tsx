@@ -35,32 +35,26 @@ export function VisitSpecialtyFocus() {
 	return (
 		<section
 			data-testid="visit-specialty-focus"
-			className="specialty-focus-bar bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4"
+			className="specialty-focus-bar bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 min-h-[32px] sm:h-8 text-xs shrink-0 select-none"
 			aria-label="Фокус специальности приема"
 		>
-			<div>
-				<p className="eyebrow">Фокус врача</p>
-				<h3>{currentSpecialtyLabel}</h3>
-				<p>
-					{activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} ·{" "}
-					{activeChair?.name ?? "кресло"}
-				</p>
+			<div className="flex items-center gap-2 min-w-0">
+				<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] shrink-0">Фокус:</span>
+				<strong className="font-semibold text-xs text-[var(--ink)] truncate">{currentSpecialtyLabel}</strong>
+				<span className="text-[11px] text-[var(--muted)] hidden sm:inline shrink-0">
+					({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})
+				</span>
 			</div>
-			<div className="specialty-focus-options">
-				{/*
-				  Пустой список раньше оставлял справа глухое место без объяснения:
-				  врач видел заголовок «Фокус врача» и ничего под ним.
-				*/}
+			<div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
 				{focusOptions.length === 0 ? (
-					<p className="text-xs text-slate-500 dark:text-slate-400 m-0">
-						Направления приёма не настроены. Их включают в настройках клиники,
-						на вкладке профиля; приём можно вести и без них.
-					</p>
+					<span className="text-[11px] text-[var(--muted)] truncate">
+						Направления не настроены
+					</span>
 				) : null}
 				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 				{focusOptions.map((option: any) => (
 					<button
-						className={selectedSpecialty === option.specialty ? "active" : ""}
+						className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-[var(--paper)] font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
 						type="button"
 						key={option.specialty}
 						aria-pressed={selectedSpecialty === option.specialty}
@@ -68,9 +62,9 @@ export function VisitSpecialtyFocus() {
 							if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
 							if (setSelectedProtocolId) setSelectedProtocolId(null);
 						}}
+						title={option.hint}
 					>
 						<strong>{option.title}</strong>
-						<span>{option.hint}</span>
 					</button>
 				))}
 			</div>

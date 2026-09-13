@@ -252,7 +252,6 @@ import {
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { VisitSoapEditor, type VisitSoapNoteValues } from "./components/visit/VisitSoapEditor";
-import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { PatientAllergySafetyBanner } from "./components/patients/PatientAllergySafetyBanner";
 import { renderForm043uHtml } from "@dental/shared";
@@ -278,6 +277,7 @@ import {
 	Flame,
 	HeartPulse,
 	Lock,
+	MoreHorizontal,
 	Printer,
 	Scissors,
 	Shield,
@@ -624,6 +624,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
 	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
+	const [isHeaderOptionsOpen, setIsHeaderOptionsOpen] = React.useState(false);
 
 	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
 		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
@@ -1295,11 +1296,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					data-testid="visit-header-monolith"
 					aria-label="Шапка текущего приёма"
 				>
-					{/* Строка 1 (высота ~44px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
-					<div className="h-11 min-h-[44px] flex items-center justify-between gap-2 px-3 border-b border-[var(--line)] flex-nowrap overflow-x-auto scrollbar-none">
+					{/* Строка 1 (высота ~36px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
+					<div className="min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-2 px-2.5 sm:px-3 border-b border-[var(--line)] flex-nowrap overflow-hidden">
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={28} />
-							<span className="truncate min-w-0 text-sm sm:text-base md:text-lg font-bold text-[var(--ink)]" title={activePatient.fullName}>
+							<span className="truncate min-w-0 text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
 								<span className="sm:hidden">
 									{(() => {
 										const parts = (activePatient.fullName || "").trim().split(/\s+/);
@@ -1325,24 +1326,24 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							{/* Бейдж аллергии (ровно 1 раз во всей шапке!) */}
 							{activePatientAllergyText && (
 								<span
-									className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 animate-pulse"
+									className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 animate-pulse"
 									data-testid="visit-focus-allergy-alert"
 									role="alert"
 									title={`Критический стоп-фактор / аллергия пациента: ${activePatientAllergyText}`}
 								>
 									<AlertOctagon size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span className="truncate max-w-[110px] sm:max-w-[160px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
+									<span className="truncate max-w-[100px] sm:max-w-[140px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
 								</span>
 							)}
 						</div>
 
-						<div className="flex items-center gap-1.5 shrink-0">
+						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
 							{/* Кнопка физиологической нормы 043/у (1-клик) */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0"
+								className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
@@ -1352,58 +1353,97 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="sm:hidden">Норма</span>
 							</button>
 
-							{/* Кнопка Профгигиена (1-клик) */}
-							<button
-								type="button"
-								onClick={handleApplyHygienePresetQuick}
-								data-testid="btn-hygiene-preset-one-click"
-								className="!hidden md:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1 cursor-pointer shrink-0 transition-all"
-								title="Профгигиена (1-клик): протокол ультразвук + Air-Flow + полировка + фторирование Bifluorid 12"
-								aria-label="Профгигиена (1-клик)"
-							>
-								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-								<span className="hidden 2xl:inline">Профгигиена</span>
-							</button>
-
-							{/* Кнопка Анестезия (1-клик) */}
-							<button
-								type="button"
-								onClick={handleApplyAnesthesiaPresetQuick}
-								data-testid="btn-anesthesia-preset-one-click"
-								className="!hidden lg:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 items-center gap-1 cursor-pointer shrink-0 transition-all"
-								title="Стандартная анестезия (1-клик): Sol. Articaini 4% 1:100 000 — 1.7 мл без осложнений"
-								aria-label="Анестезия (1-клик)"
-							>
-								<Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
-								<span className="hidden 2xl:inline">+ Анестезия</span>
-							</button>
-
-							{/* Клинические шаблоны StomX (448 протоколов) — на десктопе */}
-							<button
-								type="button"
-								onClick={handleOpenStomxTemplatesFromHeader}
-								data-testid="btn-open-stomt-templates-header"
-								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 items-center gap-1 cursor-pointer shrink-0"
-								title="Клинические шаблоны StomX (448 протоколов 043/у по 5 специальностям)"
-							>
-								<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-								<span className="hidden 2xl:inline">Шаблоны (448)</span>
-							</button>
-
 							{/* Печать Формы 043/у (Мандат 8e) — на десктопе */}
 							<button
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0"
+								className="hidden sm:inline-flex secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 								<span className="hidden 2xl:inline">Печать 043/у</span>
 							</button>
 
+							{/* Поповер вторичных действий: пресеты гигиены, анестезии, шаблоны */}
+							<div className="relative shrink-0">
+								<button
+									type="button"
+									onClick={() => setIsHeaderOptionsOpen((prev) => !prev)}
+									data-testid="visit-header-options-btn"
+									className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 w-8 sm:w-7 p-0 flex items-center justify-center shrink-0 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+									title="Дополнительные клинические действия и шаблоны"
+									aria-label="Дополнительные клинические действия"
+									aria-expanded={isHeaderOptionsOpen}
+								>
+									<MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+								</button>
+								{isHeaderOptionsOpen && (
+									<div
+										className="absolute right-0 top-full mt-1 w-56 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
+										role="menu"
+									>
+										{/* Кнопка Профгигиена (1-клик) */}
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderOptionsOpen(false);
+												handleApplyHygienePresetQuick();
+											}}
+											data-testid="btn-hygiene-preset-one-click"
+											className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-teal-700 dark:text-teal-300 flex items-center gap-2 cursor-pointer transition-colors"
+											role="menuitem"
+										>
+											<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>Профгигиена (1-клик)</span>
+										</button>
+										{/* Кнопка Анестезия (1-клик) */}
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderOptionsOpen(false);
+												handleApplyAnesthesiaPresetQuick();
+											}}
+											data-testid="btn-anesthesia-preset-one-click"
+											className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-indigo-700 dark:text-indigo-300 flex items-center gap-2 cursor-pointer transition-colors"
+											role="menuitem"
+										>
+											<Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
+											<span>+ Анестезия (1-клик)</span>
+										</button>
+										{/* Клинические шаблоны StomX (448 протоколов) */}
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderOptionsOpen(false);
+												handleOpenStomxTemplatesFromHeader();
+											}}
+											data-testid="btn-open-stomt-templates-header"
+											className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+											role="menuitem"
+										>
+											<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>Шаблоны 043/у (448)</span>
+										</button>
+										{/* Мобильный дубль печати 043/у, если на узком экране */}
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderOptionsOpen(false);
+												handlePrintForm043uFast();
+											}}
+											className="sm:hidden w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-sky-700 dark:text-sky-300 flex items-center gap-2 cursor-pointer transition-colors"
+											role="menuitem"
+										>
+											<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+											<span>Печать 043/у</span>
+										</button>
+									</div>
+								)}
+							</div>
+
 							{/* Статус приема: только на широких экранах */}
-							<span className="!hidden md:!inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
+							<span className="hidden xl:inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
 								Черновик
 							</span>
 
@@ -1412,7 +1452,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 py-1 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+								className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer rounded-lg"
 								title="Завершить приём и сохранить все изменения"
 							>
 								<CheckCircle2 size={14} className="shrink-0" />
@@ -2285,58 +2325,58 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 					{/* Быстрая раскраска карты: один выбранный цвет ставится кликом по зубу. */}
 					<div
-						className="tooth-stamp-bar flex flex-wrap gap-1.5 items-center"
+						className="tooth-stamp-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9"
 						role="toolbar"
 						aria-label="Инструменты быстрого штампа"
 					>
 						<span className="stamp-bar-title shrink-0">Быстрый штамп:</span>
 						<button
 							type="button"
-							className={`stamp-btn min-h-[44px] px-3 py-2 ${activeStamp === null ? "active" : ""}`}
+							className={`stamp-btn shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === null ? "active" : ""}`}
 							onClick={() => setActiveStamp(null)}
 						>
-							<Eye size={14} className="inline mr-1" aria-hidden="true" />
-							Обычный клик
+							<Eye size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
+							<span className="truncate">Обычный клик</span>
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-planned min-h-[44px] px-3 py-2 ${activeStamp === "planned" ? "active" : ""}`}
+							className={`stamp-btn stamp-planned shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "planned" ? "active" : ""}`}
 							onClick={() => setActiveStamp("planned")}
 						>
-							<FileText size={14} className="inline mr-1" aria-hidden="true" />
-							В план
+							<FileText size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
+							<span className="truncate">В план</span>
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-treatment min-h-[44px] px-3 py-2 ${activeStamp === "treatment" ? "active" : ""}`}
+							className={`stamp-btn stamp-treatment shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "treatment" ? "active" : ""}`}
 							onClick={() => setActiveStamp("treatment")}
 						>
-							<AlertTriangle size={14} className="inline mr-1" aria-hidden="true" />
-							Лечение
+							<AlertTriangle size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
+							<span className="truncate">Лечение</span>
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-watch min-h-[44px] px-3 py-2 ${activeStamp === "watch" ? "active" : ""}`}
+							className={`stamp-btn stamp-watch shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "watch" ? "active" : ""}`}
 							onClick={() => setActiveStamp("watch")}
 						>
-							<AlertTriangle size={14} className="inline mr-1" aria-hidden="true" />
-							Наблюдение
+							<AlertTriangle size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
+							<span className="truncate">Наблюдение</span>
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-done min-h-[44px] px-3 py-2 ${activeStamp === "done" ? "active" : ""}`}
+							className={`stamp-btn stamp-done shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "done" ? "active" : ""}`}
 							onClick={() => setActiveStamp("done")}
 						>
-							<CheckCircle2 size={14} className="inline mr-1" aria-hidden="true" />
-							Готово
+							<CheckCircle2 size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
+							<span className="truncate">Готово</span>
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-missing min-h-[44px] px-3 py-2 ${activeStamp === "missing" ? "active" : ""}`}
+							className={`stamp-btn stamp-missing shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "missing" ? "active" : ""}`}
 							onClick={() => setActiveStamp("missing")}
 						>
-							<Ban size={14} className="inline mr-1" aria-hidden="true" />
-							Нет зуба
+							<Ban size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
+							<span className="truncate">Нет зуба</span>
 						</button>
 					</div>
 
@@ -2509,12 +2549,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																			state === "idle"
 																				? "var(--paper-soft)"
 																				: state === "planned"
-																					? "#f0f9ff"
+																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
 																					: state === "treatment"
-																						? "#fff5f5"
+																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
 																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
+																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
+																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
 																		}
 																		stroke={
 																			state === "idle"
@@ -2663,12 +2703,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																			state === "idle"
 																				? "var(--paper-soft)"
 																				: state === "planned"
-																					? "#f0f9ff"
+																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
 																					: state === "treatment"
-																						? "#fff5f5"
+																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
 																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
+																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
+																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
 																		}
 																		stroke={
 																			state === "idle"
@@ -2830,12 +2870,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																			state === "idle"
 																				? "var(--paper-soft)"
 																				: state === "planned"
-																					? "#f0f9ff"
+																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
 																					: state === "treatment"
-																						? "#fff5f5"
+																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
 																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
+																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
+																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
 																		}
 																		stroke={
 																			state === "idle"
@@ -2985,12 +3025,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																			state === "idle"
 																				? "var(--paper-soft)"
 																				: state === "planned"
-																					? "#f0f9ff"
+																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
 																					: state === "treatment"
-																						? "#fff5f5"
+																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
 																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
+																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
+																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
 																		}
 																		stroke={
 																			state === "idle"

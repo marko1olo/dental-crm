@@ -1829,7 +1829,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				</div>
 				<div className="p-8 sm:p-12 flex items-center justify-center min-h-[420px]">
 					<EmptyState
-						icon={<WifiOff className="w-8 h-8 text-[var(--bad-fg,#ef4444)]" />}
+						icon={<WifiOff className="w-8 h-8 text-[var(--bad-fg,var(--danger))]" />}
 						title="Нет связи с сервером"
 						description="Не удалось подключиться к серверу клиники. Расписание приемов временно недоступно. Проверьте подключение к сети и повторите попытку."
 						action={
