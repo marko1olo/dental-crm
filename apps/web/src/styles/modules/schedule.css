@@ -364,7 +364,9 @@
 	white-space: nowrap;
 	min-width: max-content;
 }
-.schedule-my-chair-chip {
+.schedule-my-chair-chip,
+.schedule-auto-call-chip,
+.schedule-doctor-chip {
 	flex-shrink: 0 !important;
 	min-width: max-content !important;
 	max-width: none !important;

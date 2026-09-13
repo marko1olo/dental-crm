@@ -127,6 +127,37 @@
 	flex-shrink: 0;
 }
 
+.patients-header-actions .secondary-button {
+	height: 28px;
+	min-height: 28px;
+	padding: 0 0.75rem;
+	font-weight: 600;
+	font-size: 0.8125rem;
+	border-radius: 8px;
+	white-space: nowrap;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	transition: all 0.15s ease;
+}
+
+.patients-header-actions .secondary-button.active {
+	background: var(--teal) !important;
+	color: var(--on-teal, var(--paper, #ffffff)) !important;
+	border-color: var(--teal) !important;
+}
+
+.patients-header-actions .secondary-button:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.patients-header-actions .secondary-button.active:hover {
+	background: var(--teal-dark, var(--teal)) !important;
+	color: var(--on-teal, var(--paper, #ffffff)) !important;
+	border-color: var(--teal-dark, var(--teal)) !important;
+}
+
 .patients-new-patient-btn {
 	display: inline-flex;
 	align-items: center;
@@ -142,7 +173,8 @@
 }
 
 @media (pointer: coarse), (max-width: 768px) {
-	.patients-new-patient-btn {
+	.patients-new-patient-btn,
+	.patients-header-actions .secondary-button {
 		height: 44px;
 		min-height: 44px;
 	}

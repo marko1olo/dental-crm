@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus, Armchair } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus, Armchair } from "lucide-react";
 import React, { type ReactElement, useState, useRef, useEffect, useMemo } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -351,21 +351,38 @@ export function ScheduleFilterStrip({
 				</button>
 
 				{/* 1-Click "Моё кресло" filter chip (StomX / DentalPRO parity, Mandates 8e, 8n) */}
-				{myChair && (
+				{myChair && (() => {
+					const cleanChairName = myChair.name.replace(/\s*\(.*\)/, "").trim();
+					return (
+						<button
+							type="button"
+							className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
+							onClick={handleSelectMyChair}
+							title={`Моё дежурное кресло: ${cleanChairName}. Нажмите для быстрой фильтрации (1 клик)`}
+							aria-label={`Моё дежурное кресло: ${cleanChairName}`}
+							data-testid="schedule-my-chair-btn"
+						>
+							<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
+							<span className="whitespace-nowrap shrink-0">
+								<span className="sm:hidden">Моё</span>
+								<span className="hidden sm:inline">Моё кресло ({cleanChairName})</span>
+							</span>
+						</button>
+					);
+				})()}
+
+				{/* 1-Click "📞 Автодозвон" confirmation panel chip (Mandates 8d, 8p, 8n) */}
+				{onToggleConfirmations && (
 					<button
 						type="button"
-						className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
-						onClick={handleSelectMyChair}
-						title={`Моё дежурное кресло: ${myChair.name}. Нажмите для быстрой фильтрации (1 клик)`}
-						aria-label={`Моё дежурное кресло: ${myChair.name}`}
-						data-testid="schedule-my-chair-btn"
-						style={{ flexShrink: 0, minWidth: "max-content" }}
+						className={`quick-chip schedule-auto-call-chip ${showConfirmationsPanel ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
+						onClick={onToggleConfirmations}
+						title="Утренний автодозвон и подтверждение визитов (1 клик)"
+						aria-label="Автодозвон и подтверждения"
+						data-testid="schedule-auto-call-chip-btn"
 					>
-						<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
-						<span className="whitespace-nowrap shrink-0">
-							<span className="sm:hidden">Моё</span>
-							<span className="hidden sm:inline">Моё кресло ({myChair.name})</span>
-						</span>
+						<PhoneCall size={13} className="shrink-0 text-current" aria-hidden="true" />
+						<span className="whitespace-nowrap shrink-0">Автодозвон</span>
 					</button>
 				)}
 
@@ -389,8 +406,7 @@ export function ScheduleFilterStrip({
 								<button
 									key={member.id}
 									type="button"
-									className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center flex-shrink-0 select-none`}
-									style={{ flexShrink: 0, whiteSpace: "nowrap", minWidth: "fit-content" }}
+									className={`quick-chip schedule-doctor-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center flex-shrink-0 select-none`}
 									onClick={() =>
 										setScheduleDoctorFilterId(
 											scheduleDoctorFilterId === member.id ? null : member.id,
@@ -450,9 +466,6 @@ export function ScheduleFilterStrip({
 				>
 					<span className="whitespace-nowrap font-bold">+ Кресло</span>
 				</button>
-
-				{/* Active filter summary & shift warning chips integrated directly into single-row filter strip (Mandates 8d, 8p) */}
-				{activeFilterSummary}
 			</div>
 
 			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}

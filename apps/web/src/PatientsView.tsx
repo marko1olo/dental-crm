@@ -679,17 +679,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				<div className="patients-header-actions shrink-0">
 					<button
 						type="button"
-						className={`secondary-button ${showLostPatientsOnly ? "active" : ""} shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg font-medium inline-flex items-center justify-center`}
+						className={`secondary-button ${showLostPatientsOnly ? "active" : ""} shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg font-medium inline-flex items-center justify-center cursor-pointer transition-all select-none`}
 						onClick={toggleLostPatients}
-						disabled={isLoadingLost}
 						title="Показать пациентов без будущих приемов, открытых задач и записей в листе ожидания"
-						style={{
-							backgroundColor: showLostPatientsOnly ? "var(--teal)" : undefined,
-							color: showLostPatientsOnly ? "var(--on-teal, var(--paper))" : undefined,
-							borderColor: showLostPatientsOnly ? "var(--teal)" : undefined,
-						}}
 					>
-						<span className="truncate">
+						<span className="whitespace-nowrap">
 							{isLoadingLost
 								? "Загрузка..."
 								: showLostPatientsOnly
