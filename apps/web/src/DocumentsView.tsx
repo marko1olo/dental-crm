@@ -1625,15 +1625,30 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				</button>
 			</div>
 
-			{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ В 1 КЛИК */}
-			<DocumentQuickRoleScenarios
-				onOpenPrimaryIntake={() => setIsPrimaryIntakeOpen(true)}
-				onPrintPrimaryIntake={handleDirectPrintPrimaryIntake}
-				onOpenSurgicalPackage={() => setIsSurgicalPackageOpen(true)}
-				onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
-				onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
-				onOpenSanpinRegistry={() => setIsSanpinRegistryOpen(true)}
-			/>
+			{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ В 1 КЛИК (СВЁРНУТЫ ПО УМОЛЧАНИЮ ДЛЯ ЭКОНОМИИ ВЫСОТЫ < 160-180px, МАНДАТ 8p) */}
+			<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion">
+				<summary className="document-scenarios-summary">
+					<div className="flex items-center gap-2">
+						<Zap size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<span className="font-bold text-xs text-[var(--ink)]">
+							Быстрые ролевые пакеты документов (6 пакетов)
+						</span>
+					</div>
+					<span className="document-scenarios-summary-badge">
+						Развернуть пакеты
+					</span>
+				</summary>
+				<div className="document-scenarios-accordion-content">
+					<DocumentQuickRoleScenarios
+						onOpenPrimaryIntake={() => setIsPrimaryIntakeOpen(true)}
+						onPrintPrimaryIntake={handleDirectPrintPrimaryIntake}
+						onOpenSurgicalPackage={() => setIsSurgicalPackageOpen(true)}
+						onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
+						onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
+						onOpenSanpinRegistry={() => setIsSanpinRegistryOpen(true)}
+					/>
+				</div>
+			</details>
 
 			{/* 3. НАВИГАЦИОННЫЕ ВКЛАДКИ ПО КАТЕГОРИЯМ */}
 			<DocumentNavTabs

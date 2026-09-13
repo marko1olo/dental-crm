@@ -381,9 +381,6 @@ export function OnlineBookingConversionPanel() {
 						<div>
 							<h3 className="text-base font-bold text-[var(--ink)] m-0 flex items-center gap-2">
 								Сквозная аналитика: Онлайн-записи vs Администраторы
-								<span className="text-[11px] px-2 py-0.5 rounded-full bg-teal-500/15 text-[var(--teal)] font-semibold">
-									Фича №28
-								</span>
 							</h3>
 							<p className="text-xs text-[var(--muted)] m-0">
 								Выделение автоматических каналов самозаписи (Сайт, Карты, 2ГИС,

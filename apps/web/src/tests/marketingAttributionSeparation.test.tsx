@@ -32,7 +32,6 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 		// Root container
 		assert.ok(html.includes("data-testid=\"online-booking-conversion-panel\""));
 		assert.ok(html.includes("Сквозная аналитика: Онлайн-записи vs Администраторы"));
-		assert.ok(html.includes("Фича №28"));
 
 		// KPI cards
 		assert.ok(html.includes("Доля самозаписи"));

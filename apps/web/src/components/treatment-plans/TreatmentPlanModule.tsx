@@ -789,7 +789,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 								role="menuitem"
 								data-testid="tp-invoice-btn"
-								title="Сформировать наряд / счет на оплату с контролем цен и защитой сметы (Фича #41)"
+								title="Сформировать наряд / счет на оплату с контролем цен и защитой сметы"
 							>
 								<Receipt size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<span>Счет / Наряд на оплату</span>

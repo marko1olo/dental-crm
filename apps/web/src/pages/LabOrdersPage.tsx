@@ -102,7 +102,13 @@ export function LabOrdersPage() {
 		const total = orders.length;
 		const inProgress = orders.filter((o) => o.status === "in_progress" || o.status === "sent").length;
 		const tryIn = orders.filter((o) => o.status === "fitting" || o.status === "refitting").length;
+		const ready = orders.filter((o) => o.status === "shipped" || o.status === "delivered" || o.status === "received" || o.status === "completed").length;
 		const completed = orders.filter((o) => o.status === "completed").length;
+		const overdue = orders.filter((o) => {
+			if (!o.dueDate || o.status === "completed" || o.status === "cancelled") return false;
+			const due = new Date(o.dueDate).getTime();
+			return !Number.isNaN(due) && due < Date.now();
+		}).length;
 
 		const totalCost = orders.reduce((sum, o) => sum + (o.priceRub || 0), 0);
 		const doctorDeductions = orders.reduce((sum, o) => sum + (o.doctorDeductionRub || ((o.priceRub || 0) * (o.doctorSharePct ?? 50)) / 100), 0);
@@ -111,7 +117,9 @@ export function LabOrdersPage() {
 			total,
 			inProgress,
 			tryIn,
+			ready,
 			completed,
+			overdue,
 			totalCost,
 			doctorDeductions,
 		};
@@ -214,86 +222,96 @@ export function LabOrdersPage() {
 	};
 
 	return (
-		<div className="p-6 space-y-6 max-w-7xl mx-auto">
-			{/* Page Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-				<div className="space-y-1">
-					<h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3 m-0">
-						<FlaskConical className="w-7 h-7 text-teal-600 dark:text-teal-400" />
-						Зуботехническая лаборатория (CAD/CAM ЗТЛ)
-					</h1>
-					<p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 m-0">
-						Цифровые наряд-заказы, 3-зонная расцветка VITA, культи ND1–ND9, трекинг этапов и удержания из гонораров врачей.
-					</p>
+		<div className="p-4 space-y-3 max-w-7xl mx-auto">
+			{/* Page Header (Compact ~36px) */}
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+				<div className="flex items-center gap-2.5 min-w-0">
+					<FlaskConical className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+					<div className="min-w-0">
+						<h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate m-0 leading-tight">
+							Зуботехническая лаборатория (CAD/CAM ЗТЛ)
+						</h1>
+						<p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 hidden sm:block leading-tight">
+							Цифровые наряд-заказы, расцветка VITA, культи ND1–ND9, трекинг этапов и удержания.
+						</p>
+					</div>
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2 shrink-0">
 					<button
 						type="button"
 						onClick={fetchOrders}
-						className="w-11 h-11 min-w-[44px] min-h-[44px] p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
+						className="h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
 						title="Обновить список"
-						style={{ minWidth: "44px", minHeight: "44px" }}
 					>
-						<RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-teal-600" : ""}`} />
+						<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-teal-600" : ""}`} />
 					</button>
 
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="h-11 min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-2 transition-all cursor-pointer"
-						style={{ minHeight: "44px" }}
+						className="h-9 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-1.5 transition-all cursor-pointer"
 					>
-						<Plus className="w-4 h-4" />
-						Новый наряд в ЗТЛ
+						<Plus className="w-3.5 h-3.5" />
+						<span>Новый наряд в ЗТЛ</span>
 					</button>
 				</div>
 			</div>
 
-			{/* Summary KPI Cards */}
-			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-				<div className="p-3.5 bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm space-y-1">
-					<span className="text-xs font-semibold text-[var(--muted)]">Всего заказов</span>
-					<div className="text-xl font-black text-[var(--ink)] font-mono">{metrics.total}</div>
-				</div>
-
-				<div className="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-200 dark:border-blue-800/40 shadow-sm space-y-1">
-					<span className="text-xs font-semibold text-blue-700 dark:text-blue-300">В работе ЗТЛ</span>
-					<div className="text-xl font-black text-blue-900 dark:text-blue-100 font-mono">{metrics.inProgress}</div>
-				</div>
-
-				<div className="p-3.5 bg-purple-50/50 dark:bg-purple-950/20 rounded-2xl border border-purple-200 dark:border-purple-800/40 shadow-sm space-y-1">
-					<span className="text-xs font-semibold text-purple-700 dark:text-purple-300">На примерке</span>
-					<div className="text-xl font-black text-purple-900 dark:text-purple-100 font-mono">{metrics.tryIn}</div>
-				</div>
-
-				<div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800/40 shadow-sm space-y-1">
-					<span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Сдано работ</span>
-					<div className="text-xl font-black text-emerald-900 dark:text-emerald-100 font-mono">{metrics.completed}</div>
-				</div>
-
-				<div className="p-3.5 bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)] shadow-sm space-y-1 col-span-2 sm:col-span-1 lg:col-span-1">
-					<span className="text-xs font-semibold text-[var(--muted)]">Сумма ЗТЛ</span>
-					<div className="text-lg font-black text-teal-600 dark:text-teal-400 font-mono">{money(metrics.totalCost)}</div>
-				</div>
-
-				<div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-800/40 shadow-sm space-y-1 col-span-2 sm:col-span-2 lg:col-span-1">
-					<span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Удержания с врачей</span>
-					<div className="text-lg font-black text-amber-900 dark:text-amber-200 font-mono">{money(metrics.doctorDeductions)}</div>
-				</div>
+			{/* Compact 1-Line Inline Summary Chip Strip (32-36px) */}
+			<div className="h-9 min-h-[34px] flex items-center gap-2.5 px-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] text-xs text-[var(--muted)] overflow-x-auto whitespace-nowrap shadow-2xs scrollbar-thin">
+				<span>
+					Всего: <strong className="text-[var(--ink)] font-mono">{metrics.total}</strong>
+				</span>
+				<span className="text-[var(--line)]">•</span>
+				<span>
+					В работе: <strong className="text-blue-600 dark:text-blue-400 font-mono">{metrics.inProgress}</strong>
+				</span>
+				<span className="text-[var(--line)]">•</span>
+				<span>
+					Готовы: <strong className="text-teal-600 dark:text-teal-400 font-mono">{metrics.ready}</strong>
+				</span>
+				<span className="text-[var(--line)]">•</span>
+				<span>
+					На примерке: <strong className="text-purple-600 dark:text-purple-400 font-mono">{metrics.tryIn}</strong>
+				</span>
+				<span className="text-[var(--line)]">•</span>
+				<span>
+					Просрочено:{" "}
+					<strong
+						className={
+							metrics.overdue > 0
+								? "text-rose-600 dark:text-rose-400 font-bold font-mono"
+								: "text-[var(--ink)] font-mono"
+						}
+					>
+						{metrics.overdue}
+					</strong>
+				</span>
+				<span className="text-[var(--line)]">•</span>
+				<span>
+					Сумма: <strong className="text-teal-600 dark:text-teal-400 font-mono">{money(metrics.totalCost)}</strong>
+				</span>
+				{metrics.doctorDeductions > 0 && (
+					<>
+						<span className="text-[var(--line)]">•</span>
+						<span>
+							Удержания: <strong className="text-amber-600 dark:text-amber-400 font-mono">{money(metrics.doctorDeductions)}</strong>
+						</span>
+					</>
+				)}
 			</div>
 
-			{/* Filters & Search Toolbar (Mandate 8c: >=44px) */}
-			<div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm">
+			{/* Filters & Search Toolbar (Compact 36px) */}
+			<div className="flex flex-col sm:flex-row items-center gap-2 p-1.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs">
 				<div className="relative flex-1 w-full">
-					<Search className="w-4 h-4 text-[var(--muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+					<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />
 					<input
 						type="text"
 						placeholder="Поиск по пациенту, врачу, зубу FDI или материалу..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full h-11 min-h-[44px] pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
-						style={{ minHeight: "44px" }}
+						className="w-full h-9 min-h-[36px] pl-8 pr-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
 					/>
 				</div>
 
@@ -301,8 +319,7 @@ export function LabOrdersPage() {
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
-						className="h-11 min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer"
-						style={{ minHeight: "44px" }}
+						className="h-9 min-h-[36px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
 					>
 						<option value="all">Все статусы</option>
 						<option value="sent">Отправлен в ЗТЛ</option>
@@ -316,8 +333,7 @@ export function LabOrdersPage() {
 					<select
 						value={doctorFilter}
 						onChange={(e) => setDoctorFilter(e.target.value)}
-						className="h-11 min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer"
-						style={{ minHeight: "44px" }}
+						className="h-9 min-h-[36px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
 					>
 						<option value="all">Все врачи</option>
 						{doctorsList.map((doc: string) => (

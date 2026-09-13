@@ -1,5 +1,5 @@
 import type { StaffRole } from "@dental/shared";
-import { KeyRound, Phone, ShieldCheck, UserPlus } from "lucide-react";
+import { KeyRound, MoreVertical, Phone, ShieldCheck, UserPlus } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -101,6 +101,11 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 		string | null
 	>(null);
 	const [newPassword, setNewPassword] = useState("");
+
+	// Credential menu popover state
+	const [credentialMenuOpenId, setCredentialMenuOpenId] = useState<
+		string | null
+	>(null);
 
 	/*
 	 * Кого именно касается сообщение. «PIN-код успешно изменен» не говорило, у кого:
@@ -486,38 +491,18 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											</button>
 										</form>
 									) : (
-										/* flex-wrap: три кнопки в колонке от 280 px не встают в один
-                       ряд на телефоне и обрезались бы справа. */
-										<div className="flex flex-wrap gap-2">
+										<div className="flex items-center gap-2">
 											<button
 												type="button"
-												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
-												onClick={() => {
-													setEditingPinForId(member.id);
-													setEditingPasswordForId(null);
-													setEditingPhoneForId(null);
-													setNewPin("");
-												}}
-												title="Назначить PIN-код для планшета"
+												className="secondary-button flex-1 justify-center py-1.5 text-xs flex items-center gap-1 cursor-pointer font-semibold text-teal-700 dark:text-teal-400"
+												onClick={() => setSelectedStaffForCard(member)}
+												title="Открыть расширенную карточку сотрудника (СНИЛС, ИНН, медкнижка, ставки ЗП, безопасность)"
 											>
-												<KeyRound size={14} /> PIN
+												<UserPlus size={14} /> Карточка
 											</button>
 											<button
 												type="button"
-												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
-												onClick={() => {
-													setEditingPasswordForId(member.id);
-													setEditingPinForId(null);
-													setEditingPhoneForId(null);
-													setNewPassword("");
-												}}
-												title="Назначить пароль для входа"
-											>
-												<ShieldCheck size={14} /> Пароль
-											</button>
-											<button
-												type="button"
-												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
+												className="secondary-button flex-1 justify-center py-1.5 text-xs flex items-center gap-1 cursor-pointer"
 												onClick={() => {
 													setEditingPhoneForId(member.id);
 													setEditingPinForId(null);
@@ -527,19 +512,60 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 															? member.phone
 															: "",
 													);
+													setCredentialMenuOpenId(null);
 												}}
 												title="Указать или исправить телефон сотрудника"
 											>
 												<Phone size={14} /> Телефон
 											</button>
-											<button
-												type="button"
-												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer font-semibold text-teal-700 dark:text-teal-400"
-												onClick={() => setSelectedStaffForCard(member)}
-												title="Открыть расширенную карточку сотрудника (СНИЛС, ИНН, медкнижка, ставки ЗП, безопасность)"
-											>
-												<UserPlus size={14} /> Карточка
-											</button>
+											<div className="relative">
+												<button
+													type="button"
+													className="secondary-button p-1.5 text-xs flex items-center justify-center cursor-pointer rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+													onClick={() =>
+														setCredentialMenuOpenId(
+															credentialMenuOpenId === member.id ? null : member.id,
+														)
+													}
+													title="Доступы (PIN, Пароль)"
+													aria-label="Меню доступов"
+													aria-expanded={credentialMenuOpenId === member.id}
+												>
+													<MoreVertical size={14} />
+												</button>
+												{credentialMenuOpenId === member.id && (
+													<div className="absolute right-0 bottom-full mb-1 w-36 py-1 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-10 flex flex-col text-xs">
+														<button
+															type="button"
+															className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 cursor-pointer"
+															onClick={() => {
+																setEditingPinForId(member.id);
+																setEditingPasswordForId(null);
+																setEditingPhoneForId(null);
+																setNewPin("");
+																setCredentialMenuOpenId(null);
+															}}
+														>
+															<KeyRound size={13} className="text-slate-400" />
+															<span>PIN-код</span>
+														</button>
+														<button
+															type="button"
+															className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 cursor-pointer"
+															onClick={() => {
+																setEditingPasswordForId(member.id);
+																setEditingPinForId(null);
+																setEditingPhoneForId(null);
+																setNewPassword("");
+																setCredentialMenuOpenId(null);
+															}}
+														>
+															<ShieldCheck size={13} className="text-slate-400" />
+															<span>Пароль</span>
+														</button>
+													</div>
+												)}
+											</div>
 										</div>
 									)}
 								</div>

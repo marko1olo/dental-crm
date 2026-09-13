@@ -4,6 +4,7 @@ import {
 	Calendar,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	Clock,
 	Copy,
 	ExternalLink,
@@ -114,6 +115,30 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 	const cardMenuRef = useRef<HTMLDivElement | null>(null);
+
+	// Fast Presets dropdown state
+	const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
+	const presetsMenuRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!isPresetsMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (presetsMenuRef.current && !presetsMenuRef.current.contains(e.target as Node)) {
+				setIsPresetsMenuOpen(false);
+			}
+		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setIsPresetsMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isPresetsMenuOpen]);
 
 	useEffect(() => {
 		if (!openMenuOrderId) return;
@@ -637,47 +662,88 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						<RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[var(--teal)]" : ""}`} />
 					</button>
 
-					<button
-						type="button"
-						onClick={() => void handleOneClickCreate()}
-						disabled={submitting}
-						className="lab-btn-32 bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20 font-bold"
-						title="Создать наряд ЗТЛ в 1 клик: Коронка цирконий/E.max, цвет VITA A2, срок 7 рабочих дней"
-						data-testid="lab-order-one-click-btn"
-					>
-						<Zap className="w-3.5 h-3.5 text-amber-500" />
-						<span>Цирконий A2 (7 дн.)</span>
-					</button>
+					{/* Consolidated Presets Dropdown */}
+					<div className="relative inline-block" ref={presetsMenuRef}>
+						<button
+							type="button"
+							onClick={() => setIsPresetsMenuOpen((prev) => !prev)}
+							disabled={submitting}
+							className="lab-btn-32 bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20 font-bold"
+							title="Быстрые экспресс-шаблоны ЗТЛ (Цирконий A2, Временная PMMA, Вкладка КХС)"
+							aria-expanded={isPresetsMenuOpen}
+							aria-haspopup="true"
+						>
+							<Zap className="w-3.5 h-3.5 text-amber-500" />
+							<span>Быстрые шаблоны</span>
+							<ChevronDown className={`w-3 h-3 transition-transform ${isPresetsMenuOpen ? "rotate-180" : ""}`} />
+						</button>
 
-					<button
-						type="button"
-						onClick={() => {
-							const pmma = EXPRESS_LAB_PRESETS.find((p) => p.id === "pmma_temp");
-							if (pmma) void handleExpressPresetCreate(pmma);
-						}}
-						disabled={submitting}
-						className="lab-btn-32 bg-teal-500/10 text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/20 font-bold"
-						title="Создать наряд в 1 клик: Временная PMMA CAD/CAM, срок 2 рабочих дня"
-						data-testid="lab-order-preset-pmma-btn"
-					>
-						<Zap className="w-3.5 h-3.5 text-teal-500" />
-						<span>Временная PMMA (2 дн.)</span>
-					</button>
+						{isPresetsMenuOpen && (
+							<div className="absolute left-0 top-full mt-1 w-64 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+								<button
+									type="button"
+									onClick={() => {
+										setIsPresetsMenuOpen(false);
+										void handleOneClickCreate();
+									}}
+									disabled={submitting}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
+									title="Создать наряд ЗТЛ в 1 клик: Коронка цирконий/E.max, цвет VITA A2, срок 7 рабочих дней"
+									data-testid="lab-order-one-click-btn"
+								>
+									<div className="flex items-center gap-2">
+										<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+										<div>
+											<div className="font-bold">Цирконий A2 (7 дн.)</div>
+											<div className="text-[10px] text-[var(--muted)]">Коронка Zr/E.max, цвет A2</div>
+										</div>
+									</div>
+								</button>
 
-					<button
-						type="button"
-						onClick={() => {
-							const corePost = EXPRESS_LAB_PRESETS.find((p) => p.id === "core_post_cocr");
-							if (corePost) void handleExpressPresetCreate(corePost);
-						}}
-						disabled={submitting}
-						className="lab-btn-32 bg-slate-500/10 text-slate-800 dark:text-slate-200 border-slate-500/30 hover:bg-slate-500/20 font-bold"
-						title="Создать наряд в 1 клик: Культевая вкладка КХС (CoCr), срок 3 рабочих дня"
-						data-testid="lab-order-preset-core-post-btn"
-					>
-						<Zap className="w-3.5 h-3.5 text-slate-500" />
-						<span>Вкладка КХС (3 дн.)</span>
-					</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsPresetsMenuOpen(false);
+										const pmma = EXPRESS_LAB_PRESETS.find((p) => p.id === "pmma_temp");
+										if (pmma) void handleExpressPresetCreate(pmma);
+									}}
+									disabled={submitting}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
+									title="Создать наряд в 1 клик: Временная PMMA CAD/CAM, срок 2 рабочих дня"
+									data-testid="lab-order-preset-pmma-btn"
+								>
+									<div className="flex items-center gap-2">
+										<Zap className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+										<div>
+											<div className="font-bold">Временная PMMA (2 дн.)</div>
+											<div className="text-[10px] text-[var(--muted)]">CAD/CAM фрезеровка</div>
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsPresetsMenuOpen(false);
+										const corePost = EXPRESS_LAB_PRESETS.find((p) => p.id === "core_post_cocr");
+										if (corePost) void handleExpressPresetCreate(corePost);
+									}}
+									disabled={submitting}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
+									title="Создать наряд в 1 клик: Культевая вкладка КХС (CoCr), срок 3 рабочих дня"
+									data-testid="lab-order-preset-core-post-btn"
+								>
+									<div className="flex items-center gap-2">
+										<Zap className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+										<div>
+											<div className="font-bold">Вкладка КХС (3 дн.)</div>
+											<div className="text-[10px] text-[var(--muted)]">Культевая вкладка CoCr</div>
+										</div>
+									</div>
+								</button>
+							</div>
+						)}
+					</div>
 
 					<button
 						type="button"
@@ -687,7 +753,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						data-testid="lab-orders-hub-trigger"
 					>
 						<Layers className="w-3.5 h-3.5 text-indigo-500" />
-						<span>Реестр нарядов ЗТЛ</span>
+						<span>Реестр нарядов</span>
 					</button>
 
 					<button
@@ -697,9 +763,10 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 							setIsOrderModalOpen(true);
 						}}
 						className="lab-btn-32 is-primary"
+						title="Полный наряд CAD/CAM"
 					>
 						<Sparkles className="w-3.5 h-3.5" />
-						+ Полный наряд CAD/CAM
+						<span>+ Наряд CAD/CAM</span>
 					</button>
 
 					<button
@@ -708,7 +775,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						className="lab-btn-32"
 					>
 						{showQuickForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-						{showQuickForm ? "Отмена" : "Быстрый наряд"}
+						<span>{showQuickForm ? "Отмена" : "Быстрый наряд"}</span>
 					</button>
 				</div>
 			</div>

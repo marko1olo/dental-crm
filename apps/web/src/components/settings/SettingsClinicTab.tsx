@@ -9,29 +9,21 @@ import type {
 import {
 	CalendarDays,
 	ChevronDown,
+	ChevronRight,
 	Clock,
 	ExternalLink,
 	FileText,
-	KeyRound,
 	Plus,
 	Search,
 	ShieldCheck,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { useState } from "react";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
 import {
 	loadUiPreferences,
 	saveUiPreferences,
 } from "../../utils/preferencesUtils";
 import { showToast } from "../GlobalToast";
-import {
-	planStaffCredentialUpdate,
-	reloadStaffList,
-	requestStaffMutation,
-	type SettingsAccessHeaders,
-} from "./staffMutationRequest";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -92,310 +84,6 @@ const ODONTOGRAM_VIEW_MODE_OPTIONS: ReadonlyArray<{
 	},
 ];
 
-/** Что реально ушло на сервер. Уведомление обязано перечислить именно это. */
-type IssuedCredential = "email" | "password" | "pin";
-
-const issuedCredentialLabels: Record<IssuedCredential, string> = {
-	email: "логин",
-	password: "пароль",
-	pin: "PIN-код",
-};
-
-type StaffCredentialsSaveResult =
-	/** `issued` непуст всегда: без единого поля запрос не отправляется вовсе. */
-	| { readonly ok: true; readonly issued: readonly IssuedCredential[] }
-	/** Отказ уже показан человеку здесь — вызывающей стороне добавлять нечего. */
-	| { readonly ok: false };
-
-/**
- * Сохранение доступов сотрудника: логин, пароль, PIN — ОДНИМ запросом.
- *
- * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО, И ЭТО НЕ «ДУБЛИРОВАНИЕ КОДА».
- *
- * Здесь стоял свой собственный `fetch` со своими руками собранными заголовками:
- * `Content-Type` плюс `x-dente-clinic-token` из localStorage. Охрана маршрутов
- * `/api/settings/*` требует НЕ токен кабинета, а `x-dente-admin-secret`
- * (`requireSettingsAccess`, routes/settings.ts:648; отказ 403 на :667; сам
- * маршрут закрыт ею на :774 — проверено 2026-07-29, номера строк гниют).
- * Пропускает запрос без секрета она ровно в одном случае: секрет на сервере НЕ
- * ЗАДАН И включена лазейка `DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS=1` И
- * `NODE_ENV !== "production"` (:640-646).
- *
- * Общая обёртка `lib/apiAuthFetch.ts` секрет НЕ подставляет: она знает ровно два
- * заголовка — токен кабинета и токен сотрудника (:22-23, ставятся на :86-87).
- * Значит на машине разработчика кнопка «Сохранить доступы» зелёная, а в клинике
- * с заданным `DENTE_SETTINGS_ADMIN_SECRET` она отвечала 403 ВСЕГДА: ни логина,
- * ни пароля, ни PIN-кода сотруднику не выдать ни одному.
- *
- * Это была ТРЕТЬЯ реализация одного маршрута
- * `POST /api/settings/staff/:staffId/credentials`. Две другие — PIN и пароль во
- * вкладке «Сотрудники» — уже сведены в общий путь `./staffMutationRequest.ts`, и
- * там же, в :184, эта копия названа долгом. Теперь маршрут зовётся из одного
- * места, а заголовки берутся оттуда же, откуда их берут все остальные вкладки
- * настроек: `auth.settingsAccessHeaders`.
- *
- * ПОЧЕМУ ЗАПРОС ОСТАЛСЯ ОДИН, А НЕ РАСПАЛСЯ НА ТРИ. Сервер принимает `email`,
- * `password` и `pinCode` одним телом (routes/settings.ts:781-789), а форма ниже
- * даёт заполнить все три сразу. Три вызова по одному полю дали бы три запроса и
- * три уведомления на одно нажатие. Сами ПРАВИЛА проверки при этом взяты у общего
- * пути (`planStaffCredentialUpdate`), поэтому третьей копии «ровно 4 цифры» и
- * «не короче 6 знаков» в дереве больше нет.
- *
- * ПОЧЕМУ ОТКАЗ БОЛЬШЕ НЕ НАЗЫВАЕТСЯ «сервер не ответил». Прежний `catch`
- * печатал эту фразу и на обрыве связи, и на 403, и на 500 — то есть называл
- * причину, которой сервер не сообщал. Общий путь разводит «до сервера не дошли»
- * (`status === null`) и код ответа, а текст на каждый случай даёт
- * `actionFailureToast` из `lib/panelStateText.ts`.
- */
-async function saveStaffCredentialsRequest(
-	staffId: string,
-	staffName: string,
-	email: string,
-	password: string,
-	pin: string,
-	accessHeaders: SettingsAccessHeaders | undefined,
-): Promise<StaffCredentialsSaveResult> {
-	const payload: { email?: string; password?: string; pinCode?: string } = {};
-	const issued: IssuedCredential[] = [];
-
-	const trimmedEmail = email.trim();
-	if (trimmedEmail) {
-		payload.email = trimmedEmail;
-		issued.push("email");
-	}
-	if (password) {
-		const plan = planStaffCredentialUpdate("password", password);
-		if (!plan.ok) {
-			showToast(plan.warning, "warning");
-			return { ok: false };
-		}
-		Object.assign(payload, plan.body);
-		issued.push("password");
-	}
-	if (pin) {
-		const plan = planStaffCredentialUpdate("pin", pin);
-		if (!plan.ok) {
-			showToast(plan.warning, "warning");
-			return { ok: false };
-		}
-		Object.assign(payload, plan.body);
-		issued.push("pin");
-	}
-	if (issued.length === 0) {
-		showToast("Заполните логин, пароль или PIN-код", "warning");
-		return { ok: false };
-	}
-
-	const failedAction = `Доступы для ${staffName} не сохранены`;
-	const outcome = await requestStaffMutation({
-		url: `/api/settings/staff/${staffId}/credentials`,
-		method: "POST",
-		accessHeaders,
-		logLabel: failedAction,
-		body: payload,
-	});
-	if (!outcome.ok) {
-		showToast(
-			outcome.message ?? actionFailureToast(failedAction, outcome.status),
-			"error",
-		);
-		return { ok: false };
-	}
-	return { ok: true, issued };
-}
-
-/**
- * Уведомление об успехе.
- *
- * БЫЛО «Доступы обновлены» — три умолчания в трёх словах. Не сказано, ЧТО
- * выдано (логин, пароль или PIN-код — а форма отправляет до трёх сразу), не
- * сказано, КОМУ (редактор доступов стоит на карточке каждого сотрудника, и при
- * пяти сотрудниках подряд администратор не знает, тому ли он сменил пароль), и
- * не сказано, что СТАРЫЙ доступ перестал работать — сотрудник придёт к планшету
- * со старым PIN-кодом и решит, что сломалась программа.
- *
- * Общие тексты `staffCredentialSavedMessage` сюда не подошли: они описывают
- * ровно ОДИН вид доступа, а этот запрос несёт до трёх. Согласование («его
- * больше не работает» против «их больше не работают») считается по числу
- * выданных секретов, а не подставляется в одну форму: ровно на таком
- * согласовании в этом дереве уже получали «Статус не загружены».
- */
-function staffCredentialsSavedMessage(
-	staffName: string,
-	issued: readonly IssuedCredential[],
-	listRefreshed: boolean,
-): string {
-	const listed = issued.map((item) => issuedCredentialLabels[item]).join(", ");
-	const secretCount = issued.filter((item) => item !== "email").length;
-	const replaced =
-		secretCount === 0
-			? ""
-			: secretCount === 1
-				? " Сообщите его сотруднику: старый больше не работает."
-				: " Сообщите их сотруднику: старые больше не работают.";
-	/* Логин виден на самой кнопке редактора, поэтому непрочитанный список данных
-     клиники — это стоящая на экране неправда, а не мелкая задержка. */
-	const staleHint = listRefreshed
-		? ""
-		: " Обновите страницу, чтобы увидеть это на карточке.";
-	return `Для ${staffName} сохранено: ${listed}.${replaced}${staleHint}`;
-}
-
-/**
- * УБРАН МЁРТВЫЙ ШОВ ВНЕДРЕНИЯ. Здесь стоял необязательный проп
- * `saveCredentials`, а на вызове — `props.saveStaffCredentials ||
- * saveStaffCredentials`. Это тавтология: второе имя получено деструктуризацией
- * ИЗ ТОГО ЖЕ `props`, то есть выражение читало одно и то же свойство дважды.
- * Объявления `saveStaffCredentials` в дереве нет вовсе — поиск по `apps`,
- * `scripts` и `packages` даёт только вхождения внутри этого файла, — поэтому обе
- * половины всегда `undefined` и живым путём всегда был запрос выше. Шов, который
- * выглядит как выбор из двух источников, а не даёт ни одного, дороже
- * отсутствующего: следующий читатель ищет реализацию, которой нет.
- *
- * Взамен приходят две настоящие зависимости. `accessHeaders` — без него секрет
- * администратора настроек не уйдёт и сервер ответит 403. `loadDashboard` —
- * список персонала берётся из дашборда, а подпись кнопки ниже читает
- * `member.email`: без перечитывания выданный логин на экране не появится.
- */
-function StaffCredentialsEditor({
-	member,
-	accessHeaders,
-	loadDashboard,
-}: {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	member: any;
-	accessHeaders: SettingsAccessHeaders | undefined;
-	loadDashboard: unknown;
-}) {
-	const [isOpen, setIsOpen] = useState(false);
-	const [email, setEmail] = useState(member.email || "");
-	const [password, setPassword] = useState("");
-	const [pin, setPin] = useState("");
-	const [saving, setSaving] = useState(false);
-
-	/* Имя в кавычках, как во вкладке «Сотрудники»: подстановка идёт в середину
-     предложения — Доступы для «Иванова» не сохранены. Без имени подставляется
-     слово «сотрудника», а не пустое место: безымянная строка на экране выглядит
-     как оборванный текст, и непонятно, кого именно касается отказ. */
-	const staffName =
-		typeof member?.fullName === "string" && member.fullName.trim()
-			? `«${member.fullName.trim()}»`
-			: "сотрудника";
-
-	const handleSave = async () => {
-		setSaving(true);
-		try {
-			const result = await saveStaffCredentialsRequest(
-				member.id,
-				staffName,
-				email,
-				password,
-				pin,
-				accessHeaders,
-			);
-			/* Отказ уже назван внутри запроса. Поля НЕ чистим и редактор НЕ закрываем:
-         иначе набранный пароль придётся вспоминать заново. */
-			if (!result.ok) return;
-			setPassword("");
-			setPin("");
-			setIsOpen(false);
-			/* Доступы на сервере уже изменены, поэтому об успехе говорим и тогда, когда
-         данные клиники не удалось перечитать: отказ перечитывания меняет только
-         подсказку, а не сам факт сохранения. */
-			const listRefreshed = await reloadStaffList(loadDashboard);
-			showToast(
-				staffCredentialsSavedMessage(staffName, result.issued, listRefreshed),
-				"success",
-			);
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	return (
-		<div
-			className="staff-credentials-editor"
-			style={{
-				marginTop: 8,
-				padding: "6px 0",
-			}}
-		>
-			<button
-				type="button"
-				onClick={() => setIsOpen(!isOpen)}
-				className="secondary-button compact-button"
-				style={{ display: "flex", gap: 6, alignItems: "center" }}
-			>
-				<KeyRound size={14} />
-				{member.email
-					? `Управление доступом (${member.email})`
-					: "Выдать доступ (логин/пароль)"}
-			</button>
-
-			{isOpen && (
-				<div
-					style={{
-						marginTop: 12,
-						display: "flex",
-						flexDirection: "column",
-						gap: 8,
-					}}
-				>
-					<label style={{ fontSize: 12 }}>
-						Email (Логин)
-						<input
-							type="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							placeholder="email@example.com"
-							style={{ width: "100%", marginTop: 4 }}
-						/>
-					</label>
-					<div style={{ display: "flex", gap: 12 }}>
-						<label style={{ fontSize: 12, flex: 1 }}>
-							Новый пароль
-							<input
-								type="password"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								placeholder="Оставьте пустым, чтобы не менять"
-								style={{ width: "100%", marginTop: 4 }}
-							/>
-						</label>
-						<label style={{ fontSize: 12, flex: 1 }}>
-							Новый PIN (4 цифры)
-							<input
-								type="password"
-								value={pin}
-								onChange={(e) => setPin(e.target.value)}
-								maxLength={4}
-								placeholder="0000"
-								style={{ width: "100%", marginTop: 4 }}
-							/>
-						</label>
-					</div>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "flex-end",
-							marginTop: 4,
-						}}
-					>
-						<button
-							type="button"
-							onClick={handleSave}
-							disabled={saving}
-							className="primary-button compact-button"
-						>
-							{saving ? "Сохраняю..." : "Сохранить доступы"}
-						</button>
-					</div>
-				</div>
-			)}
-		</div>
-	);
-}
-
 export function SettingsClinicTab({
 	props = {},
 	settingsTab,
@@ -407,15 +95,6 @@ export function SettingsClinicTab({
 	const p = props || {};
 	const {
 		dashboard,
-		/*
-		 * `auth` и `loadDashboard` приходят тем же мешком пропсов, что и всё
-		 * остальное: `SettingsView.tsx:1188` собирает `settingsProps` как
-		 * `{...appLogic, ...settingsStore, ...derivations}`, а `auth` — ключ
-		 * возвращаемого объекта `useAppLogic` (:13792 в `return` с :13771). Тот же
-		 * путь используют `SettingsStaffTab.tsx:25` и `SettingsProtocolsTab.tsx:55`.
-		 */
-		auth,
-		loadDashboard,
 		changeClinicMode,
 		clinicProfileDraft,
 		clinicProfileSaveState,
@@ -438,15 +117,7 @@ export function SettingsClinicTab({
 		setNewStaffRole,
 		newStaffSpecialty,
 		setNewStaffSpecialty,
-		staffScheduleDrafts,
 		staffScheduleDraftFromWorkingHours,
-		staffScheduleSaveStates,
-		staffScheduleDirtyIds,
-		staffScheduleSavingId,
-		updateStaffScheduleDraft,
-		toggleStaffWorkingDay,
-		updateStaffScheduleDay,
-		saveStaffSchedule,
 		newChairName,
 		setNewChairName,
 		addChair,
@@ -477,6 +148,7 @@ export function SettingsClinicTab({
 		clinicModeLabels,
 		staffRoleLabels,
 		specialtyLabels,
+		setSettingsTab,
 	} = p;
 
 	const odontogramViewMode = useAppStore((state) => state.odontogramViewMode);
@@ -485,16 +157,6 @@ export function SettingsClinicTab({
 	);
 
 	if (settingsTab !== "clinic") return null;
-
-	/*
-	 * Один источник заголовков домена настроек на всю вкладку. `settingsAccessHeaders`
-	 * отправляет СЕССИОННЫЙ секрет домена настроек плюс оба токена, каждый в своём
-	 * заголовке; отсутствие помощника не молчит — общий путь пишет об этом в журнал
-	 * разработчика (`staffMutationHeaders` в ./staffMutationRequest.ts).
-	 */
-	const accessHeaders = auth?.settingsAccessHeaders as
-		| SettingsAccessHeaders
-		| undefined;
 
 	const typedClinicModes = Object.keys(clinicModeLabels || {}) as ClinicMode[];
 	const typedModeHints = (dashboard?.clinicSettings?.modeHints ??
@@ -564,37 +226,6 @@ export function SettingsClinicTab({
 		if (typeof addChair === "function") {
 			addChair(chairName);
 		}
-	};
-
-	const setStaffPresetDays = (staffId: string, days: number[]) => {
-		updateStaffScheduleDraft(staffId, { workingDays: days });
-		showToast(
-			days.length === 5
-				? "Установлен стандартный график: Пн–Пт"
-				: days.length === 6
-					? "Установлен график: Пн–Сб"
-					: "Установлен полный график: Пн–Вс",
-			"info",
-		);
-	};
-
-	const applyStaffHoursToAll = (staffId: string) => {
-		const draft =
-			staffScheduleDrafts[staffId] ?? staffScheduleDraftFromWorkingHours(null);
-		const start = draft.start || "09:00";
-		const end = draft.end || "18:00";
-		const days: number[] = draft.workingDays?.length
-			? draft.workingDays
-			: [1, 2, 3, 4, 5];
-		const perDay: Record<number, { start: string; end: string }> = {};
-		for (const d of days) {
-			perDay[d] = { start, end };
-		}
-		updateStaffScheduleDraft(staffId, { perDay });
-		showToast(
-			`Часы ${start}–${end} скопированы на все рабочие дни сотрудника`,
-			"success",
-		);
 	};
 
 	const setChairPresetDays = (chairId: string, days: number[]) => {
@@ -1354,245 +985,30 @@ export function SettingsClinicTab({
 						</div>
 					) : null}
 
-					<div className="staff-list divide-y divide-slate-100 dark:divide-slate-800">
-						{typedStaffMembers.map((member) => {
-							const scheduleDraft =
-								staffScheduleDrafts[member.id] ??
-								staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
-							const scheduleSaveState =
-								staffScheduleSaveStates[member.id] ?? "saved";
-							const scheduleDirty = staffScheduleDirtyIds.has(member.id);
-							const scheduleSaving =
-								staffScheduleSavingId === member.id ||
-								scheduleSaveState === "saving";
-							const scheduleSaveLabel = scheduleSaving
-								? "Автосохранение"
-								: scheduleSaveState === "error"
-									? "Не сохранено"
-									: scheduleDirty
-										? "Ждет автосохранения"
-										: "Сохранено";
-							return (
-								<div
-									className="staff-row !border-0 !bg-transparent !shadow-none py-3"
-									key={member.id}
-								>
-									<span style={{ background: member.color }} />
-									<div>
-										<strong>{member.fullName}</strong>
-										<p>
-											{staffRoleLabels[member.role]} ·{" "}
-											{(member.specialties || [])
-												.map((item) => specialtyLabels[item])
-												.join(", ")}
-										</p>
-									</div>
-									<small>
-										{member.canSignMedicalRecords
-											? "ЭМК"
-											: member.canManageImports
-												? "Импорт"
-												: "Доступ"}
-									</small>
-									<div className="staff-schedule-editor">
-										<label>
-											С
-											<input
-												type="time"
-												value={scheduleDraft.start}
-												onChange={(event: InputChangeEvent) =>
-													updateStaffScheduleDraft(member.id, {
-														start: event.target.value,
-													})
-												}
-											/>
-										</label>
-										<label>
-											До
-											<input
-												type="time"
-												value={scheduleDraft.end}
-												onChange={(event: InputChangeEvent) =>
-													updateStaffScheduleDraft(member.id, {
-														end: event.target.value,
-													})
-												}
-											/>
-										</label>
-										<div
-											style={{
-												display: "flex",
-												gap: "6px",
-												alignItems: "center",
-												flexWrap: "wrap",
-												margin: "4px 0",
-											}}
-										>
-											<span
-												style={{
-													fontSize: "11px",
-													color: "var(--muted)",
-													fontWeight: 600,
-												}}
-											>
-												График:
-											</span>
-											<button
-												type="button"
-												className="compact-button secondary-button"
-												style={{ fontSize: "11px", padding: "2px 8px" }}
-												onClick={() =>
-													setStaffPresetDays(member.id, [1, 2, 3, 4, 5])
-												}
-												title="Установить стандартный график: с Понедельника по Пятницу"
-											>
-												Пн–Пт
-											</button>
-											<button
-												type="button"
-												className="compact-button secondary-button"
-												style={{ fontSize: "11px", padding: "2px 8px" }}
-												onClick={() =>
-													setStaffPresetDays(member.id, [1, 2, 3, 4, 5, 6])
-												}
-												title="Установить шестидневку: с Понедельника по Субботу"
-											>
-												Пн–Сб
-											</button>
-											<button
-												type="button"
-												className="compact-button secondary-button"
-												style={{ fontSize: "11px", padding: "2px 8px" }}
-												onClick={() =>
-													setStaffPresetDays(member.id, [1, 2, 3, 4, 5, 6, 7])
-												}
-												title="Установить все 7 дней недели"
-											>
-												Все дни
-											</button>
-											<button
-												type="button"
-												className="compact-button secondary-button"
-												style={{
-													fontSize: "11px",
-													padding: "4px 10px",
-													minHeight: "44px",
-													display: "inline-flex",
-													alignItems: "center",
-													color: "var(--teal)",
-													fontWeight: 600,
-												}}
-												onClick={() => applyStaffHoursToAll(member.id)}
-												title="Скопировать часы С и ДО ко всем выбранным дням"
-											>
-												<Clock size={14} className="inline mr-1" />
-												Часы ко всем дням
-											</button>
-										</div>
-										<fieldset
-											className="weekday-toggle-row staff-weekday-row"
-											style={{ border: "none", padding: 0, margin: 0 }}
-											aria-label={`Рабочие дни: ${member.fullName}`}
-										>
-											{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-											{typedWeekdayOptions.map((day: any) => (
-												<button
-													className={
-														(scheduleDraft.workingDays ?? []).includes(
-															day.value,
-														)
-															? "active"
-															: ""
-													}
-													key={day.value}
-													type="button"
-													aria-pressed={(
-														scheduleDraft.workingDays ?? []
-													).includes(day.value)}
-													onClick={() =>
-														toggleStaffWorkingDay(member.id, day.value)
-													}
-												>
-													{day.label}
-												</button>
-											))}
-										</fieldset>
-										<details className="settings-advanced-block schedule-advanced-block">
-											<summary className="settings-advanced-toggle">
-												<span className="settings-advanced-label">
-													Индивидуальные часы по дням
-												</span>
-												<ChevronDown size={14} className="settings-advanced-chevron shrink-0" />
-											</summary>
-											<section
-												className="staff-day-hours"
-												aria-label={`Часы по дням: ${member.fullName}`}
-											>
-												{typedWeekdayOptions
-													.filter((day) =>
-														(scheduleDraft.workingDays ?? []).includes(
-															day.value,
-														),
-													)
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													.map((day: any) => {
-														const dayHours = scheduleDraft?.perDay?.[day.value];
-														return (
-															<div key={`hours-${member.id}-${day.value}`}>
-																<span>{day.label}</span>
-																<input
-																	aria-label={`${day.label}, начало`}
-																	type="time"
-																	value={dayHours?.start ?? scheduleDraft.start}
-																	onChange={(event: InputChangeEvent) =>
-																		updateStaffScheduleDay(
-																			member.id,
-																			day.value,
-																			{ start: event.target.value },
-																		)
-																	}
-																/>
-																<input
-																	aria-label={`${day.label}, конец`}
-																	type="time"
-																	value={dayHours?.end ?? scheduleDraft.end}
-																	onChange={(event: InputChangeEvent) =>
-																		updateStaffScheduleDay(
-																			member.id,
-																			day.value,
-																			{ end: event.target.value },
-																		)
-																	}
-																/>
-															</div>
-														);
-													})}
-											</section>
-										</details>
-										<div className="staff-schedule-actions">
-											<span
-												className={`save-state save-state-${scheduleSaveState}`}
-											>
-												{scheduleSaveLabel}
-											</span>
-											<button
-												className="secondary-button compact-button"
-												type="button"
-												onClick={() => void saveStaffSchedule(member.id)}
-												disabled={scheduleSaving}
-											>
-												{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
-											</button>
-										</div>
-									</div>
-									<StaffCredentialsEditor
-										member={member}
-										accessHeaders={accessHeaders}
-										loadDashboard={loadDashboard}
-									/>
-								</div>
-							);
-						})}
+					<div className="mt-4 p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+						<div className="space-y-1">
+							<div className="text-sm font-semibold text-[var(--ink)]">
+								Персонал клиники ({typedStaffMembers.length})
+							</div>
+							<p className="text-xs text-[var(--muted)] m-0 leading-relaxed">
+								Управление детальными графиками смен, паролями и карточками персонала вынесено в специализированную вкладку «Сотрудники».
+							</p>
+						</div>
+						<button
+							type="button"
+							className="secondary-button compact-button inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+							style={{ minHeight: "44px" }}
+							onClick={() => {
+								if (typeof props?.setSettingsTab === "function") {
+									props.setSettingsTab("staff");
+								} else if (typeof setSettingsTab === "function") {
+									setSettingsTab("staff");
+								}
+							}}
+						>
+							<span>Перейти в «Сотрудники»</span>
+							<ChevronRight size={14} aria-hidden="true" />
+						</button>
 					</div>
 				</article>
 

@@ -6,10 +6,10 @@
    ============================================================ */
 
 .analytics-dashboard {
-	padding: 20px 24px;
+	padding: 10px 16px;
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
+	gap: 10px;
 	height: 100%;
 	overflow-y: auto;
 	color: var(--ink);
@@ -24,10 +24,29 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
+	gap: 10px;
 	flex-wrap: wrap;
-	padding-bottom: 12px;
+	padding-bottom: 6px;
 	border-bottom: 1px solid var(--line);
+	min-height: 32px;
+}
+
+/* ─── Вкладки разделов аналитики (Compact 32-36px) ─────────── */
+
+.analytics-section-tabs {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding-bottom: 6px;
+	margin-bottom: 8px;
+	border-bottom: 1px solid var(--line);
+}
+
+.analytics-section-tabs button {
+	height: 34px;
+	min-height: 34px;
+	box-sizing: border-box;
 }
 
 .analytics-header-title-group {
@@ -339,15 +358,26 @@
 
 @media (max-width: 640px) {
 	.analytics-dashboard {
-		gap: 14px;
-		padding: 12px;
+		gap: 10px;
+		padding: 10px 12px;
 	}
 
 	.analytics-header {
 		flex-direction: column;
 		align-items: stretch;
-		gap: 10px;
-		padding-bottom: 10px;
+		gap: 8px;
+		padding-bottom: 8px;
+	}
+
+	.analytics-section-tabs {
+		gap: 6px;
+		padding-bottom: 6px;
+		margin-bottom: 8px;
+	}
+
+	.analytics-section-tabs button {
+		min-height: 36px;
+		height: 36px;
 	}
 
 	.analytics-toolbar {

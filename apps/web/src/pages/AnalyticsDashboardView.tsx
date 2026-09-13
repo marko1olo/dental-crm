@@ -291,9 +291,9 @@ export function AnalyticsDashboardView() {
 				</div>
 			</header>
 
-			{/* Навигация по подразделам аналитики (44x44px touch targets) */}
+			{/* Навигация по подразделам аналитики (Компактные 32-36px вкладки) */}
 			<div
-				className="analytics-section-tabs mb-6 flex flex-wrap gap-2 border-b border-[var(--line)] pb-3"
+				className="analytics-section-tabs"
 				role="tablist"
 				aria-label="Разделы аналитики"
 			>
@@ -301,7 +301,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "executive"}
-					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
 						analyticsSection === "executive"
 							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
@@ -314,7 +314,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "operational"}
-					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
 						analyticsSection === "operational"
 							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
@@ -327,7 +327,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "curators"}
-					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
 						analyticsSection === "curators"
 							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
@@ -340,7 +340,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "lost_patients"}
-					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
 						analyticsSection === "lost_patients"
 							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
@@ -353,7 +353,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "freed_slots"}
-					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
 						analyticsSection === "freed_slots"
 							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
@@ -366,7 +366,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "marketing"}
-					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
 						analyticsSection === "marketing"
 							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
@@ -378,11 +378,11 @@ export function AnalyticsDashboardView() {
 				<button
 					type="button"
 					onClick={() => setIsMarketingRoiOpen(true)}
-					className="inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer ml-auto"
+					className="inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer ml-auto"
 					data-testid="btn-open-marketing-roi-modal"
 					title="Открыть сквозную аналитику ROI маркетинговых кампаний"
 				>
-					<TrendingUp className="w-4 h-4 mr-2" />
+					<TrendingUp className="w-3.5 h-3.5 mr-1.5" />
 					<span>ROI маркетинговых кампаний</span>
 				</button>
 			</div>
@@ -792,17 +792,12 @@ export function AnalyticsDashboardView() {
 						пациент, не приходивший восемь месяцев, подождёт ещё день.
 						Панель сама не показывается, когда окон нет.
 					*/}
-					<div className="mt-6">
-						<FreedSlotsPanel />
-					</div>
-
-					<div className="mt-6">
-						<RecallListPanel />
-					</div>
-
-					<div className="mt-6">
-						<LostPatientsPanel />
-					</div>
+					{/*
+						Панели возврата пациентов (LostPatientsPanel, RecallListPanel)
+						и освободившихся окон (FreedSlotsPanel) вынесены в специализированные
+						вкладки верхнего уровня (lost_patients, freed_slots) per Mandate 8s
+						(Закон Единого Неделимого Авторитета).
+					*/}
 
 					{/*
 						Отсюда убран ConfirmationPerformanceReportsWidget по той же причине,

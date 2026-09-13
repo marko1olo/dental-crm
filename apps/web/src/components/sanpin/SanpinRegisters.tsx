@@ -232,11 +232,44 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 
 function DisinfectantsRegisterTab() {
 	const [query, setQuery] = useState("");
-	const filtered = DEFAULT_DISINFECTANT_RECORDS.filter(
+	const [records, setRecords] = useState<DisinfectantSolutionRecord[]>(DEFAULT_DISINFECTANT_RECORDS);
+	const filtered = records.filter(
 		(r) =>
 			r.tradeNameRu.toLowerCase().includes(query.toLowerCase()) ||
 			r.purposeRu.toLowerCase().includes(query.toLowerCase())
 	);
+
+	const handleAddSolution = () => {
+		const now = new Date();
+		const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+		const prepDate = `${getRecentIsoDate(0)} ${timeStr}`;
+		const expDate = getRecentDateTimeRu(14, timeStr);
+		const newRecord: DisinfectantSolutionRecord = {
+			id: `ds-${Date.now()}`,
+			tradeNameRu: "Аламинол (раствор 1.5%)",
+			purposeRu: "Текущая предстерилизационная очистка и дезинфекция инструментов (ЦСО)",
+			concentrationPercent: 1.5,
+			preparationDate: prepDate,
+			expiryDate: expDate,
+			testStripResultRu: "Дезиконт-Аламинол: 1.5% норма (тест пройден)",
+			responsibleNurseRu: "Медсестра ЦСО",
+			volumeLiters: 5,
+		};
+		setRecords((prev) => [newRecord, ...prev]);
+		showToast("Рабочий раствор зарегистрирован в журнале!", "success");
+	};
+
+	const handleVerifyTestStrips = () => {
+		const now = new Date();
+		const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+		setRecords((prev) =>
+			prev.map((r) => ({
+				...r,
+				testStripResultRu: `Тест-полоска экспресс: норма (${timeStr}, активен)`,
+			}))
+		);
+		showToast(`Тест-полоски концентрации: все емкости (${records.length} шт.) в норме!`, "success");
+	};
 
 	return (
 		<div className="sanpin-tab-content">
@@ -263,7 +296,7 @@ function DisinfectantsRegisterTab() {
 				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
 					<button
 						type="button"
-						onClick={() => showToast("Рабочий раствор зарегистрирован в журнале!", "success")}
+						onClick={handleAddSolution}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
@@ -271,7 +304,7 @@ function DisinfectantsRegisterTab() {
 					</button>
 					<button
 						type="button"
-						onClick={() => showToast("Тест-полоски концентрации: все 5 емкостей в норме!", "success")}
+						onClick={handleVerifyTestStrips}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
 					>
@@ -376,11 +409,28 @@ const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
 
 function BacLabRegisterTab() {
 	const [query, setQuery] = useState("");
-	const filtered = DEFAULT_BAC_LAB_RECORDS.filter(
+	const [records, setRecords] = useState<BacLabRecord[]>(DEFAULT_BAC_LAB_RECORDS);
+	const filtered = records.filter(
 		(r) =>
 			r.actNumberRu.toLowerCase().includes(query.toLowerCase()) ||
 			r.targetObjectRu.toLowerCase().includes(query.toLowerCase())
 	);
+
+	const handleAddProtocol = () => {
+		const nextActNum = 268 + records.length - DEFAULT_BAC_LAB_RECORDS.length;
+		const newRecord: BacLabRecord = {
+			id: `bac-${Date.now()}`,
+			actNumberRu: `Акт № ${nextActNum}/С`,
+			sampleDate: getRecentIsoDate(0),
+			targetObjectRu: "Операционный блок: смыв со столика хирурга и наконечника после автоклава",
+			pathogensTestedRu: "ОМЧ, БГКП, Staphylococcus aureus, спорообразующие бациллы",
+			resultRu: "Рост микрофлоры отсутствует (100% стерильно)",
+			labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
+			statusRu: "Протокол утвержден",
+		};
+		setRecords((prev) => [newRecord, ...prev]);
+		showToast("Протокол смывов аккредитованной лаборатории зарегистрирован!", "success");
+	};
 
 	return (
 		<div className="sanpin-tab-content">
@@ -407,7 +457,7 @@ function BacLabRegisterTab() {
 				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
 					<button
 						type="button"
-						onClick={() => showToast("Протокол смывов аккредитованной лаборатории зарегистрирован!", "success")}
+						onClick={handleAddProtocol}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
@@ -502,11 +552,31 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 
 function NeedleDisposalRegisterTab() {
 	const [query, setQuery] = useState("");
-	const filtered = DEFAULT_NEEDLE_DISPOSAL_RECORDS.filter(
+	const [records, setRecords] = useState<NeedleDisposalRecord[]>(DEFAULT_NEEDLE_DISPOSAL_RECORDS);
+	const filtered = records.filter(
 		(r) =>
 			r.wasteTypeRu.toLowerCase().includes(query.toLowerCase()) ||
 			r.containerCodeRu.toLowerCase().includes(query.toLowerCase())
 	);
+
+	const handleAddNeedleBatch = () => {
+		const now = new Date();
+		const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+		const containerNum = 13 + records.length - DEFAULT_NEEDLE_DISPOSAL_RECORDS.length;
+		const sealNum = String(4813 + records.length - DEFAULT_NEEDLE_DISPOSAL_RECORDS.length).padStart(5, "0");
+		const newRecord: NeedleDisposalRecord = {
+			id: `nd-${Date.now()}`,
+			shiftDateRu: `${getRecentIsoDate(0)} ${timeStr}`,
+			wasteTypeRu: "Иглы инъекционные карпульные 30G/27G + карпулы пустые (класс Б)",
+			treatmentMethodRu: "Иглоотсекатель / деструктор + хим. дезинфекция Бриллиант Классик 2%",
+			netWeightKg: 0.95,
+			containerCodeRu: `Желтый контейнер КБ-${containerNum} (пломба № ${sealNum})`,
+			surrenderedNurseRu: "Медсестра ЦСО",
+			acceptedNurseRu: "Старшая медсестра",
+		};
+		setRecords((prev) => [newRecord, ...prev]);
+		showToast("Партия утилизированных игл внесена в журнал!", "success");
+	};
 
 	return (
 		<div className="sanpin-tab-content">
@@ -533,7 +603,7 @@ function NeedleDisposalRegisterTab() {
 				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
 					<button
 						type="button"
-						onClick={() => showToast("Партия утилизированных игл внесена в журнал!", "success")}
+						onClick={handleAddNeedleBatch}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>

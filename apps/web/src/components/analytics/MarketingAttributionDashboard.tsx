@@ -156,9 +156,6 @@ export function MarketingAttributionDashboard() {
 							<h3 className="text-base font-bold text-[var(--ink)] m-0 flex items-center gap-2">
 								<Settings size={18} className="text-[var(--teal)]" />
 								Настройка обязательности полей при создании карточки пациента
-								<span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-semibold">
-									Фича №35
-								</span>
 							</h3>
 							<p className="text-xs text-[var(--muted)] m-0">
 								Укажите, какие поля регистратор или администратор ОБЯЗАН заполнить при первичной регистрации пациента
