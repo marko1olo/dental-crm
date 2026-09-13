@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import {
@@ -12,7 +12,7 @@ const webSrcRoot = path.join(import.meta.dirname, "../../..");
 const TARGET_FILES = [
 	"components/imaging/DicomViewerModal.tsx",
 	"components/radiology/doseSheet/radiationDoseEngine.ts",
-	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx",
+	"components/documents/forms/RadiationDoseSheetForm.tsx",
 	"components/photography/ClinicalPhotoProtocolModal.tsx",
 	"components/photography/BeforeAfterComparisonView.tsx",
 ];
@@ -62,3 +62,19 @@ test("Wave 107: exportDoseJournalToCsv по умолчанию не подста
 		"exportDoseJournalToCsv с явным ФИО пациента должен выводить переданное имя",
 	);
 });
+
+test("Wave 199 (Mandate 8s): RadiationDoseSheetModal.tsx искоренен в пользу RadiationDoseSheetForm.tsx", () => {
+	const modalPath = path.join(webSrcRoot, "components/radiology/doseSheet/RadiationDoseSheetModal.tsx");
+	assert.strictEqual(
+		existsSync(modalPath),
+		false,
+		"RadiationDoseSheetModal.tsx должен быть удален из кодовой базы в пользу RadiationDoseSheetForm.tsx",
+	);
+	const canonicalFormPath = path.join(webSrcRoot, "components/documents/forms/RadiationDoseSheetForm.tsx");
+	assert.strictEqual(
+		existsSync(canonicalFormPath),
+		true,
+		"Канонический SSOT RadiationDoseSheetForm.tsx обязан присутствовать в кодовой базе",
+	);
+});
+

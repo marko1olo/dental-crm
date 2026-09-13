@@ -14,7 +14,7 @@ import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { OrthodonticVisitProtocolWidget } from "../orthodontics/OrthodonticVisitProtocolWidget";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtocolWidget";
-import { RadiationDoseSheetModal } from "../radiology/doseSheet/RadiationDoseSheetModal";
+import { RadiationDoseSheetForm } from "../documents/forms/RadiationDoseSheetForm";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VisitTimer } from "../visit/VisitTimer";
 import { VisitEndoProtocolWidget } from "../visit/endo/VisitEndoProtocolWidget";
@@ -55,7 +55,6 @@ import { DirectRvgCaptureModal } from "../radiology/DirectRvgCaptureModal";
 import { HotFolderIntakeModal } from "../radiology/HotFolderIntakeModal";
 import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
-import { ImplantCrossSectionPlanner } from "../radiology/ImplantCrossSectionPlanner";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import { SurgeryCockpitModal } from "../surgery/SurgeryCockpitModal";
 import { SurgeryProtocolPanel } from "../surgery/SurgeryProtocolPanel";
@@ -267,11 +266,22 @@ export const ClinicalModalsHost: React.FC = () => {
 			{activeModal === "radiology_viewer" && (
 				<DicomViewerModal isOpen={true} onClose={close} />
 			)}
-			{activeModal === "cbct_3d_studio" && (
-				<CbctMprImplantStudioModal isOpen={true} onClose={close} />
+			{(activeModal === "cbct_3d_studio" || activeModal === "cbct_mpr_viewer") && (
+				<CbctMprImplantStudioModal
+					isOpen={true}
+					onClose={close}
+					patientName={patientName}
+					initialStudioMode="diagnostic"
+				/>
 			)}
 			{activeModal === "implant_cross_section" && (
-				<ImplantCrossSectionPlanner  {...({} as any)} />
+				<CbctMprImplantStudioModal
+					isOpen={true}
+					onClose={close}
+					patientName={patientName}
+					initialStudioMode="implant"
+					initialSidebarOpen={true}
+				/>
 			)}
 			{activeModal === "implant_passport" && (
 				<ImplantPassportModal
@@ -382,7 +392,32 @@ export const ClinicalModalsHost: React.FC = () => {
 				<RadiologyReferralModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "radiation_dose_sheet" && (
-				<RadiationDoseSheetModal isOpen={true} onClose={close}  {...({} as any)} />
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="radiation-dose-sheet-modal-container"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) close();
+					}}
+				>
+					<div className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-6 text-slate-100 overflow-y-auto">
+						<div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-700">
+							<h3 className="text-base font-bold text-slate-100">
+								Лист учета дозовых нагрузок (СанПиН 2.6.1.1192-03)
+							</h3>
+							<button
+								type="button"
+								onClick={close}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors flex items-center justify-center"
+								aria-label="Закрыть"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<RadiationDoseSheetForm />
+					</div>
+				</div>
 			)}
 			{activeModal === "sterilization_autoclave_log" && (
 				<AutoclaveLog257Modal isOpen={true} onClose={close}  {...({} as any)} />

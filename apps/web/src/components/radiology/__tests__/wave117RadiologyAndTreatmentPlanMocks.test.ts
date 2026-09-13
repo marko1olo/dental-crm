@@ -57,14 +57,21 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 		);
 	});
 
-	it("verifies absence of 'Иванов И.И.' in ImplantCrossSectionPlanner.tsx", () => {
-		const implantPath = path.join(webSrcRoot, "components/radiology/ImplantCrossSectionPlanner.tsx");
-		const implantContent = fs.readFileSync(implantPath, "utf8");
+	it("verifies canonical SSOT CbctMprImplantStudioModal.tsx purity and eradication of duplicate ImplantCrossSectionPlanner.tsx (Wave 199)", () => {
+		const canonicalStudioPath = path.join(webSrcRoot, "components/radiology/CbctMprImplantStudioModal.tsx");
+		const studioContent = fs.readFileSync(canonicalStudioPath, "utf8");
 
 		assert.strictEqual(
-			implantContent.includes("Иванов И.И."),
+			studioContent.includes("Иванов И.И."),
 			false,
-			"ImplantCrossSectionPlanner.tsx must not contain 'Иванов И.И.'",
+			"CbctMprImplantStudioModal.tsx must not contain 'Иванов И.И.'",
+		);
+
+		const duplicatePath = path.join(webSrcRoot, "components/radiology/ImplantCrossSectionPlanner.tsx");
+		assert.strictEqual(
+			fs.existsSync(duplicatePath),
+			false,
+			"ImplantCrossSectionPlanner.tsx must be eradicated as duplicate in Wave 199",
 		);
 	});
 
@@ -95,13 +102,14 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 		);
 	});
 
-	it("verifies absence of 'Др. Смирнов А.В.' in RadiologyReferralModal and RadiationDoseSheet", () => {
+	it("verifies absence of 'Др. Смирнов А.В.' in RadiologyReferralModal, RadiationDoseSheetForm and eradication of RadiationDoseSheetModal (Wave 199)", () => {
 		const referralPath = path.join(webSrcRoot, "components/radiology/RadiologyReferralModal.tsx");
-		const doseModalPath = path.join(webSrcRoot, "components/radiology/doseSheet/RadiationDoseSheetModal.tsx");
+		const canonicalDoseFormPath = path.join(webSrcRoot, "components/documents/forms/RadiationDoseSheetForm.tsx");
 		const doseEnginePath = path.join(webSrcRoot, "components/radiology/doseSheet/radiationDoseEngine.ts");
+		const duplicateDoseModalPath = path.join(webSrcRoot, "components/radiology/doseSheet/RadiationDoseSheetModal.tsx");
 
 		const referralContent = fs.readFileSync(referralPath, "utf8");
-		const doseModalContent = fs.readFileSync(doseModalPath, "utf8");
+		const doseFormContent = fs.readFileSync(canonicalDoseFormPath, "utf8");
 		const doseEngineContent = fs.readFileSync(doseEnginePath, "utf8");
 
 		assert.strictEqual(
@@ -110,14 +118,19 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 			"RadiologyReferralModal.tsx must not contain 'Др. Смирнов А.В.'",
 		);
 		assert.strictEqual(
-			doseModalContent.includes("Др. Смирнов А.В."),
+			doseFormContent.includes("Др. Смирнов А.В."),
 			false,
-			"RadiationDoseSheetModal.tsx must not contain 'Др. Смирнов А.В.'",
+			"RadiationDoseSheetForm.tsx must not contain 'Др. Смирнов А.В.'",
 		);
 		assert.strictEqual(
 			doseEngineContent.includes("Др. Смирнов А.В."),
 			false,
 			"radiationDoseEngine.ts must not contain 'Др. Смирнов А.В.'",
+		);
+		assert.strictEqual(
+			fs.existsSync(duplicateDoseModalPath),
+			false,
+			"RadiationDoseSheetModal.tsx must be eradicated as duplicate in Wave 199",
 		);
 	});
 

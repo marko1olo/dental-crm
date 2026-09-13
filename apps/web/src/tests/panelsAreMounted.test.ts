@@ -934,12 +934,9 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/portal/timeline/PatientPortalTimelineModal.tsx:PatientPortalTimelineModal",
 	"components/prescriptions/PrescriptionsTab.tsx:PrescriptionsTab",
 	"components/prescriptions/generator/MedicalPrescriptionModal.tsx:MedicalPrescriptionModal",
-	"components/radiology/CbctMprViewer.tsx:CbctMprViewer",
 	"components/radiology/DirectRvgCaptureModal.tsx:DirectRvgCaptureModal",
 	"components/radiology/HotFolderIntakeModal.tsx:HotFolderIntakeModal",
-	"components/radiology/ImplantCrossSectionPlanner.tsx:ImplantCrossSectionPlanner",
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
-	"components/radiology/doseSheet/RadiationDoseSheetModal.tsx:RadiationDoseSheetModal",
 	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
 	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
 	"components/surgery/SurgeryCockpitModal.tsx:SurgeryCockpitModal",
@@ -968,7 +965,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 56;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 53;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.
@@ -1435,3 +1432,36 @@ test("второго планировщика смет и его очереди 
 			"src/tests/planPricing.test.ts — удалять его вместе с остатками планировщика нельзя.",
 	);
 });
+
+test("дубликатов КЛКТ и листа дозовых нагрузок (Wave 199) в дереве больше нет", () => {
+	/*
+	 * Wave 199 (Mandates 8a-8t): 3 несмонтированных дубликата ликвидированы (-5,437 LOC):
+	 * 1. CbctMprViewer.tsx -> канонический SSOT CbctMprImplantStudioModal.tsx
+	 * 2. ImplantCrossSectionPlanner.tsx -> канонический SSOT CbctMprImplantStudioModal.tsx
+	 * 3. RadiationDoseSheetModal.tsx -> канонический SSOT RadiationDoseSheetForm.tsx
+	 */
+	for (const removed of [
+		"components/radiology/CbctMprViewer.tsx",
+		"components/radiology/ImplantCrossSectionPlanner.tsx",
+		"components/radiology/doseSheet/RadiationDoseSheetModal.tsx",
+	]) {
+		assert.equal(
+			existsSync(path.join(webSrcRoot, removed)),
+			false,
+			`${removed} вернулся в дерево. Модуль ликвидирован как дубликат по Wave 199; используйте канонический SSOT.`,
+		);
+	}
+
+	// Канонические SSOT обязаны присутствовать в дереве
+	assert.equal(
+		existsSync(path.join(webSrcRoot, "components/radiology/CbctMprImplantStudioModal.tsx")),
+		true,
+		"Канонический SSOT CbctMprImplantStudioModal.tsx отсутствует в дереве",
+	);
+	assert.equal(
+		existsSync(path.join(webSrcRoot, "components/documents/forms/RadiationDoseSheetForm.tsx")),
+		true,
+		"Канонический SSOT RadiationDoseSheetForm.tsx отсутствует в дереве",
+	);
+});
+
