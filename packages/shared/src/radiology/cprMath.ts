@@ -70,6 +70,7 @@ export function trilinear(
 	ci: number,
 	cj: number,
 	ck: number,
+	airSentinel = AIR_HU,
 ): number {
 	// Genuinely outside the volume boundary -> air sentinel
 	if (
@@ -80,7 +81,7 @@ export function trilinear(
 		ck < 0 ||
 		ck > dims[2] - 1
 	) {
-		return AIR_HU;
+		return airSentinel;
 	}
 
 	// Clamp a hair inside so the upper neighbor index stays within volume bounds
@@ -115,6 +116,8 @@ export function trilinear(
 		getVoxel(i1, j1, k1) * fi * fj * fk
 	);
 }
+
+export const trilinearInterpolation = trilinear;
 
 export { buildUniformCurve };
 

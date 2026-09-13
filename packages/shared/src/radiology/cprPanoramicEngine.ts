@@ -11,13 +11,31 @@
  */
 
 import { z } from "zod";
+import {
+  type Point2,
+  type Vec3,
+  type CPRResult,
+  type VolumeSamplingData,
+  AIR_HU,
+  trilinear,
+  trilinearInterpolation,
+  type CrossSectionFrame,
+  crossSectionFrame,
+  computeCrossSection,
+} from "./cprMath.js";
+
+export type { Point2, Vec3, CPRResult, VolumeSamplingData, CrossSectionFrame };
+export {
+  AIR_HU,
+  trilinear,
+  trilinearInterpolation,
+  crossSectionFrame,
+  computeCrossSection,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. TYPES & SCHEMAS
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type Point2 = [number, number];
-export type Vec3 = [number, number, number];
 
 export const point2Schema = z.tuple([z.number(), z.number()]);
 export const vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
@@ -32,19 +50,6 @@ export const archToothLandmarkSchema = z.object({
   point: point2Schema,
 });
 export type ArchToothLandmark = z.infer<typeof archToothLandmarkSchema>;
-
-/** Minimal volume description required for pure voxel sampling. */
-export interface VolumeSamplingData {
-  readonly dims: [number, number, number];
-  readonly origin: [number, number, number];
-  readonly getVoxel: (i: number, j: number, k: number) => number;
-  readonly invSx: number;
-  readonly invSy: number;
-  readonly invSz: number;
-  readonly zMin: number;
-  readonly zMax: number;
-  readonly vSpacing: number;
-}
 
 export interface VolumeSamplingInput {
   dimensions: [number, number, number];
@@ -94,14 +99,6 @@ export interface PanoramicReformationResult {
   meanHU: number;
 }
 
-export interface CrossSectionFrame {
-  point: Point2;
-  normal: Point2;
-  tangent: Point2;
-  origin: [number, number, number];
-  eU: [number, number, number];
-  eV: [number, number, number];
-}
 
 export const paraxialCrossSectionParamsSchema = z.object({
   controlPoints: z.array(point2Schema).min(2),
@@ -334,50 +331,6 @@ export function generateDefaultArchWithLandmarks(
 // 3. TRILINEAR VOXEL INTERPOLATION & SAMPLING ADAPTER
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const AIR_HU = -1024;
-
-export function trilinearInterpolation(
-  getVoxel: (i: number, j: number, k: number) => number,
-  dims: [number, number, number],
-  ci: number,
-  cj: number,
-  ck: number,
-  airSentinel = AIR_HU,
-): number {
-  if (ci < 0 || ci > dims[0] - 1 || cj < 0 || cj > dims[1] - 1 || ck < 0 || ck > dims[2] - 1) {
-    return airSentinel;
-  }
-  const qi = Math.max(0, Math.min(ci, dims[0] - 1 - 1e-6));
-  const qj = Math.max(0, Math.min(cj, dims[1] - 1 - 1e-6));
-  const qk = Math.max(0, Math.min(ck, dims[2] - 1 - 1e-6));
-
-  const i0 = Math.floor(qi);
-  const j0 = Math.floor(qj);
-  const k0 = Math.floor(qk);
-  const i1 = i0 + 1;
-  const j1 = j0 + 1;
-  const k1 = k0 + 1;
-
-  const fi = qi - i0;
-  const fj = qj - j0;
-  const fk = qk - k0;
-  const nfi = 1 - fi;
-  const nfj = 1 - fj;
-  const nfk = 1 - fk;
-
-  return (
-    getVoxel(i0, j0, k0) * nfi * nfj * nfk +
-    getVoxel(i1, j0, k0) * fi * nfj * nfk +
-    getVoxel(i0, j1, k0) * nfi * fj * nfk +
-    getVoxel(i1, j1, k0) * fi * fj * nfk +
-    getVoxel(i0, j0, k1) * nfi * nfj * fk +
-    getVoxel(i1, j0, k1) * fi * nfj * fk +
-    getVoxel(i0, j1, k1) * nfi * fj * fk +
-    getVoxel(i1, j1, k1) * fi * fj * fk
-  );
-}
-
-export const trilinear = trilinearInterpolation;
 
 export function createVolumeSamplingData(source: VolumeSamplingInput | VolumeSamplingData): VolumeSamplingData {
   if ("getVoxel" in source && "invSx" in source) return source as VolumeSamplingData;
@@ -520,37 +473,7 @@ export const generatePanoramic = buildPanoramicReformation;
 // 5. PARAXIAL CROSS-SECTION REFORMATION
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function crossSectionFrame(
-  controlPoints: Point2[],
-  positionNormalized: number,
-  tiltDeg: number,
-  zMin: number,
-  zMax: number,
-): CrossSectionFrame | null {
-  const { curve, normals } = buildUniformCurve(controlPoints, 500);
-  if (curve.length < 2) return null;
 
-  const idx = Math.round(Math.max(0, Math.min(1, positionNormalized)) * (curve.length - 1));
-  const point = curve[idx] ?? [0, 0];
-  const normal = normals[idx] ?? [0, 1];
-  const tangent: Point2 = [normal[1], -normal[0]];
-
-  const MAX_TILT_DEG = 30;
-  const clampedTiltDeg = Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, tiltDeg));
-  const tiltRad = (clampedTiltDeg * Math.PI) / 180;
-  const sinT = Math.sin(tiltRad);
-  const cosT = Math.cos(tiltRad);
-  const zMid = (zMin + zMax) / 2;
-
-  return {
-    point,
-    normal,
-    tangent,
-    origin: [point[0], point[1], zMid],
-    eU: [normal[0], normal[1], 0],
-    eV: [tangent[0] * sinT, tangent[1] * sinT, cosT],
-  };
-}
 
 export function computeParaxialCrossSection(
   params: ParaxialCrossSectionParams,
@@ -614,8 +537,6 @@ export function computeParaxialCrossSection(
     meanHU,
   };
 }
-
-export const computeCrossSection = computeParaxialCrossSection;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 6. REGULATORY FORM 043/U A4 PROTOCOL FORMATTER (0 EMOJIS)

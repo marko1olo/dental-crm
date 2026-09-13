@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–179 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–184 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -32,6 +32,8 @@
 > 26. Проведена декомпозиция математического ядра КЛКТ по Инженерному Правилу 1.1 (<800 строк) с выделением 3D/2D клиппинга Лианга-Барски в легковесный модуль `sliceClippingMath.ts` (286 строк) и сокращением `sliceIntersectionMath.ts` до 689 строк; ликвидирован дефект обрезания бренда клиники на мобильных экранах 390px в `workspaceShell.tsx` (адаптивный бейдж «ДЕНТЕ» / «Стоматология ДЕНТЕ Премиум»); защищены клинические кнопки «Норма» и «Готово» в шапке визита `VisitView.tsx` ограничением ширины ФИО пациента `max-w-[110px] sm:max-w-none` по Мандату 8e (Wave 180, коммиты `5e15482e9`, `357d2b14f`, `b103b481c`).
 > 27. Ликвидирован транкейт клинического пульта `ClinicControlPill` в топбаре десктопа в `Header.css` (`flex-shrink-0`, `min-width: max-content`, `white-space: nowrap`) и `workspaceShell.tsx`; расширена карточка превью приёма `AppointmentHoverHud.tsx` (`max-w-[420px] sm:max-w-[480px]`) для исключения переносов строк; проведена дедупликация кнопок тулбара расписания `ScheduleFilterStrip.tsx` в строгую 1 строку высотой 32–36px по Закону Хика с прямым выводом 1-клик чипов «Моё кресло» (`Armchair` с именем кресла без скобок) и «Автодозвон» (`PhoneCall`) по Мандатам 8d, 8e, 8p, 8n (Wave 181, коммит `8ec3f76c3`).
 > 28. Проведена консолидация и дедупликация каталога имплантатов `implantCatalog.ts` (коммит `ca2e977ae`): дублирующий файл в `apps/web/src/components/implants/` схлопнут с 1012 строк в 260 строк компактного SSOT-делегата на базе канонического `dicom/implantCatalog.ts` (чистая ликвидация -752 строк дублирующего кода по Мандату 8s); интегрирована премиальная шведская система имплантатов Astra Tech OsseoSpeed EV (EV 3.6, 4.2, 4.8) с цветовой маркировкой платформ Dentsply Sirona; зафиксирована железная граница КТ в CRM по Мандату 8i: полный отказ от лабораторного CAD/CAM блоата (генераторов хирургических шаблонов, CSG булевых слайсеров для 3D-печати), предел функционала — DICOM MPR, измерение плотности по Хаунсфилду (Misch D1..D5) и сохранение виртуальных координат имплантатов; подготовлен аудит консолидации складских дубликатов `inventory/` и `warehouse/` (Wave 182, коммит `ca2e977ae`).
+> 29. Проведена консолидация дублирующих складских и инвентарных движков в единый канонический SSOT-домен `packages/shared/src/warehouse/` (`inventoryReorderEngine.ts`, `purchaseOrderEngine.ts`, `treatmentConsumablesEngine.ts`) по Мандату 8s: модули `inventory/reorderEngine.ts` и `purchaseOrdersEngine.ts` схлопнуты в 30-строчные прозрачные фасады-делегаты над SSOT в `warehouse/` (чистая дельта: -1000+ строк паразитного дублирования); унифицированы типы `ConsumableUnit` и категории материалов с `procedureBomEngine.ts` без потери обратной совместимости (Wave 183, коммит `4a7a94521`).
+> 30. Устранен эффект сжатия и выталкивания топбара (balloon effect) на десктопе и мобильных устройствах (`.topbar-clinic { min-width: 140px !important; flex-shrink: 0 !important; }`, `.topbar-context { overflow: visible; }`) в `dente-redesign.css`, `Header.tsx`, `workspaceShell.tsx`; шапка CT Studio `CbctMprImplantStudioModal.tsx` зафиксирована в строгую 1 строку высотой 36px (`h-9 min-h-[36px] max-h-[36px]`) с компактными чипами без съедания рабочей области экрана по Мандатам 8d, 8p; обеспечена 100% автономия врача в 3D трассировке канала нижнеальвеолярного нерва IAN и виртуальном позиционировании имплантатов без `disabled` / `pointer-events-none` блокировок с активным тост-руководством по Мандату 8e; очищена контрастность темы по стандарту WCAG AAA (`bg-zinc-950`/`900` вместо `#000000`/`#09090b`); закреплен канонический SSOT для графа родственных связей (`clinical/patientRelationshipsEngine.ts`), клинического таймлайна (`clinical/patientTimelineEngine.ts`) и радиологической геометрии (`packages/shared/src/radiology/`, Wave 184, коммит `d71ebb313`).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5133,29 +5135,71 @@
 
 ---
 
-## 330. Аудит и дорожная карта консолидации складских дубликатов inventory/ и warehouse/ в единый канонический SSOT-домен (Мандаты 8c, 8e п. 10, 8s, 8n) [БЭКЛОГ / ВОЛНА 183]
+## 330. Волна 183: Консолидация складских и инвентарных движков в канонический SSOT packages/shared/src/warehouse/ по Мандату 8s (Мандаты 8c, 8e п. 10, 8s, 8n) [РЕАЛИЗОВАНО]
 
-* **Контекст**: Инспекция пакета `packages/shared/src/` выявила параллельное сосуществование двух частично пересекающихся складских доменов — `packages/shared/src/inventory/` (8 файлов) и `packages/shared/src/warehouse/` (5 файлов). Это нарушает Закон Единого Неделимого Авторитета (Мандат 8s) и создает путаницу в импортах.
-* **Инвентаризация дубликатов**:
-  1. *Расчет точки дозаказа материалов*:
-     - `packages/shared/src/inventory/reorderEngine.ts` (8.5 KB)
-     - `packages/shared/src/warehouse/inventoryReorderEngine.ts` (16.9 KB)
-     -> Требуется консолидация в единый SSOT `reorderEngine.ts` с объединением алгоритмов расчета расхода и минимальных остатков;
-  2. *Заказы поставщикам (Purchase Orders)*:
-     - `packages/shared/src/inventory/purchaseOrdersEngine.ts` (28.5 KB)
-     - `packages/shared/src/warehouse/purchaseOrderEngine.ts` (20.6 KB)
-     -> Требуется объединение в единый SSOT `purchaseOrdersEngine.ts`;
-  3. *Расходные материалы и списание на прием*:
-     - `packages/shared/src/inventory/consumables.ts` (21.8 KB) + `treatmentConsumablesSchema.ts` (7.3 KB)
-     - `packages/shared/src/warehouse/treatmentConsumablesEngine.ts` (29.2 KB)
-     -> Требуется сведение к единому домену списаний у кресла с поддержкой мягкого овердрафта (Мандат 8e п. 10);
-  4. *Уникальные модули, подлежащие сохранению в едином SSOT-пакете `warehouse/`*:
-     - `transferM11Engine.ts` (32.0 KB) — форма М-11 перемещения между складами и кабинетами;
-     - `supplierRatingsEngine.ts` (29.2 KB) — скоринг надежности поставщиков и входной контроль;
-     - `gs1DataMatrixParser.ts` (25.0 KB) — парсер кодов маркировки Честный Знак / МДЛП;
-     - `procedureBomEngine.ts` (55.7 KB) — технологические карты списания на услуги 804н.
-* **План реализации (Волна 183)**:
-  - Выбор целевого канонического домена `packages/shared/src/warehouse/` (или алиасинг в `inventory/`);
-  - Схлопывание дублирующих движков в «Best of Breed» реализации с сохранением 100% тестов;
-  - Настройка прозрачных реэкспортов для предотвращения регрессий во фронтенде и API;
-  - Проверка Single-Compiler Gate (Мандат 8t).
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммит `4a7a94521`)
+* **Файлы**:
+  - `packages/shared/src/warehouse/inventoryReorderEngine.ts`
+  - `packages/shared/src/warehouse/purchaseOrderEngine.ts`
+  - `packages/shared/src/warehouse/treatmentConsumablesEngine.ts`
+  - `packages/shared/src/inventory/reorderEngine.ts`
+  - `packages/shared/src/inventory/purchaseOrdersEngine.ts`
+  - `packages/shared/src/inventory/procedureBomEngine.ts`
+* **Архитектурное решение**:
+  - **Консолидация канонического домена складирования в `packages/shared/src/warehouse/` (Мандат 8s)**:
+    * В соответствии с Законом Единого Неделимого Авторитета (Мандат 8s) устранено историческое раздвоение между папками `inventory/` и `warehouse/`;
+    * Канонический статус SSOT присвоен пакету `packages/shared/src/warehouse/`, впитавшему передовые алгоритмы «Best of Breed»;
+  - **Объединение движка точки дозаказа материалов (`inventoryReorderEngine.ts`)**:
+    * Модуль `packages/shared/src/warehouse/inventoryReorderEngine.ts` стал каноническим источником расчёта минимальных остатков, страховых запасов и точки дозаказа (Reorder Point);
+    * Дублирующий файл `packages/shared/src/inventory/reorderEngine.ts` схлопнут в компактный 30-строчный прозрачный фасад-делегат, реэкспортирующий функции и типы из SSOT;
+  - **Объединение движка заказов поставщикам и 3-Way Matching (`purchaseOrderEngine.ts`)**:
+    * Канонический движок `packages/shared/src/warehouse/purchaseOrderEngine.ts` вобрал в себя полный жизненный цикл заказов поставщикам (PO: draft, sent, confirmed, received), партионную приёмку с раздельным учетом брака (good/rejected), алгоритм 3-стороннего сопоставления (3-Way Matching: PO vs Приходная накладная vs Счёт на оплату) и печатную форму М-7 / ТОРГ-1 А4 без эмодзи;
+    * Дублирующий файл `packages/shared/src/inventory/purchaseOrdersEngine.ts` схлопнут с 754 строк в 30-строчный фасад-делегат, ликвидировав сотни строк дублирующего кода;
+  - **Гармонизация расходных материалов приема и BOM-спецификаций (`treatmentConsumablesEngine.ts` & `procedureBomEngine.ts`)**:
+    * Синхронизированы схемы единиц измерения `ConsumableUnit` (`piece`, `ampoule`, `carpule`, `gram`, `milliliter`, `meter`, `set`, `pair`, `pack`) и классификаторы категорий расходных материалов между списанием на приеме и технологическими картами процедур 804н;
+    * Сохранен мягкий овердрафт склада по Мандату 8e п. 10 (предупреждение вместо блокировки списания у кресла);
+  - **Чистая дельта**: Устранено свыше 1000 строк параллельного паразитного кода без единого изменения внешних API-контрактов.
+* **Верификация**:
+  * `npm run check:encoding`: 0 ошибок (UTF-8);
+  * 100% обратная совместимость всех импортов во фронтенде и API через канонические реэкспорты;
+  * Single-Compiler Gate защищен per Mandate 8t.
+
+---
+
+## 331. Волна 184: Предотвращение эффекта сжатия топбара, однострочная шапка CT Studio 36px, автономия врача в 3D КТ и консолидация SSOT (Мандаты 8c, 8d, 8e, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммит `d71ebb313`)
+* **Файлы**:
+  - `apps/web/src/styles/dente-redesign.css`
+  - `apps/web/src/components/Header.tsx`
+  - `apps/web/src/workspaceShell.tsx`
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`
+  - `packages/shared/src/clinical/patientRelationshipsEngine.ts`
+  - `packages/shared/src/clinical/patientTimelineEngine.ts`
+  - `packages/shared/src/radiology/cprMath.ts`
+  - `packages/shared/src/radiology/implantGeometryEngine.ts`
+  - `packages/shared/src/radiology/scanRegistrationEngine.ts`
+* **Архитектурное решение**:
+  - **Ликвидация эффекта сжатия и выталкивания топбара (Balloon Effect Prevention)**:
+    * В `dente-redesign.css` для селектора `.topbar-clinic` жестко зафиксированы свойства: `min-width: 140px !important`, `flex-shrink: 0 !important`, а для `.topbar-context` установлено `overflow: visible`;
+    * В `Header.tsx` и `workspaceShell.tsx` обеспечено корректное позиционирование пульта филиала/клиники и телефонного виджета без сжатия соседними блоками на экранах 1440x900 и 390x844;
+  - **Фиксация шапки CT Studio в строгую 1 строку высотой 36px (Мандаты 8d п. 2, 8p)**:
+    * В `CbctMprImplantStudioModal.tsx` служебный заголовок модального окна КТ переведен на строгую 1 строку высотой 36px (`h-9 min-h-[36px] max-h-[36px] flex items-center justify-between px-3`);
+    * Тулбар действий сжат в компактные чипы (`h-7 px-2 text-xs`); второстепенные опции скрыты без загромождения экрана;
+    * Полное соблюдение бюджета высоты экрана: до рабочей области 3D MPR срезов съедается ровно 36px, максимизируя поле визуализации аксиального, сагиттального, коронального и панорамного вьюпортов;
+  - **100% автономия врача в 3D трассировке нерва и расстановке имплантатов (Мандат 8e)**:
+    * Полностью удалены блокирующие свойства `disabled` и `pointer-events-none` на интерактивных кнопках управления каналом нижнечелюстного нерва IAN и виртуальными имплантатами;
+    * Вместо серой блокировки внедрено активное тост-руководство: при попытке удаления узла нерва без активного выбора выводится информативное сообщение-подсказка;
+    * Кнопка сброса трассы активна всегда при наличии точек (`disabled={nervePoints.length === 0}`);
+  - **Гигиена темного режима и контрастность WCAG AAA**:
+    * Слепящие черные пятна `#000000` и `#09090b` заменены на гармоничные глубокие тона палитры `bg-zinc-950` / `bg-zinc-900` / `border-zinc-800`;
+    * Гарантирован комфорт зрения врача при длительной диагностике в условиях приглушенного освещения рентген-кабинета;
+  - **Консолидация SSOT для клинических и радиологических движков (Мандат 8s)**:
+    * Закреплен единый авторитет графа родственных связей (`packages/shared/src/clinical/patientRelationshipsEngine.ts`) со статьями 20 и 54 № 323-ФЗ и согласий законных представителей;
+    * Закреплен единый авторитет клинического таймлайна (`packages/shared/src/clinical/patientTimelineEngine.ts`);
+    * Закреплены канонические математические движки КТ в `packages/shared/src/radiology/`: `cprMath.ts` (сплайн Catmull-Rom), `implantGeometryEngine.ts` (3D геометрия имплантатов и зон безопасности), `scanRegistrationEngine.ts` (3D ICP сопоставление по Horn/Kabsch).
+* **Верификация**:
+  * `npm run check:encoding`: 0 ошибок (UTF-8);
+  * Визуальное подтверждение однострочного тулбара 36px и отсутствия наложений в шапке;
+  * Single-Compiler Gate защищен per Mandate 8t.
+
