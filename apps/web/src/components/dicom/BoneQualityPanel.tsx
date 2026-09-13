@@ -7,6 +7,10 @@ import {
 	type ImplantSystem,
 	mischDescription,
 } from "../../utils/dicom/boneQualityEngine";
+import {
+	classifyMischBoneDensity,
+	type BoneDensityRecommendation,
+} from "./panoramicMprMath";
 
 interface Props {
 	huSamples?: number[]; // HU values sampled along the implant axis
@@ -26,11 +30,13 @@ const SYSTEMS: { value: ImplantSystem; label: string }[] = [
 ];
 
 const MISCH_COLORS: Record<string, string> = {
-	D1: "#ef4444",
-	D2: "#22c55e",
-	D3: "#f59e0b",
-	D4: "#f97316",
+	D1: "var(--red, #ef4444)",
+	D2: "var(--teal, #0d9488)",
+	D3: "var(--amber, #f59e0b)",
+	D4: "var(--orange, #f97316)",
+	D5: "var(--purple, #a855f7)",
 };
+
 
 /*
  * ПЛОТНОСТЬ КОСТИ НЕ ПРИДУМЫВАЕТСЯ.
@@ -96,13 +102,19 @@ export function BoneQualityPanel({
 	}
 
 	const zones = extractHUZones(huSamples);
+	const meanHU = Math.round(
+		huSamples.reduce((s, v) => s + v, 0) / huSamples.length,
+	);
+	const recommendation: BoneDensityRecommendation =
+		classifyMischBoneDensity(meanHU);
 	const protocol: DrillProtocol = generateDrillProtocol(
 		zones,
 		implantSystem,
 		implantDiameterMm,
 		implantLengthMm,
 	);
-	const mischColor = MISCH_COLORS[protocol.mischClass] ?? "#a1a1aa";
+	const activeClass = recommendation.mischClass;
+	const mischColor = MISCH_COLORS[activeClass] ?? "#a1a1aa";
 
 	return (
 		<div
@@ -123,7 +135,7 @@ export function BoneQualityPanel({
 				<div className="mt-2 space-y-3">
 					{/* Misch Class Badge */}
 					<div
-						className="flex items-center gap-3 p-2 rounded-lg"
+						className="flex items-start gap-3 p-2.5 rounded-lg"
 						style={{ background: "var(--glass-panel)" }}
 					>
 						<div
@@ -138,13 +150,104 @@ export function BoneQualityPanel({
 								flexShrink: 0,
 							}}
 						>
-							{protocol.mischClass}
+							{activeClass}
 						</div>
 						<div
-							className="text-xs leading-snug"
-							style={{ color: "var(--muted)" }}
+							className="text-xs leading-snug flex-1"
+							style={{ color: "var(--ink)" }}
 						>
-							{mischDescription(protocol.mischClass)}
+							<div className="font-semibold">{recommendation.label}</div>
+							<div
+								className="text-[11px] mt-0.5"
+								style={{ color: "var(--muted)" }}
+							>
+								{recommendation.description}
+							</div>
+							<div
+								className="text-[11px] font-medium mt-1"
+								style={{ color: "var(--teal)" }}
+							>
+								Средняя плотность: {meanHU} HU ({recommendation.huRange})
+							</div>
+						</div>
+					</div>
+
+					{/* Clinical Recommendations & Protocol Hints */}
+					<div
+						className="p-2.5 rounded-lg text-xs leading-relaxed border space-y-1.5"
+						style={{
+							background: "var(--paper-soft)",
+							borderColor: "var(--line)",
+							color: "var(--ink)",
+						}}
+					>
+						<div
+							className="font-semibold flex items-center gap-1.5"
+							style={{ color: "var(--amber, #f59e0b)" }}
+						>
+							<Activity className="w-3.5 h-3.5 shrink-0" />
+							Клинические рекомендации по препарированию ({activeClass}):
+						</div>
+						<div className="text-[11px]" style={{ color: "var(--ink)" }}>
+							{recommendation.clinicalAdvice}
+						</div>
+						<div className="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+							<span
+								className="px-2 py-0.5 rounded font-medium border"
+								style={{
+									background: "var(--paper-soft)",
+									borderColor: "var(--line)",
+									color: "var(--ink)",
+								}}
+							>
+								Обороты: {recommendation.drillingRpm}
+							</span>
+							<span
+								className="px-2 py-0.5 rounded font-medium border"
+								style={{
+									background: "var(--paper-soft)",
+									borderColor: "var(--line)",
+									color: "var(--ink)",
+								}}
+							>
+								Торк: {recommendation.torqueNcm}
+							</span>
+							{recommendation.corticalTap && (
+								<span
+									className="px-2 py-0.5 rounded font-bold border"
+									style={{
+										background: "var(--danger-soft, rgba(239, 68, 68, 0.15))",
+										borderColor: "var(--danger-border, rgba(239, 68, 68, 0.3))",
+										color: "var(--danger-ink, var(--ink))",
+									}}
+								>
+									КОРТИКАЛЬНЫЙ МЕТЧИК
+								</span>
+							)}
+							{recommendation.underDrilling && (
+								<span
+									className="px-2 py-0.5 rounded font-bold border"
+									style={{
+										background: "var(--warning-soft, rgba(245, 158, 11, 0.15))",
+										borderColor: "var(--warning-border, rgba(245, 158, 11, 0.3))",
+										color: "var(--warning-ink, var(--ink))",
+									}}
+								>
+									НЕДОСВЕРЛИВАНИЕ (-{recommendation.underDrillingMm} мм)
+								</span>
+							)}
+							{recommendation.osteotomeCondensation && (
+								<span
+									className="px-2 py-0.5 rounded font-bold border"
+									style={{
+										background: "var(--purple-soft, rgba(168, 85, 247, 0.15))",
+										borderColor: "var(--purple-border, rgba(168, 85, 247, 0.3))",
+										color: "var(--purple-ink, var(--ink))",
+									}}
+								>
+									ОСТЕОТОМНАЯ КОМПРЕССИЯ
+								</span>
+							)}
 						</div>
 					</div>
 
@@ -191,9 +294,17 @@ export function BoneQualityPanel({
 							{protocol.warnings.map((w) => (
 								<div
 									key={w}
-									className="text-[11px] p-2 rounded bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 flex items-center gap-1.5"
+									className="text-[11px] p-2 rounded border flex items-center gap-1.5"
+									style={{
+										background: "var(--warning-soft, rgba(245, 158, 11, 0.1))",
+										borderColor: "var(--warning-border, rgba(245, 158, 11, 0.3))",
+										color: "var(--warning-ink, var(--ink))",
+									}}
 								>
-									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+									<AlertTriangle
+										className="w-3.5 h-3.5 shrink-0"
+										style={{ color: "var(--amber, #f59e0b)" }}
+									/>
 									<span>{w}</span>
 								</div>
 							))}
@@ -208,12 +319,26 @@ export function BoneQualityPanel({
 						>
 							<span>Протокол сверления</span>
 							{protocol.underdrillingApplied && (
-								<span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80">
+								<span
+									className="text-[10px] font-bold px-1.5 py-0.5 rounded border"
+									style={{
+										background: "var(--warning-soft, rgba(245, 158, 11, 0.15))",
+										borderColor: "var(--warning-border, rgba(245, 158, 11, 0.3))",
+										color: "var(--warning-ink, var(--ink))",
+									}}
+								>
 									НЕДОСВЕРЛИВАНИЕ (МЯГКАЯ КОСТЬ)
 								</span>
 							)}
 							{protocol.corticalTapRequired && (
-								<span className="text-[10px] text-rose-700 dark:text-rose-300 font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950/80">
+								<span
+									className="text-[10px] font-bold px-1.5 py-0.5 rounded border"
+									style={{
+										background: "var(--danger-soft, rgba(239, 68, 68, 0.15))",
+										borderColor: "var(--danger-border, rgba(239, 68, 68, 0.3))",
+										color: "var(--danger-ink, var(--ink))",
+									}}
+								>
 									МЕТЧИК (ПЛОТНЫЙ КОРТИКАЛ)
 								</span>
 							)}
@@ -228,8 +353,11 @@ export function BoneQualityPanel({
 									}}
 								>
 									<div
-										className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold shrink-0"
-										style={{ color: "var(--ink)" }}
+										className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+										style={{
+											background: "var(--surface-200, var(--paper-soft))",
+											color: "var(--ink)",
+										}}
 									>
 										{step.step}
 									</div>
@@ -249,7 +377,10 @@ export function BoneQualityPanel({
 											{step.irrigation ? "• Охлаждение физраствором" : ""}
 										</div>
 										{step.note && (
-											<div className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+											<div
+												className="text-[11px] mt-0.5"
+												style={{ color: "var(--amber, #f59e0b)" }}
+											>
 												{step.note}
 											</div>
 										)}
@@ -303,25 +434,62 @@ function PanelHeader({
 }
 
 function ZoneCard({ label, hu }: { label: string; hu: number }) {
+	if (!Number.isFinite(hu)) {
+		return (
+			<div
+				className="p-2 rounded-lg text-center"
+				style={{ background: "var(--paper-soft)" }}
+			>
+				<div
+					className="text-xs truncate"
+					title={label}
+					style={{ color: "var(--muted)" }}
+				>
+					{label}
+				</div>
+				<div className="text-xs font-bold" style={{ color: "var(--muted)" }}>
+					— HU
+				</div>
+			</div>
+		);
+	}
+
 	const color =
 		hu > 1250
-			? "#ef4444"
+			? "var(--red, #ef4444)"
 			: hu >= 850
-				? "#22c55e"
+				? "var(--teal, #0d9488)"
 				: hu >= 350
-					? "#f59e0b"
-					: "#f97316";
+					? "var(--amber, #f59e0b)"
+					: hu >= 150
+						? "var(--orange, #f97316)"
+						: "var(--purple, #a855f7)";
+	const boneClass =
+		hu > 1250
+			? "D1"
+			: hu >= 850
+				? "D2"
+				: hu >= 350
+					? "D3"
+					: hu >= 150
+						? "D4"
+						: "D5";
 	return (
 		<div
 			className="p-2 rounded-lg text-center"
 			style={{ background: "var(--paper-soft)" }}
 		>
-			<div className="text-xs truncate" title={label} style={{ color: "var(--muted)" }}>
+			<div
+				className="text-xs truncate"
+				title={label}
+				style={{ color: "var(--muted)" }}
+			>
 				{label}
 			</div>
 			<div className="text-xs font-bold" style={{ color }}>
-				{Math.round(hu)} HU
+				{Math.round(hu)} HU ({boneClass})
 			</div>
 		</div>
 	);
 }
+

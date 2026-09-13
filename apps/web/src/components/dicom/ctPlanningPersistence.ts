@@ -316,17 +316,27 @@ function worldPointsOf(value: unknown): WorldPoint3[] {
 export function parseCtPlanningMarkup(planning: unknown): CtPlanningMarkup {
 	if (!planning || typeof planning !== "object") return emptyCtPlanningMarkup();
 	const row = planning as Record<string, unknown>;
+	const nervePoints = worldPointsOf(row.nervePointsJson);
 	const implants: StoredImplant[] = [];
 	for (const candidate of parseJsonArray(row.implantsJson)) {
 		const implant = storedImplantOf(candidate);
-		if (implant) implants.push(implant);
+		if (implant) {
+			if (nervePoints.length > 0 && implant.distanceToNerve === null) {
+				const safety = validateImplantNerveSafety(implant, nervePoints);
+				if (safety) {
+					implant.distanceToNerve = safety.distanceToNerveMm;
+				}
+			}
+			implants.push(implant);
+		}
 	}
 	return {
 		splinePoints: worldPointsOf(row.splinePointsJson),
-		nervePoints: worldPointsOf(row.nervePointsJson),
+		nervePoints,
 		implants,
 	};
 }
+
 
 /**
  * Текст отказа для врача: что произошло, почему, что делать.
@@ -430,6 +440,24 @@ async function jsonBodyOf(response: Response): Promise<unknown> {
 }
 
 /**
+ * Склонение существительных с числительными в русском языке.
+ */
+export function pluralizeRu(
+	n: number,
+	one: string,
+	few: string,
+	many: string,
+): string {
+	const absN = Math.abs(Math.round(n));
+	const mod10 = absN % 10;
+	const mod100 = absN % 100;
+	if (mod100 >= 11 && mod100 <= 19) return `${n} ${many}`;
+	if (mod10 === 1) return `${n} ${one}`;
+	if (mod10 >= 2 && mod10 <= 4) return `${n} ${few}`;
+	return `${n} ${many}`;
+}
+
+/**
  * ЗАГОЛОВКИ. Собираются `denteAdminSecretRequestHeaders` — тем же способом, что и
  * остальной клиент. Запрос без них молча получает 401, экран при этом выглядит
  * пустым, а не сломанным, и этот класс дефекта в дереве ловили многократно.
@@ -443,6 +471,14 @@ export async function saveCtPlanningMarkup(
 	studyInstanceUid: string,
 	markup: CtPlanningMarkup,
 ): Promise<CtPlanningSaveOutcome> {
+	if (ctPlanningMarkupIsEmpty(markup)) {
+		return {
+			status: "refused",
+			message:
+				"Разметка пуста: нечего сохранять. Обведите зубную дугу или добавьте имплантат перед сохранением.",
+		};
+	}
+
 	let response: Response;
 	try {
 		response = await fetch(CT_PLANNING_SAVE_URL, {
@@ -510,10 +546,311 @@ export function ctPlanningRestoredLabel(
 	if (ctPlanningMarkupIsEmpty(markup)) return null;
 	const parts: string[] = [];
 	if (markup.splinePoints.length > 0)
-		parts.push(`точек дуги ${markup.splinePoints.length}`);
+		parts.push(
+			`${pluralizeRu(markup.splinePoints.length, "точка", "точки", "точек")} дуги`,
+		);
 	if (markup.nervePoints.length > 0)
-		parts.push(`точек канала ${markup.nervePoints.length}`);
+		parts.push(
+			`${pluralizeRu(markup.nervePoints.length, "точка", "точки", "точек")} канала`,
+		);
 	if (markup.implants.length > 0)
-		parts.push(`имплантов ${markup.implants.length}`);
+		parts.push(
+			pluralizeRu(
+				markup.implants.length,
+				"имплантат",
+				"имплантата",
+				"имплантатов",
+			),
+		);
 	return `Разметка этого снимка восстановлена из базы: ${parts.join(", ")}.`;
 }
+
+// ---------------------------------------------------------------------------
+// IMPLANT SAFETY CLEARANCE ENGINE & MANDIBULAR NERVE / SINUS VALIDATOR
+// ---------------------------------------------------------------------------
+
+export const MANDIBULAR_NERVE_SAFETY_THRESHOLD_MM = 1.5;
+export const SINUS_FLOOR_SAFETY_THRESHOLD_MM = 1.5;
+export const NEIGHBOR_IMPLANT_SAFETY_THRESHOLD_MM = 3.0;
+
+function sub3(
+	a: [number, number, number],
+	b: [number, number, number],
+): [number, number, number] {
+	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+
+function dot3(
+	a: [number, number, number],
+	b: [number, number, number],
+): number {
+	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+/** Shortest distance from 3D point p to line segment [a, b]. */
+export function distPointToSegment3(
+	p: [number, number, number],
+	a: [number, number, number],
+	b: [number, number, number],
+): number {
+	const ab = sub3(b, a);
+	const len2 = dot3(ab, ab);
+	let t = len2 > 0 ? dot3(sub3(p, a), ab) / len2 : 0;
+	t = Math.max(0, Math.min(1, t));
+	const c: [number, number, number] = [
+		a[0] + ab[0] * t,
+		a[1] + ab[1] * t,
+		a[2] + ab[2] * t,
+	];
+	return Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]);
+}
+
+/** Shortest distance between 3D point p and a polyline. */
+export function distPointToPolyline3(
+	p: [number, number, number],
+	poly: readonly [number, number, number][],
+): number {
+	if (poly.length === 0) return Number.POSITIVE_INFINITY;
+	if (poly.length === 1) {
+		return Math.hypot(
+			p[0] - poly[0]![0],
+			p[1] - poly[0]![1],
+			p[2] - poly[0]![2],
+		);
+	}
+	let min = Number.POSITIVE_INFINITY;
+	for (let i = 0; i < poly.length - 1; i++) {
+		const d = distPointToSegment3(p, poly[i]!, poly[i + 1]!);
+		if (d < min) min = d;
+	}
+	return min;
+}
+
+/**
+ * Shortest distance between two 3D segments [p1, q1] and [p2, q2].
+ * Standard clamped closest-point-of-two-segments solution.
+ */
+export function distSegmentToSegment3(
+	p1: [number, number, number],
+	q1: [number, number, number],
+	p2: [number, number, number],
+	q2: [number, number, number],
+): number {
+	const d1 = sub3(q1, p1);
+	const d2 = sub3(q2, p2);
+	const r = sub3(p1, p2);
+	const a = dot3(d1, d1);
+	const e = dot3(d2, d2);
+	const f = dot3(d2, r);
+	const EPS = 1e-9;
+
+	let s: number;
+	let t: number;
+	if (a <= EPS && e <= EPS) {
+		return Math.hypot(r[0], r[1], r[2]);
+	}
+	if (a <= EPS) {
+		s = 0;
+		t = Math.max(0, Math.min(1, f / e));
+	} else {
+		const c = dot3(d1, r);
+		if (e <= EPS) {
+			t = 0;
+			s = Math.max(0, Math.min(1, -c / a));
+		} else {
+			const b = dot3(d1, d2);
+			const denom = a * e - b * b;
+			s = denom > EPS ? Math.max(0, Math.min(1, (b * f - c * e) / denom)) : 0;
+			t = (b * s + f) / e;
+			if (t < 0) {
+				t = 0;
+				s = Math.max(0, Math.min(1, -c / a));
+			} else if (t > 1) {
+				t = 1;
+				s = Math.max(0, Math.min(1, (b - c) / a));
+			}
+		}
+	}
+	const c1: [number, number, number] = [
+		p1[0] + d1[0] * s,
+		p1[1] + d1[1] * s,
+		p1[2] + d1[2] * s,
+	];
+	const c2: [number, number, number] = [
+		p2[0] + d2[0] * t,
+		p2[1] + d2[1] * t,
+		p2[2] + d2[2] * t,
+	];
+	return Math.hypot(c1[0] - c2[0], c1[1] - c2[1], c1[2] - c2[2]);
+}
+
+/** Shortest distance between line segment [a, b] and a 3D polyline. */
+export function distSegmentToPolyline3(
+	a: [number, number, number],
+	b: [number, number, number],
+	poly: readonly [number, number, number][],
+): number {
+	if (poly.length === 0) return Number.POSITIVE_INFINITY;
+	if (poly.length === 1 && poly[0]) return distPointToSegment3(poly[0], a, b);
+	let min = Number.POSITIVE_INFINITY;
+	for (let i = 0; i < poly.length - 1; i++) {
+		const pStart = poly[i]!;
+		const pEnd = poly[i + 1]!;
+		const d = distSegmentToSegment3(a, b, pStart, pEnd);
+		if (d < min) min = d;
+	}
+	return min;
+}
+
+export interface ImplantSafetyWarning {
+	implantId: string;
+	fdiCode: string;
+	distanceToNerveMm: number;
+	apexDistanceToNerveMm: number;
+	thresholdMm: number;
+	status: "safe" | "warning" | "collision";
+	isSafe: boolean;
+	messageRu: string;
+}
+
+export interface PlanSafetyValidationResult {
+	isSafe: boolean;
+	worstStatus: "safe" | "warning" | "collision";
+	warnings: ImplantSafetyWarning[];
+	summaryRu: string;
+}
+
+/**
+ * Validates surface-to-surface clearance of a planned implant against the mandibular nerve canal.
+ * Clinical standard: minimum 1.5 mm clearance required to avoid compression neuropathy / paresthesia.
+ */
+export function validateImplantNerveSafety(
+	implant: StoredImplant,
+	nervePoints: readonly WorldPoint3[],
+	options?: {
+		thresholdMm?: number;
+		nerveTubeRadiusMm?: number;
+	},
+): ImplantSafetyWarning | null {
+	if (nervePoints.length === 0) return null;
+
+	const threshold =
+		options?.thresholdMm ?? MANDIBULAR_NERVE_SAFETY_THRESHOLD_MM;
+	const nerveTubeRadius = options?.nerveTubeRadiusMm ?? 0;
+	const implantRadius = (implant.diameter || 4.0) / 2;
+
+	const poly: [number, number, number][] = nervePoints.map((p) => [
+		p.x,
+		p.y,
+		p.z,
+	]);
+	const centerlineDist = distSegmentToPolyline3(
+		implant.startWorld,
+		implant.endWorld,
+		poly,
+	);
+	const surfaceClearanceMm = centerlineDist - implantRadius - nerveTubeRadius;
+	const apexDist =
+		distPointToPolyline3(implant.endWorld, poly) - nerveTubeRadius;
+
+	const toothLabel = implant.fdiCode ? `зуб #${implant.fdiCode}` : implant.id;
+	let status: "safe" | "warning" | "collision" = "safe";
+	let isSafe = true;
+	let messageRu = `Безопасный коридор соблюдён: зазор ${surfaceClearanceMm.toFixed(1)} мм (норма >= ${threshold.toFixed(1)} мм).`;
+
+	if (surfaceClearanceMm <= 0) {
+		status = "collision";
+		isSafe = false;
+		messageRu = `КРИТИЧЕСКАЯ КОЛЛИЗИЯ: имплантат (${toothLabel}) пересекает нижнечелюстной канал! Высокий риск необратимой парестезии тройничного нерва. Требуется укорочение или изменение наклона.`;
+	} else if (surfaceClearanceMm < threshold) {
+		status = "warning";
+		isSafe = false;
+		const deficit = (threshold - surfaceClearanceMm).toFixed(1);
+		messageRu = `ОПАСНОЕ ПРИБЛИЖЕНИЕ: зазор до нижнечелюстного нерва у ${toothLabel} составляет ${surfaceClearanceMm.toFixed(1)} мм (менее безопасного порога ${threshold.toFixed(1)} мм). Рекомендуется укоротить имплантат на ${deficit} мм.`;
+	}
+
+	return {
+		implantId: implant.id,
+		fdiCode: implant.fdiCode,
+		distanceToNerveMm: Number(surfaceClearanceMm.toFixed(2)),
+		apexDistanceToNerveMm: Number(apexDist.toFixed(2)),
+		thresholdMm: threshold,
+		status,
+		isSafe,
+		messageRu,
+	};
+}
+
+/**
+ * Validates all implants in the CT planning case against anatomical safety constraints.
+ * Auto-populates `implant.distanceToNerve` with accurate surface-to-surface clearance.
+ */
+export function validatePlanSafety(
+	markup: CtPlanningMarkup,
+	options?: {
+		thresholdMm?: number;
+		nerveTubeRadiusMm?: number;
+	},
+): PlanSafetyValidationResult {
+	if (markup.implants.length === 0) {
+		return {
+			isSafe: true,
+			worstStatus: "safe",
+			warnings: [],
+			summaryRu: "В плане нет размещенных имплантатов.",
+		};
+	}
+
+	if (markup.nervePoints.length === 0) {
+		return {
+			isSafe: true,
+			worstStatus: "safe",
+			warnings: [],
+			summaryRu: "Нижнечелюстной канал не размечен врачом.",
+		};
+	}
+
+	const warnings: ImplantSafetyWarning[] = [];
+	let hasCollision = false;
+	let hasWarning = false;
+
+	for (const implant of markup.implants) {
+		const evalResult = validateImplantNerveSafety(
+			implant,
+			markup.nervePoints,
+			options,
+		);
+		if (evalResult) {
+			implant.distanceToNerve = evalResult.distanceToNerveMm;
+			if (!evalResult.isSafe) {
+				warnings.push(evalResult);
+				if (evalResult.status === "collision") hasCollision = true;
+				if (evalResult.status === "warning") hasWarning = true;
+			}
+		}
+	}
+
+	const worstStatus: "safe" | "warning" | "collision" = hasCollision
+		? "collision"
+		: hasWarning
+			? "warning"
+			: "safe";
+	const isSafe = !hasCollision && !hasWarning;
+
+	const collisionCount = warnings.filter(
+		(w) => w.status === "collision",
+	).length;
+	const summaryRu = hasCollision
+		? `В плане обнаружены критические коллизии с нижнечелюстным каналом (${pluralizeRu(collisionCount, "имплантат", "имплантата", "имплантатов")}).`
+		: hasWarning
+			? `Внимание: обнаружено опасное сближение с нижнечелюстным каналом (<1.5 мм) у ${pluralizeRu(warnings.length, "имплантата", "имплантатов", "имплантатов")}.`
+			: "Все имплантаты установлены с соблюдением порога безопасности (>=1.5 мм от нервного канала).";
+
+	return {
+		isSafe,
+		worstStatus,
+		warnings,
+		summaryRu,
+	};
+}
+
