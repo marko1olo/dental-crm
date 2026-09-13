@@ -48,6 +48,7 @@ import {
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
 	createDefaultAdultTeethData,
+	SurfaceSelector,
 	TOOTH_STATE_LABELS,
 	ToothChart,
 	type ToothData,
@@ -1609,6 +1610,14 @@ export const OdontogramModule = ({
 											);
 										})}
 									</div>
+									<details className="mt-1">
+										<summary className="text-[11px] text-[var(--muted,#64748b)] cursor-pointer hover:underline text-center">
+											Анатомическая 2D схема
+										</summary>
+										<div className="flex justify-center p-1">
+											<SurfaceSelector selected={activeSurfaces} onChange={setActiveSurfaces} size={60} />
+										</div>
+									</details>
 								</div>
 
 								{/* 1-Tap Tooth Status Assignment */}

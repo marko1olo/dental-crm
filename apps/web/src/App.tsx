@@ -2050,18 +2050,7 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-					{perspective === "chairsider" ? (
-						<ChairsiderPerspectiveView />
-					) : perspective === "frontdesk" ? (
-						<FrontdeskPerspectiveView />
-					) : perspective === "presentation" ? (
-						<CasePresentationView />
-					) : perspective === "orthodontic" ? (
-						<OrthodonticPerspectiveView />
-					) : perspective === "pediatric" ? (
-						<PediatricPerspectiveView />
-					) : (
-						<>
+
 							{currentView === "shift" ? (
 						/*
           Граница и Suspense здесь появились последними из всех разделов, и это
@@ -2372,69 +2361,73 @@ export function App() {
 											</section>
 										}
 									>
-										<ScheduleView
-											appointmentLabels={appointmentLabels}
-											appointmentReadinessById={appointmentReadinessById}
-											appointmentReadinessLabels={appointmentReadinessLabels}
-											appointmentScheduleDraftFromAppointment={
-												appointmentScheduleDraftFromAppointment
-											}
-											closeAppointmentEditor={closeAppointmentEditor}
-											createAppointmentFromDraft={createAppointmentFromDraft}
-											dashboard={dashboard}
-											editingAppointmentId={editingAppointmentId}
-											formatTime={formatTime}
-											fromDateTimeLocalValue={fromDateTimeLocalValue}
-											lockScheduleAdminSession={() =>
-												lockTelegramAdminSession("schedule")
-											}
-											newAppointmentError={newAppointmentError}
-											normalizedAppointmentStatus={normalizedAppointmentStatus}
-											normalizedAppointmentStatusFilter={
-												normalizedAppointmentStatusFilter
-											}
-											openAppointmentEditor={openAppointmentEditor}
-											openScheduleWarning={openScheduleWarning}
-											patientName={patientName}
-											recommendedActionPriorityLabels={
-												recommendedActionPriorityLabels
-											}
-											resetNewAppointmentDraft={resetNewAppointmentDraft}
-											saveAppointmentSchedule={saveAppointmentSchedule}
-											shiftWarnings={shiftWarnings}
-											sortedAppointments={sortedAppointments}
-											staffRoleLabels={staffRoleLabels}
-											scheduleAdminSecretDraft={scheduleAdminSecretDraft}
-											scheduleAdminSecretSession={scheduleAdminSecretSession}
-											toDateTimeLocalValue={toDateTimeLocalValue}
-											unlockScheduleAdminSession={() =>
-												unlockTelegramAdminSession("schedule")
-											}
-											updateAppointmentScheduleDraft={
-												updateAppointmentScheduleDraft
-											}
-											updateNewAppointmentDraft={updateNewAppointmentDraft}
-											visibleScheduleSuggestions={visibleScheduleSuggestions}
-											// Нужен для живого обновления сетки, когда запись создал или
-											// перенёс другой администратор.
-											//
-											// ЗДЕСЬ СТОЯЛО «этот ScheduleView отрисован ВЫШЕ
-											// AppLogicProvider, поэтому useAppLogicContext() здесь пуст».
-											// ЭТО НЕВЕРНО и было неверно с тех пор, как провайдер обнял всё
-											// рабочее место: он открывается на строке 2509 и закрывается на
-											// 5070, а этот вызов — на 3947, то есть ВНУТРИ. Утверждение
-											// опасно вдвойне: во-первых, оно объясняло пропсы причиной,
-											// которой нет; во-вторых, «контекст здесь пуст» описывало
-											// выдуманный пустой объект, которого больше не существует —
-											// useAppLogicContext() вне провайдера теперь бросает исключение
-											// (contexts/AppLogicContext.tsx).
-											//
-											// Пропс остаётся, и это осознанно: экран получает loadDashboard
-											// явно, а не выуживает его из общего объекта, так видно, кто чем
-											// пользуется. Менять на чтение из контекста без прогона живого
-											// расписания не за чем.
-											loadDashboard={loadDashboard}
-										/>
+										{perspective === "frontdesk" ? (
+											<FrontdeskPerspectiveView />
+										) : (
+											<ScheduleView
+												appointmentLabels={appointmentLabels}
+												appointmentReadinessById={appointmentReadinessById}
+												appointmentReadinessLabels={appointmentReadinessLabels}
+												appointmentScheduleDraftFromAppointment={
+													appointmentScheduleDraftFromAppointment
+												}
+												closeAppointmentEditor={closeAppointmentEditor}
+												createAppointmentFromDraft={createAppointmentFromDraft}
+												dashboard={dashboard}
+												editingAppointmentId={editingAppointmentId}
+												formatTime={formatTime}
+												fromDateTimeLocalValue={fromDateTimeLocalValue}
+												lockScheduleAdminSession={() =>
+													lockTelegramAdminSession("schedule")
+												}
+												newAppointmentError={newAppointmentError}
+												normalizedAppointmentStatus={normalizedAppointmentStatus}
+												normalizedAppointmentStatusFilter={
+													normalizedAppointmentStatusFilter
+												}
+												openAppointmentEditor={openAppointmentEditor}
+												openScheduleWarning={openScheduleWarning}
+												patientName={patientName}
+												recommendedActionPriorityLabels={
+													recommendedActionPriorityLabels
+												}
+												resetNewAppointmentDraft={resetNewAppointmentDraft}
+												saveAppointmentSchedule={saveAppointmentSchedule}
+												shiftWarnings={shiftWarnings}
+												sortedAppointments={sortedAppointments}
+												staffRoleLabels={staffRoleLabels}
+												scheduleAdminSecretDraft={scheduleAdminSecretDraft}
+												scheduleAdminSecretSession={scheduleAdminSecretSession}
+												toDateTimeLocalValue={toDateTimeLocalValue}
+												unlockScheduleAdminSession={() =>
+													unlockTelegramAdminSession("schedule")
+												}
+												updateAppointmentScheduleDraft={
+													updateAppointmentScheduleDraft
+												}
+												updateNewAppointmentDraft={updateNewAppointmentDraft}
+												visibleScheduleSuggestions={visibleScheduleSuggestions}
+												// Нужен для живого обновления сетки, когда запись создал или
+												// перенёс другой администратор.
+												//
+												// ЗДЕСЬ СТОЯЛО «этот ScheduleView отрисован ВЫШЕ
+												// AppLogicProvider, поэтому useAppLogicContext() здесь пуст».
+												// ЭТО НЕВЕРНО и было неверно с тех пор, как провайдер обнял всё
+												// рабочее место: он открывается на строке 2509 и закрывается на
+												// 5070, а этот вызов — на 3947, то есть ВНУТРИ. Утверждение
+												// опасно вдвойне: во-первых, оно объясняло пропсы причиной,
+												// которой нет; во-вторых, «контекст здесь пуст» описывало
+												// выдуманный пустой объект, которого больше не существует —
+												// useAppLogicContext() вне провайдера теперь бросает исключение
+												// (contexts/AppLogicContext.tsx).
+												//
+												// Пропс остаётся, и это осознанно: экран получает loadDashboard
+												// явно, а не выуживает его из общего объекта, так видно, кто чем
+												// пользуется. Менять на чтение из контекста без прогона живого
+												// расписания не за чем.
+												loadDashboard={loadDashboard}
+											/>
+										)}
 									</Suspense>
 									{/*
               Утренний обзвон живёт в ScheduleView: кнопка «Подтверждения» рядом
@@ -2497,7 +2490,17 @@ export function App() {
 											</section>
 										}
 									>
-										<VisitView />
+										{perspective === "chairsider" ? (
+											<ChairsiderPerspectiveView />
+										) : perspective === "pediatric" ? (
+											<PediatricPerspectiveView />
+										) : perspective === "orthodontic" ? (
+											<OrthodonticPerspectiveView />
+										) : perspective === "presentation" ? (
+											<CasePresentationView />
+										) : (
+											<VisitView />
+										)}
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
@@ -3399,8 +3402,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-						</>
-					)}
 					<VoiceAssistantUI
 						onNavigate={(view) => {
 							setCurrentView(view);

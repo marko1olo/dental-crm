@@ -948,7 +948,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/offline/ClinicalConflictModal.tsx:ClinicalConflictModal",
 	"components/orthodontics/OrthodonticExaminationCard.tsx:OrthodonticExaminationCard",
 	"components/orthodontics/OrthodonticStudioModal.tsx:OrthodonticStudioModal",
-	"components/orthopedics/OrthopedicsChairsidePanel.tsx:OrthopedicsChairsidePanel",
 	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
 	"components/patient-portal/PatientWebappPortalModal.tsx:PatientWebappPortalModal",
 	"components/patients/PatientDetailModal.tsx:PatientDetailModal",

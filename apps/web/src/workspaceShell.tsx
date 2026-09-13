@@ -538,6 +538,16 @@ export function PerspectiveSwitcher() {
 						title={perspectiveDescriptions[mode]}
 						onClick={(event) => {
 							setPerspective(mode);
+							if (
+								mode === "chairsider" ||
+								mode === "pediatric" ||
+								mode === "orthodontic" ||
+								mode === "presentation"
+							) {
+								window.location.hash = "visit";
+							} else if (mode === "frontdesk") {
+								window.location.hash = "schedule";
+							}
 							event.currentTarget.closest("details")?.removeAttribute("open");
 						}}
 					>
