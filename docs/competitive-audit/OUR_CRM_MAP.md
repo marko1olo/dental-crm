@@ -103,7 +103,8 @@
   - **Математическое ядро CPR (Curved Planar Reformation) и нормали зубной дуги**: Catmull-Rom сплайн-интерполяция зубной дуги по 7–9 анатомическим ориентирам челюсти, вычисление векторов касательных и нормалей Френе-Серре в аксиальной плоскости, генерация ортогональных кросс-секционных срезов с шагом 1.0–2.0 мм и толщиной 0.5–20 мм (`cprMath.ts`, `cprPanoramicEngine.ts`, `panoramicMprMath.ts`, `panoramicArch.ts`); ликвидация 375+ строк дублирующего кода из `panoramicMprMath.ts` с делегированием в `@dental/shared/radiology` per Mandate 8s (коммит `f333f5403`).
   - **Анатомическая классификация плотности кости по Misch (D1..D5 HU) и рекомендации**: D1 > 1250 HU, D2 850..1250 HU, D3 350..850 HU, D4 150..350 HU, D5 < 150 HU с автоматической выдачей рекомендаций по протоколу препарирования (стандартное, under-drilling, биконденсация, метчик) и торку (15–45 Н·см) (`boneQualityEngine.ts`, `cbctCropBox.ts`, `BoneQualityPanel.tsx`); согласование порога D5 (<150 HU) для показаний к направленной костной регенерации (GBR/НКР) (коммит `f333f5403`).
   - **Прецизионные калиперы измерений КТ (`dicomMeasurementMath.ts`)**: 2D/3D евклидовы расстояния с учетом анизотропного воксельного масштабирования (`rowSpacing`, `columnSpacing`, `sliceThickness`), 2D/3D углы (скалярное произведение и арккосинус с выводом в градусах), длина сложных полилиний, статистический анализ замкнутых областей интереса ROI (площадь в мм² по формуле Гаусса, число вокселей, средний HU, стандартное отклонение, min/max), линейное профилирование плотности (HU line profile) вдоль произвольной 3D траектории с субвоксельной интерполяцией.
-  - **Хирургический каталог имплантатов и параметров втулок (`implantCatalog.ts`)**: Промышленные системы Nobel Biocare, Straumann, Osstem, Dentium, Universal с полным набором диаметров (3.0–5.5 мм), длин (7.0–18.0 мм), цветовым кодированием ортопедических платформ (NP розовый, RP золотистый, WP синий) и габаритами направляющих втулок хирургических шаблонов (диаметр, высота, offset 8–12 мм) для интеграции со студией планирования и 3D-печатью.
+  - **Хирургический каталог имплантатов (`implantCatalog.ts`), интеграция Astra Tech OsseoSpeed EV и дедупликация по Мандату 8s (коммит `ca2e977ae`)**: 6 промышленных систем имплантатов: Nobel Biocare (Active, Replace CC, Branemark), Straumann (BLX, Bone Level, Standard Plus), Osstem (TSIII SA/CA, MS), Dentium (SuperLine, SimpleLine II), Astra Tech Implant System EV (Dentsply Sirona Sweden; OsseoSpeed EV 3.6, 4.2, 4.8, 5.4 с официальной цветовой маркировкой платформ Green Ø3.0, Purple Ø3.6, Yellow Ø4.2, Blue Ø4.8, Brown Ø5.4) и Universal. Полный спектр диаметров (3.0–5.5 мм), длин (6.0–18.0 мм), заводские параметры направляющих втулок (диаметр, высота, offset 8–12 мм). Полная дедупликация по Мандату 8s: файл `apps/web/src/components/implants/implantCatalog.ts` сокращен с 1012 до 260 строк эффективного кода (-752 строки чистого дублирования) и преобразован в прозрачный фасад-делегат над каноническим источником `apps/web/src/components/dicom/implantCatalog.ts`.
+  - **Железная граница КТ в CRM (Мандаты 8i и 8k)**: Строгое ограничение функционала КТ амбулаторными потребностями врача-стоматолога у кресла — мультипланарная реконструкция DICOM MPR, денситометрия кости по Misch (D1..D5 HU), аналитический контроль клиренса нижнечелюстного нерва IAN ($\ge 1.5$ мм) и экспорт виртуальных 3D-координат имплантатов для зуботехнической лаборатории. В CRM категорически исключен тяжелый лабораторный CAD/CAM блоат (генераторы хирургических шаблонов, CSG boolean сшивка сеток, слайсинг для 3D-принтеров) — клиника лечит пациентов, а не заменяет софт CAD/CAM-лаборатории.
   - **Аналитическое пересечение срезов и референсные линии MPR (`sliceIntersectionMath.ts`, коммит `36cbce21f`)**: расчет взаимного пересечения плоскостей срезов в замкнутой векторной форме $\mathbf{n}_1 \cdot \mathbf{X} = d_1$ и $\mathbf{n}_2 \cdot \mathbf{X} = d_2$ без Three.js, 3D/2D клиппинг Лианга-Барски объемами КТ и вьюпортами, построение наклонного базиса Френе-Серре для кросс-секций с клиническим углом наклона $\theta \in [-30^\circ, +30^\circ]$, референсные перекрестия для Axial, Coronal, Sagittal, Cross-Section и Panoramic на частоте 60 FPS с Zero-Allocation буферами `SliceIntersectionScratch`.
   - **Аналитический расчет и валидация клиренса нижнечелюстного нерва IAN (>=1.5 мм)**: аналитический расчет расстояния от апикальной части виртуального имплантата до ломаной канала нижнеальвеолярного нерва (Inferior Alveolar Nerve) с буфером безопасности 1.5 мм (статусы safe, warning <1.5 мм, collision <=0 мм) без блокировки врача (`cbctSafetyEngine.ts`, `implantSafetyClearance.ts`, `ctPlanningPersistence.ts`, `cbctSafetyAndMisch.test.ts`).
   - Унифицированный модуль цефалометрии ТРГ `CephalometricAnalysisModal.tsx` с голосовой диктовкой анатомических ориентиров (коммит `95128f01e`).
@@ -173,6 +174,7 @@
   - Мобильный портал смен врача `DoctorMobileShiftModal.tsx` со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенной фиксацией явок.
   - Журнал автоклавирования и стерилизационных партий (`sterilization.ts`).
   - Гостевой портал зуботехнических лабораторий (`GuestLabPortal.tsx`).
+  - **Аудит и дорожная карта консолидации складских дубликатов (Мандат 8s / Волна 183)**: В ходе аудита пакета `@dental/shared` выявлено параллельное существование двух складских доменов: `packages/shared/src/inventory/` (8 модулей) и `packages/shared/src/warehouse/` (6 модулей). Зафиксированы функциональные дубли: расчет точек перезаказа (`inventory/reorderEngine.ts` vs `warehouse/inventoryReorderEngine.ts`), заказы поставщикам (`inventory/purchaseOrdersEngine.ts` vs `warehouse/purchaseOrderEngine.ts`), нормы списания расходников (`inventory/consumables.ts` vs `warehouse/treatmentConsumablesEngine.ts`). Сформирована дорожная карта консолидации в единый канонический SSOT с сохранением уникальных возможностей (типовая форма М-11, парсинг GS1 DataMatrix, спецификации технологических карт процедур BOM и рейтинг надежности поставщиков).
 
 ### 2.9. Умная миграция данных с конкурентов (Smart Imports)
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
@@ -3241,11 +3243,27 @@
 - **Файлы**: `apps/web/src/components/Header.css`, `apps/web/src/components/Header.tsx`, `apps/web/src/components/schedule/AppointmentHoverHud.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`.
 - **Тесты**: `Header.test.ts` PASS, `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t).
 
-
-
-
-
-
-
-
-
+### 2.10.263. Волна 182: Дедупликация каталога имплантатов implantCatalog по Мандату 8s, интеграция системы Astra Tech OsseoSpeed EV, железная граница КТ и аудит складских дубликатов (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8s, 8t)
+- **Идея & Бизнес-эффект**: Ликвидация 752 строк дублирующего кода в каталоге имплантатов по Мандату 8s (коммит `ca2e977ae`), интеграция премиальной шведской системы Astra Tech Implant System EV (Dentsply Sirona) с полной линейкой типоразмеров и официальной цветовой кодировкой платформ, фиксация Железной границы КТ по Мандату 8i (чистая амбулаторная диагностика и экспорт координат без лабораторного CAD/CAM/CSG блоата) и проведение глубокого аудита складских дубликатов `packages/shared/src/inventory/` vs `warehouse/` для подготовки бесшовного объединения в Волне 183.
+- **Архитектурные механизмы**:
+  1. *Глубокая дедупликация `implantCatalog.ts` по Мандату 8s (коммит `ca2e977ae`)*:
+     - Исторический файл `apps/web/src/components/implants/implantCatalog.ts` (1012 строк) содержал практически 100% копию `apps/web/src/components/dicom/implantCatalog.ts`;
+     - Модуль в `components/implants/` схлопнут до компактного фасада-делегата (260 строк эффективной логики, -752 строки дублирования), реэкспортирующего канонические типы и пресеты из `components/dicom/implantCatalog.ts`;
+     - Сохранены все интерфейсы обратной совместимости (`ImplantItem`, `ImplantSystem`, `ImplantPlatform`, `STANDARD_IMPLANTS`), исключая регрессии во внешних компонентах.
+  2. *Интеграция Astra Tech Implant System EV (Dentsply Sirona Sweden)*:
+     - В канонический каталог `apps/web/src/components/dicom/implantCatalog.ts` добавлена система `astra-tech-ev`:
+       * Линейка платформ: Green (Ø3.0 мм, узкая), Purple (Ø3.6 мм), Yellow (Ø4.2 мм), Blue (Ø4.8 мм), Brown (Ø5.4 мм, широкая);
+       * Длины имплантатов: от 6.0 до 17.0 мм с микрорезьбой шейки MicroThread и поверхностью OsseoSpeed;
+       * Навигационные втулки: диаметр 5.0 мм, высота 5.0 мм, offset 9.0 мм;
+     - Обновлен нормализатор `normalizeSystemId` и канонический реестр `CANONICAL_IMPLANT_SYSTEMS` (Nobel Biocare, Straumann, Osstem, Dentium, Astra Tech, Universal).
+  3. *Железная граница функционала КТ (Мандаты 8i и 8k)*:
+     - Строгое разграничение: CRM частной клиники решает клинические задачи врача у кресла, а не конкурирует с лабораторными CAD/CAM пакетами (Exocad, 3Shape);
+     - Разрешенный scope КТ: загрузка DICOM, мультипланарная реконструкция MPR (Axial, Coronal, Sagittal, Cross-Section, Panoramic), денситометрия Misch D1..D5 HU, аналитический клиренс IAN-нерва ($\ge 1.5$ мм), сохранение 3D-координат и углов наклона виртуальных имплантатов;
+     - Запрещенный scope: генераторы хирургических шаблонов, булевы CSG-операции сшивки полигональных сеток и слайсинг для 3D-принтеров (задачи зуботехнической лаборатории).
+  4. *Аудит складских дубликатов `inventory/` vs `warehouse/`*:
+     - Детальная ревизия структуры `@dental/shared`:
+       * Пересечения: расчет точки перезаказа (`inventory/reorderEngine.ts` vs `warehouse/inventoryReorderEngine.ts`), заказы поставщикам (`inventory/purchaseOrdersEngine.ts` vs `warehouse/purchaseOrderEngine.ts`), списание расходников (`inventory/consumables.ts` vs `warehouse/treatmentConsumablesEngine.ts`);
+       * Уникальные модули: межскладское перемещение по форме М-11 (`warehouse/transferM11Engine.ts`), парсер маркировки Честный Знак / GS1 DataMatrix (`inventory/gs1DataMatrixParser.ts`), BOM-спецификации технологических карт (`inventory/procedureBomEngine.ts`), рейтинг поставщиков (`inventory/supplierRatingsEngine.ts`);
+     - Подготовлена архитектурная дорожная карта объединения в единый SSOT в Волне 183.
+- **Файлы**: `apps/web/src/components/dicom/implantCatalog.ts`, `apps/web/src/components/implants/implantCatalog.ts`, `packages/shared/src/inventory/*`, `packages/shared/src/warehouse/*`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t), 326/326 фичей со статусом [ДА] (100% паритет).
