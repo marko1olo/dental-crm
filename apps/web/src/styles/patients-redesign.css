@@ -383,12 +383,13 @@
 
 .patient-row h3 {
 	margin: 0;
-	font-size: 0.95rem;
+	font-size: 0.92rem;
 	font-weight: 700;
 	color: var(--ink);
-	line-height: 1.3;
-	word-break: break-word;
-	overflow-wrap: break-word;
+	line-height: 1.25;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .patient-row p {

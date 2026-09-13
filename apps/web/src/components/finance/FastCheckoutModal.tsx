@@ -58,7 +58,6 @@ import { KktLanPrinterService } from "../../services/hardware/kktLanPrinter";
 import { showToast } from "../GlobalToast";
 import { useModalA11y } from "../../hooks/useModalA11y";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import "../payments/checkout/fastCheckout.css";
 
 export interface FastCheckoutModalProps {
 	readonly isOpen: boolean;

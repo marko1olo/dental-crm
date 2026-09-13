@@ -38,7 +38,6 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast.js";
-import "./clinicalWriteoff.css";
 import {
 	type ClinicalWriteoffDocument,
 	type ClinicalWriteoffLine,

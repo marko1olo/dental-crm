@@ -41,6 +41,7 @@ import {
 	Zap,
 } from "lucide-react";
 import {
+	allocateRemainderToTender,
 	validate54FzBuyerInn,
 	type PayerType,
 } from "./cashboxOperations.js";
@@ -85,6 +86,57 @@ export type CashRegisterTenderMethod =
 	| "deposit"
 	| "installment"
 	| "split";
+
+const CASH_DISCOUNT_BUTTONS: readonly {
+	preset: LoyaltyDiscountPreset;
+	label: string;
+	testId: string;
+	title: string;
+	icon?: React.ComponentType<{ className?: string }>;
+	activeClass?: string;
+	inactiveClass?: string;
+}[] = [
+	{
+		preset: "round_hundreds",
+		label: "Округлить до сотен рублей (скидка на копейки)",
+		testId: "btn-discount-round-hundreds",
+		title: "Округлить сумму чека вниз до сотен рублей (скидка на копейки, например 7 428 ₽ -> 7 400 ₽)",
+		icon: Sparkles,
+		activeClass: "bg-amber-600 text-white shadow-2xs ring-2 ring-amber-400",
+		inactiveClass: "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-100",
+	},
+	{ preset: "discount_3", label: "3%", testId: "btn-discount-3", title: "Быстрая скидка 3% без запроса мастер-паролей" },
+	{ preset: "discount_5", label: "5%", testId: "btn-discount-5", title: "Быстрая скидка 5% без запроса мастер-паролей" },
+	{ preset: "discount_10", label: "10%", testId: "btn-discount-10", title: "Быстрая скидка 10% без запроса мастер-паролей" },
+	{ preset: "pensioner_10", label: "Пенсионная 10%", testId: "btn-discount-pensioner", title: "Пенсионная скидка 10%" },
+	{
+		preset: "warranty_100",
+		label: "100% Гарантия (Переделка)",
+		testId: "btn-discount-warranty",
+		title: "100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)",
+		icon: ShieldCheck,
+		activeClass: "bg-blue-600 text-white shadow-2xs ring-2 ring-blue-400",
+		inactiveClass: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800",
+	},
+	{
+		preset: "colleague_100",
+		label: "Персонал 100%",
+		testId: "btn-discount-colleague",
+		title: "Скидка для сотрудников клиники 100%",
+		icon: UserCheck,
+		activeClass: "bg-purple-600 text-white shadow-2xs ring-2 ring-purple-400",
+		inactiveClass: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800",
+	},
+	{ preset: "manual_percent", label: "Ручная %", testId: "btn-discount-manual", title: "Ручной процент скидки" },
+	{ preset: "none", label: "Сброс (0%)", testId: "btn-discount-none", title: "Сброс скидки" },
+];
+
+const CASH_DENOMINATIONS = [
+	{ amount: 1000, testId: "btn-cash-1000", label: "1 000 ₽" },
+	{ amount: 2000, testId: "btn-cash-2000", label: "2 000 ₽" },
+	{ amount: 5000, testId: "btn-cash-5000", label: "5 000 ₽" },
+	{ amount: 10000, testId: "btn-cash-10000", label: "10 000 ₽" },
+] as const;
 
 export interface CashRegisterModalProps {
 	readonly isOpen: boolean;
@@ -342,24 +394,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub || 0));
 		const remKop = Math.max(0, totalKop - depKop);
 
-		const depRub = kopecksToRub(depKop);
-		const remRub = kopecksToRub(remKop);
-
-		setSplitDepositRub(depRub);
+		setSplitDepositRub(kopecksToRub(depKop));
 		setSplitFamilyRub(0);
-		if (targetMethod === "card") {
-			setSplitCardRub(remRub);
-			setSplitCashRub(0);
-			setSplitSbpRub(0);
-		} else if (targetMethod === "cash") {
-			setSplitCashRub(remRub);
-			setSplitCardRub(0);
-			setSplitSbpRub(0);
-		} else {
-			setSplitSbpRub(remRub);
-			setSplitCardRub(0);
-			setSplitCashRub(0);
-		}
+		setSplitCardRub(targetMethod === "card" ? kopecksToRub(remKop) : 0);
+		setSplitCashRub(targetMethod === "cash" ? kopecksToRub(remKop) : 0);
+		setSplitSbpRub(targetMethod === "sbp" ? kopecksToRub(remKop) : 0);
 	};
 
 	const applySplitFamilyAndRemainder = (targetMethod: "card" | "cash" | "sbp" = "card") => {
@@ -367,24 +406,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		const famKop = Math.min(totalKop, rubToKopecks(patientFamilyBalanceRub || 0));
 		const remKop = Math.max(0, totalKop - famKop);
 
-		const famRub = kopecksToRub(famKop);
-		const remRub = kopecksToRub(remKop);
-
-		setSplitFamilyRub(famRub);
+		setSplitFamilyRub(kopecksToRub(famKop));
 		setSplitDepositRub(0);
-		if (targetMethod === "card") {
-			setSplitCardRub(remRub);
-			setSplitCashRub(0);
-			setSplitSbpRub(0);
-		} else if (targetMethod === "cash") {
-			setSplitCashRub(remRub);
-			setSplitCardRub(0);
-			setSplitSbpRub(0);
-		} else {
-			setSplitSbpRub(remRub);
-			setSplitCardRub(0);
-			setSplitCashRub(0);
-		}
+		setSplitCardRub(targetMethod === "card" ? kopecksToRub(remKop) : 0);
+		setSplitCashRub(targetMethod === "cash" ? kopecksToRub(remKop) : 0);
+		setSplitSbpRub(targetMethod === "sbp" ? kopecksToRub(remKop) : 0);
 	};
 
 	const applySplitBothDepositsAndRemainder = (targetMethod: "card" | "cash" | "sbp" = "card") => {
@@ -396,44 +422,30 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 		setSplitDepositRub(kopecksToRub(depKop));
 		setSplitFamilyRub(kopecksToRub(famKop));
-		if (targetMethod === "card") {
-			setSplitCardRub(kopecksToRub(remKop));
-			setSplitCashRub(0);
-			setSplitSbpRub(0);
-		} else if (targetMethod === "cash") {
-			setSplitCashRub(kopecksToRub(remKop));
-			setSplitCardRub(0);
-			setSplitSbpRub(0);
-		} else {
-			setSplitSbpRub(kopecksToRub(remKop));
-			setSplitCardRub(0);
-			setSplitCashRub(0);
-		}
+		setSplitCardRub(targetMethod === "card" ? kopecksToRub(remKop) : 0);
+		setSplitCashRub(targetMethod === "cash" ? kopecksToRub(remKop) : 0);
+		setSplitSbpRub(targetMethod === "sbp" ? kopecksToRub(remKop) : 0);
 	};
 
 	const applyRemainingToMethod = (targetMethod: "card" | "cash" | "sbp" | "deposit" | "family") => {
-		const totalKop = rubToKopecks(totalInvoiceRub);
-		let otherKop = 0;
-		if (targetMethod !== "card") otherKop += rubToKopecks(splitCardRub);
-		if (targetMethod !== "cash") otherKop += rubToKopecks(splitCashRub);
-		if (targetMethod !== "sbp") otherKop += rubToKopecks(splitSbpRub);
-		if (targetMethod !== "deposit") otherKop += rubToKopecks(splitDepositRub);
-		if (targetMethod !== "family") otherKop += rubToKopecks(splitFamilyRub);
-
-		const remKop = Math.max(0, totalKop - otherKop);
-		let finalKop = remKop;
-		if (targetMethod === "deposit") {
-			finalKop = Math.min(remKop, rubToKopecks(patientDepositRub || 0));
-		} else if (targetMethod === "family") {
-			finalKop = Math.min(remKop, rubToKopecks(patientFamilyBalanceRub || 0));
-		}
-		const remRub = kopecksToRub(finalKop);
-
-		if (targetMethod === "card") setSplitCardRub(remRub);
-		if (targetMethod === "cash") setSplitCashRub(remRub);
-		if (targetMethod === "sbp") setSplitSbpRub(remRub);
-		if (targetMethod === "deposit") setSplitDepositRub(remRub);
-		if (targetMethod === "family") setSplitFamilyRub(remRub);
+		const next = allocateRemainderToTender({
+			totalDueRub: totalInvoiceRub,
+			currentTenders: {
+				cardRub: splitCardRub,
+				cashRub: splitCashRub,
+				sbpRub: splitSbpRub,
+				depositRub: splitDepositRub,
+				familyRub: splitFamilyRub,
+			},
+			targetTender: targetMethod,
+			patientDepositRub,
+			patientFamilyBalanceRub,
+		});
+		setSplitCardRub(next.cardRub);
+		setSplitCashRub(next.cashRub);
+		setSplitSbpRub(next.sbpRub);
+		setSplitDepositRub(next.depositRub);
+		setSplitFamilyRub(next.familyRub);
 	};
 
 	// 1-Click Fast Presets (Мандаты 8e, 8k, 8n)
@@ -456,6 +468,64 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		setSplitSbpRub(0);
 		setSplitFamilyRub(0);
 		showToast(`Применен пресет: 100% карта (${totalInvoiceRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
+	};
+
+	const computeEffectiveTenderKopecks = (overrideTender?: "card" | "cash" | "sbp") => {
+		const totalKopecks = rubToKopecks(totalInvoiceRub);
+		const effectiveTender = overrideTender || selectedTender;
+		const isSplit = !overrideTender && (activeTab === "split" || selectedTender === "split");
+
+		let cashKop = isSplit
+			? rubToKopecks(splitCashRub)
+			: effectiveTender === "cash"
+			? totalKopecks
+			: 0;
+		let cardKop = isSplit
+			? rubToKopecks(splitCardRub)
+			: effectiveTender === "card"
+			? totalKopecks
+			: 0;
+		let sbpKop = isSplit
+			? rubToKopecks(splitSbpRub)
+			: effectiveTender === "sbp"
+			? totalKopecks
+			: 0;
+		let prepaidKop = isSplit
+			? rubToKopecks(splitDepositRub + splitFamilyRub)
+			: selectedTender === "deposit"
+			? Math.min(totalKopecks, rubToKopecks(patientDepositRub || 0))
+			: selectedTender === "family"
+			? Math.min(totalKopecks, rubToKopecks(patientFamilyBalanceRub || 0))
+			: 0;
+		let creditKop = 0;
+
+		if (selectedTender === "installment") {
+			const downPaymentKop = Math.round((totalKopecks * downPaymentPercent) / 100);
+			cardKop = downPaymentKop;
+			creditKop = Math.max(0, totalKopecks - downPaymentKop);
+		}
+
+		if (!isSplit && (selectedTender === "deposit" || selectedTender === "family")) {
+			if (prepaidKop < totalKopecks) {
+				cardKop = totalKopecks - prepaidKop;
+			}
+		}
+
+		if (isSplit) {
+			const currentAllocatedKop = cashKop + cardKop + sbpKop + prepaidKop;
+			const deltaKop = totalKopecks - currentAllocatedKop;
+			if (deltaKop !== 0) {
+				if (cardKop > 0 || (cashKop === 0 && sbpKop === 0 && prepaidKop === 0)) {
+					cardKop = Math.max(0, cardKop + deltaKop);
+				} else if (cashKop > 0) {
+					cashKop = Math.max(0, cashKop + deltaKop);
+				} else if (sbpKop > 0) {
+					sbpKop = Math.max(0, sbpKop + deltaKop);
+				}
+			}
+		}
+
+		return { totalKopecks, cashKop, cardKop, sbpKop, prepaidKop, creditKop };
 	};
 
 	// Fast 1-Click fiscalize action with rage click debounce + atomic ref lock
@@ -517,61 +587,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				}
 			}
 
-			const effectiveTender = overrideTender || selectedTender;
-			const isSplit = !overrideTender && (activeTab === "split" || selectedTender === "split");
-			let cashKop = isSplit
-				? rubToKopecks(splitCashRub)
-				: effectiveTender === "cash"
-				? totalKopecks
-				: 0;
-			let cardKop = isSplit
-				? rubToKopecks(splitCardRub)
-				: effectiveTender === "card"
-				? totalKopecks
-				: 0;
-			let sbpKop = isSplit
-				? rubToKopecks(splitSbpRub)
-				: effectiveTender === "sbp"
-				? totalKopecks
-				: 0;
-			let prepaidKop = isSplit
-				? rubToKopecks(splitDepositRub + splitFamilyRub)
-				: selectedTender === "deposit"
-				? Math.min(totalKopecks, rubToKopecks(patientDepositRub || 0))
-				: selectedTender === "family"
-				? Math.min(totalKopecks, rubToKopecks(patientFamilyBalanceRub || 0))
-				: 0;
-			let creditKop = 0;
-
-			// Честная рассрочка клиники (0% переплат): первый взнос оплачивается картой, остаток оформляется в кредит
-			if (selectedTender === "installment") {
-				const downPaymentKop = Math.round((totalKopecks * downPaymentPercent) / 100);
-				cardKop = downPaymentKop;
-				creditKop = Math.max(0, totalKopecks - downPaymentKop);
-			}
-
-			// Если выбран депозит/семейный счет на основном экране, но средств не хватает на 100% чека,
-			// остаток автоматически списывается картой в 1 клик (без блокировки)
-			if (!isSplit && (selectedTender === "deposit" || selectedTender === "family")) {
-				if (prepaidKop < totalKopecks) {
-					cardKop = totalKopecks - prepaidKop;
-				}
-			}
-
-			// Автоматическая балансировка сплит-платежа до копейки без ошибок валидации
-			if (isSplit) {
-				const currentAllocatedKop = cashKop + cardKop + sbpKop + prepaidKop;
-				const deltaKop = totalKopecks - currentAllocatedKop;
-				if (deltaKop !== 0) {
-					if (cardKop > 0 || (cashKop === 0 && sbpKop === 0 && prepaidKop === 0)) {
-						cardKop = Math.max(0, cardKop + deltaKop);
-					} else if (cashKop > 0) {
-						cashKop = Math.max(0, cashKop + deltaKop);
-					} else if (sbpKop > 0) {
-						sbpKop = Math.max(0, sbpKop + deltaKop);
-					}
-				}
-			}
+			const { cashKop, cardKop, sbpKop, prepaidKop, creditKop } =
+				computeEffectiveTenderKopecks(overrideTender);
 
 			// Real statutory 54-FZ FFD 1.2 request to backend
 			// Note: Buyer INN is strictly NOT required for physical persons (FFD 1.2 tag 1228 only applies to B2B legal entities).
@@ -755,41 +772,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	};
 
 	const buildPrintPayload = (): FiscalReceiptPrintPayload => {
-		const totalKopecks = rubToKopecks(totalInvoiceRub);
-		const isSplit = activeTab === "split" || selectedTender === "split";
-		let cashKop = isSplit
-			? rubToKopecks(splitCashRub)
-			: selectedTender === "cash"
-			? totalKopecks
-			: 0;
-		let cardKop = isSplit
-			? rubToKopecks(splitCardRub)
-			: selectedTender === "card"
-			? totalKopecks
-			: 0;
-		let sbpKop = isSplit
-			? rubToKopecks(splitSbpRub)
-			: selectedTender === "sbp"
-			? totalKopecks
-			: 0;
-		let prepaidKop = isSplit
-			? rubToKopecks(splitDepositRub + splitFamilyRub)
-			: selectedTender === "deposit"
-			? Math.min(totalKopecks, rubToKopecks(patientDepositRub || 0))
-			: selectedTender === "family"
-			? Math.min(totalKopecks, rubToKopecks(patientFamilyBalanceRub || 0))
-			: 0;
-
-		if (selectedTender === "installment") {
-			const downPaymentKop = Math.round((totalKopecks * downPaymentPercent) / 100);
-			cardKop = downPaymentKop;
-		}
-
-		if (!isSplit && (selectedTender === "deposit" || selectedTender === "family")) {
-			if (prepaidKop < totalKopecks) {
-				cardKop = totalKopecks - prepaidKop;
-			}
-		}
+		const { cashKop, cardKop, sbpKop, prepaidKop } = computeEffectiveTenderKopecks();
 
 		return {
 			operationType,
@@ -1379,123 +1362,41 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 								{/* 1-Tap Fast Preset Pills (Hick's Law & Mandate 8e: Freedom for Doctors) */}
 								<div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("round_hundreds")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
-											selectedDiscountPreset === "round_hundreds"
-												? "bg-amber-600 text-white shadow-2xs ring-2 ring-amber-400"
-												: "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-100"
-										}`}
-										data-testid="btn-discount-round-hundreds"
-										title="Округлить сумму чека вниз до сотен рублей (скидка на копейки, например 7 428 ₽ -> 7 400 ₽)"
-									>
-										<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-										<span>Округлить до сотен рублей (скидка на копейки)</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("discount_3")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "discount_3"
-												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-										}`}
-										data-testid="btn-discount-3"
-										title="Быстрая скидка 3% без запроса мастер-паролей"
-									>
-										3%
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("discount_5")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "discount_5"
-												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-										}`}
-										data-testid="btn-discount-5"
-										title="Быстрая скидка 5% без запроса мастер-паролей"
-									>
-										5%
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("discount_10")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "discount_10"
-												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-										}`}
-										data-testid="btn-discount-10"
-										title="Быстрая скидка 10% без запроса мастер-паролей"
-									>
-										10%
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("pensioner_10")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "pensioner_10"
-												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-										}`}
-										data-testid="btn-discount-pensioner"
-										title="Пенсионная скидка 10%"
-									>
-										Пенсионная 10%
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("warranty_100")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-											selectedDiscountPreset === "warranty_100"
-												? "bg-blue-600 text-white shadow-2xs ring-2 ring-blue-400"
-												: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
-										}`}
-										data-testid="btn-discount-warranty"
-										title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
-									>
-										<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-										<span>100% Гарантия (Переделка)</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("colleague_100")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-											selectedDiscountPreset === "colleague_100"
-												? "bg-purple-600 text-white shadow-2xs ring-2 ring-purple-400"
-												: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
-										}`}
-										data-testid="btn-discount-colleague"
-									>
-										<UserCheck className="w-3.5 h-3.5 shrink-0" />
-										<span>Персонал 100%</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("manual_percent")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "manual_percent"
-												? "bg-amber-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-										}`}
-										data-testid="btn-discount-manual"
-									>
-										Ручная %
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("none")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "none"
+									{CASH_DISCOUNT_BUTTONS.map((btn) => {
+										const isSelected = selectedDiscountPreset === btn.preset;
+										const Icon = btn.icon;
+										const activeCls =
+											btn.activeClass ||
+											(btn.preset === "none"
 												? "bg-[var(--teal)] text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-										}`}
-										data-testid="btn-discount-none"
-									>
-										Сброс (0%)
-									</button>
+												: btn.preset === "manual_percent"
+												? "bg-amber-600 text-white shadow-2xs"
+												: "bg-teal-600 text-white shadow-2xs");
+										const inactiveCls =
+											btn.inactiveClass ||
+											"bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]";
+										return (
+											<button
+												key={btn.preset}
+												type="button"
+												onClick={() => setSelectedDiscountPreset(btn.preset)}
+												className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+													isSelected ? activeCls : inactiveCls
+												}`}
+												data-testid={btn.testId}
+												title={btn.title}
+											>
+												{Icon && (
+													<Icon
+														className={`w-3.5 h-3.5 ${
+															btn.preset === "round_hundreds" ? "text-amber-500" : "shrink-0"
+														}`}
+													/>
+												)}
+												<span>{btn.label}</span>
+											</button>
+										);
+									})}
 								</div>
 
 								{/* Round-off 100 Rubles Clinical Notice Banner */}
@@ -2110,42 +2011,18 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													>
 														Без сдачи
 													</button>
-													<button
-														type="button"
-														onClick={() => setReceivedCashRub(1000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
-														data-testid="btn-cash-1000"
-														style={{ minHeight: "44px" }}
-													>
-														1 000 ₽
-													</button>
-													<button
-														type="button"
-														onClick={() => setReceivedCashRub(2000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
-														data-testid="btn-cash-2000"
-														style={{ minHeight: "44px" }}
-													>
-														2 000 ₽
-													</button>
-													<button
-														type="button"
-														onClick={() => setReceivedCashRub(5000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
-														data-testid="btn-cash-5000"
-														style={{ minHeight: "44px" }}
-													>
-														5 000 ₽
-													</button>
-													<button
-														type="button"
-														onClick={() => setReceivedCashRub(10000)}
-														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
-														data-testid="btn-cash-10000"
-														style={{ minHeight: "44px" }}
-													>
-														10 000 ₽
-													</button>
+													{CASH_DENOMINATIONS.map((denom) => (
+														<button
+															key={denom.amount}
+															type="button"
+															onClick={() => setReceivedCashRub(denom.amount)}
+															className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+															data-testid={denom.testId}
+															style={{ minHeight: "44px" }}
+														>
+															{denom.label}
+														</button>
+													))}
 												</div>
 											</div>
 										</div>

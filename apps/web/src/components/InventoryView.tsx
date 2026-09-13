@@ -279,8 +279,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	return (
 		<div
 			style={{
-				padding: 24,
-				maxWidth: 1200,
+				padding: "20px 24px",
+				maxWidth: "100%",
+				width: "100%",
+				boxSizing: "border-box",
 				margin: "0 auto",
 				height: "100%",
 				display: "flex",
@@ -995,7 +997,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									whiteSpace: "nowrap",
 								}}
 							>
-								<Plus size={16} /> + Добавить позицию
+								<Plus size={16} /> Добавить позицию
 							</button>
 						</div>
 					</div>
@@ -1004,6 +1006,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					<div
 						style={{
 							flex: 1,
+							overflowX: "auto",
 							overflowY: "auto",
 							background: paperBg,
 							borderRadius: 16,
@@ -1013,6 +1016,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						<table
 							style={{
 								width: "100%",
+								minWidth: "780px",
 								borderCollapse: "collapse",
 								textAlign: "left",
 							}}
@@ -1488,6 +1492,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																fontSize: 13,
 																minHeight: 44,
 																padding: "8px 12px",
+																whiteSpace: "nowrap",
 															}}
 															title="Оприходовать материал на склад (Primary Action)"
 														>

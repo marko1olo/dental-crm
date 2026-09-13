@@ -1,34 +1,15 @@
 /**
  * DENTE Dental CRM — 1C:Enterprise (1С:Бухгалтерия 8.3 / 1С:Медицина / 1С:УТ)
  * Statutory CommerceML 2.09 Multi-Document Package Export & Accounting Integration Engine.
- *
- * Implements Russian statutory export standards for:
- * 1. Выгрузка кассовых смен и чеков 54-ФЗ (счета 50 «Касса», 51 «Расчетные счета», 57.03 «Эквайринг», 62 «Расчеты с покупателями», 90.01.1 «Выручка»).
- * 2. Выгрузка актов выполненных медицинских услуг с кодами номенклатуры 804н (Приказ Минздрава 804н), номерами зубов FDI и ФИО врачей.
- * 3. Списание материалов ЦСО и склада (счет 10 «Материалы» / 10.01 / 10.06 -> 20.01 «Основное производство»).
- * 4. Отражение зарплаты врачей и персонала (Форма Т-51, Т-13, счета 70 / 68.01 / 69.01 -> 20.01 / 26).
- *
- * Invariants:
- * - Strict integer kopeck math (0 float rounding bugs): line item totals strictly equal document totals.
- * - Deterministic SHA-256 transaction hash for idempotency and protection against double posting in 1C.
- * - Multi-tender payments (Cash 50.01, Acquiring 57.03, SBP/Bank 51, Advance 62.02) strictly balance total sales.
- * - Tax exemption declaration: «Без НДС (пп. 2 п. 2 ст. 149 НК РФ)».
- * - Safe XML entity escaping (XML 1.0) and UTF-8 compliance.
+ * Cleaned and compacted per Mandates 8s, 8i, 8k.
  */
 
 import { z } from "zod";
 import { escapeXml } from "../cda/c14n.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
-import {
-	validateRussianInn,
-	validateRussianKpp,
-	validateRussianOgrn,
-} from "./taxDeduction.js";
+import { validateRussianInn, validateRussianKpp, validateRussianOgrn } from "./taxDeduction.js";
 import { canonicalJsonStringify, sha256Hex } from "../sync/hashing.js";
-import {
-	type OneCPartyInfo,
-	oneCPartyInfoSchema,
-} from "./oneCEnterpriseExport.js";
+import { type OneCPartyInfo, oneCPartyInfoSchema } from "./oneCEnterpriseExport.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STATUTORY CONSTANTS & ACCOUNTING PLAN
@@ -37,35 +18,31 @@ import {
 export const COMMERCEML_VERSION_209 = "2.09" as const;
 export const COMMERCEML_XMLNS = "urn:1C.ru:commerceml_2" as const;
 export const ENTERPRISEDATA_VERSION_113 = "1.13" as const;
-export const ENTERPRISEDATA_XMLNS =
-	"http://v8.1c.ru/edi/edi_stnd/EnterpriseData/1.13" as const;
-
+export const ENTERPRISEDATA_XMLNS = "http://v8.1c.ru/edi/edi_stnd/EnterpriseData/1.13" as const;
 export const TAX_EXEMPTION_ARTICLE_149_RU = "пп. 2 п. 2 ст. 149 НК РФ" as const;
+
 export const DEFAULT_OKEI_PIECE_CODE = "796" as const;
 export const DEFAULT_OKEI_PIECE_NAME = "шт" as const;
 export const DEFAULT_OKEI_LITER_CODE = "112" as const;
 export const DEFAULT_OKEI_KG_CODE = "166" as const;
 export const DEFAULT_OKEI_PACK_CODE = "778" as const;
 
-/**
- * 1C Standard Chart of Accounts presets for Russian dental & medical clinics.
- */
 export const oneCChartOfAccountsSchema = z.object({
-	accountSalesRevenue: z.string().default("90.01.1"), // Выручка от медицинских услуг
-	accountSalesCost: z.string().default("90.02.1"), // Себестоимость продаж
-	accountMaterials: z.string().default("10.01"), // Сырье и материалы
-	accountConsumables: z.string().default("10.06"), // Прочие материалы (ЦСО, стерилизация, перчатки)
-	accountProductionCost: z.string().default("20.01"), // Основное производство (Медицинские услуги)
-	accountGeneralExpense: z.string().default("26"), // Общехозяйственные расходы
-	accountCashDesk: z.string().default("50.01"), // Касса организации (Наличные)
-	accountBankCurrent: z.string().default("51"), // Расчетные счета (СБП, безналичные переводы)
-	accountAcquiringTransit: z.string().default("57.03"), // Продажи по платежным картам / Эквайринг
-	accountBuyersSettlement: z.string().default("62.01"), // Расчеты с покупателями и заказчиками
-	accountAdvancesReceived: z.string().default("62.02"), // Авансы полученные
-	accountRetailBuyers: z.string().default("62.Р"), // Розничные покупатели
-	accountPayroll: z.string().default("70"), // Расчеты с персоналом по оплате труда
-	accountNdfl: z.string().default("68.01"), // НДФЛ 13%
-	accountSocialTaxes: z.string().default("69.01"), // Страховые взносы по единому тарифу 30%
+	accountSalesRevenue: z.string().default("90.01.1"),
+	accountSalesCost: z.string().default("90.02.1"),
+	accountMaterials: z.string().default("10.01"),
+	accountConsumables: z.string().default("10.06"),
+	accountProductionCost: z.string().default("20.01"),
+	accountGeneralExpense: z.string().default("26"),
+	accountCashDesk: z.string().default("50.01"),
+	accountBankCurrent: z.string().default("51"),
+	accountAcquiringTransit: z.string().default("57.03"),
+	accountBuyersSettlement: z.string().default("62.01"),
+	accountAdvancesReceived: z.string().default("62.02"),
+	accountRetailBuyers: z.string().default("62.Р"),
+	accountPayroll: z.string().default("70"),
+	accountNdfl: z.string().default("68.01"),
+	accountSocialTaxes: z.string().default("69.01"),
 });
 export type OneCChartOfAccounts = z.infer<typeof oneCChartOfAccountsSchema>;
 
@@ -87,9 +64,6 @@ export const DEFAULT_1C_CHART_OF_ACCOUNTS: OneCChartOfAccounts = {
 	accountSocialTaxes: "69.01",
 };
 
-/**
- * Clinic organization profile for statutory 1C exchange.
- */
 export const oneCClinicProfileSchema = z.object({
 	id: z.string().min(1),
 	name: z.string().min(1).max(255),
@@ -138,13 +112,7 @@ export const DEFAULT_CLINIC_PROFILE_1C: OneCClinicProfile = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const oneCPaymentTenderTypeSchema = z.enum([
-	"cash", // 50.01
-	"card_acquiring", // 57.03
-	"sbp", // 51
-	"bank_transfer", // 51
-	"dms", // 76.ДМС
-	"certificate_deposit", // 62.02
-	"advance_offset", // 62.02 -> 62.01
+	"cash", "card_acquiring", "sbp", "bank_transfer", "dms", "certificate_deposit", "advance_offset",
 ]);
 export type OneCPaymentTenderType = z.infer<typeof oneCPaymentTenderTypeSchema>;
 
@@ -183,8 +151,8 @@ export type OneCRetailSaleItem = z.infer<typeof oneCRetailSaleItemSchema>;
 export const oneCRetailSalesDocumentSchema = z.object({
 	id: z.string().min(1),
 	documentNumber: z.string().min(1),
-	documentDateIso: z.string(), // YYYY-MM-DD
-	documentTime: z.string().default("18:00:00"), // HH:mm:ss
+	documentDateIso: z.string(),
+	documentTime: z.string().default("18:00:00"),
 	periodLabelRu: z.string().min(1),
 	cashRegisterName: z.string().min(1),
 	warehouseName: z.string().min(1),
@@ -220,7 +188,7 @@ export type OneCMedicalActItem = z.infer<typeof oneCMedicalActItemSchema>;
 export const oneCMedicalActDocumentSchema = z.object({
 	id: z.string().min(1),
 	actNumber: z.string().min(1),
-	documentDateIso: z.string(), // YYYY-MM-DD
+	documentDateIso: z.string(),
 	documentTime: z.string().default("12:00:00"),
 	patient: oneCPartyInfoSchema,
 	contractNumber: z.string().optional().nullable(),
@@ -244,8 +212,8 @@ export const oneCMaterialWriteoffItemSchema = z.object({
 	quantity: z.number().positive(),
 	unitCostKopecks: z.number().int().nonnegative(),
 	totalCostKopecks: z.number().int().nonnegative(),
-	debitAccount: z.string().default("20.01"), // Основное производство
-	creditAccount: z.string().default("10.01"), // Материалы
+	debitAccount: z.string().default("20.01"),
+	creditAccount: z.string().default("10.01"),
 	costItemTitleRu: z.string().default("Списание стоматологических материалов (BOM / ЦСО)"),
 	relatedServiceCode804n: z.string().optional().nullable(),
 	relatedServiceName: z.string().optional().nullable(),
@@ -295,7 +263,7 @@ export const oneCPayrollDocumentSchema = z.object({
 	documentNumber: z.string().min(1),
 	documentDateIso: z.string(),
 	documentTime: z.string().default("20:00:00"),
-	registrationPeriodIso: z.string(), // YYYY-MM-01
+	registrationPeriodIso: z.string(),
 	periodLabelRu: z.string().min(1),
 	employees: z.array(oneCPayrollEmployeeItemSchema).min(1),
 	totalGrossKopecks: z.number().int().nonnegative(),
@@ -323,30 +291,18 @@ export const oneCCommerceMlPackageSchema = z.object({
 export type OneCCommerceMlPackage = z.infer<typeof oneCCommerceMlPackageSchema>;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DETERMINISTIC SHA-256 IDEMPOTENCY & PROTECTION AGAINST DOUBLE POSTING
+// DETERMINISTIC SHA-256 IDEMPOTENCY
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * Computes deterministic SHA-256 hash from canonical JSON payload of a document or package.
- * Strips existing `sha256Hash` field before calculation to ensure stability.
- */
 export function computeCommerceMlSha256(payload: unknown): string {
-	if (typeof payload !== "object" || payload === null) {
-		return sha256Hex(String(payload));
-	}
-	// Shallow copy to remove existing hash key
+	if (typeof payload !== "object" || payload === null) return sha256Hex(String(payload));
 	const clone = { ...(payload as Record<string, unknown>) };
 	delete clone.sha256Hash;
-	const canonical = canonicalJsonStringify(clone);
-	return sha256Hex(canonical);
+	return sha256Hex(canonicalJsonStringify(clone));
 }
 
-/**
- * Generates composite idempotency key for 1C exchange: `<docId>#<sha256>`.
- */
 export function computeCommerceMlCompositeKey(docId: string, payload: unknown): string {
-	const hash = computeCommerceMlSha256(payload);
-	return `${docId}#${hash}`;
+	return `${docId}#${computeCommerceMlSha256(payload)}`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -358,50 +314,23 @@ export interface OneCCredentialValidationResult {
 	readonly errors: readonly string[];
 }
 
-export function validateOneCClinicCredentials(
-	profile: OneCClinicProfile,
-): OneCCredentialValidationResult {
+export function validateOneCClinicCredentials(profile: OneCClinicProfile): OneCCredentialValidationResult {
 	const errors: string[] = [];
-
-	if (!profile.name || profile.name.trim().length === 0) {
-		errors.push("Не указано краткое наименование организации");
-	}
-
-	const innResult = validateRussianInn(profile.inn);
-	if (!innResult.isValid) {
-		errors.push(innResult.errorMessageRu || `Некорректный ИНН клиники: ${profile.inn}`);
-	}
-
+	if (!profile.name?.trim()) errors.push("Не указано краткое наименование организации");
+	const innRes = validateRussianInn(profile.inn);
+	if (!innRes.isValid) errors.push(innRes.errorMessageRu || `Некорректный ИНН клиники: ${profile.inn}`);
 	if (profile.kpp) {
-		const kppResult = validateRussianKpp(profile.kpp);
-		if (!kppResult.isValid) {
-			errors.push(kppResult.errorMessageRu || `Некорректный КПП клиники: ${profile.kpp}`);
-		}
+		const kppRes = validateRussianKpp(profile.kpp);
+		if (!kppRes.isValid) errors.push(kppRes.errorMessageRu || `Некорректный КПП клиники: ${profile.kpp}`);
 	}
-
 	if (profile.ogrn) {
-		const ogrnResult = validateRussianOgrn(profile.ogrn);
-		if (!ogrnResult.isValid) {
-			errors.push(ogrnResult.errorMessageRu || `Некорректный ОГРН клиники: ${profile.ogrn}`);
-		}
+		const ogrnRes = validateRussianOgrn(profile.ogrn);
+		if (!ogrnRes.isValid) errors.push(ogrnRes.errorMessageRu || `Некорректный ОГРН клиники: ${profile.ogrn}`);
 	}
-
-	if (profile.bankBik && !/^\d{9}$/.test(profile.bankBik.trim())) {
-		errors.push("БИК банка должен состоять строго из 9 цифр");
-	}
-
-	if (profile.bankAccount && !/^\d{20}$/.test(profile.bankAccount.trim())) {
-		errors.push("Расчетный счет организации должен состоять строго из 20 цифр");
-	}
-
-	if (profile.bankCorrAccount && !/^\d{20}$/.test(profile.bankCorrAccount.trim())) {
-		errors.push("Корреспондентский счет банка должен состоять строго из 20 цифр");
-	}
-
-	return {
-		isValid: errors.length === 0,
-		errors,
-	};
+	if (profile.bankBik && !/^\d{9}$/.test(profile.bankBik.trim())) errors.push("БИК банка должен состоять строго из 9 цифр");
+	if (profile.bankAccount && !/^\d{20}$/.test(profile.bankAccount.trim())) errors.push("Расчетный счет организации должен состоять строго из 20 цифр");
+	if (profile.bankCorrAccount && !/^\d{20}$/.test(profile.bankCorrAccount.trim())) errors.push("Корреспондентский счет банка должен состоять строго из 20 цифр");
+	return { isValid: errors.length === 0, errors };
 }
 
 export interface OneCPackageIntegrityResult {
@@ -420,112 +349,64 @@ export interface OneCPackageIntegrityResult {
 	readonly sha256: string;
 }
 
-export function validatePackageIntegrity(
-	pkg: OneCCommerceMlPackage,
-): OneCPackageIntegrityResult {
+export function validatePackageIntegrity(pkg: OneCCommerceMlPackage): OneCPackageIntegrityResult {
 	const errors: string[] = [];
 
-	// 1. Validate Sales Document Arithmetic
-	const calculatedSalesKop = pkg.retailSalesDocument.items.reduce(
-		(sum, it) => sum + it.totalKopecks,
-		0,
-	);
+	const calculatedSalesKop = pkg.retailSalesDocument.items.reduce((sum, it) => sum + it.totalKopecks, 0);
 	if (calculatedSalesKop !== pkg.retailSalesDocument.totalRevenueKopecks) {
-		errors.push(
-			`Несходимость выручки в Отчете о розничных продажах: сумма строк (${calculatedSalesKop} коп.) != итого документа (${pkg.retailSalesDocument.totalRevenueKopecks} коп.)`,
-		);
+		errors.push(`Несходимость выручки в Отчете о розничных продажах: сумма строк (${calculatedSalesKop} коп.) != итого документа (${pkg.retailSalesDocument.totalRevenueKopecks} коп.)`);
 	}
 
-	const calculatedPaymentsKop = pkg.retailSalesDocument.payments.reduce(
-		(sum, p) => sum + p.amountKopecks,
-		0,
-	);
+	const calculatedPaymentsKop = pkg.retailSalesDocument.payments.reduce((sum, p) => sum + p.amountKopecks, 0);
 	if (calculatedPaymentsKop !== pkg.retailSalesDocument.totalRevenueKopecks) {
-		errors.push(
-			`Несходимость оплат в Отчете о розничных продажах: сумма способов оплат (${calculatedPaymentsKop} коп.) != сумма выручки (${pkg.retailSalesDocument.totalRevenueKopecks} коп.)`,
-		);
+		errors.push(`Несходимость оплат в Отчете о розничных продажах: сумма способов оплат (${calculatedPaymentsKop} коп.) != сумма выручки (${pkg.retailSalesDocument.totalRevenueKopecks} коп.)`);
 	}
 
-	// 2. Validate Medical Acts Arithmetic
 	let calculatedActsKop = 0;
-	if (pkg.medicalActs && pkg.medicalActs.length > 0) {
+	if (pkg.medicalActs?.length) {
 		for (const act of pkg.medicalActs) {
 			const actItemsSum = act.items.reduce((s, it) => s + it.totalKopecks, 0);
 			if (actItemsSum !== act.totalKopecks) {
-				errors.push(
-					`Несходимость сумм в Акте № ${act.actNumber}: сумма строк (${actItemsSum} коп.) != итого (${act.totalKopecks} коп.)`,
-				);
+				errors.push(`Несходимость сумм в Акте № ${act.actNumber}: сумма строк (${actItemsSum} коп.) != итого (${act.totalKopecks} коп.)`);
 			}
 			calculatedActsKop += act.totalKopecks;
 		}
 	}
 
-	// 3. Validate Material Writeoff Arithmetic
-	const calculatedMaterialsKop = pkg.materialWriteoffDocument.items.reduce(
-		(sum, it) => sum + it.totalCostKopecks,
-		0,
-	);
+	const calculatedMaterialsKop = pkg.materialWriteoffDocument.items.reduce((sum, it) => sum + it.totalCostKopecks, 0);
 	if (calculatedMaterialsKop !== pkg.materialWriteoffDocument.totalCostKopecks) {
-		errors.push(
-			`Несходимость себестоимости материалов (Счет 10): сумма строк (${calculatedMaterialsKop} коп.) != итого накладной (${pkg.materialWriteoffDocument.totalCostKopecks} коп.)`,
-		);
+		errors.push(`Несходимость себестоимости материалов (Счет 10): сумма строк (${calculatedMaterialsKop} коп.) != итого накладной (${pkg.materialWriteoffDocument.totalCostKopecks} коп.)`);
 	}
 
-	// 4. Validate Payroll Arithmetic (if provided)
 	let calcPayrollGross = 0;
 	let calcPayrollNdfl = 0;
 	let calcPayrollSocial = 0;
 	let calcPayrollNet = 0;
 
 	if (pkg.payrollDocument) {
-		calcPayrollGross = pkg.payrollDocument.employees.reduce(
-			(sum, it) => sum + it.grossEarnedKopecks,
-			0,
-		);
-		calcPayrollNdfl = pkg.payrollDocument.employees.reduce(
-			(sum, it) => sum + it.ndfl13Kopecks,
-			0,
-		);
-		calcPayrollSocial = pkg.payrollDocument.employees.reduce(
-			(sum, it) => sum + it.socialInsuranceTaxesKopecks,
-			0,
-		);
-		calcPayrollNet = pkg.payrollDocument.employees.reduce(
-			(sum, it) => sum + it.netPayoutKopecks,
-			0,
-		);
-
-		if (calcPayrollGross !== pkg.payrollDocument.totalGrossKopecks) {
-			errors.push(
-				`Несходимость ФОТ зарплаты: сумма начислений (${calcPayrollGross} коп.) != итого документа (${pkg.payrollDocument.totalGrossKopecks} коп.)`,
-			);
-		}
-		if (calcPayrollNdfl !== pkg.payrollDocument.totalNdflKopecks) {
-			errors.push(
-				`Несходимость НДФЛ: сумма налога (${calcPayrollNdfl} коп.) != итого документа (${pkg.payrollDocument.totalNdflKopecks} коп.)`,
-			);
-		}
-		if (calcPayrollSocial !== pkg.payrollDocument.totalSocialTaxesKopecks) {
-			errors.push(
-				`Несходимость страховых взносов: сумма взносов (${calcPayrollSocial} коп.) != итого документа (${pkg.payrollDocument.totalSocialTaxesKopecks} коп.)`,
-			);
-		}
-		if (calcPayrollNet !== pkg.payrollDocument.totalNetPayoutKopecks) {
-			errors.push(
-				`Несходимость выплаты на руки: сумма выплат (${calcPayrollNet} коп.) != итого документа (${pkg.payrollDocument.totalNetPayoutKopecks} коп.)`,
-			);
-		}
-
 		for (const emp of pkg.payrollDocument.employees) {
+			calcPayrollGross += emp.grossEarnedKopecks;
+			calcPayrollNdfl += emp.ndfl13Kopecks;
+			calcPayrollSocial += emp.socialInsuranceTaxesKopecks;
+			calcPayrollNet += emp.netPayoutKopecks;
 			if (emp.grossEarnedKopecks - emp.ndfl13Kopecks !== emp.netPayoutKopecks) {
-				errors.push(
-					`Ошибка расчета сотрудника «${emp.employeeName}»: Начислено (${emp.grossEarnedKopecks}) - НДФЛ (${emp.ndfl13Kopecks}) != На руки (${emp.netPayoutKopecks})`,
-				);
+				errors.push(`Ошибка расчета сотрудника «${emp.employeeName}»: Начислено (${emp.grossEarnedKopecks}) - НДФЛ (${emp.ndfl13Kopecks}) != На руки (${emp.netPayoutKopecks})`);
 			}
 		}
-	}
 
-	const pkgSha = computeCommerceMlSha256(pkg);
+		if (calcPayrollGross !== pkg.payrollDocument.totalGrossKopecks) {
+			errors.push(`Несходимость ФОТ зарплаты: сумма начислений (${calcPayrollGross} коп.) != итого документа (${pkg.payrollDocument.totalGrossKopecks} коп.)`);
+		}
+		if (calcPayrollNdfl !== pkg.payrollDocument.totalNdflKopecks) {
+			errors.push(`Несходимость НДФЛ: сумма налога (${calcPayrollNdfl} коп.) != итого документа (${pkg.payrollDocument.totalNdflKopecks} коп.)`);
+		}
+		if (calcPayrollSocial !== pkg.payrollDocument.totalSocialTaxesKopecks) {
+			errors.push(`Несходимость страховых взносов: сумма взносов (${calcPayrollSocial} коп.) != итого документа (${pkg.payrollDocument.totalSocialTaxesKopecks} коп.)`);
+		}
+		if (calcPayrollNet !== pkg.payrollDocument.totalNetPayoutKopecks) {
+			errors.push(`Несходимость выплаты на руки: сумма выплат (${calcPayrollNet} коп.) != итого документа (${pkg.payrollDocument.totalNetPayoutKopecks} коп.)`);
+		}
+	}
 
 	return {
 		isValid: errors.length === 0,
@@ -540,7 +421,7 @@ export function validatePackageIntegrity(
 			payrollSocial: calcPayrollSocial,
 			payrollNet: calcPayrollNet,
 		},
-		sha256: pkgSha,
+		sha256: computeCommerceMlSha256(pkg),
 	};
 }
 
@@ -549,49 +430,40 @@ export function validatePackageIntegrity(
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function formatKopToRub(kopecks: number): string {
-	const rub = Math.max(0, Math.round(kopecks)) / 100;
-	return rub.toFixed(2);
+	return (Math.max(0, Math.round(kopecks)) / 100).toFixed(2);
 }
 
 export function formatKopToRubLocale(kopecks: number): string {
-	const rub = Math.max(0, Math.round(kopecks)) / 100;
-	return `${rub.toLocaleString("ru-RU", {
+	return `${(Math.max(0, Math.round(kopecks)) / 100).toLocaleString("ru-RU", {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	})} ₽`;
 }
+
+const reqVal = (name: string, val: string | number | boolean): string =>
+	`\t\t\t<ЗначениеРеквизита>\n\t\t\t\t<Наименование>${name}</Наименование>\n\t\t\t\t<Значение>${val}</Значение>\n\t\t\t</ЗначениеРеквизита>`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COMMERCEML 2.09 XML GENERATOR
 // ═══════════════════════════════════════════════════════════════════════════
 
 function renderRetailSalesItemsCommerceMl(items: readonly OneCRetailSaleItem[]): string {
-	return items
-		.map((it) => {
-			const unitCode = it.unitCode || DEFAULT_OKEI_PIECE_CODE;
-			const unitName = it.unitName || DEFAULT_OKEI_PIECE_NAME;
-			const toothSuffix = it.toothNumber ? ` (Зуб ${it.toothNumber})` : "";
-			const fullName = `${it.name}${toothSuffix}`;
-			const vatRate = it.vatRate || "Без НДС";
-			const vatAmountRub = formatKopToRub(it.vatAmountKopecks ?? 0);
-			const priceRub = formatKopToRub(it.priceKopecks);
-			const totalRub = formatKopToRub(it.totalKopecks);
-			const discountPercent =
-				it.priceKopecks > 0
-					? Math.round((it.discountKopecks / it.priceKopecks) * 100)
-					: 0;
-
-			return `\t\t\t\t<Товар>
+	return items.map((it) => {
+		const unitCode = it.unitCode || DEFAULT_OKEI_PIECE_CODE;
+		const unitName = it.unitName || DEFAULT_OKEI_PIECE_NAME;
+		const fullName = `${it.name}${it.toothNumber ? ` (Зуб ${it.toothNumber})` : ""}`;
+		const discountPercent = it.priceKopecks > 0 ? Math.round((it.discountKopecks / it.priceKopecks) * 100) : 0;
+		return `\t\t\t\t<Товар>
 \t\t\t\t\t<Ид>${escapeXml(it.id)}</Ид>
 \t\t\t\t\t<Артикул>${escapeXml(it.code804n || it.id)}</Артикул>
 \t\t\t\t\t<Код804н>${escapeXml(it.code804n || "")}</Код804н>
 \t\t\t\t\t<Наименование>${escapeXml(fullName)}</Наименование>
 \t\t\t\t\t<БазоваяЕдиница Код="${escapeXml(unitCode)}" НаименованиеПолное="${escapeXml(unitName)}">${escapeXml(unitName)}</БазоваяЕдиница>
-\t\t\t\t\t<СтавкаНДС>${escapeXml(vatRate)}</СтавкаНДС>
-\t\t\t\t\t<ЦенаЗаЕдиницу>${priceRub}</ЦенаЗаЕдиницу>
+\t\t\t\t\t<СтавкаНДС>${escapeXml(it.vatRate || "Без НДС")}</СтавкаНДС>
+\t\t\t\t\t<ЦенаЗаЕдиницу>${formatKopToRub(it.priceKopecks)}</ЦенаЗаЕдиницу>
 \t\t\t\t\t<Количество>${it.quantity}</Количество>
-\t\t\t\t\t<Сумма>${totalRub}</Сумма>
-\t\t\t\t\t<СуммаНДС>${vatAmountRub}</СуммаНДС>
+\t\t\t\t\t<Сумма>${formatKopToRub(it.totalKopecks)}</Сумма>
+\t\t\t\t\t<СуммаНДС>${formatKopToRub(it.vatAmountKopecks ?? 0)}</СуммаНДС>
 \t\t\t\t\t<Скидки>
 \t\t\t\t\t\t<Скидка>
 \t\t\t\t\t\t\t<Процент>${discountPercent}</Процент>
@@ -601,91 +473,54 @@ function renderRetailSalesItemsCommerceMl(items: readonly OneCRetailSaleItem[]):
 \t\t\t\t\t<НоменклатурнаяГруппа>${escapeXml(it.nomenclatureGroup || "Стоматологические услуги")}</НоменклатурнаяГруппа>
 \t\t\t\t\t<ВрачФИО>${escapeXml(it.doctorName || "")}</ВрачФИО>
 \t\t\t\t</Товар>`;
-		})
-		.join("\n");
+	}).join("\n");
 }
 
-function renderRetailSalesPaymentsCommerceMl(
-	payments: readonly OneCPaymentBreakdownItem[],
-): string {
-	return payments
-		.map((p) => {
-			const sumRub = formatKopToRub(p.amountKopecks);
-			const acquiringInfo = p.acquiringBankName
-				? `\n\t\t\t\t\t<Эквайер>${escapeXml(p.acquiringBankName)}</Эквайер>`
-				: "";
-			const terminalInfo = p.acquiringTerminalId
-				? `\n\t\t\t\t\t<Терминал>${escapeXml(p.acquiringTerminalId)}</Терминал>`
-				: "";
-			const fiscalInfo = p.fiscalReceiptNumber
-				? `\n\t\t\t\t\t<Чек54ФЗ>${escapeXml(p.fiscalReceiptNumber)}</Чек54ФЗ>`
-				: "";
-
-			return `\t\t\t\t<Оплата>
+function renderRetailSalesPaymentsCommerceMl(payments: readonly OneCPaymentBreakdownItem[]): string {
+	return payments.map((p) => {
+		const acq = p.acquiringBankName ? `\n\t\t\t\t\t<Эквайер>${escapeXml(p.acquiringBankName)}</Эквайер>` : "";
+		const term = p.acquiringTerminalId ? `\n\t\t\t\t\t<Терминал>${escapeXml(p.acquiringTerminalId)}</Терминал>` : "";
+		const fisc = p.fiscalReceiptNumber ? `\n\t\t\t\t\t<Чек54ФЗ>${escapeXml(p.fiscalReceiptNumber)}</Чек54ФЗ>` : "";
+		return `\t\t\t\t<Оплата>
 \t\t\t\t\t<Ид>${escapeXml(p.id)}</Ид>
 \t\t\t\t\t<ВидОплаты>${escapeXml(p.tenderTitleRu)}</ВидОплаты>
 \t\t\t\t\t<ТипОплаты>${escapeXml(p.tenderType)}</ТипОплаты>
-\t\t\t\t\t<Сумма>${sumRub}</Сумма>
-\t\t\t\t\t<СчетУчета>${escapeXml(p.accountCode)}</СчетУчета>${acquiringInfo}${terminalInfo}${fiscalInfo}
+\t\t\t\t\t<Сумма>${formatKopToRub(p.amountKopecks)}</Сумма>
+\t\t\t\t\t<СчетУчета>${escapeXml(p.accountCode)}</СчетУчета>${acq}${term}${fisc}
 \t\t\t\t</Оплата>`;
-		})
-		.join("\n");
+	}).join("\n");
 }
 
 function renderMedicalActItemsCommerceMl(items: readonly OneCMedicalActItem[]): string {
-	return items
-		.map((it) => {
-			const unitCode = it.unitCode || DEFAULT_OKEI_PIECE_CODE;
-			const unitName = it.unitName || DEFAULT_OKEI_PIECE_NAME;
-			const toothSuffix = it.toothNumber ? ` (Зуб ${it.toothNumber})` : "";
-			const fullName = `${it.name}${toothSuffix}`;
-			const priceRub = formatKopToRub(it.priceKopecks);
-			const totalRub = formatKopToRub(it.totalKopecks);
-			const vatRub = formatKopToRub(it.vatAmountKopecks ?? 0);
-			const vatRate = it.vatRate || "Без НДС";
-
-			const toothTag = it.toothNumber
-				? `\n\t\t\t\t\t<Зуб>${it.toothNumber}</Зуб>\n\t\t\t\t\t<НомерЗуба>${it.toothNumber}</НомерЗуба>`
-				: "";
-
-			return `\t\t\t\t<Товар>
+	return items.map((it) => {
+		const unitCode = it.unitCode || DEFAULT_OKEI_PIECE_CODE;
+		const unitName = it.unitName || DEFAULT_OKEI_PIECE_NAME;
+		const toothSuffix = it.toothNumber ? ` (Зуб ${it.toothNumber})` : "";
+		const toothTag = it.toothNumber ? `\n\t\t\t\t\t<Зуб>${it.toothNumber}</Зуб>\n\t\t\t\t\t<НомерЗуба>${it.toothNumber}</НомерЗуба>` : "";
+		return `\t\t\t\t<Товар>
 \t\t\t\t\t<Ид>${escapeXml(it.id)}</Ид>
 \t\t\t\t\t<Артикул>${escapeXml(it.code804n || it.id)}</Артикул>
 \t\t\t\t\t<Код804н>${escapeXml(it.code804n || "")}</Код804н>${toothTag}
-\t\t\t\t\t<Наименование>${escapeXml(fullName)}</Наименование>
+\t\t\t\t\t<Наименование>${escapeXml(`${it.name}${toothSuffix}`)}</Наименование>
 \t\t\t\t\t<БазоваяЕдиница Код="${escapeXml(unitCode)}" НаименованиеПолное="${escapeXml(unitName)}">${escapeXml(unitName)}</БазоваяЕдиница>
-\t\t\t\t\t<СтавкаНДС>${escapeXml(vatRate)}</СтавкаНДС>
-\t\t\t\t\t<ЦенаЗаЕдиницу>${priceRub}</ЦенаЗаЕдиницу>
+\t\t\t\t\t<СтавкаНДС>${escapeXml(it.vatRate || "Без НДС")}</СтавкаНДС>
+\t\t\t\t\t<ЦенаЗаЕдиницу>${formatKopToRub(it.priceKopecks)}</ЦенаЗаЕдиницу>
 \t\t\t\t\t<Количество>${it.quantity}</Количество>
-\t\t\t\t\t<Сумма>${totalRub}</Сумма>
-\t\t\t\t\t<СуммаНДС>${vatRub}</СуммаНДС>
+\t\t\t\t\t<Сумма>${formatKopToRub(it.totalKopecks)}</Сумма>
+\t\t\t\t\t<СуммаНДС>${formatKopToRub(it.vatAmountKopecks ?? 0)}</СуммаНДС>
 \t\t\t\t\t<ВрачФИО>${escapeXml(it.attendingDoctorName || "")}</ВрачФИО>
 \t\t\t\t</Товар>`;
-		})
-		.join("\n");
+	}).join("\n");
 }
 
-function renderMedicalActDocumentCommerceMl(
-	act: OneCMedicalActDocument,
-	clinic: OneCClinicProfile,
-	chartOfAccounts: OneCChartOfAccounts,
-): string {
-	const actTotalRub = formatKopToRub(act.totalKopecks);
+function renderMedicalActDocumentCommerceMl(act: OneCMedicalActDocument, clinic: OneCClinicProfile, chartOfAccounts: OneCChartOfAccounts): string {
 	const actSha = act.sha256Hash || computeCommerceMlSha256(act);
-
-	const contractRequisite = act.contractNumber
-		? `\n\t\t\t\t<ЗначениеРеквизита>
-\t\t\t\t\t<Наименование>Договор</Наименование>
-\t\t\t\t\t<Значение>Договор № ${escapeXml(act.contractNumber)}${act.contractDateIso ? ` от ${escapeXml(act.contractDateIso)}` : ""}</Значение>
-\t\t\t\t</ЗначениеРеквизита>`
-		: "";
-
-	const doctorRequisite = act.attendingDoctorName
-		? `\n\t\t\t\t<ЗначениеРеквизита>
-\t\t\t\t\t<Наименование>ВрачФИО</Наименование>
-\t\t\t\t\t<Значение>${escapeXml(act.attendingDoctorName)}</Значение>
-\t\t\t\t</ЗначениеРеквизита>`
-		: "";
+	const contractReq = act.contractNumber ? `\n${reqVal("Договор", `Договор № ${escapeXml(act.contractNumber)}${act.contractDateIso ? ` от ${escapeXml(act.contractDateIso)}` : ""}`)}` : "";
+	const docReq = act.attendingDoctorName ? `\n${reqVal("ВрачФИО", escapeXml(act.attendingDoctorName))}` : "";
+	const p = act.patient;
+	const innTag = p.inn ? `\t\t\t\t<ИНН>${escapeXml(p.inn)}</ИНН>\n` : "";
+	const addrTag = p.address ? `\t\t\t\t<Адрес>${escapeXml(p.address)}</Адрес>\n` : "";
+	const phoneTag = p.phone ? `\t\t\t\t<Контакты><Контакт><Тип>ТелефонРабочий</Тип><Значение>${escapeXml(p.phone)}</Значение></Контакт></Контакты>\n` : "";
 
 	return `\t<!-- Акт выполненных медицинских услуг: № ${escapeXml(act.actNumber)} -->
 \t<Документ>
@@ -697,107 +532,68 @@ function renderMedicalActDocumentCommerceMl(
 \t\t<Роль>Продавец</Роль>
 \t\t<Валюта>руб</Валюта>
 \t\t<Курс>1</Курс>
-\t\t<Сумма>${actTotalRub}</Сумма>
+\t\t<Сумма>${formatKopToRub(act.totalKopecks)}</Сумма>
 \t\t<ХэшТранзакцииSHA256>${actSha}</ХэшТранзакцииSHA256>
 \t\t<Контрагенты>
 \t\t\t<Контрагент>
-\t\t\t\t<Ид>${escapeXml(act.patient.id)}</Ид>
-\t\t\t\t<Наименование>${escapeXml(act.patient.name)}</Наименование>
-\t\t\t\t<ПолноеНаименование>${escapeXml(act.patient.fullName || act.patient.name)}</ПолноеНаименование>
+\t\t\t\t<Ид>${escapeXml(p.id)}</Ид>
+\t\t\t\t<Наименование>${escapeXml(p.name)}</Наименование>
+\t\t\t\t<ПолноеНаименование>${escapeXml(p.fullName || p.name)}</ПолноеНаименование>
 \t\t\t\t<Роль>Покупатель</Роль>
-${act.patient.inn ? `\t\t\t\t<ИНН>${escapeXml(act.patient.inn)}</ИНН>\n` : ""}${act.patient.address ? `\t\t\t\t<Адрес>${escapeXml(act.patient.address)}</Адрес>\n` : ""}${act.patient.phone ? `\t\t\t\t<Контакты><Контакт><Тип>ТелефонРабочий</Тип><Значение>${escapeXml(act.patient.phone)}</Значение></Контакт></Контакты>\n` : ""}\t\t\t</Контрагент>
+${innTag}${addrTag}${phoneTag}\t\t\t</Контрагент>
 \t\t</Контрагенты>
 \t\t<Товары>
 ${renderMedicalActItemsCommerceMl(act.items)}
 \t\t</Товары>
 \t\t<ЗначенияРеквизитов>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>ОсвобождениеОтНДС</Наименование>
-\t\t\t\t<Значение>${TAX_EXEMPTION_ARTICLE_149_RU}</Значение>
-\t\t\t</ЗначениеРеквизита>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>СчетРасчетовСПокупателем</Наименование>
-\t\t\t\t<Значение>${escapeXml(chartOfAccounts.accountBuyersSettlement)}</Значение>
-\t\t\t</ЗначениеРеквизита>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>СчетДоходов</Наименование>
-\t\t\t\t<Значение>${escapeXml(chartOfAccounts.accountSalesRevenue)}</Значение>
-\t\t\t</ЗначениеРеквизита>${contractRequisite}${doctorRequisite}
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>Проведен</Наименование>
-\t\t\t\t<Значение>true</Значение>
-\t\t\t</ЗначениеРеквизита>
+${reqVal("ОсвобождениеОтНДС", TAX_EXEMPTION_ARTICLE_149_RU)}
+${reqVal("СчетРасчетовСПокупателем", escapeXml(chartOfAccounts.accountBuyersSettlement))}
+${reqVal("СчетДоходов", escapeXml(chartOfAccounts.accountSalesRevenue))}${contractReq}${docReq}
+${reqVal("Проведен", "true")}
 \t\t</ЗначенияРеквизитов>
 \t</Документ>`;
 }
 
-function renderMaterialWriteoffItemsCommerceMl(
-	items: readonly OneCMaterialWriteoffItem[],
-): string {
-	return items
-		.map((it) => {
-			const unitCostRub = formatKopToRub(it.unitCostKopecks);
-			const totalCostRub = formatKopToRub(it.totalCostKopecks);
-			const batchInfo = it.batchNumber
-				? `\n\t\t\t\t\t<Партия>${escapeXml(it.batchNumber)}</Партия>`
-				: "";
-			const expInfo = it.expirationDateIso
-				? `\n\t\t\t\t\t<СрокГодности>${escapeXml(it.expirationDateIso)}</СрокГодности>`
-				: "";
-			const csoCycleInfo = it.sterilizerCycleNumber
-				? `\n\t\t\t\t\t<ЦиклЦСО>${escapeXml(it.sterilizerCycleNumber)}</ЦиклЦСО>`
-				: "";
-
-			return `\t\t\t\t<Материал>
+function renderMaterialWriteoffItemsCommerceMl(items: readonly OneCMaterialWriteoffItem[]): string {
+	return items.map((it) => {
+		const batchInfo = it.batchNumber ? `\n\t\t\t\t\t<Партия>${escapeXml(it.batchNumber)}</Партия>` : "";
+		const expInfo = it.expirationDateIso ? `\n\t\t\t\t\t<СрокГодности>${escapeXml(it.expirationDateIso)}</СрокГодности>` : "";
+		const csoCycleInfo = it.sterilizerCycleNumber ? `\n\t\t\t\t\t<ЦиклЦСО>${escapeXml(it.sterilizerCycleNumber)}</ЦиклЦСО>` : "";
+		return `\t\t\t\t<Материал>
 \t\t\t\t\t<Ид>${escapeXml(it.id)}</Ид>
 \t\t\t\t\t<Артикул>${escapeXml(it.article || it.id)}</Артикул>
 \t\t\t\t\t<Наименование>${escapeXml(it.name)}</Наименование>
 \t\t\t\t\t<БазоваяЕдиница Код="${escapeXml(it.unitCode)}" НаименованиеПолное="${escapeXml(it.unitName)}">${escapeXml(it.unitName)}</БазоваяЕдиница>
 \t\t\t\t\t<Количество>${it.quantity}</Количество>
-\t\t\t\t\t<СебестоимостьЗаЕдиницу>${unitCostRub}</СебестоимостьЗаЕдиницу>
-\t\t\t\t\t<Сумма>${totalCostRub}</Сумма>
+\t\t\t\t\t<СебестоимостьЗаЕдиницу>${formatKopToRub(it.unitCostKopecks)}</СебестоимостьЗаЕдиницу>
+\t\t\t\t\t<Сумма>${formatKopToRub(it.totalCostKopecks)}</Сумма>
 \t\t\t\t\t<СчетДебета>${escapeXml(it.debitAccount)}</СчетДебета>
 \t\t\t\t\t<СчетКредита>${escapeXml(it.creditAccount)}</СчетКредита>
 \t\t\t\t\t<СтатьяЗатрат>${escapeXml(it.costItemTitleRu)}</СтатьяЗатрат>${batchInfo}${expInfo}${csoCycleInfo}
 \t\t\t\t</Материал>`;
-		})
-		.join("\n");
+	}).join("\n");
 }
 
-function renderPayrollEmployeesCommerceMl(
-	employees: readonly OneCPayrollEmployeeItem[],
-): string {
-	return employees
-		.map((emp) => {
-			const grossRub = formatKopToRub(emp.grossEarnedKopecks);
-			const ndflRub = formatKopToRub(emp.ndfl13Kopecks);
-			const socialRub = formatKopToRub(emp.socialInsuranceTaxesKopecks);
-			const netRub = formatKopToRub(emp.netPayoutKopecks);
-
-			return `\t\t\t\t<Сотрудник>
+function renderPayrollEmployeesCommerceMl(employees: readonly OneCPayrollEmployeeItem[]): string {
+	return employees.map((emp) => `\t\t\t\t<Сотрудник>
 \t\t\t\t\t<Ид>${escapeXml(emp.id)}</Ид>
 \t\t\t\t\t<ТабельныйНомер>${escapeXml(emp.employeeTabNumber)}</ТабельныйНомер>
 \t\t\t\t\t<ФИО>${escapeXml(emp.employeeName)}</ФИО>
 \t\t\t\t\t<Должность>${escapeXml(emp.positionTitleRu)}</Должность>
 \t\t\t\t\t<Специальность>${escapeXml(emp.specialtyRu)}</Специальность>
 \t\t\t\t\t<ВидНачисления>${escapeXml(emp.calculationTypeTitleRu)}</ВидНачисления>
-\t\t\t\t\t<СуммаНачислено>${grossRub}</СуммаНачислено>
-\t\t\t\t\t<СуммаНДФЛ>${ndflRub}</СуммаНДФЛ>
-\t\t\t\t\t<СуммаСтраховыеВзносы>${socialRub}</СуммаСтраховыеВзносы>
-\t\t\t\t\t<СуммаКВыплате>${netRub}</СуммаКВыплате>
+\t\t\t\t\t<СуммаНачислено>${formatKopToRub(emp.grossEarnedKopecks)}</СуммаНачислено>
+\t\t\t\t\t<СуммаНДФЛ>${formatKopToRub(emp.ndfl13Kopecks)}</СуммаНДФЛ>
+\t\t\t\t\t<СуммаСтраховыеВзносы>${formatKopToRub(emp.socialInsuranceTaxesKopecks)}</СуммаСтраховыеВзносы>
+\t\t\t\t\t<СуммаКВыплате>${formatKopToRub(emp.netPayoutKopecks)}</СуммаКВыплате>
 \t\t\t\t\t<СчетДебета>${escapeXml(emp.debitAccount)}</СчетДебета>
 \t\t\t\t\t<СчетКредитаЗарплата>${escapeXml(emp.creditAccountPayroll)}</СчетКредитаЗарплата>
 \t\t\t\t\t<СчетКредитаНДФЛ>${escapeXml(emp.creditAccountNdfl)}</СчетКредитаНДФЛ>
 \t\t\t\t\t<СчетКредитаВзносы>${escapeXml(emp.creditAccountSocial)}</СчетКредитаВзносы>
 \t\t\t\t\t<СтатьяЗатрат>${escapeXml(emp.costItemTitleRu)}</СтатьяЗатрат>
-\t\t\t\t</Сотрудник>`;
-		})
-		.join("\n");
+\t\t\t\t</Сотрудник>`).join("\n");
 }
 
-/**
- * Generates official 1C:Enterprise CommerceML 2.09 Multi-Document Package XML.
- */
 export function generateCommerceMl209PackageXml(pkg: OneCCommerceMlPackage): string {
 	const clinic = pkg.clinic;
 	const accounts = pkg.chartOfAccounts || DEFAULT_1C_CHART_OF_ACCOUNTS;
@@ -824,10 +620,9 @@ export function generateCommerceMl209PackageXml(pkg: OneCCommerceMlPackage): str
 			</РасчетныеСчета>`
 		: "";
 
-	const medicalActsXml =
-		medicalActs.length > 0
-			? `\n${medicalActs.map((act) => renderMedicalActDocumentCommerceMl(act, clinic, accounts)).join("\n")}`
-			: "";
+	const medicalActsXml = medicalActs.length > 0
+		? `\n${medicalActs.map((act) => renderMedicalActDocumentCommerceMl(act, clinic, accounts)).join("\n")}`
+		: "";
 
 	const payrollDocXml = payrollDoc
 		? `\n\t<!-- Документ: Отражение зарплаты в бухучете (Форма Т-51 / Т-13) -->
@@ -846,26 +641,11 @@ export function generateCommerceMl209PackageXml(pkg: OneCCommerceMlPackage): str
 ${renderPayrollEmployeesCommerceMl(payrollDoc.employees)}
 \t\t</Начисления>
 \t\t<ЗначенияРеквизитов>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>Основание</Наименование>
-\t\t\t\t<Значение>Расчетная ведомость по форме Т-51 (${escapeXml(payrollDoc.periodLabelRu)})</Значение>
-\t\t\t</ЗначениеРеквизита>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>СчетЗарплатыКт</Наименование>
-\t\t\t\t<Значение>${escapeXml(accounts.accountPayroll)}</Значение>
-\t\t\t</ЗначениеРеквизита>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>СчетНдфлКт</Наименование>
-\t\t\t\t<Значение>${escapeXml(accounts.accountNdfl)}</Значение>
-\t\t\t</ЗначениеРеквизита>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>СчетВзносовКт</Наименование>
-\t\t\t\t<Значение>${escapeXml(accounts.accountSocialTaxes)}</Значение>
-\t\t\t</ЗначениеРеквизита>
-\t\t\t<ЗначениеРеквизита>
-\t\t\t\t<Наименование>Проведен</Наименование>
-\t\t\t\t<Значение>true</Значение>
-\t\t\t</ЗначениеРеквизита>
+${reqVal("Основание", `Расчетная ведомость по форме Т-51 (${escapeXml(payrollDoc.periodLabelRu)})`)}
+${reqVal("СчетЗарплатыКт", escapeXml(accounts.accountPayroll))}
+${reqVal("СчетНдфлКт", escapeXml(accounts.accountNdfl))}
+${reqVal("СчетВзносовКт", escapeXml(accounts.accountSocialTaxes))}
+${reqVal("Проведен", "true")}
 \t\t</ЗначенияРеквизитов>
 \t</Документ>`
 		: "";
@@ -929,38 +709,14 @@ ${renderRetailSalesItemsCommerceMl(salesDoc.items)}
 ${renderRetailSalesPaymentsCommerceMl(salesDoc.payments)}
 		</Оплаты>
 		<ЗначенияРеквизитов>
-			<ЗначениеРеквизита>
-				<Наименование>ОсвобождениеОтНДС</Наименование>
-				<Значение>${TAX_EXEMPTION_ARTICLE_149_RU}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетДоходов</Наименование>
-				<Значение>${escapeXml(accounts.accountSalesRevenue)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетРасходов</Наименование>
-				<Значение>${escapeXml(accounts.accountSalesCost)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетКасса</Наименование>
-				<Значение>${escapeXml(accounts.accountCashDesk)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетЭквайринг</Наименование>
-				<Значение>${escapeXml(accounts.accountAcquiringTransit)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетРасчетный</Наименование>
-				<Значение>${escapeXml(accounts.accountBankCurrent)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетРасчетов</Наименование>
-				<Значение>${escapeXml(accounts.accountRetailBuyers)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>Проведен</Наименование>
-				<Значение>true</Значение>
-			</ЗначениеРеквизита>
+${reqVal("ОсвобождениеОтНДС", TAX_EXEMPTION_ARTICLE_149_RU)}
+${reqVal("СчетДоходов", escapeXml(accounts.accountSalesRevenue))}
+${reqVal("СчетРасходов", escapeXml(accounts.accountSalesCost))}
+${reqVal("СчетКасса", escapeXml(accounts.accountCashDesk))}
+${reqVal("СчетЭквайринг", escapeXml(accounts.accountAcquiringTransit))}
+${reqVal("СчетРасчетный", escapeXml(accounts.accountBankCurrent))}
+${reqVal("СчетРасчетов", escapeXml(accounts.accountRetailBuyers))}
+${reqVal("Проведен", "true")}
 		</ЗначенияРеквизитов>
 	</Документ>${medicalActsXml}
 
@@ -982,33 +738,17 @@ ${renderRetailSalesPaymentsCommerceMl(salesDoc.payments)}
 ${renderMaterialWriteoffItemsCommerceMl(writeoffDoc.items)}
 		</Материалы>
 		<ЗначенияРеквизитов>
-			<ЗначениеРеквизита>
-				<Наименование>ОснованиеСписания</Наименование>
-				<Значение>${escapeXml(writeoffDoc.reasonRu || "Автоматическое списание по нормам BOM и ЦСО")}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетЗатратДебет</Наименование>
-				<Значение>${escapeXml(accounts.accountProductionCost)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>СчетМатериаловКредит</Наименование>
-				<Значение>${escapeXml(accounts.accountMaterials)}</Значение>
-			</ЗначениеРеквизита>
-			<ЗначениеРеквизита>
-				<Наименование>Проведен</Наименование>
-				<Значение>true</Значение>
-			</ЗначениеРеквизита>
+${reqVal("ОснованиеСписания", escapeXml(writeoffDoc.reasonRu || "Автоматическое списание по нормам BOM и ЦСО"))}
+${reqVal("СчетЗатратДебет", escapeXml(accounts.accountProductionCost))}
+${reqVal("СчетМатериаловКредит", escapeXml(accounts.accountMaterials))}
+${reqVal("Проведен", "true")}
 		</ЗначенияРеквизитов>
 	</Документ>${payrollDocXml}
 </КоммерческаяИнформация>`;
 }
 
-// Backward-compatible alias
 export const generateCommerceMl209Xml = generateCommerceMl209PackageXml;
 
-/**
- * Generates official 1C:Enterprise EnterpriseData v1.13 XML Package.
- */
 export function generateEnterpriseData113Xml(pkg: OneCCommerceMlPackage): string {
 	const clinic = pkg.clinic;
 	const salesDoc = pkg.retailSalesDocument;
@@ -1027,9 +767,7 @@ export function generateEnterpriseData113Xml(pkg: OneCCommerceMlPackage): string
 			<TotalSocial>${formatKopToRub(payrollDoc.totalSocialTaxesKopecks)}</TotalSocial>
 			<TotalNet>${formatKopToRub(payrollDoc.totalNetPayoutKopecks)}</TotalNet>
 			<Employees>
-${payrollDoc.employees
-	.map(
-		(emp) => `				<Employee>
+${payrollDoc.employees.map((emp) => `				<Employee>
 					<TabNumber>${escapeXml(emp.employeeTabNumber)}</TabNumber>
 					<FullName>${escapeXml(emp.employeeName)}</FullName>
 					<Position>${escapeXml(emp.positionTitleRu)}</Position>
@@ -1039,9 +777,7 @@ ${payrollDoc.employees
 					<NetPayout>${formatKopToRub(emp.netPayoutKopecks)}</NetPayout>
 					<DebitAccount>${escapeXml(emp.debitAccount)}</DebitAccount>
 					<CreditAccountPayroll>${escapeXml(emp.creditAccountPayroll)}</CreditAccountPayroll>
-				</Employee>`,
-	)
-	.join("\n")}
+				</Employee>`).join("\n")}
 			</Employees>
 		</Document.ОтражениеЗарплатыВБухучете>`
 		: "";
@@ -1074,9 +810,7 @@ ${payrollDoc.employees
 			<Amount>${formatKopToRub(salesDoc.totalRevenueKopecks)}</Amount>
 			<TaxExemption>${TAX_EXEMPTION_ARTICLE_149_RU}</TaxExemption>
 			<Items>
-${salesDoc.items
-	.map(
-		(it) => `				<Item>
+${salesDoc.items.map((it) => `				<Item>
 					<Code804n>${escapeXml(it.code804n || "")}</Code804n>
 					<Name>${escapeXml(it.name)}</Name>
 					<Tooth>${it.toothNumber || ""}</Tooth>
@@ -1084,21 +818,15 @@ ${salesDoc.items
 					<Price>${formatKopToRub(it.priceKopecks)}</Price>
 					<Total>${formatKopToRub(it.totalKopecks)}</Total>
 					<Doctor>${escapeXml(it.doctorName || "")}</Doctor>
-				</Item>`,
-	)
-	.join("\n")}
+				</Item>`).join("\n")}
 			</Items>
 			<Payments>
-${salesDoc.payments
-	.map(
-		(p) => `				<Payment>
+${salesDoc.payments.map((p) => `				<Payment>
 					<Type>${escapeXml(p.tenderType)}</Type>
 					<Title>${escapeXml(p.tenderTitleRu)}</Title>
 					<Amount>${formatKopToRub(p.amountKopecks)}</Amount>
 					<Account>${escapeXml(p.accountCode)}</Account>
-				</Payment>`,
-	)
-	.join("\n")}
+				</Payment>`).join("\n")}
 			</Payments>
 		</Document.ОтчетОРозничныхПродажах>
 
@@ -1115,9 +843,7 @@ ${salesDoc.payments
 			<TotalCost>${formatKopToRub(writeoffDoc.totalCostKopecks)}</TotalCost>
 			<Reason>${escapeXml(writeoffDoc.reasonRu || "Списание материалов BOM")}</Reason>
 			<Materials>
-${writeoffDoc.items
-	.map(
-		(it) => `				<Material>
+${writeoffDoc.items.map((it) => `				<Material>
 					<Article>${escapeXml(it.article)}</Article>
 					<Name>${escapeXml(it.name)}</Name>
 					<Unit>${escapeXml(it.unitName)}</Unit>
@@ -1127,9 +853,7 @@ ${writeoffDoc.items
 					<Batch>${escapeXml(it.batchNumber || "")}</Batch>
 					<DebitAccount>${escapeXml(it.debitAccount)}</DebitAccount>
 					<CreditAccount>${escapeXml(it.creditAccount)}</CreditAccount>
-				</Material>`,
-	)
-	.join("\n")}
+				</Material>`).join("\n")}
 			</Materials>
 		</Document.ТребованиеНакладная>${payrollSection}
 	</Body>
@@ -1141,42 +865,27 @@ ${writeoffDoc.items
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function generateRetailSalesCsv(doc: OneCRetailSalesDocument): string {
-	const header =
-		"НомерДокумента;Дата;Касса;Склад;Код804н;Номенклатура;Зуб;ЕдИзм;Количество;Цена;Скидка;Сумма;СтавкаНДС;ВрачФИО;СчетУчета;НоменклатурнаяГруппа\n";
+	const header = "НомерДокумента;Дата;Касса;Склад;Код804н;Номенклатура;Зуб;ЕдИзм;Количество;Цена;Скидка;Сумма;СтавкаНДС;ВрачФИО;СчетУчета;НоменклатурнаяГруппа\n";
 	const rows = doc.items.map((it) => {
 		const toothStr = it.toothNumber ? String(it.toothNumber) : "";
-		const priceStr = formatKopToRub(it.priceKopecks);
-		const discountStr = formatKopToRub(it.discountKopecks);
-		const totalStr = formatKopToRub(it.totalKopecks);
-		return `"${doc.documentNumber}";"${doc.documentDateIso}";"${doc.cashRegisterName}";"${doc.warehouseName}";"${it.code804n || ""}";"${it.name}";"${toothStr}";"${it.unitName || "шт"}";${it.quantity};${priceStr};${discountStr};${totalStr};"${it.vatRate || "Без НДС"}";"${it.doctorName || ""}";"90.01.1";"${it.nomenclatureGroup || "Стоматологические услуги"}"`;
+		return `"${doc.documentNumber}";"${doc.documentDateIso}";"${doc.cashRegisterName}";"${doc.warehouseName}";"${it.code804n || ""}";"${it.name}";"${toothStr}";"${it.unitName || "шт"}";${it.quantity};${formatKopToRub(it.priceKopecks)};${formatKopToRub(it.discountKopecks)};${formatKopToRub(it.totalKopecks)};"${it.vatRate || "Без НДС"}";"${it.doctorName || ""}";"90.01.1";"${it.nomenclatureGroup || "Стоматологические услуги"}"`;
 	});
-
 	return `\uFEFF${header}${rows.join("\n")}`;
 }
 
 export function generateMaterialWriteoffCsv(doc: OneCMaterialWriteoffDocument): string {
-	const header =
-		"НомерДокумента;Дата;СкладОтправитель;ПодразделениеПолучатель;Артикул;Номенклатура;Партия;СрокГодности;ЕдИзм;Количество;Себестоимость;Сумма;СчетДебета;СчетКредита;СтатьяЗатрат\n";
-	const rows = doc.items.map((it) => {
-		const costStr = formatKopToRub(it.unitCostKopecks);
-		const totalStr = formatKopToRub(it.totalCostKopecks);
-		return `"${doc.documentNumber}";"${doc.documentDateIso}";"${doc.senderWarehouseName}";"${doc.recipientDepartmentName}";"${it.article}";"${it.name}";"${it.batchNumber || ""}";"${it.expirationDateIso || ""}";"${it.unitName}";${it.quantity};${costStr};${totalStr};"${it.debitAccount}";"${it.creditAccount}";"${it.costItemTitleRu}"`;
-	});
-
+	const header = "НомерДокумента;Дата;СкладОтправитель;ПодразделениеПолучатель;Артикул;Номенклатура;Партия;СрокГодности;ЕдИзм;Количество;Себестоимость;Сумма;СчетДебета;СчетКредита;СтатьяЗатрат\n";
+	const rows = doc.items.map((it) =>
+		`"${doc.documentNumber}";"${doc.documentDateIso}";"${doc.senderWarehouseName}";"${doc.recipientDepartmentName}";"${it.article}";"${it.name}";"${it.batchNumber || ""}";"${it.expirationDateIso || ""}";"${it.unitName}";${it.quantity};${formatKopToRub(it.unitCostKopecks)};${formatKopToRub(it.totalCostKopecks)};"${it.debitAccount}";"${it.creditAccount}";"${it.costItemTitleRu}"`,
+	);
 	return `\uFEFF${header}${rows.join("\n")}`;
 }
 
 export function generatePayrollReflectionCsv(doc: OneCPayrollDocument): string {
-	const header =
-		"НомерДокумента;Дата;Период;ТабельныйНомер;Сотрудник;Должность;Специальность;ВидНачисления;СуммаНачислено;НДФЛ13;СтраховыеВзносы;КВыплате;СчетДт;СчетКт;СтатьяЗатрат\n";
-	const rows = doc.employees.map((emp) => {
-		const grossStr = formatKopToRub(emp.grossEarnedKopecks);
-		const ndflStr = formatKopToRub(emp.ndfl13Kopecks);
-		const socialStr = formatKopToRub(emp.socialInsuranceTaxesKopecks);
-		const netStr = formatKopToRub(emp.netPayoutKopecks);
-		return `"${doc.documentNumber}";"${doc.documentDateIso}";"${doc.periodLabelRu}";"${emp.employeeTabNumber}";"${emp.employeeName}";"${emp.positionTitleRu}";"${emp.specialtyRu}";"${emp.calculationTypeTitleRu}";${grossStr};${ndflStr};${socialStr};${netStr};"${emp.debitAccount}";"${emp.creditAccountPayroll}";"${emp.costItemTitleRu}"`;
-	});
-
+	const header = "НомерДокумента;Дата;Период;ТабельныйНомер;Сотрудник;Должность;Специальность;ВидНачисления;СуммаНачислено;НДФЛ13;СтраховыеВзносы;КВыплате;СчетДт;СчетКт;СтатьяЗатрат\n";
+	const rows = doc.employees.map((emp) =>
+		`"${doc.documentNumber}";"${doc.documentDateIso}";"${doc.periodLabelRu}";"${emp.employeeTabNumber}";"${emp.employeeName}";"${emp.positionTitleRu}";"${emp.specialtyRu}";"${emp.calculationTypeTitleRu}";${formatKopToRub(emp.grossEarnedKopecks)};${formatKopToRub(emp.ndfl13Kopecks)};${formatKopToRub(emp.socialInsuranceTaxesKopecks)};${formatKopToRub(emp.netPayoutKopecks)};"${emp.debitAccount}";"${emp.creditAccountPayroll}";"${emp.costItemTitleRu}"`,
+	);
 	return `\uFEFF${header}${rows.join("\n")}`;
 }
 
@@ -1191,55 +900,25 @@ export function generateCombinedCsvBundle(pkg: OneCCommerceMlPackage): {
 	return {
 		retailSalesCsv: generateRetailSalesCsv(pkg.retailSalesDocument),
 		writeoffsCsv: generateMaterialWriteoffCsv(pkg.materialWriteoffDocument),
-		payrollCsv: pkg.payrollDocument
-			? generatePayrollReflectionCsv(pkg.payrollDocument)
-			: "",
+		payrollCsv: pkg.payrollDocument ? generatePayrollReflectionCsv(pkg.payrollDocument) : "",
 	};
 }
 
-export function generateAccountantExecutiveSummary(
-	pkg: OneCCommerceMlPackage,
-): string {
-	const salesTotal = formatKopToRubLocale(
-		pkg.retailSalesDocument.totalRevenueKopecks,
-	);
-	const materialsTotal = formatKopToRubLocale(
-		pkg.materialWriteoffDocument.totalCostKopecks,
-	);
-	const payrollTotal = pkg.payrollDocument
-		? formatKopToRubLocale(pkg.payrollDocument.totalGrossKopecks)
-		: "0,00 ₽";
-	const ndflTotal = pkg.payrollDocument
-		? formatKopToRubLocale(pkg.payrollDocument.totalNdflKopecks)
-		: "0,00 ₽";
-	const netTotal = pkg.payrollDocument
-		? formatKopToRubLocale(pkg.payrollDocument.totalNetPayoutKopecks)
-		: "0,00 ₽";
+export function generateAccountantExecutiveSummary(pkg: OneCCommerceMlPackage): string {
+	const salesTotal = formatKopToRubLocale(pkg.retailSalesDocument.totalRevenueKopecks);
+	const materialsTotal = formatKopToRubLocale(pkg.materialWriteoffDocument.totalCostKopecks);
+	const payrollTotal = pkg.payrollDocument ? formatKopToRubLocale(pkg.payrollDocument.totalGrossKopecks) : "0,00 ₽";
+	const ndflTotal = pkg.payrollDocument ? formatKopToRubLocale(pkg.payrollDocument.totalNdflKopecks) : "0,00 ₽";
+	const netTotal = pkg.payrollDocument ? formatKopToRubLocale(pkg.payrollDocument.totalNetPayoutKopecks) : "0,00 ₽";
 
-	const cashTotal = formatKopToRubLocale(
-		pkg.retailSalesDocument.payments
-			.filter((p) => p.tenderType === "cash")
-			.reduce((s, p) => s + p.amountKopecks, 0),
-	);
-	const cardTotal = formatKopToRubLocale(
-		pkg.retailSalesDocument.payments
-			.filter((p) => p.tenderType === "card_acquiring")
-			.reduce((s, p) => s + p.amountKopecks, 0),
-	);
-	const sbpTotal = formatKopToRubLocale(
-		pkg.retailSalesDocument.payments
-			.filter((p) => p.tenderType === "sbp")
-			.reduce((s, p) => s + p.amountKopecks, 0),
-	);
-
-	const sha = computeCommerceMlSha256(pkg);
+	const tenderSum = (t: string) => formatKopToRubLocale(pkg.retailSalesDocument.payments.filter((p) => p.tenderType === t).reduce((s, p) => s + p.amountKopecks, 0));
 
 	return `================================================================================
 ПАКЕТ ВЫГРУЗКИ В 1С:ПРЕДПРИЯТИЕ 8.3 (CommerceML 2.09)
 Организация: ${pkg.clinic.fullName} (ИНН: ${pkg.clinic.inn}, КПП: ${pkg.clinic.kpp || "—"})
 Период: ${pkg.exportPeriodStartIso} — ${pkg.exportPeriodEndIso}
 Дата и время формирования: ${pkg.generatedAtIso}
-Контрольный хэш пакета (SHA-256): ${sha}
+Контрольный хэш пакета (SHA-256): ${computeCommerceMlSha256(pkg)}
 ================================================================================
 
 1. ДОКУМЕНТ «ОТЧЕТ О РОЗНИЧНЫХ ПРОДАЖАХ» (54-ФЗ)
@@ -1247,9 +926,9 @@ export function generateAccountantExecutiveSummary(
    Касса: ${pkg.retailSalesDocument.cashRegisterName}
    Выручка от медуслуг (Счет 90.01.1): ${salesTotal} (Без НДС, ст. 149 НК РФ)
    Способы оплаты:
-     - Наличные в кассу (Счет 50.01): ${cashTotal}
-     - Банковские карты / Эквайринг (Счет 57.03): ${cardTotal}
-     - СБП / Расчетный счет (Счет 51): ${sbpTotal}
+     - Наличные в кассу (Счет 50.01): ${tenderSum("cash")}
+     - Банковские карты / Эквайринг (Счет 57.03): ${tenderSum("card_acquiring")}
+     - СБП / Расчетный счет (Счет 51): ${tenderSum("sbp")}
 
 2. ДОКУМЕНТ «ТРЕБОВАНИЕ-НАКЛАДНАЯ / СПИСАНИЕ МАТЕРИАЛОВ»
    Номер: ${pkg.materialWriteoffDocument.documentNumber} от ${pkg.materialWriteoffDocument.documentDateIso}
@@ -1280,134 +959,31 @@ export function createRealisticShiftExportPackage(
 	clinicOverrides?: Partial<OneCClinicProfile>,
 	chartOverrides?: Partial<OneCChartOfAccounts>,
 ): OneCCommerceMlPackage {
-	const clinic: OneCClinicProfile = {
-		...DEFAULT_CLINIC_PROFILE_1C,
-		...clinicOverrides,
-	};
-	const chartOfAccounts: OneCChartOfAccounts = {
-		...DEFAULT_1C_CHART_OF_ACCOUNTS,
-		...chartOverrides,
-	};
-
+	const clinic: OneCClinicProfile = { ...DEFAULT_CLINIC_PROFILE_1C, ...clinicOverrides };
+	const chartOfAccounts: OneCChartOfAccounts = { ...DEFAULT_1C_CHART_OF_ACCOUNTS, ...chartOverrides };
 	const prefix = clinic.prefix1C || "DN";
 	const cleanDate = dateIso.replace(/-/g, "");
 
+	const sale = (id: string, code804n: string, name: string, toothNumber: number | undefined, quantity: number, priceKopecks: number, discountKopecks: number, doctorName: string, nomenclatureGroup: string): OneCRetailSaleItem => ({
+		id, code804n, name, toothNumber, unitCode: DEFAULT_OKEI_PIECE_CODE, unitName: DEFAULT_OKEI_PIECE_NAME,
+		quantity, priceKopecks, discountKopecks, totalKopecks: priceKopecks * quantity - discountKopecks,
+		vatRate: "Без НДС", vatAmountKopecks: 0, doctorName, nomenclatureGroup,
+	});
+
 	const salesItems: OneCRetailSaleItem[] = [
-		{
-			id: "srv-001",
-			code804n: "A16.07.002.001",
-			name: "Наложение временной пломбы (световой композит)",
-			toothNumber: 16,
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: DEFAULT_OKEI_PIECE_NAME,
-			quantity: 1,
-			priceKopecks: 120000,
-			discountKopecks: 0,
-			totalKopecks: 120000,
-			vatRate: "Без НДС",
-			vatAmountKopecks: 0,
-			doctorName: "Барабаш С.В.",
-			nomenclatureGroup: "Терапевтическая стоматология",
-		},
-		{
-			id: "srv-002",
-			code804n: "A16.07.030.002",
-			name: "Механическая и медикаментозная обработка 3 корневых каналов",
-			toothNumber: 16,
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: DEFAULT_OKEI_PIECE_NAME,
-			quantity: 3,
-			priceKopecks: 350000,
-			discountKopecks: 50000,
-			totalKopecks: 1000000,
-			vatRate: "Без НДС",
-			vatAmountKopecks: 0,
-			doctorName: "Барабаш С.В.",
-			nomenclatureGroup: "Эндодонтия",
-		},
-		{
-			id: "srv-003",
-			code804n: "A16.07.054.001",
-			name: "Установка дентального имплантата Straumann BLX Roxolid SLA",
-			toothNumber: 46,
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: DEFAULT_OKEI_PIECE_NAME,
-			quantity: 1,
-			priceKopecks: 6500000,
-			discountKopecks: 0,
-			totalKopecks: 6500000,
-			vatRate: "Без НДС",
-			vatAmountKopecks: 0,
-			doctorName: "Васильев Д.М.",
-			nomenclatureGroup: "Хирургическая стоматология / Имплантация",
-		},
-		{
-			id: "srv-004",
-			code804n: "A16.07.006.002",
-			name: "Изготовление коронки из диоксида циркония Prettau (CAD/CAM)",
-			toothNumber: 21,
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: DEFAULT_OKEI_PIECE_NAME,
-			quantity: 2,
-			priceKopecks: 2800000,
-			discountKopecks: 100000,
-			totalKopecks: 5500000,
-			vatRate: "Без НДС",
-			vatAmountKopecks: 0,
-			doctorName: "Васильев Д.М.",
-			nomenclatureGroup: "Ортопедическая стоматология",
-		},
-		{
-			id: "srv-005",
-			code804n: "A16.07.051",
-			name: "Профессиональная гигиена полости рта и AirFlow (комплекс)",
-			toothNumber: undefined,
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: DEFAULT_OKEI_PIECE_NAME,
-			quantity: 1,
-			priceKopecks: 1630000,
-			discountKopecks: 0,
-			totalKopecks: 1630000,
-			vatRate: "Без НДС",
-			vatAmountKopecks: 0,
-			doctorName: "Барабаш С.В.",
-			nomenclatureGroup: "Профилактическая стоматология",
-		},
+		sale("srv-001", "A16.07.002.001", "Наложение временной пломбы (световой композит)", 16, 1, 120000, 0, "Барабаш С.В.", "Терапевтическая стоматология"),
+		sale("srv-002", "A16.07.030.002", "Механическая и медикаментозная обработка 3 корневых каналов", 16, 3, 350000, 50000, "Барабаш С.В.", "Эндодонтия"),
+		sale("srv-003", "A16.07.054.001", "Установка дентального имплантата Straumann BLX Roxolid SLA", 46, 1, 6500000, 0, "Васильев Д.М.", "Хирургическая стоматология / Имплантация"),
+		sale("srv-004", "A16.07.006.002", "Изготовление коронки из диоксида циркония Prettau (CAD/CAM)", 21, 2, 2800000, 100000, "Васильев Д.М.", "Ортопедическая стоматология"),
+		sale("srv-005", "A16.07.051", "Профессиональная гигиена полости рта и AirFlow (комплекс)", undefined, 1, 1630000, 0, "Барабаш С.В.", "Профилактическая стоматология"),
 	];
 
-	const totalSalesKopecks = salesItems.reduce((s, it) => s + it.totalKopecks, 0); // 147 500,00 ₽
+	const totalSalesKopecks = salesItems.reduce((s, it) => s + it.totalKopecks, 0);
 
 	const payments: OneCPaymentBreakdownItem[] = [
-		{
-			id: "pay-001",
-			tenderType: "cash",
-			tenderTitleRu: "Наличные в кассу (50.01)",
-			amountKopecks: 3250000, // 32 500,00 ₽
-			accountCode: chartOfAccounts.accountCashDesk,
-			fiscalReceiptNumber: "ЧЕК-00042",
-			fiscalSign: "99401284",
-		},
-		{
-			id: "pay-002",
-			tenderType: "card_acquiring",
-			tenderTitleRu: "Оплата банковской картой / Эквайринг (57.03)",
-			amountKopecks: 8500000, // 85 000,00 ₽
-			accountCode: chartOfAccounts.accountAcquiringTransit,
-			acquiringBankName: "ПАО СБЕРБАНК",
-			acquiringTerminalId: "POS-00847291",
-			acquiringContractNumber: "ACQ-2026-981",
-			fiscalReceiptNumber: "ЧЕК-00043",
-			fiscalSign: "99401285",
-		},
-		{
-			id: "pay-003",
-			tenderType: "sbp",
-			tenderTitleRu: "Система быстрых платежей / QR (51)",
-			amountKopecks: 3000000, // 30 000,00 ₽
-			accountCode: chartOfAccounts.accountBankCurrent,
-			fiscalReceiptNumber: "ЧЕК-00044",
-			fiscalSign: "99401286",
-		},
+		{ id: "pay-001", tenderType: "cash", tenderTitleRu: "Наличные в кассу (50.01)", amountKopecks: 3250000, accountCode: chartOfAccounts.accountCashDesk, fiscalReceiptNumber: "ЧЕК-00042", fiscalSign: "99401284" },
+		{ id: "pay-002", tenderType: "card_acquiring", tenderTitleRu: "Оплата банковской картой / Эквайринг (57.03)", amountKopecks: 8500000, accountCode: chartOfAccounts.accountAcquiringTransit, acquiringBankName: "ПАО СБЕРБАНК", acquiringTerminalId: "POS-00847291", acquiringContractNumber: "ACQ-2026-981", fiscalReceiptNumber: "ЧЕК-00043", fiscalSign: "99401285" },
+		{ id: "pay-003", tenderType: "sbp", tenderTitleRu: "Система быстрых платежей / QR (51)", amountKopecks: 3000000, accountCode: chartOfAccounts.accountBankCurrent, fiscalReceiptNumber: "ЧЕК-00044", fiscalSign: "99401286" },
 	];
 
 	const salesDoc: OneCRetailSalesDocument = {
@@ -1424,87 +1000,22 @@ export function createRealisticShiftExportPackage(
 		totalDiscountKopecks: 150000,
 		totalVatKopecks: 0,
 		cashierName: "Смирнова Е.А.",
-		comment:
-			"Кассовая смена закрыта штатно. Выручка фискализирована в ОФД по ФФД 1.2.",
+		comment: "Кассовая смена закрыта штатно. Выручка фискализирована в ОФД по ФФД 1.2.",
 	};
 	salesDoc.sha256Hash = computeCommerceMlSha256(salesDoc);
 
+	const mat = (id: string, article: string, name: string, unitCode: string, unitName: string, quantity: number, unitCostKopecks: number, totalCostKopecks: number, debitAccount: string, creditAccount: string, costItemTitleRu: string, opt: Partial<OneCMaterialWriteoffItem> = {}): OneCMaterialWriteoffItem => ({
+		id, article, name, unitCode, unitName, quantity, unitCostKopecks, totalCostKopecks, debitAccount, creditAccount, costItemTitleRu, ...opt,
+	});
+
 	const writeoffItems: OneCMaterialWriteoffItem[] = [
-		{
-			id: "mat-001",
-			article: "MAT-FLT-250",
-			name: "Композит светового отверждения Filtek Supreme XTE Body A2 (шприц 3г)",
-			batchNumber: "Партия №2408-A",
-			expirationDateIso: "2027-11-30",
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: "шт",
-			quantity: 1,
-			unitCostKopecks: 425000, // 4 250,00 ₽
-			totalCostKopecks: 425000,
-			debitAccount: chartOfAccounts.accountProductionCost,
-			creditAccount: chartOfAccounts.accountMaterials,
-			costItemTitleRu: "Списание расходных материалов на терапевтический прием",
-			relatedServiceCode804n: "A16.07.002.001",
-			csoLogId: "CSO-2026-0828-01",
-			sterilizerCycleNumber: "Ц-142",
-		},
-		{
-			id: "mat-002",
-			article: "MAT-STRAUM-BLX",
-			name: "Имплантат Straumann BLX Ø 4.0mm SLActive 10mm (титан Roxolid)",
-			batchNumber: "LOT-849201",
-			expirationDateIso: "2029-06-30",
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: "шт",
-			quantity: 1,
-			unitCostKopecks: 1850000, // 18 500,00 ₽
-			totalCostKopecks: 1850000,
-			debitAccount: chartOfAccounts.accountProductionCost,
-			creditAccount: chartOfAccounts.accountMaterials,
-			costItemTitleRu: "Списание имплантационных систем (Хирургия)",
-			relatedServiceCode804n: "A16.07.054.001",
-			csoLogId: "CSO-2026-0828-02",
-			sterilizerCycleNumber: "Ц-143",
-		},
-		{
-			id: "mat-003",
-			article: "MAT-SEPT-100",
-			name: "Анестетик Септанест с адреналином 1:100 000 (упаковка 50 карпул)",
-			batchNumber: "B-202604",
-			expirationDateIso: "2028-04-30",
-			unitCode: DEFAULT_OKEI_PACK_CODE,
-			unitName: "упак",
-			quantity: 0.1,
-			unitCostKopecks: 550000,
-			totalCostKopecks: 55000, // 550,00 ₽
-			debitAccount: chartOfAccounts.accountProductionCost,
-			creditAccount: chartOfAccounts.accountConsumables,
-			costItemTitleRu: "Списание анестетиков и расходников ЦСО",
-			relatedServiceCode804n: "A16.07.002.001",
-		},
-		{
-			id: "mat-004",
-			article: "MAT-STER-KRAFT",
-			name: "Крафт-пакеты самоклеящиеся для стерилизации 100х200 мм (ЦСО)",
-			batchNumber: "KP-202601",
-			expirationDateIso: "2028-12-31",
-			unitCode: DEFAULT_OKEI_PIECE_CODE,
-			unitName: "шт",
-			quantity: 15,
-			unitCostKopecks: 8500,
-			totalCostKopecks: 127500, // 1 275,00 ₽
-			debitAccount: chartOfAccounts.accountProductionCost,
-			creditAccount: chartOfAccounts.accountConsumables,
-			costItemTitleRu: "Списание материалов ЦСО и стерилизации (СанПиН)",
-			csoLogId: "CSO-2026-0828-03",
-			sterilizerCycleNumber: "Ц-144",
-		},
+		mat("mat-001", "MAT-FLT-250", "Композит светового отверждения Filtek Supreme XTE Body A2 (шприц 3г)", DEFAULT_OKEI_PIECE_CODE, "шт", 1, 425000, 425000, chartOfAccounts.accountProductionCost, chartOfAccounts.accountMaterials, "Списание расходных материалов на терапевтический прием", { batchNumber: "Партия №2408-A", expirationDateIso: "2027-11-30", relatedServiceCode804n: "A16.07.002.001", csoLogId: "CSO-2026-0828-01", sterilizerCycleNumber: "Ц-142" }),
+		mat("mat-002", "MAT-STRAUM-BLX", "Имплантат Straumann BLX Ø 4.0mm SLActive 10mm (титан Roxolid)", DEFAULT_OKEI_PIECE_CODE, "шт", 1, 1850000, 1850000, chartOfAccounts.accountProductionCost, chartOfAccounts.accountMaterials, "Списание имплантационных систем (Хирургия)", { batchNumber: "LOT-849201", expirationDateIso: "2029-06-30", relatedServiceCode804n: "A16.07.054.001", csoLogId: "CSO-2026-0828-02", sterilizerCycleNumber: "Ц-143" }),
+		mat("mat-003", "MAT-SEPT-100", "Анестетик Септанест с адреналином 1:100 000 (упаковка 50 карпул)", DEFAULT_OKEI_PACK_CODE, "упак", 0.1, 550000, 55000, chartOfAccounts.accountProductionCost, chartOfAccounts.accountConsumables, "Списание анестетиков и расходников ЦСО", { batchNumber: "B-202604", expirationDateIso: "2028-04-30", relatedServiceCode804n: "A16.07.002.001" }),
+		mat("mat-004", "MAT-STER-KRAFT", "Крафт-пакеты самоклеящиеся для стерилизации 100х200 мм (ЦСО)", DEFAULT_OKEI_PIECE_CODE, "шт", 15, 8500, 127500, chartOfAccounts.accountProductionCost, chartOfAccounts.accountConsumables, "Списание материалов ЦСО и стерилизации (СанПиН)", { batchNumber: "KP-202601", expirationDateIso: "2028-12-31", csoLogId: "CSO-2026-0828-03", sterilizerCycleNumber: "Ц-144" }),
 	];
 
-	const totalMaterialsCost = writeoffItems.reduce(
-		(s, it) => s + it.totalCostKopecks,
-		0,
-	); // 24 575,00 ₽
+	const totalMaterialsCost = writeoffItems.reduce((s, it) => s + it.totalCostKopecks, 0);
 
 	const writeoffDoc: OneCMaterialWriteoffDocument = {
 		id: `doc-writeoff-${cleanDate}`,
@@ -1517,75 +1028,26 @@ export function createRealisticShiftExportPackage(
 		items: writeoffItems,
 		totalCostKopecks: totalMaterialsCost,
 		responsiblePersonName: "Смирнова Е.А.",
-		reasonRu:
-			"Автоматическое списание по нормам BOM и актам стерилизации ЦСО за смену",
+		reasonRu: "Автоматическое списание по нормам BOM и актам стерилизации ЦСО за смену",
 	};
 	writeoffDoc.sha256Hash = computeCommerceMlSha256(writeoffDoc);
 
-	const payrollEmployees: OneCPayrollEmployeeItem[] = [
-		{
-			id: "emp-001",
-			employeeTabNumber: "ВР-001",
-			employeeName: "Барабаш С.В.",
-			positionTitleRu: "Врач стоматолог-терапевт",
-			specialtyRu: "Терапевтическая стоматология",
-			calculationTypeTitleRu: "Сдельная оплата труда (25% от чистой выручки)",
-			grossRevenueGeneratedKopecks: 14500000,
-			grossEarnedKopecks: 3625000, // 36 250,00 ₽
-			ndfl13Kopecks: 471250, // 4 712,50 ₽
-			socialInsuranceTaxesKopecks: 1087500, // 10 875,00 ₽ (30%)
-			netPayoutKopecks: 3153750, // 31 537,50 ₽
-			debitAccount: chartOfAccounts.accountProductionCost,
-			creditAccountPayroll: chartOfAccounts.accountPayroll,
-			creditAccountNdfl: chartOfAccounts.accountNdfl,
-			creditAccountSocial: chartOfAccounts.accountSocialTaxes,
-			costItemTitleRu: "Оплата труда врачебного персонала",
-		},
-		{
-			id: "emp-002",
-			employeeTabNumber: "ВР-002",
-			employeeName: "Васильев Д.М.",
-			positionTitleRu: "Врач стоматолог-хирург-имплантолог",
-			specialtyRu: "Хирургическая стоматология",
-			calculationTypeTitleRu: "Сдельная оплата труда (30% от хирургии)",
-			grossRevenueGeneratedKopecks: 6500000,
-			grossEarnedKopecks: 1950000, // 19 500,00 ₽
-			ndfl13Kopecks: 253500, // 2 535,00 ₽
-			socialInsuranceTaxesKopecks: 585000, // 5 850,00 ₽
-			netPayoutKopecks: 1696500, // 16 965,00 ₽
-			debitAccount: chartOfAccounts.accountProductionCost,
-			creditAccountPayroll: chartOfAccounts.accountPayroll,
-			creditAccountNdfl: chartOfAccounts.accountNdfl,
-			creditAccountSocial: chartOfAccounts.accountSocialTaxes,
-			costItemTitleRu: "Оплата труда врачебного персонала",
-		},
-		{
-			id: "emp-003",
-			employeeTabNumber: "АС-001",
-			employeeName: "Ковалева О.И.",
-			positionTitleRu: "Ассистент стоматолога",
-			specialtyRu: "Сестринское дело в стоматологии",
-			calculationTypeTitleRu: "Почасовая оплата за смену (12 часов)",
-			grossRevenueGeneratedKopecks: 0,
-			grossEarnedKopecks: 360000, // 3 600,00 ₽
-			ndfl13Kopecks: 46800, // 468,00 ₽
-			socialInsuranceTaxesKopecks: 108000, // 1 080,00 ₽
-			netPayoutKopecks: 313200, // 3 132,00 ₽
-			debitAccount: chartOfAccounts.accountProductionCost,
-			creditAccountPayroll: chartOfAccounts.accountPayroll,
-			creditAccountNdfl: chartOfAccounts.accountNdfl,
-			creditAccountSocial: chartOfAccounts.accountSocialTaxes,
-			costItemTitleRu: "Оплата труда среднего медицинского персонала",
-		},
-	];
+	const emp = (id: string, tab: string, name: string, pos: string, spec: string, calc: string, rev: number, gross: number, costTitle: string): OneCPayrollEmployeeItem => {
+		const ndfl = Math.round(gross * 0.13);
+		const social = Math.round(gross * 0.3);
+		return {
+			id, employeeTabNumber: tab, employeeName: name, positionTitleRu: pos, specialtyRu: spec, calculationTypeTitleRu: calc,
+			grossRevenueGeneratedKopecks: rev, grossEarnedKopecks: gross, ndfl13Kopecks: ndfl, socialInsuranceTaxesKopecks: social,
+			netPayoutKopecks: gross - ndfl, debitAccount: chartOfAccounts.accountProductionCost, creditAccountPayroll: chartOfAccounts.accountPayroll,
+			creditAccountNdfl: chartOfAccounts.accountNdfl, creditAccountSocial: chartOfAccounts.accountSocialTaxes, costItemTitleRu: costTitle,
+		};
+	};
 
-	const totalGross = payrollEmployees.reduce((s, e) => s + e.grossEarnedKopecks, 0);
-	const totalNdfl = payrollEmployees.reduce((s, e) => s + e.ndfl13Kopecks, 0);
-	const totalSocial = payrollEmployees.reduce(
-		(s, e) => s + e.socialInsuranceTaxesKopecks,
-		0,
-	);
-	const totalNet = payrollEmployees.reduce((s, e) => s + e.netPayoutKopecks, 0);
+	const payrollEmployees: OneCPayrollEmployeeItem[] = [
+		emp("emp-001", "ВР-001", "Барабаш С.В.", "Врач стоматолог-терапевт", "Терапевтическая стоматология", "Сдельная оплата труда (25% от чистой выручки)", 14500000, 3625000, "Оплата труда врачебного персонала"),
+		emp("emp-002", "ВР-002", "Васильев Д.М.", "Врач стоматолог-хирург-имплантолог", "Хирургическая стоматология", "Сдельная оплата труда (30% от хирургии)", 6500000, 1950000, "Оплата труда врачебного персонала"),
+		emp("emp-003", "АС-001", "Ковалева О.И.", "Ассистент стоматолога", "Сестринское дело в стоматологии", "Почасовая оплата за смену (12 часов)", 0, 360000, "Оплата труда среднего медицинского персонала"),
+	];
 
 	const payrollDoc: OneCPayrollDocument = {
 		id: `doc-payroll-${cleanDate}`,
@@ -1595,10 +1057,10 @@ export function createRealisticShiftExportPackage(
 		registrationPeriodIso: `${dateIso.slice(0, 7)}-01`,
 		periodLabelRu: `Смена ${dateIso}`,
 		employees: payrollEmployees,
-		totalGrossKopecks: totalGross,
-		totalNdflKopecks: totalNdfl,
-		totalSocialTaxesKopecks: totalSocial,
-		totalNetPayoutKopecks: totalNet,
+		totalGrossKopecks: payrollEmployees.reduce((s, e) => s + e.grossEarnedKopecks, 0),
+		totalNdflKopecks: payrollEmployees.reduce((s, e) => s + e.ndfl13Kopecks, 0),
+		totalSocialTaxesKopecks: payrollEmployees.reduce((s, e) => s + e.socialInsuranceTaxesKopecks, 0),
+		totalNetPayoutKopecks: payrollEmployees.reduce((s, e) => s + e.netPayoutKopecks, 0),
 		comment: "Отражение заработной платы по итогам смены (Форма Т-51 / Т-13)",
 	};
 	payrollDoc.sha256Hash = computeCommerceMlSha256(payrollDoc);
@@ -1623,36 +1085,16 @@ export function createRealisticShiftExportPackage(
 			attendingDoctorName: "Барабаш С.В.",
 			items: [
 				{
-					id: "act-it-1",
-					code804n: "A16.07.002.001",
-					name: "Наложение временной пломбы (световой композит)",
-					toothNumber: 16,
-					unitCode: DEFAULT_OKEI_PIECE_CODE,
-					unitName: DEFAULT_OKEI_PIECE_NAME,
-					quantity: 1,
-					priceKopecks: 120000,
-					discountKopecks: 0,
-					totalKopecks: 120000,
-					vatRate: "Без НДС",
-					vatAmountKopecks: 0,
-					attendingDoctorName: "Барабаш С.В.",
-					attendingDoctorSpecialty: "Стоматолог-терапевт",
+					id: "act-it-1", code804n: "A16.07.002.001", name: "Наложение временной пломбы (световой композит)", toothNumber: 16,
+					unitCode: DEFAULT_OKEI_PIECE_CODE, unitName: DEFAULT_OKEI_PIECE_NAME, quantity: 1, priceKopecks: 120000,
+					discountKopecks: 0, totalKopecks: 120000, vatRate: "Без НДС", vatAmountKopecks: 0,
+					attendingDoctorName: "Барабаш С.В.", attendingDoctorSpecialty: "Стоматолог-терапевт",
 				},
 				{
-					id: "act-it-2",
-					code804n: "A16.07.030.002",
-					name: "Механическая и медикаментозная обработка 3 корневых каналов",
-					toothNumber: 16,
-					unitCode: DEFAULT_OKEI_PIECE_CODE,
-					unitName: DEFAULT_OKEI_PIECE_NAME,
-					quantity: 3,
-					priceKopecks: 350000,
-					discountKopecks: 50000,
-					totalKopecks: 1000000,
-					vatRate: "Без НДС",
-					vatAmountKopecks: 0,
-					attendingDoctorName: "Барабаш С.В.",
-					attendingDoctorSpecialty: "Стоматолог-терапевт",
+					id: "act-it-2", code804n: "A16.07.030.002", name: "Механическая и медикаментозная обработка 3 корневых каналов", toothNumber: 16,
+					unitCode: DEFAULT_OKEI_PIECE_CODE, unitName: DEFAULT_OKEI_PIECE_NAME, quantity: 3, priceKopecks: 350000,
+					discountKopecks: 50000, totalKopecks: 1000000, vatRate: "Без НДС", vatAmountKopecks: 0,
+					attendingDoctorName: "Барабаш С.В.", attendingDoctorSpecialty: "Стоматолог-терапевт",
 				},
 			],
 			totalKopecks: 1120000,

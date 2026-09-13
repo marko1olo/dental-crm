@@ -776,7 +776,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								}}
 							>
 								<div className="min-w-0 flex-1">
-									<h3 className="break-words leading-tight" title={patient.fullName}>{patient.fullName}</h3>
+									<h3 className="truncate leading-tight font-semibold text-sm" title={patient.fullName}>{patient.fullName}</h3>
 									<p className="truncate">{patient.phone ?? "Телефон не указан"}</p>
 									{patient.notes ? (
 										<p className="truncate text-xs text-[var(--muted)] opacity-75 mt-0.5" title={patient.notes}>

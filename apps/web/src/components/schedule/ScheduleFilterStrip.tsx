@@ -341,6 +341,10 @@ export function ScheduleFilterStrip({
 			{/* Center: 1-line horizontal scrollable doctor & chair filters */}
 			<div
 				className="schedule-filter-chips flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0"
+				style={{
+					maskImage: "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
+					WebkitMaskImage: "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
+				}}
 				onWheel={(e) => {
 					if (e.deltaY !== 0) {
 						e.currentTarget.scrollLeft += e.deltaY;

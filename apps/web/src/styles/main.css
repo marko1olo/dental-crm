@@ -7,6 +7,9 @@
 @import "../components/copilot/CopilotDrawer.css";
 @import "../components/copilot/CopilotGenerativeCards.css";
 @import "../components/copilot/CopilotActionConfirm.css";
+@import "../components/payments/checkout/fastCheckout.css";
+@import "../components/inventory/writeoff/clinicalWriteoff.css";
+@import "../components/telephony/telephonyFloatingWidget.css";
 
 :root {
 	/* LIGHT THEME (Premium Aesthetics) */

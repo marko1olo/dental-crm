@@ -22,7 +22,7 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { countLabel } from "../../lib/russianPlural";
 import { normalizeRubAmountInput } from "../../rubAmountInput";

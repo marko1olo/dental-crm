@@ -40,9 +40,11 @@ import {
 	type StomxReceiptTypeAlias,
 } from "@dental/shared";
 import {
+	allocateRemainderToTender,
 	calculateCashChange,
 	validate54FzBuyerInn,
 	type PayerType,
+	type TenderAllocationTarget,
 } from "./cashboxOperations.js";
 import { SberPayIntegration } from "./SberPayIntegration.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
@@ -303,6 +305,28 @@ ${discountInfoHtml}
 </html>`;
 }
 
+const DISCOUNT_PRESETS = [
+	{ percent: 0, label: "Без скидки 0%", title: "Без скидки 0%", testId: "preset-discount-0", reason: "" },
+	{ percent: 5, label: "-5% Пенс/Утро", title: "Скидка 5% (Пенсионная / Утренняя)", testId: "preset-discount-5", reason: "Пенсионная / Утренняя" },
+	{ percent: 10, label: "-10% Постоянный", title: "Скидка 10% (Постоянный пациент / Семейная скидка)", testId: "preset-discount-10", reason: "Постоянный пациент / Семейная скидка" },
+	{ percent: 15, label: "-15% Комплекс", title: "Скидка 15% (Комплексный план лечения)", testId: "preset-discount-15", reason: "Комплексный план лечения" },
+	{ percent: 20, label: "-20% Партнёр", title: "Скидка 20% (Сотрудники клиники / Партнёры)", testId: "preset-discount-20", reason: "Сотрудники клиники / Партнёры" },
+	{ percent: 50, label: "-50% Персонал", title: "Скидка 50% (Персонал клиники / Близкие родственники)", testId: "preset-discount-50", reason: "Персонал клиники / Близкие родственники" },
+] as const;
+
+const CASH_DENOMINATIONS = [
+	{ amount: 1000, testId: "btn-cash-1000", label: "1 000 ₽" },
+	{ amount: 2000, testId: "btn-cash-2000", label: "2 000 ₽" },
+	{ amount: 5000, testId: "btn-cash-5000", label: "5 000 ₽" },
+	{ amount: 10000, testId: "btn-cash-10000", label: "10 000 ₽" },
+] as const;
+
+const CASH_ADD_BUTTONS = [
+	{ amount: 1000, testId: "btn-cash-add-1000", label: "+1 000 ₽" },
+	{ amount: 2000, testId: "btn-cash-add-2000", label: "+2 000 ₽" },
+	{ amount: 5000, testId: "btn-cash-add-5000", label: "+5 000 ₽" },
+] as const;
+
 export const PaymentModal: React.FC<PaymentModalProps> = ({
 	isOpen,
 	patientId,
@@ -486,6 +510,49 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		}
 	};
 
+	const resetSplitTenders = (
+		overrides: Partial<{
+			card: number;
+			cash: number;
+			deposit: number;
+			sbp: number;
+			certificate: number;
+			bonus: number;
+		}> = {},
+	) => {
+		setSplitCardRub(overrides.card ?? 0);
+		setSplitCashRub(overrides.cash ?? 0);
+		setSplitDepositRub(overrides.deposit ?? 0);
+		setSplitSbpRub(overrides.sbp ?? 0);
+		setSplitCertificateRub(overrides.certificate ?? 0);
+		setSplitBonusRub(overrides.bonus ?? 0);
+	};
+
+	const applySplitRemainder = (targetTender: TenderAllocationTarget) => {
+		const next = allocateRemainderToTender({
+			totalDueRub,
+			currentTenders: {
+				cardRub: splitCardRub,
+				cashRub: splitCashRub,
+				sbpRub: splitSbpRub,
+				depositRub: splitDepositRub,
+				familyRub: 0,
+				certificateRub: splitCertificateRub,
+				bonusRub: splitBonusRub,
+			},
+			targetTender,
+			patientDepositRub,
+		});
+		resetSplitTenders({
+			card: next.cardRub,
+			cash: next.cashRub,
+			deposit: next.depositRub,
+			sbp: next.sbpRub,
+			certificate: next.certificateRub || 0,
+			bonus: next.bonusRub || 0,
+		});
+	};
+
 	const applyExactCashPreset = () => {
 		if (isWarranty100) {
 			setIsWarranty100(false);
@@ -495,12 +562,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		setActiveMethod("cash");
 		const effectiveTotal = isWarranty100 ? rawTotalDueRub : totalDueRub;
 		setReceivedCashRub(effectiveTotal);
-		setSplitCashRub(effectiveTotal);
-		setSplitCardRub(0);
-		setSplitDepositRub(0);
-		setSplitSbpRub(0);
-		setSplitCertificateRub(0);
-		setSplitBonusRub(0);
+		resetSplitTenders({ cash: effectiveTotal });
 		showToast(`Применен пресет: Без сдачи (Ровно сумма счёта: ${effectiveTotal.toLocaleString("ru-RU")} ₽)`, "info", 2000);
 	};
 
@@ -514,24 +576,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 		if (depositKop >= totalKop && totalKop > 0) {
 			setActiveMethod("family_deposit");
-			setSplitDepositRub(totalDueRub);
-			setSplitCardRub(0);
-			setSplitCashRub(0);
-			setSplitSbpRub(0);
-			setSplitCertificateRub(0);
-			setSplitBonusRub(0);
+			resetSplitTenders({ deposit: totalDueRub });
 			showToast(`Применен пресет: Списан весь аванс/бонусы (${totalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2500);
 		} else if (depositKop > 0) {
 			const usedDepKop = Math.min(totalKop, depositKop);
 			const remKop = Math.max(0, totalKop - usedDepKop);
 			const usedRub = kopecksToRub(usedDepKop);
 			const remRub = kopecksToRub(remKop);
-			setSplitDepositRub(usedRub);
-			setSplitCardRub(remRub);
-			setSplitCashRub(0);
-			setSplitSbpRub(0);
-			setSplitCertificateRub(0);
-			setSplitBonusRub(0);
+			resetSplitTenders({ deposit: usedRub, card: remRub });
 			setActiveMethod("split");
 			showToast(
 				`Применен пресет: Списан весь аванс/бонусы ${usedRub.toLocaleString("ru-RU")} ₽ + остаток ${remRub.toLocaleString("ru-RU")} ₽ картой`,
@@ -542,12 +594,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			setActiveMethod("split");
 			const bonusAmount = Math.min(totalDueRub, 500);
 			const cardRest = Math.max(0, Number((totalDueRub - bonusAmount).toFixed(2)));
-			setSplitBonusRub(bonusAmount);
-			setSplitCardRub(cardRest);
-			setSplitCashRub(0);
-			setSplitDepositRub(0);
-			setSplitSbpRub(0);
-			setSplitCertificateRub(0);
+			resetSplitTenders({ bonus: bonusAmount, card: cardRest });
 			showToast(`Аванс 0 ₽. Применено списание бонусов (${bonusAmount} ₽) + Карта (${cardRest} ₽)`, "info", 2500);
 		}
 	};
@@ -559,12 +606,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		const remKop = totalKop - halfKop;
 		const cashRub = kopecksToRub(halfKop);
 		const cardRub = kopecksToRub(remKop);
-		setSplitCashRub(cashRub);
-		setSplitCardRub(cardRub);
-		setSplitDepositRub(0);
-		setSplitSbpRub(0);
-		setSplitCertificateRub(0);
-		setSplitBonusRub(0);
+		resetSplitTenders({ cash: cashRub, card: cardRub });
 		setActiveMethod("split");
 		showToast(
 			`Применен пресет: 50/50 Нал (${cashRub.toLocaleString("ru-RU")} ₽) + Карта (${cardRub.toLocaleString("ru-RU")} ₽)`,
@@ -581,12 +623,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		}
 		setActiveMethod("card_terminal");
 		const effectiveTotal = isWarranty100 ? rawTotalDueRub : totalDueRub;
-		setSplitCardRub(effectiveTotal);
-		setSplitCashRub(0);
-		setSplitDepositRub(0);
-		setSplitSbpRub(0);
-		setSplitCertificateRub(0);
-		setSplitBonusRub(0);
+		resetSplitTenders({ card: effectiveTotal });
 		showToast(`Применен пресет: Оплата картой 100% (${effectiveTotal.toLocaleString("ru-RU")} ₽)`, "info", 2000);
 	};
 
@@ -598,12 +635,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		}
 		const available = Math.min(totalDueRub, Math.max(0, patientDepositRub));
 		const remainder = Number((totalDueRub - available).toFixed(2));
-		setSplitDepositRub(available);
-		setSplitCardRub(remainder);
-		setSplitCashRub(0);
-		setSplitSbpRub(0);
-		setSplitCertificateRub(0);
-		setSplitBonusRub(0);
+		resetSplitTenders({ deposit: available, card: remainder });
 		setActiveMethod("split");
 		showToast(
 			`Применен пресет: Аванс ${available.toLocaleString("ru-RU")} ₽ + Карта ${remainder.toLocaleString("ru-RU")} ₽`,
@@ -630,12 +662,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		const usedDepRub = kopecksToRub(depositKop);
 		const usedCashRub = kopecksToRub(cashKop);
 		const usedCardRub = kopecksToRub(cardKop);
-		setSplitDepositRub(usedDepRub);
-		setSplitCashRub(usedCashRub);
-		setSplitCardRub(usedCardRub);
-		setSplitSbpRub(0);
-		setSplitCertificateRub(0);
-		setSplitBonusRub(0);
+		resetSplitTenders({ deposit: usedDepRub, cash: usedCashRub, card: usedCardRub });
 		setActiveMethod("split");
 		showToast(
 			`Применен пресет: Аванс ${usedDepRub.toLocaleString("ru-RU")} ₽ + Нал ${usedCashRub.toLocaleString("ru-RU")} ₽ + Карта ${usedCardRub.toLocaleString("ru-RU")} ₽`,
@@ -1165,94 +1192,36 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 					{/* 1-Click Discount Preset Buttons */}
 					<div className="flex items-center gap-1.5 flex-wrap">
-						<button
-							type="button"
-							onClick={() => applyDiscountPreset(0, "")}
-							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-								effectiveDiscountPercent === 0 && !isWarranty100
-									? "bg-slate-700 text-white border-slate-700 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-slate-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-discount-0"
-							title="Без скидки 0%"
-						>
-							<span>Без скидки 0%</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => applyDiscountPreset(5, "Пенсионная / Утренняя")}
-							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-								effectiveDiscountPercent === 5 && !isWarranty100
-									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-discount-5"
-							title="Скидка 5% (Пенсионная / Утренняя)"
-						>
-							<Percent size={12} className={effectiveDiscountPercent === 5 && !isWarranty100 ? "text-white" : "text-amber-600"} />
-							<span>-5% Пенс/Утро</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => applyDiscountPreset(10, "Постоянный пациент / Семейная скидка")}
-							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-								effectiveDiscountPercent === 10 && !isWarranty100
-									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-discount-10"
-							title="Скидка 10% (Постоянный пациент / Семейная скидка)"
-						>
-							<Percent size={12} className={effectiveDiscountPercent === 10 && !isWarranty100 ? "text-white" : "text-amber-600"} />
-							<span>-10% Постоянный</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => applyDiscountPreset(15, "Комплексный план лечения")}
-							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-								effectiveDiscountPercent === 15 && !isWarranty100
-									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-discount-15"
-							title="Скидка 15% (Комплексный план лечения)"
-						>
-							<Percent size={12} className={effectiveDiscountPercent === 15 && !isWarranty100 ? "text-white" : "text-amber-600"} />
-							<span>-15% Комплекс</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => applyDiscountPreset(20, "Сотрудники клиники / Партнёры")}
-							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-								effectiveDiscountPercent === 20 && !isWarranty100
-									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-discount-20"
-							title="Скидка 20% (Сотрудники клиники / Партнёры)"
-						>
-							<Percent size={12} className={effectiveDiscountPercent === 20 && !isWarranty100 ? "text-white" : "text-amber-600"} />
-							<span>-20% Партнёр</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => applyDiscountPreset(50, "Персонал клиники / Близкие родственники")}
-							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-								effectiveDiscountPercent === 50 && !isWarranty100
-									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-discount-50"
-							title="Скидка 50% (Персонал клиники / Близкие родственники)"
-						>
-							<Percent size={12} className={effectiveDiscountPercent === 50 && !isWarranty100 ? "text-white" : "text-amber-600"} />
-							<span>-50% Персонал</span>
-						</button>
+						{DISCOUNT_PRESETS.map((p) => {
+							const isActive = effectiveDiscountPercent === p.percent && !isWarranty100;
+							const isZero = p.percent === 0;
+							const activeClass = isZero
+								? "bg-slate-700 text-white border-slate-700 shadow-2xs"
+								: "bg-amber-600 text-white border-amber-600 shadow-2xs";
+							const inactiveClass = isZero
+								? "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-slate-400 text-[var(--ink,#0f172a)]"
+								: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]";
+							return (
+								<button
+									key={p.percent}
+									type="button"
+									onClick={() => applyDiscountPreset(p.percent, p.reason)}
+									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										isActive ? activeClass : inactiveClass
+									}`}
+									data-testid={p.testId}
+									title={p.title}
+								>
+									{!isZero && (
+										<Percent
+											size={12}
+											className={isActive ? "text-white" : "text-amber-600"}
+										/>
+									)}
+									<span>{p.label}</span>
+								</button>
+							);
+						})}
 
 						<button
 							type="button"
@@ -1767,71 +1736,32 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										>
 											Без сдачи
 										</button>
-										<button
-											type="button"
-											onClick={() => setReceivedCashRub(1000)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
-											data-testid="btn-cash-1000"
-											title="Внесено 1 000 ₽"
-										>
-											1 000 ₽
-										</button>
-										<button
-											type="button"
-											onClick={() => setReceivedCashRub(2000)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
-											data-testid="btn-cash-2000"
-											title="Внесено 2 000 ₽"
-										>
-											2 000 ₽
-										</button>
-										<button
-											type="button"
-											onClick={() => setReceivedCashRub(5000)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
-											data-testid="btn-cash-5000"
-											title="Внесено 5 000 ₽"
-										>
-											5 000 ₽
-										</button>
-										<button
-											type="button"
-											onClick={() => setReceivedCashRub(10000)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
-											data-testid="btn-cash-10000"
-											title="Внесено 10 000 ₽"
-										>
-											10 000 ₽
-										</button>
+										{CASH_DENOMINATIONS.map((denom) => (
+											<button
+												key={denom.amount}
+												type="button"
+												onClick={() => setReceivedCashRub(denom.amount)}
+												className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
+												data-testid={denom.testId}
+												title={`Внесено ${denom.label}`}
+											>
+												{denom.label}
+											</button>
+										))}
 									</div>
 									<div className="grid grid-cols-4 gap-1.5 pt-1">
-										<button
-											type="button"
-											onClick={() => setReceivedCashRub((prev) => prev + 1000)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
-											data-testid="btn-cash-add-1000"
-											title="Добавить 1 000 ₽ к внесенной сумме"
-										>
-											+1 000 ₽
-										</button>
-										<button
-											type="button"
-											onClick={() => setReceivedCashRub((prev) => prev + 2000)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
-											data-testid="btn-cash-add-2000"
-											title="Добавить 2 000 ₽ к внесенной сумме"
-										>
-											+2 000 ₽
-										</button>
-										<button
-											type="button"
-											onClick={() => setReceivedCashRub((prev) => prev + 5000)}
-											className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
-											data-testid="btn-cash-add-5000"
-											title="Добавить 5 000 ₽ к внесенной сумме"
-										>
-											+5 000 ₽
-										</button>
+										{CASH_ADD_BUTTONS.map((addBtn) => (
+											<button
+												key={addBtn.amount}
+												type="button"
+												onClick={() => setReceivedCashRub((prev) => prev + addBtn.amount)}
+												className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
+												data-testid={addBtn.testId}
+												title={`Добавить ${addBtn.label.replace("+", "")} к внесенной сумме`}
+											>
+												{addBtn.label}
+											</button>
+										))}
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(totalDueRub)}
@@ -2087,48 +2017,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								</button>
 								<button
 									type="button"
-									onClick={() => {
-										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop =
-											rubToKopecks(splitCashRub) +
-											rubToKopecks(splitDepositRub) +
-											rubToKopecks(splitSbpRub) +
-											rubToKopecks(splitCertificateRub) +
-											rubToKopecks(splitBonusRub);
-										setSplitCardRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
-									}}
+									onClick={() => applySplitRemainder("card")}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer flex items-center"
 								>
 									Остаток на карту
 								</button>
 								<button
 									type="button"
-									onClick={() => {
-										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop =
-											rubToKopecks(splitCardRub) +
-											rubToKopecks(splitDepositRub) +
-											rubToKopecks(splitSbpRub) +
-											rubToKopecks(splitCertificateRub) +
-											rubToKopecks(splitBonusRub);
-										setSplitCashRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
-									}}
+									onClick={() => applySplitRemainder("cash")}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer flex items-center"
 								>
 									Остаток наличными
 								</button>
 								<button
 									type="button"
-									onClick={() => {
-										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop =
-											rubToKopecks(splitCardRub) +
-											rubToKopecks(splitCashRub) +
-											rubToKopecks(splitDepositRub) +
-											rubToKopecks(splitCertificateRub) +
-											rubToKopecks(splitBonusRub);
-										setSplitSbpRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
-									}}
+									onClick={() => applySplitRemainder("sbp")}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer flex items-center"
 									data-testid="btn-payment-remainder-sbp"
 								>
@@ -2136,16 +2039,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								</button>
 								<button
 									type="button"
-									onClick={() => {
-										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop =
-											rubToKopecks(splitCardRub) +
-											rubToKopecks(splitCashRub) +
-											rubToKopecks(splitDepositRub) +
-											rubToKopecks(splitSbpRub) +
-											rubToKopecks(splitBonusRub);
-										setSplitCertificateRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
-									}}
+									onClick={() => applySplitRemainder("certificate")}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-amber-400 cursor-pointer flex items-center"
 									data-testid="btn-payment-remainder-certificate"
 								>
@@ -2153,16 +2047,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								</button>
 								<button
 									type="button"
-									onClick={() => {
-										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop =
-											rubToKopecks(splitCardRub) +
-											rubToKopecks(splitCashRub) +
-											rubToKopecks(splitDepositRub) +
-											rubToKopecks(splitSbpRub) +
-											rubToKopecks(splitCertificateRub);
-										setSplitBonusRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
-									}}
+									onClick={() => applySplitRemainder("bonus")}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-pink-400 cursor-pointer flex items-center"
 									data-testid="btn-payment-remainder-bonus"
 								>
@@ -2171,17 +2056,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								{patientDepositRub > 0 && (
 									<button
 										type="button"
-										onClick={() => {
-											const totalKop = rubToKopecks(totalDueRub);
-											const otherKop =
-												rubToKopecks(splitCardRub) +
-												rubToKopecks(splitCashRub) +
-												rubToKopecks(splitSbpRub) +
-												rubToKopecks(splitCertificateRub) +
-												rubToKopecks(splitBonusRub);
-											const remKop = Math.max(0, totalKop - otherKop);
-											setSplitDepositRub(kopecksToRub(Math.min(remKop, rubToKopecks(patientDepositRub))));
-										}}
+										onClick={() => applySplitRemainder("deposit")}
 										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-indigo-400 cursor-pointer flex items-center"
 										data-testid="btn-payment-remainder-deposit"
 									>

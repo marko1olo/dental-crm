@@ -43,7 +43,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -69,7 +69,6 @@ import {
 	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
-import "./telephonyFloatingWidget.css";
 
 export interface TelephonyFloatingWidgetProps {
 	className?: string;
