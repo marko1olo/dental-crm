@@ -35,6 +35,7 @@ export {
 	formatDimensions2DRu,
 } from "./dicomMeasurementMath";
 export * from "./implantCatalog";
+export * from "./sliceClippingMath";
 export * from "./sliceIntersectionMath";
 export type { Cornerstone3DViewerProps, ImplantData } from "./Cornerstone3DViewer";
 export {
