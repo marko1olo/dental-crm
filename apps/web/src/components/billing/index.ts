@@ -3,6 +3,7 @@
  */
 
 export * from "./cashShiftClosingEngine";
-export * from "./CashShiftClosingModal";
+export { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
+export type { BankInstallmentQrModalProps } from "../payments/BankInstallmentQrModal";
 export * from "./InvoicesView";
 

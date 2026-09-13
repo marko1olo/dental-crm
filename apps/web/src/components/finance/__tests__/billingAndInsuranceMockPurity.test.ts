@@ -3,7 +3,7 @@
  * Confirms total eradication of synthetic 'Иванов Иван Иванович' fallback mocks across:
  * 1. PatientBillingModal.tsx
  * 2. DmsGuaranteeLetterModal.tsx
- * 3. FamilyWalletModal.tsx
+ * 3. FamilyWalletPanel.tsx (Canonical SSOT)
  * 4. BankInstallmentQrModal.tsx
  */
 
@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { PatientBillingModal } from "../PatientBillingModal";
-import { FamilyWalletModal } from "../FamilyWalletModal";
+import { FamilyWalletPanel } from "../FamilyWalletPanel";
 import { DmsGuaranteeLetterModal } from "../../insurance/DmsGuaranteeLetterModal";
 import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal";
 
@@ -34,8 +34,8 @@ describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity", () => {
 			relPath: "src/components/insurance/DmsGuaranteeLetterModal.tsx",
 		},
 		{
-			name: "FamilyWalletModal.tsx",
-			relPath: "src/components/finance/FamilyWalletModal.tsx",
+			name: "FamilyWalletPanel.tsx",
+			relPath: "src/components/finance/FamilyWalletPanel.tsx",
 		},
 		{
 			name: "BankInstallmentQrModal.tsx",
@@ -78,11 +78,11 @@ describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity", () => {
 		assert.ok(!html.includes("Иванов Иван Иванович"), "Rendered HTML must not contain synthetic patient name");
 	});
 
-	it("FamilyWalletModal: renders with clean default empty state without synthetic Ivanov family members", () => {
+	it("FamilyWalletPanel: renders with clean default empty state without synthetic Ivanov family members", () => {
 		const html = renderToString(
-			React.createElement(FamilyWalletModal, {
-				isOpen: true,
-				onClose: () => {},
+			React.createElement(FamilyWalletPanel, {
+				patientId: "pat-clean",
+				remainingDebtRub: 0,
 			}),
 		);
 		assert.ok(!html.includes("Иванов Иван Иванович"), "Rendered HTML must not contain synthetic Ivanov head payer");

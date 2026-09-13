@@ -5,7 +5,7 @@
  * Solo-Doctor Friction Killer & Reality/Procedure Simulator Elimination (Mandates 8e, 8k, 8n).
  *
  * Verifies:
- * 1. 54-FZ Buyer INN optionality for natural persons (Mandate 8e, 8n) in CashRegisterModal, FastCheckoutModal, PatientAdministrativeForm.
+ * 1. 54-FZ Buyer INN optionality for natural persons (Mandate 8e, 8n) in PaymentModal, FastCheckoutModal, PatientAdministrativeForm.
  * 2. Complete elimination of denomination simulator / banknote counting (Mandate 8k) in ShiftCloseZReportModal & CashDayTally.
  * 3. Quick cash change input wording without procedure simulator jargon ("Быстрый ввод внесенной суммы").
  * 4. 1-Click carpule & visit write-offs without commission (Mandate 8e item 10, 8n).
@@ -19,7 +19,6 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { ShiftCloseZReportModal } from "../fiscal/ShiftCloseZReportModal.js";
 import { CashDayTally } from "../CashDayTally.js";
-import { CashRegisterModal } from "../CashRegisterModal.js";
 import { PaymentModal } from "../PaymentModal.js";
 import { FastCheckoutModal } from "../FastCheckoutModal.js";
 import { FiscalReceipt54FzModal } from "../FiscalReceipt54FzModal.js";
@@ -49,14 +48,14 @@ describe("Wave 46: 54-FZ Buyer INN Optionality for Citizens (Mandates 8e & 8n)",
 		assert.equal(resLegalEmpty.isRequired, true);
 	});
 
-	it("renders physical person INN badge and inputs in CashRegisterModal", () => {
+	it("renders physical person INN badge and inputs in PaymentModal", () => {
 		const html = renderToString(
-			React.createElement(CashRegisterModal, {
+			React.createElement(PaymentModal, {
 				isOpen: true,
 				onClose: () => {},
 				patientId: "pat-test-1",
 				patientName: "Кузнецов Михаил Сергеевич",
-				totalAmountRub: 5000,
+				amountRub: 5000,
 			})
 		);
 
@@ -155,17 +154,6 @@ describe("Wave 46: Elimination of Denomination Simulator & Banknote Counting (Ma
 	});
 
 	it("verifies quick cash input wording in financial modals eliminates 'выбор купюр'", () => {
-		const cashRegHtml = renderToString(
-			React.createElement(CashRegisterModal, {
-				isOpen: true,
-				onClose: () => {},
-				totalAmountRub: 5000,
-				defaultTender: "cash",
-			})
-		);
-		assert.ok(cashRegHtml.includes("Быстрый ввод внесенной суммы:"), "CashRegisterModal must use correct label");
-		assert.equal(cashRegHtml.includes("Быстрый выбор купюр:"), false, "Must not say 'Быстрый выбор купюр:'");
-
 		const paymentHtml = renderToString(
 			React.createElement(PaymentModal, {
 				isOpen: true,
@@ -225,15 +213,15 @@ describe("Wave 46: 1-Click Carpule & Clinical Write-Offs without Commission (Man
 });
 
 describe("Wave 46: Strict Zero Emojis (Mandate 8d Item 7)", () => {
-	it("proves strict zero emojis (⚡) in CashRegisterModal, FastCheckoutModal, and FiscalReceipt54FzModal", () => {
-		const cashRegHtml = renderToString(
-			React.createElement(CashRegisterModal, {
+	it("proves strict zero emojis (⚡) in PaymentModal, FastCheckoutModal, and FiscalReceipt54FzModal", () => {
+		const paymentHtml = renderToString(
+			React.createElement(PaymentModal, {
 				isOpen: true,
 				onClose: () => {},
-				totalAmountRub: 5000,
+				amountRub: 5000,
 			})
 		);
-		assert.equal(cashRegHtml.includes("⚡"), false, "CashRegisterModal must not contain ⚡ emoji");
+		assert.equal(paymentHtml.includes("⚡"), false, "PaymentModal must not contain ⚡ emoji");
 
 		const fastCheckoutHtml = renderToString(
 			React.createElement(FastCheckoutModal, {

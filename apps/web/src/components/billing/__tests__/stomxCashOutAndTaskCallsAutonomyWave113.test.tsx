@@ -22,7 +22,7 @@ import {
 	getTaskCallMeta,
 	type StomxTaskCallType,
 } from "@dental/shared";
-import { CashShiftClosingModal } from "../CashShiftClosingModal";
+import { CashShiftWidget } from "../../finance/CashShiftWidget";
 import { PatientRecallsHubModal } from "../../recalls/PatientRecallsHubModal";
 import {
 	determineTaskCallTypeForCandidate,
@@ -125,37 +125,35 @@ describe("Wave 113 — StomX Cash Out (РКО КО-2) & Task Calls Workflow", ()
 		});
 	});
 
-	describe("2. CashShiftClosingModal — Cash Out (Выемка / РКО КО-2)", () => {
-		it("renders cash out navigation tab button (btn-nav-cash-out)", () => {
+	describe("2. CashShiftWidget — Cash Out (Выемка / РКО КО-2)", () => {
+		it("renders cash out navigation tab button (tab-cash-out-mode)", () => {
 			const html = renderToString(
-				React.createElement(CashShiftClosingModal, {
-					isOpen: true,
-					onClose: () => {},
+				React.createElement(CashShiftWidget, {
+					initialIsOpen: true,
+					initialCashFlowModalOpen: true,
+					initialCashFlowMode: "cash_out",
 					shiftNumber: 42,
-					initialChangeFundRub: 10000,
-					cashierFullName: "Кассир К.",
+					cashierName: "Кассир К.",
 				})
 			);
 
-			assert.ok(html.includes('data-testid="btn-nav-cash-out"'), "Missing cash-out nav tab button");
-			assert.ok(html.includes("Выемка / Расход"), "Missing cash-out tab label");
-			assert.ok(html.includes('data-testid="btn-nav-cash-in"'), "Missing cash-in nav tab button");
-			assert.ok(html.includes("Внесение размена"), "Missing cash-in tab label");
+			assert.ok(html.includes('data-testid="tab-cash-out-mode"'), "Missing cash-out nav tab button");
+			assert.ok(html.includes("Расход"), "Missing cash-out tab label");
+			assert.ok(html.includes('data-testid="tab-cash-in-mode"'), "Missing cash-in nav tab button");
+			assert.ok(html.includes("Внесение"), "Missing cash-in tab label");
 		});
 
 		it("contains no synthetic test characters (Барабаш, Волкова, Сидорова) in initial state", () => {
 			const html = renderToString(
-				React.createElement(CashShiftClosingModal, {
-					isOpen: true,
-					onClose: () => {},
+				React.createElement(CashShiftWidget, {
+					initialIsOpen: true,
 					shiftNumber: 1,
-					initialChangeFundRub: 5000,
 				})
 			);
 
-			assert.equal(html.includes("Барабаш"), false, "Found synthetic Барабаш in cash shift modal");
-			assert.equal(html.includes("Волкова"), false, "Found synthetic Волкова in cash shift modal");
-			assert.equal(html.includes("Сидорова"), false, "Found synthetic Сидорова in cash shift modal");
+			assert.equal(html.includes("Барабаш"), false, "Found synthetic Барабаш in cash shift widget");
+			assert.equal(html.includes("Волкова"), false, "Found synthetic Волкова in cash shift widget");
+			assert.equal(html.includes("Сидорова"), false, "Found synthetic Сидорова in cash shift widget");
 		});
 	});
 

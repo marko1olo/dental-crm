@@ -17,7 +17,6 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { PaymentModal } from "../PaymentModal.js";
 import { FastCheckoutModal } from "../FastCheckoutModal.js";
-import { CashRegisterModal } from "../CashRegisterModal.js";
 import {
 	calculateCashChange,
 	validate54FzBuyerInn,
@@ -94,12 +93,13 @@ describe("Wave 44: 54-FZ Cashier Autonomy & Citizen INN Optionality (Mandates 8e
 		assert.equal(submitTag.includes("disabled"), false, "Submit button must not be disabled when INN is empty");
 	});
 
-	it("verifies cashier name falls back to doctor name when cashierFullName is omitted in CashRegisterModal (Mandate 8n)", () => {
+	it("verifies cashier name falls back to doctor name when cashierFullName is omitted in PaymentModal (Mandate 8n)", () => {
 		const html = renderToString(
-			React.createElement(CashRegisterModal, {
+			React.createElement(PaymentModal, {
 				isOpen: true,
 				onClose: () => {},
 				doctorName: "Д-р Смирнов А. П.",
+				amountRub: 3000,
 			})
 		);
 		assert.ok(html.includes("Д-р Смирнов А. П."), "Must render doctor name as cashier fallback");

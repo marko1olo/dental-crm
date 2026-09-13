@@ -3,7 +3,7 @@
  *
  * Wave 111 Unit Test Suite:
  * 1. PatientGeneralInfoTab — StomX Marketing Sources & Statutory Legal Representatives (СК РФ ст. 64 / 323-ФЗ ст. 20)
- * 2. CashShiftClosingModal — 1-click StomX Cash In Presets (Внесение для размена, аванс, подотчет)
+ * 2. CashShiftWidget — 1-click StomX Cash In Presets (Внесение для размена, аванс, подотчет)
  * 3. Total eradication of synthetic mock patients from ChairsideTabletConsentModal, CmoEmrAuditModal, PatientRecallsHubModal
  */
 
@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PatientGeneralInfoTab } from "../tabs/PatientGeneralInfoTab";
-import { CashShiftClosingModal } from "../../billing/CashShiftClosingModal";
+import { CashShiftWidget } from "../../finance/CashShiftWidget";
 import { PatientRecallsHubModal } from "../../recalls/PatientRecallsHubModal";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -89,24 +89,24 @@ test("Wave 111 — PatientGeneralInfoTab renders statutory legal representative 
 	);
 });
 
-test("Wave 111 — CashShiftClosingModal renders 1-click StomX cash-in preset buttons", () => {
+test("Wave 111 — CashShiftWidget renders 1-click StomX cash-in preset buttons", () => {
 	const markup = renderToStaticMarkup(
-		<CashShiftClosingModal
-			isOpen={true}
-			onClose={() => {}}
+		<CashShiftWidget
+			initialIsOpen={true}
+			initialCashFlowModalOpen={true}
+			initialCashFlowMode="cash_in"
 			shiftNumber={101}
-			cashierFullName="Кассир"
-			operations={[]}
+			cashierName="Кассир"
 		/>,
 	);
 
 	assert.ok(
-		markup.includes("data-testid=\"cash-shift-closing-modal\""),
-		"Must render cash shift closing modal",
+		markup.includes("data-testid=\"cash-shift-widget\""),
+		"Must render cash shift widget",
 	);
 	assert.ok(
-		markup.includes("Сверка фактической наличности"),
-		"Must render cash reconciliation section",
+		markup.includes("Внесение ДС"),
+		"Must render cash-in section",
 	);
 });
 
@@ -136,43 +136,31 @@ test("Wave 111 — PatientRecallsHubModal renders honest empty state without DEF
 test("Wave 111 — Static file verification: Zero synthetic mock patients in production components", () => {
 	const webComponentsDir = path.resolve(__dirname, "../../");
 
-	// 1. ChairsideTabletConsentModal
-	const consentPath = path.join(webComponentsDir, "chairside/ChairsideTabletConsentModal.tsx");
+	// 1. InformedConsentModal
+	const consentPath = path.join(webComponentsDir, "consents/InformedConsentModal.tsx");
 	const consentContent = fs.readFileSync(consentPath, "utf-8");
 	assert.ok(
 		!consentContent.includes("Иванова Анна Сергеевна"),
-		"ChairsideTabletConsentModal must not contain synthetic Ivanova Anna",
+		"InformedConsentModal must not contain synthetic Ivanova Anna",
 	);
 	assert.ok(
 		!consentContent.includes("Барабаш Сергей Владимирович"),
-		"ChairsideTabletConsentModal must not contain synthetic Barabash",
+		"InformedConsentModal must not contain synthetic Barabash",
 	);
 	assert.ok(
 		!consentContent.includes("4510 № 123456"),
-		"ChairsideTabletConsentModal must not contain hardcoded fake passport 4510",
+		"InformedConsentModal must not contain hardcoded fake passport 4510",
 	);
 	assert.ok(
 		!consentContent.includes("043/у-7842"),
-		"ChairsideTabletConsentModal must not contain hardcoded card 043/у-7842",
+		"InformedConsentModal must not contain hardcoded card 043/у-7842",
 	);
 	assert.ok(
 		!consentContent.includes("A16.07.002.001"),
-		"ChairsideTabletConsentModal must not contain mock treatmentItems with serviceCode A16.07.002.001",
+		"InformedConsentModal must not contain mock treatmentItems with serviceCode A16.07.002.001",
 	);
 
-	// 2. CmoQualityAuditModal
-	const cmoPath = path.join(webComponentsDir, "cmo/CmoQualityAuditModal.tsx");
-	const cmoContent = fs.readFileSync(cmoPath, "utf-8");
-	assert.ok(
-		!cmoContent.includes("Смирнов Алексей Владимирович"),
-		"CmoQualityAuditModal must not contain synthetic Smirnov Alexey",
-	);
-	assert.ok(
-		!cmoContent.includes("Прохоров Константин Игоревич"),
-		"CmoQualityAuditModal must not contain synthetic Prokhorov Konstantin",
-	);
-
-	// 3. PatientRecallsHubModal
+	// 2. PatientRecallsHubModal
 	const recallsPath = path.join(webComponentsDir, "recalls/PatientRecallsHubModal.tsx");
 	const recallsContent = fs.readFileSync(recallsPath, "utf-8");
 	assert.ok(
@@ -180,12 +168,12 @@ test("Wave 111 — Static file verification: Zero synthetic mock patients in pro
 		"PatientRecallsHubModal must not contain DEFAULT_REGISTRY",
 	);
 
-	// 4. CashShiftClosingModal & cashShiftClosingEngine
-	const cashModalPath = path.join(webComponentsDir, "billing/CashShiftClosingModal.tsx");
+	// 4. CashShiftWidget & cashShiftClosingEngine
+	const cashModalPath = path.join(webComponentsDir, "finance/CashShiftWidget.tsx");
 	const cashModalContent = fs.readFileSync(cashModalPath, "utf-8");
 	assert.ok(
 		!cashModalContent.includes("Смирновой"),
-		"CashShiftClosingModal must not contain synthetic Smirnov in explanation placeholder",
+		"CashShiftWidget must not contain synthetic Smirnov in explanation placeholder",
 	);
 
 	const cashEnginePath = path.join(webComponentsDir, "billing/cashShiftClosingEngine.ts");

@@ -1,6 +1,4 @@
-import { SignaturePadCanvas } from "../portal/selfCheckin/SignaturePadCanvas";
 import { WarehouseManagerModal } from "../inventory/WarehouseManagerModal";
-import { ClinicalConflictModal } from "../offline/ClinicalConflictModal";
 import { PatientCardModal } from "../patients/PatientCardModal";
 /**
  * BackofficeModalsHost.tsx — On-demand backoffice modal layer for dental clinic operations.
@@ -12,25 +10,23 @@ import React, { useState, useEffect } from "react";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { Billing1CExportModal } from "../finance/Billing1CExportModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
-import { CashRegisterModal } from "../finance/CashRegisterModal";
-import { CashShiftClosingModal } from "../billing/CashShiftClosingModal";
+import { PaymentModal } from "../finance/PaymentModal";
+import { ShiftCloseZReportModal } from "../finance/fiscal/ShiftCloseZReportModal";
 import { CashShiftWidget } from "../finance/CashShiftWidget";
-import { FamilyWalletModal } from "../finance/FamilyWalletModal";
-import { PatientInstallmentScheduleModal } from "../finance/PatientInstallmentScheduleModal";
+import { FamilyWalletPanel } from "../finance/FamilyWalletPanel";
+import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { FastCheckoutModal } from "../finance/FastCheckoutModal";
 import { SberPosTerminalModal } from "../payments/sberPos/SberPosTerminalModal";
 import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal";
 import { PatientOmnichannelHubModal } from "../messaging/PatientOmnichannelHubModal";
 import { ManagerialPnlDashboardModal } from "../finance/pnl/ManagerialPnlDashboardModal";
 import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
-import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
+import { PrescriptionModal } from "../visit/PrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
 import { TimesheetT13Modal } from "../payroll/TimesheetT13Modal";
 import { SickLeaveElnModal } from "../documents/sickLeave/SickLeaveElnModal";
 import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
-import { CmoQualityAuditModal } from "../cmo/CmoQualityAuditModal";
-import { PatientCabinetModal, PatientOnlineBookingModal } from "../portal";
-import { PatientPortalTimelineModal } from "../portal/timeline/PatientPortalTimelineModal";
+import { PatientCabinetModal } from "../portal";
 import { PatientRecallsHubModal } from "../recalls/PatientRecallsHubModal";
 import { DoctorMobileShiftModal } from "../doctor-portal";
 import { DoctorShiftRosterModal } from "../schedule/roster/DoctorShiftRosterModal";
@@ -148,28 +144,61 @@ export const BackofficeModalsHost: React.FC = () => {
 					}}
 				 {...({} as any)} />
 			)}
-			{activeModal === "cash_register" && (
-				<CashRegisterModal
+			{(activeModal === "cash_register" || activeModal === "cash_register_modal") && (
+				<PaymentModal
 					isOpen={true}
 					onClose={close}
-					totalAmountRub={0}
+					amountRub={0}
+					patientId={patientId}
 					patientName={patientName}
 					patientPhone={patientPhone}
 					patientDepositRub={0}
 					patientFamilyBalanceRub={0}
+					doctorName={doctorFullName}
 				 {...({} as any)} />
 			)}
 			{activeModal === "cash_shift_closing" && (
-				<CashShiftClosingModal isOpen={true} onClose={close}  {...({} as any)} />
+				<ShiftCloseZReportModal
+					isOpen={true}
+					onClose={close}
+					cashierFullName={doctorFullName}
+				 {...({} as any)} />
 			)}
 			{activeModal === "cash_shift_widget" && (
 				<CashShiftWidget  {...({} as any)} />
 			)}
-			{activeModal === "family_wallet" && (
-				<FamilyWalletModal isOpen={true} onClose={close}  {...({} as any)} />
+			{(activeModal === "family_wallet" || activeModal === "family_wallet_modal") && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+					role="dialog"
+					aria-modal="true"
+				>
+					<div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] p-6 shadow-2xl relative">
+						<button
+							type="button"
+							onClick={close}
+							className="absolute top-4 right-4 min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)]"
+							aria-label="Закрыть"
+						>
+							<X size={20} />
+						</button>
+						<FamilyWalletPanel
+							patientId={patientId}
+							remainingDebtRub={0}
+							onPaymentSuccess={close}
+						/>
+					</div>
+				</div>
 			)}
-			{activeModal === "installment_schedule" && (
-				<PatientInstallmentScheduleModal isOpen={true} onClose={close}  {...({} as any)} />
+			{(activeModal === "installment_schedule" || activeModal === "patient_installment") && (
+				<BankInstallmentQrModal
+					isOpen={true}
+					onClose={close}
+					stageAmountKopecks={0 as any}
+					patientId={patientId}
+					patientName={patientName}
+					patientPhone={patientPhone}
+				 {...({} as any)} />
 			)}
 			{activeModal === "fast_checkout" && (
 				<FastCheckoutModal isOpen={true} onClose={close} totalAmountRub={0}  {...({} as any)} />
@@ -194,7 +223,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<TaxDeductionCertificateModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "medical_prescription" && (
-				<MedicalPrescriptionModal isOpen={true} onClose={close}  {...({} as any)} />
+				<PrescriptionModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "doctor_payroll" && (
 				<DoctorPayrollModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -223,23 +252,12 @@ export const BackofficeModalsHost: React.FC = () => {
 			{activeModal === "egisz_documents_journal" && (
 				<EgiszRemdHubModal isOpen={true} onClose={close} initialTab="journal" />
 			)}
-			{activeModal === "cmo_quality_audit" && (
-				<CmoQualityAuditModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "patient_portal" && (
+			{(activeModal === "patient_portal" ||
+				activeModal === "patient_mobile_portal" ||
+				activeModal === "patient_webapp_portal" ||
+				activeModal === "patient_online_booking" ||
+				activeModal === "patient_portal_timeline") && (
 				<PatientCabinetModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "patient_mobile_portal" && (
-				<PatientCabinetModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "patient_online_booking" && (
-				<PatientOnlineBookingModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "patient_webapp_portal" && (
-				<PatientCabinetModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "patient_portal_timeline" && (
-				<PatientPortalTimelineModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{(activeModal === "patient_recall_manager" || activeModal === "patient_recalls_hub") && (
 				<PatientRecallsHubModal isOpen={true} onClose={close}  {...({} as any)} />
@@ -440,9 +458,6 @@ export const BackofficeModalsHost: React.FC = () => {
 			{activeModal === "warehouse_manager" && (
 				<WarehouseManagerModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
-			{activeModal === "clinical_conflict" && (
-				<ClinicalConflictModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
 			{activeModal === "patient_card" && (
 				<PatientCardModal
 					isOpen={true}
@@ -461,9 +476,6 @@ export const BackofficeModalsHost: React.FC = () => {
 			)}
 			{activeModal === "fiscal_receipt_modal" && (
 				<FiscalReceipt54FzModal isOpen={true} onClose={close}  {...({} as any)} />
-			)}
-			{activeModal === "signature_pad_canvas" && (
-				<SignaturePadCanvas {...({} as any)} />
 			)}
 			{activeModal === "cbct_mpr_workspace" && (
 				<CbctMprWorkspace

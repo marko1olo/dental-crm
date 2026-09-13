@@ -24,7 +24,7 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 			"apps/web/src/components/finance/CashDayTally.tsx",
 			"apps/web/src/components/finance/CashShiftWidget.tsx",
 			"apps/web/src/components/finance/OneCExportButton.tsx",
-			"apps/web/src/components/finance/CashRegisterModal.tsx",
+			"apps/web/src/components/finance/FastCheckoutModal.tsx",
 			"apps/web/src/components/finance/PaymentModal.tsx",
 		];
 
@@ -46,7 +46,7 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 		const filesToCheckForPhone = [
 			"apps/web/src/components/finance/Billing1CExportModal.tsx",
 			"apps/web/src/components/finance/OneCExportButton.tsx",
-			"apps/web/src/components/prescriptions/generator/MedicalPrescriptionModal.tsx",
+			"apps/web/src/components/visit/PrescriptionModal.tsx",
 			"apps/web/src/components/emergency/EmergencyRescueModal.tsx",
 			"apps/web/src/components/lab/DentalLabOrderModal.tsx",
 			"apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx",

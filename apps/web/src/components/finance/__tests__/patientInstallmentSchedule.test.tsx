@@ -17,7 +17,7 @@ import {
 	parseKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
-import { PatientInstallmentScheduleModal } from "../PatientInstallmentScheduleModal";
+import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal";
 
 describe("Wave 23 / Domain 4: Patient Stage Payments, 0% Installments & Overdue Debt Engine", () => {
 	it("1. Scenario: 300 000 ₽ Implants (Surgery 150k + Orthopedics 150k) — Default Preset Integrity", () => {
@@ -130,27 +130,19 @@ describe("Wave 23 / Domain 4: Patient Stage Payments, 0% Installments & Overdue 
 		assert.ok(msg.includes("https://qr.nspk.ru/test-pay"), "Includes SBP QR payment link");
 	});
 
-	it("6. PatientInstallmentScheduleModal Component Rendering", () => {
-		const stages = createDefaultImplantStagesPreset(300000);
-
+	it("6. BankInstallmentQrModal Canonical SSOT Component Rendering", () => {
 		const html = renderToString(
-			createElement(PatientInstallmentScheduleModal, {
+			createElement(BankInstallmentQrModal, {
 				isOpen: true,
 				onClose: () => {},
 				patientName: "Иванов Иван Сергеевич",
-				doctorName: "Д-р Смирнов А. В.",
-				initialStages: stages,
+				stageAmountKopecks: 30000000,
 			}),
 		);
 
-		assert.ok(html.includes("data-testid=\"patient-installment-schedule-modal\""), "Renders modal container");
-		assert.ok(html.includes("data-testid=\"tab-clinical-stages\""), "Renders stages tab");
-		assert.ok(html.includes("data-testid=\"tab-0-installments\""), "Renders installments tab");
-		assert.ok(html.includes("data-testid=\"tab-fiscal-ndfl\""), "Renders fiscal ndfl tab");
-		assert.ok(html.includes("data-testid=\"stage-item-stage-implant-surgery-1\""), "Renders surgery stage");
-		assert.ok(html.includes("data-testid=\"stage-item-stage-implant-ortho-2\""), "Renders orthopedics stage");
-		assert.ok(html.includes("data-testid=\"pay-stage-btn-stage-implant-surgery-1\""), "Renders 1-click pay stage button");
-		assert.ok(html.includes("data-testid=\"copy-whatsapp-reminder-btn\""), "Renders WhatsApp copy button");
-		assert.ok(html.includes("data-testid=\"print-schedule-btn\""), "Renders print button");
+		assert.ok(html.includes("data-testid=\"bank-installment-modal\""), "Renders modal container");
+		assert.ok(html.includes("data-testid=\"bank-installment-qr-box\""), "Renders installment QR box");
+		assert.ok(html.includes("data-testid=\"copy-installment-link-btn\""), "Renders copy installment link button");
+		assert.ok(html.includes("data-testid=\"send-installment-sms-btn\""), "Renders send SMS button");
 	});
 });

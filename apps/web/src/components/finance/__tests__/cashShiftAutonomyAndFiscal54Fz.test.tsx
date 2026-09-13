@@ -16,7 +16,7 @@ import { renderToString } from "react-dom/server";
 import { CashShiftWidget } from "../CashShiftWidget";
 import { FastCheckoutModal } from "../FastCheckoutModal";
 import { FiscalReceipt54FzModal } from "../FiscalReceipt54FzModal";
-import { CashRegisterModal } from "../CashRegisterModal";
+import { PaymentModal } from "../PaymentModal";
 
 describe("CashShiftWidget — Mandate 8e Autonomy & X-Report Verification", () => {
 	it("renders X-report button enabled when shift is closed (isProcessing=false)", () => {
@@ -118,13 +118,13 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 	});
 });
 
-describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
-	it("renders 1-click presets: Без сдачи, 100% карта, Аванс + Карта, Сем. счет + Карта, 100% Гарантия, Депозит + Карта + Нал", () => {
+describe("PaymentModal — Multi-Tender & Doctor Autonomy Presets", () => {
+	it("renders 1-click presets: Без сдачи, 100% карта, 100% Гарантия, Депозит + Карта + Нал", () => {
 		const html = renderToString(
-			React.createElement(CashRegisterModal, {
+			React.createElement(PaymentModal, {
 				isOpen: true,
 				onClose: () => {},
-				totalAmountRub: 20000,
+				amountRub: 20000,
 				patientDepositRub: 5000,
 				patientFamilyBalanceRub: 7000,
 			})
@@ -132,12 +132,9 @@ describe("CashRegisterModal — Multi-Tender & Doctor Autonomy Presets", () => {
 
 		assert.ok(html.includes('data-testid="preset-exact-cash"'));
 		assert.ok(html.includes('data-testid="preset-full-card"'));
-		assert.ok(html.includes('data-testid="preset-deposit-card"'));
-		assert.ok(html.includes('data-testid="preset-family-card"'));
-		assert.ok(html.includes('data-testid="preset-three-way"'));
+		assert.ok(html.includes('data-testid="preset-three-way-split"'));
 		assert.ok(html.includes('data-testid="preset-warranty-100"'));
-		assert.ok(html.includes('data-testid="btn-discount-warranty"'));
-		assert.ok(html.includes("100% Гарантия (Переделка)"));
+		assert.ok(html.includes("Гарантия 100% (0 ₽)"));
 	});
 });
 

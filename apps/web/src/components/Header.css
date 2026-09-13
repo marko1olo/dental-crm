@@ -135,6 +135,7 @@
 	padding: 12px;
 	margin-bottom: 10px;
 	transition: border-color 0.2s ease;
+	overflow: hidden;
 }
 
 .dnt-cc-section:last-child {

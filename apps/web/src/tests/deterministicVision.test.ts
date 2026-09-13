@@ -93,8 +93,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ component: "LeadsKanbanView", selector: ".kanban-modal-close", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "MarketingRoiModal", selector: ".marketing-roi-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "AnesthesiaQuickBar", selector: ".anesthesia-quick-bar", minWidthPx: 44, minHeightPx: 44, targetCategory: "primary_action" },
-				{ component: "CashShiftClosingModal", selector: ".cash-shift-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
-				{ component: "CmoQualityAuditModal", selector: ".cmo-btn-close", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
+				{ component: "ShiftCloseZReportModal", selector: ".cash-shift-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "SanpinRegistryPackageModal", selector: ".document-package-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "TreatmentPlan3TierComparison", selector: ".plan-tier-segment-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "tariff_segmented" },
 			];
@@ -128,7 +127,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ component: "PaidMedicalContractModal", selector: ".paid-contract-tab-btn", heightPx: 34, minAllowedPx: 30, maxAllowedPx: 38 },
 				{ component: "PaidMedicalContractModal", selector: ".paid-contract-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
 				{ component: "EgiszRemdHubModal", selector: ".egisz-btn.sm", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 38 },
-				{ component: "CashShiftClosingModal", selector: ".cash-shift-close-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
+				{ component: "ShiftCloseZReportModal", selector: ".cash-shift-close-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
 			];
 
 			for (const item of desktopToolbars) {

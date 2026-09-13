@@ -347,11 +347,15 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	// Sync balance with WS
 	const wsUrl = (() => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const wsHost = (import.meta as any).env.VITE_WS_URL;
+		const wsHost = (
+			import.meta as unknown as { env?: Record<string, string> }
+		).env?.VITE_WS_URL;
 		if (wsHost) return wsHost;
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		return `${protocol}//${window.location.host}/api/ws/schedule`;
+		if (typeof window !== "undefined" && window.location) {
+			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+			return `${protocol}//${window.location.host}/api/ws/schedule`;
+		}
+		return "ws://127.0.0.1:4100/api/ws/schedule";
 	})();
 	const { lastMessage } = useWebsocket(wsUrl);
 	useEffect(() => {

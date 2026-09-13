@@ -1114,6 +1114,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						</h2>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0">
 							Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong>
+							<span className="ml-2 text-[var(--muted,#64748b)]">• Врач / Кассир: <strong className="text-[var(--ink,#0f172a)]">{effectiveCashier}</strong></span>
 						</p>
 					</div>
 
@@ -1501,7 +1502,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					</div>
 
 					{/* 54-FZ Buyer Details (Mandates 8e & 8n: Frictionless, optional for physical persons) */}
-					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5">
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="payer-type-section">
 						<div className="flex items-center justify-between flex-wrap gap-2">
 							<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
 								<Building2 size={14} className="text-indigo-600" />

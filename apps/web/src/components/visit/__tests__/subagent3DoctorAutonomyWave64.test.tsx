@@ -41,11 +41,11 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 	);
 	const commConsentsSource = fs.readFileSync(commConsentsPath, "utf8");
 
-	const cashRegisterModalPath = path.resolve(
+	const fastCheckoutModalPath = path.resolve(
 		__dirname,
-		"../../finance/CashRegisterModal.tsx",
+		"../../finance/FastCheckoutModal.tsx",
 	);
-	const cashRegisterModalSource = fs.readFileSync(cashRegisterModalPath, "utf8");
+	const fastCheckoutModalSource = fs.readFileSync(fastCheckoutModalPath, "utf8");
 
 	it("1. guarantees VisitEmkTab Save button is NOT disabled by foreign note text (Mandate 8e)", () => {
 		assert.ok(
@@ -121,14 +121,14 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 		assert.strictEqual(warrantyResult.paymentStatus, "Оплачено (скидка 100%)");
 		assert.strictEqual(warrantyResult.bypassKktZeroReceipt, true);
 
-		// Verify CashRegisterModal contains physical person non-requirement badge and warranty preset
+		// Verify FastCheckoutModal contains physical person non-requirement badge and warranty preset
 		assert.ok(
-			cashRegisterModalSource.includes("data-testid=\"inn-physical-not-required-badge\""),
-			"CashRegisterModal must display 54-FZ badge that INN is not required for physical persons",
+			fastCheckoutModalSource.includes("data-testid=\"inn-physical-not-required-badge\""),
+			"FastCheckoutModal must display 54-FZ badge that INN is not required for physical persons",
 		);
 		assert.ok(
-			cashRegisterModalSource.includes("data-testid=\"btn-discount-warranty\""),
-			"CashRegisterModal must have 1-tap 100% warranty rework button",
+			fastCheckoutModalSource.includes("data-testid=\"btn-discount-warranty\""),
+			"FastCheckoutModal must have 1-tap 100% warranty rework button",
 		);
 	});
 

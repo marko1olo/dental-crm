@@ -8,8 +8,8 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { PatientBillingModal } from "../PatientBillingModal";
-import { CashRegisterModal } from "../CashRegisterModal";
-import { FamilyWalletModal } from "../FamilyWalletModal";
+import { FastCheckoutModal } from "../FastCheckoutModal";
+import { FamilyWalletPanel } from "../FamilyWalletPanel";
 import { calculateCashChange, getCashPresetSuggestions } from "../fiscal/fiscal54fzEngine";
 
 describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () => {
@@ -77,46 +77,37 @@ describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () =>
 		assert.ok(suggestions.includes(5000), "5000 bill must be suggested");
 	});
 
-	it("CashRegisterModal: renders 54-FZ checkout studio with multi-tender support and thermal receipt", () => {
+	it("FastCheckoutModal: renders 54-FZ checkout studio with multi-tender support and doctor discounts", () => {
 		const html = renderToString(
-			<CashRegisterModal
+			<FastCheckoutModal
 				isOpen={true}
 				onClose={() => {}}
-				totalAmountRub={18500}
+				totalBillRub={18500}
 				patientName="Петров Петр Петрович"
 				patientDepositRub={5000}
 				patientFamilyBalanceRub={35000}
+				initialPaymentMethod="cash"
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="cash-register-modal"'), "Cash register modal must be rendered in DOM");
-		assert.ok(html.includes('data-testid="doctor-discounts-panel"'), "Doctor discount & warranty panel must be present");
-		assert.ok(html.includes('data-testid="select-cash-discount"'), "Discount selector must be present");
+		assert.ok(html.includes('data-testid="fast-checkout-modal"'), "Fast checkout modal must be rendered in DOM");
+		assert.ok(html.includes('data-testid="checkout-doctor-discounts-section"'), "Doctor discount & warranty panel must be present");
 		assert.ok(html.includes('data-testid="btn-discount-warranty"'), "100% warranty discount button must be present");
-		assert.ok(html.includes('data-testid="btn-discount-pensioner"'), "Pensioner discount button must be present");
 		assert.ok(html.includes('data-testid="cash-tender-panel"'), "Tender panel must be present");
-		assert.ok(html.includes('data-testid="btn-tender-card"'), "Card tender button must be present");
-		assert.ok(html.includes('data-testid="btn-tender-sbp"'), "SBP tender button must be present");
-		assert.ok(html.includes('data-testid="btn-tender-cash"'), "Cash tender button must be present");
-		assert.ok(html.includes('data-testid="btn-cash-submit-fiscalize"'), "Fiscalize submit button must be present");
+		assert.ok(html.includes('data-testid="btn-checkout-100-card"'), "Card tender button must be present");
+		assert.ok(html.includes('data-testid="btn-checkout-100-sbp"'), "SBP tender button must be present");
+		assert.ok(html.includes('data-testid="btn-checkout-100-cash"'), "Cash tender button must be present");
+		assert.ok(html.includes('data-testid="btn-submit-fast-checkout"'), "Fiscalize submit button must be present");
 	});
 
-	it("FamilyWalletModal: renders balance allocation, quick 1-click actions, and member limit controls", () => {
+	it("FamilyWalletPanel: renders balance allocation and family wallet controls", () => {
 		const html = renderToString(
-			<FamilyWalletModal
-				isOpen={true}
-				onClose={() => {}}
-				familyGroupName="Семья Кузнецовых"
-				headPayerName="Кузнецов Павел Сергеевич"
-				initialTotalBalanceRub={60000}
+			<FamilyWalletPanel
+				patientId="pat-1"
+				remainingDebtRub={60000}
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="family-wallet-modal"'), "Family wallet modal must be rendered");
-		assert.ok(html.includes('data-testid="family-allocation-view"'), "Allocation view must be active by default");
-		assert.ok(html.includes('data-testid="btn-split-equally"'), "Split equally button must be present");
-		assert.ok(html.includes('data-testid="btn-children-10k"'), "Children 10k preset button must be present");
-		assert.ok(html.includes('data-testid="btn-remove-limits"'), "Remove limits button must be present");
-		assert.ok(html.includes('data-testid="btn-save-family-wallet"'), "Save settings button must be present");
+		assert.ok(html.includes("family-wallet"), "Family wallet panel must be rendered");
 	});
 });

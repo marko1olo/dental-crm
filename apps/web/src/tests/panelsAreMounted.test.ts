@@ -155,8 +155,8 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	 * Канонический SSOT: Billing1CExportModal (смонтирован в OneCExportButton, InvoicesView и BackofficeModalsHost).
 	 */
 	/*
-	 * CashShiftClosingModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
-	 * через точку входа #clinical-modals-studio?modal=cash_shift_closing.
+	 * CashShiftClosingModal УДАЛЁН per Mandate 8s (Wave 199) как параллельный дубликат.
+	 * Канонический SSOT: CashShiftWidget / ShiftCloseZReportModal.
 	 */
 	/*
 	 * PatientPortalModal УДАЛЁН per Mandate 8s как устаревший фасад-обертка.
@@ -900,18 +900,13 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  */
 const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/analytics/MarketingRoiModal.tsx:MarketingRoiModal",
-	"components/billing/CashShiftClosingModal.tsx:CashShiftClosingModal",
 	"components/chairside/ChairsideTabletConsentModal.tsx:ChairsideTabletConsentModal",
 	"components/clinical/ClinicalProtocolPresets.tsx:ClinicalProtocolPresets",
 	"components/clinical/DiagnosisSelector.tsx:DiagnosisSelector",
 	"components/clinical/PostOpCareSheetModal.tsx:PostOpCareSheetModal",
-	"components/cmo/CmoQualityAuditModal.tsx:CmoQualityAuditModal",
 	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
 	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
 	"components/endo/EndoQuickProtocolsBar.tsx:EndoQuickProtocolsBar",
-	"components/finance/CashRegisterModal.tsx:CashRegisterModal",
-	"components/finance/FamilyWalletModal.tsx:FamilyWalletModal",
-	"components/finance/PatientInstallmentScheduleModal.tsx:PatientInstallmentScheduleModal",
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
 	"components/inventory/WarehouseManagerModal.tsx:WarehouseManagerModal",
@@ -924,14 +919,7 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/modals/ClinicalModalsHost.tsx:ClinicalModalsHost",
 	"components/odontogram/PediatricToothChart.tsx:PediatricToothChart",
 	"components/odontogram/ToothStatusPalette.tsx:ToothStatusPalette",
-	"components/offline/ClinicalConflictModal.tsx:ClinicalConflictModal",
-	"components/patient-portal/InteractiveTreatmentTimelineWidget.tsx:InteractiveTreatmentTimelineWidget",
-	"components/patients/transfer/PatientBranchTransferModal.tsx:PatientBranchTransferModal",
 	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
-	"components/portal/PatientOnlineBookingModal.tsx:PatientOnlineBookingModal",
-	"components/portal/UpcomingVisitCard.tsx:UpcomingVisitCard",
-	"components/portal/selfCheckin/SignaturePadCanvas.tsx:SignaturePadCanvas",
-	"components/portal/timeline/PatientPortalTimelineModal.tsx:PatientPortalTimelineModal",
 	"components/prescriptions/PrescriptionsTab.tsx:PrescriptionsTab",
 	"components/prescriptions/generator/MedicalPrescriptionModal.tsx:MedicalPrescriptionModal",
 	"components/radiology/DirectRvgCaptureModal.tsx:DirectRvgCaptureModal",
@@ -939,9 +927,7 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
 	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
 	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
-	"components/surgery/SurgeryCockpitModal.tsx:SurgeryCockpitModal",
 	"components/surgery/SurgeryProtocolPanel.tsx:SurgeryProtocolPanel",
-	"components/surgery/SurgerySafetyChecklist.tsx:SurgerySafetyChecklist",
 	"components/sync/OfflineSyncGuardModal.tsx:OfflineSyncGuardModal",
 	"components/treatment-plans/TreatmentPlanRoadmap.tsx:TreatmentPlanRoadmap",
 	"components/visit/VisitTimer.tsx:VisitTimer",
@@ -965,7 +951,7 @@ const LEGACY_BACKLOG_CEILING = 0;
 /**
  * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 53;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 39;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.
