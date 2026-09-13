@@ -699,7 +699,10 @@ export function WorkspaceTopbar({
 					<p className="eyebrow truncate">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
-					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden">{formatDisplayClinicName(clinicName)}</h1>
+					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden">
+						<span className="sm:hidden">{formatDisplayClinicName(clinicName).split(/\s+/)[0] || formatDisplayClinicName(clinicName)}</span>
+						<span className="hidden sm:inline">{formatDisplayClinicName(clinicName)}</span>
+					</h1>
 				</div>
 				<div className="topbar-selectors shrink-0 flex items-center gap-1.5 mr-2">
 					<details

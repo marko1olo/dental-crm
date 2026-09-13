@@ -1299,7 +1299,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<div className="min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-2 px-2.5 sm:px-3 border-b border-[var(--line)] flex-nowrap overflow-hidden">
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={28} />
-							<span className="truncate min-w-0 text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
+							<span className="truncate min-w-0 max-w-[110px] sm:max-w-none text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
 								<span className="sm:hidden">
 									{(() => {
 										const parts = (activePatient.fullName || "").trim().split(/\s+/);
