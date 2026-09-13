@@ -13,8 +13,7 @@ import { PostOpCareSheetModal } from "../clinical/PostOpCareSheetModal";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { BoneQualityPanel } from "../dicom/BoneQualityPanel";
 import { EndoQuickProtocolsBar } from "../endo/EndoQuickProtocolsBar";
-import { StomxToothFormulaView } from "../formula/StomxToothFormulaView";
-import { StomxDefectsPalette } from "../formula/StomxDefectsPalette";
+import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { OrthodonticStudioModal } from "../orthodontics/OrthodonticStudioModal";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtocolWidget";
@@ -366,8 +365,8 @@ export const ClinicalModalsHost: React.FC = () => {
 			)}
 			{activeModal === "stomx_formula" && (
 				<>
-					<StomxToothFormulaView patientId={patientId} {...({} as any)} />
-					<StomxDefectsPalette {...({} as any)} />
+					<OdontogramModule patientId={patientId} />
+					<ToothStatusPalette />
 				</>
 			)}
 			{activeModal === "orthodontic_studio" && (

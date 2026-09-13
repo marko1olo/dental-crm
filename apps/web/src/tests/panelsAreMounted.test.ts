@@ -925,8 +925,6 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/finance/RefundReceiptModal.tsx:RefundReceiptModal",
 	"components/finance/one-c/OneCCommerceMlModal.tsx:OneCCommerceMlModal",
 	"components/finance/pnl/ClinicalPnlHubModal.tsx:ClinicalPnlHubModal",
-	"components/formula/StomxDefectsPalette.tsx:StomxDefectsPalette",
-	"components/formula/StomxToothFormulaView.tsx:StomxToothFormulaView",
 	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
 	"components/imaging/DicomViewport.tsx:DicomViewport",
 	"components/imaging/ImagingModal.tsx:ImagingModal",
