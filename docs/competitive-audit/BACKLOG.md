@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 167–175 / SSOT CONSOLIDATION, MANDATE 8t SINGLE-COMPILER GATE, 15 DEAD API SERVICES PURGE, EGISZ SEMD 106 PURIFICATION, TOMORROW REMINDERS MOUNTING, DESKTOP ERGONOMICS & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–177 / SSOT CONSOLIDATION, CPR SPLINE MATH, MISCH HU D1..D5 DENSITY, IAN NERVE CLEARANCE 1.5MM, PERSPECTIVES CONSOLIDATION, DESKTOP ERGONOMICS & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -25,6 +25,8 @@
 > 19. Ликвидированы 10 единиц мертвого серверного кода (`DentalLabOrderService`, `DmsInsuranceService`, `OfflineFiscalSpooler`, `phiRedactor`, `recallReminderService`, `ClinicalRecordLockService`, `patientScoring`, `SmartPricelistImportService`, `splitPaymentService`, `IdempotentTransactionService`), исключено госпитальное контекстное заражение СЭМД 106 по Мандату 8i, закреплены бюджеты десктопной высоты шапок <=88–100px и автономия врача по Мандатам 8d, 8e, 8p (Wave 174).
 > 20. Завершена тотальная чистка серверного блоата API: ликвидированы еще 5 неиспользуемых сервисов (`DicomMeasurementEngine`, `postOpCareTrigger`, `PermissionPolicyService`, `decree458Categorizer`, `recallScheduler`), доведя суммарную чистку мертвого кода API за Волны 174–175 до 15 сервисов (-9836 строк); в `ScheduleView.tsx` смонтирован компонент пакетных напоминаний `TomorrowRemindersModal` с актуализацией `panelsAreMounted.test.ts`; полностью вычищен стационарный СЭМД 106 из `packages/shared/src/egisz/` per Mandate 8i; устранен дефект переполнения мобильной шапки `[DEFECT-PATIENTS-MOB-01]` в `patients-redesign.css` и `overflow-fixes.css` (Wave 175).
 > 21. Ликвидирован паразитный дублирующий и несмонтированный фронтенд-код и неподдерживаемый провайдер Ollama (-4495 строк, коммиты `c93a458e6`, `cc55beb1c`): удалены `AppointmentDrawer.tsx`, `ChairRosterModal.tsx`, `SberbankTerminalPaymentModal.tsx` и `localOllama.ts`; подтверждена консолидация на канонических SSOT: `AppointmentModal.tsx` и `QuickBookingDrawer.tsx` (визиты и запись), `DoctorShiftRosterModal.tsx` и `ChairScheduleView.tsx` (расписание смен и кресел), `sberPos/SberPosTerminalModal.tsx` (терминал Сбера); подтверждена полная работоспособность 5 ключевых модулей: `TomorrowRemindersModal` (напоминания на завтра), `ClassicGostOdontogram.tsx` (хоткеи формулы), `mprWorker.ts` (3D WebWorker MPR), `whatsappBridge.ts` / `websocketBroker.ts` (Telegram/WhatsApp брокер), касса 54-ФЗ без требования ИНН физлиц (Мандат 8e п. 9) (Wave 175).
+> 22. Консолидированы тулбары расписания (`ScheduleFilterStrip.tsx`), картотеки (`PatientsFilterBar.tsx`), визита (`VisitView.tsx`) и финансов (`FinanceView.tsx`) в строгую 1 строку высотой 32–36px по Закону Хика (Мандаты 8d п. 2, 8p); ликвидированы дубли соматического анамнеза в `VisitView.tsx` и `PatientCardModal.tsx`; обеспечена 100% автономия соло-врача и регистратуры (0 disabled кнопок, касса без ИНН физлиц, optional assistant в расписании) по Мандатам 8e, 8n (Wave 176, коммит `019e19a03`).
+> 23. Интегрировано математическое ядро CPR (Curved Planar Reformation): Catmull-Rom сплайн-интерполяция зубной дуги по 7–9 анатомическим ориентирам челюсти, расчет векторов нормалей Френе-Серре в аксиальной плоскости, генерация ортогональных кросс-секционных срезов с шагом 1.0–2.0 мм и толщиной 0.5–20 мм (`cprMath.ts`, `cprPanoramicEngine.ts`, `panoramicMprMath.ts`, `panoramicArch.ts`); внедрена классификация плотности кости по Мишу (Misch D1..D5 HU) с автоматической генерацией рекомендаций протокола препарирования (under-drilling, метчик, биконденсация) и торка (`boneQualityEngine.ts`, `BoneQualityPanel.tsx`); реализован аналитический замер и валидация безопасного клиренса до нижнечелюстного нерва IAN (safety clearance >=1.5 мм, статусы safe/warning/collision) без блокировки врача (`cbctSafetyEngine.ts`, `implantSafetyClearance.ts`, `ctPlanningPersistence.ts`, `cbctSafetyAndMisch.test.ts`); ликвидированы 5 параллельных перспектив в пользу единых канонических экранов (`ScheduleView`, `VisitView`, `PatientsView`, `FinanceView`) по Мандату 8s (`App.tsx`, `workspaceShell.tsx`, `perspectiveStore.ts`); устранен дефект обрезания текста тулбара расписания на десктопе 1440x900 в `ScheduleFilterStrip.tsx` и `ScheduleView.tsx` (Wave 177).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -4875,6 +4877,80 @@
   * Главный реестр фич: 325/325 в статусе `[ДА]`, 0 битых путей, 638 проверенных путей файлов.
   * Кодировка: UTF-8 без BOM, `check:encoding` 0 ошибок.
   * Single-Compiler Gate: защищен per Mandate 8t.
+
+---
+
+## 257. Волна 176: Консолидация тулбаров в 1 строку (32–36px), автономия врача (0 disabled кнопок, касса 54-ФЗ без ИНН физлиц, optional assistant) и ликвидация дублей соматики (Мандаты 8d п. 2, 8e, 8n, 8p) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммит `019e19a03`)
+* **Файлы**:
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/components/patients/PatientFiltersBar.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/FinanceView.tsx`
+  - `apps/web/src/components/patients/PatientCardModal.tsx`
+  - `apps/web/src/components/schedule/AppointmentModal.tsx`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
+  - `apps/web/src/components/finance/CashRegisterModal.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+* **Архитектурное решение**:
+  - **Консолидация тулбаров по Закону Хика (Мандаты 8d п. 2, 8p)**:
+    * Все тулбары ключевых рабочих мест (`ScheduleFilterStrip`, `PatientFiltersBar`, `VisitView`, `FinanceView`) сжаты в строгую 1 строку высотой 32–36px (`h-9 max-h-9 overflow-hidden shrink-0`), исключая частокол из 10+ кнопок и перерасход полезной высоты экрана.
+  - **Ликвидация дублей соматического анамнеза (Мандат 8p)**:
+    * Устранены дублирующие плашки и поля соматики между `VisitView.tsx` и `PatientCardModal.tsx`. Сохранен единый 1-кликовый пресет «Соматически здоров / норма».
+  - **100% автономия соло-врача и регистратуры (Мандаты 8e, 8n)**:
+    * 0 заблокированных disabled кнопок без объяснения причин;
+    * Касса 54-ФЗ не требует обязательного ИНН с физических лиц;
+    * Выбор ассистента в расписании строго опционален (nullable), позволяя соло-врачу сохранять визиты за 5 секунд.
+
+---
+
+## 258. Волна 177: Математика CPR-панорамы (Catmull-Rom сплайн и нормали), классификация плотности кости по Misch (D1..D5 HU), клиренс нижнечелюстного нерва IAN (1.5 мм), ликвидация 5 параллельных перспектив по Мандату 8s и десктопная эргономика расписания 1440x900 (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммиты `671f8fd1b`, `9617c20e3`, `bfeb5023e`, `019e19a03`)
+* **Файлы**:
+  - `packages/shared/src/radiology/cprMath.ts`
+  - `packages/shared/src/radiology/cprPanoramicEngine.ts`
+  - `apps/web/src/components/dicom/panoramicMprMath.ts`
+  - `apps/web/src/components/dicom/panoramicArch.ts`
+  - `packages/shared/src/radiology/boneQualityEngine.ts`
+  - `packages/shared/src/radiology/cbctCropBox.ts`
+  - `apps/web/src/components/dicom/BoneQualityPanel.tsx`
+  - `packages/shared/src/radiology/cbctSafetyEngine.ts`
+  - `packages/shared/src/radiology/implantSafetyClearance.ts`
+  - `apps/web/src/components/dicom/ctPlanningPersistence.ts`
+  - `apps/web/src/App.tsx`
+  - `apps/web/src/workspaceShell.tsx`
+  - `apps/web/src/store/perspectiveStore.ts`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/ScheduleView.tsx`
+  - `packages/shared/src/tests/cbctSafetyAndMisch.test.ts`
+  - `apps/web/src/components/dicom/__tests__/panoramicReconstruction.test.ts`
+* **Архитектурное решение**:
+  - **Математическое ядро CPR (Curved Planar Reformation) и нормали зубной дуги**:
+    * В `cprMath.ts`, `cprPanoramicEngine.ts`, `panoramicMprMath.ts`, `panoramicArch.ts` внедрена Catmull-Rom сплайн-интерполяция зубной дуги по 7–9 анатомическим ориентирам челюсти (`condyle_right`, `angle_right`, `molar_right`, `canine_right`, `incisors`, `canine_left`, `molar_left`, `angle_left`, `condyle_left`);
+    * Реализован строгий расчет векторов касательных и нормалей Френе-Серре в аксиальной плоскости;
+    * Построение ортогональных кросс-секционных срезов вдоль кривой дуги с шагом 1.0–2.0 мм и регулируемой толщиной среза 0.5–20 мм для прецизионного планирования имплантации.
+  - **Классификация плотности костной ткани по Misch (D1..D5 HU) с клиническими рекомендациями**:
+    * В `boneQualityEngine.ts`, `cbctCropBox.ts` и `BoneQualityPanel.tsx` реализована шкала Хаунсфилда по Карлу Мишу:
+      - D1 (>1250 HU) — плотная кортикальная кость (передний отдел нижней челюсти);
+      - D2 (850..1250 HU) — толстая плотная кортикальная кость с крупноячеистой губчатой тканью;
+      - D3 (350..850 HU) — тонкая пористая кортикальная кость с мелкоячеистой губчатой тканью;
+      - D4 (150..350 HU) — тонкая трабекулярная кость (дистальный отдел верхней челюсти);
+      - D5 (<150 HU) — незрелая, слабоминерализованная костная ткань.
+    * Автоматическая выдача клинических рекомендаций по протоколу препарирования (стандартный, under-drilling с недосверливанием финальным диаметром, биконденсация кости, нарезание резьбы метчиком) и рекомендованному торку (15–45 Н·см) без процедурных выдумок.
+  - **Валидация безопасного клиренса до нижнечелюстного нерва (IAN safety clearance >=1.5 мм)**:
+    * В `cbctSafetyEngine.ts`, `implantSafetyClearance.ts` и `ctPlanningPersistence.ts` реализован аналитический расчет расстояния от верхушки виртуального имплантата до ломаной канала нижнеальвеолярного нерва (Inferior Alveolar Nerve, IAN);
+    * Установлен канонический буфер безопасности 1.5 мм: при расстоянии >=1.5 мм статус `safe`, при сближении <1.5 мм выдается предупреждение `warning` в HUD, при пересечении <=0 мм — статус `collision` без блокировки работы хирурга (Мандат 8e).
+  - **Ликвидация 5 параллельных перспектив по Закону Единого Авторитета (Мандат 8s)**:
+    * В `App.tsx`, `workspaceShell.tsx` и `perspectiveStore.ts` устранено дублирование параллельных экранов (`ChairsiderPerspectiveView`, `FrontdeskPerspectiveView`, `CasePresentationView`, `OrthodonticPerspectiveView`, `PediatricPerspectiveView`);
+    * Все клинические и административные сценарии сведены к единым каноническим экранам (`ScheduleView`, `VisitView`, `PatientsView`, `FinanceView`), устраняя фрагментацию логики.
+  - **Эргономика тулбара расписания на десктопе 1440x900**:
+    * В `ScheduleFilterStrip.tsx` и `ScheduleView.tsx` устранен клиппинг текста и перенос строк: тулбар зафиксирован в строгую 1 строку `sm:h-9 sm:max-h-9` с `max-w-full overflow-hidden shrink-0 select-none`, предотвращая выпадение элементов за пределы экрана при любых разрешениях десктопа.
+* **Верификация**:
+  * Реестр фич: 325/325 со статусом `[ДА]`, 100% паритет;
+  * Тесты: `cbctSafetyAndMisch.test.ts` PASS, `panoramicReconstruction.test.ts` PASS;
+  * Single-Compiler Gate защищен per Mandate 8t.
 
 
 
