@@ -885,7 +885,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		const effectiveWatermark =
 			revisionCount > 0
 				? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount})`
-				: watermarkText;
+				: (isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
 
 		const cardHtml = renderForm043uHtml({
 			medicalCardNumber:

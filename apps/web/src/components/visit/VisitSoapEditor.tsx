@@ -20,13 +20,15 @@ import {
 	FileText,
 	Flame,
 	HeartPulse,
+	MoreHorizontal,
+	Printer,
 	Scissors,
 	Search,
 	Sparkles,
 	Stethoscope,
 	X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface VisitSoapNoteValues {
 	complaint?: string;
@@ -173,6 +175,39 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	const [previewProtocol, setPreviewProtocol] =
 		useState<OutpatientProtocolTemplate | null>(null);
 	const [isCorrectionMode, setIsCorrectionMode] = useState<boolean>(false);
+	const [isSoapMoreOpen, setIsSoapMoreOpen] = useState<boolean>(false);
+	const soapMoreRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!isSoapMoreOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (soapMoreRef.current && !soapMoreRef.current.contains(e.target as Node)) {
+				setIsSoapMoreOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isSoapMoreOpen]);
+
+	// ── Синхронный бэкап черновика в localStorage (защита от потери при смене вкладок/звонках) ──
+	const soapStorageKey = useMemo(
+		() => `dente_soap_editor_draft_${selectedTooth ?? "general"}`,
+		[selectedTooth],
+	);
+
+	useEffect(() => {
+		try {
+			const saved = localStorage.getItem(soapStorageKey);
+			if (saved && (!initialValues?.complaint && !initialValues?.treatmentPlan)) {
+				const parsed = JSON.parse(saved);
+				if (parsed && typeof parsed === "object") {
+					setValues((prev) => ({ ...prev, ...parsed }));
+				}
+			}
+		} catch {
+			// ignore storage quota errors
+		}
+	}, [soapStorageKey]);
 
 	// Синхронизация при внешних изменениях activeTooth
 	useEffect(() => {
@@ -228,6 +263,16 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		return () => clearTimeout(timer);
 	}, [values, saveStatus, onChange, onSave]);
 
+	// Немедленный сброс несохраненного черновика при размонтировании (защита при смене вкладок)
+	useEffect(() => {
+		return () => {
+			if (saveStatus === "saving") {
+				onChange?.(values);
+				onSave?.(values);
+			}
+		};
+	}, [saveStatus, values, onChange, onSave]);
+
 	// Мандат 8e: Автономия врача и версионный аудит («Исправленному верить»)
 	const handleEnableCorrection = useCallback(() => {
 		setIsCorrectionMode(true);
@@ -253,11 +298,14 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					: stamp,
 			};
 			setSaveStatus("saved");
+			try {
+				localStorage.setItem(soapStorageKey, JSON.stringify(next));
+			} catch {}
 			onSave?.(next);
 			onChange?.(next);
 			return next;
 		});
-	}, [onSave, onChange]);
+	}, [onSave, onChange, soapStorageKey]);
 
 	const handleFieldChange = useCallback(
 		(field: keyof VisitSoapNoteValues, val: string) => {
@@ -279,14 +327,23 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							? `${next.treatmentPlan}\n\n${stamp}`
 							: stamp;
 					}
+					try {
+						localStorage.setItem(soapStorageKey, JSON.stringify(next));
+					} catch {}
 					return next;
 				});
 				return;
 			}
 			setSaveStatus("saving");
-			setValues((prev) => ({ ...prev, [field]: val }));
+			setValues((prev) => {
+				const next = { ...prev, [field]: val };
+				try {
+					localStorage.setItem(soapStorageKey, JSON.stringify(next));
+				} catch {}
+				return next;
+			});
 		},
-		[isLocked, isCorrectionMode],
+		[isLocked, isCorrectionMode, soapStorageKey],
 	);
 
 	// Фильтрация протоколов StomX среди всех 448 шаблонов
@@ -515,7 +572,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								title="Приём закрыт. Нажмите для внесения правок с версионным аудитом («Исправленному верить»)"
 							>
 								<Edit3 className="w-3.5 h-3.5" />
-								<span>Внести исправление («Исправленному верить»)</span>
+								<span className="hidden md:inline">Внести исправление («Исправленному верить»)</span>
+								<span className="md:hidden">Исправить</span>
 							</button>
 						) : (
 							<div
@@ -524,7 +582,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								title="Режим исправления закрытого дневника («Исправленному верить»)"
 							>
 								<Check className="w-3.5 h-3.5 text-emerald-600" />
-								<span className="hidden sm:inline">Исправленному верить</span>
+								<span>Исправленному верить</span>
 							</div>
 						)
 					)}
@@ -587,15 +645,77 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						)}
 					</button>
 
-					{/* Индикатор сохранения */}
-					<span className="text-[11px] font-medium text-[var(--muted)] min-w-[70px] text-right inline-flex items-center justify-end gap-1">
+					{/* Дополнительные действия «...» (Мандаты 8d, 8e, 8p: 1 строка тулбара 32–36px) */}
+					<div className="relative inline-block" ref={soapMoreRef}>
+						<button
+							type="button"
+							data-testid="btn-soap-more-actions"
+							onClick={() => setIsSoapMoreOpen((v) => !v)}
+							className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent hover:border-[var(--line)] transition-colors cursor-pointer"
+							title="Дополнительные действия дневника"
+							aria-label="Дополнительные действия"
+							aria-expanded={isSoapMoreOpen}
+						>
+							<MoreHorizontal className="w-4 h-4" />
+						</button>
+						{isSoapMoreOpen && (
+							<div
+								data-testid="soap-more-dropdown"
+								className="absolute right-0 top-full mt-1 z-50 min-w-[200px] p-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs"
+							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsSoapMoreOpen(false);
+										handleCopyFullText();
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<Copy className="w-4 h-4 text-[var(--teal)] shrink-0" />
+									<span>Скопировать дневник</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsSoapMoreOpen(false);
+										setActiveViewMode("full_text");
+										setTimeout(() => window.print(), 100);
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<Printer className="w-4 h-4 text-sky-600 shrink-0" />
+									<span>Печать Формы 043/у</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsSoapMoreOpen(false);
+										handleApplyNorm();
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<Check className="w-4 h-4 text-emerald-600 shrink-0" />
+									<span>Норма в 1 клик</span>
+								</button>
+							</div>
+						)}
+					</div>
+
+					{/* Индикатор сохранения (Мандат 8e: Debounced Autosave «СОХРАНЕНО» / «Сохранение...») */}
+					<span
+						data-testid="soap-autosave-status"
+						className="text-[11px] font-semibold min-w-[90px] text-right inline-flex items-center justify-end gap-1"
+					>
 						{saveStatus === "saving" ? (
-							"Запись..."
+							<span className="text-amber-600 dark:text-amber-400 inline-flex items-center gap-1 animate-pulse">
+								<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping inline-block shrink-0" />
+								<span>Сохранение...</span>
+							</span>
 						) : saveStatus === "saved" ? (
-							<>
-								<Check className="w-3 h-3 text-emerald-600 inline shrink-0" aria-hidden="true" />
-								<span>Сохранено</span>
-							</>
+							<span className="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 font-bold">
+								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 inline" aria-hidden="true" />
+								<span>СОХРАНЕНО</span>
+							</span>
 						) : (
 							""
 						)}
@@ -616,7 +736,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsTemplatesOpen(false)}
-							className="p-1 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg cursor-pointer"
+							className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-1 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg cursor-pointer flex items-center justify-center"
+							aria-label="Закрыть шаблоны"
 						>
 							<X className="w-4 h-4" />
 						</button>
@@ -627,7 +748,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveSpecialty("all")}
-							className={`h-7 px-2.5 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${activeSpecialty === "all" ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${activeSpecialty === "all" ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
 						>
 							Все протоколы ({STOMX_ALL_448_TEMPLATES_INDEX.length})
 						</button>
@@ -641,7 +762,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									key={spec.id}
 									type="button"
 									onClick={() => setActiveSpecialty(spec.id)}
-									className={`h-7 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${isActive ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
+									className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${isActive ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
 								>
 									{SPECIALTY_ICONS[spec.id]}
 									<span>{spec.shortLabel}</span>
@@ -659,7 +780,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по диагнозу, протоколу (кариес, пульпит, виниры, имплантация, кюретаж)..."
-							className="w-full h-8 pl-8 pr-3 text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+							className="w-full h-9 pl-8 pr-3 text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 						/>
 					</div>
 
@@ -692,7 +813,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									<button
 										type="button"
 										onClick={() => handleApplyProtocol(protocol, "replace")}
-										className="flex-1 h-6 text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white rounded cursor-pointer transition-colors"
+										className="flex-1 min-h-[44px] sm:min-h-0 sm:h-6 text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white rounded cursor-pointer transition-colors flex items-center justify-center touch-manipulation"
 										title="Заменить текущий дневник этим протоколом в 1 клик"
 									>
 										Заполнить (1 клик)
@@ -700,7 +821,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									<button
 										type="button"
 										onClick={() => setPreviewProtocol(protocol)}
-										className="h-6 px-1.5 text-[11px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded"
+										className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-6 sm:px-1.5 text-[11px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded flex items-center justify-center touch-manipulation"
 										title="Предпросмотр протокола"
 									>
 										<Eye className="w-3.5 h-3.5" />
@@ -708,7 +829,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									<button
 										type="button"
 										onClick={() => handleApplyProtocol(protocol, "append")}
-										className="h-6 px-2 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded cursor-pointer"
+										className="min-h-[44px] sm:min-h-0 sm:h-6 px-2 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded cursor-pointer flex items-center justify-center touch-manipulation"
 										title="Дописать протокол к текущему тексту"
 									>
 										+ Добавить
@@ -934,9 +1055,66 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</div>
 				</div>
 			) : (
-				/* ── РЕЖИМ ПЕЧАТНОГО ПРЕДПРОСМОТРА 043/У ── */
-				<div className="p-4 bg-[var(--paper)] font-serif text-[var(--ink)] text-xs leading-relaxed space-y-3 border border-[var(--line)] rounded-xl">
-					<div className="border-b-2 border-[var(--line-strong,var(--ink))] pb-2 text-center">
+				/* ── РЕЖИМ ПЕЧАТНОГО ПРЕДПРОСМОТРА 043/У (МАНДАТ 8E) ── */
+				<div className="p-4 bg-[var(--paper)] font-serif text-[var(--ink)] text-xs leading-relaxed space-y-3 border border-[var(--line)] rounded-xl relative overflow-hidden">
+					{/* Водяной знак штампа (Мандат 8e) */}
+					<div
+						className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
+						aria-hidden="true"
+					>
+						<div
+							style={{
+								transform: "rotate(-28deg)",
+								fontSize: "32pt",
+								fontWeight: 900,
+								color: isLocked ? "rgba(16, 185, 129, 0.05)" : "rgba(15, 23, 42, 0.045)",
+								textTransform: "uppercase",
+								letterSpacing: "0.1em",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{isLocked
+								? (isCorrectionMode ? "ИСПРАВЛЕННОМУ ВЕРИТЬ" : "ПОДПИСАНО ВРАЧОМ")
+								: "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП"}
+						</div>
+					</div>
+
+					{/* Верхняя панель печати: штамп и кнопка печати (Мандат 8e) */}
+					<div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[var(--line)] relative z-10">
+						<div className="flex items-center gap-2">
+							{isLocked ? (
+								<span
+									data-testid="soap-print-stamp-locked"
+									className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-600/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold tracking-wider uppercase font-sans"
+								>
+									<Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+									<span>{isCorrectionMode ? "ИСПРАВЛЕННОМУ ВЕРИТЬ" : "ПОДПИСАНО ВРАЧОМ"}</span>
+								</span>
+							) : (
+								<span
+									data-testid="soap-print-stamp-draft"
+									className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-600/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 text-[10px] font-bold tracking-wider uppercase font-sans"
+								>
+									<FileText className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+									<span>ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП</span>
+								</span>
+							)}
+						</div>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => window.print()}
+								data-testid="btn-soap-print-action"
+								className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 text-xs font-bold rounded-lg bg-[var(--teal,var(--brand-primary))] text-white hover:opacity-90 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors font-sans"
+								title="Распечатать медицинскую карту Форма 043/у"
+							>
+								<Printer className="w-3.5 h-3.5" />
+								<span>Напечатать (Ctrl+P)</span>
+							</button>
+						</div>
+					</div>
+
+					<div className="border-b-2 border-[var(--line-strong,var(--ink))] pb-2 text-center relative z-10">
 						<div className="font-sans font-black text-sm uppercase tracking-wide">
 							МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (Форма № 043/у)
 						</div>
@@ -946,33 +1124,40 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						</div>
 					</div>
 
-					<div>
-						<span className="font-bold">Жалобы: </span>
-						{values.complaint || "Не предъявляет."}
+					<div className="relative z-10 space-y-2.5">
+						<div>
+							<span className="font-bold">Жалобы: </span>
+							{values.complaint || "Не предъявляет."}
+						</div>
+						<div>
+							<span className="font-bold">Анамнез заболевания и жизни: </span>
+							{values.anamnesis ||
+								"Соматически здоров. Аллергоанамнез спокойный."}
+						</div>
+						<div>
+							<span className="font-bold">
+								Данные объективного исследования:{" "}
+							</span>
+							{values.objectiveStatus || "Патологических изменений не выявлено."}
+						</div>
+						<div>
+							<span className="font-bold">Диагноз: </span>
+							{values.icd10 ? `[${values.icd10}] ` : ""}
+							{values.diagnosis || "Z01.2 Стоматологическое обследование."}
+						</div>
+						<div>
+							<span className="font-bold">Протокол проведенного лечения: </span>
+							{values.treatmentPlan || "Консультация, осмотр."}
+						</div>
+						<div>
+							<span className="font-bold">Рекомендации: </span>
+							{values.recommendations || "Стандартный гигиенический уход."}
+						</div>
 					</div>
-					<div>
-						<span className="font-bold">Анамнез заболевания и жизни: </span>
-						{values.anamnesis ||
-							"Соматически здоров. Аллергоанамнез спокойный."}
-					</div>
-					<div>
-						<span className="font-bold">
-							Данные объективного исследования:{" "}
-						</span>
-						{values.objectiveStatus || "Патологических изменений не выявлено."}
-					</div>
-					<div>
-						<span className="font-bold">Диагноз: </span>
-						{values.icd10 ? `[${values.icd10}] ` : ""}
-						{values.diagnosis || "Z01.2 Стоматологическое обследование."}
-					</div>
-					<div>
-						<span className="font-bold">Протокол проведенного лечения: </span>
-						{values.treatmentPlan || "Консультация, осмотр."}
-					</div>
-					<div>
-						<span className="font-bold">Рекомендации: </span>
-						{values.recommendations || "Стандартный гигиенический уход."}
+
+					<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between text-[11px] text-[var(--muted)] font-sans relative z-10">
+						<span>Форма 043/у • Приказ Минздрава России № 834н</span>
+						<span>Подпись врача: _________________ / {isLocked ? (isCorrectionMode ? "Исправленному верить" : "Подписано врачом") : "Черновик"}</span>
 					</div>
 				</div>
 			)}

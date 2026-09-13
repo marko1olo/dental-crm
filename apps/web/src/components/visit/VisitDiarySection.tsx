@@ -302,8 +302,19 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		[],
 	);
 
-	// Mandate 8e: Doctor autonomy — failed network load does not disable inputs, doctor can continue writing and autosave locally
-	const fieldsDisabled = isLocked && !isRevising;
+	// Mandate 8e: Doctor autonomy — failed network load does not disable inputs, doctor can continue writing and autosave locally.
+	// Interacting with fields in locked visits automatically triggers revision mode («Исправленному верить») with zero bureaucratic barriers.
+	const ensureRevisingIfLocked = useCallback(() => {
+		if (isLocked && !isRevising) {
+			beginRevise();
+			showToast(
+				"Режим правки закрытого дневника активирован («Исправленному верить»)",
+				"info",
+				3000,
+			);
+		}
+	}, [isLocked, isRevising, beginRevise]);
+	const fieldsDisabled = false;
 
 	const ctx = useAppLogicContext();
 	const activePatient = ctx.activePatient;
@@ -434,6 +445,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		: sessionDoctorSpecialty;
 
 	const handleIcdSelect = (code: string) => {
+		ensureRevisingIfLocked();
 		setDiary((prev) => ({ ...prev, diagnosisIcd10: code }));
 		setIcdSearch(code);
 		setShowIcdDropdown(false);
@@ -441,6 +453,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const commitIcdInput = () => {
+		ensureRevisingIfLocked();
 		const typed = (icdSearch ?? "").trim();
 		if (!typed) return;
 		const normalized = typed.toUpperCase();
@@ -482,6 +495,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const handleInsertPerioStatus = () => {
+		ensureRevisingIfLocked();
 		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (НОРМА В 1 КЛИК)]
 Десна бледно-розовая, плотная, зубодесневое прикрепление сохранено, патологических карманов нет (норма).
 Глубина зондирования зубодесневых борозд: 1–2 мм во всех секстантах.
@@ -510,6 +524,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const handleApplyPerioPathology = (preset: PerioPathologyPreset) => {
+		ensureRevisingIfLocked();
 		setDiary((prev) => ({
 			...prev,
 			diagnosisIcd10: prev.diagnosisIcd10 || preset.defaultIcd10,
@@ -530,6 +545,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const handleInsertPediatricStatus = () => {
+		ensureRevisingIfLocked();
 		const patientAgeYears = patientBirthDate
 			? Math.floor(
 					(Date.now() - new Date(patientBirthDate).getTime()) /
@@ -565,6 +581,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const handleApplyFullPhysiologicalNorm = () => {
+		ensureRevisingIfLocked();
 		setDiary((prev) => ({
 			...prev,
 			anamnesis:
@@ -584,6 +601,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const handleAddComplaintChip = (chipText: string) => {
+		ensureRevisingIfLocked();
 		setDiary((prev) => {
 			const cur = (prev.anamnesis ?? "").trim();
 			if (!cur) {
@@ -708,20 +726,32 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							Дневник приёма · Форма 043/у
 						</h2>
 						<div className="vde-043__meta">
-							{localDraftSavedAt && (
+							{isSaving ? (
 								<span
-									className="vde-043__meta-item text-emerald-600 dark:text-emerald-400 font-medium"
+									className="vde-043__meta-item text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1"
+									title="Идет сохранение на сервер..."
+								>
+									<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0 inline-block" />
+									Сохранение...
+								</span>
+							) : localDraftSavedAt || lastSavedAt ? (
+								<span
+									className="vde-043__meta-item text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1"
 									title="Автосохранение черновика при каждом вводе в IndexedDB и LocalStorage"
 								>
-									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0 inline-block" />
-									Черновик сохранён:{" "}
-									{localDraftSavedAt.toLocaleTimeString("ru-RU", {
-										hour: "2-digit",
-										minute: "2-digit",
-										second: "2-digit",
-									})}
+									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 inline-block" />
+									СОХРАНЕНО
+									{localDraftSavedAt && (
+										<span className="font-normal text-[var(--muted)] ml-0.5">
+											{localDraftSavedAt.toLocaleTimeString("ru-RU", {
+												hour: "2-digit",
+												minute: "2-digit",
+												second: "2-digit",
+											})}
+										</span>
+									)}
 								</span>
-							)}
+							) : null}
 							{lastSavedAt && (
 								<span className="vde-043__meta-item">
 									<Clock className="w-3 h-3" />
@@ -875,7 +905,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									id="diary-top-revise-btn"
 									data-testid="diary-top-revise-btn"
 									onClick={() => beginRevise()}
-									disabled={isSaving}
 									className="vde-043__btn vde-043__btn--amber text-xs py-1 px-2.5 font-bold flex items-center gap-1"
 									title="Внести исправление в закрытый дневник («Исправленному верить»)"
 								>
@@ -946,7 +975,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<button
 									type="button"
 									onClick={handleInsertPerioStatus}
-									className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-l-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
+									className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 rounded-l-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
 									title="Вставить физиологическую норму пародонта в 1 клик (десна бледно-розовая, плотная, карманов нет)"
 									data-testid="insert-perio-043-btn"
 								>
@@ -957,7 +986,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<button
 									type="button"
 									onClick={() => setShowPerioPathologyMenu((v) => !v)}
-									className="inline-flex items-center gap-1 px-2.5 py-1.5 h-9 rounded-r-xl bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 font-semibold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
+									className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 rounded-r-xl bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 font-semibold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
 									title="Выбрать протокол патологии пародонта (гингивит, пародонтит K05.3, абсцесс, рецессия)"
 									data-testid="perio-pathology-menu-btn"
 									aria-expanded={showPerioPathologyMenu}
@@ -1143,9 +1172,11 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							}
 							disabled={fieldsDisabled}
 							onApplyAnesthesia={(text) => {
+								ensureRevisingIfLocked();
 								applyAnesthesiaPreset(text);
 							}}
 							onDisposalCarpules={(count, drugId) => {
+								ensureRevisingIfLocked();
 								const drugName =
 									DENTAL_ANESTHETICS[drugId]?.tradeNamesRu[0] ?? "Анестетик";
 								const disposalNote = `[СанПиН 3.3686-21] Медсестра: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии).`;
@@ -1209,7 +1240,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					<div className="flex items-center gap-2 shrink-0">
 						<button
 							type="button"
-							onClick={applyPendingSoapSuggestion}
+							onClick={() => {
+								ensureRevisingIfLocked();
+								applyPendingSoapSuggestion();
+							}}
 							className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-black text-sm sm:text-base shadow-sm transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
 							data-testid="btn-apply-soap-suggestion"
 							title="Внести структурированный протокол СтАР в дневник приёма"
@@ -1250,6 +1284,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										setFieldInterimMap((p) => ({ ...p, anamnesis: interim }));
 									}}
 									onResult={(text) => {
+										ensureRevisingIfLocked();
 										setDiary((p) => ({
 											...p,
 											anamnesis: p.anamnesis ? `${p.anamnesis} ${text}` : text,
@@ -1268,10 +1303,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						value={diary.anamnesis}
 						onChange={(e) => {
 							handleAutoResize(e);
+							ensureRevisingIfLocked();
 							setDiary((p) => ({ ...p, anamnesis: e.target.value }));
 							scheduleDebouncedSave();
 						}}
-						onFocus={handleAutoResize}
+						onFocus={(e) => {
+							handleAutoResize(e);
+							ensureRevisingIfLocked();
+						}}
 						placeholder="Жалобы пациента, анамнез развития заболевания (morbi) и жизни (vitae)..."
 					/>
 					{COMPLAINT_QUICK_CHIPS.length > 0 && (
@@ -1343,6 +1382,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										setFieldInterimMap((p) => ({ ...p, statusLocalis: interim }));
 									}}
 									onResult={(text) => {
+										ensureRevisingIfLocked();
 										setDiary((p) => ({
 											...p,
 											statusLocalis: p.statusLocalis
@@ -1363,10 +1403,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						value={diary.statusLocalis}
 						onChange={(e) => {
 							handleAutoResize(e);
+							ensureRevisingIfLocked();
 							setDiary((p) => ({ ...p, statusLocalis: e.target.value }));
 							scheduleDebouncedSave();
 						}}
-						onFocus={handleAutoResize}
+						onFocus={(e) => {
+							handleAutoResize(e);
+							ensureRevisingIfLocked();
+						}}
 						placeholder="Внешний осмотр, перкуссия, пальпация, ЭОД, рентген..."
 					/>
 					{fieldInterimMap.statusLocalis && (
@@ -1405,6 +1449,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										<button
 											type="button"
 											onClick={() => {
+												ensureRevisingIfLocked();
 												setDiary((p) => ({ ...p, diagnosisIcd10: "" }));
 												setIcdSearch("");
 												scheduleDebouncedSave();
@@ -1426,10 +1471,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										className="vde-043__input vde-043__icd-input min-h-[44px]"
 										value={icdSearch}
 										onChange={(e) => {
+											ensureRevisingIfLocked();
 											setIcdSearch(e.target.value);
 											setShowIcdDropdown(true);
 										}}
-										onFocus={() => !fieldsDisabled && setShowIcdDropdown(true)}
+										onFocus={() => {
+											ensureRevisingIfLocked();
+											setShowIcdDropdown(true);
+										}}
 										onKeyDown={(e) => {
 											if (e.key === "Enter") {
 												e.preventDefault();
@@ -1495,8 +1544,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								className="vde-043__input vde-043__tooth-input"
 								value={diary.diagnosisTooth}
 								onChange={(e) => {
+									ensureRevisingIfLocked();
 									setDiary((p) => ({ ...p, diagnosisTooth: e.target.value }));
 									scheduleDebouncedSave();
+								}}
+								onFocus={() => {
+									ensureRevisingIfLocked();
 								}}
 								placeholder="16, 36..."
 								maxLength={32}
@@ -1522,6 +1575,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										setFieldInterimMap((p) => ({ ...p, treatmentDescription: interim }));
 									}}
 									onResult={(text) => {
+										ensureRevisingIfLocked();
 										setDiary((p) => ({
 											...p,
 											treatmentDescription: p.treatmentDescription
@@ -1542,10 +1596,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						value={diary.treatmentDescription}
 						onChange={(e) => {
 							handleAutoResize(e);
+							ensureRevisingIfLocked();
 							setDiary((p) => ({ ...p, treatmentDescription: e.target.value }));
 							scheduleDebouncedSave();
 						}}
-						onFocus={handleAutoResize}
+						onFocus={(e) => {
+							handleAutoResize(e);
+							ensureRevisingIfLocked();
+						}}
 						placeholder="Анестезия, проведённые манипуляции, рекомендации..."
 					/>
 					{fieldInterimMap.treatmentDescription && (
@@ -1573,6 +1631,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										key={rec.id}
 										type="button"
 										onClick={() => {
+											ensureRevisingIfLocked();
 											setDiary((prev) =>
 												appendRecommendationToSoap(prev, rec.text),
 											);
@@ -1607,6 +1666,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										setFieldInterimMap((p) => ({ ...p, complications: interim }));
 									}}
 									onResult={(text) => {
+										ensureRevisingIfLocked();
 										setDiary((p) => ({
 											...p,
 											complications: p.complications
@@ -1628,10 +1688,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							value={diary.complications}
 							onChange={(e) => {
 								handleAutoResize(e);
+								ensureRevisingIfLocked();
 								setDiary((p) => ({ ...p, complications: e.target.value }));
 								scheduleDebouncedSave();
 							}}
-							onFocus={handleAutoResize}
+							onFocus={(e) => {
+								handleAutoResize(e);
+								ensureRevisingIfLocked();
+							}}
 							placeholder="Осложнения лечения..."
 						/>
 						<textarea
@@ -1640,10 +1704,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							value={diary.comorbidities}
 							onChange={(e) => {
 								handleAutoResize(e);
+								ensureRevisingIfLocked();
 								setDiary((p) => ({ ...p, comorbidities: e.target.value }));
 								scheduleDebouncedSave();
 							}}
-							onFocus={handleAutoResize}
+							onFocus={(e) => {
+								handleAutoResize(e);
+								ensureRevisingIfLocked();
+							}}
 							placeholder="Сопутствующие заболевания (если есть)..."
 						/>
 					</div>
@@ -1701,7 +1769,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						type="button"
 						id="diary-save-btn"
 						onClick={() => doSave(false)}
-						disabled={isSaving}
 						className="vde-043__btn"
 					>
 						{isSaving ? "Сохраняю..." : "Сохранить черновик"}
@@ -1815,7 +1882,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						id="diary-revise-btn"
 						data-testid="diary-revise-begin"
 						onClick={() => beginRevise()}
-						disabled={isSaving}
 						className="vde-043__btn vde-043__btn--amber ml-auto font-bold flex items-center gap-1.5"
 						title="Внести исправление в дневник (с сохранением истории версий «Исправленному верить»)"
 					>
