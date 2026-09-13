@@ -1,6 +1,6 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { useCallback, useEffect, useState } from "react";
-import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard, MoreHorizontal } from "lucide-react";
+import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard, MoreHorizontal, ShieldCheck } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
@@ -303,8 +303,9 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isPnlOpen, setIsPnlOpen] = useState(false);
 	const [isInvoicesOpen, setIsInvoicesOpen] = useState(false);
 	const [isFinanceOptionsOpen, setIsFinanceOptionsOpen] = useState(false);
+	const [isCashShiftOpen, setIsCashShiftOpen] = useState(false);
 
-	// Desktop Keyboard Navigation: Esc closes open financial sub-modals (Invoices, PnL, options popover)
+	// Desktop Keyboard Navigation: Esc closes open financial sub-modals (Invoices, PnL, options popover, cash shift)
 	useEffect(() => {
 		const handleKeyDown = (e: globalThis.KeyboardEvent) => {
 			if (e.key === "Escape") {
@@ -320,11 +321,15 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					setIsPnlOpen(false);
 					return;
 				}
+				if (isCashShiftOpen) {
+					setIsCashShiftOpen(false);
+					return;
+				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen]);
+	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen]);
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
@@ -336,6 +341,21 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					<span className="text-xs text-[var(--muted)] truncate shrink-0 hidden sm:inline" title={documentPatient?.fullName ?? "пациент не выбран"}>
 						· {documentPatient?.fullName ?? "пациент не выбран"}
 					</span>
+					<button
+						type="button"
+						onClick={() => setIsCashShiftOpen((prev) => !prev)}
+						className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none ${
+							isCashShiftOpen
+								? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
+								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,rgba(0,0,0,0.15))]"
+						}`}
+						title={isCashShiftOpen ? "Скрыть панель кассовой смены" : "Открыть управление сменой ККТ 54-ФЗ"}
+						aria-expanded={isCashShiftOpen}
+						data-testid="btn-toggle-cash-shift"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+						<span>ККТ 54-ФЗ</span>
+					</button>
 				</div>
 				<div className="finance-header-actions flex items-center gap-1.5 shrink-0 flex-nowrap">
 					{billingSummary && billingSummary.totalDueRub > 0 && (
@@ -365,7 +385,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						<span className="truncate">Счета и акты (804н)</span>
 					</button>
 
-					{/* Поповер вторичных действий: P&L и Документы */}
+					{/* Поповер вторичных действий: P&L, Документы и Смена ККТ */}
 					<div className="relative shrink-0">
 						<button
 							type="button"
@@ -407,16 +427,33 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 									<FileText size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
 									<span>Документы</span>
 								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsFinanceOptionsOpen(false);
+										setIsCashShiftOpen((prev) => !prev);
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+									data-testid="menuitem-toggle-cash-shift"
+								>
+									<ShieldCheck size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+									<span>{isCashShiftOpen ? "Скрыть смену ККТ" : "Кассовая смена ККТ"}</span>
+								</button>
 							</div>
 						)}
 					</div>
 				</div>
 			</div>
 
-			<CashShiftWidget
-				compact={true}
-				cashierName={paymentFiscalCashierName || undefined}
-			/>
+			{isCashShiftOpen && (
+				<div className="relative mb-3 animate-in fade-in duration-150" data-testid="cash-shift-panel-container">
+					<CashShiftWidget
+						compact={true}
+						cashierName={paymentFiscalCashierName || undefined}
+					/>
+				</div>
+			)}
 
 			<FinancePlanningOverview
 				activePaymentsCount={(activePayments ?? []).length}
