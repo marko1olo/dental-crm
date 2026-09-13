@@ -22,7 +22,7 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 	it("1. NurseCarpuleDisposalModal: absence of «Мандат 8e» and presence of pure clinical SanPiN reference", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx",
+			"apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
