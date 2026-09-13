@@ -694,8 +694,8 @@ export function WorkspaceTopbar({
 
 	return (
 		<header className="topbar">
-			<div className="topbar-context min-w-0 flex-1 overflow-hidden">
-				<div className="topbar-clinic min-w-0 max-w-[240px] shrink sm:min-w-[140px]">
+			<div className="topbar-context min-w-0 flex-1 overflow-visible">
+				<div className="topbar-clinic min-w-0 max-w-[200px] sm:max-w-[220px] shrink sm:min-w-[140px]">
 					<p className="eyebrow truncate">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>

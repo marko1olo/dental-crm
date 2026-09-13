@@ -6,6 +6,8 @@
 	position: relative;
 	display: inline-flex;
 	align-items: center;
+	flex-shrink: 0;
+	min-width: max-content;
 }
 
 /* Unified Clinic Status Capsule (Menu Extra Pill) */
@@ -17,6 +19,7 @@
 	min-height: 36px;
 	flex-shrink: 0;
 	white-space: nowrap;
+	min-width: max-content;
 	border-radius: 9999px;
 	background: var(--paper-strong, var(--paper, #ffffff));
 	border: 1px solid var(--line-strong, var(--line, #cbd5e1));

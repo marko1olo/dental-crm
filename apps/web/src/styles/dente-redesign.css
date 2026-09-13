@@ -904,14 +904,14 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	flex-wrap: nowrap;
 	min-width: 0;
 	flex: 1 1 auto;
-	overflow: hidden;
+	overflow: visible;
 }
 .topbar-clinic {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
-	max-width: 280px;
-	flex-shrink: 0;
+	max-width: 220px;
+	flex-shrink: 1;
 }
 .topbar h1 {
 	margin: 0;
@@ -948,6 +948,7 @@ html.dark .topbar .eyebrow,
 	align-items: center;
 	gap: 6px;
 	flex-shrink: 0;
+	min-width: max-content;
 }
 .top-actions {
 	display: flex;

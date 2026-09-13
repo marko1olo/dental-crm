@@ -364,8 +364,7 @@ export function ScheduleFilterStrip({
 						>
 							<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
 							<span className="whitespace-nowrap shrink-0 flex-shrink-0">
-								<span className="sm:hidden">Моё</span>
-								<span className="hidden sm:inline">Моё кресло ({cleanChairName})</span>
+								Моё кресло ({cleanChairName})
 							</span>
 						</button>
 					);
@@ -522,22 +521,6 @@ export function ScheduleFilterStrip({
 							<span className="hidden md:inline">По креслам</span>
 						</button>
 					</div>
-				)}
-
-				{/* 1-Click Instant Patient Search (⌘K / Ctrl+K) */}
-				{onOpenPatientSearch && (
-					<button
-						type="button"
-						onClick={onOpenPatientSearch}
-						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 sm:min-w-0 px-2 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
-						title="Мгновенный поиск пациента по телефону или фамилии (⌘K / Ctrl+K)"
-						aria-label="Поиск пациента"
-						data-testid="schedule-search-patient-btn"
-					>
-						<UserSearch size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-						<span className="hidden xl:inline">Поиск</span>
-						<kbd className="hidden lg:inline text-[10px] font-mono px-1 py-[1px] bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--muted)]">⌘K</kbd>
-					</button>
 				)}
 
 				{/* Secondary Actions Overflow Dropdown Menu */}
@@ -739,6 +722,23 @@ export function ScheduleFilterStrip({
 								<span>Добавить кресло (+ Кресло)</span>
 							</button>
 
+							{onQuickBooking && (
+								<button
+									type="button"
+									onClick={() => {
+										onQuickBooking();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									data-testid="schedule-toolbar-quick-booking-btn"
+									title="Новая запись пациента на прием (горячая клавиша N)"
+								>
+									<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Быстрая запись (N)</span>
+								</button>
+							)}
+
 							{onOpenPatientSearch && (
 								<button
 									type="button"
@@ -748,6 +748,7 @@ export function ScheduleFilterStrip({
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
+									data-testid="schedule-search-patient-btn"
 									title="Мгновенный поиск пациента по телефону или фамилии (Ctrl+K)"
 								>
 									<UserSearch size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -977,21 +978,6 @@ export function ScheduleFilterStrip({
 							)}
 						</div>
 				</div>
-
-				{/* Secondary Action: "+ Запись" (Header CTA is dominant Primary; on mobile hidden to prevent duplicate button bloat and toolbar squeeze) */}
-				{onQuickBooking && (
-					<button
-						type="button"
-						onClick={onQuickBooking}
-						className="!hidden sm:!inline-flex secondary-button min-h-[30px] sm:h-7.5 px-2 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] active:scale-95 text-xs font-bold items-center justify-center gap-1 sm:gap-1.5 shrink-0 transition-all cursor-pointer select-none"
-						title="Новая запись пациента на прием (горячая клавиша N)"
-						aria-label="Добавить запись"
-						data-testid="schedule-toolbar-quick-booking-btn"
-					>
-						<Sparkles size={13} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
-						<span className="whitespace-nowrap font-bold">Быстрая запись</span>
-					</button>
-				)}
 			</div>
 		</section>
 
