@@ -84,22 +84,22 @@ const getAnatomicalToothColors = (
 				fill: "url(#dente-caries-grad)",
 				crownFill: "url(#dente-caries-grad)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#991b1b",
+				stroke: "#d97706",
 				opacity: "1",
-				badgeColor: "#ef4444",
-				badgeBg: "rgba(239, 68, 68, 0.15)",
-				badgeText: "#b91c1c",
+				badgeColor: "#f59e0b",
+				badgeBg: "rgba(245, 158, 11, 0.15)",
+				badgeText: "#b45309",
 			};
 		case "Pulpitis":
 			return {
 				fill: "url(#dente-pulpitis-grad)",
 				crownFill: "url(#dente-pulpitis-grad)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#991b1b",
+				stroke: "#ef4444",
 				opacity: "1",
 				badgeColor: "#ef4444",
 				badgeBg: "rgba(239, 68, 68, 0.15)",
-				badgeText: "#991b1b",
+				badgeText: "#b91c1c",
 			};
 		case "Periodontitis":
 			return {
@@ -153,11 +153,11 @@ const getAnatomicalToothColors = (
 				fill: "url(#composite-fill-gradient)",
 				crownFill: "url(#composite-fill-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#0f766e",
+				stroke: "#3b82f6",
 				opacity: "1",
-				badgeColor: "#10b981",
-				badgeBg: "rgba(16, 185, 129, 0.15)",
-				badgeText: "#0f766e",
+				badgeColor: "#3b82f6",
+				badgeBg: "rgba(59, 130, 246, 0.15)",
+				badgeText: "#1d4ed8",
 			};
 		case "Crown":
 			if (material === "gold") {
@@ -201,12 +201,12 @@ const getAnatomicalToothColors = (
 				fill: "url(#zirconia-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#60a5fa",
+				stroke: "#eab308",
 				collarFill: "url(#dente-cervical-collar)",
 				opacity: "1",
-				badgeColor: "#3b82f6",
-				badgeBg: "rgba(59, 130, 246, 0.15)",
-				badgeText: "#1d4ed8",
+				badgeColor: "#eab308",
+				badgeBg: "rgba(234, 179, 8, 0.15)",
+				badgeText: "#a16207",
 			};
 		case "Implant":
 			return {
@@ -1406,10 +1406,10 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Filled");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Пломба"
 					>
-						<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs shrink-0" />
+						<span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-xs shrink-0" />
 						<span>Пломба</span>
 					</button>
 					<button
@@ -1432,11 +1432,25 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Crown");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Коронка"
 					>
-						<span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-xs shrink-0" />
+						<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
 						<span>Коронка</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Implant");
+						}}
+						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						title="Имплантат"
+						data-testid={`quick-implant-${number}`}
+					>
+						<span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block shadow-xs shrink-0" />
+						<span>Имплант</span>
 					</button>
 					<button
 						type="button"

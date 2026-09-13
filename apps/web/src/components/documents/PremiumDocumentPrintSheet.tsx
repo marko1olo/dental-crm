@@ -187,7 +187,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 					) : (
 						<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded border border-amber-600/40 bg-amber-500/10 text-amber-800 text-[10px] font-bold tracking-wider uppercase">
 							<FileText className="w-3 h-3 text-amber-600" />
-							ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)
+							ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП
 						</span>
 					)}
 				</div>
@@ -202,7 +202,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 						top: "50%",
 						left: "50%",
 						transform: "translate(-50%, -50%) rotate(-32deg)",
-						fontSize: "64pt",
+						fontSize: "36pt",
 						fontWeight: 900,
 						color: "rgba(15, 23, 42, 0.045)",
 						textTransform: "uppercase",
@@ -213,7 +213,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 						userSelect: "none",
 					}}
 				>
-					ЧЕРНОВИК
+					ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП
 				</div>
 			) : (
 				<div

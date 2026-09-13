@@ -136,7 +136,7 @@ export function PatientAdministrativeForm({
 							},
 						});
 					}}
-					className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+					className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
 					data-testid="admin-form-print-blank-contract-btn"
 				>
 					<FileText size={15} className="shrink-0" />

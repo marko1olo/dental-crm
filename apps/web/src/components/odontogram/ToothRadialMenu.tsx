@@ -172,9 +172,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пломба (F)",
 					shortLabel: "Пломба (F)",
 					state: "Filled",
-					icon: <Wrench size={16} className="text-slate-200" />,
-					color: "from-slate-500 to-slate-700",
-					bgGradient: "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)",
+					icon: <Wrench size={16} className="text-blue-200" />,
+					color: "from-blue-600 to-blue-800",
+					bgGradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
 					hotkey: "П",
 				},
 				{
@@ -182,9 +182,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Коронка NuSmile / 3M (Cr)",
 					shortLabel: "Коронка (Cr)",
 					state: "Crown",
-					icon: <Crown size={16} className="text-sky-200" />,
-					color: "from-sky-500 to-blue-700",
-					bgGradient: "linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)",
+					icon: <Crown size={16} className="text-amber-200" />,
+					color: "from-amber-500 to-yellow-600",
+					bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
 					hotkey: "Ц",
 				},
 				{
@@ -192,9 +192,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Имплант / Герметизация (Imp)",
 					shortLabel: "Имплант (Imp)",
 					state: "Implant",
-					icon: <Hammer size={16} className="text-slate-200" />,
-					color: "from-slate-600 to-slate-800",
-					bgGradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
+					icon: <Hammer size={16} className="text-indigo-200" />,
+					color: "from-indigo-600 to-indigo-800",
+					bgGradient: "linear-gradient(135deg, #6366f1 0%, #4338ca 100%)",
 					hotkey: "И",
 				},
 				{
@@ -254,9 +254,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пломба (F)",
 					shortLabel: "Пломба (F)",
 					state: "Filled",
-					icon: <Wrench size={16} className="text-slate-200" />,
-					color: "from-slate-500 to-slate-700",
-					bgGradient: "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)",
+					icon: <Wrench size={16} className="text-blue-200" />,
+					color: "from-blue-600 to-blue-800",
+					bgGradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
 					hotkey: "П",
 				},
 				{
@@ -264,9 +264,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Коронка (Cr)",
 					shortLabel: "Коронка (Cr)",
 					state: "Crown",
-					icon: <Crown size={16} className="text-sky-200" />,
-					color: "from-sky-500 to-blue-700",
-					bgGradient: "linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)",
+					icon: <Crown size={16} className="text-amber-200" />,
+					color: "from-amber-500 to-yellow-600",
+					bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
 					hotkey: "Ц",
 				},
 				{
@@ -274,9 +274,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Имплант (Imp)",
 					shortLabel: "Имплант (Imp)",
 					state: "Implant",
-					icon: <Hammer size={16} className="text-slate-200" />,
-					color: "from-slate-600 to-slate-800",
-					bgGradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
+					icon: <Hammer size={16} className="text-indigo-200" />,
+					color: "from-indigo-600 to-indigo-800",
+					bgGradient: "linear-gradient(135deg, #6366f1 0%, #4338ca 100%)",
 					hotkey: "И",
 				},
 				{
@@ -891,7 +891,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											? "0 0 0 3px #ffffff, 0 14px 32px -4px rgba(0, 0, 0, 0.65)"
 											: "0 8px 22px -3px rgba(0, 0, 0, 0.45)",
 									}}
-									className={`radial-item-btn pointer-events-auto min-h-[36px] min-w-[36px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-108 active:scale-95 focus:outline-none ${
+									className={`radial-item-btn pointer-events-auto min-h-[44px] min-w-[44px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-108 active:scale-95 focus:outline-none touch-manipulation ${
 										isCurrent
 											? "scale-105 font-black ring-2 ring-white"
 											: "opacity-95 hover:opacity-100"
@@ -989,7 +989,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 													setSelectedSurfaces(next);
 													onSelectSurfaces?.(next);
 												}}
-												className={`min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation ${
+												className={`min-h-[44px] sm:min-h-[36px] min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 													isMatch
 														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
 														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"

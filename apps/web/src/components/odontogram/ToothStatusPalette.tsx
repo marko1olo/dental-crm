@@ -532,7 +532,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Caries" ? null : "Caries")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Caries"
 								? "bg-amber-600 text-white font-black shadow-xs ring-2 ring-amber-400"
 								: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
@@ -545,7 +545,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Pulpitis" ? null : "Pulpitis")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Pulpitis"
 								? "bg-rose-600 text-white font-black shadow-xs ring-2 ring-rose-400"
 								: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
@@ -558,7 +558,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Periodontitis" ? null : "Periodontitis")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Periodontitis"
 								? "bg-orange-600 text-white font-black shadow-xs ring-2 ring-orange-400"
 								: "bg-orange-500/10 text-orange-800 dark:text-orange-200 hover:bg-orange-500/20 border border-orange-500/20"
@@ -571,10 +571,10 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Filled" ? null : "Filled")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Filled"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs ring-2 ring-[var(--teal)]/60"
-								: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] hover:opacity-90 border border-[var(--teal,#0d9488)]/30"
+								? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
+								: "bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/20"
 						}`}
 						data-testid="palette-stamp-filled"
 					>
@@ -584,10 +584,10 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Crown" ? null : "Crown")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Crown"
-								? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
-								: "bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/20"
+								? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
+								: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
 						}`}
 						data-testid="palette-stamp-crown"
 					>
@@ -597,10 +597,10 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Implant" ? null : "Implant")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Implant"
-								? "bg-amber-600 text-white font-black shadow-xs ring-2 ring-amber-400"
-								: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
+								? "bg-indigo-600 text-white font-black shadow-xs ring-2 ring-indigo-400"
+								: "bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/20"
 						}`}
 						data-testid="palette-stamp-implant"
 					>
@@ -610,7 +610,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Healthy" ? null : "Healthy")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Healthy"
 								? "bg-emerald-600 text-white font-black shadow-xs ring-2 ring-emerald-400"
 								: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/20"
@@ -623,7 +623,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					<button
 						type="button"
 						onClick={() => onStampChange(activeStamp === "Missing" ? null : "Missing")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 ${
+						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Missing"
 								? "bg-zinc-800 text-white font-black shadow-xs ring-2 ring-zinc-500"
 								: "bg-zinc-500/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-500/20 border border-zinc-500/20"
@@ -637,7 +637,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 						<button
 							type="button"
 							onClick={() => onStampChange(null)}
-							className="min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)]"
+							className="min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)] touch-manipulation"
 							title="Сбросить режим штампа (Esc)"
 							data-testid="palette-stamp-reset"
 						>

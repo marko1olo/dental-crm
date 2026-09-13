@@ -335,7 +335,7 @@
 		gap: 12px;
 	}
 	.treatment-presenter-footer {
-		flex-direction: column;
+		flex-direction: column-reverse;
 		align-items: stretch;
 		padding: 10px 12px;
 		gap: 10px;
@@ -347,6 +347,10 @@
 	}
 	.btn-treatment-action {
 		width: 100%;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 }
 

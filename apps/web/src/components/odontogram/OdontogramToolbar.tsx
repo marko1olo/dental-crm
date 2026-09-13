@@ -414,8 +414,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 					onClick={() => onStampToolChange(activeStampTool === "Filled" ? null : "Filled")}
 					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 						activeStampTool === "Filled"
-							? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs ring-2 ring-[var(--teal)]/60"
-							: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] hover:opacity-90 border border-[var(--teal,#0d9488)]/30"
+							? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
+							: "bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/20"
 					}`}
 					title="Штамп 1-клик: Пломба (П)"
 					data-testid="stamp-filled-btn"
@@ -427,8 +427,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 					onClick={() => onStampToolChange(activeStampTool === "Crown" ? null : "Crown")}
 					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 						activeStampTool === "Crown"
-							? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
-							: "bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/20"
+							? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
+							: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
 					}`}
 					title="Штамп 1-клик: Коронка (Кр)"
 					data-testid="stamp-crown-btn"
@@ -440,8 +440,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 					onClick={() => onStampToolChange(activeStampTool === "Implant" ? null : "Implant")}
 					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 						activeStampTool === "Implant"
-							? "bg-amber-600 text-white font-black shadow-xs ring-2 ring-amber-400"
-							: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
+							? "bg-indigo-600 text-white font-black shadow-xs ring-2 ring-indigo-400"
+							: "bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/20"
 					}`}
 					title="Штамп 1-клик: Имплантат (И)"
 					data-testid="stamp-implant-btn"

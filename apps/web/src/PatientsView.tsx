@@ -840,7 +840,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									{/* Direct Action 1: «В карту» */}
 									<button
 										type="button"
-										className="patient-row-action-btn patient-row-chart-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+										className="patient-row-action-btn patient-row-chart-btn min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)] inline-flex items-center gap-1 cursor-pointer transition-colors"
 										title={`Открыть приём и карту 043/у: ${patient.fullName}`}
 										data-testid={`patient-row-chart-btn-${patient.id}`}
 										onClick={(e) => {
@@ -856,7 +856,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									{/* Direct Action 2: «Запись» */}
 									<button
 										type="button"
-										className="patient-row-action-btn patient-row-book-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal,var(--brand-primary))] hover:opacity-90 active:scale-95 text-white inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+										className="patient-row-action-btn patient-row-book-btn min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal,var(--brand-primary))] hover:opacity-90 active:scale-95 text-white inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
 										title={`Записать на приём в расписание: ${patient.fullName}`}
 										data-testid={`patient-row-book-btn-${patient.id}`}
 										onClick={(e) => {
@@ -873,14 +873,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									<div className="relative inline-flex items-center" ref={rowMenuPatientId === patient.id ? rowMenuRef : null}>
 										<button
 											type="button"
-											className="patient-row-more-btn min-h-[36px] min-w-[32px] p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
+											className="patient-row-more-btn min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
 											title="Дополнительные действия с пациентом"
 											aria-label={`Меню действий для ${patient.fullName}`}
 											aria-expanded={rowMenuPatientId === patient.id}
 											data-testid={`patient-row-more-btn-${patient.id}`}
 											onClick={(e) => {
 												e.stopPropagation();
-												setRowMenuPatientId(rowMenuPatientId === patient.id ? null : patient.id);
+												handleSelectPatient(patient.id);
+												setRowMenuPatientId((prev) => (prev === patient.id ? null : patient.id));
 											}}
 										>
 											<MoreHorizontal size={14} className="text-[var(--ink)]" />
@@ -1098,7 +1099,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									<button
 										type="button"
 										onClick={() => setIsPatientCardModalOpen(true)}
-										className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1.5 cursor-pointer text-xs shrink-0 transition-colors"
+										className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1.5 cursor-pointer text-xs shrink-0 transition-colors"
 										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
 										data-testid="patient-quick-043-btn"
 									>
@@ -1114,7 +1115,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											useAppStore.getState().setCurrentView("finance");
 											showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient.fullName}`, "info");
 										}}
-										className={`h-8 px-2.5 rounded-lg text-xs font-mono font-black inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors border ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-mono font-black inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors border ${
 											patientBalance > 0
 												? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40"
 												: patientBalance < 0
@@ -1143,7 +1144,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												useAppStore.getState().setCurrentView("schedule");
 												showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
 											}}
-											className="h-8 px-2.5 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+											className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 											title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Нажмите для перехода в расписание`}
 											data-testid="patient-quick-next-appointment-btn"
 										>
@@ -1156,7 +1157,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										<button
 											type="button"
 											onClick={() => executeBookPatientAppointmentAutonomy({ selectedPatient })}
-											className="h-8 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+											className="min-h-[44px] sm:min-h-0 sm:h-8 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 											title="Записать пациента в расписание"
 											data-testid="patient-quick-book-appointment-btn"
 										>
@@ -1377,7 +1378,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							aria-busy={patientCoreSaveState === "saving" || undefined}
 							aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
 							disabled={patientCoreSaveState === "saving"}
-							style={{ minHeight: "36px" }}
+							style={{ minHeight: "44px" }}
 							data-testid="patient-core-save-btn"
 						>
 							<UserCheck size={16} aria-hidden="true" /> Сохранить данные
@@ -1398,7 +1399,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								minHeight: "36px",
+								minHeight: "44px",
 							}}
 							title="Установить соматическую норму в 1 клик"
 							data-testid="patient-card-somatic-norm-btn"
@@ -1415,7 +1416,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								minHeight: "36px",
+								minHeight: "44px",
 							}}
 							title="Открыть амбулаторный приём 043/у без лишних подтверждений"
 							data-testid="patient-card-open-visit-btn"
@@ -1432,7 +1433,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								minHeight: "36px",
+								minHeight: "44px",
 							}}
 							title="Открыть полную амбулаторную медицинскую карту Форма 043/у"
 							data-testid="open-patient-card-modal-btn"
@@ -1454,8 +1455,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									display: "inline-flex",
 									alignItems: "center",
 									justifyContent: "center",
-									minHeight: "36px",
-									minWidth: "36px",
+									minHeight: "44px",
+									minWidth: "44px",
 									padding: "0 8px",
 								}}
 							>
@@ -1495,7 +1496,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
-											minHeight: "36px",
+											minHeight: "44px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",
@@ -1529,7 +1530,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
-											minHeight: "36px",
+											minHeight: "44px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",
@@ -1563,7 +1564,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
-											minHeight: "36px",
+											minHeight: "44px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",
@@ -1593,7 +1594,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
-											minHeight: "36px",
+											minHeight: "44px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",
@@ -1633,7 +1634,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
-											minHeight: "36px",
+											minHeight: "44px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",

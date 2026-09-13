@@ -318,7 +318,7 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 					{filteredDocuments.map((doc) => {
 						const isSigned = doc.status === "issued";
 						const isDraft = doc.status === "draft";
-						const stampText = isSigned ? "ПОДПИСАНО ВРАЧОМ" : isDraft ? "ЧЕРНОВИК" : "АННУЛИРОВАН";
+						const stampText = isSigned ? "ПОДПИСАНО ВРАЧОМ" : isDraft ? "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП" : "АННУЛИРОВАН";
 
 						return (
 							<div

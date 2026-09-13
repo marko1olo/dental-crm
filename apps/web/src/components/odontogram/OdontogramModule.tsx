@@ -1577,6 +1577,9 @@ export const OdontogramModule = ({
 									</div>
 									<div className="flex items-center justify-between gap-1 flex-nowrap overflow-x-auto py-0.5">
 										{[
+											{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
+											{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
+											{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
 											{ label: "O", surfs: ["O"], title: "Окклюзионная (O/Жевательная)" },
 											{ label: "M", surfs: ["M"], title: "Медиальная (M)" },
 											{ label: "D", surfs: ["D"], title: "Дистальная (D)" },
@@ -1585,7 +1588,7 @@ export const OdontogramModule = ({
 											{ label: "К", surfs: ["K"], title: "Контактная / Коронковая (К)" },
 											{ label: "А", surfs: ["A"], title: "Апикальная (А)" },
 										].map((chip) => {
-											const isSelected = chip.surfs.some((s) => activeSurfaces.includes(s));
+											const isSelected = chip.surfs.length > 0 && chip.surfs.every((s) => activeSurfaces.includes(s));
 											return (
 												<button
 													key={chip.label}
@@ -1594,10 +1597,10 @@ export const OdontogramModule = ({
 														setActiveSurfaces((prev) =>
 															isSelected
 																? prev.filter((s) => !chip.surfs.includes(s))
-																: [...prev, ...chip.surfs],
+																: Array.from(new Set([...prev, ...chip.surfs])),
 														);
 													}}
-													className={`flex-1 min-h-[32px] h-[32px] px-1.5 py-0.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+													className={`flex-1 min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
 															: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)]"

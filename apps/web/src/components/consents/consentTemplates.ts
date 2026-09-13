@@ -1197,7 +1197,7 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
 	const aftercare = isBlank ? "____________________________________________________________________________________" : (params.aftercare?.trim() || "Не принимать пищу до окончания действия анестезии (2-3 часа); соблюдать щадящий режим гигиены полости рта");
 
 	const today = params.date || new Date().toLocaleDateString("ru-RU");
-	const effectiveWatermark = params.watermarkText || (params.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const effectiveWatermark = params.watermarkText || (params.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
 	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	return `<!DOCTYPE html>
@@ -1441,7 +1441,7 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 	const alternatives = isBlank ? "____________________________________________________________________________________" : (params.alternatives?.trim() || "Лечение под седацией/наркозом; отказ от лечения с риском одонтогенного воспаления");
 
 	const today = params.date || new Date().toLocaleDateString("ru-RU");
-	const effectiveWatermark = params.watermarkText || (params.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const effectiveWatermark = params.watermarkText || (params.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
 	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	return `<!DOCTYPE html>
@@ -1683,7 +1683,7 @@ export function generateConsentPackagePrintHtml(
 	const clinicLicense = baseContext.licenseNumber || "ЛО41-01137-77/00368421";
 	const clinicAddress = baseContext.clinicAddress || "г. Москва, ул. Большая Стоматологическая, д. 12";
 	const today = baseContext.date || new Date().toLocaleDateString("ru-RU");
-	const effectiveWatermark = options.watermarkText || (options.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const effectiveWatermark = options.watermarkText || (options.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
 	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	// Рендерим все документы пакета последовательно

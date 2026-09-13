@@ -528,7 +528,7 @@
 	}
 
 	.plan-comparator-footer {
-		flex-direction: column;
+		flex-direction: column-reverse;
 		align-items: stretch;
 		gap: 10px;
 		padding: 10px 14px;
@@ -542,6 +542,15 @@
 		align-items: center;
 		flex-wrap: wrap;
 		gap: 6px;
+	}
+
+	.plan-action-btn-primary,
+	.plan-action-btn-secondary {
+		min-height: 44px;
+		height: auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 }
 

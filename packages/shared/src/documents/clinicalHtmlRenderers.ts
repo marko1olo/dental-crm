@@ -606,7 +606,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
     `;
 
 	const isClosed = payload.isClosed ?? (payload.status === "signed" || payload.status === "completed");
-	const watermark = payload.watermarkText ?? (isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const watermark = payload.watermarkText ?? (isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -739,7 +739,7 @@ export function renderForm043_1uHtml(payload: OrthodonticCard043_1uPayload | any
 	const ind = payload.indices || {};
 	const plan = payload.treatmentPlan || payload.appliancePlan || {};
 	const isClosed = payload.isClosed ?? (payload.status === "signed" || payload.status === "completed");
-	const watermark = payload.watermarkText ?? (isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const watermark = payload.watermarkText ?? (isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
 
 	return `<!DOCTYPE html>
 <html lang="ru">

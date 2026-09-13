@@ -213,7 +213,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-general"
-								className={`min-h-[40px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+								className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
 									activeTab === "general"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -227,7 +227,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
-								className={`min-h-[40px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+								className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
 									activeTab === "anamnesis"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -243,7 +243,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
-							className="min-h-[40px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+							className="min-h-[44px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
 							onClick={handleApplyNorm}
 							title="1-клик: Применить физиологическую норму (соматически здоров)"
 						>

@@ -302,7 +302,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												<button
 													type="button"
 													onClick={() => setShowMicroConsumables((prev) => !prev)}
-													className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+													className="min-h-[44px] sm:min-h-0 py-1.5 px-2 flex items-center text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
 												>
 													{showMicroConsumables ? "Скрыть" : "Показать"}
 												</button>
@@ -319,7 +319,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						<button
 							type="button"
 							onClick={() => setShowMaterials((prev) => !prev)}
-							className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
+							className="w-full min-h-[44px] flex items-center justify-between px-4 py-3 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
 						>
 							<div className="flex items-center gap-2">
 								<Package size={15} className="text-[var(--teal,var(--brand-primary))]" />
@@ -420,7 +420,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 					</div>
 
 					{/* Stage Subtotal & Action Footer */}
-					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 text-xs font-semibold text-[var(--muted,#64748b)] border-t border-[var(--border,#cbd5e1)]">
+					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 text-xs font-semibold text-[var(--muted,#64748b)] border-t border-[var(--border,#cbd5e1)]">
 						<div className="flex items-center gap-2">
 							<span>Итого за этап:</span>
 							<span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
@@ -428,12 +428,12 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							</span>
 						</div>
 
-						<div className="flex flex-wrap items-center gap-2">
+						<div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
 							{onOpenInstallment && stage.totalRub > 0 && (
 								<button
 									type="button"
 									onClick={() => onOpenInstallment(stage)}
-									className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors"
+									className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors w-full sm:w-auto"
 									title={`Оформить беспроцентную банковскую рассрочку (Сбер / Т-Банк / Подели) на этап №${stage.stageNumber}`}
 									data-testid={`stage-${stage.stageNumber}-installment-btn`}
 								>
@@ -460,7 +460,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 													.filter((t): t is number => typeof t === "number" && t > 0);
 												onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
 											}}
-											className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
+											className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors w-full sm:w-auto"
 											title="Оформить наряд-заказ в зуботехническую лабораторию"
 											data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
 										>
@@ -476,7 +476,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 														.filter((t): t is number => typeof t === "number" && t > 0);
 													onOneClickLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
 												}}
-												className="min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer transition-colors shadow-2xs"
+												className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer transition-colors shadow-2xs w-full sm:w-auto"
 												title="Оформить наряд в ЗТЛ в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
 												data-testid={`stage-${stage.stageNumber}-lab-order-one-click-btn`}
 											>
@@ -491,7 +491,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={() => onExecuteWriteOffStage(stage)}
-									className="min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
+									className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors w-full sm:w-auto"
 									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 								>
 									<Package size={13} />

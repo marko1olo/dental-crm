@@ -581,6 +581,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								type="button"
 								className={`btn btn-secondary ${activeTab === "formula" ? "active" : ""}`}
 								onClick={() => setActiveTab("formula")}
+								style={{ minHeight: "44px" }}
 							>
 								Зубная формула FDI и КПУ
 							</button>
@@ -588,6 +589,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								type="button"
 								className={`btn btn-secondary ${activeTab === "indices" ? "active" : ""}`}
 								onClick={() => setActiveTab("indices")}
+								style={{ minHeight: "44px" }}
 							>
 								Индексы и Пародонт (CPITN)
 							</button>
@@ -595,6 +597,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								type="button"
 								className={`btn btn-secondary ${activeTab === "anamnesis" ? "active" : ""}`}
 								onClick={() => setActiveTab("anamnesis")}
+								style={{ minHeight: "44px" }}
 							>
 								Анамнез, СОПР и План
 							</button>
@@ -606,7 +609,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								className="btn btn-sm btn-success"
 								onClick={handleApplyGlobalNorm}
 								title="1-клик: Заполнить всю Форму 043/у физиологической нормой (зубная формула, CPITN, СОПР, анамнез). Врач правит только патологию!"
-								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+								style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 							>
 								<ShieldCheck style={{ width: "16px", height: "16px" }} />
 								Норма 043/у (1-клик)
@@ -618,7 +621,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									className="btn btn-sm btn-outline-warning"
 									onClick={handleCancelRevise}
 									title="Отменить применение нормы и вернуть исходные записи"
-									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 								>
 									<Undo2 style={{ width: "16px", height: "16px" }} />
 									Отменить применение нормы
@@ -637,7 +640,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										}
 									}}
 									title="Внести исправление в закрытую карту 043/у («Исправленному верить») без согласований начмедов"
-									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 								>
 									<FileEdit style={{ width: "16px", height: "16px" }} />
 									{isRevising ? "Отменить ревизию" : "Внести исправление («Исправленному верить»)"}
@@ -659,6 +662,9 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									fontWeight: 700,
 									letterSpacing: "0.05em",
 									textTransform: "uppercase",
+									minHeight: "44px",
+									display: "inline-flex",
+									alignItems: "center",
 									background:
 										isRevising || revisionCount > 0
 											? "rgba(245, 158, 11, 0.15)"
@@ -684,7 +690,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount + (isRevising ? 1 : 0)})`
 									: initialPayload?.isSigned
 										? "ПОДПИСАНО ВРАЧОМ"
-										: "ЧЕРНОВИК"}
+										: "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП"}
 							</span>
 							<button
 								type="button"
@@ -719,7 +725,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									}
 								}}
 								title="Печать чистого бланка Формы 043/у со строками «________» для ручного заполнения на приёме"
-								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+								style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 							>
 								<Printer style={{ width: "16px", height: "16px" }} />
 								Бланк («________»)
@@ -736,7 +742,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 												? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount + (isRevising ? 1 : 0)})`
 												: isSigned
 													? "ПОДПИСАНО ВРАЧОМ"
-													: "ЧЕРНОВИК";
+													: "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП";
 										const printHtml = renderForm043uHtml({
 											...initialPayload,
 											medicalCardNumber: initialPayload?.medicalCardNumber || "__________",
@@ -777,7 +783,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 									}
 								}}
 								title="Печать карты 043/у в любой момент"
-								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+								style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 							>
 								<Printer style={{ width: "16px", height: "16px" }} />
 								Печать 043/у

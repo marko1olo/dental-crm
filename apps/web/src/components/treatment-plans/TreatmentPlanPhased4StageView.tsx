@@ -147,9 +147,12 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
       }
 
       const qty = it.quantity || 1;
+      const unitPriceKop = Math.round((it.unitPriceRub || 0) * 100);
+      const discountKop = Math.round((it.discountRub || 0) * 100);
+      const lineTotalKop = Math.max(0, unitPriceKop * qty - discountKop);
       const unitPrice = it.unitPriceRub || 0;
       const discount = it.discountRub || 0;
-      const total = Math.max(0, unitPrice * qty - discount);
+      const total = lineTotalKop / 100;
 
       groups[targetCat].push({
         id: it.id,
@@ -242,7 +245,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
           const meta: StageCategoryMetadata = STAGE_CATEGORY_META[cat];
           const items = categorizedData.groups[cat];
           const isExpanded = expandedCategories[cat];
-          const stageTotalRub = items.reduce((acc, x) => acc + x.totalPriceRub, 0);
+          const stageTotalRub = items.reduce((acc, x) => acc + Math.round(x.totalPriceRub * 100), 0) / 100;
           const percentOfPlan = grandTotalRub > 0 ? Math.round((stageTotalRub / grandTotalRub) * 100) : 0;
 
           return (
@@ -373,7 +376,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                             <button
                               type="button"
                               onClick={() => setShowMicroConsumables(!showMicroConsumables)}
-                              className="font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
+                              className="min-h-[44px] sm:min-h-0 py-1.5 px-2.5 flex items-center font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
                             >
                               {showMicroConsumables ? "Скрыть" : "Показать"}
                             </button>
@@ -412,7 +415,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
       </div>
 
       {/* Sticky Pinned Estimate Footer: Grand Totals & Actions */}
-      <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3.5 sm:p-4 pb-5 sm:pb-4 rounded-2xl shadow-lg z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 backdrop-blur-md mt-2">
+      <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3.5 sm:p-4 pb-5 sm:pb-4 rounded-2xl shadow-lg z-20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 backdrop-blur-md mt-2">
         <div className="flex items-center gap-3">
           <div>
             <div className="text-xs text-[var(--muted,#64748b)]">

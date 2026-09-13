@@ -753,8 +753,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							onClick={() => setActiveStampTool((prev) => (prev === "Filled" ? null : "Filled"))}
 							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Filled"
-									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black shadow-xs ring-2 ring-[var(--teal)]/60"
-									: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal)] hover:opacity-90 border border-[var(--teal)]/30"
+									? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
+									: "bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 border border-blue-500/30"
 							}`}
 							title="Штамп: Пломба (Клик по зубу без меню)"
 							data-testid="stamp-filled-btn"
@@ -779,13 +779,39 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							onClick={() => setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"))}
 							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Crown"
-									? "bg-[var(--brand-500,#3b82f6)] text-white font-black shadow-xs ring-2 ring-[var(--brand-500,#3b82f6)]/60"
-									: "bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] hover:bg-[var(--brand-500,#3b82f6)]/20 border border-[var(--brand-500,#3b82f6)]/30"
+									? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
+									: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
 							}`}
 							title="Штамп: Коронка (Клик по зубу без меню)"
 							data-testid="stamp-crown-primary-btn"
 						>
 							Коронка (Кр)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Implant" ? null : "Implant"))}
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Implant"
+									? "bg-indigo-600 text-white font-black shadow-xs ring-2 ring-indigo-400"
+									: "bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/20"
+							}`}
+							title="Штамп: Имплант (Клик по зубу без меню)"
+							data-testid="stamp-implant-btn"
+						>
+							Имплант (И)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Missing" ? null : "Missing"))}
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Missing"
+									? "bg-zinc-700 text-white font-black shadow-xs ring-2 ring-zinc-500"
+									: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-500/20 border border-zinc-500/20"
+							}`}
+							title="Штамп: Отсутствует / Удален (Клик по зубу без меню)"
+							data-testid="stamp-missing-btn"
+						>
+							Удален (X)
 						</button>
 						<button
 							type="button"

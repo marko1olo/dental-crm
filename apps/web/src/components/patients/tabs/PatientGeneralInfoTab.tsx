@@ -140,9 +140,8 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 					<button
 						type="button"
 						data-testid="btn-somatic-healthy-norm"
-						className="min-h-[44px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+						className="min-h-[44px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
 						onClick={handleApplyNorm}
-						disabled={disabled}
 						title="Установить физиологическую норму в 1 клик"
 					>
 						<CheckCircle2 className="w-4 h-4 shrink-0" />

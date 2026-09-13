@@ -210,8 +210,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			});
 			if (!modified) return st;
 
-			const stTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
-			const stTotalKopecks = parseKopecks(stTotalRub);
+			const stTotalKopecks = updatedItems.reduce(
+				(acc, it) => acc + Math.round(it.priceRub * 100),
+				0,
+			);
+			const stTotalRub = stTotalKopecks / 100;
 			return {
 				...st,
 				items: updatedItems,
@@ -251,7 +254,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	}, [stages]);
 
 	const grandTotalRub = useMemo(() => {
-		return stages.reduce((acc, s) => acc + s.totalRub, 0);
+		return stages.reduce((acc, s) => acc + Math.round(s.totalRub * 100), 0) / 100;
 	}, [stages]);
 
 	// Loyalty and Bonus Points deduction calculation
@@ -409,7 +412,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				planDiscountPercent: discountPercent,
 				planDiscountRub: it.discountRub,
 				quantity: it.quantity,
-				planLineTotalRub: Math.max(0, it.unitPriceRub - it.discountRub) * it.quantity,
+				planLineTotalRub: Math.max(0, Math.round(it.unitPriceRub * 100) - Math.round((it.discountRub || 0) * 100)) * it.quantity / 100,
 			})),
 		};
 	}, [stages, patientId, patientName, currentTier.title, auth, discountPercent]);
@@ -423,10 +426,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		}
 
 		const grossTotalRub = allItems.reduce(
-			(acc, it) => acc + it.unitPriceRub * it.quantity,
+			(acc, it) => acc + Math.round(it.unitPriceRub * 100) * it.quantity,
 			0,
-		);
-		const discountRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
+		) / 100;
+		const discountRub = allItems.reduce((acc, it) => acc + Math.round((it.discountRub || 0) * 100), 0) / 100;
 		const netTotalRub = loyaltyDeduction.netPayableRub;
 
 		const cleanPat = (patientId || "pat").replace(/\D/g, "").slice(0, 4) || "0001";
@@ -671,7 +674,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				{/* Global Buttons: View Toggles, Clean Hick's/Miller's Toolbar & Actions */}
 				<div className="flex flex-wrap items-center gap-2">
 					{/* Tab Switcher: 3 Tiers vs Stages vs 4 Phases */}
-					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
+					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] max-w-full overflow-x-auto">
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
@@ -816,7 +819,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										setIsCuratorModalOpen(true);
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 									data-testid="options-menu-curator-btn"
 								>
@@ -840,7 +843,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										setIsComparatorModalOpen(true);
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 								>
 									<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -852,7 +855,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										setIsStagePaymentModalOpen(true);
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-200 transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 								>
 									<Coins size={14} className="text-amber-500" />
@@ -864,7 +867,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										setIsPriceValidatorModalOpen(true);
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 								>
 									<FileCheck size={14} className="text-emerald-600" />
@@ -880,7 +883,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										setIsContractPrintOpen(true);
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 								>
 									<FileText size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -892,7 +895,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										handleOpenLabOrder();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 									data-testid="lab-work-order-btn"
 								>
@@ -905,7 +908,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										void handleOneClickLabOrder();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 									data-testid="lab-work-order-one-click-btn"
 								>
@@ -920,7 +923,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						type="button"
 						onClick={handleSavePlanToDatabase}
 						disabled={isSaving}
-						className="min-h-[40px] flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
+						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
 					>
 						<Save size={15} />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
@@ -944,7 +947,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										? "100% скидка: гарантийные переделки и персонал (без паролей и согласований)"
 										: `Применить скидку ${pct}%`
 								}
-								className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
+								className={`px-2.5 py-1 min-h-[44px] sm:min-h-[32px] inline-flex items-center justify-center rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
 									discountPercent === pct
 										? pct === 100
 											? "bg-emerald-600 text-white shadow-xs"
@@ -989,13 +992,13 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									setBonusPointsToUseRub(val);
 								}}
 								placeholder="Списать ₽"
-								className="w-24 px-2 py-1 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+								className="w-24 min-h-[44px] sm:min-h-[32px] px-2 py-1 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
 							/>
 							{bonusPointsToUseRub > 0 && (
 								<button
 									type="button"
 									onClick={() => setBonusPointsToUseRub(0)}
-									className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+									className="min-h-[44px] sm:min-h-0 px-2 py-1 text-[11px] text-rose-500 hover:underline cursor-pointer inline-flex items-center"
 								>
 									Сбросить
 								</button>
@@ -1020,7 +1023,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								type="button"
 								disabled={isCopilotExecuting}
 								onClick={() => handleExecuteCopilot(action.id)}
-								className="px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px]"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px] inline-flex items-center justify-center touch-manipulation"
 								title={action.description}
 								data-testid={`module-copilot-btn-${action.id}`}
 							>
@@ -1031,7 +1034,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsPresenterModalOpen(true)}
-							className="px-3 py-1.5 rounded-xl font-bold bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-all shadow-2xs text-[11px] inline-flex items-center gap-1.5"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-all shadow-2xs text-[11px] inline-flex items-center justify-center gap-1.5 touch-manipulation"
 							title="Запустить клиническую валидацию СтАР, проверку анатомии FDI и генерацию объяснения для пациента"
 							data-testid="module-copilot-ai-audit-btn"
 						>
@@ -1049,7 +1052,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									setCopilotFeedback(null);
 									showToast("План сброшен к исходной одонтограмме", "info");
 								}}
-								className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer"
+								className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer inline-flex items-center justify-center touch-manipulation"
 								title="Сбросить все ручные правки и AI модификации"
 								data-testid="copilot-reset-plan-btn"
 							>

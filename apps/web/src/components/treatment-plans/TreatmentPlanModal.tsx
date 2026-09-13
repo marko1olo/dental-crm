@@ -267,21 +267,21 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
 				</div>
 
 				{/* Modal Footer — Actions (Anti-Matryoshka, Touch-First) */}
-				<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-2 flex-wrap">
+				<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
 					<button
 						type="button"
 						onClick={handlePrintEstimate}
-						className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-all"
+						className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 cursor-pointer transition-all w-full sm:w-auto"
 					>
 						<Printer size={15} />
 						<span>Печать сметы (043/у)</span>
 					</button>
 
-					<div className="flex items-center gap-2 flex-wrap">
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
 						<button
 							type="button"
 							onClick={handleCreateWorkOrder}
-							className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+							className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all w-full sm:w-auto"
 							data-testid="btn-plan-create-ztl-workorder"
 						>
 							<FileText size={15} />
@@ -291,7 +291,7 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
 						<button
 							type="button"
 							onClick={handleProceedToPayment}
-							className="min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm active:scale-95"
+							className="min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-sm active:scale-95 w-full sm:w-auto"
 							data-testid="btn-plan-proceed-payment"
 						>
 							<CreditCard size={15} />

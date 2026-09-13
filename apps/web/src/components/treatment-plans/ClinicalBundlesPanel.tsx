@@ -180,7 +180,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 										key={tooth}
 										type="button"
 										onClick={() => handleToothSelect(tooth)}
-										className={`px-2 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+										className={`min-h-[44px] sm:min-h-[28px] min-w-[36px] sm:min-w-0 px-2 py-1 inline-flex items-center justify-center rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
 											selectedTooth === tooth
 												? "bg-[var(--teal,#0d9488)] text-white shadow-xs scale-105"
 												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] hover:border-[var(--teal,#0d9488)]"
@@ -201,7 +201,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 								onChange={handleCustomToothChange}
 								placeholder="FDI"
 								maxLength={2}
-								className="w-12 px-2 py-1 text-center font-mono font-bold text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:border-[var(--teal,#0d9488)]"
+								className="w-12 min-h-[44px] sm:min-h-[28px] px-2 py-1 text-center font-mono font-bold text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:border-[var(--teal,#0d9488)]"
 								title="Введите любой номер зуба по стандарту FDI ISO 3950 (11-85)"
 								data-testid="bundle-tooth-input"
 							/>
@@ -269,7 +269,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 											<button
 												type="button"
 												onClick={() => setPreviewBundle(previewBundle?.id === bundle.id ? null : bundle)}
-												className="p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer"
+												className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] flex items-center justify-center p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer touch-manipulation"
 												title="Посмотреть клинический состав и материалы"
 											>
 												<Eye size={14} />
@@ -277,7 +277,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 											<button
 												type="button"
 												onClick={() => handleApply(bundle)}
-												className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs ${
+												className={`min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-xs touch-manipulation ${
 													isRecentlyAdded
 														? "bg-emerald-600 text-white"
 														: "bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white"

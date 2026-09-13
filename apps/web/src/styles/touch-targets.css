@@ -231,6 +231,11 @@
 	.weekday-toggle-row button,
 	.patient-admin-form-grid input,
 	.patient-admin-form-grid select,
+	.patient-admin-form-grid button,
+	.document-form-nav-tabs button,
+	.form-043u-wrapper .btn,
+	.form-043u-wrapper button,
+	.document-payload-card button,
 	.patient-core-form-grid input,
 	.patient-core-form-grid select {
 		min-height: 44px;
