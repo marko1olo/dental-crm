@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–177 / SSOT CONSOLIDATION, CPR SPLINE MATH, MISCH HU D1..D5 DENSITY, IAN NERVE CLEARANCE 1.5MM, PERSPECTIVES CONSOLIDATION, DESKTOP ERGONOMICS & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–178 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 262 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 325 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 262 АДДЕНДУМ, 325/325 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -27,6 +27,7 @@
 > 21. Ликвидирован паразитный дублирующий и несмонтированный фронтенд-код и неподдерживаемый провайдер Ollama (-4495 строк, коммиты `c93a458e6`, `cc55beb1c`): удалены `AppointmentDrawer.tsx`, `ChairRosterModal.tsx`, `SberbankTerminalPaymentModal.tsx` и `localOllama.ts`; подтверждена консолидация на канонических SSOT: `AppointmentModal.tsx` и `QuickBookingDrawer.tsx` (визиты и запись), `DoctorShiftRosterModal.tsx` и `ChairScheduleView.tsx` (расписание смен и кресел), `sberPos/SberPosTerminalModal.tsx` (терминал Сбера); подтверждена полная работоспособность 5 ключевых модулей: `TomorrowRemindersModal` (напоминания на завтра), `ClassicGostOdontogram.tsx` (хоткеи формулы), `mprWorker.ts` (3D WebWorker MPR), `whatsappBridge.ts` / `websocketBroker.ts` (Telegram/WhatsApp брокер), касса 54-ФЗ без требования ИНН физлиц (Мандат 8e п. 9) (Wave 175).
 > 22. Консолидированы тулбары расписания (`ScheduleFilterStrip.tsx`), картотеки (`PatientsFilterBar.tsx`), визита (`VisitView.tsx`) и финансов (`FinanceView.tsx`) в строгую 1 строку высотой 32–36px по Закону Хика (Мандаты 8d п. 2, 8p); ликвидированы дубли соматического анамнеза в `VisitView.tsx` и `PatientCardModal.tsx`; обеспечена 100% автономия соло-врача и регистратуры (0 disabled кнопок, касса без ИНН физлиц, optional assistant в расписании) по Мандатам 8e, 8n (Wave 176, коммит `019e19a03`).
 > 23. Интегрировано математическое ядро CPR (Curved Planar Reformation): Catmull-Rom сплайн-интерполяция зубной дуги по 7–9 анатомическим ориентирам челюсти, расчет векторов нормалей Френе-Серре в аксиальной плоскости, генерация ортогональных кросс-секционных срезов с шагом 1.0–2.0 мм и толщиной 0.5–20 мм (`cprMath.ts`, `cprPanoramicEngine.ts`, `panoramicMprMath.ts`, `panoramicArch.ts`); внедрена классификация плотности кости по Мишу (Misch D1..D5 HU) с автоматической генерацией рекомендаций протокола препарирования (under-drilling, метчик, биконденсация) и торка (`boneQualityEngine.ts`, `BoneQualityPanel.tsx`); реализован аналитический замер и валидация безопасного клиренса до нижнечелюстного нерва IAN (safety clearance >=1.5 мм, статусы safe/warning/collision) без блокировки врача (`cbctSafetyEngine.ts`, `implantSafetyClearance.ts`, `ctPlanningPersistence.ts`, `cbctSafetyAndMisch.test.ts`); ликвидированы 5 параллельных перспектив в пользу единых канонических экранов (`ScheduleView`, `VisitView`, `PatientsView`, `FinanceView`) по Мандату 8s (`App.tsx`, `workspaceShell.tsx`, `perspectiveStore.ts`); устранен дефект обрезания текста тулбара расписания на десктопе 1440x900 в `ScheduleFilterStrip.tsx` и `ScheduleView.tsx` (Wave 177).
+> 24. Внедрены прецизионные калиперы измерений КТ (`dicomMeasurementMath.ts`) для 2D/3D расстояний с анизотропным воксельным скейлингом, 2D/3D углов, полилиний, ROI статистики и HU профилирования; внедрен хирургический каталог имплантатов и цветового кодирования платформ (`implantCatalog.ts`) систем Nobel Biocare, Straumann, Osstem, Dentium, Universal с диаметрами 3.0–5.5 мм, длинами 7.0–18.0 мм, кодировкой NP/RP/WP и втулками хирургических шаблонов; проведена дедупликация CPR-математики с ликвидацией 375+ строк копипаста сплайнов и нормалей из `apps/web/src/components/dicom/panoramicMprMath.ts` в пользу канонического `@dental/shared/radiology` per Mandate 8s (коммит `f333f5403`); схлопнут расчет этапов цен `casePresentationPricing.ts` на -284 строки с делегированием в `treatmentPlanStagesEngine.ts` per Mandate 8s (коммит `3bb9fc686`); устранен клиппинг даты 13.09.2026 (`w-[130px] min-w-[130px]`) и кнопки «Моё кресло» (`flex-shrink-0`) в `ScheduleFilterStrip.tsx` и `schedule.css`, а также ликвидирован 600px аккордеон в `VisitView.tsx` в пользу компактной эргономики (Wave 178, коммиты `3bb9fc686`, `f333f5403`).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -4970,6 +4971,53 @@
   * Реестр фич: 325/325 со статусом `[ДА]`, 100% паритет;
   * Тесты: `cbctSafetyAndMisch.test.ts` PASS, `panoramicReconstruction.test.ts` PASS, `cbctMprWorkspace.test.ts` PASS;
   * Single-Compiler Gate защищен per Mandate 8t.
+
+---
+
+## 259. Волна 178: Адаптация калиперов измерений КТ (dicomMeasurementMath), каталога имплантатов (implantCatalog), дедупликация CPR-математики (-375 строк в panoramicMprMath), схлопывание casePresentationPricing (-284 строки), устранение клиппинга даты/кнопки расписания и компактизация аккордеона визита (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммиты `3bb9fc686`, `f333f5403`)
+* **Файлы**:
+  - `apps/web/src/components/dicom/dicomMeasurementMath.ts`
+  - `apps/web/src/components/dicom/implantCatalog.ts`
+  - `apps/web/src/components/dicom/panoramicMprMath.ts`
+  - `apps/web/src/components/perspectives/casePresentationPricing.ts`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/styles/schedule.css`
+  - `apps/web/src/VisitView.tsx`
+  - `packages/shared/src/radiology/cprMath.ts`
+  - `packages/shared/src/radiology/boneQualityEngine.ts`
+  - `apps/web/src/components/treatment/treatmentPlanStagesEngine.ts`
+* **Архитектурное решение**:
+  - **Прецизионные калиперы измерений КТ (`dicomMeasurementMath.ts`)**:
+    * Внедрен модуль геометрических и радиометрических измерений для мультипланарного и 3D просмотра КТ:
+      - 2D и 3D евклидовы расстояния с учетом анизотропного воксельного масштабирования (`rowSpacing`, `columnSpacing`, `sliceThickness`);
+      - 2D и 3D углы между анатомическими векторами через скалярное произведение и арккосинус с выводом в градусах;
+      - Измерение длины сложных полилиний (кумулятивная длина криволинейных каналов и траекторий нервов);
+      - Статистический анализ замкнутых полигональных областей интереса (ROI): вычисление площади в мм² по формуле Гаусса (полигональное шнурование), число вокселей, средняя радиоденситометрическая плотность в единицах Хаунсфилда (HU), стандартное отклонение, min/max HU;
+      - Линейное профилирование плотности (HU line profile) вдоль произвольной 3D траектории с субвоксельной линейной интерполяцией по настраиваемому шагу дискретизации.
+  - **Хирургический каталог имплантатов и параметров втулок (`implantCatalog.ts`)**:
+    * Внедрена база данных имплантационных систем и параметров навигационной хирургии:
+      - Системы имплантатов: Nobel Biocare (Active, Replace CC, Branemark), Straumann (BLX, Bone Level, Standard Plus), Osstem (TSIII SA/CA, MS), Dentium (SuperLine, SimpleLine II), Universal (Generic Parallel, Generic Tapered);
+      - Точные диапазоны диаметров (3.0–5.5 мм) и длин (7.0–18.0 мм) с шагом каталога производителей;
+      - Цветовая кодировка ортопедических платформ: NP (Narrow Platform, фуксия/розовый), RP (Regular Platform, золотистый/желтый), WP (Wide Platform, синий/фиолетовый);
+      - Габариты направляющих втулок хирургических шаблонов (sleeve diameter, sleeve height, offset от платформы 8–12 мм) для последующего экспорта в CAM и 3D-печать.
+  - **Дедупликация CPR-математики по Мандату 8s (коммит `f333f5403`)**:
+    * Ликвидировано 375+ строк избыточного кода в `apps/web/src/components/dicom/panoramicMprMath.ts` за счет полного делегирования сплайн-интерполяции зубной дуги, вычисления нормалей Френе-Серре и сэмплинга кросс-секций в канонический модуль `@dental/shared/radiology` (`cprMath.ts`, `cprPanoramicEngine.ts`);
+    * Устранен риск расхождения математических реализаций между веб-клиентом и общим пакетом;
+    * Согласован порог костной плотности D5 (<150 HU) в `packages/shared/src/radiology/boneQualityEngine.ts` для клинических показаний к направленной костной регенерации (НКР / GBR).
+  - **Консолидация расчета цен в презентации кейсов по Мандату 8s (коммит `3bb9fc686`)**:
+    * Схлопнут модуль `apps/web/src/components/perspectives/casePresentationPricing.ts` (-284 строки) за счет делегирования расчета этапов комплексного плана лечения, скидок и промежуточных итогов в канонический движок `apps/web/src/components/treatment/treatmentPlanStagesEngine.ts`;
+    * Обеспечена копеечно точная математическая целостность (Мандат 8b) и исключение дублирующей логики биллинга.
+  - **Десктопная эргономика расписания и визита (коммит `f333f5403`)**:
+    * Устранен дефект клиппинга даты `13.09.2026`: поле даты расширено до `w-[130px] min-w-[130px]` в `ScheduleFilterStrip.tsx` и `w-[135px]` в `schedule.css`;
+    * Кнопке «Моё кресло» добавлен `flex-shrink-0`, устраняющий сжатие и обрезание текста на экранах 1440x900;
+    * В `VisitView.tsx` ликвидирован тяжелый 600px аккордеон (-86 строк) в пользу компактной и отзывчивой эргономики визита по стандартам macOS Studio Clinical HIG.
+* **Верификация**:
+  * Реестр фич: 325/325 со статусом `[ДА]`, 100% паритет;
+  * Single-Compiler Gate защищен per Mandate 8t;
+  * Кодовая база избавлена от 745+ строк дублирующего кода (коммиты `3bb9fc686`, `f333f5403`).
+
 
 
 
