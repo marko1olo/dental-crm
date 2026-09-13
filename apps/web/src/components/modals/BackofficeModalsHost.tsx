@@ -341,7 +341,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<FastCheckoutModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "fiscal_receipt_modal" && (
-				<FiscalReceiptModal isOpen={true} onClose={close}  {...({} as any)} />
+				<FiscalReceipt54FzModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "signature_pad_canvas" && (
 				<SignaturePadCanvas {...({} as any)} />
