@@ -19,29 +19,29 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 
 	const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]|⚡|🦷|⚠️|❌|✅|🚨|🔥|✓/u;
 
-	it("1. InsurancePreAuthModal: zero raw emojis, uses Lucide Zap vector icon", () => {
+	it("1. DmsGuaranteeLetterModal: zero raw emojis, uses Lucide Zap vector icon", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/InsurancePreAuthModal.tsx",
+			"apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("⚡"), "InsurancePreAuthModal must not contain raw ⚡ emoji");
-		assert.ok(!content.includes("✓"), "InsurancePreAuthModal must not contain raw ✓ symbol");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "InsurancePreAuthModal must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "InsurancePreAuthModal must render Lucide Zap vector icon");
+		assert.ok(!content.includes("⚡"), "DmsGuaranteeLetterModal must not contain raw ⚡ emoji");
+		assert.ok(!content.includes("✓"), "DmsGuaranteeLetterModal must not contain raw ✓ symbol");
+		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsGuaranteeLetterModal must be free of raw emojis");
+		assert.ok(content.includes("<Zap"), "DmsGuaranteeLetterModal must render Lucide Zap vector icon");
 	});
 
-	it("2. DmsInsuranceManagerModal: zero raw emojis, uses Lucide Zap vector icon", () => {
+	it("2. InsuranceContractsPanel: zero raw emojis, uses Lucide ShieldCheck vector icon", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/DmsInsuranceManagerModal.tsx",
+			"apps/web/src/components/settings/InsuranceContractsPanel.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("⚡"), "DmsInsuranceManagerModal must not contain raw ⚡ emoji");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsInsuranceManagerModal must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "DmsInsuranceManagerModal must render Lucide Zap vector icon");
+		assert.ok(!content.includes("⚡"), "InsuranceContractsPanel must not contain raw ⚡ emoji");
+		assert.ok(!RAW_EMOJI_REGEX.test(content), "InsuranceContractsPanel must be free of raw emojis");
+		assert.ok(content.includes("<ShieldCheck"), "InsuranceContractsPanel must render Lucide ShieldCheck vector icon");
 	});
 
 	it("3. DmsGuaranteeLetterModal: zero raw emojis, uses Lucide Zap vector icon", () => {

@@ -21,7 +21,7 @@ import {
 	generateDmsRegistryXml,
 	generateDmsRegistryCsv,
 	generateDmsA4PrintableHtml,
-} from "./DmsInsurersHubModal.js";
+} from "./dmsClaimRegistryExport.js";
 
 import {
 	type PatientGuaranteeLetter,
@@ -31,7 +31,7 @@ import {
 	FDI_ADULT_TEETH_LOWER,
 } from "./DmsGuaranteeLetterModal.js";
 
-describe("DmsInsurersHubModal — Statutory Insurance Contracts Catalog", () => {
+describe("DmsClaimRegistryExport — Statutory Insurance Contracts Catalog", () => {
 	it("1.1 Contains top Russian insurance companies with contract numbers and franchise rates", () => {
 		assert.equal(DEFAULT_STATUTORY_INSURANCE_CONTRACTS.length, 6);
 
@@ -67,7 +67,7 @@ describe("DmsInsurersHubModal — Statutory Insurance Contracts Catalog", () => 
 	});
 });
 
-describe("DmsInsurersHubModal — 1-Click Export Engines (XML, CSV, A4 HTML)", () => {
+describe("DmsClaimRegistryExport — 1-Click Export Engines (XML, CSV, A4 HTML)", () => {
 	it("2.1 Generates valid electronic XML registry conforming to Russian DMS interchange standards", () => {
 		const xml = generateDmsRegistryXml(
 			DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,

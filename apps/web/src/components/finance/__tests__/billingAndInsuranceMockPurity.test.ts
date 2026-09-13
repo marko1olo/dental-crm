@@ -2,7 +2,7 @@
  * billingAndInsuranceMockPurity.test.ts — Mock Purity Verification Suite Wave 107
  * Confirms total eradication of synthetic 'Иванов Иван Иванович' fallback mocks across:
  * 1. PatientBillingModal.tsx
- * 2. InsurancePreAuthModal.tsx
+ * 2. DmsGuaranteeLetterModal.tsx
  * 3. FamilyWalletModal.tsx
  * 4. BankInstallmentQrModal.tsx
  */
@@ -16,7 +16,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { PatientBillingModal } from "../PatientBillingModal";
 import { FamilyWalletModal } from "../FamilyWalletModal";
-import { InsurancePreAuthModal } from "../../insurance/InsurancePreAuthModal";
+import { DmsGuaranteeLetterModal } from "../../insurance/DmsGuaranteeLetterModal";
 import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,8 +30,8 @@ describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity", () => {
 			relPath: "src/components/finance/PatientBillingModal.tsx",
 		},
 		{
-			name: "InsurancePreAuthModal.tsx",
-			relPath: "src/components/insurance/InsurancePreAuthModal.tsx",
+			name: "DmsGuaranteeLetterModal.tsx",
+			relPath: "src/components/insurance/DmsGuaranteeLetterModal.tsx",
 		},
 		{
 			name: "FamilyWalletModal.tsx",
@@ -67,9 +67,9 @@ describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity", () => {
 		assert.ok(!html.includes("Иванов Иван Иванович"), "Rendered HTML must not contain synthetic patient name");
 	});
 
-	it("InsurancePreAuthModal: renders without synthetic patient mock fallback", () => {
+	it("DmsGuaranteeLetterModal: renders without synthetic patient mock fallback", () => {
 		const html = renderToString(
-			React.createElement(InsurancePreAuthModal, {
+			React.createElement(DmsGuaranteeLetterModal, {
 				isOpen: true,
 				onClose: () => {},
 				patient: { id: "pat-ins", fullName: "" },

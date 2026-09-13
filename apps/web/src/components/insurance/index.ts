@@ -16,15 +16,9 @@ export {
 	type DmsRegistryItem,
 	type DmsReconciliationRegistry,
 } from "./dmsSplitEngine.js";
-export * from "./InsurancePreAuthModal.js";
 export * from "./DmsGuaranteeLetterModal.js";
 export * from "./DmsRegistryExportModal.js";
-export * from "./DmsInsurersHubModal.js";
-export {
-	DmsInsuranceManagerModal,
-	type DmsInsuranceManagerModalProps,
-	type DmsManagerTab,
-} from "./DmsInsuranceManagerModal.js";
+export * from "./dmsClaimRegistryExport.js";
 export {
 	calculateDmsSplitInvoice,
 	generateDmsPreAuthRequest,

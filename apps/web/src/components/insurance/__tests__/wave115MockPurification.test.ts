@@ -16,10 +16,10 @@ const __dirname = path.dirname(__filename);
 const webSrcRoot = path.resolve(__dirname, "../../..");
 
 describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
-	it("1. InsurancePreAuthModal.tsx: must NOT contain 'Иванова Елена' or 'Иванов И.И.'", () => {
+	it("1. DmsGuaranteeLetterModal.tsx: must NOT contain 'Иванова Елена' or 'Иванов И.И.'", () => {
 		const filePath = path.resolve(
 			webSrcRoot,
-			"components/insurance/InsurancePreAuthModal.tsx",
+			"components/insurance/DmsGuaranteeLetterModal.tsx",
 		);
 		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
 		const content = fs.readFileSync(filePath, "utf-8");
@@ -27,12 +27,12 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 		assert.equal(
 			content.includes("Иванова Елена"),
 			false,
-			"InsurancePreAuthModal.tsx must NOT contain synthetic curator name 'Иванова Елена'",
+			"DmsGuaranteeLetterModal.tsx must NOT contain synthetic curator name 'Иванова Елена'",
 		);
 		assert.equal(
 			content.includes("Иванов И.И."),
 			false,
-			"InsurancePreAuthModal.tsx must NOT contain fallback patient name 'Иванов И.И.'",
+			"DmsGuaranteeLetterModal.tsx must NOT contain fallback patient name 'Иванов И.И.'",
 		);
 	});
 
@@ -56,10 +56,10 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 		);
 	});
 
-	it("3. DmsInsuranceManagerModal.tsx: must NOT contain 'Иванов Сергей Александрович'", () => {
+	it("3. DmsGuaranteeLetterModal.tsx: must NOT contain 'Иванов Сергей Александрович'", () => {
 		const filePath = path.resolve(
 			webSrcRoot,
-			"components/insurance/DmsInsuranceManagerModal.tsx",
+			"components/insurance/DmsGuaranteeLetterModal.tsx",
 		);
 		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
 		const content = fs.readFileSync(filePath, "utf-8");
@@ -67,17 +67,17 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 		assert.equal(
 			content.includes("Иванов Сергей Александрович"),
 			false,
-			"DmsInsuranceManagerModal.tsx must NOT contain synthetic patient name 'Иванов Сергей Александрович'",
+			"DmsGuaranteeLetterModal.tsx must NOT contain synthetic patient name 'Иванов Сергей Александрович'",
 		);
 		assert.equal(
 			content.includes("Кузнецова Ольга Дмитриевна"),
 			false,
-			"DmsInsuranceManagerModal.tsx must NOT contain sample visit patient 'Кузнецова Ольга Дмитриевна'",
+			"DmsGuaranteeLetterModal.tsx must NOT contain sample visit patient 'Кузнецова Ольга Дмитриевна'",
 		);
 		assert.equal(
 			content.includes("Петров Василий Николаевич"),
 			false,
-			"DmsInsuranceManagerModal.tsx must NOT contain sample visit patient 'Петров Василий Николаевич'",
+			"DmsGuaranteeLetterModal.tsx must NOT contain sample visit patient 'Петров Василий Николаевич'",
 		);
 	});
 

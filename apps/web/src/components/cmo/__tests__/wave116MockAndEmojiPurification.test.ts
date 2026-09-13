@@ -41,20 +41,16 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 		);
 	});
 
-	it("2. DmsInsurersHubModal: initialRegistryRecords defaults to empty array []", () => {
-		const dmsHubPath = path.join(
+	it("2. DmsRegistryExportModal: records defaults to empty array []", () => {
+		const dmsExportPath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/DmsInsurersHubModal.tsx",
+			"apps/web/src/components/insurance/DmsRegistryExportModal.tsx",
 		);
-		const dmsHubContent = fs.readFileSync(dmsHubPath, "utf-8");
+		const dmsExportContent = fs.readFileSync(dmsExportPath, "utf-8");
 
 		assert.ok(
-			dmsHubContent.includes("initialRegistryRecords = [],"),
-			"DmsInsurersHubModal must default initialRegistryRecords to []",
-		);
-		assert.ok(
-			!dmsHubContent.includes("initialRegistryRecords = DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,"),
-			"DmsInsurersHubModal must not use DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS as default prop",
+			dmsExportContent.includes("records = [],"),
+			"DmsRegistryExportModal must default records to []",
 		);
 	});
 
@@ -100,20 +96,20 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 		);
 	});
 
-	it("5. Emojis eradication: InsurancePreAuthModal & DmsInsuranceManagerModal (no star emoji)", () => {
-		const preAuthPath = path.join(
+	it("5. Emojis eradication: DmsGuaranteeLetterModal & InsuranceContractsPanel (no star emoji)", () => {
+		const guaranteePath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/InsurancePreAuthModal.tsx",
+			"apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx",
 		);
-		const preAuthContent = fs.readFileSync(preAuthPath, "utf-8");
-		assert.ok(!preAuthContent.includes("⭐"), "InsurancePreAuthModal must not contain ⭐ emoji");
+		const guaranteeContent = fs.readFileSync(guaranteePath, "utf-8");
+		assert.ok(!guaranteeContent.includes("⭐"), "DmsGuaranteeLetterModal must not contain ⭐ emoji");
 
-		const dmsManagerPath = path.join(
+		const contractsPath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/DmsInsuranceManagerModal.tsx",
+			"apps/web/src/components/settings/InsuranceContractsPanel.tsx",
 		);
-		const dmsManagerContent = fs.readFileSync(dmsManagerPath, "utf-8");
-		assert.ok(!dmsManagerContent.includes("⭐"), "DmsInsuranceManagerModal must not contain ⭐ emoji");
+		const contractsContent = fs.readFileSync(contractsPath, "utf-8");
+		assert.ok(!contractsContent.includes("⭐"), "InsuranceContractsPanel must not contain ⭐ emoji");
 	});
 
 	it("6. Emojis eradication: EmergencyRescueModal & emergencyRescueEngine (no raw ⚠️ or 🚨)", () => {

@@ -22,7 +22,7 @@ import {
 	RUSSIAN_TOP_DMS_INSURERS,
 	validateDmsPolicy,
 } from "../components/insurance/insuranceCatalogs.js";
-import { InsurancePreAuthModal } from "../components/insurance/InsurancePreAuthModal.js";
+import { DmsGuaranteeLetterModal } from "../components/insurance/DmsGuaranteeLetterModal.js";
 
 test("DMS Catalog: top 8 Russian insurers integrity and metadata", () => {
 	assert.equal(RUSSIAN_TOP_DMS_INSURERS.length, 8, "Must contain all 8 top Russian DMS insurers");
@@ -339,8 +339,8 @@ test("DMS Reconciliation Registry: generation & CSV export RFC-4180 compliance",
 	assert.ok(csv.includes("ИТОГО ПО РЕЕСТРУ"));
 });
 
-test("InsurancePreAuthModal: component export and contract verification", () => {
-	assert.equal(typeof InsurancePreAuthModal, "function");
+test("DmsGuaranteeLetterModal: component export and contract verification", () => {
+	assert.equal(typeof DmsGuaranteeLetterModal, "function");
 	assert.equal(typeof formatCurrencyRub, "function");
 	assert.equal(typeof kopecksToRubles, "function");
 	assert.equal(typeof rublesToKopecks, "function");

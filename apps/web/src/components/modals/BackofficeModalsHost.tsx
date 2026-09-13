@@ -43,9 +43,8 @@ import { MdlpScanningModal } from "../mdlp";
 import { MarketingRoiModal } from "../analytics/MarketingRoiModal";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
 import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
-import { DmsInsuranceManagerModal } from "../insurance/DmsInsuranceManagerModal";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
-import { DmsInsurersHubModal } from "../insurance/DmsInsurersHubModal";
+import { InsuranceContractsPanel } from "../settings/InsuranceContractsPanel";
 import { GranularRoleMatrixView } from "../settings/GranularRoleMatrixView";
 import { StaffCommissionsPanel } from "../settings/StaffCommissionsPanel";
 import { Calculator, ShieldCheck, X } from "lucide-react";
@@ -280,13 +279,51 @@ export const BackofficeModalsHost: React.FC = () => {
 				<ServicePricelistManagerModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "dms_insurance_manager" && (
-				<DmsInsuranceManagerModal isOpen={true} onClose={close}  {...({} as any)} />
+				<DmsGuaranteeLetterModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "dms_guarantee_letters" && (
 				<DmsGuaranteeLetterModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "dms_insurers_hub" && (
-				<DmsInsurersHubModal isOpen={true} onClose={close}  {...({} as any)} />
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="dms-insurers-hub-modal-container"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) close();
+					}}
+				>
+					<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col min-w-0">
+						<div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4 shrink-0 gap-3 min-w-0">
+							<div className="flex items-center gap-2.5 min-w-0 flex-1">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shrink-0">
+									<ShieldCheck className="w-5 h-5" />
+								</div>
+								<div className="min-w-0 flex-1">
+									<h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0 break-words leading-tight">
+										Договоры ДМС и страховые компании РФ
+									</h3>
+									<p className="text-xs text-slate-600 dark:text-slate-400 m-0 mt-0.5 break-words">
+										Управление реестрами страховых компаний, программами покрытия и лимитами
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={close}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center shrink-0 cursor-pointer touch-manipulation"
+								data-testid="close-dms-insurers-hub-modal-btn"
+								aria-label="Закрыть реестр ДМС"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto min-w-0 pr-0.5" data-testid="dms-insurers-hub-modal-scroll-body">
+							<InsuranceContractsPanel />
+						</div>
+					</div>
+				</div>
 			)}
 			{activeModal === "access_matrix" && (
 				<div
