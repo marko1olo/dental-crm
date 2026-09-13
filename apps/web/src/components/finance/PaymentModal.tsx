@@ -50,15 +50,17 @@ import { SberPayIntegration } from "./SberPayIntegration.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal.js";
 
 let paymentMutationSeq = 0;
 
-export type PaymentMethodTab = "card_terminal" | "sberpay_qr" | "biometry" | "cash" | "family_deposit" | "split";
+export type PaymentMethodTab = "card_terminal" | "sberpay_qr" | "sbp_qr" | "biometry" | "cash" | "family_deposit" | "split";
 
 export interface PaymentModalProps {
 	readonly isOpen: boolean;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
 	readonly amountKopecks?: number | undefined;
 	readonly amountRub?: number | undefined;
 	readonly invoiceId?: string | undefined;
@@ -331,6 +333,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	isOpen,
 	patientId = "pat-walkin",
 	patientName = "Пациент",
+	patientPhone = "",
 	amountKopecks,
 	amountRub: propAmountRub,
 	invoiceId,
@@ -353,6 +356,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	onSuccess = () => {},
 }) => {
 	const [activeMethod, setActiveMethod] = useState<PaymentMethodTab>(defaultMethod);
+	const [isSbpQrModalOpen, setIsSbpQrModalOpen] = useState<boolean>(false);
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
 	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
 	const [isSubmittingDeposit, setIsSubmittingDeposit] = useState<boolean>(false);
@@ -1330,6 +1334,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									<span>Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
 								</button>
 							)}
+							<button
+								type="button"
+								onClick={() => setIsSbpQrModalOpen(true)}
+								className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+								data-testid="preset-sbp-qr"
+								title="Сформировать QR СБП для быстрой оплаты пациентом"
+							>
+								<QrCode size={14} className="text-teal-600" />
+								<span>Оплата СБП по QR ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -1374,6 +1388,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					>
 						<QrCode size={16} className="text-teal-600" />
 						<span>SberPay QR (СБП)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							setActiveMethod("sbp_qr");
+							setIsSbpQrModalOpen(true);
+						}}
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+							activeMethod === "sbp_qr" || isSbpQrModalOpen
+								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400"
+								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+						}`}
+						data-testid="tab-payment-sbp-qr"
+						title="Оплата СБП по QR (НСПК / ГОСТ Р 56042-2014)"
+					>
+						<QrCode size={16} className="text-teal-600" />
+						<span>Оплата СБП по QR</span>
 					</button>
 
 					<button
@@ -2265,6 +2297,35 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					)}
 				</div>
 			</div>
+
+			<SbpPaymentQrModal
+				isOpen={isSbpQrModalOpen}
+				onClose={() => setIsSbpQrModalOpen(false)}
+				invoice={{
+					orderId: invoiceId || documentId || `ORD-${Date.now()}`,
+					patientId,
+					patientName,
+					phone: patientPhone || "",
+					sumRub: totalDueRub,
+					sumKopecks: discountCalc.totalDueKopecks,
+					purpose: `Оплата стоматологических услуг: ${patientName}`,
+					clinicName: clinicLegalName,
+				}}
+				onPaymentSuccess={(res) => {
+					setIsSbpQrModalOpen(false);
+					onSuccess({
+						method: "sbp_qr",
+						amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
+						discountRub,
+						discountPercent: effectiveDiscountPercent,
+						rawTotalRub: rawTotalDueRub,
+						discountReason: discountReason || undefined,
+						rrn: res.orderId,
+						fiscalReceiptId: res.fiscalReceiptId,
+					});
+					onClose();
+				}}
+			/>
 		</div>
 	);
 };

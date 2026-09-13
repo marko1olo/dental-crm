@@ -81,6 +81,7 @@ import {
 	type ClinicalBundleId,
 } from "./treatmentPlanBundlesEngine";
 import "./treatmentPlans.css";
+import { TreatmentPlanRoadmap } from "./TreatmentPlanRoadmap";
 import { showToast } from "../GlobalToast";
 
 export interface PlanItemLike {
@@ -244,7 +245,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const [activeTiers, setActiveTiers] = useState<readonly TreatmentPlanTier[]>(initialTiers);
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
-	const [activeTab, setActiveTab] = useState<"comparison" | "stages" | "finance" | "print_appendix" | "ai_audit">("comparison");
+	const [activeTab, setActiveTab] = useState<"comparison" | "stages" | "roadmap" | "finance" | "print_appendix" | "ai_audit">("comparison");
 	const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({
 		1: true,
 		2: true,
@@ -710,6 +711,15 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						>
 							<Clock size={14} />
 							<span>Этапы (804н)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("roadmap")}
+							className={"treatment-presenter-tab-btn " + (activeTab === "roadmap" ? "active" : "")}
+							data-testid="tab-roadmap-btn"
+						>
+							<Calendar size={14} />
+							<span>Дорожная карта</span>
 						</button>
 						<button
 							type="button"
@@ -1415,6 +1425,22 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									</div>
 								))}
 							</div>
+						</div>
+					)}
+
+					{/* TAB: Patient Treatment Plan Visual Roadmap (Дорожная карта) */}
+					{activeTab === "roadmap" && (
+						<div className="treatment-roadmap-wrapper p-2 sm:p-4" data-testid="treatment-plan-roadmap-view">
+							<TreatmentPlanRoadmap
+								stages={selectedTier.stages}
+								planTitle={`План лечения: ${selectedTier.title}`}
+								planNumber={contractNumber || "КП-2026/01"}
+								curatingDoctorName={doctorFullName || "Лечащий врач-стоматолог"}
+								patientFullName={patientName || "Пациент"}
+								onBookStage={(stage) => {
+									showToast(`Запись на этап: «${stage.titleRu}» (${stage.timelineRu}) передана в расписание`, "info");
+								}}
+							/>
 						</div>
 					)}
 

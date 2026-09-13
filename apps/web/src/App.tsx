@@ -43,6 +43,7 @@ import { showToast } from "./components/GlobalToast";
 import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardModal";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { Omnibar } from "./components/Omnibar";
+import { A2hsPromptModal } from "./pwa/A2hsPromptModal";
 
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
@@ -3409,6 +3410,7 @@ export function App() {
 						}}
 					/>
 					<Omnibar />
+					<A2hsPromptModal />
 				</section>
 				<nav className="dnt-bottom-nav" aria-label="Мобильная навигация">
 					{(["shift", "schedule", "patients", "visit"] as const).map((view) => (

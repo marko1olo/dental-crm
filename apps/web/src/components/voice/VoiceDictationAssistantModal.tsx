@@ -33,6 +33,8 @@ import {
 	type SoapAggregatedNote,
 	parseClinicalVoiceSpeech,
 } from "./voiceClinicalCommands";
+export type DictationCommand = ParsedClinicalVoiceCommand;
+export type { ParsedClinicalVoiceCommand, ClinicalVoiceParseResult, SoapAggregatedNote };
 import { UnifiedAudioClient } from "../../services/voice/UnifiedAudioClient";
 import { CanvasWaveform } from "../audio/CanvasWaveform";
 import "./voiceAssistant.css";

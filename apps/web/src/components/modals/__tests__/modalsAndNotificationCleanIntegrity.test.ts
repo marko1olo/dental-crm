@@ -18,22 +18,12 @@ test("Modals & Notifications Integrity — Wave 106 Verification", async (t) => 
 		"../../finance/fiscal/OfflineFiscalBatchModal.tsx",
 	);
 
-	await t.test("ClinicalModalsHost — zero SAMPLE_PATIENT or synthetic mock data", () => {
-		const content = fs.readFileSync(clinicalModalsPath, "utf8");
-		assert.ok(!content.includes("SAMPLE_PATIENT"), "SAMPLE_PATIENT must be eliminated");
-		assert.ok(!content.includes("Иванов Иван Иванович"), "Hardcoded Ivanov must not exist");
-		assert.ok(!content.includes("+7 (999) 123-45-67"), "Fake phone must not exist");
-		assert.ok(content.includes("useOptionalAppLogicContext"), "Must use dynamic appLogic context");
-		assert.ok(content.includes("patientName ="), "Must resolve dynamic patientName");
+	await t.test("ClinicalModalsHost — eradicated per Mandate 8s (Wave 200)", () => {
+		assert.ok(!fs.existsSync(clinicalModalsPath), "ClinicalModalsHost.tsx must be eradicated as a shirm facade host");
 	});
 
-	await t.test("BackofficeModalsHost — zero SAMPLE_PATIENT or synthetic mock data", () => {
-		const content = fs.readFileSync(backofficeModalsPath, "utf8");
-		assert.ok(!content.includes("SAMPLE_PATIENT"), "SAMPLE_PATIENT must be eliminated");
-		assert.ok(!content.includes("Иванов Иван Иванович"), "Hardcoded Ivanov must not exist");
-		assert.ok(!content.includes("+7 (999) 123-45-67"), "Fake phone must not exist");
-		assert.ok(content.includes("useOptionalAppLogicContext"), "Must use dynamic appLogic context");
-		assert.ok(content.includes("patientName ="), "Must resolve dynamic patientName");
+	await t.test("BackofficeModalsHost — eradicated per Mandate 8s (Wave 200)", () => {
+		assert.ok(!fs.existsSync(backofficeModalsPath), "BackofficeModalsHost.tsx must be eradicated as a shirm facade host");
 	});
 
 	await t.test("PatientNotificationCenter — zero hardcoded mock patients & clean empty state", () => {

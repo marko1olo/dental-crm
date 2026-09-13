@@ -3688,6 +3688,32 @@
 - **Файлы**: `apps/web/src/tests/panelsAreMounted.test.ts`, `apps/web/src/components/modals/ClinicalModalsHost.tsx`, `apps/web/src/components/modals/BackofficeModalsHost.tsx`, `apps/web/src/components/finance/FastCheckoutModal.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/documents/forms/RadiationDoseSheetForm.tsx`, `apps/web/src/components/consents/InformedConsentModal.tsx`, `apps/web/src/components/odontogram/ToothChart.tsx`, `apps/web/src/components/surgery/SurgeryVisitCockpit.tsx`, `apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx`, `apps/web/src/components/visit/PrescriptionModal.tsx`, `apps/web/src/components/endo/EndoCanalLogModal.tsx`, `apps/web/src/components/portal/PatientCabinetModal.tsx`, `apps/web/src/components/portal/PublicBookingWidget.tsx`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`, `docs/competitive-audit/FEATURES_REGISTRY.md`.
 - **Тесты**: `node --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/tests/panelsAreMounted.test.ts`: 12/12 PASS, `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8), Single-Compiler Gate защищен per Mandate 8t, 327/327 фичей со статусом [ДА] (100% паритет).
 
+### 2.10.283. Волна 200: Окончательная ликвидация последних 28 бутафорских ширм, монтирование 26 компонентов в целевые экраны и обнуление потолка (DEMOUNTED_MODAL_SHIRMS_CEILING = 0) (Мандаты 8a–8t)
+- **Идея & Бизнес-эффект**: Исторический рубеж: полное и окончательное искоренение бутафорских ширм в стоматологической CRM (Мандат 8s). Все 26 реальных промышленных компонентов (от 216 до 5 986 строк кода) монтированы в канонические production-экраны клиники (Tier 2/Tier 3) с реальными пропсами и обработчиками; фиктивные хосты-обходчики `ClinicalModalsHost.tsx` и `BackofficeModalsHost.tsx` полностью очищены и физически удалены из кодовой базы (`git rm`); бэклог демонтированных ширм в `panelsAreMounted.test.ts` обнулен до пустого массива `[]`, а потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` зафиксирован на абсолютном нуле (**0**); Single-Compiler Gate защищен и успешно пройден (`npm run typecheck` Exit Code 0 на `@dental/web` и `@dental/api`).
+- **Архитектурные механизмы**:
+  1. *Монтирование 26 компонентов в целевые production-экраны*:
+     - Клинический hot-path и приём врача (`VisitView.tsx`): `VisitTimer` (строка состояния), `EmergencyRescueModal` (аптечка анти-шок), `VoiceDictationAssistantModal` (голосовая диктовка протокола 043/у с парсингом команд и диагнозов), `WarrantyPassportModal` (выдача гарантийных сертификатов);
+     - Диагностика и лучевая диагностика (`VisitDiagnosticsTab.tsx`, `CbctMprImplantStudioModal.tsx`): `DirectRvgCaptureModal` (прямой снимок визиографа), `DicomViewerModal` (просмотр КТ-серий), `HotFolderIntakeModal` (автозахват снимков из локальной папки), `BoneQualityPanel` (классификация плотности кости по Мишу);
+     - Специализированные протоколы (`VisitSpecialtyFocus.tsx`): протокольный ящик детского приема (`VisitPediatricProtocolWidget`), хирургии (`VisitSurgeryProtocolTab`) и терапии (`VisitTherapyProtocolWidget`);
+     - Планы лечения (`TreatmentPlanPresenterModal.tsx`): визуальная дорожная карта этапов `TreatmentPlanRoadmap`;
+     - Склад и учет (`InventoryView.tsx`): управление складами `WarehouseManagerModal`, списание карпул анестетиков медсестрой в 1 клик `NurseCarpuleDisposalModal` (Мандат 8e), маркировка Честный Знак / МДЛП `MdlpScanningModal`;
+     - Лаборатория и наряды ЗТЛ (`LabOrdersPanel.tsx`): реестр заказов зуботехнической лаборатории `DentalLabOrdersHubModal`;
+     - Финансы и касса 54-ФЗ (`PaymentModal.tsx`): динамический QR-код оплаты СБП `SbpPaymentQrModal`;
+     - Аналитика и маркетинг (`AnalyticsDashboardView.tsx`): сквозной маркетинг `MarketingAttributionDashboard`, расчет ROMI `MarketingRomiTable`, калькулятор ROI `MarketingRoiModal`;
+     - Коммуникации и расписание (`CommunicationsView.tsx`): центр профосмотров и реколлов `PatientRecallsHubModal`, омниканальный чат WhatsApp/MAX/Telegram `PatientOmnichannelHubModal`;
+     - Безопасность и офлайн (`SettingsAuditTab.tsx`, `OfflineBackupVaultPanel.tsx`, `App.tsx`): журнал аудита 152-ФЗ `AuditTrailHubModal`, очередь офлайн-синхронизации `OfflineSyncGuardModal`, ambient PWA баннер `A2hsPromptModal`.
+  2. *Полная ликвидация фасадов-ширм (Мандат 8s)*:
+     - `ClinicalModalsHost.tsx` и `BackofficeModalsHost.tsx` удалены через `git rm`;
+     - `DEMOUNTED_MODAL_SHIRMS_BACKLOG = []` и `DEMOUNTED_MODAL_SHIRMS_CEILING = 0`;
+     - Регрессионный тест в `panelsAreMounted.test.ts` гарантирует невозможность возврата бутафорских хостов.
+  3. *Single-Compiler Gate & Quality (Мандаты 8d, 8e, 8t)*:
+     - `typecheck` Exit Code 0 на `@dental/web` и `@dental/api`;
+     - 13/13 тестов `panelsAreMounted.test.ts` PASS (перепись: 1071 файл, 497 компонентов, 0 сирот);
+     - 5065 файлов проверено `check:encoding` (0 ошибок UTF-8);
+     - 162 файла CSS проверено `check:css-tokens` (12 322 переменных, 0 неразрешенных токенов).
+- **Файлы**: `apps/web/src/App.tsx`, `apps/web/src/CommunicationsView.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/components/InventoryView.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/patients/LabOrdersPanel.tsx`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`, `apps/web/src/components/settings/OfflineBackupVaultPanel.tsx`, `apps/web/src/components/settings/SettingsAuditTab.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`, `apps/web/src/components/visit/VisitSpecialtyFocus.tsx`, `apps/web/src/components/voice/VoiceDictationAssistantModal.tsx`, `apps/web/src/pages/AnalyticsDashboardView.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Тесты**: `npm run typecheck -w @dental/web`: Exit Code 0, `npm run typecheck -w @dental/api`: Exit Code 0, `node scripts/check-encoding.mjs`: 0 ошибок, `panelsAreMounted.test.ts`: 13/13 PASS, 327/327 фичей со статусом [ДА] (100% паритет).
+
 
 
 

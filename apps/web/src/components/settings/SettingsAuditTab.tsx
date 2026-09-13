@@ -7,6 +7,7 @@ import type {
 import {
 	AlertOctagon,
 	Database,
+	FileText,
 	Filter,
 	History,
 	Lock,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
+import { AuditTrailHubModal } from "../security/AuditTrailHubModal";
 import { humanizeMigrationText } from "./migrationHelpers";
 
 type BrowserContinuityCheck = { label: string; value: string; detail: string };
@@ -102,6 +104,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 		: [];
 
 	const [onlyCritical152Fz, setOnlyCritical152Fz] = useState(true);
+	const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
 
 	const filteredAuditEvents = useMemo(() => {
 		if (!onlyCritical152Fz) return typedAuditEvents;
@@ -467,7 +470,18 @@ export function SettingsAuditTab(props: Record<string, any>) {
 			<div className="panel audit-panel">
 				<div className="panel-heading">
 					<h2>Аудит действий</h2>
-					<ShieldCheck aria-hidden="true" />
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={() => setIsAuditTrailOpen(true)}
+							style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem" }}
+						>
+							<FileText size={16} aria-hidden="true" />
+							Журнал аудита 152-ФЗ
+						</button>
+						<ShieldCheck aria-hidden="true" />
+					</div>
 				</div>
 				<div className="ops-list">
 					{typedAuditEvents.map((event) => (
@@ -487,6 +501,11 @@ export function SettingsAuditTab(props: Record<string, any>) {
 					))}
 				</div>
 			</div>
+
+			<AuditTrailHubModal
+				isOpen={isAuditTrailOpen}
+				onClose={() => setIsAuditTrailOpen(false)}
+			/>
 		</section>
 	);
 }

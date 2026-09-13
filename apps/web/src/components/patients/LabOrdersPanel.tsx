@@ -26,6 +26,7 @@ import { showToast } from "../GlobalToast";
 import { LAB_ORDER_PORTAL_PATH } from "../../lib/publicPortalRoute";
 import { LabOrdersPage } from "../../pages/LabOrdersPage";
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
+import { DentalLabOrdersHubModal } from "../lab/DentalLabOrdersHubModal";
 import { LabTrackingDrawer } from "../lab/LabTrackingDrawer";
 import {
 	type DentalLabOrderData,
@@ -107,6 +108,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	// Modals & Drawer state
 	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+	const [isLabHubOpen, setIsLabHubOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
 	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
@@ -675,6 +677,17 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					>
 						<Zap className="w-3.5 h-3.5 text-slate-500" />
 						<span>Вкладка КХС (3 дн.)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsLabHubOpen(true)}
+						className="lab-btn-32 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 border-indigo-500/30 hover:bg-indigo-500/20 font-bold"
+						title="Реестр нарядов ЗТЛ"
+						data-testid="lab-orders-hub-trigger"
+					>
+						<Layers className="w-3.5 h-3.5 text-indigo-500" />
+						<span>Реестр нарядов ЗТЛ</span>
 					</button>
 
 					<button
@@ -1311,6 +1324,17 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					} catch (err: any) {
 						showToast(err.message || "Не удалось обновить этап наряда в БД", "error");
 					}
+				}}
+			/>
+
+			<DentalLabOrdersHubModal
+				isOpen={isLabHubOpen}
+				onClose={() => setIsLabHubOpen(false)}
+				currentPatientId={patientId}
+				currentPatientName={orders[0]?.patientName}
+				currentDoctorName={appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name}
+				onSaveOrder={() => {
+					void fetchOrders();
 				}}
 			/>
 		</div>

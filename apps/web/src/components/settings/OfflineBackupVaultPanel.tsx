@@ -32,6 +32,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { OfflineSyncGuardModal } from "../sync/OfflineSyncGuardModal";
 import {
 	type ExportBackupResult,
 	type LocalVaultSnapshotMeta,
@@ -64,6 +65,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 }) => {
 	// Active Tab state for 3-Tier UX
 	const [activeSection, setActiveSection] = useState<"export" | "restore" | "snapshots" | "sync_queue" | "scheduler" | "integrity">("export");
+	const [isSyncGuardOpen, setIsSyncGuardOpen] = useState(false);
 
 	// Export state
 	const [exportPassphrase, setExportPassphrase] = useState("");
@@ -417,6 +419,33 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					>
 						<RefreshCw size={15} className={isCheckingIntegrity ? "spin-animation" : ""} />
 						<span>{isCheckingIntegrity ? "Проверка..." : "Сверить буфер"}</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsSyncGuardOpen(true)}
+						data-testid="open-sync-guard-modal-btn"
+						style={{
+							minHeight: "44px",
+							padding: "0 16px",
+							borderRadius: "8px",
+							background: "var(--paper-soft)",
+							color: "var(--ink)",
+							border: "1px solid var(--line)",
+							fontWeight: "600",
+							fontSize: "13px",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "6px",
+							boxSizing: "border-box",
+							transition: "all 0.15s ease",
+						}}
+						className="touch-manipulation"
+					>
+						<Activity size={15} />
+						<span>Очередь офлайн-синхронизации</span>
 					</button>
 
 					<button
@@ -1611,6 +1640,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					)}
 				</div>
 			)}
+
+			<OfflineSyncGuardModal
+				isOpen={isSyncGuardOpen}
+				onClose={() => setIsSyncGuardOpen(false)}
+			/>
 		</div>
 	);
 };

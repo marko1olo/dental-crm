@@ -330,18 +330,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Поверхностный слой базового лейаут-контейнера дизайн-системы для изолированных экранов и визуального тестирования компонентов рабочего пространства.",
 	},
-	{
-		file: "components/analytics/MarketingAttributionDashboard.tsx",
-		name: "MarketingAttributionDashboard",
-		reason:
-			"Дашборд сквозной маркетинговой аналитики и когортной атрибуции каналов привлечения пациентов для интеграции в административный модуль клиники (components/analytics/MarketingAttributionDashboard.tsx:37).",
-	},
-	{
-		file: "components/analytics/OnlineBookingConversionPanel.tsx",
-		name: "OnlineBookingConversionPanel",
-		reason:
-			"Панель конверсии онлайн-записи и воронки шагов бронирования для сквозной маркетинговой аналитики клиники (components/analytics/OnlineBookingConversionPanel.tsx:167). Используется внутри дашборда атрибуции.",
-	},
+	/*
+	 * MarketingAttributionDashboard и OnlineBookingConversionPanel СМОНТИРОВАНЫ
+	 * в AnalyticsDashboardView.tsx (Wave 200).
+	 */
 	{
 		file: "components/chairside/ChairsidePreFlightChecklist.tsx",
 		name: "ChairsidePreFlightChecklist",
@@ -898,36 +890,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * видимость доступности. Компоненты подключаются по мере реальной бизнес-необходимости
  * в целевые контекстные экраны (Tier 2/Tier 3), а не свалкой в корень приложения.
  */
-const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
-	"components/analytics/MarketingRoiModal.tsx:MarketingRoiModal",
-	"components/dicom/BoneQualityPanel.tsx:BoneQualityPanel",
-	"components/emergency/EmergencyRescueModal.tsx:EmergencyRescueModal",
-	"components/imaging/DicomViewerModal.tsx:DicomViewerModal",
-	"components/imaging/DicomViewport.tsx:DicomViewport",
-	"components/inventory/WarehouseManagerModal.tsx:WarehouseManagerModal",
-	"components/lab/DentalLabOrdersHubModal.tsx:DentalLabOrdersHubModal",
-	"components/marketing/MarketingRomiTable.tsx:MarketingRomiTable",
-	"components/mdlp/MdlpScanningModal.tsx:MdlpScanningModal",
-	"components/messaging/PatientOmnichannelHubModal.tsx:PatientOmnichannelHubModal",
-	"components/messaging/SbpPaymentQrModal.tsx:SbpPaymentQrModal",
-	"components/modals/BackofficeModalsHost.tsx:BackofficeModalsHost",
-	"components/modals/ClinicalModalsHost.tsx:ClinicalModalsHost",
-	"components/pediatric/VisitPediatricProtocolWidget.tsx:VisitPediatricProtocolWidget",
-	"components/radiology/DirectRvgCaptureModal.tsx:DirectRvgCaptureModal",
-	"components/radiology/HotFolderIntakeModal.tsx:HotFolderIntakeModal",
-	"components/radiology/RvgFiltersToolbar.tsx:RvgFiltersToolbar",
-	"components/recalls/PatientRecallsHubModal.tsx:PatientRecallsHubModal",
-	"components/security/AuditTrailHubModal.tsx:AuditTrailHubModal",
-	"components/sync/OfflineSyncGuardModal.tsx:OfflineSyncGuardModal",
-	"components/treatment-plans/TreatmentPlanRoadmap.tsx:TreatmentPlanRoadmap",
-	"components/visit/VisitTimer.tsx:VisitTimer",
-	"components/visit/surgery/VisitSurgeryProtocolTab.tsx:VisitSurgeryProtocolTab",
-	"components/visit/therapy/VisitTherapyProtocolWidget.tsx:VisitTherapyProtocolWidget",
-	"components/voice/VoiceDictationAssistantModal.tsx:VoiceDictationAssistantModal",
-	"components/inventory/NurseCarpuleDisposalModal.tsx:NurseCarpuleDisposalModal",
-	"components/warranty/WarrantyPassportModal.tsx:WarrantyPassportModal",
-	"pwa/A2hsPromptModal.tsx:A2hsPromptModal",
-];
+const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [];
 
 /**
  * Размер наследия на день, когда перепись его пересчитала. Список работает
@@ -938,9 +901,9 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 const LEGACY_BACKLOG_CEILING = 0;
 
 /**
- * Потолок бэклога ликвидации бутафорских ширм. Может только сокращаться.
+ * Потолок бэклога ликвидации бутафорских ширм. Полностью обнулен в Wave 200.
  */
-const DEMOUNTED_MODAL_SHIRMS_CEILING = 28;
+const DEMOUNTED_MODAL_SHIRMS_CEILING = 0;
 
 /**
  * Минимальный размер переписи: ниже него она заведомо выродилась.
@@ -1438,5 +1401,23 @@ test("дубликатов КЛКТ и листа дозовых нагрузо�
 		true,
 		"Канонический SSOT RadiationDoseSheetForm.tsx отсутствует в дереве",
 	);
+});
+
+test("бутафорских модальных хостов ClinicalModalsHost и BackofficeModalsHost (Wave 200) в дереве больше нет", () => {
+	/*
+	 * Wave 200 (Mandate 8s): Ликвидация последних 2 бутафорских хостов-ширм.
+	 * Все 26 вложенных модалок и виджетов смонтированы в реальные контекстные экраны (Tier 2/Tier 3),
+	 * бэклог демонтированных ширм полностью обнулен (DEMOUNTED_MODAL_SHIRMS_CEILING = 0).
+	 */
+	for (const removed of [
+		"components/modals/ClinicalModalsHost.tsx",
+		"components/modals/BackofficeModalsHost.tsx",
+	]) {
+		assert.equal(
+			existsSync(path.join(webSrcRoot, removed)),
+			false,
+			`${removed} вернулся в дерево. Хост ликвидирован как бутафорская ширма по Wave 200.`,
+		);
+	}
 });
 

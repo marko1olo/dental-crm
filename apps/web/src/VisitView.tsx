@@ -254,6 +254,9 @@ import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { VisitSoapEditor, type VisitSoapNoteValues } from "./components/visit/VisitSoapEditor";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { PatientAllergySafetyBanner } from "./components/patients/PatientAllergySafetyBanner";
+import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
+import { VoiceDictationAssistantModal, type DictationCommand } from "./components/voice/VoiceDictationAssistantModal";
+import { WarrantyPassportModal } from "./components/warranty/WarrantyPassportModal";
 import { renderForm043uHtml } from "@dental/shared";
 import {
 	Activity,
@@ -623,6 +626,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
 	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
+	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = React.useState(false);
+	const [isVoiceDictationModalOpen, setIsVoiceDictationModalOpen] = React.useState(false);
+	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = React.useState(false);
 	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = React.useState(false);
 	const headerMoreMenuRef = React.useRef<HTMLDivElement>(null);
 
@@ -1337,6 +1343,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									· {activePatient.phone}
 								</span>
 							)}
+							<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
 							{/* Бейдж аллергии (ровно 1 раз во всей шапке!) */}
 							{activePatientAllergyText && (
 								<span
@@ -1377,6 +1384,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 								<span className="hidden 2xl:inline">Печать 043/у</span>
+							</button>
+
+							{/* Экстренная помощь / Аптечка анти-шок (Мандаты 8c, 8e) */}
+							<button
+								type="button"
+								onClick={() => setIsEmergencyModalOpen(true)}
+								data-testid="btn-visit-emergency-rescue"
+								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+								title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
+							>
+								<AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+								<span className="hidden 2xl:inline">Аптечка</span>
 							</button>
 
 							{/* Статус приема: только на широких экранах */}
@@ -1431,6 +1450,40 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											<div className="flex flex-col">
 												<span className="font-semibold">Печать Формы 043/у</span>
 												<span className="text-[10px] text-[var(--muted)]">С текущим штампом (черновик/подписано)</span>
+											</div>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												setIsEmergencyModalOpen(true);
+											}}
+											data-testid="visit-more-action-emergency"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-rose-500/10 cursor-pointer text-rose-700 dark:text-rose-300 transition-colors min-h-[38px]"
+											role="menuitem"
+										>
+											<AlertOctagon size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Экстренная помощь (Анти-шок)</span>
+												<span className="text-[10px] text-[var(--muted)]">Протоколы анафилаксии, сердечного приступа</span>
+											</div>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												setIsWarrantyModalOpen(true);
+											}}
+											data-testid="visit-more-action-warranty-passport"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											role="menuitem"
+										>
+											<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Гарантийный паспорт</span>
+												<span className="text-[10px] text-[var(--muted)]">Оформление и печать гарантийного талона</span>
 											</div>
 										</button>
 
@@ -1677,6 +1730,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							>
 								<Printer size={14} />
 								<span>Печать 043/у</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsWarrantyModalOpen(true)}
+								data-testid="btn-visit-warranty-passport"
+								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+								title="Оформить гарантийный паспорт на выполненные работы"
+							>
+								<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+								<span>Гарантийный паспорт</span>
 							</button>
 							<a
 								href="#documents"
@@ -2078,6 +2141,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								justifyContent: "center",
 							}}
 						/>
+
+						<button
+							type="button"
+							onClick={() => setIsVoiceDictationModalOpen(true)}
+							data-testid="btn-open-voice-dictation-assistant"
+							className="secondary-button min-h-[44px] px-3.5 py-2 text-xs font-bold inline-flex items-center gap-2 rounded-xl text-violet-700 dark:text-violet-300 border-violet-500/40 hover:bg-violet-50 dark:hover:bg-violet-950/30 cursor-pointer transition-colors"
+							title="Открыть голосовой ИИ-ассистент врача с распознаванием команд и формулы"
+						>
+							<Sparkles size={16} className="text-violet-600 dark:text-violet-400 shrink-0" />
+							<span>ИИ-Ассистент диктовки</span>
+						</button>
 
 						<label
 							className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,rgba(255,255,255,0.1))] text-xs font-bold text-[var(--ink)] cursor-pointer select-none"
@@ -4191,6 +4265,85 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						`Акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
 						"success",
 					);
+				}}
+			/>
+
+			{/* Emergency Rescue / Anaphylaxis Anti-Shock Modal (Мандаты 8c, 8e) */}
+			<EmergencyRescueModal
+				isOpen={isEmergencyModalOpen}
+				onClose={() => setIsEmergencyModalOpen(false)}
+				onApplyToDiary={(protocolText) => {
+					appendToEMKField("diary", protocolText);
+					showToast("Протокол оказания экстренной помощи внесён в дневник 043/у", "warning");
+				}}
+				initialPatientName={activePatient?.fullName || ""}
+				initialPatientAgeYears={patientAge ? Number.parseInt(patientAge, 10) || undefined : undefined}
+				doctorFullName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
+				medCardNumber={activePatient?.medCardNumber || activePatient?.cardNumber || activePatient?.id || ""}
+				clinicName={dashboard?.organization?.name || "Стоматологическая клиника"}
+			/>
+
+			{/* AI Voice Dictation Assistant Modal */}
+			<VoiceDictationAssistantModal
+				isOpen={isVoiceDictationModalOpen}
+				onClose={() => setIsVoiceDictationModalOpen(false)}
+				activeToothNumber={selectedToothForMenu?.code ? Number.parseInt(selectedToothForMenu.code, 10) || null : null}
+				onApplySoapNote={(soap) => {
+					if (soap.subjective) appendToEMKField("complaints", soap.subjective);
+					if (soap.objective) appendToEMKField("objectiveInspection", soap.objective);
+					if (soap.assessment) appendToEMKField("diagnosis", soap.assessment);
+					if (soap.plan) appendToEMKField("treatmentPlan", soap.plan);
+					if (soap.recommendations) appendToEMKField("recommendations", soap.recommendations);
+					showToast("SOAP-запись внесена в Форму 043/у", "success");
+				}}
+				onApplyCommand={(cmd: DictationCommand) => {
+					if (cmd.toothNumber && cmd.clinicalStatus) {
+						// biome-ignore lint/suspicious/noExplicitAny: clinical status mapping
+						setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
+					}
+					if (cmd.soapText || cmd.summary) {
+						appendToEMKField("objectiveInspection", cmd.soapText || cmd.summary);
+					}
+				}}
+				onApplyAllCommands={(cmds: DictationCommand[]) => {
+					for (const cmd of cmds) {
+						if (cmd.toothNumber && cmd.clinicalStatus) {
+							// biome-ignore lint/suspicious/noExplicitAny: clinical status mapping
+							setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
+						}
+						if (cmd.soapText || cmd.summary) {
+							appendToEMKField("objectiveInspection", cmd.soapText || cmd.summary);
+						}
+					}
+					showToast(`Применено команд: ${cmds.length}`, "success");
+				}}
+			/>
+
+			{/* Warranty Passport Modal */}
+			<WarrantyPassportModal
+				isOpen={isWarrantyModalOpen}
+				onClose={() => setIsWarrantyModalOpen(false)}
+				patient={
+					activePatient
+						? {
+								id: activePatient.id,
+								fullName: activePatient.fullName,
+								birthDate: activePatient.birthDate,
+								cardNumber: activePatient.cardNumber || activePatient.medCardNumber,
+								phone: activePatient.phone,
+							}
+						: null
+				}
+				doctorName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
+				doctorSpecialty={activeDoctor?.specialty || "Стоматолог-терапевт"}
+				clinicName={dashboard?.organization?.name || "Стоматологическая клиника"}
+				onAttachToForm043u={(payload) => {
+					const summary = `Гарантийный паспорт № ${payload.certificateId} от ${payload.attachedAt} (${payload.itemCount} поз., гарантия ${payload.adjustedWarrantyMonths} мес.)`;
+					appendToEMKField("recommendations", summary);
+					showToast("Гарантийный паспорт прикреплен к Форме 043/у", "success");
+				}}
+				onCertificateIssued={(cert) => {
+					showToast(`Выдан гарантийный сертификат № ${cert.certificateId}`, "success");
 				}}
 			/>
 

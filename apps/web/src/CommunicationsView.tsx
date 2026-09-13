@@ -6,6 +6,7 @@ import type {
 } from "@dental/shared";
 import {
 	Bell,
+	Calendar,
 	CheckCircle2,
 	FileText,
 	History,
@@ -14,6 +15,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { WhatsAppChatPanel } from "./components/chat/WhatsAppChatPanel";
+import { PatientRecallsHubModal } from "./components/recalls/PatientRecallsHubModal";
+import { PatientOmnichannelHubModal } from "./components/messaging/PatientOmnichannelHubModal";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
 import {
 	journalDirectionLabel,
@@ -539,6 +542,8 @@ export function CommunicationsView(
 	const [activeSection, setActiveSection] = useState<
 		"tasks" | "chat" | "notifications"
 	>("tasks");
+	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
+	const [isOmnichannelHubOpen, setIsOmnichannelHubOpen] = useState(false);
 
 	const communicationSummaryHasNumbers = Boolean(
 		(dashboard?.communicationSummary?.openTasks ?? 0) ||
@@ -559,14 +564,36 @@ export function CommunicationsView(
 				<h2 title="Центр коммуникаций с пациентами: подтверждения визитов, рассылки, чаты и звонки">
 					Связь с пациентами
 				</h2>
-				<button
-					className="text-button"
-					type="button"
-					onClick={onGoToSchedule}
-					title="Перейти к сетке расписания"
-				>
-					Расписание
-				</button>
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setIsRecallsHubOpen(true)}
+						className="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+						data-testid="communications-recalls-hub-btn"
+						title="Профосмотры и реколлы: диспансерный учет и удержание"
+					>
+						<Calendar size={14} className="text-teal-600" />
+						<span>Профосмотры и реколлы</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setIsOmnichannelHubOpen(true)}
+						className="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+						data-testid="communications-omnichannel-hub-btn"
+						title="Омниканальный чат с пациентом (WhatsApp / Telegram / SMS)"
+					>
+						<MessageSquare size={14} className="text-teal-600" />
+						<span>Омниканальный чат с пациентом</span>
+					</button>
+					<button
+						className="text-button"
+						type="button"
+						onClick={onGoToSchedule}
+						title="Перейти к сетке расписания"
+					>
+						Расписание
+					</button>
+				</div>
 			</div>
 
 			{/* Sub-navigation tabs: Tasks & Dispatch, WhatsApp Direct Chat, and Notifications Center */}
@@ -982,6 +1009,16 @@ export function CommunicationsView(
       */}
 				</>
 			)}
+
+			<PatientRecallsHubModal
+				isOpen={isRecallsHubOpen}
+				onClose={() => setIsRecallsHubOpen(false)}
+			/>
+
+			<PatientOmnichannelHubModal
+				isOpen={isOmnichannelHubOpen}
+				onClose={() => setIsOmnichannelHubOpen(false)}
+			/>
 		</div>
 	);
 }

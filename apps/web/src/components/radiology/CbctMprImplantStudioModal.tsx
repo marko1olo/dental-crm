@@ -137,6 +137,7 @@ import {
 } from "./dentalCurveEngine";
 import { autoDetectDentalArch, findOcclusalZPlane } from "./cbctAutoArchEngine";
 import { CbctViewportHud } from "./CbctViewportHud";
+import { BoneQualityPanel } from "../dicom/BoneQualityPanel";
 import {
 	STANDARD_IMPLANT_CATALOG,
 	type CrossSectionImplantPose,
@@ -5647,41 +5648,35 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								);
 							})()}
 
-							{/* ─── MISCH BONE DENSITY (HU) & DRILLING PROTOCOL ────────────── */}
-							<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
-								<div className="flex items-center justify-between text-xs">
-									<span className="font-bold text-zinc-400">Плотность кости (Misch):</span>
-									<span className="px-2 py-1 rounded bg-zinc-900 text-cyan-400 font-bold border border-cyan-500/60">
-										Класс {mischClassification.mischClass} ({huSamplingResult.overallMeanHU} HU)
-									</span>
-								</div>
-								<div className="grid grid-cols-3 gap-1.5 text-center text-[10px] bg-zinc-900 p-2 rounded border border-zinc-800">
-									<div>
-										<div className="text-zinc-400">Кортекс</div>
-										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.coronalCrestalHU} HU</div>
-									</div>
-									<div>
-										<div className="text-zinc-400">Спонгиоза</div>
-										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.trabecularCoreHU} HU</div>
-									</div>
-									<div>
-										<div className="text-zinc-400">Апекс</div>
-										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.apicalBaseHU} HU</div>
-									</div>
-								</div>
-								<div className="text-[11px] text-zinc-400 flex flex-col gap-0.5">
-									<div>
-										Протокол: <strong className="text-zinc-100">{mischClassification.recommendedDrillingRpm}</strong>.
-										{mischClassification.underdrillingRecommended && (
-											<span className="text-amber-400 font-semibold ml-1">Недопрепарирование (Underdrilling).</span>
-										)}
-									</div>
-									<div className="text-xs font-bold text-zinc-200 flex items-center justify-between pt-1 border-t border-zinc-800">
-										<span>Торк: <strong className="text-zinc-100">{mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см</strong></span>
-										<span>ISQ: <strong className="text-zinc-100">{mischClassification.estimatedIsqScore.expectedIsq}</strong></span>
-									</div>
-								</div>
-							</div>
+							{/* ─── MISCH BONE DENSITY (HU) & DRILLING PROTOCOL (BoneQualityPanel) ────────────── */}
+							<BoneQualityPanel
+								huSamples={
+									huSamplingResult.status !== "unmeasured" &&
+									(huSamplingResult.coronalCrestalHU !== 0 ||
+										huSamplingResult.trabecularCoreHU !== 0 ||
+										huSamplingResult.apicalBaseHU !== 0)
+										? [
+												huSamplingResult.coronalCrestalHU,
+												huSamplingResult.trabecularCoreHU,
+												huSamplingResult.apicalBaseHU,
+											]
+										: undefined
+								}
+								implantDiameterMm={currentImplantSpec.diameterMm}
+								implantLengthMm={currentImplantSpec.lengthMm}
+								implantSystem={
+									currentImplantSpec.brandName?.toLowerCase().includes("straumann")
+										? "straumann"
+										: currentImplantSpec.brandName?.toLowerCase().includes("nobel")
+											? "nobel"
+											: currentImplantSpec.brandName?.toLowerCase().includes("bredent")
+												? "bredent"
+												: currentImplantSpec.brandName?.toLowerCase().includes("mdi")
+													? "mdi"
+													: "osstem"
+								}
+								toothFdi={implant3DWorld?.targetToothFdi ?? 46}
+							/>
 
 							{/* ─── 3D MANDIBULAR NERVE TRACER PANEL (IAN 3D SPLINE) ────────── */}
 							<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2">

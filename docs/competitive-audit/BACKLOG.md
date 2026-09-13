@@ -5973,6 +5973,68 @@
   - Single-Compiler Gate защищен per Mandate 8t;
   - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
 
+### 349. Wave 200: Окончательная ликвидация последних 28 бутафорских ширм, монтирование 26 компонентов в целевые экраны и обнуление потолка (DEMOUNTED_MODAL_SHIRMS_CEILING = 0)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Коммит**: `Wave 200`
+* **Затронутые файлы**:
+  - `apps/web/src/App.tsx`
+  - `apps/web/src/CommunicationsView.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/components/InventoryView.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/patients/LabOrdersPanel.tsx`
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`
+  - `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`
+  - `apps/web/src/components/settings/OfflineBackupVaultPanel.tsx`
+  - `apps/web/src/components/settings/SettingsAuditTab.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`
+  - `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`
+  - `apps/web/src/components/visit/VisitSpecialtyFocus.tsx`
+  - `apps/web/src/components/voice/VoiceDictationAssistantModal.tsx`
+  - `apps/web/src/pages/AnalyticsDashboardView.tsx`
+  - `apps/web/src/components/modals/ClinicalModalsHost.tsx` (удален via `git rm`)
+  - `apps/web/src/components/modals/BackofficeModalsHost.tsx` (удален via `git rm`)
+  - `apps/web/src/tests/panelsAreMounted.test.ts`
+* **Описание**:
+  - **Монтирование 26 промышленных компонентов в реальные контекстные экраны (Tier 2/Tier 3)**:
+    1. `VisitTimer` — монтирован в статус-бар шапки визита `VisitView.tsx`;
+    2. `EmergencyRescueModal` — монтирован на экстренную кнопку «Аптечка» и опции `VisitView.tsx`;
+    3. `VoiceDictationAssistantModal` — монтирован в панель клинической диктовки протокола `VisitView.tsx`;
+    4. `WarrantyPassportModal` — монтирован в завершение приёма и сметы `VisitView.tsx`;
+    5. `DirectRvgCaptureModal` — монтирован в действия визиографа `VisitDiagnosticsTab.tsx`;
+    6. `DicomViewerModal` — монтирован в просмотр серии КТ/DICOM `VisitDiagnosticsTab.tsx`;
+    7. `BoneQualityPanel` — монтирован в сайдбар плотности кости по Мишу `CbctMprImplantStudioModal.tsx`;
+    8. `VisitPediatricProtocolWidget` — монтирован в протокол детского приема `VisitSpecialtyFocus.tsx`;
+    9. `VisitSurgeryProtocolTab` — монтирован в протокол хирургического приема `VisitSpecialtyFocus.tsx`;
+    10. `VisitTherapyProtocolWidget` — монтирован в протокол терапевтического приема `VisitSpecialtyFocus.tsx`;
+    11. `TreatmentPlanRoadmap` — монтирован во вкладку «Дорожная карта» `TreatmentPlanPresenterModal.tsx`;
+    12. `WarehouseManagerModal` — монтирован в операции склада `InventoryView.tsx`;
+    13. `NurseCarpuleDisposalModal` — монтирован в 1-клик списание карпул медсестрой `InventoryView.tsx` (Мандат 8e);
+    14. `MdlpScanningModal` — монтирован в маркировку Честный Знак / МДЛП `InventoryView.tsx`;
+    15. `DentalLabOrdersHubModal` — монтирован в реестр нарядов ЗТЛ `LabOrdersPanel.tsx`;
+    16. `SbpPaymentQrModal` — монтирован во вкладку оплаты СБП по QR `PaymentModal.tsx`;
+    17. `MarketingAttributionDashboard` (включая `MarketingRomiTable`) — монтирован в таб ROMI `AnalyticsDashboardView.tsx`;
+    18. `MarketingRoiModal` — монтирован на кнопку ROI маркетинга `AnalyticsDashboardView.tsx`;
+    19. `PatientRecallsHubModal` — монтирован на кнопку профосмотров и реколлов `CommunicationsView.tsx`;
+    20. `PatientOmnichannelHubModal` — монтирован на кнопку омниканального чата `CommunicationsView.tsx`;
+    21. `AuditTrailHubModal` — монтирован на журнал аудита 152-ФЗ `SettingsAuditTab.tsx`;
+    22. `OfflineSyncGuardModal` — монтирован на очередь офлайн-синхронизации `OfflineBackupVaultPanel.tsx`;
+    23. `A2hsPromptModal` — монтирован как ambient PWA prompt в корне `App.tsx`;
+    24. `HotFolderIntakeModal` — монтирован в действия рентгена `VisitDiagnosticsTab.tsx`;
+    25. `RvgFiltersToolbar` — монтирован в тулбар фильтров сенсора `DirectRvgCaptureModal.tsx`;
+    26. `DicomViewport` — монтирован как основной холст серии `DicomViewerModal.tsx`.
+  - **Ликвидация бутафорских хостов-ширм (Мандат 8s)**:
+    * `ClinicalModalsHost.tsx` и `BackofficeModalsHost.tsx` полностью очищены от зависимостей и удалены через `git rm`;
+    * `DEMOUNTED_MODAL_SHIRMS_BACKLOG` полностью очищен до пустого массива `[]`;
+    * Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго обнулен до **0**;
+    * Добавлен регрессионный тест в `panelsAreMounted.test.ts`, запрещающий возврат фиктивных хостов.
+  - **Single-Compiler Gate (Мандат 8t)**:
+    * `npm run typecheck -w @dental/web` — Exit Code 0;
+    * `npm run typecheck -w @dental/api` — Exit Code 0;
+    * `check:encoding` — 0 ошибок (UTF-8);
+    * `check:css-tokens` — 0 ошибок;
+    * `check:dynamic-imports` — 0 ошибок.
+
 
 
 

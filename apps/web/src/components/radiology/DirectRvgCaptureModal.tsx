@@ -113,19 +113,19 @@ export type ProjectionAngleType = "periapical" | "bitewing" | "occlusal";
 export interface DirectRvgCaptureModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string;
-	patientName?: string;
-	patientCardNumber?: string;
-	doctorName?: string;
-	initialToothFdi?: string;
-	initialImageUrl?: string;
-	onSaveToEmr?: (study: RadiologyStudy) => void;
-	onSendToLab?: (orderData: {
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	patientCardNumber?: string | undefined;
+	doctorName?: string | undefined;
+	initialToothFdi?: string | undefined;
+	initialImageUrl?: string | undefined;
+	onSaveToEmr?: ((study: RadiologyStudy) => void) | undefined;
+	onSendToLab?: ((orderData: {
 		study: RadiologyStudy;
 		toothFdi: string;
 		note: string;
-	}) => void;
-	onExportDicom?: (study: RadiologyStudy) => void;
+	}) => void) | undefined;
+	onExportDicom?: ((study: RadiologyStudy) => void) | undefined;
 }
 
 export const SENSOR_MODELS = [

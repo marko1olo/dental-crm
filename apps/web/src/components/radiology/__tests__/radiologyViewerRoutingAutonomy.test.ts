@@ -109,13 +109,12 @@ describe("1. Anti-Matryoshka Routing & CBCT 3D Studio Autonomy (Mandates 8c, 8d,
 		expect(isCbctStudy({})).toBe(false);
 	});
 
-	it("enforces Anti-Matryoshka Law in ClinicalModalsHost.tsx (modal depth strictly 1)", () => {
-		const source = readComponentSource("components/modals/ClinicalModalsHost.tsx");
+	it("enforces Anti-Matryoshka Law in VisitDiagnosticsTab.tsx (modal depth strictly 1)", () => {
+		const source = readComponentSource("components/visit/VisitDiagnosticsTab.tsx");
 
-		// ClinicalModalsHost mounts DicomViewerModal and CbctMprImplantStudioModal at depth 1
-		expect(source).toContain('activeModal === "cbct_3d_studio"');
-		expect(source).toContain('activeModal === "radiology_viewer"');
+		// VisitDiagnosticsTab mounts DicomViewerModal, DirectRvgCaptureModal, and CbctMprImplantStudioModal at depth 1
 		expect(source).toContain("<DicomViewerModal");
+		expect(source).toContain("<DirectRvgCaptureModal");
 		expect(source).toContain("<CbctMprImplantStudioModal");
 	});
 

@@ -32,6 +32,8 @@ import { LostPatientsPanel } from "../components/analytics/LostPatientsPanel";
 import { EmptyState } from "../components/EmptyState.js";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
+import { MarketingRoiModal } from "../components/analytics/MarketingRoiModal";
+import { MarketingAttributionDashboard } from "../components/analytics/MarketingAttributionDashboard";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
 	type AnalyticsDashboardData,
@@ -116,8 +118,9 @@ export function AnalyticsDashboardView() {
 	const [dateRange, setDateRange] = useState<string>("all");
 	const [branchFilter, setBranchFilter] = useState<string>("all");
 	const [analyticsSection, setAnalyticsSection] = useState<
-		"executive" | "operational" | "curators" | "lost_patients" | "freed_slots"
+		"executive" | "operational" | "curators" | "lost_patients" | "freed_slots" | "marketing"
 	>("executive");
+	const [isMarketingRoiOpen, setIsMarketingRoiOpen] = useState(false);
 	// Счётчик ручных повторов. Кнопка «Повторить» без него не работает: период
 	// не менялся, значит зависимости эффекта те же и он бы не перезапустился.
 	const [_retryToken, setRetryToken] = useState(0);
@@ -359,10 +362,39 @@ export function AnalyticsDashboardView() {
 				>
 					Освободившиеся окна
 				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={analyticsSection === "marketing"}
+					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+						analyticsSection === "marketing"
+							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
+							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+					}`}
+					onClick={() => setAnalyticsSection("marketing")}
+				>
+					Сквозной маркетинг и ROMI
+				</button>
+				<button
+					type="button"
+					onClick={() => setIsMarketingRoiOpen(true)}
+					className="inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer ml-auto"
+					data-testid="btn-open-marketing-roi-modal"
+					title="Открыть сквозную аналитику ROI маркетинговых кампаний"
+				>
+					<TrendingUp className="w-4 h-4 mr-2" />
+					<span>ROI маркетинговых кампаний</span>
+				</button>
 			</div>
 
 			{analyticsSection === "executive" && (
 				<DirectorExecutiveDashboard onNavigateToSection={(s) => setAnalyticsSection(s as any)} />
+			)}
+
+			{analyticsSection === "marketing" && (
+				<div className="space-y-6">
+					<MarketingAttributionDashboard />
+				</div>
 			)}
 
 			{analyticsSection === "curators" && (
@@ -820,6 +852,11 @@ export function AnalyticsDashboardView() {
 			)}
 			{/* Clearance spacer for floating softphone and dev HUD triggers */}
 			<div className="h-24 w-full" aria-hidden="true" />
+
+			<MarketingRoiModal
+				isOpen={isMarketingRoiOpen}
+				onClose={() => setIsMarketingRoiOpen(false)}
+			/>
 		</section>
 	);
 }

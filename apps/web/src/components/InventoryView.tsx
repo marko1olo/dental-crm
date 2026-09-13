@@ -8,6 +8,7 @@ import {
 	Package,
 	PackageCheck,
 	Plus,
+	QrCode,
 	Search,
 	Settings,
 	ShieldCheck,
@@ -16,6 +17,7 @@ import {
 	Trash2,
 	TrendingUp,
 	Truck,
+	Warehouse,
 	X,
 } from "lucide-react";
 import React, { useState } from "react";
@@ -30,6 +32,9 @@ import { ClinicalWriteoffModal } from "./inventory/writeoff/ClinicalWriteoffModa
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal";
 import { MdlpDisposalQueueModal } from "./inventory/mdlp/index.js";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar";
+import { WarehouseManagerModal } from "./inventory/WarehouseManagerModal";
+import { NurseCarpuleDisposalModal } from "./inventory/NurseCarpuleDisposalModal";
+import { MdlpScanningModal } from "./mdlp/MdlpScanningModal";
 
 /**
  * Как показать срок годности расходника.
@@ -182,6 +187,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
+	const [isWarehouseManagerOpen, setIsWarehouseManagerOpen] = useState(false);
+	const [isNurseCarpuleDisposalOpen, setIsNurseCarpuleDisposalOpen] = useState(false);
+	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const opsMenuRef = React.useRef<HTMLDivElement>(null);
 	const [activeMenuRowId, setActiveMenuRowId] = useState<string | null>(null);
@@ -590,6 +598,95 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										}}
 										role="menu"
 									>
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="warehouse-manager-trigger"
+											onClick={() => {
+												setIsWarehouseManagerOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Управление складами и остатками: экспресс-пресеты, овердрафт и списание"
+											role="menuitem"
+										>
+											<Warehouse size={16} className="text-teal-600 shrink-0" />
+											<span>Управление складами и остатками</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-carpule-disposal-trigger"
+											onClick={() => {
+												setIsNurseCarpuleDisposalOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Списание карпул анестетиков медсестрой в 1 клик (Мандат 8e)"
+											role="menuitem"
+										>
+											<Syringe size={16} className="text-teal-600 shrink-0" />
+											<span>Списание карпул (медсестра)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="mdlp-scanning-trigger"
+											onClick={() => {
+												setIsMdlpScanningOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Честный Знак / МДЛП сканирование DataMatrix кодов (Схемы 701/531)"
+											role="menuitem"
+										>
+											<QrCode size={16} className="text-teal-600 shrink-0" />
+											<span>Честный Знак / МДЛП сканирование</span>
+										</button>
 										<button
 											type="button"
 											className="secondary-button"
@@ -2303,6 +2400,32 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					setIsMdlpDisposalOpen(false);
 					fetchItems();
 				}}
+			/>
+
+			<WarehouseManagerModal
+				isOpen={isWarehouseManagerOpen}
+				onClose={() => setIsWarehouseManagerOpen(false)}
+				initialItems={items}
+				onConfirmWriteoff={async () => {
+					setIsWarehouseManagerOpen(false);
+					fetchItems();
+				}}
+			/>
+
+			<NurseCarpuleDisposalModal
+				isOpen={isNurseCarpuleDisposalOpen}
+				onClose={() => setIsNurseCarpuleDisposalOpen(false)}
+				currentStockAvailable={items.reduce((acc, it) => (it.name.toLowerCase().includes("анесте") || it.name.toLowerCase().includes("убистезин") || it.name.toLowerCase().includes("артикаин") ? acc + Number(it.stockQuantity || 0) : acc), 0)}
+				onDisposalConfirmed={async () => {
+					setIsNurseCarpuleDisposalOpen(false);
+					fetchItems();
+				}}
+			/>
+
+			<MdlpScanningModal
+				isOpen={isMdlpScanningOpen}
+				onClose={() => setIsMdlpScanningOpen(false)}
+				initialMode="disposal_531"
 			/>
 		</div>
 	);

@@ -13,12 +13,12 @@ import {
 } from "./panoramicMprMath";
 
 interface Props {
-	huSamples?: number[]; // HU values sampled along the implant axis
-	implantDiameterMm?: number;
-	implantLengthMm?: number;
-	implantSystem?: ImplantSystem;
-	toothFdi?: number;
-	onSystemChange?: (s: ImplantSystem) => void;
+	huSamples?: number[] | undefined; // HU values sampled along the implant axis
+	implantDiameterMm?: number | undefined;
+	implantLengthMm?: number | undefined;
+	implantSystem?: ImplantSystem | undefined;
+	toothFdi?: number | undefined;
+	onSystemChange?: ((s: ImplantSystem) => void) | undefined;
 }
 
 const SYSTEMS: { value: ImplantSystem; label: string }[] = [

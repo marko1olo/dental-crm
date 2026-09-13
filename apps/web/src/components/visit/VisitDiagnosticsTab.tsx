@@ -1,4 +1,4 @@
-import { Activity, Camera, FileText, Image as ImageIcon, Layers, Plus, Scan, Trash2 } from "lucide-react";
+import { Activity, Camera, FileText, FolderInput, Image as ImageIcon, Layers, Plus, Scan, Trash2 } from "lucide-react";
 import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
@@ -12,6 +12,9 @@ import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocol
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
+import { DirectRvgCaptureModal } from "../radiology/DirectRvgCaptureModal";
+import { DicomViewerModal } from "../imaging/DicomViewerModal";
+import { HotFolderIntakeModal } from "../radiology/HotFolderIntakeModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
 	type ClinicalPhotoAttachment,
@@ -42,6 +45,9 @@ export function VisitDiagnosticsTab(props?: {
 	const [isPhotoProtocolModalOpen, setIsPhotoProtocolModalOpen] = useState<boolean>(false);
 	const [isCbctModalOpen, setIsCbctModalOpen] = useState<boolean>(false);
 	const [isImplantPassportModalOpen, setIsImplantPassportModalOpen] = useState<boolean>(false);
+	const [isDirectRvgModalOpen, setIsDirectRvgModalOpen] = useState<boolean>(false);
+	const [isDicomViewerModalOpen, setIsDicomViewerModalOpen] = useState<boolean>(false);
+	const [isHotFolderModalOpen, setIsHotFolderModalOpen] = useState<boolean>(false);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
 	const initialToothNumber = Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) || 16;
@@ -471,6 +477,33 @@ export function VisitDiagnosticsTab(props?: {
 					<Layers size={16} />
 					<span>Эндодонтия: Журнал длины каналов (WL)</span>
 				</button>
+				<button
+					type="button"
+					onClick={() => setIsDirectRvgModalOpen(true)}
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					data-testid="btn-open-direct-rvg-modal"
+				>
+					<Camera size={16} />
+					<span>Прямой снимок с визиографа (RVG)</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => setIsDicomViewerModalOpen(true)}
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-sky-600 hover:bg-sky-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					data-testid="btn-open-dicom-viewer-modal"
+				>
+					<ImageIcon size={16} />
+					<span>Просмотр DICOM / КТ-серии</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => setIsHotFolderModalOpen(true)}
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-violet-600 hover:bg-violet-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					data-testid="btn-open-hot-folder-modal"
+				>
+					<FolderInput size={16} />
+					<span>Импорт из Hot Folder (EzDent / Romexis)</span>
+				</button>
 			</div>
 
 			{/* Orthodontic Cephalometric Modal */}
@@ -609,6 +642,65 @@ export function VisitDiagnosticsTab(props?: {
 							);
 						} catch {
 							// ignore
+						}
+					}}
+				/>
+			)}
+
+			{/* Direct Visiograph (RVG) Sensor Capture Modal */}
+			{isDirectRvgModalOpen && (
+				<DirectRvgCaptureModal
+					isOpen={isDirectRvgModalOpen}
+					onClose={() => setIsDirectRvgModalOpen(false)}
+					patientId={visitPatientId ?? activePatient?.id}
+					patientName={visitPatientName ?? activePatient?.fullName}
+					patientCardNumber={activePatient?.cardNumber || activePatient?.medCardNumber}
+					doctorName={dashboard?.activeDoctor?.fullName || "Врач-стоматолог"}
+					initialToothFdi={initialToothNumber ? String(initialToothNumber) : undefined}
+					onSaveToEmr={(study) => {
+						const toothStr = study.teethFdi?.[0] || (initialToothNumber ? String(initialToothNumber) : "—");
+						const logText = `[Визиограф RVG] Снимок зуба #${toothStr}: доза ${study.effectiveDoseMicrosv || 0} мкЗв. Сохранен в ЭМК.`;
+						if (props?.onInsertToProtocol) {
+							props.onInsertToProtocol(logText);
+						} else if (typeof ctx?.appendToTranscript === "function") {
+							ctx.appendToTranscript(`\n\n${logText}`);
+						}
+					}}
+				/>
+			)}
+
+			{/* DICOM / CT Series Examination Modal */}
+			{isDicomViewerModalOpen && (
+				<DicomViewerModal
+					isOpen={isDicomViewerModalOpen}
+					onClose={() => setIsDicomViewerModalOpen(false)}
+					patientName={visitPatientName ?? activePatient?.fullName}
+					toothFdiCode={initialToothNumber ? String(initialToothNumber) : undefined}
+					onInsertToProtocol={(text) => {
+						if (props?.onInsertToProtocol) {
+							props.onInsertToProtocol(text);
+						} else if (typeof ctx?.appendToTranscript === "function") {
+							ctx.appendToTranscript(`\n\n${text}`);
+						}
+					}}
+				/>
+			)}
+
+			{/* Hot Folder Radiology Auto-Intake Modal */}
+			{isHotFolderModalOpen && (
+				<HotFolderIntakeModal
+					isOpen={isHotFolderModalOpen}
+					onClose={() => setIsHotFolderModalOpen(false)}
+					patientId={visitPatientId ?? activePatient?.id}
+					patientName={visitPatientName ?? activePatient?.fullName}
+					patientCardNumber={activePatient?.cardNumber || activePatient?.medCardNumber}
+					doctorName={dashboard?.activeDoctor?.fullName || "Врач-стоматолог"}
+					onAttachToEmr={({ study, teethFdi, protocolNote, doseMicrosv }) => {
+						const logText = `[Hot Folder] Импортирован снимок ${study.modalityLabel || "Рентген"}: ${teethFdi.join(", ") || "б/о"}, доза ${doseMicrosv} мкЗв. ${protocolNote}`;
+						if (props?.onInsertToProtocol) {
+							props.onInsertToProtocol(logText);
+						} else if (typeof ctx?.appendToTranscript === "function") {
+							ctx.appendToTranscript(`\n\n${logText}`);
 						}
 					}}
 				/>
