@@ -16,8 +16,10 @@
 
 import { AIR_HU, trilinear, type VolumeSamplingData } from "./panoramicMprMath";
 
-export type Point2D = [number, number] | { x: number; y: number };
-export type Point3D = [number, number, number] | { x: number; y: number; z: number };
+export type MeasurementPoint2D = [number, number] | { x: number; y: number };
+export type MeasurementPoint3D = [number, number, number] | { x: number; y: number; z: number };
+export type Point2D = MeasurementPoint2D;
+export type Point3D = MeasurementPoint3D;
 
 export type VoxelSpacing2D = [number, number];
 export type VoxelSpacing3D = [number, number, number];

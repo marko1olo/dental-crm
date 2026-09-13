@@ -450,6 +450,7 @@ describe("Panoramic Reconstruction, CPR Math & Implant Safety Engine (Mandates 8
 		assert.equal(planValidation.warnings.length, 2);
 		assert.ok(
 			safeImplant.distanceToNerve !== null &&
+				safeImplant.distanceToNerve !== undefined &&
 				safeImplant.distanceToNerve >= 1.5,
 		);
 	});

@@ -150,8 +150,9 @@ export function AppointmentHoverHud({
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
+								const effectiveName = appointmentPatientName || "Пациент";
 								const text = generateAppointmentWhatsAppMessage({
-									patientName: appointmentPatientName,
+									patientName: effectiveName,
 									doctorName: appointmentDoctor?.fullName,
 									doctorSpecialty: appointmentDoctor?.role,
 									appointmentStartsAt: appointment.startsAt,
@@ -163,7 +164,7 @@ export function AppointmentHoverHud({
 								if (typeof navigator !== "undefined" && navigator.clipboard) {
 									void navigator.clipboard.writeText(text);
 									showToast(
-										`Текст напоминания для ${appointmentPatientName} скопирован в буфер`,
+										`Текст напоминания для ${effectiveName} скопирован в буфер`,
 										"success",
 									);
 								}
