@@ -1965,15 +1965,16 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				aria-label="Сетка расписания по креслам и времени"
 			>
 				<div
-					className="grid min-w-[700px] border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
+					className="grid min-w-full border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
 					style={{
-						gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
+						minWidth: effectiveChairs.length > 1 ? `${Math.max(260, 72 + effectiveChairs.length * 180)}px` : undefined,
+						gridTemplateColumns: `clamp(64px, 15vw, 76px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
 					}}
 				>
 					{/* Time corner header */}
-					<div className="p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
+					<div className="px-1.5 sm:px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
 						<Clock size={14} className="text-[var(--teal)]" />
-						<span>Время</span>
+						<span className="hidden sm:inline">Время</span>
 					</div>
 
 					{/* Chair Column Headers with Visit Count & Doctor Shift Badge */}
@@ -2006,8 +2007,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										style={{ backgroundColor: chairAccentColor }}
 										data-testid={`chair-accent-bar-${chair.id}`}
 									/>
-									<div className="flex items-center justify-center gap-1 flex-wrap">
-										<span className="truncate">{chair.name}</span>
+									<div className="flex items-center justify-center gap-1 flex-wrap w-full min-w-0">
+										<span className="truncate max-w-full">{chair.name}</span>
 										<span
 											className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border shrink-0 transition-colors"
 											style={{
@@ -2227,7 +2228,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full xl:w-auto min-w-[130px] max-w-none whitespace-nowrap cursor-pointer h-6 shrink-0"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full xl:w-auto min-w-0 xl:min-w-[130px] max-w-full cursor-pointer h-6 shrink-0"
 												title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день)"
 												data-testid={`chair-shift-select-${chair.id}`}
 												aria-label={`Смена для ${chair.name}`}
@@ -2246,7 +2247,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									{/* 1-Tap Chair Doctor Quick Popover (StomX Parity, Mandate 8e, 8k, 8n) */}
 									{activeHeaderDoctorPopoverChairId === chair.id && (
 										<div
-											className="absolute top-full left-0 z-50 mt-1 p-3 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xl flex flex-col gap-2.5 min-w-[270px] sm:min-w-[320px] max-w-[340px] text-left normal-case"
+											className="absolute top-full left-0 z-50 mt-1 p-3 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xl flex flex-col gap-2.5 min-w-[260px] sm:min-w-[320px] max-w-[calc(100vw-32px)] text-left normal-case"
 											style={{
 												boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
 												zIndex: 60,
@@ -2620,7 +2621,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									{/* 1-Click Chair Sanitation & Technical Break Popover (Feature 191, Mandates 8e, 8k, 8n) */}
 									{activeHeaderMaintenanceChairId === chair.id && (
 										<div
-											className="absolute top-full left-0 z-50 mt-1 p-3 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xl flex flex-col gap-2 min-w-[260px] text-left normal-case"
+											className="absolute top-full left-0 z-50 mt-1 p-3 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xl flex flex-col gap-2 min-w-[240px] sm:min-w-[260px] max-w-[calc(100vw-32px)] text-left normal-case"
 											style={{
 												boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
 												zIndex: 60,
@@ -3132,13 +3133,14 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					return (
 						<div
 							key={hour}
-							className="grid min-w-[700px] hover:bg-[var(--paper-soft)]/50 transition-colors"
+							className="grid min-w-full hover:bg-[var(--paper-soft)]/50 transition-colors"
 							style={{
-								gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
+								minWidth: effectiveChairs.length > 1 ? `${Math.max(260, 72 + effectiveChairs.length * 180)}px` : undefined,
+								gridTemplateColumns: `clamp(64px, 15vw, 76px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
 							}}
 						>
 							{/* Time label */}
-							<div className="p-3 text-center text-xs font-bold text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center select-none sticky left-0 z-10 bg-[var(--paper)]">
+							<div className="px-1.5 sm:px-3 py-3 text-center text-xs font-bold text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center select-none sticky left-0 z-10 bg-[var(--paper)]">
 								{hour}
 							</div>
 
@@ -3206,11 +3208,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												return (
 													<div
 														key={`continuing-${cA.id}`}
-														className="w-full p-2 rounded-xl border border-dashed border-teal-500/40 bg-teal-500/10 text-teal-900 dark:text-teal-200 text-xs font-semibold flex items-center justify-between gap-1 shadow-2xs select-none"
+														className="w-full p-2 rounded-xl border border-dashed border-teal-500/40 bg-teal-500/10 text-teal-900 dark:text-teal-200 text-xs font-semibold flex items-center justify-between gap-1 shadow-2xs select-none min-w-0"
 														title={`Приём продолжается: ${cPatientName}`}
 														data-testid={`appointment-continuing-${chair.id}-${hour.replace(":", "")}`}
 													>
-														<div className="flex items-center gap-1.5 truncate">
+														<div className="flex items-center gap-1.5 truncate min-w-0">
 															<Clock size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
 															<span className="truncate">Приём продолжается ({cPatientName})</span>
 														</div>
@@ -3232,10 +3234,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												return (
 													<div
 														key={mBlock.id}
-														className="w-full p-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-between gap-1 shadow-2xs"
+														className="w-full p-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-between gap-1 shadow-2xs min-w-0"
 														data-testid={`chair-maintenance-block-${chair.id}`}
 													>
-														<div className="flex items-center gap-1.5 truncate">
+														<div className="flex items-center gap-1.5 truncate min-w-0">
 															<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
 															<span className="truncate">{mReasonLabel} ({mDuration} мин)</span>
 														</div>
@@ -3695,7 +3697,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	onAppointmentClick(a);
 																}
 															}}
-															className="cursor-pointer flex items-center justify-between gap-2"
+															className="cursor-pointer flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-1.5 sm:gap-2 min-w-0"
 															role="button"
 															tabIndex={0}
 															onKeyDown={(e) => {
@@ -3753,7 +3755,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																				setActiveStatusPickerApptId((prev) => (prev === a.id ? null : a.id));
 																			}
 																		}}
-																		className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 ${
+																		className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 max-w-[120px] sm:max-w-none truncate ${
 																			isAppointmentInChair(a.status)
 																				? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 																				: a.status === "arrived"
@@ -3774,12 +3776,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																		{String(a.status).toLowerCase() === "completed" && (
 																			<Check size={11} className="shrink-0 text-current" />
 																		)}
-																		<span>{getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}</span>
+																		<span className="truncate">{getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}</span>
 																	</button>
 
 																	{activeStatusPickerApptId === a.id && onQuickStatusChange && (
 																		<div
-																			className="absolute right-0 top-full mt-1 z-50 p-1.5 rounded-xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[190px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
+																			className="absolute right-0 top-full mt-1 z-50 p-1.5 rounded-xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[190px] max-w-[calc(100vw-32px)] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
 																			onClick={(e) => e.stopPropagation()}
 																			data-testid={`appointment-status-picker-popover-${a.id}`}
 																		>
@@ -3965,7 +3967,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 																{activeMenuApptId === a.id && (
 																	<div
-																		className="absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
+																		className="absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[calc(100vw-32px)] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
 																		onClick={(e) => e.stopPropagation()}
 																	>
 																		<div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1">
