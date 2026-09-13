@@ -1,6 +1,63 @@
 import type { LandmarkPin, MeasurementRuler, RadiologyStudy } from "./types";
 
 export * from "./cbctCaliperNerveMath";
+export {
+	euclideanDistance2D,
+	euclideanDistance3D,
+	polylineLength2D,
+	polylineLength3D,
+	angleDeg2D,
+	angleDeg3D,
+	rectangleAreaMm2,
+	ellipseAreaMm2,
+	circleAreaMm2,
+	circleRadiusMm,
+	computeRoiStats,
+	lineProfileHU,
+	formatDistanceRu,
+	formatAngleRu,
+	formatAreaRu,
+	formatDimensions2DRu,
+	formatDensityRu,
+	type RoiStats,
+	type VoxelSpacing2D,
+	type VoxelSpacing3D,
+	type MeasurementPoint2D,
+	type MeasurementPoint3D,
+} from "../dicom/dicomMeasurementMath";
+export {
+	dot3,
+	cross3,
+	norm3,
+	normalize3,
+	makePlane3D,
+	intersectPlanes3D,
+	clipLineToAABB3D,
+	clipSegment2D,
+	buildCrossSectionFrame,
+	computeAxialIntersections,
+	computeCoronalIntersections,
+	computeSagittalIntersections,
+	computeCrossSectionViewIntersections,
+	computePanoramicIntersections,
+	createSliceIntersectionScratch,
+	type Vector3D,
+	type Plane3D,
+	type Ray3D,
+	type AABB3D,
+	type Segment2D,
+	type Segment3D,
+	type FrenetCrossSectionFrame,
+	type CrossSectionPlaneSpec,
+	type OrthogonalSliceCoordinates,
+	type AxialViewportCutLines,
+	type CoronalViewportCutLines,
+	type SagittalViewportCutLines,
+	type CrossSectionViewportCutLines,
+	type PanoramicViewportCutLines,
+	type SliceIntersectionScratch,
+} from "../dicom/sliceIntersectionMath";
+
 
 /**
  * Расчет физического расстояния в миллиметрах между двумя точками на снимке.
