@@ -4984,8 +4984,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			aria-modal="true"
 			aria-labelledby={`cbct-studio-title-${modalId}`}
 			data-theme="dark"
-			className="fixed inset-0 z-[100] flex flex-col bg-[#09090b] text-zinc-100 font-sans select-none overflow-hidden w-full max-w-full h-full min-w-0"
-			style={{ color: "#f4f4f5", backgroundColor: "#09090b" }}
+			className="fixed inset-0 z-[100] flex flex-col bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden w-full max-w-full h-full min-w-0"
 		>
 			{/* Real DICOM Ingestion Controls (Hidden file inputs for Left Tool Dock) */}
 			<input
@@ -5010,47 +5009,41 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER — TRUE DARK MANDATE) ─── */}
 			<header
 				data-theme="dark"
-				className="min-h-14 px-2 sm:px-4 py-1.5 bg-[#09090b] border-b border-zinc-800 flex items-center justify-between shrink-0 gap-2 sm:gap-3 text-zinc-200 overflow-x-auto min-w-0 w-full max-w-full"
-				style={{ color: "#f4f4f5", backgroundColor: "#09090b" }}
+				className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-200 overflow-x-auto min-w-0 w-full max-w-full"
 			>
 				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
-				<div className="flex items-center gap-2.5 shrink-0 min-w-max">
-					<div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
-						<Box className="w-4 h-4" />
+				<div className="flex items-center gap-2 shrink-0 min-w-max">
+					<div className="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+						<Box className="w-3.5 h-3.5" />
 					</div>
-					<div className="flex flex-col min-w-0">
-						<div className="flex items-center gap-2">
+					<div className="flex flex-col min-w-0 justify-center">
+						<div className="flex items-center gap-1.5">
 							<h2
 								id={`cbct-studio-title-${modalId}`}
 								className="text-xs font-bold text-zinc-100 tracking-wide flex items-center gap-1.5 whitespace-nowrap"
-								style={{ color: "#f4f4f5" }}
 							>
 								3D CBCT Studio
-								<span
-									className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300 font-mono border border-zinc-800"
-									style={{ color: "#d4d4d8" }}
-								>
+								<span className="text-[9px] px-1 py-0.2 rounded bg-zinc-900 text-zinc-300 font-mono border border-zinc-800">
 									Romexis 6 / Ez3D-i
 								</span>
 							</h2>
 						</div>
 						<p
-							className="text-[10px] text-zinc-400 whitespace-nowrap"
+							className="text-[10px] text-zinc-400 whitespace-nowrap leading-none"
 							data-testid="cbct-patient-metadata-badge"
 							id="cbct-patient-metadata-badge"
-							style={{ color: "#a1a1aa" }}
 						>
-							{patientDisplayName || resolvedPatientName} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм изотропный воксель
+							{patientDisplayName || resolvedPatientName} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм
 						</p>
 					</div>
 				</div>
 
 				{/* Center: 4 Clean Workspace Modes (Romexis Segmented Switcher) */}
-				<div className="flex items-center bg-[#000000] p-1 rounded-lg border border-zinc-800 shrink-0 gap-1">
+				<div className="flex items-center bg-zinc-950 p-0.5 rounded-lg border border-zinc-800 shrink-0 gap-0.5">
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("diagnostic")}
-						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
 							studioMode === "diagnostic"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
 								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
@@ -5059,12 +5052,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						title="Режим общей 3D диагностики (панель свернута)"
 					>
 						<Search className="w-3.5 h-3.5 text-cyan-400" />
-						<span>Диагностика</span>
-					</button>
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("implant")}
-						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
 							studioMode === "implant"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
 								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
@@ -5078,7 +5069,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("endo")}
-						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
 							studioMode === "endo"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
 								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
@@ -5092,7 +5083,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("tmj")}
-						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
 							studioMode === "tmj"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
 								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
@@ -5106,36 +5097,36 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</div>
 
 				{/* Right: Layout Switcher, Sidebar Toggle with Indicator, Maximize, Close */}
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0">
 					{/* 1-Click Reset View (Zoom 100%, Pan center, Oblique 0°, Contrast Bone, clear rulers) */}
 					<button
 						type="button"
 						onClick={handleResetAll}
-						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
+						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-reset-view"
 						title="Сбросить масштаб (100%), панораму (центр), наклон осей (0°) и контраст"
 					>
 						<RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-						<span>Сброс вида</span>
+						<span>Сброс</span>
 					</button>
 
 					{/* 1-Click Auto Dental Arch Extraction Button */}
 					<button
 						type="button"
 						onClick={handleAutoDetectArch}
-						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors cursor-pointer"
+						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-auto-arch"
 						title="Сгенерировать дугу автоматически по плотности эмали и кортикального гребня"
 					>
 						<Sliders className="w-3.5 h-3.5 text-purple-400" />
-						<span>Сгенерировать дугу автоматически</span>
+						<span>Автодуга</span>
 					</button>
 
 					{/* 1-Click Toggle Dental Arch Spline on All Viewports */}
 					<button
 						type="button"
 						onClick={() => setShowDentalArch((prev) => !prev)}
-						className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 border shadow-xs transition-colors cursor-pointer ${
+						className={`px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border shadow-xs transition-colors cursor-pointer ${
 							showDentalArch
 								? "bg-purple-950/60 text-purple-200 border-purple-500/80 shadow-purple-950/40"
 								: "bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border-zinc-800"
@@ -5151,7 +5142,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={handleExportToEmr}
-						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 hover:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400 shadow-xs transition-colors cursor-pointer"
+						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 hover:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400 shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-export-emr"
 						title="Сохранить снимок и протокол планирования в карту 043/у"
 					>
@@ -5163,33 +5154,33 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={handleExportPdfReport}
-						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
+						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-export-pdf"
 						title="Сформировать печатный A4 протокол планирования / PDF"
 					>
 						<FileText className="w-3.5 h-3.5" />
-						<span>PDF Отчет</span>
+						<span>PDF</span>
 					</button>
 
 					{/* Layout Switcher */}
-					<div className="flex items-center bg-[#000000] p-1 rounded-lg border border-zinc-800 shrink-0 gap-1">
+					<div className="flex items-center bg-zinc-950 p-0.5 rounded border border-zinc-800 shrink-0 gap-0.5">
 						{maximizedViewport !== null ? (
 							<button
 								type="button"
 								onClick={() => setMaximizedViewport(null)}
-								className="whitespace-nowrap shrink-0 px-3 py-2 rounded-md text-xs font-bold min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs transition-colors cursor-pointer"
+								className="whitespace-nowrap shrink-0 px-2 py-1 rounded text-xs font-bold h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs transition-colors cursor-pointer"
 								data-testid="cbct-restore-grid-btn"
 								title="Восстановить сетку окон (2x2)"
 							>
-								<Minimize2 className="w-4 h-4 shrink-0" />
-								<span className="whitespace-nowrap">⤢ Восстановить (2x2)</span>
+								<Minimize2 className="w-3.5 h-3.5 shrink-0" />
+								<span className="whitespace-nowrap">2x2</span>
 							</button>
 						) : (
 							<>
 								<button
 									type="button"
 									onClick={() => setViewLayout("quad_view")}
-									className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+									className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 										viewLayout === "quad_view"
 											? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
 											: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
@@ -5197,13 +5188,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									data-testid="cbct-layout-quad-btn"
 									title="Сетка 4 окна (2x2)"
 								>
-									<Grid2X2 className="w-4 h-4" />
+									<Grid2X2 className="w-3.5 h-3.5" />
 									<span>4 окна</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setViewLayout("layout_1_plus_3")}
-									className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+									className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 										viewLayout === "layout_1_plus_3"
 											? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
 											: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
@@ -5211,7 +5202,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									data-testid="cbct-layout-1plus3-btn"
 									title="Раскладка 1+3 (Доминантный аксиал)"
 								>
-									<Columns2 className="w-4 h-4" />
+									<Columns2 className="w-3.5 h-3.5" />
 									<span>1+3</span>
 								</button>
 							</>
@@ -5222,53 +5213,53 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={() => setIsSidebarOpen((prev) => !prev)}
-						className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors border shadow-xs ${
+						className={`px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors border shadow-xs ${
 							isSidebarOpen
 								? "bg-zinc-900 text-cyan-400 border-cyan-500/60"
-								: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900"
+								: "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900"
 						}`}
 						title={isSidebarOpen ? "Скрыть боковую панель" : "Показать боковую панель"}
 						data-testid="cbct-toggle-sidebar-btn"
 					>
-						<span className={`w-2 h-2 rounded-full transition-colors ${isSidebarOpen ? "bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" : "bg-zinc-500"}`} />
-						<Columns2 className="w-4 h-4" />
+						<span className={`w-1.5 h-1.5 rounded-full transition-colors ${isSidebarOpen ? "bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" : "bg-zinc-500"}`} />
+						<Columns2 className="w-3.5 h-3.5" />
 						<span>Панель</span>
 					</button>
 
-					{/* Window Control Actions: Maximize & Close with comfortable spacing */}
-					<div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-zinc-800 shrink-0">
+					{/* Window Control Actions: Maximize & Close */}
+					<div className="flex items-center gap-1 pl-1.5 border-l border-zinc-800 shrink-0">
 						{/* Modal Maximize / Fullscreen Button */}
 						<button
 							type="button"
 							onClick={handleToggleFullscreenModal}
-							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-md flex items-center justify-center border transition-colors ${
+							className={`w-7 h-7 min-h-0 min-w-0 rounded flex items-center justify-center border transition-colors ${
 								isFullscreen
 									? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
-									: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border-zinc-800"
+									: "bg-zinc-950 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border-zinc-800"
 							}`}
 							title={isFullscreen ? "Свернуть из полноэкранного режима" : "Развернуть на весь экран"}
 							aria-label="Полноэкранный режим"
 							data-testid="cbct-modal-maximize-btn"
 						>
-							{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+							{isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
 						</button>
 
 						{/* Modal Close Button */}
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center border border-zinc-800 transition-colors"
+							className="w-7 h-7 min-h-0 min-w-0 rounded bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center border border-zinc-800 transition-colors"
 							aria-label="Закрыть КЛКТ студию"
 							data-testid="close-cbct-mpr-3d-studio-btn"
 						>
-							<X className="w-5 h-5" />
+							<X className="w-4 h-4" />
 						</button>
 					</div>
 				</div>
 			</header>
 
 			{/* ─── MOBILE VIEWPORT TABS (VISIBLE ONLY ON < LG SCREENS) ─────────── */}
-			<div className="lg:hidden flex items-center bg-[#09090b] border-b border-zinc-800 p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0 w-full max-w-full">
+			<div className="lg:hidden flex items-center bg-zinc-950 border-b border-zinc-800 p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0 w-full max-w-full">
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("axial")}
@@ -5276,7 +5267,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "axial"
 							? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
-							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
+							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-cyan-400" />
@@ -5289,7 +5280,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "coronal"
 							? "bg-zinc-900 text-orange-400 border-orange-500/60 shadow-xs"
-							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
+							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-orange-500" />
@@ -5302,7 +5293,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "sagittal"
 							? "bg-zinc-900 text-emerald-400 border-emerald-500/60 shadow-xs"
-							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
+							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
@@ -5315,7 +5306,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "panoramic"
 							? "bg-zinc-900 text-purple-400 border-purple-500/60 shadow-xs"
-							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
+							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-purple-500" />
@@ -5331,7 +5322,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "planner"
 							? "bg-zinc-900 text-yellow-400 border-yellow-500/60 shadow-xs"
-							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
+							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-yellow-400" />
@@ -5363,7 +5354,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				/>
 
 				{/* ─── VIEWPORTS & SIDEBAR GRID (COLS 1..12) ───────────────────── */}
-				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#000000] min-h-0 min-w-0 w-full max-w-full overflow-hidden">
+				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-zinc-950 min-h-0 min-w-0 w-full max-w-full overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
 				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all`}>
 					{maximizedViewport !== null ? (
@@ -5397,7 +5388,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 				{/* ─── RIGHT SIDEBAR: DIAGNOSTIC INSPECTOR & IMPLANT PLANNER (COLS 9..12) ─── */}
 				{(isSidebarOpen || mobileActiveTab === "planner") && (
-					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full" : "hidden lg:flex lg:flex-col"} bg-[#09090b] rounded-md border border-zinc-800 min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}>
+					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full" : "hidden lg:flex lg:flex-col"} bg-zinc-950 rounded-md border border-zinc-800 min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}>
 						{/* Active Cross-Section Carousel Header */}
 						<div className="flex items-center justify-between pb-2 border-b border-zinc-800">
 							<div className="flex items-center gap-2">
@@ -5427,7 +5418,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								<button
 									type="button"
 									onClick={() => setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))}
-									className="p-2.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
+									className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
 									title="Предыдущий срез"
 								>
 									<ChevronLeft className="w-5 h-5" />
@@ -5435,7 +5426,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								<button
 									type="button"
 									onClick={() => setActiveCrossSectionIdx((prev) => Math.min(crossSections.length - 1, prev + 1))}
-									className="p-2.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
+									className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
 									title="Следующий срез"
 								>
 									<ChevronRight className="w-5 h-5" />
@@ -5443,7 +5434,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								<button
 									type="button"
 									onClick={() => setIsSidebarOpen(false)}
-									className="p-2.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs ml-1"
+									className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs ml-1"
 									title="Скрыть панель"
 									data-testid="cbct-close-sidebar-btn"
 								>
@@ -5492,7 +5483,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						</CbctViewportHud>
 
 						{/* Quick Ridge Measurements Badge (compact matte HUD) */}
-						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm text-[10px] text-zinc-400 border border-zinc-800 font-mono shadow-xs flex items-center gap-2">
+						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-zinc-950/90 backdrop-blur-sm text-[10px] text-zinc-400 border border-zinc-800 font-mono shadow-xs flex items-center gap-2">
 							<span>H: <strong className="text-cyan-400">{activeCrossSection?.corticalCrestHeightMm ?? 14.2} мм</strong></span>
 							<span>W: <strong className="text-cyan-400">{activeCrossSection?.alveolarRidgeWidthMm ?? 7.8} мм</strong></span>
 						</div>
@@ -5502,7 +5493,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					{studioMode !== "implant" ? (
 						<div className="flex flex-col gap-3">
 							{/* Diagnostic HU & Tissue Structure Inspector */}
-							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
 								<div className="flex items-center justify-between text-xs">
 									<span className="font-bold text-zinc-100">Плотность в курсоре:</span>
 									<span className="px-2.5 py-1 rounded bg-zinc-900 text-cyan-400 font-mono font-bold border border-cyan-500/60">
@@ -5521,7 +5512,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</div>
 
 							{/* Radiological Anatomical Inspection Checklist */}
-							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
 								<div className="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
 									<Search className="w-4 h-4 text-cyan-400" />
 									<span>
@@ -5533,15 +5524,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									</span>
 								</div>
 								<div className="flex flex-col gap-1.5 text-[11px] text-zinc-400">
-									<div className="flex items-center gap-2.5 p-2 rounded bg-[#09090b] border border-zinc-800">
+									<div className="flex items-center gap-2.5 p-2 rounded bg-zinc-900 border border-zinc-800">
 										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
 										<span className="text-zinc-100">Кортикальные пластинки & гребень сохранны</span>
 									</div>
-									<div className="flex items-center gap-2.5 p-2 rounded bg-[#09090b] border border-zinc-800">
+									<div className="flex items-center gap-2.5 p-2 rounded bg-zinc-900 border border-zinc-800">
 										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
 										<span className="text-zinc-100">Периодонтальная щель & апексы корней</span>
 									</div>
-									<div className="flex items-center gap-2.5 p-2 rounded bg-[#09090b] border border-zinc-800">
+									<div className="flex items-center gap-2.5 p-2 rounded bg-zinc-900 border border-zinc-800">
 										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
 										<span className="text-zinc-100">Пневматизация синуса / канал IAN</span>
 									</div>
@@ -5565,7 +5556,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					) : (
 						<div className="flex flex-col gap-3">
 							{/* ─── 1-CLICK TOOTH FORMULA SELECTOR ───────────────────────── */}
-							<div className="p-2.5 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-1.5">
+							<div className="p-2.5 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-1.5">
 								<div className="text-[11px] font-bold text-zinc-400 flex items-center justify-between">
 									<span>Выбор позиции зуба (FDI):</span>
 									<span className="text-cyan-400 font-mono">#{activeCrossSection?.nearestToothFdi ?? "46"}</span>
@@ -5583,7 +5574,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 													className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
 														isTarget
 															? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
-															: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
+															: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 													}`}
 												>
 													{fdi}
@@ -5603,7 +5594,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 													className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
 														isTarget
 															? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
-															: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
+															: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 													}`}
 												>
 													{fdi}
@@ -5655,14 +5646,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							})()}
 
 							{/* ─── MISCH BONE DENSITY (HU) & DRILLING PROTOCOL ────────────── */}
-							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
 								<div className="flex items-center justify-between text-xs">
 									<span className="font-bold text-zinc-400">Плотность кости (Misch):</span>
 									<span className="px-2 py-1 rounded bg-zinc-900 text-cyan-400 font-bold border border-cyan-500/60">
 										Класс {mischClassification.mischClass} ({huSamplingResult.overallMeanHU} HU)
 									</span>
 								</div>
-								<div className="grid grid-cols-3 gap-1.5 text-center text-[10px] bg-[#09090b] p-2 rounded border border-zinc-800">
+								<div className="grid grid-cols-3 gap-1.5 text-center text-[10px] bg-zinc-900 p-2 rounded border border-zinc-800">
 									<div>
 										<div className="text-zinc-400">Кортекс</div>
 										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.coronalCrestalHU} HU</div>
@@ -5691,7 +5682,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</div>
 
 							{/* ─── 3D MANDIBULAR NERVE TRACER PANEL (IAN 3D SPLINE) ────────── */}
-							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
 								<div className="flex items-center justify-between text-xs">
 									<span className="font-bold text-zinc-400 flex items-center gap-1.5">
 										<Activity className="w-3.5 h-3.5 text-amber-400" />
@@ -5702,7 +5693,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									</span>
 								</div>
 
-								<div className="text-[11px] text-zinc-400 bg-[#09090b] p-2 rounded border border-zinc-800 flex flex-col gap-1">
+								<div className="text-[11px] text-zinc-400 bg-zinc-900 p-2 rounded border border-zinc-800 flex flex-col gap-1">
 									<div className="flex justify-between items-center">
 										<span>Выбранный узел:</span>
 										<span className="font-bold font-mono text-zinc-100">
@@ -5728,8 +5719,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 												showToast("Удален последний узел нерва", "info");
 											}
 										}}
-										disabled={selectedNerveNodeIdx === null || selectedNerveNodeIdx < 0 || selectedNerveNodeIdx >= nervePoints.length}
-										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+										disabled={nervePoints.length === 0}
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
 										data-testid="cbct-delete-nerve-node-btn"
 										title="Удалить выбранный или последний узел (Backspace)"
 									>
@@ -5745,7 +5736,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											showToast("Трасса канала IAN сброшена", "info");
 										}}
 										disabled={nervePoints.length === 0}
-										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
 										data-testid="cbct-reset-nerve-trace-btn"
 										title="Очистить все точки канала нерва"
 									>
@@ -5760,7 +5751,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</div>
 
 							{/* ─── VIRTUAL IMPLANT CALIPER SELECTION ───────────────────────── */}
-							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2.5" data-testid="cbct-selected-implant-card">
+							<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2.5" data-testid="cbct-selected-implant-card">
 								<div className="flex items-center justify-between">
 									<div className="text-xs font-bold text-zinc-300">Выбор имплантата (Библиотека):</div>
 									<div className="text-xs font-mono font-bold text-cyan-400">
@@ -5770,7 +5761,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 								{/* ─── LIVE MISCH BONE DENSITY & SAFETY HUD BADGE (МАНДАТ 8e) ─── */}
 								<div
-									className="p-2.5 rounded-md bg-[#09090b] border border-zinc-800 flex flex-col gap-2 shadow-xs"
+									className="p-2.5 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2 shadow-xs"
 									data-testid="cbct-implant-live-telemetry-hud"
 								>
 									<div className="flex items-center justify-between text-xs">
@@ -5834,7 +5825,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											className={`py-2 px-1 rounded-md text-xs font-bold capitalize min-h-[44px] transition-colors border flex items-center justify-center ${
 												selectedBrand === b
 													? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
-													: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 border-zinc-800 hover:bg-zinc-900"
+													: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 border-zinc-800 hover:bg-zinc-800"
 											}`}
 										>
 											{b === "straumann" ? "Straumann" : b === "nobel_biocare" ? "Nobel" : b === "osstem" ? "Osstem" : "Dentium"}
@@ -5953,7 +5944,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 												setImplantAngulationDeg(0);
 												showToast("Положение имплантата центрировано на гребне", "info");
 											}}
-											className="py-2 px-1.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
+											className="py-2 px-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
 											data-testid="reset-center-btn"
 											title="Центрировать имплантат на гребне"
 										>

@@ -909,9 +909,9 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 .topbar-clinic {
 	display: flex;
 	flex-direction: column;
-	min-width: 0;
+	min-width: 140px !important;
 	max-width: 220px;
-	flex-shrink: 1;
+	flex-shrink: 0 !important;
 }
 .topbar h1 {
 	margin: 0;
@@ -2031,7 +2031,7 @@ details summary:hover {
 	flex-wrap: nowrap;
 	min-width: 0;
 	flex: 1 1 auto;
-	overflow: hidden;
+	overflow: visible;
 }
 
 .topbar-clinic h1 {

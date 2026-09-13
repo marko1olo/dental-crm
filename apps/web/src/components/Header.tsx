@@ -198,7 +198,7 @@ export function ClinicControlPill({
 					) : (
 						<Phone size={12} className="opacity-80" />
 					)}
-					<span className="hidden xl:inline">АТС</span>
+					<span className="hidden 2xl:inline">АТС</span>
 					{activeCall ? (
 						<span className="px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-500 text-white animate-pulse">
 							Звонок
@@ -227,7 +227,7 @@ export function ClinicControlPill({
 					title={`Касса 54-ФЗ: ККТ АТОЛ / Штрих-М Онлайн — Смена открыта (${formattedShiftTime})`}
 				>
 					<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
-					<span className="hidden xl:inline">54-ФЗ</span>
+					<span className="hidden 2xl:inline">54-ФЗ</span>
 					<span className="dnt-pill-dot dnt-pill-dot--online" />
 					<span className="font-mono text-[10px] opacity-90 hidden 2xl:inline">{formattedShiftTime}</span>
 				</span>
@@ -243,7 +243,7 @@ export function ClinicControlPill({
 						size={12}
 						className={`${isSyncing ? "animate-spin text-amber-400" : isOnline ? "text-emerald-500" : "text-rose-500"}`}
 					/>
-					<span className="hidden xl:inline">{isOnline ? "БД" : "Офлайн"}</span>
+					<span className="hidden 2xl:inline">{isOnline ? "БД" : "Офлайн"}</span>
 					<span
 						className={`dnt-pill-dot ${isOnline ? "dnt-pill-dot--online" : "dnt-pill-dot--offline"}`}
 					/>
