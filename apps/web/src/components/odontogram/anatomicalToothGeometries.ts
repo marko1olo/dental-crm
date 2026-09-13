@@ -420,7 +420,7 @@ export const RESTORATIVE_MATERIALS: Record<
 		hexShaderId: "implant-hex-gradient",
 		microgroovePatternId: "implant-microgrooves-pattern",
 		strokeColor: "#334155",
-		badgeColor: "#64748b",
+		badgeColor: "#6366f1",
 	},
 };
 

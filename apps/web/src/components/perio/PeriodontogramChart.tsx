@@ -2021,7 +2021,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 										type="button"
 										disabled={readOnly}
 										onClick={() => handleKeypadDepth(numVal)}
-										className={`min-w-[32px] sm:min-w-[38px] h-9 rounded-lg font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center border ${
+										className={`min-w-[44px] min-h-[44px] sm:min-w-[38px] sm:min-h-0 sm:h-9 rounded-lg font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center border ${
 											isNorm
 												? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/30"
 												: isMod
@@ -2042,7 +2042,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								type="button"
 								disabled={readOnly}
 								onClick={handleKeypadToggleBop}
-								className={`px-2.5 h-9 rounded-lg font-bold text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer border ${
+								className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer border ${
 									focusedSite &&
 									toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]
 										?.bleedingOnProbing
@@ -2059,7 +2059,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								type="button"
 								disabled={readOnly}
 								onClick={handleKeypadTogglePlaque}
-								className={`px-2.5 h-9 rounded-lg font-bold text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer border ${
+								className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer border ${
 									focusedSite &&
 									toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]
 										?.plaque
@@ -2075,7 +2075,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								type="button"
 								disabled={readOnly}
 								onClick={handleKeypadToggleSuppuration}
-								className={`px-2 h-9 rounded-lg font-bold text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer border ${
+								className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-9 px-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer border ${
 									focusedSite &&
 									toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]
 										?.suppuration
@@ -2093,7 +2093,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							<button
 								type="button"
 								onClick={moveToPreviousSite}
-								className="w-8 h-9 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-slate-300 border border-[var(--line)] font-bold text-xs flex items-center justify-center cursor-pointer"
+								className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-9 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-slate-300 border border-[var(--line)] font-bold text-xs flex items-center justify-center cursor-pointer"
 								title="Предыдущая точка (хоткей: Стрелка влево / Shift+Tab)"
 							>
 								←
@@ -2101,7 +2101,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							<button
 								type="button"
 								onClick={moveToNextSite}
-								className="w-8 h-9 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-teal-300 border border-[var(--line)] font-bold text-xs flex items-center justify-center cursor-pointer"
+								className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-9 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-teal-300 border border-[var(--line)] font-bold text-xs flex items-center justify-center cursor-pointer"
 								title="Следующая точка (хоткей: Стрелка вправо / Tab)"
 							>
 								→
@@ -2800,7 +2800,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 	return (
 		<div
 			onClick={onSelectTooth}
-			className={`flex flex-col items-center p-1 rounded-lg border transition-all cursor-pointer ${
+			className={`flex flex-col items-center p-1 rounded-lg border transition-all cursor-pointer min-h-[140px] sm:min-h-[150px] ${
 				isMissing
 					? "opacity-35 bg-zinc-900/50 border-zinc-800"
 					: isSelected

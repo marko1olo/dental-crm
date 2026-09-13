@@ -201,23 +201,23 @@ const getAnatomicalToothColors = (
 				fill: "url(#zirconia-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#eab308",
+				stroke: "#10b981",
 				collarFill: "url(#dente-cervical-collar)",
 				opacity: "1",
-				badgeColor: "#eab308",
-				badgeBg: "rgba(234, 179, 8, 0.15)",
-				badgeText: "#a16207",
+				badgeColor: "#10b981",
+				badgeBg: "rgba(16, 185, 129, 0.15)",
+				badgeText: "#065f46",
 			};
 		case "Implant":
 			return {
 				fill: "url(#gold-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#334155",
+				stroke: "#6366f1",
 				opacity: "1",
-				badgeColor: "#64748b",
-				badgeBg: "rgba(100, 116, 139, 0.15)",
-				badgeText: "#334155",
+				badgeColor: "#6366f1",
+				badgeBg: "rgba(99, 102, 241, 0.15)",
+				badgeText: "#4f46e5",
 			};
 		case "Planned_Implant":
 			return {
@@ -236,12 +236,12 @@ const getAnatomicalToothColors = (
 				fill: "transparent",
 				crownFill: "none",
 				rootFill: "none",
-				stroke: "var(--tooth-root-stroke, #94a3b8)",
+				stroke: "var(--tooth-root-stroke, #64748b)",
 				opacity: "0.12",
 				isMissing: true,
-				badgeColor: "#94a3b8",
-				badgeBg: "rgba(148, 163, 184, 0.15)",
-				badgeText: "#64748b",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Retained":
 			return {
@@ -2094,28 +2094,28 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 				<div className="tooth-chart-legend-row">
 					<div className="tooth-chart-legend">
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Кариес
+							<span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm" /> Кариес
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" /> Пульпит
+							<span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm" /> Пульпит
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm" /> Пломба
+							<span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm" /> Пломба
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" /> Коронка
+							<span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm" /> Коронка
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" /> Имплант
+							<span className="w-2.5 h-2.5 rounded-full bg-[#6366f1] shadow-sm" /> Имплант
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 opacity-50" /> Отсутствует
+							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b] shadow-sm" /> Отсутствует
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Ретинирован

@@ -441,6 +441,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		hideQuadrantSwitcher,
 		activeQuadrant: controlledQuadrant,
 		onQuadrantChange,
+		activeStamp: activeStampTool,
 		onMarkIntactDentition: handleMarkIntactDentition,
 		onMarkWisdomTeethMissing: handleMarkWisdomTeethMissing,
 		onJawClick: (target: "JU" | "JL" | "C") => setActiveJawModalTarget(target),
@@ -738,7 +739,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Caries" ? null : "Caries"))}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Caries"
 									? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
 									: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
@@ -751,7 +752,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Filled" ? null : "Filled"))}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Filled"
 									? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
 									: "bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 border border-blue-500/30"
@@ -764,7 +765,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Pulpitis" ? null : "Pulpitis"))}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Pulpitis"
 									? "bg-rose-600 text-white font-black shadow-xs ring-2 ring-rose-400"
 									: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
@@ -777,10 +778,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"))}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Crown"
-									? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
-									: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
+									? "bg-[#10b981] text-white font-black shadow-xs ring-2 ring-[#10b981]/50"
+									: "bg-[#10b981]/10 text-emerald-800 dark:text-emerald-200 hover:bg-[#10b981]/20 border border-[#10b981]/20"
 							}`}
 							title="Штамп: Коронка (Клик по зубу без меню)"
 							data-testid="stamp-crown-primary-btn"
@@ -790,7 +791,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Implant" ? null : "Implant"))}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Implant"
 									? "bg-indigo-600 text-white font-black shadow-xs ring-2 ring-indigo-400"
 									: "bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/20"
@@ -803,10 +804,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Missing" ? null : "Missing"))}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Missing"
-									? "bg-zinc-700 text-white font-black shadow-xs ring-2 ring-zinc-500"
-									: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-500/20 border border-zinc-500/20"
+									? "bg-[#64748b] text-white font-black shadow-xs ring-2 ring-[#64748b]/50"
+									: "bg-[#64748b]/10 text-slate-700 dark:text-slate-300 hover:bg-[#64748b]/20 border border-[#64748b]/20"
 							}`}
 							title="Штамп: Отсутствует / Удален (Клик по зубу без меню)"
 							data-testid="stamp-missing-btn"
@@ -816,7 +817,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Healthy" ? null : "Healthy"))}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Healthy"
 									? "bg-[var(--ok-fg,#10b981)] text-white font-black shadow-xs ring-2 ring-[var(--ok-fg,#10b981)]/60"
 									: "bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] hover:opacity-90 border border-[var(--ok-fg,rgba(16,185,129,0.3))]"
@@ -830,7 +831,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setActiveStampTool(null)}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)]"
+								className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)]"
 								title="Сбросить режим штампа (Esc)"
 								data-testid="stamp-reset-btn"
 							>

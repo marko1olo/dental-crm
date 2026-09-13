@@ -518,35 +518,35 @@ export const getToothColors = (
 				fill: "url(#zirconia-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#eab308",
+				stroke: "#10b981",
 				collarFill: "url(#dente-cervical-collar)",
 				opacity: "1",
-				badgeColor: "#eab308",
-				badgeBg: "rgba(234, 179, 8, 0.15)",
-				badgeText: "#a16207",
+				badgeColor: "#10b981",
+				badgeBg: "rgba(16, 185, 129, 0.15)",
+				badgeText: "#059669",
 			};
 		case "Implant":
 			return {
 				fill: "url(#titanium-implant-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#64748b",
+				stroke: "#6366f1",
 				opacity: "1",
-				badgeColor: "#64748b",
-				badgeBg: "rgba(100, 116, 139, 0.15)",
-				badgeText: "#334155",
+				badgeColor: "#6366f1",
+				badgeBg: "rgba(99, 102, 241, 0.15)",
+				badgeText: "#4338ca",
 			};
 		case "Planned_Implant":
 			return {
 				fill: "url(#titanium-implant-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#64748b",
+				stroke: "#6366f1",
 				opacity: "1",
 				isPulsing: true,
-				badgeColor: "#64748b",
-				badgeBg: "rgba(100, 116, 139, 0.15)",
-				badgeText: "#475569",
+				badgeColor: "#6366f1",
+				badgeBg: "rgba(99, 102, 241, 0.15)",
+				badgeText: "#4338ca",
 			};
 		case "Missing":
 			return {
@@ -556,9 +556,9 @@ export const getToothColors = (
 				stroke: "var(--tooth-root-stroke, #94a3b8)",
 				opacity: "0.12",
 				isMissing: true,
-				badgeColor: "#94a3b8",
-				badgeBg: "rgba(148, 163, 184, 0.15)",
-				badgeText: "#64748b",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Retained":
 			return {
@@ -2789,7 +2789,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 
 			if (baseNaturalWidth <= 0) return;
 
-			const minScale = isQuadrantView ? 0.85 : 0.65;
+			const minScale = 0.95;
 			const targetScale = Math.min(
 				1.8,
 				Math.max(minScale, (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96)),
@@ -2982,13 +2982,13 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			{/* 1-Click Express Formula Actions (Mandate 8e: Санирован / Интактный, Адентия 8-ок) */}
 			{!hideExpressActions && (
 				<div
-					className="odontogram-express-bar mb-2 select-none flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none min-h-[34px] max-h-[36px] h-[36px] py-0.5"
+					className="odontogram-express-bar mb-2 select-none flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none min-h-[44px] sm:min-h-[34px] sm:max-h-[36px] sm:h-[36px] py-0.5"
 					data-testid="tooth-chart-express-actions"
 				>
 					<button
 						type="button"
 						onClick={handleMarkIntactDentition}
-						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
 						data-testid="mark-intact-dentition-btn tooth-chart-mark-intact-btn"
 					>
@@ -2999,7 +2999,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					<button
 						type="button"
 						onClick={handleMarkProHygieneDone}
-						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка (A16.07.051) + протокол 043/у"
 						data-testid="tooth-chart-mark-pro-hygiene-btn"
 					>
@@ -3010,7 +3010,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					<button
 						type="button"
 						onClick={handleApplyFastCariesK021}
-						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол 043/у + световая пломба (A16.07.002.001)"
 						data-testid="tooth-chart-apply-fast-caries-btn"
 					>
@@ -3022,7 +3022,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<button
 							type="button"
 							onClick={handleMarkWisdomTeethMissing}
-							className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 							data-testid="mark-wisdom-missing-btn tooth-chart-mark-wisdom-missing-btn"
 						>
@@ -3035,7 +3035,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<button
 							type="button"
 							onClick={handleMarkMolarsMissing}
-							className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
 							data-testid="mark-molars-missing-btn"
 						>
@@ -3047,7 +3047,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					<button
 						type="button"
 						onClick={handleMarkFrontIntact}
-						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Интактный фронт: зубы 13–23, 33–43 моментально помечаются здоровыми"
 						data-testid="mark-front-intact-btn"
 					>
@@ -3151,23 +3151,23 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				<div className="tooth-chart-legend-row">
 					<div className="tooth-chart-legend">
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Кариес
+							<span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm" /> Кариес
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" /> {isPediatricEffective ? "Пульпотомия / Пульпит" : "Пульпит"}
+							<span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm" /> {isPediatricEffective ? "Пульпотомия / Пульпит" : "Пульпит"}
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] shadow-sm" /> {isPediatricEffective ? "Пломба (СИЦ / Композит)" : "Пломба"}
+							<span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm" /> {isPediatricEffective ? "Пломба (СИЦ / Композит)" : "Пломба"}
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-500,#3b82f6)] shadow-sm" /> {isPediatricEffective ? "Коронка NuSmile / 3M" : "Коронка"}
+							<span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm" /> {isPediatricEffective ? "Коронка NuSmile / 3M" : "Коронка"}
 						</span>
 						{!isPediatricEffective && (
 							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" /> Имплант
+								<span className="w-2.5 h-2.5 rounded-full bg-[#6366f1] shadow-sm" /> Имплант
 							</span>
 						)}
 						{!isPediatricEffective && (
@@ -3176,7 +3176,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							</span>
 						)}
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 opacity-50" /> {isPediatricEffective ? "Смена (Выпал)" : "Отсутствует"}
+							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b]" /> {isPediatricEffective ? "Смена (Выпал)" : "Отсутствует"}
 						</span>
 						{(isPediatricEffective || isMixedEffective) && (
 							<span className="tooth-chart-legend-item" title="Физиологическая резорбция корней молочных зубов">

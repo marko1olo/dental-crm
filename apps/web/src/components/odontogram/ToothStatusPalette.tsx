@@ -448,7 +448,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					type="button"
 					onClick={handleIntactClick}
 					disabled={false}
-					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
 					title="Зубная формула: Интактный зубной ряд (Все зубы здоровы / норма) в 1 клик"
 					data-testid="palette-intact-btn"
 				>
@@ -460,7 +460,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					type="button"
 					onClick={handleProHygieneClick}
 					disabled={false}
-					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-3 py-1.5 rounded-xl text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
 					title="Профгигиена выполнена (Ультразвук + Air-Flow + полировка) в 1 клик с формированием протокола 043/у"
 					data-testid="palette-prophy-btn"
 				>
@@ -472,7 +472,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					type="button"
 					onClick={handleFastCariesClick}
 					disabled={false}
-					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
 					title={`Быстрая пломба/кариес (K02.1) для зуба ${currentTooth} в 1 клик с заполнением дневника 043/у`}
 					data-testid="palette-fast-caries-btn"
 				>
@@ -484,7 +484,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					type="button"
 					onClick={handleFastPulpitisClick}
 					disabled={false}
-					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-200 border border-rose-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-3 py-1.5 rounded-xl text-xs font-black bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-200 border border-rose-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
 					title={`Пульпит под ключ (K04.0) зуба ${currentTooth}: анестезия + каналы + обтурация + пломба`}
 					data-testid="palette-fast-pulpitis-btn"
 				>
@@ -496,7 +496,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					type="button"
 					onClick={handleFastExtractionClick}
 					disabled={false}
-					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-purple-500/15 hover:bg-purple-500/25 text-purple-800 dark:text-purple-200 border border-purple-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-3 py-1.5 rounded-xl text-xs font-black bg-purple-500/15 hover:bg-purple-500/25 text-purple-800 dark:text-purple-200 border border-purple-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
 					title={`Атравматичное удаление зуба ${currentTooth} под ключ: анестезия + периотомия + удаление + гемостаз + шов`}
 					data-testid="palette-fast-extraction-btn"
 				>
@@ -508,7 +508,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					type="button"
 					onClick={handleWisdomMissingClick}
 					disabled={false}
-					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-3 py-1.5 rounded-xl text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
 					title="Адентия 8-ок: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 					data-testid="palette-wisdom-btn"
 				>
@@ -586,8 +586,8 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 						onClick={() => onStampChange(activeStamp === "Crown" ? null : "Crown")}
 						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Crown"
-								? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
-								: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
+								? "bg-emerald-600 text-white font-black shadow-xs ring-2 ring-emerald-400"
+								: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/20"
 						}`}
 						data-testid="palette-stamp-crown"
 					>
@@ -625,8 +625,8 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 						onClick={() => onStampChange(activeStamp === "Missing" ? null : "Missing")}
 						className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-center gap-1 touch-manipulation ${
 							activeStamp === "Missing"
-								? "bg-zinc-800 text-white font-black shadow-xs ring-2 ring-zinc-500"
-								: "bg-zinc-500/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-500/20 border border-zinc-500/20"
+								? "bg-slate-700 text-white font-black shadow-xs ring-2 ring-slate-400"
+								: "bg-slate-500/10 text-slate-800 dark:text-slate-200 hover:bg-slate-500/20 border border-slate-500/20"
 						}`}
 						data-testid="palette-stamp-missing"
 					>

@@ -1246,6 +1246,7 @@
 	gap: 6px;
 	width: max-content;
 	margin: 0 auto;
+	min-height: 140px;
 }
 
 .teeth-row.top-row {
