@@ -51,7 +51,7 @@ import {
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
-import { OrthoPhotoProtocolModal } from "./OrthoPhotoProtocolModal";
+import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { OrthodonticExaminationCard } from "./OrthodonticExaminationCard";
 
 export interface OrthodonticStudioModalProps {
@@ -354,7 +354,7 @@ export function OrthodonticStudioModal({
 	// Sequential isolated rendering for submodals: Strict Anti-Matryoshka Law (depth strictly 1)
 	if (isFullPhotoModalOpen) {
 		return (
-			<OrthoPhotoProtocolModal
+			<OrthodonticPhotoProtocolModal
 				isOpen={isFullPhotoModalOpen}
 				onClose={() => setIsFullPhotoModalOpen(false)}
 				patientId={patientId}

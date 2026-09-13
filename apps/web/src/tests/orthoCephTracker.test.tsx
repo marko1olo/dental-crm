@@ -14,7 +14,7 @@ import {
 	generateForm043OrthodonticProtocolText,
 	type LandmarkMap,
 } from "../components/orthodontics/cephalometricMath";
-import { OrthodonticCephTrackerModal } from "../components/orthodontics/OrthodonticCephTrackerModal";
+import { CephalometricAnalysisModal } from "../components/radiology/CephalometricAnalysisModal";
 
 describe("Orthodontic Cephalometric Tracker & Analysis (OrthodonticCephTrackerModal)", () => {
 	describe("1. Mathematical Analysis of Lateral Cephalogram (Steiner, Tweed, Wits)", () => {
@@ -92,10 +92,10 @@ describe("Orthodontic Cephalometric Tracker & Analysis (OrthodonticCephTrackerMo
 		});
 	});
 
-	describe("3. OrthodonticCephTrackerModal Component SSR Rendering", () => {
+	describe("3. CephalometricAnalysisModal Component SSR Rendering", () => {
 		it("renders modal header, landmark tab, and metric cards without crashing", () => {
 			const html = renderToString(
-				<OrthodonticCephTrackerModal
+				<CephalometricAnalysisModal
 					isOpen={true}
 					onClose={() => {}}
 					patientName="Тестовый Пациент"

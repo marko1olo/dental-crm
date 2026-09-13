@@ -48,7 +48,7 @@ import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
 import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
-import { OrthodonticCephTrackerModal } from "../orthodontics/OrthodonticCephTrackerModal";
+import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { JawOcclusionModal } from "./JawOcclusionModal";
 import { TreatmentPlanWizard } from "./TreatmentPlanWizard";
 import { ToothCardModal } from "./ToothCardModal";
@@ -1338,7 +1338,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 			/>
 
 			{/* Tier 3 Orthodontic Cephalometry TRG Tracker Modal */}
-			<OrthodonticCephTrackerModal
+			<CephalometricAnalysisModal
 				isOpen={isOrthoCephOpen}
 				onClose={() => setIsOrthoCephOpen(false)}
 				patientId={patientId}

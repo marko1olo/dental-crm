@@ -11,7 +11,6 @@ describe("Wave 112 - Total Liquidation of Synthetic Character Mocks and Demo OTP
 		"apps/api/src/services/finance/commerceMlService.ts",
 		"apps/web/src/components/documents/PrimaryIntakePackageModal.tsx",
 		"apps/web/src/DocumentsView.tsx",
-		"apps/web/src/components/tax/TaxDeductionModal.tsx",
 		"apps/web/src/components/finance/refunds/RefundServiceModal.tsx",
 		"apps/web/src/components/radiology/cbctExportEngine.ts",
 		"apps/web/src/components/radiology/implantSafetyEngine.ts",

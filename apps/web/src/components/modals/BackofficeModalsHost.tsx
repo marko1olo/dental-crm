@@ -26,7 +26,7 @@ import { SberPosTerminalModal } from "../payments/sberPos/SberPosTerminalModal";
 import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal";
 import { PatientOmnichannelHubModal } from "../messaging/PatientOmnichannelHubModal";
 import { ClinicalPnlHubModal } from "../finance/pnl/ClinicalPnlHubModal";
-import { TaxDeductionModal as FnsTaxDeductionModal } from "../tax/TaxDeductionModal";
+import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
 import { FnsNdflXmlModal } from "../documents/ndflXml";
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
@@ -191,7 +191,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<ClinicalPnlHubModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "fns_tax_deduction" && (
-				<FnsTaxDeductionModal isOpen={true} onClose={close}  {...({} as any)} />
+				<TaxDeductionCertificateModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "fns_ndfl_xml" && (
 				<FnsNdflXmlModal isOpen={true} onClose={close}  {...({} as any)} />

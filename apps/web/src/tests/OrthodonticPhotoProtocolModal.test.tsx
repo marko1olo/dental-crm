@@ -2,22 +2,15 @@
  * OrthodonticPhotoProtocolModal.test.tsx — Unit & Rendering Tests for Orthodontic Photo-Protocol Modal
  */
 
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
 	OrthodonticPhotoProtocolModal,
 	ORTHODONTIC_CLINICAL_PRESETS,
-	ORTHO_CLINICAL_PRESETS,
 	generateOrthodonticDiaryNote,
-	generateOrthoDiaryText,
-	OrthoPhotoProtocolModal as OrthoPhotoProtocolModalAlias,
 } from "../components/diagnostics/OrthodonticPhotoProtocolModal";
-import OrthoPhotoProtocolModalDefault, {
-	OrthoPhotoProtocolModal,
-	ORTHODONTIC_CLINICAL_PRESETS as ReExportedPresets,
-} from "../components/orthodontics/OrthoPhotoProtocolModal";
 import { OrthodonticStudioModal } from "../components/orthodontics/OrthodonticStudioModal";
 import {
 	createEmptyOrthodonticSession,
@@ -206,27 +199,7 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 		assert.ok(!html.includes("ООО «Денте Стоматология»"));
 	});
 
-	it("re-exports canonical component and presets transparently from orthodontics/OrthoPhotoProtocolModal", () => {
-		assert.strictEqual(OrthoPhotoProtocolModal, OrthodonticPhotoProtocolModal);
-		assert.strictEqual(OrthoPhotoProtocolModalDefault, OrthodonticPhotoProtocolModal);
-		assert.strictEqual(OrthoPhotoProtocolModalAlias, OrthodonticPhotoProtocolModal);
-		assert.strictEqual(ORTHO_CLINICAL_PRESETS, ORTHODONTIC_CLINICAL_PRESETS);
-		assert.strictEqual(ReExportedPresets, ORTHODONTIC_CLINICAL_PRESETS);
-		assert.strictEqual(generateOrthoDiaryText, generateOrthodonticDiaryNote);
-
-		// Render via re-exported OrthoPhotoProtocolModal
-		const html = renderToStaticMarkup(
-			createElement(OrthoPhotoProtocolModal, {
-				isOpen: true,
-				onClose: () => {},
-				patientName: "Тестовый Пациент",
-			}),
-		);
-		assert.ok(html.includes("Тестовый Пациент"));
-		assert.ok(html.includes('data-testid="orthodontic-photo-protocol-modal"'));
-	});
-
-	it("renders OrthodonticStudioModal without error using deduplicated OrthoPhotoProtocolModal", () => {
+	it("renders OrthodonticStudioModal without error", () => {
 		const html = renderToStaticMarkup(
 			createElement(OrthodonticStudioModal, {
 				isOpen: true,

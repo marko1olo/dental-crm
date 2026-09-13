@@ -59,7 +59,7 @@ import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine
 import { OneCExportButton } from "./OneCExportButton";
 import { Fiscal54FzReceiptModal } from "./fiscal/Fiscal54FzReceiptModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
-import { TaxDeductionModal } from "../tax/TaxDeductionModal";
+import { TaxDeductionCertificateModal } from "./TaxDeductionCertificateModal";
 import type { TaxDeductionPaymentItem } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
 
@@ -533,7 +533,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 	if (isTaxModalOpen) {
 		return (
-			<TaxDeductionModal
+			<TaxDeductionCertificateModal
 				isOpen={isTaxModalOpen}
 				onClose={() => setIsTaxModalOpen(false)}
 				patientName={patient?.fullName || "Пациент"}
