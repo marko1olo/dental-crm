@@ -276,6 +276,7 @@ import {
 	FileText,
 	Flame,
 	HeartPulse,
+	Layers,
 	Lock,
 	MoreHorizontal,
 	Printer,
@@ -301,7 +302,7 @@ export async function executePolishTranscriptAutonomy({
 	hasVisitTranscriptText: boolean;
 	setTranscript?: (val: string) => void;
 	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string } | null;
+	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string; objectiveStatus?: string } | null;
 	polishTranscript?: () => Promise<void> | void;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
 }) {
@@ -312,12 +313,11 @@ export async function executePolishTranscriptAutonomy({
 			setTranscript(standardClinicalDraft);
 		}
 		if (typeof updateVisitNoteField === "function") {
-			const currentObj = visitNoteForm?.objectiveInspection || "";
+			const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
 			if (!currentObj) {
-				updateVisitNoteField(
-					"objectiveInspection",
-					"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.",
-				);
+				const objNorm = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
+				updateVisitNoteField("objectiveInspection", objNorm);
+				updateVisitNoteField("objectiveStatus", objNorm);
 			}
 			const currentAnamnesis = visitNoteForm?.anamnesis || "";
 			if (!currentAnamnesis) {
@@ -343,19 +343,18 @@ export function executeApplySomaticNormAutonomy({
 	showToastFn = showToast,
 }: {
 	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string } | null;
+	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string; objectiveStatus?: string } | null;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
 }) {
 	const normText =
 		"Соматически здоров. Хронические заболевания, сердечно-сосудистые патологии и аллергологический статус со слов пациента отрицает. Физиологическая норма.";
 	if (typeof updateVisitNoteField === "function") {
 		updateVisitNoteField("anamnesis", normText);
-		const currentObj = visitNoteForm?.objectiveInspection || "";
+		const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
 		if (!currentObj) {
-			updateVisitNoteField(
-				"objectiveInspection",
-				"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.",
-			);
+			const objNorm = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
+			updateVisitNoteField("objectiveInspection", objNorm);
+			updateVisitNoteField("objectiveStatus", objNorm);
 		}
 	}
 	showToastFn("Применена норма: соматически здоров (1 клик)", "success");
@@ -624,6 +623,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
 	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
+	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = React.useState(false);
+	const headerMoreMenuRef = React.useRef<HTMLDivElement>(null);
+
+	React.useEffect(() => {
+		if (!isHeaderMoreMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				headerMoreMenuRef.current &&
+				!headerMoreMenuRef.current.contains(e.target as Node)
+			) {
+				setIsHeaderMoreMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isHeaderMoreMenuOpen]);
 
 	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
 		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
@@ -1381,6 +1396,97 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="hidden sm:inline whitespace-nowrap">Завершить приём</span>
 								<span className="sm:hidden text-[11px] font-bold whitespace-nowrap">Готово</span>
 							</button>
+
+							{/* Меню дополнительных действий врача «...» (Мандаты 8d, 8e, 8p: ровно 1 строка тулбара, вторичные действия в поповере) */}
+							<div className="relative shrink-0" ref={headerMoreMenuRef}>
+								<button
+									type="button"
+									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
+									data-testid="visit-header-more-actions-btn"
+									className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+									title="Дополнительные действия и бланки приема"
+									aria-label="Дополнительные действия приема"
+									aria-expanded={isHeaderMoreMenuOpen}
+								>
+									<MoreHorizontal size={15} className="shrink-0" />
+								</button>
+
+								{isHeaderMoreMenuOpen && (
+									<div
+										data-testid="visit-header-more-actions-dropdown"
+										className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper))] text-[var(--ink)] shadow-xl z-50 p-1.5 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+										role="menu"
+									>
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												handlePrintForm043uFast();
+											}}
+											data-testid="visit-more-action-print-043u"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											role="menuitem"
+										>
+											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Печать Формы 043/у</span>
+												<span className="text-[10px] text-[var(--muted)]">С текущим штампом (черновик/подписано)</span>
+											</div>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												setIsDoctorCockpitModalOpen(true);
+											}}
+											data-testid="visit-more-action-doctor-shift"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											role="menuitem"
+										>
+											<FileText size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Смена и журнал врача</span>
+												<span className="text-[10px] text-[var(--muted)]">Управление расписанием и приёмами</span>
+											</div>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												setIsPriceValidatorModalOpen(true);
+											}}
+											data-testid="visit-more-action-price-lock"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											role="menuitem"
+										>
+											<ShieldCheck size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Проверка прайса / Price Lock</span>
+												<span className="text-[10px] text-[var(--muted)]">Актуализация сметы плана лечения</span>
+											</div>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												setIsStagePaymentModalOpen(true);
+											}}
+											data-testid="visit-more-action-stage-payment"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											role="menuitem"
+										>
+											<Lock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">График оплаты и этапы</span>
+												<span className="text-[10px] text-[var(--muted)]">Рассрочка и депонирование этапов</span>
+											</div>
+										</button>
+									</div>
+								)}
+							</div>
 						</div>
 					</div>
 
@@ -1625,21 +1731,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									className="primary-button visit-primary-action min-h-[44px] px-3 py-2"
 									type="button"
 									onClick={safeVisitPrimaryAction.onClick}
-									disabled={
-										safeVisitPrimaryAction.kind === "save" ||
-										safeVisitPrimaryAction.kind === "close" ||
-										safeVisitPrimaryAction.kind === "review"
-											? false
-											: safeVisitPrimaryAction.disabled
-									}
-									title={
-										safeVisitPrimaryAction.disabled &&
-										safeVisitPrimaryAction.kind !== "save" &&
-										safeVisitPrimaryAction.kind !== "close" &&
-										safeVisitPrimaryAction.kind !== "review"
-											? safeVisitPrimaryAction.detail || "Действие временно недоступно"
-											: safeVisitPrimaryAction.label
-									}
+									disabled={false}
+									title={safeVisitPrimaryAction.label}
 									aria-describedby="visit-primary-action-detail"
 									data-testid="visit-primary-action"
 								>

@@ -480,7 +480,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								setSelectedTooth(t);
 								if (t) onSelectActiveTooth?.(t);
 							}}
-							className="h-7 px-2 text-xs font-bold bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--teal,var(--brand-primary))] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+							className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-xs font-bold bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--teal,var(--brand-primary))] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 						>
 							<option value="">Без зуба</option>
 							{ALL_FDI_ADULT_TEETH.map((t) => (
@@ -498,12 +498,12 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						onChange={(e) => setSelectedSurfaces(e.target.value)}
 						placeholder="Поверхности (MOD, вест...)"
 						aria-label="Поверхности зуба"
-						className="h-7 w-32 px-2 text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+						className="min-h-[44px] sm:min-h-0 sm:h-7 w-32 px-2 text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 					/>
 				</div>
 
 				{/* Правый блок кнопок прямого действия */}
-				<div className="flex items-center gap-1.5">
+				<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
 					{/* Индикатор закрытого визита и кнопка ревизии («Исправленному верить», Мандат 8e) */}
 					{isLocked && (
 						!isCorrectionMode ? (
@@ -511,7 +511,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								type="button"
 								onClick={handleEnableCorrection}
 								data-testid="btn-soap-enable-correction"
-								className="h-8 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-xs"
+								className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-xs"
 								title="Приём закрыт. Нажмите для внесения правок с версионным аудитом («Исправленному верить»)"
 							>
 								<Edit3 className="w-3.5 h-3.5" />
@@ -520,7 +520,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						) : (
 							<div
 								data-testid="badge-soap-correction-active"
-								className="h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+								className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
 								title="Режим исправления закрытого дневника («Исправленному верить»)"
 							>
 								<Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -534,7 +534,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						type="button"
 						onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
 						data-testid="btn-open-stomt-templates"
-						className="h-8 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
 						title="Открыть каталог 448 клинических шаблонов 043/у из StomX"
 					>
 						<Sparkles className="w-3.5 h-3.5" />
@@ -546,7 +546,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						type="button"
 						onClick={handleApplyNorm}
 						data-testid="btn-soap-physio-norm"
-						className="h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
 						title="Заполнить физиологической нормой (здоров / жалоб нет)"
 					>
 						<Check className="w-3.5 h-3.5" />
@@ -558,7 +558,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewMode("fields")}
-							className={`h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "fields" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "fields" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 						>
 							<Edit3 className="w-3 h-3" />
 							<span>Поля</span>
@@ -566,7 +566,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewMode("full_text")}
-							className={`h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "full_text" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "full_text" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 						>
 							<Eye className="w-3 h-3" />
 							<span>Печать</span>
@@ -577,7 +577,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					<button
 						type="button"
 						onClick={handleCopyFullText}
-						className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent hover:border-[var(--line)] transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent hover:border-[var(--line)] transition-colors cursor-pointer"
 						title="Скопировать медицинскую запись в буфер обмена"
 					>
 						{copied ? (

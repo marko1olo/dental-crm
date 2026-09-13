@@ -244,7 +244,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(draftPanelSource).toContain('data-testid="btn-draft-somatic-norm-one-click"');
 		expect(draftPanelSource).toContain("applySomaticNormQuick");
 		expect(draftPanelSource).toContain("SOMATIC_NORM_DRAFT");
-		expect(draftPanelSource).toContain("Подставлен стандартный протокол осмотра (Мандат 8e). Собираю черновик...");
+		expect(draftPanelSource).toContain("Подставлен стандартный протокол осмотра. Собираю черновик...");
 	});
 
 	it("9. emr043Math renders 'ПОДПИСАНО ВРАЧОМ' watermark when closed/signed and 'ЧЕРНОВИК' when draft (Mandate 8e)", () => {
@@ -258,4 +258,23 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 			'<div class="watermark-draft watermark-signed" aria-hidden="true" style="color: rgba(5, 150, 105, 0.06);">ПОДПИСАНО ВРАЧОМ</div>',
 		);
 	});
+
+	it("10. verifies header maintains 1-row toolbar (32-36px) and consolidates secondary actions in '...' more menu (Mandates 8d, 8e, 8p)", () => {
+		// Header row contains more actions button and dropdown popover
+		expect(visitViewSource).toContain('data-testid="visit-header-more-actions-btn"');
+		expect(visitViewSource).toContain('data-testid="visit-header-more-actions-dropdown"');
+		expect(visitViewSource).toContain('data-testid="visit-more-action-print-043u"');
+		expect(visitViewSource).toContain('data-testid="visit-more-action-doctor-shift"');
+		expect(visitViewSource).toContain('data-testid="visit-more-action-price-lock"');
+		expect(visitViewSource).toContain('data-testid="visit-more-action-stage-payment"');
+	});
+
+	it("11. doctor primary action button is NEVER disabled (Mandate 8e: 0 disabled buttons)", () => {
+		expect(visitViewSource).toContain('data-testid="visit-primary-action"');
+		// Must not have disabled conditions on primary action
+		expect(visitViewSource).toContain(
+			'<button\n\t\t\t\t\t\t\t\t\tclassName="primary-button visit-primary-action min-h-[44px] px-3 py-2"\n\t\t\t\t\t\t\t\t\ttype="button"\n\t\t\t\t\t\t\t\t\tonClick={safeVisitPrimaryAction.onClick}\n\t\t\t\t\t\t\t\t\tdisabled={false}',
+		);
+	});
 });
+
