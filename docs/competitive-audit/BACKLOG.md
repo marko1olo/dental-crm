@@ -29,6 +29,8 @@
 > 23. Интегрировано математическое ядро CPR (Curved Planar Reformation): Catmull-Rom сплайн-интерполяция зубной дуги по 7–9 анатомическим ориентирам челюсти, расчет векторов нормалей Френе-Серре в аксиальной плоскости, генерация ортогональных кросс-секционных срезов с шагом 1.0–2.0 мм и толщиной 0.5–20 мм (`cprMath.ts`, `cprPanoramicEngine.ts`, `panoramicMprMath.ts`, `panoramicArch.ts`); внедрена классификация плотности кости по Мишу (Misch D1..D5 HU) с автоматической генерацией рекомендаций протокола препарирования (under-drilling, метчик, биконденсация) и торка (`boneQualityEngine.ts`, `BoneQualityPanel.tsx`); реализован аналитический замер и валидация безопасного клиренса до нижнечелюстного нерва IAN (safety clearance >=1.5 мм, статусы safe/warning/collision) без блокировки врача (`cbctSafetyEngine.ts`, `implantSafetyClearance.ts`, `ctPlanningPersistence.ts`, `cbctSafetyAndMisch.test.ts`); ликвидированы 5 параллельных перспектив в пользу единых канонических экранов (`ScheduleView`, `VisitView`, `PatientsView`, `FinanceView`) по Мандату 8s (`App.tsx`, `workspaceShell.tsx`, `perspectiveStore.ts`); устранен дефект обрезания текста тулбара расписания на десктопе 1440x900 в `ScheduleFilterStrip.tsx` и `ScheduleView.tsx` (Wave 177).
 > 24. Внедрены прецизионные калиперы измерений КТ (`dicomMeasurementMath.ts`) для 2D/3D расстояний с анизотропным воксельным скейлингом, 2D/3D углов, полилиний, ROI статистики и HU профилирования; внедрен хирургический каталог имплантатов и цветового кодирования платформ (`implantCatalog.ts`) систем Nobel Biocare, Straumann, Osstem, Dentium, Universal с диаметрами 3.0–5.5 мм, длинами 7.0–18.0 мм, кодировкой NP/RP/WP и втулками хирургических шаблонов; проведена дедупликация CPR-математики с ликвидацией 375+ строк копипаста сплайнов и нормалей из `apps/web/src/components/dicom/panoramicMprMath.ts` в пользу канонического `@dental/shared/radiology` per Mandate 8s (коммит `f333f5403`); схлопнут расчет этапов цен `casePresentationPricing.ts` на -284 строки с делегированием в `treatmentPlanStagesEngine.ts` per Mandate 8s (коммит `3bb9fc686`); устранен клиппинг даты 13.09.2026 (`w-[130px] min-w-[130px]`) и кнопки «Моё кресло» (`flex-shrink-0`) в `ScheduleFilterStrip.tsx` и `schedule.css`, а также ликвидирован 600px аккордеон в `VisitView.tsx` в пользу компактной эргономики (Wave 178, коммиты `3bb9fc686`, `f333f5403`).
 > 25. Интегрирован аналитический расчет взаимного пересечения плоскостей срезов и референсных линий перекрестий МПР (`sliceIntersectionMath.ts`, коммит `36cbce21f`) для мультипланарных вьюпортов КЛКТ (Axial, Coronal, Sagittal, Cross-Section, Panoramic) в замкнутой векторной форме без Three.js с 3D/2D клиппингом Лианга-Барски и Zero-Allocation scratch buffers на 60 FPS; разрешена неоднозначность компилятора в реэкспортах типов DICOM и добавлен устойчивый фоллбек имени пациента в `AppointmentHoverHud.tsx` (Wave 179, коммит `d0f7d5af8`).
+> 26. Проведена декомпозиция математического ядра КЛКТ по Инженерному Правилу 1.1 (<800 строк) с выделением 3D/2D клиппинга Лианга-Барски в легковесный модуль `sliceClippingMath.ts` (286 строк) и сокращением `sliceIntersectionMath.ts` до 689 строк; ликвидирован дефект обрезания бренда клиники на мобильных экранах 390px в `workspaceShell.tsx` (адаптивный бейдж «ДЕНТЕ» / «Стоматология ДЕНТЕ Премиум»); защищены клинические кнопки «Норма» и «Готово» в шапке визита `VisitView.tsx` ограничением ширины ФИО пациента `max-w-[110px] sm:max-w-none` по Мандату 8e (Wave 180, коммиты `5e15482e9`, `357d2b14f`, `b103b481c`).
+> 27. Ликвидирован транкейт клинического пульта `ClinicControlPill` в топбаре десктопа в `Header.css` (`flex-shrink-0`, `min-width: max-content`, `white-space: nowrap`) и `workspaceShell.tsx`; расширена карточка превью приёма `AppointmentHoverHud.tsx` (`max-w-[420px] sm:max-w-[480px]`) для исключения переносов строк; проведена дедупликация кнопок тулбара расписания `ScheduleFilterStrip.tsx` в строгую 1 строку высотой 32–36px по Закону Хика с прямым выводом 1-клик чипов «Моё кресло» (`Armchair` с именем кресла без скобок) и «Автодозвон» (`PhoneCall`) по Мандатам 8d, 8e, 8p, 8n (Wave 181, коммит `8ec3f76c3`).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5071,4 +5073,28 @@
   * `panoramicReconstruction.test.ts`: 15/15 pass;
   * `npm run typecheck -w @dental/web`: Exit Code 0;
   * `npm run typecheck -w @dental/api`: Exit Code 0;
+  * Single-Compiler Gate защищен per Mandate 8t.
+
+---
+
+## 328. Волна 181: Ликвидация транкейта ClinicControlPill в десктопном топбаре, расширение Hover HUD превью и дедупликация кнопок тулбара расписания с чипами «Моё кресло» и «Автодозвон» (Мандаты 8c, 8d, 8e, 8p, 8n) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммит `8ec3f76c3`)
+* **Файлы**:
+  - `apps/web/src/components/Header.css`
+  - `apps/web/src/components/Header.tsx`
+  - `apps/web/src/components/schedule/AppointmentHoverHud.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+* **Архитектурное решение**:
+  - **Ликвидация транкейта и сплющивания ClinicControlPill в топбаре десктопа**:
+    * В `apps/web/src/components/Header.css` селекторам `.dnt-clinic-control-pill` и `.dnt-pill-segment` добавлены свойства `flex-shrink: 0`, `white-space: nowrap`, `min-width: max-content`, гарантирующие целостное отображение статуса АТС Mango PBX («АТС В сети», «АТС Звонок») и элементов смены без сплющивания и обрезания текста на экранах 1440x900;
+  - **Расширение карточки превью визита AppointmentHoverHud**:
+    * В `apps/web/src/components/schedule/AppointmentHoverHud.tsx` максимальная ширина карточки увеличена до `max-w-[420px] sm:max-w-[480px]` (с 360px), что полностью устраняет искусственные переносы строк диагнозов, услуг и ФИО пациента при наведении курсора на слот расписания;
+  - **Дедупликация кнопок тулбара расписания и 1-клик чипы (Мандаты 8d, 8e, 8p, 8n)**:
+    * В `apps/web/src/components/schedule/ScheduleFilterStrip.tsx` тулбар расписания выстроен в строгую 1 компактную строку высотой 32–36px по Закону Хика. Дублирующие кнопки вынесены в выпадающее меню опций `...`, освободив пространство под 1-клик быстрые чипы прямого действия:
+      1) `schedule-my-chair-chip`: быстрый переход к дежурному креслу врача («Моё кресло (Кабинет 1)») с иконкой `Armchair` и очисткой имени от скобок (`cleanChairName`);
+      2) `schedule-auto-call-chip`: 1-клик вызов шторки утреннего автодозвона и подтверждения визитов пациентов («Автодозвон») с иконкой `PhoneCall` для администратора.
+* **Верификация**:
+  * `npm run check:encoding`: 0 ошибок;
+  * `Header.test.ts`: PASS;
   * Single-Compiler Gate защищен per Mandate 8t.

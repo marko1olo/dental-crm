@@ -94,7 +94,7 @@
   - Система клинических правил `ClinicalRulePanel.tsx` (проверка обязательных услуг, предупреждения о противопоказаниях).
 
 ### 2.4. Ортодонтия, 3D DICOM / MPR КТ Просмотрщик & ИИ Диагностика
-- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `OrthodonticStudioModal.tsx`, `OrthoPhotoProtocolModal.tsx`, `OrthodonticVisitProtocolWidget.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `ctPlanningPersistence.ts`, `panoramicMprMath.ts`, `panoramicArch.ts`, `BoneQualityPanel.tsx`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`, `apps/web/src/components/dicom/dicomMeasurementMath.ts`, `apps/web/src/components/dicom/implantCatalog.ts`, `apps/web/src/components/dicom/sliceIntersectionMath.ts`.
+- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `OrthodonticStudioModal.tsx`, `OrthoPhotoProtocolModal.tsx`, `OrthodonticVisitProtocolWidget.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `ctPlanningPersistence.ts`, `panoramicMprMath.ts`, `panoramicArch.ts`, `BoneQualityPanel.tsx`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`, `apps/web/src/components/dicom/dicomMeasurementMath.ts`, `apps/web/src/components/dicom/implantCatalog.ts`, `apps/web/src/components/dicom/sliceClippingMath.ts`, `apps/web/src/components/dicom/sliceIntersectionMath.ts`.
 - **Бэкенд / Shared**: `apps/api/src/routes/imaging.ts`, `imaging_planning.ts`, `dicomweb.ts`, `ai.ts`, `xray.ts`, `packages/shared/src/radiology/cprMath.ts`, `packages/shared/src/radiology/cprPanoramicEngine.ts`, `packages/shared/src/radiology/boneQualityEngine.ts`, `packages/shared/src/radiology/cbctCropBox.ts`, `packages/shared/src/radiology/cbctSafetyEngine.ts`, `packages/shared/src/radiology/implantSafetyClearance.ts`, `packages/shared/src/orthodontics/orthoEngine.ts`, `types.ts`.
 - **Преимущество [ЛУЧШЕ У НАС]**:
   - Полнофункциональная ортодонтическая студия `OrthodonticStudioModal.tsx` и движок `orthoEngine.ts`: 1-клик протоколы термоактивных дуг CuNiTi (.014 / .016), стальных и TMA рабочих дуг (.019x.025), межчелюстных эластиков (Rabbit, Fox), элайнеров (аттачменты, IPR, выдача наборов капп), фиксации и снятия брекетов с ретейнером, фотопротокол 9 ракурсов `OrthoPhotoProtocolModal.tsx` и 1-клик вставка SOAP-дневника в 043/у (коммит `5a007a4ab`), а также 1-клик классификация окклюзии по Энглю (Класс I, II/1, II/2, III) и экспресс-селекторы рабочих дуг в `OrthodonticStudioModal.tsx` и `OrthodonticVisitProtocolWidget.tsx` (коммиты `6c41ee42d`, `719b7beac`).
@@ -3206,6 +3206,40 @@
      - Выделяемый один раз контекст `createSliceIntersectionScratch()` с предварительно аллоцированными 3D-векторами и 2D-отрезками для устранения GC-пауз во время быстрого вращения или скролла срезов.
 - **Файлы**: `apps/web/src/components/dicom/sliceIntersectionMath.ts`, `apps/web/src/components/dicom/sliceIntersectionMath.test.ts`, `apps/web/src/components/dicom/index.ts`, `apps/web/src/components/dicom/panoramicReconstruction.test.ts`.
 - **Тесты**: `apps/web/src/components/dicom/sliceIntersectionMath.test.ts` (13/13 pass, 4.9 ms), `apps/web/src/components/dicom/panoramicReconstruction.test.ts` (15/15 pass, 22.4 ms), `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t).
+
+### 2.10.261. Волна 180: Декомпозиция sliceIntersectionMath по Правилу 1.1 (<800 строк) в sliceClippingMath и ликвидация клиппинга на мобильных экранах 390px (Мандаты 8c, 8d, 8e, 8p, 8t, Engineering Rule 1.1)
+- **Идея & Бизнес-эффект**: Чистая декомпозиция математического ядра КЛКТ в строгом соответствии с Инженерным Правилом 1.1 (<800 строк в исходном файле) и ликвидация дефектов адаптивности на мобильных экранах 390x844 (iPhone SE / 13 mini) без ущерба для скорости рендеринга и автономии врача (Мандат 8e).
+- **Архитектурные механизмы**:
+  1. *Декомпозиция модуля геометрии и клиппинга (`sliceClippingMath.ts`, коммиты `5e15482e9`, `b103b481c`)*:
+     - Выделение типов 3D/2D векторов (`Vec3`, `Point2D`, `Segment2D`), конструктора плоскостей (`Plane3D`, `makePlane3D`), скалярных/векторных операций (`dot3`, `cross3`, `norm3`, `normalize3`) и отсечения отрезков по алгоритму Лианга-Барски (3D `clipLineToAABB3D` и 2D `clipSegment2D`) в отдельный сфокусированный модуль `sliceClippingMath.ts` (286 строк);
+     - Сокращение размера `apps/web/src/components/dicom/sliceIntersectionMath.ts` с 940 до 689 строк, гарантируя запас до лимита 800 строк;
+     - Прозрачный реэкспорт всех типов и функций через `apps/web/src/components/dicom/index.ts` и устранение коллизии символов в `radiologyMath.ts`;
+  2. *Ликвидация клиппинга бренда клиники на экранах 390px в `workspaceShell.tsx`*:
+     - Замена жесткой строки бренда на адаптивный рендеринг: `<span className="sm:hidden">{shortBrand}</span><span className="hidden sm:inline">{fullBrand}</span>`, где `shortBrand = "ДЕНТЕ"`, а `fullBrand = "Стоматология ДЕНТЕ Премиум"`;
+     - Полное исключение обрезания многоточием в компактной шапке;
+  3. *Защита клинических кнопок в заголовке визита `VisitView.tsx` (Мандат 8e)*:
+     - Ограничение ширины ФИО пациента: `max-w-[110px] sm:max-w-none truncate`;
+     - Гарантированное сохранение доступности 1-клик кнопок «Норма» и «Готово» на 390px экранах без выдавливания за пределы вьюпорта.
+- **Файлы**: `apps/web/src/components/dicom/sliceClippingMath.ts`, `apps/web/src/components/dicom/sliceIntersectionMath.ts`, `apps/web/src/components/dicom/index.ts`, `apps/web/src/components/radiology/radiologyMath.ts`, `apps/web/src/workspaceShell.tsx`, `apps/web/src/VisitView.tsx`.
+- **Тесты**: `sliceIntersectionMath.test.ts` (13/13 pass), `panoramicReconstruction.test.ts` (15/15 pass), `panelsAreMounted.test.ts` (11/11 pass), `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t).
+
+### 2.10.262. Волна 181: Ликвидация транкейта ClinicControlPill в десктопном топбаре, расширение Hover HUD превью и дедупликация кнопок тулбара расписания с чипами «Моё кресло» и «Автодозвон» (Мандаты 8c, 8d, 8e, 8p, 8n)
+- **Идея & Бизнес-эффект**: Устранение визуального сплющивания и транкейта статусов телефонии в топбаре на десктопных разрешениях 1440x900, расширение контекстной карточки предварительного просмотра приема при наведении курсора и полировка тулбара расписания по Закону Хика в строгую 1 строку 32–36px с приоритетным выводом 1-клик действий врача и администратора (Мандаты 8d, 8e, 8p, 8n).
+- **Архитектурные механизмы**:
+  1. *Стабилизация геометрии ClinicControlPill в `Header.css` (коммит `8ec3f76c3`)*:
+     - В `.dnt-clinic-control-pill` и `.dnt-pill-segment` добавлены правила `flex-shrink: 0`, `white-space: nowrap`, `min-width: max-content`;
+     - Полная защита индикаторов телефонии Mango PBX («АТС В сети», «АТС Звонок») и смены врача от сплющивания соседними блоками топбара;
+  2. *Расширение карточки предпросмотра приема в `AppointmentHoverHud.tsx`*:
+     - Увеличение максимальной ширины карточки до `max-w-[420px] sm:max-w-[480px]` (вместо 360px);
+     - Устранение неестественных переносов строк для развернутых ФИО, названий процедур и диагнозов при наведении на ячейку расписания;
+  3. *Дедупликация кнопок и 1-клик чипы в `ScheduleFilterStrip.tsx`*:
+     - Строгая фиксация 1 строки высотой 32–36px без паразитных переносов;
+     - Консолидация второстепенных действий в меню опций `...`;
+     - Вывод приоритетных 1-клик чипов прямого действия:
+       * `schedule-my-chair-chip`: быстрый переход к текущему дежурному креслу врача («Моё кресло (Кабинет 1)») с иконкой `Armchair` и очисткой скобок в названии (`cleanChairName`);
+       * `schedule-auto-call-chip`: 1-клик вызов шторки утреннего автодозвона и подтверждения визитов пациентов («Автодозвон») с иконкой `PhoneCall` для администратора.
+- **Файлы**: `apps/web/src/components/Header.css`, `apps/web/src/components/Header.tsx`, `apps/web/src/components/schedule/AppointmentHoverHud.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`.
+- **Тесты**: `Header.test.ts` PASS, `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t).
 
 
 
