@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–184 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-13 / WAVES 175–185 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 263 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 326 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 263 АДДЕНДУМ, 326/326 СО СТАТУСОМ [ДА], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -34,6 +34,7 @@
 > 28. Проведена консолидация и дедупликация каталога имплантатов `implantCatalog.ts` (коммит `ca2e977ae`): дублирующий файл в `apps/web/src/components/implants/` схлопнут с 1012 строк в 260 строк компактного SSOT-делегата на базе канонического `dicom/implantCatalog.ts` (чистая ликвидация -752 строк дублирующего кода по Мандату 8s); интегрирована премиальная шведская система имплантатов Astra Tech OsseoSpeed EV (EV 3.6, 4.2, 4.8) с цветовой маркировкой платформ Dentsply Sirona; зафиксирована железная граница КТ в CRM по Мандату 8i: полный отказ от лабораторного CAD/CAM блоата (генераторов хирургических шаблонов, CSG булевых слайсеров для 3D-печати), предел функционала — DICOM MPR, измерение плотности по Хаунсфилду (Misch D1..D5) и сохранение виртуальных координат имплантатов; подготовлен аудит консолидации складских дубликатов `inventory/` и `warehouse/` (Wave 182, коммит `ca2e977ae`).
 > 29. Проведена консолидация дублирующих складских и инвентарных движков в единый канонический SSOT-домен `packages/shared/src/warehouse/` (`inventoryReorderEngine.ts`, `purchaseOrderEngine.ts`, `treatmentConsumablesEngine.ts`) по Мандату 8s: модули `inventory/reorderEngine.ts` и `purchaseOrdersEngine.ts` схлопнуты в 30-строчные прозрачные фасады-делегаты над SSOT в `warehouse/` (чистая дельта: -1000+ строк паразитного дублирования); унифицированы типы `ConsumableUnit` и категории материалов с `procedureBomEngine.ts` без потери обратной совместимости (Wave 183, коммит `4a7a94521`).
 > 30. Устранен эффект сжатия и выталкивания топбара (balloon effect) на десктопе и мобильных устройствах (`.topbar-clinic { min-width: 140px !important; flex-shrink: 0 !important; }`, `.topbar-context { overflow: visible; }`) в `dente-redesign.css`, `Header.tsx`, `workspaceShell.tsx`; шапка CT Studio `CbctMprImplantStudioModal.tsx` зафиксирована в строгую 1 строку высотой 36px (`h-9 min-h-[36px] max-h-[36px]`) с компактными чипами без съедания рабочей области экрана по Мандатам 8d, 8p; обеспечена 100% автономия врача в 3D трассировке канала нижнеальвеолярного нерва IAN и виртуальном позиционировании имплантатов без `disabled` / `pointer-events-none` блокировок с активным тост-руководством по Мандату 8e; очищена контрастность темы по стандарту WCAG AAA (`bg-zinc-950`/`900` вместо `#000000`/`#09090b`); закреплен канонический SSOT для графа родственных связей (`clinical/patientRelationshipsEngine.ts`), клинического таймлайна (`clinical/patientTimelineEngine.ts`) и радиологической геометрии (`packages/shared/src/radiology/`, Wave 184, коммит `d71ebb313`).
+> 31. Проведена консолидация налогового ядра ФНС в `packages/shared/src/fiscal/fnsTaxDeductionEngine.ts` и `packages/shared/src/finance/taxDeduction.ts` по Мандату 8s со схлопыванием -1000 строк дублирующегося кода; унифицирован параллельный клон зубной формулы `apps/web/src/components/formula/` в единый канонический `OdontogramModule` по Мандату 8s; внедрена эргономика десктопа: тулбар расписания `ScheduleFilterStrip.tsx` в строгую 1 строку 36px без обрезания текста, быстрый превью приёма `AppointmentHoverHud.tsx` (<120мс без CLS), навигация в 1 клик в карточку пациента и кассу без модальных барьеров (Wave 185, коммит `4f500b5e2`).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5202,4 +5203,38 @@
   * `npm run check:encoding`: 0 ошибок (UTF-8);
   * Визуальное подтверждение однострочного тулбара 36px и отсутствия наложений в шапке;
   * Single-Compiler Gate защищен per Mandate 8t.
+
+---
+
+## 332. Волна 185: Консолидация налогового ядра ФНС, унификация зубной формулы в OdontogramModule и эргономика десктопа (Мандаты 8c, 8d, 8e, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммит `4f500b5e2`)
+* **Файлы**:
+  - `packages/shared/src/fiscal/fnsTaxDeductionEngine.ts`
+  - `packages/shared/src/finance/taxDeduction.ts`
+  - `apps/web/src/components/formula/stomxFormulaAdapter.ts`
+  - `apps/web/src/components/formula/StomxDefectsPalette.tsx`
+  - `apps/web/src/components/formula/StomxToothFormulaView.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/components/schedule/AppointmentHoverHud.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/PatientWorkspaceView.tsx`
+* **Архитектурное решение**:
+  - **Консолидация налогового ядра ФНС в единый SSOT (Мандат 8s)**:
+    * Устранено историческое раздвоение между `packages/shared/src/fiscal/fnsTaxDeductionEngine.ts` и `packages/shared/src/finance/taxDeduction.ts`: ликвидировано свыше 1000 строк параллельного дублирующегося кода;
+    * Модуль `packages/shared/src/finance/taxDeduction.ts` закреплен в качестве неделимого авторитета (SSOT) для нормативных расчетов ст. 219 НК РФ, Приказа ФНС России от 08.11.2023 № ЕА-7-11/824@ (КНД 1151156 и электронный формат 5.01 по КНД 1184043), контрольных сумм ИНН, КПП, ОГРН, СНИЛС и валидации паспорта РФ;
+    * `packages/shared/src/fiscal/fnsTaxDeductionEngine.ts` реэкспортирует нормативные типы и формулы из `taxDeduction.ts`, сохраняя специфичные генераторы векторных QR/штрихкодов без дублирования бизнес-логики;
+  - **Унификация параллельного клона зубной формулы в канонический OdontogramModule (Мандат 8s)**:
+    * Модули каталога дефектов StomX в `apps/web/src/components/formula/` (`stomxFormulaAdapter.ts`, `StomxDefectsPalette.tsx`, `StomxToothFormulaView.tsx`) переведены на прозрачный адаптер над каноническим компонентом `OdontogramModule.tsx`;
+    * Гарантирована 100% двусторонняя трансляция состояний зубов FDI (11..48 adult, 51..85 pediatric) между форматом `ToothFormulaItem` и `ToothData`, устраняя фрагментацию состояния формулы и дублирующие рендер-структуры;
+  - **Эргономика десктопа: однострочный тулбар 36px и молниеносный превью HUD (Мандаты 8c, 8d, 8e, 8p, 8n)**:
+    * В `ScheduleFilterStrip.tsx` тулбар расписания зафиксирован в строгую 1 строку высотой 36px (`h-9 min-h-[36px] max-h-[36px] flex-nowrap`) с классами `truncate` и защитой от вылета и клиппинга текста на любых разрешениях десктопа 1440x900;
+    * Карточка предпросмотра приема `AppointmentHoverHud.tsx` оптимизирована с задержкой появления <120мс (`delay={100}`) и стабильными зарезервированными габаритами, исключающими сдвиг макета (CLS = 0);
+    * В `PatientsView.tsx` и `PatientWorkspaceView.tsx` обеспечена бесшовная навигация в 1 клик между расписанием, карточкой пациента и кассой 54-ФЗ без модальных барьеров и промежуточных экранов подтверждения (Мандат 8e).
+* **Верификация**:
+  - `scratch/verify_registry.js`: 326/326 фичей [ДА] (100% паритет), 1592/1592 ссылок валидны;
+  - `npm run check:encoding`: 0 ошибок (UTF-8);
+  - Single-Compiler Gate защищен per Mandate 8t.
+
 
