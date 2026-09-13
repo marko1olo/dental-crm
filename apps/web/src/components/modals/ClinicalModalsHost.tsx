@@ -32,10 +32,8 @@ import { VisitTherapyProtocolWidget } from "../visit/therapy/VisitTherapyProtoco
  */
 
 import React, { useState, useEffect } from "react";
-import {
-	CephalometricAnalysisModal,
-	OrthodonticPhotoProtocolModal,
-} from "../orthodontics";
+import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
+import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { PediatricMixedDentitionModal } from "../odontogram/PediatricMixedDentitionModal";
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import { DentalLabOrdersHubModal } from "../lab/DentalLabOrdersHubModal";
