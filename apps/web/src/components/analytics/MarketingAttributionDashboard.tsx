@@ -81,12 +81,9 @@ export function MarketingAttributionDashboard() {
 						<div>
 							<h2 className="text-lg font-black text-[var(--ink)] m-0 flex items-center gap-2">
 								Сквозная аналитика маркетинга и каналов записи
-								<span className="text-xs px-2.5 py-0.5 rounded-full bg-teal-500/15 text-[var(--teal)] font-bold">
-									Wave 16
-								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted)] m-0">
-								Раздельный учет самозаписи (Фича №28), окупаемость рекламы ROMI и обязательность полей карты (Фича №35)
+								Раздельный учет самозаписи, окупаемость рекламы ROMI и обязательность полей карты
 							</p>
 						</div>
 					</div>
@@ -105,7 +102,7 @@ export function MarketingAttributionDashboard() {
 						data-testid="tab-online-vs-admin"
 					>
 						<Bot size={15} className="text-[var(--teal)]" />
-						<span>Онлайн vs Администраторы (#28)</span>
+						<span>Онлайн vs Администраторы</span>
 					</button>
 
 					<button
@@ -133,7 +130,7 @@ export function MarketingAttributionDashboard() {
 						data-testid="tab-field-requirements"
 					>
 						<Settings size={15} className="text-indigo-500" />
-						<span>Обязательность полей карты (#35)</span>
+						<span>Обязательность полей карты</span>
 					</button>
 				</div>
 			</header>

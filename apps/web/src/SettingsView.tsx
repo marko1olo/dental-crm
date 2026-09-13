@@ -2051,12 +2051,15 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 					<SettingsClinicTab props={settingsProps} settingsTab={settingsTab} />
 				) : null}
 				{settingsTab === "access" ? (
-					<SettingsAccessTab
-						{...({ props: settingsProps, settingsTab } as {
-							props: typeof settingsProps;
-							settingsTab: string;
-						})}
-					/>
+					<div className="space-y-6">
+						<SettingsAccessTab
+							{...({ props: settingsProps, settingsTab } as {
+								props: typeof settingsProps;
+								settingsTab: string;
+							})}
+						/>
+						<EgiszBlankPermissionsWidget />
+					</div>
 				) : null}
 				{/*
           Вкладка мессенджеров показывает все три канала, а не один Telegram.
@@ -2289,7 +2292,12 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				) : null}
 				{settingsTab === "sources" ? <SettingsSourcesTab /> : null}
 				{settingsTab === "ai" ? <SettingsAiTab /> : null}
-				{settingsTab === "modules" ? <SettingsModulesTab /> : null}
+				{settingsTab === "modules" ? (
+					<div className="space-y-6">
+						<SettingsModulesTab />
+						<YandexCalendarSyncsWidget />
+					</div>
+				) : null}
 				{/*
           Кнопка вкладки и сама панель обязаны спрашивать одно и то же.
 
@@ -2380,10 +2388,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           Файлы виджетов пока на месте — их снимает ведущий отдельным коммитом
           вместе с серверной частью.
         */}
-				<div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-					<EgiszBlankPermissionsWidget />
-					<YandexCalendarSyncsWidget />
-				</div>
 				<div className="h-36 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 			</div>
 		</motion.section>

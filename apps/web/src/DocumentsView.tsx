@@ -6089,9 +6089,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				totalCount={typedActiveDocuments?.length ?? 0}
 				filteredCount={filteredActiveDocuments.length}
 				availableKinds={availableRegistryKinds}
-				activeCategoryTab={activeCategoryTab}
-				onSelectCategoryTab={setActiveCategoryTab}
-				categoryCounts={navCategoryCounts}
 				onResetFilters={() => {
 					setRegistrySearchQuery("");
 					setRegistryStatusFilter("all");
