@@ -12,7 +12,6 @@ import {
 	buildStandardImplantationProtocolText,
 	type SurgicalOperationNorm,
 } from "./surgeryProtocols";
-import { SurgeryCockpitModal } from "./SurgeryCockpitModal";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import { useVisitStore } from "../../store/visitStore";
 import "./surgery.css";
@@ -36,7 +35,6 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 	onApplyDiaryText,
 	className = "",
 }) => {
-	const [isFullCockpitOpen, setIsFullCockpitOpen] = useState<boolean>(false);
 	const [isPassportModalOpen, setIsPassportModalOpen] = useState<boolean>(false);
 
 	const effectiveTooth = activeTooth ?? 46;
@@ -174,7 +172,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 
 					<button
 						type="button"
-						onClick={() => setIsFullCockpitOpen(true)}
+						onClick={() => showToast("Хирургический протокол формы 043/у", "info")}
 						className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 shadow-2xs"
 						data-testid="btn-cockpit-full"
 					>
@@ -219,17 +217,6 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 			</div>
 
 			{/* Модальные окна */}
-			{isFullCockpitOpen && (
-				<SurgeryCockpitModal
-					isOpen={isFullCockpitOpen}
-					onClose={() => setIsFullCockpitOpen(false)}
-					initialTooth={effectiveTooth}
-					patientName={patientName}
-					patientId={patientId}
-					doctorName={doctorName}
-				/>
-			)}
-
 			{isPassportModalOpen && (
 				<ImplantPassportModal
 					isOpen={isPassportModalOpen}

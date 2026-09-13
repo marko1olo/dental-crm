@@ -36,9 +36,6 @@ export * from "./patientFieldRequirementsConfig";
 export * from "./patientListFeatureSalience";
 export * from "./patientDraftResetDecision";
 
-// Branch Transfer
-export * from "./transfer/PatientBranchTransferModal";
-
 // Consolidated Patient Components (Mandate 8s)
 export * from "./PatientHeaderCard";
 export * from "./PatientWorkspaceView";

@@ -21,7 +21,6 @@ import {
 	type SurgicalOperationNorm,
 	type StandardImplantationParams,
 } from "../../surgery/surgeryProtocols";
-import { SurgerySafetyChecklist } from "../../surgery/SurgerySafetyChecklist";
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
 import {
 	printSurgicalOperationProtocol,
@@ -567,9 +566,6 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 					data-testid="textarea-visit-surgery-protocol"
 				/>
 			</div>
-
-			{/* ВОЗ Time-Out Checklist */}
-			<SurgerySafetyChecklist toothFdi={effectiveTooth} patientName={patientName} />
 
 			{/* Footer Actions */}
 			<footer className="flex items-center justify-between gap-3 pt-3 border-t border-[var(--line)] flex-wrap">

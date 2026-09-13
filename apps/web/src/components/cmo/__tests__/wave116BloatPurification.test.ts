@@ -16,38 +16,12 @@ describe("Wave 116: Hospital Bloat & Commission Purification (Mandates 8a–8q)"
 	const __dirname = path.dirname(__filename);
 	const repoRoot = path.resolve(__dirname, "../../../../../..");
 
-	it("1. CmoQualityAuditModal: отсутствие стационарного текста «Служба контроля качества Начмеда» в пользу Формы 043/у", () => {
+	it("1. CmoQualityAuditModal: ликвидирован госпитальный блоат комиссий ВК 785н (файл отсутствует)", () => {
 		const modalPath = path.join(
 			repoRoot,
 			"apps/web/src/components/cmo/CmoQualityAuditModal.tsx",
 		);
-		const modalContent = fs.readFileSync(modalPath, "utf-8");
-
-		// Проверка заголовка
-		assert.ok(
-			!modalContent.includes("Служба контроля качества Начмеда (ВКК Приказ № 785н & 834н)"),
-			"CmoQualityAuditModal не должна содержать громоздкий стационарный заголовок начмеда",
-		);
-		assert.ok(
-			modalContent.includes("Внутренний контроль качества (Форма 043/у Минздрава РФ)"),
-			"CmoQualityAuditModal обязана содержать заголовок Внутренний контроль качества (Форма 043/у Минздрава РФ)",
-		);
-
-		// Проверка подписи в акте экспертизы
-		assert.ok(
-			!modalContent.includes("Председатель комиссии (Начмед):"),
-			"Подпись не должна требовать должность Начмеда",
-		);
-		assert.ok(
-			modalContent.includes("Ответственный за контроль качества:"),
-			"Подпись должна быть нейтральной: 'Ответственный за контроль качества:'",
-		);
-
-		// Проверка фиксации принципа консультативности (Мандат 8e)
-		assert.ok(
-			modalContent.includes("Мандат 8e (п. 4): Аудит качества носит строго консультативный/экспертный характер"),
-			"В коде модала зафиксирован приоритет Мандата 8e и отсутствие блокировки врача",
-		);
+		assert.ok(!fs.existsSync(modalPath), "CmoQualityAuditModal ликвидирован по Мандатам 8e, 8i, 8k");
 	});
 
 	it("2. sickLeaveElnEngine: отсутствие захардкоженных членов комиссий Смирнова и Кузнецовой", () => {

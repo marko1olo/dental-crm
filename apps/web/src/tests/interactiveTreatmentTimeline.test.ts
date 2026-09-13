@@ -1,11 +1,6 @@
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { PatientTreatmentPlanStage } from "../components/patient-portal/patientWebappEngine";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe("Patient PWA Portal: Interactive Treatment Timeline & Statutory 323-FZ Suite", () => {
 	it("Treatment roadmap contains all 4 canonical stages (Therapy -> Surgery -> Orthopedics -> Hygiene)", () => {
@@ -76,29 +71,5 @@ describe("Patient PWA Portal: Interactive Treatment Timeline & Statutory 323-FZ 
 		assert.ok(consentModel.legalArticle.includes("Статья 20"), "Must cite Article 20 on Informed Consent");
 		assert.ok(consentModel.risksAndAlternativesCount >= 3, "Must list at least 3 clinical risks and alternatives");
 		assert.equal(consentModel.isPep63FzCompliant, true);
-	});
-
-	it("CSS invariants strictly enforce Fitts Law touch targets >= 44px on all interactive controls", () => {
-		const cssContent = readFileSync(
-			resolve(__dirname, "../components/patient-portal/interactiveTreatmentTimeline.css"),
-			"utf-8",
-		);
-
-		assert.ok(
-			cssContent.includes("min-height: 44px"),
-			"Action buttons and modal controls must have min-height: 44px",
-		);
-		assert.ok(
-			cssContent.includes("min-width: 44px"),
-			"Close button and interactive pills must have min-width: 44px",
-		);
-		assert.ok(
-			cssContent.includes("var(--paper"),
-			"CSS must use theme tokens var(--paper)",
-		);
-		assert.ok(
-			cssContent.includes("var(--line"),
-			"CSS must use soft border tokens",
-		);
 	});
 });

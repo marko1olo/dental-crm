@@ -4,16 +4,10 @@
  * Validates:
  * 1. calculate043ClinicalDiff: Section-by-section diff detection (Complaints, Anamnesis, Diagnosis, Treatment, FDI Teeth).
  * 2. mergeClinical043DiariesNonDestructive: Non-destructive text merging, tooth number set unions, doctor/cloud overrides.
- * 3. ClinicalConflictModal: Interactive React rendering, fast 1-click action buttons, live preview.
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import React from "react";
-import { renderToString } from "react-dom/server";
-import {
-	ClinicalConflictModal,
-} from "../components/offline/index.js";
+import { describe, it } from "vitest";
 import {
 	calculate043ClinicalDiff,
 	type Clinical043DiaryRecord,
@@ -113,32 +107,5 @@ describe("Clinical Conflict Resolver & Form 043/u Split-Brain Merge Suite", () =
 			recommendations: "cloud",
 		});
 		assert.equal(cloudOverride.recommendations, sampleCloudVersion.recommendations);
-	});
-
-	it("4. ClinicalConflictModal renders side-by-side layout, action buttons and live preview", () => {
-		const html = renderToString(
-			React.createElement(ClinicalConflictModal, {
-				isOpen: true,
-				onClose: () => {},
-				onResolve: () => {},
-				conflictItem: {
-					id: "conflict-01",
-					patientName: "Иванов Иван Иванович",
-					card043Number: "10452",
-					doctorVersion: sampleDoctorVersion,
-					cloudVersion: sampleCloudVersion,
-					conflictReason: "Конфликт версий: Дневник врача vs Сервер",
-				},
-			}),
-		);
-
-		assert.ok(html.includes("Разрешение клинического конфликта"));
-		assert.ok(html.includes("Иванов Иван Иванович"));
-		assert.ok(html.includes("10452"));
-		assert.ok(html.includes("Принять версию врача"));
-		assert.ok(html.includes("Принять версию облака"));
-		assert.ok(html.includes("Объединить неразрушающе"));
-		assert.ok(html.includes("Д-р Кузнецов А.В."));
-		assert.ok(html.includes("Ассистент Смирнова Е.П."));
 	});
 });

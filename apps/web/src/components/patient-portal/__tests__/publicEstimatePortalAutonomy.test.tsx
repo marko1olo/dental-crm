@@ -2,10 +2,9 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import type { PublicEstimateDetail, PublicEstimateMeta } from "@dental/shared";
 import { PublicEstimatePortal } from "../PublicEstimatePortal";
-import { PatientBranchTransferModal } from "../../patients/transfer/PatientBranchTransferModal";
 import { PatientCabinetModal } from "../../portal/patientCabinet/PatientCabinetModal";
 import { DEMO_PATIENT_CABINET } from "../../portal/patientCabinet/patientCabinetPresets";
 
@@ -614,43 +613,6 @@ describe("Public Portal & Statutory Signature Autonomy (Mandates 8e, 8i, 8k & 63
 			expect(body.signatureMethod).toBe("click_accept");
 		} finally {
 			globalThis.fetch = originalFetch;
-			try {
-				await act(async () => {
-					root.unmount();
-				});
-			} finally {
-				teardownMockDom();
-			}
-		}
-	});
-
-	it("PatientBranchTransferModal: uses statutory paper consent instead of biometric stylus fiction", async () => {
-		const { doc } = setupMockDom();
-		const root: Root = createRoot(doc.body as unknown as HTMLElement);
-		try {
-			await act(async () => {
-				root.render(
-					<PatientBranchTransferModal
-						isOpen={true}
-						onClose={() => {}}
-						patientId="pat-42"
-						patientFullName="Смирнов Петр Алексеевич"
-						initialSourceBranchId="branch_center"
-						initialTargetBranchId="branch_north"
-					/>,
-				);
-			});
-
-			const html = nodeToHtml(doc.body);
-
-			// 1. Must contain statutory paper consent
-			expect(html).toContain('value="paper_signed_consent"');
-			expect(html).toContain("Бумажное заявление пациента (подшито в карту 043/у)");
-
-			// 2. Biometric fiction must be completely eradicated
-			expect(html).not.toContain("tablet_stylus_biometric");
-			expect(html).not.toContain("биометрический росчерк");
-		} finally {
 			try {
 				await act(async () => {
 					root.unmount();

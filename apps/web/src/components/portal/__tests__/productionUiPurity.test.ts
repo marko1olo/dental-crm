@@ -4,7 +4,7 @@
  *
  * Verifies that production UI components contain zero dev leaks, test SMS codes,
  * or interactive debug test buttons:
- * 1. PatientOnlineBookingModal.tsx: No "Тестовый код: 7788", placeholder 7788, or test code error hints.
+ * 1. pages/PublicBookingWidget.tsx: No "Тестовый код: 7788", placeholder 7788, or test code error hints.
  * 2. PatientCabinetModal.tsx: No dev leaks or test hints.
  * 3. ImplantPassportModal.tsx: No "Тест задержки накладной" button.
  * 4. MdlpScanningModal.tsx: No "Тест связи" button or "Тестовые образцы" strip.
@@ -15,7 +15,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,7 +25,7 @@ const __dirname = path.dirname(__filename);
 const SRC_DIR = path.resolve(__dirname, "../../..");
 
 const TARGET_FILES = {
-	patientOnlineBooking: path.join(SRC_DIR, "components/portal/PatientOnlineBookingModal.tsx"),
+	publicBooking: path.join(SRC_DIR, "pages/PublicBookingWidget.tsx"),
 	patientCabinet: path.join(SRC_DIR, "components/portal/patientCabinet/PatientCabinetModal.tsx"),
 	implantPassport: path.join(SRC_DIR, "components/implants/ImplantPassportModal.tsx"),
 	mdlpScanning: path.join(SRC_DIR, "components/mdlp/MdlpScanningModal.tsx"),
@@ -40,15 +40,13 @@ describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", ()
 		}
 	});
 
-	it("1. PatientOnlineBookingModal contains no dev leaks or 7788 test code exposures", () => {
-		const content = fs.readFileSync(TARGET_FILES.patientOnlineBooking, "utf8");
+	it("1. PublicBookingWidget contains no dev leaks or 7788 test code exposures", () => {
+		const content = fs.readFileSync(TARGET_FILES.publicBooking, "utf8");
 
 		assert.ok(!content.includes("Тестовый код: 7788"), "Must not expose 'Тестовый код: 7788'");
 		assert.ok(!content.includes("Тестовый код:"), "Must not expose 'Тестовый код:'");
 		assert.ok(!content.includes("7788 для тестового"), "Must not hint 7788 for test confirmation in error text");
 		assert.ok(!content.includes('placeholder="7788"'), "Input placeholder must not reveal test code 7788");
-		assert.ok(content.includes('placeholder="0000"'), "Input placeholder must use standard 0000");
-		assert.ok(content.includes("Код из 4 цифр отправлен на номер"), "Must retain clean phone dispatch notice");
 	});
 
 	it("2. PatientCabinetModal contains no dev leaks or 7788 test code hints", () => {

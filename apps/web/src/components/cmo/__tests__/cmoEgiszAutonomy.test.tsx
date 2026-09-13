@@ -10,10 +10,9 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach } from "vitest";
 import assert from "node:assert/strict";
 
-import { CmoQualityAuditModal } from "../CmoQualityAuditModal";
 import {
 	EgiszSigningCabinetModal,
 	type EgiszCabinetDocumentItem,
@@ -359,41 +358,6 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 				],
 			}),
 		})) as unknown as typeof fetch;
-	});
-
-	it("1. CmoQualityAuditModal: custom remark add button is not disabled when text is empty, clicking shows guidance toast (Mandate 8e)", async () => {
-		await act(async () => {
-			root.render(
-				<CmoQualityAuditModal
-					isOpen={true}
-					onClose={() => {}}
-				/>,
-			);
-		});
-
-		// Find the Add Remark button
-		const addBtn = findNodeByTestId(container, "cmo-add-remark-btn");
-		assert.notStrictEqual(addBtn, null);
-		// Assert not disabled (Mandate 8e: Doctor Autonomy)
-		assert.strictEqual(addBtn?.disabled, false);
-		assert.strictEqual(addBtn?.getAttribute("disabled"), null);
-
-		let toastEvent: any = null;
-		// biome-ignore lint/suspicious/noExplicitAny: test mock window
-		(globalThis as any).window.addEventListener("dente-toast", (ev: any) => {
-			toastEvent = ev.detail;
-		});
-
-		// Click the button with empty comment
-		await clickNode(addBtn!);
-
-		// Expect helpful toast guidance instead of hard-disabled roadblock
-		assert.notStrictEqual(toastEvent, null);
-		assert.strictEqual(
-			toastEvent?.text,
-			"Введите текст индивидуального замечания для добавления",
-		);
-		assert.strictEqual(toastEvent?.type, "warning");
 	});
 
 	it("2. EgiszSigningCabinetModal: send button is not disabled when doctor signature is missing, clicking shows guidance toast (Mandate 8e)", async () => {

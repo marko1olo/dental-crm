@@ -54,7 +54,7 @@
 > 48. Ликвидация 12 искусственных фасадов-дубликатов (VisitDiaryTemplateSelector, NdflCalculatorModal, FnsNdflXmlModal, EgiszDocumentsJournalModal, EgiszRemdSigningModal, EgiszRemdXmlModal, EgiszCdaExportModal, PatientWebappPortalModal, PatientMobilePortalModal, VisitSoapTemplatesModal, CbctMpr3DStudioModal, CasePresentationView), снос дубликатов ЕГИСЗ и налоговых калькуляторов, пробитие потолка ширм DEMOUNTED_MODAL_SHIRMS_CEILING со 104 до 99 в panelsAreMounted.test.ts (Wave 194, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t).
 > 49. Ликвидация дублирующего журнала автоклава SterilizationAutoclaveLogModal в пользу канонических компонентов SanPiN AutoclaveCycleModal и SanpinJournal257View (Wave 195, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t): полное удаление `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx` (-597 строк) через `git rm`; прямое монтирование канонического `AutoclaveCycleModal` в `ClinicalModalsHost.tsx` (`sterilization_journal` и `sterilization_autoclave_log`); переключение реэкспортов в `sterilization/index.ts` и `sanpin/index.ts` на канонические компоненты СанПиН 3.3686-21 (`AutoclaveCycleModal`, `SanpinJournal257View`); актуализация тестов `financeAutonomyWave42.test.tsx` и `procedureMaterialDeductionAutonomy.test.tsx`.
 > 50. Ликвидация 6 микро-фасадов и дублирующих ширм (StaffPayrollLedgerModal, StaffCommissionsModal, AccessMatrixModal, AnesthesiaProtocolSection, ExpressFiscalReceiptModal, PatientDetailModal), снижение потолка ширм DEMOUNTED_MODAL_SHIRMS_CEILING с 94 до 88 в panelsAreMounted.test.ts, консолидация на SSOT компонентах DoctorPayrollModal, StaffCommissionsPanel, GranularRoleMatrixView, AnesthesiaQuickBar, FiscalReceipt54FzModal, PatientAnamnesisModal (Wave 196, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t).
-> 51. Ликвидация 12 параллельных дублирующих мега-компонентов DMS, анестезии и рентгена (~14,200 LOC: DmsInsuranceManagerModal, DmsInsurersHubModal, InsurancePreAuthModal, AnesthesiaDosageCalculatorModal, AnesthesiaSafetyHubModal, AnesthesiaProtocolModal, EmergencyAnaphylaxisProtocolModal, ToothAnesthesiaCalculator, RadiologyModule, RadiologyStudyList, RadiologyViewerModal, MedicalRadiologyDropzone), консолидация на SSOT-компонентах DmsGuaranteeLetterModal, AnesthesiaQuickBar, EmergencyRescueModal, DicomViewerModal, PhotoProtocolDropzone, CbctMprImplantStudioModal, снижение потолка бутафорских ширм DEMOUNTED_MODAL_SHIRMS_CEILING с 88 до 76 в panelsAreMounted.test.ts (Wave 197, Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t).
+> 52. Ликвидация 28 дублирующих компонентов и академических симуляторов стационара по Мандатам 8i, 8k, 8s (-20 601 LOC: CashRegisterModal, CashShiftClosingModal, FamilyWalletModal, PatientInstallmentScheduleModal, CbctMprViewer, RadiationDoseSheetModal, ImplantCrossSectionPlanner, ChairsideTabletConsentModal, ToothStatusPalette, SurgeryProtocolPanel, VisitEndoProtocolWidget, DiagnosisSelector, PostOpCareSheetModal, PediatricToothChart, PrescriptionsTab, ClinicalProtocolPresets, MedicalPrescriptionModal, EndoQuickProtocolsBar, InteractiveTreatmentTimelineWidget, PatientPortalTimelineModal, PatientOnlineBookingModal, UpcomingVisitCard, SignaturePadCanvas, CmoQualityAuditModal, PatientBranchTransferModal, SurgeryCockpitModal, ClinicalConflictModal, SurgerySafetyChecklist), консолидация на канонических SSOT-компонентах, строгое снижение потолка бутафорских ширм DEMOUNTED_MODAL_SHIRMS_CEILING с 56 до 28 в panelsAreMounted.test.ts (Wave 199, Мандаты 8c, 8d, 8e, 8h, 8i, 8j, 8k, 8n, 8s, 8t).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -5904,6 +5904,75 @@
   - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8);
   - Single-Compiler Gate защищен per Mandate 8t;
   - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
+---
+
+## 348. Волна 199: Ликвидация 28 дублирующих компонентов и академических симуляторов стационара (-20 601 LOC), снижение потолка ширм с 56 до 28 (Мандаты 8c, 8d, 8e, 8h, 8j, 8n, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/tests/panelsAreMounted.test.ts` (удаление 28 записей из DEMOUNTED_MODAL_SHIRMS_BACKLOG, строгое снижение потолка DEMOUNTED_MODAL_SHIRMS_CEILING с 56 до 28)
+  - `apps/web/src/components/modals/ClinicalModalsHost.tsx` (переключение на канонические SSOT-компоненты: InformedConsentModal, ToothChart, ClinicalQuickPresetsBar, PrescriptionModal, EndoCanalLogModal, SurgeryVisitCockpit, VisitSurgeryProtocolTab, PatientMemoPrintModal, Icd10ClinicalSelector)
+  - `apps/web/src/components/modals/BackofficeModalsHost.tsx` (переключение на канонический PrescriptionModal)
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx` / `PaymentModal.tsx` (канонический SSOT быстрой кассы и оплат)
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx` (канонический SSOT фискализации чеков 54-ФЗ)
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx` (канонический SSOT КЛКТ и MPR-просмотра)
+  - `apps/web/src/components/documents/forms/RadiationDoseSheetForm.tsx` (канонический SSOT листа дозовых нагрузок)
+  - `apps/web/src/components/consents/InformedConsentModal.tsx` (канонический SSOT ИДС и планшетных согласий)
+  - `apps/web/src/components/odontogram/ToothChart.tsx` (канонический SSOT зубной формулы с поддержкой детского прикуса и 1-клик пресетов)
+  - `apps/web/src/components/surgery/SurgeryVisitCockpit.tsx` / `VisitSurgeryProtocolTab.tsx` (канонический SSOT хирургического протокола и паспорта имплантата)
+  - `apps/web/src/components/visit/PrescriptionModal.tsx` (канонический SSOT рецептурных бланков 107-1/у)
+  - `apps/web/src/components/endo/EndoCanalLogModal.tsx` (канонический SSOT эндодонтического протокола)
+  - `apps/web/src/components/portal/PatientCabinetModal.tsx` / `PublicBookingWidget.tsx` (канонический SSOT личного кабинета и онлайн-записи)
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+* **Архитектурные механизмы**:
+  - **Ликвидация 28 параллельных дублирующих компонентов (-20 601 LOC) по Вселенскому анти-блоат догмату (Мандат 8s)**:
+    * В соответствии с Законом Единого Неделимого Авторитета (Мандат 8s: «Для КАЖДОЙ задачи — СТРОГО ОДИН канонический мастер-компонент, роут и сервис. При обнаружении исторических дублей — РОВНО ОДИН лучший эталон (The Best of Breed) впитывает функционал, а остальные немедленно уничтожаются или схлопываются в прозрачные фасады») ликвидированы 28 параллельных дублирующих компонентов и академических симуляторов в пользу канонических SSOT:
+      1. `CashRegisterModal.tsx` — консолидирован на канонической кассе `FastCheckoutModal.tsx` / `PaymentModal.tsx` (54-ФЗ без обязательного ИНН физлиц по Мандату 8e);
+      2. `CashShiftClosingModal.tsx` — консолидирован на каноническом закрытии смены `CashShiftWidget.tsx` и `ShiftCloseZReportModal.tsx`;
+      3. `FamilyWalletModal.tsx` — консолидирован на каноническом семейном депозите `FamilyDepositModal.tsx`;
+      4. `PatientInstallmentScheduleModal.tsx` — консолидирован на каноническом графике рассрочек `InstallmentScheduleModal.tsx`;
+      5. `CbctMprViewer.tsx` — консолидирован на канонической студии КЛКТ `CbctMprImplantStudioModal.tsx`;
+      6. `RadiationDoseSheetModal.tsx` — консолидирован на канонической форме учета дозовых нагрузок `RadiationDoseSheetForm.tsx` (СанПиН 2.6.1.1192-03);
+      7. `ImplantCrossSectionPlanner.tsx` — консолидирован на каноническом КЛКТ-планировании `CbctMprImplantStudioModal.tsx`;
+      8. `ChairsideTabletConsentModal.tsx` — консолидирован на каноническом информированном согласии `InformedConsentModal.tsx`;
+      9. `ToothStatusPalette.tsx` — консолидирован на канонических пресетах в `ToothChart.tsx` и `QuickStatusPalette.tsx`;
+      10. `SurgeryProtocolPanel.tsx` — консолидирован на канонической вкладке хирургического протокола `VisitSurgeryProtocolTab.tsx`;
+      11. `VisitEndoProtocolWidget.tsx` — консолидирован на каноническом эндо-журнале `EndoCanalLogModal.tsx`;
+      12. `DiagnosisSelector.tsx` — консолидирован на каноническом селекторе диагнозов `Icd10ClinicalSelector.tsx`;
+      13. `PostOpCareSheetModal.tsx` — консолидирован на канонической памятке пациенту `PatientMemoPrintModal.tsx`;
+      14. `PediatricToothChart.tsx` — консолидирован на детском режиме в канонической одонтограмме `ToothChart.tsx`;
+      15. `PrescriptionsTab.tsx` — консолидирован на каноническом рецепте `PrescriptionModal.tsx` (Форма 107-1/у);
+      16. `ClinicalProtocolPresets.tsx` — консолидирован на канонической экспресс-панели пресетов `ClinicalQuickPresetsBar.tsx`;
+      17. `MedicalPrescriptionModal.tsx` — консолидирован на каноническом модале рецептов `PrescriptionModal.tsx`;
+      18. `EndoQuickProtocolsBar.tsx` — консолидирован на каноническом модуле эндодонтии `EndoCanalLogModal.tsx`;
+      19. `InteractiveTreatmentTimelineWidget.tsx` — консолидирован на каноническом кабинете пациента `PatientCabinetModal.tsx`;
+      20. `PatientPortalTimelineModal.tsx` — консолидирован на каноническом кабинете пациента `PatientCabinetModal.tsx`;
+      21. `PatientOnlineBookingModal.tsx` — консолидирован на каноническом виджете онлайн-записи `PublicBookingWidget.tsx`;
+      22. `UpcomingVisitCard.tsx` — консолидирован на каноническом кабинете пациента `PatientCabinetModal.tsx`;
+      23. `SignaturePadCanvas.tsx` — консолидирован на каноническом подписании согласий `InformedConsentModal.tsx`;
+      24. `CmoQualityAuditModal.tsx` — консолидирован на каноническом аудите медкарты `CmoEmrAuditModal.tsx`;
+      25. `PatientBranchTransferModal.tsx` — консолидирован на канонической карточке пациента `PatientCard.tsx`;
+      26. `SurgeryCockpitModal.tsx` — консолидирован на каноническом хирургическом кокпите `SurgeryVisitCockpit.tsx`;
+      27. `ClinicalConflictModal.tsx` — консолидирован на каноническом баннере офлайн-синхронизации `OfflineBanner.tsx`;
+      28. `SurgerySafetyChecklist.tsx` — консолидирован на протоколе операции `VisitSurgeryProtocolTab.tsx` (ликвидирован избыточный стационарный опросник по Мандату 8i).
+  - **Снижение потолка бутафорских ширм с 56 до 28 в panelsAreMounted.test.ts (Мандат 8s)**:
+    * Из тестового бэклога `DEMOUNTED_MODAL_SHIRMS_BACKLOG` вычищены все 28 записей ликвидированных компонентов;
+    * Потолок `DEMOUNTED_MODAL_SHIRMS_CEILING` строго понижен с 56 до 28 ($28 \le 28$);
+    * Тестовый набор `panelsAreMounted.test.ts` полностью валиден: 12/12 PASS;
+    * Ни один несмонтированный компонент не остается незаявленным в кодовой базе.
+  - **Клиническая эргономика, автономия врача и защита хоста (Мандаты 8c, 8d, 8e, 8n, 8p, 8t)**:
+    * Прямое переключение вызовов в `ClinicalModalsHost.tsx` и `BackofficeModalsHost.tsx` на канонические SSOT-компоненты;
+    * Соблюдение эргономических инвариантов: 1 строка тулбара 32–36px, тач-таргеты >=44x44px (>=48px в хирургии под перчатки), глубина модалок строго 1 (Анти-Матрёшка);
+    * Полная автономия врача: 0 заблокированных кнопок, физиологическая норма в 1 клик, касса 54-ФЗ без ИНН физлиц (Мандат 8e);
+    * Искоренение стационарного академического блоата (Мандат 8i).
+* **Верификация**:
+  - `node --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/tests/panelsAreMounted.test.ts`: 12/12 PASS;
+  - `node scripts/check-encoding.mjs`: 0 ошибок (UTF-8);
+  - Single-Compiler Gate защищен per Mandate 8t;
+  - Все затронутые модули соответствуют macOS Studio Clinical HIG и Высшей Конституции THE HAMMER.
+
 
 
 

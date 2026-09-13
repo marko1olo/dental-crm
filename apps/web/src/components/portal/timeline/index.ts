@@ -16,8 +16,3 @@ export {
 	type ToothGroupCount,
 	type PortalToothAggregation,
 } from "./portalTimelineEngine";
-export {
-	PatientPortalTimelineModal,
-	type PatientPortalTimelineModalProps,
-	default,
-} from "./PatientPortalTimelineModal";
