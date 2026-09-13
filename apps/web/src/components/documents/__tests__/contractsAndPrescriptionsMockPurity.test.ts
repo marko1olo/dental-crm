@@ -31,11 +31,6 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			description: "Листок ежедневного учета работы врача-стоматолога Форма 037/у",
 		},
 		{
-			name: "FnsNdflXmlModal.tsx",
-			relativePath: "components/documents/ndflXml/FnsNdflXmlModal.tsx",
-			description: "Справка об оплате медицинских услуг для ФНС (КНД 1151156 / 1184043)",
-		},
-		{
 			name: "SettingsTelegramTab.tsx",
 			relativePath: "components/settings/SettingsTelegramTab.tsx",
 			description: "Шаблоны превью уведомлений Telegram",
@@ -86,19 +81,6 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		assert.ok(
 			content.includes('initialPayload?.doctorFullName ?? ""'),
 			"В DailyDentistWorkSheet037uForm doctorFullName обязан инициализироваться пустой строкой",
-		);
-	});
-
-	test("Functional verification: FnsNdflXmlModal fallback patient has empty fullName", () => {
-		const fullPath = path.join(
-			webSrcDir,
-			"components/documents/ndflXml/FnsNdflXmlModal.tsx",
-		);
-		const content = fs.readFileSync(fullPath, "utf-8");
-
-		assert.ok(
-			content.includes('fullName: "",') && content.includes('id: "sample-patient-1",'),
-			"В FnsNdflXmlModal запасной пациент sample-patient-1 должен иметь fullName: ''",
 		);
 	});
 

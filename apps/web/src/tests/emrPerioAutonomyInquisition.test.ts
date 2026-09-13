@@ -53,7 +53,7 @@ import {
 import {
 	CANONICAL_SOAP_TEMPLATES,
 	type CanonicalSoapTemplateKey,
-} from "../components/VisitDiaryTemplateSelector.js";
+} from "../components/visit/clinicalSoapPresets.js";
 import {
 	FORM_043_PHYSIOLOGICAL_NORM,
 	createForm043PhysiologicalNorm,

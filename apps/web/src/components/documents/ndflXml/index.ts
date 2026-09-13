@@ -7,4 +7,3 @@
 
 export * from "./fnsNdflXmlPresets";
 export * from "./fnsNdflXmlEngine";
-export * from "./FnsNdflXmlModal";

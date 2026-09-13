@@ -36,7 +36,7 @@ import { isoDateLabel } from "./AppHelpers";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 import { appendChipToText } from "./components/documents/documentChipText";
-import { FnsNdflXmlModal } from "./components/documents/ndflXml/FnsNdflXmlModal";
+import { TaxDeductionCertificateModal } from "./components/finance/TaxDeductionCertificateModal";
 import { EgiszRemdXmlModal } from "./components/egisz/remdXml/EgiszRemdXmlModal";
 import { SickLeaveElnModal } from "./components/documents/sickLeave/SickLeaveElnModal";
 import { AutoclaveLog257Modal } from "./components/sanpin/autoclaveLog/AutoclaveLog257Modal";
@@ -6556,18 +6556,10 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			/>
 
 			{isFnsNdflXmlOpen && (
-				<FnsNdflXmlModal
-					initialPatientId={activePatient?.id}
-					initialTaxYear={
-						typeof taxDocumentYear === "number" &&
-						(taxDocumentYear === 2023 ||
-							taxDocumentYear === 2024 ||
-							taxDocumentYear === 2025 ||
-							taxDocumentYear === 2026)
-							? taxDocumentYear
-							: 2025
-					}
+				<TaxDeductionCertificateModal
+					isOpen={isFnsNdflXmlOpen}
 					onClose={() => setIsFnsNdflXmlOpen(false)}
+					selectedYear={taxDocumentYear}
 				/>
 			)}
 

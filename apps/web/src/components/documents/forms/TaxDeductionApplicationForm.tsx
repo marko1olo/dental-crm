@@ -6,7 +6,7 @@ import type {
 import React, { useMemo, useState } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
-import { NdflCalculatorModal } from "../NdflCalculatorModal";
+import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { taxApplicationBlockersReview } from "../taxApplicationBlockers";
 import type { DocumentSelectOption } from "./documentFormTypes";
 
@@ -329,7 +329,7 @@ export function TaxDeductionApplicationForm({
 					</button>
 				</div>
 				{isCalculatorOpen && (
-					<NdflCalculatorModal onClose={() => setIsCalculatorOpen(false)} />
+					<TaxDeductionCertificateModal isOpen={true} onClose={() => setIsCalculatorOpen(false)} />
 				)}
 			</DocumentPayloadCard>
 		);

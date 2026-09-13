@@ -27,7 +27,6 @@ import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal";
 import { PatientOmnichannelHubModal } from "../messaging/PatientOmnichannelHubModal";
 import { ClinicalPnlHubModal } from "../finance/pnl/ClinicalPnlHubModal";
 import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
-import { FnsNdflXmlModal } from "../documents/ndflXml";
 import { MedicalPrescriptionModal } from "../prescriptions/generator/MedicalPrescriptionModal";
 import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
 import { StaffPayrollLedgerModal } from "../payroll/StaffPayrollLedgerModal";
@@ -194,7 +193,7 @@ export const BackofficeModalsHost: React.FC = () => {
 				<TaxDeductionCertificateModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "fns_ndfl_xml" && (
-				<FnsNdflXmlModal isOpen={true} onClose={close}  {...({} as any)} />
+				<TaxDeductionCertificateModal isOpen={true} onClose={close}  {...({} as any)} />
 			)}
 			{activeModal === "medical_prescription" && (
 				<MedicalPrescriptionModal isOpen={true} onClose={close}  {...({} as any)} />
