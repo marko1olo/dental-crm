@@ -132,6 +132,8 @@
 	font-weight: 600;
 	cursor: pointer;
 	white-space: nowrap;
+	touch-action: manipulation;
+	user-select: none;
 	transition:
 		background-color var(--transition-fast),
 		border-color var(--transition-fast),
@@ -190,6 +192,8 @@
 	cursor: pointer;
 	text-align: left;
 	box-sizing: border-box;
+	touch-action: manipulation;
+	user-select: none;
 	transition:
 		background-color var(--transition-fast),
 		border-color var(--transition-fast),
@@ -411,6 +415,8 @@
 	font-weight: 600;
 	color: var(--ink);
 	cursor: pointer;
+	touch-action: manipulation;
+	user-select: none;
 	transition:
 		background-color var(--transition-fast),
 		border-color var(--transition-fast);
@@ -482,6 +488,8 @@
 	font-family: var(--font-mono, monospace);
 	color: var(--ink);
 	cursor: pointer;
+	touch-action: manipulation;
+	user-select: none;
 	transition:
 		background-color var(--transition-fast),
 		border-color var(--transition-fast),

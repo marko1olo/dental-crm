@@ -1167,10 +1167,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 															e.stopPropagation();
 															handleApplyAndInsertToDiary(preset);
 														}}
-														className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-800 hover:text-white dark:text-emerald-300 dark:hover:text-white text-[11px] font-bold transition-all border border-emerald-500/30 gap-1 cursor-pointer min-h-[40px]"
+														className="flex items-center justify-center px-2.5 py-2 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-800 hover:text-white dark:text-emerald-300 dark:hover:text-white text-xs font-bold transition-all border border-emerald-500/30 gap-1.5 cursor-pointer min-h-[44px] min-w-[44px] touch-manipulation active:scale-95"
 														data-testid={`btn-fast-diary-${preset.id}`}
 													>
-														<FileText className="w-3.5 h-3.5" />
+														<FileText className="w-4 h-4" />
 														<span className="hidden xl:inline">В дневник</span>
 													</button>
 
@@ -1181,7 +1181,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 															e.stopPropagation();
 															handleApplyAndPrint(preset);
 														}}
-														className="flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shrink-0 transition-colors shadow-xs gap-1.5 cursor-pointer min-h-[40px] min-w-[40px]"
+														className="flex items-center justify-center px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0 transition-colors shadow-xs gap-1.5 cursor-pointer min-h-[44px] min-w-[44px] touch-manipulation active:scale-95"
 														data-testid={`btn-fast-print-${preset.id}`}
 													>
 														<Printer className="w-4 h-4" />
@@ -1257,10 +1257,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								<button
 									type="button"
 									onClick={() => setIsAddingCustom(!isAddingCustom)}
-									className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--teal)] border border-[var(--line)] transition-colors"
+									className="min-h-[44px] inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--teal)] border border-[var(--line)] transition-colors cursor-pointer touch-manipulation active:scale-98"
 								>
-									<Plus className="w-3.5 h-3.5" />
-									Своя пропись
+									<Plus className="w-4 h-4" />
+									<span>Своя пропись</span>
 								</button>
 							</div>
 
@@ -1304,14 +1304,14 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										<button
 											type="button"
 											onClick={() => setIsAddingCustom(false)}
-											className="min-h-[36px] px-3 py-1.5 text-xs font-medium rounded-lg text-[var(--muted)] hover:bg-[var(--line)]"
+											className="min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:bg-[var(--line)] cursor-pointer touch-manipulation"
 										>
 											Отмена
 										</button>
 										<button
 											type="button"
 											onClick={handleAddCustomDrug}
-											className="min-h-[36px] px-4 py-1.5 text-xs font-bold rounded-lg bg-[var(--teal-fill,var(--teal))] text-white shadow"
+											className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] text-white shadow cursor-pointer touch-manipulation active:scale-98"
 										>
 											Добавить в рецепт
 										</button>
@@ -1328,7 +1328,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											key={drug.id}
 											type="button"
 											onClick={() => toggleDrug(drug.id)}
-											className={`min-h-[56px] w-full flex items-start justify-between p-3 rounded-xl border text-left overflow-hidden transition-all ${
+											className={`min-h-[56px] w-full flex items-start justify-between p-3 rounded-xl border text-left overflow-hidden transition-all cursor-pointer touch-manipulation active:scale-[0.99] ${
 												isSelected
 													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] shadow-xs ring-1 ring-[var(--teal)]"
 													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -1383,7 +1383,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										<button
 											type="button"
 											onClick={() => removeCustomDrug(d.id)}
-											className="min-h-[36px] min-w-[36px] flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"
+											className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg cursor-pointer touch-manipulation active:scale-95"
 											aria-label="Удалить пропись"
 										>
 											<Trash2 className="w-4 h-4" />
@@ -1457,6 +1457,13 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											key={opt.days}
 											type="button"
 											disabled={opt.disabled}
+											title={
+												opt.disabled
+													? activeForm === "148-1u-88"
+														? "Для формы 148-1/у-88 (ПКУ) срок строго 15 дней по Приказу Минздрава 1094н"
+														: "Срок 15 дней применим только для бланков ПКУ (№ 148-1/у-88)"
+													: `Выбрать срок действия: ${opt.label}`
+											}
 											onClick={() => {
 												setValidityDays(opt.days as any);
 												if (opt.days === "365") {
@@ -1465,11 +1472,12 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 													setIsChronicSpecialCare(false);
 												}
 											}}
-											className={`min-h-[44px] px-2 py-1 text-xs font-semibold rounded-xl border text-center transition-all ${
-												opt.disabled ? "opacity-40 cursor-not-allowed bg-[var(--paper)]" :
-												validityDays === opt.days
-													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] font-bold shadow-sm"
-													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
+											className={`min-h-[44px] px-2 py-1 text-xs font-semibold rounded-xl border text-center transition-all touch-manipulation ${
+												opt.disabled
+													? "opacity-40 cursor-not-allowed bg-[var(--paper)]"
+													: validityDays === opt.days
+														? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] font-bold shadow-sm cursor-pointer"
+														: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] cursor-pointer"
 											}`}
 										>
 											{opt.label}
@@ -1539,10 +1547,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											type="button"
 											onClick={handleSignUkep}
 											disabled={isSigningUkep}
-											className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
+											className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all cursor-pointer touch-manipulation active:scale-98"
 										>
-											<ShieldCheck className="w-3.5 h-3.5" />
-											{isSigningUkep ? "Подписание..." : "Подписать УКЭП"}
+											<ShieldCheck className="w-4 h-4" />
+											<span>{isSigningUkep ? "Подписание..." : "Подписать УКЭП"}</span>
 										</button>
 									)}
 								</div>
@@ -1797,7 +1805,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyPatientMemo}
-							className="min-h-[44px] min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+							className="min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] shadow-sm transition-all active:scale-[0.98] cursor-pointer touch-manipulation"
 							data-testid="med-rx-copy-patient-btn"
 							title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
 						>
