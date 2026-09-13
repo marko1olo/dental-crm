@@ -401,7 +401,7 @@ export interface TimelineQueryResult {
 	page: number;
 	pageSize: number;
 	hasMore: boolean;
-	categoryCounts: Record<ClinicalTimelineCategory, number>;
+	categoryCounts: Record<TimelineCategory, number>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -427,14 +427,18 @@ function parseTimestamp(dateStr?: string): number {
 	return Number.isNaN(ts) ? 0 : ts;
 }
 
-function createEmptyCategoryCounts(): Record<ClinicalTimelineCategory, number> {
+function createEmptyCategoryCounts(): Record<TimelineCategory, number> {
 	return {
-		clinical: 0,
+		visit: 0,
+		treatment: 0,
 		financial: 0,
+		clinical: 0,
+		diagnostic: 0,
+		legal: 0,
+		communication: 0,
 		administrative: 0,
 		imaging: 0,
 		lab: 0,
-		communication: 0,
 	};
 }
 

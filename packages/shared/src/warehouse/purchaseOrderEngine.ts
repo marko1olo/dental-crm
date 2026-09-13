@@ -1157,7 +1157,7 @@ export function formatMaterialReceiptActM7A4(
 	const members = options?.commissionMembers || ["Старшая медицинская сестра", "Заведующий складом"];
 	const storekeeper = options?.storekeeperName || "Материально ответственное лицо";
 	const docNum = options?.supplierDocumentNumber || `СФ-${order.id}`;
-	const docDate = formatDateRu(options?.supplierDocumentDate || order.expectedDate);
+	const docDate = formatDateRu(options?.supplierDocumentDate || order.expectedDate || new Date().toISOString());
 
 	const sep = "=".repeat(80);
 	const subSep = "-".repeat(80);

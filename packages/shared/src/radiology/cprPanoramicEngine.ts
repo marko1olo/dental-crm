@@ -630,15 +630,6 @@ export function formatPanoramicCprReportA4(params: PanoramicCprReportParams): st
   return lines.join("\n");
 }
 
-export interface CPRResult {
-  pixelData: Float32Array;
-  width: number;
-  height: number;
-  horizontalSpacing: number;
-  verticalSpacing: number;
-  zMin: number;
-  zMax: number;
-}
 
 export interface PanoramicSamplingParams {
   controlPoints: Point2[];

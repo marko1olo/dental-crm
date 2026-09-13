@@ -764,6 +764,8 @@ export function createRelationshipPair(
 		relatedPatientName: params.relatedPatientName.trim(),
 		relationshipType: relType,
 		inverseType: invType,
+		isLegalGuardian: relType === "parent" || relType === "guardian",
+		canShareBalance: directIsPayer,
 		canSignConsent: directCanSign,
 		isFinancialPayer: directIsPayer,
 		isEmergencyContact: directIsEmergency,
@@ -787,6 +789,8 @@ export function createRelationshipPair(
 				: "Пациент",
 		relationshipType: invType,
 		inverseType: relType,
+		isLegalGuardian: invType === "parent" || invType === "guardian",
+		canShareBalance: inverseIsPayer,
 		canSignConsent: inverseCanSign,
 		isFinancialPayer: inverseIsPayer,
 		isEmergencyContact: inverseIsEmergency,
@@ -899,7 +903,7 @@ export function formatKinshipSummaryA4(
 			}
 			const indexStr = String(i + 1).padStart(3, "0");
 			const directLabel = getRelationshipLabelRu(rel.relationshipType);
-			const inverseLabel = getRelationshipLabelRu(rel.inverseType);
+			const inverseLabel = getRelationshipLabelRu(rel.inverseType || "other");
 
 			lines.push(`[${indexStr}] Связанное лицо: ${rel.relatedPatientName}`);
 			lines.push(`      Степень родства: ${directLabel} (встречный статус: ${inverseLabel})`);
