@@ -1005,7 +1005,7 @@ const DEMOUNTED_MODAL_SHIRMS_BACKLOG: readonly string[] = [
 	"components/visit/surgery/VisitSurgeryProtocolTab.tsx:VisitSurgeryProtocolTab",
 	"components/visit/therapy/VisitTherapyProtocolWidget.tsx:VisitTherapyProtocolWidget",
 	"components/voice/VoiceDictationAssistantModal.tsx:VoiceDictationAssistantModal",
-	"components/warehouse/NurseCarpuleDisposalModal.tsx:NurseCarpuleDisposalModal",
+	"components/inventory/NurseCarpuleDisposalModal.tsx:NurseCarpuleDisposalModal",
 	"components/warranty/WarrantyPassportModal.tsx:WarrantyPassportModal",
 	"pwa/A2hsPromptModal.tsx:A2hsPromptModal",
 ];

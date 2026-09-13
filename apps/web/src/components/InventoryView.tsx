@@ -29,7 +29,7 @@ import { WarehouseTransferModal } from "./inventory/transfers/WarehouseTransferM
 import { ClinicalWriteoffModal } from "./inventory/writeoff/ClinicalWriteoffModal";
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal";
 import { MdlpDisposalQueueModal } from "./inventory/mdlp/index.js";
-import { WarehousePackageWriteOffBar } from "./warehouse/WarehousePackageWriteOffBar";
+import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar";
 
 /**
  * Как показать срок годности расходника.
