@@ -165,13 +165,4 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 		assert.ok(!cheatSheet.includes("🚨"), "Ambulance cheat sheet must not contain 🚨 emoji");
 		assert.ok(cheatSheet.includes("[ЭКСТРЕННО]"), "Ambulance cheat sheet must include [ЭКСТРЕННО] marker");
 	});
-
-	it("7. Emojis eradication: ChairsiderPerspectiveView (no raw clipboard emoji)", () => {
-		const chairsiderPath = path.join(
-			repoRoot,
-			"apps/web/src/components/perspectives/ChairsiderPerspectiveView.tsx",
-		);
-		const chairsiderContent = fs.readFileSync(chairsiderPath, "utf-8");
-		assert.ok(!chairsiderContent.includes("📋"), "ChairsiderPerspectiveView must not contain raw 📋 emoji");
-	});
 });

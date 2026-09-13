@@ -74,10 +74,7 @@ import {
 	WorkspaceTopbar,
 } from "./workspaceShell";
 import { CasePresentationView } from "./components/perspectives/CasePresentationView";
-import { ChairsiderPerspectiveView } from "./components/perspectives/ChairsiderPerspectiveView";
-import { FrontdeskPerspectiveView } from "./components/perspectives/FrontdeskPerspectiveView";
 import { OrthodonticPerspectiveView } from "./components/perspectives/OrthodonticPerspectiveView";
-import { PediatricPerspectiveView } from "./components/perspectives/PediatricPerspectiveView";
 import { usePerspectiveStore } from "./store/perspectiveStore";
 
 const ImagingView = lazy(() =>
@@ -2361,10 +2358,7 @@ export function App() {
 											</section>
 										}
 									>
-										{perspective === "frontdesk" ? (
-											<FrontdeskPerspectiveView />
-										) : (
-											<ScheduleView
+										<ScheduleView
 												appointmentLabels={appointmentLabels}
 												appointmentReadinessById={appointmentReadinessById}
 												appointmentReadinessLabels={appointmentReadinessLabels}
@@ -2427,7 +2421,6 @@ export function App() {
 												// расписания не за чем.
 												loadDashboard={loadDashboard}
 											/>
-										)}
 									</Suspense>
 									{/*
               Утренний обзвон живёт в ScheduleView: кнопка «Подтверждения» рядом
@@ -2490,11 +2483,7 @@ export function App() {
 											</section>
 										}
 									>
-										{perspective === "chairsider" ? (
-											<ChairsiderPerspectiveView />
-										) : perspective === "pediatric" ? (
-											<PediatricPerspectiveView />
-										) : perspective === "orthodontic" ? (
+										{perspective === "orthodontic" ? (
 											<OrthodonticPerspectiveView />
 										) : perspective === "presentation" ? (
 											<CasePresentationView />

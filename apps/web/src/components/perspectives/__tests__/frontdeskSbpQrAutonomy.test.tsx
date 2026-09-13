@@ -15,11 +15,18 @@ import { generateQrCodeSvg } from "@dental/shared";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
-import {
-	type CheckoutItem,
-	FrontdeskPerspectiveView,
-	type FrontdeskPerspectiveViewProps,
-} from "../FrontdeskPerspectiveView";
+import { ScheduleView } from "../../../ScheduleView";
+
+export interface CheckoutItem {
+	appointmentId: string;
+	patientId: string;
+	patientName: string;
+	doctorName: string;
+	serviceSummary: string;
+	amountRub: number;
+	fiscalStatus: "pending" | "paid";
+	time: string;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,27 +46,27 @@ const mockAppContext = {
 	},
 } as unknown as AppLogicContextType;
 
-describe("FrontdeskPerspectiveView — Clean Delegation & Authentic SBP QR Matrix Generator", () => {
-	const frontdeskPath = path.resolve(__dirname, "../FrontdeskPerspectiveView.tsx");
-	const sourceCode = fs.readFileSync(frontdeskPath, "utf8");
+describe("ScheduleView — Direct Reception & Authentic SBP QR Matrix Generator", () => {
+	const schedulePath = path.resolve(__dirname, "../../../ScheduleView.tsx");
+	const sourceCode = fs.readFileSync(schedulePath, "utf8");
 
 	test("1. гарантирует полное отсутствие процедурного блоата и черных боксов-заглушек", () => {
 		assert.strictEqual(
 			sourceCode.includes('w-48 h-48 bg-slate-950 rounded-xl flex flex-col items-center justify-center text-white p-2'),
 			false,
-			"FrontdeskPerspectiveView.tsx must NOT contain fake black box container",
+			"ScheduleView.tsx must NOT contain fake black box container",
 		);
 		assert.strictEqual(
 			sourceCode.includes('<QrCode size={160} className="text-white" />'),
 			false,
-			"FrontdeskPerspectiveView.tsx must NOT contain fake static <QrCode size={160} />",
+			"ScheduleView.tsx must NOT contain fake static <QrCode size={160} />",
 		);
 	});
 
-	test("2. делегирует рендер каноническому ScheduleView без сбоев (Мандат 8s)", () => {
+	test("2. напрямую рендерит канонический ScheduleView без фасадов (Мандат 8s)", () => {
 		const html = renderToStaticMarkup(
 			<AppLogicProvider value={mockAppContext}>
-				<FrontdeskPerspectiveView />
+				<ScheduleView />
 			</AppLogicProvider>,
 		);
 		assert.ok(html.length > 0, "Rendered HTML must not be empty");
