@@ -1403,7 +1403,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+									className="secondary-button min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-0 sm:h-7 px-2 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 									title="Дополнительные действия и бланки приема"
 									aria-label="Дополнительные действия приема"
 									aria-expanded={isHeaderMoreMenuOpen}

@@ -371,7 +371,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 							type="button"
 							onClick={() => setIsFinanceOptionsOpen((prev) => !prev)}
 							data-testid="finance-toolbar-options-btn"
-							className="min-h-[44px] sm:min-h-0 sm:h-7 w-8 sm:w-7 p-0 flex items-center justify-center shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+							className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-0 sm:h-7 w-11 sm:w-7 p-0 flex items-center justify-center shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
 							title="Дополнительные финансовые отчеты и документы"
 							aria-label="Дополнительные действия"
 							aria-expanded={isFinanceOptionsOpen}

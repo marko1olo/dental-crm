@@ -991,6 +991,21 @@ export function ScheduleFilterStrip({
 							)}
 						</div>
 				</div>
+
+				{/* 1 Primary Action Button: [+ Запись] (Hick's Law: strictly 1 primary action button on toolbar face) */}
+				{onQuickBooking && (
+					<button
+						type="button"
+						onClick={onQuickBooking}
+						className="schedule-primary-quick-booking-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7.5 px-2.5 sm:px-3 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] hover:brightness-110 active:scale-95 text-white transition-all cursor-pointer flex items-center justify-center gap-1 shrink-0 shadow-2xs select-none"
+						title="Новая запись пациента на прием (N)"
+						aria-label="Новая запись на прием"
+						data-testid="schedule-toolbar-primary-quick-booking-btn"
+					>
+						<Plus size={14} className="shrink-0" />
+						<span className="hidden sm:inline whitespace-nowrap">+ Запись</span>
+					</button>
+				)}
 			</div>
 		</section>
 

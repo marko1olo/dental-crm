@@ -495,9 +495,9 @@ th { background: #f8fafc; font-weight: 700; }
 
 	return (
 		<div className="w-full h-full flex flex-col bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] select-none">
-			{/* 1-Line Dense Toolbar (32–36px) — Compliance: Mandate 8d & Hick's Law */}
+			{/* 1-Line Dense Toolbar (32–36px on desktop, >=44px touch targets on mobile) — Compliance: Mandates 8d, 8p & Hick's Law */}
 			<div
-				className="h-9 min-h-[36px] px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0"
+				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0 overflow-x-auto"
 				role="toolbar"
 				aria-label="Панель счетов и актов"
 			>
@@ -508,17 +508,16 @@ th { background: #f8fafc; font-weight: 700; }
 						<span>Счета и Акты</span>
 					</div>
 
-					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-1 rounded-lg border border-[var(--line,#e2e8f0)]">
+					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 sm:p-1 rounded-lg border border-[var(--line,#e2e8f0)]">
 						<button
 							type="button"
 							onClick={() => setFilterTab("all")}
-							className={`min-h-[44px] px-3 py-2 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
 								filterTab === "all"
 									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="filter-invoices-all"
-							style={{ minHeight: "44px" }}
 						>
 							<span>Все</span>
 							<span className="text-[10px] opacity-70">({invoices.length})</span>
@@ -526,13 +525,12 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={() => setFilterTab("pending")}
-							className={`min-h-[44px] px-3 py-2 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
 								filterTab === "pending"
 									? "bg-[var(--paper,#ffffff)] text-amber-700 dark:text-amber-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="filter-invoices-pending"
-							style={{ minHeight: "44px" }}
 						>
 							<span>К оплате</span>
 							<span className="text-[10px] opacity-70">
@@ -542,13 +540,12 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={() => setFilterTab("paid")}
-							className={`min-h-[44px] px-3 py-2 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
 								filterTab === "paid"
 									? "bg-[var(--paper,#ffffff)] text-emerald-700 dark:text-emerald-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="filter-invoices-paid"
-							style={{ minHeight: "44px" }}
 						>
 							<span>Оплачено</span>
 							<span className="text-[10px] opacity-70">
@@ -558,13 +555,12 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={() => setFilterTab("warranty")}
-							className={`min-h-[44px] px-3 py-2 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
 								filterTab === "warranty"
 									? "bg-[var(--paper,#ffffff)] text-purple-700 dark:text-purple-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="filter-invoices-warranty"
-							style={{ minHeight: "44px" }}
 						>
 							<span>Гарантия 100%</span>
 							<span className="text-[10px] opacity-70">
@@ -573,7 +569,7 @@ th { background: #f8fafc; font-weight: 700; }
 						</button>
 					</div>
 
-					{/* Search box & fast actions (Mandate 8c: >=44px) */}
+					{/* Search box & fast actions (Mandate 8c: >=44px on mobile, compact on desktop) */}
 					<div className="relative flex items-center">
 						<Search size={14} className="absolute left-2.5 text-[var(--muted,#64748b)] pointer-events-none" />
 						<input
@@ -581,17 +577,15 @@ th { background: #f8fafc; font-weight: 700; }
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по пациенту или № счета..."
-							className="h-11 min-h-[44px] w-48 sm:w-60 pl-8 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
+							className="h-11 min-h-[44px] sm:h-7 sm:min-h-0 w-48 sm:w-60 pl-8 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
 							data-testid="input-search-invoices"
-							style={{ minHeight: "44px" }}
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="w-11 h-11 min-h-[44px] min-w-[44px] absolute right-0 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer flex items-center justify-center"
+								className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-0 sm:min-w-0 absolute right-0 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer flex items-center justify-center"
 								aria-label="Очистить поиск"
-								style={{ minWidth: "44px", minHeight: "44px" }}
 							>
 								<X size={14} />
 							</button>
@@ -601,10 +595,9 @@ th { background: #f8fafc; font-weight: 700; }
 					<button
 						type="button"
 						onClick={() => setIsCreateModalOpen(true)}
-						className="min-h-[44px] h-11 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98"
+						className="min-h-[44px] h-11 sm:h-7 sm:min-h-0 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98"
 						data-testid="btn-create-invoice-open"
 						title="Создать счет (1 клик)"
-						style={{ minHeight: "44px" }}
 					>
 						<Plus size={14} />
 						<span className="hidden sm:inline">Новый счет</span>
@@ -614,10 +607,9 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
+							className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-0 sm:min-w-0 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
 							aria-label="Закрыть реестр счетов"
 							data-testid="btn-invoices-close"
-							style={{ minWidth: "44px", minHeight: "44px" }}
 						>
 							<X size={16} />
 						</button>
