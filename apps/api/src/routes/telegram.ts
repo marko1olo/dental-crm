@@ -47,6 +47,7 @@ import type {
 	DenteTelegramOutboxStatusFilter,
 	DomainState,
 } from "../services/telegram/telegramLegacyMemoryStore.js";
+import { updateAppointmentInDb } from "../db/appointmentsQuery.js";
 import { hydrateDomainStateFromDb } from "../db/domainStateHydration.js";
 import {
 	buildDenteTelegramLinkCodeList,
@@ -181,6 +182,7 @@ type TelegramRequestScope = {
 	organizationId?: string | null;
 	clinicId?: string | null;
 	botConfigId?: string | null;
+	state?: DomainState;
 };
 type DenteTelegramCareRequestTopic = Parameters<
 	typeof createDenteTelegramCareRequest
@@ -940,6 +942,7 @@ async function executeTelegramOutboxSend(
 	outboxItemId: string,
 	input: DenteTelegramOutboxSendRequest,
 	runtime?: TelegramResolvedOutboxRuntime,
+	domainState?: DomainState,
 ): Promise<TelegramOutboxSendExecutionResult> {
 	const clientMutationId = input.clientMutationId?.trim() || null;
 	const replay = findDenteTelegramOutboxDeliveryReceipt(
@@ -983,6 +986,7 @@ async function executeTelegramOutboxSend(
 	const prepared = prepareDenteTelegramOutboxDelivery(
 		outboxItemId,
 		runtimeResult.runtime.runtimeScope,
+		domainState,
 	);
 
 	if (!prepared.ok) {
@@ -1213,6 +1217,7 @@ async function executeTelegramOutboxSend(
 async function executeDenteTelegramOutboxDueBatch(
 	input: TelegramOutboxSendDueInput,
 	runtime?: TelegramResolvedOutboxRuntime,
+	domainState?: DomainState,
 ): Promise<DenteTelegramOutboxSendDueResponse> {
 	const runtimeResult = runtime
 		? { ok: true as const, runtime }
@@ -1244,6 +1249,7 @@ async function executeDenteTelegramOutboxDueBatch(
 	const outbox = buildDenteTelegramOutbox(
 		{ limit: Math.max(input.limit, 50), status: "due" },
 		runtimeResult.runtime.runtimeScope,
+		domainState,
 	);
 	const nowMs = Date.now();
 	const readyItems = outbox.items.filter(
@@ -1292,6 +1298,7 @@ async function executeDenteTelegramOutboxDueBatch(
 							: dueOutboxClientMutationId(item.id, item.scheduledAt),
 					},
 					runtimeResult.runtime,
+					domainState,
 				);
 				return {
 					itemId: item.id,
@@ -3411,7 +3418,10 @@ async function handleWebhook(
 	// демонстрационным данным. Загрузка идёт ПОСЛЕ проверки секрета, чтобы
 	// посторонний запрос не мог заставить сервер читать базу.
 	return withTenantCtx(runtime.organizationId, async () => {
-		await hydrateTelegramDomainState(request, runtime.organizationId);
+		const domainState = await hydrateTelegramDomainState(
+			request,
+			runtime.organizationId,
+		);
 
 		if (settings.mode === "disabled") {
 			return denteTelegramWebhookResponseSchema.parse(
@@ -3498,7 +3508,31 @@ async function handleWebhook(
 			organizationId: runtime.organizationId,
 			clinicId: runtime.clinicId,
 			botConfigId: runtime.botConfigId,
+			state: domainState,
 		});
+		if (
+			appointmentCallbackResult.handled &&
+			appointmentCallbackResult.ok &&
+			appointmentCallbackResult.action === "telegram_appointment_confirmed" &&
+			appointmentCallbackResult.appointmentId
+		) {
+			try {
+				await updateAppointmentInDb(
+					runtime.organizationId,
+					appointmentCallbackResult.appointmentId,
+					{ status: "confirmed" },
+				);
+			} catch (updateError) {
+				request.log.error(
+					{
+						err: updateError,
+						organizationId: runtime.organizationId,
+						appointmentId: appointmentCallbackResult.appointmentId,
+					},
+					"[Telegram] Не удалось обновить статус записи на confirmed в базе",
+				);
+			}
+		}
 		const linkCode = appointmentCallbackResult.handled
 			? null
 			: extractDenteTelegramLinkCode(messageText);
@@ -3640,6 +3674,7 @@ async function handleWebhook(
 										organizationId: runtime.organizationId,
 										clinicId: runtime.clinicId,
 										botConfigId: runtime.botConfigId,
+										state: domainState,
 									},
 								);
 
@@ -3878,7 +3913,7 @@ function registerTelegramOutboxRoutes(
 					message: runtimeResult.message,
 				});
 			}
-			await hydrateTelegramDomainState(
+			const domainState = await hydrateTelegramDomainState(
 				request,
 				runtimeResult.runtime.context.organizationId,
 			);
@@ -3886,6 +3921,7 @@ function registerTelegramOutboxRoutes(
 				request.params.itemId,
 				parsedInput.value,
 				runtimeResult.runtime,
+				domainState,
 			);
 			return reply.code(result.statusCode).send(result.body);
 		},
@@ -3910,13 +3946,14 @@ function registerTelegramOutboxRoutes(
 					message: runtimeResult.message,
 				});
 			}
-			await hydrateTelegramDomainState(
+			const domainState = await hydrateTelegramDomainState(
 				request,
 				runtimeResult.runtime.context.organizationId,
 			);
 			const response = await executeDenteTelegramOutboxDueBatch(
 				input,
 				runtimeResult.runtime,
+				domainState,
 			);
 			return reply
 				.code(

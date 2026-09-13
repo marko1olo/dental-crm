@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	buildDenteTelegramMessagePreviewData,
 	type TelegramMessageContext,
-} from "../sampleData.js";
+} from "../services/telegram/telegramLegacyMemoryStore.js";
 
 describe("buildDenteTelegramMessagePreviewData", () => {
 	const baseWarning = "base warning";

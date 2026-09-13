@@ -451,12 +451,18 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 			),
 		);
 
-		showToast("Документ зафиксирован в локальном архиве ЭМК (ст. 9 63-ФЗ) — режим соло-врача", "success");
+		showToast("Документ 043/у сохранен в локальной базе ЭМК клиники", "success");
 	};
 
 	// ── 5.3 Cloud Operator Gateway Dispatch (N3.Health / MedElement / Mandates 8e, 8n) ──
 	const handleSendViaCloudGateway = async (operator: "n3_health" | "medelement") => {
 		if (!currentDoc) return;
+
+		if (!currentDoc.doctorSignature) {
+			showToast("Для отправки в РЭМД наложите подпись врача (нажмите «Подписать УКЭП/ПЭП»)", "warning");
+			return;
+		}
+
 		setIsSendingLoading(true);
 
 		try {

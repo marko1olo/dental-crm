@@ -1071,7 +1071,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex items-center gap-2">
 								<span>Кассир: <strong>{cashierFullName}</strong></span>
 								<span>•</span>
-								<span>Клиника: {clinicName} (ИНН {clinicInn})</span>
+								<span>Клиника: {clinicName}{clinicInn ? ` (ИНН ${clinicInn})` : ""}</span>
 							</p>
 						</div>
 					</div>
@@ -1087,12 +1087,12 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				</div>
 
 				{/* Navigation Tabs (32px Segmented Control) */}
-				<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0">
+				<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0 overflow-x-auto whitespace-nowrap scrollbar-none">
 					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 						<button
 							type="button"
 							onClick={() => setActiveTab("checkout")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
 								activeTab === "checkout"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
@@ -1105,7 +1105,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTab("split")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
 								activeTab === "split"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
@@ -1118,7 +1118,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTab("thermal")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
 								activeTab === "thermal"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
@@ -1134,7 +1134,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						<select
 							value={operationType}
 							onChange={(e) => setOperationType(e.target.value as "income" | "income_return")}
-							className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none cursor-pointer"
+							className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none cursor-pointer"
 						>
 							<option value="income">Тег 1054: ПРИХОД</option>
 							<option value="income_return">Тег 1054: ВОЗВРАТ ПРИХОДА</option>
@@ -1148,7 +1148,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 					<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-3">
 						<div className="space-y-0.5">
 							<div className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Пациент / Плательщик:</div>
-							<div className="text-sm font-extrabold text-[var(--ink)]">{patientName} ({patientPhone})</div>
+							<div className="text-sm font-extrabold text-[var(--ink)]">{patientName || "Пациент"}{patientPhone ? ` (${patientPhone})` : ""}</div>
 							<div className="text-[11px] text-[var(--muted)] flex items-center gap-2 mt-0.5">
 								{patientDepositRub > 0 && (
 									<span className="text-indigo-600 dark:text-indigo-400 font-semibold">
@@ -1180,14 +1180,14 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									Тип плательщика (54-ФЗ Тег 1228):
 								</span>
 							</div>
-							<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)]">
+							<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex-wrap">
 								<button
 									type="button"
 									onClick={() => {
 										setPayerType("physical");
 										setBuyerInnError(null);
 									}}
-									className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+									className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 										payerType === "physical"
 											? "bg-emerald-600 text-white shadow-2xs"
 											: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -1204,7 +1204,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										const validation = validate54FzBuyerInn(buyerInn, "legal_entity");
 										setBuyerInnError(validation.errorMessage || null);
 									}}
-									className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+									className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 										payerType === "legal_entity"
 											? "bg-indigo-600 text-white shadow-2xs"
 											: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -1239,7 +1239,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										onChange={(e) => handleBuyerInnChange(e.target.value)}
 										placeholder="Необязательно (12 цифр для налогового вычета по Форме КНД 1151156)"
 										maxLength={12}
-										className="h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-emerald-500"
+										className="min-h-[44px] sm:min-h-0 sm:h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-emerald-500"
 										data-testid="input-buyer-inn-physical"
 									/>
 									{buyerInn && (
@@ -1268,7 +1268,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										onChange={(e) => handleBuyerInnChange(e.target.value)}
 										placeholder="Введите 10 цифр (ООО) или 12 цифр (ИП)"
 										maxLength={12}
-										className={`h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper)] border rounded-lg text-[var(--ink)] outline-none ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper)] border rounded-lg text-[var(--ink)] outline-none ${
 											buyerInnError ? "border-amber-500" : "border-[var(--line)] focus:border-indigo-500"
 										}`}
 										data-testid="input-buyer-inn-legal"
@@ -1302,7 +1302,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<select
 											value={selectedDiscountPreset}
 											onChange={(e) => setSelectedDiscountPreset(e.target.value as LoyaltyDiscountPreset)}
-											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none cursor-pointer"
+											className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none cursor-pointer"
 											data-testid="select-cash-discount"
 										>
 											<option value="none">Без скидки (0%)</option>
@@ -1329,7 +1329,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
 													onKeyDown={handleInputEnterKeyDown}
 													placeholder="0%"
-													className="h-8 w-16 px-2 text-xs font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-teal-500"
+													className="min-h-[44px] sm:min-h-0 sm:h-8 w-16 px-2 text-xs font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-teal-500"
 												/>
 												<span className="text-xs font-bold text-[var(--ink)]">%</span>
 											</div>
@@ -1345,14 +1345,14 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
 													onKeyDown={handleInputEnterKeyDown}
 													placeholder="0 ₽"
-													className="h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-teal-500"
+													className="min-h-[44px] sm:min-h-0 sm:h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-teal-500"
 												/>
 												<span className="text-xs font-bold text-[var(--ink)]">₽</span>
 											</div>
 										)}
 
 										{discountResult.totalDiscountRub > 0 && (
-											<div className="h-8 px-2.5 rounded-lg bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1.5 text-xs whitespace-nowrap">
+											<div className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1.5 text-xs whitespace-nowrap">
 												<Sparkles className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)] shrink-0" />
 												<span>{discountResult.savingsText} ({discountResult.effectivePercent}%)</span>
 											</div>
@@ -1380,7 +1380,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												key={btn.preset}
 												type="button"
 												onClick={() => setSelectedDiscountPreset(btn.preset)}
-												className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+												className={`min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
 													isSelected ? activeCls : inactiveCls
 												}`}
 												data-testid={btn.testId}
@@ -1463,7 +1463,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											type="button"
 											onClick={() => handleFiscalize()}
 											disabled={isProcessing}
-											className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+											className="min-h-[44px] sm:min-h-0 sm:h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
 											data-testid="btn-express-close-warranty-zero"
 										>
 											<Zap className="w-4 h-4 fill-white" />
@@ -1476,7 +1476,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											type="button"
 											onClick={() => handleFiscalize("card")}
 											disabled={isProcessing}
-											className="h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+											className="min-h-[44px] sm:min-h-0 sm:h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
 											data-testid="btn-express-pay-card"
 											title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 										>
@@ -1487,7 +1487,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										type="button"
 										onClick={() => handleFiscalize("cash")}
 										disabled={isProcessing}
-										className="h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+										className="min-h-[44px] sm:min-h-0 sm:h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
 										data-testid="btn-express-pay-cash"
 										title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
@@ -1498,7 +1498,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										type="button"
 										onClick={() => handleFiscalize("sbp")}
 										disabled={isProcessing}
-										className="h-10 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+										className="min-h-[44px] sm:min-h-0 sm:h-10 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
 										data-testid="btn-express-pay-sbp"
 										title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
@@ -1532,7 +1532,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<button
 										type="button"
 										onClick={applyExactCashPreset}
-										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
 										data-testid="preset-exact-cash"
 										title="Внести наличные ровно в сумме счета (без сдачи)"
 									>
@@ -1543,7 +1543,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<button
 										type="button"
 										onClick={applyFullCardPreset}
-										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
 										data-testid="preset-full-card"
 										title="Оплатить 100% картой через терминал"
 									>
@@ -1563,7 +1563,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												setSelectedTender("split");
 												setActiveTab("split");
 											}}
-											className="h-7 px-2.5 rounded-lg text-xs font-bold bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
 											data-testid="preset-deposit-card"
 											title="Списать весь аванс + остаток картой"
 										>
@@ -1580,7 +1580,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												setSelectedTender("split");
 												setActiveTab("split");
 											}}
-											className="h-7 px-2.5 rounded-lg text-xs font-bold bg-pink-600/10 hover:bg-pink-600/20 text-pink-700 dark:text-pink-300 border border-pink-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-pink-600/10 hover:bg-pink-600/20 text-pink-700 dark:text-pink-300 border border-pink-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
 											data-testid="preset-family-card"
 											title="Списать весь семейный счет + остаток картой"
 										>
@@ -1612,7 +1612,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												setActiveTab("split");
 												showToast("Применен пресет: Депозит + Карта + Нал", "info", 2000);
 											}}
-											className="h-7 px-2.5 rounded-lg text-xs font-bold bg-violet-600/10 hover:bg-violet-600/20 text-violet-700 dark:text-violet-300 border border-violet-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-violet-600/10 hover:bg-violet-600/20 text-violet-700 dark:text-violet-300 border border-violet-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
 											data-testid="preset-three-way"
 											title="Списать аванс/депозит + разделить остаток поровну на Карту и Наличные"
 										>
@@ -1633,7 +1633,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											setSplitFamilyRub(0);
 											showToast("Применен пресет: 100% Гарантия / переделка (0 ₽)", "info", 2000);
 										}}
-										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
 										data-testid="preset-warranty-100"
 										title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без паролей администратора)"
 									>
@@ -1648,7 +1648,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<button
 										type="button"
 										onClick={() => setSelectedTender("card")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "card"
 												? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
@@ -1662,7 +1662,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<button
 										type="button"
 										onClick={() => setSelectedTender("sbp")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "sbp"
 												? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
@@ -1679,7 +1679,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											setSelectedTender("cash");
 											if (!receivedCashRub) setReceivedCashRub(totalInvoiceRub);
 										}}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "cash"
 												? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
@@ -1693,7 +1693,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<button
 										type="button"
 										onClick={() => setSelectedTender("family")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "family"
 												? "bg-pink-600 text-white shadow-xs ring-2 ring-pink-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
@@ -1707,7 +1707,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<button
 										type="button"
 										onClick={() => setSelectedTender("deposit")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "deposit"
 												? "bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
@@ -1721,7 +1721,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									<button
 										type="button"
 										onClick={() => setSelectedTender("installment")}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "installment"
 												? "bg-amber-600 text-white shadow-xs ring-2 ring-amber-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
@@ -1741,7 +1741,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												setSplitCardRub(totalInvoiceRub);
 											}
 										}}
-										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 											selectedTender === "split"
 												? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
 												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)]"
@@ -1775,7 +1775,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													setSelectedTender("split");
 													setActiveTab("split");
 												}}
-												className="h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 												data-testid="btn-combo-deposit-card"
 											>
 												<CreditCard className="w-3.5 h-3.5" />
@@ -1788,7 +1788,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													setSelectedTender("split");
 													setActiveTab("split");
 												}}
-												className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 												data-testid="btn-combo-deposit-cash"
 											>
 												<Banknote className="w-3.5 h-3.5" />
@@ -1801,7 +1801,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													setSelectedTender("split");
 													setActiveTab("split");
 												}}
-												className="h-8 px-3 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 												data-testid="btn-combo-deposit-sbp"
 											>
 												<QrCode className="w-3.5 h-3.5" />
@@ -1832,7 +1832,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													setSelectedTender("split");
 													setActiveTab("split");
 												}}
-												className="h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 												data-testid="btn-combo-family-card"
 											>
 												<CreditCard className="w-3.5 h-3.5" />
@@ -1845,7 +1845,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													setSelectedTender("split");
 													setActiveTab("split");
 												}}
-												className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 												data-testid="btn-combo-family-cash"
 											>
 												<Banknote className="w-3.5 h-3.5" />
@@ -1873,7 +1873,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 															setSelectedCashBoxType(box.type as StomxCashBoxType);
 														}
 													}}
-													className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+													className={`min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
 														selectedCashBoxId === box.id
 															? "bg-teal-600 text-white shadow-2xs"
 															: "bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
@@ -1902,7 +1902,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													key={cat.alias}
 													type="button"
 													onClick={() => setSelectedReceiptAlias(cat.alias)}
-													className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+													className={`min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
 														selectedReceiptAlias === cat.alias
 															? "bg-teal-600 text-white shadow-2xs"
 															: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
@@ -1914,7 +1914,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											<select
 												value={selectedReceiptAlias}
 												onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
-												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-medium cursor-pointer"
+												className="min-h-[44px] sm:min-h-0 px-2 py-1 rounded-lg text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-medium cursor-pointer"
 												aria-label="Все статьи поступления"
 											>
 												{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
@@ -1931,7 +1931,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													key={cat.alias}
 													type="button"
 													onClick={() => setSelectedExpenseAlias(cat.alias)}
-													className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+													className={`min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
 														selectedExpenseAlias === cat.alias
 															? "bg-rose-600 text-white shadow-2xs"
 															: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
@@ -1943,7 +1943,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											<select
 												value={selectedExpenseAlias}
 												onChange={(e) => setSelectedExpenseAlias(e.target.value as StomxExpenseTypeAlias)}
-												className="px-2 py-1 rounded-lg text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-medium cursor-pointer"
+												className="min-h-[44px] sm:min-h-0 px-2 py-1 rounded-lg text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-medium cursor-pointer"
 												aria-label="Все статьи расходов"
 											>
 												{STOMX_CASH_EXPENSE_CATEGORIES.map((cat) => (
@@ -1993,7 +1993,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
 													onKeyDown={handleInputEnterKeyDown}
 													placeholder={`${totalInvoiceRub} ₽`}
-													className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
+													className="min-h-[44px] sm:min-h-0 sm:h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
 												/>
 											</div>
 
@@ -2045,7 +2045,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 															key={m}
 															type="button"
 															onClick={() => setInstallmentMonths(m)}
-															className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+															className={`min-h-[44px] sm:min-h-0 sm:py-0.5 px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center justify-center ${
 																installmentMonths === m
 																	? "bg-amber-600 text-white shadow-2xs"
 																	: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)]"
@@ -2067,7 +2067,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 															key={p}
 															type="button"
 															onClick={() => setDownPaymentPercent(p)}
-															className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+															className={`min-h-[44px] sm:min-h-0 sm:py-0.5 px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center justify-center ${
 																downPaymentPercent === p
 																	? "bg-emerald-600 text-white shadow-2xs"
 																	: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)]"
@@ -2200,7 +2200,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitCardRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
+											className="min-h-[44px] sm:min-h-0 sm:h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2226,7 +2226,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitCashRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
+											className="min-h-[44px] sm:min-h-0 sm:h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2252,7 +2252,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitSbpRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
+											className="min-h-[44px] sm:min-h-0 sm:h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2281,7 +2281,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitDepositRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
+											className="min-h-[44px] sm:min-h-0 sm:h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 
@@ -2310,7 +2310,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											onChange={(e) => setSplitFamilyRub(parseFloat(e.target.value) || 0)}
 											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
-											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
+											className="min-h-[44px] sm:min-h-0 sm:h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
 								</div>
@@ -2322,7 +2322,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applySplitDepositAndRemainder("card")}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 											data-testid="btn-split-preset-dep-card"
 										>
 											Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Картой
@@ -2332,7 +2332,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applySplitDepositAndRemainder("cash")}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 											data-testid="btn-split-preset-dep-cash"
 										>
 											Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Наличными
@@ -2342,7 +2342,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applySplitFamilyAndRemainder("card")}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 											data-testid="btn-split-preset-family-card"
 										>
 											Сем. счет ({Math.min(totalInvoiceRub, patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽) + Картой
@@ -2352,7 +2352,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applySplitBothDepositsAndRemainder("card")}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 text-violet-700 dark:text-violet-300 border border-violet-300 dark:border-violet-800 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 text-violet-700 dark:text-violet-300 border border-violet-300 dark:border-violet-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 											data-testid="btn-split-preset-both-card"
 										>
 											Депозит + Сем. счет + Карта
@@ -2370,28 +2370,28 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											setSplitSbpRub(0);
 											setSplitFamilyRub(0);
 										}}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-all active:scale-95"
+										className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 									>
 										50% Карта / 50% Нал
 									</button>
 									<button
 										type="button"
 										onClick={() => applyRemainingToMethod("card")}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 cursor-pointer transition-all active:scale-95"
+										className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 									>
 										Остаток на Карту
 									</button>
 									<button
 										type="button"
 										onClick={() => applyRemainingToMethod("cash")}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer transition-all active:scale-95"
+										className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 									>
 										Остаток Наличными
 									</button>
 									<button
 										type="button"
 										onClick={() => applyRemainingToMethod("sbp")}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 cursor-pointer transition-all active:scale-95"
+										className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 										data-testid="btn-split-remainder-sbp"
 									>
 										Остаток через СБП
@@ -2400,7 +2400,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applyRemainingToMethod("deposit")}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 											data-testid="btn-split-remainder-deposit"
 										>
 											Остаток с Депозита
@@ -2410,7 +2410,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applyRemainingToMethod("family")}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 cursor-pointer transition-all active:scale-95"
+											className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 											data-testid="btn-split-remainder-family"
 										>
 											Остаток из Семьи
@@ -2436,7 +2436,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								<button
 									type="button"
 									onClick={handlePrintThermalReceipt}
-									className="flex-1 min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-xs"
+									className="flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-xs"
 									data-testid="btn-print-thermal-receipt"
 								>
 									<Printer className="w-4 h-4" />
@@ -2445,7 +2445,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								<button
 									type="button"
 									onClick={handleDownloadThermalReceipt}
-									className="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+									className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 									data-testid="btn-download-thermal-receipt"
 									title="Скачать чек в формате HTML"
 								>
@@ -2506,11 +2506,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						</strong>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="w-full sm:w-auto flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5">
 						<button
 							type="button"
 							onClick={handlePrintSalesSlip}
-							className="h-10 px-3.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+							className="min-h-[44px] sm:min-h-0 sm:h-10 px-3.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 							data-testid="btn-print-sales-slip"
 							title="Распечатать товарный чек с реквизитами клиники и кодами 804н без фискализации в ОФД"
 						>
@@ -2521,7 +2521,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer transition-colors flex items-center justify-center"
 						>
 							Отмена
 						</button>
@@ -2531,7 +2531,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								type="button"
 								onClick={() => handleFiscalize()}
 								disabled={isProcessing}
-								className="h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								className="w-full sm:w-auto min-h-[48px] sm:min-h-0 sm:h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
 								data-testid="btn-cash-submit-zero-warranty"
 							>
 								<Zap className="w-4 h-4 fill-white" />
@@ -2543,7 +2543,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								onClick={() => handleFiscalize()}
 								disabled={isProcessing}
 								title={isProcessing ? "Идет фискализация чека 54-ФЗ..." : "Оплатить и пробить фискальный чек (54-ФЗ)"}
-								className="h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								className="w-full sm:w-auto min-h-[48px] sm:min-h-0 sm:h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
 								data-testid="btn-cash-submit-fiscalize"
 							>
 								<Receipt className="w-4 h-4" />

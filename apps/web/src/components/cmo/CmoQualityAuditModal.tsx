@@ -274,7 +274,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 				}
 			}
 		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Ошибка загрузки очереди начмеда";
+			const msg = err instanceof Error ? err.message : "Ошибка загрузки очереди контроля качества";
 			setFetchError(msg);
 		} finally {
 			setIsLoading(false);
@@ -323,7 +323,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 				body: JSON.stringify({ status: "approved" }),
 			});
 		} catch (err) {
-			console.error("Ошибка утверждения карты начмедом:", err);
+			console.error("Ошибка утверждения карты экспертом качества:", err);
 		}
 
 		const updated = applyCmoResolution(selectedRecord, "approved", {
@@ -407,7 +407,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 		const updated = addCmoDefectRemark(selectedRecord, {
 			category: "CLINICAL_DIARY_SOAP",
 			severity: customSeverity,
-			title: "Замечание главного врача (Начмеда)",
+			title: "Замечание контроля качества (ВКК)",
 			comment: customComment.trim(),
 			statutoryRef: "Приказ Минздрава России № 834н, Приказ № 785н",
 			penaltyScore: penalty,
@@ -633,7 +633,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 												{selectedRecord.automatedQualityScore}%
 											</span>
 											<span className="cmo-kpi-badge success">
-												{selectedRecord.status === "approved" ? "Утверждено Начмедом" : selectedRecord.status === "rejected_with_remarks" ? "Возвращено на доработку" : "Ожидает решения"}
+												{selectedRecord.status === "approved" ? "Утверждено (Контроль качества)" : selectedRecord.status === "rejected_with_remarks" ? "Возвращено на доработку" : "Ожидает решения"}
 											</span>
 										</div>
 									</div>
@@ -712,7 +712,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 									<div className="cmo-action-box">
 										<h4 className="cmo-section-title" style={{ margin: 0 }}>
 											<Sparkles size={18} color="var(--teal)" />
-											<span>Инструменты Начмеда (Внесение дефектов & Резолюция)</span>
+											<span>Инструменты контроля качества (Внесение дефектов & Резолюция)</span>
 										</h4>
 
 										{/* Quick Presets */}

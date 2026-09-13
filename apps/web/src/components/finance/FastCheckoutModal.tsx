@@ -807,7 +807,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<QrCode className="w-5 h-5" />
 						</div>
 						<div>
-							<h2 className="text-lg font-bold text-slate-900 dark:text-white break-words flex items-center gap-2 m-0">
+							<h2 className="text-lg font-bold text-[var(--ink,#0f172a)] break-words flex items-center gap-2 m-0">
 								1-Клик Оплата приема & Фискализация 54-ФЗ
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
@@ -850,7 +850,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSimpleCashierMode((prev) => !prev)}
-							className={`min-h-[38px] px-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer ml-auto flex items-center gap-1.5 ${
+							className={`min-h-[44px] px-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer ml-auto flex items-center gap-1.5 ${
 								isSimpleCashierMode
 									? "bg-teal-600 text-white shadow-xs ring-2 ring-teal-500/30"
 									: "bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-500"
@@ -975,7 +975,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("round_hundreds")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
 									discountPreset === "round_hundreds"
 										? "bg-amber-600 text-white shadow-2xs ring-2 ring-amber-400"
 										: "bg-[var(--paper,#ffffff)] hover:bg-amber-500/10 text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
@@ -989,7 +989,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("discount_3")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									discountPreset === "discount_3"
 										? "bg-teal-600 text-white shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
@@ -1001,7 +1001,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("discount_5")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									discountPreset === "discount_5"
 										? "bg-teal-600 text-white shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
@@ -1013,7 +1013,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("discount_10")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									discountPreset === "discount_10"
 										? "bg-teal-600 text-white shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
@@ -1025,7 +1025,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("warranty_100")}
-								className={`h-8 px-3 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
 									discountPreset === "warranty_100"
 										? "bg-blue-600 text-white shadow-2xs ring-2 ring-blue-400"
 										: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
@@ -1039,7 +1039,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("colleague_100")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 									discountPreset === "colleague_100"
 										? "bg-purple-600 text-white shadow-2xs ring-2 ring-purple-400"
 										: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
@@ -1052,7 +1052,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDiscountPreset("manual_percent")}
-								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									discountPreset === "manual_percent"
 										? "bg-teal-700 text-white shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
@@ -1068,7 +1068,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										setDiscountPreset("none");
 										setCustomDiscountPercent(0);
 									}}
-									className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] cursor-pointer transition-all active:scale-95 flex items-center gap-1"
+									className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] cursor-pointer transition-all active:scale-95 flex items-center gap-1"
 									data-testid="btn-discount-none"
 									title="Сбросить скидку"
 								>
@@ -1115,7 +1115,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									max={100}
 									value={customDiscountPercent || ""}
 									onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
-									className="h-8 w-20 px-2 rounded-lg border border-[var(--line,#cbd5e1)] text-xs font-bold text-right"
+									className="min-h-[44px] sm:min-h-0 sm:h-8 w-20 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink)] text-xs font-bold text-right"
 									placeholder="0"
 									data-testid="input-custom-discount-percent"
 								/>
@@ -1250,11 +1250,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</span>
 							)}
 						</div>
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 flex-wrap">
 							<button
 								type="button"
 								onClick={() => setClientType("physical_person")}
-								className={`h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 									clientType === "physical_person"
 										? "bg-teal-600 text-white shadow-xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink)] border border-[var(--line,#cbd5e1)] hover:border-teal-400"
@@ -1267,7 +1267,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setClientType("legal_entity")}
-								className={`h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 									clientType === "legal_entity"
 										? "bg-teal-600 text-white shadow-xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink)] border border-[var(--line,#cbd5e1)] hover:border-teal-400"
@@ -1290,7 +1290,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									value={buyerInn}
 									onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
 									placeholder="Не требуется (пациент-физлицо)"
-									className="h-8 w-full max-w-sm px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
+									className="min-h-[44px] sm:min-h-0 sm:h-8 w-full max-w-sm px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
 									data-testid="input-buyer-inn-physical"
 								/>
 							</div>
@@ -1307,7 +1307,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										value={buyerInn}
 										onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
 										placeholder="ИНН (10 или 12 цифр)"
-										className="h-8 w-full px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
+										className="min-h-[44px] sm:min-h-0 sm:h-8 w-full px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
 										data-testid="input-buyer-inn-legal"
 									/>
 								</div>
@@ -1320,7 +1320,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										value={buyerName}
 										onChange={(e) => setBuyerName(e.target.value)}
 										placeholder="ООО «Компания» или ИП Иванов"
-										className="h-8 w-full px-2.5 text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
+										className="min-h-[44px] sm:min-h-0 sm:h-8 w-full px-2.5 text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
 										data-testid="input-buyer-name-legal"
 									/>
 								</div>
@@ -1854,17 +1854,17 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				</div>
 
 				{/* Footer Actions (Fixed Sticky Bar — Fitts's Law) */}
-				<div className="sticky bottom-0 z-50 p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between sm:justify-end flex-wrap gap-3 shrink-0 shadow-lg">
-					<div className="text-xs text-slate-500 dark:text-slate-400 mr-auto hidden sm:block">
-						ФФД 1.2 • Чек будет отправлен на {patientPhone}
+				<div className="sticky bottom-0 z-50 p-4 sm:p-5 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between sm:justify-end flex-wrap gap-3 shrink-0 shadow-lg">
+					<div className="text-xs text-[var(--muted)] mr-auto hidden sm:block">
+						ФФД 1.2 • {patientPhone ? `Чек будет отправлен на ${patientPhone}` : "Печать фискального чека"}
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="w-full sm:w-auto flex items-center gap-2">
 						<button
 							type="button"
 							data-testid="execute-fast-checkout-btn"
 							onClick={() => void handleExecutePayment()}
 							disabled={isPrinting}
-							className="min-h-[52px] px-8 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-base font-extrabold flex items-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
+							className="w-full sm:w-auto min-h-[52px] px-4 sm:px-8 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-sm sm:text-base font-extrabold flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
 						>
 							{isPrinting ? (
 								<>

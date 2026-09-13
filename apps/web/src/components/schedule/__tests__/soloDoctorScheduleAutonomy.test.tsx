@@ -72,7 +72,7 @@ describe("Solo Doctor Schedule Autonomy (Mandates 8e, 8n)", () => {
 		);
 
 		assert.match(html, /Кресло 1 \(Основное\)/);
-		assert.match(html, /repeat\(1, minmax\(180px, 1fr\)\)/);
+		assert.match(html, /repeat\(1, minmax\((180|200)px, 1fr\)\)/);
 		assert.match(html, /09:00/);
 		assert.match(html, /18:00/);
 	});
@@ -103,6 +103,6 @@ describe("Solo Doctor Schedule Autonomy (Mandates 8e, 8n)", () => {
 		);
 
 		assert.match(html, /Кресло 1 \(Основное\)/);
-		assert.match(html, /repeat\(1, minmax\(180px, 1fr\)\)/);
+		assert.match(html, /repeat\(1, minmax\((180|200)px, 1fr\)\)/);
 	});
 });

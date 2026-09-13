@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import test from "node:test";
-import { updateDenteTelegramBotSettings } from "../sampleData.js";
+import { updateDenteTelegramBotSettings } from "../services/telegram/telegramLegacyMemoryStore.js";
 
 test("updateDenteTelegramBotSettings - normalizeTelegramPublicHttpsUrl", async (t) => {
 	await t.test("throws invalid_url for an unparseable URL", () => {

@@ -2458,6 +2458,7 @@ export function handleDenteTelegramAppointmentCallback(input: {
 	organizationId?: string | null;
 	clinicId?: string | null;
 	botConfigId?: string | null;
+	state?: DomainState;
 }): {
 	handled: boolean;
 	ok: boolean;
@@ -2506,7 +2507,8 @@ export function handleDenteTelegramAppointmentCallback(input: {
 			warnings: ["Подпись Telegram-кнопки приема недействительна."],
 		};
 	}
-	const appointment = appointments.find(
+	const targetAppointments = input.state?.appointments ?? appointments;
+	const appointment = targetAppointments.find(
 		(candidate) =>
 			candidate.id === parsed.appointmentId &&
 			candidate.organizationId === organizationId,
@@ -3469,10 +3471,11 @@ function telegramScheduleRoleForStaff(
 
 function visibleTelegramScheduleAppointments(
 	organizationScope = denteTelegramBotSettings.organizationId,
+	sourceAppointments: readonly Appointment[] = appointments,
 ): Appointment[] {
 	const nowMs = Date.now();
 	const graceMs = 15 * 60 * 1000;
-	return appointments
+	return (sourceAppointments as Appointment[])
 		.filter((appointment) => {
 			const endsAtMs = Date.parse(appointment.endsAt);
 			return (
@@ -3491,6 +3494,8 @@ export function buildDenteTelegramLinkedScheduleReply(
 		organizationId?: string | null;
 		clinicId?: string | null;
 		botConfigId?: string | null;
+		state?: DomainState;
+		appointments?: readonly Appointment[] | null;
 	} = {},
 	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
 ): {
@@ -3516,8 +3521,11 @@ export function buildDenteTelegramLinkedScheduleReply(
 		};
 	}
 
+	const appointmentList =
+		scope.state?.appointments ?? scope.appointments ?? appointments;
 	const visibleAppointments = visibleTelegramScheduleAppointments(
 		scope.organizationId?.trim() || denteTelegramBotSettings.organizationId,
+		appointmentList,
 	);
 	const linkedAppointments =
 		chatLink.subjectType === "patient"
@@ -5058,6 +5066,7 @@ function telegramScheduleReplyMarkupForPatientAppointment(
 export function prepareDenteTelegramOutboxDelivery(
 	outboxItemId: string,
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ):
 	| {
 			ok: true;
@@ -5075,7 +5084,7 @@ export function prepareDenteTelegramOutboxDelivery(
 			blockedReason: string;
 			warnings: string[];
 	  } {
-	const item = findDenteTelegramOutboxItem(outboxItemId, runtimeScope);
+	const item = findDenteTelegramOutboxItem(outboxItemId, runtimeScope, state);
 	if (!item) {
 		return {
 			ok: false,

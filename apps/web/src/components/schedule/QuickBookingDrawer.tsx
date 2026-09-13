@@ -2029,7 +2029,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 													key={item.patient.id}
 													type="button"
 													onClick={() => selectPatient(item.patient)}
-													className="w-full text-left p-2 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 transition-colors flex items-center justify-between gap-2 cursor-pointer"
+													className="w-full min-h-[44px] text-left p-2 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 transition-colors flex items-center justify-between gap-2 cursor-pointer"
 												>
 													<span className="font-bold text-[var(--ink)]">
 														{item.patient.fullName}
@@ -2337,7 +2337,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
 											</span>
 											<span className="text-[11px] text-[var(--muted)]">
-												(Мандат 8e: запись не блокируется. Запись не блокируется, врач может принять пациента в свободном кабинете)
+												(Мандат 8e: запись не блокируется, врач может принять пациента в свободном кабинете)
 											</span>
 										</div>
 									</div>
@@ -2481,7 +2481,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								onClick={() => setStatus("completed")}
 								className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 									status === "completed"
-										? "bg-slate-700 text-white font-bold border-slate-700"
+										? "bg-slate-700 dark:bg-slate-600 text-white font-bold border-slate-700 dark:border-slate-600"
 										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
 								}`}
 								data-testid="quick-status-btn-completed"
@@ -2582,14 +2582,14 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				</div>
 
 				{/* Footer Actions */}
-				<div className="p-4 sm:p-5 pb-6 sm:pb-5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 shrink-0">
-					<div className="flex items-center gap-2">
+				<div className="p-4 sm:p-5 pb-6 sm:pb-5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
+					<div className="flex items-center gap-2 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={handleRequestClose}
 							disabled={isSubmitting}
 							data-testid="quick-booking-cancel-btn"
-							className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+							className="flex-1 sm:flex-initial min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center"
 						>
 							Отмена (Esc)
 						</button>
@@ -2607,38 +2607,40 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						)}
 					</div>
 
-					<button
-						type="button"
-						onClick={handleCopyBookingConfirmation}
-						data-testid="quick-booking-copy-confirmation-btn"
-						className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-						title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
-					>
-						<Copy size={15} className="text-[var(--teal)] shrink-0" />
-						<span className="hidden sm:inline">Скопировать для пациента</span>
-						<span className="sm:hidden">Копия</span>
-					</button>
+					<div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+						<button
+							type="button"
+							onClick={handleCopyBookingConfirmation}
+							data-testid="quick-booking-copy-confirmation-btn"
+							className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+							title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
+						>
+							<Copy size={15} className="text-[var(--teal)] shrink-0" />
+							<span className="hidden sm:inline">Скопировать для пациента</span>
+							<span className="sm:hidden">Копия</span>
+						</button>
 
-					<button
-						type="button"
-						onClick={() => void handleSubmitBooking()}
-						disabled={isSubmitting}
-						data-testid="quick-drawer-save-btn"
-						className={`flex-1 min-h-[44px] px-5 font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
-							collision.hasCollision
-								? "bg-amber-600 hover:bg-amber-700 text-white"
-								: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)]"
-						}`}
-					>
-						<Plus size={16} />
-						<span>
-							{isSubmitting
-								? "Сохраняю запись…"
-								: collision.hasCollision
-									? "Записать с овербукингом (острая боль)"
-									: "Создать запись (Ctrl+Enter)"}
-						</span>
-					</button>
+						<button
+							type="button"
+							onClick={() => void handleSubmitBooking()}
+							disabled={isSubmitting}
+							data-testid="quick-drawer-save-btn"
+							className={`flex-1 min-h-[44px] px-4 sm:px-5 font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+								collision.hasCollision
+									? "bg-amber-600 hover:bg-amber-700 text-white"
+									: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)]"
+							}`}
+						>
+							<Plus size={16} />
+							<span>
+								{isSubmitting
+									? "Сохраняю запись…"
+									: collision.hasCollision
+										? "Записать с овербукингом (острая боль)"
+										: "Создать запись (Ctrl+Enter)"}
+							</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
