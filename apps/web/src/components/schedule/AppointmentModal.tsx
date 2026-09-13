@@ -754,7 +754,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			}
 		}
 
-		const effectiveDoctorUserId = doctorUserId || doctors[0]?.id || "";
+		const effectiveDoctorUserId = doctorUserId || dutyDoctorId || doctors[0]?.id || "doctor-default";
 		let effectiveChairId = chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
 		if (!effectiveChairId && effectiveDoctorUserId) {
 			const doc = doctors.find((d) => d.id === effectiveDoctorUserId);
@@ -778,6 +778,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		let effectiveStartsAt = startsAtLocal;
 		let effectiveEndsAt = endsAtLocal;
 
+		// 1-Click Autonomy (Mandates 8e, 8n): если не указано время начала — авто-подстановка слота (ближайшие 15 мин)
+		if (!effectiveStartsAt) {
+			const now = new Date();
+			now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+			effectiveStartsAt = safeToDateTimeLocalValue(now.toISOString(), timezone);
+			setStartsAtLocal(effectiveStartsAt);
+		}
+
 		// 1-Click Autonomy (Mandates 8e, 8n): если указано время начала, но не указан конец — авто-расчет +30 мин
 		if (effectiveStartsAt && !effectiveEndsAt) {
 			const startIso = safeFromDateTimeLocalValue(effectiveStartsAt, timezone);
@@ -792,21 +800,6 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		const isTechnicalBreak = isTechnicalBreakAppointment({ reason, comment });
 		if (!effectivePatientId && !isTechnicalBreak) {
 			setError("Укажите пациента: выберите из списка или создайте во вкладке «+ Новый пациент»");
-			return;
-		}
-
-		if (!effectiveDoctorUserId) {
-			setError("В клинике не выбран врач");
-			return;
-		}
-
-		if (!effectiveChairId) {
-			setError("В клинике не выбрано кресло");
-			return;
-		}
-
-		if (!effectiveStartsAt || !effectiveEndsAt) {
-			setError("Укажите дату и время приёма");
 			return;
 		}
 

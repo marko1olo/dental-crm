@@ -173,7 +173,30 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 				</div>
 
 				{/* Printable Page Container */}
-				<div className="p-6 sm:p-10 overflow-y-auto print:p-0 print:overflow-visible print:text-black bg-white text-slate-900 text-xs leading-relaxed space-y-6">
+				<div className="relative p-6 sm:p-10 overflow-y-auto print:p-0 print:overflow-visible print:text-black bg-white text-slate-900 text-xs leading-relaxed space-y-6">
+					{/* Watermark: ЧЕРНОВИК if not signed, ПОДПИСАНО if signed (Мандат 8e) */}
+					<div
+						className="doc-watermark"
+						aria-hidden="true"
+						style={{
+							position: "absolute",
+							top: "50%",
+							left: "50%",
+							transform: "translate(-50%, -50%) rotate(-32deg)",
+							fontSize: signedAgreement ? "50pt" : "64pt",
+							fontWeight: 900,
+							color: signedAgreement ? "rgba(16, 185, 129, 0.045)" : "rgba(15, 23, 42, 0.045)",
+							textTransform: "uppercase",
+							letterSpacing: "0.12em",
+							pointerEvents: "none",
+							zIndex: 0,
+							whiteSpace: "nowrap",
+							userSelect: "none",
+						}}
+					>
+						{signedAgreement ? "ПОДПИСАНО" : "ЧЕРНОВИК"}
+					</div>
+
 					{/* Top Header: Clinic & Patient Info */}
 					<div className="flex items-start justify-between border-b pb-4 border-slate-300 gap-4">
 						{/* Top Left: Clinic Credentials */}

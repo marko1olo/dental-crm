@@ -522,7 +522,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 				{/* ── Printable Document Sheet Body & Desk Preview ── */}
 				<div className="p-3 sm:p-6 lg:p-8 bg-slate-200/60 dark:bg-slate-950 flex justify-center overflow-x-auto print:p-0 print:bg-transparent print:overflow-visible">
 					<div
-						className={`premium-doc-sheet doc-palette-${branding.brandAccentColor} doc-density-${branding.layoutDensity} doc-font-${branding.fontFamily} p-4 sm:p-8 md:p-12 print:p-0`}
+						className={`premium-doc-sheet doc-palette-${branding.brandAccentColor} doc-density-${branding.layoutDensity} doc-font-${branding.fontFamily} p-4 sm:p-8 md:p-12 print:p-0 relative`}
 						style={
 							{
 								"--doc-primary": palette.primary,
@@ -536,6 +536,34 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							} as React.CSSProperties
 						}
 					>
+					{/* Watermark: ЧЕРНОВИК if draft, ПОДПИСАНО ВРАЧОМ if signed/executed (Мандат 8e) */}
+					<div
+						className={actData.status === "signed" || actData.status === "executed" ? "doc-watermark-signed" : "doc-watermark-draft"}
+						aria-hidden="true"
+						style={{
+							position: "absolute",
+							top: "50%",
+							left: "50%",
+							transform: "translate(-50%, -50%) rotate(-32deg)",
+							fontSize: actData.status === "signed" || actData.status === "executed" ? "50pt" : "64pt",
+							fontWeight: 900,
+							color:
+								actData.status === "signed" || actData.status === "executed"
+									? "rgba(16, 185, 129, 0.045)"
+									: "rgba(15, 23, 42, 0.045)",
+							textTransform: "uppercase",
+							letterSpacing: "0.12em",
+							pointerEvents: "none",
+							zIndex: 0,
+							whiteSpace: "nowrap",
+							userSelect: "none",
+						}}
+					>
+						{actData.status === "signed" || actData.status === "executed"
+							? "ПОДПИСАНО ВРАЧОМ"
+							: "ЧЕРНОВИК"}
+					</div>
+
 					{/* ── 1. Official Header with Clinic Details & Accreditation ── */}
 					{branding.headerStyle === "classic_centered" ? (
 						<header className="doc-header-classic-centered border-b-2 pb-4 mb-4" style={{ borderColor: palette.primary }}>
