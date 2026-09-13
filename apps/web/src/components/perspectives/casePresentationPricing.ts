@@ -1,23 +1,29 @@
 /**
- * casePresentationPricing.ts — чистый модуль расчёта и генерации 3-уровневых планов лечения.
+ * casePresentationPricing.ts — фасад расчёта и генерации 3-уровневых планов лечения.
  *
- * Рассчитывает планы «Стандарт / Оптимум / Премиум» на основе реального состояния зубов
- * пациента (одонтограмма), каталога услуг клиники и сохранённых планов из базы данных.
+ * Делегирует ключевые клинико-финансовые расчёты каноническим модулям:
+ * - Вычет 13% НДФЛ (Код 01 / 02) -> calculateNdflDeduction из treatmentPlanStagesEngine
+ * - Беспроцентная рассрочка 0% -> computeTierInstallments / splitKopecks
+ * - Склонения числительных -> pluralizeRu из paidContractEngine
  *
- * Полностью бескомпромиссная точная арифметика в копейках:
- * - splitKopecks для рассрочки (3, 6, 12, 24 мес.)
- * - percentageOfKopecks для вычета 13% НДФЛ (Код 01 с лимитом базы 150 000 ₽ vs Код 02 без лимита)
+ * Соответствует Мандату 8s (Закон Единого Неделимого Авторитета) и Мандату 8e (Автономия врача).
  */
 
 import {
 	type Kopecks,
 	multiplyKopecks,
 	parseKopecks,
-	percentageOfKopecks,
 	splitKopecks,
 	sumKopecks,
 } from "@dental/shared";
 import type { ToothState } from "../odontogram/ToothChart";
+import {
+	calculateNdflDeduction,
+	computeTierInstallments,
+} from "../treatment-plans/treatmentPlanStagesEngine";
+import { pluralizeRu } from "../documents/paidContractEngine";
+
+export { pluralizeRu };
 
 export interface CasePresentationTooth {
 	toothNumber: number;
@@ -81,23 +87,8 @@ export interface CasePlanTier {
 	savedPlanId?: string;
 }
 
-export function pluralizeRu(
-	count: number,
-	one: string,
-	few: string,
-	many: string,
-): string {
-	const abs = Math.abs(count) % 100;
-	const rem = abs % 10;
-	if (abs > 10 && abs < 20) return many;
-	if (rem > 1 && rem < 5) return few;
-	if (rem === 1) return one;
-	return many;
-}
-
 /**
  * Подбор цены услуги из каталога клиники по категории и ключевым словам.
- * При отсутствии совпадения используется эталонная цена для стоматологических расчётов.
  */
 export function findMatchingCatalogPrice(
 	catalog: readonly CasePresentationCatalogItem[] | undefined,
@@ -119,7 +110,6 @@ export function findMatchingCatalogPrice(
 		return normalizedKeywords.some((kw) => title.includes(kw));
 	});
 
-	// Предпочитаем активные услуги
 	const activeMatch =
 		matched.find((item) => item.active !== false) ?? matched[0];
 	if (
@@ -140,9 +130,8 @@ export function findMatchingCatalogPrice(
 }
 
 /**
- * Расчёт возврата 13% НДФЛ (Справка для налоговой).
- * Код 01 — Стандартное лечение (база ограничена 150 000 ₽, максимальный возврат 19 500 ₽)
- * Код 02 — Дорогостоящее лечение (возврат 13% от полной суммы без ограничений)
+ * Расчёт возврата 13% НДФЛ.
+ * Делегирует расчет каноническому движку calculateNdflDeduction.
  */
 export function calculateNdflRefund(
 	planKopecks: Kopecks,
@@ -151,41 +140,27 @@ export function calculateNdflRefund(
 	taxRefundKopecks: Kopecks;
 	finalPriceWithRefundKopecks: Kopecks;
 } {
-	if (planKopecks <= 0) {
-		return {
-			taxRefundKopecks: 0 as Kopecks,
-			finalPriceWithRefundKopecks: 0 as Kopecks,
-		};
-	}
-
-	let taxRefundKopecks: Kopecks;
-	if (isHighCostEligible) {
-		// Код 02: 1300 базисных пунктов = 13.00%
-		taxRefundKopecks = percentageOfKopecks(planKopecks, 1300);
-	} else {
-		// Код 01: лимит базы 150 000 руб. (15 000 000 копеек)
-		const cappedBaseKopecks = Math.min(
-			planKopecks,
-			parseKopecks(150000),
-		) as Kopecks;
-		taxRefundKopecks = percentageOfKopecks(cappedBaseKopecks, 1300);
-	}
-
-	const finalPriceWithRefundKopecks = Math.max(
-		0,
-		planKopecks - taxRefundKopecks,
-	) as Kopecks;
-	return { taxRefundKopecks, finalPriceWithRefundKopecks };
+	const res = calculateNdflDeduction(planKopecks, isHighCostEligible);
+	return {
+		taxRefundKopecks: res.refundKopecks,
+		finalPriceWithRefundKopecks: Math.max(
+			0,
+			planKopecks - res.refundKopecks,
+		) as Kopecks,
+	};
 }
 
 /**
  * Расчёт ежемесячного платежа по беспроцентной рассрочке 0%.
- * Использует splitKopecks для идеальной точности без потери остатка.
+ * Делегирует расчет каноническому движку computeTierInstallments / splitKopecks.
  */
 export function calculateInstallmentMonthly(
 	planKopecks: Kopecks,
 	months: number,
 ): Kopecks {
+	if (months === 3 || months === 6 || months === 12 || months === 24) {
+		return computeTierInstallments(planKopecks)[months].monthlyPaymentKopecks;
+	}
 	const validMonths = Math.max(1, months || 1);
 	const parts = splitKopecks(planKopecks, validMonths);
 	return parts[0] ?? (0 as Kopecks);
@@ -243,85 +218,20 @@ export function generate3TierPlans(
 ): CasePlanTier[] {
 	const findings = analyzeTeethFindings(teeth);
 
-	// Подбор реальных цен из каталога
-	const therapyCaries = findMatchingCatalogPrice(
-		catalog,
-		"therapy",
-		["кариес"],
-		4500,
-	);
-	const therapyPulpitis = findMatchingCatalogPrice(
-		catalog,
-		"therapy",
-		["пульпит", "эндо", "канал"],
-		9500,
-	);
-	const therapyPeriodontitis = findMatchingCatalogPrice(
-		catalog,
-		"therapy",
-		["периодонтит", "эндо"],
-		12500,
-	);
-	const hygieneBasic = findMatchingCatalogPrice(
-		catalog,
-		"hygiene",
-		["ультразвук", "чистк", "скейлинг"],
-		4500,
-	);
-	const hygieneAirFlow = findMatchingCatalogPrice(
-		catalog,
-		"hygiene",
-		["air-flow", "глицин", "комплекс"],
-		7500,
-	);
-	const hygieneSpa = findMatchingCatalogPrice(
-		catalog,
-		"hygiene",
-		["spa", "remin", "отбеливание", "beyond"],
-		15000,
-	);
-	const implantOsstem = findMatchingCatalogPrice(
-		catalog,
-		"surgery",
-		["osstem", "dentium", "имплант"],
-		38000,
-	);
-	const implantStraumann = findMatchingCatalogPrice(
-		catalog,
-		"surgery",
-		["straumann", "nobel", "roxolid", "премиум"],
-		75000,
-	);
-	const surgicalGuide = findMatchingCatalogPrice(
-		catalog,
-		"surgery",
-		["шаблон", "навигацион"],
-		12000,
-	);
-	const crownStandard = findMatchingCatalogPrice(
-		catalog,
-		"prosthetics",
-		["металлокерамика", "коронка"],
-		16000,
-	);
-	const crownZirconia = findMatchingCatalogPrice(
-		catalog,
-		"prosthetics",
-		["цирконий", "диоксид"],
-		28000,
-	);
-	const crownEmax = findMatchingCatalogPrice(
-		catalog,
-		"prosthetics",
-		["e.max", "emax", "керамик", "винир"],
-		42000,
-	);
-	const diagnostics = findMatchingCatalogPrice(
-		catalog,
-		"diagnostics",
-		["кт", "сним", "рентген", "диагностика"],
-		2500,
-	);
+	// Подбор цен из каталога или эталонных значений
+	const therapyCaries = findMatchingCatalogPrice(catalog, "therapy", ["кариес"], 4500);
+	const therapyPulpitis = findMatchingCatalogPrice(catalog, "therapy", ["пульпит", "эндо", "канал"], 9500);
+	const therapyPeriodontitis = findMatchingCatalogPrice(catalog, "therapy", ["периодонтит", "эндо"], 12500);
+	const hygieneBasic = findMatchingCatalogPrice(catalog, "hygiene", ["ультразвук", "чистк", "скейлинг"], 4500);
+	const hygieneAirFlow = findMatchingCatalogPrice(catalog, "hygiene", ["air-flow", "глицин", "комплекс"], 7500);
+	const hygieneSpa = findMatchingCatalogPrice(catalog, "hygiene", ["spa", "remin", "отбеливание", "beyond"], 15000);
+	const implantOsstem = findMatchingCatalogPrice(catalog, "surgery", ["osstem", "dentium", "имплант"], 38000);
+	const implantStraumann = findMatchingCatalogPrice(catalog, "surgery", ["straumann", "nobel", "roxolid", "премиум"], 75000);
+	const surgicalGuide = findMatchingCatalogPrice(catalog, "surgery", ["шаблон", "навигацион"], 12000);
+	const crownStandard = findMatchingCatalogPrice(catalog, "prosthetics", ["металлокерамика", "коронка"], 16000);
+	const crownZirconia = findMatchingCatalogPrice(catalog, "prosthetics", ["цирконий", "диоксид"], 28000);
+	const crownEmax = findMatchingCatalogPrice(catalog, "prosthetics", ["e.max", "emax", "керамик", "винир"], 42000);
+	const diagnostics = findMatchingCatalogPrice(catalog, "diagnostics", ["кт", "сним", "рентген", "диагностика"], 2500);
 
 	const cariesNums = findings.cariesTeeth.map((t) => t.toothNumber);
 	const pulpitisNums = findings.pulpitisTeeth.map((t) => t.toothNumber);
@@ -337,63 +247,39 @@ export function generate3TierPlans(
 	const basicStages: PlanStage[] = [];
 
 	if (findings.hasPathologies) {
-		basicKopecksList.push(parseKopecks(diagnostics.priceRub));
-		basicKopecksList.push(parseKopecks(hygieneBasic.priceRub));
+		basicKopecksList.push(parseKopecks(diagnostics.priceRub), parseKopecks(hygieneBasic.priceRub));
 
 		if (cariesNums.length > 0) {
-			const cost = multiplyKopecks(
-				parseKopecks(therapyCaries.priceRub),
-				cariesNums.length,
-			);
-			basicKopecksList.push(cost);
+			basicKopecksList.push(multiplyKopecks(parseKopecks(therapyCaries.priceRub), cariesNums.length));
 			basicFeatures.push(
 				`Устранение кариеса: ${cariesNums.length} ${pluralizeRu(cariesNums.length, "зуб", "зуба", "зубов")} (${formatToothList(cariesNums)})`,
 			);
 		}
 		if (pulpitisNums.length > 0) {
-			const cost = multiplyKopecks(
-				parseKopecks(therapyPulpitis.priceRub),
-				pulpitisNums.length,
-			);
-			basicKopecksList.push(cost);
+			basicKopecksList.push(multiplyKopecks(parseKopecks(therapyPulpitis.priceRub), pulpitisNums.length));
 			basicFeatures.push(
 				`Лечение пульпита: ${pulpitisNums.length} ${pluralizeRu(pulpitisNums.length, "зуб", "зуба", "зубов")} (${formatToothList(pulpitisNums)})`,
 			);
 		}
 		if (perioNums.length > 0) {
-			const cost = multiplyKopecks(
-				parseKopecks(therapyPeriodontitis.priceRub),
-				perioNums.length,
-			);
-			basicKopecksList.push(cost);
-			basicFeatures.push(
-				`Купирование периодонтита: зубы ${formatToothList(perioNums)}`,
-			);
+			basicKopecksList.push(multiplyKopecks(parseKopecks(therapyPeriodontitis.priceRub), perioNums.length));
+			basicFeatures.push(`Купирование периодонтита: зубы ${formatToothList(perioNums)}`);
 		}
 		if (crownNums.length > 0) {
-			const cost = multiplyKopecks(
-				parseKopecks(crownStandard.priceRub),
-				crownNums.length,
-			);
-			basicKopecksList.push(cost);
+			basicKopecksList.push(multiplyKopecks(parseKopecks(crownStandard.priceRub), crownNums.length));
 			basicFeatures.push(
 				`Восстановление стандартными коронками: ${crownNums.length} ед. (${formatToothList(crownNums)})`,
 			);
 		}
 		if (missingNums.length > 0) {
-			basicFeatures.push(
-				`Консервативный мониторинг отсутствующих зубов (${missingNums.length} ед.)`,
-			);
+			basicFeatures.push(`Консервативный мониторинг отсутствующих зубов (${missingNums.length} ед.)`);
 		}
 
 		basicFeatures.push("Светоотверждаемые нано-композиты Filtek / Estelite");
 		basicFeatures.push("Профессиональная ультразвуковая чистка");
 		basicFeatures.push("Базовая гарантия клиники 1 год");
 
-		const visitsTherapy = Math.max(
-			1,
-			Math.ceil((cariesNums.length + pulpitisNums.length + perioNums.length) / 2),
-		);
+		const visitsTherapy = Math.max(1, Math.ceil((cariesNums.length + pulpitisNums.length + perioNums.length) / 2));
 		basicStages.push({
 			title: "Диагностика и гигиена",
 			desc: "Ультразвуковой скейлинг, прицельные контрольные снимки",
@@ -412,7 +298,6 @@ export function generate3TierPlans(
 			});
 		}
 	} else {
-		// Профилактический стандарт
 		basicKopecksList = [
 			parseKopecks(diagnostics.priceRub),
 			parseKopecks(hygieneBasic.priceRub),
@@ -436,26 +321,17 @@ export function generate3TierPlans(
 	}
 
 	const basicTotalKopecks = sumKopecks(basicKopecksList);
-	const basicTotalRub = Math.round(basicTotalKopecks / 100);
-	const basicWeeks = Math.max(
-		1,
-		Math.min(4, Math.ceil((findings.totalPathologyCount || 1) / 2)),
-	);
-
 	const basicTier: CasePlanTier = {
 		id: "basic",
 		badge: "Стандарт",
 		title: "Терапевтический минимум",
-		subtitle:
-			"Купирование боли, устранение очагов инфекции и базовая функциональность",
+		subtitle: "Купирование боли, устранение очагов инфекции и базовая функциональность",
 		isRecommended: false,
-		badgeClass:
-			"bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700",
-		borderClass:
-			"border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600",
-		totalRub: basicTotalRub,
+		badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700",
+		borderClass: "border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600",
+		totalRub: Math.round(basicTotalKopecks / 100),
 		totalKopecks: basicTotalKopecks,
-		durationWeeks: basicWeeks,
+		durationWeeks: Math.max(1, Math.min(4, Math.ceil((findings.totalPathologyCount || 1) / 2))),
 		warrantyYears: 1,
 		features: basicFeatures,
 		stages: basicStages,
@@ -471,48 +347,32 @@ export function generate3TierPlans(
 	if (findings.hasPathologies) {
 		optimumKopecksList.push(
 			multiplyKopecks(parseKopecks(diagnostics.priceRub), 2),
+			parseKopecks(hygieneAirFlow.priceRub),
 		);
-		optimumKopecksList.push(parseKopecks(hygieneAirFlow.priceRub));
 
 		if (missingNums.length > 0) {
 			const unitImplantKopecks = sumKopecks([
 				parseKopecks(implantOsstem.priceRub),
 				parseKopecks(crownZirconia.priceRub),
 			]);
-			const totalImplantsKopecks = multiplyKopecks(
-				unitImplantKopecks,
-				missingNums.length,
+			optimumKopecksList.push(
+				multiplyKopecks(unitImplantKopecks, missingNums.length),
+				parseKopecks(surgicalGuide.priceRub),
 			);
-			const guideKopecks = parseKopecks(surgicalGuide.priceRub);
-			optimumKopecksList.push(totalImplantsKopecks);
-			optimumKopecksList.push(guideKopecks);
-
 			optimumFeatures.push(
 				`Дентальная имплантация Osstem/Dentium: ${missingNums.length} ${pluralizeRu(missingNums.length, "единица", "единицы", "единиц")} (${formatToothList(missingNums)})`,
 			);
 			optimumFeatures.push("Навигационный хирургический 3D-шаблон");
-			optimumFeatures.push(
-				`Безметалловые циркониевые коронки на имплантатах (${missingNums.length} ед.)`,
-			);
+			optimumFeatures.push(`Безметалловые циркониевые коронки на имплантатах (${missingNums.length} ед.)`);
 		}
 
 		if (crownNums.length > 0) {
-			const cost = multiplyKopecks(
-				parseKopecks(crownZirconia.priceRub),
-				crownNums.length,
-			);
-			optimumKopecksList.push(cost);
-			optimumFeatures.push(
-				`Циркониевые коронки на свои зубы: ${crownNums.length} ед. (${formatToothList(crownNums)})`,
-			);
+			optimumKopecksList.push(multiplyKopecks(parseKopecks(crownZirconia.priceRub), crownNums.length));
+			optimumFeatures.push(`Циркониевые коронки на свои зубы: ${crownNums.length} ед. (${formatToothList(crownNums)})`);
 		}
 
 		if (cariesNums.length > 0) {
-			const cost = multiplyKopecks(
-				parseKopecks(therapyCaries.priceRub + 2000),
-				cariesNums.length,
-			);
-			optimumKopecksList.push(cost);
+			optimumKopecksList.push(multiplyKopecks(parseKopecks(therapyCaries.priceRub + 2000), cariesNums.length));
 			optimumFeatures.push(
 				`Лечение кариеса под микроскопом: ${cariesNums.length} ${pluralizeRu(cariesNums.length, "зуб", "зуба", "зубов")}`,
 			);
@@ -520,19 +380,13 @@ export function generate3TierPlans(
 
 		if (pulpitisNums.length > 0 || perioNums.length > 0) {
 			const count = pulpitisNums.length + perioNums.length;
-			const cost = multiplyKopecks(
-				parseKopecks(therapyPulpitis.priceRub + 4000),
-				count,
-			);
-			optimumKopecksList.push(cost);
+			optimumKopecksList.push(multiplyKopecks(parseKopecks(therapyPulpitis.priceRub + 4000), count));
 			optimumFeatures.push(
 				`Эндодонтия каналов под микроскопом с 3D-обтурацией (${count} ${pluralizeRu(count, "зуб", "зуба", "зубов")})`,
 			);
 		}
 
-		optimumFeatures.push(
-			"Air-Flow гигиена с порошком на основе глицина и полировкой",
-		);
+		optimumFeatures.push("Air-Flow гигиена с порошком на основе глицина и полировкой");
 		optimumFeatures.push("Цифровые оптические 3D-слепки (сканер iTero)");
 		optimumFeatures.push("Расширенная гарантия клиники 5 лет");
 
@@ -578,23 +432,17 @@ export function generate3TierPlans(
 	}
 
 	const optimumTotalKopecks = sumKopecks(optimumKopecksList);
-	const optimumTotalRub = Math.round(optimumTotalKopecks / 100);
-	const optimumWeeks = missingNums.length > 0 ? 8 : 4;
-
 	const optimumTier: CasePlanTier = {
 		id: "optimum",
 		badge: "Оптимум (Выбор врача)",
 		title: "Комплексная реабилитация",
-		subtitle:
-			"Имплантация, лечение под микроскопом и безметалловая керамика",
+		subtitle: "Имплантация, лечение под микроскопом и безметалловая керамика",
 		isRecommended: true,
-		badgeClass:
-			"bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal,var(--brand-primary))]/50",
-		borderClass:
-			"border-[var(--teal,var(--brand-primary))] ring-2 ring-[var(--teal,var(--brand-primary))]/20 shadow-lg shadow-[var(--teal,var(--brand-primary))]/10",
-		totalRub: optimumTotalRub,
+		badgeClass: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal,var(--brand-primary))]/50",
+		borderClass: "border-[var(--teal,var(--brand-primary))] ring-2 ring-[var(--teal,var(--brand-primary))]/20 shadow-lg shadow-[var(--teal,var(--brand-primary))]/10",
+		totalRub: Math.round(optimumTotalKopecks / 100),
 		totalKopecks: optimumTotalKopecks,
-		durationWeeks: optimumWeeks,
+		durationWeeks: missingNums.length > 0 ? 8 : 4,
 		warrantyYears: 5,
 		features: optimumFeatures,
 		stages: optimumStages,
@@ -608,58 +456,39 @@ export function generate3TierPlans(
 	const premiumStages: PlanStage[] = [];
 
 	if (findings.hasPathologies) {
-		premiumKopecksList.push(parseKopecks(12000)); // VIP DSD + Diagnostics
-		premiumKopecksList.push(parseKopecks(hygieneSpa.priceRub));
-		premiumKopecksList.push(parseKopecks(18000)); // Седация
+		premiumKopecksList.push(
+			parseKopecks(12000),
+			parseKopecks(hygieneSpa.priceRub),
+			parseKopecks(18000),
+		);
 
 		if (missingNums.length > 0) {
 			const unitStraumannKopecks = sumKopecks([
 				parseKopecks(implantStraumann.priceRub),
 				parseKopecks(crownEmax.priceRub),
 			]);
-			const totalImplantsKopecks = multiplyKopecks(
-				unitStraumannKopecks,
-				missingNums.length,
+			premiumKopecksList.push(
+				multiplyKopecks(unitStraumannKopecks, missingNums.length),
+				parseKopecks(surgicalGuide.priceRub),
 			);
-			premiumKopecksList.push(totalImplantsKopecks);
-			premiumKopecksList.push(parseKopecks(surgicalGuide.priceRub));
-
 			premiumFeatures.push(
 				`Швейцарские имплантаты Straumann Roxolid SLActive (${missingNums.length} ед.: ${formatToothList(missingNums)})`,
 			);
 		}
 
-		const totalEstheticUnits = Math.max(
-			4,
-			missingNums.length + crownNums.length,
-		);
-		const emaxUnitsCost = multiplyKopecks(
-			parseKopecks(crownEmax.priceRub),
-			Math.max(crownNums.length, 2),
-		);
-		premiumKopecksList.push(emaxUnitsCost);
+		const totalEstheticUnits = Math.max(4, missingNums.length + crownNums.length);
+		premiumKopecksList.push(multiplyKopecks(parseKopecks(crownEmax.priceRub), Math.max(crownNums.length, 2)));
 
 		if (cariesNums.length > 0 || pulpitisNums.length > 0) {
 			const count = cariesNums.length + pulpitisNums.length;
-			const cost = multiplyKopecks(parseKopecks(14000), count);
-			premiumKopecksList.push(cost);
+			premiumKopecksList.push(multiplyKopecks(parseKopecks(14000), count));
 		}
 
-		premiumFeatures.push(
-			`Керамические виниры и коронки E.max (${totalEstheticUnits} ед.)`,
-		);
-		premiumFeatures.push(
-			"Лечение в комфортной медикаментозной седации (антистресс)",
-		);
-		premiumFeatures.push(
-			"Digital Smile Design (DSD) виртуальное 3D-моделирование",
-		);
-		premiumFeatures.push(
-			"Персональный медицинский куратор и комната отдыха после седации",
-		);
-		premiumFeatures.push(
-			"Пожизненная гарантия производителя на имплантаты Straumann",
-		);
+		premiumFeatures.push(`Керамические виниры и коронки E.max (${totalEstheticUnits} ед.)`);
+		premiumFeatures.push("Лечение в комфортной медикаментозной седации (антистресс)");
+		premiumFeatures.push("Digital Smile Design (DSD) виртуальное 3D-моделирование");
+		premiumFeatures.push("Персональный медицинский куратор и комната отдыха после седации");
+		premiumFeatures.push("Пожизненная гарантия производителя на имплантаты Straumann");
 
 		premiumStages.push({
 			title: "VIP 3D-моделирование и Smile Design",
@@ -682,15 +511,9 @@ export function generate3TierPlans(
 			parseKopecks(hygieneSpa.priceRub),
 			parseKopecks(38000),
 		];
-		premiumFeatures.push(
-			"Digital Smile Design (DSD) виртуальное 3D-моделирование улыбки",
-		);
-		premiumFeatures.push(
-			"VIP SPA-гигиена и бережное аппаратное отбеливание Beyond Polus",
-		);
-		premiumFeatures.push(
-			"Укрепление и реминерализация эмали составами премиум-класса",
-		);
+		premiumFeatures.push("Digital Smile Design (DSD) виртуальное 3D-моделирование улыбки");
+		premiumFeatures.push("VIP SPA-гигиена и бережное аппаратное отбеливание Beyond Polus");
+		premiumFeatures.push("Укрепление и реминерализация эмали составами премиум-класса");
 		premiumFeatures.push("Персональный медицинский куратор клиники");
 		premiumFeatures.push("Гарантия 10 лет");
 
@@ -707,23 +530,17 @@ export function generate3TierPlans(
 	}
 
 	const premiumTotalKopecks = sumKopecks(premiumKopecksList);
-	const premiumTotalRub = Math.round(premiumTotalKopecks / 100);
-	const premiumWeeks = missingNums.length > 0 ? 10 : 6;
-
 	const premiumTier: CasePlanTier = {
 		id: "premium",
 		badge: "VIP Премиум",
 		title: "Эстетическая реконструкция",
-		subtitle:
-			"Швейцарские имплантаты Straumann, керамика E.max, седация и VIP-сервис",
+		subtitle: "Швейцарские имплантаты Straumann, керамика E.max, седация и VIP-сервис",
 		isRecommended: false,
-		badgeClass:
-			"bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 border-purple-400/50",
-		borderClass:
-			"border-purple-500/80 hover:border-purple-400 dark:border-purple-600 shadow-md",
-		totalRub: premiumTotalRub,
+		badgeClass: "bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 border-purple-400/50",
+		borderClass: "border-purple-500/80 hover:border-purple-400 dark:border-purple-600 shadow-md",
+		totalRub: Math.round(premiumTotalKopecks / 100),
 		totalKopecks: premiumTotalKopecks,
-		durationWeeks: premiumWeeks,
+		durationWeeks: missingNums.length > 0 ? 10 : 6,
 		warrantyYears: "10 лет / Пожизненная",
 		features: premiumFeatures,
 		stages: premiumStages,
@@ -743,7 +560,6 @@ export function generate3TierPlans(
 				return parseKopecks(itemTotalRub);
 			});
 			const savedTotalKopecks = sumKopecks(savedItemKopecks);
-			const savedTotalRub = Math.round(savedTotalKopecks / 100);
 
 			const savedFeatures = latestSaved.items.slice(0, 6).map((it) => {
 				const toothPart = it.toothNumber ? ` (зуб ${it.toothNumber})` : "";
@@ -776,14 +592,11 @@ export function generate3TierPlans(
 				id: `saved_${latestSaved.id}`,
 				badge: "План из карты",
 				title: latestSaved.name || "Утверждённый план",
-				subtitle:
-					"Сохранённый лечащим врачом план с фиксированными услугами",
+				subtitle: "Сохранённый лечащим врачом план с фиксированными услугами",
 				isRecommended: false,
-				badgeClass:
-					"bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border-amber-400/50",
-				borderClass:
-					"border-amber-500/80 hover:border-amber-400 dark:border-amber-600 shadow-md",
-				totalRub: savedTotalRub,
+				badgeClass: "bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border-amber-400/50",
+				borderClass: "border-amber-500/80 hover:border-amber-400 dark:border-amber-600 shadow-md",
+				totalRub: Math.round(savedTotalKopecks / 100),
 				totalKopecks: savedTotalKopecks,
 				durationWeeks: 4,
 				warrantyYears: "По гарантии клиники",
