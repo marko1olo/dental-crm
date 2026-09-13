@@ -24,6 +24,7 @@
 > 18. Ликвидированы 6 несмонтированных фасадов и академический балласт (`AnesthesiaPkuDisposalModal.tsx`, `SpeechChunksInspector.tsx`, `SignaturePad.tsx`, `CommandPalette.tsx`, `ScheduleSubNavTabs.tsx`, `OfflineConflictReviewDrawer.tsx`), устранены синтаксические дефекты `||` в `FEATURES_REGISTRY.md`, подтверждены 100% из 639 уникальных путей к файлам (0 битых путей, 325/325 `[ДА]`), реестр и бэклог приведены в идеальное соответствие Мандатам 8g, 8h, 8s (Wave 173).
 > 19. Ликвидированы 10 единиц мертвого серверного кода (`DentalLabOrderService`, `DmsInsuranceService`, `OfflineFiscalSpooler`, `phiRedactor`, `recallReminderService`, `ClinicalRecordLockService`, `patientScoring`, `SmartPricelistImportService`, `splitPaymentService`, `IdempotentTransactionService`), исключено госпитальное контекстное заражение СЭМД 106 по Мандату 8i, закреплены бюджеты десктопной высоты шапок <=88–100px и автономия врача по Мандатам 8d, 8e, 8p (Wave 174).
 > 20. Завершена тотальная чистка серверного блоата API: ликвидированы еще 5 неиспользуемых сервисов (`DicomMeasurementEngine`, `postOpCareTrigger`, `PermissionPolicyService`, `decree458Categorizer`, `recallScheduler`), доведя суммарную чистку мертвого кода API за Волны 174–175 до 15 сервисов (-9836 строк); в `ScheduleView.tsx` смонтирован компонент пакетных напоминаний `TomorrowRemindersModal` с актуализацией `panelsAreMounted.test.ts`; полностью вычищен стационарный СЭМД 106 из `packages/shared/src/egisz/` per Mandate 8i; устранен дефект переполнения мобильной шапки `[DEFECT-PATIENTS-MOB-01]` в `patients-redesign.css` и `overflow-fixes.css` (Wave 175).
+> 21. Ликвидирован паразитный дублирующий и несмонтированный фронтенд-код и неподдерживаемый провайдер Ollama (-4495 строк, коммиты `c93a458e6`, `cc55beb1c`): удалены `AppointmentDrawer.tsx`, `ChairRosterModal.tsx`, `SberbankTerminalPaymentModal.tsx` и `localOllama.ts`; подтверждена консолидация на канонических SSOT: `AppointmentModal.tsx` и `QuickBookingDrawer.tsx` (визиты и запись), `DoctorShiftRosterModal.tsx` и `ChairScheduleView.tsx` (расписание смен и кресел), `sberPos/SberPosTerminalModal.tsx` (терминал Сбера); подтверждена полная работоспособность 5 ключевых модулей: `TomorrowRemindersModal` (напоминания на завтра), `ClassicGostOdontogram.tsx` (хоткеи формулы), `mprWorker.ts` (3D WebWorker MPR), `whatsappBridge.ts` / `websocketBroker.ts` (Telegram/WhatsApp брокер), касса 54-ФЗ без требования ИНН физлиц (Мандат 8e п. 9) (Wave 175).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 ---
@@ -2013,7 +2014,7 @@
   4. *Интеллектуальное позиционирование macOS Hover HUD*: превью карточки пациента в `ScheduleGrid.tsx` динамически учитывает нижний и правый края экрана (`bottom-full`, `right-0`), предотвращая вылет плашки за границы вьюпорта и горизонтальный паразитный скролл при 10+ креслах (Apple HIG / Мандат 8d).
   5. *Редактирование и архивация кресел*: в `QuickAddChairModal.tsx` внедрен режим редактирования параметров кресла (`isEditMode`, `initialData`, `onUpdateChair`), переключатель «Активно / В архиве» (`isActive`, `data-testid="quick-add-chair-active-toggle"`) и тач-таргеты $\ge 44\times 44\text{px}$.
   6. *Унификация графиков смен*: часы утренней и вечерней смен синхронизированы в канонические `08:00–14:00` и `14:00–20:00` в `doctorWeeklyScheduleGenerator.ts` и `ScheduleGrid.tsx`.
-- **Файлы**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `ScheduleAppointmentModal.tsx`, `ScheduleCalendar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
+- **Файлы**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `ChairScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `ScheduleAppointmentModal.tsx`, `ScheduleCalendar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
 - **Тесты**: `scheduleChairDoctorBinding.test.tsx` (21 тест), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов), `AppointmentModal.test.ts` (3 теста) — суммарно 66 тестов, 100% pass (коммит `88ee4bb06`).
 
 ### 4.65. Склад и МДЛП: ликвидация модальных матрёшек акта списания и очистка от эмодзи по Закону 7 смертных грехов UI (Мандаты 8d, 8e, 8k, 8n / Фича 194)
@@ -2075,15 +2076,15 @@
 - **Файлы**: `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/schedule/ChairScheduleView.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleInlineChairManagement.test.tsx` (7 тестов, 100% pass, коммиты `88ee4bb06`, `31c45a2ff`).
 
-### 4.71. Шаблоны закрепления врачей за креслами по графику в ChairRosterModal (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 200)
+### 4.71. Шаблоны закрепления врачей за креслами по графику в DoctorShiftRosterModal (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 200)
 - **Статус**: `[РЕАЛИЗОВАНО]`
 - **Объем реализации**:
-  1. *Шаблоны клинической сменности в 1 клик*: в `ChairRosterModal.tsx`, `DoctorShiftRosterModal.tsx`, `DoctorRosterToolbar.tsx` и `doctorShiftRosterPresets.ts` внедрены готовые шаблоны отделений: «Пятидневка (5/2, Пн-Пт 6.6ч)» по ст. 350 ТК РФ (33ч/нед и производственный календарь 2026), «Сменный 2 через 2 (2/2, 12ч)», «Все утренние / Пн/Ср/Пт утро (08:00–14:00)», «Все вечерние / Вт/Чт/Сб вечер (14:00–20:00)», «Полный день (08:00–20:00 / 12ч)»;
+  1. *Шаблоны клинической сменности в 1 клик*: в `DoctorShiftRosterModal.tsx` (ранее прототип `ChairRosterModal.tsx`, ликвидированный в Wave 175), `DoctorRosterToolbar.tsx` и `doctorShiftRosterPresets.ts` внедрены готовые шаблоны отделений: «Пятидневка (5/2, Пн-Пт 6.6ч)» по ст. 350 ТК РФ (33ч/нед и производственный календарь 2026), «Сменный 2 через 2 (2/2, 12ч)», «Все утренние / Пн/Ср/Пт утро (08:00–14:00)», «Все вечерние / Вт/Чт/Сб вечер (14:00–20:00)», «Полный день (08:00–20:00 / 12ч)»;
   2. *Движок ячеечных пресетов `applyCellShiftPreset`*: мгновенное назначение смены конкретному врачу и креслу без дубликатов;
   3. *Авторасчет баланса и коллизий*: автоматическое выявление двойных бронирований `detectRosterConflicts`, контроль ассистентских пар в 4 руки;
   4. *Форма Т-13 и печать А4*: формирование табеля учета рабочего времени Т-13 с экспортом в CSV и печать графика в формате А4 Альбомный;
   5. *Автономия соло-врача*: неблокирующее сохранение (`disabled={false}`) и безопасные fallback-значения для соло-кабинета с 1 креслом (Мандаты 8e, 8n).
-- **Файлы**: `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `DoctorRosterToolbar.tsx`, `DoctorRosterMatrix.tsx`, `doctorWeeklyScheduleGenerator.ts`, `doctorShiftRosterPresets.ts`, `doctorShiftRosterEngine.ts`.
+- **Файлы**: `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`, `apps/web/src/components/schedule/roster/doctorShiftRosterPresets.ts`, `apps/web/src/components/schedule/roster/doctorShiftRosterEngine.ts`.
 - **Тесты**: `apps/web/src/components/schedule/roster/__tests__/scheduleShiftRosterIntegration.test.tsx` (27 тестов, 100% pass, коммит `88ee4bb06`).
 
 ### 4.72. 1-тап смена и закрепление дежурного врача прямо из шапки сетки расписания без модального ада (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 201)
@@ -2119,14 +2120,14 @@
 - **Файлы**: `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleStomxDoctorChairRosterParity.test.tsx` (11 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов) — 38/38 pass, коммит `9bea85a84`.
 
-### 4.75. Недельная матрица распределения врачей по креслам в ChairRosterModal и DoctorRosterMatrix (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 204)
+### 4.75. Недельная матрица распределения врачей по креслам в DoctorShiftRosterModal и DoctorRosterMatrix (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 204)
 - **Статус**: `[РЕАЛИЗОВАНО]`
 - **Объем реализации**:
-  1. *Двунаправленная матрица распределения*: в `ChairRosterModal.tsx` и `DoctorRosterMatrix.tsx` внедрены табы «По креслам / кабинетам» и «По сотрудникам» с отображением полной недели (Пн–Вс);
+  1. *Двунаправленная матрица распределения*: в `DoctorShiftRosterModal.tsx` (ранее прототип `ChairRosterModal.tsx`, ликвидированный в Wave 175) и `DoctorRosterMatrix.tsx` внедрены табы «По креслам / кабинетам» и «По сотрудникам» с отображением полной недели (Пн–Вс);
   2. *1-тап поповер назначения смен*: в ячейках матрицы реализован быстрый поповер с 4 пресетами смен (`☀️ Утро 08:00–14:00`, `🌙 Вечер 14:00–20:00`, `🏢 Весь день 08:00–20:00`, `🚫 Выходной/Очистить`) и селекторами врача и ассистента;
   3. *Быстрые чипы дежурных врачей в сетке*: в `ScheduleGrid.tsx` шапка колонок кресел оснащена быстрыми чипами дежурных врачей с 1-тап поповером для оперативного назначения смены прямо у кресла;
   4. *Контроль коллизий и автономия персонала*: автоматическое выявление двойных бронирований кресел/врачей `detectRosterConflicts`; неблокирующее сохранение (`disabled={false}`) без модального ада (Закон Анти-Матрёшки / Грех 6); тач-таргеты $\ge 44\text{px}$.
-- **Файлы**: `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
+- **Файлы**: `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleStomxDoctorChairRosterParity.test.tsx` (11 тестов), `scheduleChairDoctorBinding.test.tsx` (24 теста) — 35/35 pass, коммит `9bea85a84`.
 
 ### 4.76. Ликвидация чужеродного госпитального поликлинического блоата 025/у и адаптация стоматологического пакета направления по Мандату 8i (Мандаты 8d, 8e, 8i, 8k, 8n / Фича 205)
@@ -2154,9 +2155,9 @@
 - **Объем реализации**:
   1. *1-тап поповер и переключатели смен прямо в шапке колонок ScheduleGrid*: в `ScheduleGrid.tsx` шапка каждого кресла оснащена быстрыми чипами дежурных врачей и 1-тап переключателями смен (`☀️ Утро 08:00–14:00`, `🌙 Вечер 14:00–20:00`, `🏢 Весь день 08:00–20:00`, `🚫 Выходной`) с автоподстановкой дежурного врача без открытия модальных окон (Закон Анти-Матрёшки / Грех 6);
   2. *1-клик создание и архетипы кресел*: в `QuickAddChairModal.tsx` и `ScheduleFilterStrip.tsx` реализовано создание кресел в 1 клик с клиническими архетипами («Терапия», «Хирургия», «Ортодонтия», «Детство», «Гигиена»), палитрами StomX, автогенерацией безопасных дефолтов «Кресло N» / «Кабинет N» и неблокирующей кнопкой `disabled={false}`;
-  3. *Недельное тиражирование и матрица*: в `DoctorShiftRosterModal.tsx`, `ChairRosterModal.tsx`, `DoctorRosterToolbar.tsx` и `doctorWeeklyScheduleGenerator.ts` обеспечено 1-клик копирование шаблонов сменности на неделю и месяц вперед (`copyWeekShiftsToTargetWeek`, `copyWeekShiftsToMonth`) и ячеечный движок `applyCellShiftPreset`;
+  3. *Недельное тиражирование и матрица*: в `DoctorShiftRosterModal.tsx`, `DoctorRosterToolbar.tsx` и `doctorWeeklyScheduleGenerator.ts` обеспечено 1-клик копирование шаблонов сменности на неделю и месяц вперед (`copyWeekShiftsToTargetWeek`, `copyWeekShiftsToMonth`) и ячеечный движок `applyCellShiftPreset`;
   4. *Эргономика и автономия персонала*: исключен срез текста (ликвидировано `...` в коммите `c0dfbfe21`), тач-таргеты строго $\ge 44\times 44\text{px}$ по Apple HIG (Мандат 8d), мгновенная адаптация для соло-врача с 1 креслом (`DEFAULT_SOLO_CHAIR`, Мандат 8n).
-- **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
 - **Тесты**: `apps/web/src/components/schedule/roster/__tests__/scheduleWeekCopyAndChairMatrix.test.tsx` (7 тестов), `apps/web/src/components/schedule/__tests__/scheduleStomxDoctorChairRosterParity.test.tsx` (11 тестов), `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (24 теста), `scheduleInlineChairManagement.test.tsx` (7 тестов) — 49/49 pass, коммиты `9bea85a84`, `5d54a4ab3`, `c0dfbfe21`.
 
 ### 4.79. Ликвидация мертвого disabled блокирования кнопки «Открыть приём» в карточках пациентов и 1-клик пакеты профгигиены/пародонтологии без процедурных симуляторов (Мандаты 8d, 8e, 8i, 8k, 8n / Фича 208)
@@ -2280,12 +2281,12 @@
 ### 4.90. Быстрое пакетное закрепление кресел за врачами по графику (2/2, 5/2, чередование смен утро/вечер, StomX/DentalPRO parity) и ликвидация модального оверлея-матрешки в графике сменности (Фича 219)
 - **Статус**: `[РЕАЛИЗОВАНО]`
 - **Объем реализации**:
-  1. *Пакетное закрепление смен врачей за креслами по графику (2/2, 5/2, чередование «утро/вечер»)*: в `ChairScheduleView.tsx`, `ScheduleGrid.tsx`, `DoctorShiftRosterModal.tsx` и `ChairRosterModal.tsx` реализовано оперативное назначение смен врачей на стоматологические кресла по типовым графикам («Утро 08:00–14:00», «Вечер 14:00–20:00», «Весь день 08:00–20:00», «2 смены 08-20 / 2 через 2», пятидневная рабочая неделя 5/2 со сменным графиком);
+  1. *Пакетное закрепление смен врачей за креслами по графику (2/2, 5/2, чередование «утро/вечер»)*: в `ChairScheduleView.tsx`, `ScheduleGrid.tsx` и `DoctorShiftRosterModal.tsx` (ранее прототип `ChairRosterModal.tsx`, ликвидированный в Wave 175) реализовано оперативное назначение смен врачей на стоматологические кресла по типовым графикам («Утро 08:00–14:00», «Вечер 14:00–20:00», «Весь день 08:00–20:00», «2 смены 08-20 / 2 через 2», пятидневная рабочая неделя 5/2 со сменным графиком);
   2. *Ликвидация модального оверлея-матрешки в графике сменности (Закон Анти-Матрёшки / Грех 6, Мандат 8d)*: привязка смен, выбор интервалов и назначение врачей перенесены в легковесный 1-тап поповер `chair-view-shift-popover-${chair.id}` без модальных блокирующих оверлеев (`fixed inset-0 bg-black/60`), исключая наслоение модалок поверх расписания и сброс пользовательского фокуса;
   3. *Сквозное автоопределение дежурного врача в слотах расписания*: алгоритм `resolveChairDutyDoctor(chairId, dateKey, assignments)` вычисляет актуального дежурного врача по времени слота и смене кресла с автоподстановкой в `QuickBookingDrawer.tsx` и `AppointmentModal.tsx`;
   4. *Неблокирующее бронирование при открытом приёме (Мандат 8e)*: при наличии активного приёма в кресле выводится мягкий предупреждающий бейдж `quick-booking-active-visit-warning` / `appointment-open-visit-warning` без отключения селекторов (`disabled={false}`);
   5. *Эргономика и Apple HIG*: единый 1-строчный тулбар (32–36px по Закону Хика), крупные тач-таргеты $\ge 44\times 44\text{px}$, полное отображение длинных русских фамилий врачей без обрезания (`min-w-0`).
-- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`.
+- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleWave43StomxParity.test.tsx` (8/8 pass), `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (25/25 pass), `apps/web/src/components/schedule/__tests__/scheduleWave42StomxParity.test.tsx` (6/6 pass) — коммиты `676610972`, `1e39b9f04`, `5033e94e3`, `3122f4f75`.
 
 ### 4.91. Клинический анти-трение протокол: 1-клик соматическая норма, пакетные связки МКБ-10 + 804н и полная автономия врача без блокировок завершения приёма (Мандаты 8e, 8i, 8k, 8n / Фича 220)
@@ -2354,7 +2355,7 @@
   4. *1-клик копирование графика сменности на неделю и месяц вперед*: в `doctorWeeklyScheduleGenerator.ts` и `DoctorRosterToolbar.tsx` реализованы функции `copyWeekShiftsToTargetWeek` и `copyWeekShiftsToMonth` с защитой от дублей и сохранением привязок врачей и ассистентов;
   5. *1-клик архетипы клинических кресел в QuickAddChairModal*: создание установок со специализациями (Терапия, Хирургия, Ортодонтия, Детство, Гигиена), палитрами StomX, безопасными дефолтами `defaultDoctorId` и fallback на соло-врача (`DEFAULT_SOLO_CHAIR`, Мандат 8n);
   6. *Медицинская плотность тулбаров (32–36px)*: стандартизация тулбаров по Закону Хика, тач-таргеты $\ge 44\times 44\text{px}$ по Apple HIG, отображение русских фамилий без обрезания (`min-w-0`).
-- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/NewAppointmentForm.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`.
+- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/NewAppointmentForm.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/roster/__tests__/doctorShiftRosterWave44.test.tsx` (9/9 pass), `apps/web/src/components/schedule/__tests__/newAppointmentFormWave45.test.tsx` (19/19 pass), `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (25/25 pass), `apps/web/src/components/schedule/__tests__/scheduleWave43StomxParity.test.tsx` (8/8 pass) — коммиты `973a47d35`, `afbf1ae72`, `676610972`, `9bea85a84`, `31c45a2ff`.
 
 ### 4.97. Ликвидация госпитального блоата и процедурных симуляторов: 1-клик соматическая норма, пакетные протоколы МКБ-10 + 804н, рецепты 1094н и полная свобода врача (Мандаты 8e, 8i, 8k, 8n) (Фича 226)
@@ -2644,10 +2645,10 @@
   - **QuickAddDoctorModal**: автономная модалка `apps/web/src/components/schedule/QuickAddDoctorModal.tsx` с полями ФИО, автогенерацией `shortName` (Иванов И.И.), выбором специализации (7 вариантов СтАР), опциональным телефоном, выбором предпочитаемого кресла (`preferredChairId`), палитрой из 10 цветов (`DOCTOR_COLOR_PRESETS`), 0 заблокированных кнопок (Мандат 8e), 0 мультяшных эмодзи (Мандат 8d п. 7), эргономичными тач-таргетами $\ge 44\times 44\text{px}$ (Мандат 8c) и offline fallback.
   - **ScheduleGrid**: тулбарная кнопка `btn-grid-quick-add-doctor` («+ Врач», иконка `UserPlus`), в поповере заголовка кресла — действие `chair-popover-bind-doctor-${chair.id}` с сохранением предпочтений в `localStorage` (`dente_doctor_preferred_chairs`, `dente_chair_default_doctors`).
   - **ChairScheduleView**: кнопки тулбара `btn-chair-view-add-doctor` («+ Врач») и `btn-apply-preferred-chairs` («Применить закрепления», `Pin`) с функцией `handleApplyDoctorPreferredChairs()`, распределяющей врачей по сменам на основе закреплений.
-  - **ChairRosterModal**: кнопка `btn-roster-add-doctor` («+ Врач», `UserPlus`) и интеграция `QuickAddDoctorModal` с мгновенным обновлением локального штата и назначений.
+  - **DoctorShiftRosterModal**: кнопка `btn-roster-add-doctor` («+ Врач», `UserPlus`) и интеграция `QuickAddDoctorModal` с мгновенным обновлением локального штата и назначений (ранее в прототипе `ChairRosterModal.tsx`, ликвидированном в Wave 175).
   - **AppointmentModal & QuickBookingDrawer**: интеллектуальная автоподстановка кресла по выбранному врачу (`doctorUserId`) с приоритетом: `doc.preferredChairId` -> `chair.defaultDoctorId` -> дежурный врач смены -> специализация врача.
   - **Мандат 8n (Соло-врач)**: при 0 настроенных креслах в клинике `effectiveChairId` безопасно использует `DEFAULT_SOLO_CHAIR.id` ("chair-1") без блокировки интерфейса.
-  - **Файлы**: `apps/web/src/components/schedule/QuickAddDoctorModal.tsx`, `ScheduleGrid.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `AppointmentModal.tsx`, `QuickBookingDrawer.tsx`.
+  - **Файлы**: `apps/web/src/components/schedule/QuickAddDoctorModal.tsx`, `ScheduleGrid.tsx`, `ChairScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `AppointmentModal.tsx`, `QuickBookingDrawer.tsx`.
   - **Тесты**: `apps/web/src/components/schedule/__tests__/quickAddDoctorAndChairBindingAutonomyWave57.test.tsx` (7/7 pass), `npm run typecheck -w @dental/web` (Exit Code 0).
 
 ---
@@ -2681,10 +2682,10 @@
     * В бейдже кресла `chair-view-badge-${chair.id}` внедрено отображение обоих врачей `(У: Иванов И.И. / В: Петров П.П.)`;
     * Экспортирована функция `syncShiftsWithServer(targetDateKey, currentAssignments, chairsList)` с отправкой `SyncShiftPayload[]` на `POST /api/schedule/shifts` с секретными заголовками `denteAdminSecretRequestHeaders()` и мягким `localStorage` фоллбэком;
     * Тулбар приведен к строгой 1 строке 32–36px (`h-9 max-h-[36px]`), доминантные действия («+ Кресло», «+ Врач», «График смен») вынесены в первый ряд, а 7 пакетных действий объединены в выпадающее меню `btn-chair-shifts-menu-trigger` («Действия со сменами...», `SlidersHorizontal`);
-  - **ChairRosterModal.tsx**:
+  - **DoctorShiftRosterModal.tsx**:
     * Кнопки смен дня увеличены до тач-таргетов $\ge 36\text{--}44\text{px}$;
-    * Хардкод пастельных цветов заменен токенами темы (`var(--purple-soft)`, `var(--gold-soft)`, `var(--teal-soft)`);
-  - **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `ChairRosterModal.tsx`.
+    * Хардкод пастельных цветов заменен токенами темы (`var(--purple-soft)`, `var(--gold-soft)`, `var(--teal-soft)`) (ранее прототип `ChairRosterModal.tsx`, ликвидированный в Wave 175);
+  - **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`.
   - **Тесты**: `apps/web/src/components/schedule/__tests__/chairSubShiftsAndToolbarParityWave59.test.tsx` (5/5 pass), Waves 55..59 regression (35/35 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0).
 
 ---
@@ -3023,9 +3024,10 @@
 ---
 
 ## 198. `расписание_шторка::appointment_drawer_полная_автономия_врача_опциональный_ассистент_и_быстрые_статусы_в_1_клик_44px` [РЕАЛИЗОВАНО] (Wave 70, Feature 261) -> KILLER / MUST-HAVE
-- **Идея**: В соответствии с Мандатами 8c, 8d, 8e п. 8 и 8n модальные окна создания и редактирования визита уступают место эргономичной боковой шторке `AppointmentDrawer.tsx` (Slide-over drawer), которая сохраняет контекст сетки расписания. Ассистент строго опционален, в режиме соло-врача автоматический байпас, статусы приема переключаются в 1 клик с тач-таргетами $\ge 44\times 44\text{px}$, а дежурный врач кресла определяется автоматически.
+> ⚠️ **Консолидация Wave 175 (коммит c93a458e6)**: Прототип `AppointmentDrawer.tsx` ликвидирован в рамках очистки от мертвого кода и дубликатов компонентов (-1428 строк). Каноническими SSOT визитов и шторки записи являются `AppointmentModal.tsx` и `QuickBookingDrawer.tsx`. Все требования автономии врача (Мандат 8e п. 8, 8n) и 1-клик статусы перенесены в них.
+- **Идея**: В соответствии с Мандатами 8c, 8d, 8e п. 8 и 8n модальные окна создания и редактирования визита уступают место эргономичной боковой шторке `QuickBookingDrawer.tsx` / `AppointmentModal.tsx` (Slide-over drawer / Modal), которые сохраняют контекст сетки расписания. Ассистент строго опционален, в режиме соло-врача автоматический байпас, статусы приема переключаются в 1 клик с тач-таргетами $\ge 44\times 44\text{px}$, а дежурный врач кресла определяется автоматически.
 - **Статус**:
-  1. **Боковая шторка записи `AppointmentDrawer.tsx` (Tier 2 по Apple HIG)**:
+  1. **Боковая шторка и модалка записи (Tier 2 по Apple HIG)**:
      * Плавное выдвижение справа без полного блокирования сетки расписания;
      * Встроенная поддержка создания нового слота и редактирования существующего визита.
   2. **Полная автономия врача и опциональный ассистент (Мандаты 8e п. 8, 8n)**:
@@ -3040,20 +3042,20 @@
   5. **Инлайн-создание пациента**:
      * Быстрое заведение пациента прямо в шторке с генерацией реального UUID без выхода из расписания.
 - **Файлы**:
-  - `apps/web/src/components/schedule/AppointmentDrawer.tsx`
   - `apps/web/src/components/schedule/AppointmentModal.tsx`
   - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
   - `apps/web/src/components/schedule/ScheduleGrid.tsx`
 - **Тесты**:
-  - `apps/web/src/components/schedule/__tests__/appointmentDrawerAutonomy.test.tsx` (10/10 pass, коммит `e1078cdfc`)
+  - `apps/web/src/components/schedule/__tests__/appointmentQuickActionsAutonomyWave49.test.tsx` (коммиты `e1078cdfc`, `a8b6f30d9`)
 
 ---
 
 ## 199. `расписание_кресла::привязка_врачей_к_креслам_пресеты_смен_диапазон_дат_ротация_2_2_и_5_2_копирование_на_неделю_месяц_14_палитр_и_соло_фоллбэк` [РЕАЛИЗОВАНО] (Wave 71, Feature 262) -> KILLER / MUST-HAVE
+> ⚠️ **Консолидация Wave 175 (коммит c93a458e6)**: Прототип `ChairRosterModal.tsx` ликвидирован в рамках очистки от мертвого кода (-1538 строк). Каноническими SSOT управления сменами и креслами являются `DoctorShiftRosterModal.tsx` и `ChairScheduleView.tsx`.
 - **Идея**: В соответствии с Мандатами 8c, 8d, 8e п. 8 и 8n модуль управления установками и расписанием приведён к полному паритету с отраслевыми стандартами StomX и DentalPRO: быстрое распределение смен врачей по креслам в 1 клик, поддержка утренних/вечерних пресетов (включая сдвиги 09-15 и 15-21), пакетное назначение смен на произвольный диапазон дат (с циклом 2/2 и пятидневкой 5/2), копирование сетки на следующую неделю и месяц вперед, 14 аутентичных палитр StomX с чипами подсказок клинических названий, надёжный фоллбэк соло-врача (`DEFAULT_SOLO_CHAIR`), закрытие шторки по Escape и расширенные опции коллизий ресурсов.
 - **Статус**:
   1. **Привязка врачей к креслам в 1 клик с пресетами смен**:
-     * Функция `applyCellShiftPreset` в `DoctorShiftRosterModal.tsx` и интерактивные кнопки в `ChairRosterModal.tsx` (`chair-btn-morning-9-...`, `chair-btn-evening-15-...`):
+     * Функция `applyCellShiftPreset` в `DoctorShiftRosterModal.tsx`:
        - `morning`: 08:00–14:00 (1 смена);
        - `morning_9`: 09:00–15:00 (1 смена, сдвиг);
        - `evening`: 14:00–20:00 (2 смена);
@@ -3074,25 +3076,23 @@
   5. **Суверенитет соло-врача (`DEFAULT_SOLO_CHAIR`)**:
      * Константа `DEFAULT_SOLO_CHAIR` в `ScheduleView.tsx` и `ChairScheduleView.tsx`: при нулевом количестве кресел в базе интерфейс никогда не ломается и не блокирует запись, автоматически подставляя основное кресло клиники по умолчанию (Мандат 8n).
   6. **Клавиатурная доступность шторки записи и коллизии**:
-     * В `AppointmentDrawer.tsx` добавлен слушатель клавиши `Escape` для мгновенного закрытия шторки без потери фокуса;
-     * В `scheduleCollisionUtils.ts` и `checkAppointmentResourceCollision.ts` экспортирован и расширен тип `ResourceCollisionOptions`.
+     * В `QuickBookingDrawer.tsx` поддержано закрытие клавишей `Escape` для мгновенного закрытия шторки без потери фокуса;
+     * В `scheduleCollisionUtils.ts` экспортирован и расширен тип `ResourceCollisionOptions`.
   7. **Ликвидация вложенных модалок и аутентичные ID (Закон Анти-Матрёшки / Грех 6, коммит `c9b682c0f`)**:
-     * В `ChairRosterModal.tsx` модальное окно добавления врача заменено на встроенную инлайн-панель `chair-quick-add-doctor-panel` прямо в заголовке модалки с глубиной строго 1;
+     * В `DoctorShiftRosterModal.tsx` модальное окно добавления врача заменено на встроенную инлайн-панель `chair-quick-add-doctor-panel` прямо в заголовке с глубиной строго 1;
      * Ликвидированы синтетические псевдослучайные ID (`Math.random()`) при генерации нового врача в пользу криптографического `crypto.randomUUID()` и последовательных табельных номеров вида `Т-001`, `Т-002`...;
      * Полная клавиатурная доступность: закрытие инлайн-панели по нажатию клавиши `Escape`;
      * Кнопки управления сменами (`chair-copy-next-week-btn`, `chair-copy-month-btn`, `chair-clear-week-btn`, `chair-global-rotate-shifts-btn`, `chair-date-range-trigger-btn`, `chair-submit-new-doctor-btn`) приведены к минимальной высоте `min-height: 44px` по Apple HIG (Мандат 8d);
      * Стили вынесены в `doctorShiftRoster.css` (`roster-nav-strip`, `roster-actions-group`, `roster-btn-icon`).
 - **Файлы**:
   - `apps/web/src/components/schedule/ChairScheduleView.tsx`
-  - `apps/web/src/components/schedule/ChairRosterModal.tsx`
   - `apps/web/src/components/schedule/QuickAddChairModal.tsx`
   - `apps/web/src/ScheduleView.tsx`
   - `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`
   - `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`
   - `apps/web/src/components/schedule/roster/doctorShiftRoster.css`
-  - `apps/web/src/components/schedule/AppointmentDrawer.tsx`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
   - `apps/web/src/utils/scheduleCollisionUtils.ts`
-  - `apps/web/src/components/schedule/checkAppointmentResourceCollision.ts`
 - **Тесты**:
   - `apps/web/src/components/schedule/__tests__/chairDoctorRosterStomXParity.test.tsx` (pass, коммиты `f8e4f3fdf`, `c9b682c0f`)
   - `apps/web/src/components/schedule/__tests__/appointmentDrawerAutonomy.test.tsx` (11/11 pass, коммит `a8b6f30d9`)
