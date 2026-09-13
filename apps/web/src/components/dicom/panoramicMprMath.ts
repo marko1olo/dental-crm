@@ -12,6 +12,26 @@
  * Pure math: zero DOM, zero Canvas, zero React dependencies for 100% deterministic testability.
  */
 
+import {
+	catmullRom,
+	interpolateArchCurve,
+	computeCurveNormals,
+	totalArcLength,
+	resampleByArcLength,
+	generateDefaultArchCurve,
+	offsetCurve,
+	buildUniformCurve,
+	AIR_HU,
+	trilinear,
+	crossSectionFrame,
+	computeCrossSection,
+	type Point2,
+	type CPRResult,
+	type VolumeSamplingData,
+	type CrossSectionGeometryParams,
+	type CrossSectionFrame,
+} from "@dental/shared/radiology";
+
 export interface Point2D {
 	x: number;
 	y: number;
@@ -635,25 +655,26 @@ export function classifyMischBoneDensity(hu: number): BoneDensityRecommendation 
 	return {
 		mischClass: "D5",
 		huRange: "0–150 HU",
-		label: "D5 — Сверхмягкая / выраженно резорбированная кость",
-		description: "Критически низкая плотность, жировая дегенерация или остеопороз.",
-		drillingRpm: "800–1000 RPM (только пилот)",
-		torqueNcm: "15–20 N·cm",
+		label: "D5 — Незрелая слабоминерализованная кость / Дефект",
+		description:
+			"Критически низкая плотность (<150 HU), незрелый регенерат, остеопороз или фиброзная ткань.",
+		drillingRpm: "— (прямое сверление противопоказано)",
+		torqueNcm: "0–15 N·cm",
 		irrigation: false,
 		corticalTap: false,
-		underDrilling: true,
-		underDrillingMm: 1.5,
-		osteotomeCondensation: true,
+		underDrilling: false,
+		underDrillingMm: 0,
+		osteotomeCondensation: false,
 		clinicalAdvice:
-			"Критический риск дестабилизации. Препарирование только пилотным бором с последующей ступенчатой экспансией остеотомами (Bone Condensers) или бикортикальная фиксация.",
+			"Установка стандартного имплантата противопоказана без предварительной направленной костной регенерации (GBR / аугментация) с выдержкой 6–9 месяцев для минерализации, либо применение скуловых/птеригоидных опор. Прямая остеоконденсация неэффективна из-за отсутствия костного матрикса.",
 	};
 }
 
 // ---------------------------------------------------------------------------
-// 6. CPR (CURVED PLANAR REFORMATION) SPLINE & NORMAL VECTOR ENGINE
+// 6. CPR (CURVED PLANAR REFORMATION) SPLINE & SAMPLING RE-EXPORTS (MANDATE 8s)
 // ---------------------------------------------------------------------------
 
-export type Point2 = [number, number];
+export type { Point2 };
 
 export function point2DToPoint2(p: Point2D): Point2 {
 	return [p.x, p.y];
@@ -663,382 +684,26 @@ export function point2ToPoint2D(p: Point2): Point2D {
 	return { x: p[0], y: p[1] };
 }
 
-/**
- * Catmull-Rom cubic spline interpolation in 2D plane (XY).
- * Evaluates position between p1 and p2 at normalized parameter t in [0, 1].
- */
-export function catmullRom2D(
-	p0: Point2,
-	p1: Point2,
-	p2: Point2,
-	p3: Point2,
-	t: number,
-): Point2 {
-	const t2 = t * t;
-	const t3 = t2 * t;
-	return [
-		0.5 *
-			(2 * p1[0] +
-				(-p0[0] + p2[0]) * t +
-				(2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
-				(-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
-		0.5 *
-			(2 * p1[1] +
-				(-p0[1] + p2[1]) * t +
-				(2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
-				(-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3),
-	];
-}
+/** Catmull-Rom cubic spline interpolation in 2D plane (XY) — canonical alias. */
+export const catmullRom2D = catmullRom;
 
-/**
- * Interpolate control points through a Catmull-Rom spline.
- * Returns a dense polyline in the same 2D coordinate space.
- */
-export function interpolateArchCurve(
-	controlPoints: Point2[],
-	samplesPerSegment = 50,
-): Point2[] {
-	const n = controlPoints.length;
-	if (n < 2) return [...controlPoints];
+export {
+	catmullRom,
+	interpolateArchCurve,
+	computeCurveNormals,
+	totalArcLength,
+	resampleByArcLength,
+	buildUniformCurve,
+	generateDefaultArchCurve,
+	offsetCurve,
+	AIR_HU,
+	trilinear,
+	crossSectionFrame,
+	computeCrossSection,
+	type CPRResult,
+	type VolumeSamplingData,
+	type CrossSectionGeometryParams,
+	type CrossSectionFrame,
+};
 
-	const result: Point2[] = [];
-	for (let i = 0; i < n - 1; i++) {
-		const p0 = controlPoints[Math.max(0, i - 1)]!;
-		const p1 = controlPoints[i]!;
-		const p2 = controlPoints[i + 1]!;
-		const p3 = controlPoints[Math.min(n - 1, i + 2)]!;
-		for (let s = 0; s < samplesPerSegment; s++) {
-			result.push(catmullRom2D(p0, p1, p2, p3, s / samplesPerSegment));
-		}
-	}
-	result.push(controlPoints[n - 1]!);
-	return result;
-}
-
-/**
- * Compute unit normals perpendicular to the curve at each point.
- * The normal is rotated 90° CW from the tangent in the XY plane: [-ty / len, tx / len].
- */
-export function computeCurveNormals(curve: Point2[]): Point2[] {
-	if (curve.length < 2) return curve.map((): Point2 => [0, 1]);
-	return curve.map((_, i, arr) => {
-		let tx: number;
-		let ty: number;
-		if (i === 0) {
-			tx = arr[1]![0] - arr[0]![0];
-			ty = arr[1]![1] - arr[0]![1];
-		} else if (i === arr.length - 1) {
-			tx = arr[i]![0] - arr[i - 1]![0];
-			ty = arr[i]![1] - arr[i - 1]![1];
-		} else {
-			tx = arr[i + 1]![0] - arr[i - 1]![0];
-			ty = arr[i + 1]![1] - arr[i - 1]![1];
-		}
-		const len = Math.hypot(tx, ty);
-		if (len === 0) return [0, 1];
-		return [-ty / len, tx / len];
-	});
-}
-
-/** Total arc length of polyline in mm. */
-export function totalArcLength(curve: Point2[]): number {
-	let len = 0;
-	for (let i = 1; i < curve.length; i++) {
-		len += Math.hypot(
-			curve[i]![0] - curve[i - 1]![0],
-			curve[i]![1] - curve[i - 1]![1],
-		);
-	}
-	return len;
-}
-
-/**
- * Resample a polyline so that points are uniformly spaced by arc length.
- * Eliminates distortion caused by uneven control point spacing.
- */
-export function resampleByArcLength(
-	curve: Point2[],
-	numSamples: number,
-): Point2[] {
-	if (curve.length < 2 || numSamples < 2) return [...curve];
-
-	const cumLen = [0];
-	for (let i = 1; i < curve.length; i++) {
-		cumLen.push(
-			cumLen[i - 1]! +
-				Math.hypot(
-					curve[i]![0] - curve[i - 1]![0],
-					curve[i]![1] - curve[i - 1]![1],
-				),
-		);
-	}
-	const total = cumLen[cumLen.length - 1]!;
-	if (total === 0) return [curve[0]!];
-
-	const result: Point2[] = [];
-	let seg = 0;
-
-	for (let s = 0; s < numSamples; s++) {
-		const target = (s / (numSamples - 1)) * total;
-		while (seg < curve.length - 2 && cumLen[seg + 1]! < target) seg++;
-
-		const segStart = cumLen[seg]!;
-		const segLen = cumLen[seg + 1]! - segStart;
-		const t = segLen > 0 ? (target - segStart) / segLen : 0;
-
-		result.push([
-			curve[seg]![0] + t * (curve[seg + 1]![0] - curve[seg]![0]),
-			curve[seg]![1] + t * (curve[seg + 1]![1] - curve[seg]![1]),
-		]);
-	}
-
-	return result;
-}
-
-/**
- * Build a dense, arc-length-uniform curve with unit normals from control points.
- */
-export function buildUniformCurve(
-	controlPoints: Point2[],
-	numSamples = 500,
-): { curve: Point2[]; normals: Point2[]; arcLen: number } {
-	const numSegments = Math.max(1, controlPoints.length - 1);
-	const subsPerSeg = Math.max(10, Math.ceil(numSamples / numSegments) * 2);
-	const rawCurve = interpolateArchCurve(controlPoints, subsPerSeg);
-
-	const curve = resampleByArcLength(rawCurve, numSamples);
-	if (curve.length === 0) return { curve, normals: [], arcLen: 0 };
-	const safeCurve = curve.length < 2 ? [curve[0]!, curve[0]!] : curve;
-	const normals = computeCurveNormals(safeCurve);
-	const arcLen = totalArcLength(safeCurve);
-
-	return { curve: safeCurve, normals, arcLen };
-}
-
-/**
- * Generate default U-shaped dental arch centered on `center` with XY extent `size`.
- */
-export function generateDefaultArchCurve(
-	center: Point2,
-	size: Point2,
-): Point2[] {
-	const [cx, cy] = center;
-	const sx = size[0] * 0.32;
-	const sy = size[1] * 0.32;
-
-	return [
-		[cx - sx, cy + sy * 0.85],
-		[cx - sx * 0.97, cy + sy * 0.35],
-		[cx - sx * 0.85, cy - sy * 0.2],
-		[cx - sx * 0.55, cy - sy * 0.7],
-		[cx, cy - sy],
-		[cx + sx * 0.55, cy - sy * 0.7],
-		[cx + sx * 0.85, cy - sy * 0.2],
-		[cx + sx * 0.97, cy + sy * 0.35],
-		[cx + sx, cy + sy * 0.85],
-	];
-}
-
-/**
- * Parallel offset curve for slab-width visualization.
- */
-export function offsetCurve(
-	curve: Point2[],
-	normals: Point2[],
-	distance: number,
-): Point2[] {
-	return curve.map((p, i) => [
-		p[0] + normals[i]![0] * distance,
-		p[1] + normals[i]![1] * distance,
-	]);
-}
-
-// ---------------------------------------------------------------------------
-// 7. CROSS-SECTIONAL CPR SAMPLING & TRILINEAR INTERPOLATION
-// ---------------------------------------------------------------------------
-
-export const AIR_HU = -1024;
-
-export interface CPRResult {
-	pixelData: Float32Array;
-	width: number;
-	height: number;
-	horizontalSpacing: number;
-	verticalSpacing: number;
-	zMin: number;
-	zMax: number;
-}
-
-export interface VolumeSamplingData {
-	dims: [number, number, number];
-	origin: [number, number, number];
-	getVoxel: (i: number, j: number, k: number) => number;
-	invSx: number;
-	invSy: number;
-	invSz: number;
-	zMin: number;
-	zMax: number;
-	vSpacing: number;
-}
-
-export interface CrossSectionGeometryParams {
-	controlPoints: Point2[];
-	position: number; // 0-1 normalized along arch curve
-	tiltDeg: number; // degrees, lean of slice vertical axis along curve
-	widthMm: number; // total width of cross-section in mm
-	resolution: number; // mm per pixel
-}
-
-export interface CrossSectionFrame {
-	point: Point2;
-	normal: Point2;
-	tangent: Point2;
-	origin: [number, number, number];
-	eU: [number, number, number];
-	eV: [number, number, number];
-}
-
-/**
- * Trilinear interpolation of volume voxels with air sentinel (-1024 HU) for boundary.
- */
-export function trilinear(
-	getVoxel: (i: number, j: number, k: number) => number,
-	dims: [number, number, number],
-	ci: number,
-	cj: number,
-	ck: number,
-): number {
-	if (
-		ci < 0 ||
-		ci > dims[0] - 1 ||
-		cj < 0 ||
-		cj > dims[1] - 1 ||
-		ck < 0 ||
-		ck > dims[2] - 1
-	) {
-		return AIR_HU;
-	}
-
-	const qi = Math.max(0, Math.min(ci, dims[0] - 1 - 1e-6));
-	const qj = Math.max(0, Math.min(cj, dims[1] - 1 - 1e-6));
-	const qk = Math.max(0, Math.min(ck, dims[2] - 1 - 1e-6));
-
-	const i0 = Math.floor(qi);
-	const j0 = Math.floor(qj);
-	const k0 = Math.floor(qk);
-	const i1 = i0 + 1;
-	const j1 = j0 + 1;
-	const k1 = k0 + 1;
-
-	const fi = qi - i0;
-	const fj = qj - j0;
-	const fk = qk - k0;
-	const nfi = 1 - fi;
-	const nfj = 1 - fj;
-	const nfk = 1 - fk;
-
-	return (
-		getVoxel(i0, j0, k0) * nfi * nfj * nfk +
-		getVoxel(i1, j0, k0) * fi * nfj * nfk +
-		getVoxel(i0, j1, k0) * nfi * fj * nfk +
-		getVoxel(i1, j1, k0) * fi * fj * nfk +
-		getVoxel(i0, j0, k1) * nfi * nfj * fk +
-		getVoxel(i1, j0, k1) * fi * nfj * fk +
-		getVoxel(i0, j1, k1) * nfi * fj * fk +
-		getVoxel(i1, j1, k1) * fi * fj * fk
-	);
-}
-
-export function crossSectionFrame(
-	controlPoints: Point2[],
-	position: number,
-	tiltDeg: number,
-	zMin: number,
-	zMax: number,
-): CrossSectionFrame | null {
-	const { curve, normals } = buildUniformCurve(controlPoints, 500);
-	if (curve.length < 2) return null;
-
-	const idx = Math.round(
-		Math.max(0, Math.min(1, position)) * (curve.length - 1),
-	);
-	const point = curve[idx]!;
-	const normal = normals[idx]!;
-	const tangent: Point2 = [normal[1], -normal[0]];
-
-	const MAX_TILT_DEG = 30;
-	const clampedTiltDeg = Math.max(
-		-MAX_TILT_DEG,
-		Math.min(MAX_TILT_DEG, tiltDeg),
-	);
-	const tiltRad = (clampedTiltDeg * Math.PI) / 180;
-	const sinT = Math.sin(tiltRad);
-	const cosT = Math.cos(tiltRad);
-	const zMid = (zMin + zMax) / 2;
-
-	return {
-		point,
-		normal,
-		tangent,
-		origin: [point[0], point[1], zMid],
-		eU: [normal[0], normal[1], 0],
-		eV: [tangent[0] * sinT, tangent[1] * sinT, cosT],
-	};
-}
-
-export function computeCrossSection(
-	vol: VolumeSamplingData,
-	params: CrossSectionGeometryParams,
-): CPRResult | null {
-	const frame = crossSectionFrame(
-		params.controlPoints,
-		params.position,
-		params.tiltDeg,
-		vol.zMin,
-		vol.zMax,
-	);
-	if (!frame) return null;
-	const { origin, eU, eV } = frame;
-
-	const halfW = params.widthMm / 2;
-	const width = Math.max(1, Math.round(params.widthMm / params.resolution));
-	const height = Math.max(
-		1,
-		Math.round((vol.zMax - vol.zMin) / vol.vSpacing),
-	);
-	const hSpacing = params.widthMm / Math.max(1, width - 1);
-	const zMid = (vol.zMin + vol.zMax) / 2;
-
-	const pixelData = new Float32Array(width * height);
-
-	for (let y = 0; y < height; y++) {
-		const v = vol.zMax - y * vol.vSpacing - zMid;
-		const bx = origin[0] + eV[0] * v;
-		const by = origin[1] + eV[1] * v;
-		const ck = (origin[2] + eV[2] * v - vol.origin[2]) * vol.invSz;
-
-		for (let x = 0; x < width; x++) {
-			const offset = -halfW + x * hSpacing;
-			const ci = (bx + eU[0] * offset - vol.origin[0]) * vol.invSx;
-			const cj = (by + eU[1] * offset - vol.origin[1]) * vol.invSy;
-			pixelData[y * width + x] = trilinear(
-				vol.getVoxel,
-				vol.dims,
-				ci,
-				cj,
-				ck,
-			);
-		}
-	}
-
-	return {
-		pixelData,
-		width,
-		height,
-		horizontalSpacing: hSpacing,
-		verticalSpacing: vol.vSpacing,
-		zMin: vol.zMin,
-		zMax: vol.zMax,
-	};
-}
 

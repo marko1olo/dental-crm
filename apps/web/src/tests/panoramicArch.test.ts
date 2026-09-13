@@ -1249,13 +1249,13 @@ describe("classifyMischBoneDensity & Drilling recommendations", () => {
 		assert.ok(res.clinicalAdvice.includes("Under-drilling"));
 	});
 
-	test("D5 (<150 HU): very soft / resorbed bone, osteotomes expansion required", () => {
+	test("D5 (<150 HU): very soft / resorbed bone, GBR bone grafting indicated, direct osteotomy contraindicated", () => {
 		const res = classifyMischBoneDensity(80);
 		assert.strictEqual(res.mischClass, "D5");
-		assert.strictEqual(res.underDrilling, true);
-		assert.strictEqual(res.underDrillingMm, 1.5);
-		assert.strictEqual(res.osteotomeCondensation, true);
-		assert.ok(res.clinicalAdvice.includes("Bone Condensers"));
+		assert.strictEqual(res.underDrilling, false);
+		assert.strictEqual(res.underDrillingMm, 0);
+		assert.strictEqual(res.osteotomeCondensation, false);
+		assert.ok(res.clinicalAdvice.includes("GBR") || res.clinicalAdvice.includes("костной"));
 	});
 });
 

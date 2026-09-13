@@ -196,13 +196,13 @@ describe("Panoramic Reconstruction, CPR Math & Implant Safety Engine (Mandates 8
 		assert.equal(d4.osteotomeCondensation, true);
 		assert.ok(d4.clinicalAdvice.includes("недопрепарирование"));
 
-		// D5 (0-150 HU): Critically soft / resorbed bone, bone condensers
+		// D5 (0-150 HU): Critically soft / resorbed bone, GBR grafting indicated
 		const d5 = classifyMischBoneDensity(80);
 		assert.equal(d5.mischClass, "D5");
-		assert.equal(d5.underDrilling, true);
-		assert.equal(d5.underDrillingMm, 1.5);
-		assert.equal(d5.osteotomeCondensation, true);
-		assert.ok(d5.clinicalAdvice.includes("остеотомами"));
+		assert.equal(d5.underDrilling, false);
+		assert.equal(d5.underDrillingMm, 0);
+		assert.equal(d5.osteotomeCondensation, false);
+		assert.ok(d5.clinicalAdvice.includes("GBR") || d5.clinicalAdvice.includes("костной"));
 
 		// Defect / Air / Sinus (<0 HU): Bone grafting required, NO osteotomes
 		const airDefect = classifyMischBoneDensity(-500);

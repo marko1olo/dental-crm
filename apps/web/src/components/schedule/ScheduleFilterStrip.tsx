@@ -325,7 +325,7 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7.5 px-1 sm:px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] sm:w-[115px] text-center tracking-tight"
+					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7.5 px-1 sm:px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[130px] min-w-[130px] sm:w-[135px] sm:min-w-[135px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
@@ -363,7 +363,7 @@ export function ScheduleFilterStrip({
 							data-testid="schedule-my-chair-btn"
 						>
 							<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
-							<span className="whitespace-nowrap shrink-0">
+							<span className="whitespace-nowrap shrink-0 flex-shrink-0">
 								<span className="sm:hidden">Моё</span>
 								<span className="hidden sm:inline">Моё кресло ({cleanChairName})</span>
 							</span>

@@ -1744,7 +1744,7 @@ export function VisitEmkTab() {
 			)}
 
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (Tier 2 Warm Context Accordion) */}
-			<details open className="group rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2 text-xs my-1">
+			<details className="group rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2 text-xs my-1">
 				<summary className="flex items-center justify-between cursor-pointer font-bold text-xs select-none list-none text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
 					<div className="flex items-center gap-1.5 min-w-0 pr-2">
 						<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />

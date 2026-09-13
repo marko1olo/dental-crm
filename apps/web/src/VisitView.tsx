@@ -624,7 +624,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
 	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
-	const [isHeaderOptionsOpen, setIsHeaderOptionsOpen] = React.useState(false);
 
 	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
 		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
@@ -1365,83 +1364,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="hidden 2xl:inline">Печать 043/у</span>
 							</button>
 
-							{/* Поповер вторичных действий: пресеты гигиены, анестезии, шаблоны */}
-							<div className="relative shrink-0">
-								<button
-									type="button"
-									onClick={() => setIsHeaderOptionsOpen((prev) => !prev)}
-									data-testid="visit-header-options-btn"
-									className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 w-8 sm:w-7 p-0 flex items-center justify-center shrink-0 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
-									title="Дополнительные клинические действия и шаблоны"
-									aria-label="Дополнительные клинические действия"
-									aria-expanded={isHeaderOptionsOpen}
-								>
-									<MoreHorizontal className="w-4 h-4" aria-hidden="true" />
-								</button>
-								{isHeaderOptionsOpen && (
-									<div
-										className="absolute right-0 top-full mt-1 w-56 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
-										role="menu"
-									>
-										{/* Кнопка Профгигиена (1-клик) */}
-										<button
-											type="button"
-											onClick={() => {
-												setIsHeaderOptionsOpen(false);
-												handleApplyHygienePresetQuick();
-											}}
-											data-testid="btn-hygiene-preset-one-click"
-											className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-teal-700 dark:text-teal-300 flex items-center gap-2 cursor-pointer transition-colors"
-											role="menuitem"
-										>
-											<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-											<span>Профгигиена (1-клик)</span>
-										</button>
-										{/* Кнопка Анестезия (1-клик) */}
-										<button
-											type="button"
-											onClick={() => {
-												setIsHeaderOptionsOpen(false);
-												handleApplyAnesthesiaPresetQuick();
-											}}
-											data-testid="btn-anesthesia-preset-one-click"
-											className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-indigo-700 dark:text-indigo-300 flex items-center gap-2 cursor-pointer transition-colors"
-											role="menuitem"
-										>
-											<Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
-											<span>+ Анестезия (1-клик)</span>
-										</button>
-										{/* Клинические шаблоны StomX (448 протоколов) */}
-										<button
-											type="button"
-											onClick={() => {
-												setIsHeaderOptionsOpen(false);
-												handleOpenStomxTemplatesFromHeader();
-											}}
-											data-testid="btn-open-stomt-templates-header"
-											className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
-											role="menuitem"
-										>
-											<DefaultSparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-											<span>Шаблоны 043/у (448)</span>
-										</button>
-										{/* Мобильный дубль печати 043/у, если на узком экране */}
-										<button
-											type="button"
-											onClick={() => {
-												setIsHeaderOptionsOpen(false);
-												handlePrintForm043uFast();
-											}}
-											className="sm:hidden w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-sky-700 dark:text-sky-300 flex items-center gap-2 cursor-pointer transition-colors"
-											role="menuitem"
-										>
-											<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-											<span>Печать 043/у</span>
-										</button>
-									</div>
-								)}
-							</div>
-
 							{/* Статус приема: только на широких экранах */}
 							<span className="hidden xl:inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
 								Черновик
@@ -1452,18 +1374,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer rounded-lg"
+								className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
 								title="Завершить приём и сохранить все изменения"
 							>
 								<CheckCircle2 size={14} className="shrink-0" />
-								<span className="hidden sm:inline">Завершить приём</span>
-								<span className="sm:hidden">Завершить</span>
+								<span className="hidden sm:inline whitespace-nowrap">Завершить приём</span>
+								<span className="sm:hidden text-[11px] font-bold whitespace-nowrap">Готово</span>
 							</button>
 						</div>
 					</div>
 
 					{/* Строка 2 (высота ~36px): Компактные табы разделов визита (высота 32px) */}
-					<div className="min-h-[44px] sm:h-9 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))]">
+					<div className="min-h-[44px] sm:h-9 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
 						<VisitMainTabs
 							visitSubViewTab={visitSubViewTab}
 							setVisitSubViewTab={setVisitSubViewTab}

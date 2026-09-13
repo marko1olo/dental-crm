@@ -317,6 +317,8 @@
 }
 .schedule-filter-strip {
 	display: flex;
+	justify-content: space-between !important;
+	width: 100% !important;
 	gap: 6px;
 	flex-wrap: nowrap;
 	align-items: center;
@@ -333,6 +335,8 @@
 	height: 28px;
 	min-height: 28px;
 	max-height: 28px;
+	width: 130px !important;
+	min-width: 130px !important;
 	line-height: 1;
 	box-sizing: border-box;
 	padding: 2px 6px;
@@ -345,6 +349,7 @@
 	margin: 0;
 	display: inline-flex;
 	align-items: center;
+	text-align: center;
 }
 .schedule-filter-strip .quick-chip {
 	height: 28px;
@@ -371,6 +376,12 @@
 	min-width: max-content !important;
 	max-width: none !important;
 	white-space: nowrap !important;
+}
+.schedule-my-chair-chip *,
+.schedule-auto-call-chip *,
+.schedule-doctor-chip * {
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
 }
 .schedule-date-picker-group {
 	display: flex;
