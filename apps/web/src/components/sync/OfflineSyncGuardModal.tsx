@@ -185,8 +185,6 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 		}
 	};
 
-	if (!isOpen) return null;
-
 	const survivabilityBadge = useMemo(() => {
 		switch (status.survivabilityGrade) {
 			case "HEALTHY":
@@ -210,6 +208,8 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 				};
 		}
 	}, [status.survivabilityGrade]);
+
+	if (!isOpen) return null;
 
 	const formatEntityKindTitle = (kind: string) => {
 		switch (kind) {

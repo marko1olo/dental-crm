@@ -356,7 +356,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	onSuccess = () => {},
 }) => {
 	const [activeMethod, setActiveMethod] = useState<PaymentMethodTab>(defaultMethod);
-	const [isSbpQrModalOpen, setIsSbpQrModalOpen] = useState<boolean>(false);
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
 	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
 	const [isSubmittingDeposit, setIsSubmittingDeposit] = useState<boolean>(false);
@@ -1336,7 +1335,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							)}
 							<button
 								type="button"
-								onClick={() => setIsSbpQrModalOpen(true)}
+								onClick={() => setActiveMethod("sbp_qr")}
 								className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 								data-testid="preset-sbp-qr"
 								title="Сформировать QR СБП для быстрой оплаты пациентом"
@@ -1392,12 +1391,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 					<button
 						type="button"
-						onClick={() => {
-							setActiveMethod("sbp_qr");
-							setIsSbpQrModalOpen(true);
-						}}
+						onClick={() => setActiveMethod("sbp_qr")}
 						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
-							activeMethod === "sbp_qr" || isSbpQrModalOpen
+							activeMethod === "sbp_qr"
 								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
 						}`}
@@ -1696,6 +1692,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								if (alt === "deposit") setActiveMethod("family_deposit");
 							}}
 						/>
+					) : activeMethod === "sbp_qr" ? (
+						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3" data-testid="sbp-qr-embedded-container">
+							<SbpPaymentQrModal
+								isOpen={true}
+								embedded={true}
+								onClose={() => setActiveMethod("card_terminal")}
+								invoice={{
+									orderId: invoiceId || documentId || `ORD-${Date.now()}`,
+									patientId,
+									patientName,
+									phone: patientPhone || "",
+									sumRub: totalDueRub,
+									sumKopecks: discountCalc.totalDueKopecks,
+									purpose: `Оплата стоматологических услуг: ${patientName}`,
+									clinicName: clinicLegalName,
+								}}
+								onPaymentSuccess={(res) => {
+									onSuccess({
+										method: "sbp_qr",
+										amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
+										discountRub,
+										discountPercent: effectiveDiscountPercent,
+										rawTotalRub: rawTotalDueRub,
+										discountReason: discountReason || undefined,
+										rrn: res.orderId,
+										fiscalReceiptId: res.fiscalReceiptId,
+									});
+									onClose();
+								}}
+							/>
+						</div>
 					) : activeMethod === "cash" ? (
 						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-4">
 							<div className="flex items-center gap-3">
@@ -2297,35 +2324,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					)}
 				</div>
 			</div>
-
-			<SbpPaymentQrModal
-				isOpen={isSbpQrModalOpen}
-				onClose={() => setIsSbpQrModalOpen(false)}
-				invoice={{
-					orderId: invoiceId || documentId || `ORD-${Date.now()}`,
-					patientId,
-					patientName,
-					phone: patientPhone || "",
-					sumRub: totalDueRub,
-					sumKopecks: discountCalc.totalDueKopecks,
-					purpose: `Оплата стоматологических услуг: ${patientName}`,
-					clinicName: clinicLegalName,
-				}}
-				onPaymentSuccess={(res) => {
-					setIsSbpQrModalOpen(false);
-					onSuccess({
-						method: "sbp_qr",
-						amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
-						discountRub,
-						discountPercent: effectiveDiscountPercent,
-						rawTotalRub: rawTotalDueRub,
-						discountReason: discountReason || undefined,
-						rrn: res.orderId,
-						fiscalReceiptId: res.fiscalReceiptId,
-					});
-					onClose();
-				}}
-			/>
 		</div>
 	);
 };

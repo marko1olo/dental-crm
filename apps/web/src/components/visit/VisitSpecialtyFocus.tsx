@@ -82,18 +82,25 @@ export function VisitSpecialtyFocus() {
 	// biome-ignore lint/suspicious/noExplicitAny: supports both array of services and single item
 	const handleAddToInvoice = (services: any) => {
 		try {
+			if (typeof window === "undefined") return;
 			const list = Array.isArray(services) ? services : [services];
-			for (const item of list) {
-				if (!item) continue;
+			const formattedServices = list
+				.filter(Boolean)
+				.map((item) => ({
+					code: item.code804n || item.code || "A16.07.002",
+					title: item.title || item.name || item.nameRu || "Стоматологическая услуга",
+					price: item.priceRub || item.price || 0,
+					quantity: item.quantity || 1,
+					toothCode: activeTooth ? String(activeTooth) : undefined,
+				}));
+
+			if (formattedServices.length > 0) {
 				window.dispatchEvent(
-					new CustomEvent("dente-add-invoice-service", {
+					new CustomEvent("dente-add-services-to-invoice", {
 						detail: {
-							service: {
-								code804n: item.code804n || item.code || "A16.07.002",
-								name: item.name || item.nameRu || "Стоматологическая услуга",
-								priceRub: item.priceRub || 0,
-								quantity: item.quantity || 1,
-							},
+							toothNumber: activeTooth ? Number(activeTooth) || activeTooth : undefined,
+							toothCode: activeTooth ? String(activeTooth) : undefined,
+							services: formattedServices,
 						},
 					}),
 				);

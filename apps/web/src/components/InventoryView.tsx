@@ -2415,7 +2415,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 			<NurseCarpuleDisposalModal
 				isOpen={isNurseCarpuleDisposalOpen}
 				onClose={() => setIsNurseCarpuleDisposalOpen(false)}
-				currentStockAvailable={items.reduce((acc, it) => (it.name.toLowerCase().includes("анесте") || it.name.toLowerCase().includes("убистезин") || it.name.toLowerCase().includes("артикаин") ? acc + Number(it.stockQuantity || 0) : acc), 0)}
+				currentStockAvailable={items.reduce((acc, it) => {
+					const n = (it?.name || "").toLowerCase();
+					return n.includes("анесте") || n.includes("убистезин") || n.includes("артикаин") ? acc + Number(it?.stockQuantity || 0) : acc;
+				}, 0)}
 				onDisposalConfirmed={async () => {
 					setIsNurseCarpuleDisposalOpen(false);
 					fetchItems();

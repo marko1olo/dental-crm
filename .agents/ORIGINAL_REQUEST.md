@@ -735,3 +735,79 @@ Integrity mode: development
 - [ ] Verbatim subagent reports presented without censorship.
 
 
+## Follow-up — 2026-09-13T20:43:19Z
+
+# Teamwork Project Prompt — Wave 200: Final Zero-Shirms Milestone (Ceiling 0), Compiler Gate, Global Test Suite & Verification
+
+> Status: Launched
+> Goal: Complete Wave 200 verification gate, compile @dental/web and @dental/api, verify all tests, capture visual proof, sync docs, and commit
+> Requested team: Use a very large team of agents (L1 Orchestrator + специализированные субагенты-исследователи, инквизиторы Ред Тим, пруфмейкеры под Конституцией THE_HAMMER_MASTER_PROMPT.md и Мандатами 8a–8t)
+
+Complete the milestone of Wave 200 for Dental CRM by verifying all 26 mounted components, validating the eradication of modal facade hosts (achieving `DEMOUNTED_MODAL_SHIRMS_CEILING = 0`), executing the centralized Single-Compiler Gate (Exit Code 0), running the global regression test suite, capturing live screenshot proofs, synchronizing competitive audit documentation, and recording an atomic Conventional Commit.
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Single-Compiler Gate (Mandate 8t)
+Execute sequential centralized compiler verification:
+1. `node scripts/check-encoding.mjs` (0 errors across all files).
+2. `node scripts/check-css-tokens.mjs` (0 unresolved tokens).
+3. `node scripts/check-dynamic-imports.mjs`.
+4. `npm run typecheck -w @dental/web` (Exit Code 0, strict TS parity).
+5. `npm run typecheck -w @dental/api` (Exit Code 0).
+
+### R2. Zero-Shirms Census & Component Reachability (Mandate 8s)
+Verify that all 26 components are mounted in real production screens and the 2 shirm hosts (`ClinicalModalsHost.tsx` and `BackofficeModalsHost.tsx`) are permanently eliminated:
+1. Run `node --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/tests/panelsAreMounted.test.ts` (13/13 PASS).
+2. Confirm `DEMOUNTED_MODAL_SHIRMS_CEILING = 0` and `DEMOUNTED_MODAL_SHIRMS_BACKLOG = []`.
+3. Confirm zero orphaned or synthetic components.
+
+### R3. Adversarial Red Team & Doctor Autonomy Audit (Mandates 8d, 8e, 8n, 8p)
+Audit the 12 modified files against the 7 Deadly Sins and Clinical HIG:
+1. Useful height budget $\le 160\text{--}180\text{px}$ in desktop views.
+2. Strictly 1-row toolbars (32–36px), zero button landfills.
+3. $\le 2$ primary action buttons per card / modal header.
+4. Autonomy of doctor and nurse: 0 disabled buttons without reason, 1-click norm, 54-FZ without requiring citizen INN, 1-click nurse disposal, debounced autosave.
+5. Zero clown copy, zero developer note leaks, zero `[object Object]` string leaks.
+
+### R4. Global Test Suite & Forensic Regression Check (Mandate 8j)
+Run key unit and integration test suites to verify zero regressions:
+1. `apps/web/src/tests/panelsAreMounted.test.ts` (13/13).
+2. `apps/web/src/components/modals/__tests__/modalsAndNotificationCleanIntegrity.test.ts`.
+3. `apps/web/src/components/radiology/__tests__/radiologyViewerRoutingAutonomy.test.ts`.
+4. Run broader web tests via `npm test -w @dental/web`.
+
+### R5. Documentation Synchronization (Mandate 8h)
+Dynamically update all competitive audit and feature registry documents:
+1. `docs/competitive-audit/BACKLOG.md`: Add Section 349 for Wave 200 (Total shirm elimination, ceiling 0, status `[ЕСТЬ] / [ЗАКРЫТО]`).
+2. `docs/competitive-audit/OUR_CRM_MAP.md`: Add Section 2.10.283.
+3. `docs/competitive-audit/FEATURES_REGISTRY.md`: Update headers and parity matrix.
+
+### R6. Clean Semantic Commit (Mandate 8b)
+Stage changes using precise, per-file `git add <file>` and record Conventional Commit:
+`feat(web): mount remaining 26 components, eradicate modal facade hosts, achieve shirm ceiling 0 (Wave 200)`
+
+## Acceptance Criteria
+
+### Shirm Eradication & Reachability
+- [ ] `ClinicalModalsHost.tsx` and `BackofficeModalsHost.tsx` physically deleted.
+- [ ] `DEMOUNTED_MODAL_SHIRMS_CEILING` equals exactly 0 in `panelsAreMounted.test.ts`.
+- [ ] `panelsAreMounted.test.ts` passes 13/13 tests with Exit Code 0.
+- [ ] All 26 components reachable from `main.tsx` through active view routes.
+
+### Static & Compiler Gates
+- [ ] `node scripts/check-encoding.mjs` passes with 0 errors (100% clean UTF-8).
+- [ ] `node scripts/check-css-tokens.mjs` passes with 0 unresolved tokens.
+- [ ] `npm run typecheck -w @dental/web` passes with Exit Code 0.
+- [ ] `npm run typecheck -w @dental/api` passes with Exit Code 0.
+
+### Ergonomics & Integrity
+- [ ] All 4 forensic bugs (voice commands, warranty passport payload, initialToothFdi type, handleAddToInvoice array) verified fixed.
+- [ ] 0 disabled buttons without reason, 0 clown copy, 0 mock patients.
+
+### Documentation & Git
+- [ ] `BACKLOG.md`, `OUR_CRM_MAP.md`, `FEATURES_REGISTRY.md` synchronized.
+- [ ] Clean atomic commit recorded with commit hash reported.
+- [ ] All subagents terminated cleanly after task completion (Mandate 8l).

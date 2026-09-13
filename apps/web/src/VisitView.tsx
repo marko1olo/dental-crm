@@ -771,12 +771,23 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		{ id: "Nobel", label: "Имплантат Nobel Biocare Active" },
 	];
 
-	const appendToEMKField = (fieldKey: string, text: string) => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const currentVal = (visitNoteForm as any)[fieldKey] || "";
-		if (!currentVal.includes(text)) {
-			const sep = currentVal ? "\n" : "";
-			updateVisitNoteField(fieldKey, currentVal + sep + text);
+	const appendToEMKField = (fieldKey: string, text?: string | null) => {
+		if (!text || typeof text !== "string") return;
+		const targetKeys =
+			fieldKey === "diary"
+				? ["treatmentPlan", "treatment"]
+				: fieldKey === "complaints"
+					? ["complaint", "complaints"]
+					: fieldKey === "objectiveInspection"
+						? ["objectiveStatus", "objectiveInspection"]
+						: [fieldKey];
+		for (const key of targetKeys) {
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			const currentVal = (visitNoteForm as any)[key] || "";
+			if (!currentVal.includes(text)) {
+				const sep = currentVal ? "\n" : "";
+				updateVisitNoteField(key, currentVal + sep + text);
+			}
 		}
 	};
 

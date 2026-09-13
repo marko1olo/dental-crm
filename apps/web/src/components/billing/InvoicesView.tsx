@@ -827,6 +827,7 @@ th { background: #f8fafc; font-weight: 700; }
 					amountKopecks={rubToKopecks(activePaymentInvoice.totalAmountRub)}
 					patientId={activePaymentInvoice.patientId}
 					patientName={activePaymentInvoice.patientName}
+					patientPhone={activePaymentInvoice.patientPhone}
 					doctorName={activePaymentInvoice.doctorName}
 					clinicLegalName={clinicLegalName}
 					invoiceId={activePaymentInvoice.id}
