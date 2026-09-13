@@ -19,6 +19,7 @@ import {
 	Truck,
 	Warehouse,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useState } from "react";
 import { money } from "../AppHelpers";
@@ -191,6 +192,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [isNurseCarpuleDisposalOpen, setIsNurseCarpuleDisposalOpen] = useState(false);
 	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
+	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
 	const opsMenuRef = React.useRef<HTMLDivElement>(null);
 	const [activeMenuRowId, setActiveMenuRowId] = useState<string | null>(null);
 	const rowMenuRef = React.useRef<HTMLDivElement>(null);
@@ -287,7 +289,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	return (
 		<div
 			style={{
-				padding: "20px 24px",
 				maxWidth: "100%",
 				width: "100%",
 				boxSizing: "border-box",
@@ -296,294 +297,215 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				display: "flex",
 				flexDirection: "column",
 				gap: 0,
+				overflow: "hidden",
+				background: paperBg,
 			}}
 		>
-			{/* HEADER */}
+			{/* 1-LINE COMPACT TOOLBAR (Mandates 8d, 8e, 8p, Apple HIG standard) */}
 			<div
-				style={{
-					display: "flex",
-					alignItems: "flex-start",
-					justifyContent: "space-between",
-					marginBottom: 24,
-					flexWrap: "wrap",
-					gap: 16,
-				}}
+				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0 overflow-x-auto"
+				role="toolbar"
+				aria-label="Панель склада материалов"
 			>
-				<div>
-					<h1
-						style={{
-							margin: 0,
-							fontSize: "24px",
-							fontWeight: 700,
-							display: "flex",
-							alignItems: "center",
-							gap: "12px",
-							color: "var(--ink)",
-						}}
-					>
-						<Package style={{ color: "var(--teal)" }} size={28} /> Склад материалов
-					</h1>
-					<p style={{ margin: "4px 0 0", fontSize: "14px", color: "var(--muted)" }}>
-						Учёт расходников, приход и списание
-					</p>
-				</div>
-				{/* KPI CARDS */}
-				<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-					<div
-						style={{
-							background: paperBg,
-							border: `1px solid ${borderColor}`,
-							padding: "12px 20px",
-							borderRadius: 12,
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							minWidth: 110,
-						}}
-					>
-						<span
-							style={{
-								fontSize: 12,
-								color: "var(--muted)",
-								textTransform: "uppercase",
-								letterSpacing: 1,
-							}}
-						>
-							Позиций
-						</span>
-						<strong style={{ fontSize: 22, color: "var(--ink)" }}>
-							{totalItems}
-						</strong>
+				{/* Left: Section Identity, Sub-tabs, and Inline KPI */}
+				<div className="flex items-center gap-2 overflow-x-auto shrink-0 min-w-0">
+					<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)] shrink-0">
+						<Package size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>Склад материалов</span>
 					</div>
-					<div
-						style={{
-							background: paperBg,
-							border: `1px solid ${borderColor}`,
-							padding: "12px 20px",
-							borderRadius: 12,
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							minWidth: 110,
-						}}
-					>
-						<span
-							style={{
-								fontSize: 12,
-								color: "var(--muted)",
-								textTransform: "uppercase",
-								letterSpacing: 1,
-							}}
+
+					{/* Subtabs switcher */}
+					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
+						<button
+							type="button"
+							onClick={() => setActiveSubTab("inventory")}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeSubTab === "inventory"
+									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="tab-inventory-items"
 						>
-							В дефиците
-						</span>
-						<strong
-							style={{
-								fontSize: 22,
-								color: lowStockCount > 0 ? "var(--tomato)" : "var(--teal)",
-							}}
+							<span>Остатки</span>
+							<span className="text-[10px] opacity-70">({items.length})</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveSubTab("rules")}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeSubTab === "rules"
+									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="tab-inventory-rules"
 						>
-							{lowStockCount}
-						</strong>
+							<span>Правила списания</span>
+							<span className="text-[10px] opacity-70">({rulesList.length})</span>
+						</button>
 					</div>
-					{totalValue > 0 && (
-						<div
-							style={{
-								background: paperBg,
-								border: `1px solid ${borderColor}`,
-								padding: "12px 20px",
-								borderRadius: 12,
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								minWidth: 140,
-							}}
-						>
-							<span
-								style={{
-									fontSize: 12,
-									color: "var(--muted)",
-									textTransform: "uppercase",
-									letterSpacing: 1,
-								}}
-							>
-								Стоимость склада
-							</span>
+
+					{/* Compact Inline KPI */}
+					<div className="hidden md:flex items-center gap-2 text-xs text-[var(--muted,#64748b)] shrink-0 pl-1 border-l border-[var(--line,#e2e8f0)]">
+						<span>
+							Позиций: <strong className="text-[var(--ink,#0f172a)]">{totalItems}</strong>
+						</span>
+						<span>•</span>
+						<span>
+							В дефиците:{" "}
 							<strong
-								style={{
-									fontSize: 18,
-									color: "var(--teal)",
-									display: "flex",
-									alignItems: "center",
-									gap: 4,
-								}}
+								className={
+									lowStockCount > 0
+										? "text-rose-600 dark:text-rose-400 font-bold"
+										: "text-teal-600 dark:text-teal-400"
+								}
 							>
-								<TrendingUp size={14} />
-								{money(totalValue)}
+								{lowStockCount}
 							</strong>
-						</div>
-					)}
+						</span>
+						{totalValue > 0 && (
+							<>
+								<span>•</span>
+								<span className="inline-flex items-center gap-1">
+									Стоимость:{" "}
+									<strong className="text-teal-600 dark:text-teal-400">
+										{money(totalValue)}
+									</strong>
+								</span>
+							</>
+						)}
+					</div>
 				</div>
-			</div>
 
-			{/* SUB-TABS */}
-			<div
-				style={{
-					display: "flex",
-					gap: 8,
-					marginBottom: 20,
-					borderBottom: `1px solid ${borderColor}`,
-					paddingBottom: 8,
-				}}
-			>
-				<button
-					type="button"
-					onClick={() => setActiveSubTab("inventory")}
-					style={{
-						padding: "8px 16px",
-						borderRadius: 8,
-						background:
-							activeSubTab === "inventory"
-								? "rgba(20, 184, 166, 0.1)"
-								: "transparent",
-						border: "none",
-						color:
-							activeSubTab === "inventory"
-								? "var(--teal, #14b8a6)"
-								: "var(--muted)",
-						fontWeight: 600,
-						fontSize: 14,
-						cursor: "pointer",
-						transition: "all 0.2s ease",
-					}}
-				>
-					<span className="inline-flex items-center gap-1.5">
-						<Package size={15} />
-						<span>Складские остатки</span>
-					</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setActiveSubTab("rules")}
-					style={{
-						padding: "8px 16px",
-						borderRadius: 8,
-						background:
-							activeSubTab === "rules"
-								? "rgba(20, 184, 166, 0.1)"
-								: "transparent",
-						border: "none",
-						color:
-							activeSubTab === "rules"
-								? "var(--teal, #14b8a6)"
-								: "var(--muted)",
-						fontWeight: 600,
-						fontSize: 14,
-						cursor: "pointer",
-						transition: "all 0.2s ease",
-					}}
-				>
-					<span className="inline-flex items-center gap-1.5">
-						<Settings size={15} />
-						<span>Правила списания</span>
-					</span>
-				</button>
-			</div>
-
-			{activeSubTab === "inventory" ? (
-				<>
-					{/* 1-CLICK CLINICAL PACKAGES WRITE-OFF BAR (MANDATES 8e, 8k, 8n) */}
-					<div style={{ marginBottom: 16 }}>
-						<WarehousePackageWriteOffBar
-							warehouseItems={items}
-							organizationId={organizationId}
-							allowSoftOverdraft={true}
-							onWriteOffComplete={() => fetchItems()}
+				{/* Right: Search, Quick Packages Toggle, Carpule Disposal, Ops Menu, Add Item */}
+				<div className="flex items-center gap-1.5 shrink-0">
+					{/* Compact Search Input */}
+					<div
+						style={{
+							position: "relative",
+							display: "flex",
+							alignItems: "center",
+						}}
+					>
+						<Search
+							size={13}
+							color="var(--muted)"
+							style={{
+								position: "absolute",
+								left: 8,
+								pointerEvents: "none",
+							}}
+						/>
+						<input
+							type="text"
+							placeholder="Поиск..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="!pl-7 w-32 sm:w-48 text-xs min-h-[44px] sm:min-h-[28px] sm:h-7"
+							style={{
+								padding: "4px 8px 4px 28px",
+								borderRadius: 6,
+								border: `1px solid ${borderColor}`,
+								background: paperBg,
+								color: "var(--ink)",
+								outline: "none",
+								boxSizing: "border-box",
+							}}
+							data-testid="inventory-search-input"
 						/>
 					</div>
 
-					{/* CONTROLS */}
-					<div
+					{/* Quick Packages Accordion Toggle */}
+					<button
+						type="button"
+						onClick={() => setIsQuickPackagesOpen((prev) => !prev)}
+						className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors border"
 						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							marginBottom: 16,
-							gap: 12,
-							flexWrap: "wrap",
+							background: isQuickPackagesOpen ? "var(--teal-soft)" : paperSoftBg,
+							color: isQuickPackagesOpen ? "var(--teal-dark, #0f766e)" : "var(--ink)",
+							borderColor: isQuickPackagesOpen ? "var(--teal)" : borderColor,
+							whiteSpace: "nowrap",
 						}}
+						title="Пакетное списание расходников в 1 клик (Мандаты 8e, 8k)"
+						data-testid="btn-toggle-quick-packages"
 					>
-						<div
+						<Zap
+							size={13}
+							className={isQuickPackagesOpen ? "text-teal-600 dark:text-teal-400" : "text-amber-500"}
+						/>
+						<span className="hidden sm:inline">Пакеты</span>
+					</button>
+
+					{/* 1-Click Carpules Write-off */}
+					<button
+						type="button"
+						data-testid="nurse-quick-carpules-btn"
+						disabled={isWritingOffCarpules}
+						onClick={() => handleQuickWriteoffCarpules()}
+						className="secondary-button"
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 5,
+							padding: "4px 10px",
+							minHeight: "36px",
+							borderRadius: 8,
+							fontWeight: 700,
+							fontSize: 12,
+							whiteSpace: "nowrap",
+							cursor: "pointer",
+							background: paperSoftBg,
+							border: `1px solid ${borderColor}`,
+							color: "var(--ink)",
+						}}
+						title="Списать пустую карпулу анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
+					>
+						<Syringe size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="hidden sm:inline">
+							{isWritingOffCarpules ? "Списание..." : "Карпулы"}
+						</span>
+					</button>
+
+					{/* Operations Dropdown Menu (Hick's Law grouping) */}
+					<div ref={opsMenuRef} style={{ position: "relative", display: "inline-block" }}>
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => setIsOpsMenuOpen((prev) => !prev)}
 							style={{
-								position: "relative",
-								minWidth: 260,
-								flex: 1,
-								maxWidth: 360,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 6,
+								padding: "4px 10px",
+								minHeight: "36px",
+								borderRadius: 8,
+								border: `1px solid ${borderColor}`,
+								background: paperSoftBg,
+								color: "var(--ink)",
+								fontWeight: 600,
+								fontSize: 12,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
 							}}
+							title="Операции со складом: Списание по наряду, ТОРГ-13, ИНВ-3/19, МДЛП, Техкарты"
+							aria-expanded={isOpsMenuOpen}
+							data-testid="btn-warehouse-ops-menu"
 						>
-							<Search
-								size={16}
-								color="var(--muted)"
+							<PackageCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span className="hidden md:inline">Операции</span>
+							<ChevronDown
+								size={12}
 								style={{
-									position: "absolute",
-									left: 12,
-									top: "50%",
-									transform: "translateY(-50%)",
+									transform: isOpsMenuOpen ? "rotate(180deg)" : "none",
+									transition: "transform 0.15s ease",
 								}}
 							/>
-							<input
-								type="text"
-								placeholder="Поиск материала..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								className="!pl-11"
-								style={{
-									width: "100%",
-									padding: "10px 12px 10px 42px",
-									borderRadius: 8,
-									border: `1px solid ${borderColor}`,
-									background: paperBg,
-									color: "var(--ink)",
-									outline: "none",
-									boxSizing: "border-box",
-								}}
-							/>
-						</div>
-						<div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-							{/* Operations Dropdown Menu (Hick's Law grouping) */}
-							<div ref={opsMenuRef} style={{ position: "relative", display: "inline-block" }}>
-								<button
-									type="button"
-									className="secondary-button"
-									onClick={() => setIsOpsMenuOpen((prev) => !prev)}
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 6,
-										padding: "8px 14px",
-										minHeight: "44px",
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: paperSoftBg,
-										color: "var(--ink)",
-										fontWeight: 600,
-										fontSize: 13,
-										cursor: "pointer",
-										whiteSpace: "nowrap",
-									}}
-									title="Операции со складом: Списание по наряду, ТОРГ-13, ИНВ-3/19, МДЛП, Техкарты"
-									aria-expanded={isOpsMenuOpen}
-								>
-									<PackageCheck size={16} className="text-teal-600" />
-									<span>Операции со складом</span>
-									<ChevronDown size={14} style={{ transform: isOpsMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
-								</button>
+						</button>
 
 								{isOpsMenuOpen && (
 									<div
 										style={{
 											position: "absolute",
-											left: 0,
+											right: 0,
 											top: "calc(100% + 4px)",
 											background: paperBg,
 											border: `1px solid ${borderColor}`,
@@ -1054,59 +976,75 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								)}
 							</div>
 
-							<button
-								type="button"
-								className="secondary-button"
-								data-testid="nurse-quick-carpules-btn"
-								disabled={isWritingOffCarpules}
-								onClick={() => handleQuickWriteoffCarpules()}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 14px",
-									minHeight: "44px",
-									borderRadius: 8,
-									fontWeight: 700,
-									fontSize: 13,
-									whiteSpace: "nowrap",
-									cursor: "pointer",
-								}}
-								title="Списать пустую карпулу анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
-							>
-								<Syringe size={16} />
-								<span>{isWritingOffCarpules ? "Списание..." : "Списать карпулу"}</span>
-							</button>
+					{/* Add Inventory Item Button */}
+					<button
+						type="button"
+						className="primary-button"
+						onClick={openAddModal}
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 5,
+							padding: "4px 12px",
+							minHeight: "36px",
+							borderRadius: 8,
+							fontWeight: 700,
+							fontSize: 12,
+							whiteSpace: "nowrap",
+							background: "var(--teal)",
+							color: "var(--on-teal, #ffffff)",
+							border: "none",
+							cursor: "pointer",
+						}}
+						data-testid="btn-add-inventory-item"
+					>
+						<Plus size={14} />
+						<span>Позиция</span>
+					</button>
+				</div>
+			</div>
 
-							<button
-								type="button"
-								className="primary-button"
-								onClick={openAddModal}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 14px",
-									minHeight: "44px",
-									borderRadius: 8,
-									fontWeight: 700,
-									fontSize: 13,
-									whiteSpace: "nowrap",
-								}}
-							>
-								<Plus size={16} /> Добавить позицию
-							</button>
-						</div>
-					</div>
+			{/* Accordion 1-Click Clinical Packages Write-Off Bar (Mandates 8e, 8k, 8n) */}
+			{activeSubTab === "inventory" && isQuickPackagesOpen && (
+				<div
+					style={{
+						padding: "10px 14px",
+						background: paperSoftBg,
+						borderBottom: `1px solid ${borderColor}`,
+						flexShrink: 0,
+					}}
+				>
+					<WarehousePackageWriteOffBar
+						warehouseItems={items}
+						organizationId={organizationId}
+						allowSoftOverdraft={true}
+						onWriteOffComplete={() => fetchItems()}
+					/>
+				</div>
+			)}
 
-					{/* TABLE */}
+			{/* MAIN CONTENT AREA */}
+			<div
+				style={{
+					padding: "8px 12px",
+					flex: 1,
+					display: "flex",
+					flexDirection: "column",
+					minHeight: 0,
+					overflow: "hidden",
+				}}
+			>
+				{activeSubTab === "rules" ? (
+					<div style={{ flex: 1, overflowY: "auto" }}>{renderRulesTab()}</div>
+				) : (
+					/* TABLE */
 					<div
 						style={{
 							flex: 1,
 							overflowX: "auto",
 							overflowY: "auto",
 							background: paperBg,
-							borderRadius: 16,
+							borderRadius: 12,
 							border: `1px solid ${borderColor}`,
 						}}
 					>
@@ -1265,7 +1203,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 												>
 													<AlertTriangle
 														size={22}
-														style={{ color: "var(--tomato)" }}
+														style={{ color: "var(--bad-fg, #ef4444)" }}
 													/>
 													<span style={{ color: "var(--ink)", fontSize: 15 }}>
 														{loadError}
@@ -1399,7 +1337,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														}}
 													>
 														{isLowStock && (
-															<AlertTriangle size={15} color="var(--tomato)" className="shrink-0" />
+															<AlertTriangle size={15} color="var(--bad-fg, #ef4444)" className="shrink-0" />
 														)}
 														<span className="truncate max-w-[280px]" title={item.name}>
 															{item.name}
@@ -1413,7 +1351,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																? "rgba(239, 68, 68, 0.1)"
 																: "rgba(16, 185, 129, 0.1)",
 															color: isLowStock
-																? "var(--tomato)"
+																? "var(--bad-fg, #ef4444)"
 																: "var(--teal)",
 															padding: "4px 10px",
 															borderRadius: 6,
@@ -1577,7 +1515,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																setAdjustAmount("");
 															}}
 															style={{
-																background: "var(--teal-soft, rgba(20, 184, 166, 0.1))",
+																background: "var(--teal-soft)",
 																color: "var(--teal-dark, #0f766e)",
 																border: "none",
 																borderRadius: 6,
@@ -1750,10 +1688,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							</tbody>
 						</table>
 					</div>
-				</>
-			) : (
-				renderRulesTab()
-			)}
+				)}
+			</div>
 
 			{/* ADD/EDIT MODAL */}
 			{showModal && (
@@ -2147,18 +2083,18 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										flex: 1,
 										padding: "8px 0",
 										borderRadius: 8,
-										border: `1px solid ${adjustType === t ? (t === "in" ? "var(--teal)" : "var(--tomato)") : borderColor}`,
+										border: `1px solid ${adjustType === t ? (t === "in" ? "var(--teal)" : "var(--bad-fg, #ef4444)") : borderColor}`,
 										background:
 											adjustType === t
 												? t === "in"
-													? "var(--teal-soft, rgba(20, 184, 166, 0.12))"
+													? "var(--teal-soft)"
 													: "var(--bad-bg, rgba(239, 68, 68, 0.12))"
 												: "transparent",
 										color:
 											adjustType === t
 												? t === "in"
 													? "var(--teal-dark, #0f766e)"
-													: "var(--bad-fg, var(--tomato))"
+													: "var(--bad-fg, #ef4444)"
 												: "var(--muted)",
 										fontWeight: 600,
 										cursor: "pointer",
@@ -2227,7 +2163,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 								>
 									Будет:{" "}
-									<strong style={{ color: adjustExceedsStock ? "var(--tomato)" : "var(--ink)" }}>
+									<strong style={{ color: adjustExceedsStock ? "var(--bad-fg, #ef4444)" : "var(--ink)" }}>
 										{adjustResultQuantity} шт.{adjustExceedsStock ? " (дефицит)" : ""}
 									</strong>
 								</p>
@@ -2239,7 +2175,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										padding: "10px 14px",
 										borderRadius: 8,
 										background: "var(--bad-bg, rgba(239,68,68,0.12))",
-										border: "1px solid var(--tomato)",
+										border: "1px solid var(--bad-fg, #ef4444)",
 										color: "var(--ink)",
 										fontSize: 13,
 										lineHeight: 1.45,
@@ -2258,7 +2194,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									fontWeight: 600,
 									color: "var(--on-teal, #ffffff)",
 									cursor: isAdjustingStock ? "not-allowed" : "pointer",
-									background: adjustType === "in" ? "var(--teal)" : "var(--tomato)",
+									background: adjustType === "in" ? "var(--teal)" : "var(--bad-fg, #ef4444)",
 									fontSize: 15,
 									opacity: isAdjustingStock ? 0.6 : 1,
 								}}

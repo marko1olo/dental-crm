@@ -35,6 +35,7 @@ import {
 	Truck,
 	RotateCcw,
 	Send,
+	MoreVertical,
 } from "lucide-react";
 import "./dentalLabWorkflow.css";
 import {
@@ -129,6 +130,14 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [inspectingOrder, setInspectingOrder] = useState<DentalLabWorkflowOrder | null>(null);
 	const [warrantyReworkOrder, setWarrantyReworkOrder] = useState<DentalLabWorkflowOrder | null>(null);
 	const [warrantyReason, setWarrantyReason] = useState<string>("Скол керамической облицовки");
+	const [activeCardMenuOrderId, setActiveCardMenuOrderId] = useState<string | null>(null);
+
+	React.useEffect(() => {
+		if (!activeCardMenuOrderId) return;
+		const handleOutside = () => setActiveCardMenuOrderId(null);
+		document.addEventListener("click", handleOutside);
+		return () => document.removeEventListener("click", handleOutside);
+	}, [activeCardMenuOrderId]);
 
 	// Форма создания нового наряда
 	const [newPatientName, setNewPatientName] = useState<string>(() => currentPatientName || "");
@@ -536,12 +545,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							<span>
 								Обнаружено <strong>{delayedOrders.length}</strong> заказов с задержкой ЗТЛ или конфликтом даты примерки!
 							</span>
-							<span className="ztl-delay-badge-count">isDelayedAlert</span>
+							<span className="ztl-delay-badge-count">Задержка ({delayedOrders.length})</span>
 						</div>
 						<button
 							type="button"
-							className="ztl-btn-secondary"
-							style={{ height: "26px", fontSize: "11px", borderColor: "#fca5a5", color: "#991b1b" }}
+							className="ztl-btn-secondary min-h-[36px] sm:min-h-[32px] px-3 py-1.5 text-xs font-semibold"
+							style={{ borderColor: "#fca5a5", color: "#991b1b" }}
 							onClick={() => setOnlyDelayedFilter((prev) => !prev)}
 						>
 							{onlyDelayedFilter ? "Показать все заказы" : "Показать проблемные наряды"}
@@ -723,28 +732,6 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 															<span>Этап {LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1}/8:</span>
 															<span>{LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.shortTitleRu || order.techStage}</span>
 														</span>
-														{order.techStage !== "patient_fixation" && (
-															<button
-																type="button"
-																style={{
-																	fontSize: "10px",
-																	fontWeight: 600,
-																	padding: "2px 6px",
-																	borderRadius: "4px",
-																	border: "1px solid var(--line, #e2e8f0)",
-																	background: "var(--paper, #fff)",
-																	color: "var(--ink, #0f172a)",
-																	cursor: "pointer",
-																}}
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleAdvanceTechStage(order);
-																}}
-																title="Перевести на следующий технологический этап ЗТЛ (1..8)"
-															>
-																Этап +1
-															</button>
-														)}
 													</div>
 
 													{/* Платформа имплантата / Абатмент / Фиксация */}
@@ -795,91 +782,212 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 														</span>
 													</div>
 
-													{/* Кнопки действий */}
-													<div className="ztl-card-actions-row">
+													{/* Кнопки действий (Мандат 8d грех 3 — строго 2 кнопки прямого действия + контекстное меню) */}
+													<div className="ztl-card-actions-row" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
 														<button
 															type="button"
-															className="ztl-btn-card-action"
+															className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
 															onClick={() => setInspectingOrder(order)}
 															title="Просмотреть детали наряда"
 														>
-															<Eye size={12} />
+															<Eye size={13} />
 															<span>Инфо</span>
-														</button>
-														<button
-															type="button"
-															className="ztl-btn-card-action"
-															onClick={() => handlePrintBlank(order)}
-															title="Распечатать наряд А4 для курьера"
-														>
-															<Printer size={12} />
-															<span>А4</span>
 														</button>
 														{order.currentStage === "installed_completed" ? (
 															<button
 																type="button"
-																className="ztl-btn-card-action"
-																style={{ color: "#e11d48", borderColor: "#fecdd3", fontWeight: 700 }}
-																onClick={() => {
-																	setWarrantyReason("Скол керамической облицовки");
-																	setWarrantyReworkOrder(order);
-																}}
-																title="Отправить на гарантийную переделку / рекламацию"
+																className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
+																style={{ color: "#059669", borderColor: "#a7f3d0", background: "rgba(16, 185, 129, 0.08)", fontWeight: 700 }}
+																onClick={() => setInspectingOrder(order)}
+																title="Работа зафиксирована и сдана пациенту"
 															>
-																<RotateCcw size={12} />
-																<span>Рекламация (0 ₽)</span>
+																<CheckCircle2 size={13} />
+																<span>Сдано</span>
 															</button>
 														) : order.currentStage === "warranty_rework" ? (
 															<button
 																type="button"
-																className="ztl-btn-card-action ztl-btn-advance"
+																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Отправить работу повторно в ЗТЛ"
 															>
-																<Send size={12} />
-																<span>Отправить в ЗТЛ</span>
+																<Send size={13} />
+																<span>В ЗТЛ</span>
 															</button>
 														) : order.currentStage === "draft" ? (
 															<button
 																type="button"
-																className="ztl-btn-card-action ztl-btn-advance"
+																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Передать наряд и слепки в ЗТЛ"
 															>
-																<Send size={12} />
-																<span>Отправить в ЗТЛ</span>
+																<Send size={13} />
+																<span>В ЗТЛ</span>
 															</button>
 														) : order.currentStage === "sent_to_lab" ? (
 															<button
 																type="button"
-																className="ztl-btn-card-action ztl-btn-advance"
+																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Назначить клиническую примерку"
 															>
-																<Calendar size={12} />
-																<span>Примерка назначена</span>
+																<Calendar size={13} />
+																<span>Примерка</span>
 															</button>
 														) : order.currentStage === "fitting_scheduled" ? (
 															<button
 																type="button"
-																className="ztl-btn-card-action ztl-btn-advance"
+																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Зафиксировать и сдать работу пациенту"
 															>
-																<CheckCircle2 size={12} />
-																<span>Сдано пациенту</span>
+																<CheckCircle2 size={13} />
+																<span>Сдать</span>
 															</button>
 														) : (
 															<button
 																type="button"
-																className="ztl-btn-card-action ztl-btn-advance"
+																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Передвинуть на следующий клинический статус"
 															>
-																<ChevronRight size={12} />
+																<ChevronRight size={13} />
 																<span>Далее</span>
 															</button>
 														)}
+
+														{/* Контекстное меню вторичных действий (...) */}
+														<div style={{ position: "relative", flexShrink: 0 }}>
+															<button
+																type="button"
+																className="ztl-btn-card-action min-h-[36px] sm:min-h-0 px-2"
+																style={{ minWidth: "32px", padding: "0 6px", flex: "none" }}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	setActiveCardMenuOrderId((prev) => (prev === order.id ? null : order.id));
+																}}
+																title="Вторичные действия: Печать А4, Этап ЗТЛ +1, Рекламация"
+																aria-expanded={activeCardMenuOrderId === order.id}
+																data-testid={`ztl-card-menu-btn-${order.id}`}
+															>
+																<MoreVertical size={13} />
+															</button>
+
+															{activeCardMenuOrderId === order.id && (
+																<div
+																	style={{
+																		position: "absolute",
+																		right: 0,
+																		bottom: "calc(100% + 4px)",
+																		background: "var(--paper, #ffffff)",
+																		border: "1px solid var(--line, #e2e8f0)",
+																		borderRadius: "8px",
+																		boxShadow: "0 10px 25px -5px rgba(0,0,0,0.18)",
+																		padding: "4px",
+																		zIndex: 50,
+																		minWidth: "190px",
+																		display: "flex",
+																		flexDirection: "column",
+																		gap: "2px",
+																	}}
+																	role="menu"
+																	onClick={(e) => e.stopPropagation()}
+																>
+																	<button
+																		type="button"
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: "8px",
+																			padding: "8px 10px",
+																			borderRadius: "6px",
+																			border: "none",
+																			background: "transparent",
+																			color: "var(--ink, #0f172a)",
+																			fontSize: "12px",
+																			fontWeight: 500,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																			minHeight: "44px",
+																		}}
+																		onClick={() => {
+																			handlePrintBlank(order);
+																			setActiveCardMenuOrderId(null);
+																		}}
+																		title="Распечатать наряд А4 для курьера"
+																		role="menuitem"
+																		data-testid={`ztl-card-print-a4-${order.id}`}
+																	>
+																		<Printer size={14} className="shrink-0 text-teal-600" />
+																		<span>Печать наряда А4</span>
+																	</button>
+
+																	{order.techStage !== "patient_fixation" && (
+																		<button
+																			type="button"
+																			style={{
+																				display: "flex",
+																				alignItems: "center",
+																				gap: "8px",
+																				padding: "8px 10px",
+																				borderRadius: "6px",
+																				border: "none",
+																				background: "transparent",
+																				color: "var(--ink, #0f172a)",
+																				fontSize: "12px",
+																				fontWeight: 500,
+																				cursor: "pointer",
+																				width: "100%",
+																				textAlign: "left",
+																				minHeight: "44px",
+																			}}
+																			onClick={() => {
+																				handleAdvanceTechStage(order);
+																				setActiveCardMenuOrderId(null);
+																			}}
+																			title="Перевести на следующий технологический этап ЗТЛ (1..8)"
+																			role="menuitem"
+																			data-testid={`ztl-card-tech-stage-${order.id}`}
+																		>
+																			<RefreshCw size={14} className="shrink-0 text-blue-600" />
+																			<span>Этап ЗТЛ (+1)</span>
+																		</button>
+																	)}
+
+																	<button
+																		type="button"
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: "8px",
+																			padding: "8px 10px",
+																			borderRadius: "6px",
+																			border: "none",
+																			background: "transparent",
+																			color: "#e11d48",
+																			fontSize: "12px",
+																			fontWeight: 500,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																			minHeight: "44px",
+																		}}
+																		onClick={() => {
+																			setWarrantyReason("Скол керамической облицовки / несоответствие прикуса");
+																			setWarrantyReworkOrder(order);
+																			setActiveCardMenuOrderId(null);
+																		}}
+																		title="Отправить на гарантийную переделку / рекламацию (0 ₽)"
+																		role="menuitem"
+																		data-testid={`ztl-card-warranty-${order.id}`}
+																	>
+																		<RotateCcw size={14} className="shrink-0 text-rose-600" />
+																		<span>Рекламация (0 ₽)</span>
+																	</button>
+																</div>
+															)}
+														</div>
 													</div>
 												</article>
 											);

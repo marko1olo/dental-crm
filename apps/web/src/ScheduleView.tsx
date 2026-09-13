@@ -2032,8 +2032,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 										setScheduleAdminSecretDraft(event.target.value)
 									}
 									onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-										if (event.key === "Enter" && adminSecretReady) {
+										if (event.key === "Enter") {
 											event.preventDefault();
+											if (!adminSecretReady) {
+												showToast("Введите мастер-пароль администратора", "warning");
+												return;
+											}
 											unlockScheduleAdminSession();
 										}
 									}}
@@ -2047,11 +2051,16 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 									только к расписанию.
 								</span>
 								<button
-									className="secondary-button shrink-0"
+									className="secondary-button shrink-0 min-h-[44px] px-3.5"
 									type="button"
-									onClick={unlockScheduleAdminSession}
+									onClick={() => {
+										if (!adminSecretReady) {
+											showToast("Введите мастер-пароль администратора", "warning");
+											return;
+										}
+										unlockScheduleAdminSession();
+									}}
 									aria-describedby="schedule-admin-unlock-guidance"
-									disabled={!adminSecretReady}
 								>
 									<ShieldCheck aria-hidden="true" /> Запомнить и повторить
 									сохранение

@@ -1245,7 +1245,7 @@ export function PaymentCapture({
 						data-testid="btn-doctor-discount-warranty"
 						title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
 					>
-						★ 100% Гарантия (Переделка)
+						100% Гарантия (Переделка)
 					</button>
 					<button
 						type="button"

@@ -2505,10 +2505,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</p>
 
 					{/* Панель выбора квадранта (Focus Mode) */}
-					<nav className="tooth-quadrant-nav flex flex-wrap gap-1.5" aria-label="Фокус на квадрант">
+					<nav className="tooth-quadrant-nav flex items-center gap-1.5 overflow-x-auto whitespace-nowrap" aria-label="Фокус на квадрант">
 						<button
 							type="button"
-							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === null ? "active" : ""}`}
+							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === null ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(null)}
 						>
 							Вся челюсть
@@ -2522,7 +2522,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 */}
 						<button
 							type="button"
-							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 2 ? "active" : ""}`}
+							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 2 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(2)}
 							title="Второй сектор: зубы 21–28"
 						>
@@ -2530,7 +2530,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 						<button
 							type="button"
-							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 1 ? "active" : ""}`}
+							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 1 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(1)}
 							title="Первый сектор: зубы 11–18"
 						>
@@ -2538,7 +2538,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 						<button
 							type="button"
-							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 3 ? "active" : ""}`}
+							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 3 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(3)}
 							title="Третий сектор: зубы 31–38"
 						>
@@ -2546,7 +2546,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 						<button
 							type="button"
-							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 4 ? "active" : ""}`}
+							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 4 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(4)}
 							title="Четвёртый сектор: зубы 41–48"
 						>
@@ -3281,11 +3281,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 						<span>{dashboard?.protocolTemplates?.length ?? 0}</span>
 					</div>
-					<div className="specialty-strip flex flex-wrap gap-1.5">
+					<div className="specialty-strip flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
 						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{(specialtiesWithTemplates || []).map((specialty: any) => (
 							<button
-								className={`min-h-[44px] px-3 py-2 break-words leading-tight ${selectedSpecialty === specialty ? "active" : ""}`}
+								className={`min-h-[44px] px-3 py-2 shrink-0 ${selectedSpecialty === specialty ? "active" : ""}`}
 								key={specialty}
 								type="button"
 								aria-pressed={selectedSpecialty === specialty}
@@ -3310,11 +3310,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										.join(", ")}
 								</p>
 							</div>
-							<div className="protocol-template-list flex flex-wrap gap-1.5">
+							<div className="protocol-template-list flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
 								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 								{(specialtyProtocolTemplates || []).map((template: any) => (
 									<button
-										className={`min-h-[44px] px-3 py-2 break-words leading-tight ${
+										className={`min-h-[44px] px-3 py-2 shrink-0 ${
 											selectedProtocolTemplate.id === template.id
 												? "active"
 												: ""

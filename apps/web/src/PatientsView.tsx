@@ -1094,7 +1094,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							</span>
 
 							{selectedPatient && (
-								<div className="flex items-center gap-1.5 flex-wrap">
+								<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
 									{/* 1-Click Medical Card 043/u */}
 									<button
 										type="button"
