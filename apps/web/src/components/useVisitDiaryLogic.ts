@@ -17,8 +17,11 @@ import {
 	panelStateText,
 	requestFailureCause,
 } from "../lib/panelStateText";
-import { CLINICAL_SOAP_PRESETS } from "./visit/clinicalSoapPresets";
-import { CANONICAL_SOAP_TEMPLATES, type Template } from "./VisitDiaryTemplateSelector";
+import {
+	CLINICAL_SOAP_PRESETS,
+	CANONICAL_SOAP_TEMPLATES,
+	type Template,
+} from "./visit/clinicalSoapPresets";
 import { useVisitStore } from "../store/visitStore";
 import { logger } from "../utils/logger";
 import {

@@ -47,7 +47,6 @@ import {
 	type DiaryPrintPhoto,
 	VisitDiaryPhotoUpload,
 } from "../VisitDiaryPhotoUpload";
-import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
 import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import { DENTAL_ANESTHETICS } from "../anesthesia/anesthesiaCatalog";
@@ -747,6 +746,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</button>
 					<button
 						type="button"
+						id="diary-open-templates-btn"
 						data-testid="open-1click-templates-btn"
 						onClick={() => setShowTemplatesModal(true)}
 						className="vde-043__btn"
@@ -839,36 +839,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							</div>
 						)
 					)}
-					<VisitDiaryTemplateSelector
-						isLocked={isLocked && !isRevising}
-						onAutoRevise={() => {
-							if (isLocked && !isRevising) {
-								beginRevise();
-							}
-						}}
-						// biome-ignore lint/suspicious/noExplicitAny: template handler
-						onSelectTemplate={(tmpl: any) => {
-							if (isLocked && !isRevising) {
-								beginRevise();
-							}
-							setDiary((prev) =>
-								mergeSoapDiaryState(
-									prev,
-									{
-										anamnesis: tmpl.prefilledAnamnesis,
-										statusLocalis: tmpl.prefilledObjective,
-										treatmentDescription: tmpl.prefilledTreatment,
-										diagnosisIcd10: tmpl.defaultIcd10,
-									},
-									{ strategy: "smart_append" },
-								),
-							);
-							if (tmpl.defaultIcd10) {
-								setIcdSearch(tmpl.defaultIcd10);
-							}
-							scheduleDebouncedSave();
-						}}
-					/>
 				</div>
 			</div>
 
@@ -1032,6 +1002,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						<div className="pt-1">
 							<ClinicalQuickPresetsBar
 								isLocked={false}
+								onOpenTemplatesModal={() => setShowTemplatesModal(true)}
 								onSelectPreset={(preset) => {
 									if (isLocked && !isRevising) {
 										beginRevise();
@@ -2015,6 +1986,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				doctorSpecialty={doctorSpecialty}
 				patientFullName={patientFullName}
 				onApplyDiary={(res) => {
+					if (isLocked && !isRevising) {
+						beginRevise();
+					}
 					setDiary((prev) =>
 						mergeSoapDiaryState(
 							prev,
@@ -2034,6 +2008,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					scheduleDebouncedSave();
 				}}
 				onApplySoapText={(text, icd) => {
+					if (isLocked && !isRevising) {
+						beginRevise();
+					}
 					setDiary((prev) => ({
 						...prev,
 						treatmentDescription: prev.treatmentDescription
