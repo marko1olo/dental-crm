@@ -41,6 +41,24 @@ export interface ClinicalDiaryTemplatesModalProps {
 
 const COMMON_TEETH_PRESETS = [16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44];
 
+function renderTemplateIcon(iconName: string, className = "w-4 h-4 shrink-0") {
+	switch (iconName) {
+		case "tooth":
+			return <FileText className={className} aria-hidden="true" />;
+		case "zap":
+			return <Zap className={className} aria-hidden="true" />;
+		case "shield":
+			return <ShieldCheck className={className} aria-hidden="true" />;
+		case "sparkles":
+			return <Sparkles className={className} aria-hidden="true" />;
+		case "scissors":
+		case "surgery":
+			return <Stethoscope className={className} aria-hidden="true" />;
+		default:
+			return <FileText className={className} aria-hidden="true" />;
+	}
+}
+
 export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalProps> = React.memo(
 	function ClinicalDiaryTemplatesModal({
 		isOpen,
@@ -214,7 +232,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										style={{ minHeight: "44px" }}
 										data-testid={`core-preset-${item.id}`}
 									>
-										<span>{item.icon}</span>
+										{renderTemplateIcon(item.icon, "w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0")}
 										<span>{item.shortTitle}</span>
 										<span className="cd-fast-badge">{item.badge}</span>
 										{isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
@@ -292,7 +310,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										>
 											<div className="cd-card-top-row">
 												<span className="cd-card-title flex items-center gap-1.5">
-													<span>{tmpl.icon}</span>
+													{renderTemplateIcon(tmpl.icon, "w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0")}
 													<span>{tmpl.title}</span>
 												</span>
 												<span className="cd-card-icd-tag">{tmpl.icd10Code}</span>

@@ -3796,3 +3796,27 @@
      - Подтверждена работа кассы без требования ИНН с физических лиц (ИНН исключен для физлиц по 54-ФЗ);
      - Подтверждено 1-клик распределение комбинированных оплат (`allocateRemainderToTender`) и целочисленный копеечный расчет сдачи (`calculateChangeKopecks`).
 - **Файлы**: `apps/web/src/CommunicationsView.tsx`, `apps/web/src/components/communications/PatientWhatsAppConversationWidget.tsx`, `apps/web/src/components/communications/RecallAutomationPipelineWidget.tsx`, `apps/web/src/components/communications/WhatsAppKapsoSettingsDrawer.tsx`, `apps/web/src/components/integrations/egiszAvailability.ts`, `apps/web/src/tests/egiszAvailability.test.ts`, `apps/web/src/components/odontogram/TreatmentPlanWizard.tsx`, `apps/web/src/components/portal/PatientBudgetSignView.tsx`, `apps/web/src/components/portal/patientBudgetSign.css`, `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`, `apps/web/src/components/surgery/SurgeryVisitCockpit.tsx`, `apps/web/src/components/lab/LabWorkOrderConstructorModal.tsx` (удален), `apps/web/src/components/lab/labWorkOrderConstructor.css` (удален), `apps/web/src/components/lab/__tests__/labWorkOrderConstructor.test.tsx` (удален), `apps/web/src/tests/panelsAreMounted.test.ts`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Коммит**: `cdaeaa821`.
+
+### 2.10.288. Волна 205: Сжатие шапки планов лечения (<166px), консолидация кнопок этапа по Закону Миллера (<=2) и touch-first касса >=44px (Мандаты 8c, 8d, 8e п. 9, 8p, 8n)
+- **Идея & Бизнес-эффект**: Завершение цикла оптимизации эргономики планов лечения и кассового узла: компрессия вертикальной шапки модуля комплексных планов лечения `TreatmentPlanModule.tsx` с 350px до <166px за счет сворачиваемых интерактивных блоков `<details>` (пакеты «под ключ» `ClinicalBundlesPanel`, ИИ-ассистент планов лечения `TreatmentPlanCopilotCard`, финансовые скидки и бонусы); консолидация частокола кнопок карточек этапов `TreatmentPlanStageCard.tsx` по Закону Миллера до $\le 2$ кнопок прямого действия («Наряд-заказ в ЗТЛ» и «Акт и списание ТМЦ») с выносом рассрочек и 1-клик нарядов ЗТЛ в контекстный поповер «...» (`MoreVertical`) с обработчиками click-outside и Escape; доведение всех кнопок купюр наличных («Без сдачи», 100, 200, 500, 1 000, 2 000, 5 000 ₽), пресетов распределения оплат и кнопок смены в `PaymentModal.tsx`, `CashShiftWidget.tsx` и `FamilyCombinedBillingModal.tsx` до стандарта тач-таргетов $\ge 44\times 44\text{px}$ по Apple HIG.
+- **Архитектурные механизмы**:
+  1. *Компрессия шапки планов лечения под норматив высоты экрана (TreatmentPlanModule.tsx)*:
+     - Шапка служебных инструментов плана сжата с >350px до <166px по Мандату 8p (бюджет служебной зоны $\le 160\text{--}180\text{px}$);
+     - Финансовые скидки (0%, 5%, 10%, 15%, 20%, 50%, 100% гарантия) и списание бонусов свернуты в интерактивный блок `<details>` с отображением активной скидки/бонусов в заголовке `<summary>`;
+     - Клинические пресеты действий Copilot свернуты в блок `<details>` с индикатором активных модификаций;
+     - Готовые клинические пакеты «под ключ» (8 пакетов по Приказу МЗ РФ № 804н) свернуты в блок `<details>` с компактным отображением `compact={true}`;
+     - Рабочая область планов лечения (3-уровневые альтернативы «Эконом/Стандарт/Премиум» и этапы) доминирует на экране с первого взгляда.
+  2. *Консолидация кнопок этапа по Закону Миллера (TreatmentPlanStageCard.tsx)*:
+     - На карточке каждого этапа плана оставлено не более 2 кнопок прямого действия: 1) «Наряд-заказ в ЗТЛ» (при наличии ортопедии); 2) «Акт и списание ТМЦ»;
+     - Вторичные операции (оформление рассрочки Сбер/Т-Банк/Подели, 1-клик наряд в ЗТЛ на диоксид циркония VITA A2) вынесены в компактное всплывающее меню «...» (`stage-X-menu-btn`);
+     - Меню снабжено ref-отслеживанием клика вне элемента и тач-таргетами $\ge 44\text{px}$ на мобильных устройствах;
+     - Исключен визуальный шум и переполнение карточек этапов.
+  3. *Touch-first эргономика кассового узла (PaymentModal.tsx, CashShiftWidget.tsx, FamilyCombinedBillingModal.tsx)*:
+     - В `PaymentModal.tsx` все быстрые пресеты купюр («Без сдачи», 100, 200, 500, 1 000, 2 000, 5 000 ₽) и пресеты распределения оплаты (ровно, списать аванс/бонусы, 50/50 нал/карта, нал+карта+аванс, вся сумма картой, аванс+карта, СБП QR) увеличены до `min-h-[44px]`;
+     - В `CashShiftWidget.tsx` все кнопки управления сменой («Внесение», «Изъятие», «Открыть/Закрыть смену», «Отчёты и экспорт») приведены к стандарту `min-h-[44px]`;
+     - В `FamilyCombinedBillingModal.tsx` селекторы способов доплаты (СБП, карта, нал) и пресеты купюр увеличены до `min-h-[44px]`;
+     - Полное соответствие Apple HIG и Мандатам 8c, 8d п. 2, 8e п. 9, 8n для работы кассира на сенсорных моноблоках и планшетах.
+- **Файлы**: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/finance/CashShiftWidget.tsx`, `apps/web/src/components/finance/FamilyCombinedBillingModal.tsx`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
+- **Коммит**: `cdaeaa821`.
+

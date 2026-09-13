@@ -347,24 +347,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Модальный кабинет начмеда для пакетного подписания электронных медицинских документов УКЭП КриптоПро перед отправкой в ЕГИСЗ РЭМД (components/cmo/EgiszSigningCabinetModal.tsx:201).",
 	},
 	{
-		file: "components/imaging/MedicalPhotoViewer.tsx",
-		name: "MedicalPhotoViewer",
-		reason:
-			"Автономный модальный просмотрщик дентальных фотографий и интраоральных снимков с калибровкой зума и слайдером До/После (components/imaging/MedicalPhotoViewer.tsx:46). Изолированный просмотрщик фотопротокола.",
-	},
-	{
-		file: "components/imaging/PhotoProtocolDropzone.tsx",
-		name: "PhotoProtocolDropzone",
-		reason:
-			"Дропзона и селектор пакетной загрузки дентальных фотографий ортодонтического и хирургического протокола (components/imaging/PhotoProtocolDropzone.tsx:52). Модуль загрузки в фотопротокол.",
-	},
-	{
-		file: "components/odontogram/ToothDualView.tsx",
-		name: "ToothDualView",
-		reason:
-			"Анатомический проекционный рендер зуба в латеральной и окклюзионной проекциях с поддержкой сурфейсов и мостовидных протезов. Специализированный компонент детального отображения одонтограммы.",
-	},
-	{
 		file: "components/surgery/SurgeryVisitCockpit.tsx",
 		name: "SurgeryVisitCockpit",
 		reason:

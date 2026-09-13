@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-14 / WAVES 175–204 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, MODALS HOSTS PURGE, WAREHOUSE & LAB ERGONOMICS, DEV LEAKS PURGE, STAFF SETTINGS SSOT DEDUPLICATION, SANPIN INTERACTIVE STATE, HEADER COMPRESSION <160PX, TOUCH-FIRST COMMUNICATIONS >=44PX, LAB CONSTRUCTOR PURGE -1895 LINES, DOCTOR AUTONOMY TREATMENT PLAN WIZARD, EGISZ LOCAL BUFFERING PROD CLEANUP, 63-FZ PEP 1-CLICK BUDGET SIGNING, 54-FZ CASHIER AUTONOMY): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 274 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 337 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 274 АДДЕНДУМ, 337/337 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-14 / WAVES 175–205 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, MODALS HOSTS PURGE, WAREHOUSE & LAB ERGONOMICS, DEV LEAKS PURGE, STAFF SETTINGS SSOT DEDUPLICATION, SANPIN INTERACTIVE STATE, HEADER COMPRESSION <160PX, TOUCH-FIRST COMMUNICATIONS >=44PX, LAB CONSTRUCTOR PURGE -1895 LINES, DOCTOR AUTONOMY TREATMENT PLAN WIZARD, EGISZ LOCAL BUFFERING PROD CLEANUP, 63-FZ PEP 1-CLICK BUDGET SIGNING, 54-FZ CASHIER AUTONOMY, TREATMENT PLAN COMPRESSION <166PX, MILLER'S LAW STAGE BUTTONS <=2, TOUCH-FIRST CASHIER >=44PX): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 277 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 340 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 277 АДДЕНДУМ, 340/340 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -59,8 +59,10 @@
 > 54. Ликвидация 444px вертикального блоата Склада в 1 строку тулбара 36px, устранение утечки флага `isDelayedAlert` в ЗТЛ, сокращение кнопок канбан-карточек ЗТЛ с 4 до строго 2 по Закону Миллера, снятие disabled-блокировки в расписании (Wave 201, коммит `1b39654d7`, Мандаты 8d, 8e, 8p, 8n).
 > 55. Устранение утечек токенов разработки (`Wave 16`, `(Фича №28)`, `(#35)`) в сквозной аналитике маркетинга, обнуление синтетических мок-выручек в онлайн-записи до прихода реальных данных API, перенос виджетов 404 из глобального подвала в семантические вкладки «Права» и «Модули», сжатие 91-значной кнопки автопилота СанПиН для сохранения 1 строки 32–36px, ликвидация дублирующих фильтров категорий в Документах (Wave 202, коммит `ef99a977a`, Мандаты 8d, 8e, 8p, 8s).
 > 56. Ликвидация утечек разработки («Фича №35», «Фича №28»), снос 584 строк дублирующего управления персоналом в SettingsClinicTab в пользу SSOT SettingsStaffTab, консолидация кнопок карточек персонала по Закону Миллера (строго 2 действия: «Карточка», «Телефон» + поповер «...»), реальный интерактивный стейт 4 журналов СанПиН взамен синтетических тостов, компрессия шапок документов (<160px), аналитики (~155px), заказов ЗТЛ (~120px) и 1 строка тулбара 36px в нарядах ЗТЛ с поповером экспресс-шаблонов (Wave 203, коммит `2cbf1f93b`, Мандаты 8d, 8e, 8p, 8s).
-> 57. Touch-first эргономика коммуникаций (тач-таргеты >=44px в PatientWhatsAppConversationWidget, RecallAutomationPipelineWidget, WhatsAppKapsoSettingsDrawer, CommunicationsView), снос 1321 строки мертвого несмонтированного конструктора ЗТЛ LabWorkOrderConstructorModal и его стилей (-1895 строк всего) с очисткой panelsAreMounted.test.ts, автономия врача в TreatmentPlanWizard (автоподстановка первичной консультации 0 руб. взамен disabled-кнопки при 0 позиций), ликвидация утечки разработки в egiszAvailability («передача не реализована» -> «Автономный режим шлюза РЭМД ЕГИСЗ»), замена процедурного рисования подписи в PatientBudgetSignView на согласование ПЭП 63-ФЗ в 1 клик, подтверждение суверенитета кассы 54-ФЗ без требования ИНН физлиц (Wave 204, Мандаты 8c, 8d, 8e, 8p, 8s, 8n).
+> 57. Touch-first эргономика коммуникаций (тач-таргеты >=44px в PatientWhatsAppConversationWidget, RecallAutomationPipelineWidget, WhatsAppKapsoSettingsDrawer, CommunicationsView), снос 1321 строки мертвого несмонтированного конструктора ЗТЛ LabWorkOrderConstructorModal и его стилей (-1895 строк всего) с очисткой panelsAreMounted.test.ts, автономия врача в TreatmentPlanWizard (автоподстановка первичной консультации 0 руб. взамен disabled-кнопки при 0 позиций), ликвидация утечки разработки в egiszAvailability («передача не реализована» -> «Автономный режим шлюза РЭМД ЕГИСЗ»), замена процедурного рисования подписи в PatientBudgetSignView на согласование ПЭП 63-ФЗ в 1 клик, подтверждение суверенитета кассы 54-ФЗ без требования ИНН физлиц (Wave 204, коммит `cdaeaa821`, Мандаты 8c, 8d, 8e, 8p, 8s, 8n).
+> 58. Сжатие шапки планов лечения (<166px) через сворачиваемые детали для пакетов, Copilot и скидок в TreatmentPlanModule, консолидация кнопок карточек этапов TreatmentPlanStageCard до <=2 по Закону Миллера с выпадающим меню «...», и touch-first тач-таргеты >=44px на купюрах наличных, пресетах оплат и сменах в PaymentModal, CashShiftWidget и FamilyCombinedBillingModal (Wave 205, коммит `cdaeaa821`, Мандаты 8c, 8d, 8e п. 9, 8p, 8n).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
+
 
 ---
 
@@ -6105,6 +6107,7 @@
   - `apps/web/src/components/lab/labWorkOrderConstructor.css` (удален)
   - `apps/web/src/components/lab/__tests__/labWorkOrderConstructor.test.tsx` (удален)
   - `apps/web/src/tests/panelsAreMounted.test.ts`
+* **Коммит**: `cdaeaa821`
 * **Описание**:
   - **Touch-first эргономика коммуникаций (>=44x44px по стандартам Apple HIG и Мандатам 8c, 8d п. 2, 8n)**:
     * В `PatientWhatsAppConversationWidget.tsx` все интерактивные кнопки быстрых шаблонов сообщений («Памятка», «Рекомендации», «Счёт») и кнопка отправки расширены до высоты `min-h-[44px]` (кнопка отправки `h-11 w-11 min-h-[44px] min-w-[44px]`);
@@ -6133,4 +6136,33 @@
   - **Суверенитет кассы 54-ФЗ (Мандаты 8b, 8e п. 9, 8n)**:
     * Подтверждена работа кассы без обязательного требования ИНН с физических лиц (ИНН требуется только юрлицам/ИП);
     * Поддержана 1-клик комбинированная оплата (нал + карта + аванс) и точный расчет сдачи без копеечных погрешностей.
+
+### 352. Wave 205: Сжатие шапки планов лечения (<166px), консолидация кнопок этапа по Закону Миллера (<=2) и touch-first касса >=44px
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/finance/CashShiftWidget.tsx`
+  - `apps/web/src/components/finance/FamilyCombinedBillingModal.tsx`
+* **Коммит**: `cdaeaa821`
+* **Описание**:
+  - **Компрессия шапки планов лечения под норматив высоты экрана (TreatmentPlanModule.tsx, Мандаты 8d, 8p)**:
+    * Вертикальная служебная шапка модуля комплексных планов лечения сжата с 350px до <166px (бюджет служебной зоны <=160–180px по Мандату 8p);
+    * Внедрены элегантные сворачиваемые интерактивные блоки `<details className="group ...">` для:
+      1) Финансовых регулировок: скидки (0%, 5%, 10%, 15%, 20%, 50%, 100% гарантия) и бонусные баллы пациента с индикацией активного дисконта в `<summary>`;
+      2) Клинического Copilot: пресетные действия и запуск ИИ-аудита с отображением обратной связи;
+      3) Готовых клинических пакетов «под ключ» (`ClinicalBundlesPanel`, 8 пакетов по Номенклатуре 804н) в компактном режиме `compact={true}`;
+    * Рабочая область сравнения 3-уровневых планов («Эконом/Стандарт/Премиум») и этапов лечения сразу доступна врачу без бесконечного скролла.
+  - **Консолидация кнопок карточки этапа по Закону Миллера (TreatmentPlanStageCard.tsx, Мандаты 8c, 8d п. 3, 8p)**:
+    * Количество кнопок прямого действия на карточке этапа свернуто до строго $\le 2$ по Закону Миллера: 1) «Наряд-заказ в ЗТЛ» (при наличии ортопедических услуг); 2) «Акт и списание ТМЦ»;
+    * Вторичные действия этапа (оформление рассрочки Сбер/Т-Банк/Подели, 1-клик заказ диоксида циркония VITA A2) вынесены в компактное выпадающее меню «...» (`MoreVertical`, `stage-X-menu-btn`);
+    * Реализовано всплывающее меню с обработчиками клика вне области (click-outside via `useRef`), клавиши Escape и тач-таргетами $\ge 44\text{px}$ на мобильных устройствах;
+    * Устранены нагромождения кнопок и переполнение карточек этапов.
+  - **Touch-first эргономика кассового узла (PaymentModal.tsx, CashShiftWidget.tsx, FamilyCombinedBillingModal.tsx, Мандаты 8c, 8d п. 2, 8e п. 9, 8n)**:
+    * В `PaymentModal.tsx` все кнопки номиналов наличных («Без сдачи», 100, 200, 500, 1 000, 2 000, 5 000 ₽), пресеты быстрых оплат (ровно, списать аванс/бонусы, 50/50 нал/карта, нал+карта+аванс, вся сумма картой, аванс+карта, СБП QR) и кнопки скидок расширены до `min-h-[44px]`;
+    * В `CashShiftWidget.tsx` все кнопки управления сменой кассира («Внесение», «Изъятие», «Открыть/Закрыть смену», «Отчёты и экспорт») приведены к стандарту `min-h-[44px]`;
+    * В `FamilyCombinedBillingModal.tsx` кнопки выбора способа доплаты (СБП, карта, нал) и кнопки купюр («Без сдачи», пресеты) расширены до `min-h-[44px]`;
+    * Исключен риск мискликов кассира и администратора при работе на сенсорных POS-моноблоках и планшетах.
+
 
