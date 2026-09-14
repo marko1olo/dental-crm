@@ -326,7 +326,10 @@
 	.patient-mobile-back-header {
 		display: flex !important;
 		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
 		margin-bottom: 0.75rem;
+		width: 100%;
 	}
 }
 
@@ -766,16 +769,16 @@
 	box-shadow: 0 0 0 2px var(--teal-surface);
 }
 
-/* Sticky Patient Actions Bar (DEF-PAT-02, Mandate 8p) */
+/* Patient Actions Bar (DEF-PAT-02, Mandate 8p) */
 .patient-admin-actions.sticky-patient-actions {
-	position: sticky;
-	bottom: 0;
-	z-index: 25;
-	background: var(--paper);
-	padding: 10px 0;
-	border-top: 1px solid var(--line);
-	box-shadow: 0 -4px 12px -2px rgba(0, 0, 0, 0.05);
-	margin-top: 12px;
+	position: static !important;
+	z-index: auto !important;
+	background: transparent !important;
+	padding: 4px 0 !important;
+	border-top: none !important;
+	box-shadow: none !important;
+	margin-top: 4px !important;
+	margin-bottom: 4px !important;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
@@ -786,9 +789,9 @@
 [data-theme="night"] .patient-admin-actions.sticky-patient-actions,
 [data-theme="contrast"] .patient-admin-actions.sticky-patient-actions,
 [data-theme="cyber_xray"] .patient-admin-actions.sticky-patient-actions {
-	background: var(--paper, #0f172a);
-	border-top-color: var(--line, rgba(255, 255, 255, 0.15));
-	box-shadow: 0 -4px 12px -2px rgba(0, 0, 0, 0.35);
+	background: transparent !important;
+	border-top-color: transparent !important;
+	box-shadow: none !important;
 }
 
 /* Collapsible Details Block */
@@ -1197,10 +1200,10 @@
 }
 
 /* Payment actions mobile non-overlapping layout (DEF-FIN-02, Mandate 8p) */
-@media (max-width: 768px) {
+@media (max-width: 860px) {
 	.payment-actions {
 		position: static !important;
-		margin-top: 8px !important;
+		margin-top: 0 !important;
 		padding: 0 !important;
 		box-shadow: none !important;
 		border-top: none !important;
@@ -1208,7 +1211,33 @@
 	}
 
 	.payment-capture {
-		padding-bottom: 16px !important;
+		padding-bottom: 140px !important;
+	}
+
+	.finance-panel {
+		padding-bottom: 140px !important;
+	}
+
+	#payment-capture #payment-checkout-bar,
+	#payment-checkout-bar,
+	.payment-checkout-bar {
+		position: fixed !important;
+		bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+		left: 0 !important;
+		right: 0 !important;
+		z-index: 9999 !important;
+		background: var(--paper) !important;
+		padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) 12px !important;
+		margin: 0 !important;
+		border-top: 1px solid var(--line) !important;
+		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		gap: 8px !important;
+		width: 100% !important;
+		box-sizing: border-box !important;
 	}
 }
 

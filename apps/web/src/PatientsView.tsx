@@ -1046,8 +1046,32 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							aria-label="Вернуться к списку пациентов"
 						>
 							<ArrowLeft size={16} aria-hidden="true" />
-							<span>← Назад к списку пациентов</span>
+							<span>← Назад</span>
 						</button>
+						{selectedPatient && (
+							<div className="flex items-center gap-1.5 shrink-0">
+								<button
+									type="button"
+									onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
+									className="min-h-[40px] px-3 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									title="Открыть амбулаторный приём 043/у (1 клик, Мандат 8e)"
+									data-testid="patient-mobile-header-open-visit-btn"
+								>
+									<Stethoscope size={14} aria-hidden="true" />
+									<span>Приём</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => void printBlankMedicalContract(selectedPatient)}
+									className="min-h-[40px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e)"
+									data-testid="patient-mobile-header-print-contract-btn"
+								>
+									<FileText size={14} aria-hidden="true" />
+									<span>Договор</span>
+								</button>
+							</div>
+						)}
 					</div>
 
 					{/* Compact Allergy & Stop-Factor Warning Badge: Shown ONLY when patient actually has recorded allergies */}
@@ -1152,6 +1176,32 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								>
 									<Check size={13} aria-hidden="true" className="text-teal-600 dark:text-teal-400" />
 									<span>Норма</span>
+								</button>
+
+								{/* Primary CTA 3 (Above Fold): Открыть приём 043/у (1-клик, Мандат 8e) */}
+								<button
+									type="button"
+									onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
+									disabled={false}
+									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
+									title="Открыть амбулаторный приём 043/у (1 клик, Мандат 8e, выше сгиба)"
+									data-testid="patient-quick-open-visit-btn"
+								>
+									<Stethoscope size={13} aria-hidden="true" className="text-[var(--teal)] shrink-0" />
+									<span>Приём</span>
+								</button>
+
+								{/* Primary CTA 4 (Above Fold): Печать договора (1-клик, Мандат 8e) */}
+								<button
+									type="button"
+									onClick={() => void printBlankMedicalContract(selectedPatient)}
+									disabled={false}
+									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)]"
+									title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e)"
+									data-testid="patient-quick-print-contract-btn"
+								>
+									<FileText size={13} aria-hidden="true" className="text-[var(--muted)] shrink-0" />
+									<span>Договор</span>
 								</button>
 
 								{/* 1-Click Medical Card 043/u */}
@@ -1280,6 +1330,266 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								placeholder="patient@mail.ru"
 							/>
 						</label>
+
+						<div
+							className="form-span-2 patient-admin-actions sticky-patient-actions"
+							style={{
+								margin: "4px 0 2px 0",
+								display: "flex",
+								flexWrap: "wrap",
+								gap: "8px",
+								justifyContent: "flex-start",
+								alignItems: "center",
+							}}
+						>
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
+								disabled={false}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									minHeight: "44px",
+								}}
+								title="Открыть амбулаторный приём 043/у без лишних подтверждений"
+								data-testid="patient-card-open-visit-btn"
+							>
+								<Stethoscope size={16} aria-hidden="true" />
+								<span>Открыть приём</span>
+							</button>
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={() => void printBlankMedicalContract(selectedPatient)}
+								disabled={false}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									minHeight: "44px",
+								}}
+								title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e п. 8)"
+								data-testid="patient-card-print-contract-btn"
+							>
+								<FileText size={16} aria-hidden="true" />
+								<span>Печать договора</span>
+							</button>
+							<div className="relative inline-block" style={{ position: "relative" }}>
+								<button
+									type="button"
+									className="secondary-button"
+									onClick={() => setIsPatientActionsMenuOpen((v) => !v)}
+									title="Дополнительные действия с пациентом"
+									aria-label="Дополнительные действия с пациентом"
+									aria-haspopup="true"
+									aria-expanded={isPatientActionsMenuOpen}
+									data-testid="patient-card-more-actions-btn"
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
+										minHeight: "44px",
+										minWidth: "44px",
+										padding: "0 8px",
+									}}
+								>
+									<MoreHorizontal size={16} aria-hidden="true" />
+								</button>
+
+								{isPatientActionsMenuOpen && (
+									<div
+										className="patient-actions-dropdown"
+										style={{
+											position: "absolute",
+											right: 0,
+											top: "calc(100% + 4px)",
+											zIndex: 100,
+											minWidth: "220px",
+											boxShadow: "var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
+											background: "var(--paper)",
+											border: "1px solid var(--line)",
+											borderRadius: "10px",
+											padding: "4px",
+											display: "flex",
+											flexDirection: "column",
+											gap: "2px",
+										}}
+									>
+										<button
+											type="button"
+											className="patient-dropdown-item"
+											onClick={() => {
+												setIsPatientActionsMenuOpen(false);
+												executeBookPatientAppointmentAutonomy({ selectedPatient });
+											}}
+											disabled={false}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												width: "100%",
+												padding: "8px 12px",
+												minHeight: "44px",
+												fontSize: "13px",
+												fontWeight: 600,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												borderRadius: "6px",
+												cursor: "pointer",
+												textAlign: "left",
+											}}
+											title="Записать выбранного пациента в расписание"
+											data-testid="patient-card-book-appointment-btn"
+										>
+											<Calendar size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>Записать в расписание</span>
+										</button>
+
+										<button
+											type="button"
+											className="patient-dropdown-item"
+											onClick={() => {
+												setIsPatientActionsMenuOpen(false);
+												if (selectedPatient?.id) {
+													usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+												}
+												useAppStore.getState().setCurrentView("finance");
+												showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient?.fullName || ""}`, "info");
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												width: "100%",
+												padding: "8px 12px",
+												minHeight: "44px",
+												fontSize: "13px",
+												fontWeight: 600,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												borderRadius: "6px",
+												cursor: "pointer",
+												textAlign: "left",
+											}}
+											title="Счета, акты по 804н и касса 54-ФЗ"
+											data-testid="patient-card-finance-btn"
+										>
+											<Receipt size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>Счета и касса (54-ФЗ)</span>
+										</button>
+
+										<button
+											type="button"
+											className="patient-dropdown-item"
+											onClick={() => {
+												setIsPatientActionsMenuOpen(false);
+												if (selectedPatient?.id) {
+													usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+												}
+												useAppStore.getState().setCurrentView("radiology");
+												showToast(`Рентген и КТ снимки: ${selectedPatient?.fullName || ""}`, "info");
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												width: "100%",
+												padding: "8px 12px",
+												minHeight: "44px",
+												fontSize: "13px",
+												fontWeight: 600,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												borderRadius: "6px",
+												cursor: "pointer",
+												textAlign: "left",
+											}}
+											title="Рентгенологические и КТ исследования пациента"
+											data-testid="patient-card-radiology-btn"
+										>
+											<Camera size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>Рентген и КТ снимки</span>
+										</button>
+
+										<button
+											type="button"
+											className="patient-dropdown-item"
+											onClick={() => {
+												setIsPatientActionsMenuOpen(false);
+												setIsLoyaltyModalOpen(true);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												width: "100%",
+												padding: "8px 12px",
+												minHeight: "44px",
+												fontSize: "13px",
+												fontWeight: 600,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												borderRadius: "6px",
+												cursor: "pointer",
+												textAlign: "left",
+											}}
+											title="Программа лояльности и бонусы (54-ФЗ / ФФД 1.2)"
+											data-testid="open-loyalty-program-modal-btn"
+										>
+											<Gift size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>Программа лояльности</span>
+										</button>
+
+										<button
+											type="button"
+											className="patient-dropdown-item"
+											onClick={() => {
+												setIsPatientActionsMenuOpen(false);
+												if (!selectedPatient) {
+													showToast(
+														"Выберите пациента из списка слева для архивации",
+														"info",
+													);
+													return;
+												}
+												showToast(
+													`Карта пациента ${selectedPatient.fullName} перемещена в архив (1 клик, без сетевого мусора)`,
+													"success",
+												);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												width: "100%",
+												padding: "8px 12px",
+												minHeight: "44px",
+												fontSize: "13px",
+												fontWeight: 600,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												borderRadius: "6px",
+												cursor: "pointer",
+												textAlign: "left",
+											}}
+											title="Архивировать карту пациента (1 клик, без сетевого мусора)"
+											data-testid="archive-patient-card-btn"
+										>
+											<Archive size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>В архив</span>
+										</button>
+									</div>
+								)}
+							</div>
+						</div>
+
 						<div
 							className="form-span-2"
 							style={{
@@ -1404,264 +1714,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						</div>
 					</div>
 
-					<div
-						className="patient-admin-actions sticky-patient-actions"
-						style={{
-							marginTop: "12px",
-							display: "flex",
-							flexWrap: "wrap",
-							gap: "8px",
-							justifyContent: "flex-start",
-							alignItems: "center",
-						}}
-					>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
-							disabled={false}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "44px",
-							}}
-							title="Открыть амбулаторный приём 043/у без лишних подтверждений"
-							data-testid="patient-card-open-visit-btn"
-						>
-							<Stethoscope size={16} aria-hidden="true" />
-							<span>Открыть приём</span>
-						</button>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => void printBlankMedicalContract(selectedPatient)}
-							disabled={false}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "44px",
-							}}
-							title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e п. 8)"
-							data-testid="patient-card-print-contract-btn"
-						>
-							<FileText size={16} aria-hidden="true" />
-							<span>Печать договора</span>
-						</button>
-						<div className="relative inline-block" style={{ position: "relative" }}>
-							<button
-								type="button"
-								className="secondary-button"
-								onClick={() => setIsPatientActionsMenuOpen((v) => !v)}
-								title="Дополнительные действия с пациентом"
-								aria-label="Дополнительные действия с пациентом"
-								aria-haspopup="true"
-								aria-expanded={isPatientActionsMenuOpen}
-								data-testid="patient-card-more-actions-btn"
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									justifyContent: "center",
-									minHeight: "44px",
-									minWidth: "44px",
-									padding: "0 8px",
-								}}
-							>
-								<MoreHorizontal size={16} aria-hidden="true" />
-							</button>
-
-							{isPatientActionsMenuOpen && (
-								<div
-									className="patient-actions-dropdown"
-									style={{
-										position: "absolute",
-										right: 0,
-										top: "calc(100% + 4px)",
-										zIndex: 100,
-										minWidth: "220px",
-										boxShadow: "var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
-										background: "var(--paper)",
-										border: "1px solid var(--line)",
-										borderRadius: "10px",
-										padding: "4px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "2px",
-									}}
-								>
-									<button
-										type="button"
-										className="patient-dropdown-item"
-										onClick={() => {
-											setIsPatientActionsMenuOpen(false);
-											executeBookPatientAppointmentAutonomy({ selectedPatient });
-										}}
-										disabled={false}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-											width: "100%",
-											padding: "8px 12px",
-											minHeight: "44px",
-											fontSize: "13px",
-											fontWeight: 600,
-											border: "none",
-											background: "transparent",
-											color: "var(--ink)",
-											borderRadius: "6px",
-											cursor: "pointer",
-											textAlign: "left",
-										}}
-										title="Записать выбранного пациента в расписание"
-										data-testid="patient-card-book-appointment-btn"
-									>
-										<Calendar size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-										<span>Записать в расписание</span>
-									</button>
-
-									<button
-										type="button"
-										className="patient-dropdown-item"
-										onClick={() => {
-											setIsPatientActionsMenuOpen(false);
-											if (selectedPatient?.id) {
-												usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
-											}
-											useAppStore.getState().setCurrentView("finance");
-											showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient?.fullName || ""}`, "info");
-										}}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-											width: "100%",
-											padding: "8px 12px",
-											minHeight: "44px",
-											fontSize: "13px",
-											fontWeight: 600,
-											border: "none",
-											background: "transparent",
-											color: "var(--ink)",
-											borderRadius: "6px",
-											cursor: "pointer",
-											textAlign: "left",
-										}}
-										title="Счета, акты по 804н и касса 54-ФЗ"
-										data-testid="patient-card-finance-btn"
-									>
-										<Receipt size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-										<span>Счета и касса (54-ФЗ)</span>
-									</button>
-
-									<button
-										type="button"
-										className="patient-dropdown-item"
-										onClick={() => {
-											setIsPatientActionsMenuOpen(false);
-											if (selectedPatient?.id) {
-												usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
-											}
-											useAppStore.getState().setCurrentView("radiology");
-											showToast(`Рентген и КТ снимки: ${selectedPatient?.fullName || ""}`, "info");
-										}}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-											width: "100%",
-											padding: "8px 12px",
-											minHeight: "44px",
-											fontSize: "13px",
-											fontWeight: 600,
-											border: "none",
-											background: "transparent",
-											color: "var(--ink)",
-											borderRadius: "6px",
-											cursor: "pointer",
-											textAlign: "left",
-										}}
-										title="Рентгенологические и КТ исследования пациента"
-										data-testid="patient-card-radiology-btn"
-									>
-										<Camera size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-										<span>Рентген и КТ снимки</span>
-									</button>
-
-									<button
-										type="button"
-										className="patient-dropdown-item"
-										onClick={() => {
-											setIsPatientActionsMenuOpen(false);
-											setIsLoyaltyModalOpen(true);
-										}}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-											width: "100%",
-											padding: "8px 12px",
-											minHeight: "44px",
-											fontSize: "13px",
-											fontWeight: 600,
-											border: "none",
-											background: "transparent",
-											color: "var(--ink)",
-											borderRadius: "6px",
-											cursor: "pointer",
-											textAlign: "left",
-										}}
-										title="Программа лояльности и бонусы (54-ФЗ / ФФД 1.2)"
-										data-testid="open-loyalty-program-modal-btn"
-									>
-										<Gift size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-										<span>Программа лояльности</span>
-									</button>
-
-									<button
-										type="button"
-										className="patient-dropdown-item"
-										onClick={() => {
-											setIsPatientActionsMenuOpen(false);
-											if (!selectedPatient) {
-												showToast(
-													"Выберите пациента из списка слева для архивации",
-													"info",
-												);
-												return;
-											}
-											showToast(
-												`Карта пациента ${selectedPatient.fullName} перемещена в архив (1 клик, без сетевого мусора)`,
-												"success",
-											);
-										}}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-											width: "100%",
-											padding: "8px 12px",
-											minHeight: "44px",
-											fontSize: "13px",
-											fontWeight: 600,
-											border: "none",
-											background: "transparent",
-											color: "var(--ink)",
-											borderRadius: "6px",
-											cursor: "pointer",
-											textAlign: "left",
-										}}
-										title="Архивировать карту пациента (1 клик, без сетевого мусора)"
-										data-testid="archive-patient-card-btn"
-									>
-										<Archive size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-										<span>В архив</span>
-									</button>
-								</div>
-							)}
-						</div>
-					</div>
 					{patientCoreSaveGuidance ? (
 						<p
 							className="patient-save-guidance"

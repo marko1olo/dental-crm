@@ -1598,43 +1598,41 @@ export function VisitEmkTab() {
 
 			{/* Единый компактный тулбар ЭМК: Ряд 1 (Вкладки протокола ЭМК + Запись/Статус) + Ряд 2 (1-Клик SOAP) */}
 			<div className="emk-unified-toolbar flex flex-col gap-1.5 my-1 py-1 border-b border-[var(--line)] min-w-0 max-w-full">
-				{/* РЯД 1: Вкладки 6 секций ЭМК — гарантированно ВСЕ 6 вкладок без сжатия («Все поля», «Жалобы», «Анамнез», «Объективно», «Диагноз», «Лечение») */}
-				<div className="flex items-center justify-between gap-2 min-w-0 w-full flex-wrap sm:flex-nowrap">
-					<div
-						className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 flex-nowrap shrink-0 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 border-b-0"
-						role="tablist"
-						aria-label="Вкладки протокола приема"
-					>
-						{emkTabs.map((tab) => {
-							const isFilled =
-								tab.id !== "all" &&
-								String(noteForm[tab.id] ?? "").trim().length > 0;
-							return (
-								<button
-									key={tab.id}
-									type="button"
-									role="tab"
-									aria-selected={activeEmkTab === tab.id}
-									className={`emk-tab-button min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 sm:px-3 py-0.5 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap touch-manipulation ${
-										activeEmkTab === tab.id
-											? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
-											: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
-									}`}
-									onClick={() => setActiveEmkTab(tab.id)}
-								>
-									<span className="whitespace-nowrap">{tab.label}</span>
-									{isFilled && <span className="emk-tab-dot" title="Заполнено" />}
-								</button>
-							);
-						})}
-					</div>
+				{/* РЯД 1: Вкладки 6 секций ЭМК — гарантированно ВСЕ 6 вкладок без сжатия («Все поля», «Жалобы», «Анамнез», «Объективно», «Диагноз», «Лечение») + Статус сохранения в едином скролл-ряду без переноса на новую строку */}
+				<div
+					className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 w-full flex-nowrap overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 border-b-0"
+					role="tablist"
+					aria-label="Вкладки протокола приема"
+				>
+					{emkTabs.map((tab) => {
+						const isFilled =
+							tab.id !== "all" &&
+							String(noteForm[tab.id] ?? "").trim().length > 0;
+						return (
+							<button
+								key={tab.id}
+								type="button"
+								role="tab"
+								aria-selected={activeEmkTab === tab.id}
+								className={`emk-tab-button min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 sm:px-3 py-0.5 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap touch-manipulation ${
+									activeEmkTab === tab.id
+										? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
+										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
+								}`}
+								onClick={() => setActiveEmkTab(tab.id)}
+							>
+								<span className="whitespace-nowrap">{tab.label}</span>
+								{isFilled && <span className="emk-tab-dot" title="Заполнено" />}
+							</button>
+						);
+					})}
 
-					<div className="flex items-center gap-1.5 shrink-0 ml-auto">
+					<div className="flex items-center gap-1.5 shrink-0 sm:ml-auto">
 						{/* Кнопка записи на следующий этап */}
 						<button
 							type="button"
 							onClick={() => handleOpenNextVisitBooking(5)}
-							className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0"
+							className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
 							data-testid="btn-schedule-next-stage"
 							title="Записать пациента на следующий этап лечения через 5-7 дней"
 						>
@@ -1658,10 +1656,10 @@ export function VisitEmkTab() {
 
 				{/* РЯД 2: 1-Клик Экспресс-Бар SOAP по Приказам Минздрава РФ (вынесен в отдельный ряд без выдавливания табов) */}
 				<div
-					className="emk-tier1-quick-soap-bar flex items-center gap-1.5 shrink-0 flex-nowrap min-w-0 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 justify-start"
+					className="emk-tier1-quick-soap-bar flex items-center gap-1 sm:gap-1.5 shrink-0 flex-nowrap min-w-0 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 justify-start"
 					data-testid="emk-tier1-quick-soap-bar"
 				>
-					<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-1">
+					<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-0.5">
 						<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" /> SOAP:
 					</span>
 					<button
@@ -1670,11 +1668,11 @@ export function VisitEmkTab() {
 						onClick={() => {
 							if (cariesPreset) handleApplyClinicalSoapPreset(cariesPreset, activeSelectedTooth, "clean_replace");
 						}}
-						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
 						title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
 					>
 						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-						<span>Кариес</span>
+						<span className="whitespace-nowrap">Кариес</span>
 					</button>
 					<button
 						type="button"
@@ -1682,11 +1680,11 @@ export function VisitEmkTab() {
 						onClick={() => {
 							if (pulpitisPreset) handleApplyClinicalSoapPreset(pulpitisPreset, activeSelectedTooth, "clean_replace");
 						}}
-						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
 						title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
 					>
 						<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-						<span>Пульпит</span>
+						<span className="whitespace-nowrap">Пульпит</span>
 					</button>
 					<button
 						type="button"
@@ -1694,11 +1692,11 @@ export function VisitEmkTab() {
 						onClick={() => {
 							if (periodontitisPreset) handleApplyClinicalSoapPreset(periodontitisPreset, activeSelectedTooth, "clean_replace");
 						}}
-						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
 						title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
 					>
 						<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-						<span>Периодонтит</span>
+						<span className="whitespace-nowrap">Периодонтит</span>
 					</button>
 					<button
 						type="button"
@@ -1706,21 +1704,21 @@ export function VisitEmkTab() {
 						onClick={() => {
 							if (hygienePreset) handleApplyClinicalSoapPreset(hygienePreset, activeSelectedTooth, "clean_replace");
 						}}
-						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
 						title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-						<span>Гигиена</span>
+						<span className="whitespace-nowrap">Гигиена</span>
 					</button>
 					<button
 						type="button"
 						data-testid="btn-quick-soap-norm"
 						onClick={handleApplyPhysiologicalNorm}
-						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
 						title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-						<span>Норма</span>
+						<span className="whitespace-nowrap">Норма</span>
 					</button>
 				</div>
 			</div>

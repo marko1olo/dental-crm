@@ -426,30 +426,32 @@ export function ScheduleFilterStrip({
 						{displayChairs.length}
 					</span>
 				)}
-				{displayChairs.map((chair) => {
-					const specName = formatChairSpecialtyLabel(chair?.specialization);
-					const chairLabel = specName && !chair.name.includes("(")
-						? `${chair.name} (${specName})`
-						: chair?.name || "Кресло";
+				{displayChairs
+					.filter((chair) => !myChair || chair.id !== myChair.id)
+					.map((chair) => {
+						const specName = formatChairSpecialtyLabel(chair?.specialization);
+						const chairLabel = specName && !chair.name.includes("(")
+							? `${chair.name} (${specName})`
+							: chair?.name || "Кресло";
 
-					return (
-						<button
-							key={chair.id}
-							type="button"
-							data-testid={`chair-view-badge-${chair.id}`}
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1`}
-							onClick={() =>
-								setScheduleChairFilterId(
-									scheduleChairFilterId === chair.id ? null : chair.id,
-								)
-							}
-							title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
-							aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
-						>
-							<span className="whitespace-nowrap">{chairLabel}</span>
-						</button>
-					);
-				})}
+						return (
+							<button
+								key={chair.id}
+								type="button"
+								data-testid={`chair-view-badge-${chair.id}`}
+								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1`}
+								onClick={() =>
+									setScheduleChairFilterId(
+										scheduleChairFilterId === chair.id ? null : chair.id,
+									)
+								}
+								title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
+								aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
+							>
+								<span className="whitespace-nowrap shrink-0">{chairLabel}</span>
+							</button>
+						);
+					})}
 
 				{/* 1-Click Inline "+ Кресло" addition button (StomX / DentalPRO parity, Mandates 8e, 8n) */}
 				<button

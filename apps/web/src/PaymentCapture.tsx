@@ -1513,19 +1513,19 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full"
+				className="payment-checkout-bar col-span-full max-md:fixed max-md:bottom-[calc(60px+env(safe-area-inset-bottom,0px))] max-md:left-0 max-md:right-0 max-md:z-[9999] max-md:bg-[var(--paper)] max-md:p-2 max-md:border-t max-md:border-[var(--line)] max-md:shadow-lg max-md:flex max-md:flex-row max-md:items-center max-md:justify-between max-md:gap-2 max-md:box-border"
 				style={{ gridColumn: "1 / -1" }}
 				data-testid="payment-checkout-bar"
 			>
 				{/* Итого к списанию / оплате по 54-ФЗ */}
 				<div
-					className="payment-total-due-banner flex items-center justify-between px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-1 sm:mb-1.5"
+					className="payment-total-due-banner flex items-center justify-between px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-1 sm:mb-1.5 max-md:mb-0 max-md:p-0 max-md:bg-transparent max-md:border-none max-md:flex-col max-md:items-start max-md:shrink-0 max-md:min-w-[80px]"
 					data-testid="payment-total-due-banner"
 				>
-					<span className="text-xs sm:text-xs font-bold text-[var(--muted)]">
-						Итого к списанию / оплате:
+					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-md:text-[9.5px] max-md:leading-none whitespace-nowrap">
+						Итого к списанию:
 					</span>
-					<span className="text-base sm:text-base font-black font-mono text-[var(--ink)]">
+					<span className="text-base sm:text-base font-black font-mono text-[var(--ink)] max-md:text-sm max-md:leading-tight whitespace-nowrap">
 						{amount && normalizeRubAmountInput(amount) !== null
 							? `${(normalizeRubAmountInput(amount) ?? 0).toLocaleString("ru-RU")} ₽`
 							: remainingDebt && remainingDebt > 0
@@ -1535,7 +1535,7 @@ export function PaymentCapture({
 				</div>
 
 				<div
-					className="payment-actions"
+					className="payment-actions max-md:flex-1 max-md:min-w-0"
 					style={{
 						display: "flex",
 						gap: "6px",

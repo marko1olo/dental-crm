@@ -563,14 +563,36 @@
 		overflow-x: auto !important;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
-		padding-right: 8px !important;
-		flex-shrink: 0 !important;
+		padding-right: 4px !important;
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
 	}
 	.emk-tabs-container::-webkit-scrollbar {
 		display: none;
 	}
+	.emk-unified-toolbar > div:first-child {
+		flex-wrap: nowrap !important;
+	}
 	.emk-tier1-quick-soap-bar {
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
 		padding-right: 8px !important;
+		width: 100% !important;
+	}
+	.emk-tier1-quick-soap-bar button {
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+		max-width: none !important;
+		min-width: fit-content !important;
+	}
+	.emk-tier1-quick-soap-bar button span {
+		white-space: nowrap !important;
+		overflow: visible !important;
+		text-overflow: clip !important;
 	}
 	.visit-fields textarea,
 	.emk-field-container textarea {

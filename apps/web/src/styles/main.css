@@ -14304,19 +14304,45 @@ html.dark .communication-side .panel-heading h3,
 		padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) 12px !important;
 		margin: 0 !important;
 		border-top: 1px solid var(--line) !important;
-		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12) !important;
-		z-index: 90 !important;
+		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
+		z-index: 9999 !important;
 		display: flex !important;
-		flex-direction: column !important;
-		gap: 4px !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		gap: 8px !important;
+		width: 100% !important;
+		box-sizing: border-box !important;
 	}
+	#payment-checkout-bar .payment-total-due-banner,
 	.payment-total-due-banner {
-		padding: 2px 4px !important;
+		padding: 0 !important;
 		margin: 0 !important;
 		background: transparent !important;
 		border: none !important;
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: flex-start !important;
+		justify-content: center !important;
+		flex-shrink: 0 !important;
+		min-width: 90px !important;
+	}
+	#payment-checkout-bar .payment-total-due-banner span:first-child,
+	.payment-total-due-banner span:first-child {
+		font-size: 10px !important;
+		line-height: 1.1 !important;
+		color: var(--muted) !important;
+		white-space: nowrap !important;
+	}
+	#payment-checkout-bar .payment-total-due-banner span:last-child,
+	.payment-total-due-banner span:last-child {
+		font-size: 16px !important;
+		line-height: 1.15 !important;
+		font-weight: 900 !important;
+		white-space: nowrap !important;
 	}
 	#payment-capture .payment-actions,
+	#payment-checkout-bar .payment-actions,
 	.payment-actions {
 		position: static !important;
 		margin: 0 !important;
@@ -14326,26 +14352,34 @@ html.dark .communication-side .panel-heading h3,
 		background: transparent !important;
 		display: flex !important;
 		flex-direction: row !important;
+		align-items: center !important;
 		gap: 6px !important;
-		width: 100% !important;
+		flex: 1 !important;
+		min-width: 0 !important;
+		width: auto !important;
 	}
 	#payment-capture .payment-actions .primary-button,
+	#payment-checkout-bar .payment-actions .primary-button,
 	.payment-actions .primary-button {
 		flex: 2 !important;
 		min-height: 44px !important;
 		height: 44px !important;
-		font-size: 13.5px !important;
+		font-size: 13px !important;
 		font-weight: 800 !important;
 		width: auto !important;
+		padding: 0 10px !important;
+		white-space: nowrap !important;
 		justify-content: center !important;
 	}
 	#payment-capture .payment-actions .secondary-button,
+	#payment-checkout-bar .payment-actions .secondary-button,
 	.payment-actions .secondary-button {
 		flex: 1 !important;
 		min-height: 44px !important;
 		height: 44px !important;
 		font-size: 11px !important;
-		padding: 2px 4px !important;
+		padding: 0 6px !important;
+		white-space: nowrap !important;
 		width: auto !important;
 		justify-content: center !important;
 	}
