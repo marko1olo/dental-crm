@@ -4001,5 +4001,63 @@
 - **Файлы**: `apps/web/src/styles/main.css`, `apps/web/src/styles/dente-redesign.css`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `docs/screenshots/inquisition_live/`.
 - **Коммит**: `6455cd2fb`.
 
+### 2.10.299. Волна 219: Ликвидация 11 мертвых файлов стилей ЗТЛ, автоклава, настроек и миграционных скратчей (-2,413 LOC) по Вселенскому анти-блоат догмату (Мандаты 8i, 8s, 8t)
+- **Идея & Бизнес-эффект**: Реализация Вселенского анти-блоат догмата (Мандат 8s) и суверенитета амбулаторного стоматологического контекста (Мандат 8i): полное физическое искоренение 11 файлов мертвого кода, заброшенных стилей зуботехнической лаборатории, стилей автоклава, 5 несмонтированных CSS-файлов настроек и устаревших скратч-скриптов миграций объемом -2,413 строк кода при 100% сохранении всей клинической и финансовой функциональности системы.
+- **Архитектурные механизмы**:
+  1. *Ликвидация мертвого CSS-кода ЗТЛ и автоклава*:
+     - Удален `apps/web/src/components/lab/labWorkOrder.css` (-488 LOC) — заброшенные стили конструктора ЗТЛ;
+     - Удален `apps/web/src/components/inventory/InventoryView.css` (-5 LOC) — пустой устаревший файл;
+     - Удален `apps/web/src/components/booking/PublicOnlineBookingWidget.css` (-3 LOC) — заброшенный статический дубликат;
+     - Удален `apps/web/src/components/sanpin/autoclave.css` (-457 LOC) — осиротевшие стили автоклава без компонентов;
+  2. *Очистка 5 несмонтированных CSS-файлов настроек*:
+     - Удалены: `SettingsAccessTab.css` (-292 LOC), `SettingsClinicTab.css` (-288 LOC), `SettingsProfileTab.css` (-189 LOC), `SettingsStaffTab.css` (-442 LOC), `SettingsTelegramTab.css` (-53 LOC) — стилизация вкладок настроек полностью переведена на модульные Tailwind-классы и единые токены;
+  3. *Удаление устаревших скратч-скриптов миграций в корне*:
+     - Удалены: `scripts/migrate-communication-task.cjs` (-48 LOC) и `scripts/migrate-uiprefs-ultimate.cjs` (-148 LOC);
+  4. *Инварианты качества и Single-Compiler Gate (Мандат 8t)*:
+     - Чистая дельта: 11 файлов удалено, -2,413 LOC;
+     - Подтвержден суверенитет ЗТЛ (Мандат 8i): в `components/lab/` сохранены исключительно амбулаторные стоматологические конструкции (коронки, мосты, виниры, элайнеры, шкала Vita);
+     - Подтвержден суверенитет склада (Мандаты 8e, 8n): списание карпул анестетиков в 1 клик медсестрой без бюрократических комиссий, мягкий овердрафт при задержке накладных.
+- **Файлы**: `apps/web/src/components/lab/labWorkOrder.css`, `apps/web/src/components/inventory/InventoryView.css`, `apps/web/src/components/booking/PublicOnlineBookingWidget.css`, `apps/web/src/components/sanpin/autoclave.css`, 5 файлов в `apps/web/src/components/settings/`, `scripts/migrate-communication-task.cjs`, `scripts/migrate-uiprefs-ultimate.cjs`.
+- **Коммит**: `41a274ff9`.
 
+### 2.10.300. Волна 220: Ликвидация 10 несмонтированных CSS-файлов, осиротевших хуков и скратчей (-4,052 LOC) по Вселенскому анти-блоат догмату (Мандаты 8i, 8s, 8t)
+- **Идея & Бизнес-эффект**: Реализация Вселенского анти-блоат догмата (Мандат 8s) и Закона Единого Неделимого Авторитета: физическое удаление 10 неиспользуемых файлов (-4,052 LOC), включая 6 заброшенных CSS-файлов с нулевым количеством ссылок, 3 осиротевших domain-хука и мертвую утилиту сканирования папок снимков; очистка токенов `token-aliases.css` и актуализация набора тестов без функциональных потерь.
+- **Архитектурные механизмы**:
+  1. *Ликвидация 6 заброшенных CSS-файлов*:
+     - Удален `apps/web/src/ScannerView.css` (-412 LOC) — заброшенные стили сканера документов;
+     - Удален `apps/web/src/components/LeadsKanbanView.css` (-356 LOC) — несмонтированные стили канбана лидов;
+     - Удален `apps/web/src/components/billing/cashShiftClosing.css` (-663 LOC) — осиротевшие стили закрытия кассовой смены;
+     - Удален `apps/web/src/components/documents/paidMedicalContract.css` (-668 LOC) — неиспользуемые стили платного медицинского договора;
+     - Удален `apps/web/src/components/patient-portal/interactiveSmartBooking.css` (-224 LOC) — несмонтированные стили букинга;
+     - Удален `apps/web/src/components/visit/SignCardDialog.css` (-296 LOC) — осиротевшие стили подписания карты;
+  2. *Ликвидация 3 осиротевших domain-хуков и утилиты снимков*:
+     - Удален `apps/web/src/hooks/domains/useCommunicationTaskLogic.ts` (-86 LOC) — заброшенный дубликат хука задач;
+     - Удален `apps/web/src/hooks/domains/usePricelistLogic.ts` (-176 LOC) — неиспользуемый хук прайс-листа;
+     - Удален `apps/web/src/hooks/domains/useUiPreferencesLogic.ts` (-895 LOC) — заброшенный хук UI настроек;
+     - Удален `apps/web/src/utils/browserImagingFolderScan.ts` (-248 LOC) — мертвая утилита сканирования локальных папок снимков;
+  3. *Очистка токенов и синхронизация тестов*:
+     - В `apps/web/src/styles/token-aliases.css` очищены мертвые селекторы и алиасы;
+     - Синхронизированы тесты `deterministicVision.test.ts`, `interactiveSmartBooking.test.ts` и `panelsAreMounted.test.ts`;
+  4. *Инварианты качества и Single-Compiler Gate (Мандат 8t)*:
+     - Чистая дельта: 10 удаленных файлов, 14 файлов изменено, -4,052 строки мертвого кода;
+     - Подтверждено соблюдение амбулаторного контекста (Мандат 8i), 0 незапланированных регрессий.
+- **Файлы**: `apps/web/src/ScannerView.css`, `apps/web/src/components/LeadsKanbanView.css`, `apps/web/src/components/billing/cashShiftClosing.css`, `apps/web/src/components/documents/paidMedicalContract.css`, `apps/web/src/components/patient-portal/interactiveSmartBooking.css`, `apps/web/src/components/visit/SignCardDialog.css`, 3 файла в `apps/web/src/hooks/domains/`, `apps/web/src/utils/browserImagingFolderScan.ts`, `apps/web/src/styles/token-aliases.css`, `apps/web/src/tests/deterministicVision.test.ts`, `apps/web/src/tests/interactiveSmartBooking.test.ts`, `apps/web/src/tests/panelsAreMounted.test.ts`.
+- **Коммит**: `32fba9103`.
 
+### 2.10.301. Волна 221: Предоставление прав finance.write и inventory.write соло-врачу (Мандаты 8e, 8n), удаление дублей кнопок в PatientsView и фиксация отступов тулбаров (Мандаты 8c, 8d, 8e, 8n, 8p)
+- **Идея & Бизнес-эффект**: Защита суверенитета соло-врача у кресла и устранение дефектов первого взгляда по Мандатам 8e, 8n и 8p: 1) предоставление роли `doctor` прав `finance.read`, `finance.write` и `inventory.write` для самостоятельного приёма оплаты и списания расходников у кресла без роли кассира или администратора; 2) ликвидация паразитного дублирующего блока кнопок в подвале карточки пациента в `PatientsView.tsx`; 3) ликвидация паразитных отступов тулбаров расписания `ScheduleFilterStrip.tsx` и экспресс-бара ЭМК `VisitEmkTab.tsx`; 4) токенизация сертификатов лояльности и очистка копирайтинга от утечек разработки.
+- **Архитектурные механизмы**:
+  1. *Автономия соло-врача у кресла (Мандаты 8e пп. 9, 10, 8n, `permissions.ts`, `billing.ts`)*:
+     - В `apps/api/src/security/permissions.ts` в матрицу прав роли `doctor` добавлены `finance.read`, `finance.write` и `inventory.write`;
+     - В `apps/api/src/routes/billing.ts` верифицирована возможность самостоятельного проведения оплат соло-врачом на аренде или в мини-клинике (1–3 кресла);
+     - Тест `permissions.test.ts` (10/10 PASS) подтвердил корректность расширенной матрицы доступа;
+  2. *Удаление дублей кнопок в картотеке пациентов (Мандаты 8c, 8d п. 3, 8p, `PatientsView.tsx`)*:
+     - Ликвидирован паразитный нижний дублирующий контейнер кнопок «Открыть приём» (`patient-card-open-visit-btn`) и «Печать договора» (`patient-card-print-contract-btn`), создававший захламление интерфейса и наезды на блок лояльности;
+     - Все действия пациента канонически сгруппированы в верхней карточке контактов со статическим позиционированием, компактными тач-таргетами и выпадающим меню «...»;
+  3. *Фиксация отступов и плотности тулбаров расписания и ЭМК (Мандаты 8c, 8d п. 2, 8p)*:
+     - В `ScheduleFilterStrip.tsx` сброшен паразитный правый бордер и паддинг степпера дат (`!border-r-0 !border-none !pr-0 !mr-0`), чипы кресел зафиксированы с `px-2.5 whitespace-nowrap min-w-fit shrink-0 select-none`;
+     - В `AppointmentCard.tsx` добавлены контекстные подсказки при активном визите;
+     - В `VisitEmkTab.tsx` тулбар быстрого ввода диагнозов зафиксирован со строгим `whitespace-nowrap shrink-0` для кнопок («Кариес», «Пульпит», «Периодонтит», «Гигиена», «Норма»);
+     - В `PaymentCapture.tsx`, `CopilotGenerativeCards.tsx`, `WarehouseTransferModal.tsx` и `LoyaltyProgramModal.tsx` очищен копирайтинг от утечек разработки («Фича...», «Не показывается врачу») и внедрены дизайн-токены `var(--good)` / `var(--bad)`.
+- **Файлы**: `apps/api/src/security/permissions.ts`, `apps/api/src/routes/billing.ts`, `apps/api/src/tests/permissions.test.ts`, `apps/web/src/PatientsView.tsx`, `apps/web/src/PaymentCapture.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/schedule/AppointmentCard.tsx`, `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/components/copilot/CopilotGenerativeCards.tsx`, `apps/web/src/components/inventory/transfers/WarehouseTransferModal.tsx`, `apps/web/src/components/loyalty/program/LoyaltyProgramModal.tsx`.
+- **Коммит**: `bd346b784`.
