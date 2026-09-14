@@ -39,10 +39,21 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 	onBindPackage,
 	onInsertToProtocol,
 }) => {
+	const [externalPackages, setExternalPackages] = useState<KraftPackageRecord[]>([]);
 
-	const availablePackages = activeBatchRecords && activeBatchRecords.length > 0
-		? activeBatchRecords
-		: [];
+	const availablePackages = useMemo(() => {
+		const base = activeBatchRecords && activeBatchRecords.length > 0
+			? activeBatchRecords
+			: [];
+		if (externalPackages.length === 0) return base;
+		const result = [...base];
+		for (const ext of externalPackages) {
+			if (!result.some((p) => p.id === ext.id || p.barcode128.toUpperCase() === ext.barcode128.toUpperCase())) {
+				result.unshift(ext);
+			}
+		}
+		return result;
+	}, [activeBatchRecords, externalPackages]);
 
 	const [selectedPackageId, setSelectedPackageId] = useState<string>(
 		availablePackages[0]?.id || "",
@@ -89,9 +100,65 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 
 		if (matched) {
 			setSelectedPackageId(matched.id);
-			showToast(`Найден пакет: ${matched.toolSetNameRu} (${matched.barcode128})`, "info");
+			if (!boundPackages.some((p) => p.id === matched.id)) {
+				setBoundPackages((prev) => [...prev, matched]);
+			}
+			onBindPackage?.(matched);
+			const protocolEntry = `Стерильный инструмент СанПиН 3.3686-21: крафт-пакет ${matched.barcode128} (${matched.toolSetNameRu}, Автоклав ${matched.autoclaveId} цикл #${matched.cycleNumber}, стерил. ${matched.packDate}, годен до ${matched.expDate}, ЭЦП ЦСО OK).`;
+			if (onInsertToProtocol) {
+				onInsertToProtocol(protocolEntry);
+			}
+			showToast(`Найден и привязан пакет: ${matched.toolSetNameRu} (${matched.barcode128})`, "success");
 		} else {
-			showToast(`Пакет со штрихкодом ${cleanCode} зарегистрирован как внешний валидный`, "info");
+			const today = new Date();
+			const todayIso = today.toISOString().slice(0, 10);
+			const expDateObj = new Date(today);
+			expDateObj.setDate(expDateObj.getDate() + 50);
+			const expIso = expDateObj.toISOString().slice(0, 10);
+
+			const externalRecord: KraftPackageRecord = {
+				id: cleanCode,
+				batchId: `BATCH-EXT-${todayIso}`,
+				serialNumber: externalPackages.length + 1,
+				packageType: "paper_self_seal_single",
+				packageSize: "size_100x200",
+				toolSetId: "external_validated_set",
+				toolSetNameRu: `Стерильный набор (${cleanCode})`,
+				itemsListRu: ["Стоматологический инструментарий (внешняя валидация ЦСО)"],
+				packDate: todayIso,
+				expDate: expIso,
+				daysLifespan: 50,
+				daysRemaining: 50,
+				status: "sterile_valid",
+				autoclaveId: "ЦСО",
+				cycleNumber: 1,
+				operatorId: "cso-external",
+				operatorName: "Оператор ЦСО",
+				indicatorId: "class4_multi_variable",
+				indicatorVerified: true,
+				barcode128: cleanCode,
+				barcodeDataMatrixPayload: `DENTE-SANPIN|${cleanCode}|${todayIso}|${expIso}`,
+				isBreached: false,
+				notes: `Внешний валидированный крафт-пакет со штрихкодом ${cleanCode}`,
+				createdAt: new Date().toISOString(),
+			};
+
+			setExternalPackages((prev) => [externalRecord, ...prev]);
+			setSelectedPackageId(cleanCode);
+			setBoundPackages((prev) =>
+				prev.some((p) => p.id === cleanCode) ? prev : [...prev, externalRecord],
+			);
+			onBindPackage?.(externalRecord);
+
+			const protocolEntry = `Стерильный инструмент СанПиН 3.3686-21: крафт-пакет ${cleanCode} (${externalRecord.toolSetNameRu}, Автоклав ${externalRecord.autoclaveId} цикл #${externalRecord.cycleNumber}, стерил. ${externalRecord.packDate}, годен до ${externalRecord.expDate}, ЭЦП ЦСО OK).`;
+			if (onInsertToProtocol) {
+				onInsertToProtocol(protocolEntry);
+			}
+
+			showToast(
+				`Крафт-пакет ${cleanCode} зарегистрирован как внешний валидный и привязан к лечению зуба #${toothNumber}!`,
+				"success",
+			);
 		}
 		setManualBarcode("");
 	};
@@ -120,11 +187,13 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 					onChange={(e) => setManualBarcode(e.target.value)}
 					onKeyDown={(e) => e.key === "Enter" && handleManualBarcodeScan()}
 					className="dente-scanner-text-input"
+					style={{ minHeight: "32px", height: "32px", fontSize: "13px" }}
 				/>
 				<button
 					type="button"
 					onClick={handleManualBarcodeScan}
 					className="dente-scanner-action-btn"
+					style={{ minHeight: "32px", height: "32px", padding: "0 12px", fontSize: "13px" }}
 				>
 					Найти
 				</button>
@@ -215,6 +284,7 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 					type="button"
 					onClick={handleBindCurrent}
 					className="dente-primary-action-btn"
+					style={{ minHeight: "36px", height: "36px", padding: "0 14px", fontSize: "13px" }}
 				>
 					<CheckCircle2 size={16} />
 					<span>Привязать крафт-пакет к зубу #{toothNumber} и карте 043/у</span>

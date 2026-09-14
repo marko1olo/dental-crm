@@ -1,7 +1,14 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard, MoreHorizontal, ShieldCheck } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
+import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageRemoveItem,
+} from "./lib/safeLocalStorage";
+import { localDayKey, summarizeCashDay } from "./components/finance/cashDaySummary";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { CashDayTally } from "./components/finance/CashDayTally";
@@ -52,10 +59,14 @@ type FinanceViewProps = {
 	formatDateTime: (value: string) => string;
 	isPaymentSaving: boolean;
 	money: (value: number | null) => string;
+	onCashIn?: (amountRub: number, basis: string, typeAlias?: string) => void | Promise<void>;
+	onCashOut?: (amountRub: number, basis: string, recipientFio?: string, typeAlias?: string) => void | Promise<void>;
+	onCloseShift?: () => void | Promise<void>;
 	onCreateDocument?: (kind: string) => void;
 	onGoToDocuments: () => void;
 	onGoToPrices: () => void;
 	onGoToVisit: () => void;
+	onOpenShift?: () => void | Promise<void>;
 	onRecordPayment: () => void;
 	paymentAmount: string;
 	paymentFeedback: string;
@@ -168,6 +179,43 @@ const EMPTY_CLINICAL_RULE_SUMMARY: Dashboard["clinicalRuleSummary"] = {
 	coveredRules: 0,
 };
 
+async function callCashShiftApi(
+	primaryUrl: string,
+	fallbackUrl: string,
+	payload: Record<string, unknown>,
+): Promise<void> {
+	const headers = denteAdminSecretRequestHeaders({
+		"Content-Type": "application/json",
+	});
+	try {
+		const res = await fetch(primaryUrl, {
+			method: "POST",
+			headers,
+			body: JSON.stringify(payload),
+		});
+		if (res.ok) return;
+		if (fallbackUrl && (res.status === 404 || res.status === 405)) {
+			await fetch(fallbackUrl, {
+				method: "POST",
+				headers,
+				body: JSON.stringify(payload),
+			});
+		}
+	} catch {
+		if (fallbackUrl) {
+			try {
+				await fetch(fallbackUrl, {
+					method: "POST",
+					headers,
+					body: JSON.stringify(payload),
+				});
+			} catch {
+				// Non-blocking: offline or standalone client resilience
+			}
+		}
+	}
+}
+
 export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const logicContext = useAppLogicContext();
 	const props = { ...logicContext, ...rawProps } as ReturnType<
@@ -194,10 +242,14 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 		 * суммы выглядят в форме приёма оплаты и в семейном кошельке на этом экране.
 		 */
 		money = props.money ?? formatMoney,
+		onCashIn: propsOnCashIn = props.onCashIn,
+		onCashOut: propsOnCashOut = props.onCashOut,
+		onCloseShift: propsOnCloseShift = props.onCloseShift,
 		onCreateDocument = props.onCreateDocument ?? (props as any).createDocument,
 		onGoToDocuments = props.onGoToDocuments ?? (() => { window.location.hash = "documents"; }),
 		onGoToPrices = props.onGoToPrices ?? (() => { (props as any).setSettingsTab?.("prices"); window.location.hash = "settings/prices"; }),
 		onGoToVisit = props.onGoToVisit ?? (() => { window.location.hash = "visit"; }),
+		onOpenShift: propsOnOpenShift = props.onOpenShift,
 		onRecordPayment = props.onRecordPayment ?? (props as any).recordPayment ?? (() => {}),
 		paymentAmount = props.paymentAmount ?? "",
 		paymentFeedback = props.paymentFeedback ?? "",
@@ -305,6 +357,154 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isFinanceOptionsOpen, setIsFinanceOptionsOpen] = useState(false);
 	const [isCashShiftOpen, setIsCashShiftOpen] = useState(false);
 
+	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
+		const saved = safeLocalStorageGetItem("dente_cash_shift_open");
+		return saved !== null ? saved === "true" : true;
+	});
+	const [shiftNumber, setShiftNumber] = useState<number>(() => {
+		const saved = safeLocalStorageGetItem("dente_cash_shift_number");
+		const parsed = saved ? Number.parseInt(saved, 10) : 1;
+		return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+	});
+	const [manualCashDeltaRub, setManualCashDeltaRub] = useState<number>(() => {
+		const saved = safeLocalStorageGetItem("dente_cash_shift_delta");
+		return saved ? Number.parseFloat(saved) || 0 : 0;
+	});
+
+	const todayKey = useMemo(() => localDayKey(new Date()) ?? "", []);
+	const cashDayTotals = useMemo(() => {
+		const sourcePayments =
+			dashboard?.payments && dashboard.payments.length > 0
+				? dashboard.payments
+				: activePayments ?? [];
+		return summarizeCashDay(sourcePayments, todayKey);
+	}, [dashboard?.payments, activePayments, todayKey]);
+
+	const cashInDrawerRub = Math.max(
+		0,
+		Math.round((cashDayTotals.cashRub + manualCashDeltaRub) * 100) / 100,
+	);
+	const cardSumRub = cashDayTotals.cardRub;
+	const sbpSumRub = cashDayTotals.sbpRub;
+	const advanceOffsetRub = cashDayTotals.advanceRub;
+
+	const handleOpenShift = useCallback(async () => {
+		if (propsOnOpenShift) {
+			await propsOnOpenShift();
+		} else {
+			await callCashShiftApi(
+				"/api/cash/cash-box-all-open",
+				"/api/fiscal/shift/open",
+				{
+					cashierFullName: paymentFiscalCashierName || undefined,
+					openedAt: new Date().toISOString(),
+				},
+			);
+		}
+		setIsShiftOpen(true);
+		safeLocalStorageSetItem("dente_cash_shift_open", "true");
+		const nextShift = shiftNumber + 1;
+		setShiftNumber(nextShift);
+		safeLocalStorageSetItem("dente_cash_shift_number", String(nextShift));
+		void loadDashboard?.();
+	}, [propsOnOpenShift, paymentFiscalCashierName, shiftNumber, loadDashboard]);
+
+	const handleCloseShift = useCallback(async () => {
+		if (propsOnCloseShift) {
+			await propsOnCloseShift();
+		} else {
+			const zNumber = `Z-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${shiftNumber}`;
+			await callCashShiftApi(
+				"/api/cash/cash-box-all-closing",
+				"/api/fiscal/shift/close",
+				{
+					cashierFullName: paymentFiscalCashierName || undefined,
+					zReportNumber: zNumber,
+					shiftNumber,
+					closedAt: new Date().toISOString(),
+				},
+			);
+		}
+		setIsShiftOpen(false);
+		safeLocalStorageSetItem("dente_cash_shift_open", "false");
+		setManualCashDeltaRub(0);
+		safeLocalStorageRemoveItem("dente_cash_shift_delta");
+		void loadDashboard?.();
+	}, [propsOnCloseShift, paymentFiscalCashierName, shiftNumber, loadDashboard]);
+
+	const handleCashIn = useCallback(
+		async (amountRub: number, basis: string, typeAlias?: string) => {
+			if (propsOnCashIn) {
+				await propsOnCashIn(amountRub, basis, typeAlias);
+			} else {
+				await callCashShiftApi(
+					"/api/cash/cash-introduction",
+					"/api/fiscal/cash-in",
+					{
+						amountRub,
+						reasonText: basis || "Служебное внесение разменного фонда",
+						typeAlias,
+						cashierFullName: paymentFiscalCashierName || undefined,
+					},
+				);
+			}
+			setManualCashDeltaRub((prev) => {
+				const next = Math.round((prev + amountRub) * 100) / 100;
+				safeLocalStorageSetItem("dente_cash_shift_delta", String(next));
+				return next;
+			});
+			void loadDashboard?.();
+		},
+		[propsOnCashIn, paymentFiscalCashierName, loadDashboard],
+	);
+
+	const handleCashOut = useCallback(
+		async (
+			amountRub: number,
+			basis: string,
+			recipientFio?: string,
+			typeAlias?: string,
+		) => {
+			if (propsOnCashOut) {
+				await propsOnCashOut(amountRub, basis, recipientFio, typeAlias);
+			} else {
+				await callCashShiftApi(
+					"/api/cash/cash-withdrawal",
+					"/api/fiscal/cash-out",
+					{
+						amountRub,
+						reasonText:
+							basis ||
+							(recipientFio
+								? `Инкассация: ${recipientFio}`
+								: "Служебное изъятие наличных средств"),
+						recipientFio,
+						typeAlias,
+						cashierFullName: paymentFiscalCashierName || undefined,
+					},
+				);
+			}
+			setManualCashDeltaRub((prev) => {
+				const next = Math.round((prev - amountRub) * 100) / 100;
+				safeLocalStorageSetItem("dente_cash_shift_delta", String(next));
+				return next;
+			});
+			void loadDashboard?.();
+		},
+		[propsOnCashOut, paymentFiscalCashierName, loadDashboard],
+	);
+
+	const handlePrintXReport = useCallback(async () => {
+		await callCashShiftApi(
+			"/api/fiscal/x-report",
+			"/api/cash/x-report",
+			{
+				cashierFullName: paymentFiscalCashierName || undefined,
+				shiftNumber,
+			},
+		);
+	}, [paymentFiscalCashierName, shiftNumber]);
+
 	// Desktop Keyboard Navigation: Esc closes open financial sub-modals (Invoices, PnL, options popover, cash shift)
 	useEffect(() => {
 		const handleKeyDown = (e: globalThis.KeyboardEvent) => {
@@ -353,7 +553,11 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						aria-expanded={isCashShiftOpen}
 						data-testid="btn-toggle-cash-shift"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+						<span
+							className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+								isShiftOpen ? "bg-emerald-500" : "bg-rose-500"
+							}`}
+						/>
 						<span>ККТ 54-ФЗ</span>
 					</button>
 				</div>
@@ -450,7 +654,18 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				<div className="relative mb-3 animate-in fade-in duration-150" data-testid="cash-shift-panel-container">
 					<CashShiftWidget
 						compact={true}
+						initialIsOpen={isShiftOpen}
+						shiftNumber={shiftNumber}
 						cashierName={paymentFiscalCashierName || undefined}
+						cashInDrawerRub={cashInDrawerRub}
+						cardSumRub={cardSumRub}
+						sbpSumRub={sbpSumRub}
+						advanceOffsetRub={advanceOffsetRub}
+						onOpenShift={handleOpenShift}
+						onCloseShift={handleCloseShift}
+						onCashIn={handleCashIn}
+						onCashOut={handleCashOut}
+						onPrintXReport={handlePrintXReport}
 					/>
 				</div>
 			)}

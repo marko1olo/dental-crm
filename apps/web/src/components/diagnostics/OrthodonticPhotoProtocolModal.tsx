@@ -18,6 +18,7 @@ import {
 	ChevronUp,
 	Layers,
 	UploadCloud,
+	MoreVertical,
 	Sparkles,
 	Maximize2,
 	AlertCircle,
@@ -200,6 +201,27 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 	);
 	const [insertProtocolOnSave, setInsertProtocolOnSave] = useState<boolean>(true);
 	const [showPresetPreview, setShowPresetPreview] = useState<boolean>(false);
+	// Active popover menu for photo slot card (Mandate 8d Item 3 / Miller's Law)
+	const [openMenuSlotId, setOpenMenuSlotId] = useState<OrthodonticAngleId | null>(null);
+
+	// Close slot popover menu on global click outside or Escape
+	useEffect(() => {
+		if (!openMenuSlotId) return;
+		const handleClickOutside = () => {
+			setOpenMenuSlotId(null);
+		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setOpenMenuSlotId(null);
+			}
+		};
+		window.addEventListener("click", handleClickOutside);
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("click", handleClickOutside);
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [openMenuSlotId]);
 
 	// File input ref for uploading
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -745,7 +767,9 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							return (
 								<div
 									key={angle.id}
-									className={`ortho-slot-card ${hasPhoto ? "has-photo" : ""} ${isDragOver ? "drag-over" : ""}`}
+									className={`ortho-slot-card ${hasPhoto ? "has-photo" : ""} ${isDragOver ? "drag-over" : ""} ${
+										openMenuSlotId === angle.id ? "!overflow-visible z-20" : ""
+									}`}
 									onDragOver={(e) => handleDragOver(e, angle.id)}
 									onDragLeave={handleDragLeave}
 									onDrop={(e) => handleDrop(e, angle.id)}
@@ -809,64 +833,129 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 										)}
 									</div>
 
-									{/* Slot Controls Bar */}
-									<div className="ortho-slot-controls flex items-center gap-1.5 flex-wrap min-h-[44px]">
+									{/* Slot Controls Bar — Miller's Law: 1-2 buttons max, desktop density (28px) */}
+									<div className="ortho-slot-controls flex items-center justify-between gap-1.5 px-3 py-1.5 min-h-[38px] relative">
 										<button
 											type="button"
 											onClick={() => triggerUploadForAngle(angle.id)}
-											className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
-											title="Загрузить снимок"
+											className="ortho-slot-btn h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer shrink-0"
+											title={hasPhoto ? "Заменить снимок" : "Загрузить снимок"}
 											data-testid={`upload-btn-${angle.id}`}
 										>
-											<UploadCloud size={16} />
+											<UploadCloud size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+											<span>{hasPhoto ? "Заменить" : "Загрузить"}</span>
 										</button>
 
 										{hasPhoto ? (
-											<>
+											<div className="relative">
 												<button
 													type="button"
-													onClick={(e) => handleRotateSlot(angle.id, e)}
-													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
-													title="Повернуть на 90°"
+													onClick={(e) => {
+														e.stopPropagation();
+														setOpenMenuSlotId((prev) => (prev === angle.id ? null : angle.id));
+													}}
+													className={`ortho-slot-btn w-7 h-7 inline-flex items-center justify-center rounded-md border transition-all cursor-pointer ${
+														openMenuSlotId === angle.id
+															? "border-[var(--teal,#0d9488)] bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)]"
+															: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:border-[var(--teal,#0d9488)]"
+													}`}
+													title="Действия со снимком"
+													aria-label="Действия со снимком"
+													aria-expanded={openMenuSlotId === angle.id}
+													data-testid={`slot-menu-btn-${angle.id}`}
 												>
-													<RotateCw size={14} />
+													<MoreVertical size={14} />
 												</button>
-												<button
-													type="button"
-													onClick={(e) => handleFlipHorizontal(angle.id, e)}
-													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
-													title="Отразить по горизонтали"
-												>
-													<FlipHorizontal size={14} />
-												</button>
-												<button
-													type="button"
-													onClick={(e) => handleZoomChange(angle.id, 0.2, e)}
-													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
-													title="Увеличить"
-												>
-													<ZoomIn size={14} />
-												</button>
-												<button
-													type="button"
-													onClick={(e) => handleZoomChange(angle.id, -0.2, e)}
-													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
-													title="Уменьшить"
-												>
-													<ZoomOut size={14} />
-												</button>
-												<button
-													type="button"
-													onClick={(e) => handleDeletePhoto(angle.id, e)}
-													className="ortho-slot-btn danger min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
-													title="Удалить снимок"
-													data-testid={`delete-btn-${angle.id}`}
-												>
-													<Trash2 size={14} />
-												</button>
-											</>
+
+												{openMenuSlotId === angle.id && (
+													<div
+														className="absolute right-0 bottom-full mb-1.5 z-40 w-52 p-1 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg shadow-xl animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5"
+														role="menu"
+														onClick={(e) => e.stopPropagation()}
+													>
+														<button
+															type="button"
+															onClick={(e) => handleRotateSlot(angle.id, e)}
+															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)] transition-colors flex items-center gap-2 cursor-pointer"
+															role="menuitem"
+															title="Повернуть на 90°"
+														>
+															<RotateCw size={13} className="text-[var(--muted,#64748b)] shrink-0" />
+															<span className="flex-1">Повернуть на 90°</span>
+															{slot?.rotationDegrees ? (
+																<span className="text-[10px] text-[var(--muted,#64748b)] font-mono">
+																	{slot.rotationDegrees}°
+																</span>
+															) : null}
+														</button>
+
+														<button
+															type="button"
+															onClick={(e) => handleFlipHorizontal(angle.id, e)}
+															className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer ${
+																slot?.flipHorizontal
+																	? "bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)]"
+																	: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)]"
+															}`}
+															role="menuitem"
+															title="Отразить по горизонтали"
+														>
+															<FlipHorizontal size={13} className="text-[var(--muted,#64748b)] shrink-0" />
+															<span className="flex-1">Отразить по горизонтали</span>
+															{slot?.flipHorizontal ? (
+																<span className="text-[10px] font-bold text-[var(--teal,#0d9488)]">Вкл</span>
+															) : null}
+														</button>
+
+														<button
+															type="button"
+															onClick={(e) => handleZoomChange(angle.id, 0.2, e)}
+															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)] transition-colors flex items-center gap-2 cursor-pointer"
+															role="menuitem"
+															title="Увеличить (+20%)"
+														>
+															<ZoomIn size={13} className="text-[var(--muted,#64748b)] shrink-0" />
+															<span className="flex-1">Увеличить (+20%)</span>
+															<span className="text-[10px] text-[var(--muted,#64748b)] font-mono">
+																{Math.round((slot?.zoom || 1) * 100)}%
+															</span>
+														</button>
+
+														<button
+															type="button"
+															onClick={(e) => handleZoomChange(angle.id, -0.2, e)}
+															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)] transition-colors flex items-center gap-2 cursor-pointer"
+															role="menuitem"
+															title="Уменьшить (-20%)"
+														>
+															<ZoomOut size={13} className="text-[var(--muted,#64748b)] shrink-0" />
+															<span className="flex-1">Уменьшить (-20%)</span>
+														</button>
+
+														<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
+
+														<button
+															type="button"
+															onClick={(e) => {
+																setOpenMenuSlotId(null);
+																handleDeletePhoto(angle.id, e);
+															}}
+															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors flex items-center gap-2 cursor-pointer"
+															role="menuitem"
+															title="Удалить снимок"
+															data-testid={`delete-btn-${angle.id}`}
+														>
+															<Trash2 size={13} className="text-rose-500 shrink-0" />
+															<span>Удалить снимок</span>
+														</button>
+													</div>
+												)}
+											</div>
 										) : (
-											<span className="text-[10px] text-[var(--muted)] truncate max-w-[150px]">
+											<span
+												className="text-[10px] text-[var(--muted,#64748b)] truncate max-w-[140px]"
+												title={angle.requiredEquipmentRu}
+											>
 												{angle.requiredEquipmentRu.slice(0, 24)}...
 											</span>
 										)}

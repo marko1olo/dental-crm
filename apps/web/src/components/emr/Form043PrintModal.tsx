@@ -548,7 +548,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 					</header>
 
 					{/* ── Навигационные вкладки ── */}
-					<nav className="emr043-nav-tabs" style={{ flexWrap: "wrap", width: "100%", padding: "8px 16px", gap: "6px" }}>
+					<nav className="emr043-nav-tabs" style={{ flexWrap: "nowrap", width: "100%", padding: "6px 16px", gap: "6px", overflowX: "auto" }}>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "overview" ? "active" : ""}`}
