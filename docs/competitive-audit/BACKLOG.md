@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-14 / WAVES 175–205 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, MODALS HOSTS PURGE, WAREHOUSE & LAB ERGONOMICS, DEV LEAKS PURGE, STAFF SETTINGS SSOT DEDUPLICATION, SANPIN INTERACTIVE STATE, HEADER COMPRESSION <160PX, TOUCH-FIRST COMMUNICATIONS >=44PX, LAB CONSTRUCTOR PURGE -1895 LINES, DOCTOR AUTONOMY TREATMENT PLAN WIZARD, EGISZ LOCAL BUFFERING PROD CLEANUP, 63-FZ PEP 1-CLICK BUDGET SIGNING, 54-FZ CASHIER AUTONOMY, TREATMENT PLAN COMPRESSION <166PX, MILLER'S LAW STAGE BUTTONS <=2, TOUCH-FIRST CASHIER >=44PX): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 277 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 340 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 277 АДДЕНДУМ, 340/340 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-14 / WAVES 175–213 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, MODALS HOSTS PURGE, WAREHOUSE & LAB ERGONOMICS, DEV LEAKS PURGE, STAFF SETTINGS SSOT DEDUPLICATION, SANPIN INTERACTIVE STATE, HEADER COMPRESSION <160PX, TOUCH-FIRST COMMUNICATIONS >=44PX, LAB CONSTRUCTOR PURGE -1895 LINES, DOCTOR AUTONOMY TREATMENT PLAN WIZARD, EGISZ LOCAL BUFFERING PROD CLEANUP, 63-FZ PEP 1-CLICK BUDGET SIGNING, 54-FZ CASHIER AUTONOMY, TREATMENT PLAN COMPRESSION <166PX, MILLER'S LAW STAGE BUTTONS <=2, TOUCH-FIRST CASHIER >=44PX, PERIODONTAL CHARTING MODAL PURGE -2652 LINES & PERIO SSOT CONSOLIDATION, SCHEDULE QUICK-BOOKING DEDUPLICATION, CASHBOX 1440X900 VIEWPORT FOLD, 2-ROW EMR TABS & ZERO TRUNCATION): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 285 СИСТЕМНЫХ АДДЕНДУМ-ФИЧЕЙ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 348 ФИЧЕЙ: 63 КАНОНИЧЕСКИЕ + 285 АДДЕНДУМ, 348/348 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -65,6 +65,9 @@
 > 60. Тотальная инквизиция интерфейса и ликвидация дефектов во всех 4 ключевых вьюпортах (Wave 209, коммит `4afe78aa8`, Мандаты 8c, 8d, 8e, 8p, 8q): в `ScheduleFilterStrip.tsx` ликвидировано обрезание `+ ЗАП` на мобильных (390px) заменой на чистый квадратный контрол `+`, устранено маскирование чипов врачей на десктопе, автодозвон перенесен в поповер опций, ликвидирован тревожный копирайтинг («Расписание не сломалось») и десктопная подсказка `(N)` на тачскринах; в `VisitEmkTab.tsx` и `VisitView.tsx` восстановлена 100% доступность кнопки «Норма» в тулбаре ЭМК, шапка визита сжата с 302px до ~170px, экспресс-протоколы СтАР свернуты в компактную 28px полосу по умолчанию; в `PatientsView.tsx` ликвидировано обрезание ФИО, телефонов и аллергоанамнеза в боковом списке за счет выноса вторичных действий в меню `...`, главные кнопки «Сохранить» и «Норма (1-клик)» выведены в топбар карточки выше 900px фолда, ликвидирована 500px пустота на мобильных устройствах с внедрением карточки-превью выбранного пациента; в `PaymentCapture.tsx` и `styles/main.css` ликвидирован слепящий светло-желтый баннер `#fff8ef` в темных темах с внедрением высококонтрастных токенов WCAG AAA, 4 карточки сводки на экранах <=768px перестроены в компактную сетку 2x2 высотой ~126px взамен 560px, выведя форму оплаты и скидки врача выше сгиба экрана.
 > 61. Искоренение стационарного академического блоата, процедурных симуляторов и 12 несмонтированных дубликатов компонентов по Мандатам 8i, 8k, 8s (-12 000+ LOC, Wave 211): полная ликвидация госпитального блока комиссий ВКК (`clinicalQualityEngine.ts`, -1795 LOC) и EMR-аудита Росздравнадзора (`cmoEmrAuditEngine.ts`, `cmoComplianceHubEngine.ts`, `components/emr/audit/`, -2219 LOC) по Мандату 8i; искоренение процедурного симулятора пародонтограммы (`perioProfileMath.ts`) и старых стилей портала (`patientMobilePortal.css`, `PatientPortal.tsx`, `PatientPortal.css`) по Мандату 8k; ликвидация 12 несмонтированных компонентов-дубликатов по Закону Единого Неделимого Авторитета (Мандат 8s: `PublicEstimatePortal`, `EgiszSigningCabinetModal`, `PaidMedicalContractModal`, `OdontogramView`, `OdontogramToolbar`, `SurgeryVisitCockpit`, `VisitTreatmentPlanTab`, `OfflineContinuityStrip`, `OfflineReadinessBanner`, `FiscalReceiptPrintView`, `Shell`, `FoolproofConfirmDialog`); реестр бутафорских ширм в `panelsAreMounted.test.ts` полностью очищен (0 phantom-записей, потолок ширм строго 0); устранена ловушка Suspense fallback в `take_inquisition_live_screenshots.cjs` с прямым ожиданием монтирования реального EMR; устранены артефакты мобильного расписания (фантомный бокс и вертикальный разделитель в `ScheduleFilterStrip.tsx`), переполнение панели действий и обрезка имени пациента в `PatientsView.tsx`, сжаты отступы формы оплаты `PaymentCapture.tsx` и `main.css` для строгого расположения всех способов оплаты и кнопки «Принять оплату» выше сгиба 844px экрана.
 > 62. Тотальная ликвидация дублирующих виджетов коммуникаций, ghost-обёрток, заброшенных директорий и мертвого CSS по Мандатам 8s, 8j, 8h (-4 500+ LOC, Wave 212): искоренены 3 несмонтированных виджета-клона коммуникаций (`PatientWhatsAppConversationWidget.tsx` -477 LOC, `RecallAutomationPipelineWidget.tsx` -476 LOC, `WhatsAppKapsoSettingsDrawer.tsx` -504 LOC) в пользу канонических SSOT (`WhatsAppChatPanel.tsx`, `PatientRecallsHubModal.tsx`, `WhatsappSettingsPanel.tsx`) с очисткой реэкспортов в `communications/index.ts` и удалением из `DECLARED_UNMOUNTED` в `panelsAreMounted.test.ts`; ликвидированы ghost-обёртка `PatientCommunicationTimelinesWidget.tsx` (-59 LOC) и фасад `WarehouseTransferModal.tsx` (-7 LOC) в пользу канонических SSOT `PatientCommunicationTimelineWidget.tsx` и `inventory/transfers/WarehouseTransferModal.tsx`; полностью уничтожены заброшенные директории `components/doctor/` (`index.ts` -9 LOC) и `components/offline/` (`index.ts` -3 LOC), а также неиспользуемые стили `OfflineContinuityStrip.css` (-492 LOC / 14.8 KB), `OfflineReadinessBanner.css` (-185 LOC / 3.6 KB) и `common/foolproofConfirm.css` (-240 LOC / 5.0 KB); общая чистая дельта: 10 удалённых файлов, ликвидировано более 4 500 строк дублирующего и паразитного кода.
+> 63. Ликвидация PeriodontalChartingModal.tsx (-2,652 LOC) и устранение коллизии дублирующего монтирования (Wave 212 Refactor, коммит `e996d71be`, Мандаты 8s, 8j, 8c, 8h): снесена гигантская дублирующая модалка пародонтограммы `apps/web/src/components/emr/PeriodontalChartingModal.tsx` (-2,217 LOC), файл стилей `periodontalCharting.css` (-222 LOC) и тест `periodontalExportAutonomyWave51.test.tsx` (-213 LOC); устранена коллизия параллельного монтирования в `OdontogramViewContainer.tsx` (где одновременно вызывались `PeriodontogramChart` и `PeriodontalChartingModal`), единственным каноническим SSOT пародонтограммы утвержден `PeriodontogramChart.tsx`.
+> 64. Очистка расписания от дублей кнопок записи и срезки врачебных плашек (Wave 212b, коммит `e26bb5d03`, Мандаты 8d, 8e, 8p, 8n): удален дубль быстрого добавления записи `schedule-toolbar-primary-quick-booking-btn`, ликвидирована срезка бейджей врачей добавлением `max-w-[140px] truncate`, кнопки сервисного управления креслами оптимизированы до `h-6 w-6`, внедрен сброс внешних паддингов `.schedule-panel { padding: 0 !important; }` для максимальной полезной высоты сетки.
+> 65. Фиксация вьюпорта кассы 1440x900 и двухрядные табы ЭМК без срезки (Wave 213, коммит `96a9d2571`, Мандаты 8c, 8d, 8e, 8p, 8n): в `PaymentCapture.tsx` и `FinanceView.tsx` оптимизированы вертикальные отступы формы оплаты, обеспечив расположение способов оплаты и кнопки «Принять оплату» строго в 1-м экране выше сгиба 900px; в `VisitEmkTab.tsx` табы ЭМК перестроены в четкие 2 ряда, полностью исключив наезды и срезку вкладок «Диагноз» и «Лечение»; очищен сайдбар пациентов от дублирующих элементов.
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 
@@ -253,7 +256,7 @@
 ## 20. `пародонтология::1_клик_физиологическая_норма_и_пресеты` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8k)
 - **Идея**: Ликвидация процедурного симулятора ручного вбивания 192 точек измерений (32 зуба x 6 поверхностей). 1-клик заполнение физиологической нормой (1-2 мм без BOP), пресеты гингивита и легкого пародонтита, а также 1-клик авто-вставка сформированного протокола осмотра пародонта в дневник Формы 043/у.
 - **Статус**: 
-  - Фронтенд: `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx` (коммит `93605442c`)
+  - Фронтенд: `apps/web/src/components/perio/PeriodontogramChart.tsx` (канонический SSOT, коммиты `93605442c`, `e996d71be`; дубликат `PeriodontalChartingModal.tsx` ликвидирован)
   - Интеграция: `createDefaultPerioTeeth`, расчет индексов, протокол для ЭМК.
 
 ---
@@ -469,7 +472,7 @@
 ## 47. `гигиена_пародонтология::1_клик_экспресс_пресеты_нормы_и_патологии_без_рутины_192_точек` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8k & СТАР)
 - **Идея**: Полная ликвидация процедурного симулятора ручного обхода и ввода 192 точек глубины карманов и кровоточивости. Внедрение 5 клинических экспресс-пресетов: (1) Пародонт в норме (глубина 1–2 мм, без BOP), (2) Катаральный гингивит (2 мм, отек десневых сосочков, BOP+), (3) Пародонтит легкий (3–4 мм, межзубный CAL), (4) Пародонтит средний (4–5 мм, рецессия 1–2 мм, над- и поддесневой зубной камень, подвижность I ст.), (5) Профессиональная гигиена полости рта (5-этапный протокол: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12). Мгновенный пересчет стоматологических индексов OHI-S, PMA, КПИ Леуса, Silness-Loe, SBI и 1-клик вставка заключения в дневник Формы 043/у. Соблюдение Греха № 7 (ноль эмодзи в медицинских картах).
 - **Статус**: 
-  - Фронтенд: `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`, `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `periodontalCharting.css`, `apps/web/src/components/perio/PeriodontogramChart.tsx` (коммит `d9f42454f`).
+  - Фронтенд: `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`, `apps/web/src/components/perio/PeriodontogramChart.tsx` (канонический SSOT, коммиты `d9f42454f`, `e996d71be`; дубликат `PeriodontalChartingModal.tsx` и `periodontalCharting.css` ликвидированы).
   - Тесты: unit-тесты `apps/web/src/tests/periodontalCharting.test.tsx` (100% passing).
 
 ---
@@ -5889,7 +5892,7 @@
       2. `KraftBarcodeLabelSheet.tsx` — консолидирован на канонической печати этикеток крафт-пакетов и штрихкодирования СанПиН `components/sanpin/kraft/KraftPackageBarcodeModal.tsx`;
       3. `KraftPackBatchBuilder.tsx` — консолидирован на каноническом мастере формирования партий крафт-пакетов `components/sanpin/kraft/KraftPackageBarcodeModal.tsx`;
       4. `SanpinJournal257View.tsx` — консолидирован на каноническом электронном журнале стерилизации Форма 257/у СанПиН 3.3686-21 `components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx`;
-      5. `PerioArchGrid.tsx` — консолидирован на канонической интерактивной пародонтограмме `components/perio/PeriodontogramChart.tsx` и `PeriodontalChartingModal.tsx` (1-клик норма, пресеты тяжелого пародонтита без ручного замера 192 точек по Мандату 8k);
+      5. `PerioArchGrid.tsx` — консолидирован на канонической интерактивной пародонтограмме `components/perio/PeriodontogramChart.tsx` (SSOT, коммит `e996d71be`; дубликат `PeriodontalChartingModal.tsx` ликвидирован) (1-клик норма, пресеты тяжелого пародонтита без ручного замера 192 точек по Мандату 8k);
       6. `PerioProfileStrip.tsx` — консолидирован на канонической экспресс-полосе статуса пародонта `components/perio/PeriodontogramChart.tsx`;
       7. `OrthodonticStudioModal.tsx` — консолидирован на каноническом фотопротоколе ортодонтии `components/diagnostics/OrthodonticPhotoProtocolModal.tsx` и ТРГ-анализе `components/radiology/CephalometricAnalysisModal.tsx`;
       8. `OrthodonticExaminationCard.tsx` — консолидирован на канонических протоколах визита `components/visit/therapy/VisitTherapyProtocolWidget.tsx`;
@@ -6212,5 +6215,71 @@
   - **Касса 54-ФЗ**: выравнивание мобильного чекаута и предотвращение перекрытия итоговой суммы;
   - **16 скриншотов Inquistion Live**: recaptured с 100% уникальными MD5 и размерами >=40 KB.
 
+### 355. Wave 212 Refactor: Ликвидация PeriodontalChartingModal.tsx (-2,652 LOC) и устранение коллизии дублирующего монтирования
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/emr/PeriodontalChartingModal.tsx` (удален, -2,217 LOC)
+  - `apps/web/src/styles/periodontalCharting.css` (удален, -222 LOC)
+  - `apps/web/src/tests/periodontalExportAutonomyWave51.test.tsx` (удален, -213 LOC)
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+* **Коммит**: `e996d71be`
+* **Описание**:
+  - **Ликвидация дублирующей модалки (-2,652 строки кода)**: удален массивный дубликат `PeriodontalChartingModal.tsx`, стили `periodontalCharting.css` и устаревший тест по Закону Единого Неделимого Авторитета (Мандаты 8s, 8j);
+  - **Устранение коллизии монтирования**: в `OdontogramViewContainer.tsx` ликвидировано параллельное монтирование двух независимых компонентов пародонтограммы, провоцировавшее дублирование состояний и рассинхронизацию данных;
+  - **Единый SSOT**: утвержден единственный канонический компонент пародонтограммы `PeriodontogramChart.tsx` (ВОЗ 6-точечный протокол, индексы КПИ/PBI/PMA, расчет подвижности и рецессий), доступный как в отдельной модалке, так и встроенный в рабочую область одонтограммы;
+  - Все тесты и Single-Compiler Gate подтверждены.
 
+### 356. Wave 212b: Очистка расписания от дублей кнопок записи и срезки врачебных плашек
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+  - `apps/web/src/styles/main.css`
+* **Коммит**: `e26bb5d03`
+* **Описание**:
+  - **Устранение дубля быстрой записи**: ликвидирована лишняя кнопка `schedule-toolbar-primary-quick-booking-btn` из тулбара фильтров, создававшая визуальный шум и дублировавшая прямое кликанье по слотам сетки расписания;
+  - **Ликвидация срезки бейджей врачей**: чипам докторов присвоено свойство `max-w-[140px] truncate` с сохранением полного имени в тултипе, исключив некрасивый разрыв и наезды текста на соседние элементы;
+  - **Компактные сервисные кнопки кресел**: управляющие элементы кресел в шапке расписания сжаты до `h-6 w-6` (24x24px), освободив ценное горизонтальное пространство для заголовков кабинетов;
+  - **Сброс внешних паддингов панели**: добавлен CSS-сброс `.schedule-panel { padding: 0 !important; }`, расширивший видимую область сетки расписания до 100% полезного пространства экрана.
+
+### 357. Wave 213: Фиксация вьюпорта кассы 1440x900, 2-рядные табы ЭМК и очистка сайдбара пациентов
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/FinanceView.tsx`
+  - `apps/web/src/VisitEmkTab.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/styles/main.css`
+* **Коммит**: `96a9d2571`
+* **Описание**:
+  - **Касса 1440x900 (Мандаты 8c, 8e п. 9, 8p)**: вертикальные отступы и размеры блоков в `PaymentCapture.tsx` и `FinanceView.tsx` оптимизированы так, что на стандартном десктопном разрешении 1440x900 форма оплаты, панель выбора способов (нал, карта, СБП, аванс, сертификат) и главная кнопка «Принять оплату» гарантированно находятся в 1-м экране строго выше сгиба 900px без необходимости вертикального скролла;
+  - **ЭМК 043/у 2-рядные табы (Мандаты 8c, 8e, 8p)**: в `VisitEmkTab.tsx` верхние вкладки дневника приема реорганизованы в структурированную 2-рядную компоновку (`flex-wrap gap-1.5`), гарантирующую 100% видимость вкладок «Диагноз» и «Лечение» без маскирования, обрезки или горизонтального скрытия на любых разрешениях;
+  - **Сайдбар пациентов**: устранены остаточные дублирующие элементы и оптимизирована высота карточки предпросмотра;
+  - Скриншоты Playwright в 4 ключевых вьюпортах подтверждают безупречную эргономику и отсутствие дефектов.
+
+### 358. Wave 214: Тотальная ликвидация 17 файлов мертвого кода и паразитных дубликатов (-8,452 LOC) по Вселенскому анти-блоат догмату (Мандаты 8i, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `temp.tsx` (удален, -5,805 LOC — неиспользуемый старый бэкап логики в корне репозитория)
+  - `onboarding_extracted.ts` (удален, -486 LOC — временный скратч-файл извлечения онбординга в корне)
+  - `test.ts` (удален, -8 LOC — устаревший черновой скрипт в корне)
+  - `apps/web/src/components/radiology/implantCrossSectionPlanner.css` (удален, -323 LOC — осиротевшие стили удаленного в Wave 199 дубликата)
+  - `apps/web/src/components/CriticalMedicalAlert.css` (удален, -94 LOC — осиротевшие стили без компонентов)
+  - `apps/web/src/components/patient-portal/familyDentalCareHub.css` (удален, -112 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/patient-portal/PostOpCareTimelineWidget.css` (удален, -104 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/recalls/patientRecalls.css` (удален, -2 LOC — мертвый 1-строчный реэкспорт recalls.css)
+  - `apps/web/src/components/UnifiedHelpCenter.css` (удален, -339 LOC — осиротевшие стили без компонентов)
+  - `apps/web/src/styles/MemoryWatchdogWidget.css` (удален, -123 LOC — осиротевшие стили без компонентов)
+  - `apps/web/src/styles/modules/odontogram.css` (удален, -6 LOC — мертвый фасад, стили одонтограммы подключены через канонический main.css)
+  - `apps/web/src/components/egisz/remdXml/egiszRemd.css` (удален, -2 LOC — мертвый 1-строчный реэкспорт egiszRemd.css)
+  - `apps/web/src/visitDictationData.ts` (удален, -188 LOC — заброшенная библиотека фраз, реальный диктант работает через DictationHints.tsx)
+  - `apps/web/src/themeTokens.ts` (удален, -235 LOC — неиспользуемые токены, цветовая схема обслуживается дизайн-токенами CSS)
+  - `apps/web/src/hooks/useCopilotViewSync.ts` (удален, -19 LOC — неиспользуемый фасад CopilotContextSync)
+  - `apps/web/src/hooks/useOfflineDraft.ts` (удален, -207 LOC — неиспользуемый хук оффлайн-черновиков)
+  - `apps/web/src/services/cryptoProApiClient.ts` (удален, -399 LOC — параллельный клиент, система работает через канонические lib/cryptopro.ts и utils/cryptoPro.ts)
+* **Описание**:
+  - **Ликвидация 17 файлов мертвого кода и дубликатов (-8,452 строки кода)**: полное физическое искоренение заброшенных скратч-файлов в корне, несмонтированных стилей-сирот, параллельных клиентов КриптоПро и мертвых фасадов по Вселенскому анти-блоат догмату (Мандат 8s);
+  - **Суверенитет амбулаторной стоматологии (Мандат 8i)**: подтверждена чистота нарядов ЗТЛ и склада от стационарного мусора (койко-дни, трансфузиология, наркотики ПКУ с комиссиями);
+  - **Верификация компонентов КТ, DICOM и рентгена**: подтверждено отсутствие процедурных диорам на `Math.sin`/Canvas — используется реальный Cornerstone3D и честные дропзоны с опциональным ИИ по кнопке врача (Мандат 8e);
+  - **Защита Single-Compiler Gate (Мандат 8t)**: субагентом не запускались `npm run typecheck`, `tsc` или `build`. Выполнены только легковесные статические проверки `check:encoding` (4983 файла, 0 ошибок) и `check:css-tokens` (144 файла, 0 ошибок).
 
