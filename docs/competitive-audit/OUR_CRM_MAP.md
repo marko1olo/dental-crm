@@ -3951,6 +3951,55 @@
      - Сняты живые скриншоты Playwright в 4 состояниях: PC Light, PC Dark, Mobile Light, Mobile Dark;
      - Проверено отсутствие 7 смертных грехов: 1 строка тулбара, 0 обрезанных слов, $\le 2$ кнопок на карточках, WCAG AAA контраст.
 - **Файлы**: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/styles/modules/patient-workspace.css`, `apps/web/src/PatientsView.tsx`, `apps/web/src/styles/patients-redesign.css`, `apps/web/src/styles/premium.css`.
-- **Коммит**: `Wave 215`.
+- **Коммит**: `2335eed18` (Wave 215/217).
+
+### 2.10.296. Волна 216: Второй этап тотальной ликвидации мертвого кода (-13,001 LOC, 40 файлов) по Вселенскому анти-блоат догмату (Мандаты 8i, 8s, 8t)
+- **Идея & Бизнес-эффект**: Реализация Вселенского анти-блоат догмата (Мандат 8s) и суверенитета амбулаторного стоматологического контекста (Мандат 8i): полное физическое искоренение 40 файлов мертвого кода, заброшенных domain-хуков в `hooks/domains/`, несмонтированных CSS-файлов без единого потребителя и осиротевших срезов хранилища `store/slices/` объемом -13,001 строк кода при 100% сохранении всей клинической и финансовой функциональности системы.
+- **Архитектурные механизмы**:
+  1. *Ликвидация 16 осиротевших domain-хуков в `apps/web/src/hooks/domains/`*:
+     - Удалены хуки с 0 потребителей: `useAuthRoutingLogic.ts` (-74 LOC), `useBillingDocumentLogic.ts` (-224 LOC), `useClinicalDocumentLogic.ts` (-230 LOC), `useClinicSettingsLogic.ts` (-410 LOC), `useDashboardReconciler.ts` (-127 LOC), `useDocumentDraftPersistence.ts` (-232 LOC), `useDocumentFallbacks.ts` (-638 LOC), `useDocumentMutations.ts` (-567 LOC), `useDocumentWorkflowState.ts` (-193 LOC), `useGlobalAppCoordinator.ts` (-57 LOC), `useImagingLogic.ts` (-913 LOC), `useMigrationWorkflowLogic.ts` (-124 LOC), `usePatientImportLogic.ts` (-140 LOC), `useRoleAccessLogic.ts` (-97 LOC), `useTaxDocumentLogic.ts` (-368 LOC), `useTelegramLogic.ts` (-190 LOC);
+  2. *Ликвидация 6 заброшенных срезов хранилища в `apps/web/src/store/slices/`*:
+     - Удалены несмонтированные срезы: `clinicalSlice.ts` (-549 LOC), `documentCoreSlice.ts` (-207 LOC), `financialSlice.ts` (-495 LOC), `intakeSlice.ts` (-437 LOC), `miscSlice.ts` (-305 LOC), `taxSlice.ts` (-109 LOC);
+  3. *Очистка 14 несмонтированных CSS-файлов*:
+     - Удалены стили без потребителей: `emergencyAnaphylaxisProtocol.css` (-615 LOC), `chairsideConsent.css` (-830 LOC), `cbctMprWorkspace.css` (-170 LOC), `fnsNdflXml.css` (-528 LOC), `medicalTourism.css` (-74 LOC), `oneCCommerceMl.css` (-322 LOC), `clinicalPnl.css` (-508 LOC), `implantPassport.css` (-158 LOC), `patientWebapp.css` (-476 LOC), `patientPortal.css` (-742 LOC), `portalTimeline.css` (-409 LOC), `medicalPrescription.css` (-146 LOC), `PublicBooking.css` (-262 LOC), `sterilizationSanpin.css` (-800 LOC);
+  4. *Очистка служебных хуков и типов*:
+     - Удалены: `useAppSession.ts` (-167 LOC), `useMemoryWatchdog.ts` (-61 LOC), `lib/offlineSync.ts` (-14 LOC), `documentTypes.ts` (-3 LOC);
+  5. *Инварианты качества и Single-Compiler Gate (Мандат 8t)*:
+     - Чистая дельта: 40 файлов удалено, -13,001 LOC;
+     - Подтверждена чистота от стационарного мусора (койко-дни, трансфузиология, бюрократические комиссии);
+     - Пройден аудит `check:encoding` (0 ошибок) и `check:css-tokens` (0 ошибок).
+- **Файлы**: 16 файлов в `apps/web/src/hooks/domains/`, 6 файлов в `apps/web/src/store/slices/`, 14 файлов `.css`, `apps/web/src/hooks/useAppSession.ts`, `apps/web/src/hooks/useMemoryWatchdog.ts`, `apps/web/src/lib/offlineSync.ts`, `apps/web/src/documentTypes.ts`.
+- **Коммит**: `872b9f616`.
+
+### 2.10.297. Волна 217: Доработка мобильных и десктопных вьюпортов расписания, ЭМК и картотеки пациентов (Мандаты 8c, 8d, 8e, 8n, 8p, 8q)
+- **Идея & Бизнес-эффект**: Комплексная эргономическая полировка мобильных и десктопных экранов расписания, ЭМК и картотеки пациентов: дедупликация кресел врача в расписании, строгий `flex-nowrap` табов дневника 043/у, вынос быстрых действий пациента под контакты и адаптивный мобильный тулбар оплат в кассе.
+- **Архитектурные механизмы**:
+  1. *Дедупликация кресел в расписании (`ScheduleFilterStrip.tsx`)*:
+     - Внедрена фильтрация `displayChairs.filter((chair) => !myChair || chair.id !== myChair.id)`, предотвращающая дублирование чипа активного кабинета врача;
+  2. *ЭМК flex-табы без переноса строк (`VisitEmkTab.tsx`, `patient-workspace.css`)*:
+     - Вкладки дневника переведены в строгий `flex-nowrap` с горизонтальным скроллом, тулбар выстроен в 1 строку (32–36px) по Закону Хика;
+  3. *Вынос действий пациента под контактный заголовок (`PatientsView.tsx`)*:
+     - Кнопки действий перенесены в реквизиты пациента со статическим позиционированием (`position: static !important`), устранены плавающие оверлеи;
+  4. *Адаптивный мобильный тулбар оплат (`PaymentCapture.tsx`, `patients-redesign.css`)*:
+     - Форма оплат адаптирована к узким экранам смартфонов с компактными кнопками быстрого расчета.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/styles/modules/patient-workspace.css`, `apps/web/src/PatientsView.tsx`, `apps/web/src/PaymentCapture.tsx`, `apps/web/src/styles/main.css`, `apps/web/src/styles/patients-redesign.css`, `apps/web/src/styles/premium.css`.
+- **Коммит**: `2335eed18`.
+
+### 2.10.298. Волна 218: Ликвидация ловушки containing block мобильной кассы (DEF-FIN-02) и честный экран КЛКТ без синтетического процедурного объема (DEF-R2-03) (Мандаты 8c, 8e, 8i, 8k, 8s, 8p)
+- **Идея & Бизнес-эффект**: Искоренение фундаментального CSS-дефекта мобильной кассы 54-ФЗ (DEF-FIN-02) и ликвидация процедурного синтетического объема КЛКТ (DEF-R2-03): 1) надежная фиксация панели оплат `#payment-checkout-bar` в первом экране мобильного вьюпорта 390x844 над нижней навигацией без необходимости скролла; 2) полное удаление синтетического процедурного объема `createEmptyCbctVolume` (120x120x120) и фейковой плашки «400 срезов» в пользу честной пустой дропзоны для реальных файлов DICOM и .ZIP архивов по Анти-блоат догмату (Мандат 8s) и Суверенитету амбулаторной стоматологии (Мандат 8i); 3) обновление всех 16 живых скриншотов Playwright во всех 4 ключевых вьюпортах.
+- **Архитектурные механизмы**:
+  1. *Ликвидация ловушки containing block мобильной кассы (DEF-FIN-02, `main.css`, `dente-redesign.css`)*:
+     - В `apps/web/src/styles/main.css` ключевые кадры анимации `@keyframes fade-up` скорректированы с `to { transform: translateY(0); }` на `to { transform: none; }`, поскольку любое ненулевое значение свойства `transform` в стандарте CSS W3C превращает родительский элемент в containing block для всех потомков с `position: fixed`;
+     - В `apps/web/src/styles/dente-redesign.css` на мобильных экранах $\le 860\text{px}$ добавлен принудительный сброс `animation: none !important; transform: none !important;` для элементов `.workspace > *`, `.work-grid`, `.page-grid`, `.finance-panel`;
+     - Панель `#payment-checkout-bar` гарантированно зафиксирована над нижним навбаром в 1-м экране вьюпорта 390x844: сумма, выбор способа оплаты и кнопка «Принять оплату» находятся в мгновенном доступе в 1 клик без скролла;
+  2. *Честный экран КЛКТ без процедурного синтетического объема и фейковых срезов (DEF-R2-03, `CbctMprImplantStudioModal.tsx`)*:
+     - Физически удален вызов `createEmptyCbctVolume(120, 120, 120, 0.5)` (воздушный шар) и процедурная фальшивка метаданных томографа («400 срезов», синтетические размеры 120x120x120);
+     - Развернута честная пустая дропзона `cbct-empty-volume-dropzone` со статусом ожидания реального томографического исследования пациента, кнопками «Выбрать папку DICOM» и «Загрузить .ZIP» и чистым сообщением о готовности загрузки томографического объема;
+     - Соблюден Мандат 8s (Запрет на процедурные диорамы) и Мандат 8k (ЦРМ — не симулятор реальности): софт отображает честное пустое состояние вместо процедурного вранья;
+  3. *Инструментальное доказательство 4-State (Мандат 8d, Studio Clinical HIG)*:
+     - Обновлены и верифицированы все 16 живых скриншотов Playwright в 4 ключевых состояниях (PC Light, PC Dark, Mobile Light, Mobile Dark).
+- **Файлы**: `apps/web/src/styles/main.css`, `apps/web/src/styles/dente-redesign.css`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `docs/screenshots/inquisition_live/`.
+- **Коммит**: `6455cd2fb`.
+
 
 
