@@ -33,10 +33,12 @@ import {
 	Truck,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../../GlobalToast.js";
 import {
 	calculateTransferTotals,
 	formatRubCurrency,
@@ -75,6 +77,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 	onClose,
 	initialDocument,
 	onDocumentSaved,
+	onConfirmTransfer,
 	onDiscrepancyActGenerated,
 }) => {
 	// 1. Шапка накладной
@@ -178,11 +181,46 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 		}
 	}, [isOpen, initialDocument]);
 
+	// Наличие на складе-отправителе по позициям каталога
+	const getAvailableStock = useCallback(
+		(itemId: string): number => {
+			const preset = getWarehouseItemCatalogPreset(itemId);
+			return preset?.initialStockByBranch[sourceBranchId] ?? 0;
+		},
+		[sourceBranchId],
+	);
+
+	// Определение позиций, уходящих в овердрафт склада (Мандаты 8e п. 10, 8n)
+	const overdraftItems = useMemo(() => {
+		return items.filter((item) => {
+			const stock = getAvailableStock(item.itemId);
+			const requiredQty = item.dispatchedQuantity > 0 ? item.dispatchedQuantity : item.requestedQuantity;
+			return requiredQty > stock;
+		});
+	}, [items, getAvailableStock]);
+
+	const hasOverdraft = overdraftItems.length > 0;
+
+	const stockByBranchMap = useMemo(() => {
+		const map: Record<WarehouseBranchId, Record<string, number>> = {
+			central_hub: {},
+			branch_center: {},
+			branch_north: {},
+			branch_south: {},
+		};
+		for (const preset of WAREHOUSE_CATALOG_PRESETS) {
+			for (const bId of Object.keys(preset.initialStockByBranch) as WarehouseBranchId[]) {
+				map[bId][preset.id] = preset.initialStockByBranch[bId];
+			}
+		}
+		return map;
+	}, []);
+
 	// Сводные суммы и валидация
 	const totals = useMemo(() => calculateTransferTotals(items), [items]);
 	const validation = useMemo(() => {
-		return validateTransferDraft(sourceBranchId, targetBranchId, items);
-	}, [sourceBranchId, targetBranchId, items]);
+		return validateTransferDraft(sourceBranchId, targetBranchId, items, stockByBranchMap);
+	}, [sourceBranchId, targetBranchId, items, stockByBranchMap]);
 
 	// Добавление товара из каталога
 	const handleAddItem = () => {
@@ -257,12 +295,53 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 			receivedByPosition: receivedPosition,
 			transportDriverFullName: driverName || undefined,
 			transportVehiclePlate: vehiclePlate || undefined,
-			notes: notes.trim() || undefined,
+			notes: notes.trim()
+				? `${notes.trim()}${hasOverdraft ? " [Внимание: списание в овердрафт склада]" : ""}`
+				: hasOverdraft
+					? "Внимание: списание в овердрафт склада (Мандат 8e п. 10)"
+					: undefined,
 		};
 
+		if (onConfirmTransfer && effectiveStatus === "dispatched") {
+			void onConfirmTransfer(doc);
+		}
 		if (onDocumentSaved) {
 			onDocumentSaved(doc);
 		}
+		onClose();
+	};
+
+	// 1-кликовое прямое списание / утилизация ТМЦ единолично медсестрой без комиссии из 3 человек (Мандаты 8e п. 10, 8n)
+	const handleOneClickWriteOff = () => {
+		const doc: WarehouseTransferDocument = {
+			id: initialDocument?.id || `doc-${Date.now()}`,
+			documentNumber: docNumber,
+			documentDate: docDate,
+			sourceBranchId,
+			targetBranchId,
+			status: "dispatched",
+			items,
+			dispatchedByFullName: dispatchedBy || "Дежурная медсестра",
+			dispatchedByPosition: dispatchedPosition || "Материально ответственное лицо",
+			receivedByFullName: receivedBy || "Дежурная медсестра",
+			receivedByPosition: receivedPosition || "Получатель ТМЦ",
+			transportDriverFullName: driverName || undefined,
+			transportVehiclePlate: vehiclePlate || undefined,
+			notes: `${notes ? `${notes}. ` : ""}Списано в 1 клик единолично медсестрой без комиссии из 3 человек (Мандат 8e п. 10, СанПиН 3.3686-21)${hasOverdraft ? ". Внимание: списание в овердрафт склада." : ""}`,
+		};
+
+		if (onConfirmTransfer) {
+			void onConfirmTransfer(doc);
+		} else if (onDocumentSaved) {
+			onDocumentSaved(doc);
+		}
+
+		if (hasOverdraft) {
+			showToast("Списание в 1 клик выполнено (Внимание: списание в овердрафт склада)", "warning");
+		} else {
+			showToast("Списание ТМЦ успешно оформлено медсестрой в 1 клик без комиссии из 3 человек", "success");
+		}
+
 		onClose();
 	};
 
@@ -296,7 +375,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 		}
 	};
 
-	// Печать Акта расхождений ТОРГ-2
+	// Печать Акта расхождений ТОРГ-2 (единолично медсестрой/завскладом без комиссии из 3 человек по Мандату 8e п. 10)
 	const handlePrintTorg2 = () => {
 		const doc: WarehouseTransferDocument = {
 			id: initialDocument?.id || `doc-${Date.now()}`,
@@ -314,7 +393,15 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 			transportVehiclePlate: vehiclePlate || undefined,
 		};
 
-		const act = generateDiscrepancyAct(doc);
+		// Единоличное оформление медсестрой/завскладом без созыва комиссии из 3 человек
+		const soloCommission = [
+			{
+				name: receivedBy || dispatchedBy || "Дежурная медсестра / Завскладом",
+				position: receivedPosition || dispatchedPosition || "Материально ответственное лицо",
+			},
+		];
+
+		const act = generateDiscrepancyAct(doc, soloCommission);
 		if (onDiscrepancyActGenerated) {
 			onDiscrepancyActGenerated(act);
 		}
@@ -352,11 +439,11 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 
 					<button
 						type="button"
-						className="wh-btn wh-btn-ghost p-2"
+						className="wh-btn wh-btn-ghost !min-h-[32px] !min-w-[32px] h-8 w-8 p-1.5 rounded-lg"
 						onClick={onClose}
 						aria-label="Закрыть окно перемещения"
 					>
-						<X size={20} />
+						<X size={18} />
 					</button>
 				</header>
 
@@ -388,7 +475,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 				{/* Body */}
 				<div className="wh-transfer-body">
 					{/* 1. Маршрут: Отправитель -> Получатель */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-line bg-paper-soft">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-xl border border-line bg-paper-soft">
 						<div>
 							<label htmlFor="wh-source-branch" className="text-xs font-semibold text-muted block mb-1">
 								Склад-отправитель (Списание)
@@ -397,7 +484,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 								id="wh-source-branch"
 								value={sourceBranchId}
 								onChange={(e) => setSourceBranchId(e.target.value as WarehouseBranchId)}
-								className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
+								className="w-full h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
 							>
 								{WAREHOUSE_BRANCHES.map((b) => (
 									<option key={b.id} value={b.id}>
@@ -415,7 +502,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 								id="wh-target-branch"
 								value={targetBranchId}
 								onChange={(e) => setTargetBranchId(e.target.value as WarehouseBranchId)}
-								className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
+								className="w-full h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
 							>
 								{WAREHOUSE_BRANCHES.map((b) => (
 									<option key={b.id} value={b.id}>
@@ -435,13 +522,13 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 									type="text"
 									value={docNumber}
 									onChange={(e) => setDocNumber(e.target.value)}
-									className="flex-1 h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-mono font-bold"
+									className="flex-1 h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-mono font-bold"
 								/>
 								<input
 									type="date"
 									value={docDate}
 									onChange={(e) => setDocDate(e.target.value)}
-									className="w-36 h-10 px-2 rounded-lg border border-line bg-paper text-ink text-sm"
+									className="w-36 h-9 sm:h-9 px-2 rounded-lg border border-line bg-paper text-ink text-sm"
 								/>
 							</div>
 						</div>
@@ -452,6 +539,30 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 						<div className="p-3 rounded-lg bg-bad-bg text-bad-fg text-xs flex items-center gap-2">
 							<AlertTriangle size={16} className="shrink-0" />
 							<span>{validation.errors.join("; ")}</span>
+						</div>
+					)}
+
+					{/* Визуальное предупреждение о мягком овердрафте (Мандат 8e п. 10 — не блокирует операцию) */}
+					{hasOverdraft && (
+						<div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
+							<AlertCircle size={16} className="shrink-0 text-amber-600 mt-0.5" />
+							<div className="flex-1">
+								<div className="font-bold text-amber-900 dark:text-amber-100 flex items-center gap-1.5">
+									<span>Внимание: списание в овердрафт склада</span>
+									<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200">
+										Мандат 8e п. 10
+									</span>
+								</div>
+								<div className="text-muted mt-0.5 leading-relaxed">
+									Позиции с дефицитом:{" "}
+									{overdraftItems.map((it) => {
+										const stock = getAvailableStock(it.itemId);
+										const req = it.dispatchedQuantity > 0 ? it.dispatchedQuantity : it.requestedQuantity;
+										return `«${it.nameRu}» (в наличии ${stock} ${it.unitRu}, требуется ${req} ${it.unitRu}, дефицит ${req - stock} ${it.unitRu})`;
+									}).join("; ")}
+									. Задержка оприходования накладной поставщика не блокирует операцию перемещения ТМЦ или оказание экстренной помощи! Разрешено списание в отрицательный остаток (мягкий овердрафт).
+								</div>
+							</div>
 						</div>
 					)}
 
@@ -488,12 +599,29 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 										const unitRub = kopecksToRubles(item.unitCostKopecks);
 										const totalRub = (item.dispatchedQuantity * item.unitCostKopecks) / 100;
 										const diff = item.dispatchedQuantity - item.receivedQuantity;
+										const currentStock = getAvailableStock(item.itemId);
+										const requiredQty = item.dispatchedQuantity > 0 ? item.dispatchedQuantity : item.requestedQuantity;
+										const isOverdraftItem = requiredQty > currentStock;
+										const deficit = Math.max(0, requiredQty - currentStock);
 
 										return (
 											<tr key={item.itemId}>
 												<td>
 													<div className="font-semibold text-ink leading-tight">{item.nameRu}</div>
-													<div className="text-xs text-muted font-mono">{item.sku}</div>
+													<div className="flex items-center gap-2 mt-0.5 flex-wrap">
+														<span className="text-xs text-muted font-mono">{item.sku}</span>
+														<span className="text-[11px] text-muted">
+															(Остаток: <span className={currentStock <= 0 ? "text-amber-600 font-bold" : "font-semibold text-ink"}>{currentStock} {item.unitRu}</span>)
+														</span>
+														{isOverdraftItem && (
+															<span
+																className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded"
+																title="Списание в мягкий овердрафт склада"
+															>
+																Овердрафт -{deficit} {item.unitRu}
+															</span>
+														)}
+													</div>
 												</td>
 												<td>
 													<input
@@ -577,7 +705,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 							<select
 								value={selectedCatalogItemId}
 								onChange={(e) => setSelectedCatalogItemId(e.target.value)}
-								className="flex-1 min-w-[280px] h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm"
+								className="flex-1 min-w-[280px] h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm"
 							>
 								{WAREHOUSE_CATALOG_PRESETS.map((p) => {
 									const sourceStock = p.initialStockByBranch[sourceBranchId] ?? 0;
@@ -594,13 +722,13 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 								min={1}
 								value={addQuantity}
 								onChange={(e) => setAddQuantity(Number(e.target.value))}
-								className="w-20 h-10 px-2 rounded-lg border border-line bg-paper text-ink text-sm text-center font-bold"
+								className="w-20 h-9 sm:h-9 px-2 rounded-lg border border-line bg-paper text-ink text-sm text-center font-bold"
 							/>
 
 							<button
 								type="button"
 								onClick={handleAddItem}
-								className="wh-btn wh-btn-secondary h-10"
+								className="wh-btn wh-btn-secondary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1 px-3 text-xs"
 							>
 								<Plus size={16} /> Добавить в накладную
 							</button>
@@ -642,30 +770,41 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 				</div>
 
 				{/* Footer */}
-				<footer className="wh-transfer-footer">
+				<footer className="wh-transfer-footer !py-2.5">
 					<button
 						type="button"
-						className="wh-btn wh-btn-secondary"
+						className="wh-btn wh-btn-secondary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
 						onClick={handlePrintTorg13}
 						title="Печать официальной накладной ТОРГ-13"
 					>
-						<Printer size={16} /> Накладная ТОРГ-13 (А4)
+						<Printer size={15} /> Накладная ТОРГ-13 (А4)
 					</button>
 
 					{totals.hasDiscrepancy && (
 						<button
 							type="button"
-							className="wh-btn wh-btn-secondary text-bad-fg"
+							className="wh-btn wh-btn-secondary text-bad-fg !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
 							onClick={handlePrintTorg2}
 							title="Печать акта об установленном расхождении ТОРГ-2"
 						>
-							<FileText size={16} /> Акт расхождений ТОРГ-2
+							<FileText size={15} /> Акт расхождений ТОРГ-2
 						</button>
 					)}
 
 					<button
 						type="button"
-						className="wh-btn wh-btn-secondary"
+						className="wh-btn wh-btn-secondary text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/10 !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs font-semibold"
+						onClick={handleOneClickWriteOff}
+						title="Списать ТМЦ в 1 клик единолично без комиссии из 3 человек (Мандат 8e п. 10)"
+						data-testid="btn-one-click-warehouse-writeoff"
+					>
+						<Zap size={15} className="text-teal-600 shrink-0" />
+						<span>1-Клик списание</span>
+					</button>
+
+					<button
+						type="button"
+						className="wh-btn wh-btn-secondary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
 						onClick={onClose}
 					>
 						Отмена
@@ -673,10 +812,10 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 
 					<button
 						type="button"
-						className="wh-btn wh-btn-primary"
+						className="wh-btn wh-btn-primary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-4 text-xs font-bold"
 						onClick={() => handleSaveDocument()}
 					>
-						<PackageCheck size={18} /> Сохранить перемещение
+						<PackageCheck size={16} /> Сохранить перемещение
 					</button>
 				</footer>
 			</div>

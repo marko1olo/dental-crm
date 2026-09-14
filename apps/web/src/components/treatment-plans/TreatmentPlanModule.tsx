@@ -680,7 +680,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
-							className={`min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "3tier"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -691,7 +691,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("stages")}
-							className={`min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "stages"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -702,7 +702,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("phased4")}
-							className={`min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "phased4"
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -715,7 +715,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					{/* Secondary 1: Digital Signature Indicator / Button */}
 					{signedAgreement ? (
 						<div
-							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[38px] touch-manipulation"
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[32px] sm:h-8 touch-manipulation"
 							data-testid="tp-signed-badge"
 						>
 							<ShieldCheck size={16} />
@@ -725,7 +725,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSignModalOpen(true)}
-							className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors touch-manipulation shadow-xs"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors touch-manipulation shadow-xs"
 							title="Открыть окно цифровой подписи согласия"
 							data-testid="tp-sign-btn"
 						>
@@ -738,7 +738,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={handleExportCashier}
-						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
 						title="Мгновенно отправить счет кассиру в 1 клик (StomX / DentalPRO Parity)"
 						data-testid="tp-quick-cashier-btn"
 					>
@@ -751,7 +751,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-							className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
 							title="Дополнительные студии, валидация и печать"
 							aria-label="Опции плана лечения"
 							aria-expanded={isOptionsMenuOpen}
@@ -925,7 +925,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						type="button"
 						onClick={handleSavePlanToDatabase}
 						disabled={isSaving}
-						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
 					>
 						<Save size={15} />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
@@ -1383,8 +1383,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					patientChartNumber={
 						patient?.chartNumber || patient?.cardNumber || `К-${patientId.slice(0, 5)}`
 					}
-					doctorId={auth?.currentUser?.id || "doc-001"}
-					doctorName={auth?.currentUser?.name || "Д-р Ковалев С. П."}
+					doctorId={auth?.currentUser?.id || `doc-${Date.now()}`}
+					doctorName={auth?.currentUser?.name || "Лечащий врач"}
 					initialTeeth={
 						selectedLabTeeth && selectedLabTeeth.length > 0 ? selectedLabTeeth : orthopedicTeeth
 					}
@@ -1395,8 +1395,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									orderNumber: `НРД-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
 									patientId,
 									patientName,
-									doctorId: auth?.currentUser?.id || "doc-001",
-									doctorName: auth?.currentUser?.name || "Д-р Ковалев С. П.",
+									doctorId: auth?.currentUser?.id || `doc-${Date.now()}`,
+									doctorName: auth?.currentUser?.name || "Лечащий врач",
 									selectedTeeth:
 										selectedLabTeeth && selectedLabTeeth.length > 0
 											? selectedLabTeeth
@@ -1513,7 +1513,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					patientId={patientId}
 					patientName={patientName}
 					patientPhone={dashboard?.activePatient?.phone || ""}
-					doctorFullName={auth?.currentUser?.name || "Д-р Ковалев С. П."}
+					doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
 					teeth={teethData}
 					onSelectPlan={(plan) => {
 						showToast(`Выбран план: ${plan.title} (${plan.totalRub.toLocaleString("ru-RU")} ₽)`, "success");

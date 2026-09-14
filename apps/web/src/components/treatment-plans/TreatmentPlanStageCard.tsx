@@ -13,9 +13,12 @@ import {
 	Layers,
 	MoreVertical,
 	Package,
+	Percent,
+	Printer,
 	Shield,
 	Sparkles,
 	Stethoscope,
+	Trash2,
 	TrendingUp,
 	UserCheck,
 	Zap,
@@ -37,9 +40,13 @@ interface TreatmentPlanStageCardProps {
 	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
 	readonly onRemoveItem?: ((itemId: string) => void) | undefined;
 	readonly onExecuteWriteOffStage?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onOpenInstallment?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onApplyStageDiscount?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onExportStageEstimate?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onDeleteStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -52,9 +59,13 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	onUpdateItem,
 	onRemoveItem,
 	onExecuteWriteOffStage,
+	onPayStage,
 	onOpenLabOrder,
 	onOneClickLabOrder,
 	onOpenInstallment,
+	onApplyStageDiscount,
+	onExportStageEstimate,
+	onDeleteStage,
 	className = "",
 }) => {
 	const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
@@ -65,13 +76,22 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 
 	useEffect(() => {
 		if (!isStageMenuOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setIsStageMenuOpen(false);
+			}
+		};
 		const handleClickOutside = (e: MouseEvent) => {
 			if (stageMenuRef.current && !stageMenuRef.current.contains(e.target as Node)) {
 				setIsStageMenuOpen(false);
 			}
 		};
+		document.addEventListener("keydown", handleKeyDown);
 		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
 	}, [isStageMenuOpen]);
 
 	const isLabOrderEligible =
@@ -85,8 +105,12 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 		);
 
 	const hasSecondaryActions = Boolean(
+		(onOpenLabOrder && isLabOrderEligible) ||
+		(onOneClickLabOrder && isLabOrderEligible) ||
 		(onOpenInstallment && stage.totalRub > 0) ||
-		(onOneClickLabOrder && isLabOrderEligible),
+		onApplyStageDiscount ||
+		onExportStageEstimate ||
+		onDeleteStage,
 	);
 
 	const materialSummary = useMemo(() => {
@@ -122,15 +146,15 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 
 	return (
 		<div
-			className={`treatment-stage-card flex flex-col rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-sm overflow-hidden transition-all duration-200 ${className}`.trim()}
+			className={`treatment-stage-card flex flex-col rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs transition-all duration-200 ${className}`.trim()}
 			data-testid={`treatment-stage-${stage.stageNumber}`}
 		>
 			{/* Stage Header */}
 			<div
 				onClick={() => setIsExpanded((prev) => !prev)}
-				className={`flex items-center justify-between p-4 cursor-pointer select-none transition-colors hover:bg-[var(--paper-soft,#f8fafc)] border-b ${
-					isExpanded ? "border-[var(--border,#cbd5e1)]" : "border-transparent"
-				} ${theme.headerBg}`}
+				className={`flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none transition-colors hover:bg-[var(--paper-soft,#f8fafc)] border-b ${
+					isExpanded ? "border-[var(--line,var(--border,#cbd5e1))]" : "border-transparent"
+				} ${theme.headerBg} ${isExpanded ? "rounded-t-2xl" : "rounded-2xl"}`}
 				role="button"
 				tabIndex={0}
 				onKeyDown={(e) => {
@@ -174,11 +198,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 				</div>
 
 				<div className="flex items-center gap-4 shrink-0">
-					<div className="text-right hidden sm:flex flex-col">
-						<span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
+					<div className="text-right flex flex-col">
+						<span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
 							{stage.totalRub.toLocaleString("ru-RU")} ₽
 						</span>
-						<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center justify-end gap-1">
+						<span className="text-[10px] text-[var(--muted,#64748b)] hidden sm:flex items-center justify-end gap-1">
 							<Clock size={11} /> {stage.estimatedVisits} виз. · {stage.estimatedWeeks} нед.
 						</span>
 					</div>
@@ -191,10 +215,10 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 
 			{/* Stage Body — Monolithic Flat Panel (Anti-Matryoshka) */}
 			{isExpanded && (
-				<div className="flex flex-col bg-[var(--paper-strong,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)]">
+				<div className="flex flex-col bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-b-2xl">
 					{/* Clinical Goal Strip */}
 					{stage.clinicalGoal && (
-						<div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)]/60 text-xs text-[var(--muted,#64748b)]">
+						<div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,var(--border,#cbd5e1))]/60 text-xs text-[var(--muted,#64748b)]">
 							<Activity size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 							<span className="font-medium">
 								<strong>Клиническая цель:</strong> {stage.clinicalGoal}
@@ -203,7 +227,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 					)}
 
 					{/* Procedure Items Flat Monolithic List */}
-					<div className="divide-y divide-slate-100 dark:divide-slate-800">
+					<div className="divide-y divide-[var(--line,#e2e8f0)]">
 						{stage.items.length === 0 ? (
 							<div className="p-4 text-center text-xs text-[var(--muted,#64748b)]">
 								В данном этапе нет запланированных процедур.
@@ -248,7 +272,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 														)}
 													</div>
 
-													<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0">
+													<div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-1 sm:pt-0">
 														{onOpenLabOrder &&
 															(item.category === "Ортопедия" ||
 																item.category === "Детская ортопедия" ||
@@ -260,7 +284,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																item.code804n.startsWith("A16.07.004") ||
 																item.code804n.startsWith("A16.07.005") ||
 																item.code804n.startsWith("A16.07.006")) && (
-																<>
+																<div className="flex items-center gap-1.5">
 																	<button
 																		type="button"
 																		onClick={() =>
@@ -268,11 +292,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																				item.toothNumber ? [item.toothNumber] : undefined,
 																			)
 																		}
-																		className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation"
+																		className="min-h-[44px] sm:min-h-[28px] sm:min-w-0 sm:py-1 sm:px-2.5 sm:text-[11px] px-3 py-2 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5"
 																		title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 																		data-testid={`item-lab-order-btn-${item.id}`}
 																	>
-																		<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+																		<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 																		<span>Наряд в ЗТЛ</span>
 																	</button>
 																	{onOneClickLabOrder && (
@@ -283,7 +307,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																					item.toothNumber ? [item.toothNumber] : undefined,
 																				)
 																			}
-																			className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs"
+																			className="min-h-[44px] sm:min-h-[28px] sm:min-w-0 sm:py-1 sm:px-2 sm:text-[11px] px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs flex items-center gap-1"
 																			title={`1-клик наряд ЗТЛ: Коронка цирконий VITA A2 (+7 раб. дн.) для ${item.name}`}
 																			data-testid={`item-lab-order-one-click-btn-${item.id}`}
 																		>
@@ -291,7 +315,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																			<span>1-клик</span>
 																		</button>
 																	)}
-																</>
+																</div>
 															)}
 
 														<div className="text-right">
@@ -324,14 +348,14 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											</div>
 										))}
 										{microConsumables.length > 0 && (
-											<div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between text-xs text-[var(--muted,#64748b)] border-t border-[var(--line,#e2e8f0)]">
+											<div className="px-4 py-2 bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-xs text-[var(--muted,#64748b)] border-t border-[var(--line,#e2e8f0)]">
 												<span>
 													Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в процедуры
 												</span>
 												<button
 													type="button"
 													onClick={() => setShowMicroConsumables((prev) => !prev)}
-													className="min-h-[44px] sm:min-h-0 py-1.5 px-2 flex items-center text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+													className="h-7 px-2 flex items-center text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
 												>
 													{showMicroConsumables ? "Скрыть" : "Показать"}
 												</button>
@@ -344,11 +368,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 					</div>
 
 					{/* Materials & Profitability Monolithic Accordion */}
-					<div className="border-t border-[var(--border,#cbd5e1)]">
+					<div className="border-t border-[var(--line,var(--border,#cbd5e1))]">
 						<button
 							type="button"
 							onClick={() => setShowMaterials((prev) => !prev)}
-							className="w-full min-h-[44px] flex items-center justify-between px-4 py-3 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
+							className="w-full min-h-[44px] sm:min-h-[32px] sm:py-1.5 flex items-center justify-between px-4 py-3 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
 						>
 							<div className="flex items-center gap-2">
 								<Package size={15} className="text-[var(--teal,var(--brand-primary))]" />
@@ -358,13 +382,13 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							</div>
 
 							<div className="flex items-center gap-3">
-								<span className="font-mono text-slate-500">
+								<span className="font-mono text-slate-500 text-[11px] hidden sm:inline">
 									Себестоимость:{" "}
 									<strong className="text-slate-800 dark:text-slate-200">
 										{materialSummary.totalMaterialsCostRub.toLocaleString("ru-RU")} ₽
 									</strong>
 								</span>
-								<span className="font-mono text-emerald-600 dark:text-emerald-400">
+								<span className="font-mono text-emerald-600 dark:text-emerald-400 text-[11px]">
 									Маржа: <strong>{materialSummary.marginPercent}%</strong>
 								</span>
 								{showMaterials ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -372,11 +396,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						</button>
 
 						{showMaterials && (
-							<div className="p-4 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-3 text-xs">
+							<div className="p-4 border-t border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] space-y-3 text-xs">
 								<div className="overflow-x-auto">
 									<table className="w-full border-collapse text-[11px]">
 										<thead>
-											<tr className="border-b border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] text-left">
+											<tr className="border-b border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] text-left">
 												<th className="pb-1 font-semibold">Материал (Норма 804н)</th>
 												<th className="pb-1 font-semibold text-center">Расход</th>
 												<th className="pb-1 font-semibold text-right">Уч. цена</th>
@@ -384,7 +408,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												<th className="pb-1 font-semibold text-center">Склад</th>
 											</tr>
 										</thead>
-										<tbody className="divide-y divide-[var(--border,#cbd5e1)]">
+										<tbody className="divide-y divide-[var(--line,var(--border,#cbd5e1))]">
 											{presentationMaterials.map((mat) => (
 												<tr key={mat.id} className="text-[var(--ink,#0f172a)]">
 													<td className="py-1.5 pr-2">
@@ -424,7 +448,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								</div>
 
 								{/* Margins breakdown strip without nested card */}
-								<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] text-[11px]">
+								<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-t border-[var(--line,var(--border,#cbd5e1))] text-[11px] rounded-lg">
 									<div>
 										<span className="text-[var(--muted,#64748b)]">Выручка: </span>
 										<strong className="font-mono text-[var(--ink,#0f172a)]">
@@ -449,7 +473,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 					</div>
 
 					{/* Stage Subtotal & Action Footer */}
-					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 text-xs font-semibold text-[var(--muted,#64748b)] border-t border-[var(--border,#cbd5e1)]">
+					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 text-xs font-semibold text-[var(--muted,#64748b)] border-t border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] rounded-b-2xl">
 						<div className="flex items-center gap-2">
 							<span>Итого за этап:</span>
 							<span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
@@ -457,46 +481,43 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							</span>
 						</div>
 
-						<div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
-							{/* Prominent Action 1: Lab Work Order (Orthopedics) */}
-							{onOpenLabOrder && isLabOrderEligible && (
-								<button
-									type="button"
-									onClick={() => {
-										const stageTeeth = stage.items
-											.map((it) => it.toothNumber)
-											.filter((t): t is number => typeof t === "number" && t > 0);
-										onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
-									}}
-									className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors w-full sm:w-auto"
-									title="Оформить наряд-заказ в зуботехническую лабораторию"
-									data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
-								>
-									<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))]" />
-									<span>Наряд-заказ в ЗТЛ</span>
-								</button>
-							)}
-
-							{/* Prominent Action 2: Write-off materials & completed act */}
+						{/* Action Buttons: Max 1-2 Direct Actions + More Menu '...' (Mandate 8d Sin 3, Miller's Law) */}
+						<div className="flex items-center justify-end gap-2 flex-wrap">
+							{/* Primary Direct Action 1: 'Акт и списание' */}
 							{onExecuteWriteOffStage && stage.items.length > 0 && (
 								<button
 									type="button"
 									onClick={() => onExecuteWriteOffStage(stage)}
-									className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors w-full sm:w-auto"
+									className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
+									data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
 								>
-									<Package size={13} />
-									<span>Акт и списание ТМЦ</span>
+									<Package size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<span>Акт и списание</span>
 								</button>
 							)}
 
-							{/* Secondary Actions Overflow Menu [...] (Miller's Law, Mandate 8d) */}
+							{/* Primary Direct Action 2: 'Оплатить этап' */}
+							{onPayStage && stage.totalRub > 0 && (
+								<button
+									type="button"
+									onClick={() => onPayStage(stage)}
+									className="h-8 px-3 rounded-lg text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									title={`Принять оплату за этап №${stage.stageNumber} (${stage.totalRub.toLocaleString("ru-RU")} ₽)`}
+									data-testid={`stage-${stage.stageNumber}-pay-btn`}
+								>
+									<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Оплатить этап</span>
+								</button>
+							)}
+
+							{/* Secondary Stage Operations Overflow Popover Menu [...] (Miller's Law, Mandate 8d Sin 3) */}
 							{hasSecondaryActions && (
 								<div className="relative inline-flex items-center" ref={stageMenuRef}>
 									<button
 										type="button"
 										onClick={() => setIsStageMenuOpen((prev) => !prev)}
-										className="min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1 shrink-0 shadow-xs transition-colors touch-manipulation"
+										className="h-8 w-8 rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer flex items-center justify-center shrink-0 shadow-2xs transition-colors touch-manipulation"
 										title="Дополнительные действия этапа"
 										aria-label="Дополнительные действия этапа"
 										aria-expanded={isStageMenuOpen}
@@ -507,26 +528,31 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 
 									{isStageMenuOpen && (
 										<div
-											className="absolute right-0 bottom-full mb-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[240px] text-xs animate-in fade-in zoom-in-95 duration-100"
+											className="absolute right-0 bottom-full mb-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] rounded-xl shadow-xl min-w-[220px] text-xs animate-in fade-in zoom-in-95 duration-100"
 											role="menu"
 										>
-											{onOpenInstallment && stage.totalRub > 0 && (
+											{/* 1. Наряд-заказ в ЗТЛ */}
+											{onOpenLabOrder && isLabOrderEligible && (
 												<button
 													type="button"
 													onClick={() => {
 														setIsStageMenuOpen(false);
-														onOpenInstallment(stage);
+														const stageTeeth = stage.items
+															.map((it) => it.toothNumber)
+															.filter((t): t is number => typeof t === "number" && t > 0);
+														onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
 													}}
-													className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
-													title={`Оформить беспроцентную банковскую рассрочку (Сбер / Т-Банк / Подели) на этап №${stage.stageNumber}`}
-													data-testid={`stage-${stage.stageNumber}-installment-btn`}
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+													title="Оформить наряд-заказ в зуботехническую лабораторию"
+													data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
 													role="menuitem"
 												>
-													<CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-													<span>Оформить рассрочку на этап</span>
+													<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+													<span>Наряд-заказ в ЗТЛ</span>
 												</button>
 											)}
 
+											{/* 2. 1-клик ЗТЛ */}
 											{onOneClickLabOrder && isLabOrderEligible && (
 												<button
 													type="button"
@@ -537,7 +563,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 															.filter((t): t is number => typeof t === "number" && t > 0);
 														onOneClickLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
 													}}
-													className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/15 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/15 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
 													title="Оформить наряд в ЗТЛ в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
 													data-testid={`stage-${stage.stageNumber}-lab-order-one-click-btn`}
 													role="menuitem"
@@ -545,6 +571,81 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 													<Zap size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
 													<span>1-клик ЗТЛ (Цирконий A2)</span>
 												</button>
+											)}
+
+											{/* 3. Скидка на этап */}
+											{onApplyStageDiscount && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														onApplyStageDiscount(stage);
+													}}
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+													title="Применить скидку к этапу лечения"
+													data-testid={`stage-${stage.stageNumber}-discount-btn`}
+													role="menuitem"
+												>
+													<Percent size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+													<span>Скидка на этап</span>
+												</button>
+											)}
+
+											{/* 4. Рассрочка на этап */}
+											{onOpenInstallment && stage.totalRub > 0 && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														onOpenInstallment(stage);
+													}}
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+													title={`Оформить беспроцентную банковскую рассрочку (Сбер / Т-Банк / Подели) на этап №${stage.stageNumber}`}
+													data-testid={`stage-${stage.stageNumber}-installment-btn`}
+													role="menuitem"
+												>
+													<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+													<span>Рассрочка на этап</span>
+												</button>
+											)}
+
+											{/* 5. Экспорт сметы этапа */}
+											{onExportStageEstimate && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														onExportStageEstimate(stage);
+													}}
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+													title="Печать или экспорт сметы по данному этапу"
+													data-testid={`stage-${stage.stageNumber}-export-btn`}
+													role="menuitem"
+												>
+													<Printer size={14} className="text-[var(--muted,#64748b)] shrink-0" />
+													<span>Экспорт сметы этапа</span>
+												</button>
+											)}
+
+											{/* 6. Удалить этап */}
+											{onDeleteStage && (
+												<>
+													<div className="my-1 border-t border-[var(--line,var(--border,#cbd5e1))]" />
+													<button
+														type="button"
+														onClick={() => {
+															setIsStageMenuOpen(false);
+															onDeleteStage(stage);
+														}}
+														className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+														title="Удалить данный этап из плана лечения"
+														data-testid={`stage-${stage.stageNumber}-delete-btn`}
+														role="menuitem"
+													>
+														<Trash2 size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+														<span>Удалить этап</span>
+													</button>
+												</>
 											)}
 										</div>
 									)}

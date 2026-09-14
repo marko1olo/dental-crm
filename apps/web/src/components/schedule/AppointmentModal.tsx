@@ -18,6 +18,7 @@ import {
 	FileText,
 	FlaskConical,
 	Globe,
+	MoreHorizontal,
 	PhoneCall,
 	Printer,
 	Repeat,
@@ -343,6 +344,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	const handleCreateInlinePatient = useCallback(async (): Promise<{
 		id: string;
@@ -517,6 +519,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		);
 		setError(null);
 		setIsSaving(false);
+		setIsMenuOpen(false);
 	}, [appointment, isOpen, safeToDateTimeLocalValue, timezone, doctors, chairs, chairDoctorAssignments]);
 
 	const currentChair = useMemo(() => {
@@ -882,70 +885,48 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 			<div className="relative w-full max-w-2xl bg-[var(--paper)] border border-[var(--line-strong)] rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
 				{/* Header */}
-				<div className="p-4 sm:p-5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-					<div className="flex items-center gap-3 min-w-0 flex-1">
-						<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
-							<Calendar size={20} />
+				<div className="px-4 py-3 sm:py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+					<div className="flex items-center gap-2.5 min-w-0 flex-1">
+						<div className="p-1.5 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
+							<Calendar size={18} />
 						</div>
 						<div className="min-w-0 flex-1">
 							<h3
-								className="text-base font-bold text-[var(--ink)] m-0 truncate"
+								className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 truncate leading-tight"
 								title={isNewAppointment ? `Запись на следующий этап: ${currentPatientName}` : `Детали записи: ${currentPatientName}`}
 							>
 								{isNewAppointment ? `Запись на следующий этап: ${currentPatientName}` : `Детали записи: ${currentPatientName}`}
 							</h3>
 							<p
-								className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate"
+								className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate leading-tight"
 								title={startsAtLocal ? `${startsAtLocal.slice(0, 10)} ${startsAtLocal.slice(11, 16)} - ${endsAtLocal.slice(11, 16)}` : ""}
 							>
 								{startsAtLocal ? `${startsAtLocal.slice(0, 10)} ${startsAtLocal.slice(11, 16)} - ${endsAtLocal.slice(11, 16)}` : ""}
 							</p>
 						</div>
 					</div>
-					<div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+					<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap relative">
 						{!isCito ? (
 							<button
 								type="button"
 								onClick={handleConvertToCito}
-								className="min-h-[44px] px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 								title="Пациент обратился с острой болью: перевести в CITO, разрешить овербукинг и включить CITO-подсветку в расписании"
 								data-testid="convert-to-cito-btn"
 							>
-								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+								<Zap size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
 								<span className="hidden sm:inline">Перевести в CITO (Острая боль)</span>
 								<span className="sm:hidden">CITO</span>
 							</button>
 						) : (
 							<div
-								className="min-h-[44px] px-3 rounded-xl border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 shrink-0"
+								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs font-extrabold flex items-center gap-1.5 shrink-0"
 								data-testid="appointment-cito-active-badge"
 							>
-								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
+								<Zap size={14} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
 								<span className="hidden sm:inline">CITO! Острая боль</span>
 								<span className="sm:hidden">CITO</span>
 							</div>
-						)}
-						{repeatAppointment && !isNewAppointment && (
-						<button
-							type="button"
-							onClick={() => repeatAppointment(appointment)}
-							className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] dark:text-slate-100 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
-							title="Повторить прием"
-						>
-							<Repeat size={15} />
-							<span className="hidden sm:inline">Повторить</span>
-						</button>
-						)}
-						{copyAppointmentToBuffer && !isNewAppointment && (
-							<button
-								type="button"
-								onClick={() => copyAppointmentToBuffer(appointment)}
-								className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] dark:text-slate-100 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
-								title="Скопировать в буфер"
-							>
-								<Copy size={15} />
-								<span className="hidden sm:inline">В буфер</span>
-							</button>
 						)}
 						<button
 							type="button"
@@ -960,41 +941,98 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									},
 								);
 							}}
-							className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+							className="h-8 min-h-[32px] px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 							title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
 							data-testid="appointment-modal-print-blank-contract-btn"
 						>
-							<FileText size={15} className="text-amber-600 dark:text-amber-400" />
+							<FileText size={14} className="text-amber-600 dark:text-amber-400" />
 							<span className="hidden sm:inline whitespace-nowrap">Бланк договора</span>
 							<span className="sm:hidden">Договор</span>
 						</button>
+						{!isNewAppointment && (repeatAppointment || copyAppointmentToBuffer) && (
+							<div className="relative">
+								<button
+									type="button"
+									onClick={() => setIsMenuOpen((prev) => !prev)}
+									className="h-8 min-h-[32px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+									title="Дополнительные действия (Миллер: вторичные действия в меню ...)"
+									aria-label="Дополнительные действия"
+									data-testid="appointment-modal-more-actions-btn"
+								>
+									<MoreHorizontal size={15} />
+									<span className="hidden md:inline">Еще</span>
+								</button>
+								{isMenuOpen && (
+									<div
+										className="fixed inset-0 z-20 cursor-default"
+										onClick={() => setIsMenuOpen(false)}
+										aria-hidden="true"
+									/>
+								)}
+								<div
+									className={`absolute right-0 top-full mt-1 w-44 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl z-30 py-1 ${isMenuOpen ? "block" : "hidden"}`}
+									data-testid="appointment-modal-more-menu"
+								>
+									{repeatAppointment && !isNewAppointment && (
+										<button
+											type="button"
+											onClick={() => {
+												setIsMenuOpen(false);
+												repeatAppointment(appointment);
+											}}
+											className="w-full px-3 py-2 text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											title="Повторить прием"
+											data-testid="appointment-modal-repeat-btn"
+										>
+											<Repeat size={14} className="text-[var(--muted)] shrink-0" />
+											<span>Повторить</span>
+										</button>
+									)}
+									{copyAppointmentToBuffer && !isNewAppointment && (
+										<button
+											type="button"
+											onClick={() => {
+												setIsMenuOpen(false);
+												copyAppointmentToBuffer(appointment);
+											}}
+											className="w-full px-3 py-2 text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											title="Скопировать в буфер"
+											data-testid="appointment-modal-copy-btn"
+										>
+											<Copy size={14} className="text-[var(--muted)] shrink-0" />
+											<span>В буфер</span>
+										</button>
+									)}
+								</div>
+							</div>
+						)}
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+							className="h-8 w-8 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 							aria-label="Закрыть"
 							data-testid="appointment-modal-close-btn"
 						>
-							<X size={20} />
+							<X size={18} />
 						</button>
 					</div>
 				</div>
 
 				{/* Body Form */}
-				<div className="flex-1 overflow-y-auto p-6 space-y-5">
+				<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 sm:space-y-4">
 					{/* Online Booking Notice Banner & 1-Click Confirmation */}
 					{Boolean(
 						(appointment?.comment && /онлайн|виджет|online|сайт/i.test(appointment.comment)) ||
 						(appointment?.reason && /онлайн|виджет|online|сайт/i.test(appointment.reason))
 					) && (
 						<div
-							className="p-3.5 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-950 dark:text-cyan-100 flex items-center justify-between gap-3 text-xs"
+							className="p-3 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-950 dark:text-cyan-100 flex items-center justify-between gap-3 text-xs"
 							data-testid="modal-online-booking-banner"
 						>
 							<div className="flex items-center gap-2">
-								<Globe size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-								<span className="font-bold text-sm">Онлайн-запись через сайт</span>
-								<span className="text-[var(--muted)]">Слот забронирован пациентом самостоятельно</span>
+								<Globe size={15} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+								<span className="font-bold text-xs sm:text-sm">Онлайн-запись через сайт</span>
+								<span className="text-[var(--muted)] text-xs hidden sm:inline">Слот забронирован пациентом</span>
 							</div>
 							{status === "planned" && (
 								<button
@@ -1002,11 +1040,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									onClick={() => {
 										setStatus("confirmed");
 									}}
-									className="px-3.5 py-2 min-h-[44px] rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+									className="h-8 min-h-[32px] px-3 rounded-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer shadow-xs transition-all text-xs"
 									title="Перевести статус в «Подтвержден» в 1 клик"
 									data-testid="modal-confirm-online-booking-btn"
 								>
-									<Check size={14} />
+									<Check size={13} />
 									<span>Подтвердить запись</span>
 								</button>
 							)}
@@ -1016,13 +1054,13 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					{/* CITO Notice Banner */}
 					{isCito && (
 						<div
-							className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-950 dark:text-rose-100 flex items-center justify-between gap-3 text-xs shadow-xs"
+							className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-950 dark:text-rose-100 flex items-center justify-between gap-3 text-xs shadow-xs"
 							data-testid="appointment-cito-banner"
 						>
 							<div className="flex items-center gap-2">
-								<Zap size={16} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
-								<span className="font-bold text-sm">Экстренный приём CITO (Острая боль)</span>
-								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён</span>
+								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
+								<span className="font-bold text-xs sm:text-sm">Экстренный приём CITO (Острая боль)</span>
+								<span className="text-[var(--muted)] text-xs">Мягкий овербукинг разрешён</span>
 							</div>
 							<span className="px-2 py-0.5 rounded bg-rose-500/25 text-rose-800 dark:text-rose-200 text-[10px] font-extrabold uppercase shrink-0">
 								CITO
@@ -1033,11 +1071,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					{/* CITO Overbooking warning */}
 					{collision.isCitoOverbooking && (
 						<div
-							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
+							className="p-2.5 sm:p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
 							role="alert"
 							data-testid="modal-cito-overbooking-alert"
 						>
-							<Zap size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
+							<Zap size={15} className="shrink-0 text-rose-600 dark:text-rose-400" />
 							<span>{collision.message || "CITO-овербукинг разрешён (острая боль): наложение на занятый слот разрешено."}</span>
 						</div>
 					)}
@@ -1045,19 +1083,19 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					{/* Collision warning */}
 					{collision.hasCollision && (
 						<div
-							className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-2"
+							className="p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-2"
 							role="alert"
 						>
-							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							<AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
 							<span>{collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
 						</div>
 					)}
 
 					{/* Readiness score bar */}
 					{readiness && (
-						<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between">
+						<div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between">
 							<div className="flex items-center gap-2">
-								<span className={`w-2.5 h-2.5 rounded-full ${readiness.state === "ready" ? "bg-emerald-500" : readiness.state === "needs_attention" ? "bg-amber-500" : "bg-rose-500"}`} />
+								<span className={`w-2 h-2 rounded-full ${readiness.state === "ready" ? "bg-emerald-500" : readiness.state === "needs_attention" ? "bg-amber-500" : "bg-rose-500"}`} />
 								<span className="text-xs font-semibold text-[var(--ink)]">
 									Готовность: {readiness.nextAction}
 								</span>
@@ -1070,7 +1108,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 					{/* Free slot waitlist matches for cancelled appointments */}
 					{(appointment.status === "cancelled" || appointment.status === "no_show") && (
-						<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+						<div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 							<WaitlistMatchesBlock appointmentId={appointment.id} compact />
 						</div>
 					)}
@@ -1089,7 +1127,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								return (
 									<div
 										key={lo.id}
-										className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-sm transition-all ${
+										className={`p-2.5 sm:p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-xs transition-all ${
 											isBeforeLab
 												? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-300"
 												: "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/20 text-[var(--ink)]"
@@ -1097,7 +1135,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									>
 										<div className="space-y-0.5">
 											<div className="font-bold flex items-center gap-1.5 flex-wrap">
-												<FlaskConical className="w-4 h-4 text-[var(--teal)] shrink-0" />
+												<FlaskConical className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 												<span>Наряд ЗТЛ: {lo.material || "Ортопедия"} (Зуб {lo.toothFdi || "—"})</span>
 												<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] text-[10px] font-bold uppercase border border-[var(--line)]">
 													{lo.status}
@@ -1138,10 +1176,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 														);
 													}
 												}}
-												className="min-h-[44px] px-3 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all"
+												className="h-8 min-h-[32px] px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs transition-all"
 												title="Синхронизировать время приема со сроком готовности наряда ЗТЛ"
 											>
-												<Calendar className="w-4 h-4" />
+												<Calendar className="w-3.5 h-3.5" />
 												На дату ЗТЛ
 											</button>
 										)}
@@ -1152,21 +1190,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					)}
 
 					{/* Form Fields */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
 						{/* Patient */}
 						<div className="sm:col-span-2">
-							<div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+							<div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
 								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-									<User size={14} className="text-[var(--teal)]" />
+									<User size={13} className="text-[var(--teal)]" />
 									<span>Пациент {isTechnicalBreak ? "(не требуется)" : "*"}</span>
 								</label>
-								<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
+								<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
 									<button
 										type="button"
 										onClick={() => setIsInlineNewPatient(false)}
-										className={`min-h-[36px] px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+										className={`h-7 px-2.5 py-1 rounded-md transition-all cursor-pointer text-xs ${
 											!isInlineNewPatient
-												? "bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm"
+												? "bg-[var(--paper)] text-[var(--teal)] font-bold shadow-xs"
 												: "text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
 										data-testid="appointment-patient-mode-select"
@@ -1176,14 +1214,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<button
 										type="button"
 										onClick={() => setIsInlineNewPatient(true)}
-										className={`min-h-[36px] px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+										className={`h-7 px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs ${
 											isInlineNewPatient
-												? "bg-[var(--teal)] text-white font-bold shadow-sm"
+												? "bg-[var(--teal)] text-white font-bold shadow-xs"
 												: "text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
 										data-testid="appointment-patient-mode-create"
 									>
-										<UserPlus size={14} />
+										<UserPlus size={13} />
 										<span>+ Новый пациент</span>
 									</button>
 								</div>
@@ -1191,11 +1229,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 							{isTechnicalBreak && !patientId && (
 								<div
-									className="mb-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2"
+									className="mb-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2"
 									data-testid="technical-break-patient-free-banner"
 								>
 									<div className="flex items-center gap-2">
-										<Clock size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+										<Clock size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
 										<span>
 											<strong>Режим технической блокировки:</strong> Слот забронирован для служебного перерыва врача ({reason || "Перерыв"}). Выбор пациента не требуется.
 										</span>
@@ -1205,12 +1243,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 							{isInlineNewPatient ? (
 								<div
-									className="p-3 rounded-xl border border-[var(--teal)]/30 bg-[var(--teal-soft,var(--paper-soft))] space-y-3 animate-fade-in"
+									className="p-3 rounded-xl border border-[var(--teal)]/30 bg-[var(--teal-soft,var(--paper-soft))] space-y-2.5 animate-fade-in"
 									data-testid="appointment-inline-new-patient-panel"
 								>
 									<div className="flex items-center justify-between text-xs font-bold text-[var(--teal-dark,var(--teal))]">
 										<span className="flex items-center gap-1.5">
-											<UserPlus size={14} />
+											<UserPlus size={13} />
 											Быстрый пациент: ФИО + Телефон
 										</span>
 										<button
@@ -1222,14 +1260,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											Отмена
 										</button>
 									</div>
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 										<div>
 											<input
 												type="text"
 												value={newPatientFullName}
 												onChange={(e) => setNewPatientFullName(e.target.value)}
 												placeholder="ФИО пациента *"
-												className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+												className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 												data-testid="appointment-quick-patient-name"
 												autoFocus
 											/>
@@ -1240,7 +1278,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 												value={newPatientPhone}
 												onChange={(e) => setNewPatientPhone(e.target.value)}
 												placeholder="+7 (___) ___-__-__"
-												className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+												className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 												data-testid="appointment-quick-patient-phone"
 											/>
 										</div>
@@ -1253,10 +1291,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											type="button"
 											onClick={() => handleCreateInlinePatient()}
 											disabled={isCreatingInlinePatient}
-											className="min-h-[44px] px-3.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all disabled:opacity-50"
+											className="h-8 min-h-[32px] px-3 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs transition-all disabled:opacity-50"
 											data-testid="appointment-quick-patient-save-btn"
 										>
-											<Check size={14} />
+											<Check size={13} />
 											{isCreatingInlinePatient ? "Создание..." : "Создать и прикрепить"}
 										</button>
 									</div>
@@ -1266,7 +1304,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<select
 										value={patientId}
 										onChange={(e) => setPatientId(e.target.value)}
-										className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 										data-testid="select-appointment-patient"
 									>
 										<option value="">-- Выберите пациента --</option>
@@ -1276,12 +1314,17 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											</option>
 										))}
 									</select>
+									{!patientId && !isTechnicalBreak && (
+										<span className="text-[11px] text-[var(--muted)] block mt-1" data-testid="appointment-patient-helper">
+											Для записи выберите пациента из списка или создайте быстрого пациента (ФИО + телефон)
+										</span>
+									)}
 									{hasOpenVisit && (
 										<div
 											className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 mt-1.5 w-full"
 											data-testid="appointment-open-visit-warning"
 										>
-											<AlertCircle size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+											<AlertCircle size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
 											<span>По приему есть активный визит. При смене пациента визит будет сохранен в новую карту</span>
 										</div>
 									)}
@@ -1291,8 +1334,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 						{/* Time */}
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 mb-1.5">
-								<Clock size={14} className="text-[var(--teal)]" />
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 mb-1">
+								<Clock size={13} className="text-[var(--teal)]" />
 								<span>Начало *</span>
 							</label>
 							<input
@@ -1313,28 +1356,28 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										}
 									}
 								}}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							/>
 						</div>
 
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 mb-1.5">
-								<Clock size={14} className="text-[var(--teal)]" />
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 mb-1">
+								<Clock size={13} className="text-[var(--teal)]" />
 								<span>Окончание *</span>
 							</label>
 							<input
 								type="datetime-local"
 								value={endsAtLocal}
 								onChange={(e) => setEndsAtLocal(e.target.value)}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							/>
 						</div>
 
 						{/* Quick Duration Buttons (Anti-Clickfest) */}
 						<div className="sm:col-span-2">
-							<div className="flex items-center justify-between gap-2 mb-1.5">
+							<div className="flex items-center justify-between gap-2 mb-1">
 								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-									<Zap size={14} className="text-[var(--teal)]" />
+									<Zap size={13} className="text-[var(--teal)]" />
 									<span>Быстрый выбор длительности:</span>
 								</label>
 								{currentDurationMinutes > 0 && (
@@ -1352,7 +1395,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										key={mins}
 										type="button"
 										onClick={() => applyDuration(mins)}
-										className={`min-h-[44px] px-3.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+										className={`h-7 sm:h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
 											currentDurationMinutes === mins
 												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
 												: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -1366,8 +1409,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 						{/* Doctor & Chair */}
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
-								Врач *
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+								Врач {isSoloDoctor ? "(соло-врач)" : "*"}
 							</label>
 							<select
 								value={doctorUserId}
@@ -1446,7 +1489,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										}
 									}
 								}}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								data-testid="select-appointment-doctor"
 							>
 								<option value="">-- Выберите врача --</option>
@@ -1458,12 +1501,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							</select>
 							{dutyDoc && (
 								<div
-									className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/20"
+									className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/20"
 									data-testid="duty-doctor-badge"
 								>
-									<UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
+									<UserCheck size={12} className="shrink-0 text-[var(--teal)]" />
 									<span>
-										Дежурный врач: {formatDoctorShortName(dutyDoc.fullName)} ({dutyDocHours})
+										Дежурный: {formatDoctorShortName(dutyDoc.fullName)} ({dutyDocHours})
 									</span>
 								</div>
 							)}
@@ -1472,16 +1515,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								dutyDoctorId &&
 								doctorUserId !== dutyDoctorId && (
 									<div
-										className="mt-1.5 p-2.5 rounded-xl text-xs bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/30 flex items-start gap-2"
+										className="mt-1 p-2 rounded-lg text-xs bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/30 flex items-start gap-1.5"
 										data-testid="duty-doctor-override-note"
 									>
-										<AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-										<div className="space-y-0.5">
+										<AlertTriangle size={14} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+										<div className="space-y-0.5 text-[11px]">
 											<span className="font-semibold block">
-												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
+												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}.
 											</span>
-											<span className="text-[11px] text-[var(--muted)]">
-												(Мандат 8e: запись не блокируется. Запись не блокируется, врач может принять пациента в свободном кабинете)
+											<span className="text-[var(--muted)]">
+												(Мандат 8e: запись не блокируется, врач может принять в свободном кабинете)
 											</span>
 										</div>
 									</div>
@@ -1489,8 +1532,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						</div>
 
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
-								Кресло *
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+								Кресло {chairs.length <= 1 ? "(соло-кресло)" : "*"}
 							</label>
 							<select
 								value={chairId}
@@ -1522,7 +1565,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										}
 									}
 								}}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								data-testid="select-appointment-chair"
 							>
 								<option value="">-- Выберите кресло --</option>
@@ -1537,31 +1580,40 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									</option>
 								))}
 							</select>
+							{!chairId && (
+								<span className="text-[11px] text-[var(--muted)] block mt-0.5">
+									По умолчанию: основное кресло клиники
+								</span>
+							)}
 						</div>
 
 						{!isSoloDoctor && assistants.length > 0 && (
 							<div>
-								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
-									Ассистент (опционально)
+								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+									Ассистент <span className="font-normal text-[var(--muted)] lowercase">(опционально, соло-приём без ассистента)</span>
 								</label>
 								<select
 									value={assistantUserId ?? ""}
 									onChange={(e) => setAssistantUserId(e.target.value || null)}
-									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									data-testid="select-appointment-assistant"
 								>
-									<option value="">-- Без ассистента --</option>
+									<option value="">-- Без ассистента (соло-приём) --</option>
 									{assistants.map((a) => (
 										<option key={a.id} value={a.id}>
 											{a.fullName}
 										</option>
 									))}
 								</select>
+								<span className="text-[11px] text-[var(--muted)] block mt-0.5">
+									Выбор ассистента не обязателен и не блокирует запись
+								</span>
 							</div>
 						)}
 
 						{/* Status */}
-						<div className={isSoloDoctor || assistants.length === 0 ? "sm:col-span-2 space-y-2" : "space-y-2"}>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+						<div className={isSoloDoctor || assistants.length === 0 ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}>
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-0.5">
 								Статус приема (1 клик):
 							</label>
 
@@ -1570,79 +1622,79 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								<button
 									type="button"
 									onClick={() => setStatus("planned")}
-									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 										status === "planned"
 											? "bg-[var(--teal-dark,var(--teal))] text-white font-bold border-[var(--teal-dark,var(--teal))]"
 											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 									data-testid="modal-status-btn-planned"
 								>
-									<Calendar size={13} className="shrink-0" />
+									<Calendar size={12} className="shrink-0" />
 									<span className="whitespace-nowrap leading-none">Запланирован</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setStatus("confirmed")}
-									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 										status === "confirmed"
 											? "bg-violet-600 text-white font-bold border-violet-600"
 											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 									data-testid="modal-status-btn-confirmed"
 								>
-									<PhoneCall size={13} className="shrink-0" />
+									<PhoneCall size={12} className="shrink-0" />
 									<span className="whitespace-nowrap leading-none">Подтвержден</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setStatus("arrived")}
-									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 										status === "arrived"
 											? "bg-emerald-600 text-white font-bold border-emerald-600"
 											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 									data-testid="modal-status-btn-arrived"
 								>
-									<UserCheck size={13} className="shrink-0" />
+									<UserCheck size={12} className="shrink-0" />
 									<span className="whitespace-nowrap leading-none">Пришел</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setStatus("in_treatment")}
-									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 										status === "in_treatment"
 											? "bg-cyan-600 text-white font-bold border-cyan-600"
 											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 									data-testid="modal-status-btn-in_treatment"
 								>
-									<CalendarCheck size={13} className="shrink-0" />
+									<CalendarCheck size={12} className="shrink-0" />
 									<span className="whitespace-nowrap leading-none">В кресле</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setStatus("completed")}
-									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 										status === "completed"
 											? "bg-slate-700 text-white font-bold border-slate-700"
 											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 									data-testid="modal-status-btn-completed"
 								>
-									<CheckCircle2 size={13} className="shrink-0" />
+									<CheckCircle2 size={12} className="shrink-0" />
 									<span className="whitespace-nowrap leading-none">Завершен</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setStatus("no_show")}
-									className={`min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+									className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 										status === "no_show"
 											? "bg-rose-600 text-white font-bold border-rose-600"
 											: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 									data-testid="modal-status-btn-no_show"
 								>
-									<UserX size={13} className="shrink-0" />
+									<UserX size={12} className="shrink-0" />
 									<span className="whitespace-nowrap leading-none">Неявка</span>
 								</button>
 							</div>
@@ -1660,7 +1712,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										);
 									}
 								}}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1"
+								className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1"
 								data-testid="select-appointment-status"
 							>
 								{(Object.keys(appointmentLabels) as Appointment["status"][]).map(
@@ -1673,29 +1725,29 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							</select>
 							{hasOpenVisit && (
 								<div
-									className="mt-1.5 p-2 rounded-lg text-xs bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/20 flex items-center gap-1.5"
+									className="mt-1 p-1.5 rounded-lg text-xs bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/20 flex items-center gap-1.5"
 									data-testid="status-open-visit-warning"
 								>
-									<AlertTriangle size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+									<AlertTriangle size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
 									<span>По этой записи открыт активный визит. Смена статуса разрешена лечащему врачу.</span>
 								</div>
 							)}
 
 							{(status === "cancelled" || status === "no_show") && (
 								<div
-									className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-2 mt-2"
+									className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-1.5 mt-1.5"
 									data-testid="appointment-refusal-reasons-block"
 								>
 									<div className="flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-200">
 										<span className="flex items-center gap-1.5">
-											<UserX size={14} className="text-rose-600 dark:text-rose-400" />
+											<UserX size={13} className="text-rose-600 dark:text-rose-400" />
 											Причина отмены / неявки (StomX 1 клик):
 										</span>
 										<span className="text-[10px] text-[var(--muted)] font-normal">
 											Фиксируется в комментарии и таймлайне
 										</span>
 									</div>
-									<div className="flex items-center gap-1.5 flex-wrap">
+									<div className="flex items-center gap-1 flex-wrap">
 										{STOMX_REFUSE_REASONS_CATALOG.map((refuse) => {
 											const isSelected = comment.includes(`[Отмена: ${refuse.nameRu}]`);
 											return (
@@ -1703,7 +1755,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 													key={refuse.id}
 													type="button"
 													onClick={() => handleApplyRefusalReason(refuse.nameRu)}
-													className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer select-none ${
+													className={`h-7 px-2 py-0.5 rounded-md text-xs font-semibold border transition-all cursor-pointer select-none ${
 														isSelected
 															? "bg-rose-600 text-white border-rose-600 shadow-xs"
 															: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-rose-400 dark:hover:border-rose-500"
@@ -1721,18 +1773,18 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 						{/* Reason */}
 						<div className="sm:col-span-2">
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
 								Повод обращения / Услуга
 							</label>
 							<input
 								type="text"
 								value={reason}
 								onChange={(e) => setReason(e.target.value)}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								placeholder="Например: Лечение кариеса, консультация, острая боль..."
 							/>
 							{/* Quick Clinical Purpose & Doctor Blocking Intervals from StomX */}
-							<div className="space-y-2 mt-2.5" data-testid="appointment-quick-reasons">
+							<div className="space-y-2 mt-2" data-testid="appointment-quick-reasons">
 								<div className="flex items-center justify-between text-[11px] font-bold text-[var(--muted)]">
 									<span>Причины визита (StomX):</span>
 									<span className="text-[10px] uppercase text-[var(--teal)] font-extrabold">1-клик выбор</span>
@@ -1744,7 +1796,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											type="button"
 											data-testid={`chip-reason-${(preset as any).shortLabel || preset.label}`}
 											onClick={() => handleApplyReasonPreset(preset)}
-											className={`min-h-[44px] px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+											className={`h-7 sm:h-8 px-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
 												preset.tone === "emergency"
 													? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20 shadow-xs"
 													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
@@ -1753,7 +1805,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										>
 											<span>{preset.label}</span>
 											{preset.tone === "emergency" && (
-												<span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider">
+												<span className="px-1 py-0.2 rounded bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider">
 													CITO
 												</span>
 											)}
@@ -1772,10 +1824,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											type="button"
 											data-testid={`chip-block-${(preset as any).shortLabel || preset.label}`}
 											onClick={() => handleApplyTechnicalBreakPreset(preset)}
-											className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+											className="h-7 sm:h-8 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5"
 											title={preset.comment}
 										>
-											<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
 											<span>{preset.label}</span>
 										</button>
 									))}
@@ -1785,21 +1837,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 						{/* Comment */}
 						<div className="sm:col-span-2">
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
 								Комментарий
 							</label>
 							<textarea
 								value={comment}
 								onChange={(e) => setComment(e.target.value)}
 								rows={2}
-								className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							/>
 						</div>
 					</div>
 
 					{error && (
 						<div
-							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5"
+							className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5"
 							role="alert"
 						>
 							<AlertTriangle size={14} className="shrink-0" />
@@ -1809,41 +1861,75 @@ export function AppointmentModal(props: AppointmentModalProps) {
 				</div>
 
 				{/* Footer */}
-				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3">
-					<button
-						type="button"
-						onClick={onClose}
-						disabled={isSaving}
-						className="min-h-[48px] px-5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-bold transition-colors cursor-pointer"
-					>
-						Отмена
-					</button>
-					<button
-						type="button"
-						onClick={(e) => handleSave(e)}
-						disabled={isSaving}
-						className={`flex-1 min-h-[48px] px-6 text-[var(--on-teal)] font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
-							collision.isCitoOverbooking || isCito
-								? "bg-rose-600 hover:bg-rose-700 text-white"
-								: collision.hasCollision
-								? "bg-amber-600 hover:bg-amber-700 text-white"
-								: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95"
-						}`}
-						data-testid="appointment-modal-save-btn"
-					>
-						<Check size={18} />
-						<span>
-							{isSaving
-								? "Сохраняю…"
-								: collision.isCitoOverbooking || isCito
-									? "Сохранить CITO (Острая боль)"
-									: collision.hasCollision
-									? "Записать с овербукингом (острая боль)"
-									: isNewAppointment
-										? "Записать на приём"
-										: "Сохранить изменения"}
+				<div className="px-4 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-2.5">
+					<div className="flex items-center justify-between gap-2 text-xs">
+						{error ? (
+							<span className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">
+								<AlertTriangle size={13} className="shrink-0" />
+								<span>{error}</span>
+							</span>
+						) : !patientId && !isTechnicalBreak && !isInlineNewPatient ? (
+							<span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">
+								<AlertCircle size={13} className="shrink-0" />
+								<span>Укажите пациента из списка или создайте во вкладке «+ Новый пациент»</span>
+							</span>
+						) : isInlineNewPatient && !newPatientFullName.trim() && !newPatientPhone.trim() ? (
+							<span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">
+								<AlertCircle size={13} className="shrink-0" />
+								<span>Введите ФИО или номер телефона для быстрой регистрации</span>
+							</span>
+						) : isTechnicalBreak ? (
+							<span className="text-amber-700 dark:text-amber-300 font-medium flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">
+								<Clock size={13} className="shrink-0" />
+								<span>Служебная блокировка расписания врача (пациент не требуется)</span>
+							</span>
+						) : (
+							<span className="text-[var(--muted)] flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">
+								<Check size={13} className="text-emerald-500 shrink-0" />
+								<span>Готово к сохранению (горячая клавиша: Ctrl+Enter)</span>
+							</span>
+						)}
+						<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
+							{isSoloDoctor ? "Режим: соло-врач" : "Ассистент: опционально"}
 						</span>
-					</button>
+					</div>
+
+					<div className="flex items-center justify-between gap-3">
+						<button
+							type="button"
+							onClick={onClose}
+							disabled={isSaving}
+							className="h-9 px-4 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm font-bold transition-colors cursor-pointer shrink-0"
+						>
+							Отмена
+						</button>
+						<button
+							type="button"
+							onClick={(e) => handleSave(e)}
+							disabled={isSaving}
+							className={`flex-1 h-9 px-5 text-[var(--on-teal)] font-extrabold rounded-lg text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
+								collision.isCitoOverbooking || isCito
+									? "bg-rose-600 hover:bg-rose-700 text-white"
+									: collision.hasCollision
+									? "bg-amber-600 hover:bg-amber-700 text-white"
+									: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95"
+							}`}
+							data-testid="appointment-modal-save-btn"
+						>
+							<Check size={16} />
+							<span>
+								{isSaving
+									? "Сохраняю…"
+									: collision.isCitoOverbooking || isCito
+										? "Сохранить CITO (Острая боль)"
+										: collision.hasCollision
+										? "Записать с овербукингом (острая боль)"
+										: isNewAppointment
+											? "Записать на приём"
+											: "Сохранить изменения"}
+							</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

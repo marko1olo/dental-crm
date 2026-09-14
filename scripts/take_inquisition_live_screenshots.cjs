@@ -257,7 +257,9 @@ async function runInquisitionCapture() {
     const targetFile = path.join(outDir, fileName);
     const brainFile = path.join(brainDir, fileName);
 
-    await page.waitForTimeout(1000);
+    await page.waitForSelector(".boot-state", { state: "detached", timeout: 20000 }).catch(() => {});
+    await page.waitForSelector(".app-shell", { state: "visible", timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(1200);
     await page.screenshot({ path: targetFile, fullPage: false });
 
     fs.copyFileSync(targetFile, brainFile);
@@ -361,6 +363,7 @@ async function runInquisitionCapture() {
   await takeProof(dPage, "01_schedule_desktop_light.png", "Schedule", "Desktop Light");
 
   await configurePage(dPage, "dark");
+  await dPage.waitForSelector(".schedule-filter-strip", { state: "visible", timeout: 20000 });
   await dPage.waitForTimeout(1000);
   await takeProof(dPage, "02_schedule_desktop_dark.png", "Schedule", "Desktop Dark");
 
@@ -370,6 +373,7 @@ async function runInquisitionCapture() {
   await takeProof(dPage, "05_visit_desktop_light.png", "Visit", "Desktop Light");
 
   await configurePage(dPage, "dark");
+  await dPage.waitForSelector(".visit-monolithic-header, .visit-panel, .visit-workspace", { state: "visible", timeout: 20000 });
   await dPage.waitForTimeout(1000);
   await takeProof(dPage, "06_visit_desktop_dark.png", "Visit", "Desktop Dark");
 
@@ -379,6 +383,7 @@ async function runInquisitionCapture() {
   await takeProof(dPage, "09_patients_desktop_light.png", "Patients", "Desktop Light");
 
   await configurePage(dPage, "dark");
+  await dPage.waitForSelector(".patients-search-box, .patients-container", { state: "visible", timeout: 20000 });
   await dPage.waitForTimeout(1000);
   await takeProof(dPage, "10_patients_desktop_dark.png", "Patients", "Desktop Dark");
 
