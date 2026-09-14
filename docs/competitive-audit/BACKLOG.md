@@ -6302,3 +6302,53 @@
   - **Фиксация мобильной кассы выше сгиба (Мандаты 8c, 8e п. 9, 8p)**: в `patients-redesign.css` и `premium.css` добавлен овердрайв `.payment-capture { padding-bottom: 120px !important; }` и сняты паразитные `backdrop-filter`/`transform` на экранах <=860px, что зафиксировало панель чекаута `#payment-checkout-bar` в первом экране мобильного вьюпорта (390x844) с 100% доступностью кнопки «Принять оплату» без необходимости прокрутки;
   - **Инструментальное доказательство 4-State**: подтверждено живыми скриншотами Playwright в 4 ключевых состояниях (PC Light, PC Dark, Mobile Light, Mobile Dark).
 
+### 360. Wave 216: Второй этап тотальной ликвидации мертвого кода (-13,001 LOC, 40 файлов) по Вселенскому анти-блоат догмату (Мандаты 8i, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/hooks/domains/useAuthRoutingLogic.ts` (удален, -74 LOC — неиспользуемый хук роутинга)
+  - `apps/web/src/hooks/domains/useBillingDocumentLogic.ts` (удален, -224 LOC — неиспользуемый хук документов биллинга)
+  - `apps/web/src/hooks/domains/useClinicalDocumentLogic.ts` (удален, -230 LOC — неиспользуемый хук клинических документов)
+  - `apps/web/src/hooks/domains/useClinicSettingsLogic.ts` (удален, -410 LOC — неиспользуемый хук настроек клиники)
+  - `apps/web/src/hooks/domains/useDashboardReconciler.ts` (удален, -127 LOC — неиспользуемый хук реконсиляции дашборда)
+  - `apps/web/src/hooks/domains/useDocumentDraftPersistence.ts` (удален, -232 LOC — неиспользуемый хук персистенции черновиков)
+  - `apps/web/src/hooks/domains/useDocumentFallbacks.ts` (удален, -638 LOC — неиспользуемый хук фоллбэков документов)
+  - `apps/web/src/hooks/domains/useDocumentMutations.ts` (удален, -567 LOC — неиспользуемый хук мутаций документов)
+  - `apps/web/src/hooks/domains/useDocumentWorkflowState.ts` (удален, -193 LOC — неиспользуемый хук состояния документов)
+  - `apps/web/src/hooks/domains/useGlobalAppCoordinator.ts` (удален, -57 LOC — неиспользуемый координатор)
+  - `apps/web/src/hooks/domains/useImagingLogic.ts` (удален, -913 LOC — неиспользуемый монолит логики рентгена)
+  - `apps/web/src/hooks/domains/useMigrationWorkflowLogic.ts` (удален, -124 LOC — неиспользуемый хук миграций)
+  - `apps/web/src/hooks/domains/usePatientImportLogic.ts` (удален, -140 LOC — неиспользуемый хук импорта пациентов)
+  - `apps/web/src/hooks/domains/useRoleAccessLogic.ts` (удален, -97 LOC — неиспользуемый хук ролевого доступа)
+  - `apps/web/src/hooks/domains/useTaxDocumentLogic.ts` (удален, -368 LOC — неиспользуемый хук налоговых справок)
+  - `apps/web/src/hooks/domains/useTelegramLogic.ts` (удален, -190 LOC — неиспользуемый дубликат модуля Telegram)
+  - `apps/web/src/hooks/useAppSession.ts` (удален, -167 LOC — неиспользуемый хук сессии)
+  - `apps/web/src/hooks/useMemoryWatchdog.ts` (удален, -61 LOC — неиспользуемый хук watchdog)
+  - `apps/web/src/lib/offlineSync.ts` (удален, -14 LOC — мертвый фасад оффлайн-синхронизации)
+  - `apps/web/src/documentTypes.ts` (удален, -3 LOC — мертвый файл типов DocumentState)
+  - `apps/web/src/store/slices/clinicalSlice.ts` (удален, -549 LOC — неиспользуемый срез хранилища)
+  - `apps/web/src/store/slices/documentCoreSlice.ts` (удален, -207 LOC — неиспользуемый срез хранилища)
+  - `apps/web/src/store/slices/financialSlice.ts` (удален, -495 LOC — неиспользуемый срез хранилища)
+  - `apps/web/src/store/slices/intakeSlice.ts` (-437 LOC — неиспользуемый срез хранилища)
+  - `apps/web/src/store/slices/miscSlice.ts` (-305 LOC — неиспользуемый срез хранилища)
+  - `apps/web/src/store/slices/taxSlice.ts` (-109 LOC — неиспользуемый срез хранилища)
+  - `apps/web/src/components/anesthesia/emergencyAnaphylaxisProtocol.css` (-615 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/chairside/chairsideConsent.css` (-830 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/dicom/cbctMprWorkspace.css` (-170 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/documents/ndflXml/fnsNdflXml.css` (-528 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/finance/medicalTourism.css` (-74 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/finance/one-c/oneCCommerceMl.css` (-322 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/finance/pnl/clinicalPnl.css` (-508 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/patient-portal/implantPassport.css` (-158 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/patient-portal/patientWebapp.css` (-476 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/portal/patientPortal.css` (-742 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/portal/timeline/portalTimeline.css` (-409 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/prescriptions/generator/medicalPrescription.css` (-146 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/PublicBooking.css` (-262 LOC — несмонтированные стили без компонентов)
+  - `apps/web/src/components/sanpin/sterilizationSanpin.css` (-800 LOC — несмонтированные стили без компонентов)
+* **Описание**:
+  - **Ликвидация 40 файлов мертвого кода (-13,001 LOC)**: физически удалены 16 осиротевших domain-хуков в `hooks/domains/`, 6 заброшенных срезов хранилища в `store/slices/`, 14 несмонтированных CSS-файлов с нулевым количеством ссылок и неиспользуемые служебные хуки/типы;
+  - **Суверенитет амбулаторной стоматологии (Мандат 8i)**: подтверждено отсутствие стационарного мусора (койко-дни, трансфузиология, бюрократические комиссии);
+  - **Аудит КТ, DICOM и рентгена (Мандаты 8s, 11)**: подтверждено использование реального движка Cornerstone3D и векторной 3D-геометрии (нормали срезов, направляющие имплантов, биссектрисы нижнечелюстного канала) без синтетических процедурных диорам;
+  - **Защита Single-Compiler Gate (Мандат 8t)**: запуск тяжелых компиляторов делегирован L1 Оркестратору.
+
+
