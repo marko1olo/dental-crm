@@ -506,9 +506,9 @@ const documentKindBaseMetadata = {
 	},
 	outpatient_medical_card_025u: {
 		title:
-			"Медицинская карта пациента, получающего медицинскую помощь в амбулаторных условиях (форма N 025/у)",
-		label: "Карта 025/у",
-		actionLabel: "Карта 025/у",
+			"[ЛИКВИДИРОВАНО] Медицинская карта 025/у (заменена на 043/у per Mandates 8i, 8s)",
+		label: "Карта 025/у (ликвидирована)",
+		actionLabel: "Карта 025/у (ликвидирована)",
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: false,

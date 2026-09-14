@@ -10,6 +10,7 @@ export * from "./restorationProtocolEngine.js";
 export * from "./therapyProtocolEngine.js";
 export * from "./stomtDefectsCatalog.js";
 export * from "./stomxPricelistCatalog.js";
+export * from "../emr/periodontogram.js";
 export {
 	type TimelineCategory,
 	type TimelineCategory as ClinicalTimelineCategory,

@@ -14,9 +14,9 @@ import {
 	createDefaultPerioTeeth,
 	generateComprehensivePerio043Text,
 } from "@dental/shared";
-import { PeriodontalChartingModal } from "../components/odontogram/PeriodontalChartingModal";
+import { PeriodontogramChart } from "../components/perio/PeriodontogramChart";
 
-describe("Periodontal Charting & Clinical Indices (PeriodontalChartingModal)", () => {
+describe("Periodontal Charting & Clinical Indices (PeriodontogramChart)", () => {
 	describe("1. Mathematical Calculation of Periodontal Indices", () => {
 		it("calculates 0% FMBS and 0% FMPS for healthy default dentition", () => {
 			const teeth = createDefaultPerioTeeth();
@@ -87,44 +87,33 @@ describe("Periodontal Charting & Clinical Indices (PeriodontalChartingModal)", (
 		});
 	});
 
-	describe("3. PeriodontalChartingModal Component SSR Rendering", () => {
-		it("renders modal header, index cards and active tooth without crash", () => {
+	describe("3. PeriodontogramChart Component SSR Rendering", () => {
+		it("renders chart container, rapid screening and active tooth without crash", () => {
 			const html = renderToString(
-				<PeriodontalChartingModal
-					isOpen={true}
-					onClose={() => {}}
+				<PeriodontogramChart
 					patientName="Тестовый Пациент"
 				/>,
 			);
 
-			assert.ok(html.includes("Пародонтологическая карта и скрининг CPITN"));
-			assert.ok(html.includes("Индекс гигиены Грина-Вермиллиона"));
-			assert.ok(html.includes("Индекс налета PLI"));
-			assert.ok(html.includes("Кровоточивость борозды SBI"));
+			assert.ok(html.includes("interactive-periodontogram"));
+			assert.ok(html.includes("Экспресс-скрининг пародонта PSR / CPITN"));
+			assert.ok(html.includes("perio-toolbar-norm-1click-btn"));
 		});
 
-		it("renders 1-click clinical presets toolbar (Norm, Gingivitis, Mild/Moderate Periodontitis, 5-Step Hygiene, Form 043/u) without cartoon emojis", () => {
+		it("renders 1-click clinical presets toolbar (Norm, Gingivitis, Mild/Moderate/Severe Periodontitis, Prophy, Form 043/u) without cartoon emojis", () => {
 			const html = renderToString(
-				<PeriodontalChartingModal
-					isOpen={true}
-					onClose={() => {}}
+				<PeriodontogramChart
 					patientName="Тестовый Пациент"
 				/>,
 			);
 
 			// Check all clinical presets and 043/u actions
-			assert.ok(html.includes("Пародонт в норме (1-2 мм, без BOP)"));
-			assert.ok(html.includes("Гингивит (глубина 2 мм, BOP)"));
-			assert.ok(html.includes("Пародонтит легкий (3-4 мм)"));
-			assert.ok(html.includes("Пародонтит средний (4-5 мм)"));
-			assert.ok(html.includes("Профгигиена (УЗ + Air Flow)"));
-			assert.ok(html.includes("В дневник 043/у"));
-			assert.ok(html.includes('data-testid="perio-preset-norm-btn"'));
-			assert.ok(html.includes('data-testid="perio-preset-gingivitis-btn"'));
-			assert.ok(html.includes('data-testid="perio-preset-periodontitis-btn"'));
-			assert.ok(html.includes('data-testid="perio-preset-moderate-btn"'));
-			assert.ok(html.includes('data-testid="perio-modal-quick-hygiene-btn"'));
-			assert.ok(html.includes('data-testid="perio-modal-insert-043-btn"'));
+			assert.ok(html.includes("perio-preset-norm-card"));
+			assert.ok(html.includes("perio-preset-gingivitis-card"));
+			assert.ok(html.includes("perio-preset-periodontitis-card"));
+			assert.ok(html.includes("perio-preset-severe-periodontitis-card"));
+			assert.ok(html.includes("perio-preset-prophy-card"));
+			assert.ok(html.includes("perio-insert-protocol-btn") || html.includes("perio-express-insert-043-btn"));
 
 			// Mandate 8d, sin #7: Zero cartoon emojis in medical/clinical forms
 			assert.equal(html.includes("⚡"), false, "Must not contain lightning bolt emoji");

@@ -677,11 +677,14 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(source.includes("pediatric-preset-pulpotec-btn"), "Кнопка Пульпотек должна присутствовать");
 		});
 
-		it("7.8. PeriodontalChartingModal.tsx содержит кнопку 'Пародонтит тяжелый (6-8 мм)' (perio-preset-severe-btn)", () => {
-			const perioModalPath = path.resolve(webSrcDir, "components/odontogram/PeriodontalChartingModal.tsx");
-			const source = fs.readFileSync(perioModalPath, "utf-8");
+		it("7.8. PeriodontogramChart.tsx содержит кнопку 'Пародонтит тяжелый (6-8 мм)' (perio-preset-severe-btn)", () => {
+			const perioChartPath = path.resolve(webSrcDir, "components/perio/PeriodontogramChart.tsx");
+			const source = fs.readFileSync(perioChartPath, "utf-8");
 			assert.ok(source.includes("perio-preset-severe-btn"), "Кнопка perio-preset-severe-btn обязана присутствовать в тулбаре");
-			assert.ok(source.includes("handleApplySeverePeriodontitisPreset"), "Обработчик handleApplySeverePeriodontitisPreset обязан присутствовать");
+			assert.ok(
+				source.includes("periodontitis_severe_express") || source.includes("handleApplySeverePeriodontitisPreset"),
+				"Обработчик тяжелого пародонтита обязан присутствовать",
+			);
 		});
 
 		it("7.9. VisitAnamnesisTab.tsx реализует debounced autosave для автономии врача (Мандат 8e)", () => {

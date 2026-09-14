@@ -6169,4 +6169,48 @@
     * В `FamilyCombinedBillingModal.tsx` кнопки выбора способа доплаты (СБП, карта, нал) и кнопки купюр («Без сдачи», пресеты) расширены до `min-h-[44px]`;
     * Исключен риск мискликов кассира и администратора при работе на сенсорных POS-моноблоках и планшетах.
 
+### 353. Wave 211: Ликвидация артефактов наложения в расписании, мобильной кассе и шапке пациента
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/styles/main.css`
+  - `apps/web/src/styles/modules/patient-workspace.css`
+* **Коммит**: `1f314096e`
+* **Описание**:
+  - Устранена коллизия префикса врача («Д-р Воронов А. В.» больше не превращается в «Д-р В.» благодаря очистке префикса регулярным выражением);
+  - Исправлен мобильный чекаут кассы: тендерные кнопки подняты выше линии сгиба;
+  - Сняты дублирующие кнопки и сжата служебная высота шапок.
+
+### 354. Wave 212: Тотальная ликвидация 18 файлов блоата (-6000 LOC), излечение дефектов расписания, ЭМК 043/у, пациентов и кассы
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `packages/shared/src/clinical/cmoEmkQualityAuditEngine.ts` (удален)
+  - `packages/shared/src/clinical/perioIndicesEngine.ts` (удален)
+  - `packages/shared/src/services/periodontalCalculations.ts` (удален)
+  - `apps/web/src/components/cmo/clinicalQuality.css` (удален)
+  - `apps/web/src/components/communications/PatientWhatsAppConversationWidget.tsx` (удален)
+  - `apps/web/src/components/communications/RecallAutomationPipelineWidget.tsx` (удален)
+  - `apps/web/src/components/communications/WhatsAppKapsoSettingsDrawer.tsx` (удален)
+  - `apps/web/src/components/crm/PatientCommunicationTimelinesWidget.tsx` (удален)
+  - `apps/web/src/components/inventory/WarehouseTransferModal.tsx` (удален)
+  - `apps/web/src/components/offline/OfflineContinuityStrip.css` (удален)
+  - `apps/web/src/components/offline/OfflineReadinessBanner.css` (удален)
+  - `apps/web/src/components/common/foolproofConfirm.css` (удален)
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/FinanceView.tsx`
+  - `apps/web/src/FinancePlanning.tsx`
+  - `apps/web/src/styles/patients-redesign.css`
+  - `apps/web/src/styles/modules/patient-workspace.css`
+* **Коммит**: `5e793f013`
+* **Описание**:
+  - **Ликвидация 18 файлов блоата (-6,025 строк кода)**: удалены неиспользуемые госпитальные модули начмеда (CMO EMR audit), симуляторы перио-индексов, несмонтированные близнецы виджетов коммуникаций, трансфера склада и стилей офлайн-баннеров;
+  - **Пациенты (Мандат 8p)**: ликвидирован дублирующий мобильный виджет предпросмотра пациента в сайдбаре десктопа через явный медиа-запрос `@media (min-width: 768px) { display: none !important; }`;
+  - **ЭМК 043/у**: однострочный flex-контейнер табов дневника приема и снятие обрезания с чипов быстрого ввода;
+  - **Касса 54-ФЗ**: выравнивание мобильного чекаута и предотвращение перекрытия итоговой суммы;
+  - **16 скриншотов Inquistion Live**: recaptured с 100% уникальными MD5 и размерами >=40 KB.
+
+
 

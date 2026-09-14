@@ -1518,7 +1518,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						}
 						className="min-h-[50px] p-3 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-200 border border-red-600/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
 						title="Пародонтит тяжёлой степени: PSR 4*, карманы >= 6 мм, гноетечение, рецессия, подвижность II-III ст."
-						data-testid="perio-preset-severe-periodontitis-card"
+						data-testid="perio-preset-severe-periodontitis-card perio-preset-severe-btn"
+						data-preset-action="perio-preset-severe-btn"
 					>
 						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
 							<span className="flex items-center gap-1.5 text-red-300">

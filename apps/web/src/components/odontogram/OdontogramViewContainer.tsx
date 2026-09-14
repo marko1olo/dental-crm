@@ -47,7 +47,6 @@ import { ToothRadialMenu } from "./ToothRadialMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
-import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
 import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { JawOcclusionModal } from "./JawOcclusionModal";
 import { TreatmentPlanWizard } from "./TreatmentPlanWizard";
@@ -206,7 +205,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [isPlanWizardOpen, setIsPlanWizardOpen] = useState<boolean>(false);
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
-	const [isLocalPerioOpen, setIsLocalPerioOpen] = useState<boolean>(false);
 
 	const handleMarkIntactDentition = useCallback(() => {
 		if (onMarkIntactDentition) {
@@ -393,7 +391,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 
 				// 3. Голосовое открытие пародонтологической карты
 				if (intent.type === "perio_measurement" || (intent.perioMeasurements && intent.perioMeasurements.length > 0)) {
-					setIsLocalPerioOpen(true);
+					if (onTogglePerio && !isPerioOpen) onTogglePerio();
 					void SoundFeedbackService.getInstance().playActionSuccess();
 					showToast("Голос: Пародонтологическая карта", "info");
 				}
@@ -906,7 +904,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								type="button"
 								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
 								className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
-									isMoreMenuOpen || activeStampTool === "Crown" || activeStampTool === "Missing" || isFastExtractMode || isMultiSelectMode || isPerioOpen || isLocalPerioOpen || isOrthoCephOpen
+									isMoreMenuOpen || activeStampTool === "Crown" || activeStampTool === "Missing" || isFastExtractMode || isMultiSelectMode || isPerioOpen || isOrthoCephOpen
 										? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
 										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 dark:hover:text-indigo-400"
 								}`}
@@ -1067,11 +1065,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 												type="button"
 												onClick={() => {
 													if (onTogglePerio) onTogglePerio();
-													else setIsLocalPerioOpen((prev) => !prev);
 													setIsMoreMenuOpen(false);
 												}}
 												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
-													isPerioOpen || isLocalPerioOpen
+													isPerioOpen
 														? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
 														: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
 												}`}
@@ -1325,17 +1322,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					patientId={patientId}
 				/>
 			)}
-
-			{/* Tier 2/3 Periodontal Charting & CPITN Screening Modal */}
-			<PeriodontalChartingModal
-				isOpen={Boolean(isPerioOpen || isLocalPerioOpen)}
-				onClose={() => {
-					setIsLocalPerioOpen(false);
-					onTogglePerio?.();
-				}}
-				patientId={patientId}
-				patientName={patientId ? `Пациент #${patientId}` : undefined}
-			/>
 
 			{/* Tier 3 Orthodontic Cephalometry TRG Tracker Modal */}
 			<CephalometricAnalysisModal
