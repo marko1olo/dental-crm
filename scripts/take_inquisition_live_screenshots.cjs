@@ -243,8 +243,16 @@ async function runInquisitionCapture() {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         await page.evaluate((h) => { window.location.hash = h; }, hash);
+        if (hash === "visit") {
+          await page.waitForSelector('[aria-busy="true"]', { state: "detached", timeout: 30000 }).catch(() => {});
+        }
         await page.waitForSelector(selector, { timeout: 20000 });
-        await page.waitForTimeout(1200);
+        if (hash === "visit") {
+          await page.waitForSelector('[aria-busy="true"]', { state: "detached", timeout: 30000 }).catch(() => {});
+          await page.waitForTimeout(1500);
+        } else {
+          await page.waitForTimeout(1200);
+        }
         break;
       } catch (err) {
         if (attempt === 3) throw err;
@@ -369,12 +377,15 @@ async function runInquisitionCapture() {
 
   // 1B. Visit Desktop Light & Dark
   await configurePage(dPage, "light");
-  await navigateView(dPage, "visit", ".visit-monolithic-header, .visit-panel, .visit-workspace");
+  await navigateView(dPage, "visit", ".visit-monolithic-header, [data-testid=\"visit-view\"]:not([aria-busy=\"true\"])");
+  await dPage.waitForSelector('[aria-busy="true"]', { state: "detached", timeout: 30000 }).catch(() => {});
+  await dPage.waitForTimeout(1500);
   await takeProof(dPage, "05_visit_desktop_light.png", "Visit", "Desktop Light");
 
   await configurePage(dPage, "dark");
-  await dPage.waitForSelector(".visit-monolithic-header, .visit-panel, .visit-workspace", { state: "visible", timeout: 20000 });
-  await dPage.waitForTimeout(1000);
+  await dPage.waitForSelector('[aria-busy="true"]', { state: "detached", timeout: 30000 }).catch(() => {});
+  await dPage.waitForSelector(".visit-monolithic-header, [data-testid=\"visit-view\"]:not([aria-busy=\"true\"])", { state: "visible", timeout: 20000 });
+  await dPage.waitForTimeout(1500);
   await takeProof(dPage, "06_visit_desktop_dark.png", "Visit", "Desktop Dark");
 
   // 1C. Patients Desktop Light & Dark
@@ -427,11 +438,15 @@ async function runInquisitionCapture() {
 
   // 2B. Visit Mobile Light & Dark
   await configurePage(mPage, "light");
-  await navigateView(mPage, "visit", ".visit-monolithic-header, .visit-panel, .visit-workspace");
+  await navigateView(mPage, "visit", ".visit-monolithic-header, [data-testid=\"visit-view\"]:not([aria-busy=\"true\"])");
+  await mPage.waitForSelector('[aria-busy="true"]', { state: "detached", timeout: 30000 }).catch(() => {});
+  await mPage.waitForTimeout(1500);
   await takeProof(mPage, "07_visit_mobile_light.png", "Visit", "Mobile Light");
 
   await configurePage(mPage, "dark");
-  await mPage.waitForTimeout(1000);
+  await mPage.waitForSelector('[aria-busy="true"]', { state: "detached", timeout: 30000 }).catch(() => {});
+  await mPage.waitForSelector(".visit-monolithic-header, [data-testid=\"visit-view\"]:not([aria-busy=\"true\"])", { state: "visible", timeout: 20000 });
+  await mPage.waitForTimeout(1500);
   await takeProof(mPage, "08_visit_mobile_dark.png", "Visit", "Mobile Dark");
 
   // 2C. Patients Mobile Light & Dark

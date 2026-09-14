@@ -986,7 +986,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									<div className="text-[11px] font-bold text-[var(--teal)] uppercase tracking-wider">
 										Выбранный пациент
 									</div>
-									<div className="text-sm font-bold text-[var(--ink)] truncate">
+									<div className="text-sm font-bold text-[var(--ink)] leading-snug break-words line-clamp-2">
 										{selectedPatient.fullName}
 									</div>
 									<div className="text-xs text-[var(--muted)] truncate">
@@ -1147,7 +1147,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							</span>
 
 							{selectedPatient && (
-								<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
+								<div className="flex flex-wrap items-center gap-1.5">
 									{/* Primary CTA 1 (Above Fold): Сохранить данные */}
 									<button
 										type="button"
@@ -1155,7 +1155,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										aria-busy={patientCoreSaveState === "saving" || undefined}
 										aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
 										disabled={patientCoreSaveState === "saving"}
-										className="primary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-xs"
+										className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
 										title="Сохранить изменения в карточке пациента (1 клик, выше сгиба 900px)"
 										data-testid="patient-core-save-top-btn"
 									>
@@ -1175,7 +1175,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											})
 										}
 										disabled={false}
-										className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)]"
+										className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)]"
 										title="Установить соматическую норму в 1 клик (Мандат 8e, выше сгиба 900px)"
 										data-testid="patient-card-somatic-norm-top-btn"
 									>
@@ -1187,7 +1187,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									<button
 										type="button"
 										onClick={() => setIsPatientCardModalOpen(true)}
-										className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1.5 cursor-pointer text-xs shrink-0 transition-colors"
+										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
 										data-testid="patient-quick-043-btn"
 									>
@@ -1203,7 +1203,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											useAppStore.getState().setCurrentView("finance");
 											showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient.fullName}`, "info");
 										}}
-										className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-mono font-black inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors border ${
+										className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-mono font-black inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors border ${
 											patientBalance > 0
 												? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40"
 												: patientBalance < 0
@@ -1232,7 +1232,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												useAppStore.getState().setCurrentView("schedule");
 												showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
 											}}
-											className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+											className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 											title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Нажмите для перехода в расписание`}
 											data-testid="patient-quick-next-appointment-btn"
 										>
@@ -1245,12 +1245,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										<button
 											type="button"
 											onClick={() => executeBookPatientAppointmentAutonomy({ selectedPatient })}
-											className="min-h-[44px] sm:min-h-0 sm:h-8 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+											className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 											title="Записать пациента в расписание"
 											data-testid="patient-quick-book-appointment-btn"
 										>
 											<Calendar size={12} className="shrink-0" />
-											<span>+ Записать</span>
+											<span>+ Запись</span>
 										</button>
 									)}
 								</div>

@@ -22,7 +22,7 @@ import {
 import type { ChangeEvent, KeyboardEvent } from "react";
 import React, { useState } from "react";
 import { EmptyState } from "../EmptyState";
-import { PatientPortal } from "../PatientPortal";
+import { PatientCabinetModal } from "../portal/patientCabinet/PatientCabinetModal";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -964,25 +964,10 @@ export function SettingsTelegramTab({
 						</label>
 
 						{showPatientPortalPreview && (
-							<div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-								<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl relative">
-									<div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-										<strong className="text-sm font-semibold text-slate-900 dark:text-white">
-											Превью Портала Пациента
-										</strong>
-										<button
-											type="button"
-											className="ghost-button"
-											onClick={() => setShowPatientPortalPreview(false)}
-										>
-											Закрыть
-										</button>
-									</div>
-									<div style={{ padding: "16px" }}>
-										<PatientPortal />
-									</div>
-								</div>
-							</div>
+							<PatientCabinetModal
+								isOpen={showPatientPortalPreview}
+								onClose={() => setShowPatientPortalPreview(false)}
+							/>
 						)}
 
 						<label htmlFor="telegram-welcome-image-url-draft">

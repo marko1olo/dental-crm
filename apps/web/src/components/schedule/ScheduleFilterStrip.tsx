@@ -308,7 +308,7 @@ export function ScheduleFilterStrip({
 				role="toolbar"
 			>
 			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px touch targets on mobile, 32-36px on desktop (HIG) */}
-			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
+			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r-0 sm:border-r sm:border-[var(--line)]">
 				<button
 					type="button"
 					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
@@ -352,7 +352,7 @@ export function ScheduleFilterStrip({
 				}
 			`}</style>
 			<div
-				className="schedule-filter-chips flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0"
+				className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0"
 				onWheel={(e) => {
 					if (e.deltaY !== 0) {
 						e.currentTarget.scrollLeft += e.deltaY;
@@ -607,6 +607,57 @@ export function ScheduleFilterStrip({
 									</div>
 								</div>
 							)}
+
+							{/* Mobile Filter Chips by Doctor & Chair (visible strictly on < sm) */}
+							<div className="sm:hidden mb-1.5 pb-1.5 border-b border-[var(--line)]">
+								<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+									Фильтр расписания
+								</div>
+								<div className="flex flex-wrap gap-1 p-0.5">
+									<button
+										type="button"
+										onClick={() => {
+											resetScheduleFilters();
+											setIsOptionsMenuOpen(false);
+										}}
+										className={`quick-chip ${activeScheduleFilterCount === 0 ? "active font-bold" : ""} min-h-[36px] px-2.5 text-xs font-semibold rounded-lg`}
+									>
+										Все записи
+									</button>
+									{myChair && (() => {
+										const cleanChairName = myChair.name.replace(/\s*\(.*\)/, "").trim();
+										return (
+											<button
+												type="button"
+												onClick={() => {
+													handleSelectMyChair();
+													setIsOptionsMenuOpen(false);
+												}}
+												className={`quick-chip ${isMyChairActive ? "active font-bold" : ""} min-h-[36px] px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1`}
+											>
+												<Armchair size={12} />
+												<span>Моё ({cleanChairName})</span>
+											</button>
+										);
+									})()}
+									{!isSoloDoctor &&
+										staffMembers
+											.filter((m) => m?.active && (m?.role === "doctor" || m?.role === "owner"))
+											.map((m) => (
+												<button
+													key={`m-opt-doc-${m.id}`}
+													type="button"
+													onClick={() => {
+														setScheduleDoctorFilterId(scheduleDoctorFilterId === m.id ? null : m.id);
+														setIsOptionsMenuOpen(false);
+													}}
+													className={`quick-chip ${scheduleDoctorFilterId === m.id ? "active font-bold" : ""} min-h-[36px] px-2 text-xs rounded-lg`}
+												>
+													{m.fullName?.split(" ")[0] || "Врач"}
+												</button>
+											))}
+								</div>
+							</div>
 
 							{/* Quick dates */}
 							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">

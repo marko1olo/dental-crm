@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { generateSmpDispatchCheatSheet } from "../../emergency/emergencyRescueEngine";
 
 describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", () => {

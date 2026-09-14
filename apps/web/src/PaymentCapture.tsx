@@ -1065,7 +1065,7 @@ export function PaymentCapture({
             NewAppointmentForm столбик задаёт сам, поэтому общий стиль не
             трогаем. */}
 					<div
-						className="smart-ai-booking col-span-full"
+						className="smart-ai-booking payment-smart-ai-booking col-span-full"
 						style={{
 							gridColumn: "1 / -1",
 							marginBottom: "8px",
@@ -1081,11 +1081,11 @@ export function PaymentCapture({
 						}}
 					>
 						<Bot size={18} color="var(--teal-dark)" />
-						<div style={{ position: "relative", flex: 1 }}>
+						<div style={{ position: "relative", flex: 1, minWidth: 0 }}>
 							<input
 								type="text"
 								value={smartInputText}
-								placeholder="Пример: Оплата 5000 картой, нужен налоговый вычет..."
+								placeholder="Пример: Оплата 5000 картой..."
 								onFocus={() => setShowHints(true)}
 								onBlur={() => setTimeout(() => setShowHints(false), 200)}
 								onChange={(e) => setSmartInputText(e.target.value)}
@@ -1100,7 +1100,9 @@ export function PaymentCapture({
 									border: "none",
 									background: "transparent",
 									outline: "none",
-									fontSize: "14px",
+									fontSize: "13px",
+									paddingRight: "8px",
+									boxSizing: "border-box",
 									fontFamily: "inherit",
 									color: "var(--ink)",
 								}}
@@ -1126,7 +1128,7 @@ export function PaymentCapture({
 						/>
 					</div>
 					<div
-						className="quick-chips-row col-span-full"
+						className="quick-chips-row payment-smart-chips col-span-full"
 						style={{
 							gridColumn: "1 / -1",
 							marginBottom: "8px",
@@ -1138,8 +1140,7 @@ export function PaymentCapture({
 					>
 						<button
 							type="button"
-							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
-							style={{ minHeight: "44px" }}
+							className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
 							onClick={() => handleSmartDictation("5000 наличными")}
 						>
 							<Banknote size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
@@ -1147,8 +1148,7 @@ export function PaymentCapture({
 						</button>
 						<button
 							type="button"
-							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
-							style={{ minHeight: "44px" }}
+							className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
 							onClick={() => handleSmartDictation("15000 по карте")}
 						>
 							<CreditCard size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
@@ -1156,8 +1156,7 @@ export function PaymentCapture({
 						</button>
 						<button
 							type="button"
-							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
-							style={{ minHeight: "44px" }}
+							className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
 							onClick={() => handleSmartDictation("20000 сбп, вычет")}
 						>
 							<QrCode size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
@@ -1195,7 +1194,7 @@ export function PaymentCapture({
 				<label htmlFor="payment-amount-input">Сумма к оплате (₽)</label>
 				{remainingDebt !== undefined && (
 					<div
-						className="quick-chips-row"
+						className="quick-chips-row payment-amount-presets"
 						style={{
 							marginTop: "6px",
 							flexWrap: "wrap",
@@ -1207,8 +1206,7 @@ export function PaymentCapture({
 						{remainingDebt > 0 && (
 							<button
 								type="button"
-								className="quick-chip min-h-[44px] px-4 font-bold text-sm"
-								style={{ minHeight: "44px" }}
+								className="quick-chip min-h-[36px] sm:min-h-[44px] px-3.5 font-bold text-xs sm:text-sm"
 								onClick={() => onAmountChange(rubAmountForInput(remainingDebt))}
 							>
 								Долг: {money(remainingDebt)}
@@ -1218,8 +1216,7 @@ export function PaymentCapture({
 							<button
 								key={val}
 								type="button"
-								className="quick-chip min-h-[44px] px-3.5 font-bold text-sm"
-								style={{ minHeight: "44px" }}
+								className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 font-bold text-xs sm:text-sm"
 								onClick={() => onAmountChange(String(val))}
 							>
 								{val} ₽
@@ -1240,14 +1237,13 @@ export function PaymentCapture({
 				</span>
 				<div
 					role="toolbar"
-					className="quick-chips-row"
+					className="quick-chips-row doctor-discount-chips"
 					style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}
 					aria-label="Скидки врача и гарантийные переделки"
 				>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-extrabold ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
-						style={{ minHeight: "44px" }}
+						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-extrabold ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
 						onClick={() => applyDoctorDiscount("warranty_100")}
 						data-testid="btn-doctor-discount-warranty"
 						title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
@@ -1256,8 +1252,7 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-bold ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
-						style={{ minHeight: "44px" }}
+						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-bold ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
 						onClick={() => applyDoctorDiscount("colleague_100")}
 						data-testid="btn-doctor-discount-colleague"
 						title="100% скидка для коллег и персонала клиники"
@@ -1266,8 +1261,7 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-						style={{ minHeight: "44px" }}
+						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-2.5 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						onClick={() => applyDoctorDiscount("percent_50")}
 						data-testid="btn-doctor-discount-50"
 					>
@@ -1275,8 +1269,7 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-						style={{ minHeight: "44px" }}
+						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-2.5 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						onClick={() => applyDoctorDiscount("percent_20")}
 						data-testid="btn-doctor-discount-20"
 					>
@@ -1284,8 +1277,7 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-						style={{ minHeight: "44px" }}
+						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-2.5 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						onClick={() => applyDoctorDiscount("percent_10")}
 						data-testid="btn-doctor-discount-10"
 					>
@@ -1296,7 +1288,7 @@ export function PaymentCapture({
 
 			<div
 				role="toolbar"
-				className="quick-chips-row col-span-full"
+				className="quick-chips-row payment-methods-toolbar col-span-full"
 				style={{
 					gridColumn: "1 / -1",
 					marginBottom: method === "cash" ? "8px" : "10px",
@@ -1311,12 +1303,11 @@ export function PaymentCapture({
 					const isActive = method === paymentMethod;
 					return (
 						<button
-							className={`quick-chip min-h-[44px] px-4 text-xs sm:text-sm font-bold ${
+							className={`quick-chip min-h-[38px] sm:min-h-[44px] px-3 sm:px-4 text-xs sm:text-sm font-bold ${
 								isActive
 									? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-400 font-bold"
 									: ""
 							}`}
-							style={{ minHeight: "44px" }}
 							key={paymentMethod}
 							type="button"
 							aria-pressed={isActive}
@@ -1482,7 +1473,7 @@ export function PaymentCapture({
 				возвратом или коррекцией, не повторной записью.
 			</p>
 			<div
-				className="col-span-full"
+				className="payment-actions col-span-full"
 				style={{
 					gridColumn: "1 / -1",
 					display: "flex",
@@ -1493,8 +1484,7 @@ export function PaymentCapture({
 				}}
 			>
 				<button
-					className="primary-button min-h-[44px]"
-					style={{ minHeight: "44px" }}
+					className="primary-button min-h-[42px] sm:min-h-[44px]"
 					type="button"
 					onClick={handlePrimarySubmit}
 					aria-busy={isSaving || undefined}
@@ -1508,8 +1498,7 @@ export function PaymentCapture({
 					{isSaving ? "Записываю" : "Принять оплату"}
 				</button>
 				<button
-					className="secondary-button min-h-[44px]"
-					style={{ minHeight: "44px" }}
+					className="secondary-button min-h-[38px] sm:min-h-[44px]"
 					type="button"
 					onClick={handleSberPosClick}
 					aria-describedby={

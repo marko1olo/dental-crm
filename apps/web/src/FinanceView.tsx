@@ -586,7 +586,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						data-testid="btn-finance-open-invoices"
 					>
 						<Receipt size={13} className="shrink-0" />
-						<span className="truncate">Счета и акты (804н)</span>
+						<span className="truncate hidden sm:inline">Счета и акты (804н)</span>
 					</button>
 
 					{/* Поповер вторичных действий: P&L, Документы и Смена ККТ */}

@@ -347,10 +347,8 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 			const html = renderToString(
 				<AppLogicProvider value={mockAppContext as any}>
 					<TreatmentPlanModule
-						activePatient={{
-							id: "PAT-WAVE62",
-							fullName: "Волков Дмитрий Андреевич",
-						}}
+						patientId="PAT-WAVE62"
+						patientName="Волков Дмитрий Андреевич"
 						teethData={sampleTeeth}
 						onExportToCashier={handleExport}
 					/>
