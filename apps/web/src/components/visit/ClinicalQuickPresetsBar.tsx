@@ -126,6 +126,22 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 				</div>
 
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => {
+							const normPreset = CLINICAL_SOAP_PRESETS.find((p) => p.id === "norm_healthy");
+							if (normPreset) {
+								handlePresetClick(normPreset);
+							}
+						}}
+						className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
+						title="1-клик норма Формы 043/у (Z01.2): пациент соматически здоров, патологий твердых тканей и пародонта не выявлено"
+						data-testid="btn-quick-apply-physio-norm"
+					>
+						<ShieldCheck size={16} />
+						<span>Норма (1-клик)</span>
+					</button>
+
 					{onOpenTemplatesModal && (
 						<button
 							type="button"
@@ -207,31 +223,36 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 					<Sparkles size={14} className="text-amber-500" />
 					<span>Главные экспресс-сценарии приема:</span>
 				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
 					{topExpressPresets.map((preset) => {
+						const isNorm = preset.id === "norm_healthy";
 						const isHygiene = preset.id === "hygiene_complex";
 						const isCaries = preset.id === "caries_medium";
 						const isPulpitis = preset.id === "pulpitis_acute";
 						const isPerio = preset.id === "perio_srp_curettage";
 						const isSurgery = preset.id === "surgery_extraction_simple";
 
-						const bgGradient = isHygiene
-							? "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 hover:opacity-90"
-							: isCaries
-								? "bg-blue-500/15 text-blue-800 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
-								: isPulpitis
-									? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
-									: isPerio
-										? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/25"
-										: "bg-purple-500/15 text-purple-800 dark:text-purple-200 border-purple-500/30 hover:bg-purple-500/25";
+						const bgGradient = isNorm
+							? "bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/25"
+							: isHygiene
+								? "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 hover:opacity-90"
+								: isCaries
+									? "bg-blue-500/15 text-blue-800 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
+									: isPulpitis
+										? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
+										: isPerio
+											? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/25"
+											: "bg-purple-500/15 text-purple-800 dark:text-purple-200 border-purple-500/30 hover:bg-purple-500/25";
 
-						const dynamicBadge = isHygiene
-							? "Профгигиена"
-							: isSurgery
-								? currentTooth ? `Удаление ${currentTooth}` : "Удаление"
-								: currentTooth
-									? `${preset.shortBadge.replace(/\s*\d{2}/, "")} ${currentTooth}`
-									: preset.shortBadge;
+						const dynamicBadge = isNorm
+							? "Норма (Здоров)"
+							: isHygiene
+								? "Профгигиена"
+								: isSurgery
+									? currentTooth ? `Удаление ${currentTooth}` : "Удаление"
+									: currentTooth
+										? `${preset.shortBadge.replace(/\s*\d{2}/, "")} ${currentTooth}`
+										: preset.shortBadge;
 
 						return (
 							<button
@@ -244,6 +265,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
+										{isNorm && <ShieldCheck size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
 										{isHygiene && <Sparkles size={17} className="text-[var(--ok-fg)] shrink-0" />}
 										{isCaries && <Stethoscope size={17} className="text-blue-600 dark:text-blue-400 shrink-0" />}
 										{isPulpitis && <Flame size={17} className="text-rose-600 dark:text-rose-400 shrink-0" />}
@@ -256,7 +278,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 									</span>
 								</div>
 								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
-									{isHygiene ? "Осмотр, Air-Flow, фторирование" : isCaries ? "Кариес → Пломба + 804н" : isPulpitis ? "Анестезия + Экстирпация + Ca(OH)2" : isPerio ? "УЗ + AirFlow + Хлоргексидин" : "Удаление + Гемостаз + Шов"}
+									{isNorm ? "Осмотр: Здоров, норма 043/у" : isHygiene ? "Осмотр, Air-Flow, фторирование" : isCaries ? "Кариес → Пломба + 804н" : isPulpitis ? "Анестезия + Экстирпация + Ca(OH)2" : isPerio ? "УЗ + AirFlow + Хлоргексидин" : "Удаление + Гемостаз + Шов"}
 								</span>
 							</button>
 						);

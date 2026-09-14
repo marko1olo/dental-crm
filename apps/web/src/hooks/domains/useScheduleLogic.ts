@@ -24,6 +24,7 @@ import {
 	staffWorkingHoursFromDraft,
 } from "../../AppHelpers";
 import { showToast } from "../../components/GlobalToast";
+import { DEFAULT_SOLO_CHAIR } from "../../components/schedule/ScheduleGrid";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useSettingsStore } from "../../store/settingsStore";
@@ -899,11 +900,9 @@ export function useScheduleLogic({
 			return false;
 		}
 		// Авто-подстановка кресла и врача при их отсутствии перед валидацией (Мандат 8e / 8n)
-		if (!newAppointmentDraft.chairId && dashboard?.clinicSettings?.chairs) {
-			const activeChairs = dashboard.clinicSettings.chairs.filter((c) => c.active);
-			if (activeChairs.length > 0 && activeChairs[0]) {
-				newAppointmentDraft.chairId = activeChairs[0].id;
-			}
+		if (!newAppointmentDraft.chairId) {
+			const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
+			newAppointmentDraft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 		}
 		if (!newAppointmentDraft.doctorUserId && dashboard?.clinicSettings?.staff) {
 			const activeDocs = dashboard.clinicSettings.staff.filter(

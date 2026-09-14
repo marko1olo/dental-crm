@@ -36,7 +36,7 @@ import {
 } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
+import { DEFAULT_SOLO_CHAIR, formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
 import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
 
 export const DURATION_PRESETS = [15, 30, 45, 60, 90, 120] as const;
@@ -311,13 +311,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	const clinicMode = dashboard.clinicSettings?.profile?.mode;
 	const clinicTimezone = dashboard.clinicSettings?.profile?.timezone;
 
-	// Запрет на палки в колёса регистратуре (Мандат 8e): авто-подстановка кресла и врача при их отсутствии
+	// Запрет на палки в колёса регистратуре (Мандат 8e / 8n): авто-подстановка кресла и врача при их отсутствии
 	useEffect(() => {
-		if (!newAppointmentDraft?.chairId && dashboard.clinicSettings?.chairs) {
-			const firstActiveChair = dashboard.clinicSettings.chairs.find((c) => c.active);
-			if (firstActiveChair) {
-				updateNewAppointmentDraft("chairId", firstActiveChair.id);
-			}
+		if (!newAppointmentDraft?.chairId) {
+			const firstActiveChair = (dashboard.clinicSettings?.chairs ?? []).find((c) => c.active);
+			updateNewAppointmentDraft("chairId", firstActiveChair?.id || DEFAULT_SOLO_CHAIR.id);
 		}
 	}, [newAppointmentDraft?.chairId, dashboard.clinicSettings?.chairs, updateNewAppointmentDraft]);
 
@@ -399,17 +397,21 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	);
 
 	// Критичные поля: Пациент и время приёма. Кресло и врач авто-назначаются по умолчанию при 1-2 кликах.
+	const isSoloMode =
+		clinicMode === "solo_doctor" ||
+		clinicMode === "one_chair" ||
+		(dashboard.clinicSettings?.staff ?? []).filter((m) => m.active && (m.role === "doctor" || m.role === "owner")).length <= 1;
+
 	const criticalMissingSteps = useMemo(() => {
-		const activeChairs = (dashboard.clinicSettings?.chairs ?? []).filter((c) => c.active);
 		const activeDocs = (dashboard.clinicSettings?.staff ?? []).filter(
 			(m) => m.active && (m.role === "doctor" || m.role === "owner"),
 		);
 		return newAppointmentMissingSteps.filter((step) => {
-			if (step.includes("кресло") && activeChairs.length > 0) return false;
-			if (step.includes("врач") && activeDocs.length > 0) return false;
+			if (step.includes("кресло")) return false;
+			if (step.includes("врач") && (activeDocs.length > 0 || isSoloMode)) return false;
 			return true;
 		});
-	}, [newAppointmentMissingSteps, dashboard.clinicSettings?.chairs, dashboard.clinicSettings?.staff]);
+	}, [newAppointmentMissingSteps, dashboard.clinicSettings?.staff, isSoloMode]);
 
 	const collision = useMemo(() => {
 		const isCito = Boolean(
@@ -534,6 +536,38 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	const newAppointmentReadyToCreate =
 		criticalMissingSteps.length === 0;
 
+	const handleQuickCreatePatientFromQuery = async () => {
+		const q = patientSearchQuery.trim();
+		const nameToCreate = q || "Новый пациент";
+		try {
+			const headers =
+				typeof authRef.current?.denteClinicalMutationHeaders === "function"
+					? authRef.current.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+					: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+			const isPhoneOnly = /^[+\d\s()-]{5,}$/.test(nameToCreate);
+			const res = await fetch("/api/patients", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					fullName: isPhoneOnly ? `Пациент (${nameToCreate})` : nameToCreate,
+					phone: isPhoneOnly ? nameToCreate : null,
+				}),
+			});
+			if (res.ok) {
+				const pat = await res.json();
+				if (pat?.id) {
+					updateNewAppointmentDraft("patientId", pat.id);
+					showToast(`Пациент «${pat.fullName || nameToCreate}» создан и выбран!`, "success", 3500);
+				}
+			} else {
+				showToast("Не удалось создать пациента", "error");
+			}
+		} catch (err) {
+			logger.error("Failed to create inline patient", err);
+			showToast("Ошибка создания пациента", "error");
+		}
+	};
+
 	const handleCreateAppointment = async () => {
 		// Авто-подстановка безопасных дефолтов при отсутствии полей (Мандаты 8e, 8k, 8n)
 		if (!newAppointmentDraft?.startsAt) {
@@ -549,12 +583,10 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			updateNewAppointmentDraft("endsAt", end.toISOString());
 		}
 		let currentChairId = newAppointmentDraft?.chairId;
-		if (!currentChairId && dashboard.clinicSettings?.chairs) {
-			const firstChair = dashboard.clinicSettings.chairs.find((c) => c.active);
-			if (firstChair) {
-				currentChairId = firstChair.id;
-				updateNewAppointmentDraft("chairId", firstChair.id);
-			}
+		if (!currentChairId) {
+			const firstChair = (dashboard.clinicSettings?.chairs ?? []).find((c) => c.active);
+			currentChairId = firstChair?.id || DEFAULT_SOLO_CHAIR.id;
+			updateNewAppointmentDraft("chairId", currentChairId);
 		}
 		if (!newAppointmentDraft?.doctorUserId) {
 			const targetTime = newAppointmentDraft?.startsAt;
@@ -581,10 +613,38 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			}
 		}
 		if (!newAppointmentDraft?.patientId) {
-			const firstActivePatient = (dashboard.patients ?? []).find((p) => p.status === "active");
-			if (firstActivePatient) {
-				updateNewAppointmentDraft("patientId", firstActivePatient.id);
-				showToast(`Автоматически выбран пациент: ${firstActivePatient.fullName}`, "info", 2500);
+			const q = patientSearchQuery.trim();
+			if (q) {
+				try {
+					const headers =
+						typeof authRef.current?.denteClinicalMutationHeaders === "function"
+							? authRef.current.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+							: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+					const isPhoneOnly = /^[+\d\s()-]{5,}$/.test(q);
+					const res = await fetch("/api/patients", {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							fullName: isPhoneOnly ? `Пациент (${q})` : q,
+							phone: isPhoneOnly ? q : null,
+						}),
+					});
+					if (res.ok) {
+						const pat = await res.json();
+						if (pat?.id) {
+							updateNewAppointmentDraft("patientId", pat.id);
+							showToast(`Пациент «${pat.fullName || q}» создан и прикреплен к записи`, "success", 3000);
+						}
+					}
+				} catch (err) {
+					logger.error("Auto patient creation failed in new appointment form", err);
+				}
+			} else {
+				const firstActivePatient = (dashboard.patients ?? []).find((p) => p.status === "active");
+				if (firstActivePatient) {
+					updateNewAppointmentDraft("patientId", firstActivePatient.id);
+					showToast(`Автоматически выбран пациент: ${firstActivePatient.fullName}`, "info", 2500);
+				}
 			}
 		}
 		if (!newAppointmentDraft?.reason) {
@@ -1246,15 +1306,45 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								)}
 							</div>
 
-							{(dashboard.patients ?? []).length > 6 && (
-								<div className="mb-2">
-									<input
-										type="text"
-										value={patientSearchQuery}
-										onChange={(e) => setPatientSearchQuery(e.target.value)}
-										placeholder="Поиск пациента по имени, телефону (+7...) или году рождения..."
-										className="w-full px-2.5 py-1.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs outline-none focus:ring-2 focus:ring-[var(--teal)]"
-									/>
+							<div className="mb-2 flex items-center gap-2">
+								<input
+									type="text"
+									data-testid="new-appointment-patient-input"
+									value={patientSearchQuery}
+									onChange={(e) => setPatientSearchQuery(e.target.value)}
+									placeholder="Поиск пациента или ввод ФИО/телефона нового..."
+									className="w-full px-2.5 py-1.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								/>
+								{patientSearchQuery.trim() && (
+									<button
+										type="button"
+										onClick={handleQuickCreatePatientFromQuery}
+										className="shrink-0 min-h-[44px] px-3 py-1.5 rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-xs font-bold hover:bg-[var(--teal-dark)] transition-colors cursor-pointer flex items-center gap-1"
+										title="Создать карту пациента на лету (1 клик)"
+										data-testid="btn-new-appointment-quick-create-patient"
+									>
+										<Plus size={14} />
+										<span>+ Пациент</span>
+									</button>
+								)}
+							</div>
+
+							{filteredPatients.length === 0 && (
+								<div className="p-3 mb-2 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-center space-y-2">
+									<p className="text-xs text-[var(--muted)] m-0">
+										{patientSearchQuery.trim()
+											? `Пациент «${patientSearchQuery.trim()}» не найден в картотеке`
+											: "В базе клиники пока нет пациентов"}
+									</p>
+									<button
+										type="button"
+										onClick={handleQuickCreatePatientFromQuery}
+										className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg bg-[var(--teal)] text-[var(--on-teal,white)] text-xs font-bold hover:bg-[var(--teal-dark)] transition-colors cursor-pointer"
+										data-testid="btn-create-first-patient"
+									>
+										<Plus size={14} />
+										<span>Создать «{patientSearchQuery.trim() || "Новый пациент"}» и записать</span>
+									</button>
 								</div>
 							)}
 
