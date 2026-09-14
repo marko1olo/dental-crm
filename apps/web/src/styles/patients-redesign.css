@@ -288,19 +288,31 @@
 /* Patients Main Grid (Master-Detail) */
 .patients-main-grid {
 	display: grid;
-	grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+	grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
 	gap: 1.25rem;
 	align-items: start;
 	width: 100%;
 	min-width: 0;
 }
 
-/* Mobile Master-Detail Navigation Stack on <= 900px */
+@media (min-width: 1440px) {
+	.patients-main-grid {
+		grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+	}
+}
+
+/* Mobile Master-Detail Navigation Stack on <= 900px (DEF-PAT-04) */
 @media (max-width: 900px) {
+	.patients-panel {
+		min-height: auto;
+		padding-bottom: 2rem;
+	}
+
 	.patients-main-grid {
 		display: flex !important;
 		flex-direction: column !important;
 		grid-template-columns: 1fr !important;
+		gap: 0.75rem;
 	}
 
 	.patients-main-grid.mobile-view-list .patient-admin-panel {
@@ -345,6 +357,44 @@
 	background: var(--teal-surface);
 	border-color: var(--teal);
 	color: var(--teal-dark);
+}
+
+/* Compact Mobile Patient Preview Card (DEF-PAT-04: Eliminates 500px dead void on mobile) */
+.patient-mobile-preview-card {
+	background: var(--paper);
+	border: 1px solid var(--line-strong, var(--line));
+	border-left: 4px solid var(--teal);
+	border-radius: 12px;
+	padding: 10px 14px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	box-shadow: var(--shadow-1);
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: pointer;
+	margin-top: 0.5rem;
+	user-select: none;
+}
+
+.patient-mobile-preview-card:hover {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+	box-shadow: var(--shadow-2);
+}
+
+.patient-mobile-preview-card:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+}
+
+[data-theme="dark"] .patient-mobile-preview-card,
+[data-theme="night"] .patient-mobile-preview-card,
+[data-theme="contrast"] .patient-mobile-preview-card,
+[data-theme="cyber_xray"] .patient-mobile-preview-card {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.2));
+	border-left-color: var(--teal, #2dd4bf);
 }
 
 /* Patient List & Row Items */
@@ -708,6 +758,31 @@
 	outline: none;
 	background: var(--paper);
 	box-shadow: 0 0 0 2px var(--teal-surface);
+}
+
+/* Sticky Patient Actions Bar (DEF-PAT-02, Mandate 8p) */
+.patient-admin-actions.sticky-patient-actions {
+	position: sticky;
+	bottom: 0;
+	z-index: 25;
+	background: var(--paper);
+	padding: 10px 0;
+	border-top: 1px solid var(--line);
+	box-shadow: 0 -4px 12px -2px rgba(0, 0, 0, 0.05);
+	margin-top: 12px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+[data-theme="dark"] .patient-admin-actions.sticky-patient-actions,
+[data-theme="night"] .patient-admin-actions.sticky-patient-actions,
+[data-theme="contrast"] .patient-admin-actions.sticky-patient-actions,
+[data-theme="cyber_xray"] .patient-admin-actions.sticky-patient-actions {
+	background: var(--paper, #0f172a);
+	border-top-color: var(--line, rgba(255, 255, 255, 0.15));
+	box-shadow: 0 -4px 12px -2px rgba(0, 0, 0, 0.35);
 }
 
 /* Collapsible Details Block */

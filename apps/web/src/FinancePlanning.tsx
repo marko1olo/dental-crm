@@ -115,7 +115,7 @@ export function FinancePlanningOverview({
         ловит только нулевой вариант.
       */}
 			<section
-				className="finance-summary-grid bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-3 mb-4"
+				className="finance-summary-grid bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 mb-2 sm:mb-4"
 				aria-label="Финансовая сводка"
 				data-testid="finance-planning"
 			>

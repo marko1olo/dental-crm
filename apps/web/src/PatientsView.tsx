@@ -11,6 +11,7 @@ import {
 	Calendar,
 	Camera,
 	Check,
+	ChevronRight,
 	Clock,
 	FileText,
 	Gift,
@@ -837,44 +838,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									) : null}
 								</div>
 								<div className="patient-row-actions flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-									{/* Direct Action 1: «В карту» */}
-									<button
-										type="button"
-										className="patient-row-action-btn patient-row-chart-btn min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)] inline-flex items-center gap-1 cursor-pointer transition-colors"
-										title={`Открыть приём и карту 043/у: ${patient.fullName}`}
-										data-testid={`patient-row-chart-btn-${patient.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleSelectPatient(patient.id);
-											executeOpenPatientVisitAutonomy({ selectedPatient: patient });
-										}}
-									>
-										<FileText size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-										<span className="hidden sm:inline">В карту</span>
-									</button>
-
-									{/* Direct Action 2: «Запись» */}
-									<button
-										type="button"
-										className="patient-row-action-btn patient-row-book-btn min-h-[44px] sm:min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal,var(--brand-primary))] hover:opacity-90 active:scale-95 text-white inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-										title={`Записать на приём в расписание: ${patient.fullName}`}
-										data-testid={`patient-row-book-btn-${patient.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleSelectPatient(patient.id);
-											executeBookPatientAppointmentAutonomy({ selectedPatient: patient });
-										}}
-									>
-										<Calendar size={13} className="shrink-0" />
-										<span className="hidden sm:inline">Запись</span>
-									</button>
-
-									{/* Secondary Actions Dropdown Menu «...» (Miller's Law) */}
+									{/* Secondary Actions Dropdown Menu «...» (Miller's Law - frees >200px of row width) */}
 									<div className="relative inline-flex items-center" ref={rowMenuPatientId === patient.id ? rowMenuRef : null}>
 										<button
 											type="button"
-											className="patient-row-more-btn min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
-											title="Дополнительные действия с пациентом"
+											className="patient-row-more-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
+											title="Действия с пациентом (В карту, Запись, Карточка, Касса 54-ФЗ)"
 											aria-label={`Меню действий для ${patient.fullName}`}
 											aria-expanded={rowMenuPatientId === patient.id}
 											data-testid={`patient-row-more-btn-${patient.id}`}
@@ -894,6 +863,40 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												data-testid="patient-row-actions-dropdown"
 												onClick={(e) => e.stopPropagation()}
 											>
+												{/* Action 1: «В карту» */}
+												<button
+													type="button"
+													className="patient-row-action-btn patient-row-chart-btn w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+													role="menuitem"
+													title={`Открыть приём и карту 043/у: ${patient.fullName}`}
+													data-testid={`patient-row-chart-btn-${patient.id}`}
+													onClick={() => {
+														setRowMenuPatientId(null);
+														handleSelectPatient(patient.id);
+														executeOpenPatientVisitAutonomy({ selectedPatient: patient });
+													}}
+												>
+													<FileText size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+													<span>В карту 043/у (Приём)</span>
+												</button>
+
+												{/* Action 2: «Запись» */}
+												<button
+													type="button"
+													className="patient-row-action-btn patient-row-book-btn w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+													role="menuitem"
+													title={`Записать на приём в расписание: ${patient.fullName}`}
+													data-testid={`patient-row-book-btn-${patient.id}`}
+													onClick={() => {
+														setRowMenuPatientId(null);
+														handleSelectPatient(patient.id);
+														executeBookPatientAppointmentAutonomy({ selectedPatient: patient });
+													}}
+												>
+													<Calendar size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+													<span>Записать на приём</span>
+												</button>
+
 												<button
 													type="button"
 													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
@@ -950,10 +953,60 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											</div>
 										)}
 									</div>
+
+									{/* Visual interactive chevron indicator (DEF-PAT-04) */}
+									<ChevronRight
+										size={16}
+										className="text-[var(--muted)] opacity-50 group-hover:opacity-100 group-hover:text-[var(--teal)] transition-all shrink-0 pointer-events-none ml-0.5"
+										aria-hidden="true"
+									/>
 								</div>
 							</article>
 						);
 					})}
+					{/* Mobile Compact Patient Preview Card (DEF-PAT-04: Eliminates 500px dead void on mobile) */}
+					{selectedPatient && mobileActiveView === "list" && (
+						<div
+							className="patient-mobile-preview-card md:hidden"
+							onClick={() => setMobileActiveView("card")}
+							role="button"
+							tabIndex={0}
+							aria-label={`Выбран пациент ${selectedPatient.fullName}. Нажмите для открытия полной карточки`}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									setMobileActiveView("card");
+								}
+							}}
+							data-testid="patient-mobile-preview-card"
+						>
+							<div className="flex items-center gap-2.5 min-w-0 flex-1">
+								<PatientAvatar fullName={selectedPatient.fullName} size={34} />
+								<div className="min-w-0 flex-1">
+									<div className="text-[11px] font-bold text-[var(--teal)] uppercase tracking-wider">
+										Выбранный пациент
+									</div>
+									<div className="text-sm font-bold text-[var(--ink)] truncate">
+										{selectedPatient.fullName}
+									</div>
+									<div className="text-xs text-[var(--muted)] truncate">
+										{selectedPatient.phone || "Телефон не указан"}
+									</div>
+								</div>
+							</div>
+							<button
+								type="button"
+								className="primary-button min-h-[44px] px-3.5 text-xs font-bold shrink-0 inline-flex items-center gap-1 rounded-xl"
+								onClick={(e) => {
+									e.stopPropagation();
+									setMobileActiveView("card");
+								}}
+							>
+								<span>Карточка</span>
+								<ArrowRight size={14} aria-hidden="true" />
+							</button>
+						</div>
+					)}
 					{(displayPatients ?? []).length === 0 ? (
 						<EmptyState
 							className="patient-empty-state"
@@ -1095,6 +1148,41 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 							{selectedPatient && (
 								<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
+									{/* Primary CTA 1 (Above Fold): Сохранить данные */}
+									<button
+										type="button"
+										onClick={savePatientCore}
+										aria-busy={patientCoreSaveState === "saving" || undefined}
+										aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
+										disabled={patientCoreSaveState === "saving"}
+										className="primary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-xs"
+										title="Сохранить изменения в карточке пациента (1 клик, выше сгиба 900px)"
+										data-testid="patient-core-save-top-btn"
+									>
+										<UserCheck size={13} aria-hidden="true" />
+										<span>Сохранить</span>
+									</button>
+
+									{/* Primary CTA 2 (Above Fold): Соматически здоров / норма (1-клик) */}
+									<button
+										type="button"
+										onClick={() =>
+											executePatientSomaticNormAutonomy({
+												selectedPatient,
+												currentNotes: patientCoreDraft?.notes,
+												updatePatientCoreDraft,
+												showToastFn: triggerToast,
+											})
+										}
+										disabled={false}
+										className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)]"
+										title="Установить соматическую норму в 1 клик (Мандат 8e, выше сгиба 900px)"
+										data-testid="patient-card-somatic-norm-top-btn"
+									>
+										<Check size={13} aria-hidden="true" className="text-teal-600 dark:text-teal-400" />
+										<span>Норма (1-клик)</span>
+									</button>
+
 									{/* 1-Click Medical Card 043/u */}
 									<button
 										type="button"
@@ -1361,7 +1449,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					</div>
 
 					<div
-						className="patient-admin-actions"
+						className="patient-admin-actions sticky-patient-actions"
 						style={{
 							marginTop: "12px",
 							display: "flex",
@@ -1378,7 +1466,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							aria-busy={patientCoreSaveState === "saving" || undefined}
 							aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
 							disabled={patientCoreSaveState === "saving"}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "36px" }}
 							data-testid="patient-core-save-btn"
 						>
 							<UserCheck size={16} aria-hidden="true" /> Сохранить данные
@@ -1399,7 +1487,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								minHeight: "44px",
+								minHeight: "36px",
 							}}
 							title="Установить соматическую норму в 1 клик"
 							data-testid="patient-card-somatic-norm-btn"

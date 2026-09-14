@@ -123,19 +123,7 @@ export function UrgentScheduleRequestsWidget({
 	}
 
 	if (requests.length === 0) {
-		return (
-			<div
-				className="rounded-xl border text-xs text-center"
-				style={{
-					padding: "14px 16px",
-					borderColor: "var(--line)",
-					background: "var(--paper-soft)",
-					color: "var(--muted)",
-				}}
-			>
-				Срочных обращений нет. Окна резерва готовы к записи.
-			</div>
-		);
+		return null;
 	}
 
 	return (

@@ -1321,22 +1321,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	return (
 		<>
 			<div className="panel visit-panel" id="visit" data-testid="visit-view">
-				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=82px) (Mandates 8e, 8p, HIG) ═══ */}
+				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) (Mandates 8e, 8p, HIG) ═══ */}
 				<header
-					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-2 overflow-hidden shrink-0"
+					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0"
 					data-testid="visit-header-monolith"
 					aria-label="Шапка текущего приёма"
 				>
-					{/* Строка 1 (высота ~36px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
-					<div className="min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-2 px-2.5 sm:px-3 border-b border-[var(--line)] flex-nowrap overflow-hidden">
+					{/* Строка 1 (высота ~32-34px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
+					<div className="min-h-[38px] sm:min-h-[34px] sm:h-8.5 sm:max-h-8.5 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-2.5 border-b border-[var(--line)] flex-nowrap overflow-hidden">
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-							<PatientAvatar fullName={activePatient.fullName} size={28} />
-							<span className="truncate min-w-0 max-w-[110px] sm:max-w-none text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
+							<PatientAvatar fullName={activePatient.fullName} size={26} />
+							<span className="truncate min-w-0 max-w-[170px] xs:max-w-[220px] sm:max-w-none text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
 								<span className="sm:hidden">
 									{(() => {
 										const parts = (activePatient.fullName || "").trim().split(/\s+/);
 										if (parts.length >= 2) {
-											const initials = parts.slice(1).map((p) => (p[0] ? `${p[0]}.` : "")).join("");
+											const initials = parts.slice(1).map((p) => (p[0] ? `${p[0]}.` : "")).join(" ");
 											return `${parts[0]} ${initials}`.trim();
 										}
 										return activePatient.fullName;
@@ -1375,7 +1375,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+								className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
@@ -1390,7 +1390,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+								className="!hidden sm:!inline-flex secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
@@ -1402,7 +1402,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={() => setIsEmergencyModalOpen(true)}
 								data-testid="btn-visit-emergency-rescue"
-								className="!hidden sm:!inline-flex secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+								className="!hidden sm:!inline-flex secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
 								title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
 							>
 								<AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
@@ -1419,7 +1419,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
+								className="primary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
 								title="Завершить приём и сохранить все изменения"
 							>
 								<CheckCircle2 size={14} className="shrink-0" />
@@ -1433,7 +1433,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-0 sm:h-7 px-2 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+									className="secondary-button min-h-[36px] min-w-[36px] sm:min-w-0 sm:min-h-0 sm:h-7 px-1.5 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 									title="Дополнительные действия и бланки приема"
 									aria-label="Дополнительные действия приема"
 									aria-expanded={isHeaderMoreMenuOpen}
@@ -1554,8 +1554,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 					</div>
 
-					{/* Строка 2 (высота ~36px): Компактные табы разделов визита (высота 32px) */}
-					<div className="min-h-[44px] sm:h-9 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
+					{/* Строка 2 (высота ~30-32px): Компактные табы разделов визита (DEF-VIS-02) */}
+					<div className="min-h-[36px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
 						<VisitMainTabs
 							visitSubViewTab={visitSubViewTab}
 							setVisitSubViewTab={setVisitSubViewTab}
@@ -1576,10 +1576,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 				<div
 					style={{
-						margin: "16px 0",
+						margin: "4px 0 8px",
 						display: visitSubViewTab === "emk" ? "flex" : "none",
 						flexDirection: "column",
-						gap: "16px",
+						gap: "4px",
 					}}
 					aria-hidden={visitSubViewTab !== "emk"}
 				>
@@ -1612,7 +1612,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				{odontogramTabWasOpened && (
 					<div
 						style={{
-							margin: "8px 0",
+							margin: "4px 0 8px",
 							display: visitSubViewTab === "odontogram" ? undefined : "none",
 						}}
 						aria-hidden={visitSubViewTab !== "odontogram"}
@@ -1628,7 +1628,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				{anamnesisTabWasOpened && (
 					<div
 						style={{
-							margin: "16px 0",
+							margin: "4px 0 8px",
 							display: visitSubViewTab === "anamnesis" ? undefined : "none",
 						}}
 						aria-hidden={visitSubViewTab !== "anamnesis"}

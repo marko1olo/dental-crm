@@ -485,7 +485,7 @@ function InstallmentCalculator({
 		<details
 			className="payment-capture-detail-section"
 			open={isOpen}
-			style={{ marginBottom: "20px" }}
+			style={{ marginBottom: "6px" }}
 		>
 			{/* БЫЛО: «Калькулятор рассрочки (Внутренний)». Слово «внутренний» —
           из разработки: пользователю оно не говорит ничего, а насторожить
@@ -1043,7 +1043,7 @@ export function PaymentCapture({
 
 	return (
 		<div
-			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4"
+			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-3 sm:p-4"
 			id="payment-capture"
 		>
 			{feedback ? (
@@ -1065,14 +1065,14 @@ export function PaymentCapture({
             NewAppointmentForm столбик задаёт сам, поэтому общий стиль не
             трогаем. */}
 					<div
-						className="smart-ai-booking"
+						className="smart-ai-booking col-span-full"
 						style={{
 							gridColumn: "1 / -1",
-							marginBottom: "12px",
+							marginBottom: "8px",
 							border: "1px solid var(--line-strong)",
 							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.05)",
 							borderRadius: "12px",
-							padding: "8px 12px",
+							padding: "6px 10px",
 							background: "var(--paper)",
 							display: "flex",
 							flexDirection: "row",
@@ -1126,8 +1126,15 @@ export function PaymentCapture({
 						/>
 					</div>
 					<div
-						className="quick-chips-row"
-						style={{ marginBottom: "16px", flexWrap: "wrap", display: "flex", gap: "6px" }}
+						className="quick-chips-row col-span-full"
+						style={{
+							gridColumn: "1 / -1",
+							marginBottom: "8px",
+							flexWrap: "wrap",
+							display: "flex",
+							gap: "6px",
+							width: "100%",
+						}}
 					>
 						<button
 							type="button"
@@ -1158,7 +1165,7 @@ export function PaymentCapture({
 						</button>
 					</div>
 					{showSmartPreview && smartParsedData && (
-						<div style={{ marginBottom: "16px" }}>
+						<div className="col-span-full" style={{ gridColumn: "1 / -1", marginBottom: "8px" }}>
 							<SmartParsePreview
 								parsedData={smartParsedData}
 								rawText={smartInputText}
@@ -1172,7 +1179,7 @@ export function PaymentCapture({
 					)}
 				</>
 			)}
-			<div className="smart-field">
+			<div className="smart-field col-span-full" style={{ gridColumn: "1 / -1" }}>
 				<input
 					id="payment-amount-input"
 					inputMode="numeric"
@@ -1190,7 +1197,7 @@ export function PaymentCapture({
 					<div
 						className="quick-chips-row"
 						style={{
-							marginTop: "8px",
+							marginTop: "6px",
 							flexWrap: "wrap",
 							display: "flex",
 							gap: "6px",
@@ -1224,11 +1231,11 @@ export function PaymentCapture({
 
 			{/* Скидки врача и гарантийные переделки (Мандат 8e п. 7, Мандат 8n: без паролей администратора и блокировок) */}
 			<div
-				className="doctor-discounts-section"
-				style={{ marginTop: "12px", marginBottom: "16px" }}
+				className="doctor-discounts-section col-span-full"
+				style={{ gridColumn: "1 / -1", marginTop: "8px", marginBottom: "8px" }}
 				data-testid="doctor-discounts-section"
 			>
-				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-1.5">
+				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-1">
 					Скидка врача / Гарантия (без паролей администратора):
 				</span>
 				<div
@@ -1259,7 +1266,7 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_50" ? "active" : ""}`}
+						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						style={{ minHeight: "44px" }}
 						onClick={() => applyDoctorDiscount("percent_50")}
 						data-testid="btn-doctor-discount-50"
@@ -1268,7 +1275,7 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_20" ? "active" : ""}`}
+						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						style={{ minHeight: "44px" }}
 						onClick={() => applyDoctorDiscount("percent_20")}
 						data-testid="btn-doctor-discount-20"
@@ -1277,7 +1284,7 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_10" ? "active" : ""}`}
+						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						style={{ minHeight: "44px" }}
 						onClick={() => applyDoctorDiscount("percent_10")}
 						data-testid="btn-doctor-discount-10"
@@ -1289,22 +1296,36 @@ export function PaymentCapture({
 
 			<div
 				role="toolbar"
-				className="quick-chips-row"
-				style={{ marginBottom: method === "cash" ? "12px" : "20px", display: "flex", gap: "6px", flexWrap: "wrap" }}
+				className="quick-chips-row col-span-full"
+				style={{
+					gridColumn: "1 / -1",
+					marginBottom: method === "cash" ? "8px" : "10px",
+					display: "flex",
+					gap: "6px",
+					flexWrap: "wrap",
+					width: "100%",
+				}}
 				aria-label="Способ оплаты"
 			>
-				{visiblePaymentMethods.map((paymentMethod) => (
-					<button
-						className={`quick-chip min-h-[44px] px-4 text-xs sm:text-sm font-bold ${method === paymentMethod ? "active" : ""}`}
-						style={{ minHeight: "44px" }}
-						key={paymentMethod}
-						type="button"
-						aria-pressed={method === paymentMethod}
-						onClick={() => onMethodChange(paymentMethod)}
-					>
-						{methodLabels[paymentMethod]}
-					</button>
-				))}
+				{visiblePaymentMethods.map((paymentMethod) => {
+					const isActive = method === paymentMethod;
+					return (
+						<button
+							className={`quick-chip min-h-[44px] px-4 text-xs sm:text-sm font-bold ${
+								isActive
+									? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-400 font-bold"
+									: ""
+							}`}
+							style={{ minHeight: "44px" }}
+							key={paymentMethod}
+							type="button"
+							aria-pressed={isActive}
+							onClick={() => onMethodChange(paymentMethod)}
+						>
+							{methodLabels[paymentMethod]}
+						</button>
+					);
+				})}
 			</div>
 
 			{method === "cash" && (normalizeRubAmountInput(amount) ?? 0) > 0 && (() => {
@@ -1315,7 +1336,8 @@ export function PaymentCapture({
 
 				return (
 					<div
-						className="p-4 mb-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--teal)]/30 space-y-3"
+						className="col-span-full p-3 mb-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/30 space-y-2"
+						style={{ gridColumn: "1 / -1" }}
 						data-testid="cash-change-hud"
 					>
 						<div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1459,7 +1481,17 @@ export function PaymentCapture({
 				Каждая оплата добавляет новую строку в историю. Ошибку закрывайте
 				возвратом или коррекцией, не повторной записью.
 			</p>
-			<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+			<div
+				className="col-span-full"
+				style={{
+					gridColumn: "1 / -1",
+					display: "flex",
+					gap: "8px",
+					flexWrap: "wrap",
+					width: "100%",
+					marginTop: "4px",
+				}}
+			>
 				<button
 					className="primary-button min-h-[44px]"
 					style={{ minHeight: "44px" }}

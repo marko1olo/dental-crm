@@ -693,9 +693,9 @@ export function WorkspaceTopbar({
 	}, [lastMessage, triggerIncomingCall, isDoctorMode]);
 
 	return (
-		<header className="topbar">
+		<header className="topbar pl-3 sm:pl-4">
 			<div className="topbar-context min-w-0 flex-1 overflow-visible">
-				<div className="topbar-clinic shrink-0 min-w-[140px] sm:max-w-[340px] max-w-[240px]">
+				<div className="topbar-clinic shrink-0 min-w-[140px] sm:max-w-[340px] max-w-[240px] pl-1 sm:pl-0">
 					<p className="eyebrow truncate">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>

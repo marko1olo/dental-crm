@@ -338,13 +338,21 @@ export function ScheduleFilterStrip({
 				</button>
 			</div>
 
-			{/* Center: 1-line horizontal scrollable doctor & chair filters */}
+			{/* Center: 1-line horizontal scrollable doctor & chair filters (Mandate 8p: no aggressive mask on desktop >= 1280px) */}
+			<style>{`
+				.schedule-filter-chips {
+					mask-image: linear-gradient(to right, black calc(100% - 12px), transparent 100%);
+					-webkit-mask-image: linear-gradient(to right, black calc(100% - 12px), transparent 100%);
+				}
+				@media (min-width: 1280px) {
+					.schedule-filter-chips {
+						mask-image: none !important;
+						-webkit-mask-image: none !important;
+					}
+				}
+			`}</style>
 			<div
 				className="schedule-filter-chips flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0"
-				style={{
-					maskImage: "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
-					WebkitMaskImage: "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
-				}}
 				onWheel={(e) => {
 					if (e.deltaY !== 0) {
 						e.currentTarget.scrollLeft += e.deltaY;
@@ -380,21 +388,6 @@ export function ScheduleFilterStrip({
 						</button>
 					);
 				})()}
-
-				{/* 1-Click "Автодозвон" confirmation panel chip (Mandates 8d, 8p, 8n) */}
-				{onToggleConfirmations && (
-					<button
-						type="button"
-						className={`quick-chip schedule-auto-call-chip ${showConfirmationsPanel ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
-						onClick={onToggleConfirmations}
-						title="Утренний автодозвон и подтверждение визитов (1 клик)"
-						aria-label="Автодозвон и подтверждения"
-						data-testid="schedule-auto-call-chip-btn"
-					>
-						<PhoneCall size={13} className="shrink-0 text-current" aria-hidden="true" />
-						<span className="whitespace-nowrap shrink-0 flex-shrink-0">Автодозвон</span>
-					</button>
-				)}
 
 				{/* Doctor filter chips */}
 				{!isSoloDoctor &&
@@ -482,7 +475,7 @@ export function ScheduleFilterStrip({
 			</div>
 
 			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
-			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l border-[var(--line)]">
+			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l-0 sm:border-l sm:border-[var(--line)]">
 				{/* 1-Click View Mode Switcher: [ Лента | Сетка | По креслам ] (desktop & tablet, on mobile embedded in options dropdown) */}
 				{setScheduleViewMode && (
 					<div className="hidden sm:flex items-center gap-0.5 sm:gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
@@ -935,11 +928,17 @@ export function ScheduleFilterStrip({
 										onToggleConfirmations();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className={`w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer ${
+										showConfirmationsPanel
+											? "bg-[var(--teal-soft)] text-[var(--teal-dark)] font-bold"
+											: "text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
+									}`}
 									role="menuitem"
+									data-testid="schedule-auto-call-chip-btn"
+									title="Утренний автодозвон и подтверждение визитов (1 клик)"
 								>
 									<PhoneCall size={14} className="text-[var(--teal,var(--brand-primary))]" />
-									<span>{showConfirmationsPanel ? "Скрыть обзвон" : "Утренний обзвон"}</span>
+									<span>{showConfirmationsPanel ? "Скрыть автодозвон" : "Автодозвон и подтверждения"}</span>
 								</button>
 							)}
 
@@ -997,13 +996,13 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={onQuickBooking}
-						className="schedule-primary-quick-booking-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg text-xs font-black bg-[var(--teal,var(--brand-primary))] hover:brightness-110 active:scale-95 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs select-none"
+						className="schedule-primary-quick-booking-btn h-9 w-9 sm:w-auto min-h-[36px] min-w-[36px] sm:min-h-0 sm:h-7 px-0 sm:px-3 rounded-lg text-xs font-black bg-[var(--teal,var(--brand-primary))] hover:brightness-110 active:scale-95 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs select-none"
 						title="Новая запись пациента на прием (N)"
 						aria-label="Новая запись на прием: + ЗАПИСЬ"
 						data-testid="schedule-toolbar-primary-quick-booking-btn"
 					>
-						<Plus size={14} className="shrink-0 stroke-[3]" aria-hidden="true" />
-						<span className="whitespace-nowrap font-black uppercase tracking-wider text-xs">
+						<Plus size={15} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
+						<span className="hidden sm:inline whitespace-nowrap font-black uppercase tracking-wider text-xs">
 							Запись
 						</span>
 					</button>

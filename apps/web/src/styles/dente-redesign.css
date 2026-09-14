@@ -1513,6 +1513,8 @@ button[data-tooth-state="missing"] {
 	}
 	.topbar {
 		padding: 8px 14px;
+		padding-left: max(16px, calc(12px + env(safe-area-inset-left)));
+		padding-right: max(12px, calc(8px + env(safe-area-inset-right)));
 		flex-wrap: nowrap;
 		gap: 8px;
 		min-height: 52px;
@@ -1529,6 +1531,7 @@ button[data-tooth-state="missing"] {
 		max-width: 140px;
 		word-break: normal;
 		display: block;
+		padding-left: 2px;
 	}
 	.topbar .eyebrow,
 	.topbar-clinic .eyebrow {

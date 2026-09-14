@@ -1796,38 +1796,16 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 	return (
 		<div className="space-y-3">
-			{/* Day 0 Empty State Banner when no appointments for selected day */}
+			{/* Day 0 Empty State Banner when no appointments for selected day (compact <= 36px 1-line strip, Mandate 8p) */}
 			{dayAppointments.length === 0 && (
-				<div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 text-xs">
-					<div className="flex items-center gap-2 sm:gap-3">
-						<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-						<div>
-							<span className="font-bold text-[var(--ink)]">На выбранный день записей пока нет.</span>
-							<span className="text-[var(--muted)] ml-1 hidden sm:inline">Нажмите на любой свободный интервал в сетке ниже или кнопку «+ Записать первого пациента».</span>
-						</div>
-					</div>
-					<button
-						type="button"
-						onClick={() => {
-							const firstChair = effectiveChairs[0];
-							const firstChairId = firstChair?.id || DEFAULT_SOLO_CHAIR.id;
-							const firstChairAssign = effectiveChairAssignments[firstChairId];
-							const firstDocId = firstChairAssign?.doctorId || selectedDoctorId || null;
-							const firstDocName = firstChairAssign?.doctorName || (firstDocId ? dashboard?.clinicSettings?.staff?.find((m) => m.id === firstDocId)?.fullName : undefined);
-							onSlotClick({
-								dateKey,
-								startTime: "09:00",
-								chairId: firstChairId,
-								doctorUserId: firstDocId,
-								doctorName: firstDocName || undefined,
-							});
-						}}
-						className="primary-button hidden sm:flex min-h-[44px] px-3.5 items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer shrink-0"
-						data-testid="btn-grid-first-appointment"
-					>
-						<Plus size={14} aria-hidden="true" />
-						<span>Записать первого пациента</span>
-					</button>
+				<div className="h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] max-h-9 px-3 rounded-lg bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex items-center gap-2 text-xs select-none">
+					<CalendarCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
+					<span className="font-semibold text-[var(--ink)] truncate">
+						На выбранный день записей пока нет.
+					</span>
+					<span className="text-[var(--muted)] hidden md:inline truncate">
+						Нажмите на любой свободный интервал в сетке ниже для записи пациента.
+					</span>
 				</div>
 			)}
 

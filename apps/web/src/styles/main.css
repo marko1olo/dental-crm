@@ -12517,12 +12517,12 @@ html.dark .payment-capture h3,
 .payment-capture {
 	align-items: end;
 	display: grid;
-	gap: 10px;
+	gap: 8px;
 	grid-template-columns: minmax(120px, 0.5fr) minmax(220px, 1fr) minmax(
 			160px,
 			0.7fr
 		) minmax(160px, 0.7fr);
-	padding: 12px;
+	padding: 10px 12px;
 }
 
 .payment-capture .primary-button {
@@ -12535,7 +12535,7 @@ html.dark .payment-capture h3,
 	font-weight: 850;
 	grid-column: 1 / -1;
 	line-height: 1.35;
-	margin: -2px 0 0;
+	margin: 2px 0 0;
 }
 
 .payment-capture-detail-section {
@@ -12544,7 +12544,7 @@ html.dark .payment-capture h3,
 	border-radius: 8px;
 	grid-column: 1 / -1;
 	min-width: 0;
-	padding: 11px 12px;
+	padding: 7px 10px;
 }
 
 .payment-capture-detail-section summary {
@@ -12557,8 +12557,8 @@ html.dark .payment-capture h3,
 
 .payment-capture-detail-section[open] summary {
 	border-bottom: 1px solid var(--line);
-	margin-bottom: 10px;
-	padding-bottom: 9px;
+	margin-bottom: 8px;
+	padding-bottom: 7px;
 }
 
 .payment-capture-detail-grid {
@@ -12604,7 +12604,17 @@ html.dark .payment-capture h3,
 	font-weight: 850;
 	grid-column: 1 / -1;
 	line-height: 1.35;
-	padding: 9px 12px;
+	padding: 8px 10px;
+}
+
+html.dark .payment-capture-feedback,
+[data-theme="dark"] .payment-capture-feedback,
+[data-theme="night"] .payment-capture-feedback,
+.dark .payment-capture-feedback,
+body.dark-mode .payment-capture-feedback {
+	background: rgba(16, 185, 129, 0.12);
+	border: 1px solid rgba(16, 185, 129, 0.3);
+	color: #6ee7b7;
 }
 
 .payment-capture-missing {
@@ -12613,9 +12623,9 @@ html.dark .payment-capture h3,
 	border-radius: 8px;
 	color: #744d18;
 	display: grid;
-	gap: 6px;
+	gap: 4px;
 	grid-column: 1 / -1;
-	padding: 10px 12px;
+	padding: 8px 10px;
 }
 
 .payment-capture-missing strong {
@@ -12628,6 +12638,32 @@ html.dark .payment-capture h3,
 	font-size: 13px;
 	margin: 0;
 	padding-left: 18px;
+}
+
+html.dark .payment-capture-missing,
+[data-theme="dark"] .payment-capture-missing,
+[data-theme="night"] .payment-capture-missing,
+.dark .payment-capture-missing,
+body.dark-mode .payment-capture-missing {
+	background: rgba(245, 158, 11, 0.12);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+	color: #fcd34d;
+}
+
+html.dark .payment-capture-missing strong,
+[data-theme="dark"] .payment-capture-missing strong,
+[data-theme="night"] .payment-capture-missing strong,
+.dark .payment-capture-missing strong,
+body.dark-mode .payment-capture-missing strong {
+	color: #fcd34d;
+}
+
+html.dark .payment-capture-missing ul,
+[data-theme="dark"] .payment-capture-missing ul,
+[data-theme="night"] .payment-capture-missing ul,
+.dark .payment-capture-missing ul,
+body.dark-mode .payment-capture-missing ul {
+	color: #fcd34d;
 }
 
 .payment-capture label {
@@ -14011,7 +14047,6 @@ html.dark .communication-side .panel-heading h3,
 	.schedule-command-grid,
 	.schedule-shift-summary-grid,
 	.schedule-suggestion-strip,
-	.finance-summary-grid,
 	.plan-scenario-grid,
 	.clinical-rule-grid,
 	.finance-split,
@@ -14122,6 +14157,43 @@ html.dark .communication-side .panel-heading h3,
 	.visit-fields,
 	.compliance-bar div {
 		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.finance-summary-grid {
+		display: grid !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 6px !important;
+		padding: 8px !important;
+		margin-bottom: 8px !important;
+	}
+
+	.finance-summary-grid article {
+		min-height: 56px !important;
+		max-height: 76px !important;
+		padding: 6px 8px !important;
+		gap: 2px !important;
+	}
+
+	.finance-summary-grid span {
+		font-size: 11px !important;
+		line-height: 1.1 !important;
+	}
+
+	.finance-summary-grid strong {
+		font-size: 15px !important;
+		line-height: 1.15 !important;
+	}
+
+	.finance-summary-grid p {
+		font-size: 10px !important;
+		line-height: 1.15 !important;
+		white-space: nowrap !important;
+		overflow: hidden !important;
+		text-overflow: ellipsis !important;
+	}
+
+	.finance-summary-grid .finance-tax-deduction-card {
+		padding-bottom: 6px !important;
 	}
 
 	.folder-scan-row label {
@@ -16310,7 +16382,6 @@ html.dark .clinic-profile-form-grid textarea,
 .ct-planning-workflow-grid,
 .document-audit-facts-grid,
 .document-issue-attestation-grid,
-.finance-summary-grid,
 .imaging-source-grid,
 .smart-mode-grid,
 .marketing-form-grid,
@@ -16355,7 +16426,6 @@ html.dark .clinic-profile-form-grid textarea,
 .ct-planning-workflow-grid > *,
 .document-audit-facts-grid > *,
 .document-issue-attestation-grid > *,
-.finance-summary-grid > *,
 .imaging-source-grid > *,
 .smart-mode-grid > *,
 .marketing-form-grid > *,
@@ -16978,5 +17048,16 @@ html.dark .quick-chip:hover,
 	background: var(--paper-strong, rgba(51, 65, 85, 0.85)) !important;
 	border-color: var(--teal, #0d9488) !important;
 	color: #ffffff !important;
+}
+
+html.dark .quick-chip.active,
+[data-theme="dark"] .quick-chip.active,
+[data-theme="night"] .quick-chip.active,
+.dark .quick-chip.active,
+body.dark-mode .quick-chip.active {
+	background: rgba(13, 148, 136, 0.25) !important;
+	border-color: #2dd4bf !important;
+	color: #5eead4 !important;
+	font-weight: 800 !important;
 }
 
