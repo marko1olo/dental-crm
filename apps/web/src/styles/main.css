@@ -15041,7 +15041,7 @@ html.dark .communication-side .panel-heading h3,
 	}
 	to {
 		opacity: 1;
-		transform: translateY(0);
+		transform: none;
 	}
 }
 

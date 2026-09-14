@@ -72,7 +72,6 @@ import {
 	applyWindowLevelDrag,
 	calculateCrosshairDragWorldMm,
 	ROMEXIS_COLORS,
-	createEmptyCbctVolume,
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
@@ -858,27 +857,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			};
 		}
 
-		// Default initial volume if no real DICOM loaded yet
-		if (!volume) {
-			const vol = createEmptyCbctVolume(120, 120, 120, 0.5);
-			setVolume(vol);
-			setLoadedSliceCount(120);
-			const arch = autoDetectDentalArch(vol, jawType);
-			setArchCurve(arch);
-			const occlusalZMm = findOcclusalZPlane(vol, jawType);
-			let archCenterX = 0;
-			let archCenterY = 0;
-			if (arch.splinePointsMm.length > 0) {
-				const midIdx = Math.floor(arch.splinePointsMm.length / 2);
-				archCenterX = arch.splinePointsMm[midIdx]?.x ?? 0;
-				archCenterY = arch.splinePointsMm[midIdx]?.y ?? 0;
-			} else if (arch.anchors.length > 0) {
-				const midAnchor = arch.anchors[Math.floor(arch.anchors.length / 2)];
-				archCenterX = midAnchor?.positionMm.x ?? 0;
-				archCenterY = midAnchor?.positionMm.y ?? 0;
-			}
-			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
-		} else {
+		// Automatically recalculate dental arch when real volume is loaded or jawType changes
+		if (volume) {
 			const arch = autoDetectDentalArch(volume, jawType);
 			setArchCurve(arch);
 		}
@@ -5034,7 +5014,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							data-testid="cbct-patient-metadata-badge"
 							id="cbct-patient-metadata-badge"
 						>
-							{patientDisplayName || resolvedPatientName} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм
+							{patientDisplayName || resolvedPatientName} • {loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • {volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}
 						</p>
 					</div>
 				</div>
@@ -5360,7 +5340,49 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-zinc-950 min-h-0 min-w-0 w-full max-w-full overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
 				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all`}>
-					{maximizedViewport !== null ? (
+					{!volume ? (
+						<div
+							className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950 border border-dashed border-zinc-800 rounded-lg m-1 select-none"
+							data-testid="cbct-empty-volume-dropzone"
+							onDragOver={(e) => e.preventDefault()}
+							onDrop={(e) => {
+								e.preventDefault();
+								if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+									handleDicomFilesChange(e.dataTransfer.files);
+								}
+							}}
+						>
+							<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
+								<Box className="w-6 h-6" />
+							</div>
+							<h3 className="text-sm font-bold text-zinc-100 mb-1">
+								Исследование КЛКТ не загружено
+							</h3>
+							<p className="text-xs text-zinc-400 max-w-md mb-4">
+								Перетащите папку со срезами DICOM (.dcm) или архив .zip сюда, либо выберите файлы для построения мультипланарной реконструкции (MPR) и имплантологического планирования.
+							</p>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => folderInputRef.current?.click()}
+									className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+									data-testid="cbct-btn-select-folder-empty"
+								>
+									<FolderOpen className="w-4 h-4" />
+									<span>Выбрать папку DICOM</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => zipInputRef.current?.click()}
+									className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+									data-testid="cbct-btn-select-zip-empty"
+								>
+									<UploadCloud className="w-4 h-4" />
+									<span>Загрузить .ZIP</span>
+								</button>
+							</div>
+						</div>
+					) : maximizedViewport !== null ? (
 						<div className="flex-1 flex flex-col min-h-0 w-full h-full">
 							{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col w-full h-full")}
 							{maximizedViewport === "coronal" && renderCoronalViewport("flex-1 flex flex-col w-full h-full")}

@@ -1903,6 +1903,13 @@ button[data-tooth-state="missing"] {
 		overscroll-behavior-y: contain;
 		padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 	}
+	.app-shell.dente-redesign .workspace > *,
+	.work-grid,
+	.page-grid,
+	.finance-panel {
+		animation: none !important;
+		transform: none !important;
+	}
 	.dnt-bottom-nav {
 		display: flex;
 		position: relative;
