@@ -1966,7 +1966,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					}}
 				>
 					{/* Time corner header */}
-					<div className="px-1.5 sm:px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
+					<div className="px-1.5 sm:px-2 py-1.5 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
 						<Clock size={14} className="text-[var(--teal)]" />
 						<span className="hidden sm:inline">Время</span>
 					</div>
@@ -1991,7 +1991,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							return (
 								<div
 									key={chair.id}
-									className="p-1 sm:p-1.5 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1 min-w-0 relative transition-colors"
+									className="py-1 px-1 sm:px-2 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-0.5 min-w-0 relative transition-colors"
 									style={{ borderTop: `3px solid ${chairAccentColor}` }}
 									data-testid={`chair-header-${chair.id}`}
 									data-chair-palette={chairPalette.nameRu}
@@ -2065,7 +2065,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														isActive: (chair as any).active ?? (chair as any).isActive ?? true,
 													});
 												}}
-												className="min-h-[28px] h-7 w-7 p-1 rounded-lg hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center"
+												className="min-h-[24px] h-6 w-6 p-0.5 rounded-md hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center"
 												title={`Редактировать параметры кресла «${chair.name}»`}
 												aria-label={`Редактировать параметры кресла ${chair.name}`}
 												data-testid={`btn-edit-chair-${chair.id}`}
@@ -2100,7 +2100,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													prev === chair.id ? null : chair.id,
 												);
 											}}
-											className="min-h-[28px] h-7 w-7 p-1 rounded-lg bg-transparent hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-amber-600 transition-colors cursor-pointer flex items-center justify-center"
+											className="min-h-[24px] h-6 w-6 p-0.5 rounded-md bg-transparent hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-amber-600 transition-colors cursor-pointer flex items-center justify-center"
 											title={`Санобработка / Техперерыв для «${chair.name}» (1 клик)`}
 											aria-label={`Санобработка и техперерыв для ${chair.name}`}
 											data-testid={`btn-chair-maintenance-${chair.id}`}
@@ -2149,7 +2149,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									)}
 									{doctors.length >= 1 && (
 										<div
-											className="flex flex-col xl:flex-row items-center justify-center w-full my-0.5 gap-1 min-h-[44px] sm:min-h-0 cursor-pointer"
+											className="flex flex-row items-center justify-center w-full my-0 gap-1 min-h-[26px] sm:min-h-0 cursor-pointer"
 											data-testid={`chair-doctor-badge-${chair.id}`}
 											title={assignment?.doctorName ? `Врач на смене: ${assignment.doctorName} (${assignment.shiftHours || "08:00–20:00"}). Нажмите для смены` : undefined}
 											aria-label={assignment?.doctorName ? `Врач ${assignment.doctorName}, ${assignment.shiftHours || "08:00–20:00"}. Нажмите для изменения` : undefined}
@@ -2177,7 +2177,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full xl:w-auto min-w-0 xl:min-w-[120px] truncate cursor-pointer h-6"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] flex-1 min-w-0 max-w-[140px] truncate cursor-pointer h-6"
 												title="Закрепление врача за креслом в 1 клик (выбор из списка)"
 												data-testid={`chair-duty-doctor-select-${chair.id}`}
 												aria-label={`Дежурный врач для ${chair.name}`}
@@ -2223,7 +2223,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] w-full xl:w-auto min-w-0 xl:min-w-[130px] max-w-full cursor-pointer h-6 shrink-0"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] min-w-0 max-w-[110px] truncate cursor-pointer h-6 shrink-0"
 												title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день)"
 												data-testid={`chair-shift-select-${chair.id}`}
 												aria-label={`Смена для ${chair.name}`}

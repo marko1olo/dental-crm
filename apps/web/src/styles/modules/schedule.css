@@ -392,6 +392,9 @@
 	white-space: nowrap !important;
 	flex-shrink: 0 !important;
 }
+.schedule-panel {
+	padding: 0 !important;
+}
 .schedule-date-picker-group {
 	display: flex;
 	align-items: center;
@@ -401,6 +404,13 @@
 	margin-right: 2px;
 	height: 28px;
 	min-height: 28px;
+}
+@media (max-width: 640px) {
+	.schedule-date-picker-group {
+		border-right: none !important;
+		padding-right: 0 !important;
+		margin-right: 0 !important;
+	}
 }
 .schedule-date-picker-group .secondary-button {
 	height: 28px;

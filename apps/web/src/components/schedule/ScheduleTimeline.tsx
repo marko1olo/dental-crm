@@ -488,14 +488,8 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 							>
 								<Plus aria-hidden="true" size={16} />
 								<span>
-									{(dashboard.appointments ?? []).length === 0 ? (
-										"Записать первого пациента"
-									) : (
-										<>
-											Записать пациента
-											<span className="hidden sm:inline"> (N)</span>
-										</>
-									)}
+									Записать пациента
+									<span className="hidden sm:inline"> (N)</span>
 								</span>
 							</button>
 						</div>

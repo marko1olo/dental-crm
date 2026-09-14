@@ -308,7 +308,7 @@ export function ScheduleFilterStrip({
 				role="toolbar"
 			>
 			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px touch targets on mobile, 32-36px on desktop (HIG) */}
-			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r-0 sm:border-r sm:border-[var(--line)]">
+			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-0 sm:pr-1.5 border-r-0 sm:border-r sm:border-[var(--line)]">
 				<button
 					type="button"
 					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
@@ -338,17 +338,14 @@ export function ScheduleFilterStrip({
 				</button>
 			</div>
 
-			{/* Center: 1-line horizontal scrollable doctor & chair filters (Mandate 8p: no aggressive mask on desktop >= 1280px) */}
+			{/* Center: 1-line horizontal scrollable doctor & chair filters */}
 			<style>{`
 				.schedule-filter-chips {
-					mask-image: linear-gradient(to right, black calc(100% - 12px), transparent 100%);
-					-webkit-mask-image: linear-gradient(to right, black calc(100% - 12px), transparent 100%);
+					scrollbar-width: none;
+					-ms-overflow-style: none;
 				}
-				@media (min-width: 1280px) {
-					.schedule-filter-chips {
-						mask-image: none !important;
-						-webkit-mask-image: none !important;
-					}
+				.schedule-filter-chips::-webkit-scrollbar {
+					display: none;
 				}
 			`}</style>
 			<div
@@ -405,7 +402,7 @@ export function ScheduleFilterStrip({
 								<button
 									key={member.id}
 									type="button"
-									className={`quick-chip schedule-doctor-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center flex-shrink-0 select-none`}
+									className={`quick-chip schedule-doctor-chip ${scheduleDoctorFilterId === member.id ? "active font-bold" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center select-none`}
 									onClick={() =>
 										setScheduleDoctorFilterId(
 											scheduleDoctorFilterId === member.id ? null : member.id,
@@ -413,7 +410,7 @@ export function ScheduleFilterStrip({
 									}
 									title={`Фильтр по врачу: ${member?.fullName || "Врач"}`}
 								>
-									<span className="shrink-0 whitespace-nowrap min-w-fit font-medium">
+									<span className="shrink-0 flex-shrink-0 whitespace-nowrap min-w-max font-medium">
 										{formattedShort}
 									</span>
 								</button>
@@ -470,8 +467,8 @@ export function ScheduleFilterStrip({
 				{activeFilterSummary}
 			</div>
 
-			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
-			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l-0 sm:border-l sm:border-[var(--line)]">
+			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu */}
+			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-0 sm:pl-1.5 border-l-0 sm:border-l sm:border-[var(--line)]">
 				{/* 1-Click View Mode Switcher: [ Лента | Сетка | По креслам ] (desktop & tablet, on mobile embedded in options dropdown) */}
 				{setScheduleViewMode && (
 					<div className="hidden sm:flex items-center gap-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
@@ -1037,23 +1034,6 @@ export function ScheduleFilterStrip({
 							)}
 						</div>
 				</div>
-
-				{/* 1 Primary Action Button: [+ ЗАПИСЬ] (Hick's Law: strictly 1 primary action button on toolbar face) */}
-				{onQuickBooking && (
-					<button
-						type="button"
-						onClick={onQuickBooking}
-						className="schedule-primary-quick-booking-btn h-9 w-9 sm:w-auto min-h-[36px] min-w-[36px] sm:min-h-0 sm:h-7 px-0 sm:px-3 rounded-lg text-xs font-black bg-[var(--teal,var(--brand-primary))] hover:brightness-110 active:scale-95 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs select-none"
-						title="Новая запись пациента на прием (N)"
-						aria-label="Новая запись на прием: + ЗАПИСЬ"
-						data-testid="schedule-toolbar-primary-quick-booking-btn"
-					>
-						<Plus size={15} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
-						<span className="hidden sm:inline whitespace-nowrap font-black uppercase tracking-wider text-xs">
-							Запись
-						</span>
-					</button>
-				)}
 			</div>
 		</section>
 
