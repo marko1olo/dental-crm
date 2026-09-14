@@ -964,49 +964,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							</article>
 						);
 					})}
-					{/* Mobile Compact Patient Preview Card (DEF-PAT-04: Eliminates 500px dead void on mobile) */}
-					{selectedPatient && mobileActiveView === "list" && (
-						<div
-							className="patient-mobile-preview-card md:hidden"
-							onClick={() => setMobileActiveView("card")}
-							role="button"
-							tabIndex={0}
-							aria-label={`Выбран пациент ${selectedPatient.fullName}. Нажмите для открытия полной карточки`}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									setMobileActiveView("card");
-								}
-							}}
-							data-testid="patient-mobile-preview-card"
-						>
-							<div className="flex items-center gap-2.5 min-w-0 flex-1">
-								<PatientAvatar fullName={selectedPatient.fullName} size={34} />
-								<div className="min-w-0 flex-1">
-									<div className="text-[11px] font-bold text-[var(--teal)] uppercase tracking-wider">
-										Выбранный пациент
-									</div>
-									<div className="text-sm font-bold text-[var(--ink)] leading-snug break-words line-clamp-2">
-										{selectedPatient.fullName}
-									</div>
-									<div className="text-xs text-[var(--muted)] truncate">
-										{selectedPatient.phone || "Телефон не указан"}
-									</div>
-								</div>
-							</div>
-							<button
-								type="button"
-								className="primary-button min-h-[44px] px-3.5 text-xs font-bold shrink-0 inline-flex items-center gap-1 rounded-xl"
-								onClick={(e) => {
-									e.stopPropagation();
-									setMobileActiveView("card");
-								}}
-							>
-								<span>Карточка</span>
-								<ArrowRight size={14} aria-hidden="true" />
-							</button>
-						</div>
-					)}
 					{(displayPatients ?? []).length === 0 ? (
 						<EmptyState
 							className="patient-empty-state"
@@ -1109,7 +1066,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					) : null}
 
 					<div
-						className="panel-heading compact-heading"
+						className="panel-heading compact-heading flex flex-col gap-1.5"
 						style={{
 							borderBottom: "none",
 							paddingBottom: "0",
@@ -1117,160 +1074,158 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						}}
 					>
 						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "10px",
-								minWidth: 0,
-								flex: 1,
-								flexWrap: "wrap",
-							}}
+							className="flex items-center justify-between gap-2.5 w-full min-w-0"
 						>
-							{selectedPatient && (
-								<PatientAvatar
-									fullName={selectedPatient.fullName}
-									size={36}
-								/>
-							)}
-							<span
-								className="break-words min-w-0 max-w-full sm:max-w-md leading-tight"
-								title={selectedPatient ? selectedPatient.fullName : undefined}
-								style={{
-									fontSize: "16px",
-									fontWeight: 700,
-									color: "var(--ink)",
-								}}
+							<div className="flex items-center gap-2.5 min-w-0 flex-1">
+								{selectedPatient && (
+									<PatientAvatar
+										fullName={selectedPatient.fullName}
+										size={36}
+									/>
+								)}
+								<span
+									className="break-words min-w-0 max-w-full sm:max-w-md leading-tight"
+									title={selectedPatient ? selectedPatient.fullName : undefined}
+									style={{
+										fontSize: "16px",
+										fontWeight: 700,
+										color: "var(--ink)",
+									}}
+								>
+									{selectedPatient
+										? selectedPatient.fullName
+										: "Карточка пациента"}
+								</span>
+							</div>
+
+							<PatientCardSavePill
+								hasSelectedPatient={Boolean(selectedPatient)}
+								sections={[
+									{
+										dirty: patientCoreDirty,
+										saveState: patientCoreSaveState,
+									},
+									{
+										dirty: patientAdministrativeProfileDirty,
+										saveState: patientAdministrativeProfileSaveState,
+									},
+								]}
+							/>
+						</div>
+
+						{selectedPatient && (
+							<div
+								className="flex items-center gap-1.5 flex-nowrap overflow-x-auto w-full pt-0.5 pb-0.5 select-none"
+								data-testid="patient-quick-actions-toolbar"
 							>
-								{selectedPatient
-									? selectedPatient.fullName
-									: "Карточка пациента"}
-							</span>
+								{/* Primary CTA 1 (Above Fold): Сохранить данные */}
+								<button
+									type="button"
+									onClick={savePatientCore}
+									aria-busy={patientCoreSaveState === "saving" || undefined}
+									aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
+									disabled={patientCoreSaveState === "saving"}
+									className="primary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
+									style={{ minHeight: "36px" }}
+									title="Сохранить изменения в карточке пациента (1 клик, выше сгиба 900px)"
+									data-testid="patient-core-save-btn"
+								>
+									<UserCheck size={13} aria-hidden="true" />
+									<span>Сохранить</span>
+								</button>
 
-							{selectedPatient && (
-								<div className="flex flex-wrap items-center gap-1.5">
-									{/* Primary CTA 1 (Above Fold): Сохранить данные */}
-									<button
-										type="button"
-										onClick={savePatientCore}
-										aria-busy={patientCoreSaveState === "saving" || undefined}
-										aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
-										disabled={patientCoreSaveState === "saving"}
-										className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
-										style={{ minHeight: "36px" }}
-										title="Сохранить изменения в карточке пациента (1 клик, выше сгиба 900px)"
-										data-testid="patient-core-save-btn"
-									>
-										<UserCheck size={13} aria-hidden="true" />
-										<span>Сохранить</span>
-									</button>
+								{/* Primary CTA 2 (Above Fold): Соматически здоров / норма (1-клик) */}
+								<button
+									type="button"
+									onClick={() =>
+										executePatientSomaticNormAutonomy({
+											selectedPatient,
+											currentNotes: patientCoreDraft?.notes,
+											updatePatientCoreDraft,
+											showToastFn: triggerToast,
+										})
+									}
+									disabled={false}
+									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)]"
+									title="Установить соматическую норму в 1 клик (Мандат 8e, выше сгиба 900px)"
+									data-testid="patient-card-somatic-norm-btn"
+								>
+									<Check size={13} aria-hidden="true" className="text-teal-600 dark:text-teal-400" />
+									<span>Норма</span>
+								</button>
 
-									{/* Primary CTA 2 (Above Fold): Соматически здоров / норма (1-клик) */}
-									<button
-										type="button"
-										onClick={() =>
-											executePatientSomaticNormAutonomy({
-												selectedPatient,
-												currentNotes: patientCoreDraft?.notes,
-												updatePatientCoreDraft,
-												showToastFn: triggerToast,
-											})
-										}
-										disabled={false}
-										className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)]"
-										title="Установить соматическую норму в 1 клик (Мандат 8e, выше сгиба 900px)"
-										data-testid="patient-card-somatic-norm-btn"
-									>
-										<Check size={13} aria-hidden="true" className="text-teal-600 dark:text-teal-400" />
-										<span>Норма (1-клик)</span>
-									</button>
+								{/* 1-Click Medical Card 043/u */}
+								<button
+									type="button"
+									onClick={() => setIsPatientCardModalOpen(true)}
+									className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+									title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
+									data-testid="open-patient-card-modal-btn"
+								>
+									<FileText size={13} className="text-[var(--teal)] shrink-0" />
+									<span>Карта 043/у</span>
+								</button>
 
-									{/* 1-Click Medical Card 043/u */}
-									<button
-										type="button"
-										onClick={() => setIsPatientCardModalOpen(true)}
-										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
-										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
-										data-testid="open-patient-card-modal-btn"
-									>
-										<FileText size={13} className="text-[var(--teal)] shrink-0" />
-										<span>Карта 043/у</span>
-									</button>
+								{/* 1-Click 54-FZ Fiscal Balance */}
+								<button
+									type="button"
+									onClick={() => {
+										usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+										useAppStore.getState().setCurrentView("finance");
+										showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient.fullName}`, "info");
+									}}
+									className={`min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-mono font-black inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors border ${
+										patientBalance > 0
+											? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40"
+											: patientBalance < 0
+												? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40"
+												: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
+									}`}
+									title="Фискальный баланс по 54-ФЗ. Нажмите для перехода в кассу"
+									data-testid="patient-quick-balance-btn"
+								>
+									<Receipt size={12} className="shrink-0" />
+									<span>
+										{patientBalance > 0
+											? `+${patientBalance.toLocaleString("ru-RU")} ₽`
+											: patientBalance < 0
+												? `-${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
+												: "0 ₽"}
+									</span>
+								</button>
 
-									{/* 1-Click 54-FZ Fiscal Balance */}
+								{/* 1-Click Next Appointment */}
+								{nextPatientAppointment ? (
 									<button
 										type="button"
 										onClick={() => {
-											usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
-											useAppStore.getState().setCurrentView("finance");
-											showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient.fullName}`, "info");
+											useScheduleStore.getState().setScheduleDateFilter(nextPatientAppointment.startsAt?.split("T")[0] || new Date().toISOString().split("T")[0]);
+											useAppStore.getState().setCurrentView("schedule");
+											showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
 										}}
-										className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-mono font-black inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors border ${
-											patientBalance > 0
-												? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40"
-												: patientBalance < 0
-													? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40"
-													: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
-										}`}
-										title="Фискальный баланс по 54-ФЗ. Нажмите для перехода в кассу"
-										data-testid="patient-quick-balance-btn"
+										className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+										title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Нажмите для перехода в расписание`}
+										data-testid="patient-quick-next-appointment-btn"
 									>
-										<Receipt size={12} className="shrink-0" />
+										<Clock size={12} className="shrink-0" />
 										<span>
-											{patientBalance > 0
-												? `+${patientBalance.toLocaleString("ru-RU")} ₽`
-												: patientBalance < 0
-													? `-${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-													: "0 ₽ (54-ФЗ)"}
+											Приём: {new Date(nextPatientAppointment.startsAt!).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} {new Date(nextPatientAppointment.startsAt!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
 										</span>
 									</button>
-
-									{/* 1-Click Next Appointment */}
-									{nextPatientAppointment ? (
-										<button
-											type="button"
-											onClick={() => {
-												useScheduleStore.getState().setScheduleDateFilter(nextPatientAppointment.startsAt?.split("T")[0] || new Date().toISOString().split("T")[0]);
-												useAppStore.getState().setCurrentView("schedule");
-												showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
-											}}
-											className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
-											title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Нажмите для перехода в расписание`}
-											data-testid="patient-quick-next-appointment-btn"
-										>
-											<Clock size={12} className="shrink-0" />
-											<span>
-												Приём: {new Date(nextPatientAppointment.startsAt!).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} {new Date(nextPatientAppointment.startsAt!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-											</span>
-										</button>
-									) : (
-										<button
-											type="button"
-											onClick={() => executeBookPatientAppointmentAutonomy({ selectedPatient })}
-											className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
-											title="Записать пациента в расписание"
-											data-testid="patient-quick-book-appointment-btn"
-										>
-											<Calendar size={12} className="shrink-0" />
-											<span>+ Запись</span>
-										</button>
-									)}
-								</div>
-							)}
-						</div>
-
-						<PatientCardSavePill
-							hasSelectedPatient={Boolean(selectedPatient)}
-							sections={[
-								{
-									dirty: patientCoreDirty,
-									saveState: patientCoreSaveState,
-								},
-								{
-									dirty: patientAdministrativeProfileDirty,
-									saveState: patientAdministrativeProfileSaveState,
-								},
-							]}
-						/>
+								) : (
+									<button
+										type="button"
+										onClick={() => executeBookPatientAppointmentAutonomy({ selectedPatient })}
+										className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+										title="Записать пациента в расписание"
+										data-testid="patient-quick-book-appointment-btn"
+									>
+										<Calendar size={12} className="shrink-0" />
+										<span>+ Запись</span>
+									</button>
+								)}
+							</div>
+						)}
 					</div>
 
 					{/* Core Info Form */}

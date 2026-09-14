@@ -437,7 +437,7 @@ export function ScheduleFilterStrip({
 							key={chair.id}
 							type="button"
 							data-testid={`chair-view-badge-${chair.id}`}
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1`}
+							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1`}
 							onClick={() =>
 								setScheduleChairFilterId(
 									scheduleChairFilterId === chair.id ? null : chair.id,

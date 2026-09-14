@@ -366,6 +366,11 @@
 
 /* ── ЭМК Вкладки (EMK Tabs) ─────────────────────────────────────── */
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.emk-unified-toolbar {
+	border-bottom: 1px solid var(--line);
+	padding: 4px 0;
+}
+
 .emk-tabs-container {
 	display: flex;
 	flex-wrap: nowrap;
@@ -373,13 +378,73 @@
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
 	gap: 6px;
-	margin-bottom: 12px;
-	border-bottom: 1px solid var(--line);
-	padding-bottom: 8px;
+	margin: 0;
+	padding: 2px 0;
+	border-bottom: none;
+	min-width: 0;
+	flex-shrink: 0;
 }
 
 .emk-tabs-container::-webkit-scrollbar {
 	display: none;
+}
+
+.emk-tier1-quick-soap-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	min-width: 0;
+	padding: 2px 0;
+}
+
+.emk-tier1-quick-soap-bar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Компактный тулбар форматирования текста ЭМК (DEF-VIS-05) */
+.emk-formatting-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 32px;
+	height: 32px;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.emk-formatting-toolbar-actions {
+	display: flex;
+	align-items: center;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	touch-action: pan-x;
+	padding-right: 8px;
+}
+
+.emk-formatting-toolbar-actions::-webkit-scrollbar {
+	display: none;
+}
+
+/* Ультракомпактная плашка голосовой диктовки (DEF-VIS-02) */
+.emk-voice-pilot-hud {
+	margin: 2px 0 !important;
+}
+
+.emk-voice-pilot-hud > div:first-child {
+	min-height: 26px !important;
+	padding: 2px 8px !important;
+}
+
+.emk-voice-pilot-hud button {
+	min-height: 22px !important;
+	height: 22px !important;
+	padding: 1px 8px !important;
+	font-size: 11px !important;
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
@@ -387,10 +452,10 @@
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	color: var(--muted);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 700;
-	padding: 5px 14px;
-	min-height: 34px;
+	padding: 4px 10px;
+	min-height: 28px;
 	border-radius: 8px;
 	cursor: pointer;
 	display: inline-flex;
@@ -432,17 +497,40 @@
 	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
+/* Сверхкомпактная плашка специальности (DEF-VIS-02: схлопывание шапок) */
+.specialty-focus-bar {
+	min-height: 28px !important;
+	height: 28px !important;
+	padding: 2px 10px !important;
+	font-size: 11px !important;
+	margin-bottom: 2px !important;
+}
+.specialty-focus-bar button {
+	min-height: 22px !important;
+	height: 22px !important;
+	padding: 1px 6px !important;
+	font-size: 11px !important;
+}
+
+/* Комфортный размер textarea в дневнике 043/у — текст не сжимается до 2 узких строк */
+.visit-fields textarea,
+.emk-field-container textarea {
+	min-height: 120px !important;
+	line-height: 1.5;
+	font-size: 14px;
+}
+
 /* Увеличенный размер textarea в режиме одной вкладки */
 .visit-fields.single-tab-mode {
 	grid-template-columns: 1fr;
 }
 
 .visit-fields.single-tab-mode textarea {
-	min-height: 160px;
+	min-height: 160px !important;
 	font-size: 14px;
 }
 
-/* Quick Chips в контексте визита / ЭМК — снятие ограничения max-width: 180px и троеточия (DEF-VIS-04) */
+/* Quick Chips в контексте визита / ЭМК — снятие обрезания и точек (DEF-VIS-04) */
 .visit-note-panel .quick-chip,
 .visit-quick-chip,
 .emk-tab-panel .quick-chip,
@@ -451,6 +539,7 @@
 	overflow: visible !important;
 	text-overflow: clip !important;
 	white-space: nowrap !important;
+	flex-shrink: 0 !important;
 }
 
 /* Patient List CLS Fixes */
@@ -460,7 +549,7 @@
 	min-height: 80px;
 }
 
-@media (max-width: 390px) {
+@media (max-width: 768px) {
 	.visit-grid-container {
 		grid-template-columns: 1fr;
 	}
@@ -474,15 +563,25 @@
 		overflow-x: auto !important;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
+		padding-right: 8px !important;
+		flex-shrink: 0 !important;
 	}
 	.emk-tabs-container::-webkit-scrollbar {
 		display: none;
 	}
-	.visit-note-panel {
-		padding-bottom: 6rem !important; /* pb-24 safe area */
+	.emk-tier1-quick-soap-bar {
+		padding-right: 8px !important;
 	}
+	.visit-fields textarea,
+	.emk-field-container textarea {
+		min-height: 130px !important;
+		font-size: 14px;
+	}
+	/* Предотвращение перекрытия дневника нижним навбаром на мобильных экранах */
+	.visit-panel,
+	.visit-note-panel,
 	.visit-fields {
-		padding-bottom: 6rem !important; /* pb-24 safe area */
+		padding-bottom: 7.5rem !important; /* 120px safe area above mobile navigation */
 	}
 }
 

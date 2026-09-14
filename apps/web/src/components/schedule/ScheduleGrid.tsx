@@ -2223,7 +2223,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] min-w-0 max-w-[110px] truncate cursor-pointer h-6 shrink-0"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] min-w-fit max-w-none cursor-pointer h-6 shrink-0"
 												title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день)"
 												data-testid={`chair-shift-select-${chair.id}`}
 												aria-label={`Смена для ${chair.name}`}

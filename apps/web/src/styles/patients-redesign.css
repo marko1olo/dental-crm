@@ -858,7 +858,7 @@
 
 .quick-chip {
 	padding: 5px 10px;
-	min-height: 32px;
+	min-height: 28px;
 	max-width: 180px;
 	text-overflow: ellipsis;
 	overflow: hidden;
@@ -868,15 +868,17 @@
 	border-radius: 999px;
 	background: var(--paper-soft);
 	color: var(--ink);
-	border: 1px solid var(--line);
+	border: 1px solid var(--line-strong, var(--line)) !important;
+	border-style: solid !important;
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
 
 .quick-chip:hover {
-	background: var(--teal-surface);
-	border-color: var(--teal);
-	color: var(--teal-dark);
+	background: var(--teal-surface) !important;
+	border-color: var(--teal) !important;
+	border-style: solid !important;
+	color: var(--teal-dark) !important;
 }
 
 /* Widgets Grid */
@@ -1109,3 +1111,104 @@
 	justify-content: center;
 	gap: 0.5rem;
 }
+
+/* Mobile Topbar Cleanup: remove redundant + Запись button from topbar on Patients and Finance views (Mandate 8p) */
+@media (max-width: 840px) {
+	.workspace.view-patients .top-actions,
+	.workspace.view-finance .top-actions {
+		display: none !important;
+	}
+}
+
+/* Compact Single-Row Finance Summary Grid (DEF-FIN-01, Mandate 8p & 8c) */
+.finance-summary-grid {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 12px !important;
+	padding: 4px 12px !important;
+	min-height: 32px !important;
+	max-height: 36px !important;
+	margin-bottom: 8px !important;
+	flex-wrap: nowrap !important;
+	overflow-x: auto !important;
+}
+
+.finance-summary-grid article {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: baseline !important;
+	gap: 6px !important;
+	min-height: 24px !important;
+	max-height: 28px !important;
+	padding: 0 4px !important;
+	border: none !important;
+	background: transparent !important;
+	flex-shrink: 0 !important;
+}
+
+.finance-summary-grid span {
+	font-size: 11px !important;
+	font-weight: 700 !important;
+	color: var(--muted) !important;
+	white-space: nowrap !important;
+	line-height: 1 !important;
+}
+
+.finance-summary-grid strong {
+	font-size: 13px !important;
+	font-weight: 800 !important;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	color: var(--ink) !important;
+}
+
+.finance-summary-grid p {
+	display: none !important;
+}
+
+@media (max-width: 768px) {
+	.finance-summary-grid {
+		display: grid !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 4px 8px !important;
+		padding: 6px 10px !important;
+		min-height: auto !important;
+		max-height: none !important;
+		margin-bottom: 6px !important;
+	}
+
+	.finance-summary-grid article {
+		display: flex !important;
+		flex-direction: row !important;
+		justify-content: space-between !important;
+		align-items: center !important;
+		min-height: 22px !important;
+		max-height: none !important;
+		padding: 2px 4px !important;
+		border: none !important;
+		background: transparent !important;
+	}
+
+	.finance-summary-grid p {
+		display: none !important;
+	}
+}
+
+/* Payment actions mobile non-overlapping layout (DEF-FIN-02, Mandate 8p) */
+@media (max-width: 768px) {
+	.payment-actions {
+		position: static !important;
+		margin-top: 8px !important;
+		padding: 0 !important;
+		box-shadow: none !important;
+		border-top: none !important;
+		background: transparent !important;
+	}
+
+	.payment-capture {
+		padding-bottom: 16px !important;
+	}
+}
+

@@ -1318,20 +1318,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		);
 	}
 
+	const isSignedVisit = Boolean(
+		activeAppointment?.status === "completed" ||
+		activeAppointment?.status === "signed" ||
+		activeAppointment?.status === "closed" ||
+		visitNoteForm?.status === "completed" ||
+		visitNoteForm?.status === "signed",
+	);
+
 	return (
 		<>
-			<div className="panel visit-panel pb-24 sm:pb-8" id="visit" data-testid="visit-view">
+			<div className="panel visit-panel pb-28 sm:pb-8" id="visit" data-testid="visit-view">
 				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) (Mandates 8e, 8p, HIG) ═══ */}
 				<header
 					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0"
 					data-testid="visit-header-monolith"
 					aria-label="Шапка текущего приёма"
 				>
-					{/* Строка 1 (высота ~30-32px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
-					<div className="min-h-[34px] sm:min-h-[30px] sm:h-8 sm:max-h-8 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0.5 sm:py-1 border-b border-[var(--line)] flex-nowrap overflow-hidden">
+					{/* Строка 1 (высота ~30-32px): Пациент, возраст, телефон, бейдж аллергии, кнопка нормы 043/у, статус и завершить приём */}
+					<div className="min-h-[36px] sm:min-h-[30px] sm:h-8 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={26} />
-							<span className="truncate min-w-0 max-w-[170px] xs:max-w-[220px] sm:max-w-none text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
+							<span className="truncate min-w-0 text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
 								<span className="sm:hidden">
 									{(() => {
 										const parts = (activePatient.fullName || "").trim().split(/\s+/);
@@ -1364,7 +1372,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									title={`Критический стоп-фактор / аллергия пациента: ${activePatientAllergyText}`}
 								>
 									<AlertOctagon size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span className="truncate max-w-[100px] sm:max-w-[140px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
+									<span className="truncate max-w-[80px] sm:max-w-[140px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
 								</span>
 							)}
 						</div>
@@ -1375,7 +1383,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+								className="secondary-button min-h-[30px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
@@ -1390,7 +1398,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="!hidden sm:!inline-flex secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+								className="!hidden sm:!inline-flex secondary-button min-h-[30px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
@@ -1402,16 +1410,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={() => setIsEmergencyModalOpen(true)}
 								data-testid="btn-visit-emergency-rescue"
-								className="!hidden sm:!inline-flex secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+								className="!hidden sm:!inline-flex secondary-button min-h-[30px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
 								title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
 							>
 								<AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
 								<span className="hidden 2xl:inline">Аптечка</span>
 							</button>
 
-							{/* Статус приема: только на широких экранах */}
+							{/* Статус приема (клинический статус визита): не конфликтует со статусом сохранения ЭМК */}
 							<span className="!hidden xl:!inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
-								Черновик
+								{isSignedVisit ? "Подписано" : "На приёме"}
 							</span>
 
 							{/* Кнопка «Завершить приём» */}
@@ -1419,7 +1427,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
+								className="primary-button min-h-[30px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
 								title="Завершить приём и сохранить все изменения"
 							>
 								<CheckCircle2 size={14} className="shrink-0" />
@@ -1433,7 +1441,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button min-h-[36px] min-w-[36px] sm:min-w-0 sm:min-h-0 sm:h-7 px-1.5 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+									className="secondary-button min-h-[30px] min-w-[30px] sm:min-w-0 sm:min-h-0 sm:h-7 px-1.5 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 									title="Дополнительные действия и бланки приема"
 									aria-label="Дополнительные действия приема"
 									aria-expanded={isHeaderMoreMenuOpen}
@@ -1576,10 +1584,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 				<div
 					style={{
-						margin: "2px 0 4px",
+						margin: "0 0 2px",
 						display: visitSubViewTab === "emk" ? "flex" : "none",
 						flexDirection: "column",
-						gap: "2px",
+						gap: "1px",
 					}}
 					aria-hidden={visitSubViewTab !== "emk"}
 				>

@@ -533,7 +533,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
-			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-2 sm:mb-3 flex-nowrap overflow-hidden shrink-0 select-none">
+			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
 				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
 					<span className="truncate text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0">
 						<span className="sm:hidden">Оплаты</span>
@@ -682,17 +682,17 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				strategyLabels={scenarioStrategyLabels}
 			/>
 
-			{/* Сворачиваемый блок клинических рекомендаций и правил (не крадёт полезную высоту экрана) */}
+			{/* Сворачиваемый блок клинических рекомендаций и правил (не крадёт полезную высоту экрана, свернут по умолчанию) */}
 			<details
-				className="clinical-recommendations-accordion group rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 text-xs shadow-xs my-2 select-none"
+				className="clinical-recommendations-accordion group rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 text-xs shadow-xs my-0.5 sm:my-1 select-none"
 				data-testid="clinical-recommendations-accordion"
 			>
-				<summary className="flex items-center justify-between cursor-pointer font-semibold text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors">
-					<div className="flex items-center gap-2">
-						<FileText size={15} className="text-[var(--teal)] shrink-0" />
-						<span>Клинические рекомендации и правила</span>
+				<summary className="flex items-center justify-between cursor-pointer font-medium text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors min-h-[26px]">
+					<div className="flex items-center gap-1.5">
+						<FileText size={13} className="text-[var(--teal)] shrink-0" />
+						<span className="text-[11px] sm:text-xs">Клинические рекомендации и правила</span>
 						{clinicalRuleSummary && (
-							<span className="text-[11px] text-[var(--muted)] font-normal">
+							<span className="text-[10px] sm:text-[11px] text-[var(--muted)] font-normal">
 								({clinicalRuleSummary.unresolved > 0
 									? `${clinicalRuleSummary.unresolved} нерешённых`
 									: clinicalRuleSummary.activeRules ?? 0})
@@ -700,11 +700,11 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						)}
 					</div>
 					<ChevronDown
-						size={15}
+						size={13}
 						className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180 shrink-0"
 					/>
 				</summary>
-				<div className="pt-3 space-y-3">
+				<div className="pt-2 space-y-2">
 					<ClinicalRulePanel
 						actionLabels={clinicalRuleActionLabels}
 						context="finance"
