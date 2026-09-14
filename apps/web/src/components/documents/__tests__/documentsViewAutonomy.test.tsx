@@ -20,7 +20,6 @@ import {
 	executeOpenLatestDocumentAutonomy,
 } from "../../../DocumentsView";
 import { DocumentsOutpatientArchive } from "../DocumentsOutpatientArchive";
-import { PaidMedicalContractModal } from "../PaidMedicalContractModal";
 import { DentalMedicalCard043uForm } from "../forms/DentalMedicalCard043uForm";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { documentSourceStatusClassNames } from "../../../workspaceUiLabels";
@@ -405,34 +404,6 @@ describe("Documents View Outpatient Archive Autonomy & Non-blocking Selection (M
 		// No disabled buttons anywhere
 		const disabledButtons = html.match(/<button[^>]*disabled[^>]*>/g);
 		expect(disabledButtons).toBeNull();
-	});
-
-	it("PaidMedicalContractModal renders contract-stamp-badge and print-blank-contract-btn without crashing", () => {
-		// Test draft state
-		const draftHtml = renderToStaticMarkup(
-			<PaidMedicalContractModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={{ fullName: "Сидоров Петр", birthDate: "1992-05-10" }}
-			/>,
-		);
-
-		expect(draftHtml).toContain('data-testid="contract-stamp-badge"');
-		expect(draftHtml).toContain("ЧЕРНОВИК");
-		expect(draftHtml).toContain('data-testid="print-blank-contract-btn"');
-
-		// Test signed state
-		const signedHtml = renderToStaticMarkup(
-			<PaidMedicalContractModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={{ fullName: "Сидоров Петр", birthDate: "1992-05-10" }}
-				initialData={{ signedAt: "07.09.2026" }}
-			/>,
-		);
-
-		expect(signedHtml).toContain('data-testid="contract-stamp-badge"');
-		expect(signedHtml).toContain("ПОДПИСАНО ВРАЧОМ");
 	});
 
 	it("DentalMedicalCard043uForm renders form043-stamp-badge and btn-043-print-blank without blocking doctor", () => {

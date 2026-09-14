@@ -67,7 +67,7 @@ test("EGISZ REMD and CDA R2: Document UUIDs do NOT use Math.random()", () => {
 });
 
 test("Prescription 107-1/u and Booking: Series and booking numbers are deterministic/crypto", () => {
-	const emrPath = path.join(webSrcRoot, "components/emr/clinicalEmrEngine.ts");
+	const emrPath = path.resolve(webSrcRoot, "../../../packages/shared/src/emr/emrProtocolEngine.ts");
 	const bookingPath = path.join(webSrcRoot, "components/booking/PublicOnlineBookingWidget.tsx");
 	const loyaltyPath = path.join(webSrcRoot, "components/loyalty/program/loyaltyEngine.ts");
 
@@ -75,7 +75,7 @@ test("Prescription 107-1/u and Booking: Series and booking numbers are determini
 	const bookingCode = readFileSync(bookingPath, "utf8");
 	const loyaltyCode = readFileSync(loyaltyPath, "utf8");
 
-	assert.ok(!emrCode.includes("Math.random()"), "clinicalEmrEngine.ts must NOT contain Math.random()");
+	assert.ok(!emrCode.includes("Math.random()"), "emrProtocolEngine.ts must NOT contain Math.random()");
 	assert.ok(!bookingCode.includes("Math.random()"), "PublicOnlineBookingWidget.tsx must NOT contain Math.random()");
 	assert.ok(!loyaltyCode.includes("Math.random()"), "loyaltyEngine.ts must NOT contain Math.random()");
 });

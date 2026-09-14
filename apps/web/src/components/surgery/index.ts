@@ -5,4 +5,3 @@
  */
 
 export * from "./surgeryProtocols";
-export * from "./SurgeryVisitCockpit";

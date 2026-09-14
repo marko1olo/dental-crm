@@ -246,7 +246,6 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("3. Sanctity of Medical Records & Zero Cartoon Emojis (Mandate 8d item 7)", () => {
 		const filesToCheckForLightning = [
-			"components/odontogram/OdontogramToolbar.tsx",
 			"components/odontogram/OdontogramViewContainer.tsx",
 			"components/odontogram/TreatmentEstimator.tsx",
 			"components/odontogram/PediatricMixedDentitionModal.tsx",

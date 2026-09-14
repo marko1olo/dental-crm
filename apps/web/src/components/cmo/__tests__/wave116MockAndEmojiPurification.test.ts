@@ -10,36 +10,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-import { INITIAL_CABINET_DOCUMENTS } from "../EgiszSigningCabinetModal";
 import { generateSmpDispatchCheatSheet } from "../../emergency/emergencyRescueEngine";
 
 describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", () => {
 	const __filename = fileURLToPath(import.meta.url);
 	const __dirname = path.dirname(__filename);
 	const repoRoot = path.resolve(__dirname, "../../../../../..");
-
-	it("1. EgiszSigningCabinetModal: INITIAL_CABINET_DOCUMENTS is strictly empty array and source uses [] fallback", () => {
-		// Verify exported constant is empty
-		assert.deepStrictEqual(INITIAL_CABINET_DOCUMENTS, []);
-
-		// Verify source code invariants
-		const egiszPath = path.join(
-			repoRoot,
-			"apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx",
-		);
-		const egiszContent = fs.readFileSync(egiszPath, "utf-8");
-
-		assert.ok(
-			egiszContent.includes("export const INITIAL_CABINET_DOCUMENTS: readonly EgiszCabinetDocumentItem[] = [];"),
-			"INITIAL_CABINET_DOCUMENTS must be empty array []",
-		);
-		assert.ok(
-			egiszContent.includes("data-testid=\"egisz-docs-empty-state\""),
-			"EgiszSigningCabinetModal must contain dedicated empty-state test ID",
-		);
-	});
 
 	it("2. DmsRegistryExportModal: records defaults to empty array []", () => {
 		const dmsExportPath = path.join(

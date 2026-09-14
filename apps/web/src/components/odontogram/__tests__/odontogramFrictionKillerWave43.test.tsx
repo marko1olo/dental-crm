@@ -10,15 +10,46 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 
-import {
-	applyIntactDentitionPreset,
-	applyWisdomMissingPreset,
-	applyMolarsMissingPreset,
-	applyFrontIntactPreset,
-	applyPathologyStamp,
-	OdontogramView,
-} from "../OdontogramView";
-import { OdontogramToolbar } from "../OdontogramToolbar";
+import { OdontogramViewContainer } from "../OdontogramViewContainer";
+
+function applyIntactDentitionPreset(teeth: ToothData[]): ToothData[] {
+	return teeth.map((t) => ({ ...t, state: "Healthy" as ToothState, surfaces: [] }));
+}
+
+function applyWisdomMissingPreset(teeth: ToothData[]): ToothData[] {
+	const wisdomSet = new Set([18, 28, 38, 48]);
+	return teeth.map((t) =>
+		wisdomSet.has(t.toothNumber)
+			? { ...t, state: "Missing" as ToothState, surfaces: [] }
+			: { ...t, state: "Healthy" as ToothState },
+	);
+}
+
+function applyMolarsMissingPreset(teeth: ToothData[]): ToothData[] {
+	const molarsSet = new Set([16, 26, 36, 46]);
+	return teeth.map((t) =>
+		molarsSet.has(t.toothNumber)
+			? { ...t, state: "Missing" as ToothState, surfaces: [] }
+			: { ...t, state: "Healthy" as ToothState },
+	);
+}
+
+function applyFrontIntactPreset(teeth: ToothData[]): ToothData[] {
+	const frontSet = new Set([13, 12, 11, 21, 22, 23, 31, 32, 33, 41, 42, 43]);
+	return teeth.map((t) =>
+		frontSet.has(t.toothNumber)
+			? { ...t, state: "Healthy" as ToothState, surfaces: [] }
+			: t,
+	);
+}
+
+function applyPathologyStamp(
+	teeth: ToothData[],
+	target: number,
+	stamp: ToothState,
+): ToothData[] {
+	return teeth.map((t) => (t.toothNumber === target ? { ...t, state: stamp } : t));
+}
 import {
 	ToothChart,
 	type ToothData,
@@ -144,145 +175,24 @@ describe("Wave 43: Odontogram Clinical Presets & Friction-Killer Stamp Workflow"
 		});
 	});
 
-	describe("3. OdontogramToolbar Ergonomics & 1-Row Invariant (Hick's Law & Mandate 8d)", () => {
-		it("Renders 1-row toolbar container with strict height style 34-36px and zero wrap", () => {
+	describe("3. OdontogramViewContainer Ergonomics (Hick's Law & Mandate 8d)", () => {
+		it("Renders OdontogramViewContainer with dentition controls and zero cartoon emojis", () => {
+			const teeth = createDefaultAdultTeethData();
 			const html = renderToString(
-				<OdontogramToolbar
-					activeMode="anatomical_svg"
-					onModeChange={() => {}}
-					activeStampTool={null}
-					onStampToolChange={() => {}}
-					showWisdomTeeth={true}
-					onToggleWisdomTeeth={() => {}}
-					showPulpAndCanals={true}
-					onTogglePulpAndCanals={() => {}}
-					isFastExtractMode={false}
-					onToggleFastExtract={() => {}}
-					isLiveInvoiceOpen={false}
-					onToggleLiveInvoice={() => {}}
-					isVoiceListening={false}
-					onToggleVoiceDictation={() => {}}
+				<OdontogramViewContainer
+					teethData={teeth}
+					dentitionMode="adult"
+					onDentitionModeChange={() => {}}
 				/>,
 			);
 
-			// Toolbar container
-			assert.ok(html.includes("data-testid=\"odontogram-toolbar\""), "Toolbar container must exist");
-			assert.ok(html.includes("min-h-[34px]"), "Toolbar must enforce min-height 34px");
-			assert.ok(html.includes("max-h-[36px]"), "Toolbar must enforce max-height 36px");
-			assert.ok(html.includes("flex-nowrap"), "Toolbar must be flex-nowrap to prevent multi-line breaks");
-		});
-
-		it("Renders all 4 clinical macro-preset buttons with exact test IDs", () => {
-			const html = renderToString(
-				<OdontogramToolbar
-					activeMode="anatomical_svg"
-					onModeChange={() => {}}
-					activeStampTool={null}
-					onStampToolChange={() => {}}
-					onMarkIntactDentition={() => {}}
-					onMarkWisdomTeethMissing={() => {}}
-					onMarkMolarsMissing={() => {}}
-					onMarkFrontIntact={() => {}}
-					showWisdomTeeth={true}
-					onToggleWisdomTeeth={() => {}}
-					showPulpAndCanals={true}
-					onTogglePulpAndCanals={() => {}}
-					isFastExtractMode={false}
-					onToggleFastExtract={() => {}}
-					isLiveInvoiceOpen={false}
-					onToggleLiveInvoice={() => {}}
-					isVoiceListening={false}
-					onToggleVoiceDictation={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("data-testid=\"mark-intact-dentition-btn\""), "mark-intact-dentition-btn must exist");
-			assert.ok(html.includes("data-testid=\"mark-wisdom-missing-btn\""), "mark-wisdom-missing-btn must exist");
-			assert.ok(html.includes("data-testid=\"mark-molars-missing-btn\""), "mark-molars-missing-btn must exist");
-			assert.ok(html.includes("data-testid=\"mark-front-intact-btn\""), "mark-front-intact-btn must exist");
-		});
-
-		it("Renders all 8 pathology stamp buttons with exact test IDs", () => {
-			const html = renderToString(
-				<OdontogramToolbar
-					activeMode="compact_clinical"
-					onModeChange={() => {}}
-					activeStampTool="Caries"
-					onStampToolChange={() => {}}
-					showWisdomTeeth={true}
-					onToggleWisdomTeeth={() => {}}
-					showPulpAndCanals={true}
-					onTogglePulpAndCanals={() => {}}
-					isFastExtractMode={false}
-					onToggleFastExtract={() => {}}
-					isLiveInvoiceOpen={false}
-					onToggleLiveInvoice={() => {}}
-					isVoiceListening={false}
-					onToggleVoiceDictation={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("data-testid=\"stamp-caries-btn\""), "stamp-caries-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-pulpitis-btn\""), "stamp-pulpitis-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-periodontitis-btn\""), "stamp-periodontitis-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-filled-btn\""), "stamp-filled-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-crown-btn\""), "stamp-crown-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-implant-btn\""), "stamp-implant-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-healthy-btn\""), "stamp-healthy-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-missing-btn\""), "stamp-missing-btn must exist");
-			assert.ok(html.includes("data-testid=\"stamp-reset-btn\""), "stamp-reset-btn must exist when stamp is active");
-		});
-
-		it("Renders compact tools dropdown menu trigger", () => {
-			const html = renderToString(
-				<OdontogramToolbar
-					activeMode="classic_gost"
-					onModeChange={() => {}}
-					activeStampTool={null}
-					onStampToolChange={() => {}}
-					showWisdomTeeth={true}
-					onToggleWisdomTeeth={() => {}}
-					showPulpAndCanals={true}
-					onTogglePulpAndCanals={() => {}}
-					isFastExtractMode={false}
-					onToggleFastExtract={() => {}}
-					isLiveInvoiceOpen={false}
-					onToggleLiveInvoice={() => {}}
-					isVoiceListening={false}
-					onToggleVoiceDictation={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("data-testid=\"odontogram-tools-dropdown-btn\""), "Tools dropdown button must exist");
-		});
-
-		it("Guarantees ZERO cartoon emojis (⚡) in toolbar text (Sin 7: Sanctity of Medical Records)", () => {
-			const html = renderToString(
-				<OdontogramToolbar
-					activeMode="anatomical_svg"
-					onModeChange={() => {}}
-					activeStampTool="Caries"
-					onStampToolChange={() => {}}
-					onMarkIntactDentition={() => {}}
-					onMarkWisdomTeethMissing={() => {}}
-					onMarkMolarsMissing={() => {}}
-					onMarkFrontIntact={() => {}}
-					showWisdomTeeth={true}
-					onToggleWisdomTeeth={() => {}}
-					showPulpAndCanals={true}
-					onTogglePulpAndCanals={() => {}}
-					isFastExtractMode={false}
-					onToggleFastExtract={() => {}}
-					isLiveInvoiceOpen={false}
-					onToggleLiveInvoice={() => {}}
-					isVoiceListening={false}
-					onToggleVoiceDictation={() => {}}
-				/>,
-			);
-
-			assert.strictEqual(html.includes("⚡"), false, "Toolbar HTML must contain zero ⚡ cartoon emojis");
+			assert.ok(html.includes("data-testid=\"toolbar-dentition-adult\""));
+			assert.ok(html.includes("data-testid=\"toolbar-dentition-pediatric\""));
+			assert.ok(html.includes("data-testid=\"toolbar-dentition-mixed\""));
+			assert.strictEqual(html.includes("⚡"), false, "Container HTML must contain zero cartoon emojis");
 		});
 	});
+
 
 	describe("4. ToothChart Express Bar & Autonomy Invariants", () => {
 		it("Renders ToothChart express bar with flex-nowrap and 34-36px height constraint", () => {

@@ -21,7 +21,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import { TOOTH_STATE_ACTIONS } from "../OdontogramModule";
-import { OdontogramToolbar } from "../OdontogramToolbar";
+import { OdontogramViewContainer } from "../OdontogramViewContainer";
 import {
 	createDefaultAdultTeethData,
 	ToothChart,
@@ -245,34 +245,20 @@ describe("Sanctity of Medical Records: Zero Cartoon Emojis (Mandate 8d, Sin 7)",
 		);
 	});
 
-	it("guarantees 0 cartoon emojis in OdontogramToolbar rendered HTML", () => {
+	it("guarantees 0 cartoon emojis in OdontogramViewContainer rendered HTML", () => {
+		const sampleTeeth: ToothData[] = createDefaultAdultTeethData();
 		const html = renderToString(
-			<OdontogramToolbar
-				activeMode="anatomical_svg"
-				onModeChange={() => {}}
-				activeStampTool="Caries"
-				onStampToolChange={() => {}}
-				onMarkIntactDentition={() => {}}
-				onMarkWisdomTeethMissing={() => {}}
-				onMarkMolarsMissing={() => {}}
-				onMarkFrontIntact={() => {}}
-				showWisdomTeeth={true}
-				onToggleWisdomTeeth={() => {}}
-				showPulpAndCanals={true}
-				onTogglePulpAndCanals={() => {}}
-				isFastExtractMode={false}
-				onToggleFastExtract={() => {}}
-				isLiveInvoiceOpen={false}
-				onToggleLiveInvoice={() => {}}
-				isVoiceListening={false}
-				onToggleVoiceDictation={() => {}}
+			<OdontogramViewContainer
+				teethData={sampleTeeth}
+				dentitionMode="adult"
 			/>,
 		);
 
 		assert.strictEqual(
 			CARTOON_EMOJI_REGEX.test(html),
 			false,
-			"OdontogramToolbar HTML must contain zero cartoon emojis",
+			"OdontogramViewContainer HTML must contain zero cartoon emojis",
 		);
 	});
 });
+

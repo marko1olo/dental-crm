@@ -4,6 +4,5 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./clinicalQualityEngine";
-export * from "./EgiszSigningCabinetModal";
+export * from "../egisz/EgiszRemdHubModal";
 

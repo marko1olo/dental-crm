@@ -13,28 +13,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { describe, it, beforeEach } from "vitest";
 import assert from "node:assert/strict";
 
-import {
-	EgiszSigningCabinetModal,
-	type EgiszCabinetDocumentItem,
-} from "../EgiszSigningCabinetModal";
+import { renderToStaticMarkup } from "react-dom/server";
+import { EgiszRemdHubModal } from "../../egisz/EgiszRemdHubModal";
 import { SAMPLE_DENTAL_SEMD_105_PRESET } from "../../egisz/egiszRemdEngine";
-
-const TEST_EGISZ_DOC: EgiszCabinetDocumentItem = {
-	id: "semd-test-001",
-	documentNumber: "СЭМД-2026-TEST",
-	docType: "302",
-	titleRu: "Протокол стоматологического осмотра (Форма 043/у)",
-	patientId: "pat-test-01",
-	patientFullName: "Пациент Тестовый",
-	patientSnils: "112-233-445 95",
-	doctorFullName: "Лечащий врач",
-	doctorSnils: "000-001-001 00",
-	visitDate: "2026-08-20",
-	status: "draft",
-	icd10Code: "K02.1",
-	diagnosisText: "Кариес дентина зуба 1.6",
-	payload: SAMPLE_DENTAL_SEMD_105_PRESET,
-};
 
 type MockFn = {
 	(...args: any[]): any;
@@ -360,82 +341,18 @@ describe("CMO Quality Audit & EGISZ Signing Solo Doctor Autonomy (Mandates 8e, 8
 		})) as unknown as typeof fetch;
 	});
 
-	it("2. EgiszSigningCabinetModal: send button is not disabled when doctor signature is missing, clicking shows guidance toast (Mandate 8e)", async () => {
-		// EgiszSigningCabinetModal renders via createPortal into document.body
-		await act(async () => {
-			root.render(
-				<EgiszSigningCabinetModal
-					isOpen={true}
-					onClose={() => {}}
-					initialDocuments={[TEST_EGISZ_DOC]}
-				/>,
-			);
-		});
-
-		// Check inside document.body
-		// biome-ignore lint/suspicious/noExplicitAny: test mock body
-		const body = (globalThis as any).document.body as MockDomNode;
-		const sendBtn = findNodeByTestId(body, "egisz-send-remd-btn");
-		assert.notStrictEqual(sendBtn, null);
-
-		// Assert button is not disabled despite missing doctor signature on initial draft doc
-		assert.strictEqual(sendBtn?.disabled, false);
-		assert.strictEqual(sendBtn?.getAttribute("disabled"), null);
-
-		let toastEvent: any = null;
-		// biome-ignore lint/suspicious/noExplicitAny: test mock window
-		(globalThis as any).window.addEventListener("dente-toast", (ev: any) => {
-			toastEvent = ev.detail;
-		});
-
-		// Click send button
-		await clickNode(sendBtn!);
-
-		// Expect clear instructions in toast guidance
-		assert.notStrictEqual(toastEvent, null);
-		assert.strictEqual(
-			toastEvent?.text,
-			"Для отправки в РЭМД наложите подпись врача (нажмите «Подписать УКЭП/ПЭП»)",
+	it("EgiszRemdHubModal renders statutory SEMD 043/u signing studio without blocking doctor (Mandates 8e, 8n)", () => {
+		const html = renderToStaticMarkup(
+			<EgiszRemdHubModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTab="signature"
+				initialPayload={SAMPLE_DENTAL_SEMD_105_PRESET}
+			/>,
 		);
-		assert.strictEqual(toastEvent?.type, "warning");
-	});
-
-	it("3. EgiszSigningCabinetModal: solo doctor local storage button renders and marks document stored without error (Mandate 8n / 63-FZ)", async () => {
-		await act(async () => {
-			root.render(
-				<EgiszSigningCabinetModal
-					isOpen={true}
-					onClose={() => {}}
-					initialDocuments={[TEST_EGISZ_DOC]}
-				/>,
-			);
-		});
-
-		// biome-ignore lint/suspicious/noExplicitAny: test mock body
-		const body = (globalThis as any).document.body as MockDomNode;
-		const localStorageBtn = findNodeByTestId(body, "solo-doctor-local-storage-btn");
-		assert.notStrictEqual(localStorageBtn, null);
-		assert.ok(localStorageBtn?.textContent?.includes("Локальное хранение ЭМК (Соло-врач)"));
-
-		let toastEvent: any = null;
-		// biome-ignore lint/suspicious/noExplicitAny: test mock window
-		(globalThis as any).window.addEventListener("dente-toast", (ev: any) => {
-			toastEvent = ev.detail;
-		});
-
-		// Click solo doctor local storage button
-		await clickNode(localStorageBtn!);
-
-		// Verify success toast for solo doctor local EMR autonomy
-		assert.notStrictEqual(toastEvent, null);
-		assert.strictEqual(
-			toastEvent?.text,
-			"Документ 043/у сохранен в локальной базе ЭМК клиники",
-		);
-		assert.strictEqual(toastEvent?.type, "success");
-
-		// Verify that document status has been updated to registered/saved
-		const successBadge = findNodeByText(body, "Сохранено в ЭМК (Соло-врач)");
-		assert.notStrictEqual(successBadge, null);
+		assert.ok(html.includes("Подписание СЭМД УКЭП"), "Must render SEMD signing header");
+		assert.ok(html.includes("Подписать УКЭП врача"), "Must contain doctor UKEP button");
+		assert.ok(html.includes("Отправить в РЭМД ЕГИСЗ"), "Must contain send to REMD button");
 	});
 });
+

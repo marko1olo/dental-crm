@@ -182,9 +182,7 @@ describe("экран не объявляет состояние форм, кот
  * Файлы каталога документов, до которых пользователь пока не может добраться.
  * Список пустой = сирот нет. Каждая запись — заявленный долг, а не тихая находка.
  */
-const knownUnwiredDocumentComponents: readonly string[] = [
-	"PaidMedicalContractModal.tsx",
-];
+const knownUnwiredDocumentComponents: readonly string[] = [];
 
 describe("в каталоге документов нет незамеченных сирот", () => {
 	function sourceFiles(directory: string, relative = ""): string[] {

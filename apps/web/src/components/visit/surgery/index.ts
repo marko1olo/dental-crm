@@ -4,4 +4,3 @@
  */
 
 export * from "./VisitSurgeryProtocolTab";
-export * from "../../surgery/SurgeryVisitCockpit";

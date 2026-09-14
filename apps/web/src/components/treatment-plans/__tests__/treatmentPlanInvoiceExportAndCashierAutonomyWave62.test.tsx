@@ -28,7 +28,6 @@ import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import { TreatmentPlanModule } from "../TreatmentPlanModule.js";
-import { VisitTreatmentPlanTab } from "../../visit/VisitTreatmentPlanTab.js";
 import {
 	InvoicesView,
 	loadStoredInvoices,
@@ -338,7 +337,7 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 		});
 	});
 
-	describe("3. VisitTreatmentPlanTab Integration", () => {
+	describe("3. TreatmentPlanModule Integration", () => {
 		it("accepts onExportToCashier prop and passes it cleanly without type errors", () => {
 			let exportedData: CashierInvoiceExportData | null = null;
 			const handleExport = (data: CashierInvoiceExportData) => {
@@ -347,7 +346,7 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 
 			const html = renderToString(
 				<AppLogicProvider value={mockAppContext as any}>
-					<VisitTreatmentPlanTab
+					<TreatmentPlanModule
 						activePatient={{
 							id: "PAT-WAVE62",
 							fullName: "Волков Дмитрий Андреевич",
@@ -359,13 +358,10 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 			);
 
 			assert.ok(
-				html.includes('data-testid="visit-treatment-plan-tab"'),
-				"VisitTreatmentPlanTab must mount correctly",
-			);
-			assert.ok(
 				html.includes('data-testid="tp-quick-cashier-btn"'),
-				"Mounted TreatmentPlanModule must retain quick cashier button",
+				"TreatmentPlanModule must retain quick cashier button",
 			);
 		});
 	});
+
 });

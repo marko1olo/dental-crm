@@ -89,7 +89,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ component: "DiagnosticDrawer", selector: ".dente-diagnostic-tab-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "tab_selector" },
 				{ component: "ToothContextDrawer", selector: ".dente-drawer-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "ToothContextDrawer", selector: ".dente-row-del-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "primary_action" },
-				{ component: "PatientPortal", selector: ".doc-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
+				{ component: "PatientCabinetModal", selector: ".pc-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "LeadsKanbanView", selector: ".kanban-modal-close", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "MarketingRoiModal", selector: ".marketing-roi-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "AnesthesiaQuickBar", selector: ".anesthesia-quick-bar", minWidthPx: 44, minHeightPx: 44, targetCategory: "primary_action" },
@@ -124,8 +124,8 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ component: "ToothContextDrawer", selector: ".dente-quick-tab-btn", heightPx: 32, minAllowedPx: 28, maxAllowedPx: 36 },
 				{ component: "ToothContextDrawer", selector: ".dente-touch-chip", heightPx: 32, minAllowedPx: 28, maxAllowedPx: 36 },
 				{ component: "DiagnosticDrawer", selector: ".dente-diagnostic-tab-btn", heightPx: 32, minAllowedPx: 28, maxAllowedPx: 36 },
-				{ component: "PaidMedicalContractModal", selector: ".paid-contract-tab-btn", heightPx: 34, minAllowedPx: 30, maxAllowedPx: 38 },
-				{ component: "PaidMedicalContractModal", selector: ".paid-contract-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
+				{ component: "PaidServiceContractForm", selector: ".paid-contract-tab-btn", heightPx: 34, minAllowedPx: 30, maxAllowedPx: 38 },
+				{ component: "PaidServiceContractForm", selector: ".paid-contract-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
 				{ component: "EgiszRemdHubModal", selector: ".egisz-btn.sm", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 38 },
 				{ component: "ShiftCloseZReportModal", selector: ".cash-shift-close-btn", heightPx: 36, minAllowedPx: 32, maxAllowedPx: 40 },
 			];
@@ -152,7 +152,6 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "egisz/egiszRemd.css", classPattern: ".egisz-close-btn" },
 				{ file: "diagnostics/DiagnosticDrawer.css", classPattern: ".dente-diagnostic-close-btn" },
 				{ file: "diagnostics/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
-				{ file: "PatientPortal.css", classPattern: ".doc-close-btn" },
 				{ file: "LeadsKanbanView.css", classPattern: ".kanban-modal-close" },
 				{ file: "analytics/marketingRoi.css", classPattern: ".marketing-roi-close-btn" },
 				{ file: "anesthesia/anesthesia.css", classPattern: ".hub-btn-close" },
@@ -233,7 +232,6 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 		test("Header and Navigation components incorporate min-w-0, truncate, and overflow protection", () => {
 			const filesToCheck = [
 				path.join(webComponentsDir, "Header.css"),
-				path.join(webComponentsDir, "PatientPortal.css"),
 				path.join(webComponentsDir, "documents/documentNavigation.css"),
 				path.join(webComponentsDir, "diagnostics/ToothContextDrawer.css"),
 				path.join(webComponentsDir, "cmo/clinicalQuality.css"),

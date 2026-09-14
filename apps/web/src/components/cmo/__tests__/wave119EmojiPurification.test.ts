@@ -114,16 +114,15 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(content.includes("<CheckCircle2"), "SettingsAiTab must render Lucide CheckCircle2 icon");
 	});
 
-	it("8. OfflineReadinessBanner: zero raw emojis, uses Lucide Zap vector icon", () => {
+	it("8. WorkspaceContinuityStrip: zero raw emojis", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/offline/OfflineReadinessBanner.tsx",
+			"apps/web/src/workspaceContinuityStrip.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("⚡"), "OfflineReadinessBanner must not contain raw ⚡ emoji");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "OfflineReadinessBanner must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "OfflineReadinessBanner must render Lucide Zap vector icon");
+		assert.ok(!content.includes("⚡"), "WorkspaceContinuityStrip must not contain raw ⚡ emoji");
+		assert.ok(!RAW_EMOJI_REGEX.test(content), "WorkspaceContinuityStrip must be free of raw emojis");
 	});
 
 	it("9. SanpinRegisters: zero raw emojis, uses Lucide Sparkles vector icon", () => {

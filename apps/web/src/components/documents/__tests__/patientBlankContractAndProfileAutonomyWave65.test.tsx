@@ -54,17 +54,6 @@ describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Pat
 	);
 	const requiredFieldsPanelSource = fs.readFileSync(requiredFieldsPanelPath, "utf8");
 
-	const paidContractModalPath = path.resolve(
-		__dirname,
-		"../PaidMedicalContractModal.tsx",
-	);
-	const paidContractModalSource = fs.readFileSync(paidContractModalPath, "utf8");
-
-	const paidContractCssPath = path.resolve(
-		__dirname,
-		"../paidMedicalContract.css",
-	);
-	const paidContractCssSource = fs.readFileSync(paidContractCssPath, "utf8");
 
 	const patientsViewPath = path.resolve(__dirname, "../../../PatientsView.tsx");
 	const patientsViewSource = fs.readFileSync(patientsViewPath, "utf8");
@@ -290,21 +279,6 @@ describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Pat
 		assert.ok(
 			requiredFieldsPanelSource.includes("Printer"),
 			"Must use vector Lucide Printer icon",
-		);
-	});
-
-	it("8. PaidMedicalContractModal exposes paper and footer blank contract print buttons", () => {
-		assert.ok(
-			paidContractModalSource.includes('data-testid="print-blank-paper-contract-btn"'),
-			"Must include print-blank-paper-contract-btn in paper sign section",
-		);
-		assert.ok(
-			paidContractModalSource.includes('data-testid="print-blank-contract-btn"'),
-			"Must include print-blank-contract-btn in footer",
-		);
-		assert.ok(
-			paidContractCssSource.includes("min-height: 44px"),
-			"paid-contract-btn must have min-height: 44px",
 		);
 	});
 

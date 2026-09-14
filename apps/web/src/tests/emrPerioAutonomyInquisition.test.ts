@@ -581,14 +581,14 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(source.includes("onApplyFastCariesK021"), "ToothChartProps обязан поддерживать onApplyFastCariesK021");
 		});
 
-		it("6.5. OdontogramToolbar.tsx: Содержит пункты меню 1-клик действий в инструментах", () => {
-			const toolbarPath = path.resolve(__dirname, "../components/odontogram/OdontogramToolbar.tsx");
-			const source = fs.readFileSync(toolbarPath, "utf-8");
+		it("6.5. ToothChart.tsx: Содержит пункты меню 1-клик действий в экспресс-баре", () => {
+			const chartPath = path.resolve(__dirname, "../components/odontogram/ToothChart.tsx");
+			const source = fs.readFileSync(chartPath, "utf-8");
 
-			assert.ok(source.includes("tools-menu-mark-intact-btn"), "Toolbar обязан содержать пункт Интактный зубной ряд");
-			assert.ok(source.includes("tools-menu-mark-wisdom-missing-btn"), "Toolbar обязан содержать пункт Адентия 8-ок");
-			assert.ok(source.includes("tools-menu-mark-pro-hygiene-btn"), "Toolbar обязан содержать пункт Профгигиена");
-			assert.ok(source.includes("tools-menu-apply-fast-caries-btn"), "Toolbar обязан содержать пункт Быстрая пломба K02.1");
+			assert.ok(source.includes("tooth-chart-mark-intact-btn"), "Express bar обязан содержать пункт Интактный зубной ряд");
+			assert.ok(source.includes("tooth-chart-mark-wisdom-missing-btn"), "Express bar обязан содержать пункт Адентия 8-ок");
+			assert.ok(source.includes("tooth-chart-mark-pro-hygiene-btn"), "Express bar обязан содержать пункт Профгигиена");
+			assert.ok(source.includes("tooth-chart-apply-fast-caries-btn"), "Express bar обязан содержать пункт Быстрая пломба K02.1");
 		});
 
 		it("6.6. VisiographAnalyzer: Мгновенное открытие снимка (<50мс) без блокировки ИИ (Мандат 8e)", () => {

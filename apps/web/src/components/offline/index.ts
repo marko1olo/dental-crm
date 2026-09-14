@@ -1,3 +1,2 @@
-export * from "./OfflineContinuityStrip.js";
-export * from "./OfflineReadinessBanner.js";
-export { OfflineContinuityStrip as default } from "./OfflineContinuityStrip.js";
+export * from "../../workspaceContinuityStrip.js";
+export { WorkspaceContinuityStrip as default } from "../../workspaceContinuityStrip.js";

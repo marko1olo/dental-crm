@@ -90,18 +90,12 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	readonly name: string;
 	readonly reason: string;
 }> = [
-	{
-		file: "components/finance/fiscal/FiscalReceiptPrintView.tsx",
-		name: "FiscalReceiptPrintView",
-		reason:
-			"Автономный визуализатор и генератор печатной термоленты кассового чека 54-ФЗ (ФФД 1.2) с поддержкой лент 80мм/57мм, QR-кода ФНС и штампа «ОПЛАЧЕНО». Предоставляется как экспортируемый компонент для интеграции в аппаратные и терминальные очереди печати.",
-	},
-	{
-		file: "components/documents/PaidMedicalContractModal.tsx",
-		name: "PaidMedicalContractModal",
-		reason:
-			"Интерактивное модальное окно заключения договора на оказание платных медицинских услуг в строгом соответствии с Постановлением Правительства РФ № 736 от 11.05.2023 с поддержкой touch-подписи стилусом на планшете, SMS OTP авторизации простой ЭП (1-click ПЭП) и экспортом в печатный бланк.",
-	},
+	/*
+	 * FiscalReceiptPrintView УДАЛЁН per Mandate 8s (канонический SSOT: Order804nFiscalReceiptPrint.tsx).
+	 */
+	/*
+	 * PaidMedicalContractModal УДАЛЁН per Mandate 8s (канонический SSOT: PaidServiceContractForm.tsx).
+	 */
 	{
 		file: "components/diagnostics/Icd10ClinicalSelector.tsx",
 		name: "Icd10ClinicalSelector",
@@ -115,30 +109,18 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	/*
 	 * PrescriptionsWidget УДАЛЁН per Mandate 8s как несмонтированный дубликат (канонические SSOT: PrescriptionPrintModal.tsx и PrescriptionModal.tsx).
 	 */
-	{
-		file: "components/offline/OfflineContinuityStrip.tsx",
-		name: "OfflineContinuityStrip",
-		reason:
-			"Автономный индикатор состояния мульти-сетевой топологии и ручного сброса очереди IndexedDB мутаций (Cloud VPS / Wi-Fi LAN Mesh / Autonomous Offline) с русской плюрализацией и кнопкой принудительной синхронизации.",
-	},
-	{
-		file: "components/offline/OfflineReadinessBanner.tsx",
-		name: "OfflineReadinessBanner",
-		reason:
-			"Баннер готовности к офлайн-работе с индикацией Service Worker, готовности IndexedDB и кнопками 1-клик экспорта зашифрованного резервного архива базы (.dente) и проверки целостности локального кэша.",
-	},
+	/*
+	 * OfflineContinuityStrip и OfflineReadinessBanner УДАЛЕНЫ per Mandate 8s (канонический SSOT: workspaceContinuityStrip.tsx).
+	 */
 	/*
 	 * PatientSearchModal СМОНТИРОВАН в ScheduleView.tsx и доступен в расписании.
 	 */
 	/*
 	 * TomorrowRemindersModal СМОНТИРОВАН в ScheduleView.tsx и доступен в расписании по кнопке «Напомнить на завтра».
 	 */
-	{
-		file: "components/common/FoolproofConfirmDialog.tsx",
-		name: "FoolproofConfirmDialog",
-		reason:
-			"Универсальное модальное окно защиты от случайных и опасных действий ('Защита от дурака' / Foolproof Dialog) с крупными кнопками, двойным подтверждением и понятными текстами для пожилого персонала и медсестер.",
-	},
+	/*
+	 * FoolproofConfirmDialog УДАЛЁН per Mandate 8s как несмонтированный компонент.
+	 */
 	/*
 	 * AppointmentDrawer УДАЛЁН per Mandate 8s (Wave 175).
 	 * Актуальный рабочий процесс ведётся через AppointmentCard, AppointmentModal и визит VisitView.
@@ -267,63 +249,21 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Боковая панель настройки параметров интеграции WhatsApp Business API и провайдера Kapso в административном контуре клиники.",
 	},
-	{
-		file: "components/patient-portal/PublicEstimatePortal.tsx",
-		name: "PublicEstimatePortal",
-		reason:
-			"Публичный портал согласования сметы и финансового плана лечения пациентом по защищенной одноразовой ссылке с подтверждением согласия.",
-	},
-	{
-		file: "components/odontogram/OdontogramView.tsx",
-		name: "OdontogramView",
-		reason:
-			"Канонический фасадный контейнер мультирежимной интерактивной одонтограммы (3D анатомическая, 6-поверхностная и ГОСТ 043/у) для изолированного тестирования и встраивания.",
-	},
-	{
-		file: "components/visit/VisitTreatmentPlanTab.tsx",
-		name: "VisitTreatmentPlanTab",
-		reason:
-			"Вкладка составления поэтапного клинического плана лечения внутри амбулаторного визита пациента с интеграцией классификатора Номенклатуры услуг 804н.",
-	},
+	/*
+	 * PublicEstimatePortal УДАЛЁН per Mandate 8s (канонический SSOT: PatientBudgetSignView.tsx).
+	 */
+	/*
+	 * OdontogramView и OdontogramToolbar УДАЛЕНЫ per Mandate 8s (канонический SSOT: OdontogramViewContainer.tsx).
+	 */
+	/*
+	 * VisitTreatmentPlanTab УДАЛЁН per Mandate 8s (канонический SSOT: TreatmentPlanModule.tsx).
+	 */
 	/*
 	 * AdultToothChart УДАЛЁН per Mandate 8s как мёртвый дубликат (канонические SSOT: ToothChart.tsx и AnatomicalSvgOdontogram.tsx).
 	 */
-	{
-		file: "components/odontogram/OdontogramToolbar.tsx",
-		name: "OdontogramToolbar",
-		reason:
-			"Интерактивная панель инструментов клинических диагнозов одонтограммы (кариес, пульпит, периодонтит, имплант, коронка), применяемая в изолированных одонтологических сценариях и тестах компонентов.",
-	},
-	{
-		file: "components/Shell.tsx",
-		name: "Shell",
-		reason:
-			"Базовый модульный лейаут-контейнер дизайн-системы для изолированных экранов, вспомогательных модулей и визуального тестирования компонентов рабочего пространства.",
-	},
-	{
-		file: "components/Shell.tsx",
-		name: "ShellHeader",
-		reason:
-			"Шапка базового лейаут-контейнера дизайн-системы для изолированных экранов и визуального тестирования компонентов рабочего пространства.",
-	},
-	{
-		file: "components/Shell.tsx",
-		name: "ShellContent",
-		reason:
-			"Контентная область базового лейаут-контейнера дизайн-системы для изолированных экранов и визуального тестирования компонентов рабочего пространства.",
-	},
-	{
-		file: "components/Shell.tsx",
-		name: "ShellFooter",
-		reason:
-			"Подвальная область базового лейаут-контейнера дизайн-системы для изолированных экранов и визуального тестирования компонентов рабочего пространства.",
-	},
-	{
-		file: "components/Shell.tsx",
-		name: "ShellSurface",
-		reason:
-			"Поверхностный слой базового лейаут-контейнера дизайн-системы для изолированных экранов и визуального тестирования компонентов рабочего пространства.",
-	},
+	/*
+	 * Shell (ShellHeader, ShellContent, ShellFooter, ShellSurface) УДАЛЁН per Mandate 8s (канонический SSOT: workspaceShell.tsx).
+	 */
 	/*
 	 * MarketingAttributionDashboard и OnlineBookingConversionPanel СМОНТИРОВАНЫ
 	 * в AnalyticsDashboardView.tsx (Wave 200).
@@ -334,18 +274,12 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Чеклист предполетной подготовки ассистента и стерильности кабинета перед приемом пациента по стандартам СанПиН (components/chairside/ChairsidePreFlightChecklist.tsx:128). Вызывается из мобильного ассистентского терминала.",
 	},
-	{
-		file: "components/cmo/EgiszSigningCabinetModal.tsx",
-		name: "EgiszSigningCabinetModal",
-		reason:
-			"Модальный кабинет начмеда для пакетного подписания электронных медицинских документов УКЭП КриптоПро перед отправкой в ЕГИСЗ РЭМД (components/cmo/EgiszSigningCabinetModal.tsx:201).",
-	},
-	{
-		file: "components/surgery/SurgeryVisitCockpit.tsx",
-		name: "SurgeryVisitCockpit",
-		reason:
-			"Компактный хирургический кокпит и панель 1-клик протоколов Form 043/у по Закону Единого Неделимого Авторитета (Мандат 8s). Экспортируется для контекстных визитов и стоматологических хирургических экранов.",
-	},
+	/*
+	 * EgiszSigningCabinetModal УДАЛЁН per Mandate 8s (канонический SSOT: EgiszRemdHubModal.tsx).
+	 */
+	/*
+	 * SurgeryVisitCockpit УДАЛЁН per Mandate 8s (канонический SSOT: VisitSurgeryProtocolTab.tsx).
+	 */
 ];
 
 

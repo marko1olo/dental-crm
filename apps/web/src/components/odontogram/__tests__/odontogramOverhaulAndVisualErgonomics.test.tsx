@@ -23,7 +23,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import { TOOTH_STATE_ACTIONS } from "../OdontogramModule";
-import { OdontogramToolbar } from "../OdontogramToolbar";
 import { OdontogramViewContainer } from "../OdontogramViewContainer";
 import {
 	createDefaultAdultTeethData,
@@ -101,48 +100,8 @@ describe("CLIN-04: Elimination of Duplicate Dentition Switchers (Hick's Law & Ma
 		);
 	});
 
-	it("renders single compact 1-row dentition toggle in OdontogramToolbar and OdontogramViewContainer", () => {
+	it("renders single compact 1-row dentition toggle in OdontogramViewContainer", () => {
 		let chosenMode = "";
-		const htmlToolbar = renderToString(
-			<OdontogramToolbar
-				activeMode="compact_clinical"
-				onModeChange={() => {}}
-				dentitionMode="adult"
-				onDentitionModeChange={(m) => {
-					chosenMode = m;
-				}}
-				activeStampTool={null}
-				onStampToolChange={() => {}}
-				onMarkIntactDentition={() => {}}
-				onMarkWisdomTeethMissing={() => {}}
-				onMarkMolarsMissing={() => {}}
-				onMarkFrontIntact={() => {}}
-				showWisdomTeeth={true}
-				onToggleWisdomTeeth={() => {}}
-				showPulpAndCanals={false}
-				onTogglePulpAndCanals={() => {}}
-				isFastExtractMode={false}
-				onToggleFastExtract={() => {}}
-				isLiveInvoiceOpen={false}
-				onToggleLiveInvoice={() => {}}
-				isVoiceListening={false}
-				onToggleVoiceDictation={() => {}}
-			/>,
-		);
-
-		assert.ok(
-			htmlToolbar.includes("data-testid=\"toolbar-dentition-adult\""),
-			"OdontogramToolbar must contain toolbar-dentition-adult",
-		);
-		assert.ok(
-			htmlToolbar.includes("data-testid=\"toolbar-dentition-pediatric\""),
-			"OdontogramToolbar must contain toolbar-dentition-pediatric",
-		);
-		assert.ok(
-			htmlToolbar.includes("data-testid=\"toolbar-dentition-mixed\""),
-			"OdontogramToolbar must contain toolbar-dentition-mixed",
-		);
-
 		const teeth = createDefaultAdultTeethData();
 		const htmlContainer = renderToString(
 			<OdontogramViewContainer
@@ -163,8 +122,13 @@ describe("CLIN-04: Elimination of Duplicate Dentition Switchers (Hick's Law & Ma
 			htmlContainer.includes("data-testid=\"toolbar-dentition-pediatric\""),
 			"OdontogramViewContainer must contain toolbar-dentition-pediatric",
 		);
+		assert.ok(
+			htmlContainer.includes("data-testid=\"toolbar-dentition-mixed\""),
+			"OdontogramViewContainer must contain toolbar-dentition-mixed",
+		);
 	});
 });
+
 
 describe("CLIN-05: 3-Tier Architecture & Elimination of Giant Checkout Ribbon (Mandate 8c)", () => {
 	it("verifies OdontogramModule.tsx has eliminated the giant 420px checkout ribbon", () => {
