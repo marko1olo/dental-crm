@@ -830,7 +830,7 @@ export const documentKindSourceMetadata = {
 		sourceReference:
 			"Приказ Минздрава России от 13.05.2025 N 274н, приложение N 1, учетная форма N 025/у",
 		sourceNote:
-			"DENTE заполняет структуру формы 025/у только из карточки пациента, профиля клиники и подписанных визитов. Неизвестные разделы остаются явно пустыми; юридически значимый электронный обмен требует отдельного контура УКЭП/МИС/ЕГИСЗ.",
+			"ФОРМА 025/у ЛИКВИДИРОВАНА (МАНДАТЫ 8i, 8s). В частной амбулаторной стоматологии регламентным документом является Форма 043/у Минздрава РФ. Сохраняется исключительно для совместимости с историческими записями БД.",
 		sourceCheckedAt: documentSourceCheckedAt,
 	},
 	dental_medical_card_043u: {
@@ -1124,7 +1124,6 @@ export const documentFactoryGroups = [
 			"minor_legal_representative_consent",
 			"photo_video_consent",
 			"medical_intervention_refusal",
-			"outpatient_medical_card_025u",
 			"dental_medical_card_043u",
 			"orthodontic_medical_card_043_1u",
 			"daily_dentist_diary_037u",
@@ -13979,7 +13978,6 @@ export class DentalInteractionMatrixEngine {
 export * from "./security/index.js";
 export * from "./types/pricing.js";
 export * from "./staff/index.js";
-export * from "./services/periodontalCalculations.js";
 export * from "./utils/money.js";
 export * from "./anesthesia/index.js";
 

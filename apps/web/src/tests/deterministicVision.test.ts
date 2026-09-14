@@ -156,7 +156,6 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "analytics/marketingRoi.css", classPattern: ".marketing-roi-close-btn" },
 				{ file: "anesthesia/anesthesia.css", classPattern: ".hub-btn-close" },
 				{ file: "billing/cashShiftClosing.css", classPattern: ".cash-shift-close-btn" },
-				{ file: "cmo/clinicalQuality.css", classPattern: ".cmo-btn-close" },
 				{ file: "documents/documentNavigation.css", classPattern: ".document-package-close-btn" },
 			];
 
@@ -191,7 +190,6 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				"documents/documentNavigation.css",
 				"anesthesia/anesthesia.css",
 				"billing/cashShiftClosing.css",
-				"cmo/clinicalQuality.css",
 			];
 
 			for (const relPath of mobileMediaCheckedFiles) {
@@ -234,7 +232,6 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				path.join(webComponentsDir, "Header.css"),
 				path.join(webComponentsDir, "documents/documentNavigation.css"),
 				path.join(webComponentsDir, "diagnostics/ToothContextDrawer.css"),
-				path.join(webComponentsDir, "cmo/clinicalQuality.css"),
 			];
 
 			for (const fullPath of filesToCheck) {

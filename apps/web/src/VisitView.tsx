@@ -1320,15 +1320,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 	return (
 		<>
-			<div className="panel visit-panel" id="visit" data-testid="visit-view">
+			<div className="panel visit-panel pb-24 sm:pb-8" id="visit" data-testid="visit-view">
 				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) (Mandates 8e, 8p, HIG) ═══ */}
 				<header
 					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0"
 					data-testid="visit-header-monolith"
 					aria-label="Шапка текущего приёма"
 				>
-					{/* Строка 1 (высота ~32-34px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
-					<div className="min-h-[38px] sm:min-h-[34px] sm:h-8.5 sm:max-h-8.5 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-2.5 border-b border-[var(--line)] flex-nowrap overflow-hidden">
+					{/* Строка 1 (высота ~30-32px): Пациент, возраст, телефон, бейдж аллергии (ровно 1 раз!), кнопка нормы 043/у, статус и завершить приём */}
+					<div className="min-h-[34px] sm:min-h-[30px] sm:h-8 sm:max-h-8 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0.5 sm:py-1 border-b border-[var(--line)] flex-nowrap overflow-hidden">
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={26} />
 							<span className="truncate min-w-0 max-w-[170px] xs:max-w-[220px] sm:max-w-none text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
@@ -1576,10 +1576,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 				<div
 					style={{
-						margin: "4px 0 8px",
+						margin: "2px 0 4px",
 						display: visitSubViewTab === "emk" ? "flex" : "none",
 						flexDirection: "column",
-						gap: "4px",
+						gap: "2px",
 					}}
 					aria-hidden={visitSubViewTab !== "emk"}
 				>
@@ -1637,7 +1637,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<section
 							aria-label="Соматический статус"
 							data-testid="visit-somatic-status-block"
-							className="visit-somatic-status-block flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[44px]"
+							className="visit-somatic-status-block flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[36px]"
 						>
 							<div className="flex items-center gap-2 min-w-0 flex-1">
 								<HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />

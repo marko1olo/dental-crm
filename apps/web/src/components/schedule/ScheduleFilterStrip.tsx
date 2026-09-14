@@ -4,7 +4,7 @@ import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
-import type { ChairDoctorShiftAssignment } from "./ScheduleGrid";
+import { type ChairDoctorShiftAssignment, formatDoctorShortName } from "./ScheduleGrid";
 
 export { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 
@@ -399,11 +399,7 @@ export function ScheduleFilterStrip({
 						)
 						.map((member) => {
 							const rawName = member?.fullName || "Врач";
-							const parts = rawName.trim().split(/\s+/);
-							const formattedShort =
-								parts.length > 1
-									? `${parts[0]} ${parts.slice(1).map((p) => (p[0] ? `${p[0].toUpperCase()}.` : "")).join("")}`
-									: rawName;
+							const formattedShort = formatDoctorShortName(rawName) || rawName;
 
 							return (
 								<button
@@ -478,11 +474,11 @@ export function ScheduleFilterStrip({
 			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l-0 sm:border-l sm:border-[var(--line)]">
 				{/* 1-Click View Mode Switcher: [ Лента | Сетка | По креслам ] (desktop & tablet, on mobile embedded in options dropdown) */}
 				{setScheduleViewMode && (
-					<div className="hidden sm:flex items-center gap-0.5 sm:gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
+					<div className="hidden sm:flex items-center gap-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("timeline")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[34px] sm:min-w-0 px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[28px] sm:min-w-0 px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "timeline"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -498,7 +494,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("grid")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[34px] sm:min-w-0 px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[28px] sm:min-w-0 px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "grid"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -514,7 +510,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("chairs")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[34px] sm:min-w-0 px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[28px] sm:min-w-0 px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "chairs"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"

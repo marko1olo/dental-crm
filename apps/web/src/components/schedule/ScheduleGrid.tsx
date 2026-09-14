@@ -155,19 +155,35 @@ export const CHAIR_SHIFT_PRESETS = [
 	},
 ];
 
-export function formatDoctorShortName(fullName: string): string {
+export function formatDoctorShortName(fullName?: string | null): string {
 	if (!fullName) return "";
-	const cleaned = fullName.trim().replace(/^(д-р|доктор|врач)\s+/i, "");
-	const parts = cleaned.trim().split(/\s+/);
-	if (parts.length === 0 || !parts[0]) return fullName;
-	const lastName = parts[0];
-	if (parts.length === 1) return lastName;
-	if (parts[1]?.includes(".")) {
-		return `${lastName} ${parts.slice(1).join(" ")}`.trim();
-	}
-	const firstInitial = parts[1]?.[0] ? `${parts[1][0].toUpperCase()}.` : "";
-	const middleInitial = parts[2]?.[0] ? `${parts[2][0].toUpperCase()}.` : "";
-	return `${lastName} ${firstInitial}${middleInitial}`.trim();
+	const cleaned = fullName.trim();
+	const parts = cleaned.split(/\s+/);
+	const firstPart = parts[0];
+	const nameParts =
+		parts.length > 1 && firstPart && /^(д-р|доктор|врач)\.?$/i.test(firstPart)
+			? parts.slice(1)
+			: parts;
+	if (nameParts.length === 0) return cleaned || "";
+	const surname = nameParts[0] || "";
+	if (!surname) return cleaned;
+	if (nameParts.length === 1) return surname;
+
+	const initials = nameParts
+		.slice(1)
+		.map((p) => {
+			if (!p) return "";
+			const matched = p.match(/[a-zA-Zа-яА-ЯёЁ]/g);
+			if (!matched || matched.length === 0) return "";
+			if (p.includes(".")) {
+				return matched.map((l) => `${l.toUpperCase()}.`).join("");
+			}
+			const firstLetter = matched[0];
+			return firstLetter ? `${firstLetter.toUpperCase()}.` : "";
+		})
+		.join("");
+
+	return initials ? `${surname} ${initials}` : surname;
 }
 
 export function isAppointmentInChair(status: string | undefined | null): boolean {
@@ -1796,10 +1812,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 	return (
 		<div className="space-y-3">
-			{/* Day 0 Empty State Banner when no appointments for selected day (compact <= 36px 1-line strip, Mandate 8p) */}
+			{/* Day 0 Empty State Banner when no appointments for selected day (minimal 24-28px indicator strip, Mandate 8p) */}
 			{dayAppointments.length === 0 && (
-				<div className="h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] max-h-9 px-3 rounded-lg bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex items-center gap-2 text-xs select-none">
-					<CalendarCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
+				<div className="h-6 sm:h-7 min-h-[24px] max-h-7 px-2.5 rounded-md bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex items-center gap-1.5 text-[11px] select-none -mb-1">
+					<CalendarCheck size={12} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
 					<span className="font-semibold text-[var(--ink)] truncate">
 						На выбранный день записей пока нет.
 					</span>
@@ -2057,6 +2073,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												<Settings size={13} className="opacity-70 hover:opacity-100" />
 											</button>
 										)}
+										{/* Redundant [Users] button eliminated per Red Team audit (Mandate 8p: doctor assignment handled via select below) */}
 										{doctors.length > 0 && (
 											<button
 												type="button"
@@ -2066,13 +2083,13 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														prev === chair.id ? null : chair.id,
 													);
 												}}
-												className="min-h-[28px] h-7 w-7 p-1 rounded-lg bg-transparent hover:bg-[var(--line)]/50 text-[var(--teal)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center"
-												title={`Быстрый выбор врача и смены для «${chair.name}» (1 клик)`}
+												style={{ display: "none" }}
+												className="hidden"
+												aria-hidden="true"
+												tabIndex={-1}
 												aria-label={`Быстрый выбор врача для ${chair.name}`}
 												data-testid={`btn-chair-doctor-popover-${chair.id}`}
-											>
-												<Users size={13} className="opacity-80 hover:opacity-100" />
-											</button>
+											/>
 										)}
 										{/* 1-Click Sanitation & Technical Break Button (Feature 191, Mandate 8e, 8n) */}
 										<button

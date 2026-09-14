@@ -140,9 +140,18 @@ export function FinancePlanningOverview({
 						{billingSummary ? money(billingSummary.totalPaidRub) : "—"}
 					</strong>
 					<p>
-						{billingSummary
-							? `${ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])} по текущему пациенту`
-							: financeSummaryUnknownLabel}
+						{billingSummary ? (
+							<>
+								<span className="sm:hidden">
+									{ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])}
+								</span>
+								<span className="hidden sm:inline">
+									{ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])} по текущему пациенту
+								</span>
+							</>
+						) : (
+							financeSummaryUnknownLabel
+						)}
 					</p>
 				</article>
 				<article

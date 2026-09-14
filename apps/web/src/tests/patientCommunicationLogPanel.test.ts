@@ -63,7 +63,7 @@ function code(relativePath: string): string {
 }
 
 const PANEL = "components/patients/PatientCommunicationTimelineWidget.tsx";
-const WRAPPER = "components/crm/PatientCommunicationTimelinesWidget.tsx";
+const OVERVIEW_TAB = "components/patients/PatientOverviewTab.tsx";
 
 test("панель отправляет в раздел, который есть в реестре разделов", () => {
 	const source = code(PANEL);
@@ -96,9 +96,8 @@ test("панель отправляет в раздел, который есть
 
 test("пустой журнал не выдаётся за отсутствие общения", () => {
 	const source = code(PANEL);
-	const wrapper = code(WRAPPER);
 
-	// Прежние формулировки обеих панелей — каждая утверждала больше, чем известно.
+	// Прежние формулировки панели — каждая утверждала больше, чем известно.
 	for (const lie of [
 		"Записи звонков и сообщений с пациентом отсутствуют",
 		"Звонков и сообщений по пациенту не записано",
@@ -106,10 +105,6 @@ test("пустой журнал не выдаётся за отсутствие 
 		assert.ok(
 			!source.includes(lie),
 			`в панель вернулась формулировка «${lie}»: она читается как «с человеком не связывались»`,
-		);
-		assert.ok(
-			!wrapper.includes(lie),
-			`в обёртку вернулась формулировка «${lie}»`,
 		);
 	}
 
@@ -149,27 +144,15 @@ test("ссылка на запись разговора не вернулась:
 });
 
 test("журнал на экране «Пациенты» — одна реализация, а не вторая копия", () => {
-	const wrapper = code(WRAPPER);
+	const tabSource = code(OVERVIEW_TAB);
 
 	assert.match(
-		wrapper,
-		/import \{ PatientCommunicationTimelineWidget \} from "\.\.\/patients\/PatientCommunicationTimelineWidget"/,
-		"обёртка перестала переиспользовать единственную реализацию журнала",
-	);
-	// Ответ маршрута — объект с итогами. Разбор массивом означает вторую копию,
-	// которая покажет пустой журнал на непустой базе.
-	assert.ok(
-		!wrapper.includes("Array.isArray"),
-		"в обёртке снова разбирается ответ: маршрут отдаёт объект с итогами, и Array.isArray даст пустой список на непустой базе",
+		tabSource,
+		/import \{ PatientCommunicationTimelineWidget \} from "\.\/PatientCommunicationTimelineWidget"/,
+		"вкладка перестала переиспользовать единственную реализацию журнала",
 	);
 	assert.ok(
-		!wrapper.includes("usePatientResource"),
-		"обёртка снова грузит данные сама — это вторая копия панели",
-	);
-
-	// Внешняя метка сохранена: на неё ссылается генератор снимков-доказательств.
-	assert.ok(
-		wrapper.includes('data-testid="patient-communication-timelines-widget"'),
-		"снята метка patient-communication-timelines-widget — scripts/generate-wave15-individual-proofs.cjs перестанет находить панель",
+		tabSource.includes("<PatientCommunicationTimelineWidget"),
+		"вкладка должна монтировать PatientCommunicationTimelineWidget напрямую без обёрток",
 	);
 });

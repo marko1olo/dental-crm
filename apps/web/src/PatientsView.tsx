@@ -777,10 +777,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								}}
 							>
 								<div className="min-w-0 flex-1">
-									<h3 className="truncate leading-tight font-semibold text-sm" title={patient.fullName}>{patient.fullName}</h3>
+									<h3 className="break-words line-clamp-2 leading-tight font-semibold text-sm" title={patient.fullName}>{patient.fullName}</h3>
 									<p className="truncate">{patient.phone ?? "Телефон не указан"}</p>
 									{patient.notes ? (
-										<p className="truncate text-xs text-[var(--muted)] opacity-75 mt-0.5" title={patient.notes}>
+										<p className="break-words line-clamp-2 text-xs text-[var(--muted)] opacity-75 mt-0.5" title={patient.notes}>
 											{patient.notes}
 										</p>
 									) : null}
@@ -1156,8 +1156,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
 										disabled={patientCoreSaveState === "saving"}
 										className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
+										style={{ minHeight: "36px" }}
 										title="Сохранить изменения в карточке пациента (1 клик, выше сгиба 900px)"
-										data-testid="patient-core-save-top-btn"
+										data-testid="patient-core-save-btn"
 									>
 										<UserCheck size={13} aria-hidden="true" />
 										<span>Сохранить</span>
@@ -1177,7 +1178,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										disabled={false}
 										className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)]"
 										title="Установить соматическую норму в 1 клик (Мандат 8e, выше сгиба 900px)"
-										data-testid="patient-card-somatic-norm-top-btn"
+										data-testid="patient-card-somatic-norm-btn"
 									>
 										<Check size={13} aria-hidden="true" className="text-teal-600 dark:text-teal-400" />
 										<span>Норма (1-клик)</span>
@@ -1189,7 +1190,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										onClick={() => setIsPatientCardModalOpen(true)}
 										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)] font-bold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 										title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
-										data-testid="patient-quick-043-btn"
+										data-testid="open-patient-card-modal-btn"
 									>
 										<FileText size={13} className="text-[var(--teal)] shrink-0" />
 										<span>Карта 043/у</span>
@@ -1460,42 +1461,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						}}
 					>
 						<button
-							className="primary-button"
-							type="button"
-							onClick={savePatientCore}
-							aria-busy={patientCoreSaveState === "saving" || undefined}
-							aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
-							disabled={patientCoreSaveState === "saving"}
-							style={{ minHeight: "36px" }}
-							data-testid="patient-core-save-btn"
-						>
-							<UserCheck size={16} aria-hidden="true" /> Сохранить данные
-						</button>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() =>
-								executePatientSomaticNormAutonomy({
-									selectedPatient,
-									currentNotes: patientCoreDraft?.notes,
-									updatePatientCoreDraft,
-									showToastFn: triggerToast,
-								})
-							}
-							disabled={false}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
-							title="Установить соматическую норму в 1 клик"
-							data-testid="patient-card-somatic-norm-btn"
-						>
-							<Check size={16} aria-hidden="true" />
-							<span>Соматически здоров / норма (1-клик)</span>
-						</button>
-						<button
 							className="secondary-button"
 							type="button"
 							onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
@@ -1515,7 +1480,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						<button
 							className="secondary-button"
 							type="button"
-							onClick={() => setIsPatientCardModalOpen(true)}
+							onClick={() => void printBlankMedicalContract(selectedPatient)}
 							disabled={false}
 							style={{
 								display: "inline-flex",
@@ -1523,11 +1488,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								gap: "6px",
 								minHeight: "44px",
 							}}
-							title="Открыть полную амбулаторную медицинскую карту Форма 043/у"
-							data-testid="open-patient-card-modal-btn"
+							title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e п. 8)"
+							data-testid="patient-card-print-contract-btn"
 						>
 							<FileText size={16} aria-hidden="true" />
-							<span>Амбулаторная карта 043/у</span>
+							<span>Печать договора</span>
 						</button>
 						<div className="relative inline-block" style={{ position: "relative" }}>
 							<button

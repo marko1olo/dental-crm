@@ -1468,11 +1468,11 @@ export function VisitEmkTab() {
 	return (
 		<section
 			data-testid="visit-emk-tab"
-			className="visit-note-panel bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-2.5 pb-32 sm:pb-8"
+			className="visit-note-panel bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-1.5 sm:p-2 pb-24 sm:pb-8"
 			aria-label="Черновик электронной медицинской карты"
 		>
-			<div className="visit-note-head flex items-center justify-between gap-2 flex-wrap mb-1">
-				<div className="flex items-center gap-2 min-w-0">
+			<div className="visit-note-head flex items-center justify-between gap-1.5 sm:gap-2 flex-wrap mb-1 min-w-0 max-w-full">
+				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
 					<p
 						className="eyebrow text-[var(--ink-2,var(--muted,#cbd5e1))] dark:text-slate-200 text-xs font-semibold m-0 shrink-0"
 						style={{ color: "var(--ink-2, var(--muted, #cbd5e1))" }}
@@ -1482,7 +1482,7 @@ export function VisitEmkTab() {
 					</p>
 					<span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
 					<h3
-						className="text-slate-900 dark:text-slate-100 text-sm font-bold truncate m-0"
+						className="text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-bold truncate m-0"
 						style={{ color: "var(--ink, #f8fafc)" }}
 						data-testid="emk-section-title"
 					>
@@ -1493,20 +1493,20 @@ export function VisitEmkTab() {
 								: "Структура приема"}
 					</h3>
 				</div>
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0 max-w-full">
 					<button
 						type="button"
 						onClick={() => handleOpenNextVisitBooking(5)}
-						className="min-h-[28px] h-7 px-2.5 py-0.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
+						className="min-h-[26px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0.5 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0"
 						data-testid="btn-schedule-next-stage"
 						title="Записать пациента на следующий этап лечения через 5-7 дней"
 					>
-						<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/></svg>
+						<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/></svg>
 						<span className="hidden sm:inline">След. этап (+5д)</span>
 						<span className="sm:hidden">+5д</span>
 					</button>
 					<span
-						className={`visit-note-status-badge text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border transition-all shrink-0 ${
+						className={`visit-note-status-badge text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border transition-all shrink-0 whitespace-nowrap ${
 							draft || isVisitNoteDirty
 								? "ready bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
 								: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 dark:bg-emerald-950/40"
@@ -1620,21 +1620,21 @@ export function VisitEmkTab() {
 
 
 
-			{/* Умный голосовой AI-Пилот ЭМК (0 кликов на приёме) — сверхкомпактный 32px бар (DEF-VIS-02) */}
+			{/* Умный голосовой AI-Пилот ЭМК (0 кликов на приёме) — сверхкомпактный 30-32px бар (DEF-VIS-02) */}
 			<EmkVoicePilot
 				onApplyToothState={handleApplyVoiceToothState}
 				onApplySoapNotes={handleApplyVoiceSoapNotes}
 				onApplyAnesthesia={handleApplyVoiceAnesthesia}
 				onApplyProcedures={handleApplyVoiceProcedures}
 				activeSelectedTooth={activeSelectedTooth}
-				className="my-0.5 [&>div:first-child]:min-h-[30px] sm:[&>div:first-child]:min-h-[32px] sm:[&>div:first-child]:h-8 [&>div:first-child]:py-0.5 [&_button]:min-h-[26px] [&_button]:h-7"
+				className="my-0.5 [&>div:first-child]:min-h-[28px] sm:[&>div:first-child]:min-h-[30px] sm:[&>div:first-child]:h-7.5 [&>div:first-child]:py-0.5 [&_button]:min-h-[24px] [&_button]:h-6.5"
 			/>
 
 			{/* Единый компактный тулбар ЭМК: Вкладки протокола + 1-Клик SOAP (1 строка 32-36px по Мандату 8p, DEF-VIS-01, DEF-VIS-03) */}
-			<div className="emk-unified-toolbar flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 my-0.5 sm:my-1 py-0.5 sm:py-1 border-b border-[var(--line)] min-h-[32px] sm:min-h-[36px] min-w-0 max-w-full">
+			<div className="emk-unified-toolbar flex flex-col sm:flex-row sm:items-center sm:justify-between sm:flex-nowrap gap-1.5 sm:gap-2 my-0.5 sm:my-1 py-0.5 sm:py-1 border-b border-[var(--line)] min-h-[32px] sm:min-h-[36px] min-w-0 max-w-full">
 				{/* Вкладки протокола приема ЭМК — скроллируемые на десктопе при сжатии без выталкивания SOAP бара */}
 				<div
-					className="emk-tabs-container flex items-center gap-1 min-w-0 flex-1 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 p-0 border-b-0"
+					className="emk-tabs-container flex items-center gap-1 min-w-0 flex-1 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 p-0 border-b-0 flex-nowrap"
 					role="tablist"
 					aria-label="Вкладки протокола приема"
 				>
@@ -1766,7 +1766,7 @@ export function VisitEmkTab() {
 			</details>
 
 			<div
-				className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""} pb-36 pr-0 sm:pb-32 sm:pr-72 lg:pr-80`}
+				className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""} pb-24 sm:pb-32 pr-0 sm:pr-72 lg:pr-80`}
 			>
 				{fieldsUnavailable ? (
 					<div
@@ -2077,7 +2077,7 @@ export function VisitEmkTab() {
 												key={chip}
 												type="button"
 												onClick={() => handleChipClick(chip)}
-												className="quick-chip h-7 sm:h-8 min-h-[28px] sm:min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation whitespace-nowrap shadow-2xs inline-flex items-center gap-1.5 shrink-0"
+												className="quick-chip visit-quick-chip max-w-none h-7 sm:h-8 min-h-[28px] sm:min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation whitespace-nowrap shadow-2xs inline-flex items-center gap-1.5 shrink-0"
 											>
 												<span className="text-[var(--teal,var(--brand-primary))] font-extrabold">+</span>
 												<span>{chip}</span>

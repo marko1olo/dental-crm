@@ -8,7 +8,7 @@
  * 2. X.509 Certificate parser and validator (SNILS, OGRN, validity dates, thumbprints).
  * 3. Detached CAdES-BES (PKCS#7 / .p7s) digital signature generator and verifier.
  * 4. Dual UKEP signing protocol (Лечащий врач + Медицинская организация / Главный врач).
- * 5. SEMD 105 (Протокол консультации) and SEMD 106 (Эпикриз) CDA R2 XML generation & signing.
+ * 5. SEMD 105 (Протокол консультации) and SEMD 104 (Стоматологический эпикриз) CDA R2 XML generation & signing.
  * 6. Federal REMD EGISZ SOAP 1.2 / MTOM and REST transport envelopes.
  * 7. SEMD lifecycle state machine (DRAFT -> SIGNED -> SENT -> REGISTERED / REJECTED).
  * 8. Statutory REMD validation error codes lookup and SOAP Fault parser.
@@ -134,7 +134,7 @@ describe("EGISZ CryptoPro & REMD Statutory Signing Engine (Wave 15)", () => {
 		});
 
 		it("вычисляет 512-битный хэш ГОСТ Р 34.11-2012", () => {
-			const text = "Выписной эпикриз СЭМД 106";
+			const text = "Стоматологический эпикриз СЭМД 104";
 			const hash512 = computeGost3411_2012_512Hex(text);
 
 			assert.equal(hash512.length, 128, "Длина хэша ГОСТ 34.11-2012 512 бит должна составлять 128 hex-символов");
@@ -542,7 +542,7 @@ describe("EGISZ CryptoPro & REMD Statutory Signing Engine (Wave 15)", () => {
 			const restDto = buildRemdRestSubmissionPayload({
 				documentId: "REMD-REST-01",
 				documentVersion: 1,
-				docTypeNsiCode: "106",
+				docTypeNsiCode: "104",
 				canonicalXml: canonicalDocXml,
 				doctorSignature: doctorSig,
 				doctorSnils: "12345678964",
@@ -553,7 +553,7 @@ describe("EGISZ CryptoPro & REMD Statutory Signing Engine (Wave 15)", () => {
 			});
 
 			assert.equal(restDto.documentId, "REMD-REST-01");
-			assert.equal(restDto.docTypeNsiCode, "106");
+			assert.equal(restDto.docTypeNsiCode, "104");
 			assert.equal(restDto.clinic.oid, TEST_CLINIC.oid);
 			assert.equal(restDto.doctor.snils, "12345678964");
 			assert.ok(restDto.attachments.cdaXmlBase64);

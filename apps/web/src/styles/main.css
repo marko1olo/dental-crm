@@ -14162,114 +14162,161 @@ html.dark .communication-side .panel-heading h3,
 	.finance-summary-grid {
 		display: grid !important;
 		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-		gap: 6px !important;
-		padding: 8px !important;
-		margin-bottom: 8px !important;
+		gap: 4px !important;
+		padding: 6px !important;
+		margin-bottom: 6px !important;
 	}
 
 	.finance-summary-grid article {
-		min-height: 56px !important;
-		max-height: 76px !important;
-		padding: 6px 8px !important;
-		gap: 2px !important;
+		min-height: 48px !important;
+		max-height: none !important;
+		padding: 4px 6px !important;
+		gap: 1px !important;
 	}
 
 	.finance-summary-grid span {
-		font-size: 11px !important;
+		font-size: 10px !important;
 		line-height: 1.1 !important;
 	}
 
 	.finance-summary-grid strong {
-		font-size: 15px !important;
+		font-size: 14px !important;
 		line-height: 1.15 !important;
 	}
 
 	.finance-summary-grid p {
-		font-size: 10px !important;
-		line-height: 1.15 !important;
-		white-space: nowrap !important;
+		font-size: 9.5px !important;
+		line-height: 1.25 !important;
+		white-space: normal !important;
+		word-break: break-word !important;
 		overflow: hidden !important;
-		text-overflow: ellipsis !important;
+		text-overflow: clip !important;
 	}
 
 	.finance-summary-grid .finance-tax-deduction-card {
-		padding-bottom: 6px !important;
+		padding-bottom: 4px !important;
 	}
 
-	/* PaymentCapture mobile above-the-fold squeeze (T.A.R.S. Mandate 8p) */
+	/* PaymentCapture mobile above-the-fold squeeze (T.A.R.S. Mandate 8p & 8c Hot Path) */
 	.payment-capture {
 		padding: 4px 6px !important;
-		gap: 4px !important;
+		gap: 3px !important;
 	}
 	.payment-smart-ai-booking {
-		margin-bottom: 4px !important;
-		padding: 4px 8px !important;
+		margin-bottom: 3px !important;
+		padding: 4px 6px !important;
 		border-radius: 8px !important;
 	}
 	.payment-smart-chips {
-		margin-bottom: 4px !important;
+		margin-bottom: 3px !important;
 		gap: 4px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+	}
+	.payment-smart-chips::-webkit-scrollbar {
+		display: none !important;
 	}
 	.payment-smart-chips .quick-chip {
-		min-height: 32px !important;
-		height: 32px !important;
-		padding: 2px 8px !important;
-		font-size: 11px !important;
+		min-height: 28px !important;
+		height: 28px !important;
+		padding: 2px 6px !important;
+		font-size: 10.5px !important;
+		flex-shrink: 0 !important;
 	}
 	.payment-amount-presets {
-		margin-top: 4px !important;
+		margin-top: 3px !important;
 		gap: 4px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+	}
+	.payment-amount-presets::-webkit-scrollbar {
+		display: none !important;
 	}
 	.payment-amount-presets .quick-chip {
-		min-height: 30px !important;
-		height: 30px !important;
-		padding: 2px 8px !important;
-		font-size: 11px !important;
+		min-height: 28px !important;
+		height: 28px !important;
+		padding: 2px 6px !important;
+		font-size: 10.5px !important;
+		flex-shrink: 0 !important;
 	}
 	.doctor-discounts-section {
-		margin-top: 4px !important;
-		margin-bottom: 4px !important;
+		margin-top: 3px !important;
+		margin-bottom: 3px !important;
 	}
 	.doctor-discounts-section span {
-		margin-bottom: 2px !important;
-		font-size: 10px !important;
+		margin-bottom: 1px !important;
+		font-size: 9.5px !important;
 	}
 	.doctor-discount-chips {
-		gap: 4px !important;
+		gap: 3px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+	}
+	.doctor-discount-chips::-webkit-scrollbar {
+		display: none !important;
 	}
 	.doctor-discount-chips .quick-chip {
-		min-height: 30px !important;
-		height: 30px !important;
-		padding: 2px 8px !important;
-		font-size: 11px !important;
+		min-height: 28px !important;
+		height: 28px !important;
+		padding: 2px 6px !important;
+		font-size: 10.5px !important;
+		flex-shrink: 0 !important;
 	}
 	.payment-methods-toolbar {
-		margin-bottom: 6px !important;
-		gap: 4px !important;
+		margin-bottom: 4px !important;
+		display: grid !important;
+		grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+		gap: 3px !important;
 	}
 	.payment-methods-toolbar .quick-chip {
-		min-height: 36px !important;
-		height: 36px !important;
-		padding: 4px 10px !important;
-		font-size: 12px !important;
+		min-height: 34px !important;
+		height: 34px !important;
+		padding: 2px 2px !important;
+		font-size: 11px !important;
+		justify-content: center !important;
+		text-align: center !important;
 	}
 	.payment-actions {
-		margin-top: 4px !important;
-		gap: 6px !important;
+		position: sticky !important;
+		bottom: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
+		background: var(--paper) !important;
+		padding: 6px 8px !important;
+		margin: 4px -6px -4px -6px !important;
+		border-top: 1px solid var(--line) !important;
+		border-radius: 0 0 12px 12px !important;
+		box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08) !important;
+		z-index: 30 !important;
+		display: flex !important;
+		flex-direction: column !important;
+		gap: 4px !important;
 	}
 	.payment-actions .primary-button {
 		min-height: 40px !important;
 		height: 40px !important;
-		font-size: 13px !important;
+		font-size: 13.5px !important;
+		font-weight: 700 !important;
+		width: 100% !important;
+		justify-content: center !important;
 	}
 	.payment-actions .secondary-button {
-		min-height: 36px !important;
+		min-height: 32px !important;
+		height: 32px !important;
 		font-size: 11px !important;
-		padding: 4px 8px !important;
+		padding: 2px 6px !important;
+		width: 100% !important;
+		justify-content: center !important;
 	}
 	.clinical-recommendations-accordion {
-		margin: 4px 0 !important;
-		padding: 6px 10px !important;
+		margin: 2px 0 !important;
+		padding: 4px 8px !important;
 	}
 
 	.folder-scan-row label {

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
-import { PatientCommunicationTimelinesWidget } from "../crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 import { LabOrdersPanel } from "./LabOrdersPanel";
 import { PatientWorkspaceView } from "./PatientWorkspaceView";
@@ -269,7 +268,7 @@ export function PatientOverviewTab() {
 								</span>
 							</summary>
 							<div className="patient-secondary-accordion__body">
-								<PatientCommunicationTimelinesWidget patientId={selectedPatientId} />
+								<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
 								<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
 								<PatientDuplicateMergeQueuesWidget />
 							</div>

@@ -397,6 +397,12 @@
 	border-left-color: var(--teal, #2dd4bf);
 }
 
+@media (min-width: 768px) {
+	.patient-mobile-preview-card {
+		display: none !important;
+	}
+}
+
 /* Patient List & Row Items */
 .patient-list {
 	display: flex;

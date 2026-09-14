@@ -1043,7 +1043,7 @@ export function PaymentCapture({
 
 	return (
 		<div
-			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-3 sm:p-4"
+			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2.5 sm:p-4"
 			id="payment-capture"
 		>
 			{feedback ? (
@@ -1068,19 +1068,19 @@ export function PaymentCapture({
 						className="smart-ai-booking payment-smart-ai-booking col-span-full"
 						style={{
 							gridColumn: "1 / -1",
-							marginBottom: "8px",
+							marginBottom: "4px",
 							border: "1px solid var(--line-strong)",
 							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.05)",
-							borderRadius: "12px",
-							padding: "6px 10px",
+							borderRadius: "10px",
+							padding: "4px 8px",
 							background: "var(--paper)",
 							display: "flex",
 							flexDirection: "row",
 							alignItems: "center",
-							gap: "8px",
+							gap: "6px",
 						}}
 					>
-						<Bot size={18} color="var(--teal-dark)" />
+						<Bot size={16} color="var(--teal-dark)" className="shrink-0" />
 						<div style={{ position: "relative", flex: 1, minWidth: 0 }}>
 							<input
 								type="text"
@@ -1100,8 +1100,8 @@ export function PaymentCapture({
 									border: "none",
 									background: "transparent",
 									outline: "none",
-									fontSize: "13px",
-									paddingRight: "8px",
+									fontSize: "12px",
+									paddingRight: "6px",
 									boxSizing: "border-box",
 									fontFamily: "inherit",
 									color: "var(--ink)",
@@ -1131,36 +1131,38 @@ export function PaymentCapture({
 						className="quick-chips-row payment-smart-chips col-span-full"
 						style={{
 							gridColumn: "1 / -1",
-							marginBottom: "8px",
-							flexWrap: "wrap",
+							marginBottom: "4px",
 							display: "flex",
-							gap: "6px",
+							gap: "4px",
 							width: "100%",
 						}}
 					>
 						<button
 							type="button"
-							className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
+							className="quick-chip min-h-[28px] sm:min-h-[44px] px-2 sm:px-3 text-[11px] sm:text-sm font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("5000 наличными")}
 						>
-							<Banknote size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-							<span>5000 наличными</span>
+							<Banknote size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+							<span className="sm:hidden">5000 нал</span>
+							<span className="hidden sm:inline">5000 наличными</span>
 						</button>
 						<button
 							type="button"
-							className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
+							className="quick-chip min-h-[28px] sm:min-h-[44px] px-2 sm:px-3 text-[11px] sm:text-sm font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("15000 по карте")}
 						>
-							<CreditCard size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-							<span>15000 картой</span>
+							<CreditCard size={13} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							<span className="sm:hidden">15000 карта</span>
+							<span className="hidden sm:inline">15000 картой</span>
 						</button>
 						<button
 							type="button"
-							className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
+							className="quick-chip min-h-[28px] sm:min-h-[44px] px-2 sm:px-3 text-[11px] sm:text-sm font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("20000 сбп, вычет")}
 						>
-							<QrCode size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
-							<span>20000 СБП + вычет</span>
+							<QrCode size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
+							<span className="sm:hidden">20000 СБП</span>
+							<span className="hidden sm:inline">20000 СБП + вычет</span>
 						</button>
 					</div>
 					{showSmartPreview && smartParsedData && (
@@ -1196,17 +1198,16 @@ export function PaymentCapture({
 					<div
 						className="quick-chips-row payment-amount-presets"
 						style={{
-							marginTop: "6px",
-							flexWrap: "wrap",
+							marginTop: "3px",
 							display: "flex",
-							gap: "6px",
+							gap: "4px",
 							width: "100%",
 						}}
 					>
 						{remainingDebt > 0 && (
 							<button
 								type="button"
-								className="quick-chip min-h-[36px] sm:min-h-[44px] px-3.5 font-bold text-xs sm:text-sm"
+								className="quick-chip min-h-[28px] sm:min-h-[44px] px-2.5 sm:px-3.5 font-bold text-xs sm:text-sm shrink-0"
 								onClick={() => onAmountChange(rubAmountForInput(remainingDebt))}
 							>
 								Долг: {money(remainingDebt)}
@@ -1216,7 +1217,7 @@ export function PaymentCapture({
 							<button
 								key={val}
 								type="button"
-								className="quick-chip min-h-[36px] sm:min-h-[44px] px-3 font-bold text-xs sm:text-sm"
+								className="quick-chip min-h-[28px] sm:min-h-[44px] px-2 sm:px-3 font-bold text-xs sm:text-sm shrink-0"
 								onClick={() => onAmountChange(String(val))}
 							>
 								{val} ₽
@@ -1229,30 +1230,31 @@ export function PaymentCapture({
 			{/* Скидки врача и гарантийные переделки (Мандат 8e п. 7, Мандат 8n: без паролей администратора и блокировок) */}
 			<div
 				className="doctor-discounts-section col-span-full"
-				style={{ gridColumn: "1 / -1", marginTop: "8px", marginBottom: "8px" }}
+				style={{ gridColumn: "1 / -1", marginTop: "3px", marginBottom: "3px" }}
 				data-testid="doctor-discounts-section"
 			>
-				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-1">
+				<span className="text-[10px] sm:text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5 sm:mb-1">
 					Скидка врача / Гарантия (без паролей администратора):
 				</span>
 				<div
 					role="toolbar"
 					className="quick-chips-row doctor-discount-chips"
-					style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}
+					style={{ display: "flex", gap: "3px" }}
 					aria-label="Скидки врача и гарантийные переделки"
 				>
 					<button
 						type="button"
-						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-extrabold ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
+						className={`quick-chip min-h-[28px] sm:min-h-[44px] px-2 sm:px-3 text-[11px] sm:text-sm font-extrabold shrink-0 ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
 						onClick={() => applyDoctorDiscount("warranty_100")}
 						data-testid="btn-doctor-discount-warranty"
 						title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
 					>
-						100% Гарантия (Переделка)
+						<span className="sm:hidden">100% Гарантия</span>
+						<span className="hidden sm:inline">100% Гарантия (Переделка)</span>
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-3 text-xs sm:text-sm font-bold ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
+						className={`quick-chip min-h-[28px] sm:min-h-[44px] px-2 sm:px-3 text-[11px] sm:text-sm font-bold shrink-0 ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
 						onClick={() => applyDoctorDiscount("colleague_100")}
 						data-testid="btn-doctor-discount-colleague"
 						title="100% скидка для коллег и персонала клиники"
@@ -1261,27 +1263,30 @@ export function PaymentCapture({
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-2.5 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
+						className={`quick-chip min-h-[28px] sm:min-h-[44px] px-1.5 sm:px-2.5 text-[11px] sm:text-sm font-semibold shrink-0 ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						onClick={() => applyDoctorDiscount("percent_50")}
 						data-testid="btn-doctor-discount-50"
 					>
-						Скидка 50%
+						<span className="sm:hidden">-50%</span>
+						<span className="hidden sm:inline">Скидка 50%</span>
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-2.5 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
+						className={`quick-chip min-h-[28px] sm:min-h-[44px] px-1.5 sm:px-2.5 text-[11px] sm:text-sm font-semibold shrink-0 ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						onClick={() => applyDoctorDiscount("percent_20")}
 						data-testid="btn-doctor-discount-20"
 					>
-						Скидка 20%
+						<span className="sm:hidden">-20%</span>
+						<span className="hidden sm:inline">Скидка 20%</span>
 					</button>
 					<button
 						type="button"
-						className={`quick-chip min-h-[36px] sm:min-h-[44px] px-2.5 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
+						className={`quick-chip min-h-[28px] sm:min-h-[44px] px-1.5 sm:px-2.5 text-[11px] sm:text-sm font-semibold shrink-0 ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
 						onClick={() => applyDoctorDiscount("percent_10")}
 						data-testid="btn-doctor-discount-10"
 					>
-						Скидка 10%
+						<span className="sm:hidden">-10%</span>
+						<span className="hidden sm:inline">Скидка 10%</span>
 					</button>
 				</div>
 			</div>
@@ -1291,10 +1296,7 @@ export function PaymentCapture({
 				className="quick-chips-row payment-methods-toolbar col-span-full"
 				style={{
 					gridColumn: "1 / -1",
-					marginBottom: method === "cash" ? "8px" : "10px",
-					display: "flex",
-					gap: "6px",
-					flexWrap: "wrap",
+					marginBottom: method === "cash" ? "4px" : "6px",
 					width: "100%",
 				}}
 				aria-label="Способ оплаты"
@@ -1303,7 +1305,7 @@ export function PaymentCapture({
 					const isActive = method === paymentMethod;
 					return (
 						<button
-							className={`quick-chip min-h-[38px] sm:min-h-[44px] px-3 sm:px-4 text-xs sm:text-sm font-bold ${
+							className={`quick-chip min-h-[34px] sm:min-h-[44px] px-1 sm:px-4 text-[11px] sm:text-sm font-bold justify-center text-center ${
 								isActive
 									? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-400 font-bold"
 									: ""
@@ -1313,7 +1315,14 @@ export function PaymentCapture({
 							aria-pressed={isActive}
 							onClick={() => onMethodChange(paymentMethod)}
 						>
-							{methodLabels[paymentMethod]}
+							<span className="sm:hidden">
+								{paymentMethod === "bank_transfer"
+									? "Перевод"
+									: methodLabels[paymentMethod]}
+							</span>
+							<span className="hidden sm:inline">
+								{methodLabels[paymentMethod]}
+							</span>
 						</button>
 					);
 				})}
@@ -1468,7 +1477,7 @@ export function PaymentCapture({
 					<span>Оплата не блокируется. Для формирования справки ФНС не хватает: {taxDeductionMissingSteps.join(", ")} (можно заполнить позже в карточке пациента).</span>
 				</div>
 			) : null}
-			<p className="payment-capture-safeguard">
+			<p className="payment-capture-safeguard text-[10px] text-[var(--muted)] my-1 hidden sm:block">
 				Каждая оплата добавляет новую строку в историю. Ошибку закрывайте
 				возвратом или коррекцией, не повторной записью.
 			</p>
@@ -1477,14 +1486,13 @@ export function PaymentCapture({
 				style={{
 					gridColumn: "1 / -1",
 					display: "flex",
-					gap: "8px",
-					flexWrap: "wrap",
+					gap: "6px",
 					width: "100%",
 					marginTop: "4px",
 				}}
 			>
 				<button
-					className="primary-button min-h-[42px] sm:min-h-[44px]"
+					className="primary-button min-h-[40px] sm:min-h-[44px]"
 					type="button"
 					onClick={handlePrimarySubmit}
 					aria-busy={isSaving || undefined}
@@ -1498,7 +1506,7 @@ export function PaymentCapture({
 					{isSaving ? "Записываю" : "Принять оплату"}
 				</button>
 				<button
-					className="secondary-button min-h-[38px] sm:min-h-[44px]"
+					className="secondary-button min-h-[32px] sm:min-h-[44px]"
 					type="button"
 					onClick={handleSberPosClick}
 					aria-describedby={
@@ -1507,7 +1515,9 @@ export function PaymentCapture({
 					disabled={isSaving}
 					data-testid="payment-sberpos-button"
 				>
-					<CreditCard aria-hidden="true" /> Оплата картой (Сбербанк POS / SberPay QR)
+					<CreditCard aria-hidden="true" />{" "}
+					<span className="sm:hidden">Сбербанк POS</span>
+					<span className="hidden sm:inline">Оплата картой (Сбербанк POS / SberPay QR)</span>
 				</button>
 			</div>
 			{patientId && (

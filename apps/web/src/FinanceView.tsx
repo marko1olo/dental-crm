@@ -533,12 +533,13 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
-			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-2 px-2.5 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 flex-nowrap overflow-hidden shrink-0 select-none">
-				<div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-2 sm:mb-3 flex-nowrap overflow-hidden shrink-0 select-none">
+				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
 					<span className="truncate text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0">
-						Оплаты и план
+						<span className="sm:hidden">Оплаты</span>
+						<span className="hidden sm:inline">Оплаты и план</span>
 					</span>
-					<span className="text-xs text-[var(--muted)] max-w-[140px] truncate" title={documentPatient?.fullName ?? "пациент не выбран"}>
+					<span className="text-xs text-[var(--muted)] min-w-0 flex-1 truncate" title={documentPatient?.fullName ?? "пациент не выбран"}>
 						· {documentPatient?.fullName ?? "пациент не выбран"}
 					</span>
 					<button
@@ -575,7 +576,8 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 							data-testid="btn-finance-pay-debt-quick"
 						>
 							<CreditCard size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
-							<span className="truncate">Оплатить долг ({money(billingSummary.totalDueRub)})</span>
+							<span className="truncate hidden sm:inline">Оплатить долг ({money(billingSummary.totalDueRub)})</span>
+							<span className="truncate sm:hidden">{money(billingSummary.totalDueRub)}</span>
 						</button>
 					)}
 					<button

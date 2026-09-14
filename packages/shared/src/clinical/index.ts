@@ -3,7 +3,6 @@
  * Clinical Audit, CMO Quality Control & Pharmacotherapy DDI Safety Engine.
  */
 
-export * from "./cmoEmkQualityAuditEngine.js";
 export * from "./clinicalDdiDrugSafetyEngine.js";
 export * from "./visitWorkOrder.js";
 export * from "./endoProtocolEngine.js";
@@ -43,7 +42,6 @@ export {
 	filterTimelineEntries,
 } from "./patientTimelineEngine.js";
 export * from "./patientRelationshipsEngine.js";
-export * from "./perioIndicesEngine.js";
 export * from "./odontogramTreatmentEngine.js";
 export * from "./pediatricDentition.js";
 export * from "./smartClinicalPlaybooksEngine.js";

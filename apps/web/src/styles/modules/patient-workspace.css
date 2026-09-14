@@ -368,11 +368,18 @@
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-tabs-container {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
 	gap: 6px;
 	margin-bottom: 12px;
 	border-bottom: 1px solid var(--line);
 	padding-bottom: 8px;
+}
+
+.emk-tabs-container::-webkit-scrollbar {
+	display: none;
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
@@ -392,6 +399,8 @@
 	gap: 6px;
 	touch-action: manipulation;
 	transition: all 0.15s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .emk-tab-button:hover {
@@ -433,6 +442,17 @@
 	font-size: 14px;
 }
 
+/* Quick Chips в контексте визита / ЭМК — снятие ограничения max-width: 180px и троеточия (DEF-VIS-04) */
+.visit-note-panel .quick-chip,
+.visit-quick-chip,
+.emk-tab-panel .quick-chip,
+.visit-fields .quick-chip {
+	max-width: none !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
+	white-space: nowrap !important;
+}
+
 /* Patient List CLS Fixes */
 .patient-row {
 	display: grid;
@@ -457,6 +477,12 @@
 	}
 	.emk-tabs-container::-webkit-scrollbar {
 		display: none;
+	}
+	.visit-note-panel {
+		padding-bottom: 6rem !important; /* pb-24 safe area */
+	}
+	.visit-fields {
+		padding-bottom: 6rem !important; /* pb-24 safe area */
 	}
 }
 

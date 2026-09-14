@@ -231,24 +231,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	 * удалённой QrGatewayPanel ниже), и он остаётся. Сама же ссылка работает и без
 	 * неё: её вставляет на сайт клиники тот, кто этот сайт ведёт.
 	 */
-	{
-		file: "components/communications/PatientWhatsAppConversationWidget.tsx",
-		name: "PatientWhatsAppConversationWidget",
-		reason:
-			"Виджет прямого чата с пациентом через официальный WhatsApp Cloud API / Kapso с поддержкой HSM-шаблонов, истории переписки и статусов доставки сообщений.",
-	},
-	{
-		file: "components/communications/RecallAutomationPipelineWidget.tsx",
-		name: "RecallAutomationPipelineWidget",
-		reason:
-			"Виджет воронки автоматического диспансерного вызова (Recall) пациентов на профилактические осмотры и гигиену по периодам 3/6/12 месяцев.",
-	},
-	{
-		file: "components/communications/WhatsAppKapsoSettingsDrawer.tsx",
-		name: "WhatsAppKapsoSettingsDrawer",
-		reason:
-			"Боковая панель настройки параметров интеграции WhatsApp Business API и провайдера Kapso в административном контуре клиники.",
-	},
+	/*
+	 * PatientWhatsAppConversationWidget, RecallAutomationPipelineWidget, WhatsAppKapsoSettingsDrawer
+	 * УДАЛЕНЫ per Mandate 8s (Wave 212: канонические SSOT: WhatsAppChatPanel.tsx, PatientRecallsHubModal.tsx, WhatsappSettingsPanel.tsx).
+	 */
 	/*
 	 * PublicEstimatePortal УДАЛЁН per Mandate 8s (канонический SSOT: PatientBudgetSignView.tsx).
 	 */
