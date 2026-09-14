@@ -152,10 +152,10 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "egisz/egiszRemd.css", classPattern: ".egisz-close-btn" },
 				{ file: "diagnostics/DiagnosticDrawer.css", classPattern: ".dente-diagnostic-close-btn" },
 				{ file: "diagnostics/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
-				{ file: "LeadsKanbanView.css", classPattern: ".kanban-modal-close" },
+				{ file: "emergency/emergencyRescue.css", classPattern: ".emergency-close-btn" },
 				{ file: "analytics/marketingRoi.css", classPattern: ".marketing-roi-close-btn" },
 				{ file: "anesthesia/anesthesia.css", classPattern: ".hub-btn-close" },
-				{ file: "billing/cashShiftClosing.css", classPattern: ".cash-shift-close-btn" },
+				{ file: "emr/templates/clinicalDiaryTemplates.css", classPattern: ".cd-templates-close-btn" },
 				{ file: "documents/documentNavigation.css", classPattern: ".document-package-close-btn" },
 			];
 
@@ -186,10 +186,10 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				"consents/informedConsent.css",
 				"documents/sickLeave/sickLeaveEln.css",
 				"egisz/egiszRemd.css",
-				"documents/paidMedicalContract.css",
+				"emergency/emergencyRescue.css",
 				"documents/documentNavigation.css",
 				"anesthesia/anesthesia.css",
-				"billing/cashShiftClosing.css",
+				"emr/templates/clinicalDiaryTemplates.css",
 			];
 
 			for (const relPath of mobileMediaCheckedFiles) {

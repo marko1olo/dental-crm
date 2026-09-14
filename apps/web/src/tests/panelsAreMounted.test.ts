@@ -472,7 +472,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * их импортировали только они сами, и ни один класс (help-hud-*, tour-*) не
 	 * рендерит ни один другой файл. Общие таблицы не тронуты: --brand-400 и
 	 * --brand-500, на которые эти листы ссылались, остаются нужны живым файлам
-	 * (ScannerView.css, styles/main.css, settings/SettingsMessengersTab.css).
+	 * (styles/main.css, settings/SettingsMessengersTab.css).
 	 */
 	/*
 	 * components/Odontogram.tsx УДАЛЁН — вторая, локальная зубная формула.

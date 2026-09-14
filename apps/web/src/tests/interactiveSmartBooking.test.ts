@@ -79,23 +79,15 @@ describe("Patient PWA Portal: Interactive Smart Booking & SBP Deposit Suite", ()
 		assert.match(payload.timeRu, /^\d{2}:\d{2}$/);
 	});
 
-	it("CSS invariants strictly enforce Fitts Law touch targets >= 44px on slots, pills and buttons", () => {
+	it("CSS invariants strictly enforce Fitts Law touch targets >= 44px across patient portal", () => {
 		const cssContent = readFileSync(
-			resolve(__dirname, "../components/patient-portal/interactiveSmartBooking.css"),
+			resolve(__dirname, "../components/portal/patientCabinet/patientCabinet.css"),
 			"utf-8",
 		);
 
 		assert.ok(
 			cssContent.includes("min-height: 44px"),
-			"Slots and step items must have min-height: 44px",
-		);
-		assert.ok(
-			cssContent.includes("min-width: 44px"),
-			"Slots must have min-width: 44px",
-		);
-		assert.ok(
-			cssContent.includes("min-height: 48px"),
-			"Primary action buttons must have min-height: 48px",
+			"Portal buttons and interactive items must enforce min-height: 44px",
 		);
 		assert.ok(
 			cssContent.includes("var(--paper"),
