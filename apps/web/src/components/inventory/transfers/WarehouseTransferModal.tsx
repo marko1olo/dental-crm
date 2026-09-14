@@ -795,7 +795,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 						type="button"
 						className="wh-btn wh-btn-secondary text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/10 !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs font-semibold"
 						onClick={handleOneClickWriteOff}
-						title="Списать ТМЦ в 1 клик единолично без комиссии из 3 человек (Мандат 8e п. 10)"
+						title="Списать ТМЦ в 1 клик"
 						data-testid="btn-one-click-warehouse-writeoff"
 					>
 						<Zap size={15} className="text-teal-600 shrink-0" />

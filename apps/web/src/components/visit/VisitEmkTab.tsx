@@ -1656,7 +1656,7 @@ export function VisitEmkTab() {
 
 				{/* РЯД 2: 1-Клик Экспресс-Бар SOAP по Приказам Минздрава РФ (вынесен в отдельный ряд без выдавливания табов) */}
 				<div
-					className="emk-tier1-quick-soap-bar flex items-center gap-1 sm:gap-1.5 shrink-0 flex-nowrap min-w-0 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 justify-start"
+					className="emk-tier1-quick-soap-bar flex items-center gap-1 sm:gap-1.5 shrink-0 flex-nowrap min-w-0 overflow-x-auto whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 justify-start"
 					data-testid="emk-tier1-quick-soap-bar"
 				>
 					<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-0.5">
@@ -1672,7 +1672,7 @@ export function VisitEmkTab() {
 						title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
 					>
 						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-						<span className="whitespace-nowrap">Кариес</span>
+						<span className="whitespace-nowrap shrink-0">Кариес</span>
 					</button>
 					<button
 						type="button"
@@ -1684,7 +1684,7 @@ export function VisitEmkTab() {
 						title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
 					>
 						<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-						<span className="whitespace-nowrap">Пульпит</span>
+						<span className="whitespace-nowrap shrink-0">Пульпит</span>
 					</button>
 					<button
 						type="button"
@@ -1696,7 +1696,7 @@ export function VisitEmkTab() {
 						title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
 					>
 						<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-						<span className="whitespace-nowrap">Периодонтит</span>
+						<span className="whitespace-nowrap shrink-0">Периодонтит</span>
 					</button>
 					<button
 						type="button"
@@ -1708,7 +1708,7 @@ export function VisitEmkTab() {
 						title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-						<span className="whitespace-nowrap">Гигиена</span>
+						<span className="whitespace-nowrap shrink-0">Гигиена</span>
 					</button>
 					<button
 						type="button"
@@ -1718,7 +1718,7 @@ export function VisitEmkTab() {
 						title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-						<span className="whitespace-nowrap">Норма</span>
+						<span className="whitespace-nowrap shrink-0">Норма</span>
 					</button>
 				</div>
 			</div>

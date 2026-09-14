@@ -308,7 +308,7 @@ export function ScheduleFilterStrip({
 				role="toolbar"
 			>
 			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px touch targets on mobile, 32-36px on desktop (HIG) */}
-			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-0 sm:pr-1.5 border-r-0 sm:border-r sm:border-[var(--line)]">
+			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 !border-r-0 !border-none !pr-0 !mr-0">
 				<button
 					type="button"
 					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-[30px] inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
@@ -439,7 +439,7 @@ export function ScheduleFilterStrip({
 								key={chair.id}
 								type="button"
 								data-testid={`chair-view-badge-${chair.id}`}
-								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1`}
+								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
 								onClick={() =>
 									setScheduleChairFilterId(
 										scheduleChairFilterId === chair.id ? null : chair.id,
@@ -448,7 +448,7 @@ export function ScheduleFilterStrip({
 								title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
 								aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
 							>
-								<span className="whitespace-nowrap shrink-0">{chairLabel}</span>
+								<span className="whitespace-nowrap min-w-fit shrink-0">{chairLabel}</span>
 							</button>
 						);
 					})}

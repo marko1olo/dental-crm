@@ -1240,7 +1240,7 @@ export const CopilotReactTracker: React.FC<CopilotReactTrackerProps> = ({
 						<h4 className="copilot-rt-title">{title}</h4>
 						<div className="copilot-rt-subtitle">
 							{allDone
-								? "✅ Все шаги клинического рассуждения успешно завершены"
+								? "Все шаги клинического рассуждения успешно завершены"
 								: `Выполняется шаг ${Math.min(activeIndex + 1, steps.length)} из ${steps.length}...`}
 						</div>
 					</div>

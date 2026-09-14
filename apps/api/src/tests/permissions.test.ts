@@ -30,10 +30,11 @@ test("владелец клиники может всё", () => {
 	}
 });
 
-test("врач не допущен к кассе и настройкам", () => {
+test("врач ведёт приём, оформляет оплату у кресла и списывает материалы, но не правит настройки", () => {
 	assert.equal(roleHasPermission("doctor", "clinical.write"), true);
-	assert.equal(roleHasPermission("doctor", "finance.write"), false);
-	assert.equal(roleHasPermission("doctor", "finance.read"), false);
+	assert.equal(roleHasPermission("doctor", "finance.write"), true);
+	assert.equal(roleHasPermission("doctor", "finance.read"), true);
+	assert.equal(roleHasPermission("doctor", "inventory.write"), true);
 	assert.equal(roleHasPermission("doctor", "settings.write"), false);
 });
 

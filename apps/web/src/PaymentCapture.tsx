@@ -1262,7 +1262,7 @@ export function PaymentCapture({
 				data-testid="doctor-discounts-section"
 			>
 				<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
-					Скидка врача / Гарантия (без паролей администратора):
+					Скидка врача / Гарантия:
 				</span>
 				<div
 					role="toolbar"

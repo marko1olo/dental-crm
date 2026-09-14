@@ -1223,7 +1223,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 														void handleShiftAppointmentTime(m);
 													}}
 													className="min-h-[44px] min-w-[44px] px-1.5 py-1 rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
-													title={`Сдвинуть на +${m} минут`}
+													title={
+														appointmentHasOpenVisit
+															? "Приём уже открыт — сдвиг времени невозможен"
+															: `Сдвинуть на +${m} минут`
+													}
 												>
 													+{m}м
 												</button>
@@ -1364,12 +1368,16 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer disabled:opacity-40"
 											role="menuitem"
 											onClick={() => setIsRefusalReasonsOpen((prev) => !prev)}
-											title="Отменить приём с фиксацией 1-клик причины StomX"
+											title={
+												appointmentHasOpenVisit
+													? "Приём уже открыт — отмена через дневник визита"
+													: "Отменить приём"
+											}
 											data-testid="appointment-card-refusal-menu-trigger"
 										>
 											<div className="flex items-center gap-2">
 												<XCircle size={14} className="text-rose-600 shrink-0" />
-												<span>Отменить (1 клик причина)</span>
+												<span>Отменить приём</span>
 											</div>
 											<ChevronDown
 												size={14}

@@ -103,8 +103,10 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	const [certificateNominalRub, setCertificateNominalRub] = useState<number>(5000);
 	const [recipientName, setRecipientName] = useState<string>("");
 	const [activeCertificate, setActiveCertificate] = useState<GiftCertificate | null>(null);
-	const [certVerifyInput, setCertVerifyInput] = useState<string>("");
-	const [certRedeemFeedback, setCertRedeemFeedback] = useState<string | null>(null);
+	const [certRedeemFeedback, setCertRedeemFeedback] = useState<{
+		isSuccess: boolean;
+		message: string;
+	} | null>(null);
 
 	// Promo State
 	const [promoInput, setPromoInput] = useState<string>("");
@@ -208,11 +210,17 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		if (!certVerifyInput) return;
 		const isCodeValid = validateGiftCertificateSerial(certVerifyInput);
 		if (!isCodeValid) {
-			setCertRedeemFeedback("❌ Неверный 16-значный номер сертификата (ошибка Luhn checksum)");
+			setCertRedeemFeedback({
+				isSuccess: false,
+				message: "Неверный 16-значный номер сертификата (ошибка контрольной суммы Luhn)",
+			});
 			return;
 		}
 		if (!activeCertificate) {
-			setCertRedeemFeedback("❌ Нет активного сертификата для списания");
+			setCertRedeemFeedback({
+				isSuccess: false,
+				message: "Нет активного сертификата для списания",
+			});
 			return;
 		}
 		const res = redeemGiftCertificate(
@@ -229,11 +237,15 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 						}
 					: null,
 			);
-			setCertRedeemFeedback(
-				`✅ Успешно списано ${(res.redeemedAmountKop / 100).toLocaleString("ru-RU")} ₽ с сертификата. Остаток на карте: ${(res.newBalanceKop / 100).toLocaleString("ru-RU")} ₽`
-			);
+			setCertRedeemFeedback({
+				isSuccess: true,
+				message: `Успешно списано ${(res.redeemedAmountKop / 100).toLocaleString("ru-RU")} ₽ с сертификата. Остаток на карте: ${(res.newBalanceKop / 100).toLocaleString("ru-RU")} ₽`,
+			});
 		} else {
-			setCertRedeemFeedback(`❌ Ошибка: ${res.errorMessageRu}`);
+			setCertRedeemFeedback({
+				isSuccess: false,
+				message: `Ошибка: ${res.errorMessageRu}`,
+			});
 		}
 	};
 
@@ -1087,10 +1099,10 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													fontSize: "0.8125rem",
 													marginTop: "0.5rem",
 													fontWeight: 600,
-													color: certRedeemFeedback.startsWith("✅") ? "#047857" : "#b91c1c",
+													color: certRedeemFeedback.isSuccess ? "var(--good, #047857)" : "var(--bad, #b91c1c)",
 												}}
 											>
-												{certRedeemFeedback}
+												{certRedeemFeedback.message}
 											</div>
 										)}
 									</div>

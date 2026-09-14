@@ -553,9 +553,10 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 		)
 			return;
 		// Секрет клиники — это барьер периметра, он одинаков для чтения и записи.
-		// Здесь дополнительно проверяется роль сотрудника: врач и ассистент к кассе
-		// не допущены. Мягкий режим — если сотрудник не опознан, поведение прежнее
-		// (см. security/permissions.ts).
+		// Здесь проверяется право роли: проводить оплату могут владелец, админ,
+		// управляющий, администратор и врач у кресла (Мандаты 8e и 8n: автономия соло-врача).
+		// Ассистент к кассе не допущен. Мягкий режим — если сотрудник не опознан,
+		// поведение прежнее (см. security/permissions.ts).
 		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
 			return;
 		const parsedInput = createPaymentSchema.safeParse(request.body);

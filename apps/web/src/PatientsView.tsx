@@ -1054,7 +1054,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									type="button"
 									onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
 									className="min-h-[40px] px-3 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-									title="Открыть амбулаторный приём 043/у (1 клик, Мандат 8e)"
+									title="Открыть амбулаторный приём 043/у"
 									data-testid="patient-mobile-header-open-visit-btn"
 								>
 									<Stethoscope size={14} aria-hidden="true" />
@@ -1064,7 +1064,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									type="button"
 									onClick={() => void printBlankMedicalContract(selectedPatient)}
 									className="min-h-[40px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-									title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e)"
+									title="Распечатать бланк договора"
 									data-testid="patient-mobile-header-print-contract-btn"
 								>
 									<FileText size={14} aria-hidden="true" />
@@ -1151,7 +1151,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									disabled={patientCoreSaveState === "saving"}
 									className="primary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
 									style={{ minHeight: "36px" }}
-									title="Сохранить изменения в карточке пациента (1 клик, выше сгиба 900px)"
+									title="Сохранить изменения в карточке пациента"
 									data-testid="patient-core-save-btn"
 								>
 									<UserCheck size={13} aria-hidden="true" />
@@ -1171,34 +1171,34 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									}
 									disabled={false}
 									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] border border-[var(--line)]"
-									title="Установить соматическую норму в 1 клик (Мандат 8e, выше сгиба 900px)"
+									title="Установить соматическую норму"
 									data-testid="patient-card-somatic-norm-btn"
 								>
 									<Check size={13} aria-hidden="true" className="text-teal-600 dark:text-teal-400" />
 									<span>Норма</span>
 								</button>
 
-								{/* Primary CTA 3 (Above Fold): Открыть приём 043/у (1-клик, Мандат 8e) */}
+								{/* Primary CTA 3 (Above Fold): Открыть приём 043/у */}
 								<button
 									type="button"
 									onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
 									disabled={false}
 									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
-									title="Открыть амбулаторный приём 043/у (1 клик, Мандат 8e, выше сгиба)"
-									data-testid="patient-quick-open-visit-btn"
+									title="Открыть амбулаторный приём 043/у"
+									data-testid="patient-card-open-visit-btn"
 								>
 									<Stethoscope size={13} aria-hidden="true" className="text-[var(--teal)] shrink-0" />
 									<span>Приём</span>
 								</button>
 
-								{/* Primary CTA 4 (Above Fold): Печать договора (1-клик, Мандат 8e) */}
+								{/* Primary CTA 4 (Above Fold): Печать договора */}
 								<button
 									type="button"
 									onClick={() => void printBlankMedicalContract(selectedPatient)}
 									disabled={false}
 									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)]"
-									title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e)"
-									data-testid="patient-quick-print-contract-btn"
+									title="Распечатать бланк договора"
+									data-testid="patient-card-print-contract-btn"
 								>
 									<FileText size={13} aria-hidden="true" className="text-[var(--muted)] shrink-0" />
 									<span>Договор</span>
@@ -1342,40 +1342,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								alignItems: "center",
 							}}
 						>
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
-								disabled={false}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "6px",
-									minHeight: "44px",
-								}}
-								title="Открыть амбулаторный приём 043/у без лишних подтверждений"
-								data-testid="patient-card-open-visit-btn"
-							>
-								<Stethoscope size={16} aria-hidden="true" />
-								<span>Открыть приём</span>
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => void printBlankMedicalContract(selectedPatient)}
-								disabled={false}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "6px",
-									minHeight: "44px",
-								}}
-								title="Распечатать бумажный бланк договора со строками ____ (1 клик, Мандат 8e п. 8)"
-								data-testid="patient-card-print-contract-btn"
-							>
-								<FileText size={16} aria-hidden="true" />
-								<span>Печать договора</span>
-							</button>
 							<div className="relative inline-block" style={{ position: "relative" }}>
 								<button
 									type="button"
@@ -1559,7 +1525,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													return;
 												}
 												showToast(
-													`Карта пациента ${selectedPatient.fullName} перемещена в архив (1 клик, без сетевого мусора)`,
+													`Карта пациента ${selectedPatient.fullName} перемещена в архив`,
 													"success",
 												);
 											}}
@@ -1579,7 +1545,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												cursor: "pointer",
 												textAlign: "left",
 											}}
-											title="Архивировать карту пациента (1 клик, без сетевого мусора)"
+											title="Архивировать карту пациента"
 											data-testid="archive-patient-card-btn"
 										>
 											<Archive size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
