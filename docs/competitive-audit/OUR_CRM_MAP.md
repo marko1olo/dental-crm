@@ -3908,4 +3908,49 @@
 - **Файлы**: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/schedule/DoctorFilterStrip.tsx`, `apps/web/src/styles/dente-redesign.css`, `apps/web/src/components/finance/PaymentCapture.tsx`, `apps/web/src/FinanceView.tsx`, `apps/web/src/components/emr/VisitEmkTab.tsx`, `apps/web/src/VisitView.tsx`.
 - **Коммиты**: `e26bb5d03`, `96a9d2571`.
 
+### 2.10.294. Волна 214: Тотальная ликвидация 17 файлов мертвого кода и паразитных дубликатов (-8,560 LOC) по Вселенскому анти-блоат догмату (Мандаты 8i, 8s, 8t)
+- **Идея & Бизнес-эффект**: Реализация Вселенского анти-блоат догмата (Мандат 8s) и суверенитета амбулаторного стоматологического контекста (Мандат 8i): полное физическое искоренение 17 файлов мертвого кода, черновых скратчей в корне, заброшенных стилей-сирот, неиспользуемых хуков и параллельного клиента КриптоПро суммарным объемом -8,560 строк кода при 100% сохранении всей клинической и финансовой функциональности системы.
+- **Архитектурные механизмы**:
+  1. *Ликвидация черновых скратчей в корне репозитория*:
+     - Удален `temp.tsx` (-5,804 LOC) — неиспользуемый устаревший бэкап логики;
+     - Удален `onboarding_extracted.ts` (-485 LOC) — временный рабочий файл экстракции;
+     - Удален `test.ts` (-7 LOC) — заброшенный черновой скрипт.
+  2. *Очистка осиротевших стилей и мертвых фасадов CSS*:
+     - Удалены стили-сироты удаленных компонентов: `implantCrossSectionPlanner.css` (-322 LOC), `CriticalMedicalAlert.css` (-93 LOC), `familyDentalCareHub.css` (-111 LOC), `PostOpCareTimelineWidget.css` (-224 LOC), `UnifiedHelpCenter.css` (-338 LOC), `MemoryWatchdogWidget.css` (-122 LOC);
+     - Удалены мертвые 1-строчные реэкспорты: `patientRecalls.css` (-1 LOC), `egiszRemd.css` (-1 LOC), `modules/odontogram.css` (-5 LOC — стили одонтограммы централизованы в `main.css`).
+  3. *Ликвидация параллельных клиентов и заброшенных хуков*:
+     - Удален `apps/web/src/services/cryptoProApiClient.ts` (-398 LOC) — параллельный дубликат, система канонически использует `lib/cryptopro.ts` и `utils/cryptoPro.ts`;
+     - Удалены неиспользуемые хуки: `useOfflineDraft.ts` (-206 LOC), `useCopilotViewSync.ts` (-18 LOC);
+     - Удалены заброшенные файлы: `visitDictationData.ts` (-187 LOC — диктант работает через `DictationHints.tsx`), `themeTokens.ts` (-234 LOC — цветовая система работает на CSS-токенах).
+  4. *Инварианты качества и Single-Compiler Gate (Мандат 8t)*:
+     - Чистая дельта: 17 файлов удалено, -8,560 LOC;
+     - Пройден аудит `check:encoding` (0 ошибок) и `check:css-tokens` (0 ошибок);
+     - Подтверждено отсутствие процедурных диорам КТ/DICOM на Canvas — используется Cornerstone3D.
+- **Файлы**: `temp.tsx`, `onboarding_extracted.ts`, `test.ts`, `apps/web/src/services/cryptoProApiClient.ts`, `apps/web/src/hooks/useOfflineDraft.ts`, `apps/web/src/hooks/useCopilotViewSync.ts`, `apps/web/src/visitDictationData.ts`, `apps/web/src/themeTokens.ts`, 7 файлов `.css`.
+- **Коммит**: `b26b16a1a`.
+
+### 2.10.295. Волна 215: Дедупликация кресел в расписании, flex-табы ЭМК, вынос действий пациента и фиксация мобильной кассы 54-ФЗ (Мандаты 8c, 8d, 8e, 8n, 8p, 8q)
+- **Идея & Бизнес-эффект**: Ликвидация дефектов первого взгляда (Мандат 8p) и достижение безупречной эргономики соло-врача и мобильного чекаута: 1) устранение паразитного дублирования активного кресла в расписании; 2) перевод вкладок ЭМК 043/у в строгий `flex-nowrap` со скроллом для гарантированной 1 строки тулбара 32–36px по Закону Хика; 3) вынос действий пациента («Открыть приём», «Печать договора», «...») в реквизиты под контактами со статическим позиционированием, устранив наезд на блок лояльности; 4) фиксация мобильной панели кассы 54-ФЗ `#payment-checkout-bar` в первом экране выше сгиба без необходимости вертикального скролла. Паритет расширен до 350/350 фичей (100%).
+- **Архитектурные механизмы**:
+  1. *Дедупликация кресел в расписании (`ScheduleFilterStrip.tsx`)*:
+     - Внедрена фильтрация `displayChairs.filter((chair) => !myChair || chair.id !== myChair.id)`;
+     - Ликвидирован паразитный дублирующий чип активного кабинета врача `myChair`, устранены сдвоенные бейджи и визуальный мусор в тулбаре расписания.
+  2. *ЭМК flex-табы без переноса строк (`VisitEmkTab.tsx`, `patient-workspace.css`)*:
+     - Контейнер табов переведен в `flex-nowrap`, `flex-1` с плавным горизонтальным скроллом `overflow-x-auto` и скрытием скроллбаров;
+     - Добавлено CSS-правило `.emk-unified-toolbar > div:first-child { flex-wrap: nowrap !important; }`, что обеспечивает строго 1 строку тулбара 32–36px по Закону Хика и Apple HIG;
+     - Полоса быстрого SOAP-ввода `.emk-tier1-quick-soap-bar` также переведена в `flex-nowrap` со скроллом для предотвращения многострочного раздувания.
+  3. *Вынос действий пациента из подвала лояльности (`PatientsView.tsx`, `patients-redesign.css`)*:
+     - Панель кнопок администратора и врача перенесена непосредственно в блок контактов под ФИО;
+     - Классу `.patient-admin-actions.sticky-patient-actions` задано статическое позиционирование (`position: static !important; box-shadow: none !important; background: transparent !important;`), исключив перекрытия и наезды на блок программы лояльности;
+     - Сохранена полная автономия врача: 1-клик «Открыть приём», 1-клик печать договора `_______` без 403, выпадающее меню «...».
+  4. *Фиксация мобильной панели кассы в первом экране (`patients-redesign.css`, `premium.css`)*:
+     - В `.payment-capture` добавлен нижний отступ `padding-bottom: 120px !important;`, резервирующий пространство под липкий чекаут;
+     - На экранах $\le 860\text{px}$ сняты паразитные свойства `backdrop-filter` и `transform` с родительских зон, предотвращая срыв CSS-позиционирования `position: fixed`;
+     - Панель `#payment-checkout-bar` гарантированно зафиксирована в первом экране мобильного вьюпорта 390x844: сумма, способ оплаты и кнопка «Принять оплату» доступны в 1 клик без скролла.
+  5. *Инструментальное доказательство 4-State (Мандаты 8d, 8q)*:
+     - Сняты живые скриншоты Playwright в 4 состояниях: PC Light, PC Dark, Mobile Light, Mobile Dark;
+     - Проверено отсутствие 7 смертных грехов: 1 строка тулбара, 0 обрезанных слов, $\le 2$ кнопок на карточках, WCAG AAA контраст.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/styles/modules/patient-workspace.css`, `apps/web/src/PatientsView.tsx`, `apps/web/src/styles/patients-redesign.css`, `apps/web/src/styles/premium.css`.
+- **Коммит**: `Wave 215`.
+
 
