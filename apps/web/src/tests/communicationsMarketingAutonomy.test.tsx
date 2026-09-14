@@ -16,7 +16,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { CommunicationsView } from "../CommunicationsView.js";
 import { CampaignPanel } from "../components/communications/CampaignPanel.js";
 import { showToast } from "../components/GlobalToast.js";
-import { buildReviewReplyDraft } from "../components/marketing/reviewReplyDraft.js";
 import { AppLogicProvider } from "../contexts/AppLogicContext.js";
 import { MarketingView } from "../MarketingView.js";
 

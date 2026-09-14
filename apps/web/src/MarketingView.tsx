@@ -1,4 +1,3 @@
-import "./styles/marketing.css";
 import { RecallListPanel } from "./components/patients/RecallListPanel";
 
 export function MarketingView({

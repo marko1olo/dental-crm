@@ -40,6 +40,7 @@ import {
 } from "@dental/shared";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import "./marketingRomi.css";
 
 const STORAGE_KEY = "dental_crm_mkt_romi_channels_v3";
 
