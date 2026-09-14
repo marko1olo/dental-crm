@@ -7,19 +7,12 @@ import {
 	Check,
 	ChevronDown,
 	ChevronUp,
-	Clock,
 	Copy,
-	CreditCard,
 	Delete,
 	FileQuestion,
-	FileText,
 	Headphones,
 	History,
-	Maximize2,
 	MessageSquare,
-	Mic,
-	MicOff,
-	Minimize2,
 	Pause,
 	Phone,
 	PhoneCall,
@@ -28,14 +21,9 @@ import {
 	PhoneOff,
 	PhoneOutgoing,
 	Play,
-	Plus,
 	RotateCcw,
 	RotateCw,
-	Send,
-	Shield,
-	ShieldAlert,
 	Sparkles,
-	Stethoscope,
 	User,
 	UserCheck,
 	Volume2,
@@ -43,27 +31,23 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import {
-	calculatePatientFinancialStatus,
 	formatDurationTimer,
 	formatPatientInitials,
 	formatPhoneDisplay,
 	generateAppointmentConfirmationMessage,
 	generateWaveformBars,
-	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
 	normalizePhoneDigits,
 	openWhatsAppChat,
 	type PlaybackSpeed,
 	resolvePatientFromPhone,
-	resolvePatientLastVisit,
 	resolvePatientSomaticAlerts,
 	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
@@ -93,7 +77,6 @@ export function TelephonyFloatingWidget({
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
 	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
-	const transferState = useTelephonyStore((s) => s.transferState);
 	const callHistory = useTelephonyStore((s) => s.callHistory);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
@@ -127,7 +110,6 @@ export function TelephonyFloatingWidget({
 	const [audioCurrentTime, setAudioCurrentTime] = useState(0);
 	const [audioDuration, setAudioDuration] = useState(45);
 	const [whatsappSent, setWhatsappSent] = useState(false);
-	const [smsCopied, setSmsCopied] = useState(false);
 	const [showTranscript, setShowTranscript] = useState(false);
 	const [copiedTranscript, setCopiedTranscript] = useState(false);
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
@@ -197,28 +179,6 @@ export function TelephonyFloatingWidget({
 			null
 		);
 	}, [resolvedPatient, dashboard?.patientInsights]);
-
-	const financialSummary = useMemo(() => {
-		return calculatePatientFinancialStatus(
-			resolvedPatient,
-			patientInsight,
-			dashboard?.insuranceContracts,
-		);
-	}, [resolvedPatient, patientInsight, dashboard?.insuranceContracts]);
-
-	const lastVisitSummary = useMemo(() => {
-		return resolvePatientLastVisit(
-			resolvedPatient?.id || null,
-			dashboard?.appointments,
-			dashboard?.clinicSettings?.staff,
-			dashboard?.todayIso,
-		);
-	}, [
-		resolvedPatient?.id,
-		dashboard?.appointments,
-		dashboard?.clinicSettings?.staff,
-		dashboard?.todayIso,
-	]);
 
 	const upcomingAppointment = useMemo(() => {
 		return resolvePatientUpcomingAppointment(

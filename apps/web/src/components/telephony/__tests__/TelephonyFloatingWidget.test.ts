@@ -10,7 +10,6 @@ import {
 	generateWhatsAppConfirmationUrl,
 	normalizePhoneDigits,
 	resolvePatientFromPhone,
-	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
 } from "../../../store/telephonyStore";
 

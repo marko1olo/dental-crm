@@ -4,7 +4,6 @@ import type {
 	Appointment,
 	InsuranceContract,
 	Patient,
-	PatientInsight,
 	StaffMember,
 } from "@dental/shared";
 import {

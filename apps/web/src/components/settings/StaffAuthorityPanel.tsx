@@ -21,7 +21,6 @@ import {
 	type StaffAuthorityState,
 	canAccessFullPatientPii,
 	canViewFinancialReports,
-	normalizeStaffRole,
 	staffAuthorityFlagKeys,
 } from "@dental/shared";
 import { CheckCircle2, Lock, Shield, ShieldAlert, ShieldCheck } from "lucide-react";

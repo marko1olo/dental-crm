@@ -269,6 +269,8 @@ export function SettingsTelegramTab({
 
 	const [showPatientPortalPreview, setShowPatientPortalPreview] =
 		React.useState(false);
+	const [localTelegramPreview, setLocalTelegramPreview] =
+		useState<DenteTelegramMessagePreview | null>(null);
 
 	if (settingsTab !== "telegram") return null;
 
@@ -294,9 +296,6 @@ export function SettingsTelegramTab({
 		{ value: "me", label: "Мне" },
 		{ value: "phone", label: "По номеру телефона" },
 	];
-
-	const [localTelegramPreview, setLocalTelegramPreview] =
-		useState<DenteTelegramMessagePreview | null>(null);
 
 	const previewTelegramTemplate = async (
 		templateKind: DenteTelegramMessagePreview["templateKind"],

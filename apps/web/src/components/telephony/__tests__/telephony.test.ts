@@ -1,22 +1,17 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import type { Appointment, InsuranceContract, Patient, PatientInsight, StaffMember } from "@dental/shared";
+import type { Appointment, InsuranceContract, Patient, StaffMember } from "@dental/shared";
 import {
 	calculatePatientFinancialStatus,
 	formatDurationTimer,
 	formatPatientInitials,
 	formatPhoneDisplay,
-	generateAppointmentConfirmationMessage,
-	generateSmsConfirmationUrl,
-	generateTelegramConfirmationUrl,
 	generateWaveformBars,
-	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
 	type IncomingCallPayload,
 	normalizePhoneDigits,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
-	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
 } from "../../../store/telephonyStore.js";
 

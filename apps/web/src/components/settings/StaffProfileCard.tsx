@@ -13,7 +13,6 @@
 
 import {
 	canViewManagementNotes,
-	dentalSpecialtySchema,
 	formatStaffInn,
 	formatStaffSnils,
 	type StaffProfileExtended,
@@ -25,7 +24,6 @@ import {
 } from "@dental/shared";
 import {
 	AlertCircle,
-	AlertTriangle,
 	Building2,
 	Calculator,
 	Calendar,
@@ -52,7 +50,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
-import { DoctorSnilsValidationWidget } from "./DoctorSnilsValidationWidget";
 import { StaffSecurityTab } from "./StaffSecurityTab";
 import { CREATABLE_STAFF_ROLES, staffRoleTitle } from "./settingsInviteRoles";
 import "./staffProfile.css";

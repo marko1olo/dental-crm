@@ -5,17 +5,13 @@ import type {
 	LocalBridgeUsePlansResponse,
 } from "@dental/shared";
 import {
-	AlertOctagon,
 	Database,
 	FileText,
-	Filter,
 	History,
-	Lock,
-	ShieldAlert,
 	ShieldCheck,
 	SlidersHorizontal,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import { useState } from "react";
 import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
 import { AuditTrailHubModal } from "../security/AuditTrailHubModal";
 import { humanizeMigrationText } from "./migrationHelpers";
@@ -51,6 +47,8 @@ function localBridgeEndpointSummary(
 }
 
 export function SettingsAuditTab(props: Record<string, any>) {
+	const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
+
 	const {
 		browserCanRequestPersistentStorage,
 		browserContinuity,
@@ -102,42 +100,6 @@ export function SettingsAuditTab(props: Record<string, any>) {
 	const typedAuditEvents: AuditEvent[] = Array.isArray(dashboard?.auditEvents)
 		? (dashboard.auditEvents as AuditEvent[])
 		: [];
-
-	const [onlyCritical152Fz, setOnlyCritical152Fz] = useState(true);
-	const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
-
-	const filteredAuditEvents = useMemo(() => {
-		if (!onlyCritical152Fz) return typedAuditEvents;
-		const criticalKeywords = [
-			"export",
-			"backup",
-			"delete",
-			"remove",
-			"void",
-			"refund",
-			"role",
-			"permission",
-			"rbac",
-			"token",
-			"auth",
-			"152-фз",
-			"54-фз",
-			"экспорт",
-			"бэкап",
-			"удален",
-			"возврат",
-			"права",
-			"доступ",
-			"парол",
-			"персональн",
-			"чек",
-			"фискал",
-		];
-		return typedAuditEvents.filter((event) => {
-			const text = `${event.reason || ""} ${event.id || ""}`.toLowerCase();
-			return criticalKeywords.some((kw) => text.includes(kw));
-		});
-	}, [typedAuditEvents, onlyCritical152Fz]);
 
 	return (
 		<section className="ops-grid" aria-label="Журнал операций">

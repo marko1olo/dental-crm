@@ -10,7 +10,6 @@ import {
 } from "@dental/shared";
 import {
 	Check,
-	Copy,
 	Edit3,
 	Mail,
 	MessageCircle,
@@ -24,7 +23,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -234,7 +233,7 @@ export function SettingsMessageTemplatesTab() {
 	};
 
 	// Save template (Create or Update)
-	const handleSave = async (e: React.FormEvent) => {
+	const handleSave = async (e: FormEvent) => {
 		e.preventDefault();
 		if (!draftTitle.trim() || !draftText.trim()) {
 			showToast("Заполните название и текст шаблона", "warning");

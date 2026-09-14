@@ -1,7 +1,6 @@
 import type {
 	DatabaseSnapshot,
 	DenteBackupHeader,
-	DenteBackupItemsCount,
 	DryRunRestoreResult,
 	OfflineSyncQueueStatus,
 } from "@dental/shared";
@@ -17,7 +16,6 @@ import {
 	EyeOff,
 	FileArchive,
 	HardDrive,
-	KeyRound,
 	Lock,
 	Play,
 	RefreshCw,

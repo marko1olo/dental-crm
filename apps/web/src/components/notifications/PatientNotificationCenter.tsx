@@ -1,5 +1,4 @@
 import {
-	AlertCircle,
 	AlertTriangle,
 	Bell,
 	Calendar,
@@ -26,14 +25,11 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
 import { useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
-import { useScheduleStore } from "../../store/scheduleStore";
 import {
-	formatPhoneDisplay,
 	openWhatsAppChat,
 	useTelephonyStore,
 } from "../../store/telephonyStore";

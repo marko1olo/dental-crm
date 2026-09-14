@@ -5,8 +5,6 @@ import {
 	BellOff,
 	Calendar,
 	CalendarCheck,
-	CalendarDays,
-	CalendarPlus,
 	Check,
 	ChevronDown,
 	ChevronRight,
@@ -16,26 +14,16 @@ import {
 	CreditCard,
 	ExternalLink,
 	FileQuestion,
-	FileText,
-	Forward,
-	Gauge,
-	MessageSquare,
-	Mic,
-	MicOff,
 	Pause,
-	Phone,
 	PhoneCall,
 	PhoneForwarded,
-	PhoneIncoming,
 	PhoneOff,
 	Play,
 	RotateCcw,
 	RotateCw,
 	Send,
 	Shield,
-	ShieldAlert,
 	Sparkles,
-	Stethoscope,
 	User,
 	UserCheck,
 	Volume2,
@@ -43,8 +31,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { useAppStore } from "../../store/appStore";
@@ -56,9 +43,7 @@ import {
 	formatPatientInitials,
 	formatPhoneDisplay,
 	generateAppointmentConfirmationMessage,
-	generateSmsConfirmationUrl,
 	generateWaveformBars,
-	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
 	openWhatsAppChat,
 	type PlaybackSpeed,
@@ -103,11 +88,9 @@ export function CallAudioPlayer({
 }) {
 	const playbackSpeed = useTelephonyStore((s) => s.playbackSpeed);
 	const setPlaybackSpeed = useTelephonyStore((s) => s.setPlaybackSpeed);
-	const cyclePlaybackSpeed = useTelephonyStore((s) => s.cyclePlaybackSpeed);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
 	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
-	const setVolumeLevel = useTelephonyStore((s) => s.setVolumeLevel);
 
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [currentTime, setCurrentTime] = useState(0);
@@ -442,10 +425,7 @@ export function IncomingCallPopup() {
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
 	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
-	const transferState = useTelephonyStore((s) => s.transferState);
-	const cancelCallTransfer = useTelephonyStore((s) => s.cancelCallTransfer);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
-	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
 	const agentState = useTelephonyStore((s) => s.agentState);
 	const setAgentState = useTelephonyStore((s) => s.setAgentState);
@@ -472,7 +452,6 @@ export function IncomingCallPopup() {
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [newPatientNameInput, setNewPatientNameInput] = useState("");
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
-	const [transferTarget, setTransferTarget] = useState("");
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
 
 	// Escape key dismisses the side drawer without affecting the call
@@ -596,12 +575,8 @@ export function IncomingCallPopup() {
 	const avatarColors = getAvatarColor(callerName);
 
 	const isKnownPatient = Boolean(resolvedPatient);
-	const hasNotes = Boolean(resolvedPatient?.notes?.trim());
 	const hasDms = financialSummary.hasInsurance;
 	const hasDebt = financialSummary.hasDebt;
-	const isHighRisk =
-		patientInsight?.riskLevel === "high" ||
-		(resolvedPatient as { noShowRisk?: boolean })?.noShowRisk;
 
 	// Provider label
 	const providerLabel =

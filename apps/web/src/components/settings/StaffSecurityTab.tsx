@@ -24,7 +24,6 @@ import {
 	LogOut,
 	RefreshCw,
 	Shield,
-	ShieldAlert,
 	ShieldCheck,
 	Smartphone,
 	XCircle,
@@ -45,7 +44,7 @@ export interface StaffSecurityTabProps {
 export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 	staffMember,
 	onSaved,
-	onClose,
+	onClose: _onClose,
 }) => {
 	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;

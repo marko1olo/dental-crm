@@ -9,7 +9,7 @@
  * - Mandate 8o: Scope-Bounded Verifiable Assertions.
  */
 
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";

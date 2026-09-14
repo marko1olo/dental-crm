@@ -46,7 +46,6 @@
  */
 
 import {
-	type GranularStaffRole,
 	ROLE_METADATA_REGISTRY,
 	type StaffRole,
 } from "@dental/shared";
