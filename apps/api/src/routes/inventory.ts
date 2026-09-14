@@ -6,6 +6,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { getRequestIdentity } from "../security/identity.js";
 
 declare module "fastify" {
 	interface FastifyRequest {
@@ -428,22 +429,43 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const actualAdjustment = adjustment;
 			const newStock = currentStock + actualAdjustment;
 			const isOverdraft = newStock < 0;
+			const identity = getRequestIdentity(request);
+			const isClinicalRole =
+				identity.role === "doctor" ||
+				identity.role === "assistant" ||
+				request.user?.role === "doctor" ||
+				request.user?.role === "assistant";
+			const isClinicalCategory =
+				item.category === "anesthesia" ||
+				item.category === "anesthetic" ||
+				item.category === "consumable" ||
+				item.category === "consumables" ||
+				item.category === "ppe" ||
+				item.category === "composite" ||
+				item.category === "surgery" ||
+				item.category === "hygiene" ||
+				item.category === "auxiliary" ||
+				item.category === "material" ||
+				item.category === "Расходные материалы" ||
+				item.category === "Анестетики" ||
+				item.category === "Шовный материал" ||
+				item.category === "Перевязочные средства";
 			const isClinicalOperation =
+				isClinicalRole ||
+				isClinicalCategory ||
 				parsedStock.data.isClinicalOperation === true ||
 				Boolean(
 					parsedStock.data.reason &&
-						/(операци|лечени|при[её]м|визит|дефицит|экстрен|карпул|анесте|расход)/i.test(
+						/(операци|лечени|при[её]м|визит|дефицит|экстрен|карпул|анесте|расход|списан)/i.test(
 							parsedStock.data.reason,
 						),
 				) ||
 				Boolean(
 					item.name &&
-						/(карпул|анесте|ультракаин|септодонт|септанест|скандонест|убистезин|артикаин|мепивакаин|перчатк|маск|игла|валик|слюноотсос)/i.test(
+						/(карпул|анесте|ультракаин|септодонт|септанест|септонест|скандонест|убистезин|артикаин|мепивакаин|лидокаин|бупивакаин|перчатк|маск|игла|валик|слюноотсос|коффердам|пломб|композит|шовн|скальпель|губк|паст|клин|матриц)/i.test(
 							item.name,
 						),
-				) ||
-				item.category === "anesthetic" ||
-				item.category === "consumable";
+				);
 			if (isOverdraft && parsedStock.data.allowOverdraft === false && !isClinicalOperation) {
 				return { insufficientStock: true as const, currentStock };
 			}
@@ -464,6 +486,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			// Log the transaction (same tx: the ledger entry commits atomically with the balance change)
 			if (actualAdjustment !== 0) {
 				const userContext = request.user;
+				const effectiveUserId = identity.userId ?? userContext?.id ?? null;
 				await tx.insert(inventoryTransactions).values({
 					organizationId,
 					inventoryItemId: itemId,
@@ -474,7 +497,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					notes: isOverdraft
 						? (parsedStock.data.reason || `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед.)`)
 						: (parsedStock.data.reason || null),
-					userId: userContext?.id ?? null,
+					userId: effectiveUserId,
 				});
 			}
 
@@ -1137,6 +1160,73 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				userId: userContext?.id ?? null,
 				visitId: body.visitId ?? null,
 				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
+	});
+
+	// POST /:organizationId/quick-writeoff-package — 1-клик пакетное списание анестетиков и расходников
+	// (Мандаты 8e п. 10, 8k, 8n: мягкий овердрафт склада без созыва комиссии из 3 человек).
+	server.post<{
+		Params: { organizationId: string };
+		Body?: {
+			packageId?: string;
+			quantityMultiplier?: number;
+			cabinetId?: string;
+			doctorName?: string;
+			nurseName?: string;
+			patientName?: string;
+			visitId?: string;
+			notes?: string;
+			allowOverdraft?: boolean;
+			allowSoftOverdraft?: boolean;
+		};
+	}>("/:organizationId/quick-writeoff-package", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff package",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const identity = getRequestIdentity(request);
+		const userContext = request.user;
+		const effectiveUserId = identity.userId ?? userContext?.id ?? null;
+		const pkgId = body.packageId || "anesthesia";
+		const multiplier = Math.max(1, body.quantityMultiplier ?? 1);
+
+		const result = await db.transaction(async (tx) => {
+			if (pkgId === "anesthesia") {
+				return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+					organizationId,
+					carpulesCount: multiplier,
+					userId: effectiveUserId,
+					visitId: body.visitId ?? null,
+					notes: body.notes ?? `Списание анестезии у кресла (пакет «Стандартная анестезия» x${multiplier})`,
+				});
+			}
+			if (pkgId === "surgery") {
+				return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+					organizationId,
+					visitType: "surgery",
+					userId: effectiveUserId,
+					visitId: body.visitId ?? null,
+					notes: body.notes ?? `Списание хирургического пакета у кресла x${multiplier}`,
+				});
+			}
+			return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+				organizationId,
+				visitType: "therapy",
+				userId: effectiveUserId,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? `Списание пакета приёма у кресла (${pkgId}) x${multiplier}`,
 			});
 		});
 

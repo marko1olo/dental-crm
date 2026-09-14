@@ -83,7 +83,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 		if (!effectiveUserId) {
 			return reply.code(400).send({
 				error: "UserRequired",
-				message: "Для открытия кассовой смены требуется идентификатор сотрудника (кассира/администратора).",
+				message: "Для открытия кассовой смены требуется идентификатор сотрудника (кассира/администратора/врача).",
 			});
 		}
 
