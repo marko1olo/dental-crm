@@ -187,4 +187,21 @@ describe("createPaymentInDb", () => {
 		);
 		assert.strictEqual(calls.insert, 0);
 	});
+
+	test("успешно проводит гарантийную переделку / платеж со 100% скидкой (0 руб)", async () => {
+		const zeroPaymentData = { ...mockPaymentData, amountRub: 0, note: "Гарантийная переделка (скидка 100%)" };
+		const calls = stubTransaction({ insertedRows: [zeroPaymentData] });
+
+		const result = await createPaymentInDb("org-123", {
+			patientId: "pat-123",
+			amountRub: 0,
+			discountPercent: 100,
+			method: "card",
+			note: "Гарантийная замена пломбы",
+		});
+
+		assert.strictEqual(result.id, "pay-123");
+		assert.strictEqual(result.amountRub, 0);
+		assert.strictEqual(calls.insert, 1);
+	});
 });

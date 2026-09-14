@@ -167,7 +167,25 @@ export async function createPaymentInDb(
 	input: CreatePaymentInput,
 ): Promise<Payment> {
 	const incomingPaymentKopecks = toKopecks(input.amountRub, "сумма оплаты");
-	if (incomingPaymentKopecks <= 0) {
+	if (incomingPaymentKopecks < 0) {
+		throw new Error("Сумма оплаты не может быть отрицательной.");
+	}
+
+	// Мандаты 8e п. 7 и 8n: Свобода скидок и переделок соло-врача (до 100%).
+	// Если скидка 100% (гарантийная переделка, персонал, бесплатный прием), incomingPaymentKopecks === 0
+	// НЕ выбрасывает ошибку, а фиксирует гарантийный платеж / акт со статусом 100% скидки.
+	const isWarrantyOrFullDiscount =
+		incomingPaymentKopecks === 0 &&
+		(input.discountPercent === 100 ||
+			input.amountRub === 0 ||
+			Boolean(
+				input.note &&
+					/(гаранти|передел|скидк.*100|100%|безвозмездн|warranty|персонал|бесплатн)/i.test(
+						input.note,
+					),
+			));
+
+	if (incomingPaymentKopecks === 0 && !isWarrantyOrFullDiscount) {
 		throw new Error("Сумма оплаты должна быть строго больше нуля.");
 	}
 
@@ -358,6 +376,8 @@ export async function createPaymentInDb(
 				discountKopecks = Math.trunc(
 					(catalogPriceKopecks * Math.round(input.discountPercent * 100)) / 10000,
 				);
+			} else if (isWarrantyOrFullDiscount) {
+				discountKopecks = catalogPriceKopecks;
 			}
 
 			const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
@@ -641,6 +661,10 @@ export async function createPaymentInDb(
 			}
 		}
 
+		const effectivePaymentNote = isWarrantyOrFullDiscount
+			? (input.note || "Гарантийная переделка (скидка 100%)")
+			: (input.note || null);
+
 		const [newPayment] = await tx
 			.insert(schema.payments)
 			.values({
@@ -661,7 +685,7 @@ export async function createPaymentInDb(
 				payerIdentityDocument: input.payerIdentityDocument || null,
 				payerRelationship: input.payerRelationship || null,
 				taxDeductionCode: input.taxDeductionCode || null,
-				note: input.note || null,
+				note: effectivePaymentNote,
 				status: "paid",
 			})
 			.returning();
@@ -673,11 +697,34 @@ export async function createPaymentInDb(
 		if (input.documentId) {
 			await tx
 				.update(schema.generatedDocuments)
-				.set({ status: "issued", issuedAt: new Date() })
+				.set({
+					status: "issued",
+					issuedAt: new Date(),
+					...(isWarrantyOrFullDiscount ? { totalAmountRub: 0 } : {}),
+				})
 				.where(
 					and(
 						eq(schema.generatedDocuments.id, input.documentId),
 						eq(schema.generatedDocuments.organizationId, organizationId),
+						eq(schema.generatedDocuments.status, "draft"),
+					),
+				);
+		}
+
+		if (input.visitId && isWarrantyOrFullDiscount) {
+			// Фиксируем закрытие актов выполненных работ визита по гарантии со 100% скидкой
+			await tx
+				.update(schema.generatedDocuments)
+				.set({
+					status: "issued",
+					issuedAt: new Date(),
+					totalAmountRub: 0,
+				})
+				.where(
+					and(
+						eq(schema.generatedDocuments.organizationId, organizationId),
+						eq(schema.generatedDocuments.visitId, input.visitId),
+						eq(schema.generatedDocuments.kind, "completed_works_act"),
 						eq(schema.generatedDocuments.status, "draft"),
 					),
 				);
