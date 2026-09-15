@@ -51,14 +51,33 @@ import "./executiveDashboard.css";
 
 export interface DirectorExecutiveDashboardProps {
 	readonly initialPeriod?: ExecutivePeriod;
+	readonly period?: ExecutivePeriod;
+	readonly onPeriodChange?: (period: ExecutivePeriod) => void;
+	readonly hideHeaderToolbar?: boolean;
 	readonly onNavigateToSection?: (sectionKey: string) => void;
 }
 
 export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProps> = ({
 	initialPeriod = "month",
+	period: controlledPeriod,
+	onPeriodChange,
+	hideHeaderToolbar = false,
 	onNavigateToSection,
 }) => {
-	const [period, setPeriod] = useState<ExecutivePeriod>(initialPeriod);
+	const [internalPeriod, setInternalPeriod] = useState<ExecutivePeriod>(initialPeriod);
+	const period = controlledPeriod ?? internalPeriod;
+
+	const handlePeriodSelect = useCallback(
+		(p: ExecutivePeriod) => {
+			if (onPeriodChange) {
+				onPeriodChange(p);
+			} else {
+				setInternalPeriod(p);
+			}
+		},
+		[onPeriodChange],
+	);
+
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
 	const [payload, setPayload] = useState<ExecutiveDashboardPayload | null>(null);
@@ -222,62 +241,64 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 	return (
 		<div className="executive-dashboard" role="main" aria-label="Рабочий стол Генерального директора">
 			{/* ─── ВЕРХНЯЯ ПАНЕЛЬ УПРАВЛЕНИЯ ────────────────────────────────────────── */}
-			<header className="executive-header">
-				<div className="executive-header-info">
-					<div className="executive-title-row">
-						<h1 className="executive-title">Рабочий стол Генерального директора</h1>
-					</div>
-					<p className="executive-subtitle">
-						Сквозная конверсия первичных пациентов, план/факт P&amp;L отделений и операционная эффективность
-					</p>
-				</div>
-
-				<div className="executive-controls">
-					{/* Переключатель периода с touch-таргетами >= 44x44px */}
-					<div className="executive-period-toggle" role="group" aria-label="Период отчета">
-						<button
-							type="button"
-							className={`executive-period-btn ${period === "day" ? "active" : ""}`}
-							onClick={() => setPeriod("day")}
-						>
-							День
-						</button>
-						<button
-							type="button"
-							className={`executive-period-btn ${period === "month" ? "active" : ""}`}
-							onClick={() => setPeriod("month")}
-						>
-							Месяц
-						</button>
-						<button
-							type="button"
-							className={`executive-period-btn ${period === "quarter" ? "active" : ""}`}
-							onClick={() => setPeriod("quarter")}
-						>
-							Квартал
-						</button>
-						<button
-							type="button"
-							className={`executive-period-btn ${period === "year" ? "active" : ""}`}
-							onClick={() => setPeriod("year")}
-						>
-							Год
-						</button>
+			{!hideHeaderToolbar && (
+				<header className="executive-header">
+					<div className="executive-header-info">
+						<div className="executive-title-row">
+							<h1 className="executive-title">Рабочий стол Генерального директора</h1>
+						</div>
+						<p className="executive-subtitle">
+							Сквозная конверсия первичных пациентов, план/факт P&amp;L отделений и операционная эффективность
+						</p>
 					</div>
 
-					{/* Кнопка обновления */}
-					<button
-						type="button"
-						className="executive-refresh-btn"
-						onClick={loadDashboard}
-						disabled={loading}
-						aria-label="Обновить показатели дашборда"
-					>
-						<RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
-						<span>Обновить</span>
-					</button>
-				</div>
-			</header>
+					<div className="executive-controls">
+						{/* Переключатель периода с touch-таргетами >= 44x44px */}
+						<div className="executive-period-toggle" role="group" aria-label="Период отчета">
+							<button
+								type="button"
+								className={`executive-period-btn ${period === "day" ? "active" : ""}`}
+								onClick={() => handlePeriodSelect("day")}
+							>
+								День
+							</button>
+							<button
+								type="button"
+								className={`executive-period-btn ${period === "month" ? "active" : ""}`}
+								onClick={() => handlePeriodSelect("month")}
+							>
+								Месяц
+							</button>
+							<button
+								type="button"
+								className={`executive-period-btn ${period === "quarter" ? "active" : ""}`}
+								onClick={() => handlePeriodSelect("quarter")}
+							>
+								Квартал
+							</button>
+							<button
+								type="button"
+								className={`executive-period-btn ${period === "year" ? "active" : ""}`}
+								onClick={() => handlePeriodSelect("year")}
+							>
+								Год
+							</button>
+						</div>
+
+						{/* Кнопка обновления */}
+						<button
+							type="button"
+							className="executive-refresh-btn"
+							onClick={loadDashboard}
+							disabled={loading}
+							aria-label="Обновить показатели дашборда"
+						>
+							<RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
+							<span>Обновить</span>
+						</button>
+					</div>
+				</header>
+			)}
 
 			{/* ─── 4 ДОМИНАНТНЫХ KPI КАРТОЧКИ (TIER 1) ──────────────────────────────── */}
 			<section className="executive-kpi-grid" aria-label="Ключевые показатели эффективности клиники">

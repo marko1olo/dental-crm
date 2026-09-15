@@ -12,7 +12,9 @@ import {
 	CheckCircle2,
 	Clock,
 	FileCheck,
+	Download,
 	Filter,
+	MoreHorizontal,
 	Plus,
 	Printer,
 	Search,
@@ -21,7 +23,7 @@ import {
 	UserCheck,
 	X,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -36,6 +38,20 @@ export function GeneralCleaningRegisterTab() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [viewMode, setViewMode] = useState<"table" | "schedule">("table");
 	const [isAutopilotLoading, setIsAutopilotLoading] = useState(false);
+	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
+	const optionsMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleOptionsClickOutside = (event: MouseEvent) => {
+			if (optionsMenuRef.current && !optionsMenuRef.current.contains(event.target as Node)) {
+				setIsOptionsMenuOpen(false);
+			}
+		};
+		if (isOptionsMenuOpen) {
+			document.addEventListener("mousedown", handleOptionsClickOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleOptionsClickOutside);
+	}, [isOptionsMenuOpen]);
 
 	// ⚡ 1-Клик автопилот графика генеральных уборок на месяц (по СанПиН каждые 7 дней)
 	const handleAutopilotMonth = async () => {
@@ -317,6 +333,44 @@ export function GeneralCleaningRegisterTab() {
 		});
 	}, [logs, searchQuery, typeFilter]);
 
+	const handleExportCsv = () => {
+		if (!filteredLogs || filteredLogs.length === 0) {
+			showToast("Нет записей для экспорта", "error");
+			return;
+		}
+		const headers = [
+			"Дата плана",
+			"Дата факта",
+			"Кабинет",
+			"Тип уборки",
+			"Дезсредство",
+			"Концентрация %",
+			"Экспозиция мин",
+			"Облучение мин",
+			"Исполнитель",
+		];
+		const rows = filteredLogs.map((l) => [
+			l.scheduledDate || "",
+			l.actualDateTime || "",
+			l.roomName || "",
+			l.cleaningType === "general" ? "Генеральная" : "Текущая",
+			l.disinfectantName || "",
+			l.solutionConcentrationPercent ?? "",
+			l.exposureTimeMinutes ?? "",
+			l.uvIrradiationMinutes ?? "",
+			l.operatorName || "",
+		]);
+		const csvContent = [headers.join(";"), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))].join("\r\n");
+		const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `General_Cleaning_Journal_${new Date().toISOString().slice(0, 10)}.csv`;
+		a.click();
+		URL.revokeObjectURL(url);
+		showToast("Журнал генеральных уборок выгружен в CSV", "success");
+	};
+
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
@@ -334,13 +388,14 @@ export function GeneralCleaningRegisterTab() {
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "2rem", minWidth: "260px" }}
+							style={{ paddingLeft: "2rem", minWidth: "240px", height: "36px" }}
 						/>
 					</div>
 					<select
 						value={typeFilter}
 						onChange={(e) => setTypeFilter(e.target.value)}
 						className="sanpin-select"
+						style={{ height: "36px" }}
 					>
 						<option value="all">Все виды уборок</option>
 						<option value="general">Генеральные уборки</option>
@@ -349,45 +404,13 @@ export function GeneralCleaningRegisterTab() {
 				</div>
 
 				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-					<button
-						type="button"
-						onClick={handleAutopilotMonth}
-						disabled={isAutopilotLoading}
-						className="sanpin-btn touch-manipulation"
-						style={{
-							minHeight: "44px",
-							padding: "0.5rem 1.15rem",
-							fontSize: "0.875rem",
-							fontWeight: 800,
-							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
-							border: "none",
-							cursor: "pointer",
-							borderRadius: "8px",
-							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.45rem",
-							whiteSpace: "nowrap",
-						}}
-						title="Автоматически заполнить график генеральных уборок на месяц с интервалом 7 дней для каждого кабинета клиники по СанПиН 3.3686-21"
-						data-testid="nurse-cleaning-monthly-autopilot-btn"
-					>
-						<Sparkles size={16} />
-						<span>
-							{isAutopilotLoading
-								? "Формирование графика..."
-								: "Заполнить график уборок на месяц (7 дн.)"}
-						</span>
-					</button>
-
-					<div style={{ display: "inline-flex", borderRadius: "8px", border: "1px solid var(--line, #cbd5e1)", overflow: "hidden" }}>
+					<div style={{ display: "inline-flex", borderRadius: "8px", border: "1px solid var(--line, #cbd5e1)", overflow: "hidden", height: "36px" }}>
 						<button
 							type="button"
 							onClick={() => setViewMode("table")}
 							style={{
-								padding: "0.4rem 0.75rem",
-								minHeight: "44px",
+								padding: "0.35rem 0.75rem",
+								minHeight: "36px",
 								fontSize: "0.825rem",
 								fontWeight: 700,
 								border: "none",
@@ -396,14 +419,14 @@ export function GeneralCleaningRegisterTab() {
 								color: viewMode === "table" ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)",
 							}}
 						>
-							Журнал (Таблица)
+							Таблица
 						</button>
 						<button
 							type="button"
 							onClick={() => setViewMode("schedule")}
 							style={{
-								padding: "0.4rem 0.75rem",
-								minHeight: "44px",
+								padding: "0.35rem 0.75rem",
+								minHeight: "36px",
 								fontSize: "0.825rem",
 								fontWeight: 700,
 								border: "none",
@@ -413,42 +436,160 @@ export function GeneralCleaningRegisterTab() {
 								color: viewMode === "schedule" ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)",
 							}}
 						>
-							График на месяц (7 дн.)
+							График (7 дн.)
 						</button>
 					</div>
 
 					<button
 						type="button"
-						data-testid="nurse-1click-norm-cleaning-btn"
-						onClick={handleQuickRecordNormCleaning}
-						disabled={submitting}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{
-							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
-							display: "flex",
-							alignItems: "center",
-							gap: "0.35rem",
-						}}
-						title="Мгновенная фиксация генеральной уборки кабинета по норме СанПиН (Аламинол 5%, 60 мин экспозиция, 120 мин УФ, 15 мин проветривание)"
-					>
-						<Sparkles size={15} /> 1-Клик норма СанПиН
-					</button>
-					<button
-						type="button"
-						onClick={handlePrintJournal}
-						className="sanpin-btn sanpin-btn-secondary"
-						data-testid="print-general-cleaning-journal-btn"
-					>
-						<Printer size={15} /> Печать журнала
-					</button>
-					<button
-						type="button"
 						onClick={() => setIsModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
+						style={{ height: "36px", minHeight: "36px", padding: "0 0.85rem", fontSize: "0.825rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 					>
 						<Plus size={15} /> Зафиксировать уборку
 					</button>
+
+					<div style={{ position: "relative" }} ref={optionsMenuRef}>
+						<button
+							type="button"
+							onClick={() => setIsOptionsMenuOpen(!isOptionsMenuOpen)}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ height: "36px", minHeight: "36px", padding: "0 0.65rem", display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "0.825rem" }}
+							title="Дополнительные опции: автопилот графика, норма СанПиН, экспорт, печать"
+							aria-label="Опции журнала"
+						>
+							<MoreHorizontal size={16} />
+							<span>Опции</span>
+						</button>
+
+						{isOptionsMenuOpen && (
+							<div
+								style={{
+									position: "absolute",
+									right: 0,
+									top: "100%",
+									marginTop: "4px",
+									zIndex: 40,
+									width: "280px",
+									background: "var(--paper, #ffffff)",
+									border: "1px solid var(--line, #e2e8f0)",
+									borderRadius: "8px",
+									boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
+									padding: "0.35rem",
+									display: "flex",
+									flexDirection: "column",
+									gap: "0.25rem",
+								}}
+							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsOptionsMenuOpen(false);
+										handleAutopilotMonth();
+									}}
+									disabled={isAutopilotLoading}
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.45rem 0.65rem",
+										fontSize: "0.78rem",
+										textAlign: "left",
+										background: "none",
+										border: "none",
+										borderRadius: "4px",
+										cursor: "pointer",
+										color: "var(--teal, #0d9488)",
+										fontWeight: 700,
+									}}
+									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
+									data-testid="nurse-cleaning-monthly-autopilot-btn"
+								>
+									<Sparkles size={14} />
+									<span>
+										{isAutopilotLoading
+											? "Формирование графика..."
+											: "Заполнить график уборок на месяц (7 дн.)"}
+									</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsOptionsMenuOpen(false);
+										handleQuickRecordNormCleaning();
+									}}
+									disabled={submitting}
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.45rem 0.65rem",
+										fontSize: "0.78rem",
+										textAlign: "left",
+										background: "none",
+										border: "none",
+										borderRadius: "4px",
+										cursor: "pointer",
+										color: "var(--ink)",
+									}}
+									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
+									data-testid="nurse-1click-norm-cleaning-btn"
+								>
+									<Sparkles size={14} color="var(--teal, #0d9488)" />
+									<span>1-Клик норма СанПиН (Аламинол 5%)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsOptionsMenuOpen(false);
+										handleExportCsv();
+									}}
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.45rem 0.65rem",
+										fontSize: "0.78rem",
+										textAlign: "left",
+										background: "none",
+										border: "none",
+										borderRadius: "4px",
+										cursor: "pointer",
+										color: "var(--ink)",
+									}}
+									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
+								>
+									<Download size={14} />
+									<span>Экспорт журнала в CSV</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsOptionsMenuOpen(false);
+										handlePrintJournal();
+									}}
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.45rem 0.65rem",
+										fontSize: "0.78rem",
+										textAlign: "left",
+										background: "none",
+										border: "none",
+										borderRadius: "4px",
+										cursor: "pointer",
+										color: "var(--ink)",
+									}}
+									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
+									data-testid="print-general-cleaning-journal-btn"
+								>
+									<Printer size={14} />
+									<span>Печать журнала / PDF</span>
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 

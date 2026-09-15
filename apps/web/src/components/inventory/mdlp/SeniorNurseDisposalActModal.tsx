@@ -672,7 +672,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 					</div>
 
 					{/* Предпросмотр печатной формы */}
-					<div className="border border-line rounded-lg overflow-hidden bg-white mt-3">
+					<div className="border border-line rounded-lg overflow-hidden bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] mt-3">
 						<iframe
 							title="Предпросмотр акта списания"
 							srcDoc={actHtml}

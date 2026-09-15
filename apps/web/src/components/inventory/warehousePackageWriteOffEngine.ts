@@ -21,7 +21,13 @@ import type { InventoryItem } from "./useInventoryLogic";
 
 let packageWriteOffActSeq = 0;
 
-export type ClinicalPackageId = "anesthesia" | "filling" | "hygiene" | "surgery";
+export type ClinicalPackageId =
+	| "anesthesia"
+	| "filling"
+	| "hygiene"
+	| "surgery"
+	| "carpule_quick"
+	| "sterilization_kit";
 
 export interface ClinicalWriteoffPackageItem {
 	readonly id: string;
@@ -372,6 +378,75 @@ export const CLINICAL_WRITEOFF_PACKAGES: readonly ClinicalWriteoffPackage[] = [
 			},
 		],
 	},
+	{
+		id: "carpule_quick",
+		title: "Списать карпулу анестетика (Септанест/Убистезин)",
+		description: "1 пустая карпула анестетика (Септанест / Убистезин 4% 1.7 мл) + карпульная игла 30G евростандарт",
+		buttonClass: "btn-writeoff-anesthetic-carpule",
+		testId: "btn-writeoff-anesthetic-carpule",
+		items: [
+			{
+				id: "art_septanest_ubistesin_carpule",
+				sku: "MED-ANES-SEPT",
+				nameRu: "Карпула анестетика (Септанест / Убистезин 4% 1.7 мл)",
+				category: "anesthesia",
+				unit: "карп.",
+				standardQuantity: 1,
+				unitCostKopecks: 14500,
+				defaultLotNumber: "LOT-SEPT-2026",
+				defaultExpDate: "2027-10",
+			},
+			{
+				id: "dental_needle_30g",
+				sku: "MED-NEEDLE-30G",
+				nameRu: "Игла карпульная стоматологическая 30G евростандарт 25 мм",
+				category: "anesthesia",
+				unit: "шт.",
+				standardQuantity: 1,
+				unitCostKopecks: 2500,
+				defaultLotNumber: "LOT-NDL-2026",
+				defaultExpDate: "2028-01",
+			},
+		],
+	},
+	{
+		id: "sterilization_kit",
+		title: "Набор стерилизации: 1 лоток + перчатки",
+		description: "1 лоток стерилизации со смотровым инструментом в крафт-пакете + 2 пары перчаток + салфетка",
+		buttonClass: "btn-writeoff-sterilization-kit",
+		testId: "btn-writeoff-sterilization-kit",
+		items: [
+			{
+				id: "sterilization_tray_kraft",
+				sku: "STER-TRAY-01",
+				nameRu: "Стерилизационный лоток со смотровым набором (крафт-пакет V-класса)",
+				category: "auxiliary",
+				unit: "лоток",
+				standardQuantity: 1,
+				unitCostKopecks: 8500,
+				defaultLotNumber: "LOT-KRAFT-2026",
+				defaultExpDate: "2027-01",
+			},
+			{
+				id: "nitrile_gloves_pair",
+				sku: "MED-GLOVE-M",
+				nameRu: "Перчатки смотровые нитриловые неопудренные (пара)",
+				category: "ppe",
+				unit: "пар",
+				standardQuantity: 2,
+				unitCostKopecks: 3500,
+			},
+			{
+				id: "antiseptic_alcohol_wipe",
+				sku: "MED-WIPE-01",
+				nameRu: "Антисептическая дезинфицирующая салфетка стерильная",
+				category: "auxiliary",
+				unit: "шт.",
+				standardQuantity: 1,
+				unitCostKopecks: 500,
+			},
+		],
+	},
 ];
 
 export interface OneClickPackageWriteOffOptions {
@@ -549,7 +624,7 @@ export async function handleOneClickPackageWriteOff(
 
 	if (isOverdraft) {
 		toastType = "warning";
-		toastMessage = `Списание пакета «${pkg.title}» выполнено в 1 клик. Зафиксирован Мягкий овердрафт: дефицит ${overdraftCount} поз. (накладная в пути). Операция не заблокирована!`;
+		toastMessage = `Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной. Списание пакета «${pkg.title}» выполнено в 1 клик. Зафиксирован Мягкий овердрафт: дефицит ${overdraftCount} поз. (накладная в пути). Операция не заблокирована!`;
 	} else {
 		toastType = "success";
 		toastMessage = `Клинический пакет «${pkg.title}» успешно списан со склада в 1 клик (${pkg.items.length} поз., без комиссии из 3 человек).`;

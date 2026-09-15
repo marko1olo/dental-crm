@@ -4,7 +4,7 @@ import {
 	ArrowUpFromLine,
 	ChevronDown,
 	Edit2,
-	MoreVertical,
+	MoreHorizontal,
 	Package,
 	PackageCheck,
 	Plus,
@@ -165,6 +165,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		isWritingOffStandardKit,
 		handleQuickWriteoffCarpules,
 		isWritingOffCarpules,
+		handleQuickWriteoffAnestheticCarpule,
+		handleQuickWriteoffSterilizationKit,
 		handleQuickWriteoffShiftBundle,
 		isWritingOffShiftBundle,
 		handleQuickWriteoffVisitBundle,
@@ -298,7 +300,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		>
 			{/* 1-LINE COMPACT TOOLBAR (Mandates 8d, 8e, 8p, Apple HIG standard) */}
 			<div
-				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0 overflow-x-auto"
+				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex flex-nowrap items-center justify-between gap-2 shrink-0 overflow-x-auto"
 				role="toolbar"
 				aria-label="Панель склада материалов"
 			>
@@ -722,6 +724,66 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										>
 											<PackageCheck size={16} className="text-teal-600 shrink-0" />
 											<span>Списать базовый набор (1 клик)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-anesthetic-carpule-btn"
+											onClick={() => {
+												handleQuickWriteoffAnestheticCarpule();
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="1-клик списание пустой карпулы анестетика (Септанест/Убистезин) медсестрой без комиссии из 3 человек"
+											role="menuitem"
+										>
+											<Syringe size={16} className="text-teal-600 shrink-0" />
+											<span>Списать карпулу анестетика (Септанест/Убистезин)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-sterilization-kit-btn"
+											onClick={() => {
+												handleQuickWriteoffSterilizationKit();
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="1-клик списание набора стерилизации: 1 лоток со смотровым инструментом в крафт-пакете + 2 пары перчаток"
+											role="menuitem"
+										>
+											<PackageCheck size={16} className="text-teal-600 shrink-0" />
+											<span>Набор стерилизации: 1 лоток + перчатки</span>
 										</button>
 
 										<button
@@ -1537,7 +1599,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																aria-haspopup="menu"
 																aria-expanded={activeMenuRowId === item.id}
 															>
-																<MoreVertical size={15} />
+																<MoreHorizontal size={15} />
 															</button>
 															{activeMenuRowId === item.id && (
 																<div
@@ -2153,8 +2215,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										fontSize: 13,
 										lineHeight: 1.45,
 									}}
+									data-testid="adjust-stock-overdraft-warning"
 								>
-									Списание превышает текущий остаток ({adjustingItem.stockQuantity} шт.). Будет зафиксирован мягкий дефицит ({Math.abs(adjustResultQuantity)} шт.) для отдела снабжения.
+									Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной. Задержка оприходования накладной поставщика не блокирует оказание медицинской помощи.
 								</p>
 							)}
 							<button
@@ -2177,7 +2240,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									: adjustType === "in"
 										? "Оприходовать"
 										: adjustExceedsStock
-											? "Списать в дефицит"
+											? "Списать (Мягкий овердрафт)"
 											: "Списать"}
 							</button>
 						</form>

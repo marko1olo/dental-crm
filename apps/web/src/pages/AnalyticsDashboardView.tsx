@@ -5,6 +5,7 @@ import {
 	Building2,
 	Calendar,
 	DollarSign,
+	Printer,
 	RefreshCw,
 	TrendingUp,
 	Users,
@@ -48,10 +49,12 @@ import {
 import "./AnalyticsDashboardView.css";
 
 const DATE_RANGES = [
+	{ value: "today", label: "Сегодня" },
+	{ value: "week", label: "Неделя" },
+	{ value: "month", label: "Месяц" },
+	{ value: "quarter", label: "Квартал" },
+	{ value: "year", label: "Год" },
 	{ value: "all", label: "Всё время" },
-	{ value: "this_year", label: "Этот год" },
-	{ value: "last_3_months", label: "3 месяца" },
-	{ value: "last_month", label: "Месяц" },
 ];
 
 const BRANCH_OPTIONS = [
@@ -388,7 +391,25 @@ export function AnalyticsDashboardView() {
 			</div>
 
 			{analyticsSection === "executive" && (
-				<DirectorExecutiveDashboard onNavigateToSection={(s) => setAnalyticsSection(s as any)} />
+				<DirectorExecutiveDashboard
+					hideHeaderToolbar={true}
+					period={
+						dateRange === "today"
+							? "day"
+							: dateRange === "quarter"
+								? "quarter"
+								: dateRange === "year"
+									? "year"
+									: "month"
+					}
+					onPeriodChange={(p) => {
+						if (p === "day") setDateRange("today");
+						else if (p === "month") setDateRange("month");
+						else if (p === "quarter") setDateRange("quarter");
+						else if (p === "year") setDateRange("year");
+					}}
+					onNavigateToSection={(s) => setAnalyticsSection(s as any)}
+				/>
 			)}
 
 			{analyticsSection === "marketing" && (
@@ -481,41 +502,74 @@ export function AnalyticsDashboardView() {
 							<div className="analytics-kpi-grid">
 								<KpiCard
 									icon={<Users size={14} />}
-									label="Пациентов"
+									label="Пациенты"
 									value={(data?.kpis?.totalPatients ?? 0).toLocaleString(
 										"ru-RU",
 									)}
 									color="var(--teal, #0d9488)"
+									subtitle={
+										<span>
+											Первичные: <strong>{data?.kpis?.primaryPatientsCount ?? 0}</strong> • Повторные: <strong>{data?.kpis?.repeatPatientsCount ?? 0}</strong>
+										</span>
+									}
 								/>
 								<KpiCard
 									icon={<DollarSign size={14} />}
-									label="Выручка"
+									label="Выручка 54-ФЗ"
 									value={formatRub(data?.kpis?.totalRevenue ?? 0)}
 									color="var(--ok-fg, #10b981)"
+									subtitle={
+										<span>
+											Нал: {formatRub(data?.kpis?.cashRevenue ?? 0)} • Безнал: {formatRub(data?.kpis?.cashlessRevenue ?? 0)}
+										</span>
+									}
 								/>
 								<KpiCard
 									icon={<Activity size={14} />}
-									label="Приёмов"
+									label="Приёмы и кресла"
 									value={(data?.kpis?.totalAppointments ?? 0).toLocaleString(
 										"ru-RU",
 									)}
 									color="var(--brand-300, var(--teal))"
+									subtitle={
+										<span>
+											Загрузка кресел: <strong>{data?.kpis?.chairOccupancyRatePercent ?? 0}%</strong>
+										</span>
+									}
 								/>
 								<KpiCard
 									icon={<TrendingUp size={14} />}
-									label="Выручка / пациент"
-									value={formatRub(data?.kpis?.avgRevenuePerPatient ?? 0)}
+									label="Средний чек"
+									value={formatRub(data?.kpis?.averageCheck ?? data?.kpis?.avgRevenuePerPatient ?? 0)}
 									color="var(--warn-fg, #f59e0b)"
+									subtitle={
+										<span>
+											Выручка / пац: {formatRub(data?.kpis?.avgRevenuePerPatient ?? 0)}
+										</span>
+									}
 								/>
 							</div>
 
 							<div className="analytics-grid">
 								{/* Виджет 1 — сколько денег приносит пациент со временем. */}
 								<article className="glass-widget">
-									<h3 title="Пациенты сгруппированы по месяцу первого визита (когорты), и для каждой группы видно, сколько денег она принесла за год — LTV.">
-										<TrendingUp className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
-										<span>Сколько приносит пациент со временем</span>
-									</h3>
+									<div className="glass-widget-header">
+										<h3 title="Пациенты сгруппированы по месяцу первого визита (когорты), и для каждой группы видно, сколько денег она принесла за год — LTV.">
+											<TrendingUp className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+											<span>Сколько приносит пациент со временем</span>
+										</h3>
+										<div className="glass-widget-actions">
+											<button
+												type="button"
+												className="glass-action-btn"
+												onClick={() => window.print()}
+												title="Распечатать график LTV"
+											>
+												<Printer size={13} aria-hidden="true" />
+												<span>Печать</span>
+											</button>
+										</div>
+									</div>
 									<div className="analytics-chart-container">
 										{(data?.cohortLtvJson ?? []).length > 0 ? (
 											<ResponsiveContainer width="100%" height="100%">
@@ -590,8 +644,8 @@ export function AnalyticsDashboardView() {
 														strokeWidth={3}
 														fillOpacity={1}
 														fill="url(#analyticsLtvGradient)"
-														dot={{ r: 4, fill: "#10b981", strokeWidth: 1, stroke: "#ffffff" }}
-														activeDot={{ r: 6, fill: "#06b6d4", stroke: "#ffffff" }}
+														dot={{ r: 4, fill: "#10b981", strokeWidth: 1, stroke: "var(--paper)" }}
+														activeDot={{ r: 6, fill: "#06b6d4", stroke: "var(--paper)" }}
 													/>
 												</AreaChart>
 											</ResponsiveContainer>
@@ -609,10 +663,23 @@ export function AnalyticsDashboardView() {
 
 								{/* Виджет 2 — воронка планов лечения. */}
 								<article className="glass-widget">
-									<h3 title="Состояния планов лечения: черновик, в работе, согласован, завершён, отклонён">
-										<BarChart3 className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
-										<span>Воронка планов лечения</span>
-									</h3>
+									<div className="glass-widget-header">
+										<h3 title="Состояния планов лечения: черновик, в работе, согласован, завершён, отклонён">
+											<BarChart3 className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+											<span>Воронка планов лечения</span>
+										</h3>
+										<div className="glass-widget-actions">
+											<button
+												type="button"
+												className="glass-action-btn"
+												onClick={() => window.print()}
+												title="Распечатать воронку планов лечения"
+											>
+												<Printer size={13} aria-hidden="true" />
+												<span>Печать</span>
+											</button>
+										</div>
+									</div>
 									<div className="analytics-chart-container">
 										{Array.isArray(data?.planFunnelJson) &&
 										(data?.planFunnelJson ?? []).filter(
@@ -681,10 +748,23 @@ export function AnalyticsDashboardView() {
 
 								{/* Виджет 3 — загруженность кресел по фактическим приёмам. */}
 								<article className="glass-widget">
-									<h3 title="Загруженность кресел по фактическим приёмам">
-										<Activity className="w-4 h-4 text-[var(--ok-fg)]" aria-hidden="true" />
-										<span>Загруженность кресел</span>
-									</h3>
+									<div className="glass-widget-header">
+										<h3 title="Загруженность кресел по фактическим приёмам">
+											<Activity className="w-4 h-4 text-[var(--ok-fg)]" aria-hidden="true" />
+											<span>Загруженность кресел</span>
+										</h3>
+										<div className="glass-widget-actions">
+											<button
+												type="button"
+												className="glass-action-btn"
+												onClick={() => window.print()}
+												title="Распечатать график загруженности кресел"
+											>
+												<Printer size={13} aria-hidden="true" />
+												<span>Печать</span>
+											</button>
+										</div>
+									</div>
 									<div className="analytics-chart-container">
 										{Array.isArray(data?.chairUtilizationJson) &&
 										(data?.chairUtilizationJson ?? []).filter(
@@ -747,10 +827,23 @@ export function AnalyticsDashboardView() {
 
 								{/* Виджет 4 — выработка врачей по завершённым визитам. */}
 								<article className="glass-widget">
-									<h3 title="Выработка врачей по завершённым визитам">
-										<Users className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
-										<span>Эффективность врачей</span>
-									</h3>
+									<div className="glass-widget-header">
+										<h3 title="Выработка врачей по завершённым визитам">
+											<Users className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+											<span>Эффективность врачей</span>
+										</h3>
+										<div className="glass-widget-actions">
+											<button
+												type="button"
+												className="glass-action-btn"
+												onClick={() => window.print()}
+												title="Распечатать ведомость выработки врачей"
+											>
+												<Printer size={13} aria-hidden="true" />
+												<span>Печать</span>
+											</button>
+										</div>
+									</div>
 									<div className="analytics-chart-container analytics-table-container">
 										{Array.isArray(data?.doctorProfitabilityJson) &&
 										(data?.doctorProfitabilityJson ?? []).filter(
@@ -949,11 +1042,13 @@ function KpiCard({
 	label,
 	value,
 	color,
+	subtitle,
 }: {
 	icon: React.ReactNode;
 	label: string;
 	value: string;
 	color: string;
+	subtitle?: React.ReactNode;
 }) {
 	return (
 		<div className="analytics-kpi-card">
@@ -968,6 +1063,7 @@ function KpiCard({
 				<span className="truncate">{label}</span>
 			</div>
 			<div className="analytics-kpi-value">{value}</div>
+			{subtitle && <div className="analytics-kpi-subtext">{subtitle}</div>}
 		</div>
 	);
 }

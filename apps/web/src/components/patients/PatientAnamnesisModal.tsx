@@ -264,7 +264,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 									evaluation.hasCriticalStopFlags
 										? "bg-rose-500 text-white"
 										: evaluation.hasHighRiskFlags
-											? "bg-amber-500 text-white"
+											? "bg-amber-600 text-white"
 											: "bg-[var(--brand-primary)] text-white"
 								}`}
 							>

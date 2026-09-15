@@ -207,14 +207,6 @@ describe("SanPiN Microclimate & Bactericidal Zero-Setup Provisioning (Mandates 8
 				"Bactericidal tab must contain bactericidal-close-evening-shift-btn testid",
 			);
 			assert.ok(
-				bacContent.includes('data-testid="bactericidal-quick-30min-btn"'),
-				"Bactericidal tab must contain bactericidal-quick-30min-btn testid",
-			);
-			assert.ok(
-				bacContent.includes('data-testid="bactericidal-shift-autopilot-btn"'),
-				"Bactericidal tab must contain bactericidal-shift-autopilot-btn testid",
-			);
-			assert.ok(
 				bacContent.includes('data-testid="bactericidal-manual-session-btn"'),
 				"Bactericidal tab must contain bactericidal-manual-session-btn testid",
 			);

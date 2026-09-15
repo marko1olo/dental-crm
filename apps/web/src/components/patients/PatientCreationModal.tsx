@@ -591,7 +591,7 @@ export function PatientCreationModal({
 												fontWeight: "bold",
 												padding: "1px 6px",
 												borderRadius: "4px",
-												backgroundColor: "#f59e0b",
+												backgroundColor: "#b45309",
 												color: "#ffffff",
 											}}
 										>
@@ -616,7 +616,7 @@ export function PatientCreationModal({
 								cursor: "pointer",
 								flexShrink: 0,
 								backgroundColor: patientAdministrativeProfileDraft.isAnonymous
-									? "#f59e0b"
+									? "#b45309"
 									: "var(--paper-strong)",
 								color: patientAdministrativeProfileDraft.isAnonymous
 									? "#ffffff"
@@ -900,7 +900,7 @@ export function PatientCreationModal({
 								)}
 							</span>
 							{fieldRequirements.requireAdvertisingSource && (
-								<span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+								<span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
 									Обязательно по настройке клиники
 								</span>
 							)}

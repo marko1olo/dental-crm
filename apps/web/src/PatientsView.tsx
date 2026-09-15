@@ -673,30 +673,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					? "В реквизитах пациента нет новых изменений."
 					: null;
 
-	const allergyWarning = useMemo(() => {
-		const notes = (patientCoreDraft?.notes ?? "").trim();
-		if (!notes) return null;
-		const lower = notes.toLowerCase();
-		const keywords = [
-			"аллерг",
-			"анестез",
-			"кардиостимул",
-			"антикоагул",
-			"астм",
-			"отек квинке",
-			"анафилак",
-			"пенициллин",
-			"лидокаин",
-			"новокаин",
-			"ультракаин",
-			"латекс",
-		];
-		if (keywords.some((kw) => lower.includes(kw))) {
-			return notes;
-		}
-		return null;
-	}, [patientCoreDraft?.notes]);
-
 	const patientBalance = Number(
 		(selectedPatient as any)?.balanceRub ??
 			(selectedPatient as any)?.balance ??
@@ -1191,27 +1167,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							</div>
 						)}
 					</div>
-
-					{/* Compact Allergy & Stop-Factor Warning Badge: Shown ONLY when patient actually has recorded allergies */}
-					{allergyWarning ? (
-						<div
-							role="alert"
-							className="flex items-center gap-2 p-2.5 px-3 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
-							style={{ marginBottom: "6px" }}
-						>
-							<AlertTriangle
-								size={15}
-								className="text-rose-600 dark:text-rose-400 shrink-0"
-								aria-hidden="true"
-							/>
-							<span className="font-bold text-rose-800 dark:text-rose-200">
-								Внимание (аллергия / стоп-фактор):
-							</span>
-							<span className="break-words whitespace-normal text-red-600 dark:text-red-400 font-bold leading-tight">
-								{allergyWarning}
-							</span>
-						</div>
-					) : null}
 
 					<div
 						className="panel-heading compact-heading flex flex-col gap-1.5"

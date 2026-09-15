@@ -121,7 +121,41 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 
 			{/* FAST ACTION BUTTONS STRIP */}
 			<div className="flex items-center gap-2 flex-wrap">
-				{/* 1. АНЕСТЕЗИЯ */}
+				{/* 1. КАРПУЛА АНЕСТЕТИКА (СЕПТАНЕСТ/УБИСТЕЗИН) */}
+				<button
+					type="button"
+					onClick={() => handlePackageClick("carpule_quick")}
+					disabled={Boolean(submittingPackageId)}
+					className="btn-writeoff-anesthetic-carpule min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					data-testid="btn-writeoff-anesthetic-carpule"
+					title="1-клик списание пустых карпул анестетика (Септанест/Убистезин) медсестрой без комиссии из 3 человек"
+				>
+					<Syringe size={16} className="text-teal-600 shrink-0" />
+					<span>
+						{submittingPackageId === "carpule_quick"
+							? "Списание..."
+							: "Списать карпулу анестетика (Септанест/Убистезин)"}
+					</span>
+				</button>
+
+				{/* 2. НАБОР СТЕРИЛИЗАЦИИ: 1 ЛОТОК + ПЕРЧАТКИ */}
+				<button
+					type="button"
+					onClick={() => handlePackageClick("sterilization_kit")}
+					disabled={Boolean(submittingPackageId)}
+					className="btn-writeoff-sterilization-kit min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-indigo-500/30 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					data-testid="btn-writeoff-sterilization-kit"
+					title="1-клик списание набора стерилизации: 1 лоток со смотровым инструментом в крафт-пакете + 2 пары перчаток"
+				>
+					<PackageCheck size={16} className="text-indigo-600 shrink-0" />
+					<span>
+						{submittingPackageId === "sterilization_kit"
+							? "Списание..."
+							: "Набор стерилизации: 1 лоток + перчатки"}
+					</span>
+				</button>
+
+				{/* 3. АНЕСТЕЗИЯ */}
 				<button
 					type="button"
 					onClick={() => handlePackageClick("anesthesia")}
@@ -136,7 +170,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					</span>
 				</button>
 
-				{/* 2. ПРОФГИГИЕНА */}
+				{/* 4. ПРОФГИГИЕНА */}
 				<button
 					type="button"
 					onClick={() => handlePackageClick("hygiene")}
@@ -151,7 +185,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					</span>
 				</button>
 
-				{/* 3. ПЛОМБА СВЕТОВАЯ (ТЕРАПИЯ) */}
+				{/* 5. ПЛОМБА СВЕТОВАЯ (ТЕРАПИЯ) */}
 				<button
 					type="button"
 					onClick={() => handlePackageClick("filling")}
@@ -166,7 +200,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					</span>
 				</button>
 
-				{/* 4. ХИРУРГИЯ */}
+				{/* 6. ХИРУРГИЯ */}
 				<button
 					type="button"
 					onClick={() => handlePackageClick("surgery")}

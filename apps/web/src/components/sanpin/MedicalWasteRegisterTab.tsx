@@ -361,13 +361,13 @@ export function MedicalWasteRegisterTab() {
 					<tbody>
 						{loading ? (
 							<tr>
-								<td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>
+								<td colSpan={9} style={{ textAlign: "center", padding: "2rem" }}>
 									Загрузка журнала отходов...
 								</td>
 							</tr>
 						) : filteredLogs.length === 0 ? (
 							<tr>
-								<td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
+								<td colSpan={9} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
 									Записи движения отходов не найдены.
 								</td>
 							</tr>

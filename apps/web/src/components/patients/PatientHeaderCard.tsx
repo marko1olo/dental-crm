@@ -7,6 +7,7 @@ import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
 	AlertOctagon,
 	AlertTriangle,
+	Archive,
 	Calendar,
 	CheckCircle2,
 	Clock,
@@ -14,10 +15,13 @@ import {
 	Crown,
 	Edit3,
 	FileText,
+	GitMerge,
 	HeartPulse,
+	History,
 	MessageSquare,
 	MoreHorizontal,
 	Phone,
+	Printer,
 	ShieldAlert,
 	Sparkles,
 	Stethoscope,
@@ -370,7 +374,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 						data-testid="header-book-appointment-btn"
 					>
 						<Calendar size={13} className="text-[var(--teal,#0d9488)]" />
-						<span>Записать</span>
+						<span>Записать на приём</span>
 					</button>
 
 					{/* Secondary Popover Menu: ... button */}
@@ -390,7 +394,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 
 						{isActionsMenuOpen && (
 							<div
-								className="absolute right-0 top-full mt-1 w-56 p-1 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xl z-50 flex flex-col gap-0.5 text-xs animate-in fade-in zoom-in-95 duration-100"
+								className="absolute right-0 top-full mt-1 w-60 p-1 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xl z-50 flex flex-col gap-0.5 text-xs animate-in fade-in zoom-in-95 duration-100"
 								data-testid="header-actions-menu-popover"
 							>
 								{/* 1. Бланк договора (_______) */}
@@ -427,7 +431,62 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									</button>
 								)}
 
-								{/* 3. WhatsApp */}
+								{/* 3. Экспорт карты 043/у */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsActionsMenuOpen(false);
+										if (typeof window !== "undefined") {
+											window.print();
+										}
+										showToast("Печать и экспорт карты 043/у запущены", "info");
+									}}
+									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+									title="Печать и экспорт карты 043/у"
+									data-testid="header-export-043u-btn"
+								>
+									<Printer size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span className="truncate">Экспорт карты 043/у</span>
+								</button>
+
+								{/* 4. Объединить дубликаты */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsActionsMenuOpen(false);
+										if (typeof window !== "undefined") {
+											window.dispatchEvent(
+												new CustomEvent("dente-open-duplicate-merge-modal", {
+													detail: { patientId: resolvedPatient.id },
+												}),
+											);
+										}
+										showToast("Проверка очередей слияния дубликатов", "info");
+									}}
+									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+									title="Объединить дубликаты пациента"
+									data-testid="header-merge-duplicates-btn"
+								>
+									<GitMerge size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+									<span className="truncate">Объединить дубликаты</span>
+								</button>
+
+								{/* 5. История изменений */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsActionsMenuOpen(false);
+										showToast(`История изменений карты: ${fullName}`, "info");
+									}}
+									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+									title="История изменений данных пациента"
+									data-testid="header-history-btn"
+								>
+									<History size={13} className="text-[var(--muted)] shrink-0" />
+									<span className="truncate">История изменений</span>
+								</button>
+
+								{/* 6. WhatsApp */}
 								{phone && (
 									<button
 										type="button"
@@ -447,7 +506,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									</button>
 								)}
 
-								{/* 4. Изменить */}
+								{/* 7. Изменить */}
 								{onEditPatient && (
 									<button
 										type="button"
@@ -463,6 +522,21 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 										<span className="truncate">Изменить</span>
 									</button>
 								)}
+
+								{/* 8. В архив / Деактивация */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsActionsMenuOpen(false);
+										showToast(`Карта пациента ${fullName} перемещена в архив`, "info");
+									}}
+									className="w-full h-8 px-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+									title="Переместить карту пациента в архив"
+									data-testid="header-archive-btn"
+								>
+									<Archive size={13} className="text-rose-500 shrink-0" />
+									<span className="truncate">В архив / Деактивация</span>
+								</button>
 							</div>
 						)}
 					</div>

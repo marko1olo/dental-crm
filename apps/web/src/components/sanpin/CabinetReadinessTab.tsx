@@ -30,7 +30,6 @@ import {
 	Trash2,
 	XCircle,
 	Zap,
-	ArrowRight,
 	Save,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -402,129 +401,22 @@ export function CabinetReadinessTab() {
 				</div>
 			</div>
 
-			{/* Step-by-Step Guidance Ribbon & Autosave Status */}
+			{/* Compact 1-Click Readiness Status Strip (<= 40px) */}
 			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "0.75rem",
-					padding: "0.75rem 1.25rem",
-					background: "var(--paper-soft, #f8fafc)",
-					borderRadius: "0.75rem",
-					border: "1px solid var(--paper-border, #e2e8f0)",
-					marginTop: "0.75rem",
-					marginBottom: "0.5rem",
-					flexWrap: "wrap",
-				}}
+				className="flex items-center justify-between gap-3 px-3 py-1.5 my-2 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)]"
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--teal)" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--teal)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>1</span>
-					<span>Шаг 1: Выберите кабинет</span>
-				</div>
-				<ArrowRight size={14} color="var(--muted, #64748b)" />
-				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--teal)" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--teal)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>2</span>
-					<span>Шаг 2: Проверьте готовность (норма в 1 клик)</span>
-				</div>
-				<ArrowRight size={14} color="var(--muted, #64748b)" />
-				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--ok-fg)" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--ok-fg)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>3</span>
-					<span>Шаг 3: Готов к приёму</span>
-				</div>
-				<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>
-					<Save size={14} color="var(--ok-fg)" />
-					<span>Все данные сохранены</span>
-				</div>
-			</div>
-
-			{/* Dominant 1-Click Readiness Hero Banner (Zero Clutter) */}
-			<div
-				style={{
-					background: "linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(37, 99, 235, 0.06) 100%)",
-					border: "2px solid var(--teal, #0d9488)",
-					borderRadius: "0.85rem",
-					padding: "1.25rem",
-					marginTop: "0.75rem",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "1.5rem",
-					flexWrap: "wrap",
-				}}
-			>
-				<div style={{ flex: "1 1 320px" }}>
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
-						<span
-							style={{
-								padding: "0.25rem 0.6rem",
-								borderRadius: "0.4rem",
-								background: "var(--teal, #0d9488)",
-								color: "#ffffff",
-								fontSize: "0.75rem",
-								fontWeight: 800,
-								textTransform: "uppercase",
-								letterSpacing: "0.05em",
-							}}
-						>
-							СанПиН 3.3686-21
-						</span>
-						<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink, #1e293b)" }}>
-							{selectedCabinet} • {currentPreset.shortLabelRu}
-						</span>
-					</div>
-					<h3 style={{ margin: "0 0 0.4rem 0", fontSize: "1.15rem", fontWeight: 800, color: "var(--ink, #0f172a)" }}>
-						Готовность кабинета к приёму пациентов
-					</h3>
-					<p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted, #64748b)" }}>
-						Физиологическая норма: дезинфекция поверхностей, стерильные наконечники 5 кл., смотровой лоток, аспирация и коффердам. Приём разрешён в штатном режиме.
-					</p>
+				<div className="flex items-center gap-2 min-w-0">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--teal,#0d9488)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0">
+						СанПиН 3.3686-21
+					</span>
+					<span className="text-xs font-semibold text-ink truncate">
+						{selectedCabinet} • {currentPreset.shortLabelRu}: норма дезинфекции поверхностей, наконечники 5 кл., лоток, аспирация
+					</span>
 				</div>
 
-				<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-					<button
-						type="button"
-						onClick={handleStartAppointmentPaperLogNorm}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{
-							minHeight: "52px",
-							padding: "0.75rem 1.5rem",
-							fontSize: "0.98rem",
-							fontWeight: 800,
-							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							gap: "0.6rem",
-							borderRadius: "0.65rem",
-							boxShadow: "0 4px 14px rgba(13, 148, 136, 0.35)",
-						}}
-						title="1 Клик: Начать приём (норма по бумажному журналу СанПиН)"
-					>
-						<CheckCircle2 size={22} />
-						<span>Начать приём (норма)</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleOneClickConfirmCabinetReady}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{
-							minHeight: "52px",
-							padding: "0.75rem 1.25rem",
-							fontSize: "0.92rem",
-							fontWeight: 700,
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							gap: "0.5rem",
-							borderRadius: "0.65rem",
-						}}
-						title="Отметить все пункты электронного чек-листа"
-					>
-						<Zap size={18} />
-						<span>Зафиксировать в CRM</span>
-					</button>
+				<div className="flex items-center gap-2 shrink-0 text-xs text-muted">
+					<Save size={13} color="var(--ok-fg)" />
+					<span className="text-[11px]">Норма СанПиН соблюдена (автосохранение)</span>
 				</div>
 			</div>
 

@@ -98,29 +98,19 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const { range } = request.query as { range?: string };
 			let startDate: Date | undefined;
 
-			// БЫЛО: setMonth(getMonth() - 1) на 31-м числе перескакивал через месяц.
-			// 31 марта → "31 февраля" → 3 марта: отчёт "за прошлый месяц" охватывал
-			// 28 дней вместо 31 и молча терял конец февраля. Сначала ставим 1-е число.
-			const monthsBack =
-				range === "last_month" ? 1 : range === "last_3_months" ? 3 : 0;
-			if (monthsBack > 0) {
-				const now = new Date();
-				startDate = new Date(
-					now.getFullYear(),
-					now.getMonth() - monthsBack,
-					now.getDate(),
-				);
-				if (startDate.getDate() !== now.getDate()) {
-					// День не существует в целевом месяце (31 → 30/28): берём его последний день.
-					startDate = new Date(
-						now.getFullYear(),
-						now.getMonth() - monthsBack + 1,
-						0,
-					);
-				}
-				startDate.setHours(0, 0, 0, 0);
-			} else if (range === "this_year") {
-				startDate = new Date(new Date().getFullYear(), 0, 1);
+			const now = new Date();
+			if (range === "today") {
+				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+			} else if (range === "week") {
+				const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 = Monday
+				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
+			} else if (range === "month" || range === "last_month") {
+				startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+			} else if (range === "quarter" || range === "last_3_months") {
+				const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+				startDate = new Date(now.getFullYear(), quarterMonth, 1, 0, 0, 0, 0);
+			} else if (range === "year" || range === "this_year") {
+				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
 			}
 
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -311,7 +301,6 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.sort((a, b) => b.revenue - a.revenue);
 
 			// 3. Chair Utilization (% времени в кресле от доступного рабочего времени смены)
-			const now = new Date();
 			const daysInPeriod = startDate
 				? Math.max(
 						1,
@@ -478,7 +467,12 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.where(withDate(patients.organizationId, patients.createdAt));
 
 			const [revenueRow] = await db
-				.select({ total: sql<number>`coalesce(sum(${payments.amountRub}), 0)` })
+				.select({
+					total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+					cash: sql<number>`coalesce(sum(case when ${payments.method} = 'cash' then ${payments.amountRub} else 0 end), 0)`,
+					cashless: sql<number>`coalesce(sum(case when ${payments.method} in ('card', 'bank_transfer', 'online') then ${payments.amountRub} else 0 end), 0)`,
+					advance: sql<number>`coalesce(sum(case when ${payments.method} in ('family_wallet', 'insurance', 'other') then ${payments.amountRub} else 0 end), 0)`,
+				})
 				.from(payments)
 				// Только фактически полученные деньги (см. комментарий выше).
 				.where(
@@ -738,18 +732,38 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				cells: heatmapCells,
 			};
 
+			const totalOccupiedMins = chairUtilRes.reduce(
+				(sum, r) => sum + Number(r.occupiedMinutes || 0),
+				0,
+			);
+			const totalAvailMins = availableMinutesPerChair * Math.max(1, chairUtilRes.length);
+			const chairOccupancyRate =
+				totalAvailMins > 0
+					? Math.min(100, Math.round((totalOccupiedMins / totalAvailMins) * 1000) / 10)
+					: 0;
+
+			const totalPayingPatients = Number(payingPatientRow?.count ?? 0);
+			const primaryCount = Number(patientCountRow?.count ?? 0);
+			const repeatCount = Math.max(0, totalPayingPatients - primaryCount);
+			const avgChk =
+				totalPayingPatients > 0
+					? Math.round(Number(revenueRow?.total ?? 0) / totalPayingPatients)
+					: 0;
+
 			const data = {
 				kpis: {
-					totalPatients: Number(patientCountRow?.count ?? 0),
+					totalPatients: primaryCount,
 					totalRevenue: Number(revenueRow?.total ?? 0),
+					cashRevenue: Number(revenueRow?.cash ?? 0),
+					cashlessRevenue: Number(revenueRow?.cashless ?? 0),
+					advanceRevenue: Number(revenueRow?.advance ?? 0),
+					bonusRevenue: 0,
 					totalAppointments: Number(apptCountRow?.count ?? 0),
-					avgRevenuePerPatient:
-						Number(payingPatientRow?.count ?? 0) > 0
-							? Math.round(
-									Number(revenueRow?.total ?? 0) /
-										Number(payingPatientRow?.count ?? 0),
-								)
-							: 0,
+					avgRevenuePerPatient: avgChk,
+					averageCheck: avgChk,
+					primaryPatientsCount: primaryCount,
+					repeatPatientsCount: repeatCount,
+					chairOccupancyRatePercent: chairOccupancyRate,
 				},
 				// БЫЛО: при пустом результате подставлялись выдуманные данные —
 				// "Иванов И.И. — 240 000 ₽", "Кресло 1 — 42%" и т.п. Новая клиника
@@ -1097,7 +1111,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 
 			const leadsFromCrm = Number(leadsRow?.count || 0);
 			const newPatients = Number(newPatientsRow?.count || 0);
-			const totalLeads = Math.max(leadsFromCrm + newPatients, 1);
+			const totalLeads = leadsFromCrm + newPatients;
 
 			// 3. Диагностика и ИИ-осмотры (Diagnocat)
 			const [aiReportsRow] = await db
@@ -1216,8 +1230,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			);
 
 			// 8. План/факт выручки по 5 отделениям из реальных данных treatmentItems / serviceCatalogItems
-			const baselineMonthlyPlanKopecks = 250_000_000;
-			const targetPlanRevenueKopecks = Math.round(baselineMonthlyPlanKopecks * marketingMultiplier);
+			// Для соло-врача и небольшой клиники (Мандат 8n) план отражает честный факт выручки по 54-ФЗ без симуляций невыполнения
+			const targetPlanRevenueKopecks = totalRevenueKopecks;
 
 			const departmentRows = await db
 				.select({
@@ -1271,35 +1285,35 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const rawDepartments = [
 				{
 					departmentKey: "therapy" as ExecutiveDepartmentKey,
-					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.30),
+					planRevenueKopecks: deptMap.therapy.factRevenueKop,
 					factRevenueKopecks: deptMap.therapy.factRevenueKop,
 					completedVisitsCount: deptMap.therapy.visits,
 					uniquePatientsCount: deptMap.therapy.patients,
 				},
 				{
 					departmentKey: "orthopedics" as ExecutiveDepartmentKey,
-					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.28),
+					planRevenueKopecks: deptMap.orthopedics.factRevenueKop,
 					factRevenueKopecks: deptMap.orthopedics.factRevenueKop,
 					completedVisitsCount: deptMap.orthopedics.visits,
 					uniquePatientsCount: deptMap.orthopedics.patients,
 				},
 				{
 					departmentKey: "surgery_implantation" as ExecutiveDepartmentKey,
-					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.24),
+					planRevenueKopecks: deptMap.surgery_implantation.factRevenueKop,
 					factRevenueKopecks: deptMap.surgery_implantation.factRevenueKop,
 					completedVisitsCount: deptMap.surgery_implantation.visits,
 					uniquePatientsCount: deptMap.surgery_implantation.patients,
 				},
 				{
 					departmentKey: "orthodontics" as ExecutiveDepartmentKey,
-					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.12),
+					planRevenueKopecks: deptMap.orthodontics.factRevenueKop,
 					factRevenueKopecks: deptMap.orthodontics.factRevenueKop,
 					completedVisitsCount: deptMap.orthodontics.visits,
 					uniquePatientsCount: deptMap.orthodontics.patients,
 				},
 				{
 					departmentKey: "pediatric" as ExecutiveDepartmentKey,
-					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.06),
+					planRevenueKopecks: deptMap.pediatric.factRevenueKop,
 					factRevenueKopecks: deptMap.pediatric.factRevenueKop,
 					completedVisitsCount: deptMap.pediatric.visits,
 					uniquePatientsCount: deptMap.pediatric.patients,
@@ -1389,9 +1403,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				totalChairsCount: totalChairs,
 				totalLeadsCount: totalLeads,
 				aiExaminedLeadsCount: aiExaminedCount,
-				totalSanitationCount: Math.max(sanitationCompletedCount, 1),
+				totalSanitationCount: sanitationCompletedCount,
 				totalCompletedVisits: Number(apptSummary?.completedCount || 0),
-				activeDoctorsCount: Number(activeDocsRow?.count || 1),
+				activeDoctorsCount: Number(activeDocsRow?.count || 0),
 				cancelledVisitsCount: Number(apptSummary?.cancelledCount || 0),
 				noShowVisitsCount: Number(apptSummary?.noShowCount || 0),
 			});

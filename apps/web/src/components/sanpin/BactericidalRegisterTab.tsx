@@ -773,60 +773,6 @@ export function BactericidalRegisterTab() {
 				<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						onClick={() => handleOpenMorningShift()}
-						disabled={submitting}
-						className="sanpin-btn touch-manipulation"
-						style={{
-							minHeight: "44px",
-							height: "44px",
-							padding: "0.4rem 0.95rem",
-							fontSize: "0.85rem",
-							fontWeight: 700,
-							cursor: "pointer",
-							whiteSpace: "nowrap",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.4rem",
-							borderRadius: "8px",
-							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
-							border: "none",
-						}}
-						title="Включить все баклампы на 30 мин перед сменой (предоперационная подготовка)"
-						data-testid="bactericidal-quick-30min-btn"
-					>
-						<Sun size={15} />
-						<span>Утренняя смена (30 мин)</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => handleCloseEveningShift()}
-						disabled={submitting}
-						className="sanpin-btn touch-manipulation"
-						style={{
-							minHeight: "44px",
-							height: "44px",
-							padding: "0.4rem 0.95rem",
-							fontSize: "0.85rem",
-							fontWeight: 700,
-							cursor: "pointer",
-							whiteSpace: "nowrap",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.4rem",
-							borderRadius: "8px",
-							background: "var(--brand-primary, #0284c7)",
-							color: "#ffffff",
-							border: "none",
-						}}
-						title="Закрыть смену: автоматический расчет наработки и финальная дезинфекция"
-						data-testid="bactericidal-shift-autopilot-btn"
-					>
-						<Moon size={15} />
-						<span>Закрыть смену (финал)</span>
-					</button>
-					<button
-						type="button"
 						onClick={() => setIsEquipModalOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{ minHeight: "44px" }}

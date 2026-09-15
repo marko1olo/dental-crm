@@ -13,6 +13,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	appointments,
+	communicationEvents,
 	crmLeads,
 	organizations,
 	patients,
@@ -64,7 +65,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const [allLeads, allAppts, allPayments, allPatients] = await Promise.all([
+			const [allLeads, allAppts, allPayments, allPatients, allCallEvents] = await Promise.all([
 				db.select().from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
 				db.select().from(appointments).where(eq(appointments.organizationId, orgId)),
 				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
@@ -74,6 +75,18 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					notes: patients.notes,
 					administrativeProfile: patients.administrativeProfile,
 				}).from(patients).where(eq(patients.organizationId, orgId)),
+				db.select({
+					id: communicationEvents.id,
+					channel: communicationEvents.channel,
+					direction: communicationEvents.direction,
+					durationSeconds: communicationEvents.durationSeconds,
+					status: communicationEvents.status,
+				}).from(communicationEvents).where(
+					and(
+						eq(communicationEvents.organizationId, orgId),
+						eq(communicationEvents.channel, "phone"),
+					),
+				),
 			]);
 
 			// Phone to channel map
@@ -127,7 +140,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				prodoctorov: 3000000,
 				tg_bot: 1500000,
 				wa_bot: 1200000,
-				telephony: 9500000,
+				telephony: 0,
 			};
 			for (const ch of DEFAULT_DENTAL_ADVERTISING_CHANNELS) {
 				if (ch.channelKey in channelSpendMap) {
@@ -167,8 +180,8 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					}
 				}
 
-				const viewsCount = Math.max(channelLeads.length * 4, bookingsCount * 5);
-				const slotSelectedCount = Math.max(channelLeads.length, bookingsCount * 2);
+				const viewsCount = Math.max(channelLeads.length, bookingsCount);
+				const slotSelectedCount = bookingsCount;
 				const spentKopecks = channelSpendMap[def.key] || 0;
 				const romiPercent = spentKopecks > 0 ? Math.round(((revenueKopecks - spentKopecks) / spentKopecks) * 100) : 0;
 				const cacKopecks = paidPatientsCount > 0 ? Math.round(spentKopecks / paidPatientsCount) : 0;
@@ -218,9 +231,26 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				}
 			}
 
-			const incomingCallsCount = Math.max(telephonyLeads.length * 2, bookedAppointmentsCount + 10);
-			const answeredCallsCount = Math.max(bookedAppointmentsCount, Math.round(incomingCallsCount * 0.95));
-			const telephonySpentKopecks = channelSpendMap.telephony || 9500000;
+			const realCalls = allCallEvents.filter((c) => c.channel === "phone");
+			const realIncomingCalls = realCalls.filter((c) => c.direction === "inbound" || !c.direction);
+			const realAnsweredCalls = realIncomingCalls.filter(
+				(c) => (c.durationSeconds != null && c.durationSeconds > 0) || c.status === "delivered",
+			);
+			const realTotalDuration = realAnsweredCalls.reduce(
+				(acc, c) => acc + (c.durationSeconds || 0),
+				0,
+			);
+
+			const incomingCallsCount = realCalls.length > 0
+				? realIncomingCalls.length
+				: Math.max(telephonyLeads.length, bookedAppointmentsCount);
+			const answeredCallsCount = realCalls.length > 0
+				? realAnsweredCalls.length
+				: bookedAppointmentsCount;
+			const avgCallDurationSeconds = realAnsweredCalls.length > 0
+				? Math.round(realTotalDuration / realAnsweredCalls.length)
+				: 0;
+			const telephonySpentKopecks = channelSpendMap.telephony || 0;
 
 			const telephonyAdminFunnel = {
 				incomingCallsCount,
@@ -231,7 +261,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				paidPatientsCount: telephonyPaidPatients,
 				revenueKopecks: telephonyRevenueKopecks,
 				spentKopecks: telephonySpentKopecks,
-				avgCallDurationSeconds: 142,
+				avgCallDurationSeconds,
 				attendanceRatePercent: bookedAppointmentsCount > 0 ? Number(((telephonyAttended / bookedAppointmentsCount) * 100).toFixed(1)) : 0,
 				conversionCallToBookingPercent: incomingCallsCount > 0 ? Number(((bookedAppointmentsCount / incomingCallsCount) * 100).toFixed(1)) : 0,
 			};

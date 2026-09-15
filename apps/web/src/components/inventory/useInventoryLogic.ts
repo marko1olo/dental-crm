@@ -730,7 +730,7 @@ export function useInventoryLogic(organizationId: string) {
 				setAdjustAmount("");
 				showToast(
 					isDeficit
-						? "Списано под операцию, требуется оприходование (зафиксирован мягкий овердрафт: остаток в дефиците)"
+						? "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной"
 						: "Остаток изменён",
 					isDeficit ? "warning" : "success",
 				);
@@ -780,7 +780,7 @@ export function useInventoryLogic(organizationId: string) {
 				const data = await res.json();
 				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
 					showToast(
-						"Базовый набор приёма списан. Зафиксирован мягкий овердрафт: «Списано под операцию, требуется оприходование»",
+						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
 						"warning",
 					);
 				} else {
@@ -833,12 +833,12 @@ export function useInventoryLogic(organizationId: string) {
 				const data = await res.json();
 				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
 					showToast(
-						"Пустая карпула списана медсестрой в 1 клик (без комиссии). «Списано под операцию, требуется оприходование»",
+						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
 						"warning",
 					);
 				} else {
 					showToast(
-						`Пустые карпулы списаны медсестрой в 1 клик (${options?.carpulesCount ?? 1} шт., СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)`,
+						`Пустые карпулы анестетика списаны медсестрой в 1 клик (${options?.carpulesCount ?? 1} шт., СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)`,
 						"success",
 					);
 				}
@@ -852,6 +852,84 @@ export function useInventoryLogic(organizationId: string) {
 		} finally {
 			isWritingOffCarpulesRef.current = false;
 			setIsWritingOffCarpules(false);
+		}
+	};
+
+	/**
+	 * 1-клик списание пустой карпулы анестетика (Септанест/Убистезин) медсестрой
+	 * по СанПиН 3.3686-21, ПКУ без созыва комиссии из 3 человек.
+	 * Мягкий овердрафт при задержке оприходования накладной.
+	 */
+	const handleQuickWriteoffAnestheticCarpule = async (options?: {
+		carpulesCount?: number;
+		visitId?: string;
+		notes?: string;
+	}) => {
+		return handleQuickWriteoffCarpules({
+			carpulesCount: options?.carpulesCount ?? 1,
+			drugName: "Септанест/Убистезин",
+			...(options?.visitId ? { visitId: options.visitId } : {}),
+			notes: options?.notes ?? "1-клик списание карпулы анестетика (Септанест/Убистезин) медсестрой без комиссии",
+		});
+	};
+
+	const isWritingOffSterilizationKitRef = useRef(false);
+	const [isWritingOffSterilizationKit, setIsWritingOffSterilizationKit] = useState(false);
+
+	/**
+	 * 1-клик списание «Набор стерилизации: 1 лоток + перчатки»
+	 * (1 лоток со смотровым набором в крафт-пакете + 2 пары перчаток + дезинфицирующая салфетка)
+	 * без созыва комиссии из 3 человек и с мягким овердрафтом склада (Мандат 8e п. 10).
+	 */
+	const handleQuickWriteoffSterilizationKit = async (options?: {
+		visitId?: string;
+		notes?: string;
+	}) => {
+		if (isWritingOffSterilizationKitRef.current) return;
+		isWritingOffSterilizationKitRef.current = true;
+		setIsWritingOffSterilizationKit(true);
+
+		try {
+			const res = await fetch(
+				`/api/inventory/${organizationId}/quick-writeoff-package`,
+				{
+					method: "POST",
+					headers: getHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						packageId: "sterilization_kit",
+						...(options?.visitId ? { visitId: options.visitId } : {}),
+						notes: options?.notes ?? "1-клик списание: Набор стерилизации: 1 лоток + перчатки",
+						allowSoftOverdraft: true,
+						allowOverdraft: true,
+					}),
+				},
+			);
+
+			if (res.ok) {
+				const data = await res.json();
+				if (data.isOverdraft || (Array.isArray(data.warnings) && data.warnings.length > 0)) {
+					showToast(
+						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
+						"warning",
+					);
+				} else {
+					showToast(
+						"Набор стерилизации (1 лоток + перчатки) успешно списан в 1 клик",
+						"success",
+					);
+				}
+				fetchItems();
+			} else {
+				showToast("Ошибка списания набора стерилизации", "error");
+			}
+		} catch (e) {
+			logger.error(e);
+			showToast("Системная ошибка при списании набора стерилизации", "error");
+		} finally {
+			isWritingOffSterilizationKitRef.current = false;
+			setIsWritingOffSterilizationKit(false);
 		}
 	};
 
@@ -901,7 +979,7 @@ export function useInventoryLogic(organizationId: string) {
 				const data = await res.json();
 				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
 					showToast(
-						`Расход смены «${bundleNameRu}» списан. Мягкий овердрафт: «Списано под операцию, требуется оприходование»`,
+						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
 						"warning",
 					);
 				} else {
@@ -965,7 +1043,7 @@ export function useInventoryLogic(organizationId: string) {
 				const data = await res.json();
 				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
 					showToast(
-						`Визит «${visitNameRu}» списан. Мягкий овердрафт: «Списано под операцию, требуется оприходование»`,
+						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
 						"warning",
 					);
 				} else {
@@ -1074,6 +1152,9 @@ export function useInventoryLogic(organizationId: string) {
 		isWritingOffStandardKit,
 		handleQuickWriteoffCarpules,
 		isWritingOffCarpules,
+		handleQuickWriteoffAnestheticCarpule,
+		handleQuickWriteoffSterilizationKit,
+		isWritingOffSterilizationKit,
 		handleQuickWriteoffShiftBundle,
 		isWritingOffShiftBundle,
 		handleQuickWriteoffVisitBundle,

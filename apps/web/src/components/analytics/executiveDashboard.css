@@ -581,3 +581,43 @@
 		flex: 1;
 	}
 }
+
+/* ─── THEME HYGIENE (DARK / NIGHT) ───────────────────────────────────────── */
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-header,
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-panel,
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-kpi-card,
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-telemetry-bar {
+	background: var(--paper-strong);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-period-toggle {
+	background: var(--paper-soft);
+	border-color: var(--line);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-period-btn {
+	color: var(--muted);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-period-btn:hover {
+	color: var(--ink);
+	background: var(--line);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-refresh-btn {
+	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .executive-refresh-btn:hover:not(:disabled) {
+	background: var(--line);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dept-progress-track {
+	background: var(--line);
+}
+

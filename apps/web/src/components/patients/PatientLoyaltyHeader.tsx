@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Crown, Loader2 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";

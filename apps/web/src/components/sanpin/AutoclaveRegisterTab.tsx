@@ -12,6 +12,7 @@ import {
 	FileSpreadsheet,
 	FileText,
 	Flame,
+	MoreHorizontal,
 	MoreVertical,
 	Plus,
 	Printer,
@@ -194,18 +195,23 @@ export function AutoclaveRegisterTab() {
 	const [clinicDevices, setClinicDevices] = useState<ClinicAutoclaveDevice[]>(() => loadSavedClinicAutoclaves());
 	const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
+	const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+	const rowMenuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
 				setIsMoreMenuOpen(false);
 			}
+			if (rowMenuRef.current && !rowMenuRef.current.contains(event.target as Node)) {
+				setOpenRowMenuId(null);
+			}
 		};
-		if (isMoreMenuOpen) {
+		if (isMoreMenuOpen || openRowMenuId) {
 			document.addEventListener("mousedown", handleClickOutside);
 		}
 		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isMoreMenuOpen]);
+	}, [isMoreMenuOpen, openRowMenuId]);
 
 	const fetchLogs = async () => {
 		try {
@@ -594,75 +600,29 @@ export function AutoclaveRegisterTab() {
 				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»</p>
 			</div>
 
-			{/* Dominant 1-Click Autoclave Shift Cycle Hero Banner */}
+			{/* Compact 1-Click Autoclave Shift Cycle Strip (<= 38px) */}
 			<div
-				style={{
-					background: "linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(13, 148, 136, 0.06) 100%)",
-					border: "2px solid var(--primary, #0284c7)",
-					borderRadius: "0.85rem",
-					padding: "1rem 1.25rem",
-					marginTop: "0.5rem",
-					marginBottom: "0.75rem",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "1.25rem",
-					flexWrap: "wrap",
-				}}
+				className="flex items-center justify-between gap-3 px-3 py-1.5 my-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)]"
 			>
-				<div style={{ flex: "1 1 320px" }}>
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-						<span
-							style={{
-								padding: "0.2rem 0.5rem",
-								borderRadius: "0.4rem",
-								background: "var(--primary, #0284c7)",
-								color: "#ffffff",
-								fontSize: "0.75rem",
-								fontWeight: 800,
-								textTransform: "uppercase",
-								letterSpacing: "0.05em",
-							}}
-						>
-							СанПиН 3.3686-21 • Форма № 257/у
-						</span>
-						<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
-							Типовой регламент стерилизации смены
-						</span>
-					</div>
-					<h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)" }}>
-						Регистрация цикла автоклава в 1 клик (без ручного ввода 20 полей)
-					</h3>
-					<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
-						Паровое автоклавирование: 134°C, 2.15 бар, 5 мин экспозиция, химический индикатор 5 класса (норма СанПиН), термосвариваемые крафт-пакеты.
-					</p>
+				<div className="flex items-center gap-2 min-w-0">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--primary,#0284c7)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0">
+						СанПиН • Форма № 257/у
+					</span>
+					<span className="text-xs font-semibold text-ink truncate">
+						Типовой регламент: 134°C, 2.1 бар, 5 мин экспозиция (крафт-пакеты, индикатор 5 класса)
+					</span>
 				</div>
 
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+				<div className="flex items-center gap-2 shrink-0">
 					<button
 						type="button"
 						onClick={handleQuickShiftBatch}
 						disabled={isLoggingBatch}
-						className="sanpin-btn touch-manipulation"
-						style={{
-							minHeight: "48px",
-							padding: "0.6rem 1.4rem",
-							fontSize: "0.92rem",
-							fontWeight: 800,
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.45rem",
-							borderRadius: "8px",
-							background: "var(--primary, #0284c7)",
-							color: "#ffffff",
-							border: "none",
-							boxShadow: "0 2px 10px rgba(2, 132, 199, 0.3)",
-						}}
+						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-md bg-[var(--primary,#0284c7)] text-white hover:bg-sky-600 inline-flex items-center gap-1.5 cursor-pointer border-0 shadow-sm"
 						data-testid="banner-autoclave-quick-shift-btn"
 						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в Форму 257/у"
 					>
-						<Sparkles size={18} />
+						<Sparkles size={14} />
 						<span>Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин)</span>
 					</button>
 				</div>
@@ -1183,35 +1143,114 @@ export function AutoclaveRegisterTab() {
 													</button>
 												)}
 
-												<button
-													type="button"
-													onClick={() => openKraftForLog(log)}
-													className="sanpin-btn sanpin-btn-secondary"
-													style={{ minHeight: "24px", height: "24px", width: "24px", padding: "0", fontSize: "0.725rem", color: "var(--brand-primary)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-													title="Сформировать партию термоэтикеток крафт-пакетов в студии"
-												>
-													<QrCode size={12} />
-												</button>
+												<div style={{ position: "relative" }}>
+													<button
+														type="button"
+														onClick={() => setOpenRowMenuId(openRowMenuId === log.id ? null : log.id)}
+														className="sanpin-btn sanpin-btn-secondary"
+														style={{ minHeight: "24px", height: "24px", width: "24px", padding: "0", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+														title="Дополнительные действия печати и этикеток"
+														aria-label="Опции этикеток"
+													>
+														<MoreHorizontal size={13} />
+													</button>
 
-												<button
-													type="button"
-													onClick={() => handlePrintSinglePouch(log)}
-													className="sanpin-btn sanpin-btn-secondary"
-													style={{ minHeight: "24px", height: "24px", width: "24px", padding: "0", fontSize: "0.725rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-													title="Быстрая печать одной термоэтикетки (58x40 мм / DataMatrix)"
-												>
-													<Tag size={12} />
-												</button>
-
-												<button
-													type="button"
-													onClick={() => handlePrintBatchPouches(log, 10)}
-													className="sanpin-btn sanpin-btn-secondary"
-													style={{ minHeight: "24px", height: "24px", padding: "0 0.35rem", fontSize: "0.7rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "2px", flexShrink: 0, fontWeight: 700, color: "var(--teal, #0d9488)" }}
-													title="1-Клик печать пачки из 10 наклеек (срок 30 дней для запечатанных пакетов по СанПиН 3.3686-21)"
-												>
-													<Printer size={11} /> 10 шт
-												</button>
+													{openRowMenuId === log.id && (
+														<div
+															ref={rowMenuRef}
+															style={{
+																position: "absolute",
+																right: 0,
+																top: "100%",
+																marginTop: "4px",
+																zIndex: 40,
+																width: "230px",
+																background: "var(--paper, #ffffff)",
+																border: "1px solid var(--line, #e2e8f0)",
+																borderRadius: "8px",
+																boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
+																padding: "0.3rem",
+																display: "flex",
+																flexDirection: "column",
+																gap: "0.2rem",
+															}}
+														>
+															<button
+																type="button"
+																onClick={() => {
+																	setOpenRowMenuId(null);
+																	openKraftForLog(log);
+																}}
+																style={{
+																	display: "flex",
+																	alignItems: "center",
+																	gap: "0.5rem",
+																	padding: "0.4rem 0.6rem",
+																	fontSize: "0.75rem",
+																	textAlign: "left",
+																	background: "none",
+																	border: "none",
+																	borderRadius: "4px",
+																	cursor: "pointer",
+																	color: "var(--ink)",
+																}}
+																className="hover:bg-[var(--paper-soft,#f1f5f9)]"
+															>
+																<QrCode size={13} color="var(--brand-primary)" />
+																<span>Партия в студии термоэтикеток</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	setOpenRowMenuId(null);
+																	handlePrintSinglePouch(log);
+																}}
+																style={{
+																	display: "flex",
+																	alignItems: "center",
+																	gap: "0.5rem",
+																	padding: "0.4rem 0.6rem",
+																	fontSize: "0.75rem",
+																	textAlign: "left",
+																	background: "none",
+																	border: "none",
+																	borderRadius: "4px",
+																	cursor: "pointer",
+																	color: "var(--ink)",
+																}}
+																className="hover:bg-[var(--paper-soft,#f1f5f9)]"
+															>
+																<Tag size={13} />
+																<span>Печать 1 этикетки (58x40 мм)</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	setOpenRowMenuId(null);
+																	handlePrintBatchPouches(log, 10);
+																}}
+																style={{
+																	display: "flex",
+																	alignItems: "center",
+																	gap: "0.5rem",
+																	padding: "0.4rem 0.6rem",
+																	fontSize: "0.75rem",
+																	textAlign: "left",
+																	background: "none",
+																	border: "none",
+																	borderRadius: "4px",
+																	cursor: "pointer",
+																	color: "var(--teal, #0d9488)",
+																	fontWeight: 600,
+																}}
+																className="hover:bg-[var(--paper-soft,#f1f5f9)]"
+															>
+																<Printer size={13} />
+																<span>Печать пачки 10 шт (30 дней)</span>
+															</button>
+														</div>
+													)}
+												</div>
 											</div>
 										</td>
 									</tr>
