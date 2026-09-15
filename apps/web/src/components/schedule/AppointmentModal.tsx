@@ -22,6 +22,7 @@ import {
 	PhoneCall,
 	Printer,
 	Repeat,
+	Search,
 	ShieldCheck,
 	User,
 	UserCheck,
@@ -33,6 +34,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { matchesPatientSearch } from "../../utils/patientSearchUtils";
 import {
 	checkAppointmentResourceCollision,
 	isCitoAppointment,
@@ -272,6 +274,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	);
 
 	const [patientId, setPatientId] = useState(() => appointment?.patientId ?? "");
+	const [patientSearchQuery, setPatientSearchQuery] = useState("");
 	const [createdPatients, setCreatedPatients] = useState<
 		Array<{ id: string; fullName: string; phone?: string | null }>
 	>([]);
@@ -292,8 +295,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
 				} as any);
 			}
 		}
-		return base;
-	}, [activePatients, createdPatients]);
+		const q = patientSearchQuery.trim();
+		if (!q) return base;
+		const filtered = base.filter((p) => matchesPatientSearch(p, q));
+		// If current patient is selected, retain it so the select element maintains its value
+		if (patientId && !filtered.some((p) => p.id === patientId)) {
+			const current = base.find((p) => p.id === patientId);
+			if (current) filtered.unshift(current);
+		}
+		return filtered;
+	}, [activePatients, createdPatients, patientSearchQuery, patientId]);
 
 	const safeToDateTimeLocalValue = useCallback(
 		(iso: string | null | undefined, tz?: string | null) => {
@@ -346,13 +357,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-	const handleCreateInlinePatient = useCallback(async (): Promise<{
+	const handleCreateInlinePatient = useCallback(async (override?: {
+		fullName?: string;
+		phone?: string | null;
+	}): Promise<{
 		id: string;
 		fullName: string;
 		phone?: string | null;
 	} | null> => {
-		const rawName = newPatientFullName.trim();
-		const rawPhone = newPatientPhone.trim();
+		const rawName = (override?.fullName ?? newPatientFullName).trim();
+		const rawPhone = (override?.phone ?? newPatientPhone).trim();
 		let effectiveName = rawName;
 		if (!effectiveName) {
 			if (rawPhone) {
@@ -425,6 +439,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			setIsInlineNewPatient(false);
 			setNewPatientFullName("");
 			setNewPatientPhone("");
+			setPatientSearchQuery("");
 			showToast(`Пациент «${created.fullName}» создан и прикреплен к записи`, "success", 3500);
 			return created;
 		} finally {
@@ -498,6 +513,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		}
 
 		setPatientId(appointment.patientId ?? "");
+		setPatientSearchQuery("");
 		setIsInlineNewPatient(false);
 		setNewPatientFullName("");
 		setNewPatientPhone("");
@@ -758,9 +774,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			if (created?.id) {
 				effectivePatientId = created.id;
 			}
+		} else if (!effectivePatientId && patientSearchQuery.trim()) {
+			// Mandates 8e, 8k, 8n: если соло-врач ввел ФИО/телефон в быстрый поиск и нажал «Записать на прием» (Ctrl+Enter),
+			// не блокируем запись ошибкой, а автоматически создаем пациента на лету!
+			const q = patientSearchQuery.trim();
+			const isPhone = /^[0-9+()-\s]+$/.test(q);
+			const created = await handleCreateInlinePatient({
+				fullName: isPhone ? `Пациент (${q})` : q,
+				phone: isPhone ? q : null,
+			});
+			if (created?.id) {
+				effectivePatientId = created.id;
+			}
 		}
 
-		const effectiveDoctorUserId = doctorUserId || dutyDoctorId || doctors[0]?.id || "doctor-default";
+		const effectiveDoctorUserId = doctorUserId || dutyDoctorId || doctors[0]?.id || (isSoloDoctor ? "doctor-solo" : "doctor-default");
 		let effectiveChairId = chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
 		if (!effectiveChairId && effectiveDoctorUserId) {
 			const doc = doctors.find((d) => d.id === effectiveDoctorUserId);
@@ -1301,6 +1329,30 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								</div>
 							) : (
 								<>
+									<div className="relative mb-1.5">
+										<Search
+											size={13}
+											className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
+										/>
+										<input
+											type="text"
+											value={patientSearchQuery}
+											onChange={(e) => setPatientSearchQuery(e.target.value)}
+											placeholder="Быстрый поиск пациента: ФИО, телефон, карта…"
+											className="w-full pl-8 pr-7 h-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs outline-none focus:ring-2 focus:ring-[var(--teal)] transition-all"
+											data-testid="appointment-patient-search-input"
+										/>
+										{patientSearchQuery && (
+											<button
+												type="button"
+												onClick={() => setPatientSearchQuery("")}
+												className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer p-0.5"
+												title="Очистить поиск"
+											>
+												<X size={12} />
+											</button>
+										)}
+									</div>
 									<select
 										value={patientId}
 										onChange={(e) => setPatientId(e.target.value)}
@@ -1314,7 +1366,36 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											</option>
 										))}
 									</select>
-									{!patientId && !isTechnicalBreak && (
+									{patientSearchQuery.trim() && (
+										<div className="mt-1.5 flex items-center justify-between gap-2 p-1.5 px-2 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal)]/20 text-xs">
+											<span className="text-[11px] text-[var(--muted)] truncate">
+												{allDisplayPatients.length === 0
+													? "Пациент не найден в базе"
+													: `Найдено: ${allDisplayPatients.length}`}
+											</span>
+											<button
+												type="button"
+												onClick={() => {
+													const q = patientSearchQuery.trim();
+													const isPhone = /^[0-9+()-\s]+$/.test(q);
+													if (isPhone) {
+														setNewPatientPhone(q);
+														setNewPatientFullName("");
+													} else {
+														setNewPatientFullName(q);
+														setNewPatientPhone("");
+													}
+													setIsInlineNewPatient(true);
+												}}
+												className="text-xs font-bold text-[var(--teal)] hover:underline inline-flex items-center gap-1 cursor-pointer shrink-0"
+												data-testid="appointment-quick-create-from-search-btn"
+											>
+												<UserPlus size={12} />
+												<span>+ Создать «{patientSearchQuery.trim()}»</span>
+											</button>
+										</div>
+									)}
+									{!patientId && !isTechnicalBreak && !patientSearchQuery.trim() && (
 										<span className="text-[11px] text-[var(--muted)] block mt-1" data-testid="appointment-patient-helper">
 											Для записи выберите пациента из списка или создайте быстрого пациента (ФИО + телефон)
 										</span>
@@ -1867,6 +1948,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<span className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">
 								<AlertTriangle size={13} className="shrink-0" />
 								<span>{error}</span>
+							</span>
+						) : !patientId && !isTechnicalBreak && !isInlineNewPatient && patientSearchQuery.trim() ? (
+							<span className="text-teal-600 dark:text-teal-400 font-medium flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">
+								<Check size={13} className="shrink-0" />
+								<span>Пациент «{patientSearchQuery.trim()}» будет создан автоматически при сохранении (Ctrl+Enter)</span>
 							</span>
 						) : !patientId && !isTechnicalBreak && !isInlineNewPatient ? (
 							<span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5" data-testid="appointment-modal-inline-helper">

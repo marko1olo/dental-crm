@@ -141,5 +141,49 @@ describe("AppointmentModal", () => {
 		assert.ok(html.includes("Д-р Смирнов"));
 		assert.ok(html.includes("Кабинет 1"));
 	});
+
+	it("renders fast patient search input and supports solo doctor autonomy without assistant", () => {
+		const soloAppointment: Appointment = {
+			...mockAppointment,
+			id: "appt-solo-1",
+			assistantUserId: null,
+		};
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentModal, {
+				isOpen: true,
+				appointment: soloAppointment,
+				dashboard: mockDashboard as Dashboard,
+				onClose: () => {},
+				onSave: async () => true,
+				repeatAppointment: () => {},
+				patientName: () => "Иванов Иван",
+				formatTime: () => "10:00",
+				toDateTimeLocalValue: () => "2026-08-21T10:00",
+				fromDateTimeLocalValue: () => "2026-08-21T10:00:00.000Z",
+				appointmentLabels: mockLabels,
+				activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+			}),
+		);
+
+		// Fast patient search input must be present (Mandates 8e, 8n)
+		assert.ok(
+			html.includes('data-testid="appointment-patient-search-input"'),
+			"Must render fast patient search input",
+		);
+		// Assistant selector is hidden in solo mode
+		assert.ok(
+			html.includes("Режим: соло-врач"),
+			"Must display solo doctor indicator",
+		);
+		assert.ok(
+			!html.includes('data-testid="select-appointment-assistant"'),
+			"Assistant selector must be hidden in solo doctor mode",
+		);
+		// Save button is never disabled for solo doctor
+		assert.ok(
+			html.includes('data-testid="appointment-modal-save-btn"'),
+			"Save button must be present",
+		);
+	});
 });
 

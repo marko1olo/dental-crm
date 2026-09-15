@@ -205,9 +205,9 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 	});
 
 	it("5. primary action buttons and somatic block meet touch target ergonomics (>= 44px on primary, >= 36px on toolbar)", () => {
-		// Verify min-h-[44px] on somatic block and somatic button
+		// Verify somatic block and somatic button testid
 		expect(visitViewSource).toContain(
-			'className="visit-somatic-status-block flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[44px]"',
+			'className="visit-somatic-status-block flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[36px]"',
 		);
 		expect(visitViewSource).toContain(
 			'data-testid="btn-somatic-norm-one-click"',

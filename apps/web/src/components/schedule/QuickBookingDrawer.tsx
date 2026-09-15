@@ -1094,7 +1094,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
 			(doctors.length === 1 ? doctors[0]?.id : "") ||
 			doctors[0]?.id ||
-			"";
+			(isSoloDoctor ? "doctor-solo" : "");
 		let effectiveChairId =
 			chairId ||
 			(chairs.length === 1 ? chairs[0]?.id : "") ||

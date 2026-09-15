@@ -2,6 +2,7 @@ import {
 	Activity,
 	AlertTriangle,
 	Bold,
+	Bone,
 	Calendar,
 	Check,
 	CheckSquare,
@@ -310,6 +311,10 @@ export function VisitEmkTab() {
 	);
 	const hygienePreset = React.useMemo(
 		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "hygiene_complex"),
+		[],
+	);
+	const surgeryPreset = React.useMemo(
+		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "surgery_extraction_simple"),
 		[],
 	);
 
@@ -1600,7 +1605,7 @@ export function VisitEmkTab() {
 			<div className="emk-unified-toolbar flex flex-col gap-1.5 my-1 py-1 border-b border-[var(--line)] min-w-0 max-w-full">
 				{/* РЯД 1: Вкладки 6 секций ЭМК — гарантированно ВСЕ 6 вкладок без сжатия («Все поля», «Жалобы», «Анамнез», «Объективно», «Диагноз», «Лечение») + Статус сохранения в едином скролл-ряду без переноса на новую строку */}
 				<div
-					className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 w-full flex-nowrap overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 border-b-0"
+					className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 w-full flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 border-b-0 touch-pan-x"
 					role="tablist"
 					aria-label="Вкладки протокола приема"
 				>
@@ -1621,7 +1626,7 @@ export function VisitEmkTab() {
 								}`}
 								onClick={() => setActiveEmkTab(tab.id)}
 							>
-								<span className="whitespace-nowrap">{tab.label}</span>
+								<span className="whitespace-nowrap shrink-0">{tab.label}</span>
 								{isFilled && <span className="emk-tab-dot" title="Заполнено" />}
 							</button>
 						);
@@ -1656,12 +1661,34 @@ export function VisitEmkTab() {
 
 				{/* РЯД 2: 1-Клик Экспресс-Бар SOAP по Приказам Минздрава РФ (вынесен в отдельный ряд без выдавливания табов) */}
 				<div
-					className="emk-tier1-quick-soap-bar flex items-center gap-1 sm:gap-1.5 shrink-0 flex-nowrap min-w-0 overflow-x-auto whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 justify-start"
+					className="emk-tier1-quick-soap-bar flex items-center gap-1 sm:gap-1.5 shrink-0 flex-nowrap min-w-0 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-[var(--line)] py-1 justify-start touch-pan-x"
 					data-testid="emk-tier1-quick-soap-bar"
 				>
 					<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-0.5">
 						<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" /> SOAP:
 					</span>
+					<button
+						type="button"
+						data-testid="btn-quick-soap-norm"
+						onClick={handleApplyPhysiologicalNorm}
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
+						title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
+					>
+						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Норма (Здоров)</span>
+					</button>
+					<button
+						type="button"
+						data-testid="btn-quick-soap-hygiene"
+						onClick={() => {
+							if (hygienePreset) handleApplyClinicalSoapPreset(hygienePreset, activeSelectedTooth, "clean_replace");
+						}}
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
+						title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
+					>
+						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Профгигиена</span>
+					</button>
 					<button
 						type="button"
 						data-testid="btn-quick-soap-caries"
@@ -1700,25 +1727,15 @@ export function VisitEmkTab() {
 					</button>
 					<button
 						type="button"
-						data-testid="btn-quick-soap-hygiene"
+						data-testid="btn-quick-soap-extraction"
 						onClick={() => {
-							if (hygienePreset) handleApplyClinicalSoapPreset(hygienePreset, activeSelectedTooth, "clean_replace");
+							if (surgeryPreset) handleApplyClinicalSoapPreset(surgeryPreset, activeSelectedTooth, "clean_replace");
 						}}
-						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
-						title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
+						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-800 dark:text-purple-300 hover:bg-purple-500/20 transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
+						title="Простое удаление зуба K04.8: анестезия + удаление щипцами/элеватором + гемостаз"
 					>
-						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Гигиена</span>
-					</button>
-					<button
-						type="button"
-						data-testid="btn-quick-soap-norm"
-						onClick={handleApplyPhysiologicalNorm}
-						className="shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs !max-w-none min-w-fit"
-						title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
-					>
-						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Норма</span>
+						<Bone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Удаление</span>
 					</button>
 				</div>
 			</div>
@@ -1766,7 +1783,7 @@ export function VisitEmkTab() {
 			</details>
 
 			<div
-				className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""} pb-28 sm:pb-32 pr-0 sm:pr-72 lg:pr-80`}
+				className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""} pb-32 sm:pb-36 pr-0 sm:pr-72 lg:pr-80`}
 			>
 				{fieldsUnavailable ? (
 					<div
@@ -2568,7 +2585,7 @@ export function VisitEmkTab() {
 										: saveReceiptOfThisVisit
 											? visitSaveReceiptText(saveReceiptOfThisVisit)
 											: dashboard?.activeVisit?.doctorSummary ||
-												"Запись приёма пока пустая. Выберите экспресс-шаблон выше или впишите жалобы — кнопка сохранения станет активна."}
+												"Запись приёма пока пустая. Выберите экспресс-шаблон, нажмите «Норма» или сразу нажмите «Сохранить» — норма подставится автоматически."}
 					</p>
 				</div>
 
