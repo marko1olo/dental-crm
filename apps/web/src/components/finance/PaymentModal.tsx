@@ -5,7 +5,7 @@
  * Supports Cash, Sberbank POS Terminal, SberPay QR, FacePay Biometry, Family Wallet, and Split Payments.
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	X,
 	CreditCard,
@@ -77,6 +77,7 @@ export interface PaymentModalProps {
 	readonly initialCustomDiscountRub?: number | undefined;
 	readonly initialDiscountReason?: string | undefined;
 	readonly initialWarranty100?: boolean | undefined;
+	readonly initialSplit5050?: boolean | undefined;
 	readonly onPrintInvoice?: (() => void) | undefined;
 	readonly onPrintAct?: (() => void) | undefined;
 	readonly onClose: () => void;
@@ -350,6 +351,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	initialCustomDiscountRub = 0,
 	initialDiscountReason = "",
 	initialWarranty100 = false,
+	initialSplit5050 = false,
 	onPrintInvoice,
 	onPrintAct,
 	onClose,
@@ -393,8 +395,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 	const { discountRub, totalDueRub, effectiveDiscountPercent } = discountCalc;
 
-	const [splitCardRub, setSplitCardRub] = useState<number>(totalDueRub);
-	const [splitCashRub, setSplitCashRub] = useState<number>(0);
+	const initialSplit5050Cash = initialSplit5050 ? Math.floor(totalDueRub / 2) : 0;
+	const initialSplit5050Card = initialSplit5050 ? totalDueRub - initialSplit5050Cash : totalDueRub;
+	const [splitCardRub, setSplitCardRub] = useState<number>(initialSplit5050Card);
+	const [splitCashRub, setSplitCashRub] = useState<number>(initialSplit5050Cash);
 	const [splitDepositRub, setSplitDepositRub] = useState<number>(0);
 	const [splitSbpRub, setSplitSbpRub] = useState<number>(0);
 	const [splitCertificateRub, setSplitCertificateRub] = useState<number>(0);
@@ -530,6 +534,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		setSplitCertificateRub(overrides.certificate ?? 0);
 		setSplitBonusRub(overrides.bonus ?? 0);
 	};
+
+	useEffect(() => {
+		if (isOpen && initialSplit5050 && totalDueRub > 0) {
+			const totalKop = rubToKopecks(totalDueRub);
+			const halfKop = Math.floor(totalKop / 2);
+			const remKop = totalKop - halfKop;
+			const cashRub = kopecksToRub(halfKop);
+			const cardRub = kopecksToRub(remKop);
+			resetSplitTenders({ cash: cashRub, card: cardRub });
+			setActiveMethod("split");
+		}
+	}, [isOpen, initialSplit5050, totalDueRub]);
 
 	const applySplitRemainder = (targetTender: TenderAllocationTarget) => {
 		const next = allocateRemainderToTender({

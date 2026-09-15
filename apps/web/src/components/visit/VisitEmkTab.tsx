@@ -2396,7 +2396,7 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "check")}
-										className="hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
 										title="Отметка выполнения"
 										aria-label="Выполнено"
 									>
@@ -2408,7 +2408,7 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "tooth")}
-										className="hidden sm:inline-flex h-6 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold items-center justify-center gap-1 transition-colors cursor-pointer text-[var(--teal,var(--brand-primary))] shrink-0 whitespace-nowrap"
+										className="emk-desktop-only hidden sm:inline-flex h-6 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold items-center justify-center gap-1 transition-colors cursor-pointer text-[var(--teal,var(--brand-primary))] shrink-0 whitespace-nowrap"
 										title="Вставить ссылку на зуб"
 										aria-label="Зуб"
 									>
@@ -2421,7 +2421,7 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "time")}
-										className="hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-medium items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-medium items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
 										title="Вставить текущее время"
 										aria-label="Время"
 									>
@@ -2430,11 +2430,11 @@ export function VisitEmkTab() {
 								</div>
 								<div className="flex items-center gap-0.5 sm:gap-1 shrink-0 pl-1.5 border-l border-[var(--line)] bg-[var(--paper-soft)] relative">
 									{/* Mobile Dropdown Menu for secondary formatting tools */}
-									<details className="group relative sm:hidden">
+									<details className="emk-mobile-only group relative sm:hidden">
 										<summary className="h-6 w-6 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer list-none [&::-webkit-details-marker]:hidden" title="Дополнительные инструменты" aria-label="Дополнительно">
 											<MoreHorizontal size={12} />
 										</summary>
-										<div className="absolute right-0 top-full mt-1 z-50 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 flex flex-col gap-1 w-40">
+										<div className="absolute right-0 top-full mt-1 z-50 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 flex flex-col gap-1 w-44">
 											<button
 												type="button"
 												onClick={(e) => { applyTextFormatting(field.key, "check"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
@@ -2477,7 +2477,7 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "copy")}
-										className="hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs items-center justify-center transition-colors cursor-pointer shrink-0"
+										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs items-center justify-center transition-colors cursor-pointer shrink-0"
 										title="Копировать текст поля"
 										aria-label="Копировать"
 									>
@@ -2486,7 +2486,7 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "clear")}
-										className="hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-rose-500/15 hover:text-rose-600 text-xs items-center justify-center transition-colors cursor-pointer shrink-0"
+										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-rose-500/15 hover:text-rose-600 text-xs items-center justify-center transition-colors cursor-pointer shrink-0"
 										title="Очистить поле"
 										aria-label="Очистить"
 									>

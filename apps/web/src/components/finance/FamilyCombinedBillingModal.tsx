@@ -638,14 +638,16 @@ ${certs
 
 											<div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
 												{/* Векторный QR код */}
-												<div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-[var(--line,#e2e8f0)] shadow-xs">
+												<div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-[var(--line,#e2e8f0)] shadow-xs">
 													{billingResult.defaultSplit.sbpQr ? (
-														<TreatmentPlanQrCode
-															value={billingResult.defaultSplit.sbpQr.nspkUrl}
-															size={160}
-															fgColor="#0f172a"
-															title="QR-код оплаты через СБП"
-														/>
+														<div className="p-2 bg-white rounded-lg">
+															<TreatmentPlanQrCode
+																value={billingResult.defaultSplit.sbpQr.nspkUrl}
+																size={160}
+																fgColor="#0f172a"
+																title="QR-код оплаты через СБП"
+															/>
+														</div>
 													) : (
 														<div className="w-40 h-40 flex items-center justify-center text-xs text-[var(--muted,#64748b)]">
 															QR-код формируется...

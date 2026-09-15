@@ -922,7 +922,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 											</div>
 										</div>
 										<div
-											className="w-16 h-16 shrink-0 border border-slate-200 rounded-lg p-1 bg-white shadow-xs"
+											className="w-16 h-16 shrink-0 border border-slate-200 dark:border-slate-700 rounded-lg p-1 bg-white dark:bg-slate-900 shadow-xs"
 											dangerouslySetInnerHTML={{ __html: qrSvgString }}
 											title="QR-код моментальной проверки подлинности справки в ФНС"
 										/>

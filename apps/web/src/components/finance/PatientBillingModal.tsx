@@ -2078,7 +2078,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							</div>
 
 							<div
-								className="p-3 bg-white border-2 border-[var(--line-strong)] rounded-2xl shadow-md"
+								className="p-3 bg-white dark:bg-slate-900 border-2 border-[var(--line-strong)] rounded-2xl shadow-md"
 								dangerouslySetInnerHTML={{
 									__html: generateQrCodeSvg(
 										`https://dente.ru/bill/${summary.actNumber}?sum=${friendlyBreakdown.totalAmountRub}&patient=${encodeURIComponent(actParams.patient.fullName)}`,

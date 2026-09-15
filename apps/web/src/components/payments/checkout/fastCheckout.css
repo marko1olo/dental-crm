@@ -31,6 +31,8 @@
 }
 
 [data-theme="dark"] .fast-checkout-modal-container,
+[data-theme="night"] .fast-checkout-modal-container,
+[data-theme="oled"] .fast-checkout-modal-container,
 .dark .fast-checkout-modal-container {
 	background-color: var(--paper-strong, #0f172a);
 	color: #f8fafc;

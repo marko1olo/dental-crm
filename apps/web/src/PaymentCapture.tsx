@@ -740,6 +740,7 @@ export function PaymentCapture({
 	const [showHints, setShowHints] = useState(false);
 	const [isSberPosModalOpen, setIsSberPosModalOpen] = useState(false);
 	const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+	const [isSplit5050Mode, setIsSplit5050Mode] = useState(false);
 	const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
 	const [receivedCash, setReceivedCash] = useState<string>("");
 
@@ -935,21 +936,19 @@ export function PaymentCapture({
 		const effectiveTotal =
 			normalizeRubAmountInput(amount) ??
 			(remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
-		if (effectiveTotal <= 0) {
+		if (!patientId && effectiveTotal <= 0) {
 			showToast(
-				"Укажите сумму или выберите пациента с долгом для расчета 50/50",
+				"Выберите пациента или укажите сумму для расчета 50/50",
 				"warning",
 			);
 			return;
 		}
-		const half1 = Math.floor(effectiveTotal / 2);
-		const half2 = effectiveTotal - half1;
-		onAmountChange(rubAmountForInput(half1));
-		onMethodChange("cash");
+		setIsSplit5050Mode(true);
+		setIsSplitModalOpen(true);
 		showToast(
-			`Комбинированная оплата 50/50: 1-я часть (${money(half1)}, Наличные). 2-я часть (${money(half2)}, Карта) принимается следом.`,
+			"Открыто окно комбинированной оплаты (50% Наличные + 50% Карта)",
 			"info",
-			5000,
+			3000,
 		);
 	};
 
@@ -964,6 +963,7 @@ export function PaymentCapture({
 			);
 			return;
 		}
+		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
 		showToast(
 			"Открыто окно комбинированной оплаты (Нал + Карта + Баланс)",
@@ -983,6 +983,7 @@ export function PaymentCapture({
 			);
 			return;
 		}
+		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
 		showToast(
 			"Открыто окно комбинированной оплаты (Баланс + Карта)",
@@ -997,6 +998,7 @@ export function PaymentCapture({
 			showToast("Выберите пациента для проведения платежа", "warning");
 			return;
 		}
+		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
 	};
 
@@ -1847,7 +1849,10 @@ export function PaymentCapture({
 			{patientId && (
 				<PaymentModal
 					isOpen={isSplitModalOpen}
-					onClose={() => setIsSplitModalOpen(false)}
+					onClose={() => {
+						setIsSplitModalOpen(false);
+						setIsSplit5050Mode(false);
+					}}
 					patientId={patientId || undefined}
 					patientName={patientDefaults?.fullName || payerFullName || undefined}
 					amountRub={
@@ -1859,8 +1864,10 @@ export function PaymentCapture({
 					}
 					cashierName={fiscalCashierName || undefined}
 					defaultMethod="split"
+					initialSplit5050={isSplit5050Mode}
 					onSuccess={(paymentData) => {
 						setIsSplitModalOpen(false);
+						setIsSplit5050Mode(false);
 						onAmountChange("");
 						const formattedAmount = paymentData.amountKopecks
 							? money(Math.round(paymentData.amountKopecks / 100))

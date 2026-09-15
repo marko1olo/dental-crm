@@ -3087,20 +3087,20 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 							</div>
 
 							{/* Official Printable Act Layout */}
-							<div className="p-6 rounded-2xl bg-white text-slate-900 border border-slate-300 shadow-sm space-y-4 font-serif select-text">
-								<div className="text-center space-y-1 border-b border-slate-300 pb-3">
+							<div className="p-6 rounded-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-sm space-y-4 font-serif select-text">
+								<div className="text-center space-y-1 border-b border-slate-300 dark:border-slate-700 pb-3">
 									<h2 className="text-base sm:text-lg font-bold font-sans tracking-wide uppercase">
 										АКТ № {actNumber}
 									</h2>
-									<p className="text-xs font-sans text-slate-600">
+									<p className="text-xs font-sans text-slate-600 dark:text-slate-400">
 										сдачи-приемки выполненных стоматологических работ (оказанных медицинских услуг)
 									</p>
-									<p className="text-xs font-sans font-semibold text-slate-700">
+									<p className="text-xs font-sans font-semibold text-slate-700 dark:text-slate-300">
 										к Договору на оказание платных медицинских услуг № {contractNumber} от {new Date().toLocaleDateString("ru-RU")} г.
 									</p>
 								</div>
 
-								<div className="text-xs space-y-1 text-slate-800 font-sans">
+								<div className="text-xs space-y-1 text-slate-800 dark:text-slate-200 font-sans">
 									<p>
 										<strong>Исполнитель:</strong> {clinicName}, Лицензия ЛО41-01137-77/00123456
 									</p>
@@ -3114,16 +3114,16 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 								{/* Items Table */}
 								<div className="overflow-x-auto">
-									<table className="w-full text-xs font-sans border-collapse border border-slate-400">
+									<table className="w-full text-xs font-sans border-collapse border border-slate-400 dark:border-slate-600">
 										<thead>
-											<tr className="bg-slate-100 text-slate-800 font-bold text-center">
-												<th className="border border-slate-400 p-2 w-8">№</th>
-												<th className="border border-slate-400 p-2 w-28">Код 804н</th>
-												<th className="border border-slate-400 p-2 text-left">Наименование медицинской услуги</th>
-												<th className="border border-slate-400 p-2 w-14">Зуб</th>
-												<th className="border border-slate-400 p-2 w-14">Кол-во</th>
-												<th className="border border-slate-400 p-2 w-24 text-right">Цена (руб.)</th>
-												<th className="border border-slate-400 p-2 w-24 text-right">Сумма (руб.)</th>
+											<tr className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-center">
+												<th className="border border-slate-400 dark:border-slate-600 p-2 w-8">№</th>
+												<th className="border border-slate-400 dark:border-slate-600 p-2 w-28">Код 804н</th>
+												<th className="border border-slate-400 dark:border-slate-600 p-2 text-left">Наименование медицинской услуги</th>
+												<th className="border border-slate-400 dark:border-slate-600 p-2 w-14">Зуб</th>
+												<th className="border border-slate-400 dark:border-slate-600 p-2 w-14">Кол-во</th>
+												<th className="border border-slate-400 dark:border-slate-600 p-2 w-24 text-right">Цена (руб.)</th>
+												<th className="border border-slate-400 dark:border-slate-600 p-2 w-24 text-right">Сумма (руб.)</th>
 											</tr>
 										</thead>
 										<tbody>
@@ -3131,29 +3131,29 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												const qty = it.quantity || 1;
 												const sum = it.priceRub * qty - (it.discountRub || 0);
 												return (
-													<tr key={it.id || idx} className="hover:bg-slate-50">
-														<td className="border border-slate-400 p-2 text-center">{idx + 1}</td>
-														<td className="border border-slate-400 p-2 font-mono text-center text-[11px]">{it.code804n || "—"}</td>
-														<td className="border border-slate-400 p-2">{it.name}</td>
-														<td className="border border-slate-400 p-2 text-center font-bold">{it.toothNumber || "—"}</td>
-														<td className="border border-slate-400 p-2 text-center">{qty}</td>
-														<td className="border border-slate-400 p-2 text-right font-mono">{formatMoneyRu(it.priceRub)}</td>
-														<td className="border border-slate-400 p-2 text-right font-mono font-bold">{formatMoneyRu(sum)}</td>
+													<tr key={it.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+														<td className="border border-slate-400 dark:border-slate-600 p-2 text-center">{idx + 1}</td>
+														<td className="border border-slate-400 dark:border-slate-600 p-2 font-mono text-center text-[11px]">{it.code804n || "—"}</td>
+														<td className="border border-slate-400 dark:border-slate-600 p-2">{it.name}</td>
+														<td className="border border-slate-400 dark:border-slate-600 p-2 text-center font-bold">{it.toothNumber || "—"}</td>
+														<td className="border border-slate-400 dark:border-slate-600 p-2 text-center">{qty}</td>
+														<td className="border border-slate-400 dark:border-slate-600 p-2 text-right font-mono">{formatMoneyRu(it.priceRub)}</td>
+														<td className="border border-slate-400 dark:border-slate-600 p-2 text-right font-mono font-bold">{formatMoneyRu(sum)}</td>
 													</tr>
 												);
 											})}
 										</tbody>
 										<tfoot>
-											<tr className="bg-slate-100 font-bold">
-												<td colSpan={6} className="border border-slate-400 p-2 text-right uppercase">Итого к оплате:</td>
-												<td className="border border-slate-400 p-2 text-right font-mono font-extrabold text-sm">{formatMoneyRu(totalSumRub)}</td>
+											<tr className="bg-slate-100 dark:bg-slate-800 font-bold">
+												<td colSpan={6} className="border border-slate-400 dark:border-slate-600 p-2 text-right uppercase">Итого к оплате:</td>
+												<td className="border border-slate-400 dark:border-slate-600 p-2 text-right font-mono font-extrabold text-sm">{formatMoneyRu(totalSumRub)}</td>
 											</tr>
 										</tfoot>
 									</table>
 								</div>
 
 								{/* Amount in words */}
-								<div className="p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-sans space-y-1">
+								<div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-sans space-y-1">
 									<p>
 										<strong>Всего оказано услуг:</strong> {activeItems.length} на сумму <strong>{formatMoneyRu(totalSumRub)}</strong>
 									</p>
@@ -3163,26 +3163,26 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								</div>
 
 								{/* Guarantee and Quality Statement */}
-								<div className="text-[11px] text-slate-700 font-sans space-y-1 pt-1 leading-relaxed">
+								<div className="text-[11px] text-slate-700 dark:text-slate-300 font-sans space-y-1 pt-1 leading-relaxed">
 									<p>
 										Вышеперечисленные медицинские услуги выполнены в полном объеме, надлежащего качества и в установленные сроки согласно стандартам медицинской помощи и клиническим рекомендациям Минздрава РФ (ст. 779 ГК РФ, Постановление Правительства РФ № 736). Заказчик претензий по объему, качеству и срокам оказания услуг к Исполнителю не имеет.
 									</p>
 								</div>
 
 								{/* Signatures */}
-								<div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-300 text-xs font-sans">
+								<div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-300 dark:border-slate-700 text-xs font-sans">
 									<div className="space-y-4">
 										<p className="font-bold">Исполнитель:</p>
-										<p className="text-slate-600">{clinicName}</p>
-										<div className="pt-4 border-b border-slate-400 flex justify-between items-end">
+										<p className="text-slate-600 dark:text-slate-400">{clinicName}</p>
+										<div className="pt-4 border-b border-slate-400 dark:border-slate-600 flex justify-between items-end">
 											<span>Подпись / М.П.:</span>
 											<span className="font-bold">/ {cashierFullName} /</span>
 										</div>
 									</div>
 									<div className="space-y-4">
 										<p className="font-bold">Заказчик (Пациент):</p>
-										<p className="text-slate-600">{patientName}</p>
-										<div className="pt-4 border-b border-slate-400 flex justify-between items-end">
+										<p className="text-slate-600 dark:text-slate-400">{patientName}</p>
+										<div className="pt-4 border-b border-slate-400 dark:border-slate-600 flex justify-between items-end">
 											<span>Подпись:</span>
 											<span className="font-bold">/ {patientName} /</span>
 										</div>

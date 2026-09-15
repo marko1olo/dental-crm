@@ -430,6 +430,18 @@
 	display: none;
 }
 
+@media (max-width: 639px) {
+	.emk-desktop-only {
+		display: none !important;
+	}
+}
+
+@media (min-width: 640px) {
+	.emk-mobile-only {
+		display: none !important;
+	}
+}
+
 /* Ультракомпактная плашка голосовой диктовки (DEF-VIS-02) */
 .emk-voice-pilot-hud {
 	margin: 2px 0 !important;
