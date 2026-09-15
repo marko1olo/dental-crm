@@ -175,6 +175,7 @@ export interface TelephonyStore {
 	line1: TelephonyLineSession;
 	line2: TelephonyLineSession;
 	isCallHistoryModalOpen: boolean;
+	isCallDrawerOpen: boolean;
 	isMuted: boolean;
 	volumeLevel: number; // 0.0 to 1.0 (default 0.8)
 	playbackSpeed: PlaybackSpeed; // 1 | 1.25 | 1.5 | 2 (default 1)
@@ -203,6 +204,10 @@ export interface TelephonyStore {
 	cancelCallTransfer: () => void;
 	openCallHistoryModal: () => void;
 	closeCallHistoryModal: () => void;
+	setIsCallDrawerOpen: (open: boolean) => void;
+	openCallDrawer: () => void;
+	closeCallDrawer: () => void;
+	toggleCallDrawer: () => void;
 	toggleMute: () => void;
 	setVolumeLevel: (volume: number) => void;
 	setPlaybackSpeed: (speed: PlaybackSpeed) => void;
@@ -1052,6 +1057,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	line1: initialLine1,
 	line2: initialLine2,
 	isCallHistoryModalOpen: false,
+	isCallDrawerOpen: false,
 	isMuted: false,
 	volumeLevel: 0.8,
 	playbackSpeed: 1,
@@ -1305,6 +1311,10 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 
 	openCallHistoryModal: () => set({ isCallHistoryModalOpen: true }),
 	closeCallHistoryModal: () => set({ isCallHistoryModalOpen: false }),
+	setIsCallDrawerOpen: (isCallDrawerOpen) => set({ isCallDrawerOpen }),
+	openCallDrawer: () => set({ isCallDrawerOpen: true }),
+	closeCallDrawer: () => set({ isCallDrawerOpen: false }),
+	toggleCallDrawer: () => set((state) => ({ isCallDrawerOpen: !state.isCallDrawerOpen })),
 	toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
 	setVolumeLevel: (volumeLevel) => set({ volumeLevel: Math.max(0, Math.min(1, volumeLevel)) }),
 

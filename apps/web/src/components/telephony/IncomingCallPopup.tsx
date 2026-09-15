@@ -14,6 +14,7 @@ import {
 	CreditCard,
 	ExternalLink,
 	FileQuestion,
+	MoreHorizontal,
 	Pause,
 	PhoneCall,
 	PhoneForwarded,
@@ -429,6 +430,10 @@ export function IncomingCallPopup() {
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
 	const agentState = useTelephonyStore((s) => s.agentState);
 	const setAgentState = useTelephonyStore((s) => s.setAgentState);
+	const isCallDrawerOpen = useTelephonyStore((s) => s.isCallDrawerOpen);
+	const closeCallDrawer = useTelephonyStore((s) => s.closeCallDrawer);
+	const toggleCallDrawer = useTelephonyStore((s) => s.toggleCallDrawer);
+	const recordCallOutcome = useTelephonyStore((s) => s.recordCallOutcome);
 
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
@@ -449,21 +454,47 @@ export function IncomingCallPopup() {
 	const [smsCopied, setSmsCopied] = useState(false);
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [newPatientNameInput, setNewPatientNameInput] = useState("");
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
+	const [showMoreMenu, setShowMoreMenu] = useState(false);
+	const [showQuickBooking, setShowQuickBooking] = useState(false);
+	const [showOutcomePanel, setShowOutcomePanel] = useState(false);
 
-	// Escape key dismisses the side drawer without affecting the call
+	const lastCallRef = useRef<IncomingCallPayload | null>(activeCall);
+	useEffect(() => {
+		if (activeCall) {
+			lastCallRef.current = activeCall;
+		}
+	}, [activeCall]);
+
+	const currentCall = activeCall || lastCallRef.current;
+
+	// Escape key dismisses the side drawer or more menu without affecting the call
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && isDrawerOpen) {
-				setIsDrawerOpen(false);
+			if (e.key === "Escape") {
+				if (showMoreMenu) {
+					setShowMoreMenu(false);
+				} else if (isCallDrawerOpen) {
+					closeCallDrawer();
+				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isDrawerOpen]);
+	}, [isCallDrawerOpen, closeCallDrawer, showMoreMenu]);
+
+	// Close More Menu on click outside
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (showMoreMenu && !(e.target as HTMLElement).closest("[data-drawer-more-container]")) {
+				setShowMoreMenu(false);
+			}
+		};
+		window.addEventListener("mousedown", handleClickOutside);
+		return () => window.removeEventListener("mousedown", handleClickOutside);
+	}, [showMoreMenu]);
 
 	// Live Call Duration Timer (ticks every second while activeCall exists)
 	useEffect(() => {
@@ -502,13 +533,13 @@ export function IncomingCallPopup() {
 
 	// Resolve Patient Info from Dashboard via Fuzzy Phone Matching
 	const resolvedPatient = useMemo(() => {
-		if (!activeCall || !dashboard?.patients) return null;
-		if (activeCall.patientId) {
-			const found = dashboard.patients.find((p) => p.id === activeCall.patientId);
+		if (!currentCall || !dashboard?.patients) return null;
+		if (currentCall.patientId) {
+			const found = dashboard.patients.find((p) => p.id === currentCall.patientId);
 			if (found) return found;
 		}
-		return resolvePatientFromPhone(dashboard.patients, activeCall.phone);
-	}, [activeCall, dashboard?.patients]);
+		return resolvePatientFromPhone(dashboard.patients, currentCall.phone);
+	}, [currentCall, dashboard?.patients]);
 
 	const patientInsight = useMemo(() => {
 		if (!resolvedPatient || !dashboard?.patientInsights) return null;
@@ -567,10 +598,10 @@ export function IncomingCallPopup() {
 	}, [somaticAlerts]);
 
 	// Absolute doctor immunity and DND suppression: zero popup disruption
-	if (!activeCall || isDoctorMode || isDndActive) return null;
+	if ((!activeCall && !isCallDrawerOpen) || !currentCall || isDoctorMode || isDndActive) return null;
 
-	const callerName = resolvedPatient?.fullName || activeCall.patientName || "Неизвестный номер";
-	const formattedPhone = formatPhoneDisplay(activeCall.phone);
+	const callerName = resolvedPatient?.fullName || currentCall.patientName || "Неизвестный номер";
+	const formattedPhone = formatPhoneDisplay(currentCall.phone);
 	const initials = formatPatientInitials(callerName);
 	const avatarColors = getAvatarColor(callerName);
 
@@ -580,17 +611,17 @@ export function IncomingCallPopup() {
 
 	// Provider label
 	const providerLabel =
-		activeCall.provider === "mango"
+		currentCall.provider === "mango"
 			? "Mango Telecom"
-			: activeCall.provider === "uis"
+			: currentCall.provider === "uis"
 				? "UIS / CoMagic"
-				: activeCall.provider === "asterisk"
+				: currentCall.provider === "asterisk"
 					? "Asterisk SIP"
-					: activeCall.provider === "zadarma"
+					: currentCall.provider === "zadarma"
 						? "Zadarma PBX"
 						: "IP-Телефония";
 
-	const isCallAnswered = activeCall.status === "answered" || activeCall.status === "connected";
+	const isCallAnswered = activeCall ? (activeCall.status === "answered" || activeCall.status === "connected") : true;
 
 	// 1-Click WhatsApp Confirmation Trigger
 	const handleSendWhatsAppConfirmation = () => {
@@ -606,7 +637,7 @@ export function IncomingCallPopup() {
 			clinicName: dashboard?.clinicSettings?.name || "DENTE",
 		});
 
-		openWhatsAppChat(activeCall.phone, msg);
+		openWhatsAppChat(currentCall.phone, msg);
 		setWhatsappSent(true);
 		showToast(`Подтверждение приёма отправлено в WhatsApp (${callerName})`, "success");
 	};
@@ -636,30 +667,41 @@ export function IncomingCallPopup() {
 		if (resolvedPatient) {
 			setSelectedPatientId(resolvedPatient.id);
 		}
-		connectCall();
-		setIsDrawerOpen((prev) => {
-			const nextState = !prev;
-			if (nextState) {
-				showToast(
-					`Карточка ${callerName} открыта в боковой шторке (визит 043/у сохранён)`,
-					"info",
-				);
-			}
-			return nextState;
-		});
+		if (activeCall && activeCall.status === "ringing") {
+			connectCall();
+		}
+		toggleCallDrawer();
+		const willBeOpen = !isCallDrawerOpen;
+		if (willBeOpen) {
+			showToast(
+				`Карточка ${callerName} открыта в боковой шторке (визит 043/у сохранён)`,
+				"info",
+			);
+		}
 	};
 
 	// Optional navigation to full patient registry when explicitly requested
 	const handleOpenFullPatientView = () => {
+		if (currentView === "visit") {
+			showToast(
+				"Приём пациента активен (форма 043/у). Карта доступна в текущей шторке без сброса визита.",
+				"warning",
+			);
+			return;
+		}
 		if (resolvedPatient) {
 			setSelectedPatientId(resolvedPatient.id);
 			setCurrentView("patients");
-			connectCall();
+			if (activeCall && activeCall.status === "ringing") {
+				connectCall();
+			}
 			showToast(`Открыта карта: ${resolvedPatient.fullName}`, "info");
 		} else {
-			setNewPatientPhone(activeCall.phone);
+			setNewPatientPhone(currentCall.phone);
 			setCurrentView("patients");
-			connectCall();
+			if (activeCall && activeCall.status === "ringing") {
+				connectCall();
+			}
 			showToast(`Регистрация нового пациента с номером ${formattedPhone}`, "info");
 		}
 	};
@@ -708,10 +750,12 @@ export function IncomingCallPopup() {
 				reason,
 				comment: `Запись по входящему звонку (${formattedPhone})`,
 			});
-			acceptCall();
+			if (activeCall) {
+				acceptCall();
+			}
 			showToast(`Создана запись: ${resolvedPatient.fullName} (${reason})`, "info");
 		} else {
-			setNewPatientPhone(activeCall.phone);
+			setNewPatientPhone(currentCall.phone);
 			setNewAppointmentDraft({
 				patientId: "",
 				doctorUserId: defaultDoctorId,
@@ -723,7 +767,9 @@ export function IncomingCallPopup() {
 				reason,
 				comment: `Новый пациент с телефона ${formattedPhone}`,
 			});
-			acceptCall();
+			if (activeCall) {
+				acceptCall();
+			}
 			showToast(`Новая запись: ${formattedPhone} (${reason})`, "info");
 		}
 	};
@@ -744,11 +790,12 @@ export function IncomingCallPopup() {
 	return createPortal(
 		<>
 			{/* Top-Right Ambient Incoming Call Badge / Capsule (Non-blocking, Fitts's Law) */}
-			<div
-				className="dnt-incoming-call-badge-container fixed top-3 right-4 sm:top-3 sm:right-5 z-[9990] flex flex-col items-end pointer-events-none"
-				style={{ zIndex: 9990 }}
-				data-testid="incoming-call-badge-container"
-			>
+			{activeCall && (
+				<div
+					className="dnt-incoming-call-badge-container fixed top-3 right-4 sm:top-3 sm:right-5 z-[9990] flex flex-col items-end pointer-events-none"
+					style={{ zIndex: 9990 }}
+					data-testid="incoming-call-badge-container"
+				>
 				{!isExpanded ? (
 					/* 🟢 Compact Telephony Capsule (0-occlusion, non-blocking) */
 					<div
@@ -1119,18 +1166,18 @@ export function IncomingCallPopup() {
 							type="button"
 							onClick={handleToggleCardDrawer}
 							className={`flex-1 px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm cursor-pointer ${
-								isDrawerOpen
+								isCallDrawerOpen
 									? "bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--teal)]"
 									: "bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white"
 							}`}
 							title={
-								isDrawerOpen
+								isCallDrawerOpen
 									? "Скрыть боковую шторку карточки"
 									: "Открыть карточку в боковой шторке (визит 043/у сохранён)"
 							}
 							aria-label="Открыть карточку пациента в боковой шторке"
 						>
-							{isDrawerOpen ? (
+							{isCallDrawerOpen ? (
 								<>
 									<span>Скрыть</span>
 									<ChevronRight size={16} />
@@ -1146,9 +1193,10 @@ export function IncomingCallPopup() {
 				</div>
 				)}
 			</div>
+			)}
 
 			{/* Patient Side Drawer (Slide-Over on the right edge, ZERO unmounting of active 043/u visit diary) */}
-			{isDrawerOpen && (
+			{isCallDrawerOpen && (
 				<div
 					className="dnt-telephony-patient-drawer fixed right-0 top-0 bottom-0 w-full sm:w-[480px] max-w-full z-[9995] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-l border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl flex flex-col pointer-events-auto animate-slide-in-right overflow-hidden"
 					style={{ zIndex: 9995 }}
@@ -1176,19 +1224,113 @@ export function IncomingCallPopup() {
 							</div>
 						</div>
 
-						<button
-							type="button"
-							onClick={() => setIsDrawerOpen(false)}
-							className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer"
-							title="Закрыть боковую шторку (Esc)"
-							aria-label="Закрыть шторку"
-						>
-							<X size={20} />
-						</button>
+						<div className="flex items-center gap-1">
+							{/* More Actions Menu (...) */}
+							<div className="relative" data-drawer-more-container="true">
+								<button
+									type="button"
+									onClick={() => setShowMoreMenu((prev) => !prev)}
+									className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer"
+									title="Дополнительные действия (WhatsApp, SMS, перевод, исходы)"
+									aria-label="Дополнительные действия"
+									data-testid="drawer-more-menu-btn"
+								>
+									<MoreHorizontal size={20} />
+								</button>
+								{showMoreMenu && (
+									<div className="absolute right-0 top-full mt-1 w-60 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5">
+										{upcomingAppointment && (
+											<>
+												<button
+													type="button"
+													onClick={() => {
+														handleSendWhatsAppConfirmation();
+														setShowMoreMenu(false);
+													}}
+													className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+												>
+													<Send size={13} className="text-emerald-600" />
+													<span>1-Click WhatsApp</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														handleCopySmsConfirmation();
+														setShowMoreMenu(false);
+													}}
+													className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+												>
+													<Copy size={13} className="text-[var(--muted,#64748b)]" />
+													<span>Скопировать SMS</span>
+												</button>
+											</>
+										)}
+										<button
+											type="button"
+											onClick={() => {
+												navigator.clipboard?.writeText(currentCall.phone);
+												showToast("Номер телефона скопирован", "info");
+												setShowMoreMenu(false);
+											}}
+											className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+										>
+											<Copy size={13} className="text-[var(--muted,#64748b)]" />
+											<span>Копировать номер</span>
+										</button>
+										{isCallAnswered && (
+											<button
+												type="button"
+												onClick={() => {
+													setShowTransferPanel((prev) => !prev);
+													setShowMoreMenu(false);
+												}}
+												className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+											>
+												<PhoneForwarded size={13} className="text-[var(--teal)]" />
+												<span>Перевод звонка (SIP)</span>
+											</button>
+										)}
+										<button
+											type="button"
+											onClick={() => {
+												setShowOutcomePanel((prev) => !prev);
+												setShowMoreMenu(false);
+											}}
+											className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+										>
+											<Check size={13} className="text-[var(--teal)]" />
+											<span>Фиксация исхода</span>
+										</button>
+										<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
+										<button
+											type="button"
+											onClick={() => {
+												handleOpenFullPatientView();
+												setShowMoreMenu(false);
+											}}
+											className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--teal)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+										>
+											<ExternalLink size={13} />
+											<span>Открыть в общем списке</span>
+										</button>
+									</div>
+								)}
+							</div>
+
+							<button
+								type="button"
+								onClick={closeCallDrawer}
+								className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer"
+								title="Закрыть боковую шторку (Esc)"
+								aria-label="Закрыть шторку"
+							>
+								<X size={20} />
+							</button>
+						</div>
 					</div>
 
 					{/* Drawer Scrollable Content */}
-					<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
+					<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs">
 						{/* Patient Identity Block */}
 						<div className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] flex items-center gap-3">
 							<div
@@ -1211,7 +1353,7 @@ export function IncomingCallPopup() {
 									<button
 										type="button"
 										onClick={() => {
-											navigator.clipboard?.writeText(activeCall.phone);
+											navigator.clipboard?.writeText(currentCall.phone);
 											showToast("Номер телефона скопирован", "info");
 										}}
 										className="text-[10px] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-0.5 cursor-pointer underline"
@@ -1228,6 +1370,81 @@ export function IncomingCallPopup() {
 								)}
 							</div>
 						</div>
+
+						{/* 2 Primary Direct Action Buttons (Miller & Hick Law Invariant) */}
+						<div className="flex items-center gap-2">
+							{/* Action 1: Записать на приём */}
+							<button
+								type="button"
+								onClick={() => setShowQuickBooking((prev) => !prev)}
+								className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+								title="Быстрая запись на приём (3 слота)"
+								data-testid="drawer-action-book"
+							>
+								<CalendarCheck size={15} />
+								<span>Записать на приём</span>
+								<ChevronDown
+									size={14}
+									className={`transition-transform duration-200 ${showQuickBooking ? "rotate-180" : ""}`}
+								/>
+							</button>
+
+							{/* Action 2: Открыть карту */}
+							<button
+								type="button"
+								onClick={handleOpenFullPatientView}
+								className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+								title="Открыть карту пациента в реестре"
+								data-testid="drawer-action-open-card"
+							>
+								<UserCheck size={15} className="text-[var(--teal)]" />
+								<span>Открыть карту</span>
+							</button>
+						</div>
+
+						{/* Collapsible 1-Click Quick Booking Slots */}
+						{showQuickBooking && (
+							<div className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--teal-soft)] space-y-2 animate-in fade-in">
+								<div className="flex items-center justify-between">
+									<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--teal)] flex items-center gap-1">
+										<Zap size={12} className="text-amber-500" />
+										Слоты быстрой записи:
+									</span>
+									<span className="text-[10px] text-[var(--muted,#64748b)]">В 1 клик</span>
+								</div>
+								<div className="grid grid-cols-3 gap-1.5">
+									<button
+										type="button"
+										onClick={() => handleQuickBook("today_urgent")}
+										className="min-h-[44px] px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center cursor-pointer"
+										title="Записать сегодня на 10:00 (Острая боль)"
+									>
+										<span>Сегодня 10:00</span>
+										<span className="text-[9px] font-normal text-amber-700 dark:text-amber-300">
+											Острая боль
+										</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => handleQuickBook("today_standard")}
+										className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center cursor-pointer"
+										title="Записать сегодня на 14:30 (Консультация)"
+									>
+										<span>Сегодня 14:30</span>
+										<span className="text-[9px] font-normal">Консультация</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => handleQuickBook("tomorrow")}
+										className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center cursor-pointer"
+										title="Записать завтра на 11:00 (Плановый)"
+									>
+										<span>Завтра 11:00</span>
+										<span className="text-[9px] font-normal text-[var(--muted,#64748b)]">Плановый</span>
+									</button>
+								</div>
+							</div>
+						)}
 
 						{/* Somatic & Allergy Alerts (Prominent Red Invariant) */}
 						{somaticAlerts.length > 0 && (
@@ -1294,49 +1511,47 @@ export function IncomingCallPopup() {
 							</div>
 						</div>
 
-						{/* Upcoming Appointment & 1-Click WhatsApp/SMS Confirmation */}
+						{/* Upcoming Appointment Info */}
 						{upcomingAppointment && (
-							<div className="p-3.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] space-y-2.5">
+							<div className="p-3.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] space-y-2">
 								<div className="flex items-center justify-between">
 									<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
 										<CalendarCheck size={13} />
 										Предстоящий приём:
 									</span>
-									<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal)] text-white">
-										{upcomingAppointment.isToday
-											? "Сегодня"
-											: upcomingAppointment.isTomorrow
-												? "Завтра"
-												: upcomingAppointment.formattedDate}
-									</span>
+									<div className="flex items-center gap-1">
+										<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal)] text-white">
+											{upcomingAppointment.isToday
+												? "Сегодня"
+												: upcomingAppointment.isTomorrow
+													? "Завтра"
+													: upcomingAppointment.formattedDate}
+										</span>
+										<button
+											type="button"
+											onClick={handleSendWhatsAppConfirmation}
+											className="min-h-[32px] min-w-[32px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+											title="Отправить подтверждение в WhatsApp"
+										>
+											<Send size={13} />
+										</button>
+										<button
+											type="button"
+											onClick={handleCopySmsConfirmation}
+											className="min-h-[32px] min-w-[32px] rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+											title="Скопировать SMS"
+										>
+											<Copy size={13} />
+										</button>
+									</div>
 								</div>
-								<div className="text-xs text-[var(--ink,#0f172a)] space-y-1">
+								<div className="text-xs text-[var(--ink,#0f172a)] space-y-0.5">
 									<div className="font-bold">
 										Время: {upcomingAppointment.formattedTime}
 									</div>
 									<div className="text-[var(--muted,#64748b)]">
 										Врач: {upcomingAppointment.doctorName}
 									</div>
-								</div>
-								<div className="flex items-center gap-2 pt-1">
-									<button
-										type="button"
-										onClick={handleSendWhatsAppConfirmation}
-										className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
-										title="Отправить шаблон подтверждения в WhatsApp"
-									>
-										<Send size={14} />
-										<span>{whatsappSent ? "Отправлено в WA" : "1-Click WhatsApp"}</span>
-									</button>
-									<button
-										type="button"
-										onClick={handleCopySmsConfirmation}
-										className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
-										title="Скопировать текст подтверждения для SMS"
-									>
-										<Copy size={14} />
-										<span>{smsCopied ? "Скопировано" : "SMS"}</span>
-									</button>
 								</div>
 							</div>
 						)}
@@ -1357,52 +1572,13 @@ export function IncomingCallPopup() {
 							</div>
 						)}
 
-						{/* Quick 1-Click Booking presets (Without wiping active visit!) */}
-						<div className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-2">
-							<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Zap size={12} className="text-amber-500" />
-								Быстрая запись в 1 касание:
-							</span>
-							<div className="grid grid-cols-3 gap-1.5">
-								<button
-									type="button"
-									onClick={() => handleQuickBook("today_urgent")}
-									className="min-h-[44px] px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center cursor-pointer"
-									title="Записать сегодня на 10:00 (Острая боль)"
-								>
-									<span>Сегодня 10:00</span>
-									<span className="text-[9px] font-normal text-amber-700 dark:text-amber-300">
-										Острая боль
-									</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickBook("today_standard")}
-									className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center cursor-pointer"
-									title="Записать сегодня на 14:30 (Консультация)"
-								>
-									<span>Сегодня 14:30</span>
-									<span className="text-[9px] font-normal">Консультация</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickBook("tomorrow")}
-									className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center cursor-pointer"
-									title="Записать завтра на 11:00 (Плановый)"
-								>
-									<span>Завтра 11:00</span>
-									<span className="text-[9px] font-normal text-[var(--muted,#64748b)]">Плановый</span>
-								</button>
-							</div>
-						</div>
-
 						{/* WebRTC SIP Call Transfer Panel (when call is answered) */}
 						{isCallAnswered && (
 							<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-2">
 								<button
 									type="button"
 									onClick={() => setShowTransferPanel((prev) => !prev)}
-									className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--teal)] transition-all flex items-center justify-between cursor-pointer"
+									className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--teal)] transition-all flex items-center justify-between cursor-pointer"
 								>
 									<div className="flex items-center gap-2">
 										<PhoneForwarded size={15} className="text-[var(--teal)]" />
@@ -1420,7 +1596,7 @@ export function IncomingCallPopup() {
 											<button
 												type="button"
 												onClick={() => setTransferType("blind")}
-												className={`flex-1 min-h-[44px] py-1 px-2 rounded-md font-bold text-xs transition-all ${
+												className={`flex-1 min-h-[40px] py-1 px-2 rounded-md font-bold text-xs transition-all ${
 													transferType === "blind"
 														? "bg-[var(--teal)] text-white"
 														: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -1431,7 +1607,7 @@ export function IncomingCallPopup() {
 											<button
 												type="button"
 												onClick={() => setTransferType("attended")}
-												className={`flex-1 min-h-[44px] py-1 px-2 rounded-md font-bold text-xs transition-all ${
+												className={`flex-1 min-h-[40px] py-1 px-2 rounded-md font-bold text-xs transition-all ${
 													transferType === "attended"
 														? "bg-[var(--teal)] text-white"
 														: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -1473,40 +1649,48 @@ export function IncomingCallPopup() {
 						)}
 
 						{/* Audio Recording Player */}
-						{activeCall.recordingUrl && (
+						{currentCall.recordingUrl && (
 							<CallAudioPlayer
-								recordingUrl={activeCall.recordingUrl}
-								durationSeconds={activeCall.durationSeconds || 45}
-								seed={activeCall.callId || activeCall.phone}
-								transcript={activeCall.transcript}
+								recordingUrl={currentCall.recordingUrl}
+								durationSeconds={currentCall.durationSeconds || 45}
+								seed={currentCall.callId || currentCall.phone}
+								transcript={currentCall.transcript}
 							/>
 						)}
 
-						{/* Call Outcome Logging */}
-						<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-1.5">
-							<span className="font-bold text-[10px] uppercase tracking-wider text-[var(--muted,#64748b)] block">
-								Фиксация исхода звонка:
-							</span>
-							<div className="grid grid-cols-2 gap-1.5">
-								{[
-									{ action: "booked", label: "Записан на приём" },
-									{ action: "callback_15m", label: "Перезвонить 15м" },
-									{ action: "consulted", label: "Консультация" },
-									{ action: "spam", label: "Спам / Ошибка" },
-								].map((item) => (
-									<button
-										key={item.action}
-										type="button"
-										onClick={() => {
-											dismissCall();
-											showToast(`Исход зафиксирован: ${item.label}`, "success");
-										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-semibold text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer"
-									>
-										{item.label}
-									</button>
-								))}
-							</div>
+						{/* Call Outcome Logging (Collapsible Section) */}
+						<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] overflow-hidden">
+							<button
+								type="button"
+								onClick={() => setShowOutcomePanel((prev) => !prev)}
+								className="w-full min-h-[40px] px-3 py-2 flex items-center justify-between text-[11px] font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
+							>
+								<span className="uppercase tracking-wider">Фиксация исхода звонка</span>
+								<ChevronDown size={14} className={`transition-transform duration-200 ${showOutcomePanel ? "rotate-180" : ""}`} />
+							</button>
+							{showOutcomePanel && (
+								<div className="p-2.5 pt-0 grid grid-cols-2 gap-1.5 animate-in fade-in">
+									{[
+										{ action: "booked", label: "Записан на приём" },
+										{ action: "callback_15m", label: "Перезвонить 15м" },
+										{ action: "consulted", label: "Консультация" },
+										{ action: "spam", label: "Спам / Ошибка" },
+									].map((item) => (
+										<button
+											key={item.action}
+											type="button"
+											onClick={() => {
+												recordCallOutcome(item.action as any);
+												closeCallDrawer();
+												showToast(`Исход зафиксирован: ${item.label}`, "success");
+											}}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-semibold text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer"
+										>
+											{item.label}
+										</button>
+									))}
+								</div>
+							)}
 						</div>
 
 						{/* Unknown Caller: Inline quick patient registration without navigating away */}
@@ -1531,12 +1715,12 @@ export function IncomingCallPopup() {
 												showToast("Введите ФИО пациента для регистрации", "warning");
 												return;
 											}
-											setNewPatientPhone(activeCall.phone);
+											setNewPatientPhone(currentCall.phone);
 											showToast(
 												`Пациент «${newPatientNameInput}» добавлен к номеру ${formattedPhone}`,
 												"success",
 											);
-											setIsDrawerOpen(false);
+											closeCallDrawer();
 										}}
 										className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal)] text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 									>
@@ -1552,7 +1736,7 @@ export function IncomingCallPopup() {
 					<div className="shrink-0 p-3.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] flex items-center justify-between gap-2">
 						<button
 							type="button"
-							onClick={() => setIsDrawerOpen(false)}
+							onClick={closeCallDrawer}
 							className="px-4 py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--ink,#0f172a)] transition-all min-h-[44px] cursor-pointer"
 						>
 							Закрыть шторку

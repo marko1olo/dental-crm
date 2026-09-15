@@ -649,6 +649,7 @@ export function WorkspaceTopbar({
 		selectedWorkspaceRole,
 	);
 	const activeCall = useTelephonyStore((s) => s.activeCall);
+	const isCallDrawerOpen = useTelephonyStore((s) => s.isCallDrawerOpen);
 	const agentState = useTelephonyStore((s) => s.agentState);
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const setWsConnected = useTelephonyStore((s) => s.setWsConnected);
@@ -657,8 +658,7 @@ export function WorkspaceTopbar({
 	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(
-		activeCall &&
-		activeCall.status !== "connected" &&
+		(activeCall || isCallDrawerOpen) &&
 		!isDoctorMode &&
 		!isDndActive,
 	);

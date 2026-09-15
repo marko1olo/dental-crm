@@ -89,13 +89,13 @@ export function TelephonyFloatingWidget({
 	const switchLine = useTelephonyStore((s) => s.switchLine);
 	const isHeld = useTelephonyStore((s) => s.isHeld);
 	const toggleHold = useTelephonyStore((s) => s.toggleHold);
+	const openCallDrawer = useTelephonyStore((s) => s.openCallDrawer);
 
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
 
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
-	const setCurrentView = useAppStore((s) => s.setCurrentView);
 	const crmCurrentView = useAppStore((s) => s.currentView);
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
@@ -413,9 +413,8 @@ export function TelephonyFloatingWidget({
 			});
 		}
 
-		setCurrentView("schedule");
 		acceptCall();
-		showToast(`Создан черновик записи: ${reason}`, "info");
+		showToast(`Создан черновик записи: ${reason} (сохранён в расписании)`, "info");
 	};
 
 	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
@@ -1207,21 +1206,20 @@ export function TelephonyFloatingWidget({
 												</button>
 											)}
 
-											{/* Accept & Open Patient Card */}
+											{/* Accept & Open Patient Card (Non-destructive slide-over drawer) */}
 											<button
 												type="button"
 												onClick={() => {
 													if (resolvedPatient) {
 														setSelectedPatientId(resolvedPatient.id);
-														setCurrentView("patients");
-														acceptCall();
 													} else {
 														setNewPatientPhone(activeCall.phone);
-														setCurrentView("patients");
-														acceptCall();
 													}
+													acceptCall();
+													openCallDrawer();
 												}}
 												className="flex-1 min-h-[48px] px-4 py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40 focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+												title={resolvedPatient ? "Открыть карточку в боковой шторке (визит 043/у сохранён)" : "Создать пациента в боковой шторке"}
 											>
 												<UserCheck size={18} />
 												<span>{resolvedPatient ? "Открыть карту" : "Создать"}</span>
