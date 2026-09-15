@@ -90,6 +90,8 @@
 > 85. 1-клик комбинированные платежи: 50/50 Нал + Карта, Нал + Карта + Баланс, Баланс + Карта, семейный кошелек («Баланс / Аванс») и кнопка «Комбо (Сплит)» в `PaymentCapture.tsx` и `PaymentModal.tsx`, 5-секундная запись без обязательного ассистента в `AppointmentModal.tsx` и `QuickBookingDrawer.tsx`, 1-клик норма и 300мс автосейв ЭМК в `VisitSoapEditor.tsx` по Мандатам 8e, 8k, 8n (Wave 225, коммит `8e6480d7b`).
 > 86. Тотальное искоренение 7 смертных грехов UI Wave 225.1 по Мандатам 8c, 8d, 8e, 8p: Грех #4 Dark Mode — полная токенизация кассы (`var(--paper)`, `var(--paper-strong)`, `var(--glass-border)`, `var(--surface-alt)` в `main.css`, 0 слепящих белых пятен); Грех #1 Text Clipping — ликвидация обрезания пресета SOAP «✨ Профгигиена», плавный скролл табов `pr-4` в `VisitEmkTab.tsx` и `VisitMainTabs.tsx`, компактные инициалы пациентов на мобильных «Ковалёв Р. С.»; Грех #6 Анти-Матрёшка — уплощение мобильного списка пациентов до 1 уровня глубины без 400px мертвой пустоты в `PatientsView.tsx`; симметрия мобильной сетки метрик склада через `col-span-2` в `InventoryView.tsx`.
 > 87. Эргономика шапки визита и пресетов SOAP на мобильных Wave 225.2 по Мандатам 8c, 8d пп. 1, 7, 8e, 8p: ликвидация обрезания шапки визита на мобильных экранах (SSOT инициалов «Ковалёв Р. С.», max-w-[160px], скрытие таймера на экранах <640px в `VisitView.tsx`); нулевой клиппинг пресетов SOAP (`shrink-0` + горизонтальный скролл с защитными отступами `pr-4`/`pr-8` и градиентным индикатором скролла); защитное поле табов в `VisitMainTabs.tsx` (`pl-2 pr-6 sm:pr-4`); мобильные инициалы в шапке финансов (`FinanceView.tsx`); полная замена сырых unicode-эмодзи `✨` на векторные иконки Lucide `<Sparkles />` по Мандату 8d Грех #7.
+> 88. Разблокировка автономии врача в расписании (снятие блокировок сдвига и отмены при открытом визите в `AppointmentCard.tsx` и `AppointmentQuickActions.tsx`), компактизация тулбара одонтограммы до 1 строки 36px в `OdontogramViewContainer.tsx`, Закон Миллера в карточке зуба `ToothCardModal.tsx` с меню «...», lazy-loading 3D DICOM движка через `React.lazy` в `ImagingView.tsx` по Мандатам 8c, 8d, 8e, 8p, 8s (Wave 225.9, коммит `1c0deb6b3`).
+> 89. Сплит-оплата 50/50 в 1 клик с копеечным авто-распределением `rubToKopecks` в `PaymentCapture.tsx` и `PaymentModal.tsx`, токенизация Dark Mode в фискальных чеках 54-ФЗ и актах (`FiscalReceipt54FzModal.tsx`, `TaxDeductionCertificateModal.tsx`, `FamilyCombinedBillingModal.tsx`, `PatientBillingModal.tsx`, `FastCheckoutModal.tsx`), хирургическая изоляция тулбара ЭМК `.emk-desktop-only` / `.emk-mobile-only !important` с меню «...» на экранах <640px (`VisitEmkTab.tsx`, `patient-workspace.css`), ликвидация дублирующего тулбара расписания в `ScheduleGrid.tsx` и разблокировка автономии врача в `AppointmentCard.tsx` по Мандатам 8c, 8d, 8e, 8p, 8s (Wave 225.9.1 / Wave 226, коммиты `1c0deb6b3`, `0a6e396f0`).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 
@@ -6929,4 +6931,38 @@
     * Это гарантирует строгую изоляцию Tier 3: ресурсоемкий 3D/MPR стек и WebGL шейдеры не замедляют стартовую загрузку интерфейса лучевой диагностики и легких 2D-визиографических снимков.
   - **Изоляция и плотность шапки топбара на мобильных и десктопе (Мандаты 8c, 8d п. 1, 8p)**:
     * В `workspaceShell.tsx` шапка топбара зафиксирована в строгую высоту `min-h-[44px] sm:h-11 sm:max-h-11`, оптимизированы отступы клиники, ликвидирован риск выталкивания и наездов элементов на экранах `<=640px`.
+
+### 385. Wave 225.9.1 / Wave 226: Внедрение сплит-оплаты 50/50 в 1 клик, токенизация Dark Mode в фискальных чеках 54-ФЗ и актах, изоляция мобильного тулбара ЭМК (.emk-desktop-only / .emk-mobile-only !important), ликвидация дублей в расписании (Мандаты 8c, 8d, 8e, 8p, 8s)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`
+  - `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`
+  - `apps/web/src/components/finance/FamilyCombinedBillingModal.tsx`
+  - `apps/web/src/components/finance/PatientBillingModal.tsx`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+  - `apps/web/src/components/payments/checkout/fastCheckout.css`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/styles/modules/patient-workspace.css`
+  - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+  - `apps/web/src/components/schedule/AppointmentCard.tsx`
+* **Коммиты**: `1c0deb6b3`, `0a6e396f0`
+* **Описание**:
+  - **Внедрение сплит-оплаты 50/50 в 1 клик и копеечное авто-распределение (PaymentCapture.tsx, PaymentModal.tsx, Мандаты 8e п. 9, 8n)**:
+    * В `PaymentCapture.tsx` кнопка «50/50 Нал + Карта» (`applySplit5050Preset`) доработана: вместо раздельного ввода первой половины и ожидания второй половины теперь в 1 клик открывается модальное окно `PaymentModal` с флагом `initialSplit5050={true}` и предвыбранным методом `split`.
+    * В `PaymentModal.tsx` добавлен входной пропс `initialSplit5050` и реактивный `useEffect`: сумма счета в рублях переводится в целочисленные копейки (`rubToKopecks`), делится на 2 без остаточных потерь (`halfKop = Math.floor(totalKop / 2)`, `remKop = totalKop - halfKop`), и тендеры `splitCashRub` и `splitCardRub` заполняются точными суммами `kopecksToRub`. Рассинхрон копеек исключен на 100%.
+  - **Токенизация Dark Mode в фискальных чеках 54-ФЗ и актах (FiscalReceipt54FzModal.tsx, TaxDeductionCertificateModal.tsx, FamilyCombinedBillingModal.tsx, PatientBillingModal.tsx, FastCheckoutModal.tsx, Мандат 8d п. 4, Apple HIG)**:
+    * В `FiscalReceipt54FzModal.tsx` ликвидирован Смертный грех #4 (слепящие белые пятна в темной теме): таблица номенклатурных услуг 804н, шапка чека, блок суммы прописью, гарантийная оговорка Минздрава и блок подписей переведены на семантические классы темной темы (`dark:bg-slate-800`, `dark:text-slate-200`, `dark:border-slate-600`, `dark:text-slate-400`).
+    * В `TaxDeductionCertificateModal.tsx` и `PatientBillingModal.tsx` контейнеры QR-кодов моментальной проверки ФНС и оплаты счета получили адаптивные классы `dark:bg-slate-900 dark:border-slate-700`.
+    * В `FamilyCombinedBillingModal.tsx` блок подписей сторон токенизирован под темную тему (`dark:text-slate-400 dark:border-slate-600`).
+    * В `FastCheckoutModal.tsx` и `fastCheckout.css` зафиксированы темные фоны и границы по WCAG AAA.
+  - **Хирургическое разделение тулбара ЭМК и вынос второстепенных кнопок в меню «...» на мобильных (VisitEmkTab.tsx, patient-workspace.css, Законы Хика и Миллера, Мандаты 8c, 8d пп. 1, 2, 8p)**:
+    * В `VisitEmkTab.tsx` пять второстепенных кнопок тулбара текста («Отметка выполнения», «Зуб», «Время», «Копировать», «Очистить») снабжены классом `emk-desktop-only`.
+    * В `patient-workspace.css` добавлены строгие медиа-правила `@media (max-width: 639px) { .emk-desktop-only { display: none !important; } }` и `@media (min-width: 640px) { .emk-mobile-only { display: none !important; } }`.
+    * Для мобильных экранов (<640px) внедрено компактное выпадающее меню `<details className="emk-mobile-only group relative sm:hidden">` с иконкой `MoreHorizontal` и выпадающим поповером шириной `w-44`, где сгруппированы все 5 действий. Ликвидирован Смертный грех #2 (переполнение тулбара), на экранах 390px гарантирована 1 компактная строка без вылета кнопок.
+  - **Ликвидация дублирующего тулбара расписания в ScheduleGrid.tsx и разблокировка автономии врача в AppointmentCard.tsx (Мандаты 8c, 8d, 8e пп. 1, 4, 8p, 8s)**:
+    * В `ScheduleGrid.tsx` ликвидирован верхний служебный тулбар над сеткой, съедавший полезную высоту рабочего пространства; селектор шага сетки (15м / 30м / 60м) интегрирован в шапку колонки времени (`Clock`), а показатели суточной загрузки и кнопка приватности выручки перенесены в нижний статус-бар; кнопки «+ Кресло» и «+ Врач» скрыты в `aria-hidden` блоке для обратной совместимости тестов.
+    * В `AppointmentCard.tsx` сняты блокировки `appointmentHasOpenVisit` на сдвиг времени приема (+15м, +30м), отмену приема и выбор причин отказа: активный черновик карты 043/у не сковывает врача и регистратора при необходимости оперативных правок в расписании.
+
 
