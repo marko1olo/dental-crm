@@ -149,6 +149,7 @@ function setupMockDom() {
 			disabled: false,
 			value: "",
 			className: "",
+			options: [],
 			appendChild: (child: MockDomNode) => {
 				children.push(child);
 				child.parentNode = el;
@@ -665,5 +666,61 @@ describe("PaymentCapture Autonomy & Non-Blocking Guidance (Mandates 8e, 8n)", ()
 				`Button ${btn.textContent || btn.getAttribute("aria-label") || "unnamed"} missing >= 44px minHeight (style: ${btn.style.minHeight}, class: ${btn.className})`,
 			);
 		}
+	});
+
+	it("verifies 1-click combined payment presets and family wallet selection (Mandates 8e, 8n, 8k)", async () => {
+		const onAmountChange = vi.fn();
+		const onMethodChange = vi.fn();
+		const props = createBaseProps({
+			patientId: "patient-101",
+			amount: "10000",
+			remainingDebt: 10000,
+			onAmountChange,
+			onMethodChange,
+		});
+
+		await act(async () => {
+			root.render(<PaymentCapture {...props} />);
+		});
+
+		// 1. 50/50 Нал + Карта
+		const split50Btn = findNodeByTestId(container, "btn-combo-split-50-50");
+		expect(split50Btn).not.toBeNull();
+		await clickNode(split50Btn!);
+		expect(onAmountChange).toHaveBeenCalledWith("5000");
+		expect(onMethodChange).toHaveBeenCalledWith("cash");
+		expect(showToast).toHaveBeenCalledWith(
+			`Комбинированная оплата 50/50: 1-я часть (${money(5000)}, Наличные). 2-я часть (${money(5000)}, Карта) принимается следом.`,
+			"info",
+		);
+
+		// 2. Нал + Карта + Баланс
+		const splitThreeWayBtn = findNodeByTestId(container, "btn-combo-split-three-way");
+		expect(splitThreeWayBtn).not.toBeNull();
+		await clickNode(splitThreeWayBtn!);
+		expect(showToast).toHaveBeenCalledWith(
+			"Открыто окно комбинированной оплаты (Нал + Карта + Баланс)",
+			"info",
+		);
+
+		// 3. Баланс + Карта
+		const splitDepositBtn = findNodeByTestId(container, "btn-combo-split-deposit-card");
+		expect(splitDepositBtn).not.toBeNull();
+		await clickNode(splitDepositBtn!);
+		expect(showToast).toHaveBeenCalledWith(
+			"Открыто окно комбинированной оплаты (Баланс + Карта)",
+			"info",
+		);
+
+		// 4. Family wallet method selection in 1 click
+		const familyWalletMethodBtn = findNodeByTestId(container, "payment-method-family_wallet");
+		expect(familyWalletMethodBtn).not.toBeNull();
+		await clickNode(familyWalletMethodBtn!);
+		expect(onMethodChange).toHaveBeenCalledWith("family_wallet");
+
+		// 5. Split modal button in action bar
+		const splitModalBtn = findNodeByTestId(container, "payment-split-modal-button");
+		expect(splitModalBtn).not.toBeNull();
+		expect(isNodeDisabled(splitModalBtn)).toBe(false);
 	});
 });

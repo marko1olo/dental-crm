@@ -10,6 +10,7 @@ import { Banknote, Bot, Coins, CreditCard, QrCode, UserRound } from "lucide-reac
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
+import { PaymentModal } from "./components/finance/PaymentModal";
 import { showToast } from "./components/GlobalToast";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
@@ -74,8 +75,9 @@ type PaymentCaptureProps = {
 const visiblePaymentMethods: PaymentMethod[] = [
 	"cash",
 	"card",
-	"bank_transfer",
+	"family_wallet",
 	"online",
+	"bank_transfer",
 ];
 
 const digitsOnly = (value: string, maxLength: number) =>
@@ -729,6 +731,7 @@ export function PaymentCapture({
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [isSberPosModalOpen, setIsSberPosModalOpen] = useState(false);
+	const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
 	const [receivedCash, setReceivedCash] = useState<string>("");
 
 	const handleSmartDictation = (text: string) => {
@@ -908,6 +911,67 @@ export function PaymentCapture({
 				"warning",
 			);
 		}
+	};
+
+	const applySplit5050Preset = () => {
+		const effectiveTotal =
+			normalizeRubAmountInput(amount) ??
+			(remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
+		if (effectiveTotal <= 0) {
+			showToast(
+				"Укажите сумму или выберите пациента с долгом для расчета 50/50",
+				"warning",
+			);
+			return;
+		}
+		const half1 = Math.floor(effectiveTotal / 2);
+		const half2 = effectiveTotal - half1;
+		onAmountChange(rubAmountForInput(half1));
+		onMethodChange("cash");
+		showToast(
+			`Комбинированная оплата 50/50: 1-я часть (${money(half1)}, Наличные). 2-я часть (${money(half2)}, Карта) принимается следом.`,
+			"info",
+			5000,
+		);
+	};
+
+	const applyThreeWaySplitPreset = () => {
+		const effectiveTotal =
+			normalizeRubAmountInput(amount) ??
+			(remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
+		if (!patientId && effectiveTotal <= 0) {
+			showToast(
+				"Выберите пациента или укажите сумму для комбинированной оплаты",
+				"warning",
+			);
+			return;
+		}
+		setIsSplitModalOpen(true);
+		showToast("Открыто окно комбинированной оплаты (Нал + Карта + Баланс)", "info", 3000);
+	};
+
+	const applyDepositPlusCardPreset = () => {
+		const effectiveTotal =
+			normalizeRubAmountInput(amount) ??
+			(remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
+		if (!patientId && effectiveTotal <= 0) {
+			showToast(
+				"Выберите пациента или укажите сумму для комбинированной оплаты",
+				"warning",
+			);
+			return;
+		}
+		setIsSplitModalOpen(true);
+		showToast("Открыто окно комбинированной оплаты (Баланс + Карта)", "info", 3000);
+	};
+
+	const handleOpenSplitModal = () => {
+		if (isSaving) return;
+		if (!patientId) {
+			showToast("Выберите пациента для проведения платежа", "warning");
+			return;
+		}
+		setIsSplitModalOpen(true);
 	};
 
 	const handlePrimarySubmit = () => {
@@ -1319,6 +1383,54 @@ export function PaymentCapture({
 				</div>
 			</div>
 
+			{/* Комбинированная оплата в 1 клик (Мандаты 8e, 8n, 8k: нал + карта + баланс без трения) */}
+			<div
+				className="combined-payment-presets-section col-span-full"
+				style={{ gridColumn: "1 / -1", marginTop: "2px", marginBottom: "2px" }}
+				data-testid="combined-payment-presets-section"
+			>
+				<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
+					Комбинированная оплата в 1 клик:
+				</span>
+				<div
+					role="toolbar"
+					className="quick-chips-row combined-payment-chips"
+					style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}
+					aria-label="Комбинированная оплата в 1 клик"
+				>
+					<button
+						type="button"
+						className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-400 hover:bg-indigo-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
+						onClick={applySplit5050Preset}
+						data-testid="btn-combo-split-50-50"
+						title="Комбинированная оплата: 50% Наличные + 50% Карта"
+					>
+						<Coins size={13} className="shrink-0" />
+						<span>50/50 Нал + Карта</span>
+					</button>
+					<button
+						type="button"
+						className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-400 hover:bg-teal-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
+						onClick={applyThreeWaySplitPreset}
+						data-testid="btn-combo-split-three-way"
+						title="Комбинированная оплата в 1 клик: Нал + Карта + Баланс"
+					>
+						<UserRound size={13} className="shrink-0" />
+						<span>Нал + Карта + Баланс</span>
+					</button>
+					<button
+						type="button"
+						className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400 hover:bg-purple-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
+						onClick={applyDepositPlusCardPreset}
+						data-testid="btn-combo-split-deposit-card"
+						title="Комбинированная оплата: Баланс + Карта"
+					>
+						<CreditCard size={13} className="shrink-0" />
+						<span>Баланс + Карта</span>
+					</button>
+				</div>
+			</div>
+
 			<div
 				role="toolbar"
 				className="quick-chips-row payment-methods-toolbar col-span-full"
@@ -1342,14 +1454,20 @@ export function PaymentCapture({
 							type="button"
 							aria-pressed={isActive}
 							onClick={() => onMethodChange(paymentMethod)}
+							data-testid={`payment-method-${paymentMethod}`}
 						>
 							<span className="sm:hidden">
 								{paymentMethod === "bank_transfer"
 									? "Перевод"
-									: methodLabels[paymentMethod]}
+									: paymentMethod === "family_wallet"
+										? "Баланс"
+										: methodLabels[paymentMethod] || paymentMethod}
 							</span>
 							<span className="hidden sm:inline">
-								{methodLabels[paymentMethod]}
+								{methodLabels[paymentMethod] ||
+									(paymentMethod === "family_wallet"
+										? "Баланс / Аванс"
+										: paymentMethod)}
 							</span>
 						</button>
 					);
@@ -1570,6 +1688,21 @@ export function PaymentCapture({
 						<span className="sm:hidden">Сбер POS</span>
 						<span className="hidden sm:inline">Оплата картой (Сбербанк POS / QR)</span>
 					</button>
+					<button
+						className="secondary-button min-h-[44px] sm:min-h-[38px] sm:h-9.5 flex-1 font-semibold text-xs"
+						type="button"
+						onClick={handleOpenSplitModal}
+						aria-describedby={
+							!paymentReadyToSubmit ? paymentMissingId : undefined
+						}
+						disabled={isSaving}
+						data-testid="payment-split-modal-button"
+						title="Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
+					>
+						<Coins aria-hidden="true" size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />{" "}
+						<span className="sm:hidden">Сплит</span>
+						<span className="hidden sm:inline">Комбо (Сплит)</span>
+					</button>
 				</div>
 			</div>
 			{patientId && (
@@ -1604,6 +1737,33 @@ export function PaymentCapture({
 						showToast(
 							`Оплата ${(response.amountKop / 100).toLocaleString("ru-RU")} ₽ через терминал Сбербанка (${response.cardIssuer}) успешно зафиксирована. RRN: ${response.rrn}`,
 							"success",
+						);
+					}}
+				/>
+			)}
+			{patientId && (
+				<PaymentModal
+					isOpen={isSplitModalOpen}
+					onClose={() => setIsSplitModalOpen(false)}
+					patientId={patientId || undefined}
+					patientName={patientDefaults?.fullName || payerFullName || undefined}
+					amountRub={
+						normalizeRubAmountInput(amount) ??
+						(remainingDebt && remainingDebt > 0 ? remainingDebt : undefined)
+					}
+					patientDebtRub={remainingDebt && remainingDebt > 0 ? remainingDebt : undefined}
+					cashierName={fiscalCashierName || undefined}
+					defaultMethod="split"
+					onSuccess={(paymentData) => {
+						setIsSplitModalOpen(false);
+						onAmountChange("");
+						const formattedAmount = paymentData.amountKopecks
+							? money(Math.round(paymentData.amountKopecks / 100))
+							: "";
+						showToast(
+							`Комбинированная оплата ${formattedAmount} успешно зафиксирована.`,
+							"success",
+							4000,
 						);
 					}}
 				/>
