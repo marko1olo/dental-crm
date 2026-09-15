@@ -6864,3 +6864,39 @@
   - **Аудит 043/у и ИДС**: Зачистка стационарного академического мусора в медицинских документах.
   - **Оптимизация мобильных тулбаров ЭМК на 390px**: Обеспечение адаптивности и нормативных тач-таргетов >=44px.
   - **Зачистка процедурных диорам в аналитике**: Удаление фейковых графиков и синтетических моков по Мандату 8s.
+
+### 384. Wave 225.8: Ликвидация дефектов телефонии (сохранение шторки звонка, автономия 043/у), онлайн-запись соло-врача без выбора филиала, искоренение эмодзи в справках 1151156 и памятках, токенизация Dark Mode в selfCheckin (Мандаты 8c, 8d, 8e, 8k, 8n, 8p)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/telephony/IncomingCallPopup.tsx`
+  - `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx`
+  - `apps/web/src/store/telephonyStore.ts`
+  - `apps/web/src/workspaceShell.tsx`
+  - `apps/web/src/components/booking/PublicOnlineBookingWidget.tsx`
+  - `apps/web/src/components/booking/__tests__/PublicOnlineBookingWidget.test.tsx`
+  - `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`
+  - `apps/web/src/components/portal/patientCabinet/patientCabinetEngine.ts`
+  - `apps/web/src/components/portal/patientCabinet/patientCareInstructionsEngine.ts`
+  - `apps/web/src/components/portal/patientCabinet/__tests__/patientCareInstructionsAndBilling.test.ts`
+  - `apps/web/src/components/portal/selfCheckin/selfCheckin.css`
+* **Коммиты**: `bad2e9296` + `9daf04581`
+* **Описание**:
+  - **Ликвидация дефектов телефонии и защита автономии дневника 043/у (IncomingCallPopup.tsx, TelephonyFloatingWidget.tsx, telephonyStore.ts, workspaceShell.tsx, Мандаты 8c, 8d, 8e, 8p)**:
+    * *Сохранение шторки звонка в глобальном сторе*: Ранее шторка входящего звонка (`isDrawerOpen`) управлялась локальным `useState` внутри модального окна, из-за чего при принятии звонка или переключении экранов компонент размонтировался, а открытая шторка с контекстом звонящего пациента закрывалась. Состояние шторки вынесено в центральный Zustand-стор `useTelephonyStore`: добавлены флаг `isCallDrawerOpen: boolean` и экшены `openCallDrawer()`, `closeCallDrawer()`, `toggleCallDrawer()`, `setIsCallDrawerOpen(open)`. Шторка звонка сохраняет непрерывное состояние независимо от активного экрана.
+    * *Автономия врача и защита активного визита 043/у (Мандат 8e п. 1, 6)*: В `TelephonyFloatingWidget.tsx` устранен деструктивный вызов `setCurrentView("patients")` / `setCurrentView("schedule")` при ответе на звонок или клике «Открыть карту» / «Создать». Ранее это приводило к принудительному размонтированию экрана визита врача, ведущего прием, и риску потери несохраненного текста дневника 043/у. Теперь при звонке открывается неразрушающая боковая шторка `openCallDrawer()`, а черновик записи создается в фоновом сторе с информативным уведомлением `showToast("Создан черновик записи: ... (сохранён в расписании)", "info")`, сохраняя сессию врача на 100%.
+    * *Сжатие кнопок и ликвидация визуального блоата по Законам Хика и Миллера (Мандаты 8c, 8d п. 2–3, 8p)*: В `IncomingCallPopup.tsx` удален частокол избыточных кнопок — убраны раздутые кнопки быстрой записи «Сегодня 15:00» и «Завтра 11:00», загромождавшие рабочее пространство; секция фиксации исхода звонка («Записан на приём», «Перезвонить 15м», «Консультация», «Спам / Ошибка») упакована в элегантный сворачиваемый аккордеон `showOutcomePanel` с шевроном `ChevronDown` (Tier 2 по Мандату 8c); кнопки WebRTC SIP-трансфера приведены к компактной нормативной высоте `min-h-[40px]`; в `workspaceShell.tsx` индикатор активного звонка в шапке теперь учитывает `isCallDrawerOpen`.
+  - **Онлайн-запись соло-врача без выбора филиала (PublicOnlineBookingWidget.tsx, PublicOnlineBookingWidget.test.tsx, Мандаты 8e, 8k, 8n)**:
+    * *Bypass выбора филиала*: Для соло-врача на аренде кресла или небольшой клиники с 1 филиалом (`customBranches.length <= 1`) шаг выбора филиала являлся лишним бюрократическим барьером. Внедрен автоматический автовыбор филиала через `useEffect` (`if (customBranches.length <= 1 && ...) setSelectedBranchId(customBranches[0].id)`);
+    * Сетка филиалов на Шаге 1 рендерится только при наличии нескольких филиалов (`customBranches.length > 1`), а для соло-врача отображается компактный информационный бейдж с адресом (`dbw-single-branch-info`), пациент сразу выбирает направление стоматологии без лишних кликов;
+    * Заголовок шага адаптируется: «Шаг 1 из 4: Выбор услуги» вместо «Выбор филиала и услуги»;
+    * Написан полный комплект тестов автопропуска филиала в `PublicOnlineBookingWidget.test.tsx`.
+  - **Искоренение сырых эмодзи в медицинских документах ФНС 1151156 и памятках пациента (PatientCabinetModal.tsx, patientCabinetEngine.ts, patientCareInstructionsEngine.ts, Мандаты 8d п. 7, 8e, Apple HIG)**:
+    * Согласно Греху #7 Мандата 8d, официальные медицинские и финансовые бланки РФ не должны содержать неформальных эмодзи;
+    * В `patientCabinetEngine.ts` сырые значки `📑`, `🏛️`, `💳` в инструкции по налоговому вычету заменены на векторные маркеры Lucide `FileText`, `Building2`, `CreditCard`;
+    * В `patientCareInstructionsEngine.ts` из категорий детализированного счета удалены эмодзи `🦷`, `💉`, `📷`, `🪥`, `🔩`, `👑`, `🩹`, `📐`, `✨`, замененные на векторные иконки Lucide `Syringe`, `Camera`, `Activity`, `Sparkles`, `Shield`, `Crown`, `Ruler`, `FileText`;
+    * В шаблоне счета для мессенджеров `generateFriendlyBillingWhatsAppMessage` удалены эмодзи `👋`, `✨`, `📞`, стиль приведен к профессиональному стандарту;
+    * В `PatientCabinetModal.tsx` обеспечен рендеринг векторных SVG-иконок Lucide в блоке налогового вычета.
+  - **Токенизация Dark Mode в selfCheckin (selfCheckin.css, Мандаты 8c, 8d п. 4)**:
+    * Ликвидирован Смертный грех #4 (слепящие белые пятна в темной теме): все жестко зашитые hex-цвета `#ffffff`, `#f8fafc`, `#e2e8f0`, `#334155`, `#0f172a` переведены на семантические переменные дизайн-системы `var(--paper)`, `var(--paper-strong)`, `var(--paper-muted)`, `var(--ink)`, `var(--muted)`, `var(--glass-border)`, `var(--teal)`;
+    * Реализованы полноценные селекторы для темной темы `[data-theme="dark"]` и `.dark`: модальное окно регистрации, шапка, полоса шагов, карточки согласий ИДС, опросника соматики, блок цифровой подписи на канвасе (`.signature-pad-canvas-wrapper`) и талон на прием с QR-кодом (`.selfcheckin-pass-card`, `.selfcheckin-pass-qr`) теперь безупречно отображаются в темной теме с соблюдением контрастности WCAG AAA.
+
