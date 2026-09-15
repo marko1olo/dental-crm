@@ -1,18 +1,26 @@
 import {
-	type PaymentMethod,
 	calculateCashChange,
 	getCashPresetSuggestions,
+	type PaymentMethod,
 	parseKopecks,
 	percentageOfKopecks,
 	splitKopecks,
 } from "@dental/shared";
-import { Banknote, Bot, Coins, CreditCard, QrCode, UserRound, MoreVertical } from "lucide-react";
+import {
+	Banknote,
+	Bot,
+	Coins,
+	CreditCard,
+	MoreVertical,
+	QrCode,
+	UserRound,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
-import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
 import { PaymentModal } from "./components/finance/PaymentModal";
 import { showToast } from "./components/GlobalToast";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
+import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
@@ -852,9 +860,7 @@ export function PaymentCapture({
 		taxDeductionRequested && !fiscalReceiptIssuedAt.trim()
 			? "дата фискального чека"
 			: null,
-		taxDeductionRequested && !payerFullName.trim()
-			? "ФИО плательщика"
-			: null,
+		taxDeductionRequested && !payerFullName.trim() ? "ФИО плательщика" : null,
 		taxDeductionRequested && !payerBirthDate.trim()
 			? "дата рождения плательщика"
 			: null,
@@ -865,7 +871,8 @@ export function PaymentCapture({
 			? "родство плательщика"
 			: null,
 	].filter((step): step is string => Boolean(step));
-	const isTaxDeductionDraft = taxDeductionRequested && taxDeductionMissingSteps.length > 0;
+	const isTaxDeductionDraft =
+		taxDeductionRequested && taxDeductionMissingSteps.length > 0;
 
 	const applyDoctorDiscount = (preset: DoctorDiscountPreset) => {
 		if (selectedDoctorDiscount === preset) {
@@ -958,7 +965,11 @@ export function PaymentCapture({
 			return;
 		}
 		setIsSplitModalOpen(true);
-		showToast("Открыто окно комбинированной оплаты (Нал + Карта + Баланс)", "info", 3000);
+		showToast(
+			"Открыто окно комбинированной оплаты (Нал + Карта + Баланс)",
+			"info",
+			3000,
+		);
 	};
 
 	const applyDepositPlusCardPreset = () => {
@@ -973,7 +984,11 @@ export function PaymentCapture({
 			return;
 		}
 		setIsSplitModalOpen(true);
-		showToast("Открыто окно комбинированной оплаты (Баланс + Карта)", "info", 3000);
+		showToast(
+			"Открыто окно комбинированной оплаты (Баланс + Карта)",
+			"info",
+			3000,
+		);
 	};
 
 	const handleOpenSplitModal = () => {
@@ -1217,7 +1232,11 @@ export function PaymentCapture({
 							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("5000 наличными")}
 						>
-							<Banknote size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+							<Banknote
+								size={12}
+								className="text-emerald-600 dark:text-emerald-400 shrink-0"
+								aria-hidden="true"
+							/>
 							<span className="sm:hidden">5000 нал</span>
 							<span className="hidden sm:inline">5000 наличными</span>
 						</button>
@@ -1226,7 +1245,11 @@ export function PaymentCapture({
 							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("15000 по карте")}
 						>
-							<CreditCard size={12} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							<CreditCard
+								size={12}
+								className="text-teal-600 dark:text-teal-400 shrink-0"
+								aria-hidden="true"
+							/>
 							<span className="sm:hidden">15000 карта</span>
 							<span className="hidden sm:inline">15000 картой</span>
 						</button>
@@ -1235,13 +1258,20 @@ export function PaymentCapture({
 							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("20000 сбп, вычет")}
 						>
-							<QrCode size={12} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
+							<QrCode
+								size={12}
+								className="text-indigo-600 dark:text-indigo-400 shrink-0"
+								aria-hidden="true"
+							/>
 							<span className="sm:hidden">20000 СБП</span>
 							<span className="hidden sm:inline">20000 СБП + вычет</span>
 						</button>
 					</div>
 					{showSmartPreview && smartParsedData && (
-						<div className="col-span-full" style={{ gridColumn: "1 / -1", marginBottom: "8px" }}>
+						<div
+							className="col-span-full"
+							style={{ gridColumn: "1 / -1", marginBottom: "8px" }}
+						>
 							<SmartParsePreview
 								parsedData={smartParsedData}
 								rawText={smartInputText}
@@ -1276,7 +1306,9 @@ export function PaymentCapture({
 								pattern="[0-9\s]*"
 								aria-label="Сумма оплаты"
 								aria-invalid={paymentAmountInvalid || undefined}
-								aria-describedby={paymentAmountInvalid ? paymentMissingId : undefined}
+								aria-describedby={
+									paymentAmountInvalid ? paymentMissingId : undefined
+								}
 								value={amount}
 								onChange={(event) => onAmountChange(event.target.value)}
 								placeholder="0 ₽"
@@ -1309,7 +1341,9 @@ export function PaymentCapture({
 									<button
 										type="button"
 										className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 font-bold text-xs shrink-0 bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
-										onClick={() => onAmountChange(rubAmountForInput(remainingDebt))}
+										onClick={() =>
+											onAmountChange(rubAmountForInput(remainingDebt))
+										}
 									>
 										Долг: {money(remainingDebt)}
 									</button>
@@ -1485,83 +1519,89 @@ export function PaymentCapture({
 				})}
 			</div>
 
-			{method === "cash" && (normalizeRubAmountInput(amount) ?? 0) > 0 && (() => {
-				const requiredRub = normalizeRubAmountInput(amount) ?? 0;
-				const tenderedRub = normalizeRubAmountInput(receivedCash) ?? requiredRub;
-				const changeCalc = calculateCashChange(requiredRub, tenderedRub);
-				const presets = getCashPresetSuggestions(requiredRub);
+			{method === "cash" &&
+				(normalizeRubAmountInput(amount) ?? 0) > 0 &&
+				(() => {
+					const requiredRub = normalizeRubAmountInput(amount) ?? 0;
+					const tenderedRub =
+						normalizeRubAmountInput(receivedCash) ?? requiredRub;
+					const changeCalc = calculateCashChange(requiredRub, tenderedRub);
+					const presets = getCashPresetSuggestions(requiredRub);
 
-				return (
-					<div
-						className="col-span-full p-3 mb-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/30 space-y-2"
-						style={{ gridColumn: "1 / -1" }}
-						data-testid="cash-change-hud"
-					>
-						<div className="flex items-center justify-between gap-2 flex-wrap">
-							<span className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
-								<Coins size={18} className="text-[var(--teal-dark)]" />
-								Калькулятор сдачи (Наличные)
-							</span>
-							{changeCalc.changeRub > 0 ? (
-								<span className="font-mono font-black text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-[var(--teal-dark)] text-white shadow-sm">
-									Сдача: {changeCalc.changeRub.toLocaleString("ru-RU")} ₽
+					return (
+						<div
+							className="col-span-full p-3 mb-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/30 space-y-2"
+							style={{ gridColumn: "1 / -1" }}
+							data-testid="cash-change-hud"
+						>
+							<div className="flex items-center justify-between gap-2 flex-wrap">
+								<span className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
+									<Coins size={18} className="text-[var(--teal-dark)]" />
+									Калькулятор сдачи (Наличные)
 								</span>
-							) : changeCalc.isShortage ? (
-								<span className="font-mono font-bold text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white shadow-sm">
-									Не хватает: {changeCalc.shortageRub.toLocaleString("ru-RU")} ₽
-								</span>
-							) : (
-								<span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-									Без сдачи
-								</span>
-							)}
-						</div>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-							<div className="smart-field no-float">
-								<input
-									id="payment-tendered-cash-input"
-									inputMode="numeric"
-									pattern="[0-9\s]*"
-									placeholder={`${requiredRub} ₽`}
-									value={receivedCash}
-									onChange={(e) => setReceivedCash(e.target.value)}
-									className="text-right font-mono font-bold text-base min-h-[44px]"
-								/>
-								<label htmlFor="payment-tendered-cash-input">Получено купюрами (₽)</label>
+								{changeCalc.changeRub > 0 ? (
+									<span className="font-mono font-black text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-[var(--teal-dark)] text-white shadow-sm">
+										Сдача: {changeCalc.changeRub.toLocaleString("ru-RU")} ₽
+									</span>
+								) : changeCalc.isShortage ? (
+									<span className="font-mono font-bold text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white shadow-sm">
+										Не хватает: {changeCalc.shortageRub.toLocaleString("ru-RU")}{" "}
+										₽
+									</span>
+								) : (
+									<span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+										Без сдачи
+									</span>
+								)}
 							</div>
 
-							<div className="space-y-1.5">
-								<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
-									Быстрый выбор купюры:
-								</span>
-								<div className="flex flex-wrap gap-2">
-									<button
-										type="button"
-										className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-dark)] text-white hover:brightness-110 active:brightness-95 shadow-sm cursor-pointer"
-										onClick={() => setReceivedCash(String(requiredRub))}
-									>
-										Без сдачи ({requiredRub.toLocaleString("ru-RU")} ₽)
-									</button>
-									{Array.from(new Set([500, 1000, 2000, 5000, ...presets]))
-										.filter((p) => p >= requiredRub)
-										.slice(0, 5)
-										.map((preset) => (
-											<button
-												key={preset}
-												type="button"
-												className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] shadow-sm cursor-pointer"
-												onClick={() => setReceivedCash(String(preset))}
-											>
-												{preset.toLocaleString("ru-RU")} ₽
-											</button>
-										))}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+								<div className="smart-field no-float">
+									<input
+										id="payment-tendered-cash-input"
+										inputMode="numeric"
+										pattern="[0-9\s]*"
+										placeholder={`${requiredRub} ₽`}
+										value={receivedCash}
+										onChange={(e) => setReceivedCash(e.target.value)}
+										className="text-right font-mono font-bold text-base min-h-[44px]"
+									/>
+									<label htmlFor="payment-tendered-cash-input">
+										Получено купюрами (₽)
+									</label>
+								</div>
+
+								<div className="space-y-1.5">
+									<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
+										Быстрый выбор купюры:
+									</span>
+									<div className="flex flex-wrap gap-2">
+										<button
+											type="button"
+											className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-dark)] text-white hover:brightness-110 active:brightness-95 shadow-sm cursor-pointer"
+											onClick={() => setReceivedCash(String(requiredRub))}
+										>
+											Без сдачи ({requiredRub.toLocaleString("ru-RU")} ₽)
+										</button>
+										{Array.from(new Set([500, 1000, 2000, 5000, ...presets]))
+											.filter((p) => p >= requiredRub)
+											.slice(0, 5)
+											.map((preset) => (
+												<button
+													key={preset}
+													type="button"
+													className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] shadow-sm cursor-pointer"
+													onClick={() => setReceivedCash(String(preset))}
+												>
+													{preset.toLocaleString("ru-RU")} ₽
+												</button>
+											))}
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				);
-			})()}
+					);
+				})()}
 			<FiscalDetails
 				fiscalCashierName={fiscalCashierName}
 				fiscalDetailsOpen={fiscalDetailsOpen}
@@ -1631,7 +1671,11 @@ export function PaymentCapture({
 					data-testid="payment-tax-draft-hint"
 				>
 					<span className="font-bold">Налоговый вычет (черновик): </span>
-					<span>Оплата не блокируется. Для формирования справки ФНС не хватает: {taxDeductionMissingSteps.join(", ")} (можно заполнить позже в карточке пациента).</span>
+					<span>
+						Оплата не блокируется. Для формирования справки ФНС не хватает:{" "}
+						{taxDeductionMissingSteps.join(", ")} (можно заполнить позже в
+						карточке пациента).
+					</span>
 				</div>
 			) : null}
 			<p className="payment-capture-safeguard text-[10px] text-[var(--muted)] my-0.5 hidden sm:block">
@@ -1642,19 +1686,19 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full max-md:fixed max-md:bottom-[calc(60px+env(safe-area-inset-bottom,0px))] max-md:left-0 max-md:right-0 max-md:z-[9999] max-md:bg-[var(--paper)] max-md:p-2 max-md:border-t max-md:border-[var(--line)] max-md:shadow-lg max-md:flex max-md:flex-row max-md:items-center max-md:justify-between max-md:gap-2 max-md:box-border"
+				className="payment-checkout-bar col-span-full max-sm:fixed max-sm:bottom-[calc(60px+env(safe-area-inset-bottom,0px))] max-sm:left-0 max-sm:right-0 max-sm:z-[9999] max-sm:bg-[var(--paper)] max-sm:p-3 max-sm:border-t max-sm:border-[var(--line)] max-sm:shadow-lg max-sm:flex max-sm:flex-col max-sm:gap-2 max-sm:box-border sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-2"
 				style={{ gridColumn: "1 / -1" }}
 				data-testid="payment-checkout-bar"
 			>
 				{/* Итого к списанию / оплате по 54-ФЗ */}
 				<div
-					className="payment-total-due-banner flex items-center justify-between px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-1 sm:mb-1.5 max-md:mb-0 max-md:p-0 max-md:bg-transparent max-md:border-none max-md:flex-col max-md:items-start max-md:shrink-0 max-md:min-w-[80px]"
+					className="payment-total-due-banner flex items-center justify-between px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-1 sm:mb-0 max-sm:w-full max-sm:bg-transparent max-sm:border-none max-sm:p-0"
 					data-testid="payment-total-due-banner"
 				>
-					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-md:text-[9.5px] max-md:leading-none whitespace-nowrap">
+					<span className="text-sm sm:text-xs font-bold text-[var(--muted)] max-sm:text-sm max-sm:leading-none whitespace-nowrap">
 						Итого к списанию:
 					</span>
-					<span className="text-base sm:text-base font-black font-mono text-[var(--ink)] max-md:text-sm max-md:leading-tight whitespace-nowrap">
+					<span className="text-xl sm:text-base font-black font-mono text-[var(--ink)] max-sm:text-xl max-sm:leading-tight whitespace-nowrap max-sm:text-right flex-1">
 						{amount && normalizeRubAmountInput(amount) !== null
 							? `${(normalizeRubAmountInput(amount) ?? 0).toLocaleString("ru-RU")} ₽`
 							: remainingDebt && remainingDebt > 0
@@ -1664,7 +1708,7 @@ export function PaymentCapture({
 				</div>
 
 				<div
-					className="payment-actions max-md:flex-1 max-md:min-w-0"
+					className="payment-actions max-sm:w-full max-sm:flex max-sm:flex-row max-sm:gap-2"
 					style={{
 						display: "flex",
 						gap: "6px",
@@ -1686,7 +1730,7 @@ export function PaymentCapture({
 						<span>{isSaving ? "Записываю..." : "Принять оплату"}</span>
 					</button>
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs"
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:hidden"
 						type="button"
 						onClick={handleSberPosClick}
 						aria-describedby={
@@ -1696,8 +1740,9 @@ export function PaymentCapture({
 						data-testid="payment-sberpos-button"
 					>
 						<CreditCard aria-hidden="true" size={15} className="shrink-0" />{" "}
-						<span className="sm:hidden">Сбер POS</span>
-						<span className="hidden sm:inline">Оплата картой (Сбербанк POS / QR)</span>
+						<span className="hidden sm:inline">
+							Оплата картой (Сбербанк POS / QR)
+						</span>
 					</button>
 					<div className="relative shrink-0">
 						<button
@@ -1709,13 +1754,32 @@ export function PaymentCapture({
 							disabled={isSaving}
 							title="Дополнительные способы оплаты"
 						>
-							<MoreVertical size={16} className="shrink-0 text-[var(--muted)]" />
+							<MoreVertical
+								size={16}
+								className="shrink-0 text-[var(--muted)]"
+							/>
 						</button>
 						{isMoreActionsOpen && (
 							<div
 								className="absolute right-0 bottom-full mb-1 w-48 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
 								role="menu"
 							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreActionsOpen(false);
+										handleSberPosClick();
+									}}
+									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+									disabled={isSaving}
+								>
+									<CreditCard
+										size={15}
+										className="shrink-0 text-[var(--teal)]"
+									/>
+									<span>Сбер POS</span>
+								</button>
 								<button
 									type="button"
 									onClick={() => {
@@ -1728,7 +1792,10 @@ export function PaymentCapture({
 									data-testid="payment-split-modal-button"
 									title="Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
 								>
-									<Coins size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+									<Coins
+										size={15}
+										className="shrink-0 text-indigo-600 dark:text-indigo-400"
+									/>
 									<span>Комбо (Сплит)</span>
 								</button>
 							</div>
@@ -1740,16 +1807,21 @@ export function PaymentCapture({
 				<SberPosTerminalModal
 					isOpen={isSberPosModalOpen}
 					onClose={() => setIsSberPosModalOpen(false)}
-					totalBillKop={
-						Math.round(
-							Number(
-								normalizeRubAmountInput(amount) ??
-									(remainingDebt && remainingDebt > 0 ? remainingDebt : 0),
-							) * 100,
-						)
-					}
+					totalBillKop={Math.round(
+						Number(
+							normalizeRubAmountInput(amount) ??
+								(remainingDebt && remainingDebt > 0 ? remainingDebt : 0),
+						) * 100,
+					)}
 					patientName={patientDefaults?.fullName || payerFullName || "Пациент"}
-					orderId={`CHK-2026-${patientId ? patientId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() : "891"}`}
+					orderId={`CHK-2026-${
+						patientId
+							? patientId
+									.replace(/[^a-zA-Z0-9]/g, "")
+									.slice(0, 6)
+									.toUpperCase()
+							: "891"
+					}`}
 					initialOperation={method === "online" ? "sberpay_qr" : "sale"}
 					onSelectAlternativeMethod={(altMethod) => {
 						if (altMethod === "sbp") onMethodChange("online");
@@ -1782,7 +1854,9 @@ export function PaymentCapture({
 						normalizeRubAmountInput(amount) ??
 						(remainingDebt && remainingDebt > 0 ? remainingDebt : undefined)
 					}
-					patientDebtRub={remainingDebt && remainingDebt > 0 ? remainingDebt : undefined}
+					patientDebtRub={
+						remainingDebt && remainingDebt > 0 ? remainingDebt : undefined
+					}
 					cashierName={fiscalCashierName || undefined}
 					defaultMethod="split"
 					onSuccess={(paymentData) => {

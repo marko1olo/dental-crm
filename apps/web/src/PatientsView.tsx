@@ -27,10 +27,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
-import type {
-	ChangeEvent,
-	KeyboardEvent as ReactKeyboardEvent,
-} from "react";
+import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
@@ -38,12 +35,15 @@ import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { LoyaltyProgramModal } from "./components/loyalty/program/LoyaltyProgramModal";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
+import { printBlankMedicalContract } from "./components/patients/blankContractPrint";
 import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
-import { PatientCreationModal, PatientCreationModal as CreatePatientModal } from "./components/patients/PatientCreationModal";
 import { PatientCardModal } from "./components/patients/PatientCardModal";
+import {
+	PatientCreationModal as CreatePatientModal,
+	PatientCreationModal,
+} from "./components/patients/PatientCreationModal";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
-import { printBlankMedicalContract } from "./components/patients/blankContractPrint";
 import {
 	featureDistinguishes,
 	patientListFeatureSalience,
@@ -75,7 +75,10 @@ export type PatientCoreDraft = {
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays" | "isAnonymous" | "anonymousCode" | "decree659Compliance"
+		| "preferredAppointmentWeekdays"
+		| "isAnonymous"
+		| "anonymousCode"
+		| "decree659Compliance"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
@@ -150,10 +153,7 @@ export async function executePatientCoreSaveAutonomy({
 		return { executed: false, reason: "missing_name" as const };
 	}
 	if (!patientCoreDirty) {
-		showToastFn(
-			"Данные пациента актуальны (нет несохранённых правок)",
-			"info",
-		);
+		showToastFn("Данные пациента актуальны (нет несохранённых правок)", "info");
 		return { executed: false, reason: "not_dirty" as const };
 	}
 	try {
@@ -219,8 +219,18 @@ export function executeOpenPatientVisitAutonomy({
 	selectedPatient,
 	setSelectedPatientId = (id: string) =>
 		usePatientStore.getState().setSelectedPatientId(id),
-	setCurrentView = (view: "visit" | "patients" | "schedule" | "finance" | "warehouse" | "analytics" | "tasks" | "settings" | "audit") =>
-		useAppStore.getState().setCurrentView(view),
+	setCurrentView = (
+		view:
+			| "visit"
+			| "patients"
+			| "schedule"
+			| "finance"
+			| "warehouse"
+			| "analytics"
+			| "tasks"
+			| "settings"
+			| "audit",
+	) => useAppStore.getState().setCurrentView(view),
 	showToastFn = showToast,
 }: {
 	selectedPatient: Patient | null | undefined;
@@ -241,10 +251,7 @@ export function executeOpenPatientVisitAutonomy({
 	}
 	setSelectedPatientId(selectedPatient.id);
 	setCurrentView("visit");
-	showToastFn(
-		`Открыт приём 043/у: ${selectedPatient.fullName}`,
-		"success",
-	);
+	showToastFn(`Открыт приём 043/у: ${selectedPatient.fullName}`, "success");
 	return { executed: true, reason: "visit_opened" as const };
 }
 
@@ -252,8 +259,7 @@ export function executeBookPatientAppointmentAutonomy({
 	selectedPatient,
 	setNewAppointmentDraft = (draft: any) =>
 		useScheduleStore.getState().setNewAppointmentDraft(draft),
-	setCurrentView = (view: any) =>
-		useAppStore.getState().setCurrentView(view),
+	setCurrentView = (view: any) => useAppStore.getState().setCurrentView(view),
 	showToastFn = showToast,
 }: {
 	selectedPatient: Patient | null | undefined;
@@ -308,7 +314,10 @@ export function executePatientSomaticNormAutonomy({
 }: {
 	selectedPatient: Patient | null | undefined;
 	currentNotes?: string;
-	updatePatientCoreDraft?: (field: keyof PatientCoreDraft, value: string) => void;
+	updatePatientCoreDraft?: (
+		field: keyof PatientCoreDraft,
+		value: string,
+	) => void;
 	showToastFn?: (
 		text: string,
 		type?: "success" | "error" | "info" | "warning",
@@ -316,10 +325,14 @@ export function executePatientSomaticNormAutonomy({
 	) => void;
 }) {
 	if (!selectedPatient) {
-		showToastFn("Выберите пациента перед установкой соматической нормы", "warning");
+		showToastFn(
+			"Выберите пациента перед установкой соматической нормы",
+			"warning",
+		);
 		return { executed: false, reason: "no_patient" as const };
 	}
-	const normSomatic = "Соматически здоров. Аллергии отрицает. Физиологическая норма.";
+	const normSomatic =
+		"Соматически здоров. Аллергии отрицает. Физиологическая норма.";
 	const trimmed = (currentNotes ?? "").trim();
 	const newNotes = trimmed
 		? trimmed.includes("Соматически здоров")
@@ -330,7 +343,10 @@ export function executePatientSomaticNormAutonomy({
 	if (typeof updatePatientCoreDraft === "function") {
 		updatePatientCoreDraft("notes", newNotes);
 	}
-	showToastFn("Установлена физиологическая норма соматического статуса (1 клик)", "success");
+	showToastFn(
+		"Установлена физиологическая норма соматического статуса (1 клик)",
+		"success",
+	);
 	return { executed: true, notes: newNotes };
 }
 
@@ -355,8 +371,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
-	const [isPatientActionsMenuOpen, setIsPatientActionsMenuOpen] = useState(false);
-	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">("list");
+	const [isPatientActionsMenuOpen, setIsPatientActionsMenuOpen] =
+		useState(false);
+	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">(
+		"list",
+	);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const patientActionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -401,7 +420,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const triggerToast = showToastProp ?? showToast;
 
 	const [showLostPatientsOnly, setShowLostPatientsOnly] = useState(false);
-	const [lostPatientIds, setLostPatientIds] = useState<Set<string> | null>(null);
+	const [lostPatientIds, setLostPatientIds] = useState<Set<string> | null>(
+		null,
+	);
 	const [isLoadingLost, setIsLoadingLost] = useState(false);
 	const [rowMenuPatientId, setRowMenuPatientId] = useState<string | null>(null);
 	const rowMenuRef = useRef<HTMLDivElement>(null);
@@ -445,7 +466,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
-			if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) {
+			if (
+				rowMenuRef.current &&
+				!rowMenuRef.current.contains(e.target as Node)
+			) {
 				setRowMenuPatientId(null);
 			}
 		};
@@ -505,26 +529,31 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			}
 			const targetTag = (document.activeElement?.tagName || "").toLowerCase();
 			const isOtherInput =
-				(targetTag === "input" && document.activeElement !== searchInputRef.current) ||
+				(targetTag === "input" &&
+					document.activeElement !== searchInputRef.current) ||
 				targetTag === "textarea" ||
 				targetTag === "select";
-			if (
-				!isOtherInput &&
-				(e.key === "ArrowDown" || e.key === "ArrowUp")
-			) {
+			if (!isOtherInput && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
 				if (!displayPatients || displayPatients.length === 0) return;
 				e.preventDefault();
-				const currentIndex = displayPatients.findIndex((p) => p.id === selectedPatientId);
+				const currentIndex = displayPatients.findIndex(
+					(p) => p.id === selectedPatientId,
+				);
 				let nextIndex = 0;
 				if (e.key === "ArrowDown") {
-					nextIndex = currentIndex < 0 ? 0 : Math.min(currentIndex + 1, displayPatients.length - 1);
+					nextIndex =
+						currentIndex < 0
+							? 0
+							: Math.min(currentIndex + 1, displayPatients.length - 1);
 				} else {
 					nextIndex = currentIndex <= 0 ? 0 : currentIndex - 1;
 				}
 				const nextPatient = displayPatients[nextIndex];
 				if (nextPatient) {
 					handleSelectPatient(nextPatient.id);
-					const el = document.querySelector(`[data-patient-id="${nextPatient.id}"]`);
+					const el = document.querySelector(
+						`[data-patient-id="${nextPatient.id}"]`,
+					);
 					el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
 				}
 			}
@@ -561,10 +590,19 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			}
 		};
 		window.addEventListener("dente-open-patient-card-modal", handleOpenCard);
-		window.addEventListener("dente-open-backoffice-modal", handleBackofficeModal);
+		window.addEventListener(
+			"dente-open-backoffice-modal",
+			handleBackofficeModal,
+		);
 		return () => {
-			window.removeEventListener("dente-open-patient-card-modal", handleOpenCard);
-			window.removeEventListener("dente-open-backoffice-modal", handleBackofficeModal);
+			window.removeEventListener(
+				"dente-open-patient-card-modal",
+				handleOpenCard,
+			);
+			window.removeEventListener(
+				"dente-open-backoffice-modal",
+				handleBackofficeModal,
+			);
 		};
 	}, []);
 
@@ -660,19 +698,23 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	}, [patientCoreDraft?.notes]);
 
 	const patientBalance = Number(
-		(selectedPatient as any)?.balanceRub ?? (selectedPatient as any)?.balance ?? 0,
+		(selectedPatient as any)?.balanceRub ??
+			(selectedPatient as any)?.balance ??
+			0,
 	);
 
 	const nextPatientAppointment = useMemo(() => {
 		if (!selectedPatient?.id || !props?.dashboard?.appointments) return null;
 		const nowTime = Date.now();
-		const upcoming = (props.dashboard.appointments as Array<{
-			id: string;
-			patientId?: string;
-			startsAt?: string;
-			status?: string;
-			reason?: string;
-		}>)
+		const upcoming = (
+			props.dashboard.appointments as Array<{
+				id: string;
+				patientId?: string;
+				startsAt?: string;
+				status?: string;
+				reason?: string;
+			}>
+		)
 			.filter(
 				(a) =>
 					a.patientId === selectedPatient.id &&
@@ -718,7 +760,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<X size={14} aria-hidden="true" />
 						</button>
 					) : null}
-					<span className="patients-search-shortcut-hint hidden sm:inline" aria-hidden="true">
+					<span
+						className="patients-search-shortcut-hint hidden sm:inline"
+						aria-hidden="true"
+					>
 						⌘K / Ctrl+K
 					</span>
 				</div>
@@ -795,10 +840,20 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								}}
 							>
 								<div className="min-w-0 flex-1">
-									<h3 className="break-words line-clamp-2 leading-tight font-semibold text-sm" title={patient.fullName}>{patient.fullName}</h3>
-									<p className="truncate">{patient.phone ?? "Телефон не указан"}</p>
+									<h3
+										className="break-words line-clamp-2 leading-tight font-semibold text-sm"
+										title={patient.fullName}
+									>
+										{patient.fullName}
+									</h3>
+									<p className="truncate">
+										{patient.phone ?? "Телефон не указан"}
+									</p>
 									{patient.notes ? (
-										<p className="break-words line-clamp-2 text-xs text-[var(--muted)] opacity-75 mt-0.5" title={patient.notes}>
+										<p
+											className="break-words line-clamp-2 text-xs text-[var(--muted)] opacity-75 mt-0.5"
+											title={patient.notes}
+										>
 											{patient.notes}
 										</p>
 									) : null}
@@ -823,12 +878,18 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												</span>
 											) : null}
 											{riskDistinguishes ? (
-												<span className="patient-risk-label truncate max-w-[140px]" title={patientInsightRiskLabels[insight.riskLevel]}>
+												<span
+													className="patient-risk-label truncate max-w-[140px]"
+													title={patientInsightRiskLabels[insight.riskLevel]}
+												>
 													{patientInsightRiskLabels[insight.riskLevel]}
 												</span>
 											) : null}
 											{nextActionDistinguishes ? (
-												<strong className="patient-next-action truncate max-w-[180px]" title={insight.nextBestAction}>
+												<strong
+													className="patient-next-action truncate max-w-[180px]"
+													title={insight.nextBestAction}
+												>
 													{insight.nextBestAction}
 												</strong>
 											) : null}
@@ -855,9 +916,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										</div>
 									) : null}
 								</div>
-								<div className="patient-row-actions flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+								<div
+									className="patient-row-actions flex items-center gap-1 shrink-0"
+									onClick={(e) => e.stopPropagation()}
+								>
 									{/* Secondary Actions Dropdown Menu «...» (Miller's Law - frees >200px of row width) */}
-									<div className="relative inline-flex items-center" ref={rowMenuPatientId === patient.id ? rowMenuRef : null}>
+									<div
+										className="relative inline-flex items-center"
+										ref={rowMenuPatientId === patient.id ? rowMenuRef : null}
+									>
 										<button
 											type="button"
 											className="patient-row-more-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
@@ -868,7 +935,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											onClick={(e) => {
 												e.stopPropagation();
 												handleSelectPatient(patient.id);
-												setRowMenuPatientId((prev) => (prev === patient.id ? null : patient.id));
+												setRowMenuPatientId((prev) =>
+													prev === patient.id ? null : patient.id,
+												);
 											}}
 										>
 											<MoreHorizontal size={14} className="text-[var(--ink)]" />
@@ -891,10 +960,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													onClick={() => {
 														setRowMenuPatientId(null);
 														handleSelectPatient(patient.id);
-														executeOpenPatientVisitAutonomy({ selectedPatient: patient });
+														executeOpenPatientVisitAutonomy({
+															selectedPatient: patient,
+														});
 													}}
 												>
-													<FileText size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+													<FileText
+														size={14}
+														className="text-[var(--teal,var(--brand-primary))] shrink-0"
+													/>
 													<span>В карту 043/у (Приём)</span>
 												</button>
 
@@ -908,10 +982,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													onClick={() => {
 														setRowMenuPatientId(null);
 														handleSelectPatient(patient.id);
-														executeBookPatientAppointmentAutonomy({ selectedPatient: patient });
+														executeBookPatientAppointmentAutonomy({
+															selectedPatient: patient,
+														});
 													}}
 												>
-													<Calendar size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+													<Calendar
+														size={14}
+														className="text-teal-600 dark:text-teal-400 shrink-0"
+													/>
 													<span>Записать на приём</span>
 												</button>
 
@@ -925,7 +1004,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 														setIsPatientCardModalOpen(true);
 													}}
 												>
-													<UserCheck size={14} className="text-[var(--teal)] shrink-0" />
+													<UserCheck
+														size={14}
+														className="text-[var(--teal)] shrink-0"
+													/>
 													<span>Паспортная карточка</span>
 												</button>
 												<button
@@ -936,10 +1018,16 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 														setRowMenuPatientId(null);
 														handleSelectPatient(patient.id);
 														useAppStore.getState().setCurrentView("finance");
-														showToast(`Касса 54-ФЗ: расчёт ${patient.fullName}`, "info");
+														showToast(
+															`Касса 54-ФЗ: расчёт ${patient.fullName}`,
+															"info",
+														);
 													}}
 												>
-													<Receipt size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+													<Receipt
+														size={14}
+														className="text-emerald-600 dark:text-emerald-400 shrink-0"
+													/>
 													<span>Касса 54-ФЗ / Оплата</span>
 												</button>
 												<button
@@ -951,7 +1039,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 														void printBlankMedicalContract(patient);
 													}}
 												>
-													<FileText size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+													<FileText
+														size={14}
+														className="text-blue-600 dark:text-blue-400 shrink-0"
+													/>
 													<span>Печать бланка договора (____)</span>
 												</button>
 												{patient.phone && (
@@ -964,7 +1055,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 															window.location.href = `tel:${patient.phone}`;
 														}}
 													>
-														<Phone size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+														<Phone
+															size={14}
+															className="text-teal-600 dark:text-teal-400 shrink-0"
+														/>
 														<span>Позвонить ({patient.phone})</span>
 													</button>
 												)}
@@ -986,7 +1080,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						<EmptyState
 							className="patient-empty-state"
 							icon={!query.trim() ? <Users size={32} /> : <Search size={28} />}
-							title={!query.trim() ? "В картотеке пока нет пациентов" : "Пациент не найден"}
+							title={
+								!query.trim()
+									? "В картотеке пока нет пациентов"
+									: "Пациент не найден"
+							}
 							description={
 								!query.trim()
 									? "Создайте электронную медицинскую карту (043/у) первого пациента или выполните пакетный импорт существующей базы из Excel, 1С или IDENT."
@@ -994,9 +1092,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							}
 							action={
 								!query.trim() ? (
-									<div
-										className="patient-empty-actions flex flex-col sm:flex-row flex-wrap gap-2 justify-center mt-2 w-full"
-									>
+									<div className="patient-empty-actions flex flex-col sm:flex-row flex-wrap gap-2 justify-center mt-2 w-full">
 										<button
 											type="button"
 											className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-bold shadow-sm"
@@ -1070,7 +1166,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<div className="flex items-center gap-1.5 shrink-0">
 								<button
 									type="button"
-									onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
+									onClick={() =>
+										executeOpenPatientVisitAutonomy({ selectedPatient })
+									}
 									className="min-h-[40px] px-3 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 									title="Открыть амбулаторный приём 043/у"
 									data-testid="patient-mobile-header-open-visit-btn"
@@ -1080,7 +1178,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								</button>
 								<button
 									type="button"
-									onClick={() => void printBlankMedicalContract(selectedPatient)}
+									onClick={() =>
+										void printBlankMedicalContract(selectedPatient)
+									}
 									className="min-h-[40px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 									title="Распечатать бланк договора"
 									data-testid="patient-mobile-header-print-contract-btn"
@@ -1099,11 +1199,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							className="flex items-center gap-2 p-2.5 px-3 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
 							style={{ marginBottom: "6px" }}
 						>
-							<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+							<AlertTriangle
+								size={15}
+								className="text-rose-600 dark:text-rose-400 shrink-0"
+								aria-hidden="true"
+							/>
 							<span className="font-bold text-rose-800 dark:text-rose-200">
 								Внимание (аллергия / стоп-фактор):
 							</span>
-							<span className="truncate" title={allergyWarning}>{allergyWarning}</span>
+							<span className="break-words whitespace-normal text-red-600 dark:text-red-400 font-bold leading-tight">
+								{allergyWarning}
+							</span>
 						</div>
 					) : null}
 
@@ -1115,9 +1221,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							marginBottom: "8px",
 						}}
 					>
-						<div
-							className="flex items-center justify-between gap-2.5 w-full min-w-0"
-						>
+						<div className="flex items-center justify-between gap-2.5 w-full min-w-0">
 							<div className="flex items-center gap-2.5 min-w-0 flex-1">
 								{selectedPatient && (
 									<PatientAvatar
@@ -1165,7 +1269,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									type="button"
 									onClick={savePatientCore}
 									aria-busy={patientCoreSaveState === "saving" || undefined}
-									aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
+									aria-describedby={
+										patientCoreSaveGuidance
+											? patientCoreSaveGuidanceId
+											: undefined
+									}
 									disabled={patientCoreSaveState === "saving"}
 									className="primary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
 									style={{ minHeight: "36px" }}
@@ -1179,13 +1287,19 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								{/* Primary CTA 2 (Above Fold): Открыть приём 043/у */}
 								<button
 									type="button"
-									onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
+									onClick={() =>
+										executeOpenPatientVisitAutonomy({ selectedPatient })
+									}
 									disabled={false}
 									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
 									title="Открыть амбулаторный приём 043/у"
 									data-testid="patient-card-open-visit-btn"
 								>
-									<Stethoscope size={13} aria-hidden="true" className="text-[var(--teal)] shrink-0" />
+									<Stethoscope
+										size={13}
+										aria-hidden="true"
+										className="text-[var(--teal)] shrink-0"
+									/>
 									<span>Приём</span>
 								</button>
 
@@ -1194,9 +1308,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									<button
 										type="button"
 										onClick={() => {
-											useScheduleStore.getState().setScheduleDateFilter(nextPatientAppointment.startsAt?.split("T")[0] || new Date().toISOString().split("T")[0]);
+											useScheduleStore
+												.getState()
+												.setScheduleDateFilter(
+													nextPatientAppointment.startsAt?.split("T")[0] ||
+														new Date().toISOString().split("T")[0],
+												);
 											useAppStore.getState().setCurrentView("schedule");
-											showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
+											showToast(
+												`Переход в расписание на приём: ${selectedPatient.fullName}`,
+												"info",
+											);
 										}}
 										className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 										title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
@@ -1204,13 +1326,28 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									>
 										<Clock size={12} className="shrink-0" />
 										<span>
-											Приём: {new Date(nextPatientAppointment.startsAt!).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} {new Date(nextPatientAppointment.startsAt!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+											Приём:{" "}
+											{new Date(
+												nextPatientAppointment.startsAt!,
+											).toLocaleDateString("ru-RU", {
+												day: "numeric",
+												month: "short",
+											})}{" "}
+											{new Date(
+												nextPatientAppointment.startsAt!,
+											).toLocaleTimeString("ru-RU", {
+												hour: "2-digit",
+												minute: "2-digit",
+											})}
 										</span>
 									</button>
 								)}
 
 								{/* Secondary Actions Dropdown (...) */}
-								<div ref={patientActionsMenuRef} className="relative inline-block shrink-0">
+								<div
+									ref={patientActionsMenuRef}
+									className="relative inline-block shrink-0"
+								>
 									<button
 										type="button"
 										className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)]"
@@ -1233,7 +1370,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												top: "calc(100% + 4px)",
 												zIndex: 100,
 												minWidth: "250px",
-												boxShadow: "var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
+												boxShadow:
+													"var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
 												background: "var(--paper)",
 												border: "1px solid var(--line)",
 												borderRadius: "10px",
@@ -1274,7 +1412,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												title="Установить соматическую норму (1 клик)"
 												data-testid="patient-card-somatic-norm-btn"
 											>
-												<Check size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+												<Check
+													size={14}
+													className="text-teal-600 dark:text-teal-400 shrink-0"
+													aria-hidden="true"
+												/>
 												<span>Соматически здоров (Норма)</span>
 											</button>
 
@@ -1284,7 +1426,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
 												onClick={() => {
 													setIsPatientActionsMenuOpen(false);
-													executeBookPatientAppointmentAutonomy({ selectedPatient });
+													executeBookPatientAppointmentAutonomy({
+														selectedPatient,
+													});
 												}}
 												style={{
 													display: "flex",
@@ -1304,7 +1448,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												title="Записать выбранного пациента в расписание"
 												data-testid="patient-card-book-appointment-btn"
 											>
-												<Calendar size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+												<Calendar
+													size={14}
+													className="text-teal-600 dark:text-teal-400 shrink-0"
+													aria-hidden="true"
+												/>
 												<span>Записать в расписание</span>
 											</button>
 
@@ -1334,7 +1482,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												title="Распечатать бланк договора"
 												data-testid="patient-card-print-contract-btn"
 											>
-												<FileText size={14} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
+												<FileText
+													size={14}
+													className="text-[var(--muted)] shrink-0"
+													aria-hidden="true"
+												/>
 												<span>Печать договора</span>
 											</button>
 
@@ -1364,7 +1516,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
 												data-testid="open-patient-card-modal-btn"
 											>
-												<FileText size={14} className="text-[var(--teal)] shrink-0" aria-hidden="true" />
+												<FileText
+													size={14}
+													className="text-[var(--teal)] shrink-0"
+													aria-hidden="true"
+												/>
 												<span>Медицинская карта 043/у</span>
 											</button>
 
@@ -1375,10 +1531,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												onClick={() => {
 													setIsPatientActionsMenuOpen(false);
 													if (selectedPatient?.id) {
-														usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+														usePatientStore
+															.getState()
+															.setSelectedPatientId(selectedPatient.id);
 													}
 													useAppStore.getState().setCurrentView("finance");
-													showToast(`Открыты счета и касса 54-ФЗ: ${selectedPatient?.fullName || ""}`, "info");
+													showToast(
+														`Открыты счета и касса 54-ФЗ: ${selectedPatient?.fullName || ""}`,
+														"info",
+													);
 												}}
 												style={{
 													display: "flex",
@@ -1400,7 +1561,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												data-testid="patient-card-finance-btn"
 											>
 												<span className="flex items-center gap-2">
-													<Receipt size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+													<Receipt
+														size={14}
+														className="text-teal-600 dark:text-teal-400 shrink-0"
+														aria-hidden="true"
+													/>
 													<span>Счета и касса (54-ФЗ)</span>
 												</span>
 												<span
@@ -1428,10 +1593,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												onClick={() => {
 													setIsPatientActionsMenuOpen(false);
 													if (selectedPatient?.id) {
-														usePatientStore.getState().setSelectedPatientId(selectedPatient.id);
+														usePatientStore
+															.getState()
+															.setSelectedPatientId(selectedPatient.id);
 													}
 													useAppStore.getState().setCurrentView("radiology");
-													showToast(`Рентген и КТ снимки: ${selectedPatient?.fullName || ""}`, "info");
+													showToast(
+														`Рентген и КТ снимки: ${selectedPatient?.fullName || ""}`,
+														"info",
+													);
 												}}
 												style={{
 													display: "flex",
@@ -1451,7 +1621,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												title="Рентгенологические и КТ исследования пациента"
 												data-testid="patient-card-radiology-btn"
 											>
-												<Camera size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+												<Camera
+													size={14}
+													className="text-teal-600 dark:text-teal-400 shrink-0"
+													aria-hidden="true"
+												/>
 												<span>Рентген и КТ снимки</span>
 											</button>
 
@@ -1481,7 +1655,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												title="Программа лояльности и бонусы (54-ФЗ / ФФД 1.2)"
 												data-testid="open-loyalty-program-modal-btn"
 											>
-												<Gift size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+												<Gift
+													size={14}
+													className="text-teal-600 dark:text-teal-400 shrink-0"
+													aria-hidden="true"
+												/>
 												<span>Программа лояльности</span>
 											</button>
 
@@ -1521,7 +1699,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												title="Архивировать карту пациента"
 												data-testid="archive-patient-card-btn"
 											>
-												<Archive size={14} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
+												<Archive
+													size={14}
+													className="text-[var(--muted)] shrink-0"
+													aria-hidden="true"
+												/>
 												<span>В архив</span>
 											</button>
 										</div>
@@ -1612,10 +1794,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									context="general"
 									onResult={(t) => {
 										const prev = patientCoreDraft.notes || "";
-										updatePatientCoreDraft(
-											"notes",
-											prev ? `${prev}, ${t}` : t,
-										);
+										updatePatientCoreDraft("notes", prev ? `${prev}, ${t}` : t);
 									}}
 								/>
 							</div>
@@ -1746,7 +1925,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						<summary className="settings-advanced-toggle">
 							<span className="settings-advanced-label">
 								<span className="settings-advanced-icon">
-									<FileText size={16} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+									<FileText
+										size={16}
+										className="text-teal-600 dark:text-teal-400"
+										aria-hidden="true"
+									/>
 								</span>
 								Паспортные данные и реквизиты документов
 							</span>
@@ -1818,13 +2001,21 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									className="primary-button"
 									type="button"
 									onClick={savePatientAdministrativeProfile}
-									aria-busy={patientAdministrativeProfileSaveState === "saving" || undefined}
-									aria-describedby={patientAdministrativeSaveGuidance ? patientAdministrativeSaveGuidanceId : undefined}
+									aria-busy={
+										patientAdministrativeProfileSaveState === "saving" ||
+										undefined
+									}
+									aria-describedby={
+										patientAdministrativeSaveGuidance
+											? patientAdministrativeSaveGuidanceId
+											: undefined
+									}
 									disabled={patientAdministrativeProfileSaveState === "saving"}
 									style={{ minHeight: "44px" }}
 									data-testid="patient-admin-save-btn"
 								>
-									<ShieldCheck size={16} aria-hidden="true" /> Сохранить реквизиты
+									<ShieldCheck size={16} aria-hidden="true" /> Сохранить
+									реквизиты
 								</button>
 							</div>
 							{patientAdministrativeSaveGuidance ? (
@@ -1841,7 +2032,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					</details>
 
 					{/* FAB clearance bottom spacer */}
-					<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+					<div
+						className="h-24 w-full shrink-0 pointer-events-none"
+						aria-hidden="true"
+					/>
 				</section>
 			</div>
 
