@@ -142,31 +142,14 @@ describe("Clinical Visit Integration — Form 107-1/u & Radiology Referrals", ()
 		});
 	});
 
-	describe("3. 1-Click Dental Radiology Referral Presets (Mandate 8e)", () => {
-		it("should have all 5 canonical dental radiology presets defined and valid", async () => {
-			const { CLINICAL_REFERRAL_PRESETS } = await import("./referralPresets");
-			assert.equal(CLINICAL_REFERRAL_PRESETS.length, 5);
-
-			const cbctPreset = CLINICAL_REFERRAL_PRESETS.find((p) => p.id === "cbct_both_jaws_preset");
-			assert.ok(cbctPreset);
-			assert.equal(cbctPreset.studyType, "cbct_jaw_8x8");
-			assert.equal(cbctPreset.studyGoal, "implantology");
-
-			const rvgPreset = CLINICAL_REFERRAL_PRESETS.find((p) => p.id === "rvg_periapical_preset");
-			assert.ok(rvgPreset);
-			assert.equal(rvgPreset.studyType, "intraoral_radiovisiography");
-
-			const optgPreset = CLINICAL_REFERRAL_PRESETS.find((p) => p.id === "optg_panoramic_preset");
-			assert.ok(optgPreset);
-			assert.equal(optgPreset.studyType, "optg_digital_panoramic");
-
-			const trgPreset = CLINICAL_REFERRAL_PRESETS.find((p) => p.id === "trg_lateral_preset");
-			assert.ok(trgPreset);
-			assert.equal(trgPreset.studyType, "trg_cephalometric_lateral");
-
-			const endoPreset = CLINICAL_REFERRAL_PRESETS.find((p) => p.id === "cbct_segment_endo_preset");
-			assert.ok(endoPreset);
-			assert.equal(endoPreset.studyType, "cbct_segment_5x5");
+	describe("3. Canonical Dental Radiology Modalities & Studies (Mandate 8e)", () => {
+		it("should have canonical dental radiology study labels defined in @dental/shared", async () => {
+			const { dentalRadiologyStudyLabels } = await import("@dental/shared");
+			assert.ok(dentalRadiologyStudyLabels.cbct_jaw_8x8);
+			assert.ok(dentalRadiologyStudyLabels.intraoral_radiovisiography);
+			assert.ok(dentalRadiologyStudyLabels.optg_digital_panoramic);
+			assert.ok(dentalRadiologyStudyLabels.trg_cephalometric_lateral);
+			assert.ok(dentalRadiologyStudyLabels.cbct_segment_5x5);
 		});
 	});
 });

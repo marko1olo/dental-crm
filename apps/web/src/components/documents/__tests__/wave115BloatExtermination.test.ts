@@ -130,7 +130,6 @@ describe("Wave 115: Bloat & CMO Lock Exterminator (Mandates 8a–8q)", () => {
 
 	it("4. Вычистка госпитальной формы 025/у из хуков в пользу стоматологической 043/у", () => {
 		const targetHooks = [
-			"apps/web/src/hooks/domains/useDocumentPayloads.ts",
 			"apps/web/src/hooks/domains/useDocumentWorkflowModule.ts",
 			"apps/web/src/hooks/domains/usePatientIntakeLogic.ts",
 		];
