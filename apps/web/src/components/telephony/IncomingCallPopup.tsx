@@ -47,6 +47,7 @@ import {
 	generateWaveformBars,
 	getAvatarColor,
 	openWhatsAppChat,
+	type IncomingCallPayload,
 	type PlaybackSpeed,
 	type SpeechTranscriptUtterance,
 	resolvePatientFromPhone,
@@ -57,6 +58,8 @@ import {
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
 import "./telephonyFloatingWidget.css";
+
+export type TelephonyCall = IncomingCallPayload;
 
 export function resolveTelephonyWsUrl(): string {
 	const configured = (
@@ -461,7 +464,7 @@ export function IncomingCallPopup() {
 	const [showQuickBooking, setShowQuickBooking] = useState(false);
 	const [showOutcomePanel, setShowOutcomePanel] = useState(false);
 
-	const lastCallRef = useRef<IncomingCallPayload | null>(activeCall);
+	const lastCallRef = useRef<TelephonyCall | null>(activeCall);
 	useEffect(() => {
 		if (activeCall) {
 			lastCallRef.current = activeCall;
