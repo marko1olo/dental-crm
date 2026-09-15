@@ -83,6 +83,7 @@
   - **Полное снятие блокировки ассистента в AppointmentModal и QuickBookingDrawer для соло-врача (Мандаты 8e п. 8, 8n / Волна 225, коммит `8e6480d7b`)**: В `AppointmentModal.tsx` и `QuickBookingDrawer.tsx` селектор ассистента отключает обязательную валидацию для соло-врачей (`isSoloDoctor || assistants.length === 0`), позволяя моментально сохранить визит без выбора ассистирующего персонала.
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма, Хирургия и Голосовой ввод
+  - **Оптимизация мобильных тулбаров ЭМК на 390px**: обеспечение адаптивности и нормативных тач-таргетов >= 44px для комфортной работы соло-врача на мобильных устройствах (Мандаты 8c, 8e, Wave 225.7).
 - **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontogramChart.tsx` (канонический SSOT пародонтограммы; дубликат `PeriodontalChartingModal.tsx` ликвидирован в Волне 212 Refactor), `OrthopedicsChairsidePanel.tsx`, `OdontogramViewContainer.tsx`, `TreatmentPlanWizard.tsx`, `ToothCardModal.tsx`, `PediatricToothChart.tsx`, `AnatomicalSvgOdontogram.tsx`.
 - **Бэкенд**: `apps/api/src/routes/visits.ts`, `odontogram.ts`, `toothHistory.ts`, `clinical.ts`, `speech.ts`.
 - **Возможности**:
@@ -133,6 +134,7 @@
   - **Диагностика КТ и CBCT, интеграция имплантатов MIS (Seven, V3, C1), удаление процедурных моков и безопасный клиренс IAN >=1.5 мм (Мандаты 8c, 8e, 8i, 8k, 8s / Волны 224, 225, коммиты `ad53c08e0`, `86f15b3f3`, `6455cd2fb`)**: В `implantCatalog.ts` добавлена хирургическая система имплантатов MIS Medical Implant Technologies (Seven, V3, C1) с диаметрами 3.3–6.0 мм, длинами 6.0–16.0 мм, кодировкой ортопедических платформ (NP, SP, WP) и цветовой маркировкой; в `implantTorqueCatalog.ts` внесены рекомендации по хирургическому торку 35–45 Н·см и протоколам under-drilling в зависимости от плотности кости Misch D1..D4 HU; в `implantSafetyEngine.ts` и `CbctMprImplantStudioModal.tsx` зафиксирован строгий аналитический контроль клиренса канала нижнеальвеолярного нерва (IAN $\ge 1.5$ мм); процедурные синтетические объемы и фейковые сферы полностью ликвидированы, внедрена честная дропзона `cbct-empty-volume-dropzone` реальных DICOM-файлов и ZIP-архивов с однострочной шапкой 36px.
 
 ### 2.5. Документооборот, ИДС, НДФЛ, Рецепты 1094н, ЭЛН 1089н и ЕГИСЗ
+  - **Инквизиция 043/у и ИДС**: зачистка стационарного академического мусора и госпитального блоата из медицинских документов, соответствие амбулаторной стоматологической практике (Мандат 8i, Wave 225.7).
 - **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `documentLogic.ts`, `documentValidators.ts`, `MedicalPrescriptionModal.tsx`, `PrescriptionPrintModal.tsx`, `SickLeaveElnModal.tsx`, `ImplantPassportModal.tsx`.
 - **Бэкенд / Shared**: `apps/api/src/routes/documents.ts`, `templates.ts`, `egisz.ts`, `packages/shared/src/documents/forms107_1u.ts`, `doctorShiftEngine.ts`.
 - **Возможности**:
@@ -4281,3 +4283,10 @@
 - **Файлы**: `apps/web/src/styles/main.css`, `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/components/visit/VisitMainTabs.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/components/InventoryView.tsx`.
 - **Коммиты**: `8e6480d7b` (Wave 225) + Wave 225.1 правки.
 
+
+### 2.10.315. Wave 225.7: Инквизиция медицинской документации 043/у и ИДС, оптимизация мобильных тулбаров ЭМК на 390px, зачистка процедурных диорам в аналитике (Мандаты 8c, 8d, 8e, 8i, 8s)
+* **Статус**: [ЕСТЬ] / [ЗАКРЫТО]
+* **Описание**:
+  - **Аудит 043/у и ИДС**: Зачистка стационарного академического мусора в медицинских документах.
+  - **Оптимизация мобильных тулбаров ЭМК на 390px**: Обеспечение адаптивности и нормативных тач-таргетов >=44px.
+  - **Зачистка процедурных диорам в аналитике**: Удаление фейковых графиков и синтетических моков по Мандату 8s.
