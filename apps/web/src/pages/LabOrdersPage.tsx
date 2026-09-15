@@ -1,22 +1,28 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	AlertCircle,
+	AlertOctagon,
 	Calendar,
+	Camera,
 	CheckCircle2,
 	Clock,
 	DollarSign,
 	Download,
 	ExternalLink,
+	FileText,
 	Filter,
 	FlaskConical,
 	Layers,
 	Link,
 	Loader2,
+	MessageSquare,
+	MoreHorizontal,
 	MoreVertical,
 	Plus,
 	Printer,
 	QrCode,
 	RefreshCw,
+	RotateCcw,
 	Search,
 	Sparkles,
 	Tag,
@@ -44,6 +50,7 @@ export function LabOrdersPage() {
 	// Modal State
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
+	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
 
 	// Tracking Drawer State
 	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
@@ -165,12 +172,89 @@ export function LabOrdersPage() {
 
 	const handleOpenNewOrder = () => {
 		setSelectedOrderForEdit(null);
+		setModalInitialTab("main");
 		setIsModalOpen(true);
 	};
 
 	const handleOpenEditOrder = (order: DentalLabOrderData) => {
 		setSelectedOrderForEdit(order);
+		setModalInitialTab("main");
 		setIsModalOpen(true);
+	};
+
+	const handleOpenPrintOrder = (order: DentalLabOrderData) => {
+		setSelectedOrderForEdit(order);
+		setModalInitialTab("print");
+		setIsModalOpen(true);
+	};
+
+	const handleAttachBitePhoto = (order: DentalLabOrderData) => {
+		setOpenMenuOrderId(null);
+		const url = window.prompt("Введите URL или путь к фото прикуса / 3D-скану (STL / JPG / PNG):", order.attachedImageUrl || "");
+		if (!url) return;
+		fetch(`/api/clinical/lab-orders/${order.id}`, {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({ attachedImageUrl: url.trim() }),
+		})
+			.then((res) => {
+				if (!res.ok) throw new Error("Ошибка прикрепления фото");
+				showToast("Фото прикуса успешно прикреплено к наряду ЗТЛ", "success");
+				fetchOrders();
+			})
+			.catch((err) => showToast(err.message || "Ошибка прикрепления фото", "error"));
+	};
+
+	const handleTechnicianComment = (order: DentalLabOrderData) => {
+		setOpenMenuOrderId(null);
+		const comment = window.prompt("Клинический комментарий зубному технику:", order.labComments || "");
+		if (comment === null) return;
+		fetch(`/api/clinical/lab-orders/${order.id}`, {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({ labComments: comment.trim() }),
+		})
+			.then((res) => {
+				if (!res.ok) throw new Error("Ошибка сохранения");
+				showToast("Комментарий технику сохранен", "success");
+				fetchOrders();
+			})
+			.catch((err) => showToast(err.message || "Ошибка сохранения комментария", "error"));
+	};
+
+	const handleRepeatFitting = (order: DentalLabOrderData) => {
+		setOpenMenuOrderId(null);
+		handleStatusChange(order.id!, "refitting");
+		showToast("Наряд переведен в статус: «Повторная примерка / доработка»", "success");
+	};
+
+	const handleReclamation = (order: DentalLabOrderData) => {
+		setOpenMenuOrderId(null);
+		const reason = window.prompt("Причина рекламации (скол керамики, балансир каркаса, неточный цвет VITA):", "Несоответствие цвета VITA / переделка по гарантии (0 ₽)");
+		if (!reason) return;
+		fetch(`/api/clinical/lab-orders/${order.id}`, {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				status: "refitting",
+				clinicalNotes: `${order.clinicalNotes || ""}\n[РЕКЛАМАЦИЯ ЗТЛ: ${reason}]`.trim(),
+			}),
+		})
+			.then((res) => {
+				if (!res.ok) throw new Error("Ошибка рекламации");
+				showToast("Рекламация оформлена. Наряд отправлен на гарантийную доработку (0 ₽)", "warning");
+				fetchOrders();
+			})
+			.catch((err) => showToast(err.message || "Ошибка рекламации", "error"));
 	};
 
 	const handleOpenTracking = (order: DentalLabOrderData) => {
@@ -223,103 +307,46 @@ export function LabOrdersPage() {
 
 	return (
 		<div className="p-4 space-y-3 max-w-7xl mx-auto">
-			{/* Page Header (Compact ~36px) */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-				<div className="flex items-center gap-2.5 min-w-0">
-					<FlaskConical className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
-					<div className="min-w-0">
-						<h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate m-0 leading-tight">
-							Зуботехническая лаборатория (CAD/CAM ЗТЛ)
-						</h1>
-						<p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 hidden sm:block leading-tight">
-							Цифровые наряд-заказы, расцветка VITA, культи ND1–ND9, трекинг этапов и удержания.
-						</p>
+			{/* ─── ТУЛБАР ЗТЛ: СТРОГО 1 СТРОКА 32-36PX (МАНДАТЫ 8d п. 2, 8p, ЗАКОН ХИКА) ─── */}
+			<div className="h-9 min-h-[36px] flex items-center justify-between gap-2 px-2.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs text-xs">
+				{/* Left: Brand Icon + Title + Inline Metrics */}
+				<div className="flex items-center gap-2 shrink-0">
+					<FlaskConical className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+					<span className="font-bold text-xs sm:text-sm text-[var(--ink)] whitespace-nowrap">
+						ЗТЛ (CAD/CAM)
+					</span>
+					<div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper-soft)] text-[11px] text-[var(--muted)] border border-[var(--line)] font-mono">
+						<span>Всего: <strong className="text-[var(--ink)]">{metrics.total}</strong></span>
+						<span>•</span>
+						<span>В работе: <strong className="text-blue-600 dark:text-blue-400">{metrics.inProgress}</strong></span>
+						<span>•</span>
+						<span>Готовы: <strong className="text-teal-600 dark:text-teal-400">{metrics.ready}</strong></span>
+						{metrics.overdue > 0 && (
+							<>
+								<span>•</span>
+								<span className="text-rose-600 dark:text-rose-400 font-bold">Просрочено: {metrics.overdue}</span>
+							</>
+						)}
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0">
-					<button
-						type="button"
-						onClick={fetchOrders}
-						className="h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
-						title="Обновить список"
-					>
-						<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-teal-600" : ""}`} />
-					</button>
-
-					<button
-						type="button"
-						onClick={handleOpenNewOrder}
-						className="h-9 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-1.5 transition-all cursor-pointer"
-					>
-						<Plus className="w-3.5 h-3.5" />
-						<span>Новый наряд в ЗТЛ</span>
-					</button>
-				</div>
-			</div>
-
-			{/* Compact 1-Line Inline Summary Chip Strip (32-36px) */}
-			<div className="h-9 min-h-[34px] flex items-center gap-2.5 px-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] text-xs text-[var(--muted)] overflow-x-auto whitespace-nowrap shadow-2xs scrollbar-thin">
-				<span>
-					Всего: <strong className="text-[var(--ink)] font-mono">{metrics.total}</strong>
-				</span>
-				<span className="text-[var(--line)]">•</span>
-				<span>
-					В работе: <strong className="text-blue-600 dark:text-blue-400 font-mono">{metrics.inProgress}</strong>
-				</span>
-				<span className="text-[var(--line)]">•</span>
-				<span>
-					Готовы: <strong className="text-teal-600 dark:text-teal-400 font-mono">{metrics.ready}</strong>
-				</span>
-				<span className="text-[var(--line)]">•</span>
-				<span>
-					На примерке: <strong className="text-purple-600 dark:text-purple-400 font-mono">{metrics.tryIn}</strong>
-				</span>
-				<span className="text-[var(--line)]">•</span>
-				<span>
-					Просрочено:{" "}
-					<strong
-						className={
-							metrics.overdue > 0
-								? "text-rose-600 dark:text-rose-400 font-bold font-mono"
-								: "text-[var(--ink)] font-mono"
-						}
-					>
-						{metrics.overdue}
-					</strong>
-				</span>
-				<span className="text-[var(--line)]">•</span>
-				<span>
-					Сумма: <strong className="text-teal-600 dark:text-teal-400 font-mono">{money(metrics.totalCost)}</strong>
-				</span>
-				{metrics.doctorDeductions > 0 && (
-					<>
-						<span className="text-[var(--line)]">•</span>
-						<span>
-							Удержания: <strong className="text-amber-600 dark:text-amber-400 font-mono">{money(metrics.doctorDeductions)}</strong>
-						</span>
-					</>
-				)}
-			</div>
-
-			{/* Filters & Search Toolbar (Compact 36px) */}
-			<div className="flex flex-col sm:flex-row items-center gap-2 p-1.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs">
-				<div className="relative flex-1 w-full">
-					<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />
-					<input
-						type="text"
-						placeholder="Поиск по пациенту, врачу, зубу FDI или материалу..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full h-9 min-h-[36px] pl-8 pr-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
-					/>
-				</div>
-
-				<div className="flex items-center gap-2 w-full sm:w-auto">
+				{/* Center: Search & Filters */}
+				<div className="flex items-center gap-1.5 flex-1 max-w-xl">
+					<div className="relative flex-1">
+						<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2 top-1/2 -translate-y-1/2" />
+						<input
+							type="text"
+							placeholder="Поиск (пациент, врач, зуб, материал)..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="w-full h-7.5 min-h-[30px] pl-7 pr-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
+						/>
+					</div>
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
-						className="h-9 min-h-[36px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
+						className="h-7.5 min-h-[30px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0"
+						aria-label="Фильтр по статусу"
 					>
 						<option value="all">Все статусы</option>
 						<option value="sent">Отправлен в ЗТЛ</option>
@@ -329,17 +356,39 @@ export function LabOrdersPage() {
 						<option value="shipped">В клинике</option>
 						<option value="completed">Сдан / Установлен</option>
 					</select>
-
 					<select
 						value={doctorFilter}
 						onChange={(e) => setDoctorFilter(e.target.value)}
-						className="h-9 min-h-[36px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
+						className="hidden lg:block h-7.5 min-h-[30px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0"
+						aria-label="Фильтр по врачу"
 					>
 						<option value="all">Все врачи</option>
 						{doctorsList.map((doc: string) => (
 							<option key={doc} value={doc}>{doc}</option>
 						))}
 					</select>
+				</div>
+
+				{/* Right: Actions */}
+				<div className="flex items-center gap-1.5 shrink-0">
+					<button
+						type="button"
+						onClick={fetchOrders}
+						className="h-7.5 w-7.5 min-h-[30px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
+						title="Обновить список"
+					>
+						<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-teal-600" : ""}`} />
+					</button>
+
+					<button
+						type="button"
+						onClick={handleOpenNewOrder}
+						className="h-7.5 min-h-[30px] px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+						data-testid="lab-orders-new-order-btn"
+					>
+						<Plus className="w-3.5 h-3.5" />
+						<span>+ Наряд ЗТЛ</span>
+					</button>
 				</div>
 			</div>
 
@@ -445,35 +494,7 @@ export function LabOrdersPage() {
 									)}
 								</div>
 
-								{/* Status Selector (Mandate 8c: >=44px) */}
-								<div className="flex items-center justify-between p-2 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-xs">
-									<span className="text-[var(--muted)] font-medium">Статус:</span>
-									<select
-										value={
-											(order.status === "fitting" || order.status === "refitting")
-												? "fitting"
-												: (order.status === "shipped" || order.status === "delivered" || order.status === "received")
-												? "received"
-												: (order.status === "completed")
-												? "completed"
-												: "sent"
-										}
-										onChange={(e) => {
-											const targetApiStatus = e.target.value === "received" ? "received" : e.target.value;
-											handleStatusChange(order.id!, targetApiStatus);
-										}}
-										className="h-11 min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-bold text-xs cursor-pointer text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-teal-500"
-										aria-label="Изменить статус наряда ЗТЛ"
-										style={{ minHeight: "44px" }}
-									>
-										<option value="sent">Отправлен в ЗТЛ</option>
-										<option value="fitting">На примерке</option>
-										<option value="received">Готов (в клинике)</option>
-										<option value="completed">Сдан пациенту</option>
-									</select>
-								</div>
-
-								{/* Card Bottom: Financials & <= 2 Direct Actions + Context Menu (Sin 3) */}
+								{/* Card Bottom: Financials & Strictly <= 2 Direct Action Buttons + "..." (Miller's Law / Mandates 8d item 3, 8p) */}
 								<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2">
 									<div>
 										<span className="text-[11px] text-[var(--muted)] block">Себестоимость:</span>
@@ -483,57 +504,102 @@ export function LabOrdersPage() {
 									</div>
 
 									<div className="flex items-center gap-1.5">
-										{order.dueDate && (
-											<button
-												type="button"
-												onClick={() => {
-													window.location.hash = "#schedule";
-													const d = new Date(order.dueDate!).toLocaleDateString("ru-RU");
-													showToast(`Переход в расписание на дату готовности: ${d} (зуб ${order.toothFdi || ""})`, "success");
-												}}
-												className="h-11 min-h-[44px] px-3 rounded-xl bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
-												title="Запланировать слот в расписании"
-												style={{ minHeight: "44px" }}
-											>
-												<Calendar className="w-3.5 h-3.5" />
-												Запись
-											</button>
-										)}
-
+										{/* ПРЯМОЕ ДЕЙСТВИЕ 1: Печать наряда ЗТЛ-1 (ГОСТ) */}
 										<button
 											type="button"
-											onClick={() => handleOpenEditOrder(order)}
-											className="h-11 min-h-[44px] px-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1 cursor-pointer"
-											style={{ minHeight: "44px" }}
+											onClick={() => handleOpenPrintOrder(order)}
+											className="h-9 min-h-[36px] px-3 rounded-xl bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+											title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
+											data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 										>
-											Детали
+											<Printer className="w-3.5 h-3.5" />
+											<span>Печать ЗТЛ-1</span>
 										</button>
 
+										{/* ПРЯМОЕ ДЕЙСТВИЕ 2: Сменить этап/статус */}
+										<button
+											type="button"
+											onClick={() => handleOpenTracking(order)}
+											className="h-9 min-h-[36px] px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+											title="Сменить этап или статус изготовления работы в ЗТЛ"
+											data-testid={`lab-order-stage-status-btn-${order.id}`}
+										>
+											<Layers className="w-3.5 h-3.5 text-indigo-500" />
+											<span>Этап/статус</span>
+										</button>
+
+										{/* ВТОРИЧНЫЕ ДЕЙСТВИЯ: Меню "..." (MoreHorizontal) */}
 										<div className="relative">
 											<button
 												type="button"
 												onClick={() => setOpenMenuOrderId((prev) => prev === order.id ? null : (order.id || null))}
-												className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
-												style={{ minWidth: "44px", minHeight: "44px" }}
+												className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 												aria-label="Вторичные действия с нарядом ЗТЛ"
 												aria-expanded={openMenuOrderId === order.id}
+												title="Вторичные действия: фото прикуса, комментарий технику, повторная примерка, рекламация"
 											>
-												<MoreVertical className="w-4 h-4" />
+												<MoreHorizontal className="w-4 h-4" />
 											</button>
 
 											{openMenuOrderId === order.id && (
-												<div className="absolute right-0 bottom-full mb-1 z-50 w-52 p-1 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs">
+												<div className="absolute right-0 bottom-full mb-1 z-50 w-56 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs">
+													<button
+														type="button"
+														onClick={() => handleAttachBitePhoto(order)}
+														className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
+													>
+														<Camera className="w-3.5 h-3.5 text-sky-500" />
+														<span>Прикрепить фото прикуса</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => handleTechnicianComment(order)}
+														className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
+													>
+														<MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+														<span>Комментарий технику</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => handleRepeatFitting(order)}
+														className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-purple-700 dark:text-purple-300 inline-flex items-center gap-2 cursor-pointer"
+													>
+														<RotateCcw className="w-3.5 h-3.5 text-purple-500" />
+														<span>Повторная примерка</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => handleReclamation(order)}
+														className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-semibold text-rose-600 dark:text-rose-400 inline-flex items-center gap-2 cursor-pointer"
+													>
+														<AlertOctagon className="w-3.5 h-3.5 text-rose-500" />
+														<span>Рекламация (0 ₽)</span>
+													</button>
+													{order.dueDate && (
+														<button
+															type="button"
+															onClick={() => {
+																setOpenMenuOrderId(null);
+																window.location.hash = "#schedule";
+																const d = new Date(order.dueDate!).toLocaleDateString("ru-RU");
+																showToast(`Переход в расписание на дату готовности: ${d} (зуб ${order.toothFdi || ""})`, "success");
+															}}
+															className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
+														>
+															<Calendar className="w-3.5 h-3.5 text-teal-500" />
+															<span>Запланировать прием</span>
+														</button>
+													)}
 													<button
 														type="button"
 														onClick={() => {
 															setOpenMenuOrderId(null);
-															handleOpenTracking(order);
+															handleOpenEditOrder(order);
 														}}
-														className="w-full text-left px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
-														style={{ minHeight: "44px" }}
+														className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
 													>
-														<Layers className="w-4 h-4 text-indigo-500" />
-														Трекинг этапов
+														<FileText className="w-3.5 h-3.5 text-indigo-500" />
+														<span>Подробные параметры</span>
 													</button>
 													{order.secureToken && (
 														<button
@@ -542,11 +608,10 @@ export function LabOrdersPage() {
 																setOpenMenuOrderId(null);
 																copyPortalLink(order.secureToken!);
 															}}
-															className="w-full text-left px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
-															style={{ minHeight: "44px" }}
+															className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
 														>
-															<Link className="w-4 h-4 text-teal-500" />
-															Копировать ссылку ЗТЛ
+															<Link className="w-3.5 h-3.5 text-emerald-500" />
+															<span>Копировать ссылку ЗТЛ</span>
 														</button>
 													)}
 												</div>
@@ -565,6 +630,7 @@ export function LabOrdersPage() {
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
 				initialOrder={selectedOrderForEdit}
+				initialTab={modalInitialTab}
 				onOrderSaved={() => fetchOrders()}
 			/>
 

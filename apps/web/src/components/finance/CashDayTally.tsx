@@ -288,7 +288,7 @@ ${zReportData.clinicLegalName}
 
 	return (
 		<details
-			className="payment-capture-detail-section"
+			className="payment-capture-detail-section mb-4"
 			data-testid="cash-day-tally"
 		>
 			<summary>{headline}</summary>

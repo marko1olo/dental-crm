@@ -182,8 +182,15 @@ export function DentalLabOrderModal({
 	onOrderSaved,
 	clinicPhone = "",
 	clinicName = "Денте",
+	initialTab = "main",
 }: DentalLabOrderModalProps) {
-	const [activeTab, setActiveTab] = useState<TabKey>("main");
+	const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+
+	useEffect(() => {
+		if (isOpen && initialTab) {
+			setActiveTab(initialTab);
+		}
+	}, [isOpen, initialTab]);
 
 	// Doctor Clinical Override State (Mandates 8d, 8e)
 	const [gateOverride, setGateOverride] = useState<{

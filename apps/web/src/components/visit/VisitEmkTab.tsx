@@ -2430,9 +2430,13 @@ export function VisitEmkTab() {
 								</div>
 								<div className="flex items-center gap-0.5 sm:gap-1 shrink-0 pl-1.5 border-l border-[var(--line)] bg-[var(--paper-soft)] relative">
 									{/* Mobile Dropdown Menu for secondary formatting tools */}
-									<details className="emk-mobile-only group relative sm:hidden">
-										<summary className="h-6 w-6 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer list-none [&::-webkit-details-marker]:hidden" title="Дополнительные инструменты" aria-label="Дополнительно">
-											<MoreHorizontal size={12} />
+									<details className="emk-mobile-only group relative sm:hidden !p-0 !m-0 !border-0 !bg-transparent !shadow-none !rounded-none">
+										<summary
+											className="h-7 w-7 sm:h-8 sm:w-8 !min-h-0 !min-w-0 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] inline-flex items-center justify-center cursor-pointer list-none [&::-webkit-details-marker]:hidden transition-colors"
+											title="Дополнительные инструменты"
+											aria-label="Дополнительно"
+										>
+											<MoreHorizontal size={14} />
 										</summary>
 										<div className="absolute right-0 top-full mt-1 z-50 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 flex flex-col gap-1 w-44">
 											<button

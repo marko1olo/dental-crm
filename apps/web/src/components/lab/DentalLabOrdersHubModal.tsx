@@ -25,6 +25,7 @@ import {
 	Printer,
 	ChevronRight,
 	Calendar,
+	Camera,
 	CheckCircle2,
 	Eye,
 	RefreshCw,
@@ -35,6 +36,8 @@ import {
 	Truck,
 	RotateCcw,
 	Send,
+	MessageSquare,
+	MoreHorizontal,
 	MoreVertical,
 } from "lucide-react";
 import "./dentalLabWorkflow.css";
@@ -301,6 +304,37 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		showToast(`Наряд № ${warrantyReworkOrder.orderNumber}: оформлена гарантийная рекламация (0 ₽ для пациента)`);
 		setWarrantyReworkOrder(null);
 	}, [warrantyReworkOrder, warrantyReason, onSaveOrder, showToast]);
+
+	const handleAttachBitePhoto = useCallback((order: DentalLabWorkflowOrder) => {
+		const url = window.prompt("Введите URL фото окклюзии/прикуса или ссылку на облачный снимок:", "");
+		if (url === null) return;
+		const updated: DentalLabWorkflowOrder = {
+			...order,
+			clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}📸 Фото прикуса: ${url.trim()}`,
+		};
+		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
+		if (onSaveOrder) onSaveOrder(updated);
+		showToast(`Наряд № ${order.orderNumber}: фото прикуса сохранено`);
+	}, [onSaveOrder, showToast]);
+
+	const handleTechnicianComment = useCallback((order: DentalLabWorkflowOrder) => {
+		const comment = window.prompt("Комментарий/уточнение для зубного техника:", "");
+		if (comment === null) return;
+		const updated: DentalLabWorkflowOrder = {
+			...order,
+			clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}💬 Технику: ${comment.trim()}`,
+		};
+		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
+		if (onSaveOrder) onSaveOrder(updated);
+		showToast(`Наряд № ${order.orderNumber}: комментарий технику сохранен`);
+	}, [onSaveOrder, showToast]);
+
+	const handleRepeatFitting = useCallback((order: DentalLabWorkflowOrder) => {
+		const updated = advanceLabOrderStage(order, "fitting_scheduled", "Врач-ортопед", "Назначена повторная клиническая примерка");
+		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
+		if (onSaveOrder) onSaveOrder(updated);
+		showToast(`Наряд № ${order.orderNumber}: переведен на повторную примерку`);
+	}, [onSaveOrder, showToast]);
 
 	// Создание нового наряда
 	const handleCreateOrderSubmit = useCallback((e: React.FormEvent) => {
@@ -782,16 +816,17 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 														</span>
 													</div>
 
-													{/* Кнопки действий (Мандат 8d грех 3 — строго 2 кнопки прямого действия + контекстное меню) */}
+													{/* Кнопки действий (Мандат 8d грех 3 — строго 2 кнопки прямого действия: Печать ЗТЛ-1 + Сменить этап/статус) */}
 													<div className="ztl-card-actions-row" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
 														<button
 															type="button"
 															className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
-															onClick={() => setInspectingOrder(order)}
-															title="Просмотреть детали наряда"
+															onClick={() => handlePrintBlank(order)}
+															title="Распечатать бланк наряда ЗТЛ-1 для курьера лаборатории"
+															data-testid={`ztl-card-print-a4-${order.id}`}
 														>
-															<Eye size={13} />
-															<span>Инфо</span>
+															<Printer size={13} />
+															<span>Печать ЗТЛ-1</span>
 														</button>
 														{order.currentStage === "installed_completed" ? (
 															<button
@@ -866,11 +901,11 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																	e.stopPropagation();
 																	setActiveCardMenuOrderId((prev) => (prev === order.id ? null : order.id));
 																}}
-																title="Вторичные действия: Печать А4, Этап ЗТЛ +1, Рекламация"
+																title="Вторичные действия (Миллер: фото прикуса, комментарий технику, повторная примерка, рекламация)"
 																aria-expanded={activeCardMenuOrderId === order.id}
 																data-testid={`ztl-card-menu-btn-${order.id}`}
 															>
-																<MoreVertical size={13} />
+																<MoreHorizontal size={13} />
 															</button>
 
 															{activeCardMenuOrderId === order.id && (
@@ -885,7 +920,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																		boxShadow: "0 10px 25px -5px rgba(0,0,0,0.18)",
 																		padding: "4px",
 																		zIndex: 50,
-																		minWidth: "190px",
+																		minWidth: "210px",
 																		display: "flex",
 																		flexDirection: "column",
 																		gap: "2px",
@@ -909,18 +944,104 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																			cursor: "pointer",
 																			width: "100%",
 																			textAlign: "left",
-																			minHeight: "44px",
+																			minHeight: "36px",
 																		}}
 																		onClick={() => {
-																			handlePrintBlank(order);
+																			setInspectingOrder(order);
 																			setActiveCardMenuOrderId(null);
 																		}}
-																		title="Распечатать наряд А4 для курьера"
+																		title="Просмотреть детали и спецификацию наряда"
 																		role="menuitem"
-																		data-testid={`ztl-card-print-a4-${order.id}`}
 																	>
-																		<Printer size={14} className="shrink-0 text-teal-600" />
-																		<span>Печать наряда А4</span>
+																		<Eye size={14} className="shrink-0 text-teal-600" />
+																		<span>Детали наряда</span>
+																	</button>
+
+																	<button
+																		type="button"
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: "8px",
+																			padding: "8px 10px",
+																			borderRadius: "6px",
+																			border: "none",
+																			background: "transparent",
+																			color: "var(--ink, #0f172a)",
+																			fontSize: "12px",
+																			fontWeight: 500,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																			minHeight: "36px",
+																		}}
+																		onClick={() => {
+																			handleAttachBitePhoto(order);
+																			setActiveCardMenuOrderId(null);
+																		}}
+																		title="Прикрепить ссылку на фото окклюзии или прикуса"
+																		role="menuitem"
+																	>
+																		<Camera size={14} className="shrink-0 text-sky-600" />
+																		<span>Прикрепить фото прикуса</span>
+																	</button>
+
+																	<button
+																		type="button"
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: "8px",
+																			padding: "8px 10px",
+																			borderRadius: "6px",
+																			border: "none",
+																			background: "transparent",
+																			color: "var(--ink, #0f172a)",
+																			fontSize: "12px",
+																			fontWeight: 500,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																			minHeight: "36px",
+																		}}
+																		onClick={() => {
+																			handleTechnicianComment(order);
+																			setActiveCardMenuOrderId(null);
+																		}}
+																		title="Добавить заметку или уточнение технику"
+																		role="menuitem"
+																	>
+																		<MessageSquare size={14} className="shrink-0 text-emerald-600" />
+																		<span>Комментарий технику</span>
+																	</button>
+
+																	<button
+																		type="button"
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: "8px",
+																			padding: "8px 10px",
+																			borderRadius: "6px",
+																			border: "none",
+																			background: "transparent",
+																			color: "var(--ink, #0f172a)",
+																			fontSize: "12px",
+																			fontWeight: 500,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																			minHeight: "36px",
+																		}}
+																		onClick={() => {
+																			handleRepeatFitting(order);
+																			setActiveCardMenuOrderId(null);
+																		}}
+																		title="Назначить повторную примерку каркаса или реставрации"
+																		role="menuitem"
+																	>
+																		<RotateCcw size={14} className="shrink-0 text-orange-600" />
+																		<span>Повторная примерка</span>
 																	</button>
 
 																	{order.techStage !== "patient_fixation" && (
@@ -940,7 +1061,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																				cursor: "pointer",
 																				width: "100%",
 																				textAlign: "left",
-																				minHeight: "44px",
+																				minHeight: "36px",
 																			}}
 																			onClick={() => {
 																				handleAdvanceTechStage(order);
@@ -971,7 +1092,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																			cursor: "pointer",
 																			width: "100%",
 																			textAlign: "left",
-																			minHeight: "44px",
+																			minHeight: "36px",
 																		}}
 																		onClick={() => {
 																			setWarrantyReason("Скол керамической облицовки / несоответствие прикуса");

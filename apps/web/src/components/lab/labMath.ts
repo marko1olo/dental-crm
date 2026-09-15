@@ -73,6 +73,7 @@ export interface DentalLabOrderModalProps {
 	readonly skipFinancialGate?: boolean | undefined;
 	readonly treatmentPlanAgeDays?: number | undefined;
 	readonly isPlanExpired?: boolean | undefined;
+	readonly initialTab?: "main" | "shades" | "stages" | "print" | undefined;
 	readonly onOrderSaved?: ((order: DentalLabOrderData) => void) | undefined;
 }
 

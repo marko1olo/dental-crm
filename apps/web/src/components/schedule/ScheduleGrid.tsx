@@ -1854,17 +1854,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					className="grid min-w-full border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
 					style={{
 						minWidth: effectiveChairs.length > 1 ? `${Math.max(260, 72 + effectiveChairs.length * 180)}px` : undefined,
-						gridTemplateColumns: `clamp(64px, 15vw, 76px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
+						gridTemplateColumns: `clamp(76px, 15vw, 90px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
 					}}
 				>
 					{/* Time corner header with Grid Step Selector (Mandates 8e, 8p: zero top overhead) */}
-					<div className="px-1 py-1 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex flex-col items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
+					<div className="px-1.5 py-1 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex flex-col items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
 						<div className="flex items-center justify-center gap-1 text-[11px] font-bold text-[var(--muted)]">
 							<Clock size={12} className="text-[var(--teal)]" />
 							<span className="hidden sm:inline">Время</span>
 						</div>
 						<div
-							className="flex items-center gap-0.5 p-0.5 rounded bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
+							className="flex items-center gap-0.5 p-0.5 px-2 rounded bg-[var(--paper)] border border-[var(--line)] shadow-2xs ml-0.5"
 							data-testid="schedule-grid-step-selector"
 							role="group"
 							aria-label="Шаг сетки расписания"
@@ -3071,7 +3071,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							className="grid min-w-full hover:bg-[var(--paper-soft)]/50 transition-colors"
 							style={{
 								minWidth: effectiveChairs.length > 1 ? `${Math.max(260, 72 + effectiveChairs.length * 180)}px` : undefined,
-								gridTemplateColumns: `clamp(64px, 15vw, 76px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
+								gridTemplateColumns: `clamp(76px, 15vw, 90px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
 							}}
 						>
 							{/* Time label */}

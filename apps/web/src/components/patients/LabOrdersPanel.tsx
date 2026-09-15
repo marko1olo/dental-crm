@@ -1,7 +1,9 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	AlertOctagon,
 	Calendar,
+	Camera,
 	Check,
 	CheckCircle2,
 	ChevronDown,
@@ -12,10 +14,14 @@ import {
 	Layers,
 	Link,
 	Loader2,
+	MessageSquare,
+	MoreHorizontal,
 	MoreVertical,
 	Palette,
 	Plus,
+	Printer,
 	RefreshCw,
+	RotateCcw,
 	Send,
 	Sparkles,
 	Trash2,
@@ -114,6 +120,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
+	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
 	const cardMenuRef = useRef<HTMLDivElement | null>(null);
 
 	// Fast Presets dropdown state
@@ -332,6 +339,84 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		} catch (err: any) {
 			showToast(err.message || "Ошибка удаления заказа", "error");
 		}
+	};
+
+	const handleOpenPrintOrder = (order: LabOrder) => {
+		setSelectedOrderForEdit(order as any);
+		setModalInitialTab("print");
+		setIsOrderModalOpen(true);
+	};
+
+	const handleOpenTrackingDrawer = (order: LabOrder) => {
+		setSelectedOrderForTracking(order as any);
+		setIsTrackingDrawerOpen(true);
+	};
+
+	const handleAttachBitePhoto = (order: LabOrder) => {
+		const url = window.prompt("Введите URL фото окклюзии/прикуса или ссылку на облачный снимок:", order.attachedImageUrl || "");
+		if (url === null) return;
+		void fetch(`/api/clinical/lab-orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({ attachedImageUrl: url.trim() || null }),
+		}).then((res) => {
+			if (res.ok) {
+				showToast("Фото прикуса сохранено в наряде ЗТЛ", "success");
+				void fetchOrders();
+			} else {
+				showToast("Не удалось сохранить фото", "error");
+			}
+		}).catch(() => showToast("Ошибка сети при сохранении фото", "error"));
+	};
+
+	const handleTechnicianComment = (order: LabOrder) => {
+		const comment = window.prompt("Комментарий/уточнение для зубного техника:", order.labComments || "");
+		if (comment === null) return;
+		void fetch(`/api/clinical/lab-orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({ labComments: comment.trim() || null }),
+		}).then((res) => {
+			if (res.ok) {
+				showToast("Комментарий технику обновлен", "success");
+				void fetchOrders();
+			} else {
+				showToast("Не удалось обновить комментарий", "error");
+			}
+		}).catch(() => showToast("Ошибка сети", "error"));
+	};
+
+	const handleRepeatFitting = (order: LabOrder) => {
+		void handleStatusTransition(order.id, "fitting");
+		showToast(`Наряд переведен на этап повторной примерки (зуб ${order.toothFdi || "—"})`, "success");
+	};
+
+	const handleReclamation = (order: LabOrder) => {
+		const reason = window.prompt("Причина рекламации/переделки наряда ЗТЛ (скол, не садится, цвет):", "");
+		if (reason === null) return;
+		void fetch(`/api/clinical/lab-orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}⚠️ РЕКЛАМАЦИЯ: ${reason}`,
+			}),
+		}).then((res) => {
+			if (res.ok) {
+				showToast("Рекламация зафиксирована в наряде ЗТЛ", "success");
+				void fetchOrders();
+			} else {
+				showToast("Не удалось зафиксировать рекламацию", "error");
+			}
+		}).catch(() => showToast("Ошибка сети", "error"));
 	};
 
 	const handleQuickSubmit = async (e: React.FormEvent) => {
@@ -640,16 +725,16 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	return (
 		<div className="lab-orders-panel">
-			{/* Dense Header & 32px Toolbar */}
-			<div className="lab-orders-header">
-				<div>
-					<h3>
-						<FlaskConical className="w-4 h-4 text-[var(--teal)]" />
-						Зуботехническая лаборатория (CAD/CAM ЗТЛ)
+			{/* Dense Header & 32-36px 1-Row Toolbar (Hick's Law) */}
+			<div className="lab-orders-header h-9 min-h-[36px] flex items-center justify-between gap-2 px-1">
+				<div className="flex items-center gap-2 shrink-0">
+					<h3 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-1.5 whitespace-nowrap">
+						<FlaskConical className="w-4 h-4 text-[var(--teal)] shrink-0" />
+						<span>CAD/CAM ЗТЛ</span>
 					</h3>
-					<div className="text-xs text-[var(--muted)] mt-0.5">
-						Наряды ЗТЛ, материалы, расцветка VITA Classical / 3D-Master и точный учет себестоимости
-					</div>
+					<span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
+						{orders.length} наряд{orders.length === 1 ? "" : orders.length < 5 ? "а" : "ов"}
+					</span>
 				</div>
 
 				<div className="lab-orders-toolbar">
@@ -1253,12 +1338,22 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									<div className="lab-card-actions">
 										<button
 											type="button"
-											onClick={() => handleScheduleAppointment(order)}
+											onClick={() => handleOpenPrintOrder(order)}
 											className="lab-btn-32 is-primary"
-											title="Запланировать слот приема в расписании на дату готовности работы (Primary Action)"
+											title="Распечатать бланк наряда ЗТЛ-1 для лаборатории"
 										>
-											<Calendar className="w-3.5 h-3.5" />
-											<span>Запланировать прием</span>
+											<Printer className="w-3.5 h-3.5" />
+											<span>Печать ЗТЛ-1</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => handleOpenTrackingDrawer(order)}
+											className="lab-btn-32"
+											title="Сменить этап/статус и открыть трекинг ЗТЛ"
+										>
+											<Layers className="w-3.5 h-3.5 text-indigo-500" />
+											<span>Этап/статус</span>
 										</button>
 
 										<div
@@ -1273,17 +1368,17 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 													)
 												}
 												className="lab-btn-32 !px-2"
-												title="Дополнительные действия с нарядом"
+												title="Дополнительные действия (Миллер: вторичные операции в меню ...)"
 												aria-label="Меню действий"
 												aria-haspopup="menu"
 												aria-expanded={openMenuOrderId === order.id}
 											>
-												<MoreVertical className="w-3.5 h-3.5" />
+												<MoreHorizontal className="w-3.5 h-3.5" />
 											</button>
 
 											{openMenuOrderId === order.id && (
 												<div
-													className="absolute right-0 bottom-full mb-1 w-48 p-1.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] shadow-xl z-50 flex flex-col gap-1 text-xs text-[var(--ink,#0f172a)] backdrop-blur-md"
+													className="absolute right-0 bottom-full mb-1 w-56 p-1.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] shadow-xl z-50 flex flex-col gap-1 text-xs text-[var(--ink,#0f172a)] backdrop-blur-md"
 													role="menu"
 													aria-label="Меню действий наряда"
 												>
@@ -1291,7 +1386,21 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 														type="button"
 														onClick={() => {
 															setOpenMenuOrderId(null);
+															handleScheduleAppointment(order);
+														}}
+														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+														role="menuitem"
+													>
+														<Calendar className="w-3.5 h-3.5 text-amber-500" />
+														<span>Запланировать прием</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
 															setSelectedOrderForEdit(order as any);
+															setModalInitialTab("main");
 															setIsOrderModalOpen(true);
 														}}
 														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
@@ -1305,14 +1414,52 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 														type="button"
 														onClick={() => {
 															setOpenMenuOrderId(null);
-															setSelectedOrderForTracking(order as any);
-															setIsTrackingDrawerOpen(true);
+															handleAttachBitePhoto(order);
 														}}
 														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
 														role="menuitem"
 													>
-														<Layers className="w-3.5 h-3.5 text-indigo-500" />
-														<span>Трекинг этапов</span>
+														<Camera className="w-3.5 h-3.5 text-sky-500" />
+														<span>Прикрепить фото прикуса</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
+															handleTechnicianComment(order);
+														}}
+														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+														role="menuitem"
+													>
+														<MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
+														<span>Комментарий технику</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
+															handleRepeatFitting(order);
+														}}
+														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+														role="menuitem"
+													>
+														<RotateCcw className="w-3.5 h-3.5 text-orange-500" />
+														<span>Повторная примерка</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
+															handleReclamation(order);
+														}}
+														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-rose-600 dark:text-rose-400 font-medium"
+														role="menuitem"
+													>
+														<AlertOctagon className="w-3.5 h-3.5" />
+														<span>Рекламация / брак</span>
 													</button>
 
 													{order.secureToken && (
@@ -1360,6 +1507,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				isOpen={isOrderModalOpen}
 				onClose={() => setIsOrderModalOpen(false)}
 				initialOrder={selectedOrderForEdit}
+				initialTab={modalInitialTab}
 				patientId={patientId}
 				onOrderSaved={() => fetchOrders()}
 			/>
