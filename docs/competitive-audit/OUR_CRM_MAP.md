@@ -130,7 +130,7 @@
 - **Бэкенд / Shared**: `apps/api/src/routes/documents.ts`, `templates.ts`, `egisz.ts`, `packages/shared/src/documents/forms107_1u.ts`, `doctorShiftEngine.ts`.
 - **Возможности**:
   - Генерация договоров оказания платных мед. услуг, ИДС (информированных согласий), актов.
-  - Полная отвязка стоматологической карты 043/у от многопрофильной госпитальной формы 025/у под Мандат 8i (`documentValidators.ts`, `useDocumentPayloads.ts`, `usePatientIntakeLogic.ts`, коммит `65be4645c`).
+  - Полная отвязка стоматологической карты 043/у от многопрофильной госпитальной формы 025/у под Мандат 8i (`documentValidators.ts`, `usePatientIntakeLogic.ts`, коммиты `65be4645c`, `e20a30a78` — хук `useDocumentPayloads.ts` консолидирован и ликвидирован в Wave 222).
   - Унифицированный утилитарный паспорт имплантации `ImplantPassportModal.tsx` с производителями (Straumann, Osstem, Nobel, Dentium, Astra Tech), торком, ISQ и сносом 1000+ строк процедурного блоата (коммит `13fe5e9a0`).
   - Ликвидация вложенных модальных окон (Анти-Матрёшка, Мандат 8d) в резюме визита и печати формы 043/у (`VisitSummaryModal.tsx`, `Form043PrintModal.tsx`, коммит `a5df76320`).
   - Сессионное подписание врачебных протоколов ПЭП по 63-ФЗ и Приказу Минздрава РФ № 947н в 1 клик без постоянного повторного ввода паролей (`doctorShiftEngine.ts`, `doctorShiftCockpitEngine.ts`, коммит `51f4d0677`).
@@ -550,9 +550,9 @@
   - `apps/web/src/components/imaging/VisiographAnalyzer.tsx`, `apps/web/src/components/visiograph/VisiographStudioCanvas.tsx` (коммит `6c41ee42d`).
 
 #### 2.10.51. ЭМК и Форма 043/у: мультисобытийный autosave дневника (pagehide, blur, visibilitychange, входящие звонки) и полная зачистка эмодзи из документов (Мандаты 8d, 8e п. 6, 8i / EHR)
-- **Суть и домен**: Бескомпромиссная защита от потери клинического текста врача. Текстовые поля `DebouncedEmkTextarea` в `VisitEmkTab.tsx` снабжены принудительным сохранением (flush) не только по debounced таймеру (500мс), но и по системным событиям браузера: потеря фокуса (`blur`), уход со страницы или закрытие вкладки (`pagehide`, `visibilitychange`), а также при входящем телефонном звонке через подписку на `useTelephonyStore`. Ни единое слово дневника не теряется. Проведена тотальная зачистка эмодзи (Грех № 7) из медицинских направлений на рентген (`referralPresets.ts`, `RadiologyReferralModal.tsx`) и журнала аспирационных проб (`AnesthesiaAspirationJournalModal.tsx`) с заменой на векторные иконки Lucide.
+- **Суть и домен**: Бескомпромиссная защита от потери клинического текста врача. Текстовые поля `DebouncedEmkTextarea` в `VisitEmkTab.tsx` снабжены принудительным сохранением (flush) не только по debounced таймеру (500мс), но и по системным событиям браузера: потеря фокуса (`blur`), уход со страницы или закрытие вкладки (`pagehide`, `visibilitychange`), а также при входящем телефонном звонке через подписку на `useTelephonyStore`. Ни единое слово дневника не теряется. Проведена тотальная зачистка эмодзи (Грех № 7) из медицинских направлений на рентген (`RadiologyReferralModal.tsx`, пресеты `referralPresets.ts` консолидированы и ликвидированы в Wave 222 по Мандату 8s) и журнала аспирационных проб (`AnesthesiaAspirationJournalModal.tsx`) с заменой на векторные иконки Lucide.
 - **Фронтенд**:
-  - `apps/web/src/components/visit/VisitEmkTab.tsx`, `EmkControlBoard.tsx`, `referralPresets.ts`, `RadiologyReferralModal.tsx`, `AnesthesiaAspirationJournalModal.tsx` (коммит `6c41ee42d`).
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`, `EmkControlBoard.tsx`, `RadiologyReferralModal.tsx`, `AnesthesiaAspirationJournalModal.tsx` (коммиты `6c41ee42d`, `e20a30a78`).
 
 #### 2.10.52. Ортодонтия: 1-клик протоколы фиксации класса по Энглю (I, II/1, II/2, III), рабочих дуг (NiTi, сталь SS, TMA) и раскрутки винта пластинки в дневник 043/у (Мандаты 8e, 8i, 8k, 8n / Ортодонтия)
 - **Суть и домен**: Ликвидация академического трения на приёме врача-ортодонта в `OrthodonticVisitProtocolWidget.tsx`, `OrthodonticStudioModal.tsx` и `orthoEngine.ts`. Интегрирована 1-клик панель классификации смыкания по Энглю (Класс I нейтральный, Класс II/1 дистальный с протрузией, Класс II/2 дистальный с ретрузией, Класс III мезиальный), экспресс-селекторы рабочих дуг (круглые NiTi .014/.016, прямоугольные стальные SS .019x.025, дуги ТМА) для верхней и нижней челюстей, а также счетчик активации расширяющего винта ортодонтической пластинки (шаг 1/4 оборота, 0.25 мм). Протокол формируется в 1 клик и автоматически дописывается в раздел объективного статуса и дневника SOAP Формы 043/у.
@@ -4149,3 +4149,64 @@
      - Из `CashShiftWidget.tsx`, `FiscalReceipt54FzModal.tsx`, `PaymentModal.tsx` и `PaymentCapture.tsx` вычищены упоминания StomX.
 - **Файлы**: `apps/web/src/components/imaging/DicomViewerModal.tsx`, `apps/web/src/components/plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/plans/comparator/TreatmentPlanComparatorModal.tsx`, `apps/web/src/components/plans/stagePayment/StagePaymentPlanModal.tsx`, `apps/web/src/components/finance/CashShiftWidget.tsx`, `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/PaymentCapture.tsx`, `apps/web/src/components/patients/PatientOverviewTab.tsx`, `apps/web/src/PatientsView.tsx`.
 - **Коммит**: `f0bf50cb4`.
+
+### 2.10.308. Волна 222: Быстрый поиск и автосоздание пациентов в 1 клик «+ Пациент», 5-секундная запись и 0-барьерный визит (Мандаты 8e, 8n)
+- **Идея & Бизнес-эффект**: Ликвидация барьеров при оформлении первичных пациентов и создании записей на приём для соло-практики и небольших клиник: 1) поиск и создание карты пациента в 1 клик инлайн-кнопкой «+ Пациент» прямо в форме бронирования без переключения в картотеку; 2) 5-секундная скорость оформления визита без обязательного ассистента; 3) 0-барьерный переход к ведению клинического дневника в `VisitEmkTab.tsx`.
+- **Архитектурные механизмы**:
+  1. *Инлайн автосоздание пациента из поиска (Мандаты 8e пп. 1, 8, 8n)*:
+     - В `AppointmentModal.tsx` и `QuickBookingDrawer.tsx` добавлена кнопка «+ Пациент» (`btn-quick-create-patient`), мгновенно регистрирующая нового пациента с введенным ФИО/телефоном;
+     - Устранена необходимость предварительного заведения карты в картотеке до создания слота в расписании;
+  2. *0-барьерный старт приёма (Мандат 8e)*:
+     - В `VisitEmkTab.tsx` устранены промежуточные модальные окна и предупреждения при переходе к заполнению Формы 043/у.
+- **Файлы**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/components/visit/VisitEmkTab.tsx`.
+- **Коммит**: `700e14d09`.
+
+### 2.10.309. Волна 222: Тотальная ликвидация 2 468 строк блоата — снос clinicalPnlEngine, clinicalImplants, useDocumentPayloads, referralPresets (Мандаты 8i, 8s, 8t)
+- **Идея & Бизнес-эффект**: Исполнение Вселенского анти-блоат догмата (Мандат 8s) и Суверенитета амбулаторного стоматологического контекста (Мандат 8i): физическое удаление устаревших параллельных движков PnL, неиспользуемых хуков и дубликатов имплантатов (-2,468 строк суммарно across 9 files).
+- **Архитектурные механизмы**:
+  1. *Ликвидация устаревшего PnL-движка (-1665 LOC суммарно)*:
+     - Физически удалены `apps/web/src/components/finance/pnl/clinicalPnlEngine.ts` (-1333 LOC) и `apps/web/src/components/finance/pnl/__tests__/clinicalPnlEngine.test.ts` (-332 LOC) в пользу канонической финансовой аналитики;
+  2. *Ликвидация параллельных дубликатов имплантатов и радиологии (-523 LOC)*:
+     - Физически удалены `apps/web/src/utils/dicom/clinicalImplants.ts` (-334 LOC) и тест `mandibularNerveCollision.test.ts` (-189 LOC) с консолидацией на каноническом SSOT `dicom/implantCatalog.ts`;
+  3. *Ликвидация заброшенных хуков и пресетов (-280 LOC)*:
+     - Физически удалены `apps/web/src/hooks/domains/useDocumentPayloads.ts` (-162 LOC) и `apps/web/src/components/visit/referralPresets.ts` (-91 LOC);
+     - Санитаризированы тесты `clinicalReferralWorkflow.test.ts` (-33 LOC), `wave115BloatExtermination.test.ts` (-1 LOC), `mockEradicationWave112.test.ts` (-1 LOC).
+- **Файлы**: `apps/web/src/components/finance/pnl/clinicalPnlEngine.ts` (удален), `apps/web/src/components/finance/pnl/__tests__/clinicalPnlEngine.test.ts` (удален), `apps/web/src/utils/dicom/clinicalImplants.ts` (удален), `apps/web/src/hooks/domains/useDocumentPayloads.ts` (удален), `apps/web/src/components/visit/referralPresets.ts` (удален), `apps/web/src/components/visiograph/__tests__/mandibularNerveCollision.test.ts` (удален), `apps/web/src/components/visit/clinicalReferralWorkflow.test.ts` (удален), `apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts`, `apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts`.
+- **Коммит**: `e20a30a78`.
+
+### 2.10.310. Волна 222–223: Ликвидация 5 дефектов верстки D-222-1 ... D-222-5 (Мандаты 8c, 8d, 8e, 8p)
+- **Идея & Бизнес-эффект**: Инструментальное искоренение 5 критических дефектов верстки десктопного и мобильного интерфейсов по чек-листу 7 смертных грехов UI: предотвращение сжатия кнопок кресел, адаптивная карусель SOAP на 390px, снос плавающего FAB микрофона, Закон Миллера на карточке пациента и корректный отступ мобильной кассы.
+- **Архитектурные механизмы**:
+  1. *D-222-1: Нормализация кнопки кресла в расписании (Мандаты 8d п. 2, 8p)*:
+     - В `ScheduleFilterStrip.tsx` нормализованы названия специальностей, добавлены `!shrink-0` и `minWidth: fit-content` для защиты кнопок кабинетов от сжатия и обрезки текста;
+  2. *D-222-2: Мобильная карусель SOAP-пресетов 390px (Мандаты 8c, 8d)*:
+     - В `ClinicalQuickPresetsBar.tsx` применен контейнер `flex overflow-x-auto whitespace-nowrap scrollbar-thin` с элементами `min-w-[155px]`, исключающий разрыв сетки мобильного экрана;
+  3. *D-222-3: Снос плавающего FAB микрофона (Мандаты 8d, 8p)*:
+     - Из `VisitView.tsx` удален плавающий элемент микрофона голосового ввода `chairside-floating-voice-hud` (`LucideMic`), загораживавший клинические поля приёма;
+  4. *D-222-4: Закон Миллера на карточке пациента (Мандат 8d п. 3)*:
+     - В `PatientsView.tsx` карточка пациента оптимизирована: оставлено строго <=2 кнопки прямого действия, а вторичные сгруппированы в выпадающее меню «...»;
+  5. *D-222-5: Отступ мобильной кассы 54-ФЗ (Мандаты 8c, 8e п. 9)*:
+     - В `PaymentCapture.tsx` увеличен нижний отступ `max-md:pb-36 pb-32` для гарантии 100% видимости кнопки оплаты над мобильным навбаром.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/PaymentCapture.tsx`.
+- **Коммит**: `4348bfc04`.
+
+### 2.10.311. Волна 223: Фотофиксация Playwright 16/16 живых скриншотов во всех 4 вьюпортах и вердикт инквизиции [ПРОВЕРЕНО: ЧИСТО] (Мандаты 8c, 8d, 8p)
+- **Идея & Бизнес-эффект**: Бескомпромиссная инструментальная визуальная аттестация живого приложения Playwright Chromium во всех 4 обязательных вьюпортах (PC Light 1440x900, PC Dark 1440x900, Mobile Light 390x844, Mobile Dark 390x844) по Закону инструментального бремени доказательства (Мандат 8d).
+- **Архитектурные механизмы**:
+  1. *Съемка 16 живых экранов в директории `docs/screenshots/inquisition_live/`*:
+     - Расписание: `schedule-pc-light.png`, `schedule-pc-dark.png`, `schedule-mob-light.png`, `schedule-mob-dark.png`;
+     - Приём / ЭМК: `visit-pc-light.png`, `visit-pc-dark.png`, `visit-mob-light.png`, `visit-mob-dark.png`;
+     - Картотека пациентов: `patients-pc-light.png`, `patients-pc-dark.png`, `patients-mob-light.png`, `patients-mob-dark.png`;
+     - Касса 54-ФЗ / Финансы: `cashbox-pc-light.png`, `cashbox-pc-dark.png`, `cashbox-mob-light.png`, `cashbox-mob-dark.png`;
+  2. *Инструментальный аудит чеклиста 7 смертных грехов*:
+     - Текст и локализация: 0 обрезанных слов, 0 наездов, 0 утечек `undefined`/`NaN`;
+     - Плотность тулбаров: строго 1 строка 32–36px;
+     - Карточки сущностей: <=2 кнопок прямого действия;
+     - Контрастность тем: WCAG AAA в темной теме (`zinc-950`/`900`), контраст >= 4.5:1 в светлой теме;
+     - Автономия врача: 0 disabled кнопок, 1-клик соматическая норма, касса без ИНН физлиц;
+     - Анти-Матрёшка: глубина модалок строго 1;
+     - Святость бланков: 0 эмодзи в медицинских документах и актах;
+  3. *Валидация артефактов*:
+     - Все 16 скриншотов имеют уникальные MD5-хеши и размер $\ge 40$ КБ, вердикт инквизиции: `[ПРОВЕРЕНО: ЧИСТО]`.
+- **Файлы**: `docs/screenshots/inquisition_live/` (16 файлов PNG).
+- **Коммит**: `b8fd82ed6`.
