@@ -461,6 +461,7 @@ export function IncomingCallPopup() {
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
 	const [showMoreMenu, setShowMoreMenu] = useState(false);
+	const [showBadgeMoreMenu, setShowBadgeMoreMenu] = useState(false);
 	const [showQuickBooking, setShowQuickBooking] = useState(false);
 	const [showOutcomePanel, setShowOutcomePanel] = useState(false);
 
@@ -477,7 +478,9 @@ export function IncomingCallPopup() {
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
-				if (showMoreMenu) {
+				if (showBadgeMoreMenu) {
+					setShowBadgeMoreMenu(false);
+				} else if (showMoreMenu) {
 					setShowMoreMenu(false);
 				} else if (isCallDrawerOpen) {
 					closeCallDrawer();
@@ -486,7 +489,7 @@ export function IncomingCallPopup() {
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isCallDrawerOpen, closeCallDrawer, showMoreMenu]);
+	}, [isCallDrawerOpen, closeCallDrawer, showMoreMenu, showBadgeMoreMenu]);
 
 	// Close More Menu on click outside
 	useEffect(() => {
@@ -494,10 +497,13 @@ export function IncomingCallPopup() {
 			if (showMoreMenu && !(e.target as HTMLElement).closest("[data-drawer-more-container]")) {
 				setShowMoreMenu(false);
 			}
+			if (showBadgeMoreMenu && !(e.target as HTMLElement).closest("[data-badge-more-container]")) {
+				setShowBadgeMoreMenu(false);
+			}
 		};
 		window.addEventListener("mousedown", handleClickOutside);
 		return () => window.removeEventListener("mousedown", handleClickOutside);
-	}, [showMoreMenu]);
+	}, [showMoreMenu, showBadgeMoreMenu]);
 
 	// Live Call Duration Timer (ticks every second while activeCall exists)
 	useEffect(() => {
@@ -600,8 +606,13 @@ export function IncomingCallPopup() {
 		return somaticAlerts.filter((a) => a.category === "pain");
 	}, [somaticAlerts]);
 
-	// Absolute doctor immunity and DND suppression: zero popup disruption
-	if ((!activeCall && !isCallDrawerOpen) || !currentCall || isDoctorMode || isDndActive) return null;
+	// Absolute doctor immunity and DND suppression: zero popup disruption (Mandate 8e)
+	if (isDoctorMode || isDndActive) return null;
+	if (!isCallDrawerOpen) {
+		if (!activeCall || isDoctorMode || isDndActive) return null;
+	}
+	if (!activeCall && !isCallDrawerOpen) return null;
+	if (!currentCall) return null;
 
 	const callerName = resolvedPatient?.fullName || currentCall.patientName || "Неизвестный номер";
 	const formattedPhone = formatPhoneDisplay(currentCall.phone);
@@ -942,6 +953,42 @@ export function IncomingCallPopup() {
 								<span>{formatDurationTimer(elapsedSeconds)}</span>
 							</div>
 
+							{/* Compact Call Answer / Hangup in Header */}
+							{!isCallAnswered ? (
+								<>
+									<button
+										type="button"
+										onClick={handleAnswerCall}
+										className="min-h-[36px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+										title="Принять входящий звонок (WebRTC)"
+										data-testid="badge-header-answer-btn"
+									>
+										<PhoneCall size={13} className="animate-pulse" />
+										<span>Ответить</span>
+									</button>
+									<button
+										type="button"
+										onClick={handleReject}
+										className="min-h-[36px] px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+										title="Отклонить звонок"
+										data-testid="badge-header-reject-btn"
+									>
+										<PhoneOff size={13} />
+									</button>
+								</>
+							) : (
+								<button
+									type="button"
+									onClick={handleReject}
+									className="min-h-[36px] px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+									title="Завершить разговор"
+									data-testid="badge-header-hangup-btn"
+								>
+									<PhoneOff size={13} />
+									<span>Завершить</span>
+								</button>
+							)}
+
 							{/* Mute Ringtone Toggle (>= 44x44px touch target) */}
 							<button
 								type="button"
@@ -1128,70 +1175,153 @@ export function IncomingCallPopup() {
 						)}
 					</div>
 
-					{/* Action Buttons Row (>= 44x44px touch targets) */}
+					{/* Action Buttons Row: Strictly <= 2 Primary Direct Action Buttons (Miller's Law & Mandate 8d, 8p) */}
 					<div className="flex items-center gap-2 pt-1 border-t border-[var(--line,#e2e8f0)]">
-						{/* Answer / Reject buttons */}
-						{!isCallAnswered ? (
-							<>
-								<button
-									type="button"
-									onClick={handleAnswerCall}
-									className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm cursor-pointer"
-									title="Принять входящий звонок (WebRTC)"
-								>
-									<PhoneCall size={16} className="animate-pulse" />
-									<span>Ответить</span>
-								</button>
-								<button
-									type="button"
-									onClick={handleReject}
-									className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-95 border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] cursor-pointer"
-									title="Отклонить звонок"
-								>
-									<PhoneOff size={16} />
-									<span>Сброс</span>
-								</button>
-							</>
-						) : (
-							<button
-								type="button"
-								onClick={handleReject}
-								className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm cursor-pointer"
-								title="Завершить разговор"
-							>
-								<PhoneOff size={16} />
-								<span>Завершить</span>
-							</button>
-						)}
+						{/* Action 1: Создать запись (1-click quick appointment draft without forcing assistant or branch) */}
+						<button
+							type="button"
+							onClick={() => handleQuickBook("today_standard")}
+							className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+							title="Создать запись на приём в 1 клик (соло-врач: без обязательного ассистента и филиала)"
+							data-testid="badge-action-book"
+						>
+							<CalendarCheck size={16} />
+							<span>Создать запись</span>
+						</button>
 
-						{/* Toggle Patient Side Drawer (Non-destructive: DOES NOT change currentView or wipe 043/u diary!) */}
+						{/* Action 2: Открыть карту / Создать пациента (Slide-over drawer without resetting Form 043/u) */}
 						<button
 							type="button"
 							onClick={handleToggleCardDrawer}
-							className={`flex-1 px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm cursor-pointer ${
-								isCallDrawerOpen
-									? "bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--teal)]"
-									: "bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white"
-							}`}
+							className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 							title={
-								isCallDrawerOpen
-									? "Скрыть боковую шторку карточки"
-									: "Открыть карточку в боковой шторке (визит 043/у сохранён)"
+								isKnownPatient
+									? "Открыть карту пациента в боковой шторке (визит 043/у сохранён)"
+									: "Создать нового пациента в боковой шторке (визит 043/у сохранён)"
 							}
-							aria-label="Открыть карточку пациента в боковой шторке"
+							aria-label={isKnownPatient ? "Открыть карту пациента" : "Создать нового пациента"}
+							data-testid="badge-action-card"
 						>
-							{isCallDrawerOpen ? (
-								<>
-									<span>Скрыть</span>
-									<ChevronRight size={16} />
-								</>
-							) : (
-								<>
-									<UserCheck size={16} />
-									<span>Открыть карточку</span>
-								</>
-							)}
+							<UserCheck size={16} className="text-[var(--teal)]" />
+							<span>{isKnownPatient ? "Открыть карту" : "Создать пациента"}</span>
 						</button>
+
+						{/* Menu ... (Consolidated Secondary Actions) */}
+						<div className="relative" data-badge-more-container="true">
+							<button
+								type="button"
+								onClick={() => setShowBadgeMoreMenu((prev) => !prev)}
+								className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer border border-[var(--line,#e2e8f0)]"
+								title="Дополнительные действия (слоты записи, WhatsApp, SMS, перевод)"
+								aria-label="Дополнительные действия"
+								data-testid="badge-more-menu-btn"
+							>
+								<MoreHorizontal size={18} />
+							</button>
+
+							{showBadgeMoreMenu && (
+								<div className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5">
+									<button
+										type="button"
+										onClick={() => {
+											handleQuickBook("today_urgent");
+											setShowBadgeMoreMenu(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										<Zap size={13} className="text-amber-500" />
+										<span>Запись: Острая боль (10:00)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											handleQuickBook("tomorrow");
+											setShowBadgeMoreMenu(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										<Calendar size={13} className="text-[var(--teal)]" />
+										<span>Запись: Завтра (11:00)</span>
+									</button>
+									{upcomingAppointment && (
+										<>
+											<button
+												type="button"
+												onClick={() => {
+													handleSendWhatsAppConfirmation();
+													setShowBadgeMoreMenu(false);
+												}}
+												className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+											>
+												<Send size={13} className="text-emerald-600" />
+												<span>1-Click WhatsApp</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													handleCopySmsConfirmation();
+													setShowBadgeMoreMenu(false);
+												}}
+												className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+											>
+												<Copy size={13} className="text-[var(--muted,#64748b)]" />
+												<span>Скопировать SMS</span>
+											</button>
+										</>
+									)}
+									<button
+										type="button"
+										onClick={() => {
+											navigator.clipboard?.writeText(currentCall.phone);
+											showToast("Номер телефона скопирован", "info");
+											setShowBadgeMoreMenu(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										<Copy size={13} className="text-[var(--muted,#64748b)]" />
+										<span>Копировать номер</span>
+									</button>
+									{isCallAnswered && (
+										<button
+											type="button"
+											onClick={() => {
+												setShowTransferPanel((prev) => !prev);
+												handleToggleCardDrawer();
+												setShowBadgeMoreMenu(false);
+											}}
+											className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+										>
+											<PhoneForwarded size={13} className="text-[var(--teal)]" />
+											<span>Перевод звонка (SIP)</span>
+										</button>
+									)}
+									<button
+										type="button"
+										onClick={() => {
+											setShowOutcomePanel((prev) => !prev);
+											handleToggleCardDrawer();
+											setShowBadgeMoreMenu(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										<Check size={13} className="text-[var(--teal)]" />
+										<span>Фиксация исхода</span>
+									</button>
+									<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
+									<button
+										type="button"
+										onClick={() => {
+											handleOpenFullPatientView();
+											setShowBadgeMoreMenu(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--teal)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										<ExternalLink size={13} />
+										<span>Открыть в общем списке</span>
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 				)}
@@ -1376,32 +1506,32 @@ export function IncomingCallPopup() {
 
 						{/* 2 Primary Direct Action Buttons (Miller & Hick Law Invariant) */}
 						<div className="flex items-center gap-2">
-							{/* Action 1: Записать на приём */}
+							{/* Action 1: Создать запись */}
 							<button
 								type="button"
 								onClick={() => setShowQuickBooking((prev) => !prev)}
 								className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-								title="Быстрая запись на приём (3 слота)"
+								title="Создать запись на приём (быстрые слоты в 1 клик)"
 								data-testid="drawer-action-book"
 							>
 								<CalendarCheck size={15} />
-								<span>Записать на приём</span>
+								<span>Создать запись</span>
 								<ChevronDown
 									size={14}
 									className={`transition-transform duration-200 ${showQuickBooking ? "rotate-180" : ""}`}
 								/>
 							</button>
 
-							{/* Action 2: Открыть карту */}
+							{/* Action 2: Открыть карту / Создать пациента */}
 							<button
 								type="button"
 								onClick={handleOpenFullPatientView}
 								className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-								title="Открыть карту пациента в реестре"
+								title={isKnownPatient ? "Открыть карту пациента в реестре" : "Создать нового пациента в реестре"}
 								data-testid="drawer-action-open-card"
 							>
 								<UserCheck size={15} className="text-[var(--teal)]" />
-								<span>Открыть карту</span>
+								<span>{isKnownPatient ? "Открыть карту" : "Создать пациента"}</span>
 							</button>
 						</div>
 

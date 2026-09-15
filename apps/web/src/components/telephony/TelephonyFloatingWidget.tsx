@@ -13,6 +13,7 @@ import {
 	Headphones,
 	History,
 	MessageSquare,
+	MoreHorizontal,
 	Pause,
 	Phone,
 	PhoneCall,
@@ -74,6 +75,7 @@ export function TelephonyFloatingWidget({
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const answerCall = useTelephonyStore((s) => s.answerCall);
 	const acceptCall = useTelephonyStore((s) => s.acceptCall);
+	const connectCall = useTelephonyStore((s) => s.connectCall);
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
 	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
@@ -114,6 +116,7 @@ export function TelephonyFloatingWidget({
 	const [copiedTranscript, setCopiedTranscript] = useState(false);
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
+	const [showWidgetMoreMenu, setShowWidgetMoreMenu] = useState(false);
 
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveformRef = useRef<HTMLDivElement | null>(null);
@@ -230,6 +233,30 @@ export function TelephonyFloatingWidget({
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isExpanded]);
+
+	useEffect(() => {
+		if (!showWidgetMoreMenu) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setShowWidgetMoreMenu(false);
+			}
+		};
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+			if (
+				!target.closest('[data-testid="widget-more-menu-btn"]') &&
+				!target.closest('[data-testid="widget-more-menu-dropdown"]')
+			) {
+				setShowWidgetMoreMenu(false);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [showWidgetMoreMenu]);
 
 	// Audio Playback Handlers
 	const togglePlayAudio = () => {
@@ -584,6 +611,53 @@ export function TelephonyFloatingWidget({
 						</div>
 
 						<div className="flex items-center gap-1">
+							{/* Compact Answer / Hangup in header when activeCall is present */}
+							{activeCall && (
+								!isCallAnswered ? (
+									<>
+										<button
+											type="button"
+											onClick={() => {
+												answerCall();
+												showToast("Вызов принят", "success");
+											}}
+											className="min-h-[36px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+											title="Принять входящий звонок (WebRTC)"
+											data-testid="widget-header-answer-btn"
+										>
+											<PhoneCall size={13} className="animate-pulse" />
+											<span>Ответить</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												rejectCall();
+												showToast("Вызов завершен", "info");
+											}}
+											className="min-h-[36px] px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+											title="Сбросить вызов"
+											data-testid="widget-header-reject-btn"
+										>
+											<PhoneOff size={13} />
+										</button>
+									</>
+								) : (
+									<button
+										type="button"
+										onClick={() => {
+											rejectCall();
+											showToast("Вызов завершен", "info");
+										}}
+										className="min-h-[36px] px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+										title="Завершить разговор"
+										data-testid="widget-header-hangup-btn"
+									>
+										<PhoneOff size={13} />
+										<span>Завершить</span>
+									</button>
+								)
+							)}
+
 							{/* Mute toggle >= 44x44px */}
 							<button
 								type="button"
@@ -1129,101 +1203,151 @@ export function TelephonyFloatingWidget({
 											</div>
 										)}
 
-										{/* Touch-First Quick Booking Presets */}
-										<div className="space-y-1.5">
-											<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
-												<Zap size={11} className="text-amber-400" />
-												Быстрая запись в 1 касание:
-											</span>
-											<div className="grid grid-cols-3 gap-1.5">
+										{/* Strictly <= 2 Primary Direct Actions + Context Menu (Miller's Law / Mandates 8d, 8e, 8n) */}
+										<div className="relative pt-1 border-t border-[var(--line,#e2e8f0)]">
+											<div className="flex items-center gap-2">
+												{/* Action 1: Создать запись (1-click quick appointment draft without forcing assistant or branch) */}
 												<button
 													type="button"
 													onClick={() => handleQuickBook("urgent")}
-													className="min-h-[44px] p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
+													className="flex-1 min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+													title="Создать запись на приём в 1 клик (соло-врач: без обязательного ассистента и филиала)"
+													data-testid="widget-action-book"
 												>
-													<span className="inline-flex items-center gap-1">
-														<Zap size={11} className="text-amber-500 shrink-0" />
-														<span>Острая боль</span>
-													</span>
-													<span className="text-[9px] opacity-80">10:00</span>
+													<CalendarCheck size={16} />
+													<span>Создать запись</span>
 												</button>
 
-												<button
-													type="button"
-													onClick={() => handleQuickBook("consultation")}
-													className="min-h-[44px] p-2 rounded-xl bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
-												>
-													<span className="inline-flex items-center gap-1">
-														<Calendar size={11} className="text-[var(--teal)] shrink-0" />
-														<span>Консультация</span>
-													</span>
-													<span className="text-[9px] opacity-80">15:00</span>
-												</button>
-
-												<button
-													type="button"
-													onClick={() => handleQuickBook("tomorrow")}
-													className="min-h-[44px] p-2 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
-												>
-													<span className="inline-flex items-center gap-1">
-														<CalendarDays size={11} className="text-slate-500 shrink-0" />
-														<span>Завтра</span>
-													</span>
-													<span className="text-[9px] opacity-80">11:00</span>
-												</button>
-											</div>
-										</div>
-
-										{/* PROMINENT CALL ACTION BUTTONS (>= 48x48px) */}
-										<div className="flex items-center gap-2 pt-1">
-											{/* Hangup / Reject Button >= 48x48px */}
-											<button
-												type="button"
-												onClick={() => {
-													rejectCall();
-													showToast("Вызов завершен", "info");
-												}}
-												className="min-h-[48px] min-w-[48px] px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-95 border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100 text-sm font-bold transition-all inline-flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-rose-500"
-												aria-label="Отклонить вызов"
-											>
-												<PhoneOff size={18} />
-												<span>Сброс</span>
-											</button>
-
-											{/* Answer Button >= 48x48px (if ringing) */}
-											{!isCallAnswered && (
+												{/* Action 2: Открыть карту / Создать пациента (Slide-over drawer without resetting Form 043/u) */}
 												<button
 													type="button"
 													onClick={() => {
-														answerCall();
-														showToast("Вызов принят", "success");
+														if (resolvedPatient) {
+															setSelectedPatientId(resolvedPatient.id);
+														} else {
+															setNewPatientPhone(activeCall.phone);
+														}
+														connectCall();
+														openCallDrawer();
 													}}
-													className="min-h-[48px] min-w-[48px] px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-													aria-label="Ответить на входящий вызов"
+													className="flex-1 min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+													title={resolvedPatient ? "Открыть карточку в боковой шторке (визит 043/у сохранён)" : "Создать пациента в боковой шторке"}
+													data-testid="widget-action-open-card"
 												>
-													<PhoneCall size={18} className="animate-pulse" />
-													<span>Ответить</span>
+													<UserCheck size={16} className="text-[var(--teal)]" />
+													<span>{resolvedPatient ? "Открыть карту" : "Создать"}</span>
 												</button>
-											)}
 
-											{/* Accept & Open Patient Card (Non-destructive slide-over drawer) */}
-											<button
-												type="button"
-												onClick={() => {
-													if (resolvedPatient) {
-														setSelectedPatientId(resolvedPatient.id);
-													} else {
-														setNewPatientPhone(activeCall.phone);
-													}
-													acceptCall();
-													openCallDrawer();
-												}}
-												className="flex-1 min-h-[48px] px-4 py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40 focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
-												title={resolvedPatient ? "Открыть карточку в боковой шторке (визит 043/у сохранён)" : "Создать пациента в боковой шторке"}
-											>
-												<UserCheck size={18} />
-												<span>{resolvedPatient ? "Открыть карту" : "Создать"}</span>
-											</button>
+												{/* Action 3: Menu ... (Consolidated Secondary Actions) */}
+												<button
+													type="button"
+													onClick={() => setShowWidgetMoreMenu((prev) => !prev)}
+													className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer border border-[var(--line,#e2e8f0)]"
+													title="Дополнительные действия (слоты записи, WhatsApp, перевод, удержание)"
+													aria-label="Дополнительные действия"
+													data-testid="widget-more-menu-btn"
+												>
+													<MoreHorizontal size={18} />
+												</button>
+											</div>
+
+											{/* Popover Menu Dropdown */}
+											{showWidgetMoreMenu && (
+												<div
+													className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5"
+													data-testid="widget-more-menu-dropdown"
+												>
+													<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+														Слоты быстрой записи:
+													</div>
+													<button
+														type="button"
+														onClick={() => {
+															handleQuickBook("urgent");
+															setShowWidgetMoreMenu(false);
+														}}
+														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+													>
+														<Zap size={13} className="text-amber-500 shrink-0" />
+														<span>Острая боль (10:00)</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															handleQuickBook("consultation");
+															setShowWidgetMoreMenu(false);
+														}}
+														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--teal-surface)] text-[var(--teal)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+													>
+														<Calendar size={13} className="text-[var(--teal)] shrink-0" />
+														<span>Консультация (15:00)</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															handleQuickBook("tomorrow");
+															setShowWidgetMoreMenu(false);
+														}}
+														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+													>
+														<CalendarDays size={13} className="text-slate-500 shrink-0" />
+														<span>Завтра (11:00)</span>
+													</button>
+
+													<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
+
+													<button
+														type="button"
+														onClick={() => {
+															handleSendWhatsApp();
+															setShowWidgetMoreMenu(false);
+														}}
+														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+													>
+														<MessageSquare size={13} className="text-emerald-600 shrink-0" />
+														<span>1-Click WhatsApp</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => {
+															setShowTransferPanel((prev) => !prev);
+															setShowWidgetMoreMenu(false);
+														}}
+														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+													>
+														<PhoneForwarded size={13} className="text-[var(--teal)] shrink-0" />
+														<span>Перевод звонка (SIP)</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => {
+															toggleHold();
+															setShowWidgetMoreMenu(false);
+														}}
+														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+													>
+														<Pause size={13} className="text-amber-500 shrink-0" />
+														<span>{isHeld ? "Снять с удержания" : "Удержание (Hold)"}</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => {
+															if (activeCall?.phone) {
+																navigator.clipboard?.writeText(activeCall.phone);
+																showToast("Номер телефона скопирован", "info");
+															}
+															setShowWidgetMoreMenu(false);
+														}}
+														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+													>
+														<Copy size={13} className="text-[var(--muted,#64748b)] shrink-0" />
+														<span>Копировать номер</span>
+													</button>
+												</div>
+											)}
 										</div>
 									</>
 								) : (
