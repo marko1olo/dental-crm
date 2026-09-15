@@ -289,6 +289,24 @@
 	border: 1px solid #fecaca;
 }
 
+[data-theme="dark"] .cw-warning-amber {
+	background: rgba(245, 158, 11, 0.12);
+	color: #fbbf24;
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .cw-warning-red {
+	background: rgba(239, 68, 68, 0.12);
+	color: #f87171;
+	border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .cw-chip-btn {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
 /* Сводная плашка сумм */
 .cw-summary-bar {
 	display: grid;
@@ -298,6 +316,11 @@
 	border-radius: 14px;
 	background: var(--teal-surface, rgba(13, 148, 136, 0.06));
 	border: 1px solid var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+[data-theme="dark"] .cw-summary-bar {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: rgba(13, 148, 136, 0.3);
 }
 
 @media (max-width: 800px) {

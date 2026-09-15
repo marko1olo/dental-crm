@@ -271,3 +271,15 @@
 	color: #991b1b;
 	border: 1px solid #fecaca;
 }
+
+[data-theme="dark"] .mdlp-warning-amber {
+	background: rgba(245, 158, 11, 0.12);
+	color: #fbbf24;
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .mdlp-warning-red {
+	background: rgba(239, 68, 68, 0.12);
+	color: #f87171;
+	border: 1px solid rgba(239, 68, 68, 0.3);
+}

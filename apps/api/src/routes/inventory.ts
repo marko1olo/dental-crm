@@ -433,8 +433,12 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const isClinicalRole =
 				identity.role === "doctor" ||
 				identity.role === "assistant" ||
+				identity.role === "nurse" ||
+				identity.role === "senior_nurse" ||
 				request.user?.role === "doctor" ||
-				request.user?.role === "assistant";
+				request.user?.role === "assistant" ||
+				request.user?.role === "nurse" ||
+				request.user?.role === "senior_nurse";
 			const isClinicalCategory =
 				item.category === "anesthesia" ||
 				item.category === "anesthetic" ||
@@ -525,7 +529,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return {
 				...result.updated,
 				isOverdraft: true,
-				warning: `Мягкий минусовой овердрафт партии: накладная ещё не внесена, списано под операцию (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед.).`,
+				warning: `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед., накладная поставщика ещё в пути, списание под операцию проведено без блокировки).`,
 			};
 		}
 		return result.updated;

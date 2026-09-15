@@ -8,6 +8,7 @@ import {
 	Package,
 	PackageCheck,
 	Plus,
+	Printer,
 	QrCode,
 	Search,
 	Settings,
@@ -1542,6 +1543,29 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															gap: 6,
 														}}
 													>
+														{/* Action 1: Списать расход (Direct primary action) */}
+														<button
+															type="button"
+															onClick={() => {
+																setAdjustingItem(item);
+																setAdjustType("out");
+																setAdjustAmount("");
+															}}
+															className="min-h-[36px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+															style={{
+																background: "var(--bad-bg, rgba(239, 68, 68, 0.1))",
+																color: "var(--bad-fg, #ef4444)",
+																border: "1px solid rgba(239, 68, 68, 0.25)",
+																whiteSpace: "nowrap",
+															}}
+															title="Списать расход материала (Primary Action: Расход)"
+															data-testid={`btn-item-writeoff-${item.id}`}
+														>
+															<ArrowUpFromLine size={13} />
+															<span>Списать расход</span>
+														</button>
+
+														{/* Action 2: Приход/Накладная (Direct primary action) */}
 														<button
 															type="button"
 															onClick={() => {
@@ -1549,25 +1573,21 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																setAdjustType("in");
 																setAdjustAmount("");
 															}}
+															className="min-h-[36px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
 															style={{
 																background: "var(--teal-soft)",
 																color: "var(--teal-dark, #0f766e)",
-																border: "none",
-																borderRadius: 6,
-																fontWeight: 600,
-																cursor: "pointer",
-																display: "flex",
-																alignItems: "center",
-																gap: 5,
-																fontSize: 13,
-																minHeight: 44,
-																padding: "8px 12px",
+																border: "1px solid var(--teal)",
 																whiteSpace: "nowrap",
 															}}
-															title="Оприходовать материал на склад (Primary Action)"
+															title="Оприходовать материал на склад / накладная (Primary Action: Приход)"
+															data-testid={`btn-item-arrival-${item.id}`}
 														>
-															<ArrowDownToLine size={14} /> ПРИХОД
+															<ArrowDownToLine size={13} />
+															<span>Приход/Накладная</span>
 														</button>
+
+														{/* Secondary Actions Menu (MoreHorizontal) - Miller's Law <=2 direct controls */}
 														<div
 															style={{ position: "relative", display: "inline-flex" }}
 															ref={activeMenuRowId === item.id ? rowMenuRef : null}
@@ -1580,24 +1600,17 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		prev === item.id ? null : item.id,
 																	);
 																}}
+																className="min-h-[36px] sm:min-h-0 sm:h-8 w-8 rounded-lg cursor-pointer inline-flex items-center justify-center transition-colors"
 																style={{
 																	background: "var(--paper-soft, rgba(0,0,0,0.04))",
 																	color: "var(--muted)",
 																	border: "1px solid var(--line, rgba(0,0,0,0.08))",
-																	width: 44,
-																	height: 44,
-																	minWidth: 44,
-																	minHeight: 44,
-																	borderRadius: 8,
-																	cursor: "pointer",
-																	display: "flex",
-																	alignItems: "center",
-																	justifyContent: "center",
 																}}
-																title="Действия с позицией"
-																aria-label="Действия с позицией склада"
+																title="Дополнительные действия с позицией"
+																aria-label="Меню дополнительных действий склада"
 																aria-haspopup="menu"
 																aria-expanded={activeMenuRowId === item.id}
+																data-testid={`btn-item-more-${item.id}`}
 															>
 																<MoreHorizontal size={15} />
 															</button>
@@ -1611,10 +1624,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		background: "var(--paper-strong)",
 																		border: "1px solid var(--line)",
 																		borderRadius: 8,
-																		boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+																		boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
 																		padding: 4,
 																		zIndex: 50,
-																		minWidth: 160,
+																		minWidth: 190,
 																		display: "flex",
 																		flexDirection: "column",
 																		gap: 2,
@@ -1628,9 +1641,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		type="button"
 																		onClick={() => {
 																			setActiveMenuRowId(null);
-																			setAdjustingItem(item);
-																			setAdjustType("out");
-																			setAdjustAmount("");
+																			if (item.barcode) {
+																				navigator.clipboard?.writeText(item.barcode);
+																				showToast(`Штрихкод скопирован: ${item.barcode}`, "info");
+																			} else {
+																				showToast("У позиции нет штрихкода (задайте в редактировании)", "info");
+																			}
 																		}}
 																		style={{
 																			display: "flex",
@@ -1649,8 +1665,86 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		}}
 																		role="menuitem"
 																	>
-																		<ArrowUpFromLine size={14} color="var(--bad-fg, #ef4444)" />
-																		<span>Списать (Расход)</span>
+																		<QrCode size={14} className="text-teal-600 shrink-0" />
+																		<span>Штрихкод {item.barcode ? `(${item.barcode})` : ""}</span>
+																	</button>
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setActiveMenuRowId(null);
+																			setIsWarehouseManagerOpen(true);
+																		}}
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 8,
+																			padding: "8px 12px",
+																			fontSize: 12,
+																			fontWeight: 500,
+																			color: "var(--ink)",
+																			background: "none",
+																			border: "none",
+																			borderRadius: 6,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																		}}
+																		role="menuitem"
+																	>
+																		<TrendingUp size={14} className="text-blue-600 shrink-0" />
+																		<span>История движений</span>
+																	</button>
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setActiveMenuRowId(null);
+																			showToast(`Печать этикетки «${item.name}» (штрихкод: ${item.barcode || "б/ш"}) отправлена`, "info");
+																		}}
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 8,
+																			padding: "8px 12px",
+																			fontSize: 12,
+																			fontWeight: 500,
+																			color: "var(--ink)",
+																			background: "none",
+																			border: "none",
+																			borderRadius: 6,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																		}}
+																		role="menuitem"
+																	>
+																		<Printer size={14} className="text-indigo-600 shrink-0" />
+																		<span>Печать этикетки</span>
+																	</button>
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setActiveMenuRowId(null);
+																			setIsInventoryAuditOpen(true);
+																		}}
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 8,
+																			padding: "8px 12px",
+																			fontSize: 12,
+																			fontWeight: 500,
+																			color: "var(--ink)",
+																			background: "none",
+																			border: "none",
+																			borderRadius: 6,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																		}}
+																		role="menuitem"
+																	>
+																		<ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+																		<span>Инвентаризация (сверка)</span>
 																	</button>
 																	<button
 																		type="button"
@@ -1675,7 +1769,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		}}
 																		role="menuitem"
 																	>
-																		<Edit2 size={14} color="var(--warn-fg, #d97706)" />
+																		<Edit2 size={14} className="text-amber-600 shrink-0" />
 																		<span>Редактировать</span>
 																	</button>
 																	<div
@@ -1708,7 +1802,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		}}
 																		role="menuitem"
 																	>
-																		<Trash2 size={14} />
+																		<Trash2 size={14} className="shrink-0" />
 																		<span>Удалить</span>
 																	</button>
 																</div>

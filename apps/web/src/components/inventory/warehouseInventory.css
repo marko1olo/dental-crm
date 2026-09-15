@@ -548,3 +548,18 @@
 	color: #f87171;
 	border-color: rgba(239, 68, 68, 0.3);
 }
+
+[data-theme="dark"] .discrepancy-pill.match {
+	background: var(--paper-soft);
+	color: var(--muted);
+}
+
+[data-theme="dark"] .discrepancy-pill.surplus {
+	background: rgba(16, 185, 129, 0.15);
+	color: #34d399;
+}
+
+[data-theme="dark"] .discrepancy-pill.shortage {
+	background: rgba(239, 68, 68, 0.15);
+	color: #f87171;
+}

@@ -229,6 +229,26 @@
 	}
 }
 
+[data-theme="dark"] .wh-summary-bar {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: rgba(13, 148, 136, 0.3);
+}
+
+[data-theme="dark"] .wh-table-container {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .wh-table th {
+	background: var(--paper-strong);
+	color: var(--muted);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .wh-table td {
+	border-color: var(--line);
+}
+
 /* Стили печати для документов */
 @media print {
 	.wh-transfer-overlay,

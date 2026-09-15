@@ -724,13 +724,14 @@ export function useInventoryLogic(organizationId: string) {
 					body: JSON.stringify({ adjustment, allowOverdraft: true }),
 				},
 			);
-			if (res.ok) {
-				const isDeficit = adjustType === "out" && amount > adjustingItem.stockQuantity;
+				const isDeficit =
+					adjustType === "out" &&
+					(adjustingItem.stockQuantity <= 0 || amount > adjustingItem.stockQuantity);
 				setAdjustingItem(null);
 				setAdjustAmount("");
 				showToast(
 					isDeficit
-						? "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной"
+						? "Остаток 0: зафиксирован мягкий овердрафт (накладная в пути, проведение приёма не заблокировано)"
 						: "Остаток изменён",
 					isDeficit ? "warning" : "success",
 				);
@@ -831,9 +832,9 @@ export function useInventoryLogic(organizationId: string) {
 
 			if (res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
 					showToast(
-						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
+						"Остаток 0: зафиксирован мягкий овердрафт (списание карпул выполнено, накладная в пути)",
 						"warning",
 					);
 				} else {
