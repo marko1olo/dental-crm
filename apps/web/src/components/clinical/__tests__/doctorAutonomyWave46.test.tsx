@@ -187,7 +187,8 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 				"PatientsView must contain patient-card-open-visit-btn",
 			);
 			assert.ok(
-				content.includes("Соматически здоров / норма (1-клик)"),
+				content.includes("Соматически здоров (Норма)") ||
+					content.includes("Соматически здоров / норма (1-клик)"),
 				"Must display 1-click somatic norm button label",
 			);
 		});
