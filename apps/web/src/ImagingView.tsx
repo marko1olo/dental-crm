@@ -114,12 +114,22 @@ function imagingDescriptionTemplate(
 	return body.join("\n");
 }
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
-import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
 import { CbctMprWorkspace } from "./components/dicom/CbctMprWorkspace";
-import { PanoramicRendererWindow } from "./components/dicom/PanoramicRendererWindow";
+
+// Mandate 8s: Tier 3 isolation — lazy-loading heavy 3D DICOM & Panoramic engines
+const Cornerstone3DViewer = lazy(() =>
+	import("./components/dicom/Cornerstone3DViewer").then((m) => ({
+		default: m.Cornerstone3DViewer,
+	})),
+);
+const PanoramicRendererWindow = lazy(() =>
+	import("./components/dicom/PanoramicRendererWindow").then((m) => ({
+		default: m.PanoramicRendererWindow,
+	})),
+);
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
@@ -918,10 +928,12 @@ export function ImagingView(props: ImagingViewProps) {
                             /api/imaging/planning/save и /load не вызывались из
                             клиента ни разу, хотя серверная половина дописана.
                           */
-									<Cornerstone3DViewer
-										imageIds={localImageIds}
-										patientId={activePatient?.id ?? null}
-									/>
+									<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Загрузка 3D КТ...</div>}>
+										<Cornerstone3DViewer
+											imageIds={localImageIds}
+											patientId={activePatient?.id ?? null}
+										/>
+									</Suspense>
 								) : selectedImagingStudy?.kind === "cbct" ? (
 									/*
                             КЛКТ: раньше под загрузчиком стоял просмотрщик-обманка.
@@ -2383,12 +2395,14 @@ export function ImagingView(props: ImagingViewProps) {
 
 			{isPanoramicWindowOpen && (
 				<div className="panoramic-recon-window-modal fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-					<PanoramicRendererWindow
-						volume={null}
-						splinePoints={[]}
-						onClose={() => setIsPanoramicWindowOpen(false)}
-						patientId={activePatient?.id ?? null}
-					/>
+					<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Загрузка 3D КТ...</div>}>
+						<PanoramicRendererWindow
+							volume={null}
+							splinePoints={[]}
+							onClose={() => setIsPanoramicWindowOpen(false)}
+							patientId={activePatient?.id ?? null}
+						/>
+					</Suspense>
 				</div>
 			)}
 		</section>

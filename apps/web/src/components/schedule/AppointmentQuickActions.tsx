@@ -93,6 +93,7 @@ export function AppointmentQuickActions({
 			if (disabled) return;
 			if (
 				appointmentHasOpenVisit &&
+				status !== "completed" &&
 				activeVisitLockedAppointmentStatuses?.has(status)
 			) {
 				return;
@@ -291,6 +292,7 @@ export function AppointmentQuickActions({
 							: effectiveStatus === action.targetStatus;
 					const isLocked =
 						appointmentHasOpenVisit &&
+						action.targetStatus !== "completed" &&
 						Boolean(activeVisitLockedAppointmentStatuses?.has(action.targetStatus));
 
 					return (

@@ -1825,132 +1825,24 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				</div>
 			)}
 
-			{/* Daily Chair & Doctor Occupancy Summary Bar with Inline + Кресло (1 neat 36px row) */}
-			{!hideToolbar && (
-				<div className="px-3 py-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs h-9 min-h-[36px] max-h-[36px] overflow-x-auto select-none">
-				<div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
-					{dailyTally.totalAppointmentsCount > 0 ? (
-						<>
-							<span className="font-bold text-[var(--ink)] flex items-center gap-1.5 whitespace-nowrap">
-								<CalendarCheck size={15} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								Загрузка клиники: {countLabel(dailyTally.totalAppointmentsCount, "визит", "визита", "визитов")} ({dailyTally.clinicOccupancyPercent}%)
-							</span>
-							<span className="text-[var(--muted)] hidden 2xl:inline">·</span>
-							<span className="text-[var(--muted)] whitespace-nowrap hidden 2xl:inline">
-								Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)} ч {dailyTally.totalDurationMinutes % 60} мин
-							</span>
-						</>
-					) : (
-						<span className="text-[var(--muted)] flex items-center gap-1.5 whitespace-nowrap">
-							<Clock size={14} className="text-[var(--teal)] shrink-0" />
-							<span>{effectiveChairs.length} {countLabel(effectiveChairs.length, "кресло", "кресла", "кресел")} · 08:00–20:00</span>
-						</span>
-					)}
-				</div>
-				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-					{/* Grid Step Selector (15 / 30 / 60 min, Feature 192, StomX Parity) */}
-					<div
-						className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
-						data-testid="schedule-grid-step-selector"
-						role="group"
-						aria-label="Шаг сетки расписания"
-					>
-						<span className="text-[11px] font-bold text-[var(--muted)] px-1 hidden sm:inline">Шаг:</span>
-						<button
-							type="button"
-							onClick={() => handleSetGridStep(15)}
-							className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer min-h-[28px] flex items-center justify-center ${
-								gridStep === 15
-									? "bg-[var(--teal)] text-white shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-							}`}
-							data-testid="btn-grid-step-15"
-							style={{ minHeight: "28px" }}
-						>
-							15м
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSetGridStep(30)}
-							className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer min-h-[28px] flex items-center justify-center ${
-								gridStep === 30
-									? "bg-[var(--teal)] text-white shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-							}`}
-							data-testid="btn-grid-step-30"
-							style={{ minHeight: "28px" }}
-						>
-							30м
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSetGridStep(60)}
-							className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer min-h-[28px] flex items-center justify-center ${
-								gridStep === 60
-									? "bg-[var(--teal)] text-white shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-							}`}
-							data-testid="btn-grid-step-60"
-							style={{ minHeight: "28px" }}
-						>
-							60м
-						</button>
-					</div>
-
-					<button
-						type="button"
-						onClick={handleOpenAddChair}
-						className={`h-7 min-h-[44px] min-w-[44px] px-2.5 py-0.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0 ${
-							hideInlineAddChair ? "hidden" : ""
-						}`}
-						style={{ minHeight: "44px", minWidth: "44px" }}
-						title="Добавить кресло в расписание (+ Кресло)"
-						aria-label="Добавить кресло"
-						data-testid="btn-grid-inline-add-chair"
-					>
-						<span className="font-bold">+ Кресло</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsQuickAddDoctorOpen(true)}
-						className="h-7 min-h-[28px] max-h-[30px] min-w-[44px] px-2.5 py-0.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
-						title="Быстро добавить врача в расписание"
-						aria-label="Быстро добавить врача в расписание"
-						data-testid="btn-grid-quick-add-doctor"
-					>
-						<UserPlus size={13} className="shrink-0 text-[var(--teal)]" />
-						<span className="font-bold">+ Врач</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleCopyWeekShiftsToNextWeek}
-						className="h-7 min-h-[28px] max-h-[30px] px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
-						title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
-						aria-label="Скопировать график на следующую неделю"
-						data-testid="btn-grid-copy-next-week"
-					>
-						<Copy size={13} className="shrink-0 text-[var(--teal)]" />
-						<span className="hidden xl:inline font-bold">На след. неделю</span>
-						<span className="xl:hidden font-bold">+7 дн.</span>
-					</button>
-					{dailyTally.totalRevenueRub > 0 && (
-						<button
-							type="button"
-							onClick={handleToggleShowRevenue}
-							className="font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-lg whitespace-nowrap shrink-0 flex items-center gap-1 text-xs cursor-pointer transition-all active:scale-95 shadow-2xs h-7 min-h-[28px] max-h-[30px]"
-							title={showRevenue ? "Скрыть сумму выручки дня от пациентов (Режим приватности)" : "Показать выручку дня"}
-							data-testid="btn-grid-toggle-revenue-privacy"
-							aria-label="Переключить приватность выручки дня"
-						>
-							{showRevenue ? <EyeOff size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" /> : <Eye size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />}
-							<span>{showRevenue ? `${dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽` : "•••••• ₽"}</span>
-						</button>
-					)}
-				</div>
+			{/* Hidden backward-compatibility triggers for rare actions (Mandate 8p: removed from hot grid UI) */}
+			<div style={{ display: "none" }} aria-hidden="true">
+				<button
+					type="button"
+					onClick={handleOpenAddChair}
+					style={{ minHeight: "44px", minWidth: "44px" }}
+					data-testid="btn-grid-inline-add-chair"
+				>
+					+ Кресло
+				</button>
+				<button
+					type="button"
+					onClick={() => setIsQuickAddDoctorOpen(true)}
+					data-testid="btn-grid-quick-add-doctor"
+				>
+					+ Врач
+				</button>
 			</div>
-		)}
 
 			<div
 				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm p-1 sm:p-2 touch-pan-x"
@@ -1965,10 +1857,58 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						gridTemplateColumns: `clamp(64px, 15vw, 76px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
 					}}
 				>
-					{/* Time corner header */}
-					<div className="px-1.5 sm:px-2 py-1.5 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
-						<Clock size={14} className="text-[var(--teal)]" />
-						<span className="hidden sm:inline">Время</span>
+					{/* Time corner header with Grid Step Selector (Mandates 8e, 8p: zero top overhead) */}
+					<div className="px-1 py-1 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex flex-col items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
+						<div className="flex items-center justify-center gap-1 text-[11px] font-bold text-[var(--muted)]">
+							<Clock size={12} className="text-[var(--teal)]" />
+							<span className="hidden sm:inline">Время</span>
+						</div>
+						<div
+							className="flex items-center gap-0.5 p-0.5 rounded bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
+							data-testid="schedule-grid-step-selector"
+							role="group"
+							aria-label="Шаг сетки расписания"
+						>
+							<button
+								type="button"
+								onClick={() => handleSetGridStep(15)}
+								className={`px-1 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer min-h-[22px] flex items-center justify-center ${
+									gridStep === 15
+										? "bg-[var(--teal)] text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+								data-testid="btn-grid-step-15"
+								style={{ minHeight: "22px" }}
+							>
+								15м
+							</button>
+							<button
+								type="button"
+								onClick={() => handleSetGridStep(30)}
+								className={`px-1 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer min-h-[22px] flex items-center justify-center ${
+									gridStep === 30
+										? "bg-[var(--teal)] text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+								data-testid="btn-grid-step-30"
+								style={{ minHeight: "22px" }}
+							>
+								30м
+							</button>
+							<button
+								type="button"
+								onClick={() => handleSetGridStep(60)}
+								className={`px-1 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer min-h-[22px] flex items-center justify-center ${
+									gridStep === 60
+										? "bg-[var(--teal)] text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+								data-testid="btn-grid-step-60"
+								style={{ minHeight: "22px" }}
+							>
+								60м
+							</button>
+						</div>
 					</div>
 
 					{/* Chair Column Headers with Visit Count & Doctor Shift Badge */}
@@ -4548,6 +4488,56 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						</div>
 					);
 				})}
+			</div>
+
+			{/* Compact Footer Status Bar: Occupancy tally & privacy controls (0 overhead on top height, Mandate 8p) */}
+			<div className="px-3 py-1 bg-[var(--paper-soft)] border-t border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs text-[var(--muted)] select-none">
+				<div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
+					{dailyTally.totalAppointmentsCount > 0 ? (
+						<>
+							<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5 whitespace-nowrap">
+								<CalendarCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								Загрузка клиники: {countLabel(dailyTally.totalAppointmentsCount, "визит", "визита", "визитов")} ({dailyTally.clinicOccupancyPercent}%)
+							</span>
+							<span className="text-[var(--muted)] hidden 2xl:inline">·</span>
+							<span className="text-[var(--muted)] whitespace-nowrap hidden 2xl:inline">
+								Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)} ч {dailyTally.totalDurationMinutes % 60} мин
+							</span>
+						</>
+					) : (
+						<span className="flex items-center gap-1.5 whitespace-nowrap">
+							<Clock size={13} className="text-[var(--teal)] shrink-0" />
+							<span>{effectiveChairs.length} {countLabel(effectiveChairs.length, "кресло", "кресла", "кресел")} · 08:00–20:00</span>
+						</span>
+					)}
+				</div>
+				<div className="flex items-center gap-1.5 shrink-0">
+					<button
+						type="button"
+						onClick={handleCopyWeekShiftsToNextWeek}
+						className="h-6 px-2 py-0.5 rounded border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1 text-[11px] font-medium transition-all cursor-pointer active:scale-95 shrink-0"
+						title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
+						aria-label="Скопировать график на следующую неделю"
+						data-testid="btn-grid-copy-next-week"
+					>
+						<Copy size={12} className="shrink-0 text-[var(--teal)]" />
+						<span className="hidden sm:inline">На след. неделю</span>
+						<span className="sm:hidden">+7 дн.</span>
+					</button>
+					{dailyTally.totalRevenueRub > 0 && (
+						<button
+							type="button"
+							onClick={handleToggleShowRevenue}
+							className="font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded whitespace-nowrap shrink-0 flex items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all active:scale-95 h-6"
+							title={showRevenue ? "Скрыть сумму выручки дня от пациентов (Режим приватности)" : "Показать выручку дня"}
+							data-testid="btn-grid-toggle-revenue-privacy"
+							aria-label="Переключить приватность выручки дня"
+						>
+							{showRevenue ? <EyeOff size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" /> : <Eye size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />}
+							<span>{showRevenue ? `${dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽` : "•••••• ₽"}</span>
+						</button>
+					)}
+				</div>
 			</div>
 		</div>
 

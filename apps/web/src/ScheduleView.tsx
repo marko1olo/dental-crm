@@ -112,7 +112,6 @@ type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 const activeVisitLockedAppointmentStatuses = new Set<Appointment["status"]>([
-	"completed",
 	"cancelled",
 	"no_show",
 ]);

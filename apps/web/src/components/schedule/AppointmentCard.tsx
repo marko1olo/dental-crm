@@ -490,10 +490,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 	const handleShiftAppointmentTime = useCallback(
 		async (minutes: number) => {
-			if (appointmentHasOpenVisit) {
-				showToast("Нельзя сдвинуть время: открыт активный визит", "error");
-				return;
-			}
 			const curStart = new Date(appointment.startsAt).getTime();
 			const curEnd = new Date(appointment.endsAt).getTime();
 			const durationMs = curEnd - curStart;
@@ -1217,17 +1213,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												<button
 													key={m}
 													type="button"
-													disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+													disabled={isQuickStatusUpdating}
 													onClick={() => {
 														setIsCardMenuOpen(false);
 														void handleShiftAppointmentTime(m);
 													}}
 													className="min-h-[44px] min-w-[44px] px-1.5 py-1 rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
-													title={
-														appointmentHasOpenVisit
-															? "Приём уже открыт — сдвиг времени невозможен"
-															: `Сдвинуть на +${m} минут`
-													}
+													title={`Сдвинуть на +${m} минут`}
 												>
 													+{m}м
 												</button>
@@ -1364,15 +1356,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										</div>
 										<button
 											type="button"
-											disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+											disabled={isQuickStatusUpdating}
 											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer disabled:opacity-40"
 											role="menuitem"
 											onClick={() => setIsRefusalReasonsOpen((prev) => !prev)}
-											title={
-												appointmentHasOpenVisit
-													? "Приём уже открыт — отмена через дневник визита"
-													: "Отменить приём"
-											}
+											title="Отменить приём"
 											data-testid="appointment-card-refusal-menu-trigger"
 										>
 											<div className="flex items-center gap-2">
@@ -1426,7 +1414,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										)}
 										<button
 											type="button"
-											disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+											disabled={isQuickStatusUpdating}
 											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40"
 											role="menuitem"
 											onClick={() => {
@@ -1440,7 +1428,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										</button>
 										<button
 											type="button"
-											disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+											disabled={isQuickStatusUpdating}
 											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40"
 											role="menuitem"
 											onClick={() => {

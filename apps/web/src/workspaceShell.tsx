@@ -693,13 +693,13 @@ export function WorkspaceTopbar({
 	}, [lastMessage, triggerIncomingCall, isDoctorMode]);
 
 	return (
-		<header className="topbar pl-3 sm:pl-4">
-			<div className="topbar-context min-w-0 flex-1 overflow-visible">
-				<div className="topbar-clinic shrink-0 min-w-[140px] sm:max-w-[340px] max-w-[240px] pl-1 sm:pl-0">
-					<p className="eyebrow truncate">
+		<header className="topbar min-h-[44px] sm:h-11 sm:max-h-11 pl-3 sm:pl-4 flex items-center justify-between overflow-visible">
+			<div className="topbar-context min-w-0 flex-1 flex items-center flex-nowrap overflow-visible gap-2 sm:gap-3">
+				<div className="topbar-clinic shrink-0 min-w-[120px] sm:max-w-[280px] max-w-[200px] pl-1 sm:pl-0 flex flex-col justify-center leading-tight">
+					<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
-					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden">
+					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden text-sm font-bold leading-tight m-0">
 						<span className="sm:hidden">{formatDisplayClinicName(clinicName).split(/\s+/)[0] || formatDisplayClinicName(clinicName)}</span>
 						<span className="hidden sm:inline">{formatDisplayClinicName(clinicName)}</span>
 					</h1>
@@ -787,7 +787,7 @@ export function WorkspaceTopbar({
         скрыты — `dente-redesign.css:610` и `:624`), затем инструменты помощника.
         Главное действие не забирается никогда.
       */}
-			<div className="top-actions shrink-0">
+			<div className="top-actions shrink-0 flex items-center flex-nowrap gap-1.5">
 				{/*
           ГЛАВНОЕ ДЕЙСТВИЕ — ПЕРВЫМ ЭЛЕМЕНТОМ СТРОКИ И БЕЗ УСЛОВИЯ ВОКРУГ.
           Оба свойства несут смысл. «Первым» даёт гарантию из шапки строки.

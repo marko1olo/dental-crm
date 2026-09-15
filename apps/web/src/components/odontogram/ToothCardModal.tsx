@@ -4,6 +4,7 @@ import {
 	BellPlus,
 	Check,
 	History,
+	MoreHorizontal,
 	X,
 } from "lucide-react";
 import {
@@ -190,15 +191,73 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 							</p>
 						</div>
 					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-w-[44px] min-h-[44px] sm:min-h-[32px] flex items-center justify-center rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
-						aria-label="Закрыть карточку зуба"
-						data-testid="tooth-card-close-btn"
-					>
-						<X size={18} />
-					</button>
+					<div className="flex items-center gap-1.5">
+						<details className="relative">
+							<summary
+								className="list-none min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer select-none"
+								aria-label="Дополнительные действия"
+								title="Дополнительные действия"
+							>
+								<MoreHorizontal size={18} />
+							</summary>
+							<div className="absolute right-0 top-full mt-1.5 w-64 p-1.5 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 shadow-xl z-30 flex flex-col gap-1">
+								{onOpenHistory && (
+									<button
+										type="button"
+										onClick={(e) => {
+											const details = e.currentTarget.closest("details");
+											if (details) details.open = false;
+											onOpenHistory(toothNumber);
+											onClose();
+										}}
+										className="w-full min-h-[36px] px-3 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100"
+										data-testid="tooth-card-open-history-btn"
+									>
+										<History size={15} className="text-indigo-600 shrink-0" />
+										<span>История зуба</span>
+									</button>
+								)}
+								{onOpenEndo && (
+									<button
+										type="button"
+										onClick={(e) => {
+											const details = e.currentTarget.closest("details");
+											if (details) details.open = false;
+											onOpenEndo(toothNumber);
+											onClose();
+										}}
+										className="w-full min-h-[36px] px-3 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100"
+										data-testid="tooth-card-open-endo-btn"
+									>
+										<Activity size={15} className="text-rose-600 shrink-0" />
+										<span>Журнал каналов (Эндо)</span>
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={(e) => {
+										const details = e.currentTarget.closest("details");
+										if (details) details.open = false;
+										handleTriggerRecall();
+									}}
+									className="w-full min-h-[36px] px-3 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left text-teal-700 dark:text-teal-400"
+									data-testid="tooth-card-set-recall-btn"
+								>
+									<BellPlus size={15} className="shrink-0" />
+									<span>Вызов ({suggestedRecall.label})</span>
+								</button>
+							</div>
+						</details>
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
+							aria-label="Закрыть карточку зуба"
+							data-testid="tooth-card-close-btn"
+						>
+							<X size={18} />
+						</button>
+					</div>
 				</div>
 
 				{/* Body Content */}
@@ -326,46 +385,6 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 						</div>
 					</div>
 
-					{/* Quick Links: History, Endo & Treatment Recall */}
-					<div className="flex items-center gap-2">
-						{onOpenHistory && (
-							<button
-								type="button"
-								onClick={() => {
-									onOpenHistory(toothNumber);
-									onClose();
-								}}
-								className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-								data-testid="tooth-card-open-history-btn"
-							>
-								<History size={14} className="text-indigo-600" />
-								<span>История зуба</span>
-							</button>
-						)}
-						{onOpenEndo && (
-							<button
-								type="button"
-								onClick={() => {
-									onOpenEndo(toothNumber);
-									onClose();
-								}}
-								className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-								data-testid="tooth-card-open-endo-btn"
-							>
-								<Activity size={14} className="text-rose-600" />
-								<span>Журнал каналов (Эндо)</span>
-							</button>
-						)}
-						<button
-							type="button"
-							onClick={handleTriggerRecall}
-							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-teal-700 dark:text-teal-400"
-							data-testid="tooth-card-set-recall-btn"
-						>
-							<BellPlus size={14} className="shrink-0" />
-							<span>Вызов ({suggestedRecall.label})</span>
-						</button>
-					</div>
 				</div>
 
 				{/* Footer Controls */}
