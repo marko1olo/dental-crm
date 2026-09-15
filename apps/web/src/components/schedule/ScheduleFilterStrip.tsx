@@ -79,6 +79,15 @@ export interface ScheduleFilterStripProps {
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
 	if (!rawSpec) return null;
+	const lower = rawSpec.toLowerCase().trim();
+	if (lower === "surgeon" || lower === "хирург" || lower === "хирургия") return "Хирург";
+	if (lower === "therapist" || lower === "терапевт" || lower === "терапия") return "Терапевт";
+	if (lower === "orthodontist" || lower === "ортодонт" || lower === "ортодонтия") return "Ортодонт";
+	if (lower === "orthopedist" || lower === "ортопед" || lower === "ортопедия") return "Ортопед";
+	if (lower === "periodontist" || lower === "пародонтолог" || lower === "пародонтология") return "Пародонтолог";
+	if (lower === "hygienist" || lower === "гигиенист" || lower === "гигиена") return "Гигиенист";
+	if (lower === "pediatric" || lower === "детский" || lower === "детская") return "Детский";
+	if (lower === "implantologist" || lower === "имплантолог" || lower === "имплантация") return "Имплантолог";
 	const specKey = rawSpec as DentalSpecialty;
 	const label = specialtyLabels[specKey] || rawSpec;
 	return label.charAt(0).toUpperCase() + label.slice(1);
@@ -439,7 +448,8 @@ export function ScheduleFilterStrip({
 								key={chair.id}
 								type="button"
 								data-testid={`chair-view-badge-${chair.id}`}
-								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none shrink-0 px-3 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
+								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none !shrink-0 shrink-0 px-3 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
+								style={{ whiteSpace: "nowrap", minWidth: "fit-content", flexShrink: 0 }}
 								onClick={() =>
 									setScheduleChairFilterId(
 										scheduleChairFilterId === chair.id ? null : chair.id,

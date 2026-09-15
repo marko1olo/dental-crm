@@ -1042,7 +1042,7 @@ export function PaymentCapture({
 
 	return (
 		<div
-			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 max-md:pb-24"
+			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 max-md:pb-36 pb-32"
 			id="payment-capture"
 		>
 			{feedback ? (

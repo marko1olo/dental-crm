@@ -223,7 +223,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 					<Sparkles size={14} className="text-amber-500" />
 					<span>Главные экспресс-сценарии приема:</span>
 				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+				<div className="flex overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-[var(--line)] py-1 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
 					{topExpressPresets.map((preset) => {
 						const isNorm = preset.id === "norm_healthy";
 						const isHygiene = preset.id === "hygiene_complex";
@@ -259,7 +259,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={`top-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className={`min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left ${bgGradient}`}
+								className={`min-h-[50px] min-w-[155px] sm:min-w-0 shrink-0 whitespace-nowrap px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left ${bgGradient}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`express-preset-${preset.id}`}
 							>

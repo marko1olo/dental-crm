@@ -595,7 +595,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [visitSubViewTab, setVisitSubViewTab] = useState<VisitSubViewTab>("emk");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
-	const [isVoiceHudCollapsed, setIsVoiceHudCollapsed] = useState(true);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 
@@ -4366,60 +4365,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				}}
 			/>
 
-
-			{/* ─── HOT PATH TIER 1 FLOATING CHAIRSIDE VOICE HUD (Compact 36x36px collapsed) ─── */}
-			<aside
-				className={`fixed bottom-24 right-4 transition-all select-none ${
-					isVoiceHudCollapsed
-						? "z-30 w-9 h-9 min-w-[36px] min-h-[36px] p-0 rounded-full flex items-center justify-center bg-[var(--paper,rgba(15,23,42,0.92))] backdrop-blur-md border border-[var(--line,rgba(255,255,255,0.15))] shadow-lg hover:scale-105"
-						: "z-40 flex items-center gap-2 bg-[var(--paper,rgba(15,23,42,0.92))] backdrop-blur-md border border-[var(--line,rgba(255,255,255,0.15))] rounded-full p-2 shadow-2xl"
-				}`}
-				aria-label="Голосовой ввод у кресла"
-				data-testid="chairside-floating-voice-hud"
-			>
-				{isVoiceHudCollapsed ? (
-					<button
-						type="button"
-						onClick={() => setIsVoiceHudCollapsed(false)}
-						className="w-9 h-9 min-w-[36px] min-h-[36px] p-0 rounded-full flex items-center justify-center text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
-						title="Развернуть панель голосового ввода у кресла"
-						aria-label="Развернуть голосовой ввод"
-						data-testid="chairside-voice-hud-expand"
-					>
-						<LucideMic size={18} className="shrink-0" />
-					</button>
-				) : (
-					<>
-						<label
-							className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] cursor-pointer select-none"
-							title="Автоматически заполнять дневник 043/у без блокирующего попапа"
-						>
-							<input
-								type="checkbox"
-								checked={autoApplyDictation}
-								onChange={(e) => setAutoApplyDictation(e.target.checked)}
-								className="w-4 h-4 accent-[var(--teal,#0d9488)] cursor-pointer"
-							/>
-							<span className="hidden sm:inline font-mono">0-клик</span>
-						</label>
-						<SmartMicrophoneButton
-							context="visit"
-							onResult={handleDictationResult}
-							className="shadow-md"
-						/>
-						<button
-							type="button"
-							onClick={() => setIsVoiceHudCollapsed(true)}
-							className="p-1 rounded-full text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--line-subtle,rgba(255,255,255,0.1))] transition-colors cursor-pointer"
-							title="Свернуть голосовой ввод (освободить экран)"
-							aria-label="Свернуть голосовой ввод"
-							data-testid="chairside-voice-hud-collapse"
-						>
-							<ChevronDown size={14} />
-						</button>
-					</>
-				)}
-			</aside>
 		</>
 	);
 }
