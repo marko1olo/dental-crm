@@ -6,7 +6,7 @@ import {
 	percentageOfKopecks,
 	splitKopecks,
 } from "@dental/shared";
-import { Banknote, Bot, Coins, CreditCard, QrCode, UserRound } from "lucide-react";
+import { Banknote, Bot, Coins, CreditCard, QrCode, UserRound, MoreVertical } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
@@ -732,7 +732,18 @@ export function PaymentCapture({
 	const [showHints, setShowHints] = useState(false);
 	const [isSberPosModalOpen, setIsSberPosModalOpen] = useState(false);
 	const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+	const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
 	const [receivedCash, setReceivedCash] = useState<string>("");
+
+	useEffect(() => {
+		const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+			if (e.key === "Escape" && isMoreActionsOpen) {
+				setIsMoreActionsOpen(false);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isMoreActionsOpen]);
 
 	const handleSmartDictation = (text: string) => {
 		if (!text.trim()) return;
@@ -1661,7 +1672,7 @@ export function PaymentCapture({
 					}}
 				>
 					<button
-						className="primary-button min-h-[44px] sm:min-h-[38px] sm:h-9.5 flex-1 font-bold text-sm"
+						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-bold text-sm"
 						type="button"
 						onClick={handlePrimarySubmit}
 						aria-busy={isSaving || undefined}
@@ -1675,7 +1686,7 @@ export function PaymentCapture({
 						<span>{isSaving ? "Записываю..." : "Принять оплату"}</span>
 					</button>
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-[38px] sm:h-9.5 flex-1 font-semibold text-xs"
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs"
 						type="button"
 						onClick={handleSberPosClick}
 						aria-describedby={
@@ -1688,21 +1699,41 @@ export function PaymentCapture({
 						<span className="sm:hidden">Сбер POS</span>
 						<span className="hidden sm:inline">Оплата картой (Сбербанк POS / QR)</span>
 					</button>
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-[38px] sm:h-9.5 flex-1 font-semibold text-xs"
-						type="button"
-						onClick={handleOpenSplitModal}
-						aria-describedby={
-							!paymentReadyToSubmit ? paymentMissingId : undefined
-						}
-						disabled={isSaving}
-						data-testid="payment-split-modal-button"
-						title="Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
-					>
-						<Coins aria-hidden="true" size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />{" "}
-						<span className="sm:hidden">Сплит</span>
-						<span className="hidden sm:inline">Комбо (Сплит)</span>
-					</button>
+					<div className="relative shrink-0">
+						<button
+							className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-9 sm:h-9 sm:min-w-9 sm:w-9 p-0 flex items-center justify-center rounded-lg"
+							type="button"
+							onClick={() => setIsMoreActionsOpen((prev) => !prev)}
+							aria-expanded={isMoreActionsOpen}
+							aria-label="Дополнительные способы оплаты"
+							disabled={isSaving}
+							title="Дополнительные способы оплаты"
+						>
+							<MoreVertical size={16} className="shrink-0 text-[var(--muted)]" />
+						</button>
+						{isMoreActionsOpen && (
+							<div
+								className="absolute right-0 bottom-full mb-1 w-48 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
+								role="menu"
+							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreActionsOpen(false);
+										handleOpenSplitModal();
+									}}
+									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+									disabled={isSaving}
+									data-testid="payment-split-modal-button"
+									title="Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
+								>
+									<Coins size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+									<span>Комбо (Сплит)</span>
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 			{patientId && (

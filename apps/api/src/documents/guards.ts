@@ -772,13 +772,6 @@ function structuredPayloadMissingReason(
 		return "Для выписки из медицинской карты нужны структурированные данные: период, источники записей, жалобы и анамнез, объективный статус, диагноз, лечение, рекомендации, врач, получатель и проверка данных третьих лиц.";
 	}
 	if (
-		input.kind === "outpatient_medical_card_025u" &&
-		!input.payload?.dentalMedicalCard043u &&
-		!input.payload?.outpatientMedicalCard025u
-	) {
-		return "Для медицинской карты 025/у нужны структурированные данные стоматологической карты (форма 043/у).";
-	}
-	if (
 		input.kind === "dental_medical_card_043u" &&
 		!input.payload?.dentalMedicalCard043u
 	) {

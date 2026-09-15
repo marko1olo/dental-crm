@@ -186,14 +186,14 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 			} ${className}`.trim()}
 			data-testid="emk-voice-pilot-hud"
 		>
-			{/* Header Bar — Сверхкомпактный 32–36px тулбар по Мандату 8p */}
-			<div className={`flex items-center justify-between px-2.5 py-1 sm:py-1.5 gap-2 min-h-[36px] ${transcript ? "border-b border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800" : ""}`}>
+			{/* Header Bar — Сверхкомпактный 28-30px тулбар по Мандату 8p */}
+			<div className={`flex items-center justify-between px-2 py-0.5 gap-2 min-h-[28px] sm:min-h-[30px] ${transcript ? "border-b border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800 pb-1" : ""}`}>
 				<div className="flex items-center gap-2 min-w-0">
-					{/* Компактная кнопка микрофона (min-h-[32px] h-8 touch-target) */}
+					{/* Компактная кнопка микрофона */}
 					<button
 						type="button"
 						onClick={handleToggleMic}
-						className={`min-h-[32px] h-8 px-2.5 rounded-lg flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 touch-manipulation shrink-0 ${
+						className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 rounded-lg flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 touch-manipulation shrink-0 ${
 							isListening
 								? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/40"
 								: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
@@ -249,11 +249,11 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 						<button
 							type="button"
 							onClick={handleClear}
-							className="min-h-[32px] h-8 w-8 p-1.5 rounded-lg text-zinc-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer flex items-center justify-center"
+							className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 w-7 p-1 rounded-lg text-zinc-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer flex items-center justify-center"
 							title="Очистить распознанный текст"
 							aria-label="Очистить"
 						>
-							<Trash2 size={15} />
+							<Trash2 size={14} />
 						</button>
 					)}
 
@@ -262,7 +262,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 							type="button"
 							onClick={handleApplyAll}
 							disabled={isApplied}
-							className={`min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation shadow-xs ${
+							className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 py-0.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation shadow-xs ${
 								isApplied
 									? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
 									: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white hover:scale-[1.02] active:scale-95"

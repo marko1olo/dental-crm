@@ -6834,3 +6834,14 @@
     * Ликвидирован мертвый дубликат `apps/web/src/tests/AppHelpers.test.tsx` (`git rm`), все тесты консолидированы в канонический `apps/web/src/tests/AppHelpers.test.ts`;
     * Дополнен и валидирован тестовый комплект производственного календаря РФ 2026 и табеля Т-13 в `DoctorShiftRoster.test.ts` (31/31 тестов успешно проходят в `node:test`).
 
+
+### 381. Wave 225.4: Консолидация служебной зоны ЭМК в единый 32px тулбар на десктопе, компактный Voice Pilot, разблокировка карточек расписания и ликвидация дубликатов тестов (Мандаты 8c, 8d, 8e, 8p, 8s)
+* **Статус**: `[ДА] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/schedule/AppointmentCard.tsx`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/visit/VisitMainTabs.tsx`
+  - `apps/web/src/components/inventory/__tests__/anesthesiaPkuDisposal.test.tsx` (удалено)
+  - `apps/web/src/components/emr/__tests__/emrProtocolEngine.test.ts` (удалено)
+  - `apps/web/src/components/sterilization/__tests__/kraftPackageSanpin.test.ts` (удалено)
+* **Описание изменений**: сжатие в 1 строку табов и SOAP-пресетов, удаление `isLocked` в `AppointmentCard.tsx`, адаптивная высота 32px/44px, удаление дублирующих тестов `anesthesiaPkuDisposal.test.tsx`, `emrProtocolEngine.test.ts`, `kraftPackageSanpin.test.ts`.

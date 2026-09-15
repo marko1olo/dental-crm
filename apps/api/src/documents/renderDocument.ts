@@ -587,12 +587,6 @@ function documentPayloadBlockReason(
 		return "Для выдачи выписки из медицинской карты нужны клинические строки по зубам или сегментам: зуб/область, поверхности, статус, диагноз/находка, показание и действие.";
 	}
 	if (
-		document.kind === "outpatient_medical_card_025u" &&
-		!document.payload?.dentalMedicalCard043u
-	) {
-		return "Для выдачи медицинской карты 025/у нужны структурированные данные стоматологической карты (форма 043/у).";
-	}
-	if (
 		document.kind === "dental_medical_card_043u" &&
 		!document.payload?.dentalMedicalCard043u
 	) {

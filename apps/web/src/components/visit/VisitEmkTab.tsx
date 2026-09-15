@@ -1602,10 +1602,10 @@ export function VisitEmkTab() {
 			/>
 
 			{/* Единый компактный тулбар ЭМК: Ряд 1 (Вкладки протокола ЭМК + Запись/Статус) + Ряд 2 (1-Клик SOAP) */}
-			<div className="emk-unified-toolbar flex flex-col gap-1.5 my-1 py-1 border-b border-[var(--line)] min-w-0 max-w-full">
-				{/* РЯД 1: Вкладки 6 секций ЭМК — гарантированно ВСЕ 6 вкладок без сжатия («Все поля», «Жалобы», «Анамнез», «Объективно», «Диагноз», «Лечение») + Статус сохранения в едином скролл-ряду без переноса на новую строку */}
+			<div className="emk-unified-toolbar flex flex-col lg:flex-row lg:items-center lg:justify-between gap-1.5 lg:gap-2 my-1 py-1 border-b border-[var(--line)] min-w-0 max-w-full">
+				{/* РЯД 1 (На десктопе - слева): Вкладки 6 секций ЭМК */}
 				<div
-					className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 w-full flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 pr-4 border-b-0 touch-pan-x"
+					className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 shrink-0 flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 pr-4 lg:pr-0 border-b-0 touch-pan-x"
 					role="tablist"
 					aria-label="Вкладки протокола приема"
 				>
@@ -1631,37 +1631,11 @@ export function VisitEmkTab() {
 							</button>
 						);
 					})}
-
-					<div className="flex items-center gap-1.5 shrink-0 sm:ml-auto">
-						{/* Кнопка записи на следующий этап */}
-						<button
-							type="button"
-							onClick={() => handleOpenNextVisitBooking(5)}
-							className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
-							data-testid="btn-schedule-next-stage"
-							title="Записать пациента на следующий этап лечения через 5-7 дней"
-						>
-							<Calendar size={12} className="shrink-0 text-blue-500" />
-							<span className="hidden sm:inline">Этап (+5д)</span>
-							<span className="sm:hidden">+5д</span>
-						</button>
-
-						{/* Бейдж статуса сохранения ЭМК */}
-						<span
-							className={`visit-note-status-badge text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all shrink-0 whitespace-nowrap ${
-								draft || isVisitNoteDirty
-									? "ready bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
-									: "bg-slate-100 dark:bg-slate-800 text-[var(--muted)] border-[var(--line)]"
-							}`}
-						>
-							{draft || isVisitNoteDirty ? "есть правки" : "сохранено"}
-						</span>
-					</div>
 				</div>
 
-				{/* РЯД 2: 1-Клик Экспресс-Бар SOAP по Приказам Минздрава РФ (вынесен в отдельный ряд без выдавливания табов) */}
+				{/* РЯД 2 (На десктопе - справа): 1-Клик Экспресс-Бар SOAP + Запись/Статус */}
 				<div
-					className="emk-tier1-quick-soap-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none pr-4 shrink-0 flex-nowrap min-w-0 py-1 justify-start touch-pan-x"
+					className="emk-tier1-quick-soap-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none pr-4 lg:pr-0 shrink-0 flex-nowrap min-w-0 py-1 justify-start lg:justify-end touch-pan-x"
 					data-testid="emk-tier1-quick-soap-bar"
 				>
 					<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-0.5">
@@ -1740,6 +1714,34 @@ export function VisitEmkTab() {
 						<Bone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">Удаление</span>
 					</button>
+
+					<div className="w-px h-5 bg-[var(--line)] mx-1 shrink-0 hidden sm:block" />
+
+					<div className="flex items-center gap-1.5 shrink-0 sm:ml-auto lg:ml-0">
+						{/* Кнопка записи на следующий этап */}
+						<button
+							type="button"
+							onClick={() => handleOpenNextVisitBooking(5)}
+							className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+							data-testid="btn-schedule-next-stage"
+							title="Записать пациента на следующий этап лечения через 5-7 дней"
+						>
+							<Calendar size={12} className="shrink-0 text-blue-500" />
+							<span className="hidden sm:inline">Этап (+5д)</span>
+							<span className="sm:hidden">+5д</span>
+						</button>
+
+						{/* Бейдж статуса сохранения ЭМК */}
+						<span
+							className={`visit-note-status-badge text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all shrink-0 whitespace-nowrap ${
+								draft || isVisitNoteDirty
+									? "ready bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
+									: "bg-slate-100 dark:bg-slate-800 text-[var(--muted)] border-[var(--line)]"
+							}`}
+						>
+							{draft || isVisitNoteDirty ? "есть правки" : "сохранено"}
+						</span>
+					</div>
 				</div>
 			</div>
 
@@ -1753,8 +1755,8 @@ export function VisitEmkTab() {
 			)}
 
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (Tier 2 Warm Context Accordion — компактный <=24px в свёрнутом виде, DEF-VIS-02) */}
-			<details className="group rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-2 py-0.5 text-xs my-0.5">
-				<summary className="flex items-center justify-between gap-2 cursor-pointer font-bold text-[11px] sm:text-xs select-none list-none [&::-webkit-details-marker]:hidden text-[var(--muted)] hover:text-[var(--ink)] transition-colors min-h-[24px] py-1 px-1 w-full min-w-0">
+			<details className="group rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-2 py-0.5 text-[11px] my-0.5 min-h-[20px] sm:min-h-[22px]">
+				<summary className="flex items-center justify-between gap-2 cursor-pointer font-bold text-[11px] select-none list-none [&::-webkit-details-marker]:hidden text-[var(--muted)] hover:text-[var(--ink)] transition-colors min-h-[20px] sm:min-h-[22px] py-0.5 px-1.5 w-full min-w-0">
 					<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
 						<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<span className="truncate">
