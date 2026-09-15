@@ -4097,3 +4097,55 @@
      - Подтверждено, что формулы в `cprMath.ts`, `sliceIntersectionMath.ts`, `boneQualityEngine.ts`, `cbctSafetyEngine.ts` и `mprMath.ts` представляют собой строгую аналитическую тригонометрию и расчеты Хаунсфилда без процедурных диорам и бутафории.
 - **Файлы**: `apps/web/src/components/visit/dictationApplyPlan.ts` (удален), `apps/web/src/components/visit/dictationApplyPlan.test.ts` (удален), `apps/web/src/components/dicom/__tests__/panoramicReconstruction.test.ts` (удален), `apps/web/src/utils/dicom/clinicalImplants.ts` (удален), `apps/web/src/utils/dicom/clinicalImplants.test.ts` (удален), `apps/web/src/utils/dicom/curvedMprMath.ts` (удален), `apps/web/src/components/marketing/reviewReplyDraft.ts` (удален), `apps/web/src/components/marketing/marketingRomi.css`, `scripts/` (удалены 25 файлов).
 - **Коммит**: `5301bd8b6`, `ebb57627b`, `Wave 223`.
+
+### 2.10.304. Волна 223b: Безусловные 100% скидки и гарантийные переделки в биллинге без блокировок (Мандаты 8b, 8e п. 7, 8n)
+- **Идея & Бизнес-эффект**: Реализация ключевого требования Мандата 8e п. 7: свобода скидок и гарантийных переделок врача (вплоть до 100% на переделки и лечение персонала) без ввода мастер-паролей администратора и без сбоев базы данных. Ранее вызов `createPaymentInDb` при сумме 0 ₽ завершался ошибкой или блокировкой проведения платежа из-за неверной валидации нулевых сумм в БД. Проведение нулевого платежа (100% скидка / гарантия) теперь полностью легализовано, автоматически формирует акт выполненных работ (`completed_works_act`) с суммой 0.00 ₽ и закрывает визит без препятствий для врача и регистратора.
+- **Архитектурные механизмы**:
+  1. *Безусловная поддержка нулевых платежей со 100% скидкой (Мандат 8e п. 7, `billingQuery.ts`)*:
+     - В `apps/api/src/db/billingQuery.ts` в функции `createPaymentInDb` сняты искусственные ограничения на `amountRub <= 0` для сценариев полной скидки и гарантийного обслуживания;
+     - Добавлена ветка для создания записи платежа со статусом `completed` при 100% скидке с фиксацией типа операции «Скидка 100% / Гарантийная переделка»;
+     - Обеспечена генерация акта выполненных работ со статусом `signed` и нулевой итоговой суммой для отчётности и карты 043/у;
+  2. *Юнит-тестирование нулевых транзакций*:
+     - В `apps/api/src/tests/db/billingQuery.test.ts` развернут тест, подтверждающий корректное поведение при проведении нулевого платежа со 100% скидкой.
+- **Файлы**: `apps/api/src/db/billingQuery.ts`, `apps/api/src/tests/db/billingQuery.test.ts`.
+- **Коммит**: `a9d311fc6`.
+
+### 2.10.305. Волна 223c: Вычистка мертвого кода телефонии, аудита и миграционных хелперов (-129 LOC) (Мандаты 8s, 8t)
+- **Идея & Бизнес-эффект**: Реализация Вселенского анти-блоат догмата (Мандат 8s) в подсистемах телефонии, аудита безопасности и шаблонов: вычистка накопившихся заброшенных стейтов, фантомных импортов и устаревших вспомогательных функций без нарушения функциональности рабочих экранов.
+- **Архитектурные механизмы**:
+  1. *Санитаризация виджетов телефонии (`IncomingCallPopup.tsx`, `TelephonyFloatingWidget.tsx`)*:
+     - Удалены неиспользуемые импорты и заброшенные переменные состояния: `transferTarget`, `transferState`, `cancelCallTransfer`, `volumeLevel`, `hasNotes`, `isHighRisk`, `financialSummary`, `lastVisitSummary`;
+     - Приведены в строгое соответствие тесты `TelephonyFloatingWidget.test.ts`, `telephony.test.ts`, `telephonyHub.test.ts`;
+  2. *Ликвидация мертвого кода в настройках и миграциях (-129 LOC)*:
+     - В `apps/web/src/components/settings/migrationHelpers.ts` удалены 129 строк мертвого кода, оставшегося после ранних миграций PGlite -> Postgres;
+     - В `SettingsAuditTab.tsx`, `SettingsMessageTemplatesTab.tsx`, `SettingsTelegramTab.tsx`, `StaffSecurityTab.tsx`, `PatientNotificationCenter.tsx`, `StaffProfileCard.tsx` и `OfflineBackupVaultPanel.tsx` устранены неиспользуемые импорты и переменные.
+- **Файлы**: `apps/web/src/components/telephony/IncomingCallPopup.tsx`, `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx`, `apps/web/src/components/telephony/__tests__/TelephonyFloatingWidget.test.ts`, `apps/web/src/components/telephony/__tests__/telephony.test.ts`, `apps/web/src/components/telephony/__tests__/telephonyHub.test.ts`, `apps/web/src/components/settings/SettingsAuditTab.tsx`, `apps/web/src/components/settings/SettingsMessageTemplatesTab.tsx`, `apps/web/src/components/settings/SettingsTelegramTab.tsx`, `apps/web/src/components/settings/StaffSecurityTab.tsx`, `apps/web/src/components/settings/migrationHelpers.ts`, `apps/web/src/components/notifications/PatientNotificationCenter.tsx`, `apps/web/src/components/settings/StaffProfileCard.tsx`, `apps/web/src/components/settings/OfflineBackupVaultPanel.tsx`.
+- **Коммит**: `707c0e861`.
+
+### 2.10.306. Волна 224: Создание приёма за 5 секунд без обязательного ассистента, инлайн «+ Пациент» и 1-клик норма SOAP Z01.2 (Мандаты 8c, 8d, 8e пп. 3, 8, 8n)
+- **Идея & Бизнес-эффект**: Снятие административных барьеров с соло-врача и небольших клиник: 1) создание записи на приём за 5 секунд без принудительного указания ассистента (Мандат 8e п. 8); 2) быстрое заведение карты пациента прямо из инпута формы записи кнопкой «+ Пациент» без ухода в картотеку; 3) 1-клик протокол физиологической нормы Z01.2 (`norm_healthy`) в SOAP-дневнике визита (Мандат 8e п. 3).
+- **Архитектурные механизмы**:
+  1. *Быстрая запись на приём для соло-врача (Мандаты 8e п. 8, 8n, `NewAppointmentForm.tsx`, `useScheduleLogic.ts`)*:
+     - Поле `assistantUserId` сделано полностью опциональным (`null` по умолчанию), блокировка валидации снята;
+     - Добавлена авто-подстановка кресла по умолчанию (`DEFAULT_SOLO_CHAIR`) при соло-режиме;
+     - Добавлена инлайн-кнопка «+ Пациент» (`btn-new-appointment-quick-create-patient`) в строке поиска пациентов для мгновенного заведения первичного пациента без потери контекста формы записи;
+  2. *Экспресс-пресет нормы Z01.2 в SOAP (Мандаты 8c, 8e п. 3, 8k, 8n)*:
+     - В `clinicalSoapPresets.ts` и `ClinicalQuickPresetsBar.tsx` внедрен эталонный пресет нормы `norm_healthy`: «Физиологическая норма (Z01.2) — Соматически здоров / патологий не выявлено (1-клик)»;
+     - В один клик заполняет все поля SOAP физиологической нормой (жалоб нет; СОПР бледно-розовая, чистая; прикус ортогнатический; зубные ряды интактны; диагноз Z01.2; услуга B01.065.001 1000 ₽; рекомендации по профгигиене).
+- **Файлы**: `apps/web/src/components/schedule/NewAppointmentForm.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/hooks/domains/useScheduleLogic.ts`, `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`, `apps/web/src/components/visit/clinicalSoapPresets.ts`.
+- **Коммит**: `93e49c954`.
+
+### 2.10.307. Волна 224b: Сжатие служебных тулбаров <=120px, Закон Миллера <=2 кнопок на карточках этапов и искоренение брендинга StomX (Мандаты 8c, 8d, 8p)
+- **Идея & Бизнес-эффект**: Исполнение закона «Слона в комнате» (Мандат 8p) и Закона Миллера (Мандат 8d п. 3): 1) ликвидация многоэтажных тулбаров, сжиравших высоту экрана (тулбар `DicomViewerModal.tsx` сжат до 36px/28px, тулбар `TreatmentPlanPresenterModal.tsx` сжат до <=120px); 2) сокращение кнопок прямого действия на карточках этапов рассрочки в `StagePaymentPlanModal.tsx` до $\le 2$ («Оплатить аванс» / «Закрыть актом») с выносом сервисных действий в «...»; 3) устранение паразитного дубля `PatientHeaderCard` в `PatientOverviewTab.tsx`; 4) тотальная зачистка брендинга StomX в окнах кассы и оплаты.
+- **Архитектурные механизмы**:
+  1. *Сжатие служебных тулбаров до <=120px (Мандат 8p)*:
+     - В `DicomViewerModal.tsx` тулбар сжат до высоты 36px (`h-9`), кнопки приведены к плотной десктопной сетке 28px (`h-7`/`h-8`), второстепенные режимы сгруппированы в поповеры;
+     - В `TreatmentPlanPresenterModal.tsx` суммарная высота заголовка и тулбара приведена к бюджету $\le 120$px;
+  2. *Закон Миллера: <=2 кнопок прямого действия (Мандат 8d п. 3)*:
+     - В `StagePaymentPlanModal.tsx` на карточках этапов оставлено ровно 2 кнопки прямого действия, сервисные операции перенесены в поповер «...»;
+  3. *Ликвидация дубля карточки пациента (Мандат 8p)*:
+     - В `PatientOverviewTab.tsx` удален второй дублирующий блок `PatientHeaderCard`;
+  4. *Искоренение брендинга сторонних систем (Мандат 8p)*:
+     - Из `CashShiftWidget.tsx`, `FiscalReceipt54FzModal.tsx`, `PaymentModal.tsx` и `PaymentCapture.tsx` вычищены упоминания StomX.
+- **Файлы**: `apps/web/src/components/imaging/DicomViewerModal.tsx`, `apps/web/src/components/plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/plans/comparator/TreatmentPlanComparatorModal.tsx`, `apps/web/src/components/plans/stagePayment/StagePaymentPlanModal.tsx`, `apps/web/src/components/finance/CashShiftWidget.tsx`, `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/PaymentCapture.tsx`, `apps/web/src/components/patients/PatientOverviewTab.tsx`, `apps/web/src/PatientsView.tsx`.
+- **Коммит**: `f0bf50cb4`.

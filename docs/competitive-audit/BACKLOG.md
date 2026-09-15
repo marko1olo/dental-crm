@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-15 / WAVES 175–223 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, MODALS HOSTS PURGE, WAREHOUSE & LAB ERGONOMICS, DEV LEAKS PURGE, STAFF SETTINGS SSOT DEDUPLICATION, SANPIN INTERACTIVE STATE, HEADER COMPRESSION <160PX, TOUCH-FIRST COMMUNICATIONS >=44PX, LAB CONSTRUCTOR PURGE -1895 LINES, DOCTOR AUTONOMY TREATMENT PLAN WIZARD, EGISZ LOCAL BUFFERING PROD CLEANUP, 63-FZ PEP 1-CLICK BUDGET SIGNING, 54-FZ CASHIER AUTONOMY, TREATMENT PLAN COMPRESSION <166PX, MILLER'S LAW STAGE BUTTONS <=2, TOUCH-FIRST CASHIER >=44PX, PERIODONTAL CHARTING MODAL PURGE -2652 LINES & PERIO SSOT CONSOLIDATION, SCHEDULE QUICK-BOOKING DEDUPLICATION, CASHBOX 1440X900 VIEWPORT FOLD, 2-ROW EMR TABS & ZERO TRUNCATION, ERADICATION OF 17 DEAD FILES -8560 LINES, SCHEDULE CHAIR DEDUPLICATION, EMR FLEX-TABS, PATIENT ADMIN ACTIONS ELEVATION, MOBILE PAYMENT CHECKOUT BAR FIXATION, WAVE 216 40 DEAD FILES PURGE -13001 LINES, WAVE 217 DESKTOP AND MOBILE VIEWPORT POLISHING, WAVE 218 MOBILE CHECKOUT BAR CONTAINING BLOCK CURE & CBCT EMPTY DROPZONE WITHOUT SYNTHETIC PROCEDURAL BLOAT, WAVE 219 11 DEAD FILES PURGE -2413 LINES, WAVE 220 10 DEAD FILES PURGE -4052 LINES, WAVE 221 SOLO-DOCTOR FINANCE & INVENTORY AUTONOMY, PATIENTSVIEW BUTTON DEDUPLICATION, SCHEDULE & EMR TOOLBAR PADDING COMPACTION, WAVE 222 SOFT WAREHOUSE OVERDRAFT, 1-CLICK ANESTHETIC PACKAGES WRITEOFF, MOBILE CHECKOUT PADDING FIX, STOMX BRANDING PURGE, PATIENT OVERVIEW HEADER DEDUPLICATION, DICOM VIEWER 36PX HEADER, CHAIR BRACKET FIX, MILLER'S LAW STAGE PAYMENT BUTTONS <=2, FAST APPOINTMENT BOOKING WITHOUT MANDATORY ASSISTANT, WAVE 223 32 DEAD RADIOLOGY & SCRATCH FILES PURGE -18500 LINES, MARKETING REFACTORING): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 357 ФИЧ: 63 КАНОНИЧЕСКИЕ + 294 АДДЕНДУМ, 357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-15 / WAVES 175–224 / SSOT CONSOLIDATION, CPR DEDUPLICATION -375 LINES, DICOM MEASUREMENT CALIPERS, SURGICAL IMPLANT CATALOG, CASE PRESENTATION PRICING CONSOLIDATION -284 LINES, DESKTOP ERGONOMICS, ANALYTICAL SLICE INTERSECTION MATH, SLICE CLIPPING DECOMPOSITION, IMPLANT CATALOG SSOT DEDUPLICATION, ASTRA TECH EV, WAREHOUSE SSOT CONSOLIDATION, TOPBAR BALLOON FIX, 36PX 1-ROW CT STUDIO HEADER, FNS TAX DEDUCTION SSOT CONSOLIDATION, TOOTH FORMULA ODONTOGRAM UNIFICATION, INVENTORY CANONICAL SSOT, 1C COMMERCEML & MULTI-CURRENCY PURIFICATION, TELEGRAM POSTGRESQL HYDRATION & CONFIRMATION SYNC, MOBILE 390X844 ERGONOMICS, SCHEDULE SOLO-DOCTOR ADAPTIVE GRID, RADIOLOGY & VISIOGRAPHY 32-36PX HEADER ERGONOMICS, ANATOMICAL ODONTOGRAM, FORMULA FACADE PURGE -565 LINES, SCHEDULE QUICK BOOKING BUTTON, INVOICES TOOLBAR COMPACTION, DOCTOR AUTONOMY & RIGOROUS DOCUMENTATION SENTINEL, DMS GUARANTEE LETTERS FACADE PURGE, PATIENT PORTAL SSOT CONSOLIDATION, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, EMOJI TEST PURIFICATION, STERILIZATION FACADES PURGE, PERSPECTIVES AND TAX FACADES PURGE, 12 FACADES PURGE, DEMOUNTED MODAL SHIRMS REDUCTION TO 0, MODALS HOSTS PURGE, WAREHOUSE & LAB ERGONOMICS, DEV LEAKS PURGE, STAFF SETTINGS SSOT DEDUPLICATION, SANPIN INTERACTIVE STATE, HEADER COMPRESSION <160PX, TOUCH-FIRST COMMUNICATIONS >=44PX, LAB CONSTRUCTOR PURGE -1895 LINES, DOCTOR AUTONOMY TREATMENT PLAN WIZARD, EGISZ LOCAL BUFFERING PROD CLEANUP, 63-FZ PEP 1-CLICK BUDGET SIGNING, 54-FZ CASHIER AUTONOMY, TREATMENT PLAN COMPRESSION <166PX, MILLER'S LAW STAGE BUTTONS <=2, TOUCH-FIRST CASHIER >=44PX, PERIODONTAL CHARTING MODAL PURGE -2652 LINES & PERIO SSOT CONSOLIDATION, SCHEDULE QUICK-BOOKING DEDUPLICATION, CASHBOX 1440X900 VIEWPORT FOLD, 2-ROW EMR TABS & ZERO TRUNCATION, ERADICATION OF 17 DEAD FILES -8560 LINES, SCHEDULE CHAIR DEDUPLICATION, EMR FLEX-TABS, PATIENT ADMIN ACTIONS ELEVATION, MOBILE PAYMENT CHECKOUT BAR FIXATION, WAVE 216 40 DEAD FILES PURGE -13001 LINES, WAVE 217 DESKTOP AND MOBILE VIEWPORT POLISHING, WAVE 218 MOBILE CHECKOUT BAR CONTAINING BLOCK CURE & CBCT EMPTY DROPZONE WITHOUT SYNTHETIC PROCEDURAL BLOAT, WAVE 219 11 DEAD FILES PURGE -2413 LINES, WAVE 220 10 DEAD FILES PURGE -4052 LINES, WAVE 221 SOLO-DOCTOR FINANCE & INVENTORY AUTONOMY, PATIENTSVIEW BUTTON DEDUPLICATION, SCHEDULE & EMR TOOLBAR PADDING COMPACTION, WAVE 222 SOFT WAREHOUSE OVERDRAFT, 1-CLICK ANESTHETIC PACKAGES WRITEOFF, MOBILE CHECKOUT PADDING FIX, STOMX BRANDING PURGE, PATIENT OVERVIEW HEADER DEDUPLICATION, DICOM VIEWER 36PX HEADER, CHAIR BRACKET FIX, MILLER'S LAW STAGE PAYMENT BUTTONS <=2, FAST APPOINTMENT BOOKING WITHOUT MANDATORY ASSISTANT, WAVE 223 32 DEAD RADIOLOGY & SCRATCH FILES PURGE -18500 LINES, MARKETING REFACTORING, WAVE 223B 100% DISCOUNT & WARRANTY REMAKE IN BILLING, WAVE 223C TELEPHONY DEAD CODE PURGE, WAVE 224 5-SEC BOOKING & SOAP Z01.2 NORM, WAVE 224B TOOLBAR COMPACTION <=120PX, MILLER'S LAW <=2 BUTTONS & COMPETITOR PURGE): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 357 ФИЧ: 63 КАНОНИЧЕСКИЕ + 294 АДДЕНДУМ, 357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -76,8 +76,12 @@
 > 71. Ликвидация 11 мертвых файлов и заброшенных стилей (-2,413 LOC) по Вселенскому анти-блоат догмату (Wave 219, коммит `41a274ff9`, Мандаты 8i, 8s, 8t): физически удалены заброшенные стили ЗТЛ `labWorkOrder.css`, стили автоклава `autoclave.css` без компонентов, 5 несмонтированных CSS-файлов настроек и временные скратч-скрипты миграции.
 > 72. Ликвидация 10 несмонтированных CSS-файлов, заброшенных хуков и скратчей (-4,052 LOC) по Вселенскому анти-блоат догмату (Wave 220, коммит `32fba9103`, Мандаты 8i, 8s, 8t): физически удалены 6 заброшенных CSS-файлов (`ScannerView.css`, `LeadsKanbanView.css`, `cashShiftClosing.css`, `paidMedicalContract.css`, `interactiveSmartBooking.css`, `SignCardDialog.css`), 3 осиротевших domain-хука (`useCommunicationTaskLogic`, `usePricelistLogic`, `useUiPreferencesLogic`) и утилита `browserImagingFolderScan.ts`.
 > 73. Автономия соло-врача у кресла и кассы (права `finance.write` и `inventory.write`), удаление дублей кнопок в PatientsView и фиксация отступов тулбаров расписания и ЭМК (Wave 221, коммит `bd346b784`, Мандаты 8c, 8d, 8e пп. 1, 2, 8, 9, 10, 8n, 8p): предоставление прав `finance.read`, `finance.write` и `inventory.write` роли врача `doctor`, удаление паразитного нижнего дубля кнопок приёма и договора в `PatientsView.tsx`, сброс лишнего бордера/паддинга степпера дат и фиксация отступов чипов кресел в `ScheduleFilterStrip.tsx`, сжатие SOAP экспресс-бара в `VisitEmkTab.tsx`.
-> 74. Мягкий овердрафт склада для соло-врача и 1-клик списание пакетов карпул анестетиков в inventory.ts, устранение наложения мобильной кассы на аккордеоны (max-md:pb-24), искоренение брендинга StomX в прод-UI, дедупликация карточки пациента, сжатие шапки DicomViewerModal до 36px, закон Миллера на карточках рассрочки и быстрая запись без обязательного ассистента (Wave 222, коммит `ebb57627b`, Мандаты 8c, 8d, 8e пп. 8, 9, 10, 8n, 8p): эндпоинт POST /:organizationId/quick-writeoff-package для списания карпул и расходников у кресла в 1 клик без комиссий по СанПиН; мягкий овердрафт при экстренном приёме и задержке накладных; безопасный отступ max-md:pb-24 в PaymentCapture.tsx, исключающий перекрытие аккордеонов липким чекаутом; полная зачистка брендинга StomX и утечек разработки в CashShiftWidget.tsx, FiscalReceipt54FzModal.tsx, PaymentModal.tsx; снос дублирующей плашки PatientHeaderCard в PatientOverviewTab.tsx; шапка DicomViewerModal сжата до 36px (h-9) по Закону Хика, устранена срезка скобки чипа кресла в ScheduleFilterStrip.tsx; не более 2 кнопок прямого действия на карточках этапов StagePaymentPlanModal.tsx; создание записи без ассистента в NewAppointmentForm.tsx и useScheduleLogic.ts за 5 секунд.
-> 75. Тотальная ликвидация 32 файлов мертвого кода, заброшенных утилит радиологии и скратч-скриптов (-18 500+ LOC / ~550 KB) по Вселенскому анти-блоат догмату, рефакторинг маркетинга (снос reviewReplyDraft.ts и сжатие marketingRomi.css) и строгий аудит процедурных диорам радиологии (Wave 223, коммиты `5301bd8b6`, `ebb57627b`, Мандаты 8i, 8s, 8t): физически удалены неиспользуемый dictationApplyPlan.ts (82 LOC) и его тест (74 LOC), фасад panoramicReconstruction.test.ts (7 LOC), заброшенные clinicalImplants.ts (331 LOC), clinicalImplants.test.ts (144 LOC) и curvedMprMath.ts (157 LOC), удалены 11 временных файлов _tmpdiag*.mjs (~550 KB) и 14 скратч-скриптов в scripts/, снесена тупиковая функция ответа на отзывы в маркетинге reviewReplyDraft.ts (-173 LOC); подтверждено отсутствие процедурных диорам в радиологии.
+> 74. Мягкий овердрафт склада для соло-врача, кассовые смены роли doctor в cashbox.ts и 1-клик списание пакетов карпул анестетиков в inventory.ts (POST /:organizationId/quick-writeoff-package) (Wave 222, коммит `ebb57627b`, Мандаты 8e пп. 8, 9, 10, 8k, 8n).
+> 75. Тотальная ликвидация 32 файлов мертвого кода, заброшенных утилит радиологии и скратч-скриптов (-18 500+ LOC / ~550 KB) по Вселенскому анти-блоат догмату, рефакторинг маркетинга: снос reviewReplyDraft.ts (-173 LOC) и ко-локация marketingRomi.css (-230 LOC) (Wave 223, коммиты `5301bd8b6`, `5a99ed0f3`, Мандаты 8i, 8s, 8t).
+> 76. Поддержка 100% скидок и гарантийных переделок в биллинге без блокировок createPaymentInDb (apps/api/src/db/billingQuery.ts, tests/db/billingQuery.test.ts): разрешение платежей 0 руб. при 100% скидке/гарантии и автоматическое закрытие связанных актов выполненных работ (completed_works_act, totalAmountRub: 0, status: issued) (Wave 223b, коммит `a9d311fc6`, Мандаты 8e п. 7, 8n).
+> 77. Вычистка 75+ строк мертвого кода, неиспользуемых стейтов и импортов в телефонии, настройках и уведомлениях по Мандатам 8i, 8s: IncomingCallPopup.tsx, TelephonyFloatingWidget.tsx, SettingsAuditTab.tsx, SettingsMessageTemplatesTab.tsx, SettingsTelegramTab.tsx, StaffSecurityTab.tsx, migrationHelpers.ts (-129 LOC), PatientNotificationCenter.tsx, StaffProfileCard.tsx, OfflineBackupVaultPanel.tsx (Wave 223c, коммит `707c0e861`).
+> 78. Быстрая запись за 5 секунд без обязательного ассистента с автоподстановкой кресла (DEFAULT_SOLO_CHAIR) и врача, создание карты пациента на лету из поиска (+ Пациент) в NewAppointmentForm.tsx и useScheduleLogic.ts; экспресс-норма Z01.2 в SOAP (пресет norm_healthy: Z01.2 Стоматологическое обследование — Соматически и стоматологически здоров) в ClinicalQuickPresetsBar.tsx и clinicalSoapPresets.ts (Wave 224, коммит `93e49c954`, Мандаты 8e, 8n).
+> 79. Эргономическая компрессия тулбаров до <=120px (DicomViewerModal 36px/28px плотная десктопная сетка, TreatmentPlanPresenterModal), Закон Миллера (<=2 кнопок на карточках этапов StagePaymentPlanModal и планов лечения), удаление дублирующей плашки PatientHeaderCard в PatientOverviewTab, вычистка упоминаний конкурентов (StomX) в CashShiftWidget, FiscalReceipt54FzModal, PaymentModal, PaymentCapture (Wave 224b, коммит `f0bf50cb4`, Мандаты 8p, 8e).
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 
@@ -6535,4 +6539,88 @@
   - **Защита Single-Compiler Gate (Мандат 8t)**:
     * Ни единого запуска `npm run typecheck`, `tsc -b --noEmit` или `npm run build` не производилось (гейт строго закреплен за L1 Оркестратором). Статические валидаторы `check:encoding` (4921 файл), `check:css-tokens` (115 CSS файлов, 0 unresolved `var()`), `check:stub-overrides` (827 свойств), `check:dynamic-imports` (143 импорта) пройдены со статусом EXIT 0;
     * Тесты компонентов `panelsAreMounted.test.ts` (14/14 PASS) и `panoramicReconstruction.test.ts` (15/15 PASS) подтвердили полную сохранность архитектурных инвариантов. Чистая экономия: 32 удаленных файла, -18 500+ строк мертвого кода и скратч-мусора.
+
+### 368. Wave 223b: 100% скидки и гарантийные переделки в биллинге без блокировок createPaymentInDb (Мандаты 8e п. 7, 8n)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/api/src/db/billingQuery.ts`
+  - `apps/api/src/tests/db/billingQuery.test.ts`
+* **Коммит**: `a9d311fc6`
+* **Описание**:
+  - **Автономия соло-врача по скидкам и переделкам по гарантии (Мандаты 8e п. 7, 8n)**: в `apps/api/src/db/billingQuery.ts` переработана функция `createPaymentInDb`:
+    * Добавлена поддержка нулевых платежей (`incomingPaymentKopecks === 0`) при `discountPercent === 100`, `amountRub === 0` или указании гарантийного примечания (`isWarrantyOrFullDiscount`);
+    * Отменена ошибочная блокировка «Сумма оплаты должна быть строго больше нуля» для гарантийных и 100% скидочных случаев;
+    * При проведении гарантийной переделки сумма актов выполненных работ визита (`completed_works_act`) автоматически устанавливается в `totalAmountRub: 0`, а статус переводится в `issued` без задержек и без требований мастер-паролей начмеда/администратора;
+    * В `apps/api/src/tests/db/billingQuery.test.ts` добавлен юнит-тест, подтверждающий корректное проведение платежа 0 руб. со 100% скидкой.
+
+### 369. Wave 223c: Рефакторинг телефонии, уведомлений и настроек — вычистка 75+ строк мертвого кода и неиспользуемых стейтов (Мандаты 8i, 8s)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/telephony/IncomingCallPopup.tsx`
+  - `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx`
+  - `apps/web/src/components/telephony/__tests__/TelephonyFloatingWidget.test.ts`
+  - `apps/web/src/components/telephony/__tests__/telephony.test.ts`
+  - `apps/web/src/components/telephony/__tests__/telephonyHub.test.ts`
+  - `apps/web/src/components/settings/SettingsAuditTab.tsx`
+  - `apps/web/src/components/settings/SettingsMessageTemplatesTab.tsx`
+  - `apps/web/src/components/settings/SettingsTelegramTab.tsx`
+  - `apps/web/src/components/settings/StaffSecurityTab.tsx`
+  - `apps/web/src/components/settings/migrationHelpers.ts`
+  - `apps/web/src/components/notifications/PatientNotificationCenter.tsx`
+  - `apps/web/src/components/settings/StaffProfileCard.tsx`
+  - `apps/web/src/components/settings/OfflineBackupVaultPanel.tsx`
+* **Коммит**: `707c0e861`
+* **Описание**:
+  - **Санитаризация телефонии и хуков (Мандаты 8i, 8s)**:
+    * В `IncomingCallPopup.tsx` и `TelephonyFloatingWidget.tsx` удалены неиспользуемые импорты и стейт-переменные (`transferTarget`, `transferState`, `cancelCallTransfer`, `volumeLevel`, `hasNotes`, `isHighRisk`, `financialSummary`, `lastVisitSummary`);
+    * В `migrationHelpers.ts` удалено 129 строк мертвого неиспользуемого вспомогательного кода;
+    * В `SettingsAuditTab.tsx`, `SettingsMessageTemplatesTab.tsx`, `SettingsTelegramTab.tsx`, `StaffSecurityTab.tsx`, `PatientNotificationCenter.tsx`, `StaffProfileCard.tsx` и `OfflineBackupVaultPanel.tsx` ликвидированы мертвые импорты и неиспользуемые переменные;
+    * Тесты телефонии приведены к актуальным типам без ссылок на удаленные сущности.
+
+### 370. Wave 224: Создание записи за 5 секунд без обязательного ассистента и экспресс-пресет физиологической нормы Z01.2 в SOAP (Мандаты 8e, 8n)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/schedule/NewAppointmentForm.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/hooks/domains/useScheduleLogic.ts`
+  - `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`
+  - `apps/web/src/components/visit/clinicalSoapPresets.ts`
+* **Коммит**: `93e49c954`
+* **Описание**:
+  - **Быстрая запись на приём за 5 секунд для соло-врача (Мандаты 8e п. 8, 8n)**:
+    * В `NewAppointmentForm.tsx` и `useScheduleLogic.ts` параметр выбора ассистента сделан опциональным, исключая валидационные ошибки;
+    * Реализована авто-подстановка дефолтного кресла (`DEFAULT_SOLO_CHAIR`) и врача при соло-режиме;
+    * Внедрена кнопка «+ Пациент» (`btn-new-appointment-quick-create-patient`) для мгновенного создания карты пациента на лету прямо из строки поиска формы записи в 1 клик;
+  - **Экспресс-норма Z01.2 в SOAP (Мандаты 8e п. 3, 8k, 8n)**:
+    * В `clinicalSoapPresets.ts` и `ClinicalQuickPresetsBar.tsx` добавлен эталонный пресет нормы `norm_healthy`: «Физиологическая норма (Z01.2) — Соматически здоров / патологий не выявлено (1-клик)»;
+    * Автоматически заполняет разделы SOAP (жалоб нет; слизистая бледно-розовая, влажная, прикус физиологический, зубные ряды интактны; Z01.2 патологии не выявлено; B01.065.001 первичный осмотр 1000 ₽; рекомендации по гигиене);
+    * Иконка `ShieldCheck` и прямой вывод в топовую полосу экспресс-сценариев.
+
+### 371. Wave 224b: Сжатие тулбаров до <=120px, Закон Миллера на карточках рассрочки и планов лечения, удаление дублей и зачистка брендинга конкурентов (Мандаты 8c, 8d, 8e, 8p)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/imaging/DicomViewerModal.tsx`
+  - `apps/web/src/components/plans/TreatmentPlanPresenterModal.tsx`
+  - `apps/web/src/components/plans/comparator/TreatmentPlanComparatorModal.tsx`
+  - `apps/web/src/components/plans/stagePayment/StagePaymentPlanModal.tsx`
+  - `apps/web/src/components/finance/CashShiftWidget.tsx`
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/patients/PatientOverviewTab.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/components/dicom/implantCatalog.ts`
+  - `apps/web/src/utils/dicom/clinicalImplants.ts`
+  - `apps/web/src/components/visiograph/__tests__/mandibularNerveCollision.test.ts`
+* **Коммит**: `f0bf50cb4`
+* **Описание**:
+  - **Сжатие тулбаров до <=120px и плотная десктопная эргономика (Мандаты 8d п. 2, 8p)**:
+    * В `DicomViewerModal.tsx` тулбар сжат до высоты 36px (`h-9 min-h-[36px] max-h-[36px]`), кнопки уменьшены до профессиональной плотности 28px (`h-7`/`h-8`), второстепенные опции объединены в поповеры, освободив максимум полезного пространства для визиограммы;
+    * В `TreatmentPlanPresenterModal.tsx` тулбар презентации сжат до высоты <=120px, удалены дублирующие кнопки;
+  - **Закон Миллера: <= 2 кнопки на карточке сущности (Мандат 8d п. 3)**:
+    * В `StagePaymentPlanModal.tsx` на карточках этапов рассрочки оставлено строго 2 кнопки прямого действия («Оплатить аванс» / «Закрыть актом»), а все сервисные операции (рассрочка, 54-ФЗ чек, взятие в работу без аванса) вынесены в контекстное меню «...»;
+  - **Удаление дублирующей плашки пациента (Мандаты 8c, 8d п. 3, 8p)**:
+    * В `PatientOverviewTab.tsx` ликвидирован паразитный дубль `PatientHeaderCard`, задваивавший данные пациента в первом экране;
+  - **Зачистка брендинга конкурентов и утечек разработки (Мандат 8p)**:
+    * Из `CashShiftWidget.tsx`, `FiscalReceipt54FzModal.tsx`, `PaymentModal.tsx` и `PaymentCapture.tsx` полностью вычищены упоминания сторонних систем (StomX) и заменены на аутентичную терминологию DENTE.
 
