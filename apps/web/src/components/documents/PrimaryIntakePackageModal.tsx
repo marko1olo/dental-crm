@@ -16,6 +16,7 @@ import {
 	Zap,
 	Printer,
 	Sparkles,
+	MoreHorizontal,
 } from "lucide-react";
 import { formatShortDate } from "../../AppHelpers";
 import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
@@ -87,6 +88,7 @@ export function PrimaryIntakePackageModal({
 	if (!isOpen) return null;
 
 	const [isNormApplied, setIsNormApplied] = useState(false);
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
 	const documentsByKind = new Map<DocumentKind, GeneratedDocument[]>();
 	for (const doc of existingDocuments) {
@@ -190,6 +192,46 @@ export function PrimaryIntakePackageModal({
 			},
 		});
 		showToast("Первичный пакет (4 бланка: Договор 736, ИДС 1051н, ОПД 152-ФЗ, Анкета здоровья) отправлен на печать", "success", 4000);
+	};
+
+	const handlePrintBlankPackage = () => {
+		printPrimaryIntakePackage({
+			patient: null,
+			clinic: clinicProfileDraft ? {
+				clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
+				legalName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
+				fullName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
+				shortName: clinicProfileDraft.clinicName || "",
+				inn: clinicProfileDraft.inn || "",
+				kpp: clinicProfileDraft.kpp || "",
+				ogrn: clinicProfileDraft.ogrn || "",
+				licenseNumber: clinicProfileDraft.licenseNumber || "",
+				licenseDate: clinicProfileDraft.licenseDate || "",
+				address: clinicProfileDraft.address || "",
+				actualAddress: clinicProfileDraft.address || "",
+				phone: clinicProfileDraft.phone || "",
+				directorTitle: clinicProfileDraft.directorTitle || "Руководитель",
+				directorFullName: clinicProfileDraft.directorFullName || "",
+			} : {
+				clinicName: "Стоматологическая клиника",
+				legalName: "",
+				fullName: "",
+				shortName: "",
+				inn: "",
+				kpp: "",
+				ogrn: "",
+				licenseNumber: "",
+				licenseDate: "",
+				address: "",
+				actualAddress: "",
+				phone: "",
+				directorTitle: "Руководитель",
+				directorFullName: "",
+			},
+			doctorFullName: doctorFullName || null,
+			intakeNormApplied: false,
+		});
+		showToast("Чистый первичный пакет («________») отправлен на печать", "info", 4000);
 	};
 
 	return (
@@ -353,72 +395,163 @@ export function PrimaryIntakePackageModal({
 
 				<div className="document-package-modal-footer">
 					<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+						{missingKinds.length > 0 ? (
+							<button
+								type="button"
+								className="secondary-button"
+								onClick={handleBatchCreate}
+								style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", fontWeight: 600 }}
+								title="Сформировать недостающие документы первичного пакета в базе данных"
+							>
+								<Zap size={15} aria-hidden="true" />
+								<span>Сформировать в базе ({missingKinds.length})</span>
+							</button>
+						) : (
+							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
+								<CheckCircle2 size={15} aria-hidden="true" />
+								Все 4 документа созданы в базе
+							</span>
+						)}
+
 						<button
 							type="button"
 							className="primary-button"
 							data-testid="print-primary-intake-package-btn"
 							onClick={handleBatchPrint}
 							style={{
-								minHeight: "44px",
+								minHeight: "36px",
 								background: "var(--teal, #0d9488)",
 								color: "#ffffff",
 								fontWeight: 700,
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "8px",
-								padding: "0.5rem 1.1rem",
+								padding: "0.45rem 1rem",
 								borderRadius: "8px",
 								cursor: "pointer",
 								border: "none",
 							}}
 							title="1-Клик печать всего комплекта (Договор №736 + ИДС №1051н + ОПД №152-ФЗ + Анкета соматики) с подчеркиваниями под ручную подпись"
 						>
-							<Printer size={18} aria-hidden="true" />
-							<span>Распечатать весь пакет первичного приёма (4 бланка)</span>
+							<Printer size={16} aria-hidden="true" />
+							<span>Распечатать весь пакет (4 бланка)</span>
 						</button>
+					</div>
 
+					{/* Вторичные действия вынесены в компактное меню ... по Закону Миллера (Мандат 8d) */}
+					<div className="relative inline-flex items-center">
 						<button
 							type="button"
 							className="secondary-button"
-							data-testid="footer-fill-somatic-norm-btn"
-							onClick={handleFillSomaticNorm}
-							style={{
-								minHeight: "44px",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								fontWeight: 600,
-							}}
-							title="Заполнить анкету здоровья нормой (аллергий нет, противопоказаний нет)"
+							onClick={() => setIsMoreMenuOpen((v) => !v)}
+							title="Дополнительные действия (анкета соматики, чистые бланки, закрыть)"
+							aria-label="Дополнительные действия"
+							data-testid="primary-intake-more-btn"
+							style={{ minHeight: "36px", padding: "0 10px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 						>
-							<Sparkles size={16} aria-hidden="true" />
-							<span>{isNormApplied ? "Анкета в норме" : "Анкета: норма (1 клик)"}</span>
+							<MoreHorizontal size={18} aria-hidden="true" />
 						</button>
 
-						{missingKinds.length > 0 ? (
+						{isMoreMenuOpen && (
+							<div
+								className="fixed inset-0 z-30 cursor-default"
+								onClick={() => setIsMoreMenuOpen(false)}
+								aria-hidden="true"
+							/>
+						)}
+
+						<div
+							className={`absolute right-0 bottom-full mb-2 w-72 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl z-40 py-1.5 ${
+								isMoreMenuOpen ? "block" : "hidden"
+							}`}
+							style={{ background: "var(--paper, #ffffff)", border: "1px solid var(--line, #e2e8f0)" }}
+							data-testid="primary-intake-more-menu"
+						>
 							<button
 								type="button"
-								className="secondary-button"
-								onClick={handleBatchCreate}
-								style={{ minHeight: "44px" }}
+								className="secondary-button w-full"
+								data-testid="footer-fill-somatic-norm-btn"
+								onClick={() => {
+									setIsMoreMenuOpen(false);
+									handleFillSomaticNorm();
+								}}
+								style={{
+									width: "100%",
+									border: "none",
+									background: "transparent",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "flex-start",
+									gap: "8px",
+									padding: "8px 12px",
+									fontSize: "13px",
+									fontWeight: 600,
+									color: "var(--ink, #0f172a)",
+									cursor: "pointer",
+									minHeight: "36px",
+								}}
+								title="Заполнить анкету здоровья нормой (аллергий нет, противопоказаний нет)"
 							>
-								<Zap size={16} aria-hidden="true" />
-								Сформировать в базе ({missingKinds.length})
+								<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+								<span>{isNormApplied ? "Анкета в норме" : "Анкета: норма (1 клик)"}</span>
 							</button>
-						) : (
-							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
-								<CheckCircle2 size={16} aria-hidden="true" />
-								Все 4 документа созданы в базе
-							</span>
-						)}
+							<button
+								type="button"
+								className="secondary-button w-full"
+								data-testid="print-blank-intake-package-btn"
+								onClick={() => {
+									setIsMoreMenuOpen(false);
+									handlePrintBlankPackage();
+								}}
+								style={{
+									width: "100%",
+									border: "none",
+									background: "transparent",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "flex-start",
+									gap: "8px",
+									padding: "8px 12px",
+									fontSize: "13px",
+									fontWeight: 600,
+									color: "var(--ink, #0f172a)",
+									cursor: "pointer",
+									minHeight: "36px",
+								}}
+								title="Печать чистых бланков всего пакета со строками «________» для ручного заполнения"
+							>
+								<FileText size={15} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
+								<span>Печать чистых бланков пакета («________»)</span>
+							</button>
+							<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "4px 0" }} />
+							<button
+								type="button"
+								className="secondary-button w-full"
+								onClick={() => {
+									setIsMoreMenuOpen(false);
+									onClose();
+								}}
+								style={{
+									width: "100%",
+									border: "none",
+									background: "transparent",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "flex-start",
+									gap: "8px",
+									padding: "8px 12px",
+									fontSize: "13px",
+									fontWeight: 600,
+									color: "var(--muted, #64748b)",
+									cursor: "pointer",
+									minHeight: "36px",
+								}}
+							>
+								<X size={15} className="shrink-0" aria-hidden="true" />
+								<span>Закрыть окно</span>
+							</button>
+						</div>
 					</div>
-					<button
-						type="button"
-						className="secondary-button"
-						onClick={onClose}
-					>
-						Закрыть
-					</button>
 				</div>
 			</div>
 		</div>

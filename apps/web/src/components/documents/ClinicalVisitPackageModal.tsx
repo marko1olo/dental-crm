@@ -1,4 +1,4 @@
-import type React from "react";
+import React, { useState } from "react";
 import {
 	type DocumentKind,
 	type GeneratedDocument,
@@ -13,6 +13,8 @@ import {
 	ShieldCheck,
 	Zap,
 	Printer,
+	FileText,
+	MoreHorizontal,
 } from "lucide-react";
 import { formatShortDate } from "../../AppHelpers";
 import { printClinicalPackage } from "./clinicalPackagePrintEngine";
@@ -83,6 +85,8 @@ export function ClinicalVisitPackageModal({
 }: ClinicalVisitPackageModalProps): React.JSX.Element | null {
 	if (!isOpen) return null;
 
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
 	const documentsByKind = new Map<DocumentKind, GeneratedDocument[]>();
 	for (const doc of existingDocuments) {
 		const list = documentsByKind.get(doc.kind) ?? [];
@@ -127,6 +131,28 @@ export function ClinicalVisitPackageModal({
 						gender: (patient as any)?.gender,
 					}
 				: null,
+			clinic: clinicProfileDraft
+				? {
+						clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
+						legalName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
+						fullName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
+						shortName: clinicProfileDraft.clinicName || "",
+						inn: clinicProfileDraft.inn || "",
+						kpp: clinicProfileDraft.kpp || "",
+						ogrn: clinicProfileDraft.ogrn || "",
+						licenseNumber: clinicProfileDraft.licenseNumber || "",
+						address: clinicProfileDraft.address || "",
+						actualAddress: clinicProfileDraft.address || "",
+						phone: clinicProfileDraft.phone || "",
+					}
+				: null,
+			doctorFullName: doctorFullName || "Врач-стоматолог-терапевт",
+		});
+	};
+
+	const handlePrintBlank = () => {
+		printClinicalPackage({
+			patient: null,
 			clinic: clinicProfileDraft
 				? {
 						clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
@@ -255,40 +281,134 @@ export function ClinicalVisitPackageModal({
 
 				<div className="document-package-modal-footer">
 					<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-						<button
-							type="button"
-							className="primary-button"
-							onClick={handleBatchPrint}
-							data-testid="clinical-batch-print-btn"
-							style={{ backgroundColor: "var(--teal-fill, #0d9488)" }}
-						>
-							<Printer size={16} aria-hidden="true" />
-							Печать терапевтического пакета (3 бланка в 1 клик)
-						</button>
 						{missingKinds.length > 0 ? (
 							<button
 								type="button"
 								className="secondary-button"
 								onClick={handleBatchCreate}
 								data-testid="clinical-batch-create-btn"
+								style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", fontWeight: 600 }}
 							>
-								<Zap size={16} aria-hidden="true" />
-								Сформировать в базе ({missingKinds.length})
+								<Zap size={15} aria-hidden="true" />
+								<span>Сформировать в базе ({missingKinds.length})</span>
 							</button>
 						) : (
 							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
-								<CheckCircle2 size={16} aria-hidden="true" />
+								<CheckCircle2 size={15} aria-hidden="true" />
 								Комплект в базе оформлен
 							</span>
 						)}
+
+						<button
+							type="button"
+							className="primary-button"
+							onClick={handleBatchPrint}
+							data-testid="clinical-batch-print-btn"
+							style={{
+								minHeight: "36px",
+								backgroundColor: "var(--teal-fill, #0d9488)",
+								color: "#ffffff",
+								fontWeight: 700,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "8px",
+								padding: "0.45rem 1rem",
+								borderRadius: "8px",
+								cursor: "pointer",
+								border: "none",
+							}}
+						>
+							<Printer size={16} aria-hidden="true" />
+							<span>Печать пакета (3 бланка)</span>
+						</button>
 					</div>
-					<button
-						type="button"
-						className="secondary-button"
-						onClick={onClose}
-					>
-						Закрыть
-					</button>
+
+					{/* Вторичные действия вынесены в компактное меню ... по Закону Миллера (Мандат 8d) */}
+					<div className="relative inline-flex items-center">
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => setIsMoreMenuOpen((v) => !v)}
+							title="Дополнительные действия"
+							aria-label="Дополнительные действия"
+							data-testid="clinical-more-btn"
+							style={{ minHeight: "36px", padding: "0 10px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+						>
+							<MoreHorizontal size={18} aria-hidden="true" />
+						</button>
+
+						{isMoreMenuOpen && (
+							<div
+								className="fixed inset-0 z-30 cursor-default"
+								onClick={() => setIsMoreMenuOpen(false)}
+								aria-hidden="true"
+							/>
+						)}
+
+						<div
+							className={`absolute right-0 bottom-full mb-2 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl z-40 py-1.5 ${
+								isMoreMenuOpen ? "block" : "hidden"
+							}`}
+							style={{ background: "var(--paper, #ffffff)", border: "1px solid var(--line, #e2e8f0)" }}
+							data-testid="clinical-more-menu"
+						>
+							<button
+								type="button"
+								className="secondary-button w-full"
+								data-testid="print-blank-clinical-package-btn"
+								onClick={() => {
+									setIsMoreMenuOpen(false);
+									handlePrintBlank();
+								}}
+								style={{
+									width: "100%",
+									border: "none",
+									background: "transparent",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "flex-start",
+									gap: "8px",
+									padding: "8px 12px",
+									fontSize: "13px",
+									fontWeight: 600,
+									color: "var(--ink, #0f172a)",
+									cursor: "pointer",
+									minHeight: "36px",
+								}}
+								title="Печать чистых бланков терапевтического пакета со строками «________» для ручного заполнения"
+							>
+								<FileText size={15} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
+								<span>Печать чистых бланков («________»)</span>
+							</button>
+							<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "4px 0" }} />
+							<button
+								type="button"
+								className="secondary-button w-full"
+								onClick={() => {
+									setIsMoreMenuOpen(false);
+									onClose();
+								}}
+								style={{
+									width: "100%",
+									border: "none",
+									background: "transparent",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "flex-start",
+									gap: "8px",
+									padding: "8px 12px",
+									fontSize: "13px",
+									fontWeight: 600,
+									color: "var(--muted, #64748b)",
+									cursor: "pointer",
+									minHeight: "36px",
+								}}
+							>
+								<X size={15} className="shrink-0" aria-hidden="true" />
+								<span>Закрыть окно</span>
+							</button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
