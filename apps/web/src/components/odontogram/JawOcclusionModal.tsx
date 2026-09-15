@@ -327,7 +327,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 						<button
 							type="button"
 							onClick={handle1ClickNorm}
-							className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 touch-manipulation"
+							className="min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 touch-manipulation"
 							title="1 клик: Физиологическая норма"
 							data-testid="jaw-1click-norm-btn"
 						>
@@ -338,7 +338,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-w-[44px] min-h-[44px] w-10 h-10 rounded-xl bg-[var(--odontogram-surface-hover,#f1f5f9)] hover:bg-rose-500 hover:text-white text-[var(--odontogram-ink-muted,#64748b)] flex items-center justify-center transition-all cursor-pointer shrink-0"
+							className="min-w-[44px] min-h-[44px] sm:min-h-[32px] w-10 h-10 rounded-xl bg-[var(--odontogram-surface-hover,#f1f5f9)] hover:bg-rose-500 hover:text-white text-[var(--odontogram-ink-muted,#64748b)] flex items-center justify-center transition-all cursor-pointer shrink-0"
 							title="Закрыть (Esc)"
 							aria-label="Закрыть"
 							data-testid="jaw-modal-close-btn"
@@ -362,7 +362,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 								setActiveTab("JU");
 								setSelectedPresetId("");
 							}}
-							className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-black transition-all cursor-pointer select-none flex items-center justify-center gap-1.5 touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-lg text-xs font-black transition-all cursor-pointer select-none flex items-center justify-center gap-1.5 touch-manipulation ${
 								activeTab === "JU"
 									? "bg-indigo-600 text-white shadow-xs"
 									: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
@@ -381,7 +381,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 								setActiveTab("C");
 								setSelectedPresetId("");
 							}}
-							className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-black transition-all cursor-pointer select-none flex items-center justify-center gap-1.5 touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-lg text-xs font-black transition-all cursor-pointer select-none flex items-center justify-center gap-1.5 touch-manipulation ${
 								activeTab === "C"
 									? "bg-purple-600 text-white shadow-xs"
 									: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
@@ -400,7 +400,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 								setActiveTab("JL");
 								setSelectedPresetId("");
 							}}
-							className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-black transition-all cursor-pointer select-none flex items-center justify-center gap-1.5 touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-lg text-xs font-black transition-all cursor-pointer select-none flex items-center justify-center gap-1.5 touch-manipulation ${
 								activeTab === "JL"
 									? "bg-indigo-600 text-white shadow-xs"
 									: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
@@ -485,7 +485,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 							value={customComment}
 							onChange={(e) => setCustomComment(e.target.value)}
 							placeholder="Например: умеренная болезненность в ретромолярной области, плотный контакт..."
-							className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--odontogram-border,#cbd5e1)] bg-[var(--odontogram-paper,#ffffff)] text-xs text-[var(--odontogram-ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+							className="w-full min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl border border-[var(--odontogram-border,#cbd5e1)] bg-[var(--odontogram-paper,#ffffff)] text-xs text-[var(--odontogram-ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500"
 							data-testid="jaw-modal-custom-comment-input"
 						/>
 					</div>
@@ -496,7 +496,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)] transition-colors cursor-pointer"
+						className="min-h-[44px] sm:min-h-[32px] px-4 py-2 rounded-xl text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)] transition-colors cursor-pointer"
 					>
 						Отмена
 					</button>
@@ -511,7 +511,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 								handleApplyPreset(presetToApply);
 							}
 						}}
-						className={`min-h-[44px] px-5 py-2 rounded-xl text-xs font-black shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+						className={`min-h-[44px] sm:min-h-[32px] px-5 py-2 rounded-xl text-xs font-black shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
 							selectedPreset
 								? "bg-indigo-600 hover:bg-indigo-700 text-white"
 								: "bg-emerald-600 hover:bg-emerald-700 text-white"

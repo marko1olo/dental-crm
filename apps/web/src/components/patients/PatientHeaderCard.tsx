@@ -192,7 +192,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 
 	return (
 		<div
-			className={`patient-header-card p-4 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs transition-colors space-y-3 ${className}`}
+			className={`patient-header-card p-2.5 sm:p-3 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs transition-colors space-y-2 ${className}`}
 			data-testid="patient-header-card"
 		>
 			{/* Top Row: Avatar, FIO, Actions, Sentiment & Loyalty */}
@@ -200,7 +200,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 				{/* Avatar & Core Info */}
 				<div className="flex items-center gap-3 min-w-0">
 					<div
-						className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--teal-dark,#0d9488)] to-cyan-600 text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-xs ring-2 ring-[var(--teal,#0d9488)]/20"
+						className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--teal-dark,#0d9488)] to-cyan-600 text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-xs ring-2 ring-[var(--teal,#0d9488)]/20"
 						title={fullName}
 					>
 						{initials}

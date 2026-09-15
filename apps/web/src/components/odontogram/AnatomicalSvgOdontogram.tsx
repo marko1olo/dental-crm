@@ -1393,7 +1393,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Caries");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Кариес"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
@@ -1406,7 +1406,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Filled");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Пломба"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-xs shrink-0" />
@@ -1419,7 +1419,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Pulpitis");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Пульпит"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs shrink-0" />
@@ -1432,7 +1432,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Crown");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Коронка"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
@@ -1445,7 +1445,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Implant");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Имплантат"
 						data-testid={`quick-implant-${number}`}
 					>
@@ -1459,7 +1459,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Missing");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Удален"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block shadow-xs shrink-0" />
@@ -1472,7 +1472,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Retained");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-800 dark:text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-800 dark:text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Ретинированный"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block shadow-xs shrink-0" />
@@ -1485,7 +1485,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Root");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-rose-700/15 hover:bg-rose-700 text-rose-900 dark:text-rose-200 hover:text-white border border-rose-700/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-700/15 hover:bg-rose-700 text-rose-900 dark:text-rose-200 hover:text-white border border-rose-700/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Корень"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-rose-700 inline-block shadow-xs shrink-0" />
@@ -1498,7 +1498,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Healthy");
 						}}
-						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Здоров"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-teal-400 inline-block shadow-xs shrink-0" />
@@ -2007,7 +2007,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -2190,7 +2190,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", isPediatricEffective))}
-								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
 								title="Предыдущий квадрант"
 								data-testid="quadrant-prev-btn"
 							>
@@ -2202,7 +2202,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "next", isPediatricEffective))}
-								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
 								title="Следующий квадрант"
 								data-testid="quadrant-next-btn"
 							>

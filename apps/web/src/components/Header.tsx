@@ -183,7 +183,7 @@ export function ClinicControlPill({
 			<button
 				type="button"
 				onClick={() => setIsOpen((prev) => !prev)}
-				className={`dnt-clinic-control-pill ${isOpen ? "dnt-clinic-control-pill--open" : ""}`}
+				className={`dnt-clinic-control-pill min-h-[44px] ${isOpen ? "dnt-clinic-control-pill--open" : ""}`}
 				aria-expanded={isOpen}
 				aria-label="Пульт управления клиникой (macOS Control Center)"
 				title="Открыть центр управления статусом клиники"
@@ -200,7 +200,7 @@ export function ClinicControlPill({
 					)}
 					<span className="hidden 2xl:inline">АТС</span>
 					{activeCall ? (
-						<span className="px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-500 text-white animate-pulse">
+						<span className="hidden sm:inline-block px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-500 text-white animate-pulse">
 							Звонок
 						</span>
 					) : (
@@ -219,7 +219,7 @@ export function ClinicControlPill({
 					)}
 				</span>
 
-				<span className="dnt-pill-divider" />
+				<span className="dnt-pill-divider hidden sm:block" />
 
 				{/* 2. 54-FZ Cash / KKT Status */}
 				<span
@@ -232,11 +232,11 @@ export function ClinicControlPill({
 					<span className="font-mono text-[10px] opacity-90 hidden 2xl:inline">{formattedShiftTime}</span>
 				</span>
 
-				<span className="dnt-pill-divider" />
+				<span className="dnt-pill-divider hidden sm:block" />
 
 				{/* 3. Database Sync / Offline Queue indicator */}
 				<span
-					className="dnt-pill-segment"
+					className="dnt-pill-segment hidden sm:flex"
 					title={`Синхронизация БД: PostgreSQL 18.4 (${syncLatencyMs} ms, 0 в очереди)`}
 				>
 					<Zap
@@ -323,7 +323,7 @@ export function ClinicControlPill({
 									showToast("Сформирован промежуточный X-отчет (без гашения)", "info");
 									setCurrentView("shift");
 								}}
-								className="dnt-cc-btn dnt-cc-btn--secondary flex-1"
+								className="dnt-cc-btn dnt-cc-btn--secondary flex-1 min-h-[44px]"
 								title="Снять промежуточный отчет без гашения кассы (X-отчет)"
 							>
 								<FileText size={14} />
@@ -340,7 +340,7 @@ export function ClinicControlPill({
 										setCurrentView("shift");
 									}
 								}}
-								className="dnt-cc-btn dnt-cc-btn--primary flex-1"
+								className="dnt-cc-btn dnt-cc-btn--primary flex-1 min-h-[44px]"
 								title="Сформировать Z-отчет 54-ФЗ и закрыть смену"
 							>
 								<CreditCard size={14} />
@@ -475,7 +475,7 @@ export function ClinicControlPill({
 							type="button"
 							onClick={handleManualSync}
 							disabled={isSyncing}
-							className="dnt-cc-btn dnt-cc-btn--primary w-full"
+							className="dnt-cc-btn dnt-cc-btn--primary w-full min-h-[44px]"
 						>
 							<RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
 							<span>{isSyncing ? "Синхронизация..." : "Синхронизировать сейчас"}</span>

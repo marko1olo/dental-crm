@@ -168,14 +168,14 @@ export function PatientOverviewTab({ showHeaderCard = false }: PatientOverviewTa
 				рекламации, лента приёмов, архив) сохранены ниже.
 			*/}
 			{showHeaderCard && selectedPatientId && (
-				<div className="mb-4">
+				<div className="mb-2">
 					<PatientHeaderCard patientId={selectedPatientId} />
 				</div>
 			)}
 
 			<div
 				className="patient-clinical-grid patients-my-0"
-				style={{ marginTop: "16px" }}
+				style={{ marginTop: "8px" }}
 			>
 				<div className="clinical-col-left" style={{ flex: 1 }}>
 					<PatientFamilyCard

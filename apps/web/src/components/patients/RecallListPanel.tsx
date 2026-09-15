@@ -368,7 +368,7 @@ export const RecallListPanel: React.FC = () => {
 													<td data-label="Что делать">
 														{/* Звонок доступен всегда: он не рассылка и согласия не требует. */}
 														<button
-															className="secondary-button inline-flex items-center gap-1 min-h-[44px] sm:min-h-[34px]"
+															className="secondary-button inline-flex items-center gap-1 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px]"
 															type="button"
 															disabled={false}
 															onClick={() => {
@@ -393,7 +393,7 @@ export const RecallListPanel: React.FC = () => {
 														</button>
 														{INVITABLE.includes(candidate.band) ? (
 															<button
-																className="secondary-button min-h-[44px] sm:min-h-[34px]"
+																className="secondary-button min-h-[44px] sm:min-h-[32px] sm:min-h-[34px]"
 																type="button"
 																disabled={busy}
 																onClick={() => {

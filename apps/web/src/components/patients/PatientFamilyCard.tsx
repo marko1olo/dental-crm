@@ -477,7 +477,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 					</div>
 					<button
 						type="button"
-						className="mt-4 w-full flex items-center justify-center gap-1.5 p-2.5 min-h-[44px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--bad-bg)] text-[var(--ink)] hover:text-[var(--bad-fg)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] hover:border-[var(--bad-border,rgba(239,68,68,0.3))] transition-colors"
+						className="mt-4 w-full flex items-center justify-center gap-1.5 p-2.5 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--bad-bg)] text-[var(--ink)] hover:text-[var(--bad-fg)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] hover:border-[var(--bad-border,rgba(239,68,68,0.3))] transition-colors"
 						onClick={handleUnlinkFamily}
 						disabled={loading}
 						data-testid="patient-family-unlink"
@@ -519,7 +519,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<div className="flex gap-2">
 								<button
 									type="button"
-									className="flex-1 bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white p-2 min-h-[44px] text-xs rounded-xl font-semibold cursor-pointer border-0 inline-flex items-center justify-center transition-all"
+									className="flex-1 bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white p-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-semibold cursor-pointer border-0 inline-flex items-center justify-center transition-all"
 									onClick={handleCreateFamily}
 									disabled={loading}
 								>
@@ -527,7 +527,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 								</button>
 								<button
 									type="button"
-									className="flex-1 bg-[var(--paper-soft)] text-[var(--ink)] p-2 min-h-[44px] text-xs rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
+									className="flex-1 bg-[var(--paper-soft)] text-[var(--ink)] p-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
 									onClick={() => setIsCreating(false)}
 									disabled={loading}
 								>
@@ -579,7 +579,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 									<button
 										type="button"
 										key={f.id}
-										className="w-full text-left flex justify-between items-center p-2 min-h-[44px] bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl cursor-pointer hover:bg-[var(--paper-hover,var(--paper-soft))] text-[var(--ink)] transition-colors"
+										className="w-full text-left flex justify-between items-center p-2 min-h-[44px] sm:min-h-[32px] bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl cursor-pointer hover:bg-[var(--paper-hover,var(--paper-soft))] text-[var(--ink)] transition-colors"
 										onClick={() => handleLinkFamily(f.id)}
 									>
 										<div>
@@ -597,7 +597,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<div className="flex gap-2 mt-1">
 								<button
 									type="button"
-									className="w-full p-2 min-h-[44px] text-xs bg-[var(--paper-soft)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
+									className="w-full p-2 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--paper-soft)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
 									onClick={() => {
 										setIsLinking(false);
 										setSearchQuery("");
@@ -613,7 +613,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						<div className="flex gap-2">
 							<button
 								type="button"
-								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] text-xs bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal)] rounded-xl font-semibold cursor-pointer border-0 transition-colors"
+								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal)] rounded-xl font-semibold cursor-pointer border-0 transition-colors"
 								onClick={() => {
 									const namePart =
 										typeof patientName === "string"
@@ -627,7 +627,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							</button>
 							<button
 								type="button"
-								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] transition-colors"
+								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] transition-colors"
 								onClick={() => setIsLinking(true)}
 							>
 								<LinkIcon size={16} /> <span>Привязать</span>

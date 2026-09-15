@@ -586,7 +586,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						<button
 							type="button"
 							onClick={() => setPlannerTab("comprehensive_804n")}
-							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
+							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
 								plannerTab === "comprehensive_804n"
 									? "bg-teal-600 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -597,7 +597,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						<button
 							type="button"
 							onClick={() => setPlannerTab("manual_lines")}
-							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
+							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
 								plannerTab === "manual_lines"
 									? "bg-teal-600 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -619,7 +619,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							setSignatureUrl("paper_confirmed_" + Date.now());
 							showToast("План лечения подтвержден на бумаге", "success");
 						}}
-						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
 						title="Пациент подписал распечатанную смету — подтвердить в 1 клик"
 						data-testid="estimator-paper-confirm-btn"
 					>
@@ -631,7 +631,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						onClick={() => setShowSignModal(true)}
 						disabled={planLoad.phase === "loading"}
 						title={unpricedWarning ?? "Подписать план у пациента"}
-						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
 						data-testid="estimator-open-sign-modal-btn"
 					>
 						<PenTool size={14} />
@@ -642,7 +642,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						onClick={savePlan}
 						disabled={isSaving || planLoad.phase === "loading"}
 						title={unpricedWarning ?? "Сохранить план лечения"}
-						className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+						className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
 					>
 						<Save size={14} />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
@@ -951,7 +951,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
 						>
 							<Printer size={14} />
 							<span>Печать сметы</span>
@@ -967,7 +967,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 								setIsFiscalModalOpen(true);
 							}}
 							disabled={false}
-							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer"
 						>
 							<Receipt size={14} />
 							<span>В кассу (54-ФЗ)</span>
@@ -1048,7 +1048,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 											setShowSignModal(false);
 											showToast("План лечения и смета подтверждены на бумаге", "success");
 										}}
-										className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer shadow-sm"
+										className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] sm:min-h-[32px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer shadow-sm"
 										data-testid="estimator-modal-paper-confirm-btn"
 									>
 										<ShieldCheck size={16} />
@@ -1057,7 +1057,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 									<button
 										type="button"
 										onClick={() => window.print()}
-										className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+										className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] sm:min-h-[32px] text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
 										data-testid="estimator-modal-print-btn"
 									>
 										<Printer size={16} />

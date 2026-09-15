@@ -231,7 +231,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 									key={tierKey}
 									type="button"
 									onClick={() => handleSetTier(tierKey)}
-									className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs border-0 cursor-pointer text-left transition-colors min-h-[44px] ${
+									className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs border-0 cursor-pointer text-left transition-colors min-h-[44px] sm:min-h-[32px] ${
 										currentTier === tierKey
 											? "bg-slate-100 dark:bg-slate-800 font-semibold text-slate-900 dark:text-white"
 											: "bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 font-medium"

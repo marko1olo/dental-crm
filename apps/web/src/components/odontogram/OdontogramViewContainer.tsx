@@ -479,7 +479,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 										title={option.tooltip}
 										data-testid={`odontogram-mode-btn-${option.mode}`}
 										onClick={() => handleModeSwitch(option.mode)}
-										className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer select-none shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+										className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer select-none shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
 											isActive
 												? "bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] shadow-xs font-black border border-[var(--odontogram-border,#cbd5e1)]"
 												: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-paper,#ffffff)]/60"
@@ -513,7 +513,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								<button
 									type="button"
 									onClick={() => onDentitionModeChange("adult")}
-									className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+									className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "adult"
 											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
 											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
@@ -526,7 +526,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								<button
 									type="button"
 									onClick={() => onDentitionModeChange("pediatric")}
-									className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+									className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "pediatric"
 											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
 											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
@@ -539,7 +539,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								<button
 									type="button"
 									onClick={() => onDentitionModeChange("mixed")}
-									className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+									className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "mixed"
 											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
 											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
@@ -563,7 +563,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q5)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q5 (55–51, В/Ч Правый)"
 										data-testid="batch-select-q5-btn"
 									>
@@ -572,7 +572,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q6)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q6 (61–65, В/Ч Левый)"
 										data-testid="batch-select-q6-btn"
 									>
@@ -581,7 +581,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q7)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q7 (71–75, Н/Ч Левый)"
 										data-testid="batch-select-q7-btn"
 									>
@@ -590,7 +590,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q8)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q8 (85–81, Н/Ч Правый)"
 										data-testid="batch-select-q8-btn"
 									>
@@ -599,7 +599,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(PEDIATRIC_FRONT)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all cursor-pointer select-none shrink-0"
 										title="Выделить детскую фронтальную группу (53–63, 83–73)"
 										data-testid="batch-select-front-btn"
 									>
@@ -611,7 +611,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(ADULT_Q1)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q1 (18–11, В/Ч Правый)"
 										data-testid="batch-select-q1-btn"
 									>
@@ -620,7 +620,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(ADULT_Q2)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q2 (21–28, В/Ч Левый)"
 										data-testid="batch-select-q2-btn"
 									>
@@ -629,7 +629,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(ADULT_Q3)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q3 (31–38, Н/Ч Левый)"
 										data-testid="batch-select-q3-btn"
 									>
@@ -638,7 +638,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(ADULT_Q4)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
 										title="Выделить Q4 (48–41, Н/Ч Правый)"
 										data-testid="batch-select-q4-btn"
 									>
@@ -647,7 +647,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={() => handleBatchSelectGroup(ADULT_FRONT)}
-										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all cursor-pointer select-none shrink-0"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all cursor-pointer select-none shrink-0"
 										title="Выделить фронтальную группу (13–23, 43–33)"
 										data-testid="batch-select-front-btn"
 									>
@@ -663,7 +663,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								<button
 									type="button"
 									onClick={handleMarkIntactDentition}
-									className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+									className="min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
 									title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
 									data-testid="mark-intact-dentition-btn"
 								>
@@ -675,7 +675,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									<button
 										type="button"
 										onClick={handleMarkWisdomTeethMissing}
-										className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
 										title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 										data-testid="mark-wisdom-missing-btn"
 									>
@@ -695,7 +695,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setActiveJawModalTarget("JU")}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
+								className="min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
 								title="Верхняя челюсть (JU / Maxilla): адентия, атрофия, синус-лифтинг"
 								data-testid="view-toolbar-jaw-ju-btn"
 							>
@@ -704,7 +704,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setActiveJawModalTarget("JL")}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
+								className="min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
 								title="Нижняя челюсть (JL / Mandibula): адентия, атрофия, экзостозы"
 								data-testid="view-toolbar-jaw-jl-btn"
 							>
@@ -713,7 +713,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setActiveJawModalTarget("C")}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-purple-700 dark:text-purple-300 hover:bg-purple-500/15"
+								className="min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-purple-700 dark:text-purple-300 hover:bg-purple-500/15"
 								title="Прикус / Окклюзия (C): ортогнатический, дистальный, мезиальный, глубокий"
 								data-testid="view-toolbar-jaw-c-btn"
 							>
@@ -737,7 +737,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Caries" ? null : "Caries"))}
-							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Caries"
 									? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
 									: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
@@ -750,7 +750,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Filled" ? null : "Filled"))}
-							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Filled"
 									? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
 									: "bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 border border-blue-500/30"
@@ -763,7 +763,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Pulpitis" ? null : "Pulpitis"))}
-							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Pulpitis"
 									? "bg-rose-600 text-white font-black shadow-xs ring-2 ring-rose-400"
 									: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
@@ -776,7 +776,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"))}
-							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Crown"
 									? "bg-[#10b981] text-white font-black shadow-xs ring-2 ring-[#10b981]/50"
 									: "bg-[#10b981]/10 text-emerald-800 dark:text-emerald-200 hover:bg-[#10b981]/20 border border-[#10b981]/20"
@@ -789,7 +789,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Implant" ? null : "Implant"))}
-							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Implant"
 									? "bg-indigo-600 text-white font-black shadow-xs ring-2 ring-indigo-400"
 									: "bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/20"
@@ -802,7 +802,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Missing" ? null : "Missing"))}
-							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Missing"
 									? "bg-[#64748b] text-white font-black shadow-xs ring-2 ring-[#64748b]/50"
 									: "bg-[#64748b]/10 text-slate-700 dark:text-slate-300 hover:bg-[#64748b]/20 border border-[#64748b]/20"
@@ -815,7 +815,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Healthy" ? null : "Healthy"))}
-							className={`min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Healthy"
 									? "bg-[var(--ok-fg,#10b981)] text-white font-black shadow-xs ring-2 ring-[var(--ok-fg,#10b981)]/60"
 									: "bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] hover:opacity-90 border border-[var(--ok-fg,rgba(16,185,129,0.3))]"
@@ -829,7 +829,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setActiveStampTool(null)}
-								className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)]"
+								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)]"
 								title="Сбросить режим штампа (Esc)"
 								data-testid="stamp-reset-btn"
 							>
@@ -852,7 +852,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									setIsLiveInvoiceOpen((prev) => !prev);
 								}
 							}}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
 								(isEstimatorOpen ?? isLiveInvoiceOpen)
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))] shadow-sm font-black"
 									: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
@@ -867,7 +867,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setIsPlanWizardOpen(true)}
-							className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
 							title="Сформировать черновой план лечения по номенклатуре 804н на основе всех выявленных патологий зубной формулы"
 							data-testid="create-plan-from-pathologies-btn"
 						>
@@ -886,7 +886,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									globalDentalVoiceEngine.toggle();
 								}
 							}}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black whitespace-nowrap shadow-xs shrink-0 cursor-pointer transition-all active:scale-95 ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black whitespace-nowrap shadow-xs shrink-0 cursor-pointer transition-all active:scale-95 ${
 								isVoiceListening
 									? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
 									: "bg-indigo-600 hover:bg-indigo-500 text-white"
@@ -903,7 +903,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-								className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
 									isMoreMenuOpen || activeStampTool === "Crown" || activeStampTool === "Missing" || isFastExtractMode || isMultiSelectMode || isPerioOpen || isOrthoCephOpen
 										? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
 										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 dark:hover:text-indigo-400"
@@ -939,7 +939,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													handleMarkIntactDentition();
 													setIsMoreMenuOpen(false);
 												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/30"
+												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/30"
 												title="Санация: отметить всю зубную формулу здоровой в 1 клик"
 												data-testid="btn-odontogram-all-healthy"
 											>
@@ -952,7 +952,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													handleMarkWisdomTeethMissing();
 													setIsMoreMenuOpen(false);
 												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/30"
+												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/30"
 												title="Адентия 8-ок: отметить зубы 18, 28, 38, 48 отсутствующими"
 												data-testid="btn-odontogram-wisdom-missing"
 											>
@@ -966,7 +966,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													setIsPlanWizardOpen(true);
 													setIsMoreMenuOpen(false);
 												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30"
+												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30"
 												title="Сформировать черновой план лечения по МКБ-10 и номенклатуре 804н на основе всех патологий"
 												data-testid="more-menu-plan-from-pathologies"
 											>
@@ -981,7 +981,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													setCardModalTooth(targetTooth);
 													setIsMoreMenuOpen(false);
 												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/30"
+												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/30"
 												title="Открыть подробную карточку зуба с поверхностями и протоколами"
 												data-testid="more-menu-tooth-card"
 											>
@@ -1005,7 +1005,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"));
 													setIsMoreMenuOpen(false);
 												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
+												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
 													activeStampTool === "Crown"
 														? "bg-[var(--brand-500,#3b82f6)] text-white font-black shadow-xs ring-2 ring-[var(--brand-500,#3b82f6)]/60"
 														: "bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] hover:bg-[var(--brand-500,#3b82f6)]/20 border border-[var(--brand-500,#3b82f6)]/30"
@@ -1022,7 +1022,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													setActiveStampTool((prev) => (prev === "Missing" ? null : "Missing"));
 													setIsMoreMenuOpen(false);
 												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
+												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
 													activeStampTool === "Missing"
 														? "bg-rose-700 text-white font-black shadow-xs ring-2 ring-rose-500"
 														: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
@@ -1052,7 +1052,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 														onOpenPediatricModal();
 														setIsMoreMenuOpen(false);
 													}}
-													className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+													className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
 													title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
 												>
 													<Sparkles size={14} className="text-amber-500 shrink-0" />
@@ -1067,7 +1067,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													if (onTogglePerio) onTogglePerio();
 													setIsMoreMenuOpen(false);
 												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
+												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
 													isPerioOpen
 														? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
 														: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
@@ -1086,7 +1086,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 													setIsOrthoCephOpen((prev) => !prev);
 													setIsMoreMenuOpen(false);
 												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
+												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
 													isOrthoCephOpen
 														? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/50 shadow-xs font-black"
 														: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/20"
@@ -1107,7 +1107,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 														setIsMoreMenuOpen(false);
 													}}
 													disabled={diagnocatLoading}
-													className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] border border-[var(--brand-500,#3b82f6)]/30 hover:bg-[var(--brand-500,#3b82f6)]/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+													className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] border border-[var(--brand-500,#3b82f6)]/30 hover:bg-[var(--brand-500,#3b82f6)]/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
 													title="Загрузить отчёт Diagnocat AI"
 												>
 													<Stethoscope size={14} className="text-[var(--brand-500,#3b82f6)] shrink-0" />
@@ -1128,7 +1128,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 											{/* Shift Multi-Select Checkbox */}
 											{onToggleMultiSelect && (
 												<label
-													className={`flex items-center justify-between min-h-[44px] sm:min-h-[32px] sm:h-[32px] text-xs font-bold cursor-pointer select-none px-2.5 py-1 rounded-lg border transition-colors ${
+													className={`flex items-center justify-between min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] text-xs font-bold cursor-pointer select-none px-2.5 py-1 rounded-lg border transition-colors ${
 														isMultiSelectMode
 															? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-black"
 															: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)]"
@@ -1148,7 +1148,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 											<button
 												type="button"
 												onClick={() => setShowWisdomTeeth((prev) => !prev)}
-												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
 													showWisdomTeeth
 														? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
 														: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
@@ -1167,7 +1167,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 												<button
 													type="button"
 													onClick={() => setShowPulpAndCanals((prev) => !prev)}
-													className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+													className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
 														showPulpAndCanals
 															? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/40 shadow-xs font-black"
 															: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
@@ -1186,7 +1186,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 											<button
 												type="button"
 												onClick={() => setIsFastExtractMode((prev) => !prev)}
-												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
 													isFastExtractMode
 														? "bg-rose-600 text-white border-rose-700 shadow-md animate-pulse font-black"
 														: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-rose-600 dark:hover:text-rose-400"

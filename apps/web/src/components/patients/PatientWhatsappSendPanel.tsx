@@ -282,7 +282,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("reminder")}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
 						<span className="flex items-center gap-1">
 							<Calendar size={12} className="text-amber-400" />
@@ -296,7 +296,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("confirmation")}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
 						<span className="flex items-center gap-1">
 							<CheckCircle2 size={12} className="text-emerald-400" />
@@ -310,7 +310,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("hygiene")}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
 						<span className="flex items-center gap-1">
 							<Sparkles size={12} className="text-cyan-400" />
@@ -324,7 +324,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("checkup")}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
 						<span className="flex items-center gap-1">
 							<Stethoscope size={12} className="text-purple-400" />
@@ -338,7 +338,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("xray")}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
 						<span className="flex items-center gap-1">
 							<Scan size={12} className="text-cyan-400" />
@@ -352,7 +352,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("treatment_plan")}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
 						<span className="flex items-center gap-1">
 							<ClipboardList size={12} className="text-indigo-400" />
@@ -366,7 +366,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("route")}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
 						<span className="flex items-center gap-1">
 							<MapPin size={12} className="text-rose-400" />
@@ -420,7 +420,7 @@ export const PatientWhatsappSendPanel: React.FC<
 						data-testid="patient-whatsapp-send-submit"
 						disabled={busy}
 						onClick={() => void send()}
-						className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/40 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm"
+						className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/40 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm"
 					>
 						<Send size={14} />
 						<span>{busy ? "Отправляю…" : "Отправить в WhatsApp"}</span>
@@ -431,7 +431,7 @@ export const PatientWhatsappSendPanel: React.FC<
 							<button
 								type="button"
 								onClick={handleOpenWebWhatsApp}
-								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-emerald-300 border border-zinc-700 hover:border-emerald-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-emerald-300 border border-zinc-700 hover:border-emerald-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
 								title="Открыть в веб-версии WhatsApp"
 							>
 								<MessageSquare size={14} />
@@ -443,7 +443,7 @@ export const PatientWhatsappSendPanel: React.FC<
 								href={`https://t.me/+${cleanPhone}`}
 								target="_blank"
 								rel="noreferrer"
-								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-sky-300 border border-zinc-700 hover:border-sky-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-sky-300 border border-zinc-700 hover:border-sky-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
 								title="Написать пациенту в Telegram"
 							>
 								<span>Telegram</span>
@@ -452,7 +452,7 @@ export const PatientWhatsappSendPanel: React.FC<
 
 							<a
 								href={`sms:+${cleanPhone}?body=${encodeURIComponent(message.trim() || "")}`}
-								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-indigo-300 border border-zinc-700 hover:border-indigo-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-indigo-300 border border-zinc-700 hover:border-indigo-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
 								title="Отправить SMS"
 							>
 								<span>SMS</span>
@@ -460,7 +460,7 @@ export const PatientWhatsappSendPanel: React.FC<
 
 							<a
 								href={`tel:+${cleanPhone}`}
-								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-teal-300 border border-zinc-700 hover:border-teal-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-teal-300 border border-zinc-700 hover:border-teal-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
 								title={`Позвонить на ${phoneHint}`}
 							>
 								<Phone size={14} />

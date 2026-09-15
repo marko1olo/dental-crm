@@ -277,7 +277,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 										? "Снять блокировку записи"
 										: "Заблокировать запись и добавить в ЧС"
 								}
-								className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center ${
+								className={`px-4 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center ${
 									isBlacklisted
 										? "bg-emerald-600 hover:bg-emerald-700 text-white"
 										: "bg-rose-600 hover:bg-rose-700 text-white"
@@ -311,7 +311,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 												"info",
 											);
 										}}
-										className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all inline-flex items-center gap-1.5 shadow-xs"
+										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all inline-flex items-center gap-1.5 shadow-xs"
 										title="Разрешить запись пациента с острой болью в соответствии со ст. 124 УК РФ"
 									>
 										<Zap size={14} className="text-white shrink-0" aria-hidden="true" />
@@ -393,7 +393,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							onClick={handleApplyStatus}
 							disabled={isApplying}
 							title="Подтвердить действие"
-							className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--bad-fg)] hover:opacity-90 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
+							className="flex-1 min-h-[44px] sm:min-h-[32px] px-4 py-2.5 rounded-xl bg-[var(--bad-fg)] hover:opacity-90 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
 						>
 							{isApplying ? "Применяем…" : "Подтвердить"}
 						</button>
@@ -401,7 +401,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							type="button"
 							onClick={() => setConfirmModalOpen(false)}
 							title="Отмена действия"
-							className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold transition-colors inline-flex items-center justify-center"
+							className="flex-1 min-h-[44px] sm:min-h-[32px] px-4 py-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold transition-colors inline-flex items-center justify-center"
 						>
 							Отмена
 						</button>

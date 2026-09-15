@@ -205,7 +205,7 @@ export const PediatricResorptionTab: React.FC<PediatricResorptionTabProps> = ({
 								key={preset.id}
 								type="button"
 								onClick={() => handleAgeChange(preset.targetAge)}
-								className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer select-none active:scale-95 flex items-center gap-1.5 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer select-none active:scale-95 flex items-center gap-1.5 ${
 									isSelected
 										? "bg-teal-600 dark:bg-teal-600 text-white font-black border-teal-600 shadow-sm shadow-teal-600/30 ring-2 ring-teal-500/20"
 										: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-700"
@@ -325,7 +325,7 @@ export const PediatricResorptionTab: React.FC<PediatricResorptionTabProps> = ({
 						<button
 							type="button"
 							onClick={handleApplyExpectedForSelected}
-							className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-300 dark:border-teal-700 text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 select-none"
+							className="min-h-[44px] sm:min-h-[32px] px-4 py-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-300 dark:border-teal-700 text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 select-none"
 						>
 							<Sparkles className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
 							<span>Норма ({expectedForSelected}%) к зубу {selectedPrimaryTooth}</span>
@@ -336,7 +336,7 @@ export const PediatricResorptionTab: React.FC<PediatricResorptionTabProps> = ({
 							<button
 								type="button"
 								onClick={handleApplyCurrent}
-								className="min-h-[44px] px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white text-xs sm:text-sm font-black shadow-md shadow-teal-600/20 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 shrink-0 select-none"
+								className="min-h-[44px] sm:min-h-[32px] px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white text-xs sm:text-sm font-black shadow-md shadow-teal-600/20 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 shrink-0 select-none"
 							>
 								<Check className="w-4 h-4 shrink-0" />
 								<span>Применить {selectedResorptionStage}% к зубу {selectedPrimaryTooth}</span>

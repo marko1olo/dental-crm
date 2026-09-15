@@ -193,7 +193,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
+						className="min-w-[44px] min-h-[44px] sm:min-h-[32px] flex items-center justify-center rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
 						aria-label="Закрыть карточку зуба"
 						data-testid="tooth-card-close-btn"
 					>
@@ -228,7 +228,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 										key={opt.state}
 										type="button"
 										onClick={() => setCurrentState(opt.state as ToothState)}
-										className={`min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between ${
+										className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between ${
 											isSelected
 												? "bg-indigo-600 text-white border-indigo-600 shadow-xs font-black ring-2 ring-indigo-500/40"
 												: "bg-[var(--odontogram-surface,#f8fafc)] dark:bg-zinc-800 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:border-indigo-400"
@@ -261,7 +261,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 										key={surf.code}
 										type="button"
 										onClick={() => handleToggleSurface(surf.code)}
-										className={`min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between ${
+										className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between ${
 											isSelected
 												? "bg-teal-600 text-white border-teal-600 shadow-xs font-black"
 												: "bg-[var(--odontogram-surface,#f8fafc)] dark:bg-zinc-800 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:border-teal-500"
@@ -335,7 +335,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 									onOpenHistory(toothNumber);
 									onClose();
 								}}
-								className="min-h-[44px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								data-testid="tooth-card-open-history-btn"
 							>
 								<History size={14} className="text-indigo-600" />
@@ -349,7 +349,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 									onOpenEndo(toothNumber);
 									onClose();
 								}}
-								className="min-h-[44px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								data-testid="tooth-card-open-endo-btn"
 							>
 								<Activity size={14} className="text-rose-600" />
@@ -359,7 +359,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 						<button
 							type="button"
 							onClick={handleTriggerRecall}
-							className="min-h-[44px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-teal-700 dark:text-teal-400"
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] flex-1 px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-teal-700 dark:text-teal-400"
 							data-testid="tooth-card-set-recall-btn"
 						>
 							<BellPlus size={14} className="shrink-0" />
@@ -373,7 +373,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-bold transition-all cursor-pointer"
+						className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] px-4 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-bold transition-all cursor-pointer"
 					>
 						Отмена
 					</button>
@@ -381,7 +381,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 					<button
 						type="button"
 						onClick={handleSave}
-						className="min-h-[44px] sm:min-h-[38px] px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+						className="min-h-[44px] sm:min-h-[32px] sm:min-h-[38px] px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-98"
 						data-testid="tooth-card-save-btn"
 					>
 						<Check size={16} />

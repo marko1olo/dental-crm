@@ -300,7 +300,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
+						className="min-w-[44px] min-h-[44px] sm:min-h-[32px] flex items-center justify-center rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
 						aria-label="Закрыть"
 						data-testid="wizard-close-btn"
 					>
@@ -503,7 +503,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintEstimate}
-							className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
 							data-testid="wizard-print-estimate-btn"
 						>
 							<Printer size={14} />
@@ -526,7 +526,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 							onClick={handleCreateDraftPlan}
 							disabled={isSubmitting}
 							title="Создать черновик комплексного плана лечения"
-							className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[38px] px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+							className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[32px] sm:min-h-[38px] px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
 							data-testid="btn-create-treatment-plan"
 						>
 							<Check size={16} />

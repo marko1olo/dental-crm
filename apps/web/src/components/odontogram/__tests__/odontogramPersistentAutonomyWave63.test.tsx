@@ -294,18 +294,18 @@ describe("WAVE 63 (FEATURE 252): Odontogram Persistent Autonomy & 1-Click Clinic
 			}
 		});
 
-		it("guarantees minimum touch target size min-h-[44px] on all action buttons", () => {
-			// Check that classes specify min-h-[44px]
+		it("guarantees minimum touch target size min-h-[44px] sm:min-h-[32px] on all action buttons", () => {
+			// Check that classes specify min-h-[44px] sm:min-h-[32px]
 			const buttonClasses = [
-				"min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold",
-				"min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600",
-				"min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600",
+				"min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold",
+				"min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600",
+				"min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600",
 			];
 
 			for (const cls of buttonClasses) {
 				assert.ok(
-					cls.includes("min-h-[44px]"),
-					`Button class '${cls}' must enforce min-h-[44px] touch target (Mandate 8e / Glove Ergonomics)`,
+					cls.includes("min-h-[44px] sm:min-h-[32px]"),
+					`Button class '${cls}' must enforce min-h-[44px] sm:min-h-[32px] touch target (Mandate 8e / Glove Ergonomics)`,
 				);
 			}
 		});

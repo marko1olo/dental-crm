@@ -489,7 +489,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-100 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-800 border border-transparent hover:border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:hover:border-slate-700 transition-all cursor-pointer flex items-center justify-center shrink-0"
+						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] p-2 rounded-xl text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-100 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-800 border border-transparent hover:border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:hover:border-slate-700 transition-all cursor-pointer flex items-center justify-center shrink-0"
 						aria-label="Закрыть модальное окно"
 					>
 						<X className="w-5 h-5" />
@@ -576,7 +576,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={handleApplyPrimaryNorm}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-emerald-500/40 hover:border-emerald-500 hover:bg-emerald-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-emerald-500/40 hover:border-emerald-500 hover:bg-emerald-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Установить норму временного прикуса (3 года): 20 интактных молочных зубов (51–85), кариеса нет, резорбция 0%"
 								data-testid="pediatric-preset-3y-btn"
 							>
@@ -595,7 +595,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={handleApplyFirstMolarNorm}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-cyan-500/40 hover:border-cyan-500 hover:bg-cyan-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-cyan-500/40 hover:border-cyan-500 hover:bg-cyan-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Установить норму (6 лет): прорезывание первых моляров (16, 26, 36, 46) + 20 молочных зубов"
 								data-testid="pediatric-preset-6y-btn"
 							>
@@ -614,7 +614,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={handleApplyEarlyMixedNorm}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-teal-500/40 hover:border-teal-500 hover:bg-teal-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-teal-500/40 hover:border-teal-500 hover:bg-teal-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Установить норму сменного прикуса (9 лет): резцы 11..42, моляры 16..46, молочные 53..85"
 								data-testid="pediatric-preset-9y-btn"
 							>
@@ -633,7 +633,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={handleApplyPermanentNorm}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-blue-500/40 hover:border-blue-500 hover:bg-blue-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-blue-500/40 hover:border-blue-500 hover:bg-blue-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Установить норму постоянного прикуса (12 лет): 28 постоянных зубов 17..27, 47..37 без 8-ок"
 								data-testid="pediatric-preset-12y-btn"
 							>
@@ -652,7 +652,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={() => handleApplyProcedurePreset("saforide")}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Приказ 804н: A16.07.057 Серебрение эмали Saforide 38% (51, 52, 61, 62)"
 								data-testid="pediatric-preset-saforide-btn"
 							>
@@ -671,7 +671,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={() => handleApplyProcedurePreset("fissurit")}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-sky-500/40 hover:border-sky-500 hover:bg-sky-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-sky-500/40 hover:border-sky-500 hover:bg-sky-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Приказ 804н: A16.07.050 Запечатывание фиссур Fissurit FX (16, 26, 36, 46)"
 								data-testid="pediatric-preset-fissurit-btn"
 							>
@@ -690,7 +690,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={() => handleApplyProcedurePreset("pulpotec")}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Приказ 804н: A16.07.009 Пульпотомия (ампутация пульпы) препаратом Pulpotec"
 								data-testid="pediatric-preset-pulpotec-btn"
 							>
@@ -709,7 +709,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<button
 								type="button"
 								onClick={handleInsertCariogramTo043}
-								className="min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-sm text-left"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-sm text-left"
 								title="Мгновенно перенести текущий протокол, Cariogram и поведение по Франклу в дневник Формы 043/у"
 								data-testid="pediatric-preset-insert-043-btn"
 							>
@@ -814,7 +814,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 																		3000,
 																	);
 																}}
-																className="min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-xs select-none touch-manipulation"
+																className="min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-xs select-none touch-manipulation"
 																title={`Применить формулу «${preset.labelRu}» в 1 клик`}
 																data-testid={`pediatric-timeline-apply-${preset.id}`}
 															>
@@ -1152,7 +1152,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer select-none active:scale-95"
+						className="min-h-[44px] sm:min-h-[32px] px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer select-none active:scale-95"
 					>
 						Готово
 					</button>

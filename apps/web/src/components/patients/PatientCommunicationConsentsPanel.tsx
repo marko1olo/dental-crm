@@ -361,7 +361,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						data-testid="patient-comm-consents-reload"
 						disabled={loading || saving}
 						onClick={() => void load()}
-						className="px-3.5 py-2 min-h-[44px] text-xs rounded-xl border border-zinc-600 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 inline-flex items-center justify-center font-medium"
+						className="px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl border border-zinc-600 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 inline-flex items-center justify-center font-medium"
 					>
 						Обновить
 					</button>
@@ -370,7 +370,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						data-testid="patient-comm-consents-save"
 						disabled={loading || saving}
 						onClick={() => void save()}
-						className="px-4 py-2 min-h-[44px] text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white border border-[var(--teal,var(--brand-primary))]/40 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
+						className="px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white border border-[var(--teal,var(--brand-primary))]/40 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
 					>
 						{saving ? "Сохраняю…" : "Сохранить"}
 					</button>
@@ -426,8 +426,8 @@ export const PatientCommunicationConsentsPanel: React.FC<
 													disabled={saving}
 													className={
 														on
-															? "min-w-[88px] min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600/25 text-emerald-200 border border-emerald-400/35 inline-flex items-center justify-center cursor-pointer transition-colors"
-															: "min-w-[88px] min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-800/80 text-zinc-400 border border-zinc-700 inline-flex items-center justify-center cursor-pointer transition-colors"
+															? "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600/25 text-emerald-200 border border-emerald-400/35 inline-flex items-center justify-center cursor-pointer transition-colors"
+															: "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-800/80 text-zinc-400 border border-zinc-700 inline-flex items-center justify-center cursor-pointer transition-colors"
 													}
 												>
 													{on ? "Разрешено" : "Запрещено"}

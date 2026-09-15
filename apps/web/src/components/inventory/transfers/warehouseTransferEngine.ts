@@ -484,7 +484,7 @@ export function generateTorg2Html(act: WarehouseDiscrepancyAct): string {
 	<p>
 		<strong>Отправитель:</strong> ${act.sourceBranch.nameRu}<br>
 		<strong>Получатель:</strong> ${act.targetBranch.nameRu}<br>
-		Комиссия в составе представителей Получателя и Экспедитора составила настоящий акт о том, что при приемке ТМЦ выявлены следующие расхождения:
+		Ответственный сотрудник Получателя составил настоящий акт о том, что при приемке ТМЦ выявлены следующие расхождения:
 	</p>
 
 	<table>
@@ -512,7 +512,7 @@ export function generateTorg2Html(act: WarehouseDiscrepancyAct): string {
 		</tbody>
 	</table>
 
-	<p><strong>Заключение комиссии:</strong> Сумма выявленного ущерба составляет <strong>${act.totalFinancialDamageRubles.toFixed(2)} руб.</strong> Подлежит урегулированию между складом-отправителем и службой логистики.</p>
+	<p><strong>Заключение:</strong> Сумма выявленного ущерба составляет <strong>${act.totalFinancialDamageRubles.toFixed(2)} руб.</strong> Подлежит урегулированию между складом-отправителем и службой логистики.</p>
 
 	<div class="signatures">
 		${act.commissionMembers

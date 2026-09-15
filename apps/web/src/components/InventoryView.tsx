@@ -25,7 +25,6 @@ import React, { useState } from "react";
 import { money } from "../AppHelpers";
 import { showToast } from "./GlobalToast";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
-import { ProcedureMaterialDeductionModal } from "./inventory/ProcedureMaterialDeductionModal";
 import { MaterialBomsSettingsPanel } from "./inventory/MaterialBomsSettingsPanel";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
 import { WarehouseTransferModal } from "./inventory/transfers/WarehouseTransferModal";
@@ -34,7 +33,6 @@ import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAudi
 import { MdlpDisposalQueueModal } from "./inventory/mdlp/index.js";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar";
 import { WarehouseManagerModal } from "./inventory/WarehouseManagerModal";
-import { NurseCarpuleDisposalModal } from "./inventory/NurseCarpuleDisposalModal";
 import { MdlpScanningModal } from "./mdlp/MdlpScanningModal";
 
 /**
@@ -182,14 +180,11 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		totalItems,
 		getHeaders,
 	} = inventory;
-
-	const [isDeductionModalOpen, setIsDeductionModalOpen] = useState(false);
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
 	const [isWarehouseManagerOpen, setIsWarehouseManagerOpen] = useState(false);
-	const [isNurseCarpuleDisposalOpen, setIsNurseCarpuleDisposalOpen] = useState(false);
 	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
@@ -553,36 +548,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										<button
 											type="button"
 											className="secondary-button"
-											data-testid="nurse-carpule-disposal-trigger"
-											onClick={() => {
-												setIsNurseCarpuleDisposalOpen(true);
-												setIsOpsMenuOpen(false);
-											}}
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: 8,
-												padding: "8px 12px",
-												borderRadius: 6,
-												border: "none",
-												background: "transparent",
-												color: "var(--ink)",
-												fontWeight: 500,
-												fontSize: 13,
-												cursor: "pointer",
-												textAlign: "left",
-												width: "100%",
-											}}
-											title="Списание карпул анестетиков медсестрой в 1 клик (Мандат 8e)"
-											role="menuitem"
-										>
-											<Syringe size={16} className="text-teal-600 shrink-0" />
-											<span>Списание карпул (медсестра)</span>
-										</button>
-
-										<button
-											type="button"
-											className="secondary-button"
 											data-testid="mdlp-scanning-trigger"
 											onClick={() => {
 												setIsMdlpScanningOpen(true);
@@ -727,35 +692,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										>
 											<Package size={16} className="text-teal-600 shrink-0" />
 											<span>МДЛП (Схема 10560)</span>
-										</button>
-
-										<button
-											type="button"
-											className="secondary-button"
-											onClick={() => {
-												setIsDeductionModalOpen(true);
-												setIsOpsMenuOpen(false);
-											}}
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: 8,
-												padding: "8px 12px",
-												borderRadius: 6,
-												border: "none",
-												background: "transparent",
-												color: "var(--ink)",
-												fontWeight: 500,
-												fontSize: 13,
-												cursor: "pointer",
-												textAlign: "left",
-												width: "100%",
-											}}
-											title="Списание расходных материалов по клиническим техкартам"
-											role="menuitem"
-										>
-											<Package size={16} className="shrink-0" />
-											<span>Клинические техкарты</span>
 										</button>
 
 										<button
@@ -2265,45 +2201,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				/>
 			) : null}
 
-			<ProcedureMaterialDeductionModal
-				isOpen={isDeductionModalOpen}
-				onClose={() => setIsDeductionModalOpen(false)}
-				warehouseItems={items}
-				onConfirmDeduction={async (lines) => {
-					try {
-						let deductedCount = 0;
-						for (const line of lines) {
-							if (!line.inventoryItemId || line.quantity <= 0) continue;
-							const res = await fetch(
-								`/api/inventory/${organizationId}/${line.inventoryItemId}/stock`,
-								{
-									method: "PATCH",
-									headers: getHeaders({ "Content-Type": "application/json" }),
-									body: JSON.stringify({
-										adjustment: -line.quantity,
-										allowOverdraft: true,
-										reason: `Клиническое списание по процедуре: ${line.materialName}`,
-									}),
-								},
-							);
-							if (res.ok) deductedCount++;
-						}
-						showToast(
-							deductedCount > 0
-								? `Списано со склада ${deductedCount} поз. (мягкий овердрафт активен)`
-								: "Списание выполнено",
-							"success",
-						);
-					} catch (e) {
-						console.error(e);
-						showToast("Ошибка при списании материалов", "error");
-					} finally {
-						setIsDeductionModalOpen(false);
-						fetchItems();
-					}
-				}}
-			/>
-
 			<ClinicalWriteoffModal
 				isOpen={isClinicalWriteoffOpen}
 				onClose={() => setIsClinicalWriteoffOpen(false)}
@@ -2385,19 +2282,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				}}
 			/>
 
-			<NurseCarpuleDisposalModal
-				isOpen={isNurseCarpuleDisposalOpen}
-				onClose={() => setIsNurseCarpuleDisposalOpen(false)}
-				currentStockAvailable={items.reduce((acc, it) => {
-					const n = (it?.name || "").toLowerCase();
-					return n.includes("анесте") || n.includes("убистезин") || n.includes("артикаин") ? acc + Number(it?.stockQuantity || 0) : acc;
-				}, 0)}
-				onDisposalConfirmed={async () => {
-					setIsNurseCarpuleDisposalOpen(false);
-					fetchItems();
-				}}
-			/>
-
 			<MdlpScanningModal
 				isOpen={isMdlpScanningOpen}
 				onClose={() => setIsMdlpScanningOpen(false)}
@@ -2406,3 +2290,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		</div>
 	);
 };
+
+
+
+
+

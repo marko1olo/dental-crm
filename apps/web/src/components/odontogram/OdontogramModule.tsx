@@ -1216,7 +1216,7 @@ export const OdontogramModule = ({
 						<button
 							type="button"
 							onClick={handleSyncAllToDiary}
-							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
 							title="Перенести клинический статус зубной формулы в Дневник 043/у в 1 клик"
 							data-testid="btn-hotpath-sync-all-to-diary"
 						>
@@ -1228,7 +1228,7 @@ export const OdontogramModule = ({
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 dark:bg-zinc-100 hover:bg-slate-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 dark:bg-zinc-100 hover:bg-slate-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
 							title="Распечатать графическую одонтограмму со всеми патологиями на лист A4 для вклейки в амбулаторную карту"
 							data-testid="print-odontogram-a4-btn"
 						>
@@ -1600,7 +1600,7 @@ export const OdontogramModule = ({
 																: Array.from(new Set([...prev, ...chip.surfs])),
 														);
 													}}
-													className={`flex-1 min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+													className={`flex-1 min-h-[44px] sm:min-h-[32px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
 															: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)]"
@@ -1629,7 +1629,7 @@ export const OdontogramModule = ({
 										key={action.state}
 										type="button"
 										onClick={() => handleApplyToothState(action.state)}
-										className={`flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-black text-sm sm:text-base cursor-pointer select-none active:scale-95 text-center leading-tight break-words min-w-0 ${action.className}`}
+										className={`flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-black text-sm sm:text-base cursor-pointer select-none active:scale-95 text-center leading-tight break-words min-w-0 ${action.className}`}
 									>
 										<span className="min-w-0 break-words text-center leading-tight">{action.label}</span>
 									</button>
@@ -1641,7 +1641,7 @@ export const OdontogramModule = ({
 										setHistoryTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-bold text-sm bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20 cursor-pointer min-w-0 text-center leading-tight"
+									className="col-span-2 flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-bold text-sm bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<History className="w-4 h-4 inline mr-2 shrink-0" />
 									<span className="min-w-0 break-words">История зуба</span>
@@ -1653,7 +1653,7 @@ export const OdontogramModule = ({
 										setEndoTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-bold text-sm bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20 cursor-pointer min-w-0 text-center leading-tight"
+									className="col-span-2 flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-bold text-sm bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<Activity className="w-4 h-4 inline mr-2 shrink-0" />
 									<span className="min-w-0 break-words">Журнал каналов (Эндо)</span>
@@ -1669,7 +1669,7 @@ export const OdontogramModule = ({
 										void handleOneClickLabOrder(targets);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-black text-sm bg-amber-500/15 text-amber-900 dark:text-amber-100 border-amber-500/30 hover:bg-amber-500/25 cursor-pointer min-w-0 text-center leading-tight shadow-2xs active:scale-95"
+									className="col-span-2 flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-black text-sm bg-amber-500/15 text-amber-900 dark:text-amber-100 border-amber-500/30 hover:bg-amber-500/25 cursor-pointer min-w-0 text-center leading-tight shadow-2xs active:scale-95"
 								>
 									<FlaskConical className="w-4 h-4 inline mr-2 text-amber-600 shrink-0" />
 									<span className="min-w-0 break-words">Наряд ЗТЛ в 1 клик (Цирконий A2, +7 дн.)</span>
@@ -1705,7 +1705,7 @@ export const OdontogramModule = ({
 										setMenuConfig(null);
 									}}
 
-									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-bold text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
+									className="col-span-2 flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-bold text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<Sparkles className="w-4 h-4 inline mr-2 shrink-0" />
 									<span className="min-w-0 break-words">Вставить в дневник 043/у</span>

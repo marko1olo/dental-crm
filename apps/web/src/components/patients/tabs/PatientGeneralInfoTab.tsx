@@ -138,7 +138,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 					<button
 						type="button"
 						data-testid="btn-somatic-healthy-norm"
-						className="min-h-[44px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
+						className="min-h-[44px] sm:min-h-[32px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
 						onClick={handleApplyNorm}
 						title="Установить физиологическую норму в 1 клик"
 					>
@@ -156,7 +156,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</label>
 						<input
 							type="text"
-							className="min-h-[44px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
 							value={patient?.fullName ?? ""}
 							onChange={(e) => onUpdatePatient?.("fullName", e.target.value)}
 							placeholder="Фамилия Имя Отчество"
@@ -172,7 +172,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</label>
 						<input
 							type="tel"
-							className="min-h-[44px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
 							value={patient?.phone ?? ""}
 							onChange={(e) => onUpdatePatient?.("phone", e.target.value)}
 							placeholder="+7 (___) ___-__-__"
@@ -188,7 +188,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</label>
 						<input
 							type="date"
-							className="min-h-[44px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
 							value={patient?.birthDate ?? ""}
 							onChange={(e) => onUpdatePatient?.("birthDate", e.target.value)}
 							disabled={disabled}
@@ -203,7 +203,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</label>
 						<input
 							type="text"
-							className="min-h-[44px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-sm rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-primary,#0d9488)]"
 							value={patient?.address ?? ""}
 							onChange={(e) => onUpdatePatient?.("address", e.target.value)}
 							placeholder="г. Москва, ул. ..."
@@ -281,7 +281,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									key={rep.code}
 									type="button"
 									data-testid={`chip-representative-${rep.code}`}
-									className={`min-h-[44px] px-3 py-1.5 text-xs rounded-xl font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+									className={`min-h-[44px] sm:min-h-[32px] px-3 py-1.5 text-xs rounded-xl font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
 										isSelected
 											? "bg-indigo-600 text-white border-indigo-600 dark:bg-indigo-600 dark:border-indigo-500 shadow-xs"
 											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"

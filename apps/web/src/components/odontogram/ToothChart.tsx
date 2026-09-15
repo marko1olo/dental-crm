@@ -1926,7 +1926,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Caries", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Кариес молочного зуба"
 									data-testid={`quick-caries-${number}`}
 								>
@@ -1940,7 +1940,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Pulpitis", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Витальная пульпотомия молочного зуба (Biodentine/MTA)"
 									data-testid={`quick-pulpotomy-${number}`}
 								>
@@ -1954,7 +1954,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Filled", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Пломба стеклоиономерным цементом (СИЦ / Композит)"
 									data-testid={`quick-filled-${number}`}
 								>
@@ -1968,7 +1968,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Crown", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Эстетическая циркониевая коронка NuSmile / 3M"
 									data-testid={`quick-nusmile-${number}`}
 								>
@@ -1987,7 +1987,7 @@ const ToothSVG = ({
 											const nextStage = stages[nextIdx] ?? 0;
 											onResorptionChange(targets, nextStage);
 										}}
-										className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+										className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 										title={`Сменить стадию физиологической резорбции корня (текущая: ${rootResorptionStage ?? 0}%)`}
 										data-testid={`quick-resorption-${number}`}
 									>
@@ -2002,7 +2002,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Missing", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-slate-500/15 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-slate-500/15 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Физиологическая смена зуба (выпал / эксфолиация)"
 									data-testid={`quick-exfoliated-${number}`}
 								>
@@ -2016,7 +2016,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Healthy", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Здоровый интактный молочный зуб"
 									data-testid={`quick-healthy-${number}`}
 								>
@@ -2033,7 +2033,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Caries", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Кариес"
 									data-testid={`quick-caries-${number}`}
 								>
@@ -2047,7 +2047,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Filled", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Пломба"
 									data-testid={`quick-filled-${number}`}
 								>
@@ -2061,7 +2061,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Pulpitis", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Пульпит"
 									data-testid={`quick-pulpitis-${number}`}
 								>
@@ -2075,7 +2075,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Crown", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Коронка"
 									data-testid={`quick-crown-${number}`}
 								>
@@ -2089,7 +2089,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Implant", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Имплантат"
 									data-testid={`quick-implant-${number}`}
 								>
@@ -2103,7 +2103,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Missing", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Удален"
 									data-testid={`quick-missing-${number}`}
 								>
@@ -2117,7 +2117,7 @@ const ToothSVG = ({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Healthy", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 									title="Здоров (Интактный)"
 									data-testid={`quick-healthy-${number}`}
 								>
@@ -3148,13 +3148,13 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			{/* 1-Click Express Formula Actions (Mandate 8e: Санирован / Интактный, Адентия 8-ок) */}
 			{!hideExpressActions && (
 				<div
-					className="odontogram-express-bar mb-2 select-none flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none min-h-[44px] sm:min-h-[34px] sm:max-h-[36px] sm:h-[36px] py-0.5"
+					className="odontogram-express-bar mb-2 select-none flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:max-h-[36px] sm:h-[36px] py-0.5"
 					data-testid="tooth-chart-express-actions"
 				>
 					<button
 						type="button"
 						onClick={handleMarkIntactDentition}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
 						data-testid="mark-intact-dentition-btn tooth-chart-mark-intact-btn"
 					>
@@ -3165,7 +3165,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					<button
 						type="button"
 						onClick={handleMarkProHygieneDone}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка (A16.07.051) + протокол 043/у"
 						data-testid="tooth-chart-mark-pro-hygiene-btn"
 					>
@@ -3176,7 +3176,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					<button
 						type="button"
 						onClick={handleApplyFastCariesK021}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол 043/у + световая пломба (A16.07.002.001)"
 						data-testid="tooth-chart-apply-fast-caries-btn"
 					>
@@ -3188,7 +3188,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<button
 							type="button"
 							onClick={handleMarkWisdomTeethMissing}
-							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 							data-testid="mark-wisdom-missing-btn tooth-chart-mark-wisdom-missing-btn"
 						>
@@ -3201,7 +3201,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<button
 							type="button"
 							onClick={handleMarkMolarsMissing}
-							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
 							data-testid="mark-molars-missing-btn"
 						>
@@ -3213,7 +3213,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					<button
 						type="button"
 						onClick={handleMarkFrontIntact}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Интактный фронт: зубы 13–23, 33–43 моментально помечаются здоровыми"
 						data-testid="mark-front-intact-btn"
 					>
@@ -3230,7 +3230,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -3369,7 +3369,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", pediatricMode))}
-								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
 								title="Предыдущий квадрант"
 								data-testid="quadrant-prev-btn"
 							>
@@ -3381,7 +3381,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "next", pediatricMode))}
-								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
 								title="Следующий квадрант"
 								data-testid="quadrant-next-btn"
 							>

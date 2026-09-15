@@ -186,7 +186,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
-								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer"
 								title="Печать карты пациента"
 							>
 								<Printer className="w-4 h-4" />
@@ -197,7 +197,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-close-patient-card-modal"
 								onClick={onClose}
-								className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 								aria-label="Закрыть окно"
 							>
 								<X className="w-5 h-5" />
@@ -211,7 +211,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-general"
-								className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
 									activeTab === "general"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -225,7 +225,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
-								className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
 									activeTab === "anamnesis"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -241,7 +241,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
-							className="min-h-[44px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
 							onClick={handleApplyNorm}
 							title="1-клик: Применить физиологическую норму (соматически здоров)"
 						>
@@ -292,7 +292,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								onClick={onClose}
-								className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 							>
 								Закрыть
 							</button>
@@ -300,7 +300,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
-								className="min-h-[44px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-teal-700 text-white shadow-sm cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-teal-700 text-white shadow-sm cursor-pointer"
 							>
 								Сохранить
 							</button>

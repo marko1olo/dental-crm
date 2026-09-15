@@ -503,7 +503,7 @@ export function OrthodonticProgressWidget({
 									Пара «фон --teal-dark + текст --on-teal» проходит норму во всех темах.
 									Наведение — яркостью (brightness).
 								*/
-								className="flex-1 min-h-[44px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] rounded-xl p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-all"
+								className="flex-1 min-h-[44px] sm:min-h-[32px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] rounded-xl p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-all"
 							>
 								{saving ? (
 									"Сохранение..."
@@ -518,7 +518,7 @@ export function OrthodonticProgressWidget({
 									type="button"
 									disabled={saving}
 									onClick={handleResetWidget}
-									className="px-4 py-2.5 min-h-[44px] rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors inline-flex items-center justify-center"
+									className="px-4 py-2.5 min-h-[44px] sm:min-h-[32px] rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors inline-flex items-center justify-center"
 								>
 									Удалить
 								</button>
@@ -551,7 +551,7 @@ export function OrthodonticProgressWidget({
 								<button
 									type="button"
 									onClick={handleStartEdit}
-									className="mt-2 min-h-[44px] bg-transparent border border-[var(--teal-ring)] text-[var(--teal-dark)] px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-[var(--teal-surface)] transition-colors inline-flex items-center justify-center"
+									className="mt-2 min-h-[44px] sm:min-h-[32px] bg-transparent border border-[var(--teal-ring)] text-[var(--teal-dark)] px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-[var(--teal-surface)] transition-colors inline-flex items-center justify-center"
 								>
 									Начать отсчёт капп
 								</button>
@@ -575,7 +575,7 @@ export function OrthodonticProgressWidget({
 									<button
 										type="button"
 										onClick={handleStartEdit}
-										className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
+										className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-3.5 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
 									>
 										Изменить
 									</button>

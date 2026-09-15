@@ -65,7 +65,6 @@ import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
 import { TreatmentPlanSignatureModal } from "./TreatmentPlanSignatureModal";
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
-import { TreatmentPlanPhased4StageView } from "./TreatmentPlanPhased4StageView";
 import { TreatmentPlanComparatorModal } from "./comparator/TreatmentPlanComparatorModal";
 import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
@@ -125,7 +124,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		if (Number.isNaN(createdTime)) return 0;
 		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
 	}, [planCreatedAtIso]);
-	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages" | "phased4">("3tier");
+	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages">("3tier");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
@@ -699,17 +698,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						>
 							Поэтапный (I, II, III)
 						</button>
-						<button
-							type="button"
-							onClick={() => setActiveViewTab("phased4")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
-								activeViewTab === "phased4"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-black"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
-						>
-							4 Этапа
-						</button>
+						
 					</div>
 
 					{/* Secondary 1: Digital Signature Indicator / Button */}
@@ -1179,24 +1168,6 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						setIsContractPrintOpen(true);
 					}}
 				/>
-			) : activeViewTab === "phased4" ? (
-				<TreatmentPlanPhased4StageView
-					stages={stages}
-					planTierTitle={currentTier.title}
-					patientName={patientName}
-					onExecuteStage={(cat) => {
-						showToast(`Переход к выполнению этапа «${cat}»`, "info");
-					}}
-					onOpenStagePayment={() => setIsStagePaymentModalOpen(true)}
-					onOpenInstallment={() => {
-						if (stages.length > 0) {
-							setSelectedInstallmentStage(stages[0]!);
-							setIsInstallmentModalOpen(true);
-						}
-					}}
-					onApproveAndSign={() => setIsSignModalOpen(true)}
-					onPrintContract={() => setIsContractPrintOpen(true)}
-				/>
 			) : (
 				<div className="flex flex-col gap-4">
 					{stages.map((stage) => (
@@ -1542,3 +1513,4 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 };
 
 export default TreatmentPlanModule;
+

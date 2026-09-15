@@ -88,7 +88,7 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 								key={age}
 								type="button"
 								onClick={() => onAgeChange(age)}
-								className={`min-h-[44px] min-w-[68px] px-3.5 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
+								className={`min-h-[44px] sm:min-h-[32px] min-w-[68px] px-3.5 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
 									isSelected
 										? "bg-emerald-600 dark:bg-emerald-600 text-white font-bold border-emerald-600 shadow-md shadow-emerald-600/20"
 										: "bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80"
@@ -125,7 +125,7 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 							return (
 								<span
 									key={num}
-									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-bold border flex items-center justify-center gap-1 shadow-xs transition-all ${
+									className={`min-h-[44px] sm:min-h-[32px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-bold border flex items-center justify-center gap-1 shadow-xs transition-all ${
 										isErupting
 											? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 											: isPrim
@@ -154,7 +154,7 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 							return (
 								<span
 									key={num}
-									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-bold border flex items-center justify-center gap-1 shadow-xs transition-all ${
+									className={`min-h-[44px] sm:min-h-[32px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-bold border flex items-center justify-center gap-1 shadow-xs transition-all ${
 										isErupting
 											? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 											: isPrim

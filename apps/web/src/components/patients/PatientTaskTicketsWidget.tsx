@@ -260,7 +260,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				<button
 					type="button"
 					onClick={() => setIsAdding(!isAdding)}
-					className={`border-0 rounded-xl px-3.5 py-2 min-h-[44px] text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+					className={`border-0 rounded-xl px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
 						isAdding
 							? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
 							: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 hover:brightness-105"
@@ -285,7 +285,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 						<button
 							type="button"
 							onClick={() => setDraftDropped(false)}
-							className="shrink-0 rounded-xl border border-amber-400 bg-[var(--paper)] min-h-[44px] px-4 py-2 font-semibold text-amber-900 cursor-pointer dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100 inline-flex items-center justify-center"
+							className="shrink-0 rounded-xl border border-amber-400 bg-[var(--paper)] min-h-[44px] sm:min-h-[32px] px-4 py-2 font-semibold text-amber-900 cursor-pointer dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100 inline-flex items-center justify-center"
 						>
 							Понятно
 						</button>
@@ -308,7 +308,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										onChange={(e) => setNewTitle(e.target.value)}
 										placeholder=" "
 										required
-										className="w-full p-2.5 min-h-[44px] rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none"
+										className="w-full p-2.5 min-h-[44px] sm:min-h-[32px] rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none"
 									/>
 									<label
 										htmlFor="ticket-title-input"
@@ -364,7 +364,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 							<div className="flex gap-2 justify-end mt-4">
 								<button
 									type="button"
-									className="ghost-button text-slate-600 dark:text-slate-300 hover:underline cursor-pointer min-h-[44px] px-3.5 py-2 inline-flex items-center justify-center"
+									className="ghost-button text-slate-600 dark:text-slate-300 hover:underline cursor-pointer min-h-[44px] sm:min-h-[32px] px-3.5 py-2 inline-flex items-center justify-center"
 									onClick={() => setIsAdding(false)}
 								>
 									Отмена
@@ -373,7 +373,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									type="submit"
 									disabled={isSubmitting}
 									aria-busy={isSubmitting}
-									className="primary-button bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white px-4 py-2 min-h-[44px] rounded-xl font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center transition-all"
+									className="primary-button bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white px-4 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center transition-all"
 								>
 									{isSubmitting ? "Создание..." : "Создать задачу"}
 								</button>
@@ -436,7 +436,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									<button
 										type="button"
 										onClick={() => handleToggleStatus(ticket.id, ticket.status)}
-										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 min-h-[44px] min-w-[44px] items-center justify-center ${
+										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 min-h-[44px] sm:min-h-[32px] min-w-[44px] items-center justify-center ${
 											isPending
 												? "text-slate-400 dark:text-slate-500 hover:text-[var(--teal,var(--brand-primary))]"
 												: "text-emerald-500"
@@ -490,7 +490,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										disabled={deletingId === ticket.id}
 										aria-busy={deletingId === ticket.id}
 										onClick={() => handleDelete(ticket.id)}
-										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										title="Удалить задачу"
 									>
 										<Trash2 size={16} />

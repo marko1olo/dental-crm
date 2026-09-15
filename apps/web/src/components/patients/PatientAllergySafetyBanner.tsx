@@ -216,7 +216,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<button
 										type="button"
 										onClick={handleApplySomaticNorm}
-										className="safety-btn safety-btn--outline text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 min-h-[44px]"
+										className="safety-btn safety-btn--outline text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 min-h-[44px] sm:min-h-[32px]"
 										data-testid="banner-apply-somatic-norm-btn"
 										title="Зафиксировать физиологическую норму в 1 клик"
 									>
@@ -231,7 +231,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										type="button"
 										onClick={() => setIsDrawerOpen((prev) => !prev)}
 										aria-expanded={isDrawerOpen}
-										className="safety-btn safety-btn--outline text-xs min-h-[44px]"
+										className="safety-btn safety-btn--outline text-xs min-h-[44px] sm:min-h-[32px]"
 									>
 										{isDrawerOpen ? (
 											<>
@@ -253,7 +253,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										type="button"
 										onClick={handleSyncToDiary}
 										title="Скопировать и вставить в дневник 043/у"
-										className="safety-btn safety-btn--outline text-xs min-h-[44px]"
+										className="safety-btn safety-btn--outline text-xs min-h-[44px] sm:min-h-[32px]"
 									>
 										<Copy className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 										В 043/у
@@ -265,7 +265,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<button
 										type="button"
 										onClick={() => setIsModalOpen(true)}
-										className={`safety-btn min-h-[44px] ${
+										className={`safety-btn min-h-[44px] sm:min-h-[32px] ${
 											evaluation.hasCriticalStopFlags
 												? "safety-btn--primary-red"
 												: "safety-btn--outline"

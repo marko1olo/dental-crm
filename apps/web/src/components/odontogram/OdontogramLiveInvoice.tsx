@@ -862,7 +862,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#ffffff)] transition-colors cursor-pointer"
+					className="min-h-[44px] sm:min-h-[32px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#ffffff)] transition-colors cursor-pointer"
 					title="Скрыть смету"
 					aria-label="Закрыть смету"
 				>
@@ -903,7 +903,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 								key={pct}
 								type="button"
 								onClick={() => handleSetQuickDiscount(pct)}
-								className={`min-h-[44px] px-2.5 py-1 rounded-md font-mono text-xs font-bold border transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-md font-mono text-xs font-bold border transition-all cursor-pointer ${
 									!isDiscountCustom && discountPercent === pct
 										? pct === 100
 											? "bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-400"
@@ -960,7 +960,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 											<button
 												type="button"
 												onClick={() => handleUpdateQty(itemKey, -1)}
-												className="min-h-[44px] min-w-[44px] flex items-center justify-center p-1 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+												className="min-h-[44px] sm:min-h-[32px] min-w-[44px] flex items-center justify-center p-1 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
 												title="Уменьшить количество"
 												aria-label={`Уменьшить количество для зуба ${item.toothNumber}`}
 											>
@@ -972,7 +972,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 											<button
 												type="button"
 												onClick={() => handleUpdateQty(itemKey, 1)}
-												className="min-h-[44px] min-w-[44px] flex items-center justify-center p-1 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+												className="min-h-[44px] sm:min-h-[32px] min-w-[44px] flex items-center justify-center p-1 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
 												title="Увеличить количество"
 												aria-label={`Увеличить количество для зуба ${item.toothNumber}`}
 											>
@@ -983,7 +983,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 										<button
 											type="button"
 											onClick={() => handleExcludeItem(itemKey)}
-											className="min-h-[44px] px-2 text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer ml-1"
+											className="min-h-[44px] sm:min-h-[32px] px-2 text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer ml-1"
 											title="Исключить из сметы"
 										>
 											<Trash2 size={12} />
@@ -1044,7 +1044,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 					<button
 						type="button"
 						onClick={handleCreateInvoice}
-						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+						className="min-h-[44px] sm:min-h-[32px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
 						title="Создать официальный счет на оплату в кассу"
 					>
 						<Receipt size={15} />
@@ -1055,7 +1055,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsFiscalModalOpen(true)}
-						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+						className="min-h-[44px] sm:min-h-[32px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
 						title="Принять оплату (карты, СБП, наличные) и пробить фискальный чек 54-ФЗ"
 					>
 						<ShieldCheck size={15} />
@@ -1066,7 +1066,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 					<button
 						type="button"
 						onClick={handleExportToPlan}
-						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 active:scale-95"
+						className="min-h-[44px] sm:min-h-[32px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 active:scale-95"
 						title="Перенести услуги сметы в комплексный план лечения пациента"
 					>
 						<Zap size={15} />
@@ -1077,7 +1077,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 					<button
 						type="button"
 						onClick={handlePrint}
-						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+						className="min-h-[44px] sm:min-h-[32px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
 						title="Распечатать смету или сохранить в PDF"
 					>
 						<Printer size={15} />

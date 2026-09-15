@@ -432,69 +432,33 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 
 			{/* Empty State when no appointments found */}
 			{visibleAppointmentCount === 0 && (
-				<EmptyState
-					icon={<Calendar size={32} />}
-					title={
-						(dashboard.appointments ?? []).length === 0
-							? "Записей пока нет ни одной"
+				<div className="py-3 px-4 text-xs max-w-sm mx-auto text-center text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] mt-4 shadow-sm">
+					<p className="font-medium mb-3 text-[var(--ink)]">
+						{(dashboard.appointments ?? []).length === 0
+							? "Записей пока нет"
 							: activeScheduleFilterCount > 0
 								? scheduleDateFilter.trim()
 									? "На этот день записей нет"
 									: "Всё скрыто фильтрами"
-								: "Записей нет"
-					}
-					description={
-						(dashboard.appointments ?? []).length === 0
-							? "Первая запись появится здесь после оформления визита. Нажмите кнопку «Записать пациента» ниже."
-							: activeScheduleFilterCount > 0
-								? scheduleDateFilter.trim()
-									? "На выбранный день записей нет. Полистайте дни стрелками рядом с датой или оформите запись на свободное время."
-									: "Записи есть, но их скрывают выбранные фильтры. Снимите фильтры кнопкой «Снять все фильтры»."
-								: "На выбранный день записей нет. Запишите пациента кнопкой ниже."
-					}
-					glass={true}
-					action={
-						<div
-							className="schedule-empty-actions flex flex-wrap gap-2 justify-center mt-3"
-						>
-							{scheduleDateFilter.trim() &&
-							clinicToday &&
-							scheduleDateFilter.trim() !== clinicToday &&
-							typeof setScheduleDateFilter === "function" &&
-							typeof todayScheduleDate === "function" ? (
-								<button
-									className="secondary-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
-									type="button"
-									onClick={() => setScheduleDateFilter(todayScheduleDate())}
-								>
-									Вернуться на сегодня
-								</button>
-							) : null}
-							{activeScheduleFilterCount > 0 &&
-							typeof resetScheduleFilters === "function" ? (
-								<button
-									className="text-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
-									type="button"
-									onClick={resetScheduleFilters}
-								>
-									Снять все фильтры
-								</button>
-							) : null}
-							<button
-								className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors font-bold shadow-sm"
-								type="button"
-								onClick={onNewAppointmentClick}
-								data-testid="btn-create-first-appointment"
-							>
-								<Plus aria-hidden="true" size={16} />
-								<span>
-									Записать пациента
-									<span className="hidden sm:inline"> (N)</span>
-								</span>
+								: "На выбранный день записей нет"}
+					</p>
+					<div className="schedule-empty-actions flex flex-wrap gap-2 justify-center">
+						{scheduleDateFilter.trim() && clinicToday && scheduleDateFilter.trim() !== clinicToday && typeof setScheduleDateFilter === "function" && typeof todayScheduleDate === "function" ? (
+							<button className="secondary-button min-h-[36px] px-3 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
+								На сегодня
 							</button>
-						</div>
-					}
-				/>
+						) : null}
+						{activeScheduleFilterCount > 0 && typeof resetScheduleFilters === "function" ? (
+							<button className="text-button min-h-[36px] px-3 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors" type="button" onClick={resetScheduleFilters}>
+								Снять фильтры
+							</button>
+						) : null}
+						<button className="primary-button min-h-[36px] px-3 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors font-bold shadow-sm" type="button" onClick={onNewAppointmentClick} data-testid="btn-create-first-appointment">
+							<Plus aria-hidden="true" size={14} />
+							<span>Записать пациента</span>
+						</button>
+					</div>
+				</div>
 			)}
 		</div>
 	);

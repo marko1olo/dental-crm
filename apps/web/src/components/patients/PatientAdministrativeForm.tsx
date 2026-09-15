@@ -136,7 +136,7 @@ export function PatientAdministrativeForm({
 							},
 						});
 					}}
-					className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+					className="min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
 					data-testid="admin-form-print-blank-contract-btn"
 				>
 					<FileText size={15} className="shrink-0" />
@@ -278,7 +278,7 @@ export function PatientAdministrativeForm({
 									event.preventDefault();
 									handleSelectRelationship(opt.value, opt.recipient);
 								}}
-								className={`min-h-[44px] px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
 									isSelected
 										? "bg-teal-500/15 text-[var(--teal)] border-[var(--teal)] shadow-xs font-bold"
 										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-hover)]"

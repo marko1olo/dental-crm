@@ -1139,9 +1139,7 @@ export function generateAct0504230Html(
 		}
 	</p>
 
-	${
-		doc.isQuickCarpuleWriteoff || doc.isSingleSigner
-			? `<div class="signatures-row">
+	<div class="signatures-row">
 		<div class="sign-col" style="width: 45%;">
 			<strong>СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО):</strong><br>
 			${doc.writtenOffByRole || (doc.isQuickCarpuleWriteoff ? (info.headNursePosition || "Старшая медицинская сестра") : (doc.doctorSpecialty || "Врач-стоматолог"))}<br>
@@ -1153,26 +1151,7 @@ export function generateAct0504230Html(
 			${doc.doctorSpecialty || "Заведующий кабинетом"}<br>
 			________________ / ${doc.doctorFullName || info.chiefDoctorFullName} /
 		</div>
-	</div>`
-			: `<div class="signatures-row">
-		<div class="sign-col">
-			<strong>УТВЕРЖДАЮ:</strong><br>
-			${info.chiefDoctorPosition}<br>
-			________________ / ${info.chiefDoctorFullName} /<br>
-			«____» ________________ 2026 г.
-		</div>
-		<div class="sign-col">
-			<strong>ПРЕДСЕДАТЕЛЬ КОМИССИИ:</strong><br>
-			${info.headNursePosition}<br>
-			________________ / ${info.headNurseFullName} /
-		</div>
-		<div class="sign-col">
-			<strong>ВРАЧ (МОЛ):</strong><br>
-			${doc.doctorSpecialty}<br>
-			________________ / ${doc.doctorFullName} /
-		</div>
-	</div>`
-	}
+	</div>
 </body>
 </html>`;
 }
@@ -1364,9 +1343,7 @@ export function generateTorg16Html(
 		</tbody>
 	</table>
 
-	${
-		doc.isQuickCarpuleWriteoff || doc.isSingleSigner
-			? `<div class="signs">
+	<div class="signs">
 		<div style="width: 45%;">
 			<strong>Списание произведено единолично:</strong><br>
 			${doc.writtenOffByRole || (doc.isQuickCarpuleWriteoff ? (info.headNursePosition || "Старшая медицинская сестра") : (doc.doctorSpecialty || "Врач-стоматолог"))}<br>
@@ -1377,25 +1354,7 @@ export function generateTorg16Html(
 			${doc.doctorSpecialty || info.chiefDoctorPosition}<br>
 			________________ / ${doc.doctorFullName || info.chiefDoctorFullName} /
 		</div>
-	</div>`
-			: `<div class="signs">
-		<div>
-			<strong>Член комиссии:</strong><br>
-			${doc.doctorSpecialty}<br>
-			________________ / ${doc.doctorFullName} /
-		</div>
-		<div>
-			<strong>Член комиссии:</strong><br>
-			${info.headNursePosition}<br>
-			________________ / ${info.headNurseFullName} /
-		</div>
-		<div>
-			<strong>Утвердил руководитель:</strong><br>
-			${info.chiefDoctorPosition}<br>
-			________________ / ${info.chiefDoctorFullName} /
-		</div>
-	</div>`
-	}
+	</div>
 </body>
 </html>`;
 }

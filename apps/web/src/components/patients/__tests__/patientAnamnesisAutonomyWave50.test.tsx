@@ -6,7 +6,7 @@
  *
  * CONSTITUTIONAL MANDATES:
  * - THE HAMMER MASTER PROMPT & .agents/AGENTS.md
- * - Mandate 8c: Universal 3-tier interaction & touch ergonomics (min-h-[44px], vector icons)
+ * - Mandate 8c: Universal 3-tier interaction & touch ergonomics (min-h-[44px] sm:min-h-[32px], vector icons)
  * - Mandate 8d (п. 4, 7): WCAG AAA contrast, zero cartoon emojis in clinical documents/cards
  * - Mandate 8e (п. 1, 3): Doctor autonomy, physiological norm in 1 click, non-blocking workflows
  * - Mandate 8i: Outpatient dental context (Form 043/u, order 804n, SanPiN 3.3686-21)
@@ -302,7 +302,7 @@ describe("Wave 50: Dental Allergy Presets & Safety Engine (Feature 235)", () => 
 
 	// ─── 3. PATIENT ANAMNESIS MODAL (PRESETS & TOGGLES) ───
 	describe("3. PatientAnamnesisModal UI Presets & Toggles", () => {
-		it("3.1. contains all 3 allergy preset buttons in source code with exact testids and min-h-[44px]", () => {
+		it("3.1. contains all 3 allergy preset buttons in source code with exact testids and min-h-[44px] sm:min-h-[32px]", () => {
 			assert.ok(
 				anamnesisModalSource.includes(
 					'data-testid="preset-allergy-penicillin"',
@@ -335,9 +335,9 @@ describe("Wave 50: Dental Allergy Presets & Safety Engine (Feature 235)", () => 
 			// Verify touch targets >= 44px
 			assert.ok(
 				anamnesisModalSource.includes(
-					"min-h-[44px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300",
+					"min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300",
 				),
-				"Must have min-h-[44px] touch target for allergy preset buttons",
+				"Must have min-h-[44px] sm:min-h-[32px] touch target for allergy preset buttons",
 			);
 		});
 

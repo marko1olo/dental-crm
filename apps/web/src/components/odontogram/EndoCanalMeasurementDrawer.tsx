@@ -548,7 +548,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 							type="button"
 							onClick={handleResetDefaults}
 							title="Сбросить к анатомическим значениям"
-							className="min-w-[44px] min-h-[44px] p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+							className="min-w-[44px] min-h-[44px] sm:min-h-[32px] p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
 						>
 							<RotateCcw size={18} />
 						</button>
@@ -556,7 +556,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 							type="button"
 							onClick={onClose}
 							aria-label="Закрыть"
-							className="min-w-[44px] min-h-[44px] p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+							className="min-w-[44px] min-h-[44px] sm:min-h-[32px] p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
 						>
 							<X size={20} />
 						</button>
@@ -939,7 +939,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 							type="button"
 							data-testid="btn-endo-save-protocol-043"
 							onClick={handleInsertToProtocol}
-							className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all min-h-[44px] cursor-pointer active:scale-98"
+							className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all min-h-[44px] sm:min-h-[32px] cursor-pointer active:scale-98"
 							title="Вставить протокол в дневник 043/у (1 клик)"
 						>
 							<Sparkles size={16} />
@@ -951,7 +951,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-semibold transition-colors min-h-[44px] cursor-pointer"
+							className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-semibold transition-colors min-h-[44px] sm:min-h-[32px] cursor-pointer"
 						>
 							Отмена
 						</button>
@@ -959,7 +959,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 							type="button"
 							disabled={isSaving}
 							onClick={handleSave}
-							className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-colors min-h-[44px] cursor-pointer disabled:opacity-50"
+							className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-colors min-h-[44px] sm:min-h-[32px] cursor-pointer disabled:opacity-50"
 						>
 							<Save size={16} />
 							<span>{isSaving ? "Сохранение..." : "Сохранить каналы"}</span>
