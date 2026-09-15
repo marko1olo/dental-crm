@@ -21,7 +21,8 @@ export type ImplantBrand =
 	| "nobel_biocare"
 	| "osstem"
 	| "dentium"
-	| "astra_tech";
+	| "astra_tech"
+	| "mis";
 
 export type PlatformType = "conical" | "internal_hex" | "external_hex";
 
@@ -119,6 +120,14 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		popularLines: ["OsseoSpeed EV"],
 		defaultHexColor: "#8b5cf6",
 	},
+	mis: {
+		id: "mis",
+		name: "MIS Implants",
+		country: "Израиль",
+		flagEmoji: "🇮🇱",
+		popularLines: ["SEVEN", "V3", "C1"],
+		defaultHexColor: "#a855f7",
+	},
 };
 
 const BRAND_KEY_MAP: Record<string, ImplantBrand> = {
@@ -127,6 +136,8 @@ const BRAND_KEY_MAP: Record<string, ImplantBrand> = {
 	Osstem: "osstem",
 	Dentium: "dentium",
 	"Astra Tech": "astra_tech",
+	"MIS Implants": "mis",
+	MIS: "mis",
 };
 
 const BASE_PRICES: Record<ImplantBrand, { fixture: number; cap: number; transfer: number; abutment: number; sleeve: number }> = {
@@ -135,6 +146,7 @@ const BASE_PRICES: Record<ImplantBrand, { fixture: number; cap: number; transfer
 	osstem: { fixture: 1250000, cap: 220000, transfer: 200000, abutment: 450000, sleeve: 180000 },
 	dentium: { fixture: 1450000, cap: 250000, transfer: 220000, abutment: 480000, sleeve: 180000 },
 	astra_tech: { fixture: 3100000, cap: 460000, transfer: 400000, abutment: 880000, sleeve: 250000 },
+	mis: { fixture: 1550000, cap: 240000, transfer: 210000, abutment: 460000, sleeve: 190000 },
 };
 
 function createFixtures(): ImplantFixture[] {

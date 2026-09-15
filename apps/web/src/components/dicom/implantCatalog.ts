@@ -448,11 +448,69 @@ export const ASTRA_TECH_SYSTEM: ImplantSystemSpec = {
 	lengths: [6.0, 8.0, 9.0, 11.0, 13.0, 15.0, 17.0],
 };
 
+export const MIS_SYSTEM: ImplantSystemSpec = {
+	id: "mis-implants",
+	brand: "MIS Implants",
+	line: "SEVEN / V3 / C1",
+	country: "Израиль",
+	descriptionRu:
+		"Конический имплантат с микрокольцами у шейки, двойной самонарезающей резьбой и закругленным апексом. Высокая первичная стабильность во всех типах костной ткани (D1–D4).",
+	sleeveDiameterMm: 5.0,
+	sleeveHeightMm: 5.0,
+	drillOffsetDefaultMm: 9.0,
+	primaryStabilityDesign: "Коническое тело с микрокольцами и переменной двойной резьбой",
+	sizes: [
+		{
+			diameterMm: 3.3,
+			lengthsMm: [10.0, 11.5, 13.0, 16.0],
+			platform: {
+				code: "NP",
+				labelRu: "Узкая платформа (NP 3.3)",
+				hexColor: "#9333ea",
+				cssToken: "var(--purple, #9333ea)",
+			},
+		},
+		{
+			diameterMm: 3.75,
+			lengthsMm: [8.0, 10.0, 11.5, 13.0, 16.0],
+			platform: {
+				code: "SP",
+				labelRu: "Стандартная платформа (SP 3.75)",
+				hexColor: "#f59e0b",
+				cssToken: "var(--amber, #f59e0b)",
+			},
+		},
+		{
+			diameterMm: 4.2,
+			lengthsMm: [8.0, 10.0, 11.5, 13.0, 16.0],
+			platform: {
+				code: "SP",
+				labelRu: "Стандартная платформа (SP 4.2)",
+				hexColor: "#f59e0b",
+				cssToken: "var(--amber, #f59e0b)",
+			},
+		},
+		{
+			diameterMm: 5.0,
+			lengthsMm: [8.0, 10.0, 11.5, 13.0],
+			platform: {
+				code: "WP",
+				labelRu: "Широкая платформа (WP 5.0)",
+				hexColor: "#2563eb",
+				cssToken: "var(--blue, #2563eb)",
+			},
+		},
+	],
+	diameters: [3.3, 3.75, 4.2, 5.0],
+	lengths: [8.0, 10.0, 11.5, 13.0, 16.0],
+};
+
 export const CANONICAL_IMPLANT_SYSTEMS: ImplantSystemSpec[] = [
 	OSSTEM_SYSTEM,
 	STRAUMANN_SYSTEM,
 	NOBEL_BIOCARE_SYSTEM,
 	DENTIUM_SYSTEM,
+	MIS_SYSTEM,
 	ASTRA_TECH_SYSTEM,
 	GENERIC_STANDARD_SYSTEM,
 ];
@@ -469,6 +527,7 @@ export const DENTAL_IMPLANT_BRANDS = CANONICAL_IMPLANT_SYSTEMS;
  * "straumann" | "straumann-blx"
  * "nobel" | "nobel_biocare" | "nobel-active"
  * "dentium" | "dentium-superline"
+ * "mis" | "mis-implants" | "mis-seven"
  * "astra" | "astra_tech" | "astra-tech-ev"
  */
 export function normalizeSystemId(rawId: string | undefined | null): string {
@@ -478,6 +537,7 @@ export function normalizeSystemId(rawId: string | undefined | null): string {
 	if (lower.includes("straumann")) return "straumann-blx";
 	if (lower.includes("nobel")) return "nobel-active";
 	if (lower.includes("dentium")) return "dentium-superline";
+	if (lower.includes("mis")) return "mis-implants";
 	if (lower.includes("astra")) return "astra-tech-ev";
 	return "generic";
 }

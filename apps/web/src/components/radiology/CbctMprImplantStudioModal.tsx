@@ -5837,8 +5837,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								</div>
 
 								{/* Brand selector */}
-								<div className="grid grid-cols-4 gap-1.5">
-									{(["straumann", "nobel_biocare", "osstem", "dentium"] as ImplantBrandKey[]).map((b) => (
+								<div className="grid grid-cols-5 gap-1.5">
+									{(["straumann", "nobel_biocare", "osstem", "dentium", "mis"] as ImplantBrandKey[]).map((b) => (
 										<button
 											key={b}
 											type="button"
@@ -5849,7 +5849,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 													: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 border-zinc-800 hover:bg-zinc-800"
 											}`}
 										>
-											{b === "straumann" ? "Straumann" : b === "nobel_biocare" ? "Nobel" : b === "osstem" ? "Osstem" : "Dentium"}
+											{b === "straumann" ? "Straumann" : b === "nobel_biocare" ? "Nobel" : b === "osstem" ? "Osstem" : b === "dentium" ? "Dentium" : "MIS"}
 										</button>
 									))}
 								</div>

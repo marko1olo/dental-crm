@@ -62,6 +62,14 @@ export const FAST_IMPLANT_SYSTEM_PRESETS: readonly FastImplantSystemPreset[] = [
 		recommendedDrillRpm: 800,
 	},
 	{
+		brand: "MIS",
+		model: "SEVEN / V3 / C1",
+		defaultDiameterMm: 3.75,
+		defaultLengthMm: 10.0,
+		defaultTorqueNcm: 35,
+		recommendedDrillRpm: 800,
+	},
+	{
 		brand: "Neodent",
 		model: "Helix Grand Morse (GM) Acqua",
 		defaultDiameterMm: 4.0,

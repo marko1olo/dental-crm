@@ -19,7 +19,8 @@ export type ImplantTorqueBrand =
 	| "osstem"
 	| "dentium"
 	| "astra_tech"
-	| "megagen";
+	| "megagen"
+	| "mis";
 
 export type ProstheticComponentType =
 	| "final_prosthetic_screw"
@@ -166,6 +167,22 @@ export const IMPLANT_TORQUE_SPECS: Record<ImplantTorqueBrand, BrandTorqueSpec> =
 		torqueLabScrewNcm: 10,
 		connectionSafetyNotes:
 			"AnyRidge 5° Morse Taper: клинический винт 35 N·cm. Обеспечивает cold-welding эффект конусного соединения с защитой от микроподвижности.",
+	},
+	mis: {
+		brand: "mis",
+		brandName: "MIS Implants",
+		countryRu: "Израиль",
+		screwdriverDefault: "Hex 1.27 mm (0.050 inch)",
+		screwdriverAsc: "MIS Angled Screw Channel Driver",
+		torqueFinalScrewNcm: 30,
+		torqueNarrowScrewNcm: 25,
+		torqueMultiUnitAbutmentNcm: 30,
+		torqueMultiUnitBridgeScrewNcm: 15,
+		torqueLocatorNcm: 30,
+		torqueHealingCapNcm: 10,
+		torqueLabScrewNcm: 10,
+		connectionSafetyNotes:
+			"MIS SEVEN, C1, V3: стандартный момент затяжки клинического винта абатмента 30 N·cm шестигранником 1.27 мм. Для узкой платформы NP рекомендуется 25 N·cm.",
 	},
 };
 
@@ -454,6 +471,42 @@ export const TI_BASE_CATALOG: readonly TiBaseCatalogItem[] = [
 		recommendedTorqueNcm: 35,
 		screwdriverType: "Meg-Torq / Hex 1.2 mm",
 		priceKopecks: 450000,
+	},
+
+	// MIS IMPLANTS
+	{
+		id: "mis-tb-sp-01",
+		brand: "mis",
+		brandName: "MIS Implants",
+		lineName: "Ti-Base Connect SP",
+		article: "CS-TBC15",
+		nameRu: "Ti-Base Connect SP Ø3.75/4.2 десна 1.5 мм (Conical / Hex 1.27)",
+		platformName: "Standard Platform (SP)",
+		platformDiameterMm: 4.0,
+		gingivalCuffHeightMm: 1.5,
+		chimneyPostHeightMm: 5.0,
+		engagement: "engaging",
+		maxAscAngleDeg: 25,
+		recommendedTorqueNcm: 30,
+		screwdriverType: "Hex 1.27 mm",
+		priceKopecks: 420000,
+	},
+	{
+		id: "mis-tb-wp-02",
+		brand: "mis",
+		brandName: "MIS Implants",
+		lineName: "Ti-Base Connect WP",
+		article: "CS-TBW25",
+		nameRu: "Ti-Base Connect WP Ø5.0 десна 2.5 мм (Conical / Hex 1.27)",
+		platformName: "Wide Platform (WP)",
+		platformDiameterMm: 5.0,
+		gingivalCuffHeightMm: 2.5,
+		chimneyPostHeightMm: 5.0,
+		engagement: "engaging",
+		maxAscAngleDeg: 20,
+		recommendedTorqueNcm: 30,
+		screwdriverType: "Hex 1.27 mm",
+		priceKopecks: 420000,
 	},
 ];
 

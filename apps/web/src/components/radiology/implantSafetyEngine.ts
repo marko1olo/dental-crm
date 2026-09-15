@@ -69,7 +69,7 @@ export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.5;
 export const MIN_BUCCAL_BONE_WALL_MM = 1.5;
 export const MIN_LINGUAL_BONE_WALL_MM = 1.0;
 
-export type ImplantBrandKey = "straumann" | "nobel_biocare" | "osstem" | "dentium";
+export type ImplantBrandKey = "straumann" | "nobel_biocare" | "osstem" | "dentium" | "mis";
 
 export interface VirtualImplantSpec {
 	readonly id: string;
@@ -194,6 +194,13 @@ export const STANDARD_IMPLANT_CATALOG: readonly VirtualImplantSpec[] = [
 	{ id: "dt-40-115", brand: "dentium", brandName: "Dentium", lineName: "SuperLine", diameterMm: 4.0, lengthMm: 11.5, platformDiameterMm: 4.0, apexDiameterMm: 2.8, priceKopecks: 1900000, articleNumber: "FXT4012" },
 	{ id: "dt-45-10", brand: "dentium", brandName: "Dentium", lineName: "SuperLine", diameterMm: 4.5, lengthMm: 10.0, platformDiameterMm: 4.5, apexDiameterMm: 3.1, priceKopecks: 1900000, articleNumber: "FXT4510" },
 	{ id: "dt-50-10", brand: "dentium", brandName: "Dentium", lineName: "SuperLine", diameterMm: 5.0, lengthMm: 10.0, platformDiameterMm: 5.0, apexDiameterMm: 3.5, priceKopecks: 1900000, articleNumber: "FXT5010" },
+
+	// MIS IMPLANTS (SEVEN / C1 / V3)
+	{ id: "mis-375-10", brand: "mis", brandName: "MIS Implants", lineName: "SEVEN", diameterMm: 3.75, lengthMm: 10.0, platformDiameterMm: 3.75, apexDiameterMm: 2.4, priceKopecks: 1950000, articleNumber: "MF7-10375" },
+	{ id: "mis-42-10", brand: "mis", brandName: "MIS Implants", lineName: "SEVEN", diameterMm: 4.2, lengthMm: 10.0, platformDiameterMm: 4.2, apexDiameterMm: 2.8, priceKopecks: 1950000, articleNumber: "MF7-10420" },
+	{ id: "mis-50-10", brand: "mis", brandName: "MIS Implants", lineName: "SEVEN", diameterMm: 5.0, lengthMm: 10.0, platformDiameterMm: 5.0, apexDiameterMm: 3.2, priceKopecks: 1950000, articleNumber: "MF7-10500" },
+	{ id: "mis-c1-375-10", brand: "mis", brandName: "MIS Implants", lineName: "C1", diameterMm: 3.75, lengthMm: 10.0, platformDiameterMm: 3.75, apexDiameterMm: 2.4, priceKopecks: 2150000, articleNumber: "C1-10375" },
+	{ id: "mis-v3-39-10", brand: "mis", brandName: "MIS Implants", lineName: "V3", diameterMm: 3.9, lengthMm: 10.0, platformDiameterMm: 3.9, apexDiameterMm: 2.5, priceKopecks: 2450000, articleNumber: "V3-10390" },
 ];
 
 export interface SurgeonImplantPreset {
@@ -252,6 +259,17 @@ export const SURGEON_IMPLANT_PRESETS: readonly SurgeonImplantPreset[] = [
 		diameterMm: 4.0,
 		lengthMm: 10.0,
 		clinicalIndicationRu: "Агрессивная самонарезающая резьба для кости D2-D3",
+	},
+	{
+		id: "mis_seven_regular",
+		title: "MIS SEVEN Regular (3.75 x 10 мм)",
+		shortLabel: "MIS SEVEN 3.75x10",
+		brand: "mis",
+		brandName: "MIS Implants",
+		lineName: "SEVEN",
+		diameterMm: 3.75,
+		lengthMm: 10.0,
+		clinicalIndicationRu: "Универсальный конический дизайн с двойной резьбой для кости любого типа",
 	},
 ] as const;
 
