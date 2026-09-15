@@ -103,6 +103,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	const [certificateNominalRub, setCertificateNominalRub] = useState<number>(5000);
 	const [recipientName, setRecipientName] = useState<string>("");
 	const [activeCertificate, setActiveCertificate] = useState<GiftCertificate | null>(null);
+	const [certVerifyInput, setCertVerifyInput] = useState<string>("");
 	const [certRedeemFeedback, setCertRedeemFeedback] = useState<{
 		isSuccess: boolean;
 		message: string;
@@ -203,7 +204,10 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		};
 		setActiveCertificate(cert);
 		setCertVerifyInput(newSerial);
-		setCertRedeemFeedback(`Выпущен новый сертификат ${newSerial} на ${certificateNominalRub} ₽`);
+		setCertRedeemFeedback({
+			isSuccess: true,
+			message: `Выпущен новый сертификат ${newSerial} на ${certificateNominalRub} ₽`,
+		});
 	};
 
 	const handleVerifyAndRedeemCert = () => {

@@ -31,6 +31,7 @@ import {
 	Layers,
 	Maximize2,
 	Minimize2,
+	Package,
 	Percent,
 	Printer,
 	RotateCcw,
@@ -258,6 +259,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const [printDocFormat, setPrintDocFormat] = useState<"patient_friendly" | "official_appendix">("patient_friendly");
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+	const [activeToolsPanel, setActiveToolsPanel] = useState<"copilot" | "bundles" | "discount" | null>(null);
 
 	// AI Copilot & AI Audit state
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
@@ -756,8 +758,77 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					</nav>
 				</header>
 
-				{/* AI Copilot Chairside Quick Toolbar */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print">
+				{/* Chairside Assistant & Clinical Tools Strip (Mandate 8p: Compact single-row toolbar <= 36px) */}
+				<div className="flex items-center justify-between gap-2 px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs">
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="text-[11px] font-bold text-[var(--tp-text-muted)] mr-1 hidden sm:inline">Инструменты врача:</span>
+
+						{/* Toggle AI Copilot */}
+						<button
+							type="button"
+							onClick={() => setActiveToolsPanel((prev) => (prev === "copilot" ? null : "copilot"))}
+							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
+								activeToolsPanel === "copilot"
+									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
+									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
+							}`}
+							data-testid="toggle-copilot-panel-btn"
+							title="AI Copilot у кресла: готовые сценарии и оптимизация бюджета"
+						>
+							<Sparkles size={13} className={activeToolsPanel === "copilot" ? "text-amber-300" : "text-amber-500"} />
+							<span>AI Copilot</span>
+							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "copilot" ? "rotate-180" : ""}`} />
+						</button>
+
+						{/* Toggle Clinical Bundles */}
+						<button
+							type="button"
+							onClick={() => setActiveToolsPanel((prev) => (prev === "bundles" ? null : "bundles"))}
+							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
+								activeToolsPanel === "bundles"
+									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
+									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
+							}`}
+							data-testid="toggle-bundles-panel-btn"
+							title="Готовые клинические пакеты услуг (Мандат 8e)"
+						>
+							<Package size={13} />
+							<span>Клинические пакеты</span>
+							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "bundles" ? "rotate-180" : ""}`} />
+						</button>
+
+						{/* Toggle Doctor Discount */}
+						<button
+							type="button"
+							onClick={() => setActiveToolsPanel((prev) => (prev === "discount" ? null : "discount"))}
+							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
+								activeToolsPanel === "discount" || doctorDiscountPercent > 0
+									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
+							}`}
+							data-testid="toggle-discount-panel-btn"
+							title="Скидка врача (0-100% на гарантийные переделки и персонал)"
+						>
+							<Percent size={13} />
+							<span>{doctorDiscountPercent > 0 ? `Скидка: ${doctorDiscountPercent}%` : "Скидка врача"}</span>
+							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "discount" ? "rotate-180" : ""}`} />
+						</button>
+					</div>
+
+					<div className="flex items-center gap-2">
+						{doctorDiscountPercent === 100 && (
+							<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+								100% гарантия / персонал
+							</span>
+						)}
+						<span className="text-[11px] text-[var(--tp-text-muted)] hidden lg:inline">
+							Автономия врача: скидки и пакеты в 1 клик
+						</span>
+					</div>
+				</div>
+
+				{/* Collapsible Panel 1: AI Copilot Chairside Quick Toolbar */}
+				<div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2.5 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print ${activeToolsPanel === "copilot" ? "" : "hidden"}`}>
 					<div className="flex items-center gap-2 flex-wrap">
 						<div className="inline-flex items-center gap-1 text-xs font-bold text-[var(--tp-primary)] mr-1">
 							<Sparkles size={14} className="text-amber-500" />
@@ -769,7 +840,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								type="button"
 								disabled={isCopilotExecuting}
 								onClick={() => handleExecuteCopilot(act.id)}
-								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors disabled:opacity-50"
+								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors disabled:opacity-50"
 								title={act.description}
 								data-testid={`presenter-copilot-btn-${act.id}`}
 							>
@@ -852,8 +923,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					</div>
 				)}
 
-				{/* Turnkey Clinical Packages 1-Click Bar (Mandate 8e) */}
-				<div className="px-6 py-2.5 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print">
+				{/* Collapsible Panel 2: Turnkey Clinical Packages 1-Click Bar (Mandate 8e) */}
+				<div className={`px-6 py-2.5 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print ${activeToolsPanel === "bundles" ? "" : "hidden"}`}>
 					<ClinicalBundlesPanel
 						compact
 						onApplyBundle={handleApplyClinicalBundle}
@@ -861,8 +932,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					/>
 				</div>
 
-				{/* Doctor Discount Freedom Quick Bar (Mandate 8e / Section VII.2) */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs">
+				{/* Collapsible Panel 3: Doctor Discount Freedom Quick Bar (Mandate 8e / Section VII.2) */}
+				<div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print text-xs ${activeToolsPanel === "discount" ? "" : "hidden"}`}>
 					<div className="flex items-center gap-2 flex-wrap">
 						<div className="inline-flex items-center gap-1 font-bold text-[var(--tp-primary)]">
 							<Percent size={13} className="text-emerald-600 dark:text-emerald-400" />
@@ -884,8 +955,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											? "bg-emerald-600 text-white shadow-xs"
 											: "bg-[var(--tp-primary)] text-white shadow-xs"
 										: pct === 100
-											? "bg-[var(--tp-surface-soft)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 border border-emerald-500/30"
-											: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)]"
+											? "bg-[var(--tp-surface)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 border border-emerald-500/30"
+											: "bg-[var(--tp-surface)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)]"
 								}`}
 								data-testid={`presenter-discount-btn-${pct}`}
 							>
@@ -1066,8 +1137,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 												))}
 											</div>
 
-											{/* Selection & Instant Apply Buttons */}
-											<div className="p-3.5 pt-0 flex flex-col gap-2">
+											{/* Single Primary Action Button (Miller's Law: strictly 1 primary action) */}
+											<div className="p-3.5 pt-0">
 												<button
 													type="button"
 													onClick={(e) => {
@@ -1075,33 +1146,20 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 														handleSelectTier(tier);
 														handleConfirmPatientChoice();
 													}}
-													className="btn-treatment-action btn-patient-choice w-full cursor-pointer"
+													className="treatment-tier-select-btn w-full cursor-pointer m-0"
 													data-testid={"apply-tier-btn-" + tier.tierId}
-												>
-													<CheckCircle2 size={16} />
-													<span>
-														{selectionConfirmed && selectedTierId === tier.tierId
-															? "Тариф применен"
-															: `Применить ${tier.badge} (${tier.totalRub.toLocaleString("ru-RU")} ₽)`}
-													</span>
-												</button>
-
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														handleSelectTier(tier);
-													}}
-													className="treatment-tier-select-btn cursor-pointer m-0"
-													data-testid={"select-tier-btn-" + tier.tierId}
+													aria-pressed={isSelected}
 												>
 													{isSelected ? (
 														<>
 															<Check size={14} />
-															<span>Вариант выбран</span>
+															<span>Выбранный вариант</span>
 														</>
 													) : (
-														<span>Выбрать {tier.badge}</span>
+														<>
+															<CheckCircle2 size={14} />
+															<span>Применить: выбрать этот план ({tier.totalRub.toLocaleString("ru-RU")} ₽)</span>
+														</>
 													)}
 												</button>
 											</div>

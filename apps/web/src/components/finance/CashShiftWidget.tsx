@@ -220,7 +220,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 									{cashFlowMode === "cash_in" ? "Кассовое внесение наличных (Приход)" : "Кассовое изъятие наличных (Расход)"}
 								</h3>
 								<p className="text-xs text-[var(--muted,#64748b)]">
-									Классификация операций ККТ 54-ФЗ и каталогов StomX
+									Классификация операций ККТ 54-ФЗ и кассы клиники
 								</p>
 							</div>
 						</div>
@@ -280,7 +280,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<label className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
-									Тип операции ({cashFlowMode === "cash_in" ? "Каталог приходов StomX" : "Каталог расходов StomX"}):
+									Тип операции ({cashFlowMode === "cash_in" ? "Каталог приходов клиники" : "Каталог расходов клиники"}):
 								</label>
 								<span className="text-[11px] text-[var(--muted,#64748b)]">1 клик для выбора</span>
 							</div>

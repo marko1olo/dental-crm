@@ -1498,7 +1498,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									<div className="flex items-center justify-between flex-wrap gap-2">
 										<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)] uppercase tracking-wider">
 											<Coins size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-											<span>Статья ДДС и Касса (StomX):</span>
+											<span>Статья ДДС и Касса клиники:</span>
 										</div>
 										<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
 											<Building2 size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -2561,7 +2561,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								<div className="flex items-center justify-between flex-wrap gap-2">
 									<div className="flex items-center gap-1.5 font-bold text-xs text-rose-950 dark:text-rose-200 uppercase tracking-wider">
 										<Coins size={14} className="text-rose-600 shrink-0" />
-										<span>Статья расхода ДДС и Касса (StomX):</span>
+										<span>Статья расхода ДДС и Касса клиники:</span>
 									</div>
 									<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
 										<Building2 size={13} className="text-rose-600 shrink-0" />

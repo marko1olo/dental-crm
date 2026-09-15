@@ -1456,7 +1456,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<div className="flex flex-wrap items-center justify-between gap-2">
 							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
 								<Building2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-								<span>Касса StomX:</span>
+								<span>Касса клиники:</span>
 							</div>
 							<div className="flex flex-wrap items-center gap-1">
 								{STOMX_CASH_BOXES.slice(0, 3).map((box) => (

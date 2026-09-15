@@ -18,7 +18,11 @@ import {
 	type SegmentToSegmentDistanceResult,
 	type NerveCanalSafetyReport,
 } from "@dental/shared";
-import type { Point3D } from "./curvedMprMath";
+export interface Point3D {
+	x: number;
+	y: number;
+	z: number;
+}
 
 // Re-export canonical shared radiology primitives per Mandate 8s
 export {

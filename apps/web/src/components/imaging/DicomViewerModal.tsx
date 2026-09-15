@@ -399,23 +399,23 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			{/* Top Header Toolbar */}
 			<div
 				style={{
-					height: "56px",
+					height: "36px",
 					backgroundColor: "#0f172a",
 					borderBottom: "1px solid #1e293b",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					padding: "0 16px",
-					gap: "12px",
+					padding: "0 10px",
+					gap: "8px",
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-					<Activity size={20} color="#0d9488" style={{ flexShrink: 0 }} />
-					<div style={{ minWidth: 0 }}>
-						<div style={{ fontWeight: "bold", fontSize: "14px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+					<Activity size={16} color="#0d9488" style={{ flexShrink: 0 }} />
+					<div style={{ minWidth: 0, display: "flex", alignItems: "baseline", gap: "6px" }}>
+						<div style={{ fontWeight: "bold", fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: "14px" }}>
 							{title} {toothFdiCode ? `· Зуб ${toothFdiCode}` : ""}
 						</div>
-						<div style={{ fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+						<div style={{ fontSize: "10px", color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: "12px" }}>
 							{patientName ? `${patientName} · ` : ""}
 							{studyDate || "Дата снимка: сегодня"}
 						</div>
@@ -423,16 +423,16 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				</div>
 
 				{/* Presets & Actions */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "nowrap" }}>
 					{/* Upload / Change image button */}
 					<button
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
 						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 12px",
-							fontSize: "12px",
+							minHeight: "28px",
+							height: "28px",
+							padding: "0 8px",
+							fontSize: "11px",
 							borderRadius: "6px",
 							border: "1px solid #334155",
 							backgroundColor: "#1e293b",
@@ -441,13 +441,14 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "5px",
+							gap: "4px",
 							fontWeight: 600,
+							whiteSpace: "nowrap",
 						}}
 						title="Загрузить снимок RVG/DICOM"
 					>
-						<FileUp size={14} />
-						<span>{currentImageSrc ? "Сменить снимок" : "Загрузить снимок"}</span>
+						<FileUp size={13} />
+						<span>{currentImageSrc ? "Сменить" : "Загрузить"}</span>
 					</button>
 
 					{/* On-demand AI Button */}
@@ -457,10 +458,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						onClick={handleRunAiAnalysis}
 						disabled={isAnalyzing}
 						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							fontSize: "12px",
+							minHeight: "28px",
+							height: "28px",
+							padding: "0 8px",
+							fontSize: "11px",
 							borderRadius: "6px",
 							border: "1px solid #0d9488",
 							backgroundColor: isAnalyzing ? "#134e4a" : "#0f766e",
@@ -469,22 +470,23 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "6px",
+							gap: "4px",
 							fontWeight: 600,
 							opacity: isAnalyzing ? 0.6 : 1,
 							transition: "all 0.2s ease",
+							whiteSpace: "nowrap",
 						}}
 						title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы (не перезаписывает карту без подтверждения)"
 					>
 						{isAnalyzing ? (
 							<>
-								<Loader2 size={14} className="animate-spin" />
-								<span>Анализ ИИ...</span>
+								<Loader2 size={13} className="animate-spin" />
+								<span>Анализ...</span>
 							</>
 						) : (
 							<>
-								<Sparkles size={14} />
-								<span>{aiReport ? "Перезапустить ИИ" : "Анализ ИИ"}</span>
+								<Sparkles size={13} />
+								<span>{aiReport ? "Перезапуск ИИ" : "ИИ-анализ"}</span>
 							</>
 						)}
 					</button>
@@ -495,10 +497,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							type="button"
 							onClick={() => setShowFindingsDrawer((prev) => !prev)}
 							style={{
-								minHeight: "44px",
-								minWidth: "44px",
-								padding: "8px 12px",
-								fontSize: "12px",
+								minHeight: "28px",
+								height: "28px",
+								padding: "0 8px",
+								fontSize: "11px",
 								borderRadius: "6px",
 								border: "1px solid #334155",
 								backgroundColor: showFindingsDrawer ? "#334155" : "#1e293b",
@@ -507,33 +509,36 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
-								gap: "5px",
+								gap: "4px",
 								fontWeight: 600,
+								whiteSpace: "nowrap",
 							}}
 							title="Показать / скрыть панель находок ИИ"
 						>
-							<Sparkles size={14} />
+							<Sparkles size={13} />
 							<span>Находки ИИ</span>
 						</button>
 					)}
 
 					<span
 						style={{
-							fontSize: "11px",
-							padding: "4px 8px",
+							fontSize: "10px",
+							padding: "0 6px",
+							height: "24px",
 							borderRadius: "6px",
 							background: "rgba(16, 185, 129, 0.15)",
 							color: "#34d399",
 							border: "1px solid rgba(16, 185, 129, 0.3)",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
+							gap: "3px",
 							fontWeight: 600,
+							whiteSpace: "nowrap",
 						}}
 						title="СанПиН 2.6.1.1192-03: При острой боли и неотложном приёме снимок доступен мгновенно, дозиметрия и ИДС вносятся без блокировки работы"
 					>
-						<Check size={12} color="#34d399" />
-						<span>Неотложный доступ</span>
+						<Check size={11} color="#34d399" />
+						<span>Неотложный</span>
 					</span>
 
 					{DENTAL_RADIOGRAPHY_PRESETS.map((p) => (
@@ -542,10 +547,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							type="button"
 							onClick={() => handleApplyPreset(p)}
 							style={{
-								minHeight: "44px",
-								minWidth: "44px",
-								padding: "8px 12px",
-								fontSize: "12px",
+								minHeight: "28px",
+								height: "28px",
+								padding: "0 8px",
+								fontSize: "11px",
 								borderRadius: "6px",
 								border: "1px solid #334155",
 								backgroundColor: "#1e293b",
@@ -554,6 +559,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
+								whiteSpace: "nowrap",
 							}}
 						>
 							{p.labelRu}
@@ -566,10 +572,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						data-testid="btn-dicom-norma-043"
 						onClick={handleInsertNormaTo043}
 						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							fontSize: "12px",
+							minHeight: "28px",
+							height: "28px",
+							padding: "0 8px",
+							fontSize: "11px",
 							borderRadius: "6px",
 							border: "1px solid #10b981",
 							backgroundColor: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "#064e3b",
@@ -578,13 +584,14 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "6px",
+							gap: "4px",
 							fontWeight: 600,
 							transition: "all 0.2s ease",
+							whiteSpace: "nowrap",
 						}}
 						title="1-клик действие: внести заключение «Рентген-норма» в дневник 043/у"
 					>
-						{isNormaApplied ? <CheckCircle2 size={14} /> : <Zap size={14} color="#34d399" />}
+						{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} color="#34d399" />}
 						<span>{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}</span>
 					</button>
 
@@ -595,10 +602,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							data-testid="btn-dicom-protocols-menu"
 							onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
 							style={{
-								minHeight: "44px",
-								minWidth: "44px",
-								padding: "8px 12px",
-								fontSize: "12px",
+								minHeight: "28px",
+								height: "28px",
+								padding: "0 8px",
+								fontSize: "11px",
 								borderRadius: "6px",
 								border: isProtocolsDropdownOpen ? "1px solid #0d9488" : "1px solid #334155",
 								backgroundColor: isProtocolsDropdownOpen ? "#134e4a" : "#1e293b",
@@ -607,15 +614,16 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
-								gap: "5px",
+								gap: "4px",
 								fontWeight: 600,
+								whiteSpace: "nowrap",
 							}}
 							title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
 						>
-							<FileText size={14} color="#2dd4bf" />
-							<span>Протоколы (043/у)</span>
+							<FileText size={13} color="#2dd4bf" />
+							<span>Протоколы</span>
 							<ChevronDown
-								size={14}
+								size={12}
 								style={{
 									transform: isProtocolsDropdownOpen ? "rotate(180deg)" : "none",
 									transition: "transform 0.2s ease",
@@ -733,8 +741,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					type="button"
 					onClick={onClose}
 					style={{
-						minHeight: "44px",
-						minWidth: "44px",
+						minHeight: "28px",
+						minWidth: "28px",
+						height: "28px",
+						width: "28px",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
@@ -742,11 +752,11 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						border: "none",
 						color: "#94a3b8",
 						cursor: "pointer",
-						padding: "6px",
+						padding: "4px",
 					}}
 					title="Закрыть (Esc)"
 				>
-					<X size={22} />
+					<X size={18} />
 				</button>
 			</div>
 

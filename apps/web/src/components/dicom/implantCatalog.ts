@@ -457,6 +457,8 @@ export const CANONICAL_IMPLANT_SYSTEMS: ImplantSystemSpec[] = [
 	GENERIC_STANDARD_SYSTEM,
 ];
 
+export const DENTAL_IMPLANT_BRANDS = CANONICAL_IMPLANT_SYSTEMS;
+
 // ---------------------------------------------------------------------------
 // 2. LOOKUP AND SELECTION HELPERS
 // ---------------------------------------------------------------------------

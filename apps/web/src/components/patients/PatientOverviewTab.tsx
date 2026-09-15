@@ -29,7 +29,11 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
-export function PatientOverviewTab() {
+export interface PatientOverviewTabProps {
+	readonly showHeaderCard?: boolean;
+}
+
+export function PatientOverviewTab({ showHeaderCard = false }: PatientOverviewTabProps = {}) {
 	const appLogic = useAppLogicContext();
 	const {
 		selectedPatientId,
@@ -163,7 +167,7 @@ export function PatientOverviewTab() {
 				формату. Уникальные части этого блока (семейный счёт, лояльность,
 				рекламации, лента приёмов, архив) сохранены ниже.
 			*/}
-			{selectedPatientId && (
+			{showHeaderCard && selectedPatientId && (
 				<div className="mb-4">
 					<PatientHeaderCard patientId={selectedPatientId} />
 				</div>

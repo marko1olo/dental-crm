@@ -26,6 +26,7 @@ import {
 	HelpCircle,
 	Layers,
 	Lock,
+	MoreVertical,
 	Plus,
 	Printer,
 	QrCode,
@@ -153,6 +154,9 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 	// Состояние банковской рассрочки
 	const [selectedStageForInstallment, setSelectedStageForInstallment] = useState<MilestoneStage | null>(null);
 	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
+
+	// Состояние контекстного меню карточки этапа (...)
+	const [activeStageMenuId, setActiveStageMenuId] = useState<string | null>(null);
 
 	// Уведомление
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -632,28 +636,16 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 													{preset.legalBasisRu}
 												</div>
 
-												<div className="flex flex-wrap items-center gap-2">
+												<div className="flex items-center gap-1.5 shrink-0">
 													{stage.status === "draft" && (
-														<>
-															<button
-																type="button"
-																onClick={() => handlePayAdvanceForStage(stage.id)}
-																className="stage-action-btn primary"
-															>
-																<Coins className="h-4 w-4" />
-																<span>Внести аванс ({formatKopecksRu(stage.advanceRequiredKopecks)})</span>
-															</button>
-															<button
-																type="button"
-																onClick={() => handleStageStatusChange(stage.id, "in_progress")}
-																className="stage-action-btn secondary"
-																title="Начать оказание услуг на этапе без обязательного аванса (доверие, гарантия, экстренный приём)"
-																data-testid={`stage-start-no-advance-btn-${stage.id}`}
-															>
-																<CheckCircle2 className="h-4 w-4 text-[var(--ok,#10b981)]" />
-																<span>Взять в работу без аванса</span>
-															</button>
-														</>
+														<button
+															type="button"
+															onClick={() => handlePayAdvanceForStage(stage.id)}
+															className="stage-action-btn primary"
+														>
+															<Coins className="h-4 w-4" />
+															<span>Внести аванс ({formatKopecksRu(stage.advanceRequiredKopecks)})</span>
+														</button>
 													)}
 
 													{stage.status === "advance_paid" && (
@@ -667,45 +659,105 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 														</button>
 													)}
 
-													{(stage.status === "in_progress" || stage.status === "advance_paid") && (
+													{stage.status === "in_progress" && (
 														<button
 															type="button"
 															onClick={() => {
 																setSelectedStageForActId(stage.id);
 																setActiveTab("act");
 															}}
-															className="stage-action-btn secondary"
+															className="stage-action-btn primary"
 														>
-															<FileCheck className="h-4 w-4 text-[var(--teal,var(--brand-primary))]" />
+															<FileCheck className="h-4 w-4" />
 															<span>Закрыть актом</span>
 														</button>
 													)}
 
-													<button
-														type="button"
-														onClick={() => {
-															setSelectedStageForInstallment(stage);
-															setIsInstallmentModalOpen(true);
-														}}
-														className="stage-action-btn secondary text-xs"
-														title="Оформить беспроцентную банковскую рассрочку на этап (Сбер / Т-Банк / Подели)"
-														data-testid={`stage-installment-btn-${stage.id}`}
-													>
-														<CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-														<span>Рассрочка</span>
-													</button>
+													{/* Secondary Actions Context Menu (Miller's Law: <=2 buttons on card face) */}
+													<div className="relative">
+														<button
+															type="button"
+															onClick={() => setActiveStageMenuId(activeStageMenuId === stage.id ? null : stage.id)}
+															className="stage-action-btn secondary p-1.5 h-8 w-8 min-w-[32px] flex items-center justify-center cursor-pointer rounded-lg border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-800 transition-colors"
+															title="Дополнительные действия этапа"
+															aria-label="Дополнительные действия этапа"
+															aria-expanded={activeStageMenuId === stage.id}
+															data-testid={`stage-actions-menu-btn-${stage.id}`}
+														>
+															<MoreVertical className="h-4 w-4 text-[var(--muted,#64748b)]" />
+														</button>
 
-													<button
-														type="button"
-														onClick={() => {
-															setSelectedStageForFiscalId(stage.id);
-															setActiveTab("fiscal54fz");
-														}}
-														className="stage-action-btn secondary text-xs"
-													>
-														<QrCode className="h-3.5 w-3.5" />
-														<span>54-ФЗ Чек</span>
-													</button>
+														{activeStageMenuId === stage.id && (
+															<div
+																className="absolute right-0 top-full mt-1 w-64 rounded-xl bg-[var(--paper-strong,#ffffff)] dark:bg-slate-900 border border-[var(--border,#cbd5e1)] dark:border-slate-700 shadow-xl z-30 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-100"
+																role="menu"
+															>
+																{stage.status === "draft" && (
+																	<button
+																		type="button"
+																		onClick={() => {
+																			handleStageStatusChange(stage.id, "in_progress");
+																			setActiveStageMenuId(null);
+																		}}
+																		className="w-full px-3 py-2 text-left hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer text-[var(--ink,#0f172a)] dark:text-slate-200"
+																		title="Начать оказание услуг на этапе без обязательного аванса (доверие, гарантия, экстренный приём)"
+																		data-testid={`stage-start-no-advance-btn-${stage.id}`}
+																		role="menuitem"
+																	>
+																		<CheckCircle2 className="h-4 w-4 text-[var(--ok,#10b981)] shrink-0" />
+																		<span>Взять в работу без аванса</span>
+																	</button>
+																)}
+
+																{stage.status === "advance_paid" && (
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setSelectedStageForActId(stage.id);
+																			setActiveTab("act");
+																			setActiveStageMenuId(null);
+																		}}
+																		className="w-full px-3 py-2 text-left hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer text-[var(--ink,#0f172a)] dark:text-slate-200"
+																		role="menuitem"
+																	>
+																		<FileCheck className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+																		<span>Закрыть актом</span>
+																	</button>
+																)}
+
+																<button
+																	type="button"
+																	onClick={() => {
+																		setSelectedStageForInstallment(stage);
+																		setIsInstallmentModalOpen(true);
+																		setActiveStageMenuId(null);
+																	}}
+																	className="w-full px-3 py-2 text-left hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer text-[var(--ink,#0f172a)] dark:text-slate-200"
+																	title="Оформить беспроцентную банковскую рассрочку на этап (Сбер / Т-Банк / Подели)"
+																	data-testid={`stage-installment-btn-${stage.id}`}
+																	role="menuitem"
+																>
+																	<CreditCard className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+																	<span>Оформить рассрочку</span>
+																</button>
+
+																<button
+																	type="button"
+																	onClick={() => {
+																		setSelectedStageForFiscalId(stage.id);
+																		setActiveTab("fiscal54fz");
+																		setActiveStageMenuId(null);
+																	}}
+																	className="w-full px-3 py-2 text-left hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer text-[var(--ink,#0f172a)] dark:text-slate-200"
+																	data-testid={`stage-fiscal-btn-${stage.id}`}
+																	role="menuitem"
+																>
+																	<QrCode className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+																	<span>54-ФЗ Чек</span>
+																</button>
+															</div>
+														)}
+													</div>
 												</div>
 											</div>
 										</div>

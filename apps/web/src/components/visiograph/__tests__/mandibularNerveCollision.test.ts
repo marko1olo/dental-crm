@@ -13,7 +13,7 @@ import {
 	MANDIBULAR_NERVE_DANGER_THRESHOLD_MM,
 	type NerveCanal,
 	type VirtualImplant,
-} from "../../../utils/dicom/clinicalImplants";
+} from "../../../utils/dicom/clinicalImplants.js";
 
 describe("Mandibular Nerve Collision & Safety Guard (< 2.0 mm)", () => {
 	test("MANDIBULAR_NERVE_DANGER_THRESHOLD_MM is exactly 2.0 mm", () => {

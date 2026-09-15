@@ -497,16 +497,6 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 
 						<button
 							type="button"
-							className="plan-action-btn-secondary"
-							onClick={handlePrintBrochure}
-							title="Печать брошюры / договора"
-						>
-							<Printer size={14} />
-							<span>Печать брошюры</span>
-						</button>
-
-						<button
-							type="button"
 							className="plan-action-btn-primary"
 							onClick={handleConfirmChoice}
 							data-testid="confirm-plan-choice-btn"

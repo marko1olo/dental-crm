@@ -1231,7 +1231,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40"
 												: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
 									}`}
-									title="Фискальный баланс по 54-ФЗ. Нажмите для перехода в кассу"
+									title="Баланс пациента (перейти в кассу)"
 									data-testid="patient-quick-balance-btn"
 								>
 									<Receipt size={12} className="shrink-0" />
@@ -1254,7 +1254,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											showToast(`Переход в расписание на приём: ${selectedPatient.fullName}`, "info");
 										}}
 										className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
-										title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Нажмите для перехода в расписание`}
+										title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
 										data-testid="patient-quick-next-appointment-btn"
 									>
 										<Clock size={12} className="shrink-0" />
@@ -1267,7 +1267,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										type="button"
 										onClick={() => executeBookPatientAppointmentAutonomy({ selectedPatient })}
 										className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
-										title="Записать пациента в расписание"
+										title="Записать на приём"
 										data-testid="patient-quick-book-appointment-btn"
 									>
 										<Calendar size={12} className="shrink-0" />
