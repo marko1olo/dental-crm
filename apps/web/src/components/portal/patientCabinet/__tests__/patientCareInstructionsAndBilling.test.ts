@@ -206,7 +206,7 @@ describe("Patient Care Instructions & Friendly Billing Engine", () => {
 			const t1 = translateMedicalTermToFriendly("Инфильтрационная анестезия Septanest 1:100000", "16");
 			assert.equal(t1.categoryGroup, "anesthesia");
 			assert.ok(t1.friendlyName.includes("Обезболивание (анестезия)"));
-			assert.equal(t1.groupIcon, "💉");
+			assert.equal(t1.groupIcon, "Syringe");
 
 			const t2 = translateMedicalTermToFriendly("Радиовизиография прицельная зуба A06.07.001", "16");
 			assert.equal(t2.categoryGroup, "xray");

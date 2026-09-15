@@ -16,6 +16,7 @@ import {
 	AlertCircle,
 	AlertTriangle,
 	Award,
+	Building2,
 	Calendar,
 	CalendarPlus,
 	Check,
@@ -1672,15 +1673,26 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										Как получить возврат 13% от государства:
 									</strong>
 									<div className="pc-tax-steps-grid">
-										{taxDeductionCalc.guideSteps.map((step) => (
-											<div key={step.stepNumber} className="pc-tax-step-card" data-testid={`tax-step-${step.stepNumber}`}>
-												<div className="pc-tax-step-title">
-													<span>{step.icon}</span>
-													<span>{step.titleRu}</span>
+										{taxDeductionCalc.guideSteps.map((step) => {
+											const StepVectorIcon =
+												step.icon === "Building2"
+													? Building2
+													: step.icon === "CreditCard"
+														? CreditCard
+														: FileText;
+
+											return (
+												<div key={step.stepNumber} className="pc-tax-step-card" data-testid={`tax-step-${step.stepNumber}`}>
+													<div className="pc-tax-step-title">
+														<span className="flex items-center justify-center flex-shrink-0" style={{ color: "var(--pc-primary)" }}>
+															<StepVectorIcon size={18} />
+														</span>
+														<span>{step.titleRu}</span>
+													</div>
+													<p className="pc-tax-step-desc">{step.descriptionRu}</p>
 												</div>
-												<p className="pc-tax-step-desc">{step.descriptionRu}</p>
-											</div>
-										))}
+											);
+										})}
 									</div>
 								</div>
 							</div>

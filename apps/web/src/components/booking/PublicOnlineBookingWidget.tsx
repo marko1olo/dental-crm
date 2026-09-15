@@ -771,6 +771,18 @@ export const PublicOnlineBookingWidget: React.FC<
 	const [selectedBranchId, setSelectedBranchId] = useState<string>(
 		initialBranchId || customBranches[0]?.id || "branch-central",
 	);
+
+	// Auto-select single branch if branches.length <= 1 (Mandate 8n & 8k: Solo doctor & small clinic friction killer)
+	useEffect(() => {
+		if (
+			customBranches.length <= 1 &&
+			customBranches[0]?.id &&
+			selectedBranchId !== customBranches[0].id
+		) {
+			setSelectedBranchId(customBranches[0].id);
+		}
+	}, [customBranches, selectedBranchId]);
+
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
 		initialCategoryId || customCategories[0]?.id || "therapy",
 	);
@@ -1514,37 +1526,54 @@ export const PublicOnlineBookingWidget: React.FC<
 				{/* ================================================================ */}
 				{step === 1 && (
 					<section aria-labelledby="step1-heading">
-						{/* Branch selection */}
-						<h3 id="step1-heading" className="dbw-section-heading">
-							<MapPin size={20} /> Выберите филиал клиники
-						</h3>
-						<div className="dbw-branches-grid">
-							{customBranches.map((branch) => (
-								<button
-									type="button"
-									key={branch.id}
-									className={`dbw-branch-card ${selectedBranchId === branch.id ? "selected" : ""}`}
-									onClick={() => setSelectedBranchId(branch.id)}
-								>
-									<div className="dbw-branch-name min-w-0 break-words">
-										<span>{branch.name}</span>
-										{selectedBranchId === branch.id && (
-											<CheckCircle2 size={18} className="text-teal-600 dark:text-teal-400 flex-shrink-0 ml-2" />
-										)}
-									</div>
-									<div className="dbw-branch-address min-w-0 break-words">
-										<MapPin size={14} className="flex-shrink-0" />
-										<span>{branch.address}</span>
-									</div>
-									<div className="dbw-branch-hours min-w-0 break-words">
-										{branch.workHours}
-									</div>
-								</button>
-							))}
-						</div>
+						{/* Branch selection: only rendered if multiple branches exist (Mandate 8n: Solo doctor & small clinic friction killer) */}
+						{customBranches.length > 1 && (
+							<>
+								<h3 id="step1-heading" className="dbw-section-heading">
+									<MapPin size={20} /> Выберите филиал клиники
+								</h3>
+								<div className="dbw-branches-grid">
+									{customBranches.map((branch) => (
+										<button
+											type="button"
+											key={branch.id}
+											className={`dbw-branch-card ${selectedBranchId === branch.id ? "selected" : ""}`}
+											onClick={() => setSelectedBranchId(branch.id)}
+										>
+											<div className="dbw-branch-name min-w-0 break-words">
+												<span>{branch.name}</span>
+												{selectedBranchId === branch.id && (
+													<CheckCircle2 size={18} className="text-teal-600 dark:text-teal-400 flex-shrink-0 ml-2" />
+												)}
+											</div>
+											<div className="dbw-branch-address min-w-0 break-words">
+												<MapPin size={14} className="flex-shrink-0" />
+												<span>{branch.address}</span>
+											</div>
+											<div className="dbw-branch-hours min-w-0 break-words">
+												{branch.workHours}
+											</div>
+										</button>
+									))}
+								</div>
+							</>
+						)}
+
+						{/* For solo doctor / single branch: show selected branch name as clean info badge without selection grid friction */}
+						{customBranches.length === 1 && customBranches[0] && (
+							<div className="dbw-single-branch-info text-xs text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-1.5 flex-wrap">
+								<MapPin size={14} className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
+								<span className="font-semibold text-slate-700 dark:text-slate-300">{customBranches[0].name}</span>
+								<span className="text-slate-400">•</span>
+								<span>{customBranches[0].address}</span>
+							</div>
+						)}
 
 						{/* Service Category selection */}
-						<h3 className="dbw-section-heading">
+						<h3
+							{...(customBranches.length <= 1 ? { id: "step1-heading" } : {})}
+							className="dbw-section-heading"
+						>
 							<Stethoscope size={20} /> Направление стоматологии
 						</h3>
 						<p className="dbw-section-subheading">
@@ -1606,7 +1635,7 @@ export const PublicOnlineBookingWidget: React.FC<
 
 						<footer className="dbw-actions-footer">
 							<div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-								Шаг 1 из 4: Выбор филиала и услуги
+								Шаг 1 из 4: {customBranches.length > 1 ? "Выбор филиала и услуги" : "Выбор услуги"}
 							</div>
 							<button
 								type="button"

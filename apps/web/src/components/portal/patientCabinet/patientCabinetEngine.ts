@@ -1252,21 +1252,21 @@ export function calculatePatientTaxDeduction(
 	const guideSteps: readonly TaxDeductionGuideStep[] = [
 		{
 			stepNumber: 1,
-			titleRu: "1. Скачайте готовую справку у нас",
+			titleRu: "Шаг 1: Скачайте готовую справку у нас",
 			descriptionRu: "Официальная справка по форме КНД 1151156 с реквизитами медицинской лицензии и печатью формируется мгновенно в 1 клик.",
-			icon: "📑",
+			icon: "FileText",
 		},
 		{
 			stepNumber: 2,
-			titleRu: "2. Прикрепите в ЛК nalog.ru",
+			titleRu: "Шаг 2: Прикрепите в ЛК nalog.ru",
 			descriptionRu: "Загрузите файл справки в Личном кабинете налогоплательщика (или Госуслугах) по упрощенной схеме без заполнения 3-НДФЛ.",
-			icon: "🏛️",
+			icon: "Building2",
 		},
 		{
 			stepNumber: 3,
-			titleRu: "3. Получите деньги на карту",
+			titleRu: "Шаг 3: Получите деньги на карту",
 			descriptionRu: "ФНС проверит электронную справку за 15–30 дней и перечислит 13% напрямую на ваш банковский счёт.",
-			icon: "💳",
+			icon: "CreditCard",
 		},
 	];
 

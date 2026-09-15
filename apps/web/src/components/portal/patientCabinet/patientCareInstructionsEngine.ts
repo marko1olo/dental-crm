@@ -117,7 +117,7 @@ export interface FriendlyBillingItem {
 	readonly friendlyName: string;
 	readonly categoryGroup: FriendlyBillingCategory;
 	readonly categoryGroupRu: string; // «Лечение кариеса», «Обезболивание», «Снимок»
-	readonly groupIcon: string; // "🦷", "💉", "📷", etc.
+	readonly groupIcon: string; // "Syringe", "Camera", "Activity", "Sparkles", "Shield", "Crown", "Ruler", "FileText"
 	readonly plainDescriptionRu: string;
 	readonly toothNumber?: string | number | null | undefined;
 	readonly quantity: number;
@@ -1459,7 +1459,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: "Обезболивание (анестезия)",
 			categoryGroup: "anesthesia",
 			categoryGroupRu: "Обезболивание (анестезия)",
-			groupIcon: "💉",
+			groupIcon: "Syringe",
 			plainDescriptionRu:
 				"Современное мягкое обезболивание для полной безболезненности и комфорта во время лечения",
 		};
@@ -1482,7 +1482,7 @@ export function translateMedicalTermToFriendly(
 				: "Снимок зуба (радиовизиография)",
 			categoryGroup: "xray",
 			categoryGroupRu: "Снимки и диагностика",
-			groupIcon: "📷",
+			groupIcon: "Camera",
 			plainDescriptionRu:
 				"Цифровой высокоточный снимок с минимальной лучевой нагрузкой для контроля корней и скрытых полостей",
 		};
@@ -1504,7 +1504,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: "Лечение кариеса и световая пломба",
 			categoryGroup: "caries",
 			categoryGroupRu: "Лечение кариеса и пломбирование",
-			groupIcon: "🦷",
+			groupIcon: "Activity",
 			plainDescriptionRu:
 				"Бережное очищение зуба от кариеса и установка высокоэстетичной светоотверждаемой нанокомпозитной пломбы точно в цвет эмали",
 		};
@@ -1526,7 +1526,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: "Комплексная профессиональная чистка (Air-Flow + УЗ)",
 			categoryGroup: "hygiene",
 			categoryGroupRu: "Профессиональная чистка и гигиена",
-			groupIcon: "🪥",
+			groupIcon: "Sparkles",
 			plainDescriptionRu:
 				"Удаление твердого зубного камня ультразвуком, снятие пигментного налета Air-Flow и укрепление эмали минеральным комплексом",
 		};
@@ -1544,7 +1544,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: "Установка дентального имплантата",
 			categoryGroup: "implant",
 			categoryGroupRu: "Дентальная имплантация",
-			groupIcon: "🔩",
+			groupIcon: "Shield",
 			plainDescriptionRu:
 				"Установка премиального биосовместимого титанового имплантата с пожизненной гарантией производителя",
 		};
@@ -1566,7 +1566,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: "Ортопедическая коронка/реставрация",
 			categoryGroup: "crowns",
 			categoryGroupRu: "Коронки и реставрации",
-			groupIcon: "👑",
+			groupIcon: "Crown",
 			plainDescriptionRu:
 				"Изготовление и постоянная фиксация анатомической керамической коронки для полного восстановления жевательной функции",
 		};
@@ -1586,7 +1586,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: "Бережное хирургическое вмешательство",
 			categoryGroup: "surgery",
 			categoryGroupRu: "Хирургическое лечение",
-			groupIcon: "🩹",
+			groupIcon: "Activity",
 			plainDescriptionRu:
 				"Атравматичное удаление или костная пластика с сохранением объема костной ткани",
 		};
@@ -1603,7 +1603,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: "Ортодонтическая коррекция прикуса",
 			categoryGroup: "ortho",
 			categoryGroupRu: "Исправление прикуса (ортодонтия)",
-			groupIcon: "📐",
+			groupIcon: "Ruler",
 			plainDescriptionRu:
 				"Плановая активация ортодонтической аппаратуры для создания ровной красивой улыбки",
 		};
@@ -1614,7 +1614,7 @@ export function translateMedicalTermToFriendly(
 		friendlyName: cleanToothNumberFromName(rawName),
 		categoryGroup: "other",
 		categoryGroupRu: "Стоматологические процедуры",
-		groupIcon: "✨",
+		groupIcon: "FileText",
 		plainDescriptionRu: "Медицинская услуга по индивидуальному клиническому протоколу",
 	};
 }
@@ -1755,7 +1755,7 @@ export function generateFriendlyBillingWhatsAppMessage(
 	clinicPhone: string = "+7 (495) 789-01-23",
 ): string {
 	const lines: string[] = [
-		`Здравствуйте, уважаемый(ая) ${patientName}! 👋`,
+		`Здравствуйте, уважаемый(ая) ${patientName}!`,
 		"",
 		`Детализация вашего счета в клинике ${clinicName}:`,
 		`Итого к оплате: *${breakdown.totalAmountRubFormatted}*`,
@@ -1765,7 +1765,7 @@ export function generateFriendlyBillingWhatsAppMessage(
 
 	for (const grp of breakdown.groups) {
 		lines.push("");
-		lines.push(`${grp.groupIcon} *${grp.categoryGroupRu}* — ${grp.subtotalRub.toLocaleString("ru-RU")} ₽ (${grp.percentageOfTotal}%)`);
+		lines.push(`• *${grp.categoryGroupRu}* — ${grp.subtotalRub.toLocaleString("ru-RU")} ₽ (${grp.percentageOfTotal}%)`);
 		for (const it of grp.items) {
 			const toothStr = it.toothNumber ? ` [Зуб №${it.toothNumber}]` : "";
 			lines.push(`  • ${it.friendlyName}${toothStr}: ${it.totalRub.toLocaleString("ru-RU")} ₽`);
@@ -1773,8 +1773,8 @@ export function generateFriendlyBillingWhatsAppMessage(
 	}
 
 	lines.push("");
-	lines.push(`📞 По любым вопросам звоните: ${clinicPhone}`);
-	lines.push("Спасибо за доверие к нашей клинике! ✨");
+	lines.push(`По любым вопросам звоните: ${clinicPhone}`);
+	lines.push("Спасибо за доверие к нашей клинике!");
 
 	return lines.join("\n");
 }

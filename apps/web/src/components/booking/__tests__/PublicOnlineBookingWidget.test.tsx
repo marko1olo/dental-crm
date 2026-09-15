@@ -82,6 +82,41 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		);
 	});
 
+	it("skips branch selection UI and proceeds straight to service selection when customBranches has <= 1 branch (Mandate 8n & 8k Solo Doctor)", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				initialStep: 1,
+				customBranches: [DEFAULT_BRANCHES[0]!],
+			}),
+		);
+
+		// Branch selection heading and cards must NOT be displayed
+		assert.equal(
+			html.includes("Выберите филиал клиники"),
+			false,
+			"Does not display branch selection heading for solo doctor",
+		);
+		assert.equal(
+			html.includes("dbw-branches-grid"),
+			false,
+			"Does not display branches grid for solo doctor",
+		);
+
+		// Service category and services must be immediately available
+		assert.ok(
+			html.includes("Направление стоматологии"),
+			"Immediately displays service category selection",
+		);
+		assert.ok(
+			html.includes("Терапия"),
+			"Displays service categories",
+		);
+		assert.ok(
+			html.includes("Шаг 1 из 4: Выбор услуги"),
+			"Displays streamlined step 1 label without branch selection friction",
+		);
+	});
+
 	it("renders Step 2: Attending Doctor Selection with rating, experience, and photo/avatar", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
