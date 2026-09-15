@@ -539,13 +539,26 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						<span className="sm:hidden">Оплаты</span>
 						<span className="hidden sm:inline">Оплаты и план</span>
 					</span>
-					<span className="text-xs text-[var(--muted)] min-w-0 flex-1 truncate" title={documentPatient?.fullName ?? "пациент не выбран"}>
-						· {documentPatient?.fullName ?? "пациент не выбран"}
+					<span className="text-[11px] sm:text-xs text-[var(--ink)] sm:text-[var(--muted)] min-w-0 flex-1 truncate font-semibold sm:font-normal" title={documentPatient?.fullName ?? "пациент не выбран"}>
+						·{" "}
+						<span className="sm:hidden tracking-tight">
+							{(() => {
+								const name = documentPatient?.fullName ?? "пациент не выбран";
+								if (!documentPatient?.fullName) return name;
+								const parts = name.trim().split(/\s+/);
+								if (parts.length >= 2) {
+									const initials = parts.slice(1).map((p: string) => (p[0] ? `${p[0]}.` : "")).filter(Boolean).join(" ");
+									return `${parts[0]} ${initials}`.trim();
+								}
+								return name;
+							})()}
+						</span>
+						<span className="hidden sm:inline">{documentPatient?.fullName ?? "пациент не выбран"}</span>
 					</span>
 					<button
 						type="button"
 						onClick={() => setIsCashShiftOpen((prev) => !prev)}
-						className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none ${
+						className={`inline-flex items-center gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none ${
 							isCashShiftOpen
 								? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
 								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,rgba(0,0,0,0.15))]"
@@ -559,7 +572,8 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 								isShiftOpen ? "bg-emerald-500" : "bg-rose-500"
 							}`}
 						/>
-						<span>ККТ 54-ФЗ</span>
+						<span className="sm:hidden">ККТ</span>
+						<span className="hidden sm:inline">ККТ 54-ФЗ</span>
 					</button>
 				</div>
 				<div className="finance-header-actions flex items-center gap-1.5 shrink-0 flex-nowrap">

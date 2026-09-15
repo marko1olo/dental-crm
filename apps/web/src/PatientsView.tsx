@@ -688,9 +688,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	}, [selectedPatient?.id, props?.dashboard?.appointments]);
 
 	return (
-		<div className="patients-panel" id="patients">
+		<div
+			className="patients-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-0 max-md:!rounded-none max-md:min-h-screen max-md:h-full max-md:flex-1"
+			id="patients"
+		>
 			{/* Clean Single-Tier Toolbar Header */}
-			<header className="patients-header">
+			<header className="patients-header max-md:!rounded-none max-md:!border-x-0 max-md:!border-t-0 max-md:!shadow-none max-md:!bg-[var(--paper)] max-md:px-3">
 				<div className="patients-search-box">
 					<Search aria-hidden="true" className="search-icon" />
 					<input
@@ -750,10 +753,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 			{/* Main Patient Grid (Master-Detail) positioned directly below header */}
 			<div
-				className={`patients-main-grid mt-4 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"}`}
+				className={`patients-main-grid mt-4 max-md:mt-2 max-md:px-2 max-md:pb-6 max-md:flex-1 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"}`}
 			>
 				{/* Left Column: Patient List */}
-				<div className="patient-list">
+				<div className="patient-list max-md:gap-2 max-md:flex-1 max-md:h-full">
 					{(displayPatients ?? []).map((patient) => {
 						const insight = patientInsightById?.get(patient.id);
 						const patientIsSelected = selectedPatient?.id === patient.id;
@@ -1049,7 +1052,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 				{/* Right Column: Selected Patient Details & Widgets */}
 				<section
-					className="patient-admin-panel"
+					className="patient-admin-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-2 max-md:!rounded-none"
 					aria-label="Карточка активного пациента"
 				>
 					{/* Mobile back to list navigation header */}

@@ -1335,21 +1335,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					aria-label="Шапка текущего приёма"
 				>
 					{/* Строка 1 (высота ~30-32px): Пациент, возраст, телефон, бейдж аллергии, кнопка нормы 043/у, статус и завершить приём */}
-					<div className="min-h-[36px] sm:min-h-[30px] sm:h-8 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
-						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-							<PatientAvatar fullName={activePatient.fullName} size={26} />
-							<span className="truncate min-w-0 text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName}>
-								<span className="sm:hidden">
+					<div className="min-h-[36px] sm:min-h-[30px] sm:h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
+						<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
+							<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px]" />
+							<span className="truncate min-w-0 sm:max-w-none text-xs sm:text-sm font-bold text-[var(--ink)] shrink" title={activePatient.fullName || activePatient.name}>
+								<span className="sm:hidden text-[11px] leading-tight font-semibold">
 									{(() => {
-										const parts = (activePatient.fullName || "").trim().split(/\s+/);
+										const fullName = activePatient.fullName || activePatient.name || "";
+										const parts = fullName.trim().split(/\s+/);
 										if (parts.length >= 2) {
-											const initials = parts.slice(1).map((p) => (p[0] ? `${p[0]}.` : "")).join(" ");
+											const initials = parts.slice(1).map((p: string) => (p[0] ? `${p[0]}.` : "")).filter(Boolean).join(" ");
 											return `${parts[0]} ${initials}`.trim();
 										}
-										return activePatient.fullName;
+										return fullName;
 									})()}
 								</span>
-								<span className="hidden sm:inline">{activePatient.fullName}</span>
+								<span className="hidden sm:inline">{activePatient.fullName || activePatient.name}</span>
 							</span>
 							{patientAge && (
 								<span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">
@@ -1361,7 +1362,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									· {activePatient.phone}
 								</span>
 							)}
-							<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
+							<span className="hidden sm:inline-flex shrink-0">
+								<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
+							</span>
 							{/* Бейдж аллергии (ровно 1 раз во всей шапке!) */}
 							{activePatientAllergyText && (
 								<span
@@ -1382,7 +1385,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button min-h-[30px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+								className="secondary-button min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-1 sm:py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
@@ -1426,7 +1429,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[30px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
+								className="primary-button min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-1 sm:py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
 								title="Завершить приём и сохранить все изменения"
 							>
 								<CheckCircle2 size={14} className="shrink-0" />
@@ -1440,7 +1443,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button min-h-[30px] min-w-[30px] sm:min-w-0 sm:min-h-0 sm:h-7 px-1.5 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+									className="secondary-button min-h-[28px] min-w-[28px] sm:min-w-0 sm:min-h-0 sm:h-7 px-1 sm:px-2 py-1 sm:py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 									title="Дополнительные действия и бланки приема"
 									aria-label="Дополнительные действия приема"
 									aria-expanded={isHeaderMoreMenuOpen}
@@ -1562,10 +1565,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 
 					{/* Строка 2 (высота ~30-32px): Компактные табы разделов визита (DEF-VIS-02) */}
-					<div className="min-h-[36px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
+					<div className="relative min-h-[36px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
 						<VisitMainTabs
 							visitSubViewTab={visitSubViewTab}
 							setVisitSubViewTab={setVisitSubViewTab}
+						/>
+						{/* Градиентный индикатор горизонтального скролла на мобильных (защита от резкого среза вкладок [Рентген]/[Согласия]) */}
+						<div
+							className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--paper)] to-transparent sm:hidden"
+							aria-hidden="true"
 						/>
 					</div>
 				</header>

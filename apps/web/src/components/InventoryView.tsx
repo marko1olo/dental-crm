@@ -1004,6 +1004,43 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				</div>
 			</div>
 
+			{/* Mobile Metrics Grid (Mandates 8c, 8d, 8p, 8n) */}
+			{activeSubTab === "inventory" && (
+				<div
+					className="md:hidden grid grid-cols-2 gap-2 p-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] shrink-0"
+					data-testid="warehouse-mobile-metrics-grid"
+				>
+					<div className="flex flex-col p-2 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg">
+						<span className="text-[10px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+							Позиций
+						</span>
+						<span className="text-sm font-bold text-[var(--ink,#0f172a)]">{totalItems}</span>
+					</div>
+					<div className="flex flex-col p-2 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg">
+						<span className="text-[10px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+							В дефиците
+						</span>
+						<span
+							className={`text-sm font-bold ${
+								lowStockCount > 0
+									? "text-rose-600 dark:text-rose-400"
+									: "text-teal-600 dark:text-teal-400"
+							}`}
+						>
+							{lowStockCount}
+						</span>
+					</div>
+					<div className="col-span-2 sm:col-span-1 flex flex-col p-2 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg">
+						<span className="text-[10px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+							Стоимость склада
+						</span>
+						<span className="text-sm font-bold text-teal-600 dark:text-teal-400">
+							{totalValue > 0 ? money(totalValue) : "0 ₽"}
+						</span>
+					</div>
+				</div>
+			)}
+
 			{/* Accordion 1-Click Clinical Packages Write-Off Bar (Mandates 8e, 8k, 8n) */}
 			{activeSubTab === "inventory" && isQuickPackagesOpen && (
 				<div

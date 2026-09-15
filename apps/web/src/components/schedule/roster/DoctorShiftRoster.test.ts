@@ -19,8 +19,10 @@ import {
 	timeStringToMinutes,
 } from "./doctorShiftRosterEngine";
 import {
+	ANNUAL_NORM_TOTALS_2026,
 	CLINIC_CABINETS_CATALOG,
 	DEFAULT_CLINIC_STAFF,
+	MEDICAL_STAFF_ROLES,
 	RUSSIAN_PRODUCTION_CALENDAR_2026,
 	SHIFT_ARCHETYPES,
 	type StaffMember,
@@ -95,6 +97,54 @@ describe("DoctorShiftRoster — Time & Shift Duration Arithmetic", () => {
 	it("computes ISO week keys correctly", () => {
 		assert.equal(getIsoWeekKey("2026-08-24"), "2026-W35");
 		assert.equal(getIsoWeekKey("2026-01-01"), "2026-W01");
+	});
+});
+
+describe("DoctorShiftRoster — Statutory Production Calendar & Shift Archetypes", () => {
+	it("verifies 2026 Russian Production Calendar month norms for 33h medical week (ТК РФ ст. 350)", () => {
+		for (let m = 1; m <= 12; m++) {
+			const monthNorm = RUSSIAN_PRODUCTION_CALENDAR_2026[m];
+			assert.ok(monthNorm, `Month ${m} must exist in 2026 production calendar`);
+			assert.ok(monthNorm.normHours33 > 0);
+			assert.ok(monthNorm.workingDays > 0);
+		}
+
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[1]!.normHours33, 99.0);
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[2]!.normHours33, 124.4);
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[3]!.normHours33, 138.6);
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[4]!.normHours33, 144.2);
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[5]!.normHours33, 124.4);
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[7]!.normHours33, 151.8);
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[8]!.normHours33, 138.6);
+		assert.equal(RUSSIAN_PRODUCTION_CALENDAR_2026[11]!.normHours33, 131.0);
+
+		assert.equal(ANNUAL_NORM_TOTALS_2026.totalWorkDays, 247);
+		assert.equal(ANNUAL_NORM_TOTALS_2026.totalPreHolidayDays, 6);
+		assert.equal(ANNUAL_NORM_TOTALS_2026.totalNormHours33, 1624.2);
+	});
+
+	it("verifies shift archetypes, staff roles, and clinic cabinets catalog", () => {
+		assert.equal(SHIFT_ARCHETYPES.morning_shift.durationHours, 6.0);
+		assert.equal(SHIFT_ARCHETYPES.morning_shift.startTime, "08:30");
+		assert.equal(SHIFT_ARCHETYPES.morning_shift.endTime, "14:30");
+		assert.equal(SHIFT_ARCHETYPES.morning_shift.t13Code, "Я");
+
+		assert.equal(SHIFT_ARCHETYPES.evening_shift.durationHours, 6.0);
+		assert.equal(SHIFT_ARCHETYPES.saturday_shift.durationHours, 7.0);
+		assert.equal(SHIFT_ARCHETYPES.sunday_duty.durationHours, 6.0);
+		assert.equal(SHIFT_ARCHETYPES.night_duty.durationHours, 12.0);
+		assert.equal(SHIFT_ARCHETYPES.night_duty.nightHours, 8.0);
+		assert.equal(SHIFT_ARCHETYPES.night_duty.t13Code, "Н");
+		assert.equal(SHIFT_ARCHETYPES.sick_leave.t13Code, "Б");
+		assert.equal(SHIFT_ARCHETYPES.vacation.t13Code, "ОТ");
+
+		assert.equal(MEDICAL_STAFF_ROLES.therapist.standardWeeklyHours, 33);
+		assert.equal(MEDICAL_STAFF_ROLES.surgeon.standardWeeklyHours, 33);
+		assert.equal(MEDICAL_STAFF_ROLES.surgeon.requiresAssistant, true);
+		assert.equal(MEDICAL_STAFF_ROLES.assistant.isAssistant, true);
+
+		assert.equal(CLINIC_CABINETS_CATALOG.length, 4);
+		assert.equal(CLINIC_CABINETS_CATALOG[0]!.chairs.length, 2);
 	});
 });
 

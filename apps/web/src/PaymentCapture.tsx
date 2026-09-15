@@ -1269,7 +1269,7 @@ export function PaymentCapture({
 								value={amount}
 								onChange={(event) => onAmountChange(event.target.value)}
 								placeholder="0 ₽"
-								className="w-full h-8 sm:h-8 px-2.5 text-sm font-bold font-mono rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal)]/20 outline-none transition-all"
+								className="w-full h-8 sm:h-8 px-2.5 text-sm font-bold font-mono rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] dark:bg-[var(--paper-strong)] dark:border-[var(--glass-border)] text-[var(--ink)] focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal)]/20 outline-none transition-all"
 							/>
 							{amount ? (
 								<button

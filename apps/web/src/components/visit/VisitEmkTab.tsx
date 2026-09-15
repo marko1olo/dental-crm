@@ -1605,7 +1605,7 @@ export function VisitEmkTab() {
 			<div className="emk-unified-toolbar flex flex-col gap-1.5 my-1 py-1 border-b border-[var(--line)] min-w-0 max-w-full">
 				{/* РЯД 1: Вкладки 6 секций ЭМК — гарантированно ВСЕ 6 вкладок без сжатия («Все поля», «Жалобы», «Анамнез», «Объективно», «Диагноз», «Лечение») + Статус сохранения в едином скролл-ряду без переноса на новую строку */}
 				<div
-					className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 w-full flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 border-b-0 touch-pan-x"
+					className="emk-tabs-container flex items-center gap-1 sm:gap-1.5 min-w-0 w-full flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 pr-4 border-b-0 touch-pan-x"
 					role="tablist"
 					aria-label="Вкладки протокола приема"
 				>
@@ -1661,7 +1661,7 @@ export function VisitEmkTab() {
 
 				{/* РЯД 2: 1-Клик Экспресс-Бар SOAP по Приказам Минздрава РФ (вынесен в отдельный ряд без выдавливания табов) */}
 				<div
-					className="emk-tier1-quick-soap-bar flex items-center gap-1 sm:gap-1.5 shrink-0 flex-nowrap min-w-0 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-[var(--line)] py-1 justify-start touch-pan-x"
+					className="emk-tier1-quick-soap-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none pr-4 shrink-0 flex-nowrap min-w-0 py-1 justify-start touch-pan-x"
 					data-testid="emk-tier1-quick-soap-bar"
 				>
 					<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-0.5">
@@ -1675,7 +1675,10 @@ export function VisitEmkTab() {
 						title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Норма (Здоров)</span>
+						<span className="whitespace-nowrap shrink-0">
+							<span className="sm:hidden">Норма</span>
+							<span className="hidden sm:inline">Норма (Здоров)</span>
+						</span>
 					</button>
 					<button
 						type="button"
@@ -1770,7 +1773,7 @@ export function VisitEmkTab() {
 						</span>
 					</div>
 				</summary>
-				<div className="pt-2">
+				<div className="pt-2 pr-4">
 					<ClinicalQuickPresetsBar
 						activeTooth={activeSelectedTooth}
 						onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}

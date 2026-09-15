@@ -31,7 +31,7 @@ import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import { countLabel } from "../../lib/russianPlural";
-import { formatShortDate, formatTime } from "../../utils/formatting";
+import { formatShortDate, formatTime } from "../../utils/dateTimeUtils";
 import { CallPlayer } from "../communications/CallPlayer";
 
 type CommunicationDirection = "inbound" | "outbound";

@@ -12537,7 +12537,7 @@ html.dark .payment-capture h3,
 }
 
 .payment-capture-safeguard {
-	color: #5d7470;
+	color: var(--muted, #5d7470);
 	font-size: 11px;
 	font-weight: 700;
 	grid-column: 1 / -1;
@@ -12546,7 +12546,7 @@ html.dark .payment-capture h3,
 }
 
 .payment-capture-detail-section {
-	background: #f7fbf9;
+	background: var(--paper-soft, #f7fbf9);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	grid-column: 1 / -1;
@@ -12581,7 +12581,7 @@ html.dark .payment-capture h3,
 
 .payment-tax-defaults {
 	align-items: start;
-	background: #f7fbf9;
+	background: var(--paper-soft, #f7fbf9);
 	border: 1px solid rgba(16, 118, 103, 0.16);
 	border-radius: 8px;
 	display: grid;
@@ -12591,7 +12591,7 @@ html.dark .payment-capture h3,
 }
 
 .payment-tax-defaults small {
-	color: #5d7470;
+	color: var(--muted, #5d7470);
 	font-size: 12px;
 	font-weight: 850;
 	line-height: 1.35;
@@ -12601,6 +12601,23 @@ html.dark .payment-capture h3,
 
 .payment-tax-defaults .secondary-button {
 	justify-self: start;
+}
+
+html.dark .payment-tax-defaults,
+[data-theme="dark"] .payment-tax-defaults,
+[data-theme="night"] .payment-tax-defaults,
+.dark .payment-tax-defaults,
+body.dark-mode .payment-tax-defaults {
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+html.dark .payment-tax-defaults small,
+[data-theme="dark"] .payment-tax-defaults small,
+[data-theme="night"] .payment-tax-defaults small,
+.dark .payment-tax-defaults small,
+body.dark-mode .payment-tax-defaults small {
+	color: var(--muted, #94a3b8);
 }
 
 .payment-capture-feedback {
@@ -12683,7 +12700,7 @@ body.dark-mode .payment-capture-missing ul {
 }
 
 .payment-capture input {
-	background: #fffdf9;
+	background: var(--paper, #ffffff);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);
@@ -12691,6 +12708,41 @@ body.dark-mode .payment-capture-missing ul {
 	outline: 0;
 	padding: 0 12px;
 	width: 100%;
+}
+
+html.dark .payment-capture input,
+[data-theme="dark"] .payment-capture input,
+[data-theme="night"] .payment-capture input,
+.dark .payment-capture input,
+body.dark-mode .payment-capture input {
+	background: var(--paper-strong, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.12));
+}
+
+html.dark #payment-amount-input,
+[data-theme="dark"] #payment-amount-input,
+[data-theme="night"] #payment-amount-input,
+.dark #payment-amount-input,
+body.dark-mode #payment-amount-input {
+	background: var(--paper-strong, #1e293b) !important;
+	color: var(--ink, #f8fafc) !important;
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.12)) !important;
+}
+
+.payment-capture .smart-field input {
+	background: transparent;
+	border: none;
+}
+
+html.dark .payment-capture .smart-field input,
+[data-theme="dark"] .payment-capture .smart-field input,
+[data-theme="night"] .payment-capture .smart-field input,
+.dark .payment-capture .smart-field input,
+body.dark-mode .payment-capture .smart-field input {
+	background: transparent;
+	border: none;
+	color: var(--ink, #f8fafc);
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
@@ -12701,7 +12753,7 @@ body.dark-mode .payment-capture-missing ul {
 }
 
 .payment-methods button {
-	background: #f7fbf9;
+	background: var(--paper-soft, #f7fbf9);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--muted);
@@ -12715,6 +12767,26 @@ body.dark-mode .payment-capture-missing ul {
 	background: var(--teal-soft);
 	border-color: var(--teal);
 	color: var(--teal-dark);
+}
+
+html.dark .payment-methods button,
+[data-theme="dark"] .payment-methods button,
+[data-theme="night"] .payment-methods button,
+.dark .payment-methods button,
+body.dark-mode .payment-methods button {
+	background: var(--paper-soft, rgba(30, 41, 59, 0.7));
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+html.dark .payment-methods button.active,
+[data-theme="dark"] .payment-methods button.active,
+[data-theme="night"] .payment-methods button.active,
+.dark .payment-methods button.active,
+body.dark-mode .payment-methods button.active {
+	background: rgba(13, 148, 136, 0.25);
+	border-color: #2dd4bf;
+	color: #5eead4;
 }
 
 .plan-scenarios {
@@ -17128,6 +17200,7 @@ body.dark-mode .communication-empty-state {
 [data-theme="night"] .finance-summary-grid article,
 .dark .finance-summary-grid article,
 body.dark-mode .finance-summary-grid article,
+html.dark .payment-capture,
 [data-theme="dark"] .payment-capture,
 [data-theme="night"] .payment-capture,
 .dark .payment-capture,
@@ -17156,6 +17229,7 @@ body.dark-mode .finance-list,
 [data-theme="night"] .service-catalog-strip article,
 .dark .service-catalog-strip article,
 body.dark-mode .service-catalog-strip article,
+html.dark .payment-capture-detail-section,
 [data-theme="dark"] .payment-capture-detail-section,
 [data-theme="night"] .payment-capture-detail-section,
 .dark .payment-capture-detail-section,
