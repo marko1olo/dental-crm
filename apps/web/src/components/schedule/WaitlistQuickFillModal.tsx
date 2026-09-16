@@ -1198,10 +1198,17 @@ export function WaitlistQuickFillModal({
 															title="Предложить окно через WhatsApp"
 															data-testid={`btn-whatsapp-${patient.id}`}
 														>
-															<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-															<span>
-																{isContacted ? "Предложено ✓" : "WhatsApp"}
-															</span>
+															{isContacted ? (
+																<>
+																	<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+																	<span>Предложено</span>
+																</>
+															) : (
+																<>
+																	<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+																	<span>WhatsApp</span>
+																</>
+															)}
 														</button>
 													)}
 
@@ -1463,10 +1470,17 @@ export function WaitlistQuickFillModal({
 															title="Отправить сообщение в WhatsApp"
 															data-testid={`btn-whatsapp-list-${item.id}`}
 														>
-															<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-															<span>
-																{isContacted ? "Предложено ✓" : "WhatsApp"}
-															</span>
+															{isContacted ? (
+																<>
+																	<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+																	<span>Предложено</span>
+																</>
+															) : (
+																<>
+																	<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+																	<span>WhatsApp</span>
+																</>
+															)}
 														</button>
 													)}
 

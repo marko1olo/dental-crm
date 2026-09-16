@@ -232,7 +232,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									data-testid="header-next-appointment-badge"
 								>
 									<Clock size={10} className="shrink-0" />
-									<span>
+									<span className="truncate max-w-[170px] sm:max-w-[240px]">
 										Приём: {new Date(nextAppointment.startsAt!).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} {new Date(nextAppointment.startsAt!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
 									</span>
 								</span>

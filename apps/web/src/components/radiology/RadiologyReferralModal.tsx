@@ -11,18 +11,13 @@ import {
 	Check,
 	FileText,
 	Info,
-	Layers,
 	Printer,
-	RotateCw,
 	Scan,
-	Sparkles,
-	Target,
 	X,
 } from "lucide-react";
 import React, { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
-import { ADULT_FDI_TEETH, FDI_TOOTH_NAMES, formatRadiationDose } from "./radiologyMath";
-import { RADIOLOGY_MODALITIES } from "./types";
+import { ADULT_FDI_TEETH, formatRadiationDose } from "./radiologyMath";
 
 export interface RadiologyReferralModalProps {
 	isOpen: boolean;

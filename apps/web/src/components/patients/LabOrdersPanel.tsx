@@ -407,7 +407,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				...denteAdminSecretRequestHeaders(),
 			},
 			body: JSON.stringify({
-				clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}⚠️ РЕКЛАМАЦИЯ: ${reason}`,
+				clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}[РЕКЛАМАЦИЯ]: ${reason}`,
 			}),
 		}).then((res) => {
 			if (res.ok) {

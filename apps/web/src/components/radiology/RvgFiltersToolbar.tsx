@@ -3,12 +3,9 @@ import {
 	Activity,
 	Contrast,
 	Eye,
-	Layers,
 	RotateCcw,
 	Sliders,
 	Sparkles,
-	Sun,
-	Zap,
 } from "lucide-react";
 
 export interface RvgFilterValues {

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ChevronDown, FileText } from "lucide-react";
+import { ChevronDown, FileText, X } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { VisitSurgeryProtocolTab } from "./surgery/VisitSurgeryProtocolTab";
 import { VisitTherapyProtocolWidget } from "./therapy/VisitTherapyProtocolWidget";
@@ -191,9 +191,10 @@ export function VisitSpecialtyFocus() {
 						<button
 							type="button"
 							onClick={() => setIsProtocolDrawerOpen(false)}
-							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold cursor-pointer px-2 py-0.5 rounded"
+							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold cursor-pointer px-2 py-0.5 rounded inline-flex items-center gap-1"
 						>
-							Свернуть ✕
+							<X size={12} className="shrink-0" aria-hidden="true" />
+							<span>Свернуть</span>
 						</button>
 					</div>
 

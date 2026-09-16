@@ -530,7 +530,7 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 				aria-expanded={isOpen}
 				aria-haspopup="dialog"
 				aria-controls={isOpen ? popoverId : undefined}
-				className={`group inline-flex items-center justify-center gap-1.5 px-2.5 py-1 min-h-[32px] sm:min-h-[36px] min-w-[110px] rounded-xl text-xs font-bold border transition-all duration-150 select-none shrink-0 ${
+				className={`group inline-flex items-center justify-center gap-1.5 px-2 py-0.5 sm:py-1 min-h-[28px] rounded-lg text-xs font-bold border transition-all duration-150 select-none shrink-0 ${
 					interactive ? "cursor-pointer active:scale-98" : "cursor-default"
 				} ${themeStyles.badgeBg} ${themeStyles.badgeBorder} ${themeStyles.badgeText}`}
 				title={`${info.label} • LTV: ${formattedLtv} • Статус: ${info.shortLabel}`}

@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Calendar, Activity, Copy, Check, QrCode, Printer, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Copy, Printer, AlertTriangle } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { FastImplantPassportData } from "./implantQuickPresets";
 import "./implants.css";

@@ -16,12 +16,9 @@
 
 import {
 	Activity,
-	AlertOctagon,
 	AlertTriangle,
-	Baby,
 	Check,
 	CheckCircle2,
-	Copy,
 	FileText,
 	HeartPulse,
 	Pill,
@@ -29,9 +26,6 @@ import {
 	Save,
 	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
-	Stethoscope,
-	ZapOff,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";

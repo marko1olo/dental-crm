@@ -555,8 +555,17 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 											title="Предложить окно через WhatsApp"
 											data-testid={`waitlist-match-whatsapp-${match.entryId}`}
 										>
-											<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-											<span>{isContacted ? "Предложено ✓" : "WhatsApp"}</span>
+											{isContacted ? (
+												<>
+													<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+													<span>Предложено</span>
+												</>
+											) : (
+												<>
+													<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+													<span>WhatsApp</span>
+												</>
+											)}
 										</button>
 									)}
 

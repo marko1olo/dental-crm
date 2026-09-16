@@ -2,17 +2,11 @@ import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity,
-	ArrowRight,
 	Camera,
-	Check,
 	CheckCircle2,
-	Clock,
-	Compass,
 	Download,
 	Eye,
 	FileText,
-	Filter,
 	FlipHorizontal,
 	HardDrive,
 	Layers,
@@ -21,13 +15,10 @@ import {
 	Plus,
 	RotateCw,
 	Scan,
-	Send,
 	ShieldCheck,
 	Sparkles,
-	Sun,
 	Truck,
 	UploadCloud,
-	Wifi,
 	X,
 	Zap,
 } from "lucide-react";
@@ -45,7 +36,6 @@ import {
 import {
 	RvgFiltersToolbar,
 	DEFAULT_RVG_FILTERS,
-	type RvgFilterPreset,
 	type RvgFilterValues,
 } from "./RvgFiltersToolbar";
 import type { RadiologyStudy } from "./types";

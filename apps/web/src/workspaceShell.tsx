@@ -524,8 +524,8 @@ export function PerspectiveSwitcher() {
 		<details className="workspace-role-switcher workspace-perspective-switcher" aria-label="Клинический режим">
 			<summary title={perspectiveDescriptions[perspective]}>
 				<span className="hidden 2xl:inline">Режим</span>
-				<strong className="hidden 2xl:inline">{perspectiveLabels[perspective]}</strong>
-				<strong className="2xl:hidden">{perspectiveShortLabels[perspective] || perspectiveLabels[perspective]}</strong>
+				<strong className="hidden 2xl:inline truncate max-w-[130px] align-middle">{perspectiveLabels[perspective]}</strong>
+				<strong className="2xl:hidden truncate max-w-[100px] align-middle">{perspectiveShortLabels[perspective] || perspectiveLabels[perspective]}</strong>
 				<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
 			</summary>
 			<div className="role-switcher-options">
@@ -711,7 +711,7 @@ export function WorkspaceTopbar({
 					>
 						<summary>
 							<span className="hidden 2xl:inline">{workspaceTopbarLabels.role.caption}</span>
-							<strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
+							<strong className="truncate max-w-[130px] 2xl:max-w-none inline-block align-middle">{staffRoleLabels[selectedWorkspaceRole]}</strong>
 							<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
 						</summary>
 						<div className="role-switcher-options">
@@ -787,7 +787,7 @@ export function WorkspaceTopbar({
         скрыты — `dente-redesign.css:610` и `:624`), затем инструменты помощника.
         Главное действие не забирается никогда.
       */}
-			<div className="top-actions shrink-0 flex items-center flex-nowrap gap-1.5">
+			<div className="top-actions">
 				{/*
           ГЛАВНОЕ ДЕЙСТВИЕ — ПЕРВЫМ ЭЛЕМЕНТОМ СТРОКИ И БЕЗ УСЛОВИЯ ВОКРУГ.
           Оба свойства несут смысл. «Первым» даёт гарантию из шапки строки.
@@ -927,8 +927,8 @@ export function WorkspaceTopbar({
 						fontWeight: 600,
 					}}
 				>
-					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0 animate-pulse" aria-hidden="true" />
-					<span className="hidden 2xl:inline">{workspaceTopbarLabels.copilot.label}</span>
+					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0 animate-pulse" aria-hidden="true" />{" "}
+					{workspaceTopbarLabels.copilot.label}
 				</button>
 
 				{/*
