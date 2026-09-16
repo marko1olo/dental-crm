@@ -247,13 +247,16 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 						<div className="executive-title-row">
 							<h1 className="executive-title">Рабочий стол Генерального директора</h1>
 						</div>
-						<p className="executive-subtitle">
+						<p
+							className="executive-subtitle"
+							title="Сквозная конверсия первичных пациентов, план/факт P&L отделений и операционная эффективность"
+						>
 							Сквозная конверсия первичных пациентов, план/факт P&amp;L отделений и операционная эффективность
 						</p>
 					</div>
 
 					<div className="executive-controls">
-						{/* Переключатель периода с touch-таргетами >= 44x44px */}
+						{/* Переключатель периода с плотной клинической сеткой 32px (на touch >= 44x44px) */}
 						<div className="executive-period-toggle" role="group" aria-label="Период отчета">
 							<button
 								type="button"
@@ -293,7 +296,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 							disabled={loading}
 							aria-label="Обновить показатели дашборда"
 						>
-							<RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
+							<RefreshCw size={15} className={loading ? "animate-spin" : ""} aria-hidden="true" />
 							<span>Обновить</span>
 						</button>
 					</div>
@@ -307,24 +310,24 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">Выручка клиники (Факт / План)</span>
-							<div className="executive-kpi-icon-wrap">
+							<div className="executive-kpi-icon-wrap executive-kpi-icon-teal">
 								<Coins size={18} aria-hidden="true" />
 							</div>
 						</div>
-						<div className="executive-kpi-main-val">{kpis.totalRevenueFormatted}</div>
+						<div className="executive-kpi-main-val">{kpis.totalRevenueFormatted || "0 ₽"}</div>
 					</div>
 					<div className="executive-kpi-subtext">
-						<span>План: {kpis.totalRevenuePlanFormatted}</span>
+						<span>План: {kpis.totalRevenuePlanFormatted || "0 ₽"}</span>
 						<span
 							className={`executive-pill ${
-								kpis.overallPlanFulfillmentPercent >= 95
+								(kpis.overallPlanFulfillmentPercent ?? 0) >= 95
 									? "executive-pill-success"
-									: kpis.overallPlanFulfillmentPercent >= 75
+									: (kpis.overallPlanFulfillmentPercent ?? 0) >= 75
 										? "executive-pill-warning"
 										: "executive-pill-danger"
 							}`}
 						>
-							{kpis.overallPlanFulfillmentPercent}% плана
+							{kpis.overallPlanFulfillmentPercent ?? 0}% плана
 						</span>
 					</div>
 				</div>
@@ -334,16 +337,16 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">Сквозная конверсия (Лид → Санация)</span>
-							<div className="executive-kpi-icon-wrap" style={{ background: "rgba(99, 102, 241, 0.1)", color: "var(--accent, #6366f1)" }}>
+							<div className="executive-kpi-icon-wrap executive-kpi-icon-accent">
 								<Filter size={18} aria-hidden="true" />
 							</div>
 						</div>
-						<div className="executive-kpi-main-val">{kpis.leadToSanitationConversionPercent}%</div>
+						<div className="executive-kpi-main-val">{kpis.leadToSanitationConversionPercent ?? 0}%</div>
 					</div>
 					<div className="executive-kpi-subtext">
-						<span>Лидов: {kpis.totalLeadsCount} пац.</span>
+						<span>Лидов: {kpis.totalLeadsCount ?? 0} пац.</span>
 						<span className="executive-pill executive-pill-neutral">
-							ИИ Diagnocat: {kpis.aiDiagnosticRatePercent}%
+							ИИ Diagnocat: {kpis.aiDiagnosticRatePercent ?? 0}%
 						</span>
 					</div>
 				</div>
@@ -353,24 +356,24 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">LTV / CAC (Unit-экономика)</span>
-							<div className="executive-kpi-icon-wrap" style={{ background: "rgba(16, 185, 129, 0.1)", color: "var(--ok-fg, #10b981)" }}>
+							<div className="executive-kpi-icon-wrap executive-kpi-icon-ok">
 								<TrendingUp size={18} aria-hidden="true" />
 							</div>
 						</div>
-						<div className="executive-kpi-main-val">{kpis.patientLtvFormatted}</div>
+						<div className="executive-kpi-main-val">{kpis.patientLtvFormatted || "0 ₽"}</div>
 					</div>
 					<div className="executive-kpi-subtext">
-						<span>CAC: {kpis.cacFormatted}</span>
+						<span>CAC: {kpis.cacFormatted || "0 ₽"}</span>
 						<span
 							className={`executive-pill ${
-								kpis.ltvToCacRatio >= 3
+								(kpis.ltvToCacRatio ?? 0) >= 3
 									? "executive-pill-success"
-									: kpis.ltvToCacRatio >= 1
+									: (kpis.ltvToCacRatio ?? 0) >= 1
 										? "executive-pill-neutral"
 										: "executive-pill-warning"
 							}`}
 						>
-							{kpis.ltvToCacRatio}x окупаемость
+							{kpis.ltvToCacRatio ?? 0}x окупаемость
 						</span>
 					</div>
 				</div>
@@ -380,16 +383,16 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">Загрузка кресел клиники</span>
-							<div className="executive-kpi-icon-wrap" style={{ background: "rgba(245, 158, 11, 0.1)", color: "var(--warn-fg, #f59e0b)" }}>
+							<div className="executive-kpi-icon-wrap executive-kpi-icon-warn">
 								<Activity size={18} aria-hidden="true" />
 							</div>
 						</div>
-						<div className="executive-kpi-main-val">{kpis.chairOccupancyRatePercent}%</div>
+						<div className="executive-kpi-main-val">{kpis.chairOccupancyRatePercent ?? 0}%</div>
 					</div>
 					<div className="executive-kpi-subtext">
-						<span>Кресел: {kpis.totalChairsCount} шт.</span>
-						<span className={`executive-pill ${kpis.cancellationRatePercent > 15 ? "executive-pill-warning" : "executive-pill-neutral"}`}>
-							Отмены: {kpis.cancellationRatePercent}%
+						<span>Кресел: {kpis.totalChairsCount ?? 1} шт.</span>
+						<span className={`executive-pill ${(kpis.cancellationRatePercent ?? 0) > 15 ? "executive-pill-warning" : "executive-pill-neutral"}`}>
+							Отмены: {kpis.cancellationRatePercent ?? 0}%
 						</span>
 					</div>
 				</div>
@@ -401,7 +404,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				<section className="executive-panel" aria-label="Сквозная воронка первичных пациентов">
 					<div className="executive-panel-header">
 						<h2 className="executive-panel-title">
-							<Filter size={20} style={{ color: "var(--teal, #0d9488)" }} aria-hidden="true" />
+							<Filter size={18} style={{ color: "var(--teal, #0d9488)" }} aria-hidden="true" />
 							Сквозная воронка первичных пациентов
 						</h2>
 						<span className="executive-panel-badge">8 этапов конверсии</span>
@@ -414,7 +417,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				<section className="executive-panel" aria-label="План/факт выручки по отделениям">
 					<div className="executive-panel-header">
 						<h2 className="executive-panel-title">
-							<Layers size={20} style={{ color: "var(--accent, #6366f1)" }} aria-hidden="true" />
+							<Layers size={18} style={{ color: "var(--accent, #6366f1)" }} aria-hidden="true" />
 							План / факт выручки по 5 отделениям
 						</h2>
 						<span className="executive-panel-badge">Структура P&amp;L</span>
@@ -432,32 +435,32 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 			{/* ─── НИЖНЯЯ ОПЕРАЦИОННАЯ ТЕЛЕМЕТРИЯ (TIER 3) ─────────────────────────── */}
 			<footer className="executive-telemetry-bar" aria-label="Операционная телеметрия">
 				<div className="telemetry-item">
-					<Users size={16} aria-hidden="true" />
+					<Users size={15} aria-hidden="true" />
 					<span>Активных врачей:</span>
-					<span className="telemetry-val">{kpis.activeDoctorsCount}</span>
+					<span className="telemetry-val">{kpis.activeDoctorsCount ?? 0}</span>
 				</div>
 
 				<div className="telemetry-item">
-					<Activity size={16} aria-hidden="true" />
+					<Activity size={15} aria-hidden="true" />
 					<span>Завершено визитов:</span>
-					<span className="telemetry-val">{kpis.totalCompletedVisits}</span>
+					<span className="telemetry-val">{kpis.totalCompletedVisits ?? 0}</span>
 				</div>
 
 				<div className="telemetry-item">
 					<span>Первичные / Повторные:</span>
 					<span className="telemetry-val">
-						{kpis.primaryPatientsCount} ({kpis.primaryPatientsPercent}%) / {kpis.repeatPatientsCount}
+						{kpis.primaryPatientsCount ?? 0} ({(kpis.primaryPatientsPercent ?? 0)}%) / {kpis.repeatPatientsCount ?? 0}
 					</span>
 				</div>
 
 				<div className="telemetry-item">
 					<span>Средний чек:</span>
-					<span className="telemetry-val">{kpis.averageCheckFormatted}</span>
+					<span className="telemetry-val">{kpis.averageCheckFormatted || "0 ₽"}</span>
 				</div>
 
 				<div className="telemetry-item">
 					<span>Маркетинговый бюджет:</span>
-					<span className="telemetry-val">{kpis.totalMarketingSpendFormatted}</span>
+					<span className="telemetry-val">{kpis.totalMarketingSpendFormatted || "0 ₽"}</span>
 				</div>
 			</footer>
 		</div>

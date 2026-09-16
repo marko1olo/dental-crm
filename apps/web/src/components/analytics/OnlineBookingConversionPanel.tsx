@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import "./executiveDashboard.css";
 
 export type OnlineBookingPeriod = "7d" | "30d" | "90d" | "all";
 
@@ -205,36 +206,31 @@ export function OnlineBookingConversionPanel() {
 									: c.key === "gis_2"
 										? "gis"
 										: c.key === "prodoctorov"
-											? "prodoctorov"
+											? "prodoc"
 											: c.key === "tg_bot"
-												? "telegram"
-												: "whatsapp",
-						viewsCount: c.viewsCount || 0,
-						slotSelectedCount: c.slotSelectedCount || 0,
-						bookingsCount: c.bookingsCount || 0,
-						attendedCount: c.attendedCount || 0,
-						noShowCount: c.noShowCount || 0,
-						paidPatientsCount: c.paidPatientsCount || 0,
-						revenueKopecks: (c.revenueKopecks || 0) as Kopecks,
-						spentKopecks: (c.spentKopecks || 0) as Kopecks,
+												? "tg"
+												: "wa",
+						viewsCount: Math.max(0, Math.round(Number(c.viewsCount) || 0)),
+						slotSelectedCount: Math.max(0, Math.round(Number(c.slotSelectedCount) || 0)),
+						bookingsCount: Math.max(0, Math.round(Number(c.bookingsCount) || 0)),
+						attendedCount: Math.max(0, Math.round(Number(c.attendedCount) || 0)),
+						noShowCount: Math.max(0, Math.round(Number(c.noShowCount) || 0)),
+						paidPatientsCount: Math.max(0, Math.round(Number(c.paidPatientsCount) || 0)),
+						revenueKopecks: Math.max(0, Math.round(Number(c.revenueKopecks) || 0)) as Kopecks,
+						spentKopecks: Math.max(0, Math.round(Number(c.spentKopecks) || 0)) as Kopecks,
 					}));
 					setChannels(mapped);
 				}
 				if (isMounted && data.telephonyAdminFunnel) {
 					setAdminFunnel({
-						incomingCallsCount:
-							data.telephonyAdminFunnel.incomingCallsCount || 0,
-						answeredCallsCount:
-							data.telephonyAdminFunnel.answeredCallsCount || 0,
-						bookedAppointmentsCount:
-							data.telephonyAdminFunnel.bookedAppointmentsCount || 0,
-						attendedCount: data.telephonyAdminFunnel.attendedCount || 0,
-						noShowCount: data.telephonyAdminFunnel.noShowCount || 0,
-						paidPatientsCount: data.telephonyAdminFunnel.paidPatientsCount || 0,
-						revenueKopecks: (data.telephonyAdminFunnel.revenueKopecks ||
-							0) as Kopecks,
-						avgCallDurationSeconds:
-							data.telephonyAdminFunnel.avgCallDurationSeconds || 120,
+						incomingCallsCount: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.incomingCallsCount) || 0)),
+						answeredCallsCount: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.answeredCallsCount) || 0)),
+						bookedAppointmentsCount: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.bookedAppointmentsCount) || 0)),
+						attendedCount: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.attendedCount) || 0)),
+						noShowCount: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.noShowCount) || 0)),
+						paidPatientsCount: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.paidPatientsCount) || 0)),
+						revenueKopecks: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.revenueKopecks) || 0)) as Kopecks,
+						avgCallDurationSeconds: Math.max(0, Math.round(Number(data.telephonyAdminFunnel.avgCallDurationSeconds) || 120)),
 					});
 				}
 			} catch {
@@ -256,23 +252,23 @@ export function OnlineBookingConversionPanel() {
 				? channels
 				: channels.filter((c) => c.key === selectedChannelKey);
 
-		const totalViews = filtered.reduce((acc, c) => acc + c.viewsCount, 0);
+		const totalViews = filtered.reduce((acc, c) => acc + (c.viewsCount || 0), 0);
 		const totalSlotSelected = filtered.reduce(
-			(acc, c) => acc + c.slotSelectedCount,
+			(acc, c) => acc + (c.slotSelectedCount || 0),
 			0,
 		);
-		const totalBookings = filtered.reduce((acc, c) => acc + c.bookingsCount, 0);
-		const totalAttended = filtered.reduce((acc, c) => acc + c.attendedCount, 0);
-		const totalNoShow = filtered.reduce((acc, c) => acc + c.noShowCount, 0);
-		const totalPaid = filtered.reduce((acc, c) => acc + c.paidPatientsCount, 0);
-		const totalRevenueKopecks = filtered.reduce(
-			(acc, c) => acc + c.revenueKopecks,
+		const totalBookings = filtered.reduce((acc, c) => acc + (c.bookingsCount || 0), 0);
+		const totalAttended = filtered.reduce((acc, c) => acc + (c.attendedCount || 0), 0);
+		const totalNoShow = filtered.reduce((acc, c) => acc + (c.noShowCount || 0), 0);
+		const totalPaid = filtered.reduce((acc, c) => acc + (c.paidPatientsCount || 0), 0);
+		const totalRevenueKopecks = Math.round(filtered.reduce(
+			(acc, c) => acc + (c.revenueKopecks || 0),
 			0,
-		);
-		const totalSpentKopecks = filtered.reduce(
-			(acc, c) => acc + c.spentKopecks,
+		)) as Kopecks;
+		const totalSpentKopecks = Math.round(filtered.reduce(
+			(acc, c) => acc + (c.spentKopecks || 0),
 			0,
-		);
+		)) as Kopecks;
 
 		const conversionRatePercent =
 			totalViews > 0 ? (totalBookings / totalViews) * 100 : 0;
@@ -281,7 +277,7 @@ export function OnlineBookingConversionPanel() {
 		const noShowRatePercent =
 			totalBookings > 0 ? (totalNoShow / totalBookings) * 100 : 0;
 		const avgCheckKopecks =
-			totalPaid > 0 ? Math.round(totalRevenueKopecks / totalPaid) : 0;
+			totalPaid > 0 ? (Math.round(totalRevenueKopecks / totalPaid) as Kopecks) : (0 as Kopecks);
 
 		// ROMI
 		const profitKopecks = totalRevenueKopecks - totalSpentKopecks;
@@ -371,28 +367,28 @@ export function OnlineBookingConversionPanel() {
 
 	return (
 		<div className="space-y-4" data-testid="online-booking-conversion-panel">
-			{/* Top Header & Controls */}
-			<div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)]">
-				<div className="space-y-1">
-					<div className="flex items-center gap-2">
-						<div className="p-2 rounded-xl bg-teal-500/10 text-[var(--teal)]">
-							<Bot size={20} />
-						</div>
-						<div>
-							<h3 className="text-base font-bold text-[var(--ink)] m-0 flex items-center gap-2">
-								Сквозная аналитика: Онлайн-записи vs Администраторы
-							</h3>
-							<p className="text-xs text-[var(--muted)] m-0">
-								Выделение автоматических каналов самозаписи (Сайт, Карты, 2ГИС,
-								ПроДокторов, Боты) из воронки АТС
-							</p>
-						</div>
+			{/* Top Header & Controls (Mandate 8p: <= 48-56px height on desktop) */}
+			<div className="online-header-compact">
+				<div className="flex items-center gap-2.5 min-w-0">
+					<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-[var(--teal)] flex items-center justify-center shrink-0">
+						<Bot size={18} aria-hidden="true" />
+					</div>
+					<div className="min-w-0 flex flex-col justify-center">
+						<h3 className="text-sm font-bold text-[var(--ink)] m-0 leading-tight truncate">
+							Сквозная аналитика: Онлайн-записи vs Администраторы
+						</h3>
+						<p
+							className="text-[11px] text-[var(--muted)] m-0 leading-tight truncate hidden md:block"
+							title="Выделение автоматических каналов самозаписи (Сайт, Карты, 2ГИС, ПроДокторов, Боты) из воронки АТС"
+						>
+							Выделение автоматических каналов самозаписи (Сайт, Карты, 2ГИС, ПроДокторов, Боты) из воронки АТС
+						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
-					{/* Period Selector */}
-					<div className="inline-flex rounded-xl bg-[var(--paper-soft)] p-1 border border-[var(--line)]">
+				<div className="flex items-center gap-2 shrink-0">
+					{/* Period Selector (32px desktop, 44px touch) */}
+					<div className="online-period-toggle" role="group" aria-label="Период отчета">
 						{(
 							[
 								{ key: "7d", label: "7 дней" },
@@ -405,11 +401,7 @@ export function OnlineBookingConversionPanel() {
 								key={p.key}
 								type="button"
 								onClick={() => setPeriod(p.key)}
-								className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors border-0 cursor-pointer min-h-[44px] flex items-center justify-center ${
-									period === p.key
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
+								className={`online-period-btn ${period === p.key ? "active" : ""}`}
 							>
 								{p.label}
 							</button>
@@ -421,7 +413,7 @@ export function OnlineBookingConversionPanel() {
 			{/* Top KPI Cards (Medical Density) */}
 			<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{/* KPI 1: Online Share */}
-				<div className="p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
+				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 					<div className="flex items-center justify-between text-xs text-[var(--muted)]">
 						<span>Доля самозаписи</span>
 						<Bot size={16} className="text-[var(--teal)]" />
@@ -436,13 +428,15 @@ export function OnlineBookingConversionPanel() {
 				</div>
 
 				{/* KPI 2: Widget Conversion */}
-				<div className="p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
+				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 					<div className="flex items-center justify-between text-xs text-[var(--muted)]">
 						<span>Конверсия виджета</span>
 						<TrendingUp size={16} className="text-emerald-500" />
 					</div>
 					<div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-						{onlineSummary.conversionRatePercent.toFixed(1)}%
+						{Number.isFinite(onlineSummary.conversionRatePercent)
+							? onlineSummary.conversionRatePercent.toFixed(1)
+							: "0.0"}%
 					</div>
 					<p className="text-[11px] text-[var(--muted)] m-0">
 						{onlineSummary.totalBookings} записей с {onlineSummary.totalViews}{" "}
@@ -451,22 +445,25 @@ export function OnlineBookingConversionPanel() {
 				</div>
 
 				{/* KPI 3: Attendance Rate */}
-				<div className="p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
+				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 					<div className="flex items-center justify-between text-xs text-[var(--muted)]">
 						<span>Доходимость (Явка)</span>
 						<UserCheck size={16} className="text-blue-500" />
 					</div>
 					<div className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
-						{onlineSummary.attendanceRatePercent.toFixed(1)}%
+						{Number.isFinite(onlineSummary.attendanceRatePercent)
+							? onlineSummary.attendanceRatePercent.toFixed(1)
+							: "0.0"}%
 					</div>
 					<p className="text-[11px] text-[var(--muted)] m-0">
-						Неявка: {onlineSummary.noShowRatePercent.toFixed(1)}% (
-						{onlineSummary.totalNoShow} чел.)
+						Неявка: {Number.isFinite(onlineSummary.noShowRatePercent)
+							? onlineSummary.noShowRatePercent.toFixed(1)
+							: "0.0"}% ({onlineSummary.totalNoShow} чел.)
 					</p>
 				</div>
 
 				{/* KPI 4: Online Revenue */}
-				<div className="p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
+				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 					<div className="flex items-center justify-between text-xs text-[var(--muted)]">
 						<span>Выручка от самозаписи</span>
 						<DollarSign size={16} className="text-[var(--teal)]" />
@@ -476,45 +473,35 @@ export function OnlineBookingConversionPanel() {
 					</div>
 					<p className="text-[11px] text-[var(--muted)] m-0">
 						Ср. чек: {formatKopecksRu(onlineSummary.avgCheckKopecks)} · ROMI:{" "}
-						{(onlineSummary.romiPercent ?? 0) > 0
-							? `+${onlineSummary.romiPercent}%`
-							: `${onlineSummary.romiPercent ?? 0}%`}
+						{onlineSummary.romiPercent !== null
+							? onlineSummary.romiPercent > 0
+								? `+${onlineSummary.romiPercent}%`
+								: `${onlineSummary.romiPercent}%`
+							: "—"}
 					</p>
 				</div>
 			</div>
 
-			{/* Navigation Tabs */}
+			{/* Navigation Tabs (32px desktop, 44px touch) */}
 			<div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 overflow-x-auto no-scrollbar flex-nowrap">
 				<button
 					type="button"
 					onClick={() => setActiveTab("self_booking")}
-					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] shrink-0 ${
-						activeTab === "self_booking"
-							? "bg-[var(--teal)] text-white shadow-sm"
-							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
+					className={`online-tab-btn ${activeTab === "self_booking" ? "active" : ""}`}
 				>
 					Каналы онлайн-самозаписи ({channels.length})
 				</button>
 				<button
 					type="button"
 					onClick={() => setActiveTab("admin_comparison")}
-					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] shrink-0 ${
-						activeTab === "admin_comparison"
-							? "bg-[var(--teal)] text-white shadow-sm"
-							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
+					className={`online-tab-btn ${activeTab === "admin_comparison" ? "active" : ""}`}
 				>
 					Сравнение: Онлайн vs Администраторы (АТС)
 				</button>
 				<button
 					type="button"
 					onClick={() => setActiveTab("funnel")}
-					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] shrink-0 ${
-						activeTab === "funnel"
-							? "bg-[var(--teal)] text-white shadow-sm"
-							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
+					className={`online-tab-btn ${activeTab === "funnel" ? "active" : ""}`}
 				>
 					Пошаговая воронка конверсии виджета
 				</button>
@@ -522,11 +509,28 @@ export function OnlineBookingConversionPanel() {
 
 			{/* Tab 1: Self-Booking Channels Table */}
 			{activeTab === "self_booking" && (
-				<div className="p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
+				<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
 					<div className="flex flex-wrap items-center justify-between gap-2">
-						<h4 className="text-sm font-bold text-[var(--ink)] m-0">
-							Эффективность каналов автоматической самозаписи
-						</h4>
+						<div className="flex items-center gap-2">
+							<h4 className="text-sm font-bold text-[var(--ink)] m-0">
+								Эффективность каналов автоматической самозаписи
+							</h4>
+							{channels.length > 0 && (
+								<select
+									aria-label="Фильтр по каналу записи"
+									value={selectedChannelKey}
+									onChange={(e) => setSelectedChannelKey(e.target.value)}
+									className="h-7 text-xs rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+								>
+									<option value="all">Все каналы ({channels.length})</option>
+									{channels.map((ch) => (
+										<option key={ch.key} value={ch.key}>
+											{ch.nameRu}
+										</option>
+									))}
+								</select>
+							)}
+						</div>
 						<div className="text-xs text-[var(--muted)]">
 							Сэкономлено времени администраторов:{" "}
 							<span className="font-bold text-[var(--teal)]">
@@ -535,110 +539,124 @@ export function OnlineBookingConversionPanel() {
 						</div>
 					</div>
 
-					<div className="overflow-x-auto">
-						<table className="w-full text-left text-xs border-collapse">
-							<thead>
-								<tr className="border-b border-[var(--line)] text-[var(--muted)] font-semibold">
-									<th className="py-2.5 px-3">Канал самозаписи</th>
-									<th className="py-2.5 px-3">Категория</th>
-									<th className="py-2.5 px-3 text-right">Просмотры</th>
-									<th className="py-2.5 px-3 text-right">Записи</th>
-									<th className="py-2.5 px-3 text-right">Конверсия</th>
-									<th className="py-2.5 px-3 text-right">Явка (чел / %)</th>
-									<th className="py-2.5 px-3 text-right">Неявки</th>
-									<th className="py-2.5 px-3 text-right">Выручка (₽)</th>
-									<th className="py-2.5 px-3 text-right">ROMI</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-[var(--line)]">
-								{channels.map((ch) => {
-									const convPercent =
-										ch.viewsCount > 0
-											? (ch.bookingsCount / ch.viewsCount) * 100
-											: 0;
-									const attendPercent =
-										ch.bookingsCount > 0
-											? (ch.attendedCount / ch.bookingsCount) * 100
-											: 0;
-									const profit = ch.revenueKopecks - ch.spentKopecks;
-									const romi =
-										ch.spentKopecks > 0
-											? Math.round((profit / ch.spentKopecks) * 100)
-											: 0;
+					{channels.length === 0 ? (
+						<div className="text-center py-8 px-4 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
+							<Globe size={32} className="mx-auto text-[var(--muted)] mb-2 opacity-50" aria-hidden="true" />
+							<div className="text-sm font-semibold text-[var(--ink)]">Нет подключенных каналов онлайн-самозаписи</div>
+							<p className="text-xs text-[var(--muted)] mt-1 max-w-md mx-auto">
+								Подключите виджет самозаписи на сайт клиники, настройте кнопки в Яндекс Картах, 2ГИС или чат-ботах Telegram/WhatsApp для автоматического привлечения пациентов.
+							</p>
+						</div>
+					) : (
+						<div className="overflow-x-auto">
+							<table className="w-full text-left text-xs border-collapse">
+								<thead>
+									<tr className="border-b border-[var(--line)] text-[var(--muted)] font-semibold">
+										<th className="py-2.5 px-3">Канал самозаписи</th>
+										<th className="py-2.5 px-3">Категория</th>
+										<th className="py-2.5 px-3 text-right">Просмотры</th>
+										<th className="py-2.5 px-3 text-right">Записи</th>
+										<th className="py-2.5 px-3 text-right">Конверсия</th>
+										<th className="py-2.5 px-3 text-right">Явка (чел / %)</th>
+										<th className="py-2.5 px-3 text-right">Неявки</th>
+										<th className="py-2.5 px-3 text-right">Выручка (₽)</th>
+										<th className="py-2.5 px-3 text-right">ROMI</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-[var(--line)]">
+									{channels.map((ch) => {
+										const convPercent =
+											ch.viewsCount > 0
+												? (ch.bookingsCount / ch.viewsCount) * 100
+												: 0;
+										const attendPercent =
+											ch.bookingsCount > 0
+												? (ch.attendedCount / ch.bookingsCount) * 100
+												: 0;
+										const profit = ch.revenueKopecks - ch.spentKopecks;
+										const romi =
+											ch.spentKopecks > 0
+												? Math.round((profit / ch.spentKopecks) * 100)
+												: 0;
 
-									return (
-										<tr
-											key={ch.key}
-											className="hover:bg-[var(--paper-soft)]/50 transition-colors"
-										>
-											<td className="py-3 px-3">
-												<div className="flex items-center gap-2 font-bold text-[var(--ink)]">
-													{renderIcon(ch.iconType)}
-													<span>{ch.nameRu}</span>
-												</div>
-											</td>
-											<td className="py-3 px-3 text-[var(--muted)]">
-												{ch.categoryRu}
-											</td>
-											<td className="py-3 px-3 text-right font-medium text-[var(--ink)]">
-												{ch.viewsCount.toLocaleString("ru-RU")}
-											</td>
-											<td className="py-3 px-3 text-right font-bold text-[var(--teal)]">
-												{ch.bookingsCount}
-											</td>
-											<td className="py-3 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
-												{convPercent.toFixed(1)}%
-											</td>
-											<td className="py-3 px-3 text-right font-medium text-blue-600 dark:text-blue-400">
-												{ch.attendedCount}{" "}
-												<span className="text-[11px] text-[var(--muted)]">
-													({attendPercent.toFixed(0)}%)
-												</span>
-											</td>
-											<td className="py-3 px-3 text-right font-medium text-rose-500">
-												{ch.noShowCount}
-											</td>
-											<td className="py-3 px-3 text-right font-bold text-[var(--ink)]">
-												{formatKopecksRu(ch.revenueKopecks)}
-											</td>
-											<td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
-												{romi > 0 ? `+${romi}%` : `${romi}%`}
-											</td>
-										</tr>
-									);
-								})}
-							</tbody>
-							<tfoot>
-								<tr className="border-t-2 border-[var(--line)] bg-[var(--paper-soft)]/40 font-bold text-[var(--ink)]">
-									<td className="py-3 px-3" colSpan={2}>
-										ИТОГО ПО САМОЗАПИСИ:
-									</td>
-									<td className="py-3 px-3 text-right">
-										{onlineSummary.totalViews.toLocaleString("ru-RU")}
-									</td>
-									<td className="py-3 px-3 text-right text-[var(--teal)]">
-										{onlineSummary.totalBookings}
-									</td>
-									<td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">
-										{onlineSummary.conversionRatePercent.toFixed(1)}%
-									</td>
-									<td className="py-3 px-3 text-right text-blue-600 dark:text-blue-400">
-										{onlineSummary.totalAttended} (
-										{onlineSummary.attendanceRatePercent.toFixed(0)}%)
-									</td>
-									<td className="py-3 px-3 text-right text-rose-500">
-										{onlineSummary.totalNoShow}
-									</td>
-									<td className="py-3 px-3 text-right text-[var(--teal)]">
-										{formatKopecksRu(onlineSummary.totalRevenueKopecks)}
-									</td>
-									<td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">
-										+{onlineSummary.romiPercent}%
-									</td>
-								</tr>
-							</tfoot>
-						</table>
-					</div>
+										return (
+											<tr
+												key={ch.key}
+												className="hover:bg-[var(--paper-soft)]/50 transition-colors"
+											>
+												<td className="py-2.5 px-3 max-w-[240px]">
+													<div className="flex items-center gap-2 font-bold text-[var(--ink)] min-w-0">
+														{renderIcon(ch.iconType)}
+														<span className="truncate" title={ch.nameRu}>{ch.nameRu}</span>
+													</div>
+												</td>
+												<td className="py-2.5 px-3 text-[var(--muted)] max-w-[140px] truncate" title={ch.categoryRu}>
+													{ch.categoryRu}
+												</td>
+												<td className="py-2.5 px-3 text-right font-medium text-[var(--ink)]">
+													{ch.viewsCount.toLocaleString("ru-RU")}
+												</td>
+												<td className="py-2.5 px-3 text-right font-bold text-[var(--teal)]">
+													{ch.bookingsCount}
+												</td>
+												<td className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+													{convPercent.toFixed(1)}%
+												</td>
+												<td className="py-2.5 px-3 text-right font-medium text-blue-600 dark:text-blue-400">
+													{ch.attendedCount}{" "}
+													<span className="text-[11px] text-[var(--muted)]">
+														({attendPercent.toFixed(0)}%)
+													</span>
+												</td>
+												<td className="py-2.5 px-3 text-right font-medium text-rose-500">
+													{ch.noShowCount}
+												</td>
+												<td className="py-2.5 px-3 text-right font-bold text-[var(--ink)]">
+													{formatKopecksRu(ch.revenueKopecks)}
+												</td>
+												<td className="py-2.5 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+													{ch.spentKopecks > 0 ? (romi > 0 ? `+${romi}%` : `${romi}%`) : "—"}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+								<tfoot>
+									<tr className="border-t-2 border-[var(--line)] bg-[var(--paper-soft)]/40 font-bold text-[var(--ink)]">
+										<td className="py-2.5 px-3" colSpan={2}>
+											ИТОГО ПО САМОЗАПИСИ:
+										</td>
+										<td className="py-2.5 px-3 text-right">
+											{onlineSummary.totalViews.toLocaleString("ru-RU")}
+										</td>
+										<td className="py-2.5 px-3 text-right text-[var(--teal)]">
+											{onlineSummary.totalBookings}
+										</td>
+										<td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">
+											{onlineSummary.conversionRatePercent.toFixed(1)}%
+										</td>
+										<td className="py-2.5 px-3 text-right text-blue-600 dark:text-blue-400">
+											{onlineSummary.totalAttended} (
+											{onlineSummary.attendanceRatePercent.toFixed(0)}%)
+										</td>
+										<td className="py-2.5 px-3 text-right text-rose-500">
+											{onlineSummary.totalNoShow}
+										</td>
+										<td className="py-2.5 px-3 text-right text-[var(--teal)]">
+											{formatKopecksRu(onlineSummary.totalRevenueKopecks)}
+										</td>
+										<td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">
+											{onlineSummary.romiPercent !== null
+												? onlineSummary.romiPercent > 0
+													? `+${onlineSummary.romiPercent}%`
+													: `${onlineSummary.romiPercent}%`
+												: "—"}
+										</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -646,10 +664,10 @@ export function OnlineBookingConversionPanel() {
 			{activeTab === "admin_comparison" && (
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					{/* Online Self-Booking Card */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-teal-500/30 space-y-4">
+					<div className="p-4 rounded-xl bg-[var(--paper)] border border-teal-500/30 space-y-3">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2">
-								<div className="p-2 rounded-xl bg-teal-500/10 text-[var(--teal)]">
+								<div className="p-1.5 rounded-lg bg-teal-500/10 text-[var(--teal)]">
 									<Bot size={18} />
 								</div>
 								<div>
@@ -661,12 +679,12 @@ export function OnlineBookingConversionPanel() {
 									</p>
 								</div>
 							</div>
-							<span className="text-xs font-bold px-2.5 py-1 rounded-full bg-teal-500/15 text-[var(--teal)]">
+							<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-500/15 text-[var(--teal)]">
 								{comparison.onlineSharePercent}% потока
 							</span>
 						</div>
 
-						<div className="space-y-2 text-xs">
+						<div className="space-y-1.5 text-xs">
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">
 									Всего создано записей:
@@ -685,7 +703,7 @@ export function OnlineBookingConversionPanel() {
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Неявка (No-show):</span>
 								<span className="font-bold text-rose-500">
-									{onlineSummary.noShowRatePercent.toFixed(1)}% (
+									{Number.isFinite(onlineSummary.noShowRatePercent) ? onlineSummary.noShowRatePercent.toFixed(1) : "0.0"}% (
 									{onlineSummary.totalNoShow} чел.)
 								</span>
 							</div>
@@ -694,13 +712,13 @@ export function OnlineBookingConversionPanel() {
 									Выручка от пациентов:
 								</span>
 								<span className="font-bold text-[var(--teal)]">
-									{formatKopecksRu(onlineSummary.totalRevenueKopecks)}
+									{formatKopecksRu(onlineSummary.totalRevenueKopecks || (0 as Kopecks))}
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Средний чек:</span>
 								<span className="font-bold text-[var(--ink)]">
-									{formatKopecksRu(onlineSummary.avgCheckKopecks)}
+									{formatKopecksRu(onlineSummary.avgCheckKopecks || (0 as Kopecks))}
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5">
@@ -715,10 +733,10 @@ export function OnlineBookingConversionPanel() {
 					</div>
 
 					{/* Admin Phone Telephony Card */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-4">
+					<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2">
-								<div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+								<div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
 									<PhoneCall size={18} />
 								</div>
 								<div>
@@ -730,12 +748,12 @@ export function OnlineBookingConversionPanel() {
 									</p>
 								</div>
 							</div>
-							<span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
+							<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
 								{comparison.adminSharePercent}% потока
 							</span>
 						</div>
 
-						<div className="space-y-2 text-xs">
+						<div className="space-y-1.5 text-xs">
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Входящих звонков:</span>
 								<span className="font-bold text-[var(--ink)]">
@@ -780,7 +798,7 @@ export function OnlineBookingConversionPanel() {
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Выручка от звонков:</span>
 								<span className="font-bold text-[var(--ink)]">
-									{formatKopecksRu(adminFunnel.revenueKopecks)}
+									{formatKopecksRu(adminFunnel.revenueKopecks || (0 as Kopecks))}
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5">
@@ -799,10 +817,16 @@ export function OnlineBookingConversionPanel() {
 
 			{/* Tab 3: Step-by-Step Funnel */}
 			{activeTab === "funnel" && (
-				<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-4">
+				<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
 					<h4 className="text-sm font-bold text-[var(--ink)] m-0">
 						6 этапов конверсии онлайн-записи (от показа до кассового чека 54-ФЗ)
 					</h4>
+
+					{onlineSummary.totalViews === 0 && (
+						<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] text-center">
+							За выбранный период нет переходов в виджет самозаписи. Данные конверсии обновятся автоматически при первом обращении пациента.
+						</div>
+					)}
 
 					<div className="grid grid-cols-1 md:grid-cols-6 gap-2">
 						{[
@@ -856,23 +880,23 @@ export function OnlineBookingConversionPanel() {
 							},
 							{
 								step: "6. Выручка",
-								count: formatKopecksRu(onlineSummary.totalRevenueKopecks),
+								count: formatKopecksRu(onlineSummary.totalRevenueKopecks || (0 as Kopecks)),
 								label: "Итоговая выручка",
-								dropoff: `Ср. чек ${formatKopecksRu(onlineSummary.avgCheckKopecks)}`,
+								dropoff: `Ср. чек ${formatKopecksRu(onlineSummary.avgCheckKopecks || (0 as Kopecks))}`,
 								color:
 									"bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold",
 							},
 						].map((item, idx) => (
 							<div
 								key={item.step}
-								className={`p-3 rounded-xl border border-[var(--line)] space-y-1 ${item.color}`}
+								className={`p-2.5 rounded-lg border border-[var(--line)] space-y-1 ${item.color}`}
 							>
 								<span className="text-[11px] font-bold block">{item.step}</span>
 								<div className="text-lg font-extrabold">{item.count}</div>
-								<span className="text-[10px] text-[var(--muted)] block">
+								<span className="text-[10px] text-[var(--muted)] block truncate" title={item.label}>
 									{item.label}
 								</span>
-								<span className="text-[10px] font-semibold text-[var(--teal)] block mt-1">
+								<span className="text-[10px] font-semibold text-[var(--teal)] block mt-0.5 truncate" title={item.dropoff}>
 									{item.dropoff}
 								</span>
 							</div>
