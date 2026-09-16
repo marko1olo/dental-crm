@@ -252,23 +252,36 @@ export const FreedSlotsPanel: React.FC = () => {
 
 									return (
 										<tr key={slot.appointmentId}>
-											<td className="ops-strong" data-label="Когда">
+											<td
+												className="ops-strong whitespace-nowrap min-w-[130px]"
+												data-label="Когда"
+											>
 												{formatMoment(slot.startsAt)}
-												<span className="ops-note">
+												<span className="ops-note block">
 													{formatDuration(slot.startsAt, slot.endsAt)}
 												</span>
 											</td>
-											<td data-label="Врач">
+											<td
+												data-label="Врач"
+												className="max-w-[180px] truncate"
+												title={slot.doctorName ?? "врач не указан"}
+											>
 												{slot.doctorName ?? "врач не указан"}
 											</td>
-											<td data-label="Почему освободилось">
+											<td
+												data-label="Почему освободилось"
+												className="max-w-[200px] break-words"
+											>
 												<span
 													className={`ops-state ops-state--${slot.status === "no_show" ? "bad" : "warn"}`}
 												>
 													{slot.freedBecause}
 												</span>
 											</td>
-											<td data-label="Кому предложить">
+											<td
+												data-label="Кому предложить"
+												className="min-w-[220px]"
+											>
 												{(slot?.topMatches ?? []).length === 0 ? (
 													/*
 														Предлагать некому — и это сказано словами, а не пустой
@@ -277,8 +290,8 @@ export const FreedSlotsPanel: React.FC = () => {
 														ограничен тремя, а в очереди могут быть люди, которых
 														сводка не показала как «подходящих» (другой врач и т.п.).
 													*/
-													<>
-														<span className="ops-note">
+													<div className="space-y-1.5">
+														<span className="ops-note block">
 															В листе ожидания подходящих нет
 															{(slot?.candidatesTotal ?? 0) > 0
 																? ` (в очереди ${slot.candidatesTotal})`
@@ -287,7 +300,7 @@ export const FreedSlotsPanel: React.FC = () => {
 														</span>
 														{(slot?.candidatesTotal ?? 0) > 0 ? (
 															<button
-																className="link-button min-h-[44px] inline-flex items-center"
+																className="link-button h-8 inline-flex items-center text-xs font-semibold cursor-pointer pointer-coarse:min-h-[44px]"
 																type="button"
 																onClick={() =>
 																	setOpenSlot(
@@ -308,78 +321,88 @@ export const FreedSlotsPanel: React.FC = () => {
 																/>
 															</div>
 														) : null}
-													</>
+													</div>
 												) : (
-													<>
-														<span className="ops-strong">
-															{best?.patientName}
-														</span>
-														<span className="ops-note">
+													<div className="space-y-1 min-w-0">
+														<div className="flex items-center justify-between gap-2">
+															<span
+																className="ops-strong truncate max-w-[200px]"
+																title={best?.patientName}
+															>
+																{best?.patientName}
+															</span>
+															{called.has(
+																calledKey(slot.appointmentId, best?.patientId),
+															) ? (
+																<span className="ops-note inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+																	<span>Позвонили</span>
+																	<Check className="w-3.5 h-3.5 text-emerald-500 inline shrink-0" />
+																</span>
+															) : (
+																<button
+																	className="secondary-button h-7 px-2 text-xs font-semibold inline-flex items-center cursor-pointer pointer-coarse:min-h-[44px]"
+																	type="button"
+																	disabled={false}
+																	onClick={() => {
+																		if (!best?.phone) {
+																			showToast(
+																				"У пациента не указан телефон. Открыть карточку для ввода?",
+																				"warning",
+																			);
+																			if (
+																				best?.patientId &&
+																				typeof appLogic?.setSelectedPatientId ===
+																					"function"
+																			) {
+																				appLogic.setSelectedPatientId(
+																					best.patientId,
+																				);
+																			}
+																			return;
+																		}
+																		setCalled((previous) =>
+																			new Set(previous).add(
+																				calledKey(
+																					slot.appointmentId,
+																					best?.patientId,
+																				),
+																			),
+																		);
+																	}}
+																>
+																	Позвонил
+																</button>
+															)}
+														</div>
+														<span className="ops-note block text-xs">
 															{best?.phone ?? "телефон не указан"}
 														</span>
-														<span className="ops-note">{best?.reason}</span>
-														{called.has(
-															calledKey(slot.appointmentId, best?.patientId),
-														) ? (
-															<span className="ops-note inline-flex items-center gap-1">
-																<span>Позвонили</span>
-																<Check className="w-3.5 h-3.5 text-emerald-500 inline shrink-0" />
+														{best?.reason && (
+															<span className="ops-note block text-xs break-words">
+																{best.reason}
 															</span>
-														) : (
-															<button
-																className="secondary-button"
-																type="button"
-																style={{ minHeight: 44 }}
-																disabled={false}
-																onClick={() => {
-																	if (!best?.phone) {
-																		showToast(
-																			"У пациента не указан телефон. Открыть карточку для ввода?",
-																			"warning",
-																		);
-																		if (
-																			best?.patientId &&
-																			typeof appLogic?.setSelectedPatientId === "function"
-																		) {
-																			appLogic.setSelectedPatientId(best.patientId);
-																		}
-																		return;
-																	}
-																	setCalled((previous) =>
-																		new Set(previous).add(
-																			calledKey(
-																				slot.appointmentId,
-																				best?.patientId,
-																			),
-																		),
-																	);
-																}}
-															>
-																Позвонил
-															</button>
 														)}
-														{/*
-															Раньше «Ещё N» раскрывало только остальных из top-3.
-															Полный GET waitlist-matches отдаёт до 20 с теми же
-															правилами сортировки — его и показываем при раскрытии.
-														*/}
-														<button
-															className="link-button min-h-[44px] inline-flex items-center"
-															type="button"
-															onClick={() =>
-																setOpenSlot(isOpen ? null : slot.appointmentId)
-															}
-															data-testid={`freed-slot-expand-${slot.appointmentId}`}
-														>
-															{isOpen
-																? "Скрыть полный подбор"
-																: (slot?.candidatesTotal ?? 0) >
-																		(slot?.topMatches ?? []).length
-																	? `Все из очереди (${slot?.candidatesTotal ?? 0})`
-																	: (slot?.topMatches ?? []).length > 1
-																		? `Ещё ${(slot?.topMatches ?? []).length - 1} и полный подбор`
-																		: "Полный подбор"}
-														</button>
+														<div className="pt-1">
+															<button
+																className="link-button h-8 inline-flex items-center text-xs font-semibold cursor-pointer pointer-coarse:min-h-[44px]"
+																type="button"
+																onClick={() =>
+																	setOpenSlot(
+																		isOpen ? null : slot.appointmentId,
+																	)
+																}
+																data-testid={`freed-slot-expand-${slot.appointmentId}`}
+															>
+																{isOpen
+																	? "Скрыть полный подбор"
+																	: (slot?.candidatesTotal ?? 0) >
+																			(slot?.topMatches ?? []).length
+																		? `Все из очереди (${slot?.candidatesTotal ?? 0})`
+																		: (slot?.topMatches ?? []).length > 1
+																			? `Ещё ${(slot?.topMatches ?? []).length - 1} и полный подбор`
+																			: "Полный подбор"}
+															</button>
+														</div>
 														{isOpen ? (
 															<div
 																style={{ marginTop: 8 }}
@@ -391,7 +414,7 @@ export const FreedSlotsPanel: React.FC = () => {
 																/>
 															</div>
 														) : null}
-													</>
+													</div>
 												)}
 											</td>
 										</tr>

@@ -1,15 +1,11 @@
 import {
-	AlertCircle,
 	AlertTriangle,
 	Calendar,
 	CalendarDays,
 	Check,
-	CheckCircle2,
 	ClipboardList,
 	Clock,
 	Copy,
-	ExternalLink,
-	Filter,
 	MessageSquare,
 	MoreVertical,
 	Phone,
@@ -18,13 +14,13 @@ import {
 	Sparkles,
 	Star,
 	Trash2,
-	User,
 	UserCheck,
 	UserPlus,
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -99,42 +95,50 @@ export const PRIORITY_CONFIG: Record<
 > = {
 	urgent: {
 		label: "Острая боль",
-		badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
+		badgeClass:
+			"bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
 		weight: 100,
 	},
 	acute_pain: {
 		label: "Острая боль",
-		badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
+		badgeClass:
+			"bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
 		weight: 100,
 	},
 	high: {
 		label: "Срочно",
-		badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
+		badgeClass:
+			"bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
 		weight: 100,
 	},
 	treatment_plan: {
 		label: "Незавершённый план",
-		badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/35 font-bold",
+		badgeClass:
+			"bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/35 font-bold",
 		weight: 75,
 	},
 	vip: {
 		label: "VIP",
-		badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/35 font-bold",
+		badgeClass:
+			"bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/35 font-bold",
 		weight: 60,
 	},
 	routine: {
 		label: "Плановый",
-		badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
+		badgeClass:
+			"bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
 		weight: 25,
 	},
 	medium: {
 		label: "Плановый",
-		badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
+		badgeClass:
+			"bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
 		weight: 25,
 	},
 	low: {
 		label: "Лист ожидания",
-		badgeClass: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25 font-medium",
+		badgeClass:
+			"bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25 font-medium",
 		weight: 10,
 	},
 };
@@ -171,7 +175,8 @@ export const TREATMENT_CATEGORIES = [
 
 export const DEFAULT_PRIORITY_CFG = {
 	label: "Плановый",
-	badgeClass: "bg-[var(--paper-strong)] text-[var(--ink-2)] border-[var(--line)]",
+	badgeClass:
+		"bg-[var(--paper-strong)] text-[var(--ink-2)] border-[var(--line)]",
 	weight: 25,
 };
 
@@ -189,13 +194,12 @@ export function calculateMatchScore(
 	const matchReasons: string[] = [];
 	const mismatchReasons: string[] = [];
 
-	if (!slot || !slot.startsAt) {
+	if (!slot?.startsAt) {
 		const score = Math.min(100, priorityCfg.weight);
 		return {
 			score,
 			rating: score >= 80 ? "excellent" : score >= 50 ? "good" : "moderate",
-			ratingLabel:
-				score >= 80 ? "Высокий приоритет" : "Стандартный приоритет",
+			ratingLabel: score >= 80 ? "Высокий приоритет" : "Стандартный приоритет",
 			priorityRank: priorityCfg.weight,
 			matchReasons: [priorityCfg.label],
 			mismatchReasons: [],
@@ -311,7 +315,9 @@ export function calculateMatchScore(
 	if (
 		patient.treatmentCategory &&
 		slot.treatmentCategory &&
-		patient.treatmentCategory.toLowerCase().includes(slot.treatmentCategory.toLowerCase())
+		patient.treatmentCategory
+			.toLowerCase()
+			.includes(slot.treatmentCategory.toLowerCase())
 	) {
 		categoryFits = true;
 		totalScore += 10;
@@ -415,7 +421,12 @@ export interface WaitlistQuickFillModalProps {
 	// biome-ignore lint/suspicious/noExplicitAny: draft updater
 	updateNewAppointmentDraft?: ((key: any, value: any) => void) | undefined;
 	focusNewAppointmentEditor?: (() => void) | undefined;
-	onBookSlot?: ((slot: TargetSlotInfo, patient: WaitlistPatientEntry) => Promise<void> | void) | undefined;
+	onBookSlot?:
+		| ((
+				slot: TargetSlotInfo,
+				patient: WaitlistPatientEntry,
+		  ) => Promise<void> | void)
+		| undefined;
 	onAppointmentCreated?: (() => void) | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: dashboard prop
 	dashboard?: any;
@@ -444,23 +455,24 @@ export function WaitlistQuickFillModal({
 	const [items, setItems] = useState<WaitlistPatientEntry[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedPriorityFilter, setSelectedPriorityFilter] = useState<string>("all");
-	const [contactedPatients, setContactedPatients] = useState<Set<string>>(new Set());
+	const [selectedPriorityFilter, setSelectedPriorityFilter] =
+		useState<string>("all");
+	const [contactedPatients, setContactedPatients] = useState<Set<string>>(
+		new Set(),
+	);
 	const [bookingPatientId, setBookingPatientId] = useState<string | null>(null);
 
 	// Add Patient Form State
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [selectedPatientId, setSelectedPatientId] = useState("");
-	const [manualPatientName, setManualPatientName] = useState("");
-	const [manualPatientPhone, setManualPatientPhone] = useState("");
 	const [preferredDoctorId, setPreferredDoctorId] = useState("");
-	const [priorityLevel, setPriorityLevel] = useState<WaitlistPriority>("medium");
+	const [priorityLevel, setPriorityLevel] =
+		useState<WaitlistPriority>("medium");
 	const [treatmentCategory, setTreatmentCategory] = useState("");
 	const [preferredDays, setPreferredDays] = useState<string[]>(["weekdays"]);
-	const [preferredTimeOfDay, setPreferredTimeOfDay] = useState<PreferredTimeOfDay[]>([
-		"morning",
-		"day",
-	]);
+	const [preferredTimeOfDay, setPreferredTimeOfDay] = useState<
+		PreferredTimeOfDay[]
+	>(["morning", "day"]);
 	const [expiryDays, setExpiryDays] = useState<number | null>(14);
 	const [customExpiryDate, setCustomExpiryDate] = useState("");
 	const [notes, setNotes] = useState("");
@@ -524,11 +536,19 @@ export function WaitlistQuickFillModal({
 			if (list.length >= 6) break;
 		}
 		return list;
-	}, [targetSlot, dashboard?.appointments, dashboard?.clinicSettings?.chairs, dashboard?.clinicSettings?.staff]);
+	}, [
+		targetSlot,
+		dashboard?.appointments,
+		dashboard?.clinicSettings?.chairs,
+		dashboard?.clinicSettings?.staff,
+	]);
 
 	const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
-	const [activeMenuPatientId, setActiveMenuPatientId] = useState<string | null>(null);
-	const activeTargetSlot = targetSlot || discoveredFreeSlots[selectedSlotIndex] || null;
+	const [activeMenuPatientId, setActiveMenuPatientId] = useState<string | null>(
+		null,
+	);
+	const activeTargetSlot =
+		targetSlot || discoveredFreeSlots[selectedSlotIndex] || null;
 
 	useEffect(() => {
 		if (isOpen) {
@@ -676,6 +696,7 @@ export function WaitlistQuickFillModal({
 							status: "planned",
 							reason: patient.treatmentCategory || "Запись из листа ожидания",
 							comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
+							assistantUserId: "",
 							clientMutationId: `waitlist-quickfill-${Date.now()}`,
 						}),
 					});
@@ -690,10 +711,12 @@ export function WaitlistQuickFillModal({
 					}
 				} else if (updateNewAppointmentDraft) {
 					updateNewAppointmentDraft("patientId", patient.patientId);
-					if (doctorUserId) updateNewAppointmentDraft("doctorUserId", doctorUserId);
+					if (doctorUserId)
+						updateNewAppointmentDraft("doctorUserId", doctorUserId);
 					if (chairId) updateNewAppointmentDraft("chairId", chairId);
 					updateNewAppointmentDraft("startsAt", startsAt);
 					updateNewAppointmentDraft("endsAt", endsAt);
+					updateNewAppointmentDraft("assistantUserId", "");
 					focusNewAppointmentEditor?.();
 				}
 			}
@@ -715,7 +738,10 @@ export function WaitlistQuickFillModal({
 			fetchWaitlist();
 		} catch (err) {
 			logger.error("Failed to book slot for patient", err);
-			showToast(actionFailureToast("Ошибка при записи пациента", null), "error");
+			showToast(
+				actionFailureToast("Ошибка при записи пациента", null),
+				"error",
+			);
 		} finally {
 			setBookingPatientId(null);
 		}
@@ -726,9 +752,9 @@ export function WaitlistQuickFillModal({
 		e.preventDefault();
 		if (isSubmitting) return;
 
-		let patientIdToSave = selectedPatientId;
-		if (!patientIdToSave && !manualPatientName.trim()) {
-			showToast("Выберите пациента или укажите его ФИО", "error");
+		const patientIdToSave = selectedPatientId;
+		if (!patientIdToSave) {
+			showToast("Выберите пациента из базы", "error");
 			return;
 		}
 
@@ -831,6 +857,8 @@ export function WaitlistQuickFillModal({
 			aria-modal="true"
 			aria-labelledby="waitlist-modal-title"
 		>
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: modal stopPropagation shield */}
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: modal dialog container */}
 			<div
 				className="relative w-full max-w-4xl max-h-[92vh] bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl flex flex-col z-10 text-[var(--ink)] overflow-hidden"
 				onClick={(e) => e.stopPropagation()}
@@ -857,54 +885,67 @@ export function WaitlistQuickFillModal({
 						type="button"
 						onClick={onClose}
 						data-testid="waitlist-quickfill-close-btn"
-						className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors"
+						className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
 						aria-label="Закрыть модальное окно"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4" />
 					</button>
 				</div>
 
 				{/* Target Slot Banner if present */}
-				{activeTargetSlot && activeTargetSlot.startsAt && (
+				{activeTargetSlot?.startsAt && (
 					<div
 						className="p-4 mx-5 mt-4 rounded-xl bg-gradient-to-r from-[var(--teal)]/10 to-teal-500/5 border border-[var(--teal)]/20 flex flex-col gap-3 shrink-0"
 						data-testid="target-slot-banner"
 					>
 						<div className="flex flex-wrap items-center justify-between gap-3">
-							<div className="flex items-center gap-3">
+							<div className="flex items-center gap-3 min-w-0">
 								<div className="p-2 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] shrink-0">
-									<Clock className="w-5 h-5" />
+									<Clock className="w-4 h-4" />
 								</div>
-								<div>
-									<div className="text-xs font-bold uppercase tracking-wider text-[var(--teal-dark)]">
+								<div className="min-w-0">
+									<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--teal-dark)]">
 										Освободившееся окно для записи
 									</div>
-									<div className="text-sm font-semibold text-[var(--ink)]">
-										{new Date(activeTargetSlot.startsAt).toLocaleDateString("ru-RU", {
-											day: "numeric",
-											month: "long",
-											weekday: "long",
-										})}{" "}
+									<div className="text-sm font-semibold text-[var(--ink)] truncate">
+										{new Date(activeTargetSlot.startsAt).toLocaleDateString(
+											"ru-RU",
+											{
+												day: "numeric",
+												month: "long",
+												weekday: "long",
+											},
+										)}{" "}
 										·{" "}
-										{new Date(activeTargetSlot.startsAt).toLocaleTimeString("ru-RU", {
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
+										{new Date(activeTargetSlot.startsAt).toLocaleTimeString(
+											"ru-RU",
+											{
+												hour: "2-digit",
+												minute: "2-digit",
+											},
+										)}
 										–
-										{new Date(activeTargetSlot.endsAt).toLocaleTimeString("ru-RU", {
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
+										{new Date(activeTargetSlot.endsAt).toLocaleTimeString(
+											"ru-RU",
+											{
+												hour: "2-digit",
+												minute: "2-digit",
+											},
+										)}
 									</div>
-									<div className="text-xs text-[var(--muted)] mt-0.5 flex items-center gap-2">
-										<span>Врач: {activeTargetSlot.doctorName || "Любой специалист"}</span>
+									<div className="text-xs text-[var(--muted)] mt-0.5 flex flex-wrap items-center gap-2">
+										<span className="truncate max-w-[200px]">
+											Врач: {activeTargetSlot.doctorName || "Любой специалист"}
+										</span>
 										{activeTargetSlot.freedBecause && (
-											<span>· Причина: {activeTargetSlot.freedBecause}</span>
+											<span className="truncate max-w-[200px]">
+												· Причина: {activeTargetSlot.freedBecause}
+											</span>
 										)}
 									</div>
 								</div>
 							</div>
-							<div className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--teal)]/15 text-[var(--teal-dark)]">
+							<div className="text-xs font-semibold px-3 py-1 rounded-lg bg-[var(--teal)]/15 text-[var(--teal-dark)] shrink-0">
 								{scoredPatients.length} кандидатов в очереди
 							</div>
 						</div>
@@ -931,13 +972,15 @@ export function WaitlistQuickFillModal({
 											key={slot.startsAt + slot.doctorUserId}
 											type="button"
 											onClick={() => setSelectedSlotIndex(idx)}
-											className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+											className={`px-2.5 py-1 h-7 rounded-lg text-xs font-bold whitespace-nowrap transition-all border cursor-pointer pointer-coarse:min-h-[36px] ${
 												isSel
 													? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
 													: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 											}`}
 										>
-											<span>{dateLabel} {timeLabel}</span>
+											<span>
+												{dateLabel} {timeLabel}
+											</span>
 											<span className="opacity-75 font-normal ml-1">
 												({slot.doctorName?.split(" ")[0]})
 											</span>
@@ -949,48 +992,48 @@ export function WaitlistQuickFillModal({
 					</div>
 				)}
 
-				{/* Navigation Sub-Tabs */}
-				<div className="px-5 pt-3 border-b border-[var(--line)] flex items-center gap-2 shrink-0 overflow-x-auto whitespace-nowrap">
+				{/* Navigation Sub-Tabs: Exactly 1 row on desktop, 32px height */}
+				<div className="px-5 pt-2 border-b border-[var(--line)] flex items-center gap-2 shrink-0 overflow-x-auto whitespace-nowrap">
 					{activeTargetSlot && (
 						<button
 							type="button"
 							onClick={() => setActiveTab("match")}
-							className={`px-4 py-2.5 min-h-[44px] text-xs font-bold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+							className={`px-3 py-1.5 h-8 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:py-2.5 ${
 								activeTab === "match"
 									? "border-[var(--teal)] text-[var(--teal-dark)] bg-[var(--paper-soft)]"
 									: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="tab-match"
 						>
-							<Sparkles className="w-4 h-4" />
-							Подбор на окно ({scoredPatients.length})
+							<Sparkles className="w-3.5 h-3.5 shrink-0" />
+							<span>Подбор на окно ({scoredPatients.length})</span>
 						</button>
 					)}
 					<button
 						type="button"
 						onClick={() => setActiveTab("list")}
-						className={`px-4 py-2.5 min-h-[44px] text-xs font-bold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+						className={`px-3 py-1.5 h-8 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:py-2.5 ${
 							activeTab === "list"
 								? "border-[var(--teal)] text-[var(--teal-dark)] bg-[var(--paper-soft)]"
 								: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="tab-list"
 					>
-						<Calendar className="w-4 h-4" />
-						Все в очереди ({items.length})
+						<Calendar className="w-3.5 h-3.5 shrink-0" />
+						<span>Все в очереди ({items.length})</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setActiveTab("add")}
-						className={`px-4 py-2.5 min-h-[44px] text-xs font-bold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+						className={`px-3 py-1.5 h-8 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:py-2.5 ${
 							activeTab === "add"
 								? "border-[var(--teal)] text-[var(--teal-dark)] bg-[var(--paper-soft)]"
 								: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="tab-add"
 					>
-						<UserPlus className="w-4 h-4" />
-						Добавить пациента
+						<UserPlus className="w-3.5 h-3.5 shrink-0" />
+						<span>Добавить пациента</span>
 					</button>
 				</div>
 
@@ -998,16 +1041,27 @@ export function WaitlistQuickFillModal({
 				<div className="flex-1 overflow-y-auto p-5 space-y-4">
 					{/* TAB 1: MATCHING ON TARGET SLOT */}
 					{activeTab === "match" && (
-						<div className="space-y-4" data-testid="match-tab-content">
+						<div className="space-y-3" data-testid="match-tab-content">
 							{scoredPatients.length === 0 ? (
 								<EmptyState
 									icon={<Sparkles size={28} />}
 									title="В листе ожидания нет подходящих пациентов"
 									description="Добавьте пациента в очередь или откройте окно для записи с улицы."
 									glass={false}
+									action={
+										<button
+											type="button"
+											onClick={() => setActiveTab("add")}
+											className="h-8 px-3 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] font-bold text-xs inline-flex items-center gap-1.5 hover:brightness-105 active:scale-95 transition-all shadow-xs cursor-pointer pointer-coarse:min-h-[44px]"
+											data-testid="match-empty-add-btn"
+										>
+											<Plus className="w-3.5 h-3.5 shrink-0" />
+											<span>+ Добавить в лист ожидания</span>
+										</button>
+									}
 								/>
 							) : (
-								<div className="space-y-3">
+								<div className="space-y-2.5">
 									{scoredPatients.map(({ patient, scoring }, idx) => {
 										const priorityCfg =
 											PRIORITY_CONFIG[patient.priorityLevel] ??
@@ -1018,25 +1072,28 @@ export function WaitlistQuickFillModal({
 										return (
 											<div
 												key={patient.id}
-												className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal)]/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+												className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal)]/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0"
 												data-testid={`match-card-${patient.id}`}
 											>
-												<div className="space-y-2 flex-1">
+												<div className="space-y-1.5 flex-1 min-w-0">
 													<div className="flex flex-wrap items-center gap-2">
-														<span className="text-xs font-bold text-[var(--muted)]">
+														<span className="text-xs font-bold text-[var(--muted)] shrink-0">
 															#{idx + 1}
 														</span>
-														<h4 className="font-bold text-sm text-[var(--ink)]">
+														<h4
+															className="font-bold text-sm text-[var(--ink)] truncate max-w-[260px]"
+															title={patient.patientName || "Пациент без имени"}
+														>
 															{patient.patientName || "Пациент без имени"}
 														</h4>
 														<span
-															className={`inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
+															className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border shrink-0 ${priorityCfg.badgeClass}`}
 														>
 															{renderPriorityIcon(patient.priorityLevel)}
 															<span>{priorityCfg.label}</span>
 														</span>
 														<span
-															className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
+															className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
 																scoring.score >= 80
 																	? "bg-[var(--ok-bg)] text-[var(--ok-fg)]"
 																	: scoring.score >= 60
@@ -1050,18 +1107,22 @@ export function WaitlistQuickFillModal({
 
 													<div className="text-xs text-[var(--muted)] flex flex-wrap items-center gap-x-3 gap-y-1">
 														{patient.patientPhone && (
-															<span className="flex items-center gap-1 font-medium text-[var(--ink-2)]">
+															<span className="flex items-center gap-1 font-medium text-[var(--ink-2)] shrink-0">
 																<Phone className="w-3 h-3 text-[var(--teal)]" />
 																{patient.patientPhone}
 															</span>
 														)}
 														{patient.preferredDoctorName && (
-															<span>Врач: {patient.preferredDoctorName}</span>
+															<span className="truncate max-w-[200px]">
+																Врач: {patient.preferredDoctorName}
+															</span>
 														)}
 														{patient.treatmentCategory && (
-															<span>Категория: {patient.treatmentCategory}</span>
+															<span className="truncate max-w-[200px]">
+																Категория: {patient.treatmentCategory}
+															</span>
 														)}
-														<span>
+														<span className="shrink-0">
 															Ждёт{" "}
 															{Math.max(
 																0,
@@ -1076,11 +1137,11 @@ export function WaitlistQuickFillModal({
 													</div>
 
 													{/* Match reasons tags */}
-													<div className="flex flex-wrap items-center gap-1.5 pt-1">
+													<div className="flex flex-wrap items-center gap-1.5 pt-0.5">
 														{scoring.matchReasons.map((r) => (
 															<span
 																key={r}
-																className="text-xs px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal-dark)] font-medium inline-flex items-center gap-1"
+																className="text-[11px] px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal-dark)] font-medium inline-flex items-center gap-1 shrink-0"
 															>
 																<Check className="w-3 h-3 text-[var(--teal-dark)] shrink-0" />
 																<span>{r}</span>
@@ -1089,7 +1150,7 @@ export function WaitlistQuickFillModal({
 														{scoring.mismatchReasons.map((m) => (
 															<span
 																key={m}
-																className="text-xs px-2 py-0.5 rounded-md bg-[var(--bad-bg)]/50 text-[var(--bad-fg)] font-medium inline-flex items-center gap-1"
+																className="text-[11px] px-2 py-0.5 rounded-md bg-[var(--bad-bg)]/50 text-[var(--bad-fg)] font-medium inline-flex items-center gap-1 shrink-0"
 															>
 																<X className="w-3 h-3 text-[var(--bad-fg)] shrink-0" />
 																<span>{m}</span>
@@ -1098,15 +1159,15 @@ export function WaitlistQuickFillModal({
 													</div>
 
 													{patient.notes && (
-														<p className="text-xs italic text-[var(--muted)] bg-[var(--paper)] p-2 rounded-lg border border-[var(--line)]">
+														<p className="text-xs italic text-[var(--muted)] bg-[var(--paper)] p-2 rounded-lg border border-[var(--line)] break-words">
 															"{patient.notes}"
 														</p>
 													)}
 												</div>
 
-												{/* 1-Click Action Buttons: Law of Miller (<= 2 primary buttons) */}
+												{/* 1-Click Action Buttons: Law of Miller (strictly <= 2 direct buttons) + MoreVertical */}
 												<div
-													className="flex items-center gap-2 shrink-0 justify-end relative"
+													className="flex items-center gap-1.5 shrink-0 justify-end relative"
 													data-menu-container={patient.id}
 												>
 													{/* Button 1 (Main): 1-Click Booking */}
@@ -1114,14 +1175,39 @@ export function WaitlistQuickFillModal({
 														type="button"
 														onClick={() => handleBookPatient(patient)}
 														disabled={bookingPatientId === patient.id}
-														className="px-3.5 py-2 min-h-[44px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+														className="h-8 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 pointer-coarse:min-h-[44px]"
 														data-testid={`btn-book-${patient.id}`}
+														title="Записать пациента в освободившееся окно в 1 клик"
 													>
-														<UserCheck className="w-4 h-4 shrink-0" />
-														<span>Записать в 1 клик</span>
+														<UserCheck className="w-3.5 h-3.5 shrink-0" />
+														<span>
+															{bookingPatientId === patient.id
+																? "Записываем..."
+																: "В окно в 1 клик"}
+														</span>
 													</button>
 
-													{/* Button 2: Secondary Actions Dropdown (MoreVertical) */}
+													{/* Button 2: WhatsApp direct */}
+													{patient.patientPhone && (
+														<button
+															type="button"
+															onClick={() => handleSendWhatsApp(patient)}
+															className={`h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer pointer-coarse:min-h-[44px] border ${
+																isContacted
+																	? "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30"
+																	: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)]"
+															}`}
+															title="Предложить окно через WhatsApp"
+															data-testid={`btn-whatsapp-${patient.id}`}
+														>
+															<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+															<span>
+																{isContacted ? "Предложено ✓" : "WhatsApp"}
+															</span>
+														</button>
+													)}
+
+													{/* Button 3: Secondary Actions Dropdown (MoreVertical) */}
 													<div className="relative">
 														<button
 															type="button"
@@ -1130,55 +1216,29 @@ export function WaitlistQuickFillModal({
 																	prev === patient.id ? null : patient.id,
 																)
 															}
-															className="p-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer shadow-xs"
+															className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer shadow-xs pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
 															title="Другие действия"
 															aria-label="Другие действия"
 															aria-haspopup="true"
 															aria-expanded={activeMenuPatientId === patient.id}
 															data-testid={`btn-more-${patient.id}`}
 														>
-															<MoreVertical className="w-4 h-4 shrink-0" />
+															<MoreVertical className="w-3.5 h-3.5 shrink-0" />
 														</button>
 
 														{activeMenuPatientId === patient.id && (
-															<div className="absolute right-0 top-full mt-1.5 min-w-[240px] p-1.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xl z-30 flex flex-col gap-1">
-																<button
-																	type="button"
-																	onClick={() => {
-																		handleSendWhatsApp(patient);
-																		setActiveMenuPatientId(null);
-																	}}
-																	className={`w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-between gap-2.5 transition-all text-left cursor-pointer ${
-																		isContacted
-																			? "bg-green-500/15 text-green-700 dark:text-green-300 border border-green-500/30"
-																			: "hover:bg-[var(--paper-soft)] text-[var(--ink)]"
-																	}`}
-																	title="Предложить окно через WhatsApp"
-																	data-testid={`btn-whatsapp-${patient.id}`}
-																>
-																	<span className="flex items-center gap-2.5">
-																		<MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
-																		<span>Предложить в WhatsApp</span>
-																	</span>
-																	{isContacted && (
-																		<span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-600 dark:text-green-400 shrink-0">
-																			<span>Предложено</span>
-																			<Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
-																		</span>
-																	)}
-																</button>
-
+															<div className="absolute right-0 top-full mt-1.5 min-w-[210px] p-1.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xl z-30 flex flex-col gap-1">
 																<button
 																	type="button"
 																	onClick={() => {
 																		handleCopySms(patient);
 																		setActiveMenuPatientId(null);
 																	}}
-																	className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all text-left cursor-pointer"
+																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
 																	title="Скопировать текст SMS"
 																	aria-label="Скопировать текст SMS"
 																>
-																	<Copy className="w-4 h-4 text-[var(--muted)] shrink-0" />
+																	<Copy className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
 																	<span>Скопировать SMS</span>
 																</button>
 
@@ -1186,14 +1246,30 @@ export function WaitlistQuickFillModal({
 																	<a
 																		href={`tel:${patient.patientPhone.replace(/[^\d+]/g, "")}`}
 																		onClick={() => setActiveMenuPatientId(null)}
-																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-[var(--paper-soft)] text-[var(--teal)] transition-all text-left cursor-pointer"
+																		className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--teal)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
 																		title="Позвонить пациенту"
 																		aria-label="Позвонить пациенту"
 																	>
-																		<Phone className="w-4 h-4 text-[var(--teal)] shrink-0" />
+																		<Phone className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 																		<span>Позвонить</span>
 																	</a>
 																)}
+
+																<div className="my-0.5 border-t border-[var(--line)]" />
+
+																<button
+																	type="button"
+																	onClick={() => {
+																		handleDelete(patient.id);
+																		setActiveMenuPatientId(null);
+																	}}
+																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
+																	title="Удалить из листа ожидания"
+																	aria-label="Удалить из листа ожидания"
+																>
+																	<Trash2 className="w-3.5 h-3.5 shrink-0" />
+																	<span>Удалить из листа</span>
+																</button>
 															</div>
 														)}
 													</div>
@@ -1208,21 +1284,20 @@ export function WaitlistQuickFillModal({
 
 					{/* TAB 2: FULL WAITLIST QUEUE */}
 					{activeTab === "list" && (
-						<div className="space-y-4" data-testid="list-tab-content">
-							{/* Filter and search bar */}
-							<div className="flex flex-wrap items-center gap-3 justify-between">
-								<div className="relative flex-1 min-w-[240px]">
-									<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+						<div className="space-y-3" data-testid="list-tab-content">
+							{/* Filter and search bar: exactly 1 row (32px, h-8) on desktop */}
+							<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
+								<div className="relative flex-1 min-w-[180px] max-w-sm">
+									<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
 									<input
 										type="text"
 										value={searchQuery}
 										onChange={(e) => setSearchQuery(e.target.value)}
 										placeholder="Поиск по ФИО, телефону или примечанию..."
-										style={{ paddingLeft: "2.75rem" }}
-										className="w-full !pl-11 pr-3 py-2 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] min-h-[44px]"
+										className="w-full pl-8 pr-2.5 h-8 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
 									/>
 								</div>
-								<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
+								<div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap shrink-0">
 									{[
 										{ id: "all", label: "Все" },
 										{ id: "urgent", label: "Острая боль" },
@@ -1234,9 +1309,9 @@ export function WaitlistQuickFillModal({
 											key={filter.id}
 											type="button"
 											onClick={() => setSelectedPriorityFilter(filter.id)}
-											className={`px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-semibold border transition-all ${
+											className={`px-2.5 h-8 rounded-lg text-xs font-semibold border transition-all flex items-center justify-center cursor-pointer pointer-coarse:min-h-[44px] ${
 												selectedPriorityFilter === filter.id
-													? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-sm"
+													? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
 													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 										>
@@ -1253,37 +1328,71 @@ export function WaitlistQuickFillModal({
 							) : filteredList.length === 0 ? (
 								<EmptyState
 									icon={<Calendar size={28} />}
-									title="В листе ожидания нет записей"
-									description="Используйте вкладку «Добавить пациента», чтобы поставить пациента в очередь."
+									title={
+										searchQuery || selectedPriorityFilter !== "all"
+											? "Ничего не найдено по фильтрам"
+											: "В листе ожидания нет записей"
+									}
+									description={
+										searchQuery || selectedPriorityFilter !== "all"
+											? "Попробуйте изменить запрос или сбросить фильтр приоритета."
+											: "Поставьте пациента в очередь ожидания при отмене или нехватке времени."
+									}
 									glass={false}
+									action={
+										<button
+											type="button"
+											onClick={() => {
+												if (searchQuery || selectedPriorityFilter !== "all") {
+													setSearchQuery("");
+													setSelectedPriorityFilter("all");
+												} else {
+													setActiveTab("add");
+												}
+											}}
+											className="h-8 px-3 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] font-bold text-xs inline-flex items-center gap-1.5 hover:brightness-105 active:scale-95 transition-all shadow-xs cursor-pointer pointer-coarse:min-h-[44px]"
+											data-testid="list-empty-add-btn"
+										>
+											<Plus className="w-3.5 h-3.5 shrink-0" />
+											<span>
+												{searchQuery || selectedPriorityFilter !== "all"
+													? "Сбросить фильтры"
+													: "+ Добавить в лист ожидания"}
+											</span>
+										</button>
+									}
 								/>
 							) : (
-								<div className="space-y-3">
+								<div className="space-y-2.5">
 									{filteredList.map((item) => {
 										const priorityCfg =
 											PRIORITY_CONFIG[item.priorityLevel] ??
 											PRIORITY_CONFIG.routine ??
 											DEFAULT_PRIORITY_CFG;
+										const isContacted = contactedPatients.has(item.id);
 
 										return (
 											<div
 												key={item.id}
-												className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col md:flex-row md:items-center justify-between gap-3"
+												className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0"
 												data-testid={`waitlist-item-${item.id}`}
 											>
-												<div className="space-y-1.5 flex-1">
+												<div className="space-y-1.5 flex-1 min-w-0">
 													<div className="flex flex-wrap items-center gap-2">
-														<h4 className="font-bold text-sm text-[var(--ink)]">
+														<h4
+															className="font-bold text-sm text-[var(--ink)] truncate max-w-[260px]"
+															title={item.patientName || "Пациент без имени"}
+														>
 															{item.patientName || "Пациент без имени"}
 														</h4>
 														<span
-															className={`inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
+															className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border shrink-0 ${priorityCfg.badgeClass}`}
 														>
 															{renderPriorityIcon(item.priorityLevel)}
 															<span>{priorityCfg.label}</span>
 														</span>
 														{item.status === "fulfilled" && (
-															<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 inline-flex items-center gap-1">
+															<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 inline-flex items-center gap-1 shrink-0">
 																<span>Принят</span>
 																<Check className="w-3 h-3 text-green-600 shrink-0" />
 															</span>
@@ -1291,18 +1400,22 @@ export function WaitlistQuickFillModal({
 													</div>
 													<div className="text-xs text-[var(--muted)] flex flex-wrap items-center gap-x-3 gap-y-1">
 														{item.patientPhone && (
-															<span className="font-medium text-[var(--ink-2)]">
+															<span className="font-medium text-[var(--ink-2)] shrink-0">
 																{item.patientPhone}
 															</span>
 														)}
 														{item.preferredDoctorName && (
-															<span>Врач: {item.preferredDoctorName}</span>
+															<span className="truncate max-w-[200px]">
+																Врач: {item.preferredDoctorName}
+															</span>
 														)}
 														{item.treatmentCategory && (
-															<span>Категория: {item.treatmentCategory}</span>
+															<span className="truncate max-w-[200px]">
+																Категория: {item.treatmentCategory}
+															</span>
 														)}
 														{item.expiryDate && (
-															<span>
+															<span className="shrink-0">
 																Действует до:{" "}
 																{new Date(item.expiryDate).toLocaleDateString(
 																	"ru-RU",
@@ -1311,43 +1424,120 @@ export function WaitlistQuickFillModal({
 														)}
 													</div>
 													{item.notes && (
-														<p className="text-xs text-[var(--muted)]">
+														<p className="text-xs text-[var(--muted)] break-words">
 															{item.notes}
 														</p>
 													)}
 												</div>
 
-												<div className="flex items-center gap-2 shrink-0">
+												{/* Action Buttons: Law of Miller (strictly <= 2 direct buttons) + MoreVertical */}
+												<div
+													className="flex items-center gap-1.5 shrink-0 justify-end relative"
+													data-menu-container={item.id}
+												>
 													{activeTargetSlot && item.status !== "fulfilled" && (
 														<button
 															type="button"
 															onClick={() => handleBookPatient(item)}
 															disabled={bookingPatientId === item.id}
-															className="px-3 py-2 min-h-[44px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+															className="h-8 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all disabled:opacity-50 pointer-coarse:min-h-[44px]"
 															title="Записать в окно в 1 клик"
+															data-testid={`btn-book-list-${item.id}`}
 														>
-															<UserCheck className="w-3.5 h-3.5" />
-															В окно
+															<UserCheck className="w-3.5 h-3.5 shrink-0" />
+															<span>
+																{bookingPatientId === item.id
+																	? "Записываем..."
+																	: "В окно"}
+															</span>
 														</button>
 													)}
-													<button
-														type="button"
-														onClick={() => handleSendWhatsApp(item)}
-														className="px-3 py-2 min-h-[44px] bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl text-xs font-semibold flex items-center gap-1.5 text-[var(--ink)]"
-														title="Отправить сообщение в WhatsApp"
-													>
-														<MessageSquare className="w-3.5 h-3.5 text-green-500" />
-														WhatsApp
-													</button>
-													<button
-														type="button"
-														onClick={() => handleDelete(item.id)}
-														className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-[var(--bad-bg)] text-[var(--bad-fg)] hover:brightness-105"
-														title="Удалить из листа"
-														aria-label="Удалить из листа"
-													>
-														<Trash2 className="w-4 h-4" />
-													</button>
+
+													{item.patientPhone && (
+														<button
+															type="button"
+															onClick={() => handleSendWhatsApp(item)}
+															className={`h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer pointer-coarse:min-h-[44px] border ${
+																isContacted
+																	? "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30"
+																	: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)]"
+															}`}
+															title="Отправить сообщение в WhatsApp"
+															data-testid={`btn-whatsapp-list-${item.id}`}
+														>
+															<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+															<span>
+																{isContacted ? "Предложено ✓" : "WhatsApp"}
+															</span>
+														</button>
+													)}
+
+													{/* Context menu for secondary actions: SMS, Call, Delete */}
+													<div className="relative">
+														<button
+															type="button"
+															onClick={() =>
+																setActiveMenuPatientId((prev) =>
+																	prev === item.id ? null : item.id,
+																)
+															}
+															className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer shadow-xs pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
+															title="Другие действия"
+															aria-label="Другие действия"
+															aria-haspopup="true"
+															aria-expanded={activeMenuPatientId === item.id}
+															data-testid={`btn-more-list-${item.id}`}
+														>
+															<MoreVertical className="w-3.5 h-3.5 shrink-0" />
+														</button>
+
+														{activeMenuPatientId === item.id && (
+															<div className="absolute right-0 top-full mt-1.5 min-w-[210px] p-1.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xl z-30 flex flex-col gap-1">
+																<button
+																	type="button"
+																	onClick={() => {
+																		handleCopySms(item);
+																		setActiveMenuPatientId(null);
+																	}}
+																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
+																	title="Скопировать текст SMS"
+																	aria-label="Скопировать текст SMS"
+																>
+																	<Copy className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
+																	<span>Скопировать SMS</span>
+																</button>
+
+																{item.patientPhone && (
+																	<a
+																		href={`tel:${item.patientPhone.replace(/[^\d+]/g, "")}`}
+																		onClick={() => setActiveMenuPatientId(null)}
+																		className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--teal)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
+																		title="Позвонить пациенту"
+																		aria-label="Позвонить пациенту"
+																	>
+																		<Phone className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+																		<span>Позвонить</span>
+																	</a>
+																)}
+
+																<div className="my-0.5 border-t border-[var(--line)]" />
+
+																<button
+																	type="button"
+																	onClick={() => {
+																		handleDelete(item.id);
+																		setActiveMenuPatientId(null);
+																	}}
+																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
+																	title="Удалить из листа ожидания"
+																	aria-label="Удалить из листа ожидания"
+																>
+																	<Trash2 className="w-3.5 h-3.5 shrink-0" />
+																	<span>Удалить из листа</span>
+																</button>
+															</div>
+														)}
+													</div>
 												</div>
 											</div>
 										);
@@ -1382,7 +1572,7 @@ export function WaitlistQuickFillModal({
 										id="waitlist-select-patient"
 										value={selectedPatientId}
 										onChange={(e) => setSelectedPatientId(e.target.value)}
-										className="w-full p-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] min-h-[44px]"
+										className="w-full p-2 h-9 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
 									>
 										<option value="">-- Выберите пациента из базы --</option>
 										{patientsList.map((p) => (
@@ -1403,28 +1593,38 @@ export function WaitlistQuickFillModal({
 											{
 												id: "urgent",
 												label: "Острая боль",
-												icon: <Zap size={16} className="shrink-0" />,
+												icon: <Zap size={15} className="shrink-0" />,
 												color:
 													"bg-[var(--bad-bg)] text-[var(--bad-fg)] border-[var(--bad-fg)]",
 											},
 											{
 												id: "treatment_plan",
 												label: "Незавершённый план",
-												icon: <ClipboardList size={16} className="shrink-0" />,
+												icon: <ClipboardList size={15} className="shrink-0" />,
 												color:
 													"bg-[var(--warn-bg)] text-[var(--warn-fg)] border-[var(--warn-fg)]",
 											},
 											{
 												id: "vip",
 												label: "VIP клиент",
-												icon: <Star size={16} className="shrink-0 text-purple-500" />,
+												icon: (
+													<Star
+														size={15}
+														className="shrink-0 text-purple-500"
+													/>
+												),
 												color:
 													"bg-purple-500/20 text-purple-600 border-purple-500",
 											},
 											{
 												id: "routine",
 												label: "Плановый",
-												icon: <CalendarDays size={16} className="shrink-0 text-slate-500" />,
+												icon: (
+													<CalendarDays
+														size={15}
+														className="shrink-0 text-slate-500"
+													/>
+												),
 												color:
 													"bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line-strong)]",
 											},
@@ -1432,14 +1632,18 @@ export function WaitlistQuickFillModal({
 											<button
 												key={p.id}
 												type="button"
-												onClick={() => setPriorityLevel(p.id as WaitlistPriority)}
-												className={`p-2.5 min-h-[44px] rounded-xl text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
+												onClick={() =>
+													setPriorityLevel(p.id as WaitlistPriority)
+												}
+												className={`p-2 rounded-lg text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1 cursor-pointer pointer-coarse:min-h-[44px] ${
 													priorityLevel === p.id
 														? `${p.color} ring-2 ring-offset-1`
 														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 												}`}
 											>
-												<span className="flex items-center justify-center">{p.icon}</span>
+												<span className="flex items-center justify-center">
+													{p.icon}
+												</span>
 												<span>{p.label}</span>
 											</button>
 										))}
@@ -1458,7 +1662,7 @@ export function WaitlistQuickFillModal({
 										id="waitlist-select-doctor"
 										value={preferredDoctorId}
 										onChange={(e) => setPreferredDoctorId(e.target.value)}
-										className="w-full p-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] min-h-[44px]"
+										className="w-full p-2 h-9 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
 									>
 										<option value="">-- Любой специалист клиники --</option>
 										{/* biome-ignore lint/suspicious/noExplicitAny: doctor type */}
@@ -1482,7 +1686,7 @@ export function WaitlistQuickFillModal({
 										id="waitlist-select-category"
 										value={treatmentCategory}
 										onChange={(e) => setTreatmentCategory(e.target.value)}
-										className="w-full p-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] min-h-[44px]"
+										className="w-full p-2 h-9 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
 									>
 										<option value="">-- Выберите направление --</option>
 										{TREATMENT_CATEGORIES.map((cat) => (
@@ -1498,7 +1702,7 @@ export function WaitlistQuickFillModal({
 									<span className="text-xs font-semibold text-[var(--muted)] block">
 										Желаемые дни недели
 									</span>
-									<div className="flex flex-wrap gap-2">
+									<div className="flex flex-wrap gap-1.5">
 										{[
 											{ id: "weekdays", label: "Пн-Пт (Будни)" },
 											{ id: "weekend", label: "Сб-Вс (Выходные)" },
@@ -1516,7 +1720,7 @@ export function WaitlistQuickFillModal({
 														setPreferredDays([...preferredDays, d.id]);
 													}
 												}}
-												className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-all ${
+												className={`px-3 py-1.5 h-8 rounded-lg text-xs font-semibold border transition-all cursor-pointer pointer-coarse:min-h-[44px] ${
 													preferredDays.includes(d.id)
 														? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
 														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -1550,20 +1754,19 @@ export function WaitlistQuickFillModal({
 															preferredTimeOfDay.filter((x) => x !== val),
 														);
 													} else {
-														setPreferredTimeOfDay([
-															...preferredTimeOfDay,
-															val,
-														]);
+														setPreferredTimeOfDay([...preferredTimeOfDay, val]);
 													}
 												}}
-												className={`p-2 min-h-[44px] rounded-xl text-xs border transition-all flex flex-col items-center justify-center ${
-													preferredTimeOfDay.includes(t.id as PreferredTimeOfDay)
+												className={`p-1.5 rounded-lg text-xs border transition-all flex flex-col items-center justify-center cursor-pointer pointer-coarse:min-h-[44px] ${
+													preferredTimeOfDay.includes(
+														t.id as PreferredTimeOfDay,
+													)
 														? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
 														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 												}`}
 											>
 												<span className="font-bold">{t.label}</span>
-												<span className="text-xs opacity-80">{t.sub}</span>
+												<span className="text-[11px] opacity-80">{t.sub}</span>
 											</button>
 										))}
 									</div>
@@ -1574,7 +1777,7 @@ export function WaitlistQuickFillModal({
 									<span className="text-xs font-semibold text-[var(--muted)] block">
 										Срок ожидания (до даты)
 									</span>
-									<div className="flex flex-wrap gap-2 items-center">
+									<div className="flex flex-wrap gap-1.5 items-center">
 										{[
 											{ days: 3, label: "3 дня" },
 											{ days: 7, label: "7 дней" },
@@ -1588,7 +1791,7 @@ export function WaitlistQuickFillModal({
 													setExpiryDays(opt.days);
 													setCustomExpiryDate("");
 												}}
-												className={`px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-semibold border transition-all ${
+												className={`px-3 py-1.5 h-8 rounded-lg text-xs font-semibold border transition-all cursor-pointer pointer-coarse:min-h-[44px] ${
 													expiryDays === opt.days && !customExpiryDate
 														? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
 														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -1604,7 +1807,7 @@ export function WaitlistQuickFillModal({
 												setCustomExpiryDate(e.target.value);
 												setExpiryDays(null);
 											}}
-											className="p-2 min-h-[44px] bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)]"
+											className="h-8 px-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] pointer-coarse:min-h-[44px]"
 										/>
 									</div>
 								</div>
@@ -1623,7 +1826,7 @@ export function WaitlistQuickFillModal({
 										onChange={(e) => setNotes(e.target.value)}
 										placeholder="Например: Пациент просил перезвонить после 15:00. Готов приехать за 30 минут."
 										rows={3}
-										className="w-full p-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										className="w-full p-2 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 									/>
 								</div>
 							</div>
@@ -1631,13 +1834,15 @@ export function WaitlistQuickFillModal({
 							<button
 								type="submit"
 								disabled={isSubmitting}
-								className="w-full py-3 min-h-[44px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
+								className="w-full py-2.5 h-10 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 pointer-coarse:min-h-[44px]"
 								data-testid="submit-waitlist-btn"
 							>
 								<UserPlus className="w-4 h-4" />
-								{isSubmitting
-									? "Сохранение..."
-									: "Зарегистрировать в листе ожидания"}
+								<span>
+									{isSubmitting
+										? "Сохранение..."
+										: "Зарегистрировать в листе ожидания"}
+								</span>
 							</button>
 						</form>
 					)}
