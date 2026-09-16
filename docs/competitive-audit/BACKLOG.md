@@ -7228,3 +7228,51 @@
     * Полная очистка от эмодзи (Мандат 8d п. 7): все журналы работы автоклава (Форма № 257/у) и контроля ПСО (Форма № 366/у) используют векторные пиктограммы Lucide (`PackageCheck`, `ShieldCheck`, `Barcode`, `Clock`);
     * Плотная десктопная сетка с высотой элементов 32–36px и адаптивные тач-таргеты $\ge 44\text{px}$ для медсестры у стерилизатора.
 
+### 393. Section 393: Red Team Wave 234 — Odontogram Radial Menu Anatomical Fidelity & 1-Tap Statuses, Non-Intrusive Floating Softphone & Zero Visit Interruption, 5-Second Fast Patient Creation & Compact Clinical Header (Мандаты 8c, 8d, 8e пп. 6, 8, 8n, 8p, 8s)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Затронутые файлы**:
+  - `apps/web/src/components/odontogram/ToothRadialMenu.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/odontogram/ToothStatusPalette.tsx`
+  - `apps/web/src/components/odontogram/ClassicGostOdontogram.tsx`
+  - `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx`
+  - `apps/web/src/components/telephony/IncomingCallPopup.tsx`
+  - `apps/web/src/components/telephony/telephonyFloatingWidget.css`
+  - `apps/web/src/store/telephonyStore.ts`
+  - `apps/web/src/components/schedule/NewAppointmentForm.tsx`
+  - `apps/web/src/components/schedule/AppointmentModal.tsx`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
+  - `apps/web/src/components/Header.tsx`
+  - `apps/web/src/components/Header.css`
+  - `apps/web/src/components/workspaceShell.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Анатомическая достоверность радиального меню одонтограммы и 1-тап статусы (Odontogram Radial Menu Anatomical Fidelity & 1-Tap Statuses) (Мандаты 8c, 8d, 8e п. 3, 8k, 8p, 8s, 8n)**:
+    * В `ToothRadialMenu.tsx`, `OdontogramModule.tsx`, `ToothChart.tsx`, `ToothStatusPalette.tsx` и `ClassicGostOdontogram.tsx` реализовано и доведено до анатомического совершенства радиальное меню зуба (`ToothRadialMenu`) для мгновенной 1-тап фиксации статусов зубной формулы FDI (11..48, 51..85);
+    * Полноценная поддержка жестов свайпа (touch swipe-to-dismiss) и адаптивный bottom-sheet drawer для планшетов у кресла и мобильных устройств (`isTouchOrMobile`, `dragOffsetY`, `handleSheetTouchMove`, порог свайпа 65px) без сбоев верстки;
+    * Каноническая клиническая палитра состояний: Кариес (`#f59e0b`), Пульпит (`#ef4444`), Периодонтит (`#f97316`), Пломба (`#3b82f6`), Коронка (`#eab308`), Имплантат (`#6366f1`), Отсутствует (`#94a3b8`);
+    * Поддержка быстрого выбора анатомических поверхностей коронки (O, M, D, V, L/P, K / Окклюзионная, Мезиальная, Дистальная, Вестибулярная, Язычная/Нёбная);
+    * Горячие клавиши клавиатуры (Hotkeys) по ГОСТ для молниеносной работы врача одной рукой (К/C — кариес, П/F — пломба, Ф/U — пульпит, Е/T — периодонтит, Ц/W — коронка, И/B — имплант, 0/O — интактный/здоров, З/P — удален/отсутствует);
+    * 1-клик быстрые переходы прямо из радиального меню: «В наряд / счет», «Журнал каналов (Эндо)», «Терапия (SOAP)» без модальных лабиринтов и с сохранением Закона Анти-Матрёшки (глубина строго 1);
+    * Строго векторные иконки Lucide (`Sparkles`, `Flame`, `Zap`, `Hammer`, `Crown`, `Wrench`, `Trash2`, `Coins`, `AlertTriangle`), ноль мультяшных эмодзи по Мандату 8d п. 7;
+    * Тач-таргеты $\ge 44\times 44\text{px}$ для сенсорных экранов планшетов у кресла и плотная десктопная сетка 28–36px при работе мышью.
+  - **Немодальный плавающий софтфон и нулевое прерывание визита врача (Non-Intrusive Floating Softphone & Zero Visit Interruption) (Мандаты 8c, 8d, 8e п. 6, 8k, 8n, 8p, 8s)**:
+    * В `TelephonyFloatingWidget.tsx`, `IncomingCallPopup.tsx`, `telephonyFloatingWidget.css` и `telephonyStore.ts` внедрен эргономичный плавающий софтфон в стиле macOS / iOS HIG Dynamic Island (верхняя амбиентная капсула-островок), полностью ликвидирующий слепые и блокирующие пятна в нижних углах экрана;
+    * Железная защита активного приёма врача от прерывания и потери данных (Мандат 8e п. 6): входящий звонок или набор номера НИКОГДА не размонтируют экран визита `VisitView`, не сбрасывают набранный текст дневника 043/у и не вызывают принудительной смены маршрута;
+    * Сквозной debounced autosave с авто-сбросом буфера при звонке (`telephonyStore.ts`);
+    * В режиме врача (`isDoctorMode`) входящий звонок отображается деликатным немодальным уведомлением в верхней строке, позволяя врачу продолжить манипуляции у кресла либо открыть контекстную шторку абонента в 1 клик (`openCallDrawer`) без потери фокуса;
+    * Закон Хика и Закон Миллера: ровно 1 строка элементов управления (32–36px), вторичные действия телефонии (история вызовов, выбор аудиоустройств, перевод на оператора) аккуратно спрятаны в компактный аккордеон/поповер;
+    * Отображение карточки абонента с автоматическим определением пациента по номеру телефона (`resolvePatientFromPhone`), вывод соматических алергенов (`resolvePatientSomaticAlerts`), ближайших записей и 1-клик генерация текста подтверждения визита в WhatsApp/Telegram без переключения экранов;
+    * Полная токенизация темы Dark/Light Mode (`var(--paper)`, `var(--ink)`, `var(--glass-panel)`, `var(--glass-border)`) по стандарту WCAG AAA без слепящих белых рамок.
+  - **Быстрое создание пациента за 5 секунд и компактная клиническая шапка (5-Second Fast Patient Creation & Compact Clinical Header) (Мандаты 8c, 8d, 8e п. 8, 8n, 8p, 8s)**:
+    * В `NewAppointmentForm.tsx`, `AppointmentModal.tsx`, `QuickBookingDrawer.tsx`, `Header.tsx`, `Header.css` и `workspaceShell.tsx` реализовано экспресс-создание пациента за 5 секунд на лету прямо из строки поиска («+ Пациент», `btn-new-appointment-quick-create-patient`, `btn-create-first-patient`);
+    * Регистратура и расписание без бюрократических барьеров (Мандат 8e п. 8): для заведения пациента и записи на первичный приём соло-врачу требуется ввести только ФИО или номер телефона — никаких обязательных полей паспорта, СНИЛС, ИНН или предварительных оплат; ассистент строго опционален (`nullable`), запись сохраняется моментально в 1 клик;
+    * Закон «Слона в комнате» и бюджет высоты экрана десктопа (Мандат 8p): клинический топбар CRM (`Header.tsx`, `workspaceShell.tsx`) оптимизирован с компактной статус-капсулой `dnt-clinic-control-pill` (высота 36px, `border-radius: 9999px`, macOS Menu Extra Pill), суммарная высота служебных областей (топбар + навигация + тулбар) строго укладывается в норматив $\le 160\text{--}180\text{px}$, оставляя $\ge 720\text{px}$ полезной высоты для сетки расписания, одонтограммы и картотеки пациентов;
+    * Полная ликвидация дублирующих шапок и баннеров: исключены паразитные промежуточные контейнеры, вторичные действия свернуты в контекстные поповеры `...`, предотвращен клиппинг инициалов и длинных наименований филиалов на любых мониторах и мобильных вьюпортах 390x844.
+
+
