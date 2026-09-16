@@ -27,6 +27,7 @@ import {
 	Sparkles,
 	User,
 	UserCheck,
+	UserPlus,
 	Volume2,
 	VolumeX,
 	X,
@@ -35,6 +36,10 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+} from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -117,6 +122,7 @@ export function TelephonyFloatingWidget({
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
 	const [showWidgetMoreMenu, setShowWidgetMoreMenu] = useState(false);
+	const [isCreatingPatient, setIsCreatingPatient] = useState(false);
 
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveformRef = useRef<HTMLDivElement | null>(null);
@@ -442,6 +448,72 @@ export function TelephonyFloatingWidget({
 
 		acceptCall();
 		showToast(`Создан черновик записи: ${reason} (сохранён в расписании)`, "info");
+	};
+
+	// 1-Click Quick Patient Creation (Mandate 8e p. 8 & 8n: Solo doctor & Reception Autonomy without 20 secondary fields)
+	const handleQuickCreatePatient = async (customName?: string) => {
+		if (!activeCall?.phone) return;
+		if (isCreatingPatient) return;
+		setIsCreatingPatient(true);
+		try {
+			const targetName = customName?.trim() || `Пациент ${formattedPhone}`;
+			const res = await fetch("/api/patients", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-dente-staff-token": readDenteStaffToken(),
+					"x-dente-clinic-token": readDenteClinicToken(),
+				},
+				body: JSON.stringify({
+					fullName: targetName,
+					phone: activeCall.phone,
+				}),
+			});
+
+			if (!res.ok) {
+				let errMsg = "Ошибка при создании пациента";
+				try {
+					const data = await res.json();
+					if (data?.message) errMsg = data.message;
+				} catch {}
+				showToast(errMsg, "error");
+				return;
+			}
+
+			const createdPatient = await res.json();
+			setSelectedPatientId(createdPatient.id);
+
+			// Update active call in telephony store
+			const active = useTelephonyStore.getState().activeCall;
+			if (active) {
+				useTelephonyStore.getState().triggerIncomingCall({
+					...active,
+					patientId: createdPatient.id,
+					patientName: createdPatient.fullName,
+				});
+			}
+
+			// Optimistically update dashboard patients if ctx available
+			if (ctx?.setDashboard) {
+				ctx.setDashboard((curr) =>
+					curr
+						? {
+								...curr,
+								patients: [
+									createdPatient,
+									...curr.patients.filter((p) => p.id !== createdPatient.id),
+								],
+							}
+						: curr,
+				);
+			}
+
+			showToast(`Пациент создан: ${createdPatient.fullName}`, "success");
+		} catch (err: any) {
+			showToast(err?.message || "Сетевая ошибка при создании пациента", "error");
+		} finally {
+			setIsCreatingPatient(false);
+		}
 	};
 
 	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
@@ -923,11 +995,11 @@ export function TelephonyFloatingWidget({
 												<button
 													type="button"
 													onClick={handleSendWhatsApp}
-													className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-2 shadow-sm"
+													className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-2 shadow-sm cursor-pointer"
 												>
-													<MessageSquare size={14} />
+													{whatsappSent ? <Check size={14} /> : <MessageSquare size={14} />}
 													<span>
-														{whatsappSent ? "Отправлено в WhatsApp ✓" : "1-Click WhatsApp"}
+														{whatsappSent ? "Отправлено в WhatsApp" : "1-Click WhatsApp"}
 													</span>
 												</button>
 											</div>
@@ -1294,6 +1366,25 @@ export function TelephonyFloatingWidget({
 														<span>Завтра (11:00)</span>
 													</button>
 
+													{!resolvedPatient && activeCall && (
+														<button
+															type="button"
+															disabled={isCreatingPatient}
+															onClick={() => {
+																handleQuickCreatePatient();
+																setShowWidgetMoreMenu(false);
+															}}
+															className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+														>
+															<UserPlus size={13} className="text-emerald-600 shrink-0" />
+															<span>
+																{isCreatingPatient
+																	? "Создание пациента..."
+																	: "1-Click создание пациента"}
+															</span>
+														</button>
+													)}
+
 													<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
 
 													<button
@@ -1421,7 +1512,7 @@ export function TelephonyFloatingWidget({
 											key={k.d}
 											type="button"
 											onClick={() => handleDialDigit(k.d)}
-											className="min-h-[48px] py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] active:scale-95 border border-[var(--line,#e2e8f0)] hover:border-[var(--teal)] text-[var(--ink,#0f172a)] transition-all flex flex-col items-center justify-center select-none shadow-xs"
+											className="min-h-[48px] min-w-[48px] py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] active:scale-95 border border-[var(--line,#e2e8f0)] hover:border-[var(--teal)] text-[var(--ink,#0f172a)] transition-all flex flex-col items-center justify-center select-none shadow-xs cursor-pointer"
 										>
 											<span className="text-base font-black leading-none">{k.d}</span>
 											{k.sub && (
