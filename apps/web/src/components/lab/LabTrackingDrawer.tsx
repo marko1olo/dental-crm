@@ -1,27 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-	Activity,
-	AlertCircle,
-	ArrowRight,
 	Calendar,
 	Check,
-	CheckCircle2,
-	ChevronRight,
-	Clock,
-	DollarSign,
 	ExternalLink,
-	FileText,
 	FlaskConical,
-	Layers,
 	Loader2,
-	MessageSquare,
-	Printer,
-	QrCode,
 	Send,
-	Sparkles,
-	Truck,
-	User,
-	Wrench,
 	X,
 } from "lucide-react";
 import { money } from "../../AppHelpers";
@@ -31,13 +15,11 @@ import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
 import { checkDentalLabFinancialGate, createDoctorClinicalOverride } from "./dentalLabFinancialGateEngine";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import {
-	type DentalLabOrderData,
 	type LabOrderStageKey,
 	type LabTrackingDrawerProps,
 	LAB_ORDER_STAGES,
 	calculateLabFinancialSplit,
 	generateBarcodeSvg,
-	generateQrCodeSvg,
 	formatGostOrderNumber,
 	formatLabOrderTeethOrJaw,
 } from "./labMath";

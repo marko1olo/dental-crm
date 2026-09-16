@@ -806,7 +806,7 @@ export function createDentalLabOrder(params: CreateDentalLabOrderParams): Dental
 
 	const seq = params.sequenceNumber ?? ((Math.floor(Date.now() / 1000) % 9000) + 1000);
 	const orderNumber = params.orderNumber || generateLabOrderNumber(seq, orderDate);
-	const id = `ztl-ord-${Date.now()}-${params.patientId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001"}`;
+	const id = `ztl-ord-${Date.now()}-${(params.patientId || "pat").replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001"}`;
 	const nowIso = new Date().toISOString();
 	const techStage: LabTechnologicalStageId = params.techStage || "impression_scan";
 

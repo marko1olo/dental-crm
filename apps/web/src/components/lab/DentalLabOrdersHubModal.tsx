@@ -30,15 +30,12 @@ import {
 	Eye,
 	RefreshCw,
 	Building2,
-	Coins,
 	FileText,
-	Clock,
 	Truck,
 	RotateCcw,
 	Send,
 	MessageSquare,
 	MoreHorizontal,
-	MoreVertical,
 } from "lucide-react";
 import "./dentalLabWorkflow.css";
 import {
@@ -126,6 +123,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [selectedLab, setSelectedLab] = useState<string>("ALL");
 	const [selectedWorkType, setSelectedWorkType] = useState<string>("ALL");
+	const [selectedStage, setSelectedStage] = useState<string>("ALL");
+	const [selectedDateRange, setSelectedDateRange] = useState<"ALL" | "today" | "week">("ALL");
 	const [onlyDelayedFilter, setOnlyDelayedFilter] = useState<boolean>(false);
 
 	// Модалка создания / деталей наряда
@@ -215,6 +214,11 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 	// Фильтрация нарядов
 	const filteredOrders = useMemo(() => {
+		const todayIso = new Date().toISOString().slice(0, 10);
+		const weekAheadDate = new Date();
+		weekAheadDate.setDate(weekAheadDate.getDate() + 7);
+		const weekAheadIso = weekAheadDate.toISOString().slice(0, 10);
+
 		return orders.filter((ord) => {
 			if (onlyDelayedFilter && !ord.isDelayedAlert && !ord.delayAlert.isDelayedAlert) {
 				return false;
@@ -224,6 +228,18 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			}
 			if (selectedWorkType !== "ALL" && ord.workTypeId !== selectedWorkType) {
 				return false;
+			}
+			if (selectedStage !== "ALL" && ord.currentStage !== selectedStage) {
+				return false;
+			}
+			if (selectedDateRange === "today") {
+				const isToday = ord.expectedLabDate === todayIso || ord.fittingDate === todayIso;
+				if (!isToday) return false;
+			} else if (selectedDateRange === "week") {
+				const targetDate = ord.expectedLabDate || ord.fittingDate || "";
+				if (!targetDate || targetDate < todayIso || targetDate > weekAheadIso) {
+					return false;
+				}
 			}
 			if (searchQuery.trim()) {
 				const q = searchQuery.toLowerCase().trim();
@@ -238,7 +254,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			}
 			return true;
 		});
-	}, [orders, onlyDelayedFilter, selectedLab, selectedWorkType, searchQuery]);
+	}, [orders, onlyDelayedFilter, selectedLab, selectedWorkType, selectedStage, selectedDateRange, searchQuery]);
 
 	// Группировка по стадиям клинического цикла (включая гарантийную переделку)
 	const ordersByStage = useMemo(() => {
@@ -663,6 +679,31 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							))}
 						</select>
 
+						<select
+							className="ztl-select"
+							value={selectedStage}
+							onChange={(e) => setSelectedStage(e.target.value)}
+							aria-label="Фильтр по этапу"
+						>
+							<option value="ALL">Все этапы</option>
+							<option value="draft">Черновик</option>
+							<option value="sent_to_lab">В работе ЗТЛ</option>
+							<option value="fitting_scheduled">Примерка назначена</option>
+							<option value="installed_completed">Сдано пациенту</option>
+							<option value="warranty_rework">Рекламация (0 ₽)</option>
+						</select>
+
+						<select
+							className="ztl-select"
+							value={selectedDateRange}
+							onChange={(e) => setSelectedDateRange(e.target.value as "ALL" | "today" | "week")}
+							aria-label="Фильтр по срокам"
+						>
+							<option value="ALL">Все сроки</option>
+							<option value="today">Готовность сегодня</option>
+							<option value="week">Ближайшие 7 дней</option>
+						</select>
+
 						<div className="ztl-filter-chips">
 							<button
 								type="button"
@@ -672,7 +713,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 								<AlertTriangle size={12} />
 								<span>Задержки ({delayedOrders.length})</span>
 							</button>
-							{(searchQuery || selectedLab !== "ALL" || selectedWorkType !== "ALL" || onlyDelayedFilter) && (
+							{(searchQuery || selectedLab !== "ALL" || selectedWorkType !== "ALL" || selectedStage !== "ALL" || selectedDateRange !== "ALL" || onlyDelayedFilter) && (
 								<button
 									type="button"
 									className="ztl-chip"
@@ -680,6 +721,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 										setSearchQuery("");
 										setSelectedLab("ALL");
 										setSelectedWorkType("ALL");
+										setSelectedStage("ALL");
+										setSelectedDateRange("ALL");
 										setOnlyDelayedFilter(false);
 									}}
 								>
@@ -845,17 +888,17 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 														</span>
 													</div>
 
-													{/* Кнопки действий (Мандат 8d грех 3 — строго 2 кнопки прямого действия: Печать ЗТЛ-1 + Сменить этап/статус) */}
+													{/* Кнопки действий (Мандат 8d грех 3 — строго 2 кнопки прямого действия: Открыть + Сменить статус, вторичные в ...) */}
 													<div className="ztl-card-actions-row" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
 														<button
 															type="button"
 															className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
-															onClick={() => handlePrintBlank(order)}
-															title="Распечатать бланк наряда ЗТЛ-1 для курьера лаборатории"
-															data-testid={`ztl-card-print-a4-${order.id}`}
+															onClick={() => setInspectingOrder(order)}
+															title="Открыть спецификацию и детали наряда"
+															data-testid={`ztl-card-open-${order.id}`}
 														>
-															<Printer size={13} />
-															<span>Печать ЗТЛ-1</span>
+															<Eye size={13} />
+															<span>Открыть</span>
 														</button>
 														{order.currentStage === "installed_completed" ? (
 															<button
@@ -864,6 +907,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																style={{ color: "#059669", borderColor: "#a7f3d0", background: "rgba(16, 185, 129, 0.08)", fontWeight: 700 }}
 																onClick={() => setInspectingOrder(order)}
 																title="Работа зафиксирована и сдана пациенту"
+																data-testid={`ztl-card-status-${order.id}`}
 															>
 																<CheckCircle2 size={13} />
 																<span>Сдано</span>
@@ -874,6 +918,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Отправить работу повторно в ЗТЛ"
+																data-testid={`ztl-card-status-${order.id}`}
 															>
 																<Send size={13} />
 																<span>В ЗТЛ</span>
@@ -884,6 +929,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Передать наряд и слепки в ЗТЛ"
+																data-testid={`ztl-card-status-${order.id}`}
 															>
 																<Send size={13} />
 																<span>В ЗТЛ</span>
@@ -894,6 +940,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Назначить клиническую примерку"
+																data-testid={`ztl-card-status-${order.id}`}
 															>
 																<Calendar size={13} />
 																<span>Примерка</span>
@@ -904,6 +951,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Зафиксировать и сдать работу пациенту"
+																data-testid={`ztl-card-status-${order.id}`}
 															>
 																<CheckCircle2 size={13} />
 																<span>Сдать</span>
@@ -914,6 +962,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 																onClick={() => handleAdvanceStage(order)}
 																title="Передвинуть на следующий клинический статус"
+																data-testid={`ztl-card-status-${order.id}`}
 															>
 																<ChevronRight size={13} />
 																<span>Далее</span>
@@ -957,6 +1006,36 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																	role="menu"
 																	onClick={(e) => e.stopPropagation()}
 																>
+																	<button
+																		type="button"
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: "8px",
+																			padding: "8px 10px",
+																			borderRadius: "6px",
+																			border: "none",
+																			background: "transparent",
+																			color: "var(--ink, #0f172a)",
+																			fontSize: "12px",
+																			fontWeight: 500,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																			minHeight: "36px",
+																		}}
+																		onClick={() => {
+																			handlePrintBlank(order);
+																			setActiveCardMenuOrderId(null);
+																		}}
+																		title="Распечатать бланк наряда ЗТЛ-1 для курьера лаборатории"
+																		role="menuitem"
+																		data-testid={`ztl-card-print-a4-${order.id}`}
+																	>
+																		<Printer size={14} className="shrink-0 text-slate-600" />
+																		<span>Печать ЗТЛ-1 (А4)</span>
+																	</button>
+
 																	<button
 																		type="button"
 																		style={{

@@ -17,7 +17,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import "./labOrders.css";
@@ -25,28 +25,12 @@ import {
 	type DentalLabOrderData,
 	type DentalLabOrderModalProps,
 	type LabOrderStageKey,
-	type CanonicalLabOrderStatus,
-	type CanonicalLabStatusInfo,
-	type LabScheduleSlotInfo,
 	CONSTRUCTION_TYPES,
-	MATERIALS,
 	LAB_MATERIALS,
-	VITA_CLASSICAL_SHADES,
 	VITA_BLEACH_SHADES,
 	VITA_3D_MASTER_SHADES,
-	SHADE_SWATCH_MAP,
-	STUMP_NATURAL_DIE_SHADES,
-	OCCLUSAL_SCHEMES,
-	CONTACT_TIGHTNESS_OPTIONS,
-	SURFACE_TEXTURE_OPTIONS,
 	LAB_ORDER_STAGES,
-	CANONICAL_LAB_STATUSES,
-	mapToCanonicalStatus,
-	calculateMaterialTotalCostKopecks,
-	buildLabAppointmentDraft,
 	calculateLabFinancialSplit,
-	generateBarcodeSvg,
-	generateQrCodeSvg,
 	formatGostOrderNumber,
 	addWorkingDays,
 	ONE_CLICK_LAB_DEFAULTS,
@@ -57,13 +41,10 @@ import {
 	type ExpressLabPreset,
 	type JawScope,
 	formatJawScopeLabel,
-	isJawWideConstruction,
 } from "./labMath";
 import {
 	rublesToKopecks,
 	formatLabOrderFormZtl1A4Protocol,
-	labOrdersEngine,
-	type LabOrder,
 } from "@dental/shared";
 import {
 	checkDentalLabFinancialGate,

@@ -6,27 +6,22 @@
  * - Предлагает моментальный переход в 1-клик банковскую рассрочку (Сбер / Т-Банк / Подели).
  */
 
-import React, { useState } from "react";
+import React from "react";
 import {
 	AlertTriangle,
-	ArrowRight,
 	CheckCircle2,
 	CreditCard,
 	DollarSign,
-	Lock,
-	QrCode,
 	Send,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
-	UserCheck,
 	X,
 	XCircle,
 } from "lucide-react";
 import { formatKopecksRu } from "@dental/shared";
 import {
 	type DentalLabFinancialGateResult,
-	createChiefDoctorOverride,
 	createDoctorClinicalOverride,
 } from "./dentalLabFinancialGateEngine";
 

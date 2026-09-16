@@ -12,9 +12,7 @@
 import {
 	type Kopecks,
 	formatKopecksRu,
-	parseKopecks,
 	percentageOfKopecks,
-	rublesToKopecks,
 } from "@dental/shared";
 
 export type DentalLabGateStatus =
@@ -79,8 +77,8 @@ export function checkDentalLabFinancialGate(
 	params: DentalLabFinancialGateParams,
 ): DentalLabFinancialGateResult {
 	const minAdvancePercent = params.minAdvancePercent ?? 50;
-	const stageTotal = Math.max(0, params.stageTotalKopecks);
-	const directPaid = Math.max(0, params.paidKopecks);
+	const stageTotal = Math.max(0, params.stageTotalKopecks ?? 0);
+	const directPaid = Math.max(0, params.paidKopecks ?? 0);
 	const deposit = Math.max(0, params.availableDepositKopecks ?? 0);
 
 	// Суммарное покрытие: внесенный аванс по этапу + свободный депозит пациента

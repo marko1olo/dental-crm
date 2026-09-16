@@ -10,11 +10,9 @@ import {
 	LAB_WORKFLOW_STAGES,
 	LabWorkflowStageId,
 	ImplantPlatformType,
-	IMPLANT_PLATFORMS,
 	AbutmentCategoryType,
 	ABUTMENT_TYPE_OPTIONS,
 	FixationType,
-	FIXATION_TYPES,
 	LabTechnologicalStageId,
 	LAB_TECHNOLOGICAL_STAGES,
 	LAB_TECHNOLOGICAL_STAGE_ORDER

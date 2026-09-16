@@ -1,5 +1,18 @@
 import React from "react";
-import { CheckCircle2, ChevronDown, Layers, Palette, Crown, Sparkles, ShieldCheck, Shield, Compass, Scissors, FileText, Zap, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
+import {
+	CheckCircle2,
+	Layers,
+	Palette,
+	Crown,
+	Sparkles,
+	ShieldCheck,
+	Compass,
+	FileText,
+	Zap,
+	RefreshCw,
+	ArrowUp,
+	ArrowDown,
+} from "lucide-react";
 import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
@@ -10,7 +23,6 @@ import {
 	addWorkingDays,
 	type JawScope,
 	isJawWideConstruction,
-	formatJawScopeLabel,
 } from "./labMath";
 
 export interface DentalLabRestorationTabProps {
