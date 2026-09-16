@@ -250,7 +250,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	);
 	const effectiveWatermark =
 		watermarkText ||
-		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ" : "ЧЕРНОВИК");
 	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	// Редактирование контекста плейсхолдеров
@@ -623,8 +623,18 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				</header>
 
 				{/* Панель выбора режима и вкладок (1 строка 32-36px, Hick's Law) */}
-				<div className="consent-toolbar-row">
-					<div className="consent-mode-segmented">
+				<div
+					className="consent-toolbar-row"
+					style={{
+						height: "36px",
+						minHeight: "36px",
+						maxHeight: "36px",
+						padding: "0 1rem",
+						flexWrap: "nowrap",
+						overflow: "hidden",
+					}}
+				>
+					<div className="consent-mode-segmented" style={{ height: "28px" }}>
 						<button
 							type="button"
 							className={`consent-mode-btn ${activeMode === "packages" ? "active" : ""}`}
@@ -634,8 +644,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							}}
 							data-testid="tab-mode-packages"
 							aria-pressed={activeMode === "packages"}
+							style={{ height: "24px", padding: "0 8px", fontSize: "12px" }}
 						>
-							<Layers size={14} />
+							<Layers size={13} />
 							<span>Пакеты ИДС (1 клик)</span>
 						</button>
 						<button
@@ -644,14 +655,24 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							onClick={() => setActiveMode("single")}
 							data-testid="tab-mode-single"
 							aria-pressed={activeMode === "single"}
+							style={{ height: "24px", padding: "0 8px", fontSize: "12px" }}
 						>
-							<FileText size={14} />
+							<FileText size={13} />
 							<span>Отдельные согласия</span>
 						</button>
 					</div>
 
 					<nav
 						className="consent-tabs-scroll"
+						style={{
+							height: "36px",
+							padding: "0",
+							display: "flex",
+							alignItems: "center",
+							overflowX: "auto",
+							borderBottom: "none",
+							flexWrap: "nowrap",
+						}}
 						aria-label={activeMode === "packages" ? "Пакеты согласий" : "Шаблоны согласий"}
 					>
 						{activeMode === "packages"
@@ -662,6 +683,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											key={pkg.key}
 											type="button"
 											className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
+											style={{
+												minHeight: "26px",
+												height: "26px",
+												padding: "0 8px",
+												fontSize: "12px",
+												borderRadius: "6px",
+											}}
 											onClick={() => {
 												setActivePackageKey(pkg.key);
 												setPreviewTemplateKey(null);
@@ -669,7 +697,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											aria-selected={isActive}
 											data-testid={`pkg-tab-${pkg.key}`}
 										>
-											<Sparkles size={14} />
+											<Sparkles size={13} />
 											<span>{PACKAGE_SHORT_TITLES[pkg.key] || pkg.title}</span>
 										</button>
 									);
@@ -681,6 +709,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											key={tpl.key}
 											type="button"
 											className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
+											style={{
+												minHeight: "26px",
+												height: "26px",
+												padding: "0 8px",
+												fontSize: "12px",
+												borderRadius: "6px",
+											}}
 											onClick={() => setActiveKey(tpl.key)}
 											aria-selected={isActive}
 											data-testid={`tpl-tab-${tpl.key}`}

@@ -1,6 +1,13 @@
 import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
-import React, { useMemo } from "react";
-import { ClipboardList, FileText, Printer, ShieldCheck } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import {
+	Copy,
+	FileCheck,
+	FileText,
+	MoreHorizontal,
+	Printer,
+	ShieldCheck,
+} from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
@@ -11,6 +18,12 @@ import {
 	generateConsentPrintHtml,
 	printHtmlViaWindowOrIframe,
 } from "../../consents/consentTemplates.js";
+import { InformedConsentModal } from "../../consents/InformedConsentModal.js";
+
+export interface InformedConsentFormProps extends DocumentVisitHints {
+	isVisitClosed?: boolean;
+	visitStatus?: string;
+}
 
 /**
  * Информированное согласие: поля формы до создания документа.
@@ -28,7 +41,9 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 	activeDoctorFullName,
 	activeVisitComplaint,
 	inferredTreatmentArea,
-}: DocumentVisitHints) {
+	isVisitClosed,
+	visitStatus,
+}: InformedConsentFormProps) {
 	const informedConsentAftercare = useDocumentStore(
 		(state) => state.informedConsentAftercare,
 	);
@@ -125,30 +140,57 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 		(state) => state.patientAdministrativeProfileDraft,
 	);
 
+	const [isConsentModalOpen, setIsConsentModalOpen] = useState<boolean>(false);
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+
+	const isClosedOrSigned = Boolean(
+		isVisitClosed ||
+		visitStatus === "completed" ||
+		visitStatus === "closed" ||
+		visitStatus === "signed" ||
+		(informedConsentConfirmedAt && informedConsentConfirmedAt.trim() !== "")
+	);
+	const effectiveWatermark = isClosedOrSigned
+		? "ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ"
+		: "ЧЕРНОВИК";
+
+	const patientModalData = useMemo(
+		() => ({
+			fullName: patientCoreDraft.fullName || null,
+			birthDate: patientCoreDraft.birthDate || null,
+			passport: patientAdministrativeProfileDraft.identityDocument || null,
+			phone: patientCoreDraft.phone || null,
+			snils: patientAdministrativeProfileDraft.snils || null,
+			address: patientAdministrativeProfileDraft.registrationAddress || null,
+			cardNumber: patientAdministrativeProfileDraft.medicalCardNumber || null,
+		}),
+		[patientCoreDraft, patientAdministrativeProfileDraft],
+	);
+
 	const handlePrintConsent = () => {
 		const html = generateConsentPrintHtml({
 			patientName:
-				patientCoreDraft.fullName || "________________________________________",
-			birthDate: patientCoreDraft.birthDate || "«___» _________ _____ г.",
+				patientCoreDraft.fullName?.trim() || "________________________________________",
+			birthDate: patientCoreDraft.birthDate?.trim() || "«___» _________ _____ г.",
 			passport:
-				patientAdministrativeProfileDraft.identityDocument ||
+				patientAdministrativeProfileDraft.identityDocument?.trim() ||
 				"серия ______ № ________ выдан ____________________",
-			snils: patientAdministrativeProfileDraft.snils || "___-___-___ __",
-			phone: patientCoreDraft.phone || "+7 (___) ___-__-__",
+			snils: patientAdministrativeProfileDraft.snils?.trim() || "___-___-___ __",
+			phone: patientCoreDraft.phone?.trim() || "+7 (___) ___-__-__",
 			doctorName:
-				informedConsentDoctorFullName ||
-				activeDoctorFullName ||
+				informedConsentDoctorFullName?.trim() ||
+				activeDoctorFullName?.trim() ||
 				"Врач-стоматолог клиники",
 			intervention:
-				informedConsentIntervention ||
+				informedConsentIntervention?.trim() ||
 				"Стоматологический осмотр, диагностика и согласованный объем вмешательств",
 			toothOrArea:
-				informedConsentToothOrArea ||
-				inferredTreatmentArea ||
+				informedConsentToothOrArea?.trim() ||
+				inferredTreatmentArea?.trim() ||
 				"Полость рта (все квадранты)",
 			diagnosisOrIndication:
-				informedConsentDiagnosisOrIndication ||
-				activeVisitComplaint ||
+				informedConsentDiagnosisOrIndication?.trim() ||
+				activeVisitComplaint?.trim() ||
 				"Санация полости рта",
 			expectedBenefit: informedConsentExpectedBenefit,
 			anesthesia: informedConsentAnesthesia,
@@ -157,18 +199,27 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 			alternatives: informedConsentAlternatives,
 			aftercare: informedConsentAftercare,
 			date:
-				informedConsentConfirmedAt ||
+				informedConsentConfirmedAt?.trim() ||
 				new Date().toLocaleDateString("ru-RU"),
 			isBlank: false,
+			isSigned: isClosedOrSigned,
+			watermarkText: effectiveWatermark,
 		});
 		printHtmlViaWindowOrIframe(html);
-		showToast("Бланк ИДС отправлен на печать (А4)", "info", 3000);
+		showToast(
+			isClosedOrSigned
+				? "Бланк ИДС отправлен на печать (ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ, А4)"
+				: "Бланк ИДС отправлен на печать (ЧЕРНОВИК, А4)",
+			"info",
+			3000,
+		);
 	};
 
 	const handlePrintBlankConsent = () => {
 		const html = generateConsentPrintHtml({
 			isBlank: true,
 			date: "«___» _________ 20___ г.",
+			watermarkText: "ЧЕРНОВИК",
 		});
 		printHtmlViaWindowOrIframe(html);
 		showToast(
@@ -176,6 +227,23 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 			"info",
 			3000,
 		);
+	};
+
+	const handleCopyPatientSummary = () => {
+		const lines = [
+			"Информированное добровольное согласие (клиника «ООО «Стоматологическая клиника ДЕНТЕ»»):",
+			`Пациент: ${patientCoreDraft.fullName?.trim() || "Пациент"}`,
+			`Вмешательство: ${informedConsentIntervention?.trim() || "Стоматологический осмотр / лечение"}`,
+			`Врач: ${informedConsentDoctorFullName?.trim() || activeDoctorFullName?.trim() || "Лечащий врач"}`,
+			`Область: ${informedConsentToothOrArea?.trim() || inferredTreatmentArea?.trim() || "По плану лечения"}`,
+			`Диагноз: ${informedConsentDiagnosisOrIndication?.trim() || activeVisitComplaint?.trim() || "По клиническим показаниям"}`,
+			"Памятка: после вмешательства возможно появление локальной чувствительности (1-3 дня). Строго соблюдайте рекомендации врача.",
+		];
+		const text = lines.join("\n");
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(text).catch(() => {});
+		}
+		showToast("Выжимка ИДС скопирована в буфер обмена для пациента", "success", 3000);
 	};
 
 	const review = useMemo(
@@ -245,83 +313,164 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 					</div>
 				) : null}
 		>
+			{/* 1-строчный тулбар 32–36px (h-9) и Закон Миллера: не более 1–2 кнопок прямого действия (Мандаты 8d, 8e) */}
 			<div
+				className="informed-consent-toolbar"
 				style={{
-					marginBottom: "14px",
+					marginBottom: "12px",
 					display: "flex",
-					gap: "8px",
-					flexWrap: "wrap",
 					alignItems: "center",
+					justifyContent: "space-between",
+					height: "36px",
+					minHeight: "36px",
+					maxHeight: "36px",
+					gap: "8px",
+					flexWrap: "nowrap",
 				}}
 			>
-				<button
-					type="button"
-					className="secondary-button inline-flex items-center gap-1.5 font-bold"
-					style={{
-						minHeight: "44px",
-						fontSize: "13px",
-						padding: "8px 16px",
-						borderRadius: "12px",
-					}}
-					data-testid="btn-informed-consent-fill-norm"
-					onClick={() => {
-						setInformedConsentIntervention(BASE_INFORMED_CONSENT_PRESET.intervention);
-						setInformedConsentDiagnosisOrIndication(BASE_INFORMED_CONSENT_PRESET.diagnosisOrIndication);
-						setInformedConsentExpectedBenefit(BASE_INFORMED_CONSENT_PRESET.expectedBenefit);
-						setInformedConsentAnesthesia(BASE_INFORMED_CONSENT_PRESET.plannedAnesthesia ?? "");
-						setInformedConsentMaterialNotes(BASE_INFORMED_CONSENT_PRESET.materialOrMedicationNotes ?? "");
-						setInformedConsentRisks(BASE_INFORMED_CONSENT_PRESET.explainedRisks.join("\n"));
-						setInformedConsentAlternatives(BASE_INFORMED_CONSENT_PRESET.alternatives.join("\n"));
-						setInformedConsentAftercare(BASE_INFORMED_CONSENT_PRESET.aftercareRequirements.join("\n"));
-						if (!informedConsentToothOrArea.trim()) {
-							setInformedConsentToothOrArea(inferredTreatmentArea || "Полость рта (все квадранты)");
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+					{/* Кнопка прямого действия 1 (Закон Миллера): Печать бланка ИДС в 1 клик */}
+					<button
+						type="button"
+						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
+						style={{
+							height: "32px",
+							minHeight: "32px",
+							fontSize: "12px",
+							padding: "0 12px",
+							borderRadius: "8px",
+							whiteSpace: "nowrap",
+						}}
+						data-testid="btn-print-informed-consent"
+						onClick={handlePrintConsent}
+						title={
+							isClosedOrSigned
+								? "Печать бланка ИДС со штампом «ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ» (А4)"
+								: "Печать бланка ИДС со штампом «ЧЕРНОВИК» (А4)"
 						}
-						if (!informedConsentDoctorFullName.trim()) {
-							setInformedConsentDoctorFullName(activeDoctorFullName || "Врач-стоматолог клиники");
-						}
-						setInformedConsentQuestionsAnswered(true);
-						setInformedConsentRisksUnderstood(true);
-						setInformedConsentWithdrawUnderstood(true);
-						showToast("ИДС заполнено по стандарту Минздрава РФ № 1051н (1 клик)", "success", 3000);
-					}}
-				>
-					<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-					<span>Заполнить ИДС нормой (1 клик)</span>
-				</button>
+					>
+						<Printer size={15} className="text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+						<span>Печать бланка ИДС (1 клик)</span>
+					</button>
 
-				<button
-					type="button"
-					className="secondary-button inline-flex items-center gap-1.5 font-semibold"
-					style={{
-						minHeight: "44px",
-						fontSize: "13px",
-						padding: "8px 14px",
-						borderRadius: "12px",
-					}}
-					data-testid="btn-print-informed-consent"
-					onClick={handlePrintConsent}
-					title="Печать текущего заполненного бланка ИДС на принтер (А4)"
-				>
-					<Printer size={16} className="text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
-					<span>Печать бланка ИДС (1 клик)</span>
-				</button>
+					{/* Кнопка прямого действия 2 (Закон Миллера): Открыть форму ИДС / планшет */}
+					<button
+						type="button"
+						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
+						style={{
+							height: "32px",
+							minHeight: "32px",
+							fontSize: "12px",
+							padding: "0 12px",
+							borderRadius: "8px",
+							whiteSpace: "nowrap",
+						}}
+						data-testid="btn-open-consent-modal"
+						onClick={() => setIsConsentModalOpen(true)}
+						title="Открыть консоль ИДС: пакеты (терапия, ортопедия, хирургия) и подписание"
+					>
+						<FileCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+						<span>Подписать на планшете</span>
+					</button>
+				</div>
 
-				<button
-					type="button"
-					className="secondary-button inline-flex items-center gap-1.5 font-semibold"
-					style={{
-						minHeight: "44px",
-						fontSize: "13px",
-						padding: "8px 14px",
-						borderRadius: "12px",
-					}}
-					data-testid="btn-print-blank-informed-consent"
-					onClick={handlePrintBlankConsent}
-					title="Печать чистого бланка ИДС со строками «________» для ручного заполнения пациентом до приема без 403-ошибок"
-				>
-					<FileText size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-					<span>Печать чистого бланка ИДС («________»)</span>
-				</button>
+				{/* Меню дополнительных действий «...» по Закону Миллера (Мандат 8d) */}
+				<div className="relative inline-flex items-center" style={{ flexShrink: 0 }}>
+					<button
+						type="button"
+						className="secondary-button inline-flex items-center justify-center"
+						style={{
+							height: "32px",
+							minHeight: "32px",
+							width: "32px",
+							padding: "0",
+							borderRadius: "8px",
+						}}
+						onClick={() => setIsMoreMenuOpen((v) => !v)}
+						title="Дополнительные действия (заполнить нормой, чистый бланк, памятка)"
+						aria-label="Дополнительные действия ИДС"
+						data-testid="btn-informed-consent-more-menu"
+					>
+						<MoreHorizontal size={16} />
+					</button>
+
+					{isMoreMenuOpen && (
+						<div
+							className="fixed inset-0 z-30 cursor-default"
+							onClick={() => setIsMoreMenuOpen(false)}
+							aria-hidden="true"
+						/>
+					)}
+
+					<div
+						className={`absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl z-40 py-1.5 ${
+							isMoreMenuOpen ? "block" : "hidden"
+						}`}
+						style={{
+							background: "var(--paper, #ffffff)",
+							border: "1px solid var(--line, #e2e8f0)",
+						}}
+						data-testid="informed-consent-dropdown-menu"
+					>
+						<button
+							type="button"
+							className="w-full inline-flex items-center gap-2 px-3 py-2 text-xs text-left font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] border-none bg-transparent cursor-pointer"
+							data-testid="btn-informed-consent-fill-norm"
+							onClick={() => {
+								setIsMoreMenuOpen(false);
+								setInformedConsentIntervention(BASE_INFORMED_CONSENT_PRESET.intervention);
+								setInformedConsentDiagnosisOrIndication(BASE_INFORMED_CONSENT_PRESET.diagnosisOrIndication);
+								setInformedConsentExpectedBenefit(BASE_INFORMED_CONSENT_PRESET.expectedBenefit);
+								setInformedConsentAnesthesia(BASE_INFORMED_CONSENT_PRESET.plannedAnesthesia ?? "");
+								setInformedConsentMaterialNotes(BASE_INFORMED_CONSENT_PRESET.materialOrMedicationNotes ?? "");
+								setInformedConsentRisks(BASE_INFORMED_CONSENT_PRESET.explainedRisks.join("\n"));
+								setInformedConsentAlternatives(BASE_INFORMED_CONSENT_PRESET.alternatives.join("\n"));
+								setInformedConsentAftercare(BASE_INFORMED_CONSENT_PRESET.aftercareRequirements.join("\n"));
+								if (!informedConsentToothOrArea.trim()) {
+									setInformedConsentToothOrArea(inferredTreatmentArea || "Полость рта (все квадранты)");
+								}
+								if (!informedConsentDoctorFullName.trim()) {
+									setInformedConsentDoctorFullName(activeDoctorFullName || "Врач-стоматолог клиники");
+								}
+								setInformedConsentQuestionsAnswered(true);
+								setInformedConsentRisksUnderstood(true);
+								setInformedConsentWithdrawUnderstood(true);
+								showToast("ИДС заполнено по стандарту Минздрава РФ № 1051н (1 клик)", "success", 3000);
+							}}
+						>
+							<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span>Заполнить ИДС нормой (1 клик)</span>
+						</button>
+
+						<button
+							type="button"
+							className="w-full inline-flex items-center gap-2 px-3 py-2 text-xs text-left font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] border-none bg-transparent cursor-pointer"
+							data-testid="btn-print-blank-informed-consent"
+							onClick={() => {
+								setIsMoreMenuOpen(false);
+								handlePrintBlankConsent();
+							}}
+							title="Печать чистого бланка ИДС со строками «________» для ручного заполнения"
+						>
+							<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Печать чистого бланка («________»)</span>
+						</button>
+
+						<button
+							type="button"
+							className="w-full inline-flex items-center gap-2 px-3 py-2 text-xs text-left font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] border-none bg-transparent cursor-pointer"
+							data-testid="btn-copy-consent-patient-summary"
+							onClick={() => {
+								setIsMoreMenuOpen(false);
+								handleCopyPatientSummary();
+							}}
+							title="Скопировать выжимку ИДС для отправки пациенту в WhatsApp / SMS"
+						>
+							<Copy size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+							<span>Копировать выжимку для пациента</span>
+						</button>
+					</div>
+				</div>
 			</div>
 			<label>
 				Планируемое вмешательство
@@ -475,6 +624,32 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 				/>
 				Пациенту объяснено право отказаться до вмешательства
 			</label>
+
+			{isConsentModalOpen && (
+				<InformedConsentModal
+					isOpen={isConsentModalOpen}
+					onClose={() => setIsConsentModalOpen(false)}
+					patient={patientModalData}
+					doctorName={
+						informedConsentDoctorFullName?.trim() ||
+						activeDoctorFullName?.trim() ||
+						"Врач-стоматолог клиники"
+					}
+					diagnosisIcd={
+						informedConsentDiagnosisOrIndication?.trim() ||
+						activeVisitComplaint?.trim() ||
+						"Санация полости рта"
+					}
+					toothNumbers={
+						informedConsentToothOrArea?.trim() ||
+						inferredTreatmentArea?.trim() ||
+						"Полость рта"
+					}
+					isSigned={isClosedOrSigned}
+					status={visitStatus}
+					watermarkText={effectiveWatermark}
+				/>
+			)}
 		</DocumentPayloadCard>
 	);
 });
