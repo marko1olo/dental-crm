@@ -1,13 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
-	Activity,
 	Contrast,
-	Expand,
-	Eye,
 	Maximize2,
 	RefreshCw,
 	Scan,
-	Sparkles,
 	Sun,
 	ZoomIn,
 } from "lucide-react";

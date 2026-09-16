@@ -6,13 +6,10 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
 	AlertOctagon,
-	AlertTriangle,
 	Archive,
 	Calendar,
-	CheckCircle2,
 	Clock,
 	Copy,
-	Crown,
 	Edit3,
 	FileText,
 	GitMerge,
@@ -22,10 +19,7 @@ import {
 	MoreHorizontal,
 	Phone,
 	Printer,
-	ShieldAlert,
-	Sparkles,
 	Stethoscope,
-	User,
 	UserCheck,
 } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";

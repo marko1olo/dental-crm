@@ -21,7 +21,6 @@ import {
 	CLINICAL_1CLICK_TEMPLATES_CATALOG,
 	CLINICAL_CATEGORY_LABELS,
 	getCore1ClickTemplates,
-	filterClinicalTemplates,
 	synthesize1ClickSoapDiary,
 	getToothAnatomicalDescription,
 	formatStatutoryUnifiedSoapText,

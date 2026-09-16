@@ -1,22 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
-	Activity,
-	AlertTriangle,
-	ArrowRight,
-	Camera,
-	Check,
 	ChevronDown,
-	ChevronRight,
 	ChevronUp,
-	FileText,
 	Heart,
 	Layers,
 	PackageCheck,
 	Scan,
-	Sparkles,
 	Syringe,
 	Wallet,
-	Wrench,
 	X,
 } from "lucide-react";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";

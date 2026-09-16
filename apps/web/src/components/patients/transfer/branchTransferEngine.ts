@@ -8,7 +8,6 @@
  */
 
 import {
-	generateQrCodeDataUri,
 	generateQrCodeSvg,
 	generateQrMatrix,
 } from "@dental/shared";

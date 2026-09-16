@@ -8,7 +8,6 @@ import {
 import {
 	type FranklRating,
 	type FranklRatingDefinition,
-	FRANKL_SCALE_DEFINITIONS,
 	getFranklDefinition,
 } from "../odontogram/pediatricDentitionEngine";
 import { FranklBehaviorBadge } from "../pediatric/FranklBehaviorBadge";

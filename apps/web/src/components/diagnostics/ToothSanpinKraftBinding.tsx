@@ -1,29 +1,15 @@
 import React, { useState, useMemo } from "react";
 import {
-	AlertTriangle,
 	Barcode,
 	Check,
 	CheckCircle2,
-	Clock,
 	PackageCheck,
-	QrCode,
-	ShieldAlert,
 	ShieldCheck,
-	Tag,
 } from "lucide-react";
 import {
 	type KraftPackageRecord,
-	type KraftPackageStatus,
-	calculatePackageExpiration,
 	generateDataMatrixSvg,
 } from "../sanpin/kraft/kraftPackageEngine";
-import {
-	DENTAL_TOOL_SETS_CATALOG,
-	KRAFT_PACKAGE_MATERIALS,
-	getDentalToolSetDefinition,
-	getKraftMaterialDefinition,
-	getChemicalIndicatorDefinition,
-} from "../sanpin/kraft/kraftPackagePresets";
 import { showToast } from "../GlobalToast";
 
 export interface ToothSanpinKraftBindingProps {

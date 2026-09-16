@@ -13,17 +13,11 @@ import { PatientAttachmentsPanel } from "./PatientAttachmentsPanel";
 import { PatientCommunicationConsentsPanel } from "./PatientCommunicationConsentsPanel";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientFamilyCard } from "./PatientFamilyCard";
-import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientHeaderCard } from "./PatientHeaderCard";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";
-
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-type TextFieldChangeEvent = React.ChangeEvent<
-	HTMLInputElement | HTMLTextAreaElement
->;
 
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -35,30 +29,11 @@ export interface PatientOverviewTabProps {
 
 export function PatientOverviewTab({ showHeaderCard = false }: PatientOverviewTabProps = {}) {
 	const appLogic = useAppLogicContext();
-	const {
-		selectedPatientId,
-		patientCoreDraft,
-		patientCoreSaveState,
-		patientCoreDirty,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		patientAdministrativeProfileSaveState,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		patientAdministrativeProfileDirty,
-	} = usePatientStore();
+	const { selectedPatientId } = usePatientStore();
 	const workspaceFlags = useWorkspaceProfile();
 	const dashboard = appLogic.dashboard;
-	// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = appLogic;
+	const { selectedPatient } = appLogic;
 
-	const _patientCoreReadyToSave =
-		(patientCoreDraft?.fullName ?? "").trim().length > 0 && patientCoreDirty;
-	const _patientCoreSaveGuidance =
-		patientCoreSaveState === "error"
-			? "Ошибка сохранения"
-			: patientCoreSaveState === "saved"
-				? "Сохранено"
-				: null;
-	const _patientCoreSaveGuidanceId = "patientCoreSaveGuidanceId";
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [familyData, setFamilyData] = useState<any>(null);
 	/*

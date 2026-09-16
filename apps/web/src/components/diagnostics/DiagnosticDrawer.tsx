@@ -12,7 +12,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { ClientLogEntry, LogLevel, NetworkLogEntry } from "@dental/shared";
 import {
 	Activity,
-	AlertTriangle,
 	Check,
 	Clock,
 	Copy,

@@ -22,7 +22,6 @@ import {
 	ChevronRight,
 } from "lucide-react";
 import {
-	POPULAR_CLINICAL_PRESETS,
 	TOP_12_AMBULATORY_PRESETS,
 	DENTAL_ICD10_MAP,
 	type DentalIcd10Item,

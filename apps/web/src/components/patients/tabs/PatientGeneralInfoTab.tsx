@@ -3,17 +3,13 @@ import {
 	AlertTriangle,
 	Calendar,
 	CheckCircle2,
-	FileText,
 	HeartPulse,
 	MapPin,
 	Megaphone,
 	Phone,
-	Printer,
 	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
 	User,
-	UserCheck,
 	Users,
 } from "lucide-react";
 import {

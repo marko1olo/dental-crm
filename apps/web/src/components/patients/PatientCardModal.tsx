@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-	CheckCircle2,
 	FileText,
 	HeartPulse,
 	Printer,
@@ -14,7 +13,6 @@ import {
 	type PatientClinicalSafetyProfile,
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
-	formatSafetyProfileToDiaryText,
 } from "./safetyMath";
 import {
 	PatientGeneralInfoTab,
@@ -206,12 +204,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					</div>
 
 					{/* Navigation Tabs */}
-					<div className="flex items-center justify-between px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2">
-						<div className="flex items-center gap-2">
+					<div className="flex items-center justify-between px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-nowrap overflow-x-auto gap-2">
+						<div className="flex items-center gap-2 shrink-0">
 							<button
 								type="button"
 								data-testid="tab-patient-general"
-								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
 									activeTab === "general"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -225,7 +223,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
-								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
 									activeTab === "anamnesis"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -241,7 +239,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap"
 							onClick={handleApplyNorm}
 							title="1-клик: Применить физиологическую норму (соматически здоров)"
 						>

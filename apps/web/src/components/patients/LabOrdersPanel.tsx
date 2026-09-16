@@ -5,18 +5,14 @@ import {
 	Calendar,
 	Camera,
 	Check,
-	CheckCircle2,
 	ChevronDown,
 	Clock,
-	Copy,
-	ExternalLink,
 	FlaskConical,
 	Layers,
 	Link,
 	Loader2,
 	MessageSquare,
 	MoreHorizontal,
-	MoreVertical,
 	Palette,
 	Plus,
 	Printer,
@@ -30,7 +26,6 @@ import {
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
-import { LAB_ORDER_PORTAL_PATH } from "../../lib/publicPortalRoute";
 import { LabOrdersPage } from "../../pages/LabOrdersPage";
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import { DentalLabOrdersHubModal } from "../lab/DentalLabOrdersHubModal";
@@ -46,7 +41,6 @@ import {
 	VITA_3D_MASTER_SHADES,
 	VITA_BLEACH_SHADES,
 	SHADE_SWATCH_MAP,
-	STUMP_NATURAL_DIE_SHADES,
 	calculateMaterialTotalCostKopecks,
 	addWorkingDays,
 	ONE_CLICK_LAB_DEFAULTS,

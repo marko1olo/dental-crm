@@ -1,12 +1,7 @@
 import React, { useState, useMemo } from "react";
 import {
-	ArrowRight,
-	Award,
 	Check,
 	Coins,
-	CreditCard,
-	Percent,
-	QrCode,
 	ShieldCheck,
 	Sparkles,
 	User,

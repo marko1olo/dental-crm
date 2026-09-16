@@ -8,9 +8,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import type { PanelSubject } from "../../lib/panelStateText";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 
 export type PatientNoShowRiskProps = {
@@ -41,7 +39,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	// Кнопка «Рассчитать AI-риск» перезапускает тот же эффект, а не отдельную
 	// функцию: иначе ручной запрос остался бы без отмены и снова мог бы
 	// показать чужой прогноз.
-	const [_reloadToken, setReloadToken] = useState(0);
+	const [reloadToken, setReloadToken] = useState(0);
 	/*
 	 * БЫЛО: отказ сервера не сохранялся нигде. Ветка `if (res.ok)` без `else` и
 	 * `catch` с одним logger.error оставляли riskData равным null, а на null
@@ -111,7 +109,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 			cancelled = true;
 			controller.abort();
 		};
-	}, [patientId]);
+	}, [patientId, reloadToken]);
 
 	if (!patientId) return null;
 
@@ -169,10 +167,10 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	return (
 		<div
 			data-testid="patient-no-show-risk"
-			className="panel p-4 rounded-xl border mb-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+			className="panel p-4 rounded-xl border mb-5 bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
 		>
 			<h3
-				className="panel-heading compact-heading flex items-center gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800"
+				className="panel-heading compact-heading flex items-center gap-2 mb-4 pb-2 border-b border-[var(--line)]"
 				title="Машинный расчет риска отмены записи пациента"
 			>
 				<BrainCircuit
@@ -187,7 +185,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 			</h3>
 
 			{loading ? (
-				<div className="text-xs text-slate-500 dark:text-slate-400 py-3">
+				<div className="text-xs text-[var(--muted)] py-3">
 					Считаем по истории пациента…
 				</div>
 			) : failure ? (
@@ -202,7 +200,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				/>
 			) : riskData ? (
 				<div>
-					<div className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700">
+					<div className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-[var(--paper-soft)] border-[var(--line)]">
 						<div className="flex items-center gap-2">
 							{getRiskIcon(riskData?.riskLevel ?? "")}
 							<span
@@ -219,10 +217,10 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 
 					{(riskData?.factors ?? []).length > 0 && (
 						<div className="mt-3">
-							<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+							<span className="text-xs font-bold text-[var(--ink)]">
 								Факторы риска:
 							</span>
-							<ul className="mt-1 space-y-1 text-xs text-slate-600 dark:text-slate-400 pl-4 list-disc">
+							<ul className="mt-1 space-y-1 text-xs text-[var(--muted)] pl-4 list-disc">
 								{(riskData?.factors ?? []).map((factor: string) => (
 									<li key={factor}>{factor}</li>
 								))}
@@ -239,7 +237,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				</div>
 			) : (
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 py-2">
-					<span className="text-xs text-slate-500 dark:text-slate-400">
+					<span className="text-xs text-[var(--muted)]">
 						Прогноз риска отмены на основе истории и поведения пациента
 					</span>
 					<button

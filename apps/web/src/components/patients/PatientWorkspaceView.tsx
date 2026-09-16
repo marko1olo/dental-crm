@@ -1,5 +1,5 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
-import { Calendar, Camera, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Printer, Receipt, Shield, Stethoscope, UserCheck } from "lucide-react";
+import { Calendar, Camera, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Printer, Receipt, Shield, Stethoscope, UserCheck } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -143,7 +143,7 @@ const VisitHistoryCardItem: React.FC<{
 					{statusLabel}
 				</span>
 			</div>
-			<div className="text-xs text-[var(--muted)]">
+			<div className="text-xs text-[var(--muted)] truncate min-w-0">
 				Врач: <strong className="text-[var(--ink)]">{doctorFullName || "Врач не назначен"}</strong>
 			</div>
 			{appointment.reason ? (
@@ -263,7 +263,6 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 
 			const [isDmsLetterOpen, setIsDmsLetterOpen] = useState(false);
 			const [isDmsRegistryOpen, setIsDmsRegistryOpen] = useState(false);
-			const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
 			const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 			const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(false);
 			const docsMenuRef = useRef<HTMLDivElement>(null);
@@ -509,7 +508,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 											onClick={() => {
 												setIsDocsMenuOpen(false);
-												setIsDmsManagerOpen(true);
+												setIsDmsLetterOpen(true);
 											}}
 											title="Управление полисами ДМС и гарантийными письмами"
 											data-testid="patient-dms-manager-btn"
@@ -553,7 +552,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									</div>
 								)}
 							</div>
-							<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] flex-wrap">
+							<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] flex-nowrap overflow-x-auto h-8 sm:h-9 max-w-full">
 								<button
 									type="button"
 									className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${

@@ -219,7 +219,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: 5, scale: 0.95 }}
 							transition={{ duration: 0.15 }}
-							className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl p-1 z-50 min-w-[160px] flex flex-col gap-0.5"
+							className="absolute top-full left-0 mt-1 bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-xl p-1 z-50 min-w-[160px] flex flex-col gap-0.5"
 						>
 							{(
 								Object.entries(LOYALTY_CONFIG) as [
@@ -233,8 +233,8 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 									onClick={() => handleSetTier(tierKey)}
 									className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs border-0 cursor-pointer text-left transition-colors min-h-[44px] sm:min-h-[32px] ${
 										currentTier === tierKey
-											? "bg-slate-100 dark:bg-slate-800 font-semibold text-slate-900 dark:text-white"
-											: "bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 font-medium"
+											? "bg-[var(--paper-soft)] font-semibold text-[var(--ink)]"
+											: "bg-transparent hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] font-medium"
 									}`}
 								>
 									<Crown size={14} color={config.color} />
@@ -252,7 +252,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 							{/* Прямая оговорка там, где выбирают статус: без неё цифры «-5%,
 							    -10%, -15%» выглядят как готовый расчёт, а считать скидку
 							    придётся человеку при оплате. */}
-							<p className="m-0 mt-1 px-3 py-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+							<p className="m-0 mt-1 px-3 py-2 text-xs leading-relaxed text-[var(--muted)] border-t border-[var(--line)]">
 								Это пометка для сотрудников. Скидка сама в счёт не подставляется
 								— назначьте её вручную при оплате.
 							</p>

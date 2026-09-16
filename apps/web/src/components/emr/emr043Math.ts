@@ -14,11 +14,9 @@ import type {
 import {
 	type FdiToothRecord,
 	type DmftIndex,
-	type CpitnIndex,
 	type CpitnSextantCode,
 	calculateDmftFromOdontogram,
 	toothStatusCodeShortMap,
-	toothStatusCodeLabels,
 	dentalBiteTypeLabels,
 } from "@dental/shared";
 

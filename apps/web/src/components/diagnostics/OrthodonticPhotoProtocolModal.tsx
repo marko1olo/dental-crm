@@ -7,7 +7,6 @@ import {
 	FileText,
 	RotateCw,
 	FlipHorizontal,
-	FlipVertical,
 	ZoomIn,
 	ZoomOut,
 	Trash2,
@@ -16,21 +15,16 @@ import {
 	Printer,
 	ChevronDown,
 	ChevronUp,
-	Layers,
 	UploadCloud,
 	MoreVertical,
 	Sparkles,
-	Maximize2,
-	AlertCircle,
 	Copy,
 } from "lucide-react";
 import {
 	ORTHODONTIC_8_ANGLES,
-	ORTHODONTIC_ANGLES_MAP,
 	ORTHODONTIC_STAGE_METADATA,
 	ANGLE_CLASS_LABELS_RU,
 	SMILE_ARC_LABELS_RU,
-	MIDLINE_SHIFT_LABELS_RU,
 	createEmptyOrthodonticSession,
 	calculateOrthodonticProtocolCompleteness,
 	updateSlotPhoto,
@@ -42,7 +36,6 @@ import {
 	type AngleClass,
 	type SmileArcType,
 	type MidlineShiftDirection,
-	type OrthodonticPhotoSlotRecord,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";

@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
-	Activity,
 	Check,
-	Coins,
 	FileText,
 	Layers,
 	Plus,
@@ -22,20 +20,14 @@ import {
 	MAF_ISO_OPTIONS,
 	TAPER_OPTIONS,
 	OBTURATION_TECHNIQUE_OPTIONS,
-	PULPITIS_COMPLETE_PRESET,
-	PERIODONTITIS_TEMP_PRESET,
-	OBTURATION_PERMANENT_PRESET,
-	getAnatomicalWorkingLength,
 	applyAnatomicalWorkingLengths,
 	applyPulpitisProtocol,
 	applyPeriodontitisTempProtocol,
 	applyObturationPermanentProtocol,
 	getDefaultCanalsForTooth,
 	generateEndoProtocol043,
-	generateEndoCanalsTable043,
 } from "../endo/EndoCanalLogModal";
 import type { RestorativeMaterialKey } from "../odontogram/anatomicalToothGeometries";
-import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 
 export interface ToothSurfacesAndEndoMatrixProps {

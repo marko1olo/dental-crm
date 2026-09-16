@@ -16,7 +16,6 @@ import {
 } from "@dental/shared";
 import {
 	AlertTriangle,
-	Building2,
 	Calendar,
 	EyeOff,
 	FileText,
