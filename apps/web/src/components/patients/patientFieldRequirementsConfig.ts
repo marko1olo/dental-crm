@@ -217,10 +217,10 @@ export function validatePatientDraftWithRequirements(
 		missingRequiredLabels.push("ФИО");
 	}
 
-	// 2. Телефон (по настройке)
+	// 2. Телефон (по настройке, кроме анонимного режима по ПП РФ №659)
 	const phoneRaw = (draft.phone || "").trim();
 	const phoneDigits = phoneRaw.replace(/\D/g, "");
-	if (requirements.requirePhone) {
+	if (requirements.requirePhone && !draft.isAnonymous) {
 		if (!phoneRaw) {
 			errors.phone = "Телефон обязателен для регистрации карты";
 			missingRequiredLabels.push("Телефон");

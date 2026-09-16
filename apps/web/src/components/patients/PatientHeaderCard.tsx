@@ -196,28 +196,29 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 
 	return (
 		<div
-			className={`patient-header-card p-2.5 sm:p-3 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs transition-colors space-y-2 ${className}`}
+			className={`patient-header-card p-2 sm:p-2.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs transition-colors flex flex-col gap-1.5 ${className}`}
 			data-testid="patient-header-card"
 		>
-			{/* Top Row: Avatar, FIO, Actions, Sentiment & Loyalty */}
-			<div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
+			{/* Main Compact Row: <= 60-70px total desktop height */}
+			<div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap min-w-0">
 				{/* Avatar & Core Info */}
-				<div className="flex items-center gap-3 min-w-0">
+				<div className="flex items-center gap-2.5 min-w-0 flex-1">
 					<div
-						className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--teal-dark,#0d9488)] to-cyan-600 text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-xs ring-2 ring-[var(--teal,#0d9488)]/20"
+						className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-[var(--teal-dark,#0d9488)] to-cyan-600 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs ring-1 ring-[var(--teal,#0d9488)]/30"
 						title={fullName}
 					>
 						{initials}
 					</div>
 
-					<div className="min-w-0">
-						<div className="flex items-center gap-2 flex-wrap">
-							<h2 className="text-base sm:text-lg font-black text-[var(--ink)] leading-tight truncate">
+					<div className="min-w-0 flex-1">
+						{/* Line 1: Full name + clinical badges */}
+						<div className="flex items-center gap-1.5 flex-wrap min-w-0">
+							<h2 className="text-sm sm:text-base font-black text-[var(--ink)] leading-tight truncate max-w-[200px] sm:max-w-[280px] lg:max-w-[360px]">
 								{fullName}
 							</h2>
 							{dashboard?.activeVisit?.patientId === resolvedPatient.id && (
 								<span
-									className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-extrabold inline-flex items-center gap-1 shrink-0"
+									className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold inline-flex items-center gap-1 shrink-0"
 									title="Пациент в данный момент находится на приёме"
 								>
 									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
@@ -226,11 +227,11 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 							)}
 							{nextAppointment && (
 								<span
-									className="px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal,#2dd4bf)] border border-[var(--teal,#0d9488)]/30 text-[11px] font-bold inline-flex items-center gap-1 shrink-0"
+									className="px-1.5 py-0.5 rounded-md bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal,#2dd4bf)] border border-[var(--teal,#0d9488)]/30 text-[10px] font-bold inline-flex items-center gap-1 shrink-0"
 									title={`Следующий приём: ${new Date(nextAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`}
 									data-testid="header-next-appointment-badge"
 								>
-									<Clock size={11} className="shrink-0" />
+									<Clock size={10} className="shrink-0" />
 									<span>
 										Приём: {new Date(nextAppointment.startsAt!).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} {new Date(nextAppointment.startsAt!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
 									</span>
@@ -238,7 +239,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 							)}
 							{diagnosisText && (
 								<span
-									className="px-2 py-0.5 rounded-md bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-[11px] font-semibold truncate max-w-[200px]"
+									className="px-1.5 py-0.5 rounded-md bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-[10px] font-semibold truncate max-w-[140px]"
 									title={`Диагноз: ${diagnosisText}`}
 									data-testid="header-diagnosis-badge"
 								>
@@ -247,26 +248,47 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 							)}
 						</div>
 
-						{birthDateStr && (
-							<div className="text-xs text-[var(--muted)] mt-0.5 flex items-center gap-1.5">
-								<Calendar size={12} className="shrink-0 opacity-70" />
-								<span>{birthDateStr}</span>
-							</div>
-						)}
+						{/* Line 2: Birthdate, Phone with copy, Loyalty, Sentiment */}
+						<div className="flex items-center gap-2.5 flex-wrap text-[11px] text-[var(--muted)] mt-0.5 min-w-0">
+							{birthDateStr && (
+								<span className="inline-flex items-center gap-1 shrink-0">
+									<Calendar size={11} className="shrink-0 opacity-70" />
+									<span>{birthDateStr}</span>
+								</span>
+							)}
+							{phone ? (
+								<span className="inline-flex items-center gap-1 font-mono font-semibold text-[var(--ink)] shrink-0">
+									<Phone size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<span>{phone}</span>
+									<button
+										type="button"
+										onClick={() => {
+											if (typeof navigator !== "undefined" && navigator.clipboard) {
+												void navigator.clipboard.writeText(phone);
+												showToast("Телефон скопирован в буфер", "success");
+											}
+										}}
+										className="p-0.5 rounded hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+										title="Скопировать телефон"
+										aria-label="Скопировать телефон"
+									>
+										<Copy size={11} />
+									</button>
+								</span>
+							) : (
+								<span className="italic shrink-0">Телефон не указан</span>
+							)}
+							<PatientSentimentBadge patient={resolvedPatient} />
+							<PatientLoyaltyHeader patientId={resolvedPatient.id} />
+						</div>
 					</div>
 				</div>
 
-				{/* Right Badges: Sentiment & Loyalty & Balance */}
-				<div className="flex items-center gap-2 flex-wrap shrink-0 self-start sm:self-auto">
-					{/* Patient Sentiment Scoring Badge */}
-					<PatientSentimentBadge patient={resolvedPatient} />
-
-					{/* Loyalty Tier Selector */}
-					<PatientLoyaltyHeader patientId={resolvedPatient.id} />
-
+				{/* Right: Balance & Action Toolbar */}
+				<div className="flex items-center gap-2 shrink-0">
 					{/* 54-FZ Fiscal Balance */}
 					<span
-						className={`px-2.5 py-1 rounded-xl text-xs font-black font-mono shrink-0 whitespace-nowrap border ${
+						className={`px-2 py-1 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap border ${
 							balance > 0
 								? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40"
 								: balance < 0
@@ -282,280 +304,289 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 						}
 					>
 						{balance > 0
-							? `Депозит: +${balance.toLocaleString("ru-RU")} ₽`
+							? `+${balance.toLocaleString("ru-RU")} ₽`
 							: balance < 0
 								? `Долг: ${Math.abs(balance).toLocaleString("ru-RU")} ₽`
-								: "Баланс: 0 ₽"}
+								: "0 ₽"}
 					</span>
-				</div>
-			</div>
 
-			{/* Contact & Safety Quick Bar */}
-			<div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--line,rgba(0,0,0,0.06))] dark:border-[var(--line,rgba(255,255,255,0.06))] flex-wrap sm:flex-nowrap text-xs">
-				<div className="flex items-center gap-3 min-w-0 flex-wrap">
-					{phone ? (
-						<div className="flex items-center gap-1.5 font-mono font-semibold text-[var(--ink)]">
-							<Phone size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>{phone}</span>
-							<button
-								type="button"
-								onClick={() => {
-									if (typeof navigator !== "undefined" && navigator.clipboard) {
-										void navigator.clipboard.writeText(phone);
-										showToast("Телефон скопирован в буфер", "success");
-									}
-								}}
-								className="p-1 rounded-md hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-[var(--paper-soft,#1e293b)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
-								title="Скопировать телефон"
-								aria-label="Скопировать телефон"
-							>
-								<Copy size={12} />
-							</button>
-						</div>
-					) : (
-						<span className="text-[var(--muted)] italic">Телефон не указан</span>
-					)}
-				</div>
-
-				{/* Quick Actions (Miller's Law / Mandate 8d & 8p: 2 primary actions + 1 compact '...' popover) */}
-				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-					{/* Primary 1: Accent - Start Visit 043/u */}
-					<button
-						type="button"
-						onClick={() => {
-							if (!resolvedPatient) return;
-							usePatientStore
-								.getState()
-								.setSelectedPatientId(resolvedPatient.id);
-							useAppStore.getState().setCurrentView("visit");
-							showToast(`Открыт приём 043/у: ${fullName}`, "success");
-						}}
-						className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all text-xs"
-						title="Открыть амбулаторный приём 043/у без лишних подтверждений"
-						data-testid="header-open-visit-btn"
-					>
-						<Stethoscope size={13} />
-						<span>Начать приём</span>
-					</button>
-
-					{/* Primary 2: Subtle - Book Appointment */}
-					<button
-						type="button"
-						onClick={() => {
-							if (!resolvedPatient) return;
-							const now = new Date();
-							const pad = (n: number) => String(n).padStart(2, "0");
-							const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-							const currentHour = now.getHours();
-							const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
-							const endHour = Math.min(startHour + 1, 21);
-							const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
-							const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
-
-							useScheduleStore.getState().setNewAppointmentDraft({
-								patientId: resolvedPatient.id,
-								doctorUserId: "",
-								assistantUserId: "",
-								chairId: "",
-								status: "planned",
-								startsAt,
-								endsAt,
-								reason: "Консультация и осмотр",
-								comment: "",
-							});
-							useAppStore.getState().setCurrentView("schedule");
-							showToast(
-								`Пациент ${fullName} выбран для записи в расписание`,
-								"success",
-							);
-						}}
-						className="h-8 px-2.5 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
-						title="Записать пациента в расписание приёма"
-						data-testid="header-book-appointment-btn"
-					>
-						<Calendar size={13} className="text-[var(--teal,#0d9488)]" />
-						<span>Записать на приём</span>
-					</button>
-
-					{/* Secondary Popover Menu: ... button */}
-					<div className="relative" ref={actionsMenuRef}>
+					{/* 1-line Action Toolbar (32px / h-8) - Miller's Law: 2 primary buttons + 1 compact '...' */}
+					<div className="flex items-center gap-1.5 shrink-0">
+						{/* Primary 1: Начать приём */}
 						<button
 							type="button"
-							onClick={() => setIsActionsMenuOpen((prev) => !prev)}
-							className="h-8 w-8 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] inline-flex items-center justify-center cursor-pointer transition-colors"
-							title="Дополнительные действия"
-							aria-label="Дополнительные действия"
-							aria-expanded={isActionsMenuOpen}
-							aria-haspopup="true"
-							data-testid="header-actions-menu-btn"
+							onClick={() => {
+								if (!resolvedPatient) return;
+								usePatientStore
+									.getState()
+									.setSelectedPatientId(resolvedPatient.id);
+								useAppStore.getState().setCurrentView("visit");
+								showToast(`Открыт приём 043/у: ${fullName}`, "success");
+							}}
+							className="h-8 px-2.5 sm:px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all text-xs"
+							title="Открыть амбулаторный приём 043/у без лишних подтверждений"
+							data-testid="header-open-visit-btn"
 						>
-							<MoreHorizontal size={15} />
+							<Stethoscope size={13} />
+							<span>Начать приём</span>
 						</button>
 
-						{isActionsMenuOpen && (
-							<div
-								className="absolute right-0 top-full mt-1 w-60 p-1 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xl z-50 flex flex-col gap-0.5 text-xs animate-in fade-in zoom-in-95 duration-100"
-								data-testid="header-actions-menu-popover"
+						{/* Primary 2: Записать */}
+						<button
+							type="button"
+							onClick={() => {
+								if (!resolvedPatient) return;
+								const now = new Date();
+								const pad = (n: number) => String(n).padStart(2, "0");
+								const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+								const currentHour = now.getHours();
+								const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
+								const endHour = Math.min(startHour + 1, 21);
+								const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
+								const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
+
+								useScheduleStore.getState().setNewAppointmentDraft({
+									patientId: resolvedPatient.id,
+									doctorUserId: "",
+									assistantUserId: "",
+									chairId: "",
+									status: "planned",
+									startsAt,
+									endsAt,
+									reason: "Консультация и осмотр",
+									comment: "",
+								});
+								useAppStore.getState().setCurrentView("schedule");
+								showToast(
+									`Пациент ${fullName} выбран для записи в расписание`,
+									"success",
+								);
+							}}
+							className="h-8 px-2.5 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
+							title="Записать пациента в расписание приёма"
+							data-testid="header-book-appointment-btn"
+						>
+							<Calendar size={13} className="text-[var(--teal,#0d9488)]" />
+							<span>Записать</span>
+						</button>
+
+						{/* Secondary Popover Menu: ... button */}
+						<div className="relative" ref={actionsMenuRef}>
+							<button
+								type="button"
+								onClick={() => setIsActionsMenuOpen((prev) => !prev)}
+								className="h-8 w-8 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] inline-flex items-center justify-center cursor-pointer transition-colors"
+								title="Дополнительные действия (печать 043/у, касса, архив)"
+								aria-label="Дополнительные действия"
+								aria-expanded={isActionsMenuOpen}
+								aria-haspopup="true"
+								data-testid="header-actions-menu-btn"
 							>
-								{/* 1. Бланк договора (_______) */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsActionsMenuOpen(false);
-										void printBlankMedicalContract(resolvedPatient, {
-											clinicName: dashboard?.clinicSettings?.profile?.legalName,
-										});
-									}}
-									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-									title="Распечатать пустой договор на оказание услуг со строками _______"
-									data-testid="header-print-blank-contract-btn"
-								>
-									<FileText size={13} className="text-amber-600 shrink-0" />
-									<span className="truncate">Бланк договора (_______)</span>
-								</button>
+								<MoreHorizontal size={15} />
+							</button>
 
-								{/* 2. Анамнез 043/у */}
-								{onOpenAnamnesis && (
+							{isActionsMenuOpen && (
+								<div
+									className="absolute right-0 top-full mt-1 w-64 p-1 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xl z-50 flex flex-col gap-0.5 text-xs animate-in fade-in zoom-in-95 duration-100"
+									data-testid="header-actions-menu-popover"
+								>
+									{/* 1. Печать и экспорт карты 043/у */}
 									<button
 										type="button"
 										onClick={() => {
 											setIsActionsMenuOpen(false);
-											onOpenAnamnesis();
+											if (typeof window !== "undefined") {
+												window.print();
+											}
+											showToast("Печать и экспорт карты 043/у запущены", "info");
 										}}
 										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-										title="Анамнез 043/у"
-										data-testid="header-anamnesis-btn"
+										title="Печать и экспорт карты 043/у"
+										data-testid="header-export-043u-btn"
 									>
-										<HeartPulse size={13} className="text-rose-500 shrink-0" />
-										<span className="truncate">Анамнез 043/у</span>
+										<Printer size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+										<span className="truncate">Печать карты (043/у)</span>
 									</button>
-								)}
 
-								{/* 3. Экспорт карты 043/у */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsActionsMenuOpen(false);
-										if (typeof window !== "undefined") {
-											window.print();
-										}
-										showToast("Печать и экспорт карты 043/у запущены", "info");
-									}}
-									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-									title="Печать и экспорт карты 043/у"
-									data-testid="header-export-043u-btn"
-								>
-									<Printer size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span className="truncate">Экспорт карты 043/у</span>
-								</button>
-
-								{/* 4. Объединить дубликаты */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsActionsMenuOpen(false);
-										if (typeof window !== "undefined") {
-											window.dispatchEvent(
-												new CustomEvent("dente-open-duplicate-merge-modal", {
-													detail: { patientId: resolvedPatient.id },
-												}),
-											);
-										}
-										showToast("Проверка очередей слияния дубликатов", "info");
-									}}
-									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-									title="Объединить дубликаты пациента"
-									data-testid="header-merge-duplicates-btn"
-								>
-									<GitMerge size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-									<span className="truncate">Объединить дубликаты</span>
-								</button>
-
-								{/* 5. История изменений */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsActionsMenuOpen(false);
-										showToast(`История изменений карты: ${fullName}`, "info");
-									}}
-									className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-									title="История изменений данных пациента"
-									data-testid="header-history-btn"
-								>
-									<History size={13} className="text-[var(--muted)] shrink-0" />
-									<span className="truncate">История изменений</span>
-								</button>
-
-								{/* 6. WhatsApp */}
-								{phone && (
+									{/* 2. Выписка счёта и касса (54-ФЗ) */}
 									<button
 										type="button"
 										onClick={() => {
 											setIsActionsMenuOpen(false);
-											openWhatsAppChat(
-												phone,
-												`Здравствуйте, ${fullName}! Стоматологическая клиника DENTE приветствует вас.`,
-											);
-										}}
-										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-emerald-800 dark:text-emerald-300 font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-										title="Написать в WhatsApp"
-										data-testid="header-whatsapp-btn"
-									>
-										<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-										<span className="truncate">WhatsApp</span>
-									</button>
-								)}
-
-								{/* 7. Изменить */}
-								{onEditPatient && (
-									<button
-										type="button"
-										onClick={() => {
-											setIsActionsMenuOpen(false);
-											onEditPatient();
+											usePatientStore
+												.getState()
+												.setSelectedPatientId(resolvedPatient.id);
+											useAppStore.getState().setCurrentView("finance");
+											showToast(`Открыта касса и счета: ${fullName}`, "info");
 										}}
 										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-										title="Редактировать данные пациента"
-										data-testid="header-edit-patient-btn"
+										title="Выписка счёта, акты выполненных работ и касса 54-ФЗ"
+										data-testid="header-finance-btn"
 									>
-										<Edit3 size={13} className="text-[var(--muted)] shrink-0" />
-										<span className="truncate">Изменить</span>
+										<FileText size={13} className="text-emerald-600 shrink-0" />
+										<span className="truncate">Счета и касса (54-ФЗ)</span>
 									</button>
-								)}
 
-								{/* 8. В архив / Деактивация */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsActionsMenuOpen(false);
-										showToast(`Карта пациента ${fullName} перемещена в архив`, "info");
-									}}
-									className="w-full h-8 px-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-									title="Переместить карту пациента в архив"
-									data-testid="header-archive-btn"
-								>
-									<Archive size={13} className="text-rose-500 shrink-0" />
-									<span className="truncate">В архив / Деактивация</span>
-								</button>
-							</div>
-						)}
+									{/* 3. Семейный баланс */}
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											showToast(
+												`Семейный баланс: доступно ${balance.toLocaleString("ru-RU")} ₽`,
+												"info",
+											);
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Семейный кошелек и распределение авансов"
+										data-testid="header-family-balance-btn"
+									>
+										<UserCheck size={13} className="text-indigo-600 shrink-0" />
+										<span className="truncate">Семейный баланс</span>
+									</button>
+
+									{/* 4. Бланк договора (_______) */}
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											void printBlankMedicalContract(resolvedPatient, {
+												clinicName: dashboard?.clinicSettings?.profile?.legalName,
+											});
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Распечатать пустой договор на оказание услуг со строками _______"
+										data-testid="header-print-blank-contract-btn"
+									>
+										<FileText size={13} className="text-amber-600 shrink-0" />
+										<span className="truncate">Бланк договора (_______)</span>
+									</button>
+
+									{/* 5. Анамнез 043/у */}
+									{onOpenAnamnesis && (
+										<button
+											type="button"
+											onClick={() => {
+												setIsActionsMenuOpen(false);
+												onOpenAnamnesis();
+											}}
+											className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+											title="Анамнез 043/у"
+											data-testid="header-anamnesis-btn"
+										>
+											<HeartPulse size={13} className="text-rose-500 shrink-0" />
+											<span className="truncate">Анамнез 043/у</span>
+										</button>
+									)}
+
+									{/* 6. Объединить дубликаты */}
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											if (typeof window !== "undefined") {
+												window.dispatchEvent(
+													new CustomEvent("dente-open-duplicate-merge-modal", {
+														detail: { patientId: resolvedPatient.id },
+													}),
+												);
+											}
+											showToast("Проверка очередей слияния дубликатов", "info");
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Объединить дубликаты пациента"
+										data-testid="header-merge-duplicates-btn"
+									>
+										<GitMerge size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+										<span className="truncate">Объединить дубликаты</span>
+									</button>
+
+									{/* 7. История изменений */}
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											showToast(`История изменений карты: ${fullName}`, "info");
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="История изменений данных пациента"
+										data-testid="header-history-btn"
+									>
+										<History size={13} className="text-[var(--muted)] shrink-0" />
+										<span className="truncate">История изменений</span>
+									</button>
+
+									{/* 8. WhatsApp */}
+									{phone && (
+										<button
+											type="button"
+											onClick={() => {
+												setIsActionsMenuOpen(false);
+												openWhatsAppChat(
+													phone,
+													`Здравствуйте, ${fullName}! Стоматологическая клиника DENTE приветствует вас.`,
+												);
+											}}
+											className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-emerald-800 dark:text-emerald-300 font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+											title="Написать в WhatsApp"
+											data-testid="header-whatsapp-btn"
+										>
+											<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<span className="truncate">WhatsApp</span>
+										</button>
+									)}
+
+									{/* 9. Изменить */}
+									{onEditPatient && (
+										<button
+											type="button"
+											onClick={() => {
+												setIsActionsMenuOpen(false);
+												onEditPatient();
+											}}
+											className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+											title="Редактировать данные пациента"
+											data-testid="header-edit-patient-btn"
+										>
+											<Edit3 size={13} className="text-[var(--muted)] shrink-0" />
+											<span className="truncate">Изменить</span>
+										</button>
+									)}
+
+									{/* 10. В архив / Деактивация */}
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											showToast(`Карта пациента ${fullName} перемещена в архив`, "info");
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Переместить карту пациента в архив"
+										data-testid="header-archive-btn"
+									>
+										<Archive size={13} className="text-rose-500 shrink-0" />
+										<span className="truncate">В архив / Деактивация</span>
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Prominent Allergy / Medical Safety Alert Banner if present */}
+			{/* Dedicated Allergy Alert Banner if present (kept compact with data-testid="header-allergy-alert") */}
 			{allergyText && (
 				<div
-					className="p-3 rounded-xl bg-rose-500/15 border-2 border-rose-600 text-rose-950 dark:text-rose-100 text-xs font-black flex items-center gap-2.5 shadow-sm"
+					className="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-600 text-rose-950 dark:text-rose-100 text-xs font-black flex items-center gap-2 shadow-xs"
 					data-testid="header-allergy-alert"
 					role="alert"
 				>
-					<AlertOctagon size={18} className="text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
-					<div className="flex-1 min-w-0">
-						<span className="uppercase tracking-wider font-black mr-1 text-[11px] text-rose-700 dark:text-rose-300">
-							АЛЛЕРГИЯ / СТОП-ФАКТОР:
+					<AlertOctagon size={14} className="text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
+					<div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+						<span className="uppercase tracking-wider font-black text-[10px] text-rose-700 dark:text-rose-300 shrink-0">
+							СТОП-ФАКТОР / АЛЛЕРГИЯ:
 						</span>
-						<span className="break-words">{allergyText}</span>
+						<span className="truncate font-semibold">{allergyText}</span>
 					</div>
 				</div>
 			)}

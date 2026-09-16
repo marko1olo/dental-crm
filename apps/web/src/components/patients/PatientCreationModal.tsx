@@ -192,23 +192,30 @@ export function PatientCreationModal({
 	const patientCreateReady = validationResult.isValid && !isPatientCreating;
 	const patientCreateGuidance = validationResult.guidanceMessage;
 
-	// Quick intake validation (CITO / booking / duty doctor): requires ONLY full name and phone
+	// Quick intake validation (CITO / booking / duty doctor): requires ONLY full name and phone (or name only if anonymous per PP RF 659)
 	const quickIntakeValidationResult = useMemo(() => {
 		return validatePatientDraftWithRequirements(
 			{
 				fullName: newPatientName,
 				phone: newPatientPhone,
+				isAnonymous: patientAdministrativeProfileDraft.isAnonymous,
 				isEmergencyOrPrimary: true,
 			},
 			{
 				...fieldRequirements,
+				requirePhone: !patientAdministrativeProfileDraft.isAnonymous,
 				requireAdvertisingSource: false,
 				requireSnils: false,
 				requireBirthDate: false,
 				requireIdentityDocument: false,
 			},
 		);
-	}, [newPatientName, newPatientPhone, fieldRequirements]);
+	}, [
+		newPatientName,
+		newPatientPhone,
+		patientAdministrativeProfileDraft.isAnonymous,
+		fieldRequirements,
+	]);
 
 	const quickActionReady =
 		quickIntakeValidationResult.isValid && !isPatientCreating;
@@ -817,7 +824,8 @@ export function PatientCreationModal({
 								className="create-patient-label"
 							>
 								Телефон{" "}
-								{fieldRequirements.requirePhone ? (
+								{fieldRequirements.requirePhone &&
+								!patientAdministrativeProfileDraft.isAnonymous ? (
 									<span className="text-rose-500 font-bold">*</span>
 								) : (
 									<span className="text-xs text-[var(--muted)] font-normal">

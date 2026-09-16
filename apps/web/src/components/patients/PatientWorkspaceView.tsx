@@ -1,5 +1,5 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
-import { Calendar, Camera, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Receipt, Shield, Stethoscope } from "lucide-react";
+import { Calendar, Camera, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Printer, Receipt, Shield, Stethoscope, UserCheck } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -425,6 +425,24 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 											onClick={() => {
 												setIsDocsMenuOpen(false);
+												if (typeof window !== "undefined") {
+													window.print();
+												}
+												showToast("Печать и экспорт карты 043/у запущены", "info");
+											}}
+											title="Распечатать амбулаторную медицинскую карту Форма 043/у"
+											data-testid="patient-workspace-print-043u-btn"
+										>
+											<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+											<span>Печать карты (043/у)</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
 												if (patientId) {
 													appLogic?.setSelectedPatientId?.(patientId);
 												}
@@ -435,6 +453,21 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 										>
 											<Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
 											<span>Счета и касса (54-ФЗ)</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												showToast("Семейный баланс и распределение авансов", "info");
+											}}
+											title="Семейный баланс и распределение авансовых платежей"
+											data-testid="patient-workspace-family-balance-btn"
+										>
+											<UserCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+											<span>Семейный баланс</span>
 										</button>
 
 										<button
