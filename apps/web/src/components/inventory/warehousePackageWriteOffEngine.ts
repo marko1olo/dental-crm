@@ -624,7 +624,7 @@ export async function handleOneClickPackageWriteOff(
 
 	if (isOverdraft) {
 		toastType = "warning";
-		toastMessage = `Остаток 0: зафиксирован мягкий овердрафт (пакет «${pkg.title}», дефицит ${overdraftCount} поз., накладная в пути). Операция проведена без блокировки!`;
+		toastMessage = `Остаток 0: Мягкий овердрафт склада (пакет «${pkg.title}», дефицит ${overdraftCount} поз., накладная в пути). Операция не заблокирована!`;
 	} else {
 		toastType = "success";
 		toastMessage = `Клинический пакет «${pkg.title}» успешно списан со склада в 1 клик (${pkg.items.length} поз., без комиссии из 3 человек).`;

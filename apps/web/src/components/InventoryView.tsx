@@ -11,7 +11,6 @@ import {
 	Printer,
 	QrCode,
 	Search,
-	Settings,
 	ShieldCheck,
 	Sparkles,
 	Syringe,

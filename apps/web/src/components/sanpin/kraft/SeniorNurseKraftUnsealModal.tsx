@@ -2,16 +2,12 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
-	Barcode,
 	CheckCircle2,
 	PackageCheck,
-	QrCode,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
-	Volume2,
 	X,
-	XCircle,
 	Zap,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast.js";

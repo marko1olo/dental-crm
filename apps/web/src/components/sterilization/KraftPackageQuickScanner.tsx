@@ -11,27 +11,16 @@
 import {
 	AlertOctagon,
 	AlertTriangle,
-	Award,
-	Barcode,
-	Calendar,
-	Check,
 	CheckCircle2,
 	Clock,
-	Flame,
-	FlaskConical,
-	Package,
-	QrCode,
 	Scan,
-	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
-	Tag,
 	X,
 	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
-	format043SterilizationRecord,
 	parseAndValidateKraftBarcode,
 	type ParsedKraftBarcode,
 } from "@dental/shared";
@@ -226,7 +215,7 @@ export function KraftPackageQuickScanner({
 
 				{/* Body */}
 				<div className="sterilization-body">
-					{/* ⚡ 1-Click Fast Standard Tray Express Bar */}
+					{/* 1-Click Fast Standard Tray Express Bar */}
 					<div
 						className="sterilization-presets-bar"
 						style={{ border: "1.5px solid var(--teal-soft, #bae6fd)" }}

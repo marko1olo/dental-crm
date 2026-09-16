@@ -7,32 +7,20 @@
  */
 
 import {
-	AlertCircle,
 	AlertTriangle,
-	ArrowRight,
-	Calendar,
 	Check,
-	CheckCircle2,
-	ChevronDown,
 	Clock,
-	Copy,
 	Download,
-	FileSpreadsheet,
 	FileText,
 	Layers,
 	MoreVertical,
-	Package,
 	PackageCheck,
-	PackagePlus,
-	PackageSearch,
-	Plus,
 	Printer,
 	RefreshCw,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	Trash2,
-	User,
 	X,
 	Zap,
 } from "lucide-react";
@@ -58,16 +46,11 @@ import {
 	validateWriteoffDocument,
 } from "./clinicalWriteoffEngine.js";
 import {
-	CLINICAL_MATERIALS_CATALOG,
 	type CabinetStockBatch,
 	DEFAULT_CLINIC_LEGAL_INFO,
 	DENTAL_CABINET_STOCK_PRESETS,
 	DISCREPANCY_REASONS,
 	type DiscrepancyReasonCode,
-	ORDER_804N_SERVICE_NORMS,
-	type Order804nServiceNorm,
-	getDiscrepancyReason,
-	getOrder804nServiceNorm,
 } from "./clinicalWriteoffPresets.js";
 
 export interface ClinicalWriteoffModalProps {

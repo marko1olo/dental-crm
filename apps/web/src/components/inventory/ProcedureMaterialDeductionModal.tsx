@@ -32,7 +32,6 @@ import { showToast } from "../GlobalToast";
 import {
 	ALL_PROCEDURE_TECH_MAPS,
 	CLINICAL_PROCEDURE_PACKAGES,
-	type ClinicalTechMapPackage,
 	type DeductionLineItem,
 	type DeductionSummary,
 	type SupplierPurchaseOrderView,
@@ -44,7 +43,6 @@ import {
 	createDeductionLinesFromTechMaps,
 	createQuickCustomLineItem,
 	createSupplierPurchaseOrderFromLines,
-	declineUnitRu,
 	evaluateStockStatus,
 	formatQuantityWithUnitRu,
 	formatSupplierPurchaseOrderTextRu,
