@@ -175,18 +175,18 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 			>
 				{/* Modal Header */}
 				<div className="flex items-center justify-between px-5 py-4 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 bg-[var(--odontogram-surface,#f8fafc)] dark:bg-zinc-950">
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-3 min-w-0">
 						<div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 font-mono font-black text-lg flex items-center justify-center shrink-0 border border-indigo-500/25">
 							{toothNumber}
 						</div>
-						<div>
+						<div className="min-w-0">
 							<h2
 								id="tooth-card-modal-title"
-								className="text-base font-black tracking-tight"
+								className="text-base font-black tracking-tight truncate"
 							>
 								Клиническая карта зуба #{toothNumber}
 							</h2>
-							<p className="text-xs text-[var(--odontogram-ink-muted,#64748b)]">
+							<p className="text-xs text-[var(--odontogram-ink-muted,#64748b)] truncate">
 								{anatomicalTitle}
 							</p>
 						</div>
@@ -205,7 +205,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 									<button
 										type="button"
 										onClick={(e) => {
-											const details = e.currentTarget.closest("details");
+											const details = e?.currentTarget?.closest?.("details");
 											if (details) details.open = false;
 											onOpenHistory(toothNumber);
 											onClose();
@@ -221,7 +221,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 									<button
 										type="button"
 										onClick={(e) => {
-											const details = e.currentTarget.closest("details");
+											const details = e?.currentTarget?.closest?.("details");
 											if (details) details.open = false;
 											onOpenEndo(toothNumber);
 											onClose();
@@ -236,7 +236,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 								<button
 									type="button"
 									onClick={(e) => {
-										const details = e.currentTarget.closest("details");
+										const details = e?.currentTarget?.closest?.("details");
 										if (details) details.open = false;
 										handleTriggerRecall();
 									}}
@@ -294,8 +294,8 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 										}`}
 										data-testid={`tooth-card-state-${opt.state}`}
 									>
-										<span>{opt.label}</span>
-										{isSelected && <Check size={14} className="shrink-0" />}
+										<span className="truncate">{opt.label}</span>
+										{isSelected && <Check size={14} className="shrink-0 ml-1" />}
 									</button>
 								);
 							})}
@@ -328,8 +328,8 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 										title={surf.desc}
 										data-testid={`tooth-card-surf-${surf.code}`}
 									>
-										<span className="font-mono font-black">{surf.code}</span>
-										<span className="text-[11px] opacity-90 whitespace-nowrap ml-1">{surf.name}</span>
+										<span className="font-mono font-black shrink-0">{surf.code}</span>
+										<span className="text-[11px] opacity-90 truncate ml-1">{surf.name}</span>
 										{isSelected && <Check size={12} className="shrink-0 ml-1" />}
 									</button>
 								);

@@ -218,7 +218,7 @@ export function EndoCanalLogModal({
 	);
 	const [copied, setCopied] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
-	const [, setIsLoadingFromDb] = useState(false);
+	const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
 
 	// Clinical Stage Stamp (Мандат 8e п. 3 — свобода сохранения на любом этапе)
 	const [stageStamp, setStageStamp] = useState<EndoStageStamp>(() => {
@@ -889,10 +889,10 @@ export function EndoCanalLogModal({
 						<div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 flex items-center justify-center shrink-0">
 							<Activity size={26} />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<span className="text-xs uppercase font-black tracking-wider text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2.5 py-0.5 rounded-md border border-rose-500/30">
-									Эндодонтический журнал каналов
+									{isLoadingFromDb ? "Загрузка каналов..." : "Эндодонтический журнал каналов"}
 								</span>
 								{toothState && (
 									<span className="text-xs font-bold px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950/80 text-orange-800 dark:text-orange-300 border border-orange-500/30">
@@ -900,7 +900,7 @@ export function EndoCanalLogModal({
 									</span>
 								)}
 							</div>
-							<h2 className="text-lg sm:text-xl font-black text-[var(--ink,#0f172a)] dark:text-white m-0 mt-1">
+							<h2 className="text-lg sm:text-xl font-black text-[var(--ink,#0f172a)] dark:text-white m-0 mt-1 truncate">
 								{toothAnatomicalName}
 							</h2>
 						</div>

@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
 	Activity,
-	AlertTriangle,
 	Check,
 	ChevronDown,
 	Coins,
@@ -13,7 +12,6 @@ import {
 	MicOff,
 	MoreHorizontal,
 	Paintbrush,
-	Radio,
 	Sparkles,
 	Stethoscope,
 	Trash2,
@@ -34,13 +32,9 @@ import {
 	type ToothState,
 	type OdontogramQuadrantId,
 	getQuadrantTitle,
-	TOP_TEETH,
-	BOTTOM_TEETH,
 	ALL_ADULT_TEETH_NUMBERS,
-	ADULT_MOLARS,
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
-	PEDIATRIC_MOLARS,
 } from "./ToothChart";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
@@ -570,7 +564,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 										}`}
 									>
 										{option.icon}
-										<span>{option.shortLabel}</span>
+										<span className="truncate">{option.shortLabel}</span>
 										{option.badge && (
 											<span
 												className={`text-[9px] px-1 py-0.2 rounded font-black tracking-tight ${
@@ -669,7 +663,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-healthy-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-									<span>Норма</span>
+									<span className="truncate">Норма</span>
 								</button>
 								<button
 									type="button"
@@ -683,7 +677,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-caries-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-									<span>Кариес</span>
+									<span className="truncate">Кариес</span>
 								</button>
 								<button
 									type="button"
@@ -697,7 +691,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-pulpitis-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0" />
-									<span>Пульпит</span>
+									<span className="truncate">Пульпит</span>
 								</button>
 								<button
 									type="button"
@@ -711,7 +705,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-filling-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
-									<span>Пломба</span>
+									<span className="truncate">Пломба</span>
 								</button>
 								<button
 									type="button"
@@ -725,7 +719,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-extracted-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
-									<span>Удален</span>
+									<span className="truncate">Удален</span>
 								</button>
 								<button
 									type="button"
@@ -739,7 +733,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-implant-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-[#64748b] shrink-0" />
-									<span>Имплант</span>
+									<span className="truncate">Имплант</span>
 								</button>
 							</div>
 						)}

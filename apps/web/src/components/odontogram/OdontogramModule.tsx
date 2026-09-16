@@ -2,22 +2,15 @@ import { isValidFdiToothNumber, calculateAge } from "@dental/shared";
 import {
 	Activity,
 	AlertTriangle,
-	Banknote,
-	Calculator,
 	Check,
-	CircleDot,
 	Coins,
-	CreditCard,
 	FlaskConical,
 	History,
 	Info,
-	Mic,
 	FileText,
 	Printer,
-	QrCode,
 	ShieldAlert,
 	Sparkles,
-	Stethoscope,
 	X,
 } from "lucide-react";
 import {

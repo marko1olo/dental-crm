@@ -1,14 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity,
 	Check,
 	CircleDot,
 	Compass,
-	Info,
 	Layers,
-	ShieldCheck,
-	Sparkles,
 	X,
 	Zap,
 } from "lucide-react";
