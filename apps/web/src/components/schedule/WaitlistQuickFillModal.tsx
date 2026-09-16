@@ -808,8 +808,6 @@ export function WaitlistQuickFillModal({
 			if (res.ok) {
 				showToast("Пациент успешно добавлен в лист ожидания", "success");
 				setSelectedPatientId("");
-				setManualPatientName("");
-				setManualPatientPhone("");
 				setPreferredDoctorId("");
 				setPriorityLevel("medium");
 				setTreatmentCategory("");
