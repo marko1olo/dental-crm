@@ -9,7 +9,7 @@
  * - Interactive 1-click patient visit confirmation & reschedule links
  */
 
-import type { Appointment, Dashboard, Patient } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import {
 	buildAppointmentActionLinks,
 	buildSmsUrl,

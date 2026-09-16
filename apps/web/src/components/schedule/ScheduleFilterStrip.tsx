@@ -80,14 +80,14 @@ export interface ScheduleFilterStripProps {
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
 	if (!rawSpec) return null;
 	const lower = rawSpec.toLowerCase().trim();
-	if (lower === "surgeon" || lower === "хирург" || lower === "хирургия") return "Хирург";
-	if (lower === "therapist" || lower === "терапевт" || lower === "терапия") return "Терапевт";
-	if (lower === "orthodontist" || lower === "ортодонт" || lower === "ортодонтия") return "Ортодонт";
-	if (lower === "orthopedist" || lower === "ортопед" || lower === "ортопедия") return "Ортопед";
-	if (lower === "periodontist" || lower === "пародонтолог" || lower === "пародонтология") return "Пародонтолог";
-	if (lower === "hygienist" || lower === "гигиенист" || lower === "гигиена") return "Гигиенист";
-	if (lower === "pediatric" || lower === "детский" || lower === "детская") return "Детский";
-	if (lower === "implantologist" || lower === "имплантолог" || lower === "имплантация") return "Имплантолог";
+	if (lower === "surgeon" || lower === "хирург" || lower === "хирургия") return "Хирургия";
+	if (lower === "therapist" || lower === "терапевт" || lower === "терапия") return "Терапия";
+	if (lower === "orthodontist" || lower === "ортодонт" || lower === "ортодонтия") return "Ортодонтия";
+	if (lower === "orthopedist" || lower === "ортопед" || lower === "ортопедия") return "Ортопедия";
+	if (lower === "periodontist" || lower === "пародонтолог" || lower === "пародонтология") return "Пародонтология";
+	if (lower === "hygienist" || lower === "гигиенист" || lower === "гигиена") return "Гигиена";
+	if (lower === "pediatric" || lower === "детский" || lower === "детская") return "Детская";
+	if (lower === "implantologist" || lower === "имплантолог" || lower === "имплантация") return "Имплантология";
 	const specKey = rawSpec as DentalSpecialty;
 	const label = specialtyLabels[specKey] || rawSpec;
 	return label.charAt(0).toUpperCase() + label.slice(1);
@@ -220,7 +220,21 @@ export function ScheduleFilterStrip({
 			return displayChairs[0] || null;
 		}
 
-		return displayChairs[0] || null;
+		// 5. If specific current doctor is provided, find first chair matching their specialty or default
+		if (currentDoctorId) {
+			const doc = staffMembers.find((m) => m.id === currentDoctorId);
+			const docTyped = doc as unknown as { specialties?: string[]; specialty?: string } | undefined;
+			const docSpecs = docTyped?.specialties || (docTyped?.specialty ? [docTyped.specialty] : []);
+			if (docSpecs.length) {
+				const specMatch = displayChairs.find(
+					(c) => c.specialization && docSpecs.includes(c.specialization),
+				);
+				if (specMatch) return specMatch;
+			}
+			return displayChairs[0] || null;
+		}
+
+		return null;
 	}, [
 		displayChairs,
 		chairDoctorAssignments,
@@ -228,6 +242,7 @@ export function ScheduleFilterStrip({
 		currentDateIso,
 		isSoloDoctor,
 		scheduleDoctorFilterId,
+		currentDoctorId,
 		staffMembers,
 	]);
 
@@ -334,7 +349,7 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7 px-1 sm:px-1.5 text-[11px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[82px] min-w-[82px] sm:w-[135px] sm:min-w-[135px] text-center tracking-tight"
+					className="schedule-date-input min-h-[44px] sm:min-h-0 sm:h-7 px-1 sm:px-1.5 text-[11px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] min-w-[86px] sm:w-[135px] sm:min-w-[135px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
@@ -436,7 +451,6 @@ export function ScheduleFilterStrip({
 					</span>
 				)}
 				{displayChairs
-					.filter((chair) => !myChair || chair.id !== myChair.id)
 					.map((chair) => {
 						const specName = formatChairSpecialtyLabel(chair?.specialization);
 						const chairLabel = specName && !chair.name.includes("(")
@@ -468,6 +482,7 @@ export function ScheduleFilterStrip({
 					type="button"
 					onClick={handleOpenAddChair}
 					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
+					style={{ minHeight: "44px", minWidth: "44px" }}
 					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
 					aria-label="Добавить кресло в расписание"
 					data-testid="schedule-add-chair-btn"
@@ -775,7 +790,8 @@ export function ScheduleFilterStrip({
 									setIsOptionsMenuOpen(false);
 									handleOpenAddChair();
 								}}
-								className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								style={{ minHeight: "44px" }}
 								role="menuitem"
 								data-testid="schedule-options-add-chair-btn"
 								title="Быстрое добавление кресла или кабинета в расписание (1 клик)"

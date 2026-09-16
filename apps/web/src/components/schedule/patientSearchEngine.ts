@@ -6,10 +6,7 @@
 import type { Patient } from "@dental/shared";
 import {
 	fuzzyMatchToken,
-	normalizeCyrillicText,
-	normalizePhoneToNational,
 	scorePatientSearch,
-	type PatientSearchableFields,
 } from "../../utils/patientSearchUtils";
 
 export interface SearchablePatient extends Patient {

@@ -19,10 +19,8 @@ import {
 	Search,
 	Sparkles,
 	User,
-	UserCheck,
 	UserPlus,
 	UserX,
-	Wallet,
 	X,
 } from "lucide-react";
 import type { Patient } from "@dental/shared";

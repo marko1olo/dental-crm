@@ -22,7 +22,6 @@ import {
 	type StaffMember,
 	type MedicalStaffRole,
 	type DoctorChairRosterTemplateId,
-	type DoctorChairRosterTemplate,
 	DOCTOR_CHAIR_ROSTER_TEMPLATES,
 } from "./doctorShiftRosterPresets";
 import type { DoctorShift } from "./doctorShiftRosterEngine";

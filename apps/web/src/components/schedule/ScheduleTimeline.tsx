@@ -6,15 +6,12 @@ import type {
 } from "@dental/shared";
 import {
 	AlertTriangle,
-	Calendar,
 	Clock,
 	Plus,
 } from "lucide-react";
 import React, { Fragment, useCallback, useEffect, useRef } from "react";
-import { EmptyState } from "../EmptyState";
 import { AppointmentCard } from "./AppointmentCard";
 import {
-	type DayGroupingAppointment,
 	type ScheduleDayGroup,
 	formatMinutesForHumans,
 } from "./scheduleDayGrouping";

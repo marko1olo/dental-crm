@@ -1,5 +1,5 @@
 import type { UrgentScheduleRequest } from "@dental/shared";
-import { AlertTriangle, Check, Clock, Flame, RotateCw, Stethoscope, User } from "lucide-react";
+import { AlertTriangle, Check, Clock, Flame, Stethoscope, User } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";

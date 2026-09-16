@@ -30,7 +30,6 @@ import {
 	exportFormT13ToCsv,
 	generateFormT13Matrix,
 	generatePrintableRosterHtml,
-	type RosterConflict,
 } from "./doctorShiftRosterEngine";
 import { DoctorRosterToolbar } from "./DoctorRosterToolbar";
 import { DoctorRosterMatrix } from "./DoctorRosterMatrix";

@@ -13,9 +13,7 @@ import {
 	Flame,
 	PhoneCall,
 	Plus,
-	RotateCw,
 	Search,
-	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	User,
@@ -23,7 +21,6 @@ import {
 	UserPlus,
 	UserX,
 	X,
-	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -33,21 +30,15 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import {
-	matchesPatientSearch,
-	normalizeCyrillicText,
 	normalizePhoneToNational,
 } from "../../utils/patientSearchUtils";
 import {
 	searchPatientsQuick,
-	type PatientSearchResultItem,
 } from "./patientSearchEngine";
 import {
 	APPOINTMENT_TYPE_PRESETS,
 	DURATION_PRESETS,
 	calculatePatientReliability,
-	formatPatientBalanceBadge,
-	type AppointmentTypePreset,
-	type DurationPreset,
 	type PatientReliabilityAssessment,
 	type QuickBookingAppointmentType,
 } from "./patientReliabilityScore";

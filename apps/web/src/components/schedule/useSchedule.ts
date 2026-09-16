@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import type { Dashboard, Appointment } from "@dental/shared";
+import type { Dashboard } from "@dental/shared";
 import type { QuickAddChairData } from "./QuickAddChairModal";
 import {
 	type ChairDoctorShiftAssignment,
@@ -20,7 +20,6 @@ import {
 	formatDoctorShortName,
 } from "./ScheduleGrid";
 import {
-	DEFAULT_CLINIC_CHAIRS,
 	type ScheduleChair,
 } from "./ScheduleFilterStrip";
 import {
@@ -33,7 +32,6 @@ import {
 	type DateRangeShiftPreset,
 } from "./roster/DoctorShiftRosterModal";
 import {
-	type QuickBookingSlotInfo,
 	resolveChairDutyDoctor,
 } from "./QuickBookingDrawer";
 import {

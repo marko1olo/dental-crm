@@ -1,6 +1,5 @@
 import type { Appointment } from "@dental/shared";
 import {
-	Ban,
 	CalendarCheck,
 	Check,
 	CheckCircle2,
@@ -17,7 +16,6 @@ import { showToast } from "../GlobalToast";
 
 import {
 	generateAppointmentWhatsAppMessage,
-	buildWhatsAppUrl,
 	type AppointmentMessageType,
 } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";

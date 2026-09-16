@@ -2,9 +2,7 @@ import {
 	type Appointment,
 	type AppointmentReadiness,
 	type Dashboard,
-	STOMX_APPT_REASONS_CATALOG,
 	STOMX_REFUSE_REASONS_CATALOG,
-	type StomxApptReasonMeta,
 } from "@dental/shared";
 import {
 	AlertCircle,
@@ -20,10 +18,8 @@ import {
 	Globe,
 	MoreHorizontal,
 	PhoneCall,
-	Printer,
 	Repeat,
 	Search,
-	ShieldCheck,
 	User,
 	UserCheck,
 	UserPlus,

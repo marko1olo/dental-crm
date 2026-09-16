@@ -2,7 +2,6 @@ import {
 	type Appointment,
 	type AppointmentReadiness,
 	type Dashboard,
-	type DentalSpecialty,
 	type ScheduleSuggestion,
 	STOMX_REFUSE_REASONS_CATALOG,
 } from "@dental/shared";
@@ -16,7 +15,6 @@ import {
 	Clock,
 	Copy,
 	CreditCard,
-	Edit3,
 	FileText,
 	MessageSquare,
 	MoreVertical,
@@ -25,7 +23,6 @@ import {
 	Printer,
 	RotateCcw,
 	Scan,
-	Sparkles,
 	Stethoscope,
 	User,
 	UserCheck,
@@ -1472,7 +1469,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								}
 							}}
 						>
-							{formatPatientDisplayFio(appointmentPatientName)}
+							<span className="truncate block min-w-0 max-w-full">
+								{formatPatientDisplayFio(appointmentPatientName)}
+							</span>
 						</h3>
 						<div className="flex items-center gap-1.5 min-w-0 max-w-full mt-0.5 flex-wrap">
 							<span

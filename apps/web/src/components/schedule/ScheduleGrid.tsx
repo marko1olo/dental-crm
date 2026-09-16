@@ -6,7 +6,6 @@ import {
 	type DoctorShiftSchedule,
 	type EmergencyReserveSlot,
 	getStomxWorkplacePalette,
-	STOMX_WORKPLACE_PALETTES,
 } from "@dental/shared";
 import {
 	AlertTriangle,
@@ -33,11 +32,9 @@ import {
 	Settings,
 	Stethoscope,
 	Sun,
-	Trash2,
 	User,
 	UserCheck,
 	UserMinus,
-	UserPlus,
 	Users,
 	UserX,
 	X,
@@ -3644,25 +3641,28 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														>
 															<div className="flex-1 min-w-0">
 																{/* Фокус 1: ФИО */}
-																<div className="font-bold flex items-center gap-1 leading-snug break-words text-xs">
+																<div className="font-bold flex items-center gap-1 leading-snug break-words text-xs min-w-0">
 																	<User size={12} className="shrink-0 text-[var(--teal)]" />
-																	<span className="break-words" title={pName}>{formatPatientDisplayFio(pName)}</span>
+																	<span className="break-words truncate min-w-0" title={pName}>{formatPatientDisplayFio(pName)}</span>
 																</div>
 																{/* Фокус 2: Процедура и время */}
-																<div className="text-xs opacity-75 font-normal truncate">
+																<div className="text-xs opacity-75 font-normal truncate min-w-0">
 																	{aStart} - {aEnd} · {a.reason || "Прием"}
 																</div>
 																{docObj && (
-																	<div className="text-xs opacity-85 font-medium truncate flex items-center gap-1 mt-0.5">
+																	<div className="text-xs opacity-85 font-medium truncate flex items-center gap-1 mt-0.5 min-w-0">
 																		<Stethoscope size={12} className="shrink-0 text-[var(--teal)]" />
-																		<span className="truncate">
+																		<span className="truncate min-w-0">
 																			{docObj.fullName
 																				?.split(" ")
 																				.map((part, index) => (index === 0 ? part : `${part[0]}.`))
 																				.join(" ") || docObj.fullName}
 																		</span>
 																		{docObj.specialties && docObj.specialties.length > 0 && (
-																			<span className="text-xs px-1 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
+																			<span
+																				className="text-xs px-1 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0 max-w-[110px] truncate"
+																				title={docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
+																			>
 																				{docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
 																			</span>
 																		)}

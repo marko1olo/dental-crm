@@ -3,16 +3,11 @@ import {
 	Search,
 	Calendar,
 	Clock,
-	User,
 	X,
 	Sparkles,
-	CheckCircle2,
-	ChevronRight,
 	Sun,
-	Sunset,
-	Moon,
 } from "lucide-react";
-import type { Appointment, Dashboard, DentalSpecialty } from "@dental/shared";
+import type { Dashboard, DentalSpecialty } from "@dental/shared";
 import {
 	findDoctorFreeSlots,
 	type DoctorFreeSlot,

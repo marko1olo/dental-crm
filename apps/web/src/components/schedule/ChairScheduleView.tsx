@@ -7,13 +7,11 @@ import {
 	SlidersHorizontal,
 	Sun,
 	Moon,
-	Building2,
 	Calendar,
 	X,
 	XCircle,
 	UserCheck,
 	Clock,
-	Armchair,
 	Copy,
 	Zap,
 	CalendarRange,
@@ -32,7 +30,6 @@ import {
 } from "./roster/DoctorShiftRosterModal";
 import {
 	ScheduleGrid,
-	type ScheduleGridProps,
 	type ChairDoctorShiftAssignment,
 	type ChairDoctorSubShift,
 	DEFAULT_SOLO_CHAIR,

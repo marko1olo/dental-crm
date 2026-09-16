@@ -22,7 +22,6 @@ import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import {
 	type SmartParsedPayload,

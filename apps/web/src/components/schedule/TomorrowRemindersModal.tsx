@@ -1,14 +1,11 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	AlertTriangle,
-	Bell,
-	BellOff,
 	Check,
 	CheckCircle2,
 	Clock,
 	Copy,
 	ExternalLink,
-	Globe,
 	MessageCircle,
 	MessageSquare,
 	Moon,
@@ -16,8 +13,6 @@ import {
 	Phone,
 	Search,
 	Send,
-	Share2,
-	Sparkles,
 	ThumbsDown,
 	ThumbsUp,
 	User,

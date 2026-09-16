@@ -10,16 +10,12 @@
  * - Anti-Matryoshka Sin 6: Modal depth strictly 1 (inline doctor addition without nested dialogs)
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
 	Armchair,
-	Calendar,
 	CalendarRange,
 	Check,
 	Clock,
-	RotateCcw,
-	Sparkles,
-	Stethoscope,
 	Trash2,
 	User,
 	UserPlus,
@@ -36,11 +32,9 @@ import {
 } from "./chairRosterMath";
 import {
 	QUICK_DOCTOR_SPECIALTIES,
-	DOCTOR_COLOR_PRESETS,
 	type QuickAddDoctorData,
 } from "./QuickAddDoctorModal";
 import type { DentalSpecialty } from "@dental/shared";
-import { specialtyLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
 
 export interface DoctorChairScheduleModalProps {
