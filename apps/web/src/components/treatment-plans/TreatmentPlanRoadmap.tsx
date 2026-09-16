@@ -18,18 +18,14 @@ import {
 	Clock,
 	Coins,
 	Crown,
-	Download,
 	FileBadge,
-	FileText,
 	HeartPulse,
 	HelpCircle,
 	Info,
 	Percent,
 	Scissors,
 	ShieldCheck,
-	Sparkles,
 	Stethoscope,
-	User,
 } from "lucide-react";
 import {
 	calculatePlanTaxDeductionBreakdown,

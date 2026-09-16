@@ -11,24 +11,20 @@ import {
 	Award,
 	Building2,
 	Check,
-	CheckCircle2,
-	Coins,
 	Eye,
 	EyeOff,
 	FileCheck,
 	FileText,
-	Layers,
 	Package,
 	Printer,
 	QrCode,
 	ShieldCheck,
-	Sparkles,
 	Stamp,
 	TrendingUp,
 	User,
 	X,
 } from "lucide-react";
-import type { CompletedWorksActAndWriteOffData, PlanStageMaterialRequirement, TreatmentPlanItem } from "./types";
+import type { CompletedWorksActAndWriteOffData } from "./types";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 import {
 	BRAND_COLOR_PALETTES,

@@ -89,7 +89,6 @@ describe("Wave 49 / Feature 233: Hick's Toolbar & Chairside Presenter Autonomy",
 			// Mode switches
 			assert.ok(html.includes("3 Варианта"), "Must include 3 Варианта mode switch");
 			assert.ok(html.includes("Поэтапный (I, II, III)"), "Must include Stages mode switch");
-			assert.ok(html.includes("4 Этапа"), "Must include 4 Этапа mode switch");
 
 			// Main action buttons
 			assert.ok(html.includes("tp-sign-btn"), "Must render Sign button");

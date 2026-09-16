@@ -17,7 +17,6 @@ import {
 	Eye,
 	Layers,
 	PackagePlus,
-	Shield,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,

@@ -6,6 +6,7 @@ import {
   Crown,
   ChevronDown,
   ChevronUp,
+  Clock,
   Coins,
   CreditCard,
   Printer,
@@ -38,6 +39,8 @@ export interface TreatmentPlanPhased4StageViewProps {
   stages: readonly TreatmentPlanStage[];
   planTierTitle?: string;
   patientName?: string;
+  planAgeDays?: number;
+  planCreatedAtIso?: string;
   onExecuteStage?: (category: TreatmentPlanStageCategory) => void;
   onOpenStagePayment?: () => void;
   onOpenInstallment?: () => void;
@@ -64,6 +67,8 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
   stages,
   planTierTitle = 'Комплексный план лечения',
   patientName = 'Пациент',
+  planAgeDays,
+  planCreatedAtIso,
   onExecuteStage,
   onOpenStagePayment,
   onOpenInstallment,
@@ -71,6 +76,12 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
   onPrintContract,
   className = '',
 }) => {
+  const effectivePlanAgeDays =
+    typeof planAgeDays === 'number'
+      ? planAgeDays
+      : planCreatedAtIso
+        ? Math.floor((Date.now() - new Date(planCreatedAtIso).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
   const [showMicroConsumables, setShowMicroConsumables] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<TreatmentPlanStageCategory, boolean>>({
     hygiene_sanitation: true,
@@ -226,6 +237,16 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
             <span className="font-bold text-sm sm:text-base text-[var(--ink,#0f172a)] break-words">
               {planTierTitle}
             </span>
+            {effectivePlanAgeDays > 30 && (
+              <span
+                className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 whitespace-nowrap inline-flex items-center gap-1 shadow-2xs"
+                title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
+                data-testid="phased-expired-unblocked-badge"
+              >
+                <Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                Смета &gt;30 дн. (актуальна / продлена)
+              </span>
+            )}
           </div>
           <p className="text-xs text-[var(--muted,#64748b)] mt-1 m-0 break-words">
             Последовательный клинический протокол DENTE и Минздрава РФ с точной финансовой разбивкой по этапам.

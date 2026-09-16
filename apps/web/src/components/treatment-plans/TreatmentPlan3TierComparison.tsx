@@ -39,7 +39,7 @@ import {
 	Sparkles,
 	Star,
 } from "lucide-react";
-import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./types";
+import type { TreatmentPlanTier, TreatmentPlanTierId } from "./types";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 
 export interface TreatmentPlan3TierComparisonProps {

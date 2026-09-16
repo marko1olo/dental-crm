@@ -16,6 +16,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import {
+	AlertCircle,
 	Bot,
 	Calendar,
 	Check,
@@ -24,8 +25,8 @@ import {
 	ChevronUp,
 	Clock,
 	Coins,
+	Copy,
 	CreditCard,
-	Crown,
 	FileCheck2,
 	FileText,
 	Layers,
@@ -34,19 +35,13 @@ import {
 	Package,
 	Percent,
 	Printer,
-	RotateCcw,
 	Send,
-	Shield,
 	ShieldCheck,
 	Sparkles,
 	Star,
 	Tablet,
 	User,
-	Wand2,
 	X,
-	Copy,
-	AlertCircle,
-	ThumbsUp,
 } from "lucide-react";
 import {
 	type Kopecks,
@@ -676,7 +671,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								type="button"
 								onClick={handleCopyTiersSummary}
 								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
-								title="Скопировать варианты сметы для пациента (WhatsApp / Telegram)"
+								title="Скопировать смету для пациента (WhatsApp / Telegram)"
 								data-testid="presenter-copy-tiers-summary-btn"
 							>
 								<Copy size={14} className="text-[var(--tp-primary)] shrink-0" />
@@ -1618,8 +1613,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									</div>
 								</div>
 
-								<div className="text-[11px] text-[var(--tp-text-muted)] bg-[var(--tp-surface-soft)] p-3 rounded-xl border border-[var(--tp-border)]">
-									✓ Оформление за 2 минуты у стойки администратора без справок о доходах
+								<div className="text-[11px] text-[var(--tp-text-muted)] bg-[var(--tp-surface-soft)] p-3 rounded-xl border border-[var(--tp-border)] flex items-center gap-1.5">
+									<Check size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Оформление за 2 минуты у стойки администратора без справок о доходах</span>
 								</div>
 							</div>
 
@@ -1660,8 +1656,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									</div>
 								</div>
 
-								<div className="text-[11px] text-[var(--tp-text-muted)] bg-[var(--tp-surface-soft)] p-3 rounded-xl border border-[var(--tp-border)]">
-									✓ Выдаем готовую официальную Справку об оплате медицинских услуг для ФНС (КНД 1151156)
+								<div className="text-[11px] text-[var(--tp-text-muted)] bg-[var(--tp-surface-soft)] p-3 rounded-xl border border-[var(--tp-border)] flex items-center gap-1.5">
+									<Check size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Выдаем готовую официальную Справку об оплате медицинских услуг для ФНС (КНД 1151156)</span>
 								</div>
 							</div>
 						</div>
@@ -2347,8 +2344,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 													))}
 												</div>
 											) : (
-												<div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300">
-													✓ Все манипуляции соответствуют анатомии зубов и числу корневых каналов.
+												<div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+													<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+													<span>Все манипуляции соответствуют анатомии зубов и числу корневых каналов.</span>
 												</div>
 											)}
 										</div>

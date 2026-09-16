@@ -14,20 +14,15 @@
 import type React from "react";
 import { useMemo, useState } from "react";
 import {
-	Calendar,
 	Check,
 	CheckCircle2,
 	Clock,
 	CreditCard,
 	FileText,
-	HeartPulse,
-	HelpCircle,
 	Percent,
 	Printer,
 	Shield,
 	Sparkles,
-	Star,
-	TrendingUp,
 	Wallet,
 	X,
 } from "lucide-react";

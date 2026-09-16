@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { AlertTriangle, Check, Edit3, X, Coins, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Edit3, X, Coins, ShieldCheck } from "lucide-react";
 import type { TreatmentPlanItem } from "./types";
 
 export interface MissingPriceAlertProps {

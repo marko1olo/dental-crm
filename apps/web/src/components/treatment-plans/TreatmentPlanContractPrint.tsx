@@ -11,19 +11,12 @@
 
 import React, { useMemo, useState } from "react";
 import {
-	Calendar,
 	Check,
-	Coins,
+	Clock,
 	CreditCard,
-	Download,
 	FileText,
-	Layers,
-	Percent,
 	Printer,
-	QrCode,
-	Shield,
 	ShieldCheck,
-	Sparkles,
 	X,
 } from "lucide-react";
 import type {
@@ -55,6 +48,7 @@ export interface TreatmentPlanContractPrintProps {
 	readonly discountPercent?: number;
 	readonly bonusPointsDeductedRub?: number;
 	readonly installmentMonths?: number;
+	readonly planAgeDays?: number;
 	readonly onClose: () => void;
 }
 
@@ -78,6 +72,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 	discountPercent = 0,
 	bonusPointsDeductedRub = 0,
 	installmentMonths = 12,
+	planAgeDays,
 	onClose,
 }) => {
 	const [showMicroConsumables, setShowMicroConsumables] = useState(false);
@@ -427,6 +422,16 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 								</p>
 							</div>
 						</div>
+
+						{/* 30-Day Plan Age Notice (Mandate 8e: Non-blocking clinical notice) */}
+						{planAgeDays !== undefined && planAgeDays > 30 && (
+							<div className="p-2.5 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] flex items-center gap-2">
+								<Clock size={13} className="text-amber-600 shrink-0" />
+								<span>
+									<strong>Примечание:</strong> Смета составлена {planAgeDays} дн. назад. Стоимость зафиксирована и утверждена лечащим врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений.
+								</span>
+							</div>
+						)}
 					</div>
 
 					{/* Section 4: Warranties & Clinical Obligations */}

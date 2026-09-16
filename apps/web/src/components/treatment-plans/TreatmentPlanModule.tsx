@@ -4,32 +4,24 @@
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
-	Award,
-	Calculator,
-	Check,
+	Bot,
 	ChevronDown,
 	Clock,
 	Coins,
 	CreditCard,
-	Download,
 	FileCheck,
-	FileDown,
 	FileText,
 	FlaskConical,
 	Layers,
 	MoreVertical,
 	PenTool,
 	Percent,
-	Printer,
 	Receipt,
-	RefreshCw,
 	Save,
 	Send,
 	ShieldCheck,
 	Sparkles,
 	UserCheck,
-	UserPlus,
-	Wallet,
 	Zap,
 } from "lucide-react";
 import {
@@ -59,7 +51,6 @@ import {
 	type CopilotCommandType,
 } from "../../services/ai/treatmentPlanCopilot";
 import { parseKopecks } from "@dental/shared";
-import { Bot } from "lucide-react";
 import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
 import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
@@ -1215,6 +1206,14 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								: {})}
 							onUpdateItemPrice={handleUpdateItemPrice}
 							onExecuteWriteOffStage={handleExecuteWriteOffStage}
+							onPayStage={(stageToPay) => {
+								setSelectedInstallmentStage(stageToPay);
+								setIsFiscalModalOpen(true);
+							}}
+							onApplyStageDiscount={() => {
+								setDiscountPercent(10);
+								showToast("Применена скидка врача 10% на план лечения", "success");
+							}}
 							onOpenLabOrder={handleOpenLabOrder}
 							onOneClickLabOrder={handleOneClickLabOrder}
 							onOpenInstallment={(stageToFinance) => {
@@ -1343,6 +1342,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					signedAgreement={signedAgreement}
 					discountPercent={discountPercent}
 					bonusPointsDeductedRub={loyaltyDeduction.appliedBonusRub}
+					planAgeDays={planAgeDays}
 					onClose={() => setIsContractPrintOpen(false)}
 				/>
 			)}
