@@ -135,6 +135,16 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [warrantyReason, setWarrantyReason] = useState<string>("Скол керамической облицовки");
 	const [activeCardMenuOrderId, setActiveCardMenuOrderId] = useState<string | null>(null);
 
+	// Неблокирующие диалоги ввода (Мандат 8e / Anti-Blocking Prompt)
+	const [actionPrompt, setActionPrompt] = useState<{
+		order: DentalLabWorkflowOrder;
+		type: "bite_photo" | "technician_comment";
+		title: string;
+		label: string;
+		placeholder: string;
+	} | null>(null);
+	const [actionPromptValue, setActionPromptValue] = useState<string>("");
+
 	React.useEffect(() => {
 		if (!activeCardMenuOrderId) return;
 		const handleOutside = () => setActiveCardMenuOrderId(null);
@@ -306,28 +316,47 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	}, [warrantyReworkOrder, warrantyReason, onSaveOrder, showToast]);
 
 	const handleAttachBitePhoto = useCallback((order: DentalLabWorkflowOrder) => {
-		const url = window.prompt("Введите URL фото окклюзии/прикуса или ссылку на облачный снимок:", "");
-		if (url === null) return;
-		const updated: DentalLabWorkflowOrder = {
-			...order,
-			clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}📸 Фото прикуса: ${url.trim()}`,
-		};
-		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
-		if (onSaveOrder) onSaveOrder(updated);
-		showToast(`Наряд № ${order.orderNumber}: фото прикуса сохранено`);
-	}, [onSaveOrder, showToast]);
+		setActionPrompt({
+			order,
+			type: "bite_photo",
+			title: `Прикрепить фото прикуса — Наряд № ${order.orderNumber}`,
+			label: "URL фото окклюзии/прикуса или ссылка на снимок:",
+			placeholder: "https://...",
+		});
+		setActionPromptValue("");
+	}, []);
 
 	const handleTechnicianComment = useCallback((order: DentalLabWorkflowOrder) => {
-		const comment = window.prompt("Комментарий/уточнение для зубного техника:", "");
-		if (comment === null) return;
+		setActionPrompt({
+			order,
+			type: "technician_comment",
+			title: `Комментарий зубному технику — Наряд № ${order.orderNumber}`,
+			label: "Клинические указания / уточнение для зубного техника:",
+			placeholder: "Укажите особенности анатомии, прозрачности, контактных пунктов...",
+		});
+		setActionPromptValue("");
+	}, []);
+
+	const handleActionPromptSubmit = useCallback((e?: React.FormEvent) => {
+		if (e) e.preventDefault();
+		if (!actionPrompt || !actionPromptValue.trim()) return;
+
+		const { order, type } = actionPrompt;
+		const prefix = type === "bite_photo" ? "[Фото прикуса]" : "[Технику]";
+		const toastText = type === "bite_photo" ? "фото прикуса сохранено" : "комментарий технику сохранен";
+
 		const updated: DentalLabWorkflowOrder = {
 			...order,
-			clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}💬 Технику: ${comment.trim()}`,
+			clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}${prefix}: ${actionPromptValue.trim()}`,
 		};
+
 		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
+		if (inspectingOrder && inspectingOrder.id === order.id) setInspectingOrder(updated);
 		if (onSaveOrder) onSaveOrder(updated);
-		showToast(`Наряд № ${order.orderNumber}: комментарий технику сохранен`);
-	}, [onSaveOrder, showToast]);
+		showToast(`Наряд № ${order.orderNumber}: ${toastText}`);
+		setActionPrompt(null);
+		setActionPromptValue("");
+	}, [actionPrompt, actionPromptValue, inspectingOrder, onSaveOrder, showToast]);
 
 	const handleRepeatFitting = useCallback((order: DentalLabWorkflowOrder) => {
 		const updated = advanceLabOrderStage(order, "fitting_scheduled", "Врач-ортопед", "Назначена повторная клиническая примерка");
@@ -548,7 +577,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 				</header>
 
 				{/* ─── 1b. МАНДАТ 8e: АВТОНОМИЯ ВРАЧА ПРИ ИСТЕЧЕНИИ ПЛАНА ЛЕЧЕНИЯ (>30 ДНЕЙ) ─── */}
-				{treatmentPlanAgeDays !== undefined && (treatmentPlanAgeDays > 30 || isPlanExpired) && (
+				{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) && (
 					<div
 						style={{
 							background: "rgba(16, 185, 129, 0.08)",
@@ -566,7 +595,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					>
 						<CheckCircle2 size={15} style={{ color: "#10b981", flexShrink: 0 }} />
 						<span>
-							<strong>Клинический регламент:</strong> Срок плана лечения ({treatmentPlanAgeDays} дн.) превысил 30 дней, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты.
+							<strong>Клинический регламент:</strong> Срок плана лечения{treatmentPlanAgeDays !== undefined ? ` (${treatmentPlanAgeDays} дн.)` : ""} превысил 30 дней, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты.
 						</span>
 					</div>
 				)}

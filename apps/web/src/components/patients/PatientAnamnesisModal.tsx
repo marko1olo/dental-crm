@@ -262,10 +262,10 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 							<div
 								className={`flex items-center justify-center w-10 h-10 rounded-xl ${
 									evaluation.hasCriticalStopFlags
-										? "bg-rose-500 text-white"
+										? "bg-[#ef4444] text-white"
 										: evaluation.hasHighRiskFlags
 											? "bg-amber-600 text-white"
-											: "bg-[var(--brand-primary)] text-white"
+											: "bg-emerald-600 text-white"
 								}`}
 							>
 								<Stethoscope className="w-5 h-5" />
@@ -303,8 +303,8 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						</div>
 					</div>
 
-					{/* Quick Presets Bar */}
-					<div className="px-5 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-2 overflow-x-auto">
+					{/* Quick Presets Bar: 1 Toolbar Row (32-36px desktop) */}
+					<div className="px-5 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-2 overflow-x-auto scrollbar-none">
 						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider shrink-0 flex items-center gap-1">
 							<Sparkles className="w-3 h-3 text-amber-500" />
 							Пресеты:
@@ -312,7 +312,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("clean")}
-							className="px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-sm cursor-pointer shrink-0 transition-all inline-flex items-center gap-1.5 active:scale-98"
+							className="px-3.5 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-xs cursor-pointer shrink-0 transition-all inline-flex items-center gap-1.5 active:scale-98"
 							data-testid="btn-somatic-healthy-norm"
 							aria-label="Соматически здоров / норма (1 клик)"
 							title="1 клик: соматически здоров, анамнез не отягощен, физиологическая норма"
@@ -350,7 +350,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("cardio")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
 							<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
 							<span>ЭКС + Кардио</span>
@@ -358,7 +358,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("anticoag")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
 							<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
 							<span>Антикоагулянты</span>
@@ -366,7 +366,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("bisphosphonate")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-700/50 hover:bg-purple-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-700/50 hover:bg-purple-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
 							<AlertOctagon className="w-3.5 h-3.5 text-purple-600 shrink-0" />
 							<span>Бисфосфонаты</span>
@@ -374,7 +374,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("pregnant_2")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-pink-50 text-pink-800 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-300 dark:border-pink-700/50 hover:bg-pink-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-pink-50 text-pink-800 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-300 dark:border-pink-700/50 hover:bg-pink-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
 							<Baby className="w-3.5 h-3.5 text-pink-600 shrink-0" />
 							<span>Беременность 2 трим.</span>
@@ -382,7 +382,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("allergy_articaine")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
 							<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
 							<span>Аллергия на Артикаин</span>
@@ -391,17 +391,17 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 
 					{/* Modal Body */}
 					<div className="anamnesis-modal__body">
-						{/* Active Stop-Flags Banner if detected */}
-						{evaluation.activeFlags.length > 0 && (
+						{/* Active Stop-Flags Banner if detected, or Calm Physiological Norm Confirmation */}
+						{evaluation.activeFlags.length > 0 ? (
 							<div
 								className={`p-3.5 rounded-xl border flex flex-col gap-2 ${
 									evaluation.hasCriticalStopFlags
-										? "bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-950 dark:text-rose-200"
-										: "bg-amber-50 dark:bg-amber-950/40 border-amber-400 text-amber-950 dark:text-amber-200"
+										? "bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-200 shadow-xs"
+										: "bg-amber-50 dark:bg-amber-950/40 border border-amber-400 text-amber-950 dark:text-amber-200"
 								}`}
 							>
 								<div className="flex items-center gap-2 font-bold text-xs">
-									<AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+									<AlertOctagon className={`w-4 h-4 shrink-0 ${evaluation.hasCriticalStopFlags ? "text-[#ef4444]" : "text-amber-600 dark:text-amber-400"}`} />
 									<span>
 										Обнаружено {evaluation.activeFlags.length} клинических факторов риска:
 									</span>
@@ -412,7 +412,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 											key={f.id}
 											className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
 												f.severity === "critical"
-													? "bg-rose-600 text-white"
+													? "bg-[#ef4444] text-white"
 													: "bg-amber-600 text-white"
 											}`}
 										>
@@ -420,6 +420,16 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 										</span>
 									))}
 								</div>
+							</div>
+						) : (
+							<div
+								className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 flex items-center gap-2 text-xs font-semibold"
+								data-testid="somatic-status-norm-banner"
+							>
+								<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>
+									Физиологическая норма: соматически здоров / аллергостатус не отягощен. Противопоказаний к амбулаторной стоматологии нет.
+								</span>
 							</div>
 						)}
 

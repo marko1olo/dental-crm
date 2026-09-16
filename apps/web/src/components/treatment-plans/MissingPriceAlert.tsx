@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { AlertTriangle, Check, Edit3, X, Coins } from "lucide-react";
+import { AlertTriangle, Check, Edit3, X, Coins, ShieldCheck, Sparkles } from "lucide-react";
 import type { TreatmentPlanItem } from "./types";
 
 export interface MissingPriceAlertProps {
@@ -12,7 +12,8 @@ export interface MissingPriceAlertProps {
 
 /**
  * MissingPriceAlert — Предупреждение о ненайденной услуге в прайс-листе клиники
- * с возможностью мгновенного инлайн-ввода и сохранения цены врачом/куратором.
+ * с возможностью мгновенного инлайн-ввода договорной цены или установки
+ * 100% гарантийной переделки (0 ₽) в 1 клик согласно Мандату 8e (Автономия врача).
  */
 export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 	item,
@@ -35,26 +36,55 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 		}
 	}, [isEditing]);
 
-	const isMissingPrice = Boolean(item.requiresManualPricing || item.priceRub === 0);
+	// Если услуга гарантийная или врач уже подтвердил стоимость (requiresManualPricing === false),
+	// предупреждение закрывается и не служит тупиковым шлагбаумом (Мандат 8e).
+	const isMissingPrice = item.isWarranty
+		? false
+		: (item.requiresManualPricing ?? (item.priceRub === 0));
 
 	// If price is valid and not editing, we don't render the alert
 	if (!isMissingPrice && !isEditing) {
 		return null;
 	}
 
+	// 1-клик: Гарантийная переделка (0 ₽) без ввода мастер-паролей (Мандат 8e)
+	const handleSetWarrantyZeroPrice = () => {
+		setError(null);
+		setIsEditing(false);
+		if (onUpdatePrice) {
+			onUpdatePrice(item.id, 0);
+		}
+		if (onUpdateItem) {
+			const updated: TreatmentPlanItem = {
+				...item,
+				priceRub: 0,
+				unitPriceRub: 0,
+				discountRub: item.unitPriceRub || item.priceRub || 0,
+				requiresManualPricing: false,
+				isWarranty: true,
+				warrantyDiscountPercent: 100,
+				warrantyPriceRub: 0,
+			};
+			onUpdateItem(updated);
+		}
+	};
+
 	const handleSavePrice = () => {
 		const cleanVal = inputPrice.trim().replace(/\s+/g, "").replace(",", ".");
 		const parsedNum = Number(cleanVal);
 
 		if (cleanVal === "" || Number.isNaN(parsedNum) || parsedNum < 0) {
-			setError("Введите корректную сумму в рублях");
+			setError("Введите корректную сумму в рублях (или 0 для гарантии)");
 			return;
 		}
 
 		setError(null);
 		setIsEditing(false);
 
-		const updatedPrice = Math.round(parsedNum);
+		// Точный расчет до копеек
+		const updatedPrice = Math.round(parsedNum * 100) / 100;
+		const isZero = updatedPrice === 0;
+
 		if (onUpdatePrice) {
 			onUpdatePrice(item.id, updatedPrice);
 		}
@@ -64,6 +94,9 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 				priceRub: updatedPrice,
 				unitPriceRub: updatedPrice,
 				requiresManualPricing: false,
+				isWarranty: isZero ? (item.isWarranty ?? true) : false,
+				warrantyDiscountPercent: isZero ? 100 : undefined,
+				warrantyPriceRub: isZero ? 0 : undefined,
 			};
 			onUpdateItem(updated);
 		}
@@ -97,9 +130,8 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 					<div className="inline-flex items-center gap-1">
 						<input
 							ref={inputRef}
-							type="number"
-							min="0"
-							step="100"
+							type="text"
+							inputMode="decimal"
 							value={inputPrice}
 							onChange={(e) => {
 								setInputPrice(e.target.value);
@@ -110,6 +142,14 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 							className="w-20 px-1.5 py-0.5 text-xs font-mono font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-amber-500 rounded outline-none shadow-xs"
 							data-testid={`inline-price-input-${item.id}`}
 						/>
+						<button
+							type="button"
+							onClick={() => setInputPrice("0")}
+							className="px-1 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 cursor-pointer"
+							title="Установить 0 ₽"
+						>
+							0 ₽
+						</button>
 						<button
 							type="button"
 							onClick={handleSavePrice}
@@ -142,9 +182,20 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 							onClick={() => setIsEditing(true)}
 							className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-600 text-white hover:bg-amber-700 cursor-pointer transition-colors shadow-xs"
 							data-testid={`inline-price-edit-btn-${item.id}`}
+							title="Ввести договорную стоимость услуги"
 						>
 							<Edit3 size={10} />
 							<span>Указать цену</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleSetWarrantyZeroPrice}
+							className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer transition-colors shadow-xs"
+							data-testid={`inline-warranty-btn-${item.id}`}
+							title="1-клик: 100% гарантийная переделка (0 ₽)"
+						>
+							<ShieldCheck size={10} />
+							<span>Гарантия 0 ₽</span>
 						</button>
 					</div>
 				)}
@@ -156,7 +207,7 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 		);
 	}
 
-	// Full Banner Variant
+	// Full Banner Variant (1-уровневая панель без лишней вложенности)
 	return (
 		<div
 			className={`missing-price-alert-full flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl border bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100 text-xs transition-all ${className}`.trim()}
@@ -182,9 +233,8 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 						<div className="relative">
 							<input
 								ref={inputRef}
-								type="number"
-								min="0"
-								step="100"
+								type="text"
+								inputMode="decimal"
 								value={inputPrice}
 								onChange={(e) => {
 									setInputPrice(e.target.value);
@@ -195,10 +245,19 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 								className="w-28 px-2.5 py-1.5 text-xs font-mono font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-amber-500 rounded-lg outline-none shadow-xs"
 								data-testid={`full-price-input-${item.id}`}
 							/>
-							<span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+							<span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
 								₽
 							</span>
 						</div>
+
+						<button
+							type="button"
+							onClick={() => setInputPrice("0")}
+							className="px-2 py-1.5 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 cursor-pointer"
+							title="Установить 0 ₽"
+						>
+							0 ₽
+						</button>
 
 						<button
 							type="button"
@@ -223,15 +282,29 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 						</button>
 					</div>
 				) : (
-					<button
-						type="button"
-						onClick={() => setIsEditing(true)}
-						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer transition-colors shadow-xs"
-						data-testid={`full-price-edit-btn-${item.id}`}
-					>
-						<Coins size={13} />
-						<span>Указать цену</span>
-					</button>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setIsEditing(true)}
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer transition-colors shadow-xs"
+							data-testid={`full-price-edit-btn-${item.id}`}
+							title="Указать договорную стоимость услуги"
+						>
+							<Coins size={13} />
+							<span>Указать цену</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleSetWarrantyZeroPrice}
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-colors shadow-xs"
+							data-testid={`full-warranty-btn-${item.id}`}
+							title="1-клик: 100% гарантийная переделка (0 ₽)"
+						>
+							<ShieldCheck size={13} />
+							<span>Гарантия 0 ₽</span>
+						</button>
+					</div>
 				)}
 			</div>
 

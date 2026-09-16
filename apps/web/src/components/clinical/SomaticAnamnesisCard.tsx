@@ -159,7 +159,9 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 						className={`flex items-center justify-center w-8 h-8 rounded-xl border ${
 							isNorm
 								? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-								: "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800"
+								: evaluation.hasCriticalStopFlags
+									? "bg-rose-50 dark:bg-rose-950/40 text-[#ef4444] border-2 border-[#ef4444]"
+									: "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
 						}`}
 					>
 						{isNorm ? (
@@ -184,7 +186,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 					<button
 						type="button"
 						onClick={handleApplyPhysiologicalNorm}
-						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all cursor-pointer active:scale-98 select-none"
+						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer active:scale-98 select-none"
 						data-testid="mark-somatic-norm-btn"
 						title="1 клик: соматически здоров, без отягощенного анамнеза (физиологическая норма)"
 						aria-label="Физиологическая норма в 1 клик"
@@ -208,11 +210,15 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 				</div>
 			) : (
 				<div
-					className="flex flex-col gap-1.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 text-xs"
+					className={`flex flex-col gap-1.5 p-3 rounded-xl border text-xs ${
+						evaluation.hasCriticalStopFlags
+							? "bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-200 shadow-xs"
+							: "bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200"
+					}`}
 					data-testid="somatic-status-alert-banner"
 				>
 					<div className="flex items-center gap-2 font-bold">
-						<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+						<AlertTriangle className={`w-4 h-4 shrink-0 ${evaluation.hasCriticalStopFlags ? "text-[#ef4444]" : "text-amber-600 dark:text-amber-400"}`} />
 						<span>
 							Обнаружено клинических факторов риска: {evaluation.activeFlags.length}
 						</span>
@@ -221,7 +227,11 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 						{evaluation.activeFlags.map((flag) => (
 							<span
 								key={flag.id}
-								className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-700"
+								className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+									flag.severity === "critical"
+										? "bg-[#ef4444] text-white border-[#ef4444]"
+										: "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-700"
+								}`}
 							>
 								{flag.titleRu}
 							</span>
@@ -243,16 +253,16 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-allergy-articaine"
 							onClick={() => toggleFlag("hasArticaineAllergy")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasArticaineAllergy
-									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
+									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
 									profile.hasArticaineAllergy
-										? "bg-rose-600 border-rose-600 text-white"
+										? "bg-[#ef4444] border-[#ef4444] text-white"
 										: "border-slate-300 dark:border-slate-600"
 								}`}
 							>
@@ -265,16 +275,16 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-allergy-lidocaine"
 							onClick={() => toggleFlag("hasLidocaineAllergy")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasLidocaineAllergy
-									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
+									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
 									profile.hasLidocaineAllergy
-										? "bg-rose-600 border-rose-600 text-white"
+										? "bg-[#ef4444] border-[#ef4444] text-white"
 										: "border-slate-300 dark:border-slate-600"
 								}`}
 							>
@@ -287,7 +297,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-allergy-mepivacaine"
 							onClick={() => toggleFlag("hasMepivacaineAllergy")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasMepivacaineAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
@@ -309,7 +319,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-allergy-sulfites"
 							onClick={() => toggleFlag("hasSulfiteAllergy")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasSulfiteAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
@@ -331,7 +341,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-allergy-penicillin"
 							onClick={() => toggleFlag("hasPenicillinAllergy")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasPenicillinAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
@@ -353,7 +363,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-allergy-latex"
 							onClick={() => toggleFlag("hasLatexAllergy")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasLatexAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
@@ -384,7 +394,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-hypertension"
 							onClick={() => toggleFlag("hasHypertension")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasHypertension
 									? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
@@ -406,16 +416,16 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-anticoagulants"
 							onClick={() => toggleFlag("takesAnticoagulants")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.takesAnticoagulants
-									? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
+									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
 							}`}
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
 									profile.takesAnticoagulants
-										? "bg-amber-600 border-amber-600 text-white"
+										? "bg-[#ef4444] border-[#ef4444] text-white"
 										: "border-slate-300 dark:border-slate-600"
 								}`}
 							>
@@ -428,16 +438,16 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-bisphosphonates"
 							onClick={() => toggleFlag("takesBisphosphonates")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.takesBisphosphonates
-									? "bg-purple-50 dark:bg-purple-950/50 border-purple-400 text-purple-900 dark:text-purple-200"
+									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-purple-50/50"
 							}`}
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
 									profile.takesBisphosphonates
-										? "bg-purple-600 border-purple-600 text-white"
+										? "bg-[#ef4444] border-[#ef4444] text-white"
 										: "border-slate-300 dark:border-slate-600"
 								}`}
 							>
@@ -450,16 +460,16 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-pacemaker"
 							onClick={() => toggleFlag("hasPacemakerExs")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasPacemakerExs
-									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
+									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
 									profile.hasPacemakerExs
-										? "bg-rose-600 border-rose-600 text-white"
+										? "bg-[#ef4444] border-[#ef4444] text-white"
 										: "border-slate-300 dark:border-slate-600"
 								}`}
 							>
@@ -468,6 +478,58 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							<span className="truncate">ЭКС (Запрет УЗ)</span>
 						</button>
 					</div>
+
+					{/* Anticoagulant and Bisphosphonate Details (MRONJ & Bleeding Risk) */}
+					{(profile.takesAnticoagulants || profile.takesBisphosphonates) && (
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-700">
+							{profile.takesAnticoagulants && (
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor={anticoagulantInputId}
+										className="text-[11px] font-bold text-[var(--ink,#0f172a)] dark:text-slate-200"
+									>
+										Препарат антикоагулянта и МНО (INR):
+									</label>
+									<input
+										id={anticoagulantInputId}
+										type="text"
+										value={profile.anticoagulantName || ""}
+										onChange={(e) =>
+											setProfile((prev) => ({
+												...prev,
+												anticoagulantName: e.target.value,
+											}))
+										}
+										placeholder="Варфарин (МНО 2.1), Ксарелто 20 мг..."
+										className="h-8 px-2.5 text-xs rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+									/>
+								</div>
+							)}
+							{profile.takesBisphosphonates && (
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor={bisphosphonateInputId}
+										className="text-[11px] font-bold text-[var(--ink,#0f172a)] dark:text-slate-200"
+									>
+										Препарат бисфосфонатов (MRONJ):
+									</label>
+									<input
+										id={bisphosphonateInputId}
+										type="text"
+										value={profile.bisphosphonateName || ""}
+										onChange={(e) =>
+											setProfile((prev) => ({
+												...prev,
+												bisphosphonateName: e.target.value,
+											}))
+										}
+										placeholder="Акласта 5 мг, Пролиа, Фосамакс..."
+										className="h-8 px-2.5 text-xs rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+									/>
+								</div>
+							)}
+						</div>
+					)}
 				</div>
 
 				{/* Category C: Diabetes, Asthma, Pregnancy */}
@@ -481,7 +543,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-diabetes"
 							onClick={() => toggleFlag("hasDiabetesMellitus")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasDiabetesMellitus
 									? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
@@ -503,7 +565,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-asthma"
 							onClick={() => toggleFlag("hasBronchialAsthma")}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasBronchialAsthma
 									? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
@@ -531,7 +593,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 										prev.pregnancyTrimester === "none" ? "trimester_2" : "none",
 								}));
 							}}
-							className={`flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.pregnancyTrimester !== "none"
 									? "bg-pink-50 dark:bg-pink-950/50 border-pink-400 text-pink-900 dark:text-pink-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-pink-50/50"
@@ -580,7 +642,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 				<button
 					type="button"
 					onClick={handleApplyPhysiologicalNorm}
-					className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+					className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 min-h-[32px] rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
 					title="Сбросить все риски до физиологической нормы"
 				>
 					<RotateCcw className="w-3.5 h-3.5" />
@@ -591,7 +653,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 					<button
 						type="button"
 						onClick={handleSyncToDiary}
-						className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+						className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
 						data-testid="sync-diary-btn"
 						title="Перенести текущую формулировку в дневник Формы 043/у"
 					>
@@ -602,7 +664,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 					<button
 						type="button"
 						onClick={handleSave}
-						className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-sm transition-all cursor-pointer active:scale-98"
+						className="inline-flex items-center gap-1.5 px-4 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-xs transition-all cursor-pointer active:scale-98"
 						data-testid="save-somatic-btn"
 						title="Сохранить соматический профиль пациента"
 					>

@@ -115,6 +115,10 @@ declare module "./labMath" {
 	interface DentalLabOrderModalProps {
 		readonly clinicName?: string | undefined;
 		readonly clinicPhone?: string | undefined;
+		readonly initialTeeth?: readonly (number | string)[] | undefined;
+		readonly patientChartNumber?: string | undefined;
+		readonly onSaveOrder?: ((order: any) => void) | undefined;
+		readonly [key: string]: any;
 	}
 }
 
@@ -172,6 +176,8 @@ export function DentalLabOrderModal({
 	doctorId,
 	doctorName,
 	initialToothFdi,
+	initialTeeth,
+	patientChartNumber,
 	patientDepositRub,
 	stageTotalRub,
 	stagePaidRub,
@@ -180,6 +186,7 @@ export function DentalLabOrderModal({
 	treatmentPlanAgeDays,
 	isPlanExpired,
 	onOrderSaved,
+	onSaveOrder,
 	clinicPhone = "",
 	clinicName = "Денте",
 	initialTab = "main",
@@ -259,6 +266,11 @@ export function DentalLabOrderModal({
 			setFormDoctorName(initialOrder.doctorName || doctorName || "Лечащий врач");
 			if (initialOrder.selectedTeeth && initialOrder.selectedTeeth.length > 0) {
 				setSelectedTeeth(initialOrder.selectedTeeth);
+			} else if (initialTeeth && initialTeeth.length > 0) {
+				const parsed = initialTeeth
+					.map((t) => (typeof t === "number" ? t : Number.parseInt(String(t), 10)))
+					.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85);
+				setSelectedTeeth(parsed);
 			} else if (initialOrder.toothFdi) {
 				const parsed = initialOrder.toothFdi
 					.split(/[\s,;-]+/)
@@ -325,7 +337,12 @@ export function DentalLabOrderModal({
 			setFormPatientName(patientName || "Пациент");
 			setFormDoctorId(doctorId || "");
 			setFormDoctorName(doctorName || "Лечащий врач");
-			if (initialToothFdi) {
+			if (initialTeeth && initialTeeth.length > 0) {
+				const parsed = initialTeeth
+					.map((t) => (typeof t === "number" ? t : Number.parseInt(String(t), 10)))
+					.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85);
+				setSelectedTeeth(parsed);
+			} else if (initialToothFdi) {
 				const toothNum = typeof initialToothFdi === "number" ? initialToothFdi : Number.parseInt(String(initialToothFdi), 10);
 				if (!Number.isNaN(toothNum)) {
 					setSelectedTeeth([toothNum]);
@@ -346,7 +363,7 @@ export function DentalLabOrderModal({
 			dCeramic.setDate(dCeramic.getDate() + 5);
 			setCeramicTrialDate(dCeramic.toISOString().slice(0, 10));
 		}
-	}, [isOpen, initialOrder, patientId, patientName, doctorId, doctorName, initialToothFdi]);
+	}, [isOpen, initialOrder, patientId, patientName, doctorId, doctorName, initialToothFdi, initialTeeth]);
 
 	// ─── TOOTH PICKER HELPERS ──────────────────────────────────────────────────
 	const toggleTooth = (tooth: number) => {
@@ -487,6 +504,7 @@ export function DentalLabOrderModal({
 				initialOrder?.isWarrantyRework ? "ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽ ДЛЯ ПАЦИЕНТА)" : null,
 				initialOrder?.reworkReason ? `Причина рекламации: ${initialOrder.reworkReason}` : null,
 				initialOrder?.originalOrderNumber ? `Исходный наряд ЗТЛ: № ${initialOrder.originalOrderNumber}` : null,
+				patientChartNumber ? `№ Медкарты: ${patientChartNumber}` : null,
 				jawScope ? `Наряд на челюсть: ${formatJawScopeLabel(jawScope)}` : null,
 				clinicalNotes.trim(),
 				`Оттискная масса / Скан: ${impressionType}`,
@@ -616,6 +634,9 @@ export function DentalLabOrderModal({
 
 			if (onOrderSaved) {
 				onOrderSaved(resultData);
+			}
+			if (onSaveOrder) {
+				onSaveOrder(resultData);
 			}
 
 			onClose();
@@ -761,7 +782,7 @@ export function DentalLabOrderModal({
 								</span>
 							</div>
 							<p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 truncate">
-								Пациент: <span className="font-bold text-slate-800 dark:text-slate-200">{formPatientName}</span> · Врач: <span className="font-bold text-slate-800 dark:text-slate-200">{formDoctorName}</span>
+								Пациент: <span className="font-bold text-slate-800 dark:text-slate-200">{formPatientName}</span>{patientChartNumber ? ` (${patientChartNumber})` : ""} · Врач: <span className="font-bold text-slate-800 dark:text-slate-200">{formDoctorName}</span>
 							</p>
 						</div>
 					</div>
@@ -770,7 +791,7 @@ export function DentalLabOrderModal({
 						<button
 							type="button"
 							onClick={handleApplyOneClickDefaults}
-							className="min-h-[44px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
+							className="min-h-[36px] sm:min-h-[34px] sm:h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
 							title="1-клик пресет: Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
 							data-testid="lab-order-apply-defaults-btn"
 						>
@@ -780,7 +801,7 @@ export function DentalLabOrderModal({
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="min-h-[44px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
+							className="min-h-[36px] sm:min-h-[34px] sm:h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
 							title="Печать наряда (ГОСТ)"
 						>
 							<Printer className="w-4 h-4" />
@@ -790,16 +811,16 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={onClose}
 							data-testid="lab-order-modal-close-btn"
-							className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+							className="min-h-[36px] min-w-[36px] sm:min-h-[34px] sm:min-w-[34px] sm:h-[34px] sm:w-[34px] rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
 							aria-label="Закрыть модальное окно"
 						>
-							<X className="w-5 h-5 sm:w-6 sm:h-6" />
+							<X className="w-5 h-5 sm:w-5 sm:h-5" />
 						</button>
 					</div>
 				</div>
 
 				{/* ─── NAVIGATION TABS (Strictly 1 Clean Toolbar Row 32–36px / Hick's Law) ─── */}
-				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
+				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
 					{[
 						{ id: "main", label: "1. Зубы и Конструкция", icon: FlaskConical, fullTitle: "1. Зубная формула и Конструкция" },
 						{ id: "shades", label: "2. Расцветка VITA", icon: Palette, fullTitle: "2. Расцветка VITA и Культя" },
@@ -813,7 +834,7 @@ export function DentalLabOrderModal({
 								key={tab.id}
 								type="button"
 								onClick={() => setActiveTab(tab.id as TabKey)}
-								className={`lab-modal-tab-btn whitespace-nowrap flex-shrink-0 ${isActive ? "is-active" : ""}`}
+								className={`lab-modal-tab-btn min-h-[34px] h-[34px] sm:h-8.5 whitespace-nowrap flex-shrink-0 ${isActive ? "is-active" : ""}`}
 								title={tab.fullTitle}
 							>
 								<Icon className="w-4 h-4 shrink-0" />

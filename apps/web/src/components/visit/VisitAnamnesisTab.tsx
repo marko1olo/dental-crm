@@ -238,18 +238,39 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 		);
 	};
 
+	const hasCriticalRisks = useMemo(() => {
+		return selectedRisks.some(
+			(r) =>
+				r.includes("анестетики") ||
+				r.includes("антикоагулянтов") ||
+				r.includes("бисфосфонатов"),
+		);
+	}, [selectedRisks]);
+
 	return (
 		<div
-			className="visit-anamnesis-tab flex flex-col gap-6 w-full max-w-full p-4 sm:p-6 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-sm"
+			className="visit-anamnesis-tab flex flex-col gap-4 w-full max-w-full p-4 sm:p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 			data-testid="visit-anamnesis-tab"
 		>
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--line)]">
-				<div className="flex items-center gap-3">
-					<div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--line)]">
-						<Stethoscope className="w-5 h-5" />
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
+				<div className="flex items-center gap-2.5">
+					<div
+						className={`flex items-center justify-center w-9 h-9 rounded-xl border ${
+							hasCriticalRisks
+								? "bg-rose-50 dark:bg-rose-950/40 text-[#ef4444] border-2 border-[#ef4444]"
+								: selectedRisks.length > 0
+									? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 border-amber-200"
+									: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border-emerald-200"
+						}`}
+					>
+						{selectedRisks.length === 0 ? (
+							<ShieldCheck className="w-5 h-5" />
+						) : (
+							<Stethoscope className="w-5 h-5" />
+						)}
 					</div>
 					<div>
-						<h3 className="text-base font-bold text-[var(--ink)] m-0">
+						<h3 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">
 							Клинический опросник и анамнез приёма
 						</h3>
 						<p className="text-xs text-[var(--muted)] m-0">
@@ -257,21 +278,21 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2.5 flex-wrap">
+				<div className="flex items-center gap-2 flex-wrap">
 					<button
 						type="button"
 						onClick={onOpenStomxTemplates || (() => setIsStomxModalOpen(true))}
-						className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer active:scale-98"
+						className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-open-stomt-templates-anamnesis"
 						title="Открыть каталог 448 клинических шаблонов 043/у из StomX (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
 					>
-						<Sparkles className="w-4 h-4" />
+						<Sparkles className="w-3.5 h-3.5" />
 						<span>Клинические шаблоны StomX (448)</span>
 					</button>
 					<button
 						type="button"
 						onClick={handleApplyPhysiologicalNorm}
-						className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer active:scale-98"
+						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-somatic-norm-one-click"
 						title="1 клик: заполнить осмотр физиологической нормой (соматически здоров)"
 					>
@@ -281,18 +302,56 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 					<button
 						type="button"
 						onClick={applyToDiary}
-						className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors shadow-sm cursor-pointer active:scale-98"
+						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-xs sm:text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-apply-anamnesis-to-diary"
 						title="Перенести текущие данные анамнеза в дневник Формы 043/у"
 					>
-						<Plus className="w-4 h-4" />
+						<Plus className="w-3.5 h-3.5" />
 						<span>Перенести в дневник 043/у</span>
 					</button>
 				</div>
 			</div>
 
+			{/* Status Banner: Anatomical Red (#ef4444) for Critical Stop Factors, or Calm Emerald Norm */}
+			{hasCriticalRisks ? (
+				<div
+					className="flex items-center gap-2.5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-200 text-xs shadow-xs"
+					data-testid="visit-anamnesis-critical-alert"
+				>
+					<AlertCircle className="w-5 h-5 text-[#ef4444] shrink-0" />
+					<div className="flex flex-col gap-0.5">
+						<span className="font-bold text-[#ef4444]">
+							ВНИМАНИЕ: Обнаружены клинические стоп-факторы ({selectedRisks.filter((r) => r.includes("анестетики") || r.includes("антикоагулянтов") || r.includes("бисфосфонатов")).join(", ")})
+						</span>
+						<span className="text-[11px] text-rose-900 dark:text-rose-300">
+							Обязательна коррекция выбора местного анестетика, оценка риска профузного кровотечения и остеонекроза челюсти (MRONJ).
+						</span>
+					</div>
+				</div>
+			) : selectedRisks.length > 0 ? (
+				<div
+					className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 text-xs"
+					data-testid="visit-anamnesis-alert-banner"
+				>
+					<AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+					<span>
+						Отмечены соматические факторы риска: {selectedRisks.join(", ")}. Учитывать при подборе анестетика и премедикации.
+					</span>
+				</div>
+			) : (
+				<div
+					className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 text-xs font-semibold"
+					data-testid="visit-anamnesis-norm-banner"
+				>
+					<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<span>
+						Физиологическая норма: соматически здоров, аллергоанамнез не отягощен. Ограничений к амбулаторной стоматологии нет.
+					</span>
+				</div>
+			)}
+
 			{/* Section 1: Top Dental Complaints */}
-			<div className="space-y-3">
+			<div className="space-y-2.5">
 				<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-2">
 					<Activity className="w-3.5 h-3.5 text-blue-500" />
 					Основные жалобы пациента (1-Click выбор)
@@ -305,7 +364,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 								key={item}
 								type="button"
 								onClick={() => toggleComplaint(item)}
-								className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl text-xs font-medium border transition-all ${
+								className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[36px] rounded-xl text-xs font-medium border transition-all cursor-pointer ${
 									isSelected
 										? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal-dark)] font-semibold shadow-xs"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
@@ -324,7 +383,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 			</div>
 
 			{/* Section 2: Somatic Status & Allergies */}
-			<div className="space-y-3">
+			<div className="space-y-2.5">
 				<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-2">
 					<AlertCircle className="w-3.5 h-3.5 text-amber-500" />
 					Факторы риска, соматический статус и аллергии
@@ -332,19 +391,29 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 				<div className="flex flex-wrap gap-2">
 					{SOMATIC_RISK_FACTORS.map((item) => {
 						const isSelected = selectedRisks.includes(item);
+						const isCritical =
+							item.includes("анестетики") ||
+							item.includes("антикоагулянтов") ||
+							item.includes("бисфосфонатов");
 						return (
 							<button
 								key={item}
 								type="button"
 								onClick={() => toggleRisk(item)}
-								className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl text-xs font-medium border transition-all ${
+								className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[36px] rounded-xl text-xs font-medium border transition-all cursor-pointer ${
 									isSelected
-										? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-semibold"
+										? isCritical
+											? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 font-bold shadow-xs"
+											: "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-semibold"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 								}`}
 							>
 								{isSelected ? (
-									<Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+									<Check
+										className={`w-3.5 h-3.5 ${
+											isCritical ? "text-[#ef4444]" : "text-amber-600 dark:text-amber-400"
+										}`}
+									/>
 								) : (
 									<Plus className="w-3 h-3 text-[var(--muted)]" />
 								)}
@@ -356,7 +425,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 			</div>
 
 			{/* Section 3: Dental History */}
-			<div className="space-y-3">
+			<div className="space-y-2.5">
 				<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-2">
 					<HeartPulse className="w-3.5 h-3.5 text-purple-500" />
 					Стоматологический анамнез
@@ -369,7 +438,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 								key={item}
 								type="button"
 								onClick={() => toggleHistory(item)}
-								className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl text-xs font-medium border transition-all ${
+								className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[36px] rounded-xl text-xs font-medium border transition-all cursor-pointer ${
 									isSelected
 										? "bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-300 font-semibold"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"

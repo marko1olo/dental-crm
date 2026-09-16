@@ -10,17 +10,19 @@
  * - 1-Click Official Printable A4 Clinic Pricelist (ст. 149 НК РФ, НДС 0%).
  */
 
-import React, { useId, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import {
 	AlertCircle,
 	ArrowUpDown,
 	Check,
 	CheckCircle2,
+	Copy,
 	Download,
 	Edit3,
 	FileSpreadsheet,
 	Filter,
 	Layers,
+	MoreHorizontal,
 	Plus,
 	Printer,
 	RefreshCw,
@@ -88,9 +90,30 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	const [activeTier, setActiveTier] = useState<PriceTierKind>('standard');
 	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
+	// Синхронизация с внешним источником истины каталога клиники (Мандат 8s)
+	useEffect(() => {
+		if (isOpen && initialItems && initialItems.length > 0) {
+			setItems(initialItems);
+		}
+	}, [isOpen, initialItems]);
+
 	// Add/Edit Service Modal State
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<ServicePricelistItem | null>(null);
+	const [formCode804n, setFormCode804n] = useState('');
+	const [formCommercialTitle, setFormCommercialTitle] = useState('');
+	const [formStatutoryTitle, setFormStatutoryTitle] = useState('');
+	const [formCategory, setFormCategory] = useState<Order804nCategory>('therapy');
+	const [formSpecialty, setFormSpecialty] = useState<DoctorSpecialty>('therapist');
+	const [formPriceRub, setFormPriceRub] = useState<string>('0');
+	const [formMaterialCostRub, setFormMaterialCostRub] = useState<string>('0');
+	const [formLabCostRub, setFormLabCostRub] = useState<string>('0');
+	const [formDurationMin, setFormDurationMin] = useState<number>(30);
+	const [formIcd10, setFormIcd10] = useState<string>('');
+
+	// Secondary Action Menu Row ID
+	const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
+	const [isBatchBarOpen, setIsBatchBarOpen] = useState(false);
 
 	// CSV Import Modal State
 	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -110,6 +133,137 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	const showToast = (msg: string) => {
 		setToastMessage(msg);
 		setTimeout(() => setToastMessage(null), 3000);
+	};
+
+	const openAddModal = () => {
+		setEditingItem(null);
+		setFormCode804n('');
+		setFormCommercialTitle('');
+		setFormStatutoryTitle('');
+		setFormCategory('therapy');
+		setFormSpecialty('therapist');
+		setFormPriceRub('');
+		setFormMaterialCostRub('0');
+		setFormLabCostRub('0');
+		setFormDurationMin(30);
+		setFormIcd10('');
+		setIsEditModalOpen(true);
+	};
+
+	const openEditModal = (item: ServicePricelistItem) => {
+		setEditingItem(item);
+		setFormCode804n(item.code804n || '');
+		setFormCommercialTitle(item.commercialTitle);
+		setFormStatutoryTitle(item.statutoryTitle804n);
+		setFormCategory(item.category);
+		setFormSpecialty(item.specialty);
+		setFormPriceRub(String(item.basePriceRub));
+		setFormMaterialCostRub(String(item.materialCostRub ?? 0));
+		setFormLabCostRub(String(item.labCostRub ?? 0));
+		setFormDurationMin(item.estimatedDurationMin);
+		setFormIcd10(item.icd10Indications.join(', '));
+		setIsEditModalOpen(true);
+	};
+
+	const handleSaveItemForm = (e: React.FormEvent) => {
+		e.preventDefault();
+		const parsedPrice = parseFloat(formPriceRub.replace(',', '.')) || 0;
+		const matCost = parseFloat(formMaterialCostRub.replace(',', '.')) || 0;
+		const labCost = parseFloat(formLabCostRub.replace(',', '.')) || 0;
+		const icdArray = formIcd10
+			.split(',')
+			.map((s) => s.trim().toUpperCase())
+			.filter(Boolean);
+
+		if (editingItem) {
+			setItems((prev) =>
+				prev.map((it) => {
+					if (it.id !== editingItem.id) return it;
+					return {
+						...it,
+						code804n: formCode804n.trim().toUpperCase(),
+						commercialTitle: formCommercialTitle.trim() || formStatutoryTitle.trim(),
+						statutoryTitle804n: formStatutoryTitle.trim() || formCommercialTitle.trim(),
+						category: formCategory,
+						specialty: formSpecialty,
+						basePriceRub: parsedPrice,
+						basePriceKopecks: rublesToKopecks(parsedPrice),
+						materialCostRub: matCost,
+						labCostRub: labCost,
+						estimatedDurationMin: formDurationMin,
+						icd10Indications: icdArray,
+					};
+				}),
+			);
+			showToast(`Услуга «${formCommercialTitle}» обновлена`);
+		} else {
+			const newItemId = `srv-custom-${Date.now()}`;
+			const newItem: ServicePricelistItem = {
+				id: newItemId,
+				code804n: formCode804n.trim().toUpperCase() || 'A16.07.000',
+				commercialTitle: formCommercialTitle.trim(),
+				statutoryTitle804n: formStatutoryTitle.trim() || formCommercialTitle.trim(),
+				category: formCategory,
+				specialty: formSpecialty,
+				basePriceRub: parsedPrice,
+				basePriceKopecks: rublesToKopecks(parsedPrice),
+				materialCostRub: matCost,
+				labCostRub: labCost,
+				estimatedDurationMin: formDurationMin,
+				icd10Indications: icdArray,
+				vatRate: 0,
+				vatExemptionArticle: 'пп. 2 п. 2 ст. 149 НК РФ',
+				isActive: true,
+				isArchived: false,
+				tags: [],
+			};
+			setItems((prev) => [newItem, ...prev]);
+			showToast(`Услуга «${formCommercialTitle}» добавлена в прейскурант`);
+		}
+		setIsEditModalOpen(false);
+	};
+
+	const handleDuplicateItem = (item: ServicePricelistItem) => {
+		const dup: ServicePricelistItem = {
+			...item,
+			id: `srv-dup-${Date.now()}`,
+			commercialTitle: `${item.commercialTitle} (копия)`,
+		};
+		setItems((prev) => [dup, ...prev]);
+		setOpenMenuRowId(null);
+		showToast(`Создан дубликат: ${dup.commercialTitle}`);
+	};
+
+	const handleToggleArchiveItem = (itemId: string) => {
+		setItems((prev) =>
+			prev.map((it) =>
+				it.id === itemId ? { ...it, isArchived: !it.isArchived, isActive: it.isArchived } : it,
+			),
+		);
+		setOpenMenuRowId(null);
+		showToast('Статус услуги изменен');
+	};
+
+	const handleSetZeroWarrantyPrice = (itemId: string) => {
+		setItems((prev) =>
+			prev.map((it) => {
+				if (it.id !== itemId) return it;
+				return {
+					...it,
+					basePriceRub: 0,
+					basePriceKopecks: 0,
+					tierPrices: { ...(it.tierPrices || {}), [activeTier]: 0 },
+				};
+			}),
+		);
+		setOpenMenuRowId(null);
+		showToast('Установлена гарантийная цена (0 ₽)');
+	};
+
+	const handleDeleteItem = (itemId: string) => {
+		setItems((prev) => prev.filter((it) => it.id !== itemId));
+		setOpenMenuRowId(null);
+		showToast('Услуга удалена из прейскуранта');
 	};
 
 	// Filtered Catalog
@@ -309,6 +463,17 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 					<div className="pricelist-header-actions">
 						<button
 							type="button"
+							className="pricelist-btn pricelist-btn-primary"
+							onClick={openAddModal}
+							title="Добавить новую услугу по Номенклатуре 804н"
+							style={{ minHeight: '36px', height: '36px', gap: '6px' }}
+						>
+							<Plus size={16} />
+							<span>Добавить услугу</span>
+						</button>
+
+						<button
+							type="button"
 							className="pricelist-btn"
 							onClick={handlePrintPricelist}
 							title="Печать официального прейскуранта клиники (A4)"
@@ -357,16 +522,26 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 					</div>
 				</header>
 
-				{/* Toolbar */}
-				<div className="pricelist-toolbar">
+				{/* 1-Row Professional Clinical Toolbar (32-36px height) — Mandates 8d & 8p */}
+				<div
+					className="pricelist-toolbar"
+					style={{
+						padding: '0.5rem 1.25rem',
+						gap: '0.5rem',
+						display: 'flex',
+						alignItems: 'center',
+						minHeight: '44px',
+					}}
+				>
 					{/* Search */}
-					<div className="pricelist-search-box">
-						<Search size={16} className="pricelist-search-icon" />
+					<div className="pricelist-search-box" style={{ maxWidth: '320px', minWidth: '220px' }}>
+						<Search size={15} className="pricelist-search-icon" />
 						<input
 							id={searchInputId}
 							type="text"
 							className="pricelist-search-input"
-							placeholder="Поиск по коду 804н, наименованию, МКБ-10..."
+							style={{ height: '34px', fontSize: '0.8125rem', padding: '0 2rem 0 2rem' }}
+							placeholder="Поиск по коду 804н, названию..."
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
 						/>
@@ -376,22 +551,46 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 								className="pricelist-search-clear"
 								onClick={() => setSearchTerm('')}
 							>
-								<X size={14} />
+								<X size={13} />
 							</button>
 						)}
 					</div>
 
-					{/* Price Tier Segmented Control */}
-					<div className="pricelist-tier-segmented">
+					{/* 1-Click Fast 804n Selector Dropdown (Zero-Row Bloat) */}
+					<select
+						className="pricelist-search-input"
+						style={{ height: '34px', padding: '0 0.5rem', width: 'auto', fontSize: '0.8125rem' }}
+						value={searchTerm}
+						onChange={(e) => {
+							setSearchTerm(e.target.value);
+							setSelectedCategory('all');
+						}}
+						title="Мгновенный поиск популярного кода Номенклатуры 804н"
+					>
+						<option value="">Быстрый код 804н...</option>
+						<option value="A16.07.002">A16.07.002 Кариес</option>
+						<option value="A16.07.008">A16.07.008 Пульпит</option>
+						<option value="A11.07.012">A11.07.012 Анестезия</option>
+						<option value="A06.07.003">A06.07.003 Снимок</option>
+						<option value="A16.07.054">A16.07.054 Имплантация</option>
+						<option value="A16.07.004">A16.07.004 Коронка</option>
+						<option value="A16.07.001">A16.07.001 Удаление</option>
+						<option value="A16.07.051">A16.07.051 Гигиена</option>
+					</select>
+
+					{/* Price Tier Segmented Control (34px) */}
+					<div className="pricelist-tier-segmented" style={{ padding: '2px' }}>
 						<button
 							type="button"
+							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
 							className={`tier-segment-btn ${activeTier === 'standard' ? 'active' : ''}`}
 							onClick={() => setActiveTier('standard')}
 						>
-							Основной (100%)
+							Основной
 						</button>
 						<button
 							type="button"
+							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
 							className={`tier-segment-btn ${activeTier === 'vip' ? 'active' : ''}`}
 							onClick={() => setActiveTier('vip')}
 						>
@@ -399,26 +598,28 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 						</button>
 						<button
 							type="button"
+							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
 							className={`tier-segment-btn ${activeTier === 'dms' ? 'active' : ''}`}
 							onClick={() => setActiveTier('dms')}
 						>
-							ДМС (Страховой)
+							ДМС
 						</button>
 						<button
 							type="button"
+							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
 							className={`tier-segment-btn ${activeTier === 'promo' ? 'active' : ''}`}
 							onClick={() => setActiveTier('promo')}
 						>
-							Промо / Акция
+							Промо
 						</button>
 					</div>
 
 					{/* Specialty Filter */}
-					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
 						<Filter size={14} style={{ color: 'var(--muted)' }} />
 						<select
 							className="pricelist-search-input"
-							style={{ height: '36px', padding: '0 0.5rem', width: 'auto' }}
+							style={{ height: '34px', padding: '0 0.5rem', width: 'auto', fontSize: '0.8125rem' }}
 							value={selectedSpecialty}
 							onChange={(e) => setSelectedSpecialty(e.target.value as DoctorSpecialty | 'all')}
 						>
@@ -430,121 +631,41 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							))}
 						</select>
 					</div>
+
+					{/* Batch Markup Toggle button */}
+					<button
+						type="button"
+						className={`pricelist-btn ${isBatchBarOpen ? 'pricelist-btn-primary' : ''}`}
+						style={{ minHeight: '34px', height: '34px', padding: '0 0.625rem', fontSize: '0.75rem', gap: '0.375rem', marginLeft: 'auto' }}
+						onClick={() => setIsBatchBarOpen((prev) => !prev)}
+						title="Пакетная индексация цен (+5%, +10%, гарантия, округление)"
+					>
+						<Sparkles size={14} />
+						<span>Индексация</span>
+					</button>
 				</div>
 
-				{/* 1-Click Fast Statutory 804n Code Chips (0-1 Click Fast Select without multi-level tree wandering) */}
-				<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', overflowX: 'auto', padding: '0.25rem 0' }}>
-					<span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-						Номенклатура 804н (1-клик):
-					</span>
-					{[
-						{ code: 'A16.07.002', label: 'A16.07.002 Кариес' },
-						{ code: 'A16.07.008', label: 'A16.07.008 Пульпит' },
-						{ code: 'A11.07.012', label: 'A11.07.012 Анестезия' },
-						{ code: 'A06.07.003', label: 'A06.07.003 Снимок' },
-						{ code: 'A16.07.054', label: 'A16.07.054 Имплантация' },
-						{ code: 'A16.07.004', label: 'A16.07.004 Коронка' },
-						{ code: 'A16.07.001', label: 'A16.07.001 Удаление' },
-						{ code: 'A16.07.051', label: 'A16.07.051 Гигиена' },
-					].map((chip) => (
-						<button
-							key={chip.code}
-							type="button"
-							onClick={() => {
-								setSearchTerm(chip.code);
-								setSelectedCategory('all');
-							}}
-							className="batch-quick-btn"
-							style={{
-								fontSize: '0.75rem',
-								fontFamily: 'monospace',
-								fontWeight: 700,
-								whiteSpace: 'nowrap',
-								padding: '0.25rem 0.5rem',
-								borderRadius: '6px',
-								border: '1px solid var(--line)',
-								background: searchTerm === chip.code ? 'var(--accent, #0284c7)' : 'var(--paper)',
-								color: searchTerm === chip.code ? '#ffffff' : 'var(--ink)',
-								cursor: 'pointer',
-							}}
-							title={`Мгновенно найти услугу по коду 804н ${chip.code}`}
-						>
-							{chip.label}
-						</button>
-					))}
-				</div>
+				{/* Collapsible Batch Markup Strip (Only when toggled) */}
+				{isBatchBarOpen && (
+					<div className="pricelist-batch-bar" style={{ padding: '0.375rem 1.25rem' }}>
+						<div className="batch-bar-left">
+							<Sparkles size={14} style={{ color: 'var(--brand-500)' }} />
+							<span style={{ fontSize: '0.75rem' }}>Пакетная индексация ({PRICE_TIER_LABELS[activeTier]}):</span>
+						</div>
 
-				{/* Batch Markup Bar */}
-				<div className="pricelist-batch-bar">
-					<div className="batch-bar-left">
-						<Sparkles size={16} style={{ color: 'var(--brand-500)' }} />
-						<span>Пакетная индексация цен ({PRICE_TIER_LABELS[activeTier]}):</span>
+						<div className="batch-bar-actions">
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(5, batchRounding)}>+5%</button>
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(10, batchRounding)}>+10%</button>
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(15, batchRounding)}>+15%</button>
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(-10, batchRounding)}>-10% (Скидка)</button>
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(-50, batchRounding)} title="Скидка 50%">-50%</button>
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(-100, batchRounding)} title="100% скидка на гарантийные переделки">-100% (Гарантия)</button>
+							<span style={{ color: 'var(--line)', margin: '0 0.25rem' }}>|</span>
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchRounding('round_100')}>До 100 ₽</button>
+							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchRounding('round_500')}>До 500 ₽</button>
+						</div>
 					</div>
-
-					<div className="batch-bar-actions">
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchMarkup(5, batchRounding)}
-						>
-							+5%
-						</button>
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchMarkup(10, batchRounding)}
-						>
-							+10%
-						</button>
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchMarkup(15, batchRounding)}
-						>
-							+15%
-						</button>
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchMarkup(-10, batchRounding)}
-						>
-							-10% (Скидка)
-						</button>
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchMarkup(-50, batchRounding)}
-							title="Скидка 50% на клинический этап"
-						>
-							-50%
-						</button>
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchMarkup(-100, batchRounding)}
-							title="100% скидка на гарантийные переделки"
-						>
-							-100% (Гарантия)
-						</button>
-
-						<span style={{ color: 'var(--line)', margin: '0 0.25rem' }}>|</span>
-
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchRounding('round_100')}
-						>
-							До 100 ₽
-						</button>
-						<button
-							type="button"
-							className="batch-quick-btn"
-							onClick={() => handleApplyBatchRounding('round_500')}
-						>
-							До 500 ₽
-						</button>
-					</div>
-				</div>
+				)}
 
 				{/* Toast Message */}
 				{toastMessage && (
