@@ -1,29 +1,16 @@
 import {
-	AlertTriangle,
 	Bell,
 	Calendar,
 	CalendarCheck,
-	Check,
 	CheckCheck,
-	Clock,
 	CreditCard,
-	FileText,
 	Filter,
 	MessageSquare,
-	Package,
 	Phone,
-	PhoneCall,
-	PhoneIncoming,
 	PhoneMissed,
-	PhoneOff,
-	RotateCcw,
-	ShieldAlert,
-	Sparkles,
 	Trash2,
-	User,
 	UserCheck,
 	X,
-	Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -159,18 +146,18 @@ export function PatientNotificationCenter({
 
 	return (
 		<div
-			className={`flex flex-col h-full w-full bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] rounded-2xl shadow-xl overflow-hidden font-sans ${className}`}
+			className={`flex flex-col h-full w-full bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--line-strong,var(--line,#e2e8f0))] rounded-2xl shadow-xl overflow-hidden font-sans ${className}`}
 			data-testid="patient-notification-center"
 		>
 			{/* Top Header */}
-			<div className="flex items-center justify-between px-5 py-3.5 bg-[var(--paper-soft,rgba(30,41,59,0.7))] border-b border-[var(--line,#334155)] backdrop-blur-md">
+			<div className="flex items-center justify-between px-5 py-3.5 bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border-b border-[var(--line,#e2e8f0)] backdrop-blur-md">
 				<div className="flex items-center gap-2.5">
-					<div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+					<div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
 						<Bell size={18} />
 					</div>
 					<div>
 						<div className="flex items-center gap-2">
-							<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)] leading-tight">
+							<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] leading-tight">
 								Центр уведомлений
 							</h3>
 							{unreadCount > 0 && (
@@ -179,7 +166,7 @@ export function PatientNotificationCenter({
 								</span>
 							)}
 						</div>
-						<p className="text-[11px] text-[var(--muted,#94a3b8)]">
+						<p className="text-[11px] text-[var(--muted,#64748b)]">
 							Звонки, WhatsApp сообщения и клинические события
 						</p>
 					</div>
@@ -190,7 +177,7 @@ export function PatientNotificationCenter({
 						<button
 							type="button"
 							onClick={handleMarkAllRead}
-							className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold text-teal-400 hover:bg-teal-500/10 transition-colors inline-flex items-center gap-1"
+							className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 transition-colors inline-flex items-center gap-1 cursor-pointer"
 							title="Отметить все как прочитанные"
 						>
 							<CheckCheck size={14} />
@@ -198,11 +185,24 @@ export function PatientNotificationCenter({
 						</button>
 					)}
 
+					{notifications.length > 0 && (
+						<button
+							type="button"
+							onClick={handleClearAll}
+							className="min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--muted,#64748b)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors inline-flex items-center gap-1 cursor-pointer"
+							title="Очистить все уведомления"
+							aria-label="Очистить все уведомления"
+						>
+							<Trash2 size={14} />
+							<span className="hidden sm:inline">Очистить</span>
+						</button>
+					)}
+
 					{onClose && (
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
+							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors cursor-pointer"
 							aria-label="Закрыть уведомления"
 						>
 							<X size={18} />
@@ -212,7 +212,7 @@ export function PatientNotificationCenter({
 			</div>
 
 			{/* Category Filter Chips */}
-			<div className="flex items-center gap-1.5 px-4 py-2.5 bg-[var(--paper,#0f172a)] border-b border-[var(--line,#334155)] overflow-x-auto scrollbar-thin">
+			<div className="flex items-center gap-1.5 px-4 py-2.5 bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border-b border-[var(--line,#e2e8f0)] overflow-x-auto scrollbar-thin">
 				{[
 					{ id: "all", label: "Все", icon: <Filter size={12} /> },
 					{ id: "call", label: "Звонки", icon: <Phone size={12} /> },
@@ -224,10 +224,10 @@ export function PatientNotificationCenter({
 						key={cat.id}
 						type="button"
 						onClick={() => setActiveCategory(cat.id as NotificationCategory)}
-						className={`min-h-[38px] px-3 py-1 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 flex-shrink-0 ${
+						className={`min-h-[38px] px-3 py-1 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
 							activeCategory === cat.id
-								? "bg-teal-600 text-white shadow-xs"
-								: "bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-slate-800"
+								? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)]"
 						}`}
 					>
 						{cat.icon}
@@ -237,9 +237,9 @@ export function PatientNotificationCenter({
 			</div>
 
 			{/* Notification Items List */}
-			<div className="flex-1 p-4 overflow-y-auto space-y-2.5 bg-[var(--paper-soft,rgba(15,23,42,0.4))]">
+			<div className="flex-1 p-4 overflow-y-auto space-y-2.5 bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))]">
 				{filteredNotifications.length === 0 ? (
-					<div className="py-12 text-center text-xs text-[var(--muted,#94a3b8)] space-y-2">
+					<div className="py-12 text-center text-xs text-[var(--muted,#64748b)] space-y-2">
 						<Bell size={24} className="mx-auto opacity-40" />
 						<p>Нет новых уведомлений</p>
 					</div>
@@ -249,20 +249,20 @@ export function PatientNotificationCenter({
 							key={item.id}
 							className={`p-3 rounded-xl border transition-all flex items-start justify-between gap-3 ${
 								item.isRead
-									? "bg-[var(--paper-soft,rgba(30,41,59,0.3))] border-[var(--line,#334155)] opacity-85"
-									: "bg-[var(--paper-soft,rgba(30,41,59,0.7))] border-teal-500/40 shadow-sm"
+									? "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--line,#e2e8f0)] opacity-80"
+									: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--teal-soft,#99f6e4)] shadow-xs"
 							}`}
 						>
 							<div className="flex items-start gap-3 min-w-0">
 								<div
 									className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
 										item.category === "call"
-											? "bg-rose-500/10 text-rose-400"
+											? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
 											: item.category === "whatsapp"
-												? "bg-emerald-500/10 text-emerald-400"
+												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
 												: item.category === "financial"
-													? "bg-amber-500/10 text-amber-400"
-													: "bg-teal-500/10 text-teal-400"
+													? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+													: "bg-teal-500/10 text-teal-600 dark:text-teal-400"
 									}`}
 								>
 									{item.category === "call" ? (
@@ -278,17 +278,17 @@ export function PatientNotificationCenter({
 
 								<div className="min-w-0 space-y-0.5">
 									<div className="flex items-center gap-2 flex-wrap">
-										<span className="font-bold text-xs sm:text-sm text-[var(--ink,#f8fafc)] leading-tight">
+										<span className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] leading-tight">
 											{item.title}
 										</span>
 										{!item.isRead && (
-											<span className="w-2 h-2 rounded-full bg-teal-400" />
+											<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)]" />
 										)}
 									</div>
-									<p className="text-xs text-[var(--ink,#f8fafc)] leading-normal min-w-0 break-words">
+									<p className="text-xs text-[var(--ink,#0f172a)] leading-normal min-w-0 break-words">
 										{item.description}
 									</p>
-									<span className="text-[10px] font-mono text-[var(--muted,#94a3b8)] inline-block pt-0.5">
+									<span className="text-[10px] font-mono text-[var(--muted,#64748b)] inline-block pt-0.5">
 										{new Date(item.timestamp).toLocaleTimeString("ru-RU", {
 											hour: "2-digit",
 											minute: "2-digit",
@@ -303,7 +303,7 @@ export function PatientNotificationCenter({
 									<button
 										type="button"
 										onClick={() => handleNotificationAction(item)}
-										className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white inline-flex items-center justify-center transition-all shadow-sm"
+										className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white inline-flex items-center justify-center transition-all shadow-xs cursor-pointer"
 										title="Перезвонить пациенту"
 										aria-label="Перезвонить пациенту"
 									>
@@ -315,7 +315,7 @@ export function PatientNotificationCenter({
 									<button
 										type="button"
 										onClick={() => handleNotificationAction(item)}
-										className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white inline-flex items-center justify-center transition-all shadow-sm"
+										className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white inline-flex items-center justify-center transition-all shadow-xs cursor-pointer"
 										title="Открыть диалог WhatsApp"
 										aria-label="Открыть диалог WhatsApp"
 									>
@@ -327,11 +327,11 @@ export function PatientNotificationCenter({
 									<button
 										type="button"
 										onClick={() => handleNotificationAction(item)}
-										className="min-h-[44px] px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold inline-flex items-center gap-1 transition-all border border-slate-700"
+										className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] text-xs font-semibold inline-flex items-center gap-1 transition-all border border-[var(--line,#e2e8f0)] shadow-xs cursor-pointer active:scale-95"
 										title="Открыть карту пациента"
 										aria-label="Открыть карту пациента"
 									>
-										<UserCheck size={14} />
+										<UserCheck size={14} className="text-[var(--teal,#0d9488)]" />
 										<span className="hidden sm:inline">Карта</span>
 									</button>
 								)}

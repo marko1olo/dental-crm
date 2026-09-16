@@ -19,6 +19,7 @@ import {
 	PhoneCall,
 	PhoneForwarded,
 	PhoneIncoming,
+	PhoneMissed,
 	PhoneOff,
 	PhoneOutgoing,
 	Play,
@@ -509,8 +510,9 @@ export function TelephonyFloatingWidget({
 			}
 
 			showToast(`Пациент создан: ${createdPatient.fullName}`, "success");
-		} catch (err: any) {
-			showToast(err?.message || "Сетевая ошибка при создании пациента", "error");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Сетевая ошибка при создании пациента";
+			showToast(msg, "error");
 		} finally {
 			setIsCreatingPatient(false);
 		}
@@ -951,7 +953,7 @@ export function TelephonyFloatingWidget({
 										)}
 
 										{/* 2. Critical Acute Pain / Emergency Banner */}
-										{(acutePainAlerts.length > 0 || (activeCall as any)?.acutePain) && (
+										{(acutePainAlerts.length > 0 || activeCall?.acutePain) && (
 											<div
 												className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 shadow-xs animate-fade-in"
 												data-testid="telephony-widget-acute-pain-alert"
@@ -1566,7 +1568,7 @@ export function TelephonyFloatingWidget({
 													) : item.status === "rejected" ? (
 														<PhoneOff size={13} />
 													) : (
-														<PhoneIncoming size={13} />
+														<PhoneMissed size={13} />
 													)}
 												</div>
 
@@ -1574,8 +1576,11 @@ export function TelephonyFloatingWidget({
 													<div className="font-bold text-[var(--ink,#0f172a)] break-words line-clamp-1 leading-snug">
 														{item.patientName || formatPhoneDisplay(item.phone)}
 													</div>
-													<div className="text-[10px] font-mono text-[var(--muted,#64748b)]">
-														{formatPhoneDisplay(item.phone)}
+													<div className="text-[10px] font-mono text-[var(--muted,#64748b)] flex items-center gap-1.5">
+														<span>{formatPhoneDisplay(item.phone)}</span>
+														{item.timestamp && (
+															<span>· {new Date(item.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>
+														)}
 													</div>
 												</div>
 											</div>

@@ -7,7 +7,6 @@ import {
 	CalendarCheck,
 	Check,
 	ChevronDown,
-	ChevronRight,
 	ChevronUp,
 	Clock,
 	Copy,
@@ -51,6 +50,7 @@ import {
 	generateWaveformBars,
 	getAvatarColor,
 	openWhatsAppChat,
+	type CallOutcome,
 	type IncomingCallPayload,
 	type PlaybackSpeed,
 	type SpeechTranscriptUtterance,
@@ -1904,7 +1904,7 @@ export function IncomingCallPopup() {
 											key={item.action}
 											type="button"
 											onClick={() => {
-												recordCallOutcome(item.action as any);
+												recordCallOutcome(item.action as CallOutcome);
 												closeCallDrawer();
 												showToast(`Исход зафиксирован: ${item.label}`, "success");
 											}}
