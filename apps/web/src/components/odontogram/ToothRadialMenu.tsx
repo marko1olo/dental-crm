@@ -6,6 +6,7 @@ import {
 	Crown,
 	Flame,
 	Hammer,
+	MoreHorizontal,
 	Sparkles,
 	Trash2,
 	Wrench,
@@ -393,10 +394,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								{toothNumber}
 							</span>
 							<div className="flex flex-col min-w-0">
-								<span className="text-base font-extrabold text-[var(--odontogram-ink)] leading-tight truncate">
+								<span className="text-sm sm:text-base font-extrabold text-[var(--odontogram-ink)] leading-snug break-words">
 									{getToothFolkAndAnatomicalNameRu(toothNumber)}
 								</span>
-								<span className="text-xs text-[var(--odontogram-ink-muted)] truncate">
+								<span className="text-xs text-[var(--odontogram-ink-muted)]">
 									Текущий: <strong className="text-[var(--odontogram-ink)]">{TOOTH_STATE_LABELS[currentState ?? "Healthy"]}</strong>
 								</span>
 							</div>
@@ -761,7 +762,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						</div>
 					)}
 
-					{/* Quick Actions (Therapy / Endo / Invoice) */}
+					{/* Quick Actions (Miller's Law: <= 2 direct buttons, secondary in '...') */}
 					{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
 						<div className="flex items-center gap-2 pt-1 border-t border-[var(--odontogram-border-subtle)]">
 							{onOpenTherapy && (
@@ -774,20 +775,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
 									<Zap size={18} />
-									<span>Терапия 043/у</span>
-								</button>
-							)}
-							{onOpenEndo && (
-								<button
-									type="button"
-									onClick={() => {
-										onOpenEndo();
-										onClose();
-									}}
-									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
-								>
-									<Wrench size={18} />
-									<span>Журнал каналов</span>
+									<span className="whitespace-nowrap">Терапия 043/у</span>
 								</button>
 							)}
 							{onAddToInvoice && (
@@ -800,8 +788,45 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-[var(--teal)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] border border-[var(--teal)]/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
 									<Coins size={18} />
-									<span>В смету</span>
+									<span className="whitespace-nowrap">В смету</span>
 								</button>
+							)}
+							{onOpenEndo && !onAddToInvoice && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenEndo();
+										onClose();
+									}}
+									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+								>
+									<Wrench size={18} />
+									<span className="whitespace-nowrap">Журнал каналов</span>
+								</button>
+							)}
+							{onOpenEndo && onAddToInvoice && onOpenTherapy && (
+								<details className="relative">
+									<summary
+										className="list-none min-h-[48px] min-w-[48px] w-12 h-12 rounded-xl bg-[var(--odontogram-surface-hover)] hover:bg-[var(--odontogram-border-strong)] text-[var(--odontogram-ink)] flex items-center justify-center transition-colors cursor-pointer select-none border border-[var(--odontogram-border-subtle)]"
+										title="Дополнительные действия"
+										aria-label="Дополнительные действия"
+									>
+										<MoreHorizontal size={20} />
+									</summary>
+									<div className="absolute right-0 bottom-full mb-2 w-56 p-1.5 rounded-xl bg-[var(--odontogram-paper)] border border-[var(--odontogram-border)] shadow-2xl z-30 flex flex-col gap-1">
+										<button
+											type="button"
+											onClick={() => {
+												onOpenEndo();
+												onClose();
+											}}
+											className="w-full min-h-[44px] px-3 py-2 rounded-lg hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left"
+										>
+											<Wrench size={16} className="shrink-0" />
+											<span>Журнал каналов (Эндо)</span>
+										</button>
+									</div>
+								</details>
 							)}
 						</div>
 					)}
@@ -1243,25 +1268,6 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									<span>Терапия 043/у</span>
 								</button>
 							)}
-							{onOpenEndo && (
-								<button
-									type="button"
-									onClick={() => {
-										onOpenEndo();
-										onClose();
-									}}
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "6px",
-										background: "transparent",
-									}}
-									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
-								>
-									<Wrench size={14} />
-									<span>Журнал каналов</span>
-								</button>
-							)}
 							{onAddToInvoice && (
 								<button
 									type="button"
@@ -1280,6 +1286,48 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									<Coins size={14} />
 									<span>В смету</span>
 								</button>
+							)}
+							{onOpenEndo && !onAddToInvoice && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenEndo();
+										onClose();
+									}}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+										background: "transparent",
+									}}
+									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+								>
+									<Wrench size={14} />
+									<span>Журнал каналов</span>
+								</button>
+							)}
+							{onOpenEndo && onAddToInvoice && onOpenTherapy && (
+								<details className="relative">
+									<summary
+										className="list-none min-h-[32px] min-w-[32px] flex items-center justify-center rounded-lg hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] transition-colors cursor-pointer select-none"
+										title="Дополнительные действия"
+									>
+										<MoreHorizontal size={16} />
+									</summary>
+									<div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-48 p-1.5 rounded-xl bg-[var(--odontogram-paper)] border border-[var(--odontogram-border)] shadow-xl z-30 flex flex-col gap-1">
+										<button
+											type="button"
+											onClick={() => {
+												onOpenEndo();
+												onClose();
+											}}
+											className="w-full min-h-[32px] px-2.5 py-1 rounded-lg hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left border-0 bg-transparent"
+										>
+											<Wrench size={14} className="shrink-0" />
+											<span>Журнал каналов</span>
+										</button>
+									</div>
+								</details>
 							)}
 						</div>
 					)}

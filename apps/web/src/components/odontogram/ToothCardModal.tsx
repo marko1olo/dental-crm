@@ -57,13 +57,13 @@ export function getSuggestedRecallForToothState(state: ToothState): SuggestedRec
 }
 
 const AVAILABLE_SURFACES = [
-	{ code: "O", name: "Окклюзионная (O)", desc: "Жевательная поверхность" },
-	{ code: "M", name: "Медиальная (M)", desc: "Передняя контактная грань" },
-	{ code: "D", name: "Дистальная (D)", desc: "Задняя контактная грань" },
-	{ code: "V", name: "Вестибулярная (V)", desc: "Щёчная / губная грань" },
-	{ code: "L", name: "Язычная / Нёбная (L/P)", desc: "Внутренняя грань" },
-	{ code: "K", name: "Контактная (К)", desc: "Аппроксимальная поверхность" },
-	{ code: "A", name: "Апикальная (А)", desc: "Пришеечная / корневая область" },
+	{ code: "O", name: "Окклюзионная", desc: "Жевательная поверхность (O)" },
+	{ code: "M", name: "Медиальная", desc: "Передняя контактная грань (M)" },
+	{ code: "D", name: "Дистальная", desc: "Задняя контактная грань (D)" },
+	{ code: "V", name: "Вестибулярная", desc: "Щёчная / губная грань (V)" },
+	{ code: "L", name: "Язычная", desc: "Внутренняя грань язычная/нёбная (L/P)" },
+	{ code: "K", name: "Контактная", desc: "Аппроксимальная поверхность (К)" },
+	{ code: "A", name: "Апикальная", desc: "Пришеечная / корневая область (А)" },
 ] as const;
 
 export const ToothCardModal: React.FC<ToothCardModalProps> = ({
@@ -329,7 +329,7 @@ export const ToothCardModal: React.FC<ToothCardModalProps> = ({
 										data-testid={`tooth-card-surf-${surf.code}`}
 									>
 										<span className="font-mono font-black">{surf.code}</span>
-										<span className="text-[10px] opacity-80 truncate ml-1">{surf.name}</span>
+										<span className="text-[11px] opacity-90 whitespace-nowrap ml-1">{surf.name}</span>
 										{isSelected && <Check size={12} className="shrink-0 ml-1" />}
 									</button>
 								);

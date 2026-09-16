@@ -1025,12 +1025,12 @@ export const DenteToothSvgDefs: React.FC = () => (
 				<stop offset="100%" stopColor="#b91c1c" stopOpacity="0.9" />
 			</linearGradient>
 
-			{/* Natural Living Root Canal Lumen Gradient */}
+			{/* Natural Living Root Canal Lumen Gradient (Strict Anatomical Red #ef4444) */}
 			<linearGradient id="dente-pulp-canal-vital" x1="0%" y1="0%" x2="0%" y2="100%">
-				<stop offset="0%" stopColor="#ffe4e6" />
-				<stop offset="40%" stopColor="#fda4af" />
-				<stop offset="80%" stopColor="#fb7185" />
-				<stop offset="100%" stopColor="#f43f5e" />
+				<stop offset="0%" stopColor="#fee2e2" />
+				<stop offset="35%" stopColor="#fca5a5" />
+				<stop offset="70%" stopColor="#ef4444" />
+				<stop offset="100%" stopColor="#dc2626" />
 			</linearGradient>
 
 			{/* Pulpitis Inflammation Gradient (Hyperemic Deep Crimson / Ruby) */}
@@ -3226,11 +3226,11 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			{/* Responsive Mobile & Desktop Quadrant Adapter Bar (Compact Space-Efficient) */}
 			{!hideQuadrantSwitcher && (
 				<div className="odontogram-quadrant-bar mb-2 select-none" data-testid="odontogram-quadrant-bar">
-					<div className="flex items-center gap-2 flex-wrap w-full">
+					<div className="flex items-center gap-2 sm:gap-1.5 flex-wrap sm:flex-nowrap w-full min-h-[44px] sm:min-h-[32px] sm:h-[34px] sm:max-h-[36px]">
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-3.5 sm:px-3 py-1.5 sm:py-1 rounded-xl sm:rounded-lg text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -3243,13 +3243,13 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 
 						<div className="h-5 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
 
-						{/* Quadrant buttons in a sleek inline strip (>= 48px touch targets on mobile with safe gap-3) */}
-						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 flex-1 min-w-0">
+						{/* Quadrant buttons in a sleek inline strip (1 tight desktop row 32-34px, >= 48px on mobile) */}
+						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-1.5 flex-1 min-w-0">
 							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -3265,7 +3265,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -3281,7 +3281,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -3297,7 +3297,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
