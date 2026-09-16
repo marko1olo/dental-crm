@@ -1,6 +1,8 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import {
+	calculatePaidContractGrandTotalKopecks,
+	calculatePaidContractServiceTotalKopecks,
 	createDefaultPaidContract,
 	formatKopecksToRubAndKop,
 	generatePaidContractHtml,
@@ -10,7 +12,9 @@ import {
 	generateSha256,
 	generateSmsSignOtp,
 	numberToWordsRu,
+	parseRublesToKopecks,
 	pluralizeRu,
+	printPaidContract736,
 	validatePaidContract736,
 	verifySmsSignOtp,
 } from "../paidContractEngine";
@@ -62,6 +66,30 @@ describe("Paid Contract Engine (Постановление Правительс�
 			assert.ok(info.formatted.includes("8 000,50"));
 			assert.ok(info.formattedWithKopecks.includes("8 000 руб. 50 коп."));
 			assert.ok(info.inWords.includes("Восемь тысяч рублей 50 копеек"));
+		});
+
+		test("parseRublesToKopecks safely parses ruble strings and numbers to integer kopecks without float error", () => {
+			assert.strictEqual(parseRublesToKopecks(0), 0);
+			assert.strictEqual(parseRublesToKopecks(null), 0);
+			assert.strictEqual(parseRublesToKopecks(undefined), 0);
+			assert.strictEqual(parseRublesToKopecks(""), 0);
+			assert.strictEqual(parseRublesToKopecks("abc"), 0);
+			assert.strictEqual(parseRublesToKopecks(1500), 150000);
+			assert.strictEqual(parseRublesToKopecks(1500.5), 150050);
+			assert.strictEqual(parseRublesToKopecks("1500"), 150000);
+			assert.strictEqual(parseRublesToKopecks("1 500,50 ₽"), 150050);
+			assert.strictEqual(parseRublesToKopecks("12345.67"), 1234567);
+		});
+
+		test("calculatePaidContractServiceTotalKopecks and calculatePaidContractGrandTotalKopecks compute integer kopecks", () => {
+			const itemTotal = calculatePaidContractServiceTotalKopecks(2, 50000, 10000); // 2 * 500 - 100 = 900 rub = 90000 kop
+			assert.strictEqual(itemTotal, 90000);
+
+			const grandTotal = calculatePaidContractGrandTotalKopecks([
+				{ name: "Осмотр", quantity: 1, unitPriceKopecks: 150000, discountKopecks: 0, totalKopecks: 150000 },
+				{ name: "Пломба", quantity: 2, unitPriceKopecks: 400000, discountKopecks: 50000, totalKopecks: 750000 },
+			]);
+			assert.strictEqual(grandTotal, 900000); // 1500 + 7500 = 9000 rub = 900000 kop
 		});
 	});
 
@@ -214,6 +242,34 @@ describe("Paid Contract Engine (Постановление Правительс�
 			assert.ok(html.includes("УВЕДОМЛЕНИЕ О БЕСПЛАТНОЙ МЕДИЦИНСКОЙ ПОМОЩИ"));
 			assert.ok(html.includes("Л041-01137"));
 			assert.ok(html.includes("PT Astra Sans"));
+		});
+
+		test("generatePaidContractHtml and Text render dedicated signature blocks for Legal Representative and Customer", () => {
+			const contract = createDefaultPaidContract({
+				patientFullName: "Иванов Артем Дмитриевич (ребенок 8 лет)",
+			});
+			contract.customer.isDifferentFromPatient = true;
+			contract.customer.fullName = "Иванов Дмитрий Сергеевич (отец-плательщик)";
+			contract.representative.hasRepresentative = true;
+			contract.representative.fullName = "Иванова Ольга Николаевна (мать-представитель)";
+			contract.representative.basisDocument = "Свидетельство о рождении серия IV-МЮ № 123456";
+
+			const html = generatePaidContractHtml(contract);
+			assert.ok(html.includes("ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ"));
+			assert.ok(html.includes("Иванова Ольга Николаевна (мать-представитель)"));
+			assert.ok(html.includes("Свидетельство о рождении"));
+			assert.ok(html.includes("ЗАКАЗЧИК (ПЛАТЕЛЬЩИК)"));
+			assert.ok(html.includes("Иванов Дмитрий Сергеевич (отец-плательщик)"));
+
+			const text = generatePaidContractText(contract);
+			assert.ok(text.includes("ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ"));
+			assert.ok(text.includes("Иванова Ольга Николаевна"));
+			assert.ok(text.includes("ЗАКАЗЧИК (ПЛАТЕЛЬЩИК)"));
+			assert.ok(text.includes("Иванов Дмитрий Сергеевич"));
+		});
+
+		test("printPaidContract736 is defined as a callable function", () => {
+			assert.strictEqual(typeof printPaidContract736, "function");
 		});
 	});
 

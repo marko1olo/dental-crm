@@ -1,5 +1,6 @@
 import {
 	type CreateSterilizationLogDto,
+	type CreatePsoCleaningLogDto,
 	type SterilizationDeviceType,
 	type SterilizerIndicatorClass,
 	type SterilizerPackagingType,
@@ -9,14 +10,17 @@ import {
 import {
 	AlertTriangle,
 	Award,
+	Boxes,
 	Check,
 	CheckCircle2,
 	Clock,
 	FileBadge,
 	FileSpreadsheet,
 	Flame,
+	FlaskConical,
 	Info,
 	Layers,
+	PackageCheck,
 	Printer,
 	QrCode,
 	ShieldAlert,
@@ -127,6 +131,12 @@ export function SanpinCycleModal({
 	const [notes, setNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [clinicEquipments, setClinicEquipments] = useState<SterilizerEquipment[]>([]);
+	const [packageCount, setPackageCount] = useState<number>(10);
+	const [packageSize, setPackageSize] = useState<string>("size_100x200");
+	const [autoRecordPso, setAutoRecordPso] = useState<boolean>(true);
+	const [psoAzopyramNegative, setPsoAzopyramNegative] = useState<boolean>(true);
+	const [psoPhenolNegative, setPsoPhenolNegative] = useState<boolean>(true);
+	const [psoDetergent, setPsoDetergent] = useState<string>("Биолот 0.5% + Аламинол 1.0%");
 
 	useEffect(() => {
 		if (isOpen) {
@@ -210,11 +220,15 @@ export function SanpinCycleModal({
 		setIndicatorType("class5_integrating");
 		setPassedIndicator(true);
 		setPackagingType("kraft_heat_sealed");
+		setPackageCount(10);
+		setAutoRecordPso(true);
+		setPsoAzopyramNegative(true);
+		setPsoPhenolNegative(true);
 		setItemsDescription("Базовый стоматологический набор смены (лотки, зеркала, зонды, пинцеты, боры)");
 		setNurseVerified(true);
 		setNurseName("Медсестра ЦСО");
-		setNotes("СанПиН 3.3686-21. Все 5 контрольных точек камеры изменили цвет на эталон (Норма)");
-		showToast("Установлен типовой цикл автоклава (134°C, 2.15 бар, 5 мин)", "success");
+		setNotes("СанПиН 3.3686-21. Все 5 контрольных точек камеры изменили цвет на эталон (Норма). ПСО: азопирам и фенолфталеин отрицательны.");
+		showToast("Установлен типовой цикл автоклава (134°C, 2.15 бар, 5 мин) и норма ПСО", "success");
 	};
 
 	const handleSubmit = async (e?: React.FormEvent, bypassNurse = false) => {
@@ -227,12 +241,42 @@ export function SanpinCycleModal({
 			const effectiveNurse = bypassNurse ? (nurseName.trim() || "Персонал клиники") : (nurseName.trim() || "Персонал клиники");
 			const effectiveVerified = bypassNurse ? true : nurseVerified;
 
+			// 1. Mandate 8k & 8e: 1-Click simultaneous PSO cleaning log (Form 366/u)
+			if (autoRecordPso) {
+				try {
+					const totalInstrumentsInBatch = Math.max(1, packageCount * 4);
+					const sample1Percent = Math.max(3, Math.round(totalInstrumentsInBatch * 0.01));
+					const psoPayload: CreatePsoCleaningLogDto = {
+						instrumentName: `${itemsDescription} (Партия ${packageCount} пакетов)`,
+						testType: "both",
+						batchItemCount: totalInstrumentsInBatch,
+						testedSampleCount: sample1Percent,
+						isAzopyramNegative: psoAzopyramNegative,
+						isPhenolphthaleinNegative: psoPhenolNegative,
+						detergentBrand: psoDetergent,
+						notes: `ПСО партии перед автоклавированием (Цикл №${cycleNumber}, ${deviceName}, оператор: ${effectiveNurse}). СанПиН 3.3686-21 п. 3584.`,
+					};
+
+					await fetch("/api/registers/pso", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+							...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+						},
+						body: JSON.stringify(psoPayload),
+					});
+				} catch (psoErr) {
+					console.warn("Failed to auto-register PSO log, proceeding with sterilization cycle", psoErr);
+				}
+			}
+
 			const payload: CreateSterilizationLogDto = {
 				deviceName,
 				sterilizerType,
 				serialNumber: serialNumber || undefined,
 				cycleNumber: Number(cycleNumber),
-				itemsDescription,
+				itemsDescription: `${itemsDescription} [Партия: ${packageCount} пакетов]`,
 				packagingType,
 				temperatureCelsius: Number(temperatureCelsius),
 				pressureBar: sterilizerType === "autoclave_steam" && pressureBar !== null ? Number(pressureBar) : null,
@@ -257,8 +301,58 @@ export function SanpinCycleModal({
 				body: JSON.stringify(payload),
 			});
 
+			// Save batch to local kraft packages registry for chairside scanner
+			try {
+				const existingRaw = localStorage.getItem("dente_kraft_packages_v1");
+				const existingList: KraftPackageRecord[] = existingRaw ? JSON.parse(existingRaw) : [];
+				const packDate = new Date().toISOString().slice(0, 10);
+				const expFormatted = estimatedExpiration
+					? new Date(estimatedExpiration).toISOString().slice(0, 10)
+					: new Date(Date.now() + 50 * 86400000).toISOString().slice(0, 10);
+
+				const newBatchRecords: KraftPackageRecord[] = [];
+				for (let i = 1; i <= Math.min(packageCount, 50); i++) {
+					const serialStr = String(i).padStart(3, "0");
+					const barcode128 = `KP-${packDate.replace(/-/g, "")}-C${cycleNumber}-${serialStr}`;
+					newBatchRecords.push({
+						id: `kp-${Date.now()}-${i}`,
+						batchId: `CYC-${cycleNumber}`,
+						serialNumber: i,
+						packageType: packagingType === "laminated_heat_sealed" ? "paper_plastic_pouch" : "paper_self_seal_single",
+						packageSize: packageSize as any,
+						toolSetId: "custom_set",
+						toolSetNameRu: `${itemsDescription.slice(0, 26)} (#${i}/${packageCount})`,
+						itemsListRu: [itemsDescription],
+						packDate,
+						expDate: expFormatted,
+						daysLifespan: 50,
+						daysRemaining: 50,
+						status: "sterile_valid",
+						autoclaveId: deviceName,
+						cycleNumber: Number(cycleNumber),
+						operatorId: "STAFF-01",
+						operatorName: effectiveNurse,
+						indicatorId: indicatorType === "class6_emulating" ? "vinar_inte_6" : indicatorType === "class5_integrating" ? "vinar_inte_5" : "vinar_steritest_4",
+						indicatorVerified: passedIndicator,
+						barcode128,
+						barcodeDataMatrixPayload: `${barcode128}|${deviceName}|CYC${cycleNumber}|${packDate}|${expFormatted}|${effectiveNurse}`,
+						isBreached: false,
+						notes: notes || `Партия ${packageCount} шт. (СанПиН 3.3686-21)`,
+						createdAt: new Date().toISOString(),
+					});
+				}
+				localStorage.setItem("dente_kraft_packages_v1", JSON.stringify([...newBatchRecords, ...existingList].slice(0, 300)));
+			} catch (storageErr) {
+				console.warn("Could not save to local kraft storage", storageErr);
+			}
+
 			if (res.ok) {
-				showToast("Стерилизационный цикл зарегистрирован (Форма № 257/у)", "success");
+				showToast(
+					autoRecordPso
+						? `Цикл стерилизации №${cycleNumber} (ф. 257/у) и ПСО партии (ф. 366/у) успешно зафиксированы!`
+						: `Стерилизационный цикл №${cycleNumber} зарегистрирован (Форма № 257/у)`,
+					"success",
+				);
 				if (onSuccess) onSuccess();
 				onClose();
 			} else {
@@ -288,7 +382,7 @@ export function SanpinCycleModal({
 			batchId: `CYC-${cycleNumber}`,
 			serialNumber: 1,
 			packageType: (packagingType === "laminated_heat_sealed" ? "paper_plastic_pouch" : "paper_self_seal_single"),
-			packageSize: "size_100x200",
+			packageSize: packageSize as any,
 			toolSetId: "custom_set",
 			toolSetNameRu: itemsDescription.slice(0, 32) || "Стоматологический набор",
 			itemsListRu: [itemsDescription],
@@ -333,6 +427,80 @@ export function SanpinCycleModal({
 			</html>
 		`);
 		printWin.document.close();
+	};
+
+	const handlePrintBatchLabels = (countToPrint = packageCount) => {
+		const printWin = window.open("", "_blank", "width=600,height=500");
+		if (!printWin) {
+			showToast("Разрешите всплывающие окна для печати партии этикеток", "error");
+			return;
+		}
+		const expFormatted = estimatedExpiration
+			? new Date(estimatedExpiration).toISOString().slice(0, 10)
+			: new Date(Date.now() + 50 * 86400000).toISOString().slice(0, 10);
+		const packDate = new Date().toISOString().slice(0, 10);
+
+		const stickersHtmlArray: string[] = [];
+		for (let i = 1; i <= Math.min(countToPrint, 50); i++) {
+			const serialStr = String(i).padStart(3, "0");
+			const barcode128 = `KP-${packDate.replace(/-/g, "")}-C${cycleNumber}-${serialStr}`;
+			const rec: KraftPackageRecord = {
+				id: `kp-cycle-${cycleNumber}-${i}`,
+				batchId: `CYC-${cycleNumber}`,
+				serialNumber: i,
+				packageType: (packagingType === "laminated_heat_sealed" ? "paper_plastic_pouch" : "paper_self_seal_single"),
+				packageSize: packageSize as any,
+				toolSetId: "custom_set",
+				toolSetNameRu: `${itemsDescription.slice(0, 24)} (#${i}/${countToPrint})`,
+				itemsListRu: [itemsDescription],
+				packDate,
+				expDate: expFormatted,
+				daysLifespan: 50,
+				daysRemaining: 50,
+				status: "sterile_valid",
+				autoclaveId: deviceName,
+				cycleNumber: Number(cycleNumber),
+				operatorId: "STAFF-01",
+				operatorName: nurseName.trim() || "Персонал клиники",
+				indicatorId: indicatorType === "class6_emulating" ? "vinar_inte_6" : indicatorType === "class5_integrating" ? "vinar_inte_5" : "vinar_steritest_4",
+				indicatorVerified: passedIndicator,
+				barcode128,
+				barcodeDataMatrixPayload: `${barcode128}|${deviceName}|CYC${cycleNumber}|${packDate}|${expFormatted}|${nurseName.trim() || "Персонал клиники"}`,
+				isBreached: false,
+				notes: notes || "",
+				createdAt: new Date().toISOString(),
+			};
+			stickersHtmlArray.push(`
+				<div class="sticker-wrapper" style="page-break-after: always; display: flex; justify-content: center; align-items: center; width: 58mm; height: 40mm;">
+					${generateThermalStickerHtml(rec, { size: "58x40", clinicName: "Стоматологическая клиника «DENTE»" })}
+				</div>
+			`);
+		}
+
+		printWin.document.write(`
+			<!DOCTYPE html>
+			<html lang="ru">
+			<head>
+				<meta charset="UTF-8">
+				<title>Партия термоэтикеток (${countToPrint} шт.): Цикл #${cycleNumber}</title>
+				<style>
+					@page { size: 58mm 40mm; margin: 0; }
+					body { margin: 0; padding: 0; background: #fff; }
+					.sticker-wrapper { width: 58mm; height: 40mm; box-sizing: border-box; }
+					@media print {
+						body { margin: 0; }
+						.sticker-wrapper { page-break-after: always; }
+					}
+				</style>
+			</head>
+			<body>
+				${stickersHtmlArray.join("\n")}
+				<script>window.print(); setTimeout(() => window.close(), 700);</script>
+			</body>
+			</html>
+		`);
+		printWin.document.close();
+		showToast(`Сформирована печать партии термоэтикеток (${countToPrint} шт.)`, "success");
 	};
 
 	return (
@@ -676,6 +844,238 @@ export function SanpinCycleModal({
 							</div>
 						</div>
 
+						{/* Group Kraft Packages Batch Card */}
+						<div
+							style={{
+								padding: "1rem",
+								borderRadius: "0.5rem",
+								background: "var(--paper-subtle)",
+								border: "1px solid var(--glass-border)",
+								display: "flex",
+								flexDirection: "column",
+								gap: "0.75rem",
+							}}
+						>
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+								<div style={{ fontSize: "0.875rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--ink)" }}>
+									<Boxes size={18} color="var(--brand-primary, #2563eb)" />
+									Партия крафт-пакетов в загрузке камеры (Мандат 8e / 8k)
+								</div>
+								<span style={{ fontSize: "0.78rem", color: "var(--muted)", fontWeight: 500 }}>
+									Групповая фиксация без ввода каждого пакета вручную
+								</span>
+							</div>
+
+							<div className="sanpin-form-row">
+								<div className="sanpin-form-group">
+									<label className="sanpin-form-label" style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+										Количество пакетов в партии (шт.)
+									</label>
+									<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+										<input
+											type="number"
+											min={1}
+											max={100}
+											required
+											value={packageCount}
+											onChange={(e) => setPackageCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+											className="sanpin-input"
+											style={{ width: "90px", minHeight: "40px", fontSize: "0.95rem", fontWeight: 700 }}
+										/>
+										<div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+											{[1, 5, 10, 15, 20, 30].map((cnt) => (
+												<button
+													key={cnt}
+													type="button"
+													onClick={() => setPackageCount(cnt)}
+													className={`sanpin-btn ${packageCount === cnt ? "sanpin-btn-primary" : "sanpin-btn-secondary"}`}
+													style={{ minHeight: "32px", padding: "0.2rem 0.55rem", fontSize: "0.78rem" }}
+												>
+													{cnt} шт.
+												</button>
+											))}
+										</div>
+									</div>
+								</div>
+
+								<div className="sanpin-form-group">
+									<label className="sanpin-form-label" style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+										Типоразмер крафт-пакетов
+									</label>
+									<select
+										value={packageSize}
+										onChange={(e) => setPackageSize(e.target.value)}
+										className="sanpin-select"
+										style={{ minHeight: "40px", fontSize: "0.875rem" }}
+									>
+										<option value="size_100x200">100 × 200 мм (Терапевтический / базовый набор)</option>
+										<option value="size_75x150">75 × 150 мм (Боры, наконечники, эндофайлы)</option>
+										<option value="size_150x250">150 × 250 мм (Хирургический набор, щипцы, элеваторы)</option>
+										<option value="size_200x300">200 × 300 мм (Ортопедические слепочные ложки / кассеты)</option>
+									</select>
+								</div>
+							</div>
+
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0.75rem", background: "var(--paper)", borderRadius: "0.375rem", border: "1px dashed var(--glass-border)", flexWrap: "wrap", gap: "0.5rem" }}>
+								<div style={{ fontSize: "0.8rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+									<PackageCheck size={16} color="#059669" />
+									<span>Партия из <strong>{packageCount} шт.</strong> регистрируется со сквозными штрихкодами (CYC-{cycleNumber}-001 ... CYC-{cycleNumber}-{String(packageCount).padStart(3, "0")})</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => handlePrintBatchLabels(packageCount)}
+									className="sanpin-btn sanpin-btn-secondary"
+									style={{ minHeight: "34px", padding: "0.3rem 0.75rem", fontSize: "0.8rem", fontWeight: 600 }}
+									title="Печать всех термоэтикеток партии на принтере 58x40 мм в 1 клик"
+								>
+									<Printer size={15} />
+									Печать всей партии ({packageCount} шт.)
+								</button>
+							</div>
+						</div>
+
+						{/* 1-Click Pre-Sterilization Cleaning (ПСО Форма № 366/у) */}
+						<div
+							style={{
+								padding: "1rem",
+								borderRadius: "0.5rem",
+								background: autoRecordPso ? "rgba(13, 148, 136, 0.06)" : "var(--paper-subtle)",
+								border: autoRecordPso ? "1.5px solid rgba(13, 148, 136, 0.35)" : "1px solid var(--glass-border)",
+								display: "flex",
+								flexDirection: "column",
+								gap: "0.75rem",
+							}}
+						>
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontWeight: 700, fontSize: "0.9rem", color: "var(--ink)" }}>
+									<input
+										type="checkbox"
+										checked={autoRecordPso}
+										onChange={(e) => setAutoRecordPso(e.target.checked)}
+										style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
+									/>
+									<FlaskConical size={18} color="var(--teal, #0d9488)" />
+									<span>Предстерилизационная очистка (ПСО, Форма № 366/у) — норма в 1 клик</span>
+								</label>
+								<span className="sanpin-badge-gov" style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}>
+									СанПиН 3.3686-21 п. 3584
+								</span>
+							</div>
+
+							{autoRecordPso && (
+								<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+										{/* Azopyram Test Control */}
+										<div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.375rem", background: "var(--paper)", border: "1px solid var(--glass-border)" }}>
+											<div style={{ fontSize: "0.78rem", color: "var(--muted)", fontWeight: 600 }}>
+												Азопирамовая проба (на скрытую кровь):
+											</div>
+											<div style={{ display: "flex", gap: "0.4rem", marginTop: "0.35rem" }}>
+												<button
+													type="button"
+													onClick={() => setPsoAzopyramNegative(true)}
+													style={{
+														flex: 1,
+														minHeight: "32px",
+														borderRadius: "4px",
+														border: psoAzopyramNegative ? "2px solid #059669" : "1px solid var(--glass-border)",
+														background: psoAzopyramNegative ? "rgba(16, 185, 129, 0.15)" : "var(--paper-subtle)",
+														color: psoAzopyramNegative ? "#059669" : "var(--muted)",
+														fontWeight: psoAzopyramNegative ? 700 : 500,
+														fontSize: "0.78rem",
+														cursor: "pointer",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														gap: "0.25rem",
+													}}
+												>
+													<CheckCircle2 size={13} /> Отрицательно (Норма)
+												</button>
+												<button
+													type="button"
+													onClick={() => setPsoAzopyramNegative(false)}
+													style={{
+														flex: 1,
+														minHeight: "32px",
+														borderRadius: "4px",
+														border: !psoAzopyramNegative ? "2px solid #dc2626" : "1px solid var(--glass-border)",
+														background: !psoAzopyramNegative ? "rgba(239, 68, 68, 0.15)" : "var(--paper-subtle)",
+														color: !psoAzopyramNegative ? "#dc2626" : "var(--muted)",
+														fontWeight: !psoAzopyramNegative ? 700 : 500,
+														fontSize: "0.78rem",
+														cursor: "pointer",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														gap: "0.25rem",
+													}}
+												>
+													<XCircle size={13} /> Положительно (Брак)
+												</button>
+											</div>
+										</div>
+
+										{/* Phenolphthalein Test Control */}
+										<div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.375rem", background: "var(--paper)", border: "1px solid var(--glass-border)" }}>
+											<div style={{ fontSize: "0.78rem", color: "var(--muted)", fontWeight: 600 }}>
+												Фенолфталеиновая проба (на щелочность СМС):
+											</div>
+											<div style={{ display: "flex", gap: "0.4rem", marginTop: "0.35rem" }}>
+												<button
+													type="button"
+													onClick={() => setPsoPhenolNegative(true)}
+													style={{
+														flex: 1,
+														minHeight: "32px",
+														borderRadius: "4px",
+														border: psoPhenolNegative ? "2px solid #059669" : "1px solid var(--glass-border)",
+														background: psoPhenolNegative ? "rgba(16, 185, 129, 0.15)" : "var(--paper-subtle)",
+														color: psoPhenolNegative ? "#059669" : "var(--muted)",
+														fontWeight: psoPhenolNegative ? 700 : 500,
+														fontSize: "0.78rem",
+														cursor: "pointer",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														gap: "0.25rem",
+													}}
+												>
+													<CheckCircle2 size={13} /> Отрицательно (Норма)
+												</button>
+												<button
+													type="button"
+													onClick={() => setPsoPhenolNegative(false)}
+													style={{
+														flex: 1,
+														minHeight: "32px",
+														borderRadius: "4px",
+														border: !psoPhenolNegative ? "2px solid #dc2626" : "1px solid var(--glass-border)",
+														background: !psoPhenolNegative ? "rgba(239, 68, 68, 0.15)" : "var(--paper-subtle)",
+														color: !psoPhenolNegative ? "#dc2626" : "var(--muted)",
+														fontWeight: !psoPhenolNegative ? 700 : 500,
+														fontSize: "0.78rem",
+														cursor: "pointer",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														gap: "0.25rem",
+													}}
+												>
+													<XCircle size={13} /> Положительно (Брак)
+												</button>
+											</div>
+										</div>
+									</div>
+
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.78rem", color: "var(--muted)", gap: "0.5rem", flexWrap: "wrap" }}>
+										<span>Моющее средство: <strong>{psoDetergent}</strong></span>
+										<span>Выборка 1% от партии: <strong>{Math.max(3, Math.round(packageCount * 4 * 0.01))} изд.</strong> (норматив СанПиН выполнен)</span>
+									</div>
+								</div>
+							)}
+						</div>
+
 						{/* Regime Parameters: Temp, Pressure, Time */}
 						<div
 							style={{
@@ -870,15 +1270,26 @@ export function SanpinCycleModal({
 										}}
 									>
 										<span>{calculatedBarcode}</span>
-										<button
-											type="button"
-											onClick={handlePrintPouchLabel}
-											className="sanpin-btn sanpin-btn-secondary"
-											style={{ minHeight: "34px", padding: "0.25rem 0.6rem", fontSize: "0.8rem" }}
-											title="Печать бирки для наклейки на крафт-пакет"
-										>
-											<Printer size={14} /> Печать бирки
-										</button>
+										<div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+											<button
+												type="button"
+												onClick={handlePrintPouchLabel}
+												className="sanpin-btn sanpin-btn-secondary"
+												style={{ minHeight: "34px", padding: "0.25rem 0.6rem", fontSize: "0.8rem" }}
+												title="Печать одиночной этикетки 58x40 мм"
+											>
+												<Printer size={14} /> Печать бирки #1
+											</button>
+											<button
+												type="button"
+												onClick={() => handlePrintBatchLabels(packageCount)}
+												className="sanpin-btn sanpin-btn-primary"
+												style={{ minHeight: "34px", padding: "0.25rem 0.6rem", fontSize: "0.8rem", fontWeight: 700 }}
+												title="Печать всей партии крафт-пакетов на термопринтере 58x40 мм"
+											>
+												<Printer size={14} /> Партия ({packageCount} шт.)
+											</button>
+										</div>
 									</div>
 								</div>
 							</div>

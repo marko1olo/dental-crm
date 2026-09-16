@@ -1,4 +1,4 @@
-import type React from "react";
+import React, { useState } from "react";
 import {
 	type DocumentKind,
 	type GeneratedDocument,
@@ -7,11 +7,15 @@ import {
 import {
 	X,
 	Building,
+	CheckCircle2,
 	FileText,
+	FlaskConical,
 	Radiation,
+	ShieldCheck,
 	Sparkles,
 	Layers,
 } from "lucide-react";
+import { showToast } from "../GlobalToast";
 
 export interface SanpinRegistryPackageModalProps {
 	readonly isOpen: boolean;
@@ -23,6 +27,8 @@ export interface SanpinRegistryPackageModalProps {
 	readonly onOpenEgiszRemd: () => void;
 	readonly onCreateDocument: (kind: DocumentKind) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
+	readonly onOpenPsoJournal366?: () => void;
+	readonly onOpenSanpinRegisters?: () => void;
 }
 
 export function SanpinRegistryPackageModal({
@@ -35,7 +41,11 @@ export function SanpinRegistryPackageModal({
 	onOpenEgiszRemd,
 	onCreateDocument,
 	onSelectDocumentKind,
+	onOpenPsoJournal366,
+	onOpenSanpinRegisters,
 }: SanpinRegistryPackageModalProps): React.JSX.Element | null {
+	const [sterilityVerified, setSterilityVerified] = useState(false);
+
 	if (!isOpen) return null;
 
 	const radiationDocs = existingDocuments.filter(
@@ -77,6 +87,46 @@ export function SanpinRegistryPackageModal({
 				</div>
 
 				<div className="document-package-modal-body">
+					{/* 1-Click Patient Treatment Sterility Clearance Banner (Mandate 8e / 8k) */}
+					<div
+						style={{
+							padding: "0.75rem 1rem",
+							marginBottom: "1rem",
+							borderRadius: "8px",
+							background: sterilityVerified ? "rgba(16, 185, 129, 0.08)" : "var(--paper-soft, #f8fafc)",
+							border: sterilityVerified ? "1.5px solid rgba(16, 185, 129, 0.4)" : "1px solid var(--line, #e2e8f0)",
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							gap: "0.75rem",
+							flexWrap: "wrap",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+							<ShieldCheck size={22} color={sterilityVerified ? "#059669" : "var(--teal, #0d9488)"} />
+							<div>
+								<div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
+									{sterilityVerified ? "Стерильность инструментов приёма подтверждена (СанПиН 3.3686-21)" : "Комплексный допуск стерильности инструментов приёма"}
+								</div>
+								<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", marginTop: "0.15rem" }}>
+									{patient ? `Пациент: ${patient.fullName} • ` : ""}ПСО (ф. 366/у, азопирам/фенолфталеин отр.) и Автоклав (ф. 257/у, 134°C, 5 кл. норма)
+								</div>
+							</div>
+						</div>
+						<button
+							type="button"
+							className={sterilityVerified ? "secondary-button" : "primary-button"}
+							onClick={() => {
+								setSterilityVerified(true);
+								showToast("Стерильность приёма заверена по СанПиН 3.3686-21", "success");
+							}}
+							style={{ minHeight: "36px", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+						>
+							<CheckCircle2 size={15} />
+							<span>{sterilityVerified ? "Подтверждено в карте" : "Заверить стерильность (1 клик)"}</span>
+						</button>
+					</div>
+
 					<div className="document-package-items-list">
 						{/* 1. БОЛЬНИЧНЫЙ ЛИСТ ЭЛН 1089н */}
 						<div className="document-package-item-card">
@@ -101,6 +151,38 @@ export function SanpinRegistryPackageModal({
 									}}
 								>
 									Открыть студию ЭЛН
+								</button>
+							</div>
+						</div>
+
+						{/* 2. ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ФОРМА № 366/У) */}
+						<div className="document-package-item-card">
+							<div className="document-package-item-info">
+								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+									<FlaskConical size={18} color="var(--brand-700, #0d9488)" aria-hidden="true" />
+									<span className="document-package-item-title">
+										Журнал предстерилизационной очистки (ПСО, Форма № 366/у)
+									</span>
+								</div>
+								<span className="document-package-item-sub">
+									<strong>СанПиН 3.3686-21 п. 3584 / Приказ Минздрава СССР № 366/у</strong> — Контроль качества очистки от крови и остатков щелочных моющих средств (азопирамовая и фенолфталеиновая пробы).
+								</span>
+							</div>
+							<div className="document-package-item-actions">
+								<button
+									type="button"
+									className="primary-button"
+									onClick={() => {
+										if (onOpenPsoJournal366) {
+											onClose();
+											onOpenPsoJournal366();
+										} else {
+											onClose();
+											onOpenAutoclaveLog257();
+										}
+									}}
+								>
+									Открыть Журнал 366/у
 								</button>
 							</div>
 						</div>

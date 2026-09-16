@@ -278,37 +278,37 @@ function DisinfectantsRegisterTab() {
 				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней» (п. 3582)</p>
 			</div>
 
-			<div className="sanpin-control-bar">
+			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
 				<div className="sanpin-filter-group">
 					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по препарату, назначению..."
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+							style={{ paddingLeft: "2.2rem", minWidth: "260px", minHeight: "34px", height: "34px", fontSize: "0.85rem" }}
 						/>
 					</div>
 				</div>
 
-				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
 					<button
 						type="button"
 						onClick={handleAddSolution}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
+						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
-						<Plus size={16} /> Приготовить раствор
+						<Plus size={15} /> Приготовить раствор
 					</button>
 					<button
 						type="button"
 						onClick={handleVerifyTestStrips}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
+						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 600 }}
 					>
-						<Droplets size={16} /> Экспресс-контроль полосками
+						<Droplets size={15} /> Экспресс-контроль полосками
 					</button>
 				</div>
 			</div>
@@ -439,29 +439,29 @@ function BacLabRegisterTab() {
 				<p>СанПиН 3.3686-21 (п. 3640) / МУК 4.2.2942-11 «Методы санитарно-бактериологических исследований»</p>
 			</div>
 
-			<div className="sanpin-control-bar">
+			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
 				<div className="sanpin-filter-group">
 					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по акту, объекту смыва..."
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+							style={{ paddingLeft: "2.2rem", minWidth: "260px", minHeight: "34px", height: "34px", fontSize: "0.85rem" }}
 						/>
 					</div>
 				</div>
 
-				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
 					<button
 						type="button"
 						onClick={handleAddProtocol}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
+						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
-						<Plus size={16} /> Внести протокол смывов
+						<Plus size={15} /> Внести протокол смывов
 					</button>
 				</div>
 			</div>
@@ -585,29 +585,29 @@ function NeedleDisposalRegisterTab() {
 				<p>СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к содержанию территорий и обращению с отходами» (разд. X)</p>
 			</div>
 
-			<div className="sanpin-control-bar">
+			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
 				<div className="sanpin-filter-group">
 					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по типу отходов, контейнеру..."
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+							style={{ paddingLeft: "2.2rem", minWidth: "260px", minHeight: "34px", height: "34px", fontSize: "0.85rem" }}
 						/>
 					</div>
 				</div>
 
-				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
 					<button
 						type="button"
 						onClick={handleAddNeedleBatch}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
+						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
-						<Plus size={16} /> Внести партию игл
+						<Plus size={15} /> Внести партию игл
 					</button>
 				</div>
 			</div>
@@ -1149,7 +1149,7 @@ export function SanpinRegisters() {
 					)}
 				</div>
 
-				<div className="sanpin-header-actions" style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>
+				<div className="sanpin-header-actions" style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>
 					{/* SOLE DOMINANT PRIMARY ACTION: 1-Клик автопилот смены СанПиН (ПСО 366/у + Автоклавы 257/у + Дезар + Температура) */}
 					<button
 						type="button"
@@ -1157,27 +1157,28 @@ export function SanpinRegisters() {
 						disabled={autoFilling}
 						className="sanpin-btn sanpin-btn-primary touch-manipulation"
 						style={{
-							minHeight: "44px",
-							padding: "0.5rem 1.25rem",
-							fontSize: "0.85rem",
+							minHeight: "34px",
+							height: "34px",
+							padding: "0.35rem 1rem",
+							fontSize: "0.825rem",
 							fontWeight: 700,
 							background: "var(--teal, #0d9488)",
 							borderColor: "var(--teal, #0d9488)",
 							color: "var(--on-teal, #ffffff)",
-							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
+							boxShadow: "0 1px 4px rgba(13, 148, 136, 0.3)",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "0.45rem",
+							gap: "0.4rem",
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-1click-autopilot-primary-btn"
 						title="1-Клик автопилот смены СанПиН: фиксирует пробы ПСО (Форма 366/у), циклы автоклавирования 134°C (Форма 257/у), облучатели Дезар и журнал T° (+4.2°C)"
 					>
-						<Sparkles size={16} />
+						<Sparkles size={15} />
 						<span>
 							{autoFilling
-								? "Оформление смены СанПиН..."
+								? "Оформление смены..."
 								: "Автопилот смены СанПиН"}
 						</span>
 					</button>
@@ -1188,20 +1189,21 @@ export function SanpinRegisters() {
 						onClick={() => setIsSeniorNurseUnsealOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{
-							minHeight: "44px",
-							padding: "0.5rem 0.95rem",
-							fontSize: "0.825rem",
+							minHeight: "34px",
+							height: "34px",
+							padding: "0.35rem 0.85rem",
+							fontSize: "0.8125rem",
 							fontWeight: 600,
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "0.4rem",
+							gap: "0.35rem",
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-scan-kraft-btn"
 						title="Вскрыть / Зафиксировать крафт-пакет: 1-клик фиксация «Стерилизация проведена / Тест-индикатор 5 класса (Норма)» без видеокамер"
 					>
-						<CheckCircle2 size={16} color="#0d9488" />
-						<span>Вскрыть крафт-пакет (Норма 5 кл.)</span>
+						<CheckCircle2 size={15} color="#0d9488" />
+						<span>Вскрыть крафт-пакет</span>
 					</button>
 
 					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
@@ -1211,23 +1213,24 @@ export function SanpinRegisters() {
 							onClick={() => setIsExportMenuOpen((prev) => !prev)}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{
-								minHeight: "44px",
-								padding: "0.4rem 0.75rem",
+								minHeight: "34px",
+								height: "34px",
+								padding: "0.35rem 0.65rem",
 								fontSize: "0.8125rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "0.35rem",
+								gap: "0.3rem",
 								whiteSpace: "nowrap",
 							}}
 							aria-expanded={isExportMenuOpen}
 							title="Опции СанПиН: Новый цикл, Закрытие смены, пакетный расчет, сшивы, ЭЦП и экспорт"
 							data-testid="sanpin-options-dropdown-btn"
 						>
-							<MoreVertical size={16} color="var(--brand-primary, #2563eb)" />
+							<MoreVertical size={15} color="var(--brand-primary, #2563eb)" />
 							<span>Опции</span>
-							<ChevronDown size={13} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+							<ChevronDown size={12} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
 						</button>
 
 						{isExportMenuOpen && (
@@ -1248,7 +1251,7 @@ export function SanpinRegisters() {
 									gap: "0.2rem",
 								}}
 							>
-								{/* + Новый цикл */}
+								{/* + Новый цикл (ф. 257/у + ПСО ф. 366/у) */}
 								<button
 									type="button"
 									onClick={() => {
@@ -1274,7 +1277,7 @@ export function SanpinRegisters() {
 									data-testid="sanpin-new-cycle-dropdown-btn"
 								>
 									<Plus size={15} color="var(--teal)" />
-									<span>+ Зафиксировать новый цикл (257/у)</span>
+									<span>+ Новый цикл (ф. 257/у + ПСО ф. 366/у)</span>
 								</button>
 
 								{/* Обновить сводку */}
@@ -1580,13 +1583,13 @@ export function SanpinRegisters() {
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					gap: "0.75rem",
+					gap: "0.6rem",
 					borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))",
-					padding: "0.35rem 0",
+					padding: "0.2rem 0",
 					overflowX: "auto",
 					whiteSpace: "nowrap",
 					WebkitOverflowScrolling: "touch",
-					minHeight: "48px",
+					minHeight: "36px",
 				}}
 			>
 				{/* 1. Category Switcher (3 Segments) */}
@@ -1602,24 +1605,25 @@ export function SanpinRegisters() {
 								aria-selected={isActive}
 								className={`sanpin-category-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "44px",
+									minHeight: "32px",
+									height: "32px",
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.45rem",
-									padding: "0.35rem 0.75rem",
-									borderRadius: "8px",
+									gap: "0.35rem",
+									padding: "0.2rem 0.65rem",
+									borderRadius: "6px",
 									cursor: "pointer",
 								}}
 								onClick={() => handleSelectCategory(cat.id)}
 								data-testid={`category-tab-${cat.id}`}
 							>
-								<Icon size={15} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
+								<Icon size={14} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
 								<span className="font-semibold text-xs whitespace-nowrap">{cat.shortLabel}</span>
 								<span
 									style={{
-										marginLeft: "0.35rem",
-										fontSize: "0.7rem",
-										padding: "0.1rem 0.4rem",
+										marginLeft: "0.25rem",
+										fontSize: "0.68rem",
+										padding: "0.05rem 0.35rem",
 										borderRadius: "9999px",
 										background: isActive ? "rgba(13, 148, 136, 0.15)" : "rgba(148, 163, 184, 0.15)",
 										color: isActive ? "var(--teal-600, #0d9488)" : "var(--muted, #64748b)",
@@ -1634,7 +1638,7 @@ export function SanpinRegisters() {
 					})}
 				</div>
 
-				<div style={{ width: "1px", height: "24px", background: "var(--line, rgba(148, 163, 184, 0.3))", flexShrink: 0 }} />
+				<div style={{ width: "1px", height: "20px", background: "var(--line, rgba(148, 163, 184, 0.3))", flexShrink: 0 }} />
 
 				{/* 2. Sub-Tabs for Active Category */}
 				<div
@@ -1651,17 +1655,18 @@ export function SanpinRegisters() {
 								onClick={() => handleSelectTab(tab.id)}
 								className={`sanpin-tab-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "44px",
-									padding: "0.35rem 0.75rem",
-									fontSize: "0.78rem",
+									minHeight: "32px",
+									height: "32px",
+									padding: "0.2rem 0.65rem",
+									fontSize: "0.75rem",
 									fontWeight: isActive ? 700 : 600,
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.35rem",
+									gap: "0.3rem",
 									flexShrink: 0,
 									whiteSpace: "nowrap",
 									cursor: "pointer",
-									borderRadius: "0.5rem",
+									borderRadius: "0.375rem",
 									border: "1px solid",
 									borderColor: isActive ? "var(--teal-600, #0d9488)" : "var(--line, rgba(148, 163, 184, 0.2))",
 									background: isActive ? "var(--teal-600, #0d9488)" : "var(--paper-soft, rgba(255, 255, 255, 0.05))",
@@ -1670,7 +1675,7 @@ export function SanpinRegisters() {
 								}}
 								data-testid={`tab-${tab.id}-btn`}
 							>
-								<Icon size={14} color={isActive ? "#ffffff" : "currentColor"} />
+								<Icon size={13} color={isActive ? "#ffffff" : "currentColor"} />
 								<span className="whitespace-nowrap">{tab.shortLabel}</span>
 							</button>
 						);

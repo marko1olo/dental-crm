@@ -304,18 +304,68 @@ export function formatKopecksToRubAndKop(kopecks: number): {
 	formattedWithKopecks: string;
 	inWords: string;
 } {
-	const wholeRub = Math.trunc((kopecks || 0) / 100);
-	const kop = Math.abs((kopecks || 0) % 100);
+	const safeKopecks = Number.isFinite(kopecks) ? Math.round(kopecks) : 0;
+	const wholeRub = Math.trunc(Math.abs(safeKopecks) / 100);
+	const kop = Math.abs(safeKopecks) % 100;
 	const groupedRub = String(wholeRub).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
 	const kopPadded = String(kop).padStart(2, "0");
 
 	return {
-		wholeRub,
+		wholeRub: safeKopecks < 0 ? -wholeRub : wholeRub,
 		kop,
-		formatted: `${groupedRub},${kopPadded}\u00A0₽`,
-		formattedWithKopecks: `${groupedRub} руб. ${kopPadded} коп.`,
-		inWords: numberToWordsRu(kopecks),
+		formatted: `${safeKopecks < 0 ? "-" : ""}${groupedRub},${kopPadded}\u00A0₽`,
+		formattedWithKopecks: `${safeKopecks < 0 ? "-" : ""}${groupedRub} руб. ${kopPadded} коп.`,
+		inWords: numberToWordsRu(safeKopecks),
 	};
+}
+
+/**
+ * Преобразует строковое или числовое значение рублей в целые копейки (Mandate 8b).
+ * Гарантирует отсутствие погрешностей с плавающей запятой, NaN и округления копеек.
+ */
+export function parseRublesToKopecks(rublesOrText: number | string | null | undefined): number {
+	if (rublesOrText === null || rublesOrText === undefined) return 0;
+	if (typeof rublesOrText === "number") {
+		if (!Number.isFinite(rublesOrText) || rublesOrText < 0) return 0;
+		return Math.round(rublesOrText * 100);
+	}
+	const cleaned = rublesOrText
+		.trim()
+		.replace(/\s+/g, "")
+		.replace(/₽/g, "")
+		.replace(/,/g, ".");
+	const val = parseFloat(cleaned);
+	if (!Number.isFinite(val) || val < 0) return 0;
+	return Math.round(val * 100);
+}
+
+/**
+ * Расчет стоимости позиции услуги в целых копейках: (кол-во × цена) - скидка.
+ */
+export function calculatePaidContractServiceTotalKopecks(
+	quantity: number,
+	unitPriceKopecks: number,
+	discountKopecks: number = 0,
+): number {
+	const qty = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+	const unitPrice = Number.isFinite(unitPriceKopecks) && unitPriceKopecks >= 0 ? Math.round(unitPriceKopecks) : 0;
+	const discount = Number.isFinite(discountKopecks) && discountKopecks >= 0 ? Math.round(discountKopecks) : 0;
+	return Math.max(0, Math.round(qty * unitPrice - discount));
+}
+
+/**
+ * Итоговая сумма по массиву услуг договора в целых копейках.
+ */
+export function calculatePaidContractGrandTotalKopecks(
+	services: PaidContractServiceItem[] | undefined,
+): number {
+	if (!services || services.length === 0) return 0;
+	return services.reduce((acc, s) => {
+		const total = Number.isFinite(s.totalKopecks)
+			? Math.round(s.totalKopecks)
+			: calculatePaidContractServiceTotalKopecks(s.quantity, s.unitPriceKopecks, s.discountKopecks);
+		return acc + total;
+	}, 0);
 }
 
 export interface ValidatePaidContractOptions {
@@ -1068,7 +1118,7 @@ ${cust.fullName}
 
 Подпись: _____________________ / ${cust.fullName} /
 Дата: «${contract.signedAt || contract.contractDate}»
-${contract.signMethod === "sms_otp" ? `[Подписано ПЭП через СМС: ${contract.smsSignDetails?.phone}, код подтвержден]` : (contract.signMethod === "paper" || contract.signMethod === "manual") ? `[Договор составлен в 2-х экземплярах на бумажном носителе (ст. 84 323-ФЗ, Постановление Правительства РФ № 736). Личная подпись пациента зафиксирована на бумаге и подшита в карту 043/у]` : ""}`;
+${contract.signMethod === "sms_otp" ? `[Подписано ПЭП через СМС: ${contract.smsSignDetails?.phone}, код подтвержден]` : (contract.signMethod === "paper" || contract.signMethod === "manual") ? `[Договор составлен в 2-х экземплярах на бумажном носителе (ст. 84 323-ФЗ, Постановление Правительства РФ № 736). Личная подпись пациента зафиксирована на бумаге и подшита в карту 043/у]` : ""}${contract.customer.isDifferentFromPatient ? `\n\nЗАКАЗЧИК (ПЛАТЕЛЬЩИК):\n${contract.customer.fullName || "________________________________________________"}\nПаспорт: серия ${contract.customer.passportSeries || "_____"} № ${contract.customer.passportNumber || "__________"}, выдан ${contract.customer.passportIssuedBy || "___________________________"}, дата: ${contract.customer.passportIssuedDate || "«___» _______ 20___ г."}, код: ${contract.customer.passportDepartmentCode || "_______"}\nАдрес регистрации: ${contract.customer.registrationAddress || "________________________________________________________"}\nТел: ${contract.customer.phone || "____________________"}\nПодпись Заказчика: _____________________ / ${contract.customer.fullName || "________________________"} /` : ""}${contract.representative?.hasRepresentative ? `\n\nЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ (для несовершеннолетних / подопечных):\n${contract.representative.fullName || "________________________________________________"}\nДокумент-основание: ${contract.representative.basisDocument || "свидетельство о рождении / акт органа опеки ____________________"}\nПаспорт: серия ${contract.representative.passportSeries || "_____"} № ${contract.representative.passportNumber || "__________"}, выдан ${contract.representative.passportIssuedBy || "___________________________"}, дата: ${contract.representative.passportIssuedDate || "«___» _______ 20___ г."}, код: ${contract.representative.passportDepartmentCode || "_______"}\nТел: ${contract.representative.phone || "____________________"}\nПодпись законного представителя: _____________________ / ${contract.representative.fullName || "________________________"} /` : ""}`;
 }
 
 /**
@@ -1279,7 +1329,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     <div>«${contract.contractDate}» г.</div>
   </div>
 
-  <p><strong>${cl.fullName}</strong> (сокращенное наименование: ${cl.shortName}), именуемое в дальнейшем <strong>«Исполнитель»</strong>, в лице ${cl.directorTitle} ${cl.directorFullName}, действующего на основании ${cl.actingOnBasis}, с одной стороны, и гражданин(ка) <strong>${cust.fullName || "________________________________________________"}</strong>, ${contract.customer.isDifferentFromPatient ? `именуемый(ая) в дальнейшем «Заказчик», действующий в интересах Пациента <strong>${pt.fullName || "________________________________________________"}</strong>` : `именуемый(ая) в дальнейшем «Пациент» (Заказчик)`}, заключили настоящий Договор о нижеследующем:</p>
+  <p><strong>${cl.fullName}</strong> (сокращенное наименование: ${cl.shortName}), именуемое в дальнейшем <strong>«Исполнитель»</strong>, в лице ${cl.directorTitle} ${cl.directorFullName}, действующего на основании ${cl.actingOnBasis}, с одной стороны, и гражданин(ка) <strong>${cust.fullName || "________________________________________________"}</strong>, ${contract.customer.isDifferentFromPatient ? `именуемый(ая) в дальнейшем «Заказчик», действующий в интересах Пациента <strong>${pt.fullName || "________________________________________________"}</strong>` : `именуемый(ая) в дальнейшем «Пациент» (Заказчик)`}${contract.representative?.hasRepresentative ? `, в лице законного представителя <strong>${contract.representative.fullName || "________________________________"}</strong>, действующего на основании ${contract.representative.basisDocument || "свидетельства о рождении / акта органа опеки ____________________"}` : ""}, заключили настоящий Договор о нижеследующем:</p>
 
   <div class="section-title">1. Предмет договора и условия оказания услуг</div>
   <p>1.1. Исполнитель обязуется оказать Пациенту платные стоматологические медицинские услуги в соответствии с клиническими рекомендациями (протоколами лечения) и стандартами медицинской помощи РФ, а Заказчик (Пациент) обязуется принять и оплатить оказанные услуги в соответствии со сметой и условиями настоящего Договора.</p>
@@ -1354,12 +1404,91 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
       Подпись Заказчика (Пациента):<br>
       ${signatureStamp}
       <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${cust.fullName || "________________________"} /</div>
-      Дата подписания: «${contract.signedAt || contract.contractDate}» г.
+
+      ${contract.customer.isDifferentFromPatient ? `
+      <div style="margin-top: 6px; padding-top: 4px; border-top: 0.5pt dashed #cbd5e1;">
+        <strong>ЗАКАЗЧИК (ПЛАТЕЛЬЩИК):</strong><br>
+        <strong>${contract.customer.fullName || "________________________________________________"}</strong><br>
+        Паспорт: серия ${contract.customer.passportSeries || "_____"} № ${contract.customer.passportNumber || "__________"}<br>
+        Выдан: ${contract.customer.passportIssuedBy || "____________________________________"}, ${contract.customer.passportIssuedDate || "«___» _______ 20___ г."}, код ${contract.customer.passportDepartmentCode || "_______"}<br>
+        Адрес: ${contract.customer.registrationAddress || "________________________________________________________"}<br>
+        Телефон: ${contract.customer.phone || "____________________"}<br>
+        Подпись Заказчика:<br>
+        <div class="sign-underline"></div>
+        <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${contract.customer.fullName || "________________________"} /</div>
+      </div>
+      ` : ""}
+
+      ${contract.representative?.hasRepresentative ? `
+      <div style="margin-top: 6px; padding-top: 4px; border-top: 0.5pt dashed #cbd5e1;">
+        <strong>ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ (для несовершеннолетних / подопечных):</strong><br>
+        <strong>${contract.representative.fullName || "________________________________________________"}</strong><br>
+        Документ-основание: ${contract.representative.basisDocument || "свидетельство о рождении / акт органа опеки ____________________"}<br>
+        Паспорт: серия ${contract.representative.passportSeries || "_____"} № ${contract.representative.passportNumber || "__________"}<br>
+        Выдан: ${contract.representative.passportIssuedBy || "____________________________________"}, ${contract.representative.passportIssuedDate || "«___» _______ 20___ г."}, код ${contract.representative.passportDepartmentCode || "_______"}<br>
+        Телефон: ${contract.representative.phone || "____________________"}<br>
+        Подпись законного представителя:<br>
+        <div class="sign-underline"></div>
+        <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${contract.representative.fullName || "________________________"} /</div>
+      </div>
+      ` : ""}
+      <div style="margin-top: 4px; font-size: 7pt; color: #475569;">Дата подписания: «${contract.signedAt || contract.contractDate}» г.</div>
     </div>
   </div>
 </div>
 </body>
 </html>`;
+}
+
+/**
+ * Автономная печать оформленного договора на оказание платных медицинских услуг (ПП РФ № 736).
+ * Не зависит от внешних бэкендов, не падает с 403-ошибками, поддерживает обход блокировщиков всплывающих окон.
+ */
+export function printPaidContract736(contract: PaidContractData): void {
+	if (typeof window === "undefined") return;
+	try {
+		const html = generatePaidContractHtml(contract);
+		let printedViaWindow = false;
+		const printWindow = window.open("", "_blank");
+		if (printWindow && !printWindow.closed) {
+			try {
+				printWindow.document.write(html);
+				printWindow.document.close();
+				printWindow.focus();
+				printedViaWindow = true;
+				setTimeout(() => {
+					try {
+						printWindow.print();
+					} catch {
+						// Окно могло быть закрыто пользователем
+					}
+				}, 250);
+			} catch {
+				printedViaWindow = false;
+			}
+		}
+		if (!printedViaWindow) {
+			const iframe = document.createElement("iframe");
+			iframe.style.position = "fixed";
+			iframe.style.right = "0";
+			iframe.style.bottom = "0";
+			iframe.style.width = "0";
+			iframe.style.height = "0";
+			iframe.style.border = "0";
+			document.body.appendChild(iframe);
+			iframe.contentDocument?.write(html);
+			iframe.contentDocument?.close();
+			iframe.contentWindow?.focus();
+			iframe.contentWindow?.print();
+			setTimeout(() => {
+				if (document.body.contains(iframe)) {
+					document.body.removeChild(iframe);
+				}
+			}, 1500);
+		}
+	} catch (err) {
+		console.error("Failed to print Decree 736 contract:", err);
+	}
 }
 
 let paidContractSequenceCounter = 0;

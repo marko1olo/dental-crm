@@ -1,5 +1,14 @@
-import React, { useMemo } from "react";
-import { FileEdit, ShieldCheck, Printer } from "lucide-react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import {
+	FileEdit,
+	ShieldCheck,
+	Printer,
+	MoreHorizontal,
+	FileText,
+	Copy,
+	RefreshCw,
+	RotateCcw,
+} from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { printBlankMedicalContract } from "../../patients/blankContractPrint";
 import { showToast } from "../../GlobalToast";
@@ -11,7 +20,13 @@ import {
 } from "../paidContractRequiredFields";
 import { PaidContractRequiredFieldsPanel } from "../PaidContractRequiredFieldsPanel";
 import { QuickChipsRow } from "../QuickChipsRow";
-import { generatePaidContractNumber } from "../paidContractEngine";
+import {
+	createDefaultPaidContract,
+	generatePaidContractNumber,
+	generatePaidContractText,
+	parseRublesToKopecks,
+	printPaidContract736,
+} from "../paidContractEngine";
 
 export const PAID_CONTRACT_FIELDS_BLOCK_TITLE = "Обязательные поля договора";
 
@@ -175,6 +190,12 @@ export const PaidServiceContractForm = React.memo(
 			(state) => state.setPaidContractWrittenChangesConfirmed,
 		);
 
+		const effectiveTotalRub = useMemo(() => {
+			const parsedKopecks = parseRublesToKopecks(paidContractTotalRub);
+			if (parsedKopecks > 0) return parsedKopecks / 100;
+			return totalRubValue;
+		}, [paidContractTotalRub, totalRubValue]);
+
 		const review: PaidContractRequiredFieldsReview = useMemo(
 			() =>
 				paidContractRequiredFieldsReview({
@@ -188,7 +209,7 @@ export const PaidServiceContractForm = React.memo(
 					serviceScope: paidContractServiceScope,
 					visitTreatmentPlan: activeVisitTreatmentPlan ?? "",
 					visitDoctorSummary: activeVisitDoctorSummary ?? "",
-					totalRub: totalRubValue,
+					totalRub: effectiveTotalRub,
 					paymentTerms: paidContractPaymentTerms,
 					priceChangeRules: paidContractPriceChangeRules,
 					freeCareNotice: paidContractFreeCareNotice,
@@ -213,7 +234,7 @@ export const PaidServiceContractForm = React.memo(
 				paidContractServiceScope,
 				activeVisitTreatmentPlan,
 				activeVisitDoctorSummary,
-				totalRubValue,
+				effectiveTotalRub,
 				paidContractPaymentTerms,
 				paidContractPriceChangeRules,
 				paidContractFreeCareNotice,
@@ -228,6 +249,25 @@ export const PaidServiceContractForm = React.memo(
 				paidContractWrittenChangesConfirmed,
 			],
 		);
+
+		const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+		const moreMenuRef = useRef<HTMLDivElement>(null);
+
+		useEffect(() => {
+			if (!isMoreMenuOpen) return;
+			const handleClickOutside = (event: MouseEvent) => {
+				if (
+					moreMenuRef.current &&
+					!moreMenuRef.current.contains(event.target as Node)
+				) {
+					setIsMoreMenuOpen(false);
+				}
+			};
+			document.addEventListener("mousedown", handleClickOutside);
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+			};
+		}, [isMoreMenuOpen]);
 
 		const handleFillStandardContract = () => {
 			const currentYear = new Date().getFullYear();
@@ -280,17 +320,160 @@ export const PaidServiceContractForm = React.memo(
 			showToast("Типовой договор заполнен (1 клик)", "success", 3000);
 		};
 
+		const handlePrintFilledContract = () => {
+			const kopecks =
+				parseRublesToKopecks(paidContractTotalRub) ||
+				(totalRubValue ? Math.round(totalRubValue * 100) : 0);
+
+			const contractData = createDefaultPaidContract({
+				contractNumber: paidContractNumber.trim() || undefined,
+				contractDate: paidContractDate.trim() || undefined,
+				patientFullName: documentPatientFullName || undefined,
+				doctorFullName:
+					paidContractDoctorFullName.trim() ||
+					activeDoctorFullName ||
+					undefined,
+				clinicalReason:
+					paidContractCareReason.trim() ||
+					activeVisitComplaint ||
+					undefined,
+				serviceScopeSummary:
+					paidContractServiceScope.trim() ||
+					activeVisitTreatmentPlan ||
+					undefined,
+				totalAmountKopecks: kopecks,
+				serviceStart: paidContractServiceStart.trim() || undefined,
+				serviceEndOrCondition:
+					paidContractServiceEnd.trim() || undefined,
+			});
+
+			if (paidContractCustomerFullName.trim()) {
+				contractData.customer.fullName = paidContractCustomerFullName.trim();
+				contractData.customer.isDifferentFromPatient =
+					paidContractCustomerFullName.trim() !== (documentPatientFullName || "");
+			}
+			if (paidContractRepresentativeFullName.trim()) {
+				contractData.representative.fullName = paidContractRepresentativeFullName.trim();
+				contractData.representative.hasRepresentative = true;
+			}
+			if (paidContractPaymentTerms.trim()) {
+				contractData.paymentTerms = paidContractPaymentTerms.trim();
+			}
+			if (paidContractPriceChangeRules.trim()) {
+				contractData.priceChangeRules = paidContractPriceChangeRules.trim();
+			}
+			if (paidContractFreeCareNotice.trim()) {
+				contractData.freeCareNotice = paidContractFreeCareNotice.trim();
+			}
+			if (paidContractRecommendationWarning.trim()) {
+				contractData.medicalRecommendationWarning = paidContractRecommendationWarning.trim();
+			}
+			if (paidContractRefundTerms.trim()) {
+				contractData.refusalAndRefundTerms = paidContractRefundTerms.trim();
+			}
+			if (paidContractWarrantyTerms.trim()) {
+				contractData.warrantyTerms = paidContractWarrantyTerms.trim();
+			}
+			if (paidContractSignedAt.trim()) {
+				contractData.signedAt = paidContractSignedAt.trim();
+			}
+
+			printPaidContract736(contractData);
+			showToast("Договор по ПП РФ № 736 отправлен на печать", "success", 3000);
+		};
+
+		const handleGenerateNewNumber = () => {
+			const newNum = generatePaidContractNumber({
+				patientFullName: documentPatientFullName || null,
+				year: new Date().getFullYear(),
+			});
+			setPaidContractNumber(newNum);
+			showToast(`Сформирован номер: ${newNum}`, "info", 3000);
+		};
+
+		const handleCopyContractText = () => {
+			const kopecks =
+				parseRublesToKopecks(paidContractTotalRub) ||
+				(totalRubValue ? Math.round(totalRubValue * 100) : 0);
+
+			const contractData = createDefaultPaidContract({
+				contractNumber: paidContractNumber.trim() || undefined,
+				contractDate: paidContractDate.trim() || undefined,
+				patientFullName: documentPatientFullName || undefined,
+				doctorFullName:
+					paidContractDoctorFullName.trim() ||
+					activeDoctorFullName ||
+					undefined,
+				clinicalReason:
+					paidContractCareReason.trim() ||
+					activeVisitComplaint ||
+					undefined,
+				serviceScopeSummary:
+					paidContractServiceScope.trim() ||
+					activeVisitTreatmentPlan ||
+					undefined,
+				totalAmountKopecks: kopecks,
+				serviceStart: paidContractServiceStart.trim() || undefined,
+				serviceEndOrCondition:
+					paidContractServiceEnd.trim() || undefined,
+			});
+
+			const text = generatePaidContractText(contractData);
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				void navigator.clipboard.writeText(text).then(
+					() => {
+						showToast("Текст договора скопирован в буфер", "success", 3000);
+					},
+					() => {
+						showToast("Не удалось скопировать текст в буфер", "error", 3000);
+					},
+				);
+			} else {
+				showToast("Буфер обмена недоступен", "warning", 3000);
+			}
+		};
+
+		const handleResetContractFields = () => {
+			setPaidContractNumber("");
+			setPaidContractDate("");
+			setPaidContractServiceStart("");
+			setPaidContractServiceEnd("");
+			setPaidContractCustomerFullName("");
+			setPaidContractRepresentativeFullName("");
+			setPaidContractCareReason("");
+			setPaidContractServiceScope("");
+			setPaidContractTotalRub("");
+			setPaidContractDoctorFullName("");
+			setPaidContractPaymentTerms("");
+			setPaidContractPriceChangeRules("");
+			setPaidContractFreeCareNotice("");
+			setPaidContractRecommendationWarning("");
+			setPaidContractRefundTerms("");
+			setPaidContractWarrantyTerms("");
+			setPaidContractSignedAt("");
+			setPaidContractClinicInfoConfirmed(false);
+			setPaidContractServiceListConfirmed(false);
+			setPaidContractPaidBasisConfirmed(false);
+			setPaidContractWrittenChangesConfirmed(false);
+			showToast("Поля договора очищены", "info", 2500);
+		};
+
 		return (
 			<article className="document-payload-card">
-				<div className="flex items-start justify-between gap-4 flex-wrap">
-					<div>
-						<h3>Договор платных медицинских услуг</h3>
-						<p>
-							Фиксация номера, сроков, состава услуг, стоимости, порядка
-							оплаты и обязательных уведомлений пациента до лечения.
+				{/* 1-строчный компактный тулбар 32-36px на десктопе per Mandate 8d (UI 7 deadly sins) & Mandate 8c */}
+				<div className="paid-contract-toolbar flex items-center justify-between gap-3 min-h-[36px] mb-3 pb-2 border-b border-[var(--border,#e2e8f0)] flex-wrap sm:flex-nowrap">
+					<div className="min-w-0 flex-1">
+						<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] truncate m-0">
+							Договор платных медицинских услуг
+						</h3>
+						<p className="text-xs text-[var(--muted,#64748b)] truncate m-0 hidden sm:block">
+							Фиксация номера, сроков, состава услуг, стоимости и обязательных уведомлений пациента по ПП РФ № 736
 						</p>
 					</div>
-					<div className="flex items-center gap-2 flex-wrap">
+
+					{/* Закон Миллера: строго не более 1-2 кнопок прямого действия, все вторичные опции — в меню "..." */}
+					<div className="flex items-center gap-1.5 shrink-0 relative">
+						{/* Кнопка 1 прямого действия: Печать бланка договора со строками _______ (Мандат 8e п. 8 — Регистратура без палок в колёсах, всегда активна в 1 клик) */}
 						<button
 							type="button"
 							onClick={() => {
@@ -303,23 +486,105 @@ export const PaidServiceContractForm = React.memo(
 									},
 								);
 							}}
-							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--border,#cbd5e1)] shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							className="paid-contract-btn h-9 px-3 rounded-lg text-xs font-semibold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] shadow-xs inline-flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98"
 							data-testid="btn-paid-contract-print-blank"
-							title="Печать пустого бланка договора со строками ________ для ручного заполнения пациентом до приёма (без 403-ошибок)"
+							title="Печать пустого бланка договора со строками ________ для ручного заполнения пациентом до приёма (Мандат 8e — без 403-ошибок)"
 						>
-							<Printer size={16} />
+							<Printer size={15} aria-hidden="true" />
 							<span>Печать договора (бланк со строками _______)</span>
 						</button>
+
+						{/* Кнопка 2 прямого действия: Типовой договор в 1 клик (Мандат 8e) */}
 						<button
 							type="button"
 							onClick={handleFillStandardContract}
-							className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							className="paid-contract-btn h-9 px-3 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98"
 							data-testid="btn-paid-contract-fill-norm"
 							title="1 клик: заполнить типовой договор клиники со стандартными реквизитами"
 						>
-							<ShieldCheck size={16} />
+							<ShieldCheck size={15} aria-hidden="true" />
 							<span>Типовой договор (1 клик)</span>
 						</button>
+
+						{/* Второстепенные опции в меню "..." (Закон Миллера per Mandate 8d) */}
+						<div className="relative" ref={moreMenuRef}>
+							<button
+								type="button"
+								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+								className="paid-contract-tab-btn h-[34px] w-[34px] p-0 rounded-lg text-xs font-semibold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] shadow-xs inline-flex items-center justify-center cursor-pointer transition-colors active:scale-98"
+								data-testid="btn-paid-contract-more"
+								title="Дополнительные действия с договором..."
+								aria-haspopup="true"
+								aria-expanded={isMoreMenuOpen}
+							>
+								<MoreHorizontal size={16} aria-hidden="true" />
+							</button>
+
+							{isMoreMenuOpen && (
+								<div
+									className="absolute right-0 top-full mt-1.5 w-64 bg-[var(--paper-strong,#ffffff)] border border-[var(--border,#cbd5e1)] rounded-xl shadow-lg z-50 py-1.5 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
+									role="menu"
+								>
+									<button
+										type="button"
+										onClick={() => {
+											setIsMoreMenuOpen(false);
+											handlePrintFilledContract();
+										}}
+										className="w-full px-3 py-2 text-left hover:bg-[var(--paper-soft,#f1f5f9)] flex items-center gap-2 cursor-pointer font-medium text-[var(--ink,#0f172a)]"
+										role="menuitem"
+										data-testid="btn-paid-contract-print-filled"
+									>
+										<FileText size={14} className="text-teal-600 shrink-0" aria-hidden="true" />
+										<span>Печать договора А4 (ПП РФ № 736)</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsMoreMenuOpen(false);
+											handleGenerateNewNumber();
+										}}
+										className="w-full px-3 py-2 text-left hover:bg-[var(--paper-soft,#f1f5f9)] flex items-center gap-2 cursor-pointer text-[var(--ink,#0f172a)]"
+										role="menuitem"
+										data-testid="btn-paid-contract-gen-number"
+									>
+										<RefreshCw size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+										<span>Новый регламентный номер</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsMoreMenuOpen(false);
+											handleCopyContractText();
+										}}
+										className="w-full px-3 py-2 text-left hover:bg-[var(--paper-soft,#f1f5f9)] flex items-center gap-2 cursor-pointer text-[var(--ink,#0f172a)]"
+										role="menuitem"
+										data-testid="btn-paid-contract-copy-text"
+									>
+										<Copy size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+										<span>Копировать текст (для ЭМК)</span>
+									</button>
+
+									<div className="my-1 border-t border-[var(--border,#e2e8f0)]" />
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsMoreMenuOpen(false);
+											handleResetContractFields();
+										}}
+										className="w-full px-3 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer"
+										role="menuitem"
+										data-testid="btn-paid-contract-reset"
+									>
+										<RotateCcw size={14} className="text-rose-500 shrink-0" aria-hidden="true" />
+										<span>Очистить поля договора</span>
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 				<PaidContractRequiredFieldsPanel

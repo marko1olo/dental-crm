@@ -162,7 +162,7 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 			phone: patientCoreDraft.phone || null,
 			snils: patientAdministrativeProfileDraft.snils || null,
 			address: patientAdministrativeProfileDraft.registrationAddress || null,
-			cardNumber: patientAdministrativeProfileDraft.medicalCardNumber || null,
+			cardNumber: null,
 		}),
 		[patientCoreDraft, patientAdministrativeProfileDraft],
 	);
