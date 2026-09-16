@@ -20,6 +20,7 @@ import {
 	FileSpreadsheet,
 	FileText,
 	Layers,
+	MoreVertical,
 	Package,
 	PackageCheck,
 	PackagePlus,
@@ -127,7 +128,8 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	const [selectedCabinetId, setSelectedCabinetId] = useState<string>(cabinetId);
 	const [statutoryFormType, setStatutoryFormType] = useState<"0504230" | "M11" | "TORG16">(defaultFormType);
 	const [notes, setNotes] = useState<string>("");
-	const [isSingleSigner, setIsSingleSigner] = useState<boolean>(true);
+	const [isSingleSigner] = useState<boolean>(true);
+	const [showExtraForms, setShowExtraForms] = useState<boolean>(false);
 
 	// 2. Строки списания
 	const [lines, setLines] = useState<ClinicalWriteoffLine[]>([]);
@@ -472,26 +474,15 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 
 					{/* РЕЖИМ СПИСАНИЯ: ЕДИНОЛИЧНОЕ УТВЕРЖДЕНИЕ ВРАЧОМ / МЕДСЕСТРОЙ (Мандат 8e, Мандат 8n) */}
 					<div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-line bg-paper text-xs">
-						<label className="flex items-center gap-2.5 cursor-pointer select-none">
-							<input
-								type="checkbox"
-								checked={isSingleSigner}
-								onChange={(e) => setIsSingleSigner(e.target.checked)}
-								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
-							/>
-							<span className="font-bold text-ink">
+						<div className="flex items-center gap-2 text-ink">
+							<ShieldCheck size={18} className="text-teal-600 shrink-0" />
+							<span className="font-bold">
 								Единоличное списание лечащим врачом / ответственной медсестрой (без комиссии из 3 человек)
 							</span>
-						</label>
+						</div>
 						<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 inline-flex items-center gap-1">
-							{isSingleSigner ? (
-								<>
-									<Check size={12} className="text-teal-600" aria-hidden="true" />
-									<span>Форма 0504230 / ТОРГ-16: без созыва комиссии</span>
-								</>
-							) : (
-								<span>Стандартная комиссия (3 подписи)</span>
-							)}
+							<Check size={12} className="text-teal-600" aria-hidden="true" />
+							<span>Форма 0504230 / ТОРГ-16: без созыва комиссии</span>
 						</span>
 					</div>
 
@@ -907,10 +898,10 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 					</div>
 				</div>
 
-				{/* Подвал и управляющие кнопки */}
+				{/* Подвал и управляющие кнопки (Мандат 8d: не более 1-2 кнопок прямого действия) */}
 				<footer className="cw-modal-footer">
-					<div className="flex items-center gap-2 flex-wrap">
-						{/* Печать официальных актов */}
+					<div className="flex items-center gap-2 relative">
+						{/* Secondary direct action: Печать акта 0504230 */}
 						<button
 							type="button"
 							className="cw-btn cw-btn-secondary"
@@ -920,32 +911,55 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 							<Printer size={16} /> Акт 0504230 (Минфин 52н)
 						</button>
 
-						<button
-							type="button"
-							className="cw-btn cw-btn-secondary"
-							onClick={() => handlePrintAct("M11")}
-							title="Печать Требования-накладной М-11"
-						>
-							<FileText size={16} /> Накладная М-11
-						</button>
+						{/* Secondary menu ... (другие формы и экспорт) */}
+						<div className="relative">
+							<button
+								type="button"
+								className="cw-btn cw-btn-secondary p-2"
+								onClick={() => setShowExtraForms((v) => !v)}
+								title="Другие бланки и экспорт..."
+								aria-label="Другие бланки и экспорт"
+							>
+								<MoreVertical size={16} />
+							</button>
 
-						<button
-							type="button"
-							className="cw-btn cw-btn-secondary"
-							onClick={() => handlePrintAct("TORG16")}
-							title="Печать Акта о списании товаров ТОРГ-16"
-						>
-							<FileText size={16} /> Акт ТОРГ-16
-						</button>
+							{showExtraForms && (
+								<div
+									className="absolute bottom-full left-0 mb-2 w-56 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1"
+									onClick={() => setShowExtraForms(false)}
+								>
+									<button
+										type="button"
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
+										onClick={() => handlePrintAct("M11")}
+										title="Печать Требования-накладной М-11"
+									>
+										<FileText size={14} className="text-teal-600" />
+										<span>Накладная М-11</span>
+									</button>
 
-						<button
-							type="button"
-							className="cw-btn cw-btn-secondary"
-							onClick={handleExportCsv}
-							title="Экспорт в CSV"
-						>
-							<Download size={16} /> CSV
-						</button>
+									<button
+										type="button"
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
+										onClick={() => handlePrintAct("TORG16")}
+										title="Печать Акта о списании товаров ТОРГ-16"
+									>
+										<FileText size={14} className="text-teal-600" />
+										<span>Акт ТОРГ-16</span>
+									</button>
+
+									<button
+										type="button"
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
+										onClick={handleExportCsv}
+										title="Экспорт в CSV"
+									>
+										<Download size={14} className="text-teal-600" />
+										<span>Экспорт в CSV</span>
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 
 					<div className="flex items-center gap-2">

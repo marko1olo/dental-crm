@@ -12,8 +12,10 @@ import {
 	Check,
 	CheckCircle2,
 	Copy,
+	Download,
 	FileText,
 	Info,
+	MoreVertical,
 	PackageCheck,
 	Printer,
 	ShieldAlert,
@@ -118,6 +120,7 @@ export function NurseCarpuleDisposalModal({
 	);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [isDisposed, setIsDisposed] = useState<boolean>(false);
+	const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
 
 	const selectedDrug = useMemo(() => {
 		return COMMON_ANESTHETICS.find((d) => d.id === selectedDrugId) ?? COMMON_ANESTHETICS[0]!;
@@ -125,6 +128,102 @@ export function NurseCarpuleDisposalModal({
 
 	const volumeTotalMl = Number((carpulesCount * selectedDrug.defaultVolumeMl).toFixed(2));
 	const isOverdraft = currentStockAvailable < carpulesCount;
+
+	const actHtml = useMemo(() => {
+		return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Акт списания карпул ${actNumber}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11pt; color: #0f172a; margin: 20mm; line-height: 1.4; }
+  .clinic-header { text-align: center; font-size: 10pt; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  h1 { text-align: center; font-size: 13pt; margin: 0 0 4px 0; }
+  .sub { text-align: center; font-size: 9.5pt; color: #475569; margin-bottom: 20px; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10pt; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #cbd5e1; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+  th, td { border: 1px solid #94a3b8; padding: 6px 10px; text-align: left; }
+  th { background: #f8fafc; font-weight: 700; }
+  .signatures { margin-top: 30px; font-size: 10pt; }
+  .stamp { display: inline-block; margin-top: 16px; padding: 8px 16px; border: 2px dashed #0d9488; color: #0f766e; font-size: 9pt; font-weight: bold; text-transform: uppercase; border-radius: 6px; }
+</style>
+</head>
+<body>
+  <div class="clinic-header">Стоматологическая клиника • Процедурный кабинет</div>
+  <h1>АКТ СПИСАНИЯ И УТИЛИЗАЦИИ КАРПУЛ АНЕСТЕТИКОВ № ${actNumber}</h1>
+  <div class="sub">Регламент СанПиН 3.3686-21 (Медицинские отходы класса Б) • Единоличное утверждение медсестрой</div>
+
+  <div class="meta-grid">
+    <div><strong>Дата списания:</strong> ${dateIso}</div>
+    <div><strong>Ответственная медсестра:</strong> ${nurseName}</div>
+    <div><strong>Лечащий врач:</strong> ${doctorName}</div>
+    <div><strong>Причина:</strong> ${disposalReason === "used_in_procedure" ? "Использовано при лечении" : disposalReason === "partial_dose" ? "Остаток карпулы после анестезии" : disposalReason === "broken_capsule" ? "Бой карпулы при зарядке" : "Истечение срока годности"}</div>
+    <div><strong>Класс отходов:</strong> Класс Б (дезинфекция Аламинол 3%, 60 мин)</div>
+    <div><strong>Статус склада:</strong> ${isOverdraft ? "Мягкий овердрафт (оприходование в пути)" : "Штатный остаток"}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>№</th>
+        <th>Наименование препарата</th>
+        <th>Серия / Партия</th>
+        <th>Кол-во</th>
+        <th>Объем, мл</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>${selectedDrug.nameRu}</td>
+        <td>${selectedDrug.defaultSeries}</td>
+        <td>${carpulesCount} шт.</td>
+        <td>${volumeTotalMl} мл</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signatures">
+    <div><strong>Списание произвела:</strong> ________________ / ${nurseName} (единолично по СанПиН 3.3686-21, без комиссии)</div>
+    <div style="margin-top: 8px;"><strong>МОЛ отделения / врач:</strong> ________________ / ${doctorName}</div>
+  </div>
+
+  <div class="stamp">Списано и обеззаражено • СанПиН 3.3686-21</div>
+</body>
+</html>`;
+	}, [actNumber, dateIso, nurseName, doctorName, disposalReason, isOverdraft, selectedDrug, carpulesCount, volumeTotalMl]);
+
+	const handlePrintAct = () => {
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.write(actHtml);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => {
+				printWin.print();
+			}, 250);
+		}
+	};
+
+	const handleDownloadAct = () => {
+		const blob = new Blob([actHtml], { type: "text/html;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = `${actNumber}.html`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	};
+
+	const handleCopyActDetails = () => {
+		const text = `Акт списания карпул ${actNumber} от ${dateIso}\nПрепарат: ${selectedDrug.nameRu}\nКоличество: ${carpulesCount} шт. (${volumeTotalMl} мл)\nМедсестра: ${nurseName}\nВрач: ${doctorName}\nСанПиН 3.3686-21 (без комиссии)`;
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(text);
+		}
+		showToast("Реквизиты акта скопированы в буфер", "success");
+	};
 
 	if (!isOpen) return null;
 
@@ -178,10 +277,10 @@ export function NurseCarpuleDisposalModal({
 						</div>
 						<div>
 							<h2 id="nurse-disposal-title" className="text-base font-bold text-[var(--ink,#0f172a)] leading-tight">
-								1-Клик списание пустых карпул анестетиков
+								1-клик пакеты: Учет карпул (1-Клик списание)
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
-								СанПиН 3.3686-21 • Единолично медсестрой (без комиссии из 3 человек)
+								СанПиН 3.3686-21 Единоличная утилизация (без комиссии из 3 человек)
 							</p>
 						</div>
 					</div>
@@ -406,40 +505,91 @@ export function NurseCarpuleDisposalModal({
 					<div className="flex items-center gap-2.5 p-3 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/50 text-teal-800 dark:text-teal-200 text-xs">
 						<UserCheck size={18} className="text-teal-600 shrink-0" />
 						<div className="leading-snug">
-							<strong>Единоличное утверждение медсестрой:</strong> по приказу клиники и СанПиН 3.3686-21 пустые карпулы списываются без созыва комиссии.
+							<strong>Единоличная медсестра-утилизатор:</strong> по приказу клиники и СанПиН 3.3686-21 пустые карпулы списываются без созыва комиссии из 3 человек.
 						</div>
 					</div>
 				</div>
 
-				{/* FOOTER ACTIONS */}
+				{/* FOOTER ACTIONS (МАНДАТ 8d: не более 1-2 кнопок прямого действия) */}
 				<div className="flex items-center justify-between p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-4 py-2 text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors flex items-center justify-center"
+						className="min-h-[44px] h-9 px-4 text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors flex items-center justify-center"
 					>
 						Отмена
 					</button>
 
-					<button
-						type="button"
-						onClick={handleFastDispose}
-						disabled={isSubmitting || isDisposed}
-						className={`min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all ${
-							isDisposed
-								? "bg-emerald-600"
-								: "bg-teal-600 hover:bg-teal-700 active:scale-98"
-						}`}
-					>
-						{isDisposed ? <CheckCircle2 size={16} /> : <Zap size={16} />}
-						<span>
-							{isDisposed
-								? "Списано успешно!"
-								: isSubmitting
-									? "Оформление..."
-									: `Списать ${carpulesCount} шт. в 1 клик`}
-						</span>
-					</button>
+					<div className="flex items-center gap-2 relative">
+						{/* Secondary: Печать акта */}
+						<button
+							type="button"
+							onClick={handlePrintAct}
+							className="min-h-[44px] h-9 px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors flex items-center gap-1.5"
+							title="Печать акта утилизации карпул по СанПиН 3.3686-21"
+						>
+							<Printer size={16} className="text-teal-600" />
+							<span>Печать акта</span>
+						</button>
+
+						{/* Secondary menu ... */}
+						<div className="relative">
+							<button
+								type="button"
+								onClick={() => setShowMoreMenu((v) => !v)}
+								className="min-h-[44px] h-9 w-9 px-0 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors flex items-center justify-center"
+								title="Дополнительные действия..."
+								aria-label="Дополнительные действия"
+							>
+								<MoreVertical size={16} />
+							</button>
+
+							{showMoreMenu && (
+								<div
+									className="absolute bottom-full right-0 mb-2 w-52 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1"
+									onClick={() => setShowMoreMenu(false)}
+								>
+									<button
+										type="button"
+										onClick={handleCopyActDetails}
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
+									>
+										<Copy size={14} className="text-teal-600" />
+										<span>Копировать реквизиты</span>
+									</button>
+									<button
+										type="button"
+										onClick={handleDownloadAct}
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
+									>
+										<Download size={14} className="text-teal-600" />
+										<span>Скачать акт (HTML)</span>
+									</button>
+								</div>
+							)}
+						</div>
+
+						{/* Primary: Списать в 1 клик */}
+						<button
+							type="button"
+							onClick={handleFastDispose}
+							disabled={isSubmitting || isDisposed}
+							className={`min-h-[44px] h-9 flex items-center gap-2 px-5 rounded-xl text-xs font-bold text-white shadow-md transition-all ${
+								isDisposed
+									? "bg-emerald-600"
+									: "bg-teal-600 hover:bg-teal-700 active:scale-98"
+							}`}
+						>
+							{isDisposed ? <CheckCircle2 size={16} /> : <Zap size={16} />}
+							<span>
+								{isDisposed
+									? "Списано успешно!"
+									: isSubmitting
+										? "Оформление..."
+										: `Списать ${carpulesCount} шт. в 1 клик`}
+							</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

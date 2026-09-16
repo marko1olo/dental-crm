@@ -11,6 +11,7 @@ import {
 	Copy,
 	Download,
 	FileText,
+	MoreVertical,
 	Printer,
 	ShieldAlert,
 	ShieldCheck,
@@ -97,6 +98,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 	// 1-Click заказ поставщику
 	const [showPoModal, setShowPoModal] = useState<boolean>(false);
 	const [copiedPo, setCopiedPo] = useState<boolean>(false);
+	const [showMoreActions, setShowMoreActions] = useState<boolean>(false);
 
 	const handleApproveAct = async (isPaperLog = paperJournalAcknowledged) => {
 		setIsApproved(true);
@@ -501,22 +503,15 @@ export const SeniorNurseDisposalActModal: React.FC<
 									</span>
 								)}
 							</div>
-							<label className="flex items-center gap-2 text-xs font-semibold text-ink cursor-pointer select-none">
-								<input
-									type="checkbox"
-									checked={isSingleSigner}
-									onChange={(e) => setIsSingleSigner(e.target.checked)}
-									className="rounded border-line text-primary focus:ring-primary h-4 w-4"
-								/>
+							<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/30 border border-teal-300 dark:border-teal-800 text-teal-800 dark:text-teal-200 text-xs font-bold">
+								<CheckCircle2 size={13} className="text-teal-600" />
 								<span>Единоличное утверждение (без комиссии из 3 человек)</span>
-							</label>
+							</span>
 						</div>
 
-						{isSingleSigner && (
-							<div className="text-[11px] text-teal-700 bg-teal-50/70 border border-teal-200/60 rounded px-2.5 py-1.5 leading-relaxed">
-								<strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится в 1 клик врачом, администратором или медсестрой без бюрократического требования комиссии из 3 человек.
-							</div>
-						)}
+						<div className="text-[11px] text-teal-700 dark:text-teal-300 bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-800/50 rounded px-2.5 py-1.5 leading-relaxed">
+							<strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится в 1 клик врачом, администратором или старшей медсестрой единолично без бюрократического требования комиссии из 3 человек.
+						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
 							<div>
@@ -600,58 +595,6 @@ export const SeniorNurseDisposalActModal: React.FC<
 								/>
 							</div>
 
-							{!isSingleSigner && (
-								<>
-									<div>
-										<label
-											htmlFor="act-nurse-input"
-											className="text-xs font-semibold text-muted block mb-1"
-										>
-											Старшая медицинская сестра
-										</label>
-										<input
-											id="act-nurse-input"
-											type="text"
-											value={seniorNurseName}
-											onChange={(e) => setSeniorNurseName(e.target.value)}
-											className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink font-semibold"
-										/>
-									</div>
-
-									<div>
-										<label
-											htmlFor="act-chief-input"
-											className="text-xs font-semibold text-muted block mb-1"
-										>
-											Главный врач (Утверждающий)
-										</label>
-										<input
-											id="act-chief-input"
-											type="text"
-											value={chiefDoctorName}
-											onChange={(e) => setChiefDoctorName(e.target.value)}
-											className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink"
-										/>
-									</div>
-
-									<div>
-										<label
-											htmlFor="act-dentist-input"
-											className="text-xs font-semibold text-muted block mb-1"
-										>
-											Врач-стоматолог (МОЛ)
-										</label>
-										<input
-											id="act-dentist-input"
-											type="text"
-											value={dentistName}
-											onChange={(e) => setDentistName(e.target.value)}
-											className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink"
-										/>
-									</div>
-								</>
-							)}
-
 							<div className="col-span-1 md:col-span-4">
 								<label
 									htmlFor="act-notes-input"
@@ -686,22 +629,14 @@ export const SeniorNurseDisposalActModal: React.FC<
 						<button
 							type="button"
 							className="mdlp-btn mdlp-btn-secondary"
-							onClick={handleDownloadHtml}
-							title="Скачать HTML-файл акта"
-						>
-							<Download size={16} /> Скачать HTML
-						</button>
-					</div>
-
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							className="mdlp-btn mdlp-btn-secondary"
 							onClick={onClose}
 						>
 							Закрыть
 						</button>
+					</div>
 
+					<div className="flex items-center gap-2 relative">
+						{/* Secondary: Печать акта списания */}
 						<button
 							type="button"
 							className="mdlp-btn mdlp-btn-secondary"
@@ -710,6 +645,49 @@ export const SeniorNurseDisposalActModal: React.FC<
 							<Printer size={18} /> Печать акта списания
 						</button>
 
+						{/* Secondary menu ... */}
+						<div className="relative">
+							<button
+								type="button"
+								className="mdlp-btn mdlp-btn-secondary p-2.5"
+								onClick={() => setShowMoreActions((v) => !v)}
+								title="Дополнительные действия..."
+								aria-label="Дополнительные действия"
+							>
+								<MoreVertical size={16} />
+							</button>
+
+							{showMoreActions && (
+								<div
+									className="absolute bottom-full right-0 mb-2 w-48 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1"
+									onClick={() => setShowMoreActions(false)}
+								>
+									<button
+										type="button"
+										onClick={handleDownloadHtml}
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
+									>
+										<Download size={14} className="text-teal-600" />
+										<span>Скачать HTML</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											if (typeof navigator !== "undefined" && navigator.clipboard) {
+												navigator.clipboard.writeText(actNumber);
+												showToast(`Номер акта ${actNumber} скопирован`, "success");
+											}
+										}}
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
+									>
+										<Copy size={14} className="text-teal-600" />
+										<span>Копировать № акта</span>
+									</button>
+								</div>
+							)}
+						</div>
+
+						{/* Primary: Утвердить списание */}
 						<button
 							type="button"
 							className="mdlp-btn mdlp-btn-primary font-bold"
