@@ -7,18 +7,24 @@ import {
 	AlertTriangle,
 	Camera,
 	CheckCircle2,
+	ChevronDown,
+	Contrast,
 	Download,
 	FileText,
 	Layers,
 	Loader2,
 	Maximize2,
+	MoreHorizontal,
+	Ruler,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	X,
+	ZoomIn,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { DicomArchiveUploader } from "./DicomArchiveUploader";
 import {
 	calculateCaliperRidgeDimensions,
 	evaluateAlveolarRidgeFeasibility,
@@ -284,6 +290,29 @@ export function Cornerstone3DViewer({
 	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(null);
 	const [isNerveTracingActive, setIsNerveTracingActive] = useState(false);
 
+	// Zero-Mock Fallback: Local DICOM Ingestion when imageIds is initially empty
+	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
+	const effectiveImageIds = imageIds.length > 0 ? imageIds : localImageIds;
+
+	// Hick & Miller 1-Row Toolbar state
+	const [isSecondaryMenuOpen, setIsSecondaryMenuOpen] = useState(false);
+	const secondaryMenuRef = useRef<HTMLDivElement>(null);
+	const [activePlane, setActivePlane] = useState<"axial" | "sagittal" | "coronal" | "pano">("axial");
+
+	useEffect(() => {
+		if (!isSecondaryMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				secondaryMenuRef.current &&
+				!secondaryMenuRef.current.contains(e.target as Node)
+			) {
+				setIsSecondaryMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isSecondaryMenuOpen]);
+
 	const [studyInstanceUid, setStudyInstanceUid] = useState<string | null>(null);
 	const [restoredMarkup, setRestoredMarkup] = useState<CtPlanningMarkup | null>(
 		null,
@@ -340,7 +369,7 @@ export function Cornerstone3DViewer({
 	}, [isInitialized]);
 
 	useEffect(() => {
-		if (!isInitialized || !imageIds.length) return;
+		if (!isInitialized || !effectiveImageIds.length) return;
 
 		let cancelled = false;
 		setLoadError(null);
@@ -355,7 +384,7 @@ export function Cornerstone3DViewer({
 		setMarkupStatus(null);
 
 		async function loadAndRender() {
-			const vId = `dente-volume-${imageIds.length}-${imageIds[0] ?? "empty"}`;
+			const vId = `dente-volume-${effectiveImageIds.length}-${effectiveImageIds[0] ?? "empty"}`;
 			setVolumeId(vId);
 			const renderingEngineId = "my-engine";
 
@@ -408,12 +437,12 @@ export function Cornerstone3DViewer({
 			renderingEngine.setViewports(viewportInputArray);
 
 			const volume = await cornerstone.volumeLoader.createAndCacheVolume(vId, {
-				imageIds,
+				imageIds: effectiveImageIds,
 			});
 
 			volume.load();
 
-			const firstImageId = imageIds[0];
+			const firstImageId = effectiveImageIds[0];
 			const seriesMeta = firstImageId
 				? (cornerstone.metaData.get("generalSeriesModule", firstImageId) as
 						| { studyInstanceUID?: unknown }
@@ -523,7 +552,7 @@ export function Cornerstone3DViewer({
 				// Ignore
 			}
 		};
-	}, [isInitialized, imageIds]);
+	}, [isInitialized, effectiveImageIds]);
 
 	useEffect(() => {
 		if (!patientId || !studyInstanceUid) return;
@@ -1301,6 +1330,91 @@ export function Cornerstone3DViewer({
 	const isNerveUnmapped =
 		latestImplant != null && latestImplant.distanceToNerve == null;
 
+	if (effectiveImageIds.length === 0) {
+		return (
+			<div
+				data-testid="cornerstone-empty-volume-dropzone"
+				style={{
+					width: "100%",
+					height: "100%",
+					minHeight: "600px",
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					justifyContent: "center",
+					backgroundColor: "var(--paper, #09090b)",
+					color: "var(--ink, #fafafa)",
+					position: "relative",
+					padding: "24px",
+					fontFamily: "sans-serif",
+				}}
+			>
+				{onClose && (
+					<button
+						type="button"
+						data-testid="cbct-mpr-close-btn"
+						aria-label="Закрыть 3D MPR"
+						onClick={onClose}
+						style={{
+							position: "absolute",
+							top: "16px",
+							right: "16px",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							width: "36px",
+							height: "36px",
+							borderRadius: "8px",
+							border: "1px solid var(--glass-border, rgba(255,255,255,0.15))",
+							backgroundColor: "rgba(255,255,255,0.05)",
+							color: "var(--ink, #fff)",
+							cursor: "pointer",
+						}}
+						title="Закрыть просмотрщик"
+					>
+						<X className="w-5 h-5" />
+					</button>
+				)}
+
+				<div style={{ maxWidth: "560px", width: "100%", textAlign: "center" }}>
+					<h3
+						style={{
+							fontSize: "18px",
+							fontWeight: 600,
+							marginBottom: "8px",
+							color: "var(--ink, #fff)",
+						}}
+					>
+						3D КЛКТ / Мультипланарная реконструкция (MPR)
+					</h3>
+					<p
+						style={{
+							fontSize: "13px",
+							color: "var(--muted, #a1a1aa)",
+							marginBottom: "20px",
+							lineHeight: 1.5,
+						}}
+					>
+						Исследование КЛКТ не загружено. Перетащите DICOM-архив (.zip) или папку со срезами томографии для построения честных воксельных срезов (аксиального, сагиттального, коронального и панорамы).
+					</p>
+
+					<div
+						style={{
+							background: "rgba(255,255,255,0.03)",
+							border: "1px dashed var(--glass-border, rgba(255,255,255,0.2))",
+							borderRadius: "16px",
+							padding: "24px",
+						}}
+					>
+						<DicomArchiveUploader
+							onImagesLoaded={(ids) => setLocalImageIds(ids)}
+						/>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div
 			style={{
@@ -1340,260 +1454,155 @@ export function Cornerstone3DViewer({
 				</div>
 			)}
 
-			{/* GLASSMORPHISM CLINICAL TOOLBAR (TOUCH TARGETS >= 44x44px) */}
+			{/* 1-ROW CLINICAL TOOLBAR (HICK & MILLER LAWS: 32-36px, STRICT ERGONOMIC DENSITY) */}
 			<div
 				className="no-scrollbar"
 				style={{
 					position: "absolute",
-					top: "12px",
+					top: "10px",
 					left: "50%",
 					transform: "translateX(-50%)",
 					zIndex: 20,
 					display: "flex",
 					flexWrap: "nowrap",
 					alignItems: "center",
-					gap: "8px",
+					gap: "4px",
 					maxWidth: "calc(100% - 24px)",
+					height: "36px",
 					overflowX: "auto",
 					scrollbarWidth: "none",
-					backgroundColor: "rgba(20,20,20,0.85)",
+					backgroundColor: "var(--paper-strong, rgba(18,18,20,0.94))",
 					backdropFilter: "blur(16px)",
 					WebkitBackdropFilter: "blur(16px)",
-					border: "1px solid rgba(255,255,255,0.18)",
-					padding: "6px",
-					borderRadius: "16px",
-					boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.7)",
+					border: "1px solid var(--line-strong, rgba(255,255,255,0.15))",
+					padding: "0 6px",
+					borderRadius: "10px",
+					boxShadow: "0 8px 24px -4px rgba(0, 0, 0, 0.7)",
 				}}
 			>
-				{/* PRIMARY TOOLS (min-h-[44px] touch target, 0 text wrapping) */}
+				{/* PLANES & MODES SEGMENT */}
 				<div
 					style={{
 						display: "flex",
-						flexWrap: "nowrap",
+						alignItems: "center",
 						flexShrink: 0,
-						backgroundColor: "rgba(0,0,0,0.45)",
-						borderRadius: "12px",
-						padding: "3px",
-						gap: "3px",
+						gap: "2px",
+						backgroundColor: "rgba(0,0,0,0.35)",
+						borderRadius: "8px",
+						padding: "2px",
 					}}
 				>
 					<button
 						type="button"
 						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "6px 12px",
-							borderRadius: "10px",
-							fontSize: "13px",
+							height: "28px",
+							padding: "0 10px",
+							borderRadius: "6px",
+							fontSize: "12px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
-							transition: "all 0.2s",
+							transition: "all 0.15s",
 							whiteSpace: "nowrap",
 							flexShrink: 0,
 							backgroundColor:
 								activeTool === cornerstoneTools.CrosshairsTool.toolName
-									? "#2563eb"
+									? "var(--brand-primary, #2563eb)"
 									: "transparent",
 							color:
 								activeTool === cornerstoneTools.CrosshairsTool.toolName
 									? "#fff"
-									: "#d4d4d8",
+									: "var(--ink, #d4d4d8)",
 						}}
 						onClick={() => setTool(cornerstoneTools.CrosshairsTool.toolName)}
+						title="Мультипланарная реконструкция: аксиальный, сагиттальный, корональный срезы"
 					>
 						МПР
 					</button>
 					<button
 						type="button"
 						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "6px 12px",
-							borderRadius: "10px",
-							fontSize: "13px",
+							height: "28px",
+							padding: "0 10px",
+							borderRadius: "6px",
+							fontSize: "12px",
 							fontWeight: 500,
 							cursor: "pointer",
 							border: "none",
-							transition: "all 0.2s",
+							transition: "all 0.15s",
 							whiteSpace: "nowrap",
 							flexShrink: 0,
 							backgroundColor:
 								activeTool === cornerstoneTools.SplineROITool.toolName
-									? "#2563eb"
-									: "transparent",
-							color:
-								activeTool === cornerstoneTools.SplineROITool.toolName
-									? "#fff"
-									: "#d4d4d8",
-						}}
-						onClick={() => setTool(cornerstoneTools.SplineROITool.toolName)}
-					>
-						Дуга (Spline)
-					</button>
-					<button
-						type="button"
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "6px 12px",
-							borderRadius: "10px",
-							fontSize: "13px",
-							fontWeight: 500,
-							cursor: "pointer",
-							border: "none",
-							transition: "all 0.2s",
-							whiteSpace: "nowrap",
-							flexShrink: 0,
-							backgroundColor:
-								activeTool === "Caliper"
 									? "var(--brand-primary, #2563eb)"
 									: "transparent",
-							color: activeTool === "Caliper" ? "#fff" : "var(--muted, #d4d4d8)",
-						}}
-						onClick={handleCaliperMeasurement}
-						title="Электронный штангенциркуль: замер высоты и ширины гребня"
-					>
-						Штангенциркуль
-					</button>
-					<button
-						type="button"
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "6px 12px",
-							borderRadius: "10px",
-							fontSize: "13px",
-							fontWeight: 500,
-							cursor: "pointer",
-							border: "none",
-							transition: "all 0.2s",
-							whiteSpace: "nowrap",
-							flexShrink: 0,
-							backgroundColor:
-								activeTool === "NerveTracer"
-									? "var(--warn-fg, #d97706)"
-									: "transparent",
-							color: activeTool === "NerveTracer" ? "#fff" : "var(--muted, #d4d4d8)",
-						}}
-						onClick={handleTraceMandibularNerve}
-						title={
-							(restoredMarkup?.nervePoints?.length ?? 0) === 0
-								? "Трассировка нижнечелюстного канала: 0 точек. Кликните по КТ-срезу для установки контрольной точки"
-								: `Трассировка нижнечелюстного канала: ${restoredMarkup?.nervePoints?.length} точек (коридор безопасности 2.0 мм)`
-						}
-					>
-						Нерв (2.0мм){(restoredMarkup?.nervePoints?.length ?? 0) > 0 ? ` [${restoredMarkup?.nervePoints?.length}]` : ""}
-					</button>
-					<button
-						type="button"
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "6px 12px",
-							borderRadius: "10px",
-							fontSize: "13px",
-							fontWeight: 500,
-							cursor: "pointer",
-							border: "none",
-							transition: "all 0.2s",
-							whiteSpace: "nowrap",
-							flexShrink: 0,
-							backgroundColor:
-								activeTool === cornerstoneTools.LengthTool.toolName
-									? "#2563eb"
-									: "transparent",
 							color:
-								activeTool === cornerstoneTools.LengthTool.toolName
+								activeTool === cornerstoneTools.SplineROITool.toolName
 									? "#fff"
-									: "#d4d4d8",
+									: "var(--ink, #d4d4d8)",
 						}}
-						onClick={() => setTool(cornerstoneTools.LengthTool.toolName)}
+						onClick={() => setTool(cornerstoneTools.SplineROITool.toolName)}
+						title="Разметка зубной дуги для развертки панорамы"
 					>
-						Линейка
+						Дуга
 					</button>
 					<button
 						type="button"
 						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "6px 12px",
-							borderRadius: "10px",
-							fontSize: "13px",
-							fontWeight: 500,
-							cursor: "pointer",
-							border: "none",
-							transition: "all 0.2s",
-							whiteSpace: "nowrap",
-							flexShrink: 0,
-							backgroundColor:
-								activeTool === cornerstoneTools.ProbeTool.toolName
-									? "#2563eb"
-									: "transparent",
-							color:
-								activeTool === cornerstoneTools.ProbeTool.toolName
-									? "#fff"
-									: "#d4d4d8",
-						}}
-						onClick={() => setTool(cornerstoneTools.ProbeTool.toolName)}
-					>
-						HU Плотность
-					</button>
-					<button
-						type="button"
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "6px 12px",
-							borderRadius: "10px",
-							fontSize: "13px",
+							height: "28px",
+							padding: "0 10px",
+							borderRadius: "6px",
+							fontSize: "12px",
 							fontWeight: 600,
 							cursor: "pointer",
 							border: "none",
-							transition: "all 0.2s",
+							transition: "all 0.15s",
 							whiteSpace: "nowrap",
 							flexShrink: 0,
-							backgroundColor:
-								activeTool === "Implant" ? "#4f46e5" : "transparent",
-							color: activeTool === "Implant" ? "#fff" : "#d4d4d8",
+							backgroundColor: showPanorex
+								? "var(--brand-primary, #2563eb)"
+								: "transparent",
+							color: showPanorex ? "#fff" : "var(--ink, #d4d4d8)",
 						}}
-						onClick={simulateImplantPlacement}
+						onClick={handleGeneratePanorex}
+						title="Развернуть ортопантомограмму (ОПТГ) по вокселям КТ"
 					>
-						+ Имплантат
+						Панорама
 					</button>
 				</div>
 
-				{/* 4 CLINICAL HU WINDOWING PRESETS */}
+				<div style={{ width: "1px", height: "16px", backgroundColor: "rgba(255,255,255,0.12)", margin: "0 2px" }} />
+
+				{/* HU WINDOWING PRESETS (W/L: BONE, SOFT TISSUE, TEETH) */}
 				<div
 					style={{
 						display: "flex",
-						flexWrap: "nowrap",
+						alignItems: "center",
 						flexShrink: 0,
-						backgroundColor: "rgba(0,0,0,0.45)",
-						borderRadius: "12px",
-						padding: "3px",
-						gap: "3px",
+						gap: "2px",
+						backgroundColor: "rgba(0,0,0,0.35)",
+						borderRadius: "8px",
+						padding: "2px",
 					}}
 				>
-					{VISIOGRAPH_PRESETS_LIST.map((preset) => (
+					{VISIOGRAPH_PRESETS_LIST.slice(0, 3).map((preset) => (
 						<button
 							key={preset.id}
 							type="button"
 							style={{
-								minHeight: "44px",
-								minWidth: "44px",
-								padding: "6px 12px",
-								borderRadius: "10px",
-								fontSize: "12px",
+								height: "28px",
+								padding: "0 8px",
+								borderRadius: "6px",
+								fontSize: "11px",
 								fontWeight: 500,
 								cursor: "pointer",
 								border: "none",
 								backgroundColor:
 									activePresetId === preset.id
-										? "#1d4ed8"
-										: "rgba(255,255,255,0.08)",
-								color: activePresetId === preset.id ? "#fff" : "#d4d4d8",
-								transition: "all 0.2s",
+										? "var(--brand-primary, #2563eb)"
+										: "transparent",
+								color: activePresetId === preset.id ? "#fff" : "var(--muted, #a1a1aa)",
+								transition: "all 0.15s",
 								whiteSpace: "nowrap",
 								flexShrink: 0,
 							}}
@@ -1605,163 +1614,393 @@ export function Cornerstone3DViewer({
 					))}
 				</div>
 
+				<div style={{ width: "1px", height: "16px", backgroundColor: "rgba(255,255,255,0.12)", margin: "0 2px" }} />
+
+				{/* MEASURE & ZOOM CONTROLS */}
 				<div
 					style={{
 						display: "flex",
 						alignItems: "center",
 						flexShrink: 0,
-						gap: "6px",
-						fontSize: "12px",
-						padding: "0 4px",
-						whiteSpace: "nowrap",
+						gap: "2px",
 					}}
 				>
-					<span style={{ color: "#a3a3a3", marginRight: "6px" }}>Срез:</span>
-					<input
-						type="range"
-						min="0"
-						max="20"
-						step="1"
-						value={panorexThickness}
-						onChange={(e) => setPanorexThickness(Number(e.target.value))}
-						style={{ width: "70px", cursor: "pointer", minHeight: "44px" }}
-					/>
-					<span style={{ width: "26px", textAlign: "right" }}>
-						{panorexThickness}мм
-					</span>
+					<button
+						type="button"
+						style={{
+							height: "28px",
+							padding: "0 8px",
+							borderRadius: "6px",
+							fontSize: "12px",
+							fontWeight: 500,
+							cursor: "pointer",
+							border: "none",
+							transition: "all 0.15s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "4px",
+							backgroundColor:
+								activeTool === cornerstoneTools.ZoomTool.toolName
+									? "var(--brand-primary, #2563eb)"
+									: "transparent",
+							color:
+								activeTool === cornerstoneTools.ZoomTool.toolName
+									? "#fff"
+									: "var(--ink, #d4d4d8)",
+						}}
+						onClick={() => setTool(cornerstoneTools.ZoomTool.toolName)}
+						title="Масштабирование срезов (Зум)"
+					>
+						<ZoomIn className="w-3.5 h-3.5" />
+						<span>Зум</span>
+					</button>
+					<button
+						type="button"
+						style={{
+							height: "28px",
+							padding: "0 8px",
+							borderRadius: "6px",
+							fontSize: "12px",
+							fontWeight: 500,
+							cursor: "pointer",
+							border: "none",
+							transition: "all 0.15s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "4px",
+							backgroundColor:
+								activeTool === cornerstoneTools.LengthTool.toolName
+									? "var(--brand-primary, #2563eb)"
+									: "transparent",
+							color:
+								activeTool === cornerstoneTools.LengthTool.toolName
+									? "#fff"
+									: "var(--ink, #d4d4d8)",
+						}}
+						onClick={() => setTool(cornerstoneTools.LengthTool.toolName)}
+						title="Линейка расстояний в миллиметрах"
+					>
+						<Ruler className="w-3.5 h-3.5" />
+						<span>Линейка</span>
+					</button>
+					<button
+						type="button"
+						style={{
+							height: "28px",
+							padding: "0 8px",
+							borderRadius: "6px",
+							fontSize: "12px",
+							fontWeight: 500,
+							cursor: "pointer",
+							border: "none",
+							transition: "all 0.15s",
+							whiteSpace: "nowrap",
+							flexShrink: 0,
+							backgroundColor:
+								activeTool === "Caliper"
+									? "var(--brand-primary, #2563eb)"
+									: "transparent",
+							color: activeTool === "Caliper" ? "#fff" : "var(--ink, #d4d4d8)",
+						}}
+						onClick={handleCaliperMeasurement}
+						title="Электронный штангенциркуль: замер высоты и ширины гребня"
+					>
+						Штангенциркуль
+					</button>
 				</div>
 
-				{/* ACTIONS: PANOREX, EXPORT 043, SAVE */}
-				<button
-					type="button"
-					style={{
-						minHeight: "44px",
-						minWidth: "44px",
-						flexShrink: 0,
-						background: "linear-gradient(to right, #2563eb, #4f46e5)",
-						color: "#fff",
-						padding: "8px 16px",
-						borderRadius: "12px",
-						fontSize: "13px",
-						fontWeight: "bold",
-						border: "none",
-						cursor: "pointer",
-						boxShadow: "0 0 12px rgba(79,70,229,0.4)",
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						whiteSpace: "nowrap",
-						transition: "all 0.2s",
-					}}
-					onClick={handleGeneratePanorex}
-				>
-					Развернуть (ОПТГ)
-				</button>
+				<div style={{ width: "1px", height: "16px", backgroundColor: "rgba(255,255,255,0.12)", margin: "0 2px" }} />
 
-				{/* 1-CLICK SNAPSHOT EXPORT TO FORM 043/U */}
-				<button
-					type="button"
-					disabled={isExportingSnapshot}
-					style={{
-						minHeight: "44px",
-						minWidth: "44px",
-						flexShrink: 0,
-						backgroundColor: "#047857",
-						color: "#fff",
-						padding: "8px 14px",
-						borderRadius: "12px",
-						fontSize: "13px",
-						fontWeight: "bold",
-						border: "none",
-						cursor: isExportingSnapshot ? "not-allowed" : "pointer",
-						opacity: isExportingSnapshot ? 0.6 : 1,
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						whiteSpace: "nowrap",
-						transition: "all 0.2s",
-						boxShadow: "0 0 10px rgba(16,185,129,0.3)",
-					}}
-					onClick={handleExportSnapshotTo043}
-					title="Сохранить текущий 3D MPR срез и протокол в электронную карту 043/у"
-				>
-					{isExportingSnapshot ? (
-						<Loader2 className="w-4 h-4 animate-spin" />
-					) : (
-						<Camera className="w-4 h-4" />
+				{/* SECONDARY MENU POPOVER (...) */}
+				<div style={{ position: "relative" }} ref={secondaryMenuRef}>
+					<button
+						type="button"
+						style={{
+							height: "28px",
+							width: "28px",
+							padding: "0",
+							borderRadius: "6px",
+							cursor: "pointer",
+							border: "1px solid var(--line-strong, rgba(255,255,255,0.12))",
+							backgroundColor: isSecondaryMenuOpen
+								? "rgba(255,255,255,0.15)"
+								: "transparent",
+							color: "var(--ink, #d4d4d8)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							transition: "all 0.15s",
+						}}
+						onClick={() => setIsSecondaryMenuOpen((prev) => !prev)}
+						title="Дополнительные функции и настройки КТ"
+						aria-label="Дополнительные функции КТ"
+					>
+						<MoreHorizontal className="w-4 h-4" />
+					</button>
+
+					{isSecondaryMenuOpen && (
+						<div
+							role="menu"
+							style={{
+								position: "absolute",
+								top: "36px",
+								right: "0",
+								zIndex: 50,
+								minWidth: "240px",
+								backgroundColor: "var(--paper-strong, #18181b)",
+								backdropFilter: "blur(20px)",
+								WebkitBackdropFilter: "blur(20px)",
+								border: "1px solid var(--line-strong, rgba(255,255,255,0.18))",
+								borderRadius: "10px",
+								padding: "6px",
+								boxShadow: "0 16px 36px -4px rgba(0, 0, 0, 0.8)",
+								display: "flex",
+								flexDirection: "column",
+								gap: "4px",
+							}}
+						>
+							<button
+								type="button"
+								style={{
+									height: "30px",
+									padding: "0 10px",
+									borderRadius: "6px",
+									fontSize: "12px",
+									fontWeight: 500,
+									cursor: "pointer",
+									border: "none",
+									textAlign: "left",
+									backgroundColor:
+										activeTool === "Implant"
+											? "rgba(79,70,229,0.3)"
+											: "transparent",
+									color: "#fff",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+								}}
+								onClick={() => {
+									setIsSecondaryMenuOpen(false);
+									simulateImplantPlacement();
+								}}
+							>
+								<span>+ Имплантат</span>
+								<span style={{ fontSize: "10px", color: "var(--muted, #a1a1aa)" }}>3D Модель</span>
+							</button>
+
+							<button
+								type="button"
+								style={{
+									height: "30px",
+									padding: "0 10px",
+									borderRadius: "6px",
+									fontSize: "12px",
+									fontWeight: 500,
+									cursor: "pointer",
+									border: "none",
+									textAlign: "left",
+									backgroundColor:
+										activeTool === "NerveTracer"
+											? "rgba(217,119,6,0.3)"
+											: "transparent",
+									color: "#fff",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+								}}
+								onClick={() => {
+									setIsSecondaryMenuOpen(false);
+									handleTraceMandibularNerve();
+								}}
+								title={
+									(restoredMarkup?.nervePoints?.length ?? 0) === 0
+										? "Трассировка нижнечелюстного канала: 0 точек"
+										: `Трассировка: ${restoredMarkup?.nervePoints?.length} точек`
+								}
+							>
+								<span>Нерв (2.0мм)</span>
+								<span style={{ fontSize: "10px", color: "#fbbf24" }}>
+									{(restoredMarkup?.nervePoints?.length ?? 0) > 0
+										? `[${restoredMarkup?.nervePoints?.length}]`
+										: "Трассировка"}
+								</span>
+							</button>
+
+							<button
+								type="button"
+								style={{
+									height: "30px",
+									padding: "0 10px",
+									borderRadius: "6px",
+									fontSize: "12px",
+									fontWeight: 500,
+									cursor: "pointer",
+									border: "none",
+									textAlign: "left",
+									backgroundColor:
+										activeTool === cornerstoneTools.ProbeTool.toolName
+											? "rgba(37,99,235,0.3)"
+											: "transparent",
+									color: "#fff",
+								}}
+								onClick={() => {
+									setIsSecondaryMenuOpen(false);
+									setTool(cornerstoneTools.ProbeTool.toolName);
+								}}
+							>
+								HU Плотность (Проба)
+							</button>
+
+							{/* Срез / Толщина */}
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									padding: "4px 10px",
+									fontSize: "12px",
+									borderTop: "1px solid rgba(255,255,255,0.08)",
+									borderBottom: "1px solid rgba(255,255,255,0.08)",
+									margin: "2px 0",
+								}}
+							>
+								<span style={{ color: "var(--muted, #a1a1aa)" }}>Толщина среза:</span>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+									<input
+										type="range"
+										min="0"
+										max="20"
+										step="1"
+										value={panorexThickness}
+										onChange={(e) => setPanorexThickness(Number(e.target.value))}
+										style={{ width: "60px", cursor: "pointer" }}
+									/>
+									<span style={{ width: "24px", textAlign: "right", fontSize: "11px" }}>
+										{panorexThickness}мм
+									</span>
+								</div>
+							</div>
+
+							<button
+								type="button"
+								disabled={isExportingSnapshot}
+								style={{
+									height: "30px",
+									padding: "0 10px",
+									borderRadius: "6px",
+									fontSize: "12px",
+									fontWeight: 500,
+									cursor: isExportingSnapshot ? "not-allowed" : "pointer",
+									border: "none",
+									textAlign: "left",
+									backgroundColor: "transparent",
+									color: "#34d399",
+									display: "flex",
+									alignItems: "center",
+									gap: "6px",
+									opacity: isExportingSnapshot ? 0.6 : 1,
+								}}
+								onClick={() => {
+									setIsSecondaryMenuOpen(false);
+									handleExportSnapshotTo043();
+								}}
+								title="Сохранить текущий 3D MPR срез и протокол в электронную карту 043/у"
+							>
+								{isExportingSnapshot ? (
+									<Loader2 className="w-3.5 h-3.5 animate-spin" />
+								) : (
+									<Camera className="w-3.5 h-3.5" />
+								)}
+								<span>В карту 043/у</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="ct-planning-save"
+								style={{
+									height: "30px",
+									padding: "0 10px",
+									borderRadius: "6px",
+									fontSize: "12px",
+									fontWeight: 500,
+									cursor: "pointer",
+									border: "none",
+									textAlign: "left",
+									backgroundColor: "transparent",
+									color: "#60a5fa",
+									display: "flex",
+									alignItems: "center",
+									gap: "6px",
+								}}
+								onClick={() => {
+									setIsSecondaryMenuOpen(false);
+									void saveMarkupNow();
+								}}
+								title="Сохранить векторы разметки в карточку"
+							>
+								<span>Сохранить разметку</span>
+							</button>
+
+							<button
+								type="button"
+								style={{
+									height: "30px",
+									padding: "0 10px",
+									borderRadius: "6px",
+									fontSize: "12px",
+									fontWeight: 500,
+									cursor: "pointer",
+									border: "none",
+									textAlign: "left",
+									backgroundColor: "transparent",
+									color: "var(--ink, #d4d4d8)",
+									display: "flex",
+									alignItems: "center",
+									gap: "6px",
+								}}
+								onClick={() => {
+									setIsSecondaryMenuOpen(false);
+									handleDownloadActiveSlice();
+								}}
+								title="Скачать снимок на диск"
+							>
+								<Download className="w-3.5 h-3.5" />
+								<span>Скачать срез</span>
+							</button>
+						</div>
 					)}
-					В карту 043/у
-				</button>
+				</div>
 
-				<button
-					type="button"
-					data-testid="ct-planning-save"
-					style={{
-						minHeight: "44px",
-						minWidth: "44px",
-						flexShrink: 0,
-						backgroundColor: "rgba(0,0,0,0.45)",
-						color: "#d4d4d8",
-						padding: "8px 14px",
-						borderRadius: "12px",
-						fontSize: "12px",
-						fontWeight: 500,
-						border: "1px solid rgba(255,255,255,0.2)",
-						cursor: "pointer",
-						whiteSpace: "nowrap",
-					}}
-					onClick={() => void saveMarkupNow()}
-					title="Сохранить векторы разметки в карточку"
-				>
-					Сохранить
-				</button>
-
-				<button
-					type="button"
-					style={{
-						minHeight: "44px",
-						minWidth: "44px",
-						flexShrink: 0,
-						backgroundColor: "rgba(255,255,255,0.1)",
-						color: "#d4d4d8",
-						padding: "8px 12px",
-						borderRadius: "12px",
-						border: "none",
-						cursor: "pointer",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-					}}
-					onClick={handleDownloadActiveSlice}
-					title="Скачать снимок на диск"
-				>
-					<Download className="w-4 h-4" />
-				</button>
-
+				{/* CLOSE BUTTON */}
 				{onClose && (
 					<button
 						type="button"
 						data-testid="cbct-mpr-close-btn"
 						aria-label="Закрыть 3D MPR"
 						style={{
-							minHeight: "44px",
-							minWidth: "44px",
+							height: "28px",
+							width: "28px",
 							flexShrink: 0,
-							backgroundColor: "rgba(239,68,68,0.2)",
+							backgroundColor: "rgba(239,68,68,0.15)",
 							color: "#fca5a5",
-							padding: "8px 12px",
-							borderRadius: "12px",
+							padding: 0,
+							borderRadius: "6px",
 							border: "1px solid rgba(239,68,68,0.3)",
 							cursor: "pointer",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",
-							transition: "all 0.2s",
+							transition: "all 0.15s",
+							marginLeft: "2px",
 						}}
 						onClick={onClose}
 						title="Закрыть 3D просмотрщик"
 					>
-						<X className="w-4 h-4" />
+						<X className="w-3.5 h-3.5" />
 					</button>
 				)}
 			</div>

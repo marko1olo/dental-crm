@@ -374,7 +374,16 @@ export function PanoramicRendererWindow({
 	// Worker unwrap execution
 	useEffect(() => {
 		if (!volume || effectiveControlPoints.length < 2) {
-			setLoading(!volume);
+			setLoading(false);
+			if (!volume) {
+				setError(
+					"Исследование КЛКТ не передано. Панорамная реконструкция строится по вокселям активного 3D-объема.",
+				);
+			} else if (effectiveControlPoints.length < 2) {
+				setError(
+					"Недостаточно контрольных точек зубной дуги. Разметьте как минимум 2 точки на аксиальном срезе.",
+				);
+			}
 			return;
 		}
 

@@ -5414,16 +5414,29 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				{/* ─── RIGHT SIDEBAR: DIAGNOSTIC INSPECTOR & IMPLANT PLANNER (COLS 9..12) ─── */}
 				{(isSidebarOpen || mobileActiveTab === "planner") && (
 					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full" : "hidden lg:flex lg:flex-col"} bg-zinc-950 rounded-md border border-zinc-800 min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}>
-						{/* Active Cross-Section Carousel Header */}
-						<div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-							<div className="flex items-center gap-2">
-								<span className="text-xs font-bold text-cyan-400">
-									Срез #{activeCrossSection?.sliceIndex ?? 1} из {crossSections.length}
-								</span>
-								<span className="px-2.5 py-1 rounded bg-zinc-900 text-zinc-100 font-bold text-xs border border-zinc-800">
-									Зуб FDI: #{activeCrossSection?.nearestToothFdi ?? "46"}
-								</span>
+						{!volume ? (
+							<div
+								className="flex-1 flex flex-col items-center justify-center p-6 text-center text-zinc-500 select-none"
+								data-testid="cbct-sidebar-empty-state"
+							>
+								<Box className="w-8 h-8 mb-2 text-zinc-700" />
+								<div className="text-xs font-semibold text-zinc-400">Данные срезов недоступны</div>
+								<div className="text-[11px] text-zinc-600 mt-1">
+									Загрузите исследование КЛКТ для построения кросс-секций и имплантологического планирования
+								</div>
 							</div>
+						) : (
+							<>
+								{/* Active Cross-Section Carousel Header */}
+								<div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+									<div className="flex items-center gap-2">
+										<span className="text-xs font-bold text-cyan-400">
+											Срез #{activeCrossSection?.sliceIndex ?? 1} из {crossSections.length}
+										</span>
+										<span className="px-2.5 py-1 rounded bg-zinc-900 text-zinc-100 font-bold text-xs border border-zinc-800">
+											Зуб FDI: {activeCrossSection?.nearestToothFdi ? `#${activeCrossSection.nearestToothFdi}` : "—"}
+										</span>
+									</div>
 							<div className="flex items-center gap-1.5">
 								{studioMode === "implant" && (
 									<button
@@ -5509,8 +5522,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 						{/* Quick Ridge Measurements Badge (compact matte HUD) */}
 						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-zinc-950/90 backdrop-blur-sm text-[10px] text-zinc-400 border border-zinc-800 font-mono shadow-xs flex items-center gap-2">
-							<span>H: <strong className="text-cyan-400">{activeCrossSection?.corticalCrestHeightMm ?? 14.2} мм</strong></span>
-							<span>W: <strong className="text-cyan-400">{activeCrossSection?.alveolarRidgeWidthMm ?? 7.8} мм</strong></span>
+							<span>H: <strong className="text-cyan-400">{activeCrossSection?.corticalCrestHeightMm != null ? `${activeCrossSection.corticalCrestHeightMm.toFixed(1)} мм` : "—"}</strong></span>
+							<span>W: <strong className="text-cyan-400">{activeCrossSection?.alveolarRidgeWidthMm != null ? `${activeCrossSection.alveolarRidgeWidthMm.toFixed(1)} мм` : "—"}</strong></span>
 						</div>
 					</div>
 
@@ -5545,7 +5558,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											? "Эндодонтический осмотр корней & каналов:"
 											: studioMode === "tmj"
 											? "Анатомический осмотр суставных головок ВНЧС:"
-											: `Анатомический осмотр зоны #${activeCrossSection?.nearestToothFdi ?? "46"}:`}
+											: `Анатомический осмотр зоны ${activeCrossSection?.nearestToothFdi ? `#${activeCrossSection.nearestToothFdi}` : "—"}:`}
 									</span>
 								</div>
 								<div className="flex flex-col gap-1.5 text-[11px] text-zinc-400">
@@ -5584,13 +5597,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							<div className="p-2.5 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-1.5">
 								<div className="text-[11px] font-bold text-zinc-400 flex items-center justify-between">
 									<span>Выбор позиции зуба (FDI):</span>
-									<span className="text-cyan-400 font-mono">#{activeCrossSection?.nearestToothFdi ?? "46"}</span>
+									<span className="text-cyan-400 font-mono">{activeCrossSection?.nearestToothFdi ? `#${activeCrossSection.nearestToothFdi}` : "—"}</span>
 								</div>
 								<div className="flex flex-col gap-1 text-[10px]">
 									{/* Upper jaw teeth */}
 									<div className="flex items-center justify-between gap-0.5 overflow-x-auto pb-0.5">
 										{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((fdi) => {
-											const isTarget = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) === fdi;
+											const isTarget = activeCrossSection?.nearestToothFdi ? Number.parseInt(activeCrossSection.nearestToothFdi, 10) === fdi : false;
 											return (
 												<button
 													key={fdi}
@@ -5610,7 +5623,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									{/* Lower jaw teeth */}
 									<div className="flex items-center justify-between gap-0.5 overflow-x-auto pb-0.5">
 										{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((fdi) => {
-											const isTarget = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) === fdi;
+											const isTarget = activeCrossSection?.nearestToothFdi ? Number.parseInt(activeCrossSection.nearestToothFdi, 10) === fdi : false;
 											return (
 												<button
 													key={fdi}
@@ -5925,7 +5938,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									<button
 										type="button"
 										onClick={() => {
-											showToast(`Имплантат ${currentImplantSpec.brand.toUpperCase()} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm} сохранен в план лечения (#${activeCrossSection?.nearestToothFdi ?? "46"})`, "success");
+											showToast(`Имплантат ${currentImplantSpec.brand.toUpperCase()} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm} сохранен в план лечения (${activeCrossSection?.nearestToothFdi ? `#${activeCrossSection.nearestToothFdi}` : "без зуба"})`, "success");
 										}}
 										className="w-full py-2.5 px-3 rounded-md bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-sm shadow-cyan-600/30 cursor-pointer"
 										data-testid="add-implant-to-plan-btn"
@@ -5977,6 +5990,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</div>
 						</div>
 					)}
+							</>
+						)}
 				</aside>
 			)}
 				</div>
