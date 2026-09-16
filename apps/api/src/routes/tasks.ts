@@ -6,7 +6,7 @@
  * - Автономия врача: 1-клик смена статуса без обязательного ввода комментариев
  * - Паритет со StomX (GET /api/tasks, POST /api/tasks, PUT /api/tasks/:id)
  */
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
@@ -152,11 +152,16 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 				: undefined;
 
 		try {
-			const tasks = await getAllTaskTicketsFromDb(orgId, {
-				patientId,
-				assignedToId,
-				status,
-			});
+			const filters: {
+				patientId?: string;
+				assignedToId?: string;
+				status?: PatientTaskTicketStatus;
+			} = {};
+			if (patientId) filters.patientId = patientId;
+			if (assignedToId) filters.assignedToId = assignedToId;
+			if (status) filters.status = status;
+
+			const tasks = await getAllTaskTicketsFromDb(orgId, filters);
 			return reply.code(200).send(tasks);
 		} catch (error) {
 			request.log.error(error);
@@ -214,8 +219,8 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 	 * Закрытие или смена статуса задачи (StomX паритет 372, 1 клик, Мандат 8e).
 	 */
 	const handleStatusUpdate = async (
-		request: Parameters<Parameters<FastifyInstance["patch"]>[1]>[0],
-		reply: Parameters<Parameters<FastifyInstance["patch"]>[1]>[1],
+		request: FastifyRequest,
+		reply: FastifyReply,
 	) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "tasks write")))
 			return;

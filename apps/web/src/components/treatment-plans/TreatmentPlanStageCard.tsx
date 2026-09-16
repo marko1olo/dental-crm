@@ -200,7 +200,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 				<div className="flex items-center gap-4 shrink-0">
 					<div className="text-right flex flex-col">
 						<span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-							{stage.totalRub.toLocaleString("ru-RU")} ₽
+							{(stage.totalRub || 0).toLocaleString("ru-RU")} ₽
 						</span>
 						<span className="text-[10px] text-[var(--muted,#64748b)] hidden sm:flex items-center justify-end gap-1">
 							<Clock size={11} /> {stage.estimatedVisits} виз. · {stage.estimatedWeeks} нед.
@@ -229,8 +229,14 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 					{/* Procedure Items Flat Monolithic List */}
 					<div className="divide-y divide-[var(--line,#e2e8f0)]">
 						{stage.items.length === 0 ? (
-							<div className="p-4 text-center text-xs text-[var(--muted,#64748b)]">
-								В данном этапе нет запланированных процедур.
+							<div className="py-8 px-4 text-center text-xs text-[var(--muted,#64748b)] flex flex-col items-center justify-center gap-2">
+								<Package size={24} className="text-[var(--muted,#64748b)] opacity-40" />
+								<span className="font-semibold text-[var(--ink,#0f172a)]">
+									В данном этапе нет запланированных процедур
+								</span>
+								<span className="text-[11px] text-[var(--muted,#64748b)] max-w-sm">
+									Назначьте процедуры из каталога 804н или примените готовый клинический пакет СтАР
+								</span>
 							</div>
 						) : (
 							(() => {
@@ -320,15 +326,15 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 
 														<div className="text-right">
 															<span className={`text-xs font-bold font-mono ${
-																item.requiresManualPricing || item.priceRub === 0
+																item.requiresManualPricing || (item.priceRub || 0) === 0
 																	? "text-amber-600 dark:text-amber-400"
 																	: "text-[var(--ink,#0f172a)]"
 															}`}>
-																{item.priceRub.toLocaleString("ru-RU")} ₽
+																{(item.priceRub || 0).toLocaleString("ru-RU")} ₽
 															</span>
-															{item.discountRub > 0 && (
+															{(item.discountRub || 0) > 0 && (
 																<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
-																	Скидка: −{item.discountRub.toLocaleString("ru-RU")} ₽
+																	Скидка: −{(item.discountRub || 0).toLocaleString("ru-RU")} ₽
 																</div>
 															)}
 														</div>
@@ -385,11 +391,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<span className="font-mono text-slate-500 text-[11px] hidden sm:inline">
 									Себестоимость:{" "}
 									<strong className="text-slate-800 dark:text-slate-200">
-										{materialSummary.totalMaterialsCostRub.toLocaleString("ru-RU")} ₽
+										{(materialSummary.totalMaterialsCostRub || 0).toLocaleString("ru-RU")} ₽
 									</strong>
 								</span>
 								<span className="font-mono text-emerald-600 dark:text-emerald-400 text-[11px]">
-									Маржа: <strong>{materialSummary.marginPercent}%</strong>
+									Маржа: <strong>{materialSummary.marginPercent || 0}%</strong>
 								</span>
 								{showMaterials ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
 							</div>
@@ -421,10 +427,10 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 														{mat.quantityRequired} {mat.unitOfMeasure}
 													</td>
 													<td className="py-1.5 text-right font-mono text-[var(--muted,#64748b)]">
-														{mat.unitCostRub.toLocaleString("ru-RU")} ₽
+														{(mat.unitCostRub || 0).toLocaleString("ru-RU")} ₽
 													</td>
 													<td className="py-1.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
-														{mat.totalCostRub.toLocaleString("ru-RU")} ₽
+														{(mat.totalCostRub || 0).toLocaleString("ru-RU")} ₽
 													</td>
 													<td className="py-1.5 text-center font-mono">
 														{mat.inStockQuantity !== undefined ? (
@@ -452,19 +458,19 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<div>
 										<span className="text-[var(--muted,#64748b)]">Выручка: </span>
 										<strong className="font-mono text-[var(--ink,#0f172a)]">
-											{materialSummary.serviceRevenueRub.toLocaleString("ru-RU")} ₽
+											{(materialSummary.serviceRevenueRub || 0).toLocaleString("ru-RU")} ₽
 										</strong>
 									</div>
 									<div>
 										<span className="text-[var(--muted,#64748b)]">Себестоимость ТМЦ: </span>
 										<strong className="font-mono text-slate-700 dark:text-slate-300">
-											{materialSummary.totalMaterialsCostRub.toLocaleString("ru-RU")} ₽
+											{(materialSummary.totalMaterialsCostRub || 0).toLocaleString("ru-RU")} ₽
 										</strong>
 									</div>
 									<div className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
 										<TrendingUp size={13} />
 										<span>
-											Валовая маржа: {materialSummary.grossMarginRub.toLocaleString("ru-RU")} ₽ ({materialSummary.marginPercent}%)
+											Валовая маржа: {(materialSummary.grossMarginRub || 0).toLocaleString("ru-RU")} ₽ ({materialSummary.marginPercent || 0}%)
 										</span>
 									</div>
 								</div>
@@ -477,7 +483,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						<div className="flex items-center gap-2">
 							<span>Итого за этап:</span>
 							<span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-								{stage.totalRub.toLocaleString("ru-RU")} ₽
+								{(stage.totalRub || 0).toLocaleString("ru-RU")} ₽
 							</span>
 						</div>
 
@@ -498,12 +504,12 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							)}
 
 							{/* Primary Direct Action 2: 'Оплатить этап' */}
-							{onPayStage && stage.totalRub > 0 && (
+							{onPayStage && (stage.totalRub || 0) > 0 && (
 								<button
 									type="button"
 									onClick={() => onPayStage(stage)}
 									className="h-8 px-3 rounded-lg text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
-									title={`Принять оплату за этап №${stage.stageNumber} (${stage.totalRub.toLocaleString("ru-RU")} ₽)`}
+									title={`Принять оплату за этап №${stage.stageNumber} (${(stage.totalRub || 0).toLocaleString("ru-RU")} ₽)`}
 									data-testid={`stage-${stage.stageNumber}-pay-btn`}
 								>
 									<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />

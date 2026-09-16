@@ -397,8 +397,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		}
 	};
 
-	const formatRubles = (amount: number): string => {
-		return amount.toLocaleString("ru-RU") + " ₽";
+	const formatRubles = (amount: number | undefined | null): string => {
+		const safe = typeof amount === "number" && !Number.isNaN(amount) ? amount : 0;
+		return safe.toLocaleString("ru-RU") + " ₽";
 	};
 
 	const handleSelectTier = (tier: TreatmentPlanTier) => {
@@ -624,7 +625,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		year: "numeric",
 	});
 
-	const patientChoiceBtnText = "Пациент выбрал " + getTierLetter(selectedTier.tierId) + " (" + selectedTier.totalRub.toLocaleString("ru-RU") + " ₽)";
+	const patientChoiceBtnText = "Пациент выбрал " + getTierLetter(selectedTier.tierId) + " (" + (selectedTier.totalRub || 0).toLocaleString("ru-RU") + " ₽)";
 	const choiceConfirmedBtnText = "Выбор зафиксирован (" + getTierLetter(selectedTier.tierId) + ")";
 
 	return (
@@ -642,19 +643,19 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 				{/* Top Bar Header */}
 				<header className="treatment-presenter-header no-print">
 					<div className="treatment-presenter-header-main">
-						<div className="treatment-presenter-title-group">
-							<div className="treatment-presenter-icon-badge">
-								<Tablet size={22} />
+						<div className="treatment-presenter-title-group min-w-0 flex-1">
+							<div className="treatment-presenter-icon-badge shrink-0">
+								<Tablet size={20} />
 							</div>
-							<div className="treatment-presenter-header-meta">
-								<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title">
-									<span>Презентация планов лечения</span>
-									<span className="treatment-presenter-law-badge">
+							<div className="treatment-presenter-header-meta min-w-0 flex-1">
+								<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title flex items-center gap-2 flex-wrap">
+									<span className="truncate">Презентация планов лечения</span>
+									<span className="treatment-presenter-law-badge whitespace-nowrap">
 										ПП РФ № 736 & 804н
 									</span>
 									{planAgeDays > 30 && (
 										<span
-											className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 text-xs inline-flex items-center gap-1 shadow-2xs"
+											className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 text-xs inline-flex items-center gap-1 shadow-2xs whitespace-nowrap"
 											title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
 											data-testid="presenter-expired-unblocked-badge"
 										>
@@ -663,57 +664,57 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										</span>
 									)}
 								</h2>
-								<p className="treatment-presenter-subtitle">
+								<p className="treatment-presenter-subtitle truncate">
 									Пациент: <strong className="text-[var(--tp-text-main)]">{patientName}</strong> · Врач: {doctorFullName}
 								</p>
 							</div>
 						</div>
 
-						{/* Header Actions: 1-Click Copy Summary, Print Appendix, Fullscreen & Close */}
-						<div className="flex items-center gap-2">
+						{/* Header Actions: 1-Click Copy Summary, Print Appendix, Fullscreen & Close (Dense Desktop h-8) */}
+						<div className="flex items-center gap-1.5 shrink-0">
 							<button
 								type="button"
 								onClick={handleCopyTiersSummary}
-								className="min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-2 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
+								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
 								title="Скопировать варианты сметы для пациента (WhatsApp / Telegram)"
 								data-testid="presenter-copy-tiers-summary-btn"
 							>
-								<Copy size={15} className="text-[var(--tp-primary)] shrink-0" />
-								<span className="hidden sm:inline">Скопировать смету для пациента</span>
-								<span className="sm:hidden">Скопировать</span>
+								<Copy size={14} className="text-[var(--tp-primary)] shrink-0" />
+								<span className="hidden sm:inline">Скопировать смету</span>
+								<span className="sm:hidden">Копия</span>
 							</button>
 
 							<button
 								type="button"
 								onClick={handlePrintAppendix}
-								className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
+								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
 								title="Печать Приложения №1 к Договору (ПП РФ № 736)"
 								data-testid="presenter-header-print-btn"
 							>
-								<Printer size={15} className="shrink-0" />
+								<Printer size={14} className="shrink-0" />
 								<span className="hidden md:inline">Печать №1</span>
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setIsFullscreen((prev) => !prev)}
-								className="treatment-presenter-close-btn"
+								className="treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
 								title={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 								aria-label={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 								data-testid="presenter-fullscreen-btn"
 							>
-								{isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+								{isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
 							</button>
 
 							{/* Close Button on Mobile / Desktop */}
 							<button
 								type="button"
 								onClick={onClose}
-								className="treatment-presenter-close-btn"
+								className="treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
 								aria-label="Закрыть модальное окно"
 								data-testid="close-treatment-presenter-btn"
 							>
-								<X size={20} />
+								<X size={18} />
 							</button>
 						</div>
 					</div>
@@ -1068,8 +1069,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 														</span>
 													)}
 												</div>
-												<h3 className="treatment-tier-name">{tier.title}</h3>
-												<p className="treatment-tier-desc">{tier.subtitle}</p>
+												<h3 className="treatment-tier-name truncate">{tier.title}</h3>
+												<p className="treatment-tier-desc line-clamp-2">{tier.subtitle}</p>
 
 												{/* Price Box */}
 												<div className="treatment-tier-price-box">
@@ -1077,14 +1078,14 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 														Итоговая стоимость
 													</div>
 													<div className="treatment-tier-total-amount">
-														<span>{tier.totalRub.toLocaleString("ru-RU")}</span>
+														<span>{(tier.totalRub || 0).toLocaleString("ru-RU")}</span>
 														<span className="treatment-tier-rub-sign">₽</span>
 													</div>
 													<div className="treatment-tier-finance-chips">
 														<div className="treatment-tier-chip-row">
 															<span>Рассрочка 0% (12 мес):</span>
 															<span className="treatment-tier-chip-highlight">
-																{tier.monthlyInstallment12Rub.toLocaleString("ru-RU")} ₽/мес
+																{(tier.monthlyInstallment12Rub || 0).toLocaleString("ru-RU")} ₽/мес
 															</span>
 														</div>
 														<button
@@ -1103,11 +1104,11 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																	<span>Вычет 13% НДФЛ:</span>
 																</span>
 																<span className="font-black text-emerald-700 dark:text-emerald-300">
-																	−{tier.ndflRefundRub.toLocaleString("ru-RU")} ₽
+																	−{(tier.ndflRefundRub || 0).toLocaleString("ru-RU")} ₽
 																</span>
 															</div>
 															<div className="text-[10px] text-emerald-600/90 dark:text-emerald-400/90 text-left mt-0.5">
-																Итого с вычетом: {tier.priceWithNdflRefundRub.toLocaleString("ru-RU")} ₽ ({tier.ndflDetails.code === "02" ? "Код 02 без лимита" : "Код 01 лимит 150к"})
+																Итого с вычетом: {(tier.priceWithNdflRefundRub || 0).toLocaleString("ru-RU")} ₽ ({tier.ndflDetails.code === "02" ? "Код 02 без лимита" : "Код 01 лимит 150к"})
 															</div>
 														</button>
 													</div>
@@ -1135,7 +1136,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 												<div className="text-[11px] font-bold text-[var(--tp-text-muted)] uppercase tracking-wider">
 													Материалы и преимущества:
 												</div>
-												<p className="text-xs font-semibold text-[var(--tp-text-main)] m-0 leading-snug">
+												<p className="text-xs font-semibold text-[var(--tp-text-main)] m-0 leading-snug line-clamp-2">
 													{tier.materialsHeadline}
 												</p>
 												<ul className="list-none p-0 m-0 space-y-1.5 mt-1">
@@ -1156,7 +1157,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 												{tier.stages.map((st) => (
 													<div key={st.stageNumber} className="treatment-tier-stage-line">
 														<span className="truncate max-w-[170px]">Этап {st.stageNumber}: {st.title.split(":")[1] || st.title}</span>
-														<span className="treatment-tier-stage-sum">{st.totalRub.toLocaleString("ru-RU")} ₽</span>
+														<span className="treatment-tier-stage-sum">{(st.totalRub || 0).toLocaleString("ru-RU")} ₽</span>
 													</div>
 												))}
 											</div>
@@ -1182,7 +1183,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 													) : (
 														<>
 															<CheckCircle2 size={14} />
-															<span>Применить: выбрать этот план ({tier.totalRub.toLocaleString("ru-RU")} ₽)</span>
+															<span>Применить: выбрать этот план ({(tier.totalRub || 0).toLocaleString("ru-RU")} ₽)</span>
 														</>
 													)}
 												</button>
@@ -1229,141 +1230,161 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 								{/* Stages Accordion List */}
 								<div className="flex flex-col gap-3">
-									{selectedTier.stages.map((stage) => {
-										const isExpanded = Boolean(expandedStages[stage.stageNumber]);
+									{selectedTier.stages.length === 0 ? (
+										<div className="p-8 text-center rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-muted)] flex flex-col items-center justify-center gap-2">
+											<Package size={28} className="text-[var(--tp-primary)] opacity-50" />
+											<span className="font-bold text-sm text-[var(--tp-text-main)]">
+												В данном варианте пока нет клинических этапов
+											</span>
+											<span>
+												Добавьте этапы лечения или выберите готовый клинический пакет СтАР
+											</span>
+										</div>
+									) : (
+										selectedTier.stages.map((stage) => {
+											const isExpanded = Boolean(expandedStages[stage.stageNumber]);
 
-										return (
-											<div
-												key={stage.stageNumber}
-												className="treatment-stage-item"
-												data-testid={"stage-item-" + stage.stageNumber}
-											>
-												{/* Stage Header */}
+											return (
 												<div
-													onClick={() => toggleStage(stage.stageNumber)}
-													className="treatment-stage-header"
-													data-testid={"stage-toggle-" + stage.stageNumber}
+													key={stage.stageNumber}
+													className="treatment-stage-item"
+													data-testid={"stage-item-" + stage.stageNumber}
 												>
-													<div className="treatment-stage-title-wrap">
-														<div className="treatment-stage-num-badge">{stage.stageNumber}</div>
-														<div>
-															<h5 className="treatment-stage-name">{stage.title}</h5>
-															<p className="treatment-stage-subtitle">{stage.subtitle}</p>
+													{/* Stage Header */}
+													<div
+														onClick={() => toggleStage(stage.stageNumber)}
+														className="treatment-stage-header"
+														data-testid={"stage-toggle-" + stage.stageNumber}
+													>
+														<div className="treatment-stage-title-wrap min-w-0 flex-1">
+															<div className="treatment-stage-num-badge shrink-0">{stage.stageNumber}</div>
+															<div className="min-w-0 flex-1">
+																<h5 className="treatment-stage-name truncate">{stage.title}</h5>
+																<p className="treatment-stage-subtitle truncate">{stage.subtitle}</p>
+															</div>
+														</div>
+
+														<div className="treatment-stage-right-meta shrink-0">
+															<div className="treatment-stage-pill hidden sm:flex">
+																<Clock size={13} />
+																<span>{stage.estimatedWeeks} нед. ({stage.estimatedVisits} виз.)</span>
+															</div>
+															<div className="treatment-stage-total-badge font-mono">
+																{(stage.totalRub || 0).toLocaleString("ru-RU")} ₽
+															</div>
+															<div className="text-[var(--tp-text-muted)]">
+																{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+															</div>
 														</div>
 													</div>
 
-													<div className="treatment-stage-right-meta">
-														<div className="treatment-stage-pill hidden sm:flex">
-															<Clock size={13} />
-															<span>{stage.estimatedWeeks} нед. ({stage.estimatedVisits} виз.)</span>
+													{/* Stage Content */}
+													{isExpanded && (
+														<div className="treatment-stage-table-wrap">
+															<table className="treatment-stage-table">
+																<thead>
+																	<tr>
+																		<th className="w-10">№</th>
+																		<th className="w-28">Код 804н</th>
+																		<th className="w-16">Зуб FDI</th>
+																		<th>Наименование услуги</th>
+																		<th className="w-16 text-center">Кол-во</th>
+																		<th className="w-24 text-right">Цена</th>
+																		<th className="w-24 text-right">Итого</th>
+																	</tr>
+																</thead>
+																<tbody>
+																	{(() => {
+																		const microConsumables = stage.items.filter(isMicroConsumable);
+																		const displayList = showMicroConsumables
+																			? stage.items
+																			: stage.items.filter((it) => !isMicroConsumable(it));
+																		return (
+																			<>
+																				{displayList.length === 0 ? (
+																					<tr>
+																						<td colSpan={7} className="py-6 text-center text-xs text-[var(--tp-text-muted)]">
+																							В данном этапе пока нет назначенных медицинских услуг.
+																						</td>
+																					</tr>
+																				) : (
+																					displayList.map((item, idx) => (
+																						<tr key={item.id || idx}>
+																							<td className="text-center font-mono text-[var(--tp-text-muted)]">
+																								{idx + 1}
+																							</td>
+																							<td>
+																								<span className="code-804n-badge">{item.code804n}</span>
+																							</td>
+																							<td className="text-center">
+																								{item.toothNumber ? (
+																									<span className="tooth-fdi-badge">{item.toothNumber}</span>
+																								) : (
+																									<span className="text-[var(--tp-text-muted)]">—</span>
+																								)}
+																							</td>
+																							<td>
+																								<div className="font-semibold text-[var(--tp-text-main)] break-words min-w-0">
+																									{item.name}
+																								</div>
+																								{item.clinicalRationale && (
+																									<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5">
+																										{item.clinicalRationale}
+																									</div>
+																								)}
+																								{(item.requiresManualPricing || item.priceRub === 0) && (
+																									<div className="mt-1">
+																										<MissingPriceAlert
+																											item={item}
+																											onUpdatePrice={handleUpdateItemPrice}
+																											variant="inline"
+																										/>
+																									</div>
+																								)}
+																							</td>
+																							<td className="text-center font-semibold">{item.quantity}</td>
+																							<td className="text-right text-[var(--tp-text-muted)] font-mono">
+																								{(item.unitPriceRub || 0).toLocaleString("ru-RU")} ₽
+																							</td>
+																							<td className={`text-right font-bold font-mono ${
+																								item.requiresManualPricing || item.priceRub === 0
+																									? "text-amber-600 dark:text-amber-400"
+																									: "text-[var(--tp-text-main)]"
+																							}`}>
+																								{(item.priceRub || 0).toLocaleString("ru-RU")} ₽
+																							</td>
+																						</tr>
+																					))
+																				)}
+																				{microConsumables.length > 0 && (
+																					<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
+																						<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
+																							<div className="flex items-center justify-between flex-wrap gap-2">
+																								<span className="flex items-center gap-1.5 font-medium">
+																									<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
+																								</span>
+																								<button
+																									type="button"
+																									onClick={() => setShowMicroConsumables((prev) => !prev)}
+																									className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+																								>
+																									{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
+																								</button>
+																							</div>
+																						</td>
+																					</tr>
+																				)}
+																			</>
+																		);
+																	})()}
+																</tbody>
+															</table>
 														</div>
-														<div className="treatment-stage-total-badge">
-															{stage.totalRub.toLocaleString("ru-RU")} ₽
-														</div>
-														<div className="text-[var(--tp-text-muted)]">
-															{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-														</div>
-													</div>
+													)}
 												</div>
-
-												{/* Stage Content */}
-												{isExpanded && (
-													<div className="treatment-stage-table-wrap">
-														<table className="treatment-stage-table">
-															<thead>
-																<tr>
-																	<th className="w-10">№</th>
-																	<th className="w-28">Код 804н</th>
-																	<th className="w-16">Зуб FDI</th>
-																	<th>Наименование услуги</th>
-																	<th className="w-16 text-center">Кол-во</th>
-																	<th className="w-24 text-right">Цена</th>
-																	<th className="w-24 text-right">Итого</th>
-																</tr>
-															</thead>
-															<tbody>
-																{(() => {
-																	const microConsumables = stage.items.filter(isMicroConsumable);
-																	const displayList = showMicroConsumables
-																		? stage.items
-																		: stage.items.filter((it) => !isMicroConsumable(it));
-																	return (
-																		<>
-																			{displayList.map((item, idx) => (
-																				<tr key={item.id || idx}>
-																					<td className="text-center font-mono text-[var(--tp-text-muted)]">
-																						{idx + 1}
-																					</td>
-																					<td>
-																						<span className="code-804n-badge">{item.code804n}</span>
-																					</td>
-																					<td className="text-center">
-																						{item.toothNumber ? (
-																							<span className="tooth-fdi-badge">{item.toothNumber}</span>
-																						) : (
-																							<span className="text-[var(--tp-text-muted)]">—</span>
-																						)}
-																					</td>
-																					<td>
-																						<div className="font-semibold text-[var(--tp-text-main)]">
-																							{item.name}
-																						</div>
-																						{item.clinicalRationale && (
-																							<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5">
-																								{item.clinicalRationale}
-																							</div>
-																						)}
-																						{(item.requiresManualPricing || item.priceRub === 0) && (
-																							<div className="mt-1">
-																								<MissingPriceAlert
-																									item={item}
-																									onUpdatePrice={handleUpdateItemPrice}
-																									variant="inline"
-																								/>
-																							</div>
-																						)}
-																					</td>
-																					<td className="text-center font-semibold">{item.quantity}</td>
-																					<td className="text-right text-[var(--tp-text-muted)]">
-																						{item.unitPriceRub.toLocaleString("ru-RU")} ₽
-																					</td>
-																					<td className={`text-right font-bold ${
-																						item.requiresManualPricing || item.priceRub === 0
-																							? "text-amber-600 dark:text-amber-400"
-																							: "text-[var(--tp-text-main)]"
-																					}`}>
-																						{item.priceRub.toLocaleString("ru-RU")} ₽
-																					</td>
-																				</tr>
-																			))}
-																			{microConsumables.length > 0 && (
-																				<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
-																					<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
-																						<div className="flex items-center justify-between flex-wrap gap-2">
-																							<span className="flex items-center gap-1.5 font-medium">
-																								<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
-																							</span>
-																							<button
-																								type="button"
-																								onClick={() => setShowMicroConsumables((prev) => !prev)}
-																								className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
-																							>
-																								{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
-																							</button>
-																						</div>
-																					</td>
-																				</tr>
-																			)}
-																		</>
-																	);
-																})()}
-															</tbody>
-														</table>
-													</div>
-												)}
-											</div>
-										);
-									})}
+											);
+										})
+									)}
 								</div>
 							</section>
 						</div>
@@ -1397,115 +1418,136 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							</div>
 
 							<div className="flex flex-col gap-4">
-								{selectedTier.stages.map((st) => (
-									<div key={st.stageNumber} className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
-										<div className="flex items-center justify-between pb-3 border-b border-[var(--tp-border)] mb-3">
-											<div className="flex items-center gap-3">
-												<div className="treatment-stage-num-badge">{st.stageNumber}</div>
-												<div>
-													<h4 className="text-sm font-black text-[var(--tp-text-main)] m-0">{st.title}</h4>
-													<p className="text-xs text-[var(--tp-text-muted)] m-0">{st.clinicalGoal}</p>
-												</div>
-											</div>
-											<div className="text-right">
-												<div className="text-sm font-black text-[var(--tp-text-main)]">
-													{st.totalRub.toLocaleString("ru-RU")} ₽
-												</div>
-												<div className="text-[11px] text-[var(--tp-text-muted)]">
-													{st.estimatedWeeks} нед. · {st.estimatedVisits} визитов
-												</div>
-											</div>
-										</div>
-
-										<div className="treatment-stage-table-wrap p-0">
-											<table className="treatment-stage-table">
-												<thead>
-													<tr>
-														<th className="w-10">№</th>
-														<th className="w-28">Код 804н</th>
-														<th className="w-16">Зуб FDI</th>
-														<th>Наименование медицинской услуги</th>
-														<th className="w-16 text-center">Кол-во</th>
-														<th className="w-24 text-right">Цена</th>
-														<th className="w-24 text-right">Стоимость</th>
-													</tr>
-												</thead>
-												<tbody>
-													{(() => {
-														const microConsumables = st.items.filter(isMicroConsumable);
-														const displayList = showMicroConsumables
-															? st.items
-															: st.items.filter((it) => !isMicroConsumable(it));
-														return (
-															<>
-																{displayList.map((it, idx) => (
-																	<tr key={it.id || idx}>
-																		<td className="text-center font-mono text-[var(--tp-text-muted)]">{idx + 1}</td>
-																		<td>
-																			<span className="code-804n-badge">{it.code804n}</span>
-																		</td>
-																		<td className="text-center">
-																			{it.toothNumber ? (
-																				<span className="tooth-fdi-badge">{it.toothNumber}</span>
-																			) : (
-																				<span className="text-[var(--tp-text-muted)]">—</span>
-																			)}</td>
-																		<td>
-																			<div className="font-semibold text-[var(--tp-text-main)]">{it.name}</div>
-																			{it.materials && (
-																				<div className="text-[11px] text-teal-700 dark:text-teal-400 mt-0.5">
-																					Материал: {it.materials}
-																				</div>
-																			)}
-																			{(it.requiresManualPricing || it.priceRub === 0) && (
-																				<div className="mt-1">
-																					<MissingPriceAlert
-																						item={it}
-																						onUpdatePrice={handleUpdateItemPrice}
-																						variant="inline"
-																					/>
-																				</div>
-																			)}
-																		</td>
-																		<td className="text-center font-semibold">{it.quantity}</td>
-																		<td className="text-right text-[var(--tp-text-muted)]">
-																			{it.unitPriceRub.toLocaleString("ru-RU")} ₽
-																		</td>
-																		<td className={`text-right font-bold ${
-																			it.requiresManualPricing || it.priceRub === 0
-																				? "text-amber-600 dark:text-amber-400"
-																				: "text-[var(--tp-text-main)]"
-																		}`}>
-																			{it.priceRub.toLocaleString("ru-RU")} ₽
-																		</td>
-																	</tr>
-																))}
-																{microConsumables.length > 0 && (
-																	<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
-																		<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
-																			<div className="flex items-center justify-between flex-wrap gap-2">
-																				<span className="flex items-center gap-1.5 font-medium">
-																					<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
-																				</span>
-																				<button
-																					type="button"
-																					onClick={() => setShowMicroConsumables((prev) => !prev)}
-																					className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
-																				>
-																					{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
-																				</button>
-																			</div>
-																		</td>
-																	</tr>
-																)}
-															</>
-														);
-													})()}
-												</tbody>
-											</table>
-										</div>
+								{selectedTier.stages.length === 0 ? (
+									<div className="p-8 text-center rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-muted)] flex flex-col items-center justify-center gap-2">
+										<Package size={28} className="text-[var(--tp-primary)] opacity-50" />
+										<span className="font-bold text-sm text-[var(--tp-text-main)]">
+											В смете пока нет клинических этапов
+										</span>
+										<span>
+											Назначьте процедуры по Приказу 804н или примените готовые клинические пакеты
+										</span>
 									</div>
-								))}
+								) : (
+									selectedTier.stages.map((st) => (
+										<div key={st.stageNumber} className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
+											<div className="flex items-center justify-between pb-3 border-b border-[var(--tp-border)] mb-3">
+												<div className="flex items-center gap-3 min-w-0 flex-1">
+													<div className="treatment-stage-num-badge shrink-0">{st.stageNumber}</div>
+													<div className="min-w-0 flex-1">
+														<h4 className="text-sm font-black text-[var(--tp-text-main)] m-0 truncate">{st.title}</h4>
+														<p className="text-xs text-[var(--tp-text-muted)] m-0 truncate">{st.clinicalGoal}</p>
+													</div>
+												</div>
+												<div className="text-right shrink-0">
+													<div className="text-sm font-black text-[var(--tp-text-main)] font-mono">
+														{(st.totalRub || 0).toLocaleString("ru-RU")} ₽
+													</div>
+													<div className="text-[11px] text-[var(--tp-text-muted)]">
+														{st.estimatedWeeks} нед. · {st.estimatedVisits} визитов
+													</div>
+												</div>
+											</div>
+
+											<div className="treatment-stage-table-wrap p-0">
+												<table className="treatment-stage-table">
+													<thead>
+														<tr>
+															<th className="w-10">№</th>
+															<th className="w-28">Код 804н</th>
+															<th className="w-16">Зуб FDI</th>
+															<th>Наименование медицинской услуги</th>
+															<th className="w-16 text-center">Кол-во</th>
+															<th className="w-24 text-right">Цена</th>
+															<th className="w-24 text-right">Стоимость</th>
+														</tr>
+													</thead>
+													<tbody>
+														{(() => {
+															const microConsumables = st.items.filter(isMicroConsumable);
+															const displayList = showMicroConsumables
+																? st.items
+																: st.items.filter((it) => !isMicroConsumable(it));
+															return (
+																<>
+																	{displayList.length === 0 ? (
+																		<tr>
+																			<td colSpan={7} className="py-6 text-center text-xs text-[var(--tp-text-muted)]">
+																				В данном этапе пока нет назначенных процедур
+																			</td>
+																		</tr>
+																	) : (
+																		displayList.map((it, idx) => (
+																			<tr key={it.id || idx}>
+																				<td className="text-center font-mono text-[var(--tp-text-muted)]">{idx + 1}</td>
+																				<td>
+																					<span className="code-804n-badge">{it.code804n}</span>
+																				</td>
+																				<td className="text-center">
+																					{it.toothNumber ? (
+																						<span className="tooth-fdi-badge">{it.toothNumber}</span>
+																					) : (
+																						<span className="text-[var(--tp-text-muted)]">—</span>
+																					)}
+																				</td>
+																				<td>
+																					<div className="font-semibold text-[var(--tp-text-main)] break-words min-w-0">{it.name}</div>
+																					{it.materials && (
+																						<div className="text-[11px] text-teal-700 dark:text-teal-400 mt-0.5">
+																							Материал: {it.materials}
+																						</div>
+																					)}
+																					{(it.requiresManualPricing || it.priceRub === 0) && (
+																						<div className="mt-1">
+																							<MissingPriceAlert
+																								item={it}
+																								onUpdatePrice={handleUpdateItemPrice}
+																								variant="inline"
+																							/>
+																						</div>
+																					)}
+																				</td>
+																				<td className="text-center font-semibold">{it.quantity}</td>
+																				<td className="text-right text-[var(--tp-text-muted)] font-mono">
+																					{(it.unitPriceRub || 0).toLocaleString("ru-RU")} ₽
+																				</td>
+																				<td className={`text-right font-bold font-mono ${
+																					it.requiresManualPricing || it.priceRub === 0
+																						? "text-amber-600 dark:text-amber-400"
+																						: "text-[var(--tp-text-main)]"
+																				}`}>
+																					{(it.priceRub || 0).toLocaleString("ru-RU")} ₽
+																				</td>
+																			</tr>
+																		))
+																	)}
+																	{microConsumables.length > 0 && (
+																		<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
+																			<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
+																				<div className="flex items-center justify-between flex-wrap gap-2">
+																					<span className="flex items-center gap-1.5 font-medium">
+																						<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
+																					</span>
+																					<button
+																						type="button"
+																						onClick={() => setShowMicroConsumables((prev) => !prev)}
+																						className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+																					>
+																						{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
+																					</button>
+																				</div>
+																			</td>
+																		</tr>
+																	)}
+																</>
+															);
+														})()}
+													</tbody>
+												</table>
+											</div>
+										</div>
+									))
+								)}
 							</div>
 						</div>
 					)}

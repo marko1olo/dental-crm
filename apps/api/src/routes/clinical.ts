@@ -5,7 +5,7 @@ import {
 	createClinicalRuleSchema,
 	updateClinicalRuleSchema,
 } from "@dental/shared";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
@@ -481,8 +481,8 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * Смена статуса клинической задачи (Мандаты 8e, 8k — закрытие в 1 клик без бюрократии).
 	 */
 	const handleClinicalTaskStatusUpdate = async (
-		request: Parameters<Parameters<FastifyInstance["patch"]>[1]>[0],
-		reply: Parameters<Parameters<FastifyInstance["patch"]>[1]>[1],
+		request: FastifyRequest,
+		reply: FastifyReply,
 	) => {
 		if (
 			!(await requireClinicalMutationAccess(

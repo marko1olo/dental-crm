@@ -255,7 +255,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	}, [stages]);
 
 	const grandTotalRub = useMemo(() => {
-		return stages.reduce((acc, s) => acc + Math.round(s.totalRub * 100), 0) / 100;
+		return stages.reduce((acc, s) => acc + Math.round((s.totalRub || 0) * 100), 0) / 100;
 	}, [stages]);
 
 	// Loyalty and Bonus Points deduction calculation
@@ -413,7 +413,13 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				planDiscountPercent: discountPercent,
 				planDiscountRub: it.discountRub,
 				quantity: it.quantity,
-				planLineTotalRub: Math.max(0, Math.round(it.unitPriceRub * 100) - Math.round((it.discountRub || 0) * 100)) * it.quantity / 100,
+				planLineTotalRub:
+					(Math.max(
+						0,
+						Math.round((it.unitPriceRub || 0) * 100) - Math.round((it.discountRub || 0) * 100),
+					) *
+						(it.quantity || 1)) /
+					100,
 			})),
 		};
 	}, [stages, patientId, patientName, currentTier.title, auth, discountPercent]);
@@ -426,11 +432,13 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			return;
 		}
 
-		const grossTotalRub = allItems.reduce(
-			(acc, it) => acc + Math.round(it.unitPriceRub * 100) * it.quantity,
-			0,
-		) / 100;
-		const discountRub = allItems.reduce((acc, it) => acc + Math.round((it.discountRub || 0) * 100), 0) / 100;
+		const grossTotalRub =
+			allItems.reduce(
+				(acc, it) => acc + Math.round((it.unitPriceRub || 0) * 100) * (it.quantity || 1),
+				0,
+			) / 100;
+		const discountRub =
+			allItems.reduce((acc, it) => acc + Math.round((it.discountRub || 0) * 100), 0) / 100;
 		const netTotalRub = loyaltyDeduction.netPayableRub;
 
 		const cleanPat = (patientId || "pat").replace(/\D/g, "").slice(0, 4) || "0001";
@@ -472,8 +480,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				id: it.id || `item-${idx}`,
 				code: it.code804n || "A16.07.002",
 				name: `${it.name}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`,
-				quantity: it.quantity,
-				priceRub: it.unitPriceRub,
+				quantity: it.quantity || 1,
+				priceRub: it.unitPriceRub || 0,
 			})),
 			createdAt: new Date().toISOString(),
 			notes: exportData.notes,
@@ -520,9 +528,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					itemId: it.id || `item-${idx}`,
 					toothNumber: it.toothNumber ?? null,
 					nameRu: it.name,
-					quantity: it.quantity,
-					unitPriceRub: it.unitPriceRub,
-					discountRub: it.discountRub,
+					quantity: it.quantity || 1,
+					unitPriceRub: it.unitPriceRub || 0,
+					discountRub: it.discountRub || 0,
 					code804n: it.code804n || undefined,
 				})),
 				allowUnplannedServices: true,
@@ -533,7 +541,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		});
 
 		showToast(
-			`Счет №${invoiceNumber} на сумму ${netTotalRub.toLocaleString("ru-RU")} ₽ успешно отправлен в кассу!`,
+			`Счет №${invoiceNumber} на сумму ${(netTotalRub || 0).toLocaleString("ru-RU")} ₽ успешно отправлен в кассу!`,
 			"success",
 			5000,
 		);
@@ -553,9 +561,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				toothNumber: it.toothNumber ?? null,
 				priceId: it.priceId || it.code804n,
 				name: it.name,
-				quantity: it.quantity,
-				price: it.unitPriceRub,
-				discount: it.discountRub,
+				quantity: it.quantity || 1,
+				price: it.unitPriceRub || 0,
+				discount: it.discountRub || 0,
 				phase: it.phase,
 				isAuto: it.isAuto ?? true,
 			}));
@@ -578,7 +586,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onPlanSaved(data.planId);
 				}
 				showToast(
-					`Комплексный план лечения успешно сохранен в базе на сумму ${grandTotalRub.toLocaleString("ru-RU")} ₽!`,
+					`Комплексный план лечения успешно сохранен в базе на сумму ${(grandTotalRub || 0).toLocaleString("ru-RU")} ₽!`,
 					"success",
 					4000,
 				);
@@ -620,7 +628,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		setIsExecutingWriteOff(true);
 		try {
 			showToast(
-				`Материалы по этапу «${completedActData.stageTitle}» на сумму ${completedActData.totalMaterialCostRub.toLocaleString("ru-RU")} ₽ успешно списаны со склада!`,
+				`Материалы по этапу «${completedActData.stageTitle}» на сумму ${(completedActData.totalMaterialCostRub || 0).toLocaleString("ru-RU")} ₽ успешно списаны со склада!`,
 				"success",
 				5000,
 			);
@@ -1168,6 +1176,33 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						setIsContractPrintOpen(true);
 					}}
 				/>
+			) : stages.length === 0 ? (
+				<div className="p-8 rounded-2xl border border-dashed border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)] space-y-3">
+					<Layers className="w-10 h-10 mx-auto text-[var(--muted,#64748b)] opacity-40" />
+					<div className="font-bold text-sm text-[var(--ink,#0f172a)]">
+						В плане лечения пока нет сформированных этапов
+					</div>
+					<p className="max-w-md mx-auto m-0 text-xs text-[var(--muted,#64748b)]">
+						Добавьте клинический пакет (Кариес / Профгигиена / Коронка) или переключитесь на 3-вариантный вид для автоматического расчета.
+					</p>
+					<div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+						<button
+							type="button"
+							onClick={() => handleApplyClinicalBundle("hygiene_turnkey")}
+							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+						>
+							<Sparkles size={13} />
+							<span>+ Пакет: Профгигиена</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveViewTab("3tier")}
+							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+						>
+							<span>3 Варианта лечения</span>
+						</button>
+					</div>
+				</div>
 			) : (
 				<div className="flex flex-col gap-4">
 					{stages.map((stage) => (

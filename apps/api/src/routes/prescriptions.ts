@@ -883,6 +883,7 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		};
 		const snapshot =
 			presc.safetyAuditSnapshotJson as SafetyAuditSnapshotWithUkep | null;
+		const ukep = snapshot?.ukepSignature;
 		const query = request.query as { withStamp?: string };
 		const withStampAndSignature = query.withStamp !== "false";
 

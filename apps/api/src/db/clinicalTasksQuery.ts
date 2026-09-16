@@ -33,7 +33,7 @@ const CLINICAL_TASK_STATUSES = [
 	"completed",
 	"cancelled",
 ] as const;
-type ClinicalTaskStatus = (typeof CLINICAL_TASK_STATUSES)[number];
+export type ClinicalTaskStatus = (typeof CLINICAL_TASK_STATUSES)[number];
 
 /** Статусы, при которых задача считается ещё не отработанной. */
 const OPEN_CLINICAL_TASK_STATUSES: readonly ClinicalTaskStatus[] = [
