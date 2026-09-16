@@ -14,7 +14,7 @@ import {
 import { useState } from "react";
 import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
 import { AuditTrailHubModal } from "../security/AuditTrailHubModal";
-import { humanizeMigrationText } from "./migrationHelpers";
+import { humanizeMigrationText } from "./SettingsViewHelpers";
 
 type BrowserContinuityCheck = { label: string; value: string; detail: string };
 type PersistenceBackupCheck = {
