@@ -73,10 +73,10 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		drugIds: ["amoxiclav_875_125"],
 	},
 	{
-		id: "clarithromycin_reserve",
-		label: "«Антибиотик резерва при аллергии на пенициллины (Кларитромицин 500 мг)»",
-		desc: "Rp: Clarithromycini 500mg, D.t.d. N 10 in tab., S. По 1 таблетке 1 раз в день 5-7 дней.",
-		drugIds: ["clarithromycin_500"],
+		id: "cyfran_st_pericoronitis",
+		label: "«Цифран СТ (500+600 мг) / Перикоронит»",
+		desc: "Rp: Tab. 'Cifran ST' (Ciprofloxacini 500mg + Tinidazoli 600mg), D.t.d. N 10 in tab., S. По 1 таблетке 2 раза в сутки после еды (каждые 12 ч), 5 дней.",
+		drugIds: ["cyfran_st"],
 	},
 	{
 		id: "analgesia_nimesil",
@@ -91,16 +91,28 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		drugIds: ["ibuprofen_400"],
 	},
 	{
+		id: "ketorolac_acute_pain",
+		label: "«Кеторолак (Кетанов 10 мг) / Острая боль»",
+		desc: "Rp: Ketorolaci 10mg, D.t.d. N 10 in tab., S. По 1 таблетке при острой боли (не более 4 таб./сутки, курс до 3-5 дней).",
+		drugIds: ["ketorolac_10"],
+	},
+	{
 		id: "chlorhexidine_antiseptic_rinse",
 		label: "«Антисептик для полоскания (Хлоргексидин 0.05%)»",
 		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% 100ml, D.S. Ротовые ванночки 3 раза в день по 1 минуте после еды, 7-10 дней.",
 		drugIds: ["chlorhexidine_005"],
 	},
 	{
-		id: "anti_inflammatory_dental_gel",
-		label: "«Противовоспалительный гель (Холисал / Метрогил Дента)»",
-		desc: "Rp: Gel dentalis, D.S. Аппликации на область десен 2-3 раза в день после чистки зубов 7-10 дней.",
-		drugIds: ["cholisal_gel"],
+		id: "miramistin_spray",
+		label: "«Антисептик спрей (Мирамистин 0.01%)»",
+		desc: "Rp: Sol. 'Miramistin' 0.01% 150ml, D.S. Орошать полость рта 3-4 раза в сутки путем 3-4 нажатий на насадку после еды, 7 дней.",
+		drugIds: ["miramistin_001"],
+	},
+	{
+		id: "solcoseryl_asepta_mucosa",
+		label: "«Солкосерил / Асепта (Заживление десен и слизистой)»",
+		desc: "Rp: Pastae 'Solcoseryl' 5.0 + Balsami 'Asepta' 10.0, D.S. Аппликации на область поражения слизистой и десен 2-3 раза в день.",
+		drugIds: ["solcoseryl_dental_paste", "asepta_balm"],
 	},
 	{
 		id: "standard_anti_inflammatory_course",
@@ -127,6 +139,12 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		drugIds: ["miramistin_001", "stomatophyt_100"],
 	},
 	{
+		id: "clarithromycin_reserve",
+		label: "«Антибиотик резерва при аллергии на пенициллины (Кларитромицин 500 мг)»",
+		desc: "Rp: Clarithromycini 500mg, D.t.d. N 10 in tab., S. По 1 таблетке 1 раз в день 5-7 дней.",
+		drugIds: ["clarithromycin_500"],
+	},
+	{
 		id: "periostitis_osteotropic",
 		label: "«Периостит / Остеотропный комплекс»",
 		desc: "Линкомицин 500 мг + Метронидазол 500 мг (Костная инфекция / Флюс)",
@@ -137,6 +155,46 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		label: "«Детский / Стоматит & Боль»",
 		desc: "Ибупрофен 400 мг + Холисал гель стоматологический (Обезболивание слизистой)",
 		drugIds: ["ibuprofen_400", "cholisal_gel"],
+	},
+	{
+		id: "anti_inflammatory_dental_gel",
+		label: "«Противовоспалительный гель (Холисал / Метрогил Дента)»",
+		desc: "Rp: Gel dentalis, D.S. Аппликации на область десен 2-3 раза в день после чистки зубов 7-10 дней.",
+		drugIds: ["cholisal_gel"],
+	},
+];
+
+/** Extended outpatient dental preparations per Order 1094n (keratoplastics & periodontal balms) */
+export const DENTAL_OUTPATIENT_EXTENDED_DRUGS: readonly DentalPrescriptionDrugPreset[] = [
+	{
+		id: "solcoseryl_dental_paste",
+		tradeNameRu: "Солкосерил дентальная паста",
+		activeSubstanceRu: "Депротеинизированный диализат из крови молочных телят",
+		category: "antiseptic",
+		categoryLabel: "Кератопластик / Слизистая",
+		latinRp: "Rp.: Pastae dentalis adhesivae 'Solcoseryl' 5.0",
+		formRu: "паста дентальная адгезивная",
+		dosageRu: "5 г",
+		quantityLabel: "1 туба (5 г)",
+		dispenseLatin: "D.t.d. N 1 in tuba",
+		signaRu: "S. Наносить тонким слоем на пораженный участок слизистой (высушив тампоном) 3-4 раза в день после еды и на ночь.",
+		recommendedForIcd10: ["K12.0", "K12.1", "K05.1", "K08.1"],
+		defaultValidityDays: "60",
+	},
+	{
+		id: "asepta_balm",
+		tradeNameRu: "Асепта бальзам для десен",
+		activeSubstanceRu: "Метронидазол + Хлоргексидин",
+		category: "antiseptic",
+		categoryLabel: "Пародонтальный бальзам",
+		latinRp: "Rp.: Balsami dentalis adhesivi 'Asepta' 10.0",
+		formRu: "бальзам для десен адгезивный",
+		dosageRu: "10 г",
+		quantityLabel: "1 туба (10 г)",
+		dispenseLatin: "D.t.d. N 1 in tuba",
+		signaRu: "S. Наносить на десны после чистки зубов 2 раза в день в течение 7-10 дней. Не пить и не есть 30 минут.",
+		recommendedForIcd10: ["K05.1", "K05.2", "K05.3"],
+		defaultValidityDays: "60",
 	},
 ];
 
@@ -447,10 +505,17 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const licNum = medicalLicenseNumber || "";
 
 	const fullCatalog = useMemo(() => {
-		if (activeForm === "148-1u-88") {
-			return CONTROLLED_DRUG_PRESETS.length > 0 ? CONTROLLED_DRUG_PRESETS : DENTAL_PRESCRIPTION_DRUG_CATALOG;
+		const base = DENTAL_PRESCRIPTION_DRUG_CATALOG;
+		const combined = [...base];
+		for (const extra of DENTAL_OUTPATIENT_EXTENDED_DRUGS) {
+			if (!combined.some((d) => d.id === extra.id)) {
+				combined.push(extra);
+			}
 		}
-		return DENTAL_PRESCRIPTION_DRUG_CATALOG;
+		if (activeForm === "148-1u-88") {
+			return CONTROLLED_DRUG_PRESETS.length > 0 ? CONTROLLED_DRUG_PRESETS : combined;
+		}
+		return combined;
 	}, [activeForm]);
 
 	const filteredCatalog = useMemo(() => {
@@ -553,6 +618,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		if (allergies) return allergies;
 		if (patient?.allergies) return patient.allergies;
 		if ((patient as any)?.anamnesis?.allergies) return (patient as any).anamnesis.allergies;
+		if ((patient as any)?.raw?.allergies) return (patient as any).raw.allergies;
 		return undefined;
 	}, [allergies, patient]);
 
@@ -956,8 +1022,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
-						{/* Desktop Form Switcher Tabs */}
-						<div className="hidden md:flex items-center p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)] gap-1">
+						{/* Desktop Form Switcher Tabs (Mandate 8d: 32px h-8) */}
+						<div className="hidden md:flex items-center p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] gap-0.5">
 							<button
 								type="button"
 								onClick={() => {
@@ -966,9 +1032,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001";
 									setCustomSeriesNumber(`РЕЦ-${new Date().getFullYear()}-${patSuffix}`);
 								}}
-								className={`min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+								className={`h-8 px-3 text-xs font-bold rounded-md transition-all cursor-pointer ${
 									activeForm === "107-1u"
-										? "bg-[var(--teal-fill,var(--teal))] text-white shadow-sm"
+										? "bg-[var(--teal-fill,var(--teal))] text-white shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -983,9 +1049,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(6, "0") || "000001";
 									setCustomSeriesNumber(`ПКУ-${new Date().getFullYear()}-${patSuffix}`);
 								}}
-								className={`min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+								className={`h-8 px-3 text-xs font-bold rounded-md transition-all cursor-pointer ${
 									activeForm === "148-1u-88"
-										? "bg-rose-600 text-white shadow-sm"
+										? "bg-rose-600 text-white shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -996,7 +1062,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[48px] min-w-[48px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
+							className="h-8 w-8 flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
 							aria-label="Закрыть"
 						>
 							<X className="w-5 h-5" />
@@ -1118,16 +1184,27 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</div>
 						)}
 
-						{/* ── 1-Click Fast Dental Presets Toolbar ── */}
+						{/* ── 1-Click Fast Dental Presets Toolbar (Mandate 8d: 1-line toolbar 32–36px) ── */}
 						{activeForm === "107-1u" && (
-							<div className="flex flex-col gap-2 p-3 rounded-xl bg-teal-500/10 border border-teal-500/25">
+							<div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/25 shrink-0">
 								<div className="flex items-center justify-between">
 									<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-200 flex items-center gap-1.5">
 										<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 										Быстрые наборы рецепта (1 клик):
 									</span>
+									<label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-[var(--ink)] select-none">
+										<input
+											type="checkbox"
+											checked={withStampAndSignature}
+											onChange={(e) => setWithStampAndSignature(e.target.checked)}
+											className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+											data-testid="toggle-stamp-signature"
+										/>
+										<span className="hidden sm:inline">Штамп клиники + факсимиле</span>
+										<span className="sm:hidden">Штамп</span>
+									</label>
 								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								<div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 [scrollbar-width:thin]">
 									{DENTAL_FAST_PRESCRIPTION_SETS.map((preset) => {
 										const isSelected =
 											preset.drugIds.length === selectedDrugIds.length &&
@@ -1136,10 +1213,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											<div
 												key={preset.id}
 												data-testid={`btn-fast-preset-${preset.id}`}
-												className={`flex items-stretch justify-between p-2.5 rounded-xl border transition-all duration-150 select-none min-h-[48px] gap-2 ${
+												className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg border text-xs h-8.5 transition-all duration-150 select-none ${
 													isSelected
-														? "bg-teal-500/20 border-teal-500 shadow-xs ring-1 ring-teal-500"
-														: "bg-[var(--paper)] border-teal-500/30 hover:bg-teal-500/10 hover:border-teal-500"
+														? "bg-teal-500/20 border-teal-500 shadow-xs ring-1 ring-teal-500 text-teal-950 dark:text-teal-100"
+														: "bg-[var(--paper)] border-teal-500/30 hover:bg-teal-500/10 hover:border-teal-500 text-[var(--ink)]"
 												}`}
 											>
 												<button
@@ -1149,64 +1226,46 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 														setValidityDays("60");
 														showToast(`Выписан набор ${preset.label} (Форма 107-1/у)`, "success", 3000);
 													}}
-													className="flex flex-col text-left cursor-pointer flex-1 justify-center min-w-0"
+													title={preset.desc}
+													className="font-bold text-xs truncate max-w-[200px] cursor-pointer hover:underline text-left"
 												>
-													<span className="text-xs font-black text-[var(--ink)] leading-snug truncate">
-														{preset.label}
-													</span>
-													<span className="text-[10px] text-[var(--muted)] leading-tight mt-0.5 line-clamp-2">
-														{preset.desc}
-													</span>
+													{preset.label.replace(/^[«"]+|[»"]+$/g, "")}
 												</button>
-
-												<div className="flex items-center gap-1.5 shrink-0 self-center">
-													<button
-														type="button"
-														title={`Внести ${preset.label} в дневник 043/у`}
-														onClick={(e) => {
-															e.stopPropagation();
-															handleApplyAndInsertToDiary(preset);
-														}}
-														className="flex items-center justify-center px-2.5 py-2 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-800 hover:text-white dark:text-emerald-300 dark:hover:text-white text-xs font-bold transition-all border border-emerald-500/30 gap-1.5 cursor-pointer min-h-[44px] min-w-[44px] touch-manipulation active:scale-95"
-														data-testid={`btn-fast-diary-${preset.id}`}
-													>
-														<FileText className="w-4 h-4" />
-														<span className="hidden xl:inline">В дневник</span>
-													</button>
-
-													<button
-														type="button"
-														title={`Печать набора ${preset.label} в 1 клик`}
-														onClick={(e) => {
-															e.stopPropagation();
-															handleApplyAndPrint(preset);
-														}}
-														className="flex items-center justify-center px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0 transition-colors shadow-xs gap-1.5 cursor-pointer min-h-[44px] min-w-[44px] touch-manipulation active:scale-95"
-														data-testid={`btn-fast-print-${preset.id}`}
-													>
-														<Printer className="w-4 h-4" />
-														<span className="hidden xl:inline">Печать</span>
-													</button>
-												</div>
+												<button
+													type="button"
+													title={`Внести ${preset.label} в дневник 043/у`}
+													onClick={(e) => {
+														e.stopPropagation();
+														handleApplyAndInsertToDiary(preset);
+													}}
+													className="p-1 rounded hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer"
+													data-testid={`btn-fast-diary-${preset.id}`}
+													aria-label={`Внести ${preset.label} в дневник`}
+												>
+													<FileText className="w-3.5 h-3.5" />
+												</button>
+												<button
+													type="button"
+													title={`Печать набора ${preset.label} в 1 клик`}
+													onClick={(e) => {
+														e.stopPropagation();
+														handleApplyAndPrint(preset);
+													}}
+													className="p-1 rounded bg-teal-600 hover:bg-teal-700 text-white transition-colors cursor-pointer"
+													data-testid={`btn-fast-print-${preset.id}`}
+													aria-label={`Печать ${preset.label}`}
+												>
+													<Printer className="w-3.5 h-3.5" />
+												</button>
 											</div>
 										);
 									})}
 								</div>
-								<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)] mt-1 select-none">
-									<input
-										type="checkbox"
-										checked={withStampAndSignature}
-										onChange={(e) => setWithStampAndSignature(e.target.checked)}
-										className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
-										data-testid="toggle-stamp-signature"
-									/>
-									<span>Печать со штампом клиники и факсимиле подписи врача (1 клик)</span>
-								</label>
 							</div>
 						)}
 
-						{/* Search & Category Filter */}
-						<div className="flex flex-col gap-2">
+						{/* Search & Category Filter (Mandate 8d: 1-line dense toolbars) */}
+						<div className="flex flex-col gap-1.5 shrink-0">
 							<div className="relative">
 								<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
 								<input
@@ -1214,12 +1273,12 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
 									placeholder="Поиск по торговому названию, МНН или латинскому названию..."
-									className="w-full min-h-[44px] pl-10 pr-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-colors"
+									className="w-full h-8.5 pl-9 pr-3 py-1 text-xs rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-colors"
 								/>
 							</div>
 
 							{activeForm === "107-1u" && (
-								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 [scrollbar-width:none]">
+								<div className="flex items-center gap-1 overflow-x-auto pb-0.5 [scrollbar-width:none]">
 									{[
 										{ id: "all", label: "Все" },
 										{ id: "nsaid", label: "НПВС" },
@@ -1233,7 +1292,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											key={cat.id}
 											type="button"
 											onClick={() => setCategoryFilter(cat.id)}
-											className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-xl border whitespace-nowrap shrink-0 transition-all ${
+											className={`h-7 px-2.5 text-xs font-bold rounded-lg border whitespace-nowrap shrink-0 transition-all cursor-pointer ${
 												categoryFilter === cat.id
 													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] shadow-xs"
 													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--ink)]"

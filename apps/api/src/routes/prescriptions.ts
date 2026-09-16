@@ -71,7 +71,7 @@ const createPrescriptionBodySchema = z.object({
 	items: z
 		.array(
 			z.object({
-				catalogDrugId: z.string().uuid().optional().nullable(),
+				catalogDrugId: z.string().max(64).optional().nullable(),
 				innLatin: z.string().min(2).max(240),
 				dosageFormLatin: z.string().min(2).max(120),
 				dosageDoseConcentration: z.string().min(1).max(80),
@@ -506,7 +506,11 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 					input.items.map((item, index) => ({
 						organizationId: orgId,
 						prescriptionId: presc.id,
-						catalogDrugId: item.catalogDrugId || null,
+						catalogDrugId:
+							item.catalogDrugId &&
+							/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.catalogDrugId)
+								? item.catalogDrugId
+								: null,
 						itemIndex: index + 1,
 						innLatin: item.innLatin,
 						dosageFormLatin: item.dosageFormLatin,
@@ -879,7 +883,8 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		};
 		const snapshot =
 			presc.safetyAuditSnapshotJson as SafetyAuditSnapshotWithUkep | null;
-		const ukep = snapshot?.ukepSignature;
+		const query = request.query as { withStamp?: string };
+		const withStampAndSignature = query.withStamp !== "false";
 
 		const payload = {
 			formNumber:
@@ -914,6 +919,7 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 							: "60",
 			isChronicSpecialCare: presc.isSpecialChronicIndication,
 			chronicPeriodicity: presc.chronicDispenseFrequencyNotes,
+			withStampAndSignature,
 			items: items.map((i) => ({
 				id: i.id,
 				latinName: i.innLatin,
