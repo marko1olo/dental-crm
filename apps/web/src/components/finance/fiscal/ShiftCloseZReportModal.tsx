@@ -199,6 +199,19 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 
 	if (!isOpen) return null;
 
+	// Mandate 8c: Anti-Matryoshka — top-level conditional return to ensure modal depth is strictly 1
+	if (isBatchModalOpen) {
+		return (
+			<OfflineFiscalBatchModal
+				isOpen={isBatchModalOpen}
+				onClose={() => setIsBatchModalOpen(false)}
+				clinicName={clinicLegalName}
+				cashierFullName={cashierFullName}
+				shiftNumber={shiftNumber}
+			/>
+		);
+	}
+
 	return (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
@@ -586,15 +599,6 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 					</div>
 				</div>
 			</div>
-
-			{/* Offline Fiscal Batch & Acquiring Reconciliation Modal */}
-			<OfflineFiscalBatchModal
-				isOpen={isBatchModalOpen}
-				onClose={() => setIsBatchModalOpen(false)}
-				clinicName={clinicLegalName}
-				cashierFullName={cashierFullName}
-				shiftNumber={shiftNumber}
-			/>
 		</div>
 	);
 };

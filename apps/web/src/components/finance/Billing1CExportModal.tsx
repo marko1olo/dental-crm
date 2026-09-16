@@ -17,10 +17,7 @@ import {
 	type OneCExportParams,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
-import {
-	OneCExportButton,
-	type OneCExportItem,
-} from "./OneCExportButton";
+import type { OneCExportItem } from "./OneCExportButton";
 
 export interface Billing1CExportModalProps {
 	readonly isOpen: boolean;
@@ -46,6 +43,18 @@ function formatMoney(amount: number): string {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	})} ₽`;
+}
+
+function triggerXmlDownload(xmlContent: string, filename: string) {
+	const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = filename;
+	document.body.appendChild(anchor);
+	anchor.click();
+	document.body.removeChild(anchor);
+	URL.revokeObjectURL(url);
 }
 
 export function Billing1CExportModal({
@@ -207,6 +216,16 @@ export function Billing1CExportModal({
 			void navigator.clipboard.writeText(summaryText);
 			showToast("Сводка для бухгалтерии скопирована в буфер", "success", 2500);
 		}
+	};
+
+	const handleDownloadXml = () => {
+		if (!generatedXml || generatedXml.startsWith("<!-- Ошибка")) {
+			showToast("Ошибка в структуре XML для 1С", "error");
+			return;
+		}
+		const filename = `1C_Export_${actNumber.replace(/[^a-zA-Z0-9_-]/g, "_")}_${docDate}.xml`;
+		triggerXmlDownload(generatedXml, filename);
+		showToast(`Файл выгрузки 1С:Предприятие (${filename}) успешно сформирован и скачан!`, "success", 5000);
 	};
 
 	return (
@@ -642,26 +661,16 @@ export function Billing1CExportModal({
 						>
 							Закрыть
 						</button>
-						<OneCExportButton
-							actNumber={actNumber}
-							documentDate={docDate}
-							docType={docType}
-							patientName={patientName}
-							patientId={patientId}
-							patientPhone={patientPhone}
-							patientAddress={patientAddress}
-							doctorName={customDoctorName}
-							clinicName={clinicName}
-							clinicInn={clinicInn}
-							clinicKpp={clinicKpp}
-							items={items}
-							totalRub={calculatedTotalRub}
-							contractNumber={selectedContract}
-							contractDate={selectedContractDate}
-							variant="primary"
-							label="Экспорт в 1С (XML)"
-							className="w-full sm:w-auto min-h-[44px] px-2.5 sm:px-4 text-[11px] sm:text-xs font-bold shadow-md bg-teal-600 hover:bg-teal-700 text-white shrink-0 flex items-center justify-center text-center whitespace-nowrap touch-manipulation cursor-pointer"
-						/>
+						<button
+							type="button"
+							onClick={handleDownloadXml}
+							className="w-full sm:w-auto min-h-[44px] px-2.5 sm:px-4 text-[11px] sm:text-xs font-bold shadow-md bg-teal-600 hover:bg-teal-700 text-white shrink-0 flex items-center justify-center gap-1.5 text-center whitespace-nowrap touch-manipulation cursor-pointer rounded-xl"
+							title="Скачать официальный XML CommerceML 2.09 для загрузки в 1С:Бухгалтерия 8.3"
+							data-testid="billing-1c-download-xml-button"
+						>
+							<Download size={14} className="shrink-0" />
+							<span>Экспорт в 1С (XML)</span>
+						</button>
 					</div>
 				</div>
 			</div>
