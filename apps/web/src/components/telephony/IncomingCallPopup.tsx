@@ -35,6 +35,10 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+} from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -464,6 +468,7 @@ export function IncomingCallPopup() {
 	const [showBadgeMoreMenu, setShowBadgeMoreMenu] = useState(false);
 	const [showQuickBooking, setShowQuickBooking] = useState(false);
 	const [showOutcomePanel, setShowOutcomePanel] = useState(false);
+	const [isCreatingPatient, setIsCreatingPatient] = useState(false);
 
 	const lastCallRef = useRef<TelephonyCall | null>(activeCall);
 	useEffect(() => {
@@ -798,6 +803,78 @@ export function IncomingCallPopup() {
 		showToast(`Вызов ${formattedPhone} отклонён`, "info");
 	};
 
+	// 1-Click Quick Patient Creation (Mandate 8e p. 8 & 8n: Solo doctor & Reception Autonomy without 20 secondary fields)
+	const handleQuickCreatePatient = async (customName?: string) => {
+		if (!currentCall?.phone) return;
+		if (isCreatingPatient) return;
+		setIsCreatingPatient(true);
+		try {
+			const entered = typeof customName === "string" ? customName : newPatientNameInput;
+			const targetName = entered.trim() || `Пациент ${formattedPhone}`;
+			const res = await fetch("/api/patients", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-dente-staff-token": readDenteStaffToken(),
+					"x-dente-clinic-token": readDenteClinicToken(),
+				},
+				body: JSON.stringify({
+					fullName: targetName,
+					phone: currentCall.phone,
+				}),
+			});
+
+			if (!res.ok) {
+				let errMsg = "Ошибка при создании пациента";
+				try {
+					const data = await res.json();
+					if (data?.message) errMsg = data.message;
+				} catch {}
+				showToast(errMsg, "error");
+				return;
+			}
+
+			const createdPatient = await res.json();
+			setSelectedPatientId(createdPatient.id);
+			setNewPatientNameInput("");
+
+			// Update active call in telephony store
+			const active = useTelephonyStore.getState().activeCall;
+			if (active) {
+				useTelephonyStore.getState().triggerIncomingCall({
+					...active,
+					patientId: createdPatient.id,
+					patientName: createdPatient.fullName,
+				});
+			}
+
+			// Optimistically update dashboard patients if ctx available
+			if (ctx?.setDashboard) {
+				ctx.setDashboard((curr) =>
+					curr
+						? {
+								...curr,
+								patients: [
+									createdPatient,
+									...curr.patients.filter((p) => p.id !== createdPatient.id),
+								],
+							}
+						: curr,
+				);
+			}
+
+			showToast(
+				`Создана амбулаторная карта: ${createdPatient.fullName} (${formattedPhone})`,
+				"success",
+			);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось сохранить пациента";
+			showToast(msg, "error");
+		} finally {
+			setIsCreatingPatient(false);
+		}
+	};
+
 	if (typeof document === "undefined") return null;
 	if (isDoctorMode) return null;
 
@@ -811,7 +888,7 @@ export function IncomingCallPopup() {
 					data-testid="incoming-call-badge-container"
 				>
 				{!isExpanded ? (
-					/* 🟢 Compact Telephony Capsule (0-occlusion, non-blocking) */
+					/* Compact Telephony Capsule (0-occlusion, non-blocking) */
 					<div
 						className="dnt-incoming-call-capsule pointer-events-auto flex items-center gap-2 p-1.5 sm:p-2 rounded-full border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xl backdrop-blur-xl animate-badge-drop max-w-[calc(100vw-24px)]"
 						role="region"
@@ -909,26 +986,26 @@ export function IncomingCallPopup() {
 						aria-label="Входящий звонок телефонии"
 						data-testid="incoming-call-popup"
 					>
-					{/* Header Row: Call status, provider, live duration & quick actions */}
-					<div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[var(--line,#e2e8f0)]">
-						<div className="flex items-center gap-2 min-w-0">
-							<span className="relative flex h-3 w-3 shrink-0">
+					{/* Header Row: Call status, provider, live duration & quick actions (Strictly 1 row 32-36px, Mandate 8d) */}
+					<div className="flex items-center justify-between gap-1.5 h-9 min-h-[36px] pb-1 border-b border-[var(--line,#e2e8f0)]">
+						<div className="flex items-center gap-1.5 min-w-0">
+							<span className="relative flex h-2.5 w-2.5 shrink-0">
 								<span
 									className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
 										isCallAnswered ? "bg-teal-400" : "bg-emerald-400"
 									}`}
 								/>
 								<span
-									className={`relative inline-flex rounded-full h-3 w-3 ${
+									className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
 										isCallAnswered ? "bg-teal-500" : "bg-emerald-500"
 									}`}
 								/>
 							</span>
 							<span className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider truncate">
-								{isCallAnswered ? "Разговор (WebRTC)" : "Входящий (SIP)"}
+								{isCallAnswered ? "Разговор" : "Входящий"}
 							</span>
 							<span
-								className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0"
+								className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0"
 								title={`Провайдер телефонии: ${providerLabel}`}
 							>
 								{activeCall.provider?.toUpperCase() || "SIP"}
@@ -948,117 +1025,76 @@ export function IncomingCallPopup() {
 
 						<div className="flex items-center gap-1 shrink-0">
 							{/* Live duration timer */}
-							<div className="flex items-center gap-1 font-mono text-xs font-bold text-[var(--muted,#64748b)] bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] px-2 py-1 rounded-lg border border-[var(--line,#e2e8f0)]">
-								<Clock size={12} className="text-[var(--teal)]" />
+							<div className="flex items-center gap-1 font-mono text-[11px] font-bold text-[var(--muted,#64748b)] bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] px-1.5 py-0.5 rounded-md border border-[var(--line,#e2e8f0)]">
+								<Clock size={11} className="text-[var(--teal)]" />
 								<span>{formatDurationTimer(elapsedSeconds)}</span>
 							</div>
 
-							{/* Compact Call Answer / Hangup in Header */}
+							{/* Strictly <= 2 Primary Direct Buttons in Header (Answer / Reject or Hangup) */}
 							{!isCallAnswered ? (
 								<>
 									<button
 										type="button"
 										onClick={handleAnswerCall}
-										className="min-h-[36px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+										className="min-h-[32px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
 										title="Принять входящий звонок (WebRTC)"
 										data-testid="badge-header-answer-btn"
 									>
-										<PhoneCall size={13} className="animate-pulse" />
+										<PhoneCall size={12} className="animate-pulse" />
 										<span>Ответить</span>
 									</button>
 									<button
 										type="button"
 										onClick={handleReject}
-										className="min-h-[36px] px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+										className="min-h-[32px] px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
 										title="Отклонить звонок"
 										data-testid="badge-header-reject-btn"
 									>
-										<PhoneOff size={13} />
+										<PhoneOff size={12} />
+										<span>Сброс</span>
 									</button>
 								</>
 							) : (
 								<button
 									type="button"
 									onClick={handleReject}
-									className="min-h-[36px] px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+									className="min-h-[32px] px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
 									title="Завершить разговор"
 									data-testid="badge-header-hangup-btn"
 								>
-									<PhoneOff size={13} />
+									<PhoneOff size={12} />
 									<span>Завершить</span>
 								</button>
 							)}
-
-							{/* Mute Ringtone Toggle (>= 44x44px touch target) */}
-							<button
-								type="button"
-								onClick={toggleMute}
-								className={`min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-									isMuted
-										? "bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300"
-										: "hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)]"
-								}`}
-								title={isMuted ? "Включить звук звонка" : "Заглушить звук звонка"}
-								aria-label={isMuted ? "Включить звонок" : "Заглушить звонок"}
-							>
-								{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-							</button>
-
-							{/* DND Toggle Button (>= 44x44px touch target) */}
-							<button
-								type="button"
-								onClick={() => {
-									setAgentState(isDndActive ? "online" : "dnd");
-									showToast(
-										isDndActive
-											? "Режим «Не беспокоить» выключен"
-											: "Включен режим «Не беспокоить» (DND)",
-										"info",
-									);
-								}}
-								className={`min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-									isDndActive
-										? "bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300"
-										: "hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)]"
-								}`}
-								title={
-									isDndActive
-										? "Режим «Не беспокоить» активен (кликните для отключения)"
-										: "Включить режим «Не беспокоить» (DND)"
-								}
-								aria-label={isDndActive ? "Отключить режим DND" : "Включить режим «Не беспокоить»"}
-							>
-								{isDndActive ? <BellOff size={16} /> : <Bell size={16} />}
-							</button>
 
 							{/* Collapse to Capsule Button */}
 							<button
 								type="button"
 								onClick={() => setIsExpanded(false)}
-								className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-all cursor-pointer"
+								className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-all cursor-pointer"
 								title="Свернуть в компактную капсулу"
 								aria-label="Свернуть в капсулу"
 								data-testid="badge-collapse-btn"
 							>
-								<ChevronUp size={16} />
+								<ChevronUp size={15} />
 							</button>
 
-							{/* Dismiss / Minimize Badge Button (>= 44x44px touch target) */}
+							{/* Dismiss / Minimize Badge Button */}
 							<button
 								type="button"
 								onClick={dismissCall}
-								className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 transition-all cursor-pointer"
+								className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 transition-all cursor-pointer"
 								title="Свернуть бейдж звонка"
 								aria-label="Закрыть уведомление"
 							>
-								<X size={16} />
+								<X size={15} />
 							</button>
 						</div>
 					</div>
 					{/* Caller Identity Row */}
 					<div className="flex items-center gap-2.5">
 						<div
-							className="w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 shadow-xs border border-white/20"
+							className="w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 shadow-xs border border-[var(--line-strong,var(--line,#e2e8f0))]"
 							style={{
 								backgroundColor: avatarColors.bg,
 								color: avatarColors.text,
@@ -1295,6 +1331,61 @@ export function IncomingCallPopup() {
 											<span>Перевод звонка (SIP)</span>
 										</button>
 									)}
+									{/* 1-Click Patient Creation for Unknown Numbers */}
+									{!isKnownPatient && (
+										<button
+											type="button"
+											onClick={() => {
+												handleQuickCreatePatient();
+												setShowBadgeMoreMenu(false);
+											}}
+											className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+										>
+											<UserCheck size={13} className="text-emerald-600" />
+											<span>1-Click Создать пациента</span>
+										</button>
+									)}
+
+									{/* Mute Ringtone Toggle */}
+									<button
+										type="button"
+										onClick={() => {
+											toggleMute();
+											setShowBadgeMoreMenu(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										{isMuted ? (
+											<Volume2 size={13} className="text-[var(--teal)]" />
+										) : (
+											<VolumeX size={13} className="text-rose-500" />
+										)}
+										<span>{isMuted ? "Включить звук звонка" : "Заглушить звук звонка"}</span>
+									</button>
+
+									{/* DND Toggle */}
+									<button
+										type="button"
+										onClick={() => {
+											setAgentState(isDndActive ? "online" : "dnd");
+											setShowBadgeMoreMenu(false);
+											showToast(
+												isDndActive
+													? "Режим «Не беспокоить» выключен"
+													: "Включен режим «Не беспокоить» (DND)",
+												"info",
+											);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										{isDndActive ? (
+											<Bell size={13} className="text-[var(--teal)]" />
+										) : (
+											<BellOff size={13} className="text-rose-500" />
+										)}
+										<span>{isDndActive ? "Выключить режим DND" : "Включить «Не беспокоить» (DND)"}</span>
+									</button>
+
 									<button
 										type="button"
 										onClick={() => {
@@ -1467,7 +1558,7 @@ export function IncomingCallPopup() {
 						{/* Patient Identity Block */}
 						<div className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] flex items-center gap-3">
 							<div
-								className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-black shrink-0 shadow-xs border border-white/20"
+								className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-black shrink-0 shadow-xs border border-[var(--line-strong,var(--line,#e2e8f0))]"
 								style={{
 									backgroundColor: avatarColors.bg,
 									color: avatarColors.text,
@@ -1831,34 +1922,24 @@ export function IncomingCallPopup() {
 							<div className="p-3.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 space-y-2">
 								<div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
 									<AlertCircle size={14} className="text-amber-500" />
-									<span>Быстрое сохранение нового пациента (без сброса визита)</span>
+									<span>Быстрое создание нового пациента (без сброса визита)</span>
 								</div>
 								<div className="space-y-1.5">
 									<input
 										type="text"
 										value={newPatientNameInput}
 										onChange={(e) => setNewPatientNameInput(e.target.value)}
-										placeholder="ФИО пациента (напр. Смирнов А.В.)"
+										placeholder="ФИО пациента (по умолчанию: Пациент + телефон)"
 										className="w-full min-h-[40px] px-3 py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-xs font-medium text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 									/>
 									<button
 										type="button"
-										onClick={() => {
-											if (!newPatientNameInput.trim()) {
-												showToast("Введите ФИО пациента для регистрации", "warning");
-												return;
-											}
-											setNewPatientPhone(currentCall.phone);
-											showToast(
-												`Пациент «${newPatientNameInput}» добавлен к номеру ${formattedPhone}`,
-												"success",
-											);
-											closeCallDrawer();
-										}}
-										className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal)] text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+										onClick={() => handleQuickCreatePatient()}
+										disabled={isCreatingPatient}
+										className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal)] text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
 									>
 										<UserCheck size={15} />
-										<span>Сохранить в базе (визит не сбрасывается)</span>
+										<span>{isCreatingPatient ? "Создание карты..." : "Создать пациента в 1 клик (визит сохранён)"}</span>
 									</button>
 								</div>
 							</div>
