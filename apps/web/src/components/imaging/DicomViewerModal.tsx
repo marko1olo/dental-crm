@@ -9,14 +9,20 @@ import {
 	Check,
 	CheckCircle2,
 	ChevronDown,
+	Download,
 	Eye,
 	FileText,
 	FileUp,
+	Hand,
 	Info,
 	Layers,
 	Loader2,
+	Minus,
+	MoreHorizontal,
+	Plus,
 	RotateCcw,
 	Ruler,
+	Sliders,
 	Sparkles,
 	UploadCloud,
 	X,
@@ -32,8 +38,10 @@ import { showToast } from "../GlobalToast.js";
 import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart.js";
 import { DicomViewport } from "./DicomViewport.js";
 import {
+	CLINICAL_IMAGING_COLORS,
 	DENTAL_RADIOGRAPHY_PRESETS,
 	DEFAULT_DICOM_VIEWPORT_STATE,
+	clampZoom,
 	type CalibratedRulerMeasurement,
 	type DicomViewportState,
 	type ImagingActiveTool,
@@ -79,6 +87,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	const [isProtocolsDropdownOpen, setIsProtocolsDropdownOpen] = useState(false);
 	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
 	const protocolsDropdownRef = useRef<HTMLDivElement>(null);
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+	const [showFindingsDrawer, setShowFindingsDrawer] = useState(false);
+	const moreMenuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (!isProtocolsDropdownOpen) return;
@@ -94,6 +105,40 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [isProtocolsDropdownOpen]);
 
+	useEffect(() => {
+		if (!isMoreMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				moreMenuRef.current &&
+				!moreMenuRef.current.contains(e.target as Node)
+			) {
+				setIsMoreMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isMoreMenuOpen]);
+
+	// Esc key handling
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				if (isProtocolsDropdownOpen) {
+					setIsProtocolsDropdownOpen(false);
+				} else if (isMoreMenuOpen) {
+					setIsMoreMenuOpen(false);
+				} else if (showFindingsDrawer) {
+					setShowFindingsDrawer(false);
+				} else {
+					onClose();
+				}
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, isProtocolsDropdownOpen, isMoreMenuOpen, showFindingsDrawer, onClose]);
+
 	// AI States (strictly on-demand, no automatic overwrite)
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [aiReport, setAiReport] = useState<string | null>(null);
@@ -101,7 +146,6 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	const [selectedFindingCodes, setSelectedFindingCodes] = useState<Set<string>>(new Set());
 	const [appliedToothCodes, setAppliedToothCodes] = useState<string[]>([]);
 	const [isApplyingToChart, setIsApplyingToChart] = useState(false);
-	const [showFindingsDrawer, setShowFindingsDrawer] = useState(false);
 	const [formulaFailure, setFormulaFailure] = useState<string | null>(null);
 	const analysisInFlightRef = useRef(false);
 
@@ -373,6 +417,34 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		setMeasurements((prev) => [...prev, m]);
 	};
 
+	const handleZoomStep = (delta: number) => {
+		setViewportState((prev) => ({
+			...prev,
+			zoom: clampZoom(prev.zoom + delta),
+		}));
+	};
+
+	const handleExportImage = () => {
+		const canvas = document.querySelector<HTMLCanvasElement>("[data-testid='dicom-viewport-canvas']");
+		if (!canvas) {
+			if (currentImageSrc) {
+				const a = document.createElement("a");
+				a.href = currentImageSrc;
+				a.download = `RVG_Tooth_${toothFdiCode || "dental"}_${Date.now()}.png`;
+				a.click();
+				showToast("Снимок сохранён", "success");
+			}
+			return;
+		}
+		const dataUrl = canvas.toDataURL("image/png");
+		const a = document.createElement("a");
+		a.href = dataUrl;
+		a.download = `RVG_Tooth_${toothFdiCode || "dental"}_${Date.now()}.png`;
+		a.click();
+		showToast("Снимок экспортирован в PNG", "success");
+		setIsMoreMenuOpen(false);
+	};
+
 	const plan = aiToothStates ? planVisiographFindings(aiToothStates) : null;
 
 	return (
@@ -396,9 +468,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				onChange={handleFileInputChange}
 			/>
 
-			{/* Top Header Toolbar */}
+			{/* Single 1-row Clinical Toolbar (36px, h-9 on desktop - Mandate 8d) */}
 			<div
 				style={{
+					minHeight: "36px",
 					height: "36px",
 					backgroundColor: "#0f172a",
 					borderBottom: "1px solid #1e293b",
@@ -406,10 +479,12 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					alignItems: "center",
 					justifyContent: "space-between",
 					padding: "0 10px",
-					gap: "8px",
+					gap: "6px",
+					userSelect: "none",
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+				{/* Left: Study details */}
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flexShrink: 1 }}>
 					<Activity size={16} color="#0d9488" style={{ flexShrink: 0 }} />
 					<div style={{ minWidth: 0, display: "flex", alignItems: "baseline", gap: "6px" }}>
 						<div style={{ fontWeight: "bold", fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: "14px" }}>
@@ -422,149 +497,185 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					</div>
 				</div>
 
-				{/* Presets & Actions */}
-				<div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "nowrap" }}>
-					{/* Upload / Change image button */}
+				{/* Center: Primary Clinical Tools (На виду: Масштаб, Панорамирование, Линейка, Эндо-апекс, Окно W/L, Форма 043/у, ИИ) */}
+				<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+					{/* Zoom Controls */}
+					<div
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							backgroundColor: "#1e293b",
+							borderRadius: "6px",
+							border: "1px solid #334155",
+							height: "28px",
+							padding: "0 2px",
+						}}
+					>
+						<button
+							type="button"
+							onClick={() => handleZoomStep(-0.25)}
+							style={{
+								width: "24px",
+								height: "24px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								background: "transparent",
+								border: "none",
+								color: "#cbd5e1",
+								cursor: "pointer",
+								borderRadius: "4px",
+							}}
+							title="Уменьшить масштаб (-)"
+						>
+							<Minus size={13} />
+						</button>
+						<button
+							type="button"
+							onClick={() => handleViewportChange({ zoom: 1.0, panX: 0, panY: 0 })}
+							style={{
+								minWidth: "38px",
+								height: "24px",
+								padding: "0 4px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								background: "transparent",
+								border: "none",
+								color: "#e2e8f0",
+								fontSize: "10px",
+								fontWeight: 700,
+								cursor: "pointer",
+								fontFamily: "monospace",
+							}}
+							title="Сбросить масштаб (100%)"
+						>
+							{Math.round(viewportState.zoom * 100)}%
+						</button>
+						<button
+							type="button"
+							onClick={() => handleZoomStep(0.25)}
+							style={{
+								width: "24px",
+								height: "24px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								background: "transparent",
+								border: "none",
+								color: "#cbd5e1",
+								cursor: "pointer",
+								borderRadius: "4px",
+							}}
+							title="Увеличить масштаб (+)"
+						>
+							<Plus size={13} />
+						</button>
+					</div>
+
+					{/* Pan tool */}
 					<button
 						type="button"
-						onClick={() => fileInputRef.current?.click()}
+						onClick={() => handleViewportChange({ activeTool: "pan" })}
 						style={{
 							minHeight: "28px",
 							height: "28px",
 							padding: "0 8px",
 							fontSize: "11px",
 							borderRadius: "6px",
-							border: "1px solid #334155",
-							backgroundColor: "#1e293b",
-							color: "#e2e8f0",
+							border: viewportState.activeTool === "pan" ? "1px solid #0d9488" : "1px solid #334155",
+							backgroundColor: viewportState.activeTool === "pan" ? "#134e4a" : "#1e293b",
+							color: viewportState.activeTool === "pan" ? "#5eead4" : "#cbd5e1",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							justifyContent: "center",
 							gap: "4px",
 							fontWeight: 600,
 							whiteSpace: "nowrap",
 						}}
-						title="Загрузить снимок RVG/DICOM"
+						title="Панорамирование (перемещение снимка мышью/пальцем)"
 					>
-						<FileUp size={13} />
-						<span>{currentImageSrc ? "Сменить" : "Загрузить"}</span>
+						<Hand size={13} />
+						<span>Панорама</span>
 					</button>
 
-					{/* On-demand AI Button */}
+					{/* Calibrated Ruler */}
 					<button
 						type="button"
-						data-testid="btn-dicom-run-ai"
-						onClick={handleRunAiAnalysis}
-						disabled={isAnalyzing}
+						onClick={() => handleViewportChange({ activeTool: "ruler" })}
 						style={{
 							minHeight: "28px",
 							height: "28px",
 							padding: "0 8px",
 							fontSize: "11px",
 							borderRadius: "6px",
-							border: "1px solid #0d9488",
-							backgroundColor: isAnalyzing ? "#134e4a" : "#0f766e",
-							color: "#ccfbf1",
-							cursor: isAnalyzing ? "not-allowed" : "pointer",
+							border: viewportState.activeTool === "ruler" ? "1px solid #0284c7" : "1px solid #334155",
+							backgroundColor: viewportState.activeTool === "ruler" ? "#0369a1" : "#1e293b",
+							color: viewportState.activeTool === "ruler" ? "#bae6fd" : "#cbd5e1",
+							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							justifyContent: "center",
 							gap: "4px",
 							fontWeight: 600,
-							opacity: isAnalyzing ? 0.6 : 1,
-							transition: "all 0.2s ease",
 							whiteSpace: "nowrap",
 						}}
-						title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы (не перезаписывает карту без подтверждения)"
+						title="Калиброванная линейка (субпиксельное измерение расстояния в мм)"
 					>
-						{isAnalyzing ? (
-							<>
-								<Loader2 size={13} className="animate-spin" />
-								<span>Анализ...</span>
-							</>
-						) : (
-							<>
-								<Sparkles size={13} />
-								<span>{aiReport ? "Перезапуск ИИ" : "ИИ-анализ"}</span>
-							</>
-						)}
+						<Ruler size={13} />
+						<span>Линейка</span>
 					</button>
 
-					{/* AI Findings Drawer Toggle */}
-					{aiToothStates && (
-						<button
-							type="button"
-							onClick={() => setShowFindingsDrawer((prev) => !prev)}
-							style={{
-								minHeight: "28px",
-								height: "28px",
-								padding: "0 8px",
-								fontSize: "11px",
-								borderRadius: "6px",
-								border: "1px solid #334155",
-								backgroundColor: showFindingsDrawer ? "#334155" : "#1e293b",
-								color: "#2dd4bf",
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "4px",
-								fontWeight: 600,
-								whiteSpace: "nowrap",
-							}}
-							title="Показать / скрыть панель находок ИИ"
-						>
-							<Sparkles size={13} />
-							<span>Находки ИИ</span>
-						</button>
-					)}
-
-					<span
+					{/* Endo Apex Tracer (Anatomical Red - Mandate 8c & 8d) */}
+					<button
+						type="button"
+						onClick={() => handleViewportChange({ activeTool: "root_canal_tracer" })}
 						style={{
-							fontSize: "10px",
-							padding: "0 6px",
-							height: "24px",
+							minHeight: "28px",
+							height: "28px",
+							padding: "0 8px",
+							fontSize: "11px",
 							borderRadius: "6px",
-							background: "rgba(16, 185, 129, 0.15)",
-							color: "#34d399",
-							border: "1px solid rgba(16, 185, 129, 0.3)",
+							border: viewportState.activeTool === "root_canal_tracer" ? "1px solid #ef4444" : "1px solid #334155",
+							backgroundColor: viewportState.activeTool === "root_canal_tracer" ? "#991b1b" : "#1e293b",
+							color: viewportState.activeTool === "root_canal_tracer" ? "#fecaca" : "#cbd5e1",
+							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "3px",
+							gap: "4px",
 							fontWeight: 600,
 							whiteSpace: "nowrap",
 						}}
-						title="СанПиН 2.6.1.1192-03: При острой боли и неотложном приёме снимок доступен мгновенно, дозиметрия и ИДС вносятся без блокировки работы"
+						title="Эндо-линейка (Apex / WL): измерение рабочей длины канала в мм (клик по точкам вдоль кривой корня, двойной клик для фиксации)"
 					>
-						<Check size={11} color="#34d399" />
-						<span>Неотложный</span>
-					</span>
+						<Activity size={13} color={viewportState.activeTool === "root_canal_tracer" ? "#fca5a5" : "#ef4444"} />
+						<span>Эндо-апекс</span>
+					</button>
 
-					{DENTAL_RADIOGRAPHY_PRESETS.map((p) => (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => handleApplyPreset(p)}
-							style={{
-								minHeight: "28px",
-								height: "28px",
-								padding: "0 8px",
-								fontSize: "11px",
-								borderRadius: "6px",
-								border: "1px solid #334155",
-								backgroundColor: "#1e293b",
-								color: "#e2e8f0",
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								justifyContent: "center",
-								whiteSpace: "nowrap",
-							}}
-						>
-							{p.labelRu}
-						</button>
-					))}
+					{/* Window/Level (W/L) Tool */}
+					<button
+						type="button"
+						onClick={() => handleViewportChange({ activeTool: "window_level" })}
+						style={{
+							minHeight: "28px",
+							height: "28px",
+							padding: "0 8px",
+							fontSize: "11px",
+							borderRadius: "6px",
+							border: viewportState.activeTool === "window_level" ? "1px solid #8b5cf6" : "1px solid #334155",
+							backgroundColor: viewportState.activeTool === "window_level" ? "#5b21b6" : "#1e293b",
+							color: viewportState.activeTool === "window_level" ? "#ddd6fe" : "#cbd5e1",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "4px",
+							fontWeight: 600,
+							whiteSpace: "nowrap",
+						}}
+						title="Окно W/L: перетаскивание мышью регулирует ширину окна (контраст) и центр окна (яркость)"
+					>
+						<Sliders size={13} />
+						<span>Окно W/L</span>
+					</button>
 
 					{/* 1-Click Norma Button (Mandate 8e) */}
 					<button
@@ -735,29 +846,370 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							</div>
 						)}
 					</div>
+
+					{/* On-demand AI Button (Mandate 8e) */}
+					<button
+						type="button"
+						data-testid="btn-dicom-run-ai"
+						onClick={handleRunAiAnalysis}
+						disabled={isAnalyzing}
+						style={{
+							minHeight: "28px",
+							height: "28px",
+							padding: "0 8px",
+							fontSize: "11px",
+							borderRadius: "6px",
+							border: "1px solid #0d9488",
+							backgroundColor: isAnalyzing ? "#134e4a" : "#0f766e",
+							color: "#ccfbf1",
+							cursor: isAnalyzing ? "not-allowed" : "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "4px",
+							fontWeight: 600,
+							opacity: isAnalyzing ? 0.6 : 1,
+							transition: "all 0.2s ease",
+							whiteSpace: "nowrap",
+						}}
+						title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы (не перезаписывает карту без подтверждения)"
+					>
+						{isAnalyzing ? (
+							<>
+								<Loader2 size={13} className="animate-spin" />
+								<span>Анализ...</span>
+							</>
+						) : (
+							<>
+								<Sparkles size={13} />
+								<span>{aiReport ? "ИИ-повтор" : "ИИ-анализ"}</span>
+							</>
+						)}
+					</button>
+
+					{/* AI Findings Drawer Toggle (if analysis was run) */}
+					{aiToothStates && (
+						<button
+							type="button"
+							onClick={() => setShowFindingsDrawer((prev) => !prev)}
+							style={{
+								minHeight: "28px",
+								height: "28px",
+								padding: "0 8px",
+								fontSize: "11px",
+								borderRadius: "6px",
+								border: "1px solid #334155",
+								backgroundColor: showFindingsDrawer ? "#334155" : "#1e293b",
+								color: "#2dd4bf",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: "4px",
+								fontWeight: 600,
+								whiteSpace: "nowrap",
+							}}
+							title="Показать / скрыть панель находок ИИ"
+						>
+							<Sparkles size={13} />
+							<span>Находки ИИ</span>
+						</button>
+					)}
 				</div>
 
-				<button
-					type="button"
-					onClick={onClose}
-					style={{
-						minHeight: "28px",
-						minWidth: "28px",
-						height: "28px",
-						width: "28px",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						background: "transparent",
-						border: "none",
-						color: "#94a3b8",
-						cursor: "pointer",
-						padding: "4px",
-					}}
-					title="Закрыть (Esc)"
-				>
-					<X size={18} />
-				</button>
+				{/* Right: Secondary Settings Menu (...) & Close Button (Mandate 8d) */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+					{/* More Options Dropdown (...) */}
+					<div style={{ position: "relative" }} ref={moreMenuRef}>
+						<button
+							type="button"
+							data-testid="btn-dicom-more-tools"
+							onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+							style={{
+								minHeight: "28px",
+								minWidth: "28px",
+								height: "28px",
+								width: "28px",
+								padding: 0,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								borderRadius: "6px",
+								border: isMoreMenuOpen ? "1px solid #0d9488" : "1px solid #334155",
+								backgroundColor: isMoreMenuOpen ? "#134e4a" : "#1e293b",
+								color: "#cbd5e1",
+								cursor: "pointer",
+							}}
+							title="Дополнительные настройки, фильтры и экспорт (...)"
+						>
+							<MoreHorizontal size={15} />
+						</button>
+
+						{isMoreMenuOpen && (
+							<div
+								style={{
+									position: "absolute",
+									right: 0,
+									top: "100%",
+									marginTop: "6px",
+									zIndex: 10000,
+									width: "280px",
+									backgroundColor: "#0f172a",
+									border: "1px solid #334155",
+									borderRadius: "10px",
+									padding: "8px",
+									boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+									display: "flex",
+									flexDirection: "column",
+									gap: "6px",
+								}}
+							>
+								{/* Preset Header */}
+								<div
+									style={{
+										fontSize: "11px",
+										fontWeight: "bold",
+										color: "#94a3b8",
+										padding: "4px 6px",
+										borderBottom: "1px solid #1e293b",
+									}}
+								>
+									КЛИНИЧЕСКИЕ ПРЕСЕТЫ (WW / WL)
+								</div>
+								<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+									{DENTAL_RADIOGRAPHY_PRESETS.map((p) => (
+										<button
+											key={p.id}
+											type="button"
+											onClick={() => {
+												handleApplyPreset(p);
+												setIsMoreMenuOpen(false);
+											}}
+											style={{
+												textAlign: "left",
+												padding: "6px 8px",
+												fontSize: "11px",
+												borderRadius: "6px",
+												background: "transparent",
+												border: "none",
+												color: "#e2e8f0",
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "space-between",
+											}}
+											onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1e293b")}
+											onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+										>
+											<span>{p.labelRu}</span>
+										</button>
+									))}
+								</div>
+
+								{/* Filters Header */}
+								<div
+									style={{
+										fontSize: "11px",
+										fontWeight: "bold",
+										color: "#94a3b8",
+										padding: "6px 6px 4px",
+										borderTop: "1px solid #1e293b",
+										borderBottom: "1px solid #1e293b",
+									}}
+								>
+									ФИЛЬТРЫ ИЗОБРАЖЕНИЯ
+								</div>
+								<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+									<button
+										type="button"
+										onClick={() => handleViewportChange({ invert: !viewportState.invert })}
+										style={{
+											textAlign: "left",
+											padding: "6px 8px",
+											fontSize: "11px",
+											borderRadius: "6px",
+											backgroundColor: viewportState.invert ? "rgba(59, 130, 246, 0.2)" : "transparent",
+											border: viewportState.invert ? "1px solid #3b82f6" : "1px solid transparent",
+											color: viewportState.invert ? "#93c5fd" : "#e2e8f0",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+										}}
+									>
+										<span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											<Eye size={13} />
+											<span>Инверсия (Негатив)</span>
+										</span>
+										{viewportState.invert && <Check size={13} />}
+									</button>
+
+									<button
+										type="button"
+										onClick={() => handleViewportChange({ sharpen: viewportState.sharpen > 0 ? 0 : 35 })}
+										style={{
+											textAlign: "left",
+											padding: "6px 8px",
+											fontSize: "11px",
+											borderRadius: "6px",
+											backgroundColor: viewportState.sharpen > 0 ? "rgba(139, 92, 246, 0.2)" : "transparent",
+											border: viewportState.sharpen > 0 ? "1px solid #8b5cf6" : "1px solid transparent",
+											color: viewportState.sharpen > 0 ? "#c4b5fd" : "#e2e8f0",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+										}}
+									>
+										<span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											<Sparkles size={13} />
+											<span>Повышение резкости</span>
+										</span>
+										{viewportState.sharpen > 0 && <Check size={13} />}
+									</button>
+
+									<button
+										type="button"
+										onClick={() => handleViewportChange({ emboss: !viewportState.emboss })}
+										style={{
+											textAlign: "left",
+											padding: "6px 8px",
+											fontSize: "11px",
+											borderRadius: "6px",
+											backgroundColor: viewportState.emboss ? "rgba(236, 72, 153, 0.2)" : "transparent",
+											border: viewportState.emboss ? "1px solid #ec4899" : "1px solid transparent",
+											color: viewportState.emboss ? "#f472b6" : "#e2e8f0",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+										}}
+									>
+										<span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											<Layers size={13} />
+											<span>3D Рельеф (Emboss)</span>
+										</span>
+										{viewportState.emboss && <Check size={13} />}
+									</button>
+								</div>
+
+								{/* Actions Header */}
+								<div
+									style={{
+										fontSize: "11px",
+										fontWeight: "bold",
+										color: "#94a3b8",
+										padding: "6px 6px 4px",
+										borderTop: "1px solid #1e293b",
+										borderBottom: "1px solid #1e293b",
+									}}
+								>
+									ДЕЙСТВИЯ
+								</div>
+								<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+									<button
+										type="button"
+										data-testid="btn-dicom-export-image"
+										onClick={handleExportImage}
+										style={{
+											textAlign: "left",
+											padding: "6px 8px",
+											fontSize: "11px",
+											borderRadius: "6px",
+											background: "transparent",
+											border: "none",
+											color: "#e2e8f0",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											gap: "6px",
+										}}
+										onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1e293b")}
+										onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+									>
+										<Download size={13} />
+										<span>Экспорт снимка (PNG)</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											fileInputRef.current?.click();
+											setIsMoreMenuOpen(false);
+										}}
+										style={{
+											textAlign: "left",
+											padding: "6px 8px",
+											fontSize: "11px",
+											borderRadius: "6px",
+											background: "transparent",
+											border: "none",
+											color: "#e2e8f0",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											gap: "6px",
+										}}
+										onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1e293b")}
+										onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+									>
+										<FileUp size={13} />
+										<span>Загрузить другой снимок</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											handleReset();
+											setIsMoreMenuOpen(false);
+										}}
+										style={{
+											textAlign: "left",
+											padding: "6px 8px",
+											fontSize: "11px",
+											borderRadius: "6px",
+											background: "transparent",
+											border: "none",
+											color: "#f87171",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											gap: "6px",
+										}}
+										onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1e293b")}
+										onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+									>
+										<RotateCcw size={13} />
+										<span>Сбросить настройки вида</span>
+									</button>
+								</div>
+							</div>
+						)}
+					</div>
+
+					{/* Close button */}
+					<button
+						type="button"
+						onClick={onClose}
+						style={{
+							minHeight: "28px",
+							minWidth: "28px",
+							height: "28px",
+							width: "28px",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							background: "transparent",
+							border: "none",
+							color: "#94a3b8",
+							cursor: "pointer",
+							padding: "4px",
+						}}
+						title="Закрыть (Esc)"
+					>
+						<X size={18} />
+					</button>
+				</div>
 			</div>
 
 			{/* Center Area: Viewport or Clean Honest Dropzone */}
@@ -1094,181 +1546,6 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					)}
 				</div>
 			)}
-
-			{/* Bottom Controls Bar */}
-			<div
-				style={{
-					height: "56px",
-					backgroundColor: "#0f172a",
-					borderTop: "1px solid #1e293b",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					padding: "0 16px",
-				}}
-			>
-				{/* Tool Selectors */}
-				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<button
-						type="button"
-						onClick={() => handleViewportChange({ activeTool: "pan" })}
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							borderRadius: "6px",
-							border: "none",
-							backgroundColor: viewportState.activeTool === "pan" ? "#0d9488" : "#1e293b",
-							color: "#ffffff",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "13px",
-						}}
-					>
-						Панорамирование
-					</button>
-					<button
-						type="button"
-						onClick={() => handleViewportChange({ activeTool: "ruler" })}
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							borderRadius: "6px",
-							border: "none",
-							backgroundColor: viewportState.activeTool === "ruler" ? "#0d9488" : "#1e293b",
-							color: "#ffffff",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "13px",
-							whiteSpace: "nowrap",
-						}}
-					>
-						<Ruler size={16} /> Линейка (мм)
-					</button>
-					<button
-						type="button"
-						onClick={() => handleViewportChange({ activeTool: "root_canal_tracer" })}
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							borderRadius: "6px",
-							border: "none",
-							backgroundColor: viewportState.activeTool === "root_canal_tracer" ? "#047857" : "#1e293b",
-							color: viewportState.activeTool === "root_canal_tracer" ? "#a7f3d0" : "#ffffff",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "13px",
-							fontWeight: 600,
-							whiteSpace: "nowrap",
-						}}
-						title="Эндо-линейка (Apex Locator): измерение рабочей длины канала в мм (клик по точкам вдоль кривой корня, двойной клик для фиксации)"
-					>
-						<Activity size={16} /> Эндо-линейка (Апекс, мм)
-					</button>
-				</div>
-
-				{/* Filters & Tonal toggles */}
-				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<button
-						type="button"
-						onClick={() => handleViewportChange({ invert: !viewportState.invert })}
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							borderRadius: "6px",
-							border: "none",
-							backgroundColor: viewportState.invert ? "#3b82f6" : "#1e293b",
-							color: "#ffffff",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "13px",
-						}}
-					>
-						<Eye size={16} /> Негатив (Инверсия)
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleViewportChange({ sharpen: viewportState.sharpen > 0 ? 0 : 35 })}
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							borderRadius: "6px",
-							border: "none",
-							backgroundColor: viewportState.sharpen > 0 ? "#8b5cf6" : "#1e293b",
-							color: "#ffffff",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "13px",
-						}}
-					>
-						<Sparkles size={16} /> Резкость
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleViewportChange({ emboss: !viewportState.emboss })}
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							borderRadius: "6px",
-							border: "none",
-							backgroundColor: viewportState.emboss ? "#ec4899" : "#1e293b",
-							color: "#ffffff",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "13px",
-						}}
-					>
-						<Layers size={16} /> 3D Рельеф (Emboss)
-					</button>
-
-					<button
-						type="button"
-						onClick={handleReset}
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "8px 14px",
-							borderRadius: "6px",
-							border: "1px solid #475569",
-							backgroundColor: "transparent",
-							color: "#94a3b8",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "13px",
-						}}
-					>
-						<RotateCcw size={16} /> Сброс
-					</button>
-				</div>
-			</div>
 		</div>
 	);
 };

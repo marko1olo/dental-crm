@@ -19,42 +19,62 @@ import type { FiscalItemDraft } from "./fiscal54fzEngine";
 
 export interface Fiscal54FzReceiptModalProps {
 	readonly isOpen: boolean;
-	readonly items: readonly (FiscalItemDraft | TreatmentPlanItem)[];
-	readonly patientId: string;
+	readonly items?: readonly (FiscalItemDraft | TreatmentPlanItem)[] | undefined;
+	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly familyPayerName?: string | undefined;
 	readonly cashierFullName?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly clinicInn?: string | undefined;
 	readonly clinicLicense?: string | undefined;
 	readonly initialOperationType?: "income" | "income_return" | undefined;
 	readonly initialTab?: FiscalModalTab | undefined;
+	readonly totalDueRub?: number | undefined;
+	readonly amountRub?: number | undefined;
+	readonly totalBillRub?: number | undefined;
+	readonly totalBillKop?: number | undefined;
+	readonly patientDebtRub?: number | undefined;
+	readonly defaultMethod?: any;
 	readonly onClose: () => void;
 	readonly onReceiptFiscalized?: ((receiptData: unknown) => void) | undefined;
 }
 
 export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 	isOpen,
-	items,
-	patientId,
+	items = [],
+	patientId = "00000000-0000-0000-0000-000000000001",
 	patientName,
 	patientPhone,
 	patientDepositRub,
+	patientFamilyBalanceRub,
+	familyPayerName,
 	cashierFullName,
 	clinicName,
+	clinicInn,
+	clinicLicense,
 	initialOperationType,
 	initialTab,
+	totalDueRub,
+	amountRub,
+	totalBillRub,
+	totalBillKop,
+	patientDebtRub,
+	defaultMethod,
 	onClose,
 	onReceiptFiscalized,
 }) => {
 	const adaptedItems = useMemo<readonly TreatmentPlanItem[]>(() => {
-		return items.map((item, idx) => {
+		return (items || []).map((item, idx) => {
 			const candidate = item as Partial<FiscalItemDraft> & Partial<TreatmentPlanItem>;
 			const qty = candidate.quantity ?? 1;
-			const price = candidate.priceRub ?? candidate.unitPriceRub ?? 0;
-			const unitPrice = candidate.unitPriceRub ?? (qty > 0 ? price / qty : price);
+			const rawPrice = candidate.priceRub ?? candidate.unitPriceRub ?? 0;
+			const price = Math.round(rawPrice * 100) / 100;
+			const rawUnitPrice = candidate.unitPriceRub ?? (qty > 0 ? price / qty : price);
+			const unitPrice = Math.round(rawUnitPrice * 100) / 100;
+			const discount = Math.round((candidate.discountRub ?? 0) * 100) / 100;
 			return {
 				id: candidate.id || `item-${idx + 1}`,
 				name: candidate.name || "Медицинская услуга",
@@ -63,7 +83,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 				quantity: qty,
 				unitPriceRub: unitPrice,
 				priceRub: price,
-				discountRub: candidate.discountRub ?? 0,
+				discountRub: discount,
 				category: candidate.taxDeductionCategory === "2" ? "implantology" : (candidate.category || "therapy"),
 				phase: typeof candidate.phase === "number" ? candidate.phase : 1,
 				stageKind:
@@ -88,9 +108,18 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 			patientName={patientName}
 			patientPhone={patientPhone}
 			patientDepositRub={patientDepositRub}
+			patientFamilyBalanceRub={patientFamilyBalanceRub}
+			familyPayerName={familyPayerName}
 			cashierFullName={cashierFullName}
 			clinicName={clinicName}
+			clinicInn={clinicInn}
 			initialTab={effectiveInitialTab}
+			totalDueRub={totalDueRub}
+			amountRub={amountRub}
+			totalBillRub={totalBillRub}
+			totalBillKop={totalBillKop}
+			patientDebtRub={patientDebtRub}
+			defaultMethod={defaultMethod}
 			onClose={onClose}
 			onReceiptFiscalized={onReceiptFiscalized as ((num: string) => void) | undefined}
 		/>

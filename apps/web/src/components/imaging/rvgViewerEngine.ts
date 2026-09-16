@@ -48,6 +48,25 @@ export {
 	type Point2D,
 };
 
+/**
+ * Anatomical and radiology palette standards (Mandate 8c & 8d)
+ * Pulp and endodontic tracing is strictly anatomical red (#ef4444).
+ * Calibrated linear rulers use radiologist cyan (#38bdf8).
+ */
+export const CLINICAL_IMAGING_COLORS = {
+	pulpRed: "#ef4444",
+	pulpRedDark: "#dc2626",
+	pulpHighlight: "#f87171",
+	rulerCyan: "#38bdf8",
+	rulerDraftAmber: "#f59e0b",
+	viewportDarkBg: "#020617",
+	panelDarkBg: "#0f172a",
+} as const;
+
+export function clampZoom(zoom: number, min = 0.2, max = 16.0): number {
+	return Number(Math.max(min, Math.min(max, zoom)).toFixed(3));
+}
+
 export const DENTAL_RADIOGRAPHY_PRESETS = [
 	{
 		id: "bone_structure",

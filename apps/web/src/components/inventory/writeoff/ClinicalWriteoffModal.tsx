@@ -128,7 +128,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	const [selectedCabinetId, setSelectedCabinetId] = useState<string>(cabinetId);
 	const [statutoryFormType, setStatutoryFormType] = useState<"0504230" | "M11" | "TORG16">(defaultFormType);
 	const [notes, setNotes] = useState<string>("");
-	const [isSingleSigner] = useState<boolean>(true);
+	const [isSingleSigner, setIsSingleSigner] = useState<boolean>(true);
 	const [showExtraForms, setShowExtraForms] = useState<boolean>(false);
 
 	// 2. Строки списания

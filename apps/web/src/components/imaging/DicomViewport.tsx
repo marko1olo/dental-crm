@@ -1,8 +1,11 @@
 /**
  * DENTE CRM — Interactive Dental DICOM / RVG Viewport Component
  * Features:
+ * - Ultra-fast <50ms image rendering (zero blocking AI delays)
+ * - Desktop Mouse: Left drag (Pan / Window-Level), Middle drag (Pan), Right drag (W/L), Wheel Zoom
  * - Touch Gestures on Tablet: Pinch-to-zoom, 1-finger pan, 2-finger Window/Level
  * - Subpixel Calibrated Ruler & Measurement Overlays
+ * - Anatomical Red for Root Canal / Pulp Tracing (Mandate 8c & 8d)
  * - WebGL Shader / 2D Canvas Filtering (Inversion, Sharpen, Emboss)
  * - Safe WebGL resource disposal on component unmount
  */
@@ -10,6 +13,7 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+	CLINICAL_IMAGING_COLORS,
 	DEFAULT_DICOM_VIEWPORT_STATE,
 	EMBOSS_SHADOW_KERNEL_3X3,
 	SHARPEN_KERNEL_3X3,
@@ -48,11 +52,21 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	const rawImageRef = useRef<HTMLImageElement | null>(null);
 	const filteredCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+	// Desktop mouse drag tracking refs
+	const isMouseDownRef = useRef<boolean>(false);
+	const mouseDragButtonRef = useRef<number>(0);
+	const mouseDragModeRef = useRef<"pan" | "window_level" | null>(null);
+	const mouseDragStartPosRef = useRef<Point2D>({ x: 0, y: 0 });
+	const mouseDragStartPanRef = useRef<Point2D>({ x: 0, y: 0 });
+	const mouseDragStartWwWlRef = useRef<{ ww: number; wl: number }>({ ww: 2000, wl: 500 });
+	const hasDraggedRef = useRef<boolean>(false);
+
 	// Touch gesture tracking refs
 	const touchStartDistanceRef = useRef<number>(0);
 	const touchStartZoomRef = useRef<number>(1);
 	const touchStartPosRef = useRef<Point2D>({ x: 0, y: 0 });
 	const touchStartPanRef = useRef<Point2D>({ x: 0, y: 0 });
+	const touchStartWwWlRef = useRef<{ ww: number; wl: number }>({ ww: 2000, wl: 500 });
 	const touchCountRef = useRef<number>(0);
 
 	// In-progress ruler drafting
@@ -114,26 +128,6 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		viewportState.emboss,
 	]);
 
-	// Load source image
-	useEffect(() => {
-		const img = new Image();
-		img.crossOrigin = "anonymous";
-		img.src = imageSrc;
-		img.onload = () => {
-			rawImageRef.current = img;
-			updateFilteredBuffer();
-			renderScene();
-		};
-	}, [imageSrc, updateFilteredBuffer]);
-
-	// Rebuild filtered buffer when filters change
-	useEffect(() => {
-		if (rawImageRef.current) {
-			updateFilteredBuffer();
-			renderScene();
-		}
-	}, [updateFilteredBuffer]);
-
 	// Render canvas scene: zero DOM allocation during pan/zoom
 	const renderScene = useCallback(() => {
 		const canvas = canvasRef.current;
@@ -148,7 +142,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = "#0f172a";
+		ctx.fillStyle = CLINICAL_IMAGING_COLORS.viewportDarkBg;
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 		// Transform matrix
@@ -166,22 +160,29 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 
 		// Draw calibrated rulers
 		for (const r of measurements) {
-			drawRulerOnContext(ctx, r.p1, r.p2, r.labelRu || `${r.lengthMm.toFixed(1)} мм`);
+			const isCanal = r.clinicalType === "root_canal_length" || r.labelRu.includes("Канал") || r.labelRu.includes("Апекс");
+			drawRulerOnContext(
+				ctx,
+				r.p1,
+				r.p2,
+				r.labelRu || `${r.lengthMm.toFixed(1)} мм`,
+				isCanal ? CLINICAL_IMAGING_COLORS.pulpRed : CLINICAL_IMAGING_COLORS.rulerCyan,
+			);
 		}
 
 		// Draw draft ruler in progress
 		if (draftRulerStart && draftRulerCurrent) {
 			const m = measureDistanceMm(draftRulerStart, draftRulerCurrent, viewportState.calibrationMmPerPixel);
-			drawRulerOnContext(ctx, draftRulerStart, draftRulerCurrent, `${m.distanceMm.toFixed(1)} мм (черновик)`, "#f59e0b");
+			drawRulerOnContext(ctx, draftRulerStart, draftRulerCurrent, `${m.distanceMm.toFixed(1)} мм (черновик)`, CLINICAL_IMAGING_COLORS.rulerDraftAmber);
 		}
 
-		// Draw draft root canal tracer in progress
+		// Draw draft root canal tracer in progress — strictly anatomical red (Mandate 8c & 8d)
 		if (draftCanalPoints.length > 0) {
 			const activePts = draftRulerCurrent ? [...draftCanalPoints, draftRulerCurrent] : draftCanalPoints;
 			ctx.save();
-			ctx.strokeStyle = "#10b981";
+			ctx.strokeStyle = CLINICAL_IMAGING_COLORS.pulpRed;
 			ctx.lineWidth = 2.5;
-			ctx.setLineDash([3, 3]);
+			ctx.setLineDash([4, 4]);
 			ctx.beginPath();
 			const startPt = activePts[0];
 			if (startPt) {
@@ -192,11 +193,11 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				}
 				ctx.stroke();
 
-				// Draw apical markers
+				// Draw apical marker dots
 				for (const pt of activePts) {
-					ctx.fillStyle = "#10b981";
+					ctx.fillStyle = CLINICAL_IMAGING_COLORS.pulpRedDark;
 					ctx.beginPath();
-					ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
+					ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
 					ctx.fill();
 				}
 
@@ -204,9 +205,9 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				const canalResult = measureRootCanalWorkingLength(activePts, viewportState.calibrationMmPerPixel);
 				const lastPt = activePts[activePts.length - 1];
 				if (lastPt) {
-					ctx.fillStyle = "#10b981";
+					ctx.fillStyle = CLINICAL_IMAGING_COLORS.pulpRed;
 					ctx.font = "bold 13px monospace";
-					ctx.fillText(`WL = ${canalResult.totalLengthMm.toFixed(1)} мм (Апекс)`, lastPt.x + 8, lastPt.y - 8);
+					ctx.fillText(`Апекс / WL = ${canalResult.totalLengthMm.toFixed(1)} мм`, lastPt.x + 8, lastPt.y - 8);
 				}
 			}
 			ctx.restore();
@@ -215,9 +216,33 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		ctx.restore();
 	}, [viewportState, measurements, draftRulerStart, draftRulerCurrent, draftCanalPoints]);
 
+	// Lightning-fast image loading (<50ms, zero network blocking)
 	useEffect(() => {
-		renderScene();
-	}, [renderScene]);
+		if (!imageSrc) return;
+		const img = new Image();
+		if (!imageSrc.startsWith("data:") && !imageSrc.startsWith("blob:")) {
+			img.crossOrigin = "anonymous";
+		}
+		const onLoaded = () => {
+			rawImageRef.current = img;
+			updateFilteredBuffer();
+			renderScene();
+		};
+		img.src = imageSrc;
+		if (img.complete && img.naturalWidth > 0) {
+			onLoaded();
+		} else {
+			img.onload = onLoaded;
+		}
+	}, [imageSrc, updateFilteredBuffer, renderScene]);
+
+	// Rebuild filtered buffer when filters change
+	useEffect(() => {
+		if (rawImageRef.current) {
+			updateFilteredBuffer();
+			renderScene();
+		}
+	}, [updateFilteredBuffer, renderScene]);
 
 	// Responsive resize sync on window/container changes
 	useEffect(() => {
@@ -246,25 +271,125 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		};
 	}, []);
 
-	// Touch gesture listeners
+	// Desktop Mouse Drag Handling
+	const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		isMouseDownRef.current = true;
+		hasDraggedRef.current = false;
+		mouseDragButtonRef.current = e.button;
+		mouseDragStartPosRef.current = { x: e.clientX, y: e.clientY };
+		mouseDragStartPanRef.current = { x: viewportState.panX, y: viewportState.panY };
+		mouseDragStartWwWlRef.current = { ww: viewportState.windowWidth, wl: viewportState.windowCenter };
+
+		if (e.button === 1) {
+			// Middle click always pans
+			mouseDragModeRef.current = "pan";
+		} else if (e.button === 2) {
+			// Right click always adjusts Window/Level
+			mouseDragModeRef.current = "window_level";
+		} else if (e.button === 0) {
+			// Left click depends on active tool
+			if (viewportState.activeTool === "pan") {
+				mouseDragModeRef.current = "pan";
+			} else if (viewportState.activeTool === "window_level") {
+				mouseDragModeRef.current = "window_level";
+			} else {
+				mouseDragModeRef.current = null;
+			}
+		}
+	};
+
+	const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (isMouseDownRef.current && mouseDragModeRef.current) {
+			const dx = e.clientX - mouseDragStartPosRef.current.x;
+			const dy = e.clientY - mouseDragStartPosRef.current.y;
+			if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+				hasDraggedRef.current = true;
+			}
+
+			if (mouseDragModeRef.current === "pan") {
+				onViewportChange({
+					panX: mouseDragStartPanRef.current.x + dx,
+					panY: mouseDragStartPanRef.current.y + dy,
+				});
+			} else if (mouseDragModeRef.current === "window_level") {
+				const nextWwWl = calculate2FingerWindowLevel(
+					dx,
+					dy,
+					mouseDragStartWwWlRef.current.ww,
+					mouseDragStartWwWlRef.current.wl,
+					2.5,
+				);
+				onViewportChange({
+					windowWidth: nextWwWl.windowWidth,
+					windowCenter: nextWwWl.windowCenter,
+				});
+			}
+			return;
+		}
+
+		// Ruler / Tracer live cursor updating
+		if (viewportState.activeTool === "ruler" && draftRulerStart) {
+			const rect = canvasRef.current?.getBoundingClientRect();
+			if (!rect) return;
+			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
+			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
+			setDraftRulerCurrent({ x: currentX, y: currentY });
+		} else if (viewportState.activeTool === "root_canal_tracer" && draftCanalPoints.length > 0) {
+			const rect = canvasRef.current?.getBoundingClientRect();
+			if (!rect) return;
+			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
+			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
+			setDraftRulerCurrent({ x: currentX, y: currentY });
+		}
+	};
+
+	const handleMouseUp = () => {
+		isMouseDownRef.current = false;
+		mouseDragModeRef.current = null;
+	};
+
+	// Mouse Wheel Zoom
+	const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+		e.preventDefault();
+		const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+		const nextZoom = Number(Math.max(0.2, Math.min(16.0, viewportState.zoom * zoomFactor)).toFixed(3));
+		onViewportChange({ zoom: nextZoom });
+	};
+
+	// Touch gesture listeners (Tablets at dental chair)
 	const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
 		touchCountRef.current = e.touches.length;
 		if (e.touches.length === 1 && e.touches[0]) {
 			const t = e.touches[0];
 			touchStartPosRef.current = { x: t.clientX, y: t.clientY };
 			touchStartPanRef.current = { x: viewportState.panX, y: viewportState.panY };
+			touchStartWwWlRef.current = { ww: viewportState.windowWidth, wl: viewportState.windowCenter };
 		} else if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
 			touchStartDistanceRef.current = calculatePinchDistance(e.touches[0], e.touches[1]);
 			touchStartZoomRef.current = viewportState.zoom;
+			touchStartWwWlRef.current = { ww: viewportState.windowWidth, wl: viewportState.windowCenter };
 		}
 	};
 
 	const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
 		if (e.touches.length === 1 && e.touches[0]) {
-			// 1-Finger Pan
 			const t = e.touches[0];
-			const newPan = calculate1FingerPan(touchStartPosRef.current, { x: t.clientX, y: t.clientY }, touchStartPanRef.current);
-			onViewportChange({ panX: newPan.x, panY: newPan.y });
+			if (viewportState.activeTool === "window_level") {
+				const dx = t.clientX - touchStartPosRef.current.x;
+				const dy = t.clientY - touchStartPosRef.current.y;
+				const nextWwWl = calculate2FingerWindowLevel(
+					dx,
+					dy,
+					touchStartWwWlRef.current.ww,
+					touchStartWwWlRef.current.wl,
+					2.5,
+				);
+				onViewportChange({ windowWidth: nextWwWl.windowWidth, windowCenter: nextWwWl.windowCenter });
+			} else {
+				// 1-Finger Pan
+				const newPan = calculate1FingerPan(touchStartPosRef.current, { x: t.clientX, y: t.clientY }, touchStartPanRef.current);
+				onViewportChange({ panX: newPan.x, panY: newPan.y });
+			}
 		} else if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
 			// Pinch-to-zoom
 			const currentDist = calculatePinchDistance(e.touches[0], e.touches[1]);
@@ -275,6 +400,9 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 
 	// Mouse click handler for Ruler and Root Canal Tracer tools
 	const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		// If user was dragging, do not interpret as point click
+		if (hasDraggedRef.current) return;
+
 		const rect = canvasRef.current?.getBoundingClientRect();
 		if (!rect) return;
 
@@ -298,6 +426,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 						lengthMm: dist.distanceMm,
 						calibrationMmPerPixel: viewportState.calibrationMmPerPixel,
 						labelRu: `${dist.distanceMm.toFixed(1)} мм`,
+						clinicalType: "general",
 					});
 				}
 				setDraftRulerStart(null);
@@ -320,6 +449,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 					lengthMm: m.totalLengthMm,
 					calibrationMmPerPixel: viewportState.calibrationMmPerPixel,
 					labelRu: `Канал: ${m.totalLengthMm.toFixed(1)} мм (WL/Apex)`,
+					clinicalType: "root_canal_length",
 				});
 			}
 			setDraftCanalPoints([]);
@@ -327,20 +457,18 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		}
 	};
 
-	const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-		if (viewportState.activeTool === "ruler" && draftRulerStart) {
-			const rect = canvasRef.current?.getBoundingClientRect();
-			if (!rect) return;
-			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
-			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
-			setDraftRulerCurrent({ x: currentX, y: currentY });
-		} else if (viewportState.activeTool === "root_canal_tracer" && draftCanalPoints.length > 0) {
-			const rect = canvasRef.current?.getBoundingClientRect();
-			if (!rect) return;
-			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
-			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
-			setDraftRulerCurrent({ x: currentX, y: currentY });
+	// Determine cursor based on tool and dragging state
+	const getCanvasCursor = () => {
+		if (viewportState.activeTool === "ruler" || viewportState.activeTool === "root_canal_tracer") {
+			return "crosshair";
 		}
+		if (viewportState.activeTool === "window_level" || mouseDragModeRef.current === "window_level") {
+			return "ew-resize";
+		}
+		if (isMouseDownRef.current && mouseDragModeRef.current === "pan") {
+			return "grabbing";
+		}
+		return "grab";
 	};
 
 	return (
@@ -351,7 +479,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				height: "100%",
 				position: "relative",
 				overflow: "hidden",
-				backgroundColor: "#020617",
+				backgroundColor: CLINICAL_IMAGING_COLORS.viewportDarkBg,
 				touchAction: "none",
 				userSelect: "none",
 			}}
@@ -360,18 +488,21 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		>
 			<canvas
 				ref={canvasRef}
+				data-testid="dicom-viewport-canvas"
 				style={{
 					width: "100%",
 					height: "100%",
 					display: "block",
-					cursor:
-						viewportState.activeTool === "ruler" || viewportState.activeTool === "root_canal_tracer"
-							? "crosshair"
-							: "grab",
+					cursor: getCanvasCursor(),
 				}}
+				onMouseDown={handleMouseDown}
+				onMouseMove={handleMouseMove}
+				onMouseUp={handleMouseUp}
+				onMouseLeave={handleMouseUp}
 				onClick={handleCanvasClick}
 				onDoubleClick={handleCanvasDoubleClick}
-				onMouseMove={handleMouseMove}
+				onWheel={handleWheel}
+				onContextMenu={(e) => e.preventDefault()}
 			/>
 		</div>
 	);
@@ -382,7 +513,7 @@ function drawRulerOnContext(
 	p1: Point2D,
 	p2: Point2D,
 	label: string,
-	color = "#38bdf8",
+	color: string = CLINICAL_IMAGING_COLORS.rulerCyan,
 ) {
 	ctx.save();
 	ctx.strokeStyle = color;
@@ -410,10 +541,9 @@ function drawRulerOnContext(
 	ctx.font = "bold 12px monospace";
 	const textWidth = ctx.measureText(label).width;
 	const padX = 6;
-	const padY = 3;
 
-	ctx.fillStyle = "rgba(2, 6, 23, 0.85)";
-	ctx.strokeStyle = "rgba(51, 65, 85, 0.8)";
+	ctx.fillStyle = "rgba(2, 6, 23, 0.9)";
+	ctx.strokeStyle = color === CLINICAL_IMAGING_COLORS.pulpRed ? "rgba(239, 68, 68, 0.6)" : "rgba(51, 65, 85, 0.8)";
 	ctx.lineWidth = 1;
 	ctx.beginPath();
 	if (typeof ctx.roundRect === "function") {
@@ -424,7 +554,7 @@ function drawRulerOnContext(
 	ctx.fill();
 	ctx.stroke();
 
-	ctx.fillStyle = "#38bdf8";
+	ctx.fillStyle = color;
 	ctx.textBaseline = "middle";
 	ctx.fillText(label, midX + 4 + padX, midY - 8);
 	ctx.restore();

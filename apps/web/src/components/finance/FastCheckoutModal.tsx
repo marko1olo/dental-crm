@@ -22,6 +22,8 @@ import {
 	Building2,
 	User,
 	FileText,
+	MoreHorizontal,
+	Send,
 } from "lucide-react";
 import {
 	convertRubToForeignCurrency,
@@ -134,6 +136,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		}
 	}, [isOpen, initialPaymentMethod]);
 	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(true);
 	const [selectedForeignCurrency, setSelectedForeignCurrency] = useState<SupportedCurrency>("USD");
 	const [clientType, setClientType] = useState<ClientLegalType>("physical_person");
@@ -434,7 +437,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				(validation as { errorMessage?: string }).errorMessage ||
 				"Скорректируйте сумму оплаты перед пробитием чека";
 
-			if (validation.errorMessageRu?.includes("ИНН")) {
+			if (clientType !== "physical_person" && validation.errorMessageRu?.includes("ИНН")) {
 				showToast(errorMsg, "warning");
 				return;
 			}
@@ -801,16 +804,16 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		<div ref={modalRef} className="fast-checkout-modal-overlay" data-testid="fast-checkout-modal" tabIndex={-1}>
 			<div className="fast-checkout-modal-container max-w-3xl">
 				{/* Header */}
-				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
-					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30">
-							<QrCode className="w-5 h-5" />
+				<div className="p-3 sm:py-2.5 sm:px-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
+					<div className="flex items-center gap-2.5 min-w-0">
+						<div className="w-8 h-8 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30 shrink-0">
+							<QrCode className="w-4 h-4" />
 						</div>
-						<div>
-							<h2 className="text-lg font-bold text-[var(--ink,#0f172a)] break-words flex items-center gap-2 m-0">
+						<div className="min-w-0">
+							<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] truncate flex items-center gap-2 m-0">
 								1-Клик Оплата приема & Фискализация 54-ФЗ
 							</h2>
-							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
+							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 truncate">
 								{patientName} • Заказ #{orderId} • К оплате: <span className="font-bold font-mono text-teal-700 dark:text-teal-300">{(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
 							</p>
 						</div>
@@ -818,39 +821,39 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer shrink-0 ml-2"
 						aria-label="Закрыть быструю кассу"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4" />
 					</button>
 				</div>
 
 				{/* Body Content */}
-				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
+				<div className="p-3 sm:p-4 overflow-y-auto flex flex-col gap-4 flex-1">
 					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
-					<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">1</span>
-							<span>Шаг 1: Способ оплаты</span>
+					<div className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300 min-w-0">
+							<span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-teal-600 text-white text-[9px] shrink-0">1</span>
+							<span className="truncate">Способ</span>
 						</div>
-						<ArrowRight size={12} className="text-[var(--muted,#64748b)]" />
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">2</span>
-							<span>Шаг 2: Проверка суммы</span>
+						<ArrowRight size={12} className="text-[var(--muted,#64748b)] shrink-0" />
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300 min-w-0">
+							<span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-teal-600 text-white text-[9px] shrink-0">2</span>
+							<span className="truncate">Сумма</span>
 						</div>
-						<ArrowRight size={12} className="text-[var(--muted,#64748b)]" />
-						<div className={`flex items-center gap-1.5 font-bold ${validation.isValid ? "text-emerald-700 dark:text-emerald-300" : "text-amber-600"}`}>
-							<span className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${validation.isValid ? "bg-emerald-600" : "bg-amber-500"} text-white text-[10px]`}>3</span>
-							<span>Шаг 3: Пробить чек 54-ФЗ</span>
+						<ArrowRight size={12} className="text-[var(--muted,#64748b)] shrink-0" />
+						<div className={`flex items-center gap-1.5 font-bold min-w-0 ${validation.isValid ? "text-emerald-700 dark:text-emerald-300" : "text-amber-600"}`}>
+							<span className={`inline-flex items-center justify-center w-4 h-4 rounded-full ${validation.isValid ? "bg-emerald-600" : "bg-amber-500"} text-white text-[9px] shrink-0`}>3</span>
+							<span className="truncate">Чек 54-ФЗ</span>
 						</div>
-						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center">
-							<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
-							54-ФЗ: ИНН с физлиц НЕ требуется
+						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0">
+							<ShieldCheck size={13} className="inline mr-1 shrink-0 text-emerald-500" />
+							<span className="truncate">54-ФЗ: ИНН с физлиц НЕ требуется</span>
 						</span>
 						<button
 							type="button"
 							onClick={() => setIsSimpleCashierMode((prev) => !prev)}
-							className={`min-h-[44px] px-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer ml-auto flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-7.5 px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ml-auto flex items-center gap-1.5 shrink-0 ${
 								isSimpleCashierMode
 									? "bg-teal-600 text-white shadow-xs ring-2 ring-teal-500/30"
 									: "bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-500"
@@ -1877,29 +1880,107 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				</div>
 
 				{/* Footer Actions (Fixed Sticky Bar — Fitts's Law) */}
-				<div className="sticky bottom-0 z-50 p-4 sm:p-5 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between sm:justify-end flex-wrap gap-3 shrink-0 shadow-lg">
-					<div className="text-xs text-[var(--muted)] mr-auto hidden sm:block">
+				<div className="sticky bottom-0 z-50 p-3 sm:py-2.5 sm:px-4 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between sm:justify-end flex-wrap gap-2.5 shrink-0 shadow-lg">
+					<div className="text-xs text-[var(--muted)] mr-auto hidden sm:block min-w-0 truncate">
 						ФФД 1.2 • {patientPhone ? `Чек будет отправлен на ${patientPhone}` : "Печать фискального чека"}
 					</div>
-					<div className="w-full sm:w-auto flex items-center gap-2">
+					<div className="w-full sm:w-auto flex items-center gap-2 relative">
+						{/* Secondary / Rare Actions Popover Menu (Mandate 8d: max 1-2 direct buttons) */}
+						<div className="relative">
+							<button
+								type="button"
+								data-testid="btn-fast-checkout-more-actions"
+								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-hover)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer select-none"
+								title="Дополнительные действия с чеком"
+								aria-label="Дополнительные действия с чеком"
+							>
+								<MoreHorizontal className="w-4 h-4 text-[var(--muted)]" />
+							</button>
+
+							{isMoreMenuOpen && (
+								<div
+									data-testid="menu-fast-checkout-more-options"
+									className="absolute bottom-full right-0 mb-2 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2 shadow-xl z-50 text-xs flex flex-col gap-1.5"
+								>
+									<div className="font-semibold text-[var(--ink)] px-2 py-1 border-b border-[var(--line)] flex items-center justify-between">
+										<span>Опции фискализации</span>
+										<span className="text-[10px] text-[var(--muted)] font-mono">54-ФЗ</span>
+									</div>
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsElectronicReceiptOnly((prev) => !prev);
+											setIsMoreMenuOpen(false);
+											showToast(
+												!isElectronicReceiptOnly
+													? "Только электронный чек (бумажный не печатается)"
+													: "Печать бумажного чека включена",
+												"info",
+											);
+										}}
+										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-hover)] text-[var(--ink)] flex items-center justify-between cursor-pointer"
+									>
+										<span>Только электронный чек</span>
+										<span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isElectronicReceiptOnly ? "bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold" : "bg-[var(--line)] text-[var(--muted)]"}`}>
+											{isElectronicReceiptOnly ? "Да" : "Нет"}
+										</span>
+									</button>
+
+									{patientPhone && (
+										<button
+											type="button"
+											onClick={() => {
+												setIsMoreMenuOpen(false);
+												showToast(
+													`Копия чека будет направлена по SMS/WhatsApp на ${patientPhone}`,
+													"success",
+												);
+											}}
+											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-hover)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
+										>
+											<Send className="w-3.5 h-3.5 text-teal-600" />
+											<span>Отправить копию по SMS</span>
+										</button>
+									)}
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsMoreMenuOpen(false);
+											void handleExecutePayment(true);
+										}}
+										disabled={isPrinting}
+										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-hover)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
+									>
+										<WifiOff className="w-3.5 h-3.5 text-amber-600" />
+										<span>Отложить в офлайн-буфер</span>
+									</button>
+								</div>
+							)}
+						</div>
+
 						<button
 							type="button"
 							data-testid="execute-fast-checkout-btn"
 							onClick={() => void handleExecutePayment()}
 							disabled={isPrinting}
-							className="w-full sm:w-auto min-h-[52px] px-4 sm:px-8 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-sm sm:text-base font-extrabold flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] sm:h-10 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
 						>
 							{isPrinting ? (
 								<>
-									<Printer className="w-5 h-5 animate-spin" />
-									Печать фискального чека 54-ФЗ...
+									<Printer className="w-4 h-4 animate-spin" />
+									<span>Печать фискального чека 54-ФЗ...</span>
 								</>
 							) : (
 								<>
-									<Check className="w-5 h-5" />
-									{targetBillKop === 0
-										? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
-										: `Пробить чек 54-ФЗ (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
+									<Check className="w-4 h-4" />
+									<span>
+										{targetBillKop === 0
+											? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
+											: `Пробить чек 54-ФЗ (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
+									</span>
 								</>
 							)}
 						</button>
