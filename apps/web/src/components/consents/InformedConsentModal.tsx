@@ -34,6 +34,8 @@ import {
 	PACKAGE_SHORT_TITLES,
 	printBlankConsentPackage,
 	printFilledConsentPackage,
+	printBlankConsentTemplate,
+	printFilledConsentTemplate,
 	renderConsentTemplate,
 	TEMPLATE_SHORT_TITLES,
 } from "./consentTemplates.js";
@@ -72,6 +74,11 @@ export interface InformedConsentModalProps {
 	licenseNumber?: string | null;
 	diagnosisIcd?: string | null;
 	toothNumbers?: string | null;
+	isLocked?: boolean;
+	isDraft?: boolean;
+	isSigned?: boolean;
+	status?: string;
+	watermarkText?: string;
 	onConsentSigned?: (payload: SignedConsentPayload) => void;
 	onPackageSigned?: (payloads: SignedConsentPayload[]) => void;
 	onConsentConfirmed?: (payload: {
@@ -216,6 +223,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	licenseNumber,
 	diagnosisIcd,
 	toothNumbers,
+	isLocked,
+	isDraft,
+	isSigned,
+	status,
+	watermarkText,
 	onConsentSigned,
 	onPackageSigned,
 	onConsentConfirmed,
@@ -226,6 +238,20 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const [previewTemplateKey, setPreviewTemplateKey] = useState<ConsentTemplateKey | null>(null);
 	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(true);
 	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
+
+	const isClosedOrSigned = Boolean(
+		isSigned ||
+		isLocked ||
+		status === "signed" ||
+		status === "closed" ||
+		status === "completed" ||
+		status === "approved" ||
+		status === "issued"
+	);
+	const effectiveWatermark =
+		watermarkText ||
+		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
 
 	// Редактирование контекста плейсхолдеров
 	const [customDiagnosis, setCustomDiagnosis] = useState<string>(diagnosisIcd || "");
@@ -386,9 +412,15 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	// Печать документа А4 (заполненный бланк)
 	const handlePrint = () => {
 		if (activeMode === "packages") {
-			printFilledConsentPackage(activePackageKey, effectiveContext);
+			printFilledConsentPackage(activePackageKey, effectiveContext, {
+				isSigned: isClosedOrSigned,
+				watermarkText: effectiveWatermark,
+			});
 		} else {
-			window.print();
+			printFilledConsentTemplate(activeDocKey, effectiveContext, {
+				isSigned: isClosedOrSigned,
+				watermarkText: effectiveWatermark,
+			});
 		}
 	};
 
@@ -403,13 +435,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				licenseNumber: licenseNumber ?? null,
 			});
 		} else {
-			setIsPrintingBlank(true);
-			setTimeout(() => {
-				window.print();
-				setTimeout(() => {
-					setIsPrintingBlank(false);
-				}, 600);
-			}, 80);
+			printBlankConsentTemplate(activeDocKey, {
+				clinicName: clinicName ?? null,
+				clinicLegalName: clinicLegalName ?? null,
+				clinicAddress: clinicAddress ?? null,
+				clinicOgrn: clinicOgrn ?? null,
+				licenseNumber: licenseNumber ?? null,
+			});
 		}
 	};
 
@@ -734,7 +766,49 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					</div>
 
 					{/* Просмотр текста согласия */}
-					<div className="consent-document-sheet">
+					<div className="consent-document-sheet" style={{ position: "relative" }}>
+						<div
+							className="consent-doc-watermark"
+							style={{
+								position: "absolute",
+								top: "45%",
+								left: "50%",
+								transform: "translate(-50%, -50%) rotate(-30deg)",
+								fontSize: "48pt",
+								fontWeight: 900,
+								color: "rgba(0, 0, 0, 0.04)",
+								textTransform: "uppercase",
+								letterSpacing: "4pt",
+								pointerEvents: "none",
+								zIndex: 0,
+								userSelect: "none",
+							}}
+							aria-hidden="true"
+						>
+							{effectiveWatermark}
+						</div>
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+							<span
+								className="consent-watermark-stamp"
+								style={{
+									display: "inline-block",
+									border: `1.5pt solid ${stampColor}`,
+									color: stampColor,
+									padding: "1.5pt 6pt",
+									borderRadius: "3px",
+									fontSize: "7.5pt",
+									fontWeight: 800,
+									textTransform: "uppercase",
+									letterSpacing: "0.04em",
+								}}
+								data-testid="consent-watermark-stamp"
+							>
+								{effectiveWatermark}
+							</span>
+							<span className="text-xs text-muted">
+								{isClosedOrSigned ? "Документ подписан / подшит в карту 043/у" : "Черновик — печать разрешена в любой момент"}
+							</span>
+						</div>
 						<h3 className="consent-document-title">{rendered.title}</h3>
 						<p className="consent-document-subtitle">{rendered.subtitle}</p>
 

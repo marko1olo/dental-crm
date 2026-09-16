@@ -172,8 +172,8 @@ const STAMP_ITEMS: Array<{
 		label: "Имплант (И)",
 		short: "Имплант",
 		testId: "stamp-implant-btn",
-		activeClass: "bg-indigo-600 text-white",
-		badgeClass: "bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border-indigo-500/20",
+		activeClass: "bg-slate-700 text-white",
+		badgeClass: "bg-slate-500/15 text-slate-800 dark:text-slate-200 hover:bg-slate-500/25 border border-slate-500/30",
 	},
 	{
 		state: "Missing",
@@ -314,6 +314,22 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 			showToast(`Выделено: ${teeth.length} зубов (пакетный режим)`, "info");
 		},
 		[activeStampTool, onQuickStateChange, onSelectTeethGroup],
+	);
+
+	const handleQuickTriggerState = useCallback(
+		(state: ToothState) => {
+			if (selectedTeeth && selectedTeeth.length > 0 && onQuickStateChange) {
+				onQuickStateChange(selectedTeeth, state);
+				SoundFeedbackService.getInstance().playActionSuccess();
+				showToast(`Статус «${state}» применён к ${selectedTeeth.length} зубам`, "success");
+			} else {
+				setActiveStampTool((prev) => (prev === state ? null : state));
+				if (activeStampTool !== state) {
+					SoundFeedbackService.getInstance().playActionSuccess();
+				}
+			}
+		},
+		[selectedTeeth, onQuickStateChange, activeStampTool],
 	);
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
@@ -620,6 +636,114 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							</div>
 						)}
 
+						{/* 1-Click Total Sanitation / Express Physiological Norm (Mandates 8e item 3 & 8k) */}
+						{onQuickStateChange && (
+							<button
+								type="button"
+								onClick={handleMarkIntactDentition}
+								className="h-8 px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0 active:scale-98"
+								title="1-клик Санирован: вся зубная формула отмечается интактной (здоровой) без ручного прокликивания 32 зубов"
+								data-testid="mark-intact-dentition-btn"
+							>
+								<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>Санирован</span>
+							</button>
+						)}
+
+						{/* 1-Click Quick State Triggers (Direct action for selected teeth or 1-click stamp) */}
+						{onQuickStateChange && (
+							<div
+								className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8 gap-0.5"
+								role="group"
+								aria-label="Быстрые статусы патологий"
+							>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Healthy")}
+									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+										activeStampTool === "Healthy"
+											? "bg-emerald-600 text-white font-black shadow-xs"
+											: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
+									}`}
+									title="Норма / Здоров: применить к выделенным зубам или включить штамп нормы"
+									data-testid="quick-trigger-healthy-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+									<span>Норма</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Caries")}
+									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+										activeStampTool === "Caries"
+											? "bg-amber-600 text-white font-black shadow-xs"
+											: "text-amber-700 dark:text-amber-400 hover:bg-amber-500/15"
+									}`}
+									title="Кариес (К): применить к выделенным зубам или включить штамп кариеса"
+									data-testid="quick-trigger-caries-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+									<span>Кариес</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Pulpitis")}
+									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+										activeStampTool === "Pulpitis"
+											? "bg-red-600 text-white font-black shadow-xs"
+											: "text-red-700 dark:text-red-400 hover:bg-red-500/15"
+									}`}
+									title="Пульпит (Ф): анатомический красный #ef4444, применить к выделенным зубам или включить штамп"
+									data-testid="quick-trigger-pulpitis-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0" />
+									<span>Пульпит</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Filled")}
+									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+										activeStampTool === "Filled"
+											? "bg-sky-600 text-white font-black shadow-xs"
+											: "text-sky-700 dark:text-sky-400 hover:bg-sky-500/15"
+									}`}
+									title="Пломба (П): применить к выделенным зубам или включить штамп пломбы"
+									data-testid="quick-trigger-filling-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+									<span>Пломба</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Missing")}
+									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+										activeStampTool === "Missing"
+											? "bg-zinc-700 text-white font-black shadow-xs"
+											: "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/15"
+									}`}
+									title="Удален (X): применить к выделенным зубам или включить штамп отсутствия"
+									data-testid="quick-trigger-extracted-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
+									<span>Удален</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Implant")}
+									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+										activeStampTool === "Implant"
+											? "bg-slate-700 text-white font-black shadow-xs"
+											: "text-slate-700 dark:text-slate-300 hover:bg-slate-500/15"
+									}`}
+									title="Имплант (И): титановый сланец #64748b, применить к выделенным зубам или включить штамп импланта"
+									data-testid="quick-trigger-implant-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-[#64748b] shrink-0" />
+									<span>Имплант</span>
+								</button>
+							</div>
+						)}
+
 						{/* Compact Stamp Selector: Dropdown Popover */}
 						<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8">
 							<details className="relative">
@@ -711,7 +835,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 												}}
 												className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
 												title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми"
-												data-testid="mark-intact-dentition-btn"
+												data-testid="mark-intact-dentition-dropdown-btn mark-intact-dentition-btn"
 											>
 												<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 												<span>Санирован</span>

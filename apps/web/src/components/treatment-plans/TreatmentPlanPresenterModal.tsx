@@ -175,6 +175,11 @@ export interface TreatmentPlanPresenterModalProps {
 	readonly onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
 	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly planCreatedAtIso?: string | undefined;
+	readonly isClosed?: boolean | undefined;
+	readonly isDraft?: boolean | undefined;
+	readonly isSigned?: boolean | undefined;
+	readonly status?: string | undefined;
+	readonly watermarkText?: string | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -224,9 +229,28 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	onPrintContract,
 	onUpdateItemPrice: onUpdateItemPriceProp,
 	planCreatedAtIso,
+	isClosed,
+	isDraft,
+	isSigned,
+	status,
+	watermarkText,
 	className = "",
 }) => {
 	if (!isOpen) return null;
+
+	const isClosedOrSigned = Boolean(
+		isSigned ||
+		isClosed ||
+		status === "closed" ||
+		status === "signed" ||
+		status === "completed" ||
+		status === "approved" ||
+		status === "issued"
+	);
+	const effectiveWatermark =
+		watermarkText ||
+		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const stampColor = isClosedOrSigned ? "#059669" : "#64748b";
 
 	const planAgeDays = useMemo(() => {
 		if (!planCreatedAtIso) return 0;
@@ -1672,7 +1696,27 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								/* ==========================================================
 								   PATIENT-FRIENDLY ESTIMATE: CLEAN LARGE BLOCKS (Mandate 8e)
 								   ========================================================== */
-								<div className="patient-friendly-estimate-doc" data-testid="patient-friendly-estimate-view">
+								<div className="patient-friendly-estimate-doc" style={{ position: "relative" }} data-testid="patient-friendly-estimate-view">
+									<div
+										className="treatment-doc-watermark"
+										style={{
+											position: "absolute",
+											top: "45%",
+											left: "50%",
+											transform: "translate(-50%, -50%) rotate(-30deg)",
+											fontSize: "52pt",
+											fontWeight: 900,
+											color: "rgba(0, 0, 0, 0.04)",
+											textTransform: "uppercase",
+											letterSpacing: "4pt",
+											pointerEvents: "none",
+											zIndex: 0,
+											userSelect: "none",
+										}}
+										aria-hidden="true"
+									>
+										{effectiveWatermark}
+									</div>
 									{/* Top Header */}
 									<div className="patient-estimate-header">
 										<div>
@@ -1684,6 +1728,25 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											</div>
 										</div>
 										<div className="text-right">
+											<div style={{ marginBottom: "2px" }}>
+												<span
+													className="treatment-watermark-stamp"
+													style={{
+														display: "inline-block",
+														border: `1.5pt solid ${stampColor}`,
+														color: stampColor,
+														padding: "1pt 5pt",
+														borderRadius: "3px",
+														fontSize: "7.5pt",
+														fontWeight: 800,
+														textTransform: "uppercase",
+														letterSpacing: "0.04em",
+													}}
+													data-testid="treatment-watermark-stamp"
+												>
+													{effectiveWatermark}
+												</span>
+											</div>
 											<div className="patient-estimate-title-main">
 												Смета и план лечения
 											</div>
@@ -1884,7 +1947,27 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								/* ==========================================================
 								   OFFICIAL LEGAL APPENDIX #1 (PP RF № 736 & Order 804n)
 								   ========================================================== */
-								<div data-testid="official-appendix-view">
+								<div data-testid="official-appendix-view" style={{ position: "relative" }}>
+									<div
+										className="treatment-doc-watermark"
+										style={{
+											position: "absolute",
+											top: "45%",
+											left: "50%",
+											transform: "translate(-50%, -50%) rotate(-30deg)",
+											fontSize: "52pt",
+											fontWeight: 900,
+											color: "rgba(0, 0, 0, 0.04)",
+											textTransform: "uppercase",
+											letterSpacing: "4pt",
+											pointerEvents: "none",
+											zIndex: 0,
+											userSelect: "none",
+										}}
+										aria-hidden="true"
+									>
+										{effectiveWatermark}
+									</div>
 									{/* Document Header */}
 									<div className="treatment-appendix-header">
 										<div>
@@ -1894,6 +1977,25 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											</div>
 										</div>
 										<div className="text-right">
+											<div style={{ marginBottom: "2px" }}>
+												<span
+													className="treatment-watermark-stamp"
+													style={{
+														display: "inline-block",
+														border: `1.5pt solid ${stampColor}`,
+														color: stampColor,
+														padding: "1pt 5pt",
+														borderRadius: "3px",
+														fontSize: "7.5pt",
+														fontWeight: 800,
+														textTransform: "uppercase",
+														letterSpacing: "0.04em",
+													}}
+													data-testid="treatment-watermark-stamp"
+												>
+													{effectiveWatermark}
+												</span>
+											</div>
 											<div className="font-bold text-xs">ПРИЛОЖЕНИЕ № 1</div>
 											<div className="text-[10px] text-slate-600">к Договору на оказание платных медицинских услуг</div>
 											<div className="text-[10px] text-slate-600">Дата: {todayRu} г.</div>

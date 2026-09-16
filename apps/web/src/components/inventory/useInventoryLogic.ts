@@ -724,6 +724,8 @@ export function useInventoryLogic(organizationId: string) {
 					body: JSON.stringify({ adjustment, allowOverdraft: true }),
 				},
 			);
+
+			if (res.ok) {
 				const isDeficit =
 					adjustType === "out" &&
 					(adjustingItem.stockQuantity <= 0 || amount > adjustingItem.stockQuantity);

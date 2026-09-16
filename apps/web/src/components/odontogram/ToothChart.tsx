@@ -696,23 +696,23 @@ export const getToothColors = (
 				fill: "url(#titanium-implant-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#6366f1",
+				stroke: "#64748b",
 				opacity: "1",
-				badgeColor: "#6366f1",
-				badgeBg: "rgba(99, 102, 241, 0.15)",
-				badgeText: "#4338ca",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Planned_Implant":
 			return {
 				fill: "url(#titanium-implant-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#6366f1",
+				stroke: "#64748b",
 				opacity: "1",
 				isPulsing: true,
-				badgeColor: "#6366f1",
-				badgeBg: "rgba(99, 102, 241, 0.15)",
-				badgeText: "#4338ca",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Missing":
 			return {
@@ -1017,12 +1017,12 @@ export const DenteToothSvgDefs: React.FC = () => (
 				<stop offset="100%" stopColor="#78350f" stopOpacity="1" />
 			</radialGradient>
 
-			{/* Natural Living Pulp Gradient (Vital Vascular Soft Tissue) */}
+			{/* Natural Living Pulp Gradient (Vital Vascular Soft Tissue - Anatomical Red #ef4444) */}
 			<linearGradient id="dente-pulp-vital-grad" x1="0%" y1="0%" x2="0%" y2="100%">
 				<stop offset="0%" stopColor="#fda4af" stopOpacity="0.95" />
-				<stop offset="35%" stopColor="#fb7185" stopOpacity="0.95" />
-				<stop offset="75%" stopColor="#f43f5e" stopOpacity="0.92" />
-				<stop offset="100%" stopColor="#e11d48" stopOpacity="0.9" />
+				<stop offset="30%" stopColor="#ef4444" stopOpacity="0.95" />
+				<stop offset="70%" stopColor="#dc2626" stopOpacity="0.92" />
+				<stop offset="100%" stopColor="#b91c1c" stopOpacity="0.9" />
 			</linearGradient>
 
 			{/* Natural Living Root Canal Lumen Gradient */}
@@ -1325,7 +1325,7 @@ const ToothSVG = ({
 						y1="10"
 						x2="50"
 						y2="140"
-						stroke="#6366f1"
+						stroke="#64748b"
 						strokeWidth="1.6"
 						strokeDasharray="4 3"
 						strokeLinecap="round"

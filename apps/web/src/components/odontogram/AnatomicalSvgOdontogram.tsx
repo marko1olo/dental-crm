@@ -213,23 +213,23 @@ const getAnatomicalToothColors = (
 				fill: "url(#gold-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#6366f1",
+				stroke: "#64748b",
 				opacity: "1",
-				badgeColor: "#6366f1",
-				badgeBg: "rgba(99, 102, 241, 0.15)",
-				badgeText: "#4f46e5",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Planned_Implant":
 			return {
 				fill: "url(#gold-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#6366f1",
+				stroke: "#64748b",
 				opacity: "1",
 				isPulsing: true,
-				badgeColor: "#6366f1",
-				badgeBg: "rgba(99, 102, 241, 0.15)",
-				badgeText: "#4f46e5",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Missing":
 			return {
@@ -518,7 +518,7 @@ const AnatomicalToothSVG = React.memo(({
 						y1="10"
 						x2="50"
 						y2="140"
-						stroke="#6366f1"
+						stroke="#64748b"
 						strokeWidth="1.6"
 						strokeDasharray="4 3"
 						strokeLinecap="round"
@@ -2109,10 +2109,10 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							<span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm" /> Коронка
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#6366f1] shadow-sm" /> Имплант
+							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b] shadow-sm" /> Имплант
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
+							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 border border-slate-500" /> План
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b] shadow-sm" /> Отсутствует

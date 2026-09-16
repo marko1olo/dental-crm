@@ -2235,6 +2235,11 @@ export interface InformedConsent1051nOptions {
 	readonly toothNumbers?: string | null | undefined;
 	readonly diagnosisIcd?: string | null | undefined;
 	readonly consentDate?: string | null | undefined;
+	readonly isClosed?: boolean | undefined;
+	readonly isDraft?: boolean | undefined;
+	readonly isSigned?: boolean | undefined;
+	readonly status?: string | undefined;
+	readonly watermarkText?: string | undefined;
 }
 
 /**
@@ -2305,7 +2310,21 @@ export function generateInformedConsent1051nHtml(
 	const diagnosis = options.diagnosisIcd ? ` по диагнозу: ${options.diagnosisIcd}` : "";
 	const teeth = options.toothNumbers ? ` в области зубов: ${options.toothNumbers}` : "";
 
-	return `<div class="informed-consent-a4-sheet" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 72ch; margin: 0 auto; line-height: 1.5; font-size: 12px;">
+	const isClosedOrSigned = Boolean(
+		options.isSigned ||
+		options.isClosed ||
+		options.status === "closed" ||
+		options.status === "signed" ||
+		options.status === "completed" ||
+		options.status === "issued"
+	);
+	const effectiveWatermark =
+		options.watermarkText ||
+		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const stampColor = isClosedOrSigned ? "#059669" : "#64748b";
+
+	return `<div class="informed-consent-a4-sheet" style="position: relative; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 72ch; margin: 0 auto; line-height: 1.5; font-size: 12px;">
+	<div class="watermark-draft" style="position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 52pt; font-weight: 900; color: rgba(0, 0, 0, 0.04); text-transform: uppercase; letter-spacing: 4pt; pointer-events: none; z-index: 0; user-select: none;" aria-hidden="true">${effectiveWatermark}</div>
 	<div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
 		<div>
 			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: normal; word-break: normal; overflow-wrap: break-word; hyphens: none;">${clinic}</div>
@@ -2313,6 +2332,9 @@ export function generateInformedConsent1051nHtml(
 			<div style="font-size: 10px; color: #64748b;">119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99</div>
 		</div>
 		<div style="text-align: right; font-size: 11px; shrink: 0;">
+			<div style="margin-bottom: 4px;">
+				<span class="watermark-stamp" style="display: inline-block; border: 1.5pt solid ${stampColor}; color: ${stampColor}; padding: 1.5pt 5pt; border-radius: 2.5pt; font-size: 7pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;" aria-hidden="true">${effectiveWatermark}</span>
+			</div>
 			<div style="font-weight: 700; color: #0f172a;">Приказ Минздрава РФ № 1051н</div>
 			<div style="color: #64748b;">Ст. 20 323-ФЗ</div>
 			<div style="font-weight: 600; color: #0f766e; margin-top: 2px;">Дата: ${date}</div>
