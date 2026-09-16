@@ -477,6 +477,74 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		}
 	});
 
+	/**
+	 * Смена статуса клинической задачи (Мандаты 8e, 8k — закрытие в 1 клик без бюрократии).
+	 */
+	const handleClinicalTaskStatusUpdate = async (
+		request: Parameters<Parameters<FastifyInstance["patch"]>[1]>[0],
+		reply: Parameters<Parameters<FastifyInstance["patch"]>[1]>[1],
+	) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"clinical task status update",
+			))
+		)
+			return;
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { taskId } = request.params as { taskId?: string };
+		if (!taskId || !UUID_PATTERN.test(taskId)) {
+			return reply.code(400).send({
+				error: "ClinicalTaskValidationError",
+				message: "Ошибка валидации: taskId должен быть UUID.",
+			});
+		}
+
+		const body = (
+			request.body && typeof request.body === "object" ? request.body : {}
+		) as { status?: string };
+		const status = body.status ?? "completed";
+		if (
+			status !== "pending" &&
+			status !== "in_progress" &&
+			status !== "completed" &&
+			status !== "cancelled"
+		) {
+			return reply.code(400).send({
+				error: "ClinicalTaskValidationError",
+				message: "Недопустимый статус клинической задачи.",
+			});
+		}
+
+		try {
+			const updated = await new ClinicalRouter().updateTaskStatus(
+				orgId,
+				taskId,
+				status,
+			);
+			if (!updated) {
+				return reply.code(404).send({
+					error: "ClinicalTaskNotFound",
+					message: "Клиническая задача не найдена в этой организации.",
+				});
+			}
+			return reply.code(200).send(updated);
+		} catch (error) {
+			request.log.error(error);
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Ошибка обновления статуса клинической задачи.",
+			});
+		}
+	};
+
+	app.patch("/api/clinical/tasks/:taskId", handleClinicalTaskStatusUpdate);
+	app.put("/api/clinical/tasks/:taskId", handleClinicalTaskStatusUpdate);
+
+
 	/*
 	 * Маршруты «пользовательские справочники бланков» и «формы осмотра без выбора
 	 * зубов» удалены вместе со своими блоками с экрана приёма: обе таблицы

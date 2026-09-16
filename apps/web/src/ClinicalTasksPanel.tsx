@@ -66,10 +66,55 @@ export type ClinicalTaskPreset = {
 
 export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 	{
+		id: "preset-ortho-call",
+		testId: "preset-task-ortho-call",
+		label: "Звонок ортодонта / контроль брекетов",
+		title: "Звонок ортодонта / контроль брекетов",
+		defaultDescription:
+			"Контрольный звонок ортодонтического пациента: оценка адаптации, целостности дуг, фиксации брекетов/элайнеров.",
+		taskType: "orthodontics_recall",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 21);
+			return d.toISOString();
+		},
+		hint: "1 клик: контроль брекетов/элайнеров через 3 недели",
+	},
+	{
+		id: "preset-implant-check",
+		testId: "preset-task-implant-check",
+		label: "Контрольный осмотр после имплантации",
+		title: "Контрольный осмотр после имплантации",
+		defaultDescription:
+			"Осмотр зоны имплантации, контроль заживления слизистой, оценка стабильности формирователя десны / винтов.",
+		taskType: "implant_check",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 10);
+			return d.toISOString();
+		},
+		hint: "1 клик: контрольный осмотр после имплантации через 10 дней",
+	},
+	{
+		id: "preset-prosthetics-ztl",
+		testId: "preset-task-prosthetics-ztl",
+		label: "Готовность работы ЗТЛ",
+		title: "Готовность работы ЗТЛ",
+		defaultDescription:
+			"Припасовка ортопедической конструкции из зуботехнической лаборатории (ЗТЛ), проверка окклюзионных контактов.",
+		taskType: "prosthetics_fitting",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 7);
+			return d.toISOString();
+		},
+		hint: "1 клик: отследить готовность работы в лаборатории через 7 дней",
+	},
+	{
 		id: "preset-recall-6m",
 		testId: "preset-task-recall-6m",
-		label: "Контрольный осмотр через 6 месяцев (Профгигиена)",
-		title: "Контрольный осмотр через 6 месяцев (Профгигиена)",
+		label: "Напоминание о профгигиене через 6 мес",
+		title: "Напоминание о профгигиене через 6 мес",
 		defaultDescription:
 			"Плановый контрольный осмотр и оценка гигиенического статуса через 6 месяцев. Профгигиена полости рта.",
 		taskType: "recall_hygiene",
@@ -79,6 +124,21 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			return d.toISOString();
 		},
 		hint: "1 клик: создать задачу контрольного осмотра и профгигиены через 6 месяцев",
+	},
+	{
+		id: "preset-ct-planning",
+		testId: "preset-task-ct-planning",
+		label: "Снимок КТ / планирование",
+		title: "Снимок КТ / планирование",
+		defaultDescription:
+			"Анализ КЛКТ/визиографии, виртуальная расстановка имплантов, разметка нижнечелюстного канала или заказ хирургического шаблона.",
+		taskType: "ct_planning",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 3);
+			return d.toISOString();
+		},
+		hint: "1 клик: задача на анализ КТ и 3D-планирование за 3 дня",
 	},
 	{
 		id: "preset-suture-removal",
@@ -94,21 +154,6 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			return d.toISOString();
 		},
 		hint: "1 клик: создать задачу на снятие швов через 7–10 дней после хирургии",
-	},
-	{
-		id: "preset-prosthetics-ztl",
-		testId: "preset-task-prosthetics-ztl",
-		label: "Припасовка каркаса / коронки ЗТЛ",
-		title: "Припасовка каркаса / коронки ЗТЛ",
-		defaultDescription:
-			"Припасовка ортопедической конструкции из зуботехнической лаборатории (ЗТЛ), проверка окклюзионных контактов.",
-		taskType: "prosthetics_fitting",
-		computeDueAt: () => {
-			const d = new Date();
-			d.setDate(d.getDate() + 10);
-			return d.toISOString();
-		},
-		hint: "1 клик: создать задачу на припасовку работы из ЗТЛ через 10 дней",
 	},
 	{
 		id: "preset-rvg-control",
@@ -283,6 +328,10 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [actionNotice, setActionNotice] = useState<string | null>(null);
 	const [notes, setNotes] = useState("");
+	const [filterStatus, setFilterStatus] = useState<"open" | "completed" | "all">(
+		"open",
+	);
+	const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
 
 	const loadFailureText = useCallback(
 		(status: number, serverMessage: string | null): string => {
@@ -558,6 +607,70 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 		[patientId, notes, auth, treatmentPlanId, assignedDoctorId],
 	);
 
+	const handleCompleteTask = useCallback(
+		async (taskId: string) => {
+			if (completingTaskId === taskId) return;
+			setCompletingTaskId(taskId);
+			// Оптимистичное завершение задачи без блокировок и без обязательных комментариев (Мандаты 8e, 8k)
+			setTasks((prev) =>
+				(prev ?? []).map((t) =>
+					t.id === taskId
+						? { ...t, status: "completed" as ClinicalTaskStatus }
+						: t,
+				),
+			);
+			try {
+				const res = await fetch(
+					`/api/clinical/tasks/${encodeURIComponent(taskId)}`,
+					{
+						method: "PATCH",
+						headers: auth
+							? auth.denteClinicalMutationHeaders({
+									"Content-Type": "application/json",
+								})
+							: { "Content-Type": "application/json" },
+						body: JSON.stringify({ status: "completed" }),
+					},
+				);
+				if (res.ok) {
+					showToast("Клиническая задача завершена в 1 клик", "success");
+					if (patientId) {
+						const current = getLocalTasks(patientId);
+						const updated = current.map((t) =>
+							t.id === taskId
+								? { ...t, status: "completed" as ClinicalTaskStatus }
+								: t,
+						);
+						try {
+							localStorage.setItem(
+								`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
+								JSON.stringify(updated),
+							);
+						} catch {
+							// Игнорируем квоту локального хранилища
+						}
+					}
+				} else {
+					showToast(
+						actionFailureToast("Не удалось завершить задачу", res.status),
+						"error",
+					);
+					await load();
+				}
+			} catch (e) {
+				logger.error("[ClinicalTasksPanel complete]", e);
+				showToast(
+					actionFailureToast("Не удалось завершить задачу", null),
+					"error",
+				);
+				await load();
+			} finally {
+				setCompletingTaskId(null);
+			}
+		},
+		[completingTaskId, auth, patientId, load],
+	);
+
 	if (!patientId) return null;
 
 	const openTasks = (tasks ?? []).filter((task) =>
@@ -566,6 +679,12 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	const closedTasks = (tasks ?? []).filter(
 		(task) => !OPEN_STATUSES.has(task.status),
 	);
+	const visibleTasks = (tasks ?? []).filter((task) => {
+		if (filterStatus === "open") return OPEN_STATUSES.has(task.status);
+		if (filterStatus === "completed") return !OPEN_STATUSES.has(task.status);
+		return true;
+	});
+
 
 	return (
 		<section className="panel ops-panel" data-testid="clinical-tasks-panel">
@@ -731,62 +850,225 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				</div>
 			</div>
 
-			{tasks !== null && openTasks.length === 0 && !error ? (
+			{/* Тулбар фильтрации статусов: ровно 1 компактная строка 32-36px (Мандат 8d) */}
+			{tasks !== null && tasks.length > 0 ? (
+				<div
+					className="clinical-tasks-toolbar"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						height: "36px",
+						marginBottom: "0.5rem",
+						gap: "0.5rem",
+					}}
+				>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "0.35rem",
+						}}
+					>
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => setFilterStatus("open")}
+							style={{
+								height: "30px",
+								fontSize: "0.8rem",
+								padding: "0 0.6rem",
+								borderRadius: "6px",
+								background:
+									filterStatus === "open"
+										? "var(--teal, #0284c7)"
+										: "var(--paper-soft, #f1f5f9)",
+								color:
+									filterStatus === "open"
+										? "#ffffff"
+										: "var(--ink, #1e293b)",
+								border: "1px solid var(--line, #e2e8f0)",
+								fontWeight: filterStatus === "open" ? 600 : 400,
+								cursor: "pointer",
+							}}
+						>
+							К исполнению ({openTasks.length})
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => setFilterStatus("completed")}
+							style={{
+								height: "30px",
+								fontSize: "0.8rem",
+								padding: "0 0.6rem",
+								borderRadius: "6px",
+								background:
+									filterStatus === "completed"
+										? "var(--teal, #0284c7)"
+										: "var(--paper-soft, #f1f5f9)",
+								color:
+									filterStatus === "completed"
+										? "#ffffff"
+										: "var(--ink, #1e293b)",
+								border: "1px solid var(--line, #e2e8f0)",
+								fontWeight: filterStatus === "completed" ? 600 : 400,
+								cursor: "pointer",
+							}}
+						>
+							Выполнено ({closedTasks.length})
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => setFilterStatus("all")}
+							style={{
+								height: "30px",
+								fontSize: "0.8rem",
+								padding: "0 0.6rem",
+								borderRadius: "6px",
+								background:
+									filterStatus === "all"
+										? "var(--teal, #0284c7)"
+										: "var(--paper-soft, #f1f5f9)",
+								color:
+									filterStatus === "all"
+										? "#ffffff"
+										: "var(--ink, #1e293b)",
+								border: "1px solid var(--line, #e2e8f0)",
+								fontWeight: filterStatus === "all" ? 600 : 400,
+								cursor: "pointer",
+							}}
+						>
+							Все ({tasks.length})
+						</button>
+					</div>
+				</div>
+			) : null}
+
+			{tasks !== null && visibleTasks.length === 0 && !error ? (
 				<p className="ops-note">
-					Открытых задач передачи у этого пациента нет. Когда этап будет
-					завершён кнопкой выше — задача появится здесь и у следующего врача.
+					{filterStatus === "completed"
+						? "Выполненных задач передачи у этого пациента пока нет."
+						: "Открытых задач передачи у этого пациента нет. Когда этап будет завершён кнопкой выше — задача появится здесь и у следующего врача."}
 				</p>
 			) : null}
 
-			{openTasks.length > 0 ? (
+			{visibleTasks.length > 0 ? (
 				<div className="ops-table-wrap">
 					<table className="ops-table">
 						<caption className="sr-only">
-							Открытые задачи передачи между этапами
+							Задачи передачи между этапами
 						</caption>
 						<thead>
 							<tr>
 								<th scope="col">Задача</th>
 								<th scope="col">Статус</th>
 								<th scope="col">Создана</th>
+								<th scope="col" style={{ textAlign: "right" }}>
+									Действие
+								</th>
 							</tr>
 						</thead>
 						<tbody>
-							{openTasks.map((task) => (
-								<tr key={task.id}>
-									<td className="ops-strong" data-label="Задача">
-										{task.title}
-										{task.description ? (
-											<span className="ops-note">{task.description}</span>
-										) : null}
-									</td>
-									<td data-label="Статус">
-										<span className="ops-state ops-state--warn">
-											{STATUS_LABELS[task.status] ?? task.status}
-										</span>
-									</td>
-									<td data-label="Создана">
-										{task.createdAt ? formatMoment(task.createdAt) : "—"}
-										{task.dueAt ? (
+							{visibleTasks.map((task) => {
+								const isOpen = OPEN_STATUSES.has(task.status);
+								return (
+									<tr key={task.id}>
+										<td
+											className="ops-strong min-w-0"
+											data-label="Задача"
+											style={{ maxWidth: "320px" }}
+										>
 											<span
-												className="ops-note"
-												style={{
-													display: "block",
-													marginTop: "0.2rem",
-													fontSize: "0.8rem",
-													color: "var(--brand-primary, #0284c7)",
-												}}
+												className="truncate block"
+												style={{ fontWeight: 600 }}
 											>
-												Срок: {formatMoment(task.dueAt)}
+												{task.title}
 											</span>
-										) : null}
-									</td>
-								</tr>
-							))}
+											{task.description ? (
+												<span
+													className="ops-note break-words"
+													style={{
+														display: "block",
+														fontSize: "0.8rem",
+														color: "var(--muted)",
+													}}
+												>
+													{task.description}
+												</span>
+											) : null}
+										</td>
+										<td data-label="Статус">
+											<span
+												className={`ops-state ${isOpen ? "ops-state--warn" : "ops-state--ok"}`}
+											>
+												{STATUS_LABELS[task.status] ?? task.status}
+											</span>
+										</td>
+										<td data-label="Создана">
+											{task.createdAt
+												? formatMoment(task.createdAt)
+												: "—"}
+											{task.dueAt ? (
+												<span
+													className="ops-note"
+													style={{
+														display: "block",
+														marginTop: "0.2rem",
+														fontSize: "0.8rem",
+														color: "var(--brand-primary, #0284c7)",
+													}}
+												>
+													Срок: {formatMoment(task.dueAt)}
+												</span>
+											) : null}
+										</td>
+										<td
+											data-label="Действие"
+											style={{ textAlign: "right" }}
+										>
+											{isOpen ? (
+												<button
+													type="button"
+													className="primary-button"
+													disabled={completingTaskId === task.id}
+													onClick={() =>
+														void handleCompleteTask(task.id)
+													}
+													style={{
+														height: "30px",
+														fontSize: "0.75rem",
+														padding: "0 0.6rem",
+														borderRadius: "6px",
+														cursor: "pointer",
+														whiteSpace: "nowrap",
+													}}
+													title="Завершить задачу в 1 клик (Мандат 8e)"
+												>
+													{completingTaskId === task.id
+														? "Завершаю…"
+														: "Завершить в 1 клик"}
+												</button>
+											) : (
+												<span
+													style={{
+														fontSize: "0.8rem",
+														color: "var(--muted)",
+													}}
+												>
+													Выполнена
+												</span>
+											)}
+										</td>
+									</tr>
+								);
+							})}
 						</tbody>
 					</table>
 				</div>
 			) : null}
+
 
 			{closedTasks.length > 0 ? (
 				<details

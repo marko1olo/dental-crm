@@ -203,3 +203,75 @@ export async function deletePatientTaskTicketFromDb(
 		.returning({ id: schema.patientTaskTickets.id });
 	return rows.length > 0;
 }
+
+/**
+ * Выборка задач CRM по всей организации с фильтрами (Мандаты 8e, 8k).
+ */
+export async function getAllTaskTicketsFromDb(
+	orgId: string,
+	filters?: {
+		patientId?: string;
+		status?: PatientTaskTicketStatus;
+		assignedToId?: string;
+	},
+): Promise<PatientTaskTicket[]> {
+	const conditions = [eq(schema.patientTaskTickets.organizationId, orgId)];
+	if (filters?.patientId) {
+		conditions.push(eq(schema.patientTaskTickets.patientId, filters.patientId));
+	}
+	if (filters?.status) {
+		conditions.push(eq(schema.patientTaskTickets.status, filters.status));
+	}
+	if (filters?.assignedToId) {
+		conditions.push(
+			eq(schema.patientTaskTickets.assignedToId, filters.assignedToId),
+		);
+	}
+	const rows = await db
+		.select()
+		.from(schema.patientTaskTickets)
+		.where(and(...conditions))
+		.orderBy(desc(schema.patientTaskTickets.createdAt));
+	return rows.map(toTicket);
+}
+
+/**
+ * Смена состояния поручения по ID (1 клик).
+ */
+export async function setTaskTicketStatusByIdInDb(
+	orgId: string,
+	ticketId: string,
+	status: PatientTaskTicketStatus,
+): Promise<PatientTaskTicket | null> {
+	const [row] = await db
+		.update(schema.patientTaskTickets)
+		.set({ status, updatedAt: new Date() })
+		.where(
+			and(
+				eq(schema.patientTaskTickets.organizationId, orgId),
+				eq(schema.patientTaskTickets.id, ticketId),
+			),
+		)
+		.returning();
+	return row ? toTicket(row) : null;
+}
+
+/**
+ * Удаление поручения по ID.
+ */
+export async function deleteTaskTicketByIdInDb(
+	orgId: string,
+	ticketId: string,
+): Promise<boolean> {
+	const rows = await db
+		.delete(schema.patientTaskTickets)
+		.where(
+			and(
+				eq(schema.patientTaskTickets.organizationId, orgId),
+				eq(schema.patientTaskTickets.id, ticketId),
+			),
+		)
+		.returning({ id: schema.patientTaskTickets.id });
+	return rows.length > 0;
+}
+

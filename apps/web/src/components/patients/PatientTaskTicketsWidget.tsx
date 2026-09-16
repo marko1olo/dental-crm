@@ -38,11 +38,59 @@ const TICKETS_SUBJECT: PanelSubject = {
 		"Задачи могут быть — их не удалось прочитать. Не планируйте день по этому списку, пока он не обновится.",
 };
 
+export const PATIENT_TASK_PRESETS = [
+	{
+		id: "preset-ortho-call",
+		title: "Звонок ортодонта / контроль брекетов",
+		label: "Звонок ортодонта",
+		description:
+			"Контрольный звонок ортодонтического пациента: оценка адаптации, целостности дуг, фиксации брекетов/элайнеров.",
+		hint: "1 клик: заполнить задачу на звонок ортодонта",
+	},
+	{
+		id: "preset-implant-check",
+		title: "Контрольный осмотр после имплантации",
+		label: "Осмотр после имплантации",
+		description:
+			"Осмотр зоны имплантации, контроль заживления слизистой, оценка стабильности формирователя десны / винтов.",
+		hint: "1 клик: заполнить задачу на контрольный осмотр после имплантации",
+	},
+	{
+		id: "preset-ztl-ready",
+		title: "Готовность работы ЗТЛ",
+		label: "Готовность работы ЗТЛ",
+		description:
+			"Проверка поступления ортопедической конструкции из зуботехнической лаборатории (ЗТЛ), контроль качества и вызов пациента на припасовку.",
+		hint: "1 клик: заполнить задачу на готовность работы ЗТЛ",
+	},
+	{
+		id: "preset-recall-6m",
+		title: "Напоминание о профгигиене через 6 мес",
+		label: "Напоминание о профгигиене через 6 мес",
+		description:
+			"Плановый контрольный осмотр и оценка гигиенического статуса через 6 месяцев. Профгигиена полости рта.",
+		hint: "1 клик: запланировать напоминание о профгигиене через 6 месяцев",
+	},
+	{
+		id: "preset-ct-planning",
+		title: "Снимок КТ / планирование",
+		label: "Снимок КТ / планирование",
+		description:
+			"Анализ КЛКТ/визиографии, виртуальная расстановка имплантов, разметка нижнечелюстного канала или заказ хирургического шаблона.",
+		hint: "1 клик: задача на анализ КТ и 3D-планирование",
+	},
+] as const;
+
+export type PatientTaskPreset = (typeof PATIENT_TASK_PRESETS)[number];
+
 export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const { dashboard, auth } = useAppLogicContext();
 	const [isAdding, setIsAdding] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [filterStatus, setFilterStatus] = useState<
+		"all" | "pending" | "completed"
+	>("all");
 
 	const getReadHeaders = useCallback(
 		() => (auth ? auth.denteClinicalReadHeaders() : {}),
@@ -57,6 +105,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const [newTitle, setNewTitle] = useState("");
 	const [newDescription, setNewDescription] = useState("");
 	const [assignedToId, setAssignedToId] = useState("");
+
 
 	/*
 	 * БЫЛО: при переключении карточки сбрасывался только СПИСОК задач (это делает
@@ -236,41 +285,116 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 		(t: any) => t.status === "pending",
 	).length;
 
+	const handleApplyPreset = (preset: PatientTaskPreset) => {
+		setIsAdding(true);
+		setNewTitle(preset.title);
+		setNewDescription(preset.description);
+		if (!assignedToId && staff.length > 0) {
+			const myId = auth?.user?.id;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			const defaultStaff = staff.find((s: any) => s.id === myId) || staff[0];
+			if (defaultStaff?.id) {
+				setAssignedToId(defaultStaff.id);
+			}
+		}
+	};
+
+	const filteredTickets = tickets.filter((t) => {
+		if (filterStatus === "pending") return t.status === "pending";
+		if (filterStatus === "completed") return t.status === "completed";
+		return true;
+	});
+
 	return (
 		<div
 			data-testid="patient-task-tickets-widget"
 			className="panel-card bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-xl mt-4 p-0 overflow-hidden"
 		>
-			<div className="panel-heading flex justify-between items-center p-4 bg-[var(--paper-soft)] border-b border-[var(--line)] m-0">
-				<div className="flex items-center gap-2.5">
-					<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] flex items-center justify-center text-[var(--teal,var(--brand-primary))]">
-						<Clock size={16} />
+			<div className="panel-heading flex flex-wrap justify-between items-center px-4 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] gap-2 min-h-[40px] m-0">
+				<div className="flex items-center gap-2">
+					<div className="w-7 h-7 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] flex items-center justify-center text-[var(--teal,var(--brand-primary))] shrink-0">
+						<Clock size={15} />
 					</div>
-					<div>
-						<h3 className="text-sm font-semibold text-[var(--ink)] m-0 flex items-center gap-2">
-							Задачи по пациенту
-							{pendingCount > 0 && (
-								<span className="bg-[var(--teal,var(--brand-primary))] text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
-									в работе: {pendingCount}
-								</span>
-							)}
-						</h3>
-					</div>
+					<h3 className="text-sm font-semibold text-[var(--ink)] m-0 flex items-center gap-1.5">
+						Задачи по пациенту
+						<span className="bg-[var(--teal,var(--brand-primary))] text-white px-2 py-0.2 rounded-full text-[11px] font-bold">
+							{pendingCount}
+						</span>
+					</h3>
 				</div>
-				<button
-					type="button"
-					onClick={() => setIsAdding(!isAdding)}
-					className={`border-0 rounded-xl px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
-						isAdding
-							? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
-							: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 hover:brightness-105"
-					}`}
-				>
-					<Plus size={16} /> {isAdding ? "Отмена" : "Создать"}
-				</button>
+
+				{/* Компактный тулбар фильтров статусов: ровно 1 строка (Мандат 8d) */}
+				<div className="flex items-center gap-1">
+					<button
+						type="button"
+						onClick={() => setFilterStatus("pending")}
+						className={`px-2.5 py-1 text-xs font-medium rounded-md cursor-pointer transition-colors border ${
+							filterStatus === "pending"
+								? "bg-[var(--teal,var(--brand-primary))] text-white border-transparent"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+						}`}
+					>
+						В работе ({pendingCount})
+					</button>
+					<button
+						type="button"
+						onClick={() => setFilterStatus("completed")}
+						className={`px-2.5 py-1 text-xs font-medium rounded-md cursor-pointer transition-colors border ${
+							filterStatus === "completed"
+								? "bg-[var(--teal,var(--brand-primary))] text-white border-transparent"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+						}`}
+					>
+						Выполнены ({tickets.length - pendingCount})
+					</button>
+					<button
+						type="button"
+						onClick={() => setFilterStatus("all")}
+						className={`px-2.5 py-1 text-xs font-medium rounded-md cursor-pointer transition-colors border ${
+							filterStatus === "all"
+								? "bg-[var(--teal,var(--brand-primary))] text-white border-transparent"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+						}`}
+					>
+						Все ({tickets.length})
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsAdding(!isAdding)}
+						className={`ml-1 border-0 rounded-lg px-3 py-1 text-xs font-semibold cursor-pointer flex items-center gap-1 transition-all h-[30px] ${
+							isAdding
+								? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+								: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 hover:brightness-105"
+						}`}
+					>
+						<Plus size={14} /> {isAdding ? "Отмена" : "Создать"}
+					</button>
+				</div>
 			</div>
 
 			<div className="p-5 bg-[var(--paper)]">
+				{/* 1-клик быстрые шаблоны стоматологических задач для соло-врача и администратора (Мандат 8k) */}
+				<div
+					className="patient-ticket-presets flex items-center gap-1.5 flex-wrap p-2.5 mb-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]"
+					data-testid="patient-ticket-presets-bar"
+				>
+					<span className="text-xs font-semibold text-[var(--muted)] shrink-0 mr-1">
+						1-клик шаблоны:
+					</span>
+					{PATIENT_TASK_PRESETS.map((preset) => (
+						<button
+							key={preset.id}
+							type="button"
+							onClick={() => handleApplyPreset(preset)}
+							title={preset.hint}
+							className="px-2.5 py-1 text-xs font-medium rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] cursor-pointer transition-colors shrink-0"
+						>
+							{preset.label}
+						</button>
+					))}
+				</div>
+
 				{/*
 					Честное сообщение о выброшенном черновике: без него сброс формы стал бы
 					тихой потерей набранного текста — один обман экрана вместо другого.
@@ -413,8 +537,13 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				)}
 
 				<div className="flex flex-col gap-2.5">
+					{filteredTickets.length === 0 && tickets.length > 0 && (
+						<div className="p-4 text-center text-xs text-[var(--muted)]">
+							Нет задач в выбранном статусе
+						</div>
+					)}
 					<AnimatePresence>
-						{tickets.map((ticket) => {
+						{filteredTickets.map((ticket) => {
 							const isPending = ticket.status === "pending";
 							const assignee = staff.find(
 								// biome-ignore lint/suspicious/noExplicitAny: automated suppression

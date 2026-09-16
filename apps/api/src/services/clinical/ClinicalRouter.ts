@@ -1,7 +1,9 @@
 import {
 	type ClinicalTaskRecord,
+	type ClinicalTaskStatus,
 	getClinicalTasksFromDb,
 	insertClinicalTaskInDb,
+	setClinicalTaskStatusInDb,
 } from "../../db/clinicalTasksQuery.js";
 
 /**
@@ -151,4 +153,14 @@ export class ClinicalRouter {
 	): Promise<ClinicalTaskRecord[]> {
 		return await getClinicalTasksFromDb(organizationId, patientId);
 	}
+
+	/** Смена статуса клинической задачи (Мандаты 8e, 8k — закрытие в 1 клик). */
+	public async updateTaskStatus(
+		organizationId: string,
+		taskId: string,
+		status: ClinicalTaskStatus,
+	): Promise<ClinicalTaskRecord | null> {
+		return await setClinicalTaskStatusInDb(organizationId, taskId, status);
+	}
 }
+

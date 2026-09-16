@@ -118,6 +118,7 @@ import {
 	startEgiszQueueWorker,
 	stopEgiszQueueWorker,
 } from "./services/egisz/EgiszQueueWorker.js";
+import { registerTasksRoutes } from "./routes/tasks.js";
 import { telephonyRoutes } from "./routes/telephony.js";
 import registerTemplateRoutes from "./routes/templates.js";
 import { copilotRoutes } from "./routes/copilot.js";
@@ -655,6 +656,7 @@ export async function createDenteApiApp(
 	await registerSberbankRoutes(app);
 	await registerSberPosWebhookRoutes(app);
 	await registerClinicalRoutes(app);
+	await registerTasksRoutes(app);
 	await registerChatRoutes(app);
 	await registerCommunicationRoutes(app);
 	await registerMessageTemplateRoutes(app);

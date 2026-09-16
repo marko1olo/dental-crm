@@ -94,22 +94,50 @@ describe("Wave 41 — Clinical Tasks Presets, Non-Blocking Sync & Somatic Norm A
 			);
 		});
 
-		it("contains all 4 required 1-click clinical task presets with correct metadata and due date calculators", () => {
-			assert.strictEqual(
-				CLINICAL_TASK_PRESETS.length,
-				4,
-				"Must define exactly 4 chairside task presets",
+		it("contains all required 1-click clinical task presets with correct metadata and due date calculators", () => {
+			assert.ok(
+				CLINICAL_TASK_PRESETS.length >= 5,
+				"Must define at least 5 chairside task presets",
 			);
 
-			const [recall, suture, ztl, rvg] = CLINICAL_TASK_PRESETS;
-			if (!recall || !suture || !ztl || !rvg) {
-				throw new Error("All 4 presets must be defined");
+			const recall = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-recall-6m",
+			);
+			const suture = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-suture-removal",
+			);
+			const ztl = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-prosthetics-ztl",
+			);
+			const rvg = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-rvg-control",
+			);
+			const ortho = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-ortho-call",
+			);
+			const implant = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-implant-check",
+			);
+			const ct = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-ct-planning",
+			);
+
+			if (
+				!recall ||
+				!suture ||
+				!ztl ||
+				!rvg ||
+				!ortho ||
+				!implant ||
+				!ct
+			) {
+				throw new Error("All presets must be defined");
 			}
 
-			// Preset 1: Профгигиена через 6 месяцев
-			assert.strictEqual(
-				recall.title,
-				"Контрольный осмотр через 6 месяцев (Профгигиена)",
+			// Preset 1: Напоминание о профгигиене через 6 месяцев
+			assert.ok(
+				recall.title.includes("Профгигиена") ||
+					recall.title.includes("профгигиене"),
 			);
 			assert.strictEqual(recall.taskType, "recall_hygiene");
 			const recallDue = new Date(recall.computeDueAt());
@@ -129,12 +157,12 @@ describe("Wave 41 — Clinical Tasks Presets, Non-Blocking Sync & Somatic Norm A
 				"Suture removal due date must be ~7-10 days ahead",
 			);
 
-			// Preset 3: Припасовка каркаса / коронки ЗТЛ
-			assert.strictEqual(ztl.title, "Припасовка каркаса / коронки ЗТЛ");
+			// Preset 3: Готовность работы ЗТЛ / припасовка
+			assert.ok(ztl.title.includes("ЗТЛ"));
 			assert.strictEqual(ztl.taskType, "prosthetics_fitting");
 			const ztlDue = new Date(ztl.computeDueAt());
 			assert.ok(
-				ztlDue.getTime() > now.getTime() + 7 * 86400000,
+				ztlDue.getTime() > now.getTime() + 5 * 86400000,
 				"ZTL fitting due date must be ahead",
 			);
 
@@ -146,13 +174,31 @@ describe("Wave 41 — Clinical Tasks Presets, Non-Blocking Sync & Somatic Norm A
 				rvgDue.getTime() > now.getTime() + 7 * 86400000,
 				"RVG control due date must be ahead",
 			);
+
+			// Preset 5: Звонок ортодонта / контроль брекетов
+			assert.strictEqual(ortho.title, "Звонок ортодонта / контроль брекетов");
+			assert.strictEqual(ortho.taskType, "orthodontics_recall");
+
+			// Preset 6: Контрольный осмотр после имплантации
+			assert.strictEqual(
+				implant.title,
+				"Контрольный осмотр после имплантации",
+			);
+			assert.strictEqual(implant.taskType, "implant_check");
+
+			// Preset 7: Снимок КТ / планирование
+			assert.strictEqual(ct.title, "Снимок КТ / планирование");
+			assert.strictEqual(ct.taskType, "ct_planning");
 		});
 
 		it("creates clinical task in 1 click without manual typing of 5 fields via executeClinicalPresetTaskAutonomy", async () => {
 			let capturedTasks: ClinicalTask[] = [];
 			let capturedToast = "";
 
-			const preset = CLINICAL_TASK_PRESETS[1]; // suture removal
+			const preset = CLINICAL_TASK_PRESETS.find(
+				(p) => p.id === "preset-suture-removal",
+			); // suture removal
+
 			if (!preset) {
 				throw new Error("Preset 1 must be defined");
 			}

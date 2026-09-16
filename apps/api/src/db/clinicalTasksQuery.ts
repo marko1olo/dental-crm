@@ -272,3 +272,27 @@ export async function getClinicalTasksFromDb(
 		mapClinicalTaskRow(row as Record<string, unknown>),
 	);
 }
+
+/**
+ * Смена состояния клинической задачи (Мандаты 8e, 8k — завершение в 1 клик без бюрократии).
+ */
+export async function setClinicalTaskStatusInDb(
+	organizationId: string,
+	taskId: string,
+	status: ClinicalTaskStatus,
+): Promise<ClinicalTaskRecord | null> {
+	const query = sql`
+		UPDATE clinical_tasks
+		SET
+			status = ${status}::clinical_task_status,
+			updated_at = NOW(),
+			completed_at = CASE WHEN ${status} = 'completed'::clinical_task_status THEN NOW() ELSE completed_at END
+		WHERE organization_id = ${organizationId}::uuid
+		  AND id = ${taskId}::uuid
+		RETURNING *
+	`;
+	const res = await db.execute(query);
+	const row = (res.rows ?? [])[0];
+	return row ? mapClinicalTaskRow(row as Record<string, unknown>) : null;
+}
+
