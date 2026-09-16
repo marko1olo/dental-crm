@@ -1,0 +1,680 @@
+{
+  "totalCommits": 4390,
+  "dateRange": {
+    "from": "2026-07-17T00:16:10+04:00",
+    "to": "2026-09-17T00:02:27+04:00"
+  },
+  "uniqueDays": [
+    "2026-09-17",
+    "2026-09-16",
+    "2026-09-15",
+    "2026-09-14",
+    "2026-09-13",
+    "2026-09-12",
+    "2026-09-11",
+    "2026-09-10",
+    "2026-09-09",
+    "2026-09-08",
+    "2026-09-07",
+    "2026-09-06",
+    "2026-09-05",
+    "2026-09-04",
+    "2026-09-03",
+    "2026-09-02",
+    "2026-09-01",
+    "2026-08-31",
+    "2026-08-30",
+    "2026-08-29",
+    "2026-08-28",
+    "2026-08-27",
+    "2026-08-26",
+    "2026-08-25",
+    "2026-08-24",
+    "2026-08-23",
+    "2026-08-22",
+    "2026-08-21",
+    "2026-08-19",
+    "2026-08-18",
+    "2026-08-17",
+    "2026-08-16",
+    "2026-08-15",
+    "2026-08-14",
+    "2026-08-13",
+    "2026-08-12",
+    "2026-08-11",
+    "2026-08-10",
+    "2026-08-09",
+    "2026-08-08",
+    "2026-08-07",
+    "2026-08-06",
+    "2026-08-05",
+    "2026-08-04",
+    "2026-08-03",
+    "2026-08-02",
+    "2026-08-01",
+    "2026-07-31",
+    "2026-07-30",
+    "2026-07-29",
+    "2026-07-28",
+    "2026-07-27",
+    "2026-07-26",
+    "2026-07-25",
+    "2026-07-24",
+    "2026-07-23",
+    "2026-07-08",
+    "2026-07-22",
+    "2026-07-19",
+    "2026-07-18",
+    "2026-07-17"
+  ],
+  "authors": {
+    "marko1olo": 4166,
+    "Петушков А.": 191,
+    "dependabot[bot]": 6,
+    "Antigravity": 1,
+    "google-labs-jules[bot]": 26
+  },
+  "topChurnFiles": [
+    {
+      "path": "apps/api/src/services/egiszCdaGenerator.ts",
+      "commitsCount": 242,
+      "insertions": 312829,
+      "deletions": 312776
+    },
+    {
+      "path": "docs/competitive-audit/BACKLOG.md",
+      "commitsCount": 224,
+      "insertions": 7926,
+      "deletions": 607
+    },
+    {
+      "path": "docs/competitive-audit/FEATURES_REGISTRY.md",
+      "commitsCount": 202,
+      "insertions": 1073,
+      "deletions": 699
+    },
+    {
+      "path": "docs/competitive-audit/OUR_CRM_MAP.md",
+      "commitsCount": 170,
+      "insertions": 4900,
+      "deletions": 322
+    },
+    {
+      "path": "packages/shared/src/index.ts",
+      "commitsCount": 164,
+      "insertions": 15513,
+      "deletions": 9426
+    },
+    {
+      "path": "apps/web/src/VisitView.tsx",
+      "commitsCount": 135,
+      "insertions": 6851,
+      "deletions": 5928
+    },
+    {
+      "path": "apps/api/src/db/schema.ts",
+      "commitsCount": 117,
+      "insertions": 12154,
+      "deletions": 12512
+    },
+    {
+      "path": "apps/web/src/PatientsView.tsx",
+      "commitsCount": 108,
+      "insertions": 5637,
+      "deletions": 4407
+    },
+    {
+      "path": "apps/web/src/ScheduleView.tsx",
+      "commitsCount": 107,
+      "insertions": 4909,
+      "deletions": 3129
+    },
+    {
+      "path": "apps/web/src/tests/panelsAreMounted.test.ts",
+      "commitsCount": 107,
+      "insertions": 4303,
+      "deletions": 2971
+    },
+    {
+      "path": "apps/web/src/useAppLogic.tsx",
+      "commitsCount": 101,
+      "insertions": 10144,
+      "deletions": 19161
+    },
+    {
+      "path": "apps/web/src/components/visit/VisitEmkTab.tsx",
+      "commitsCount": 100,
+      "insertions": 7801,
+      "deletions": 3186
+    },
+    {
+      "path": "apps/web/src/styles/main.css",
+      "commitsCount": 98,
+      "insertions": 15935,
+      "deletions": 14828
+    },
+    {
+      "path": "apps/api/src/server.ts",
+      "commitsCount": 94,
+      "insertions": 1535,
+      "deletions": 718
+    },
+    {
+      "path": "apps/web/src/App.tsx",
+      "commitsCount": 89,
+      "insertions": 12071,
+      "deletions": 16537
+    },
+    {
+      "path": "apps/web/src/components/schedule/ScheduleFilterStrip.tsx",
+      "commitsCount": 88,
+      "insertions": 2634,
+      "deletions": 1571
+    },
+    {
+      "path": "apps/web/src/components/schedule/AppointmentCard.tsx",
+      "commitsCount": 81,
+      "insertions": 4105,
+      "deletions": 2073
+    },
+    {
+      "path": "apps/web/src/components/schedule/ScheduleGrid.tsx",
+      "commitsCount": 81,
+      "insertions": 7024,
+      "deletions": 1926
+    },
+    {
+      "path": "BACKLOG.md",
+      "commitsCount": 75,
+      "insertions": 888,
+      "deletions": 48
+    },
+    {
+      "path": "apps/api/src/routes/diary.ts",
+      "commitsCount": 73,
+      "insertions": 4680,
+      "deletions": 3088
+    },
+    {
+      "path": "apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+      "commitsCount": 70,
+      "insertions": 9679,
+      "deletions": 3662
+    },
+    {
+      "path": "apps/web/src/components/odontogram/OdontogramModule.tsx",
+      "commitsCount": 70,
+      "insertions": 3294,
+      "deletions": 1610
+    },
+    {
+      "path": "apps/web/src/AppHelpers.tsx",
+      "commitsCount": 70,
+      "insertions": 14771,
+      "deletions": 14561
+    },
+    {
+      "path": "apps/web/src/pages/ClinicalModalsStudioStandalone.tsx",
+      "commitsCount": 69,
+      "insertions": 5872,
+      "deletions": 5872
+    },
+    {
+      "path": "apps/web/src/DocumentsView.tsx",
+      "commitsCount": 68,
+      "insertions": 14950,
+      "deletions": 13167
+    },
+    {
+      "path": "apps/web/src/SettingsView.tsx",
+      "commitsCount": 68,
+      "insertions": 4720,
+      "deletions": 5930
+    },
+    {
+      "path": "packages/shared/dist/index.d.ts",
+      "commitsCount": 62,
+      "insertions": 58657,
+      "deletions": 150623
+    },
+    {
+      "path": "apps/web/src/workspaceShell.tsx",
+      "commitsCount": 61,
+      "insertions": 1845,
+      "deletions": 1021
+    },
+    {
+      "path": "apps/web/src/components/odontogram/ToothChart.tsx",
+      "commitsCount": 60,
+      "insertions": 4822,
+      "deletions": 1534
+    },
+    {
+      "path": "apps/api/src/routes/egisz.ts",
+      "commitsCount": 60,
+      "insertions": 2310,
+      "deletions": 733
+    },
+    {
+      "path": "packages/shared/dist/index.js",
+      "commitsCount": 59,
+      "insertions": 19770,
+      "deletions": 26715
+    },
+    {
+      "path": "apps/web/src/components/useVisitDiaryLogic.ts",
+      "commitsCount": 58,
+      "insertions": 5686,
+      "deletions": 3428
+    },
+    {
+      "path": "apps/web/src/ShiftView.tsx",
+      "commitsCount": 58,
+      "insertions": 4462,
+      "deletions": 3934
+    },
+    {
+      "path": "apps/web/src/components/InventoryView.tsx",
+      "commitsCount": 57,
+      "insertions": 3230,
+      "deletions": 2231
+    },
+    {
+      "path": "apps/web/src/components/schedule/NewAppointmentForm.tsx",
+      "commitsCount": 57,
+      "insertions": 2477,
+      "deletions": 1178
+    },
+    {
+      "path": "apps/web/src/styles/dente-redesign.css",
+      "commitsCount": 55,
+      "insertions": 4537,
+      "deletions": 1612
+    },
+    {
+      "path": "apps/api/src/services/tests/egiszCdaGenerator.test.ts",
+      "commitsCount": 50,
+      "insertions": 3469,
+      "deletions": 3307
+    },
+    {
+      "path": "apps/web/src/FinanceView.tsx",
+      "commitsCount": 49,
+      "insertions": 1474,
+      "deletions": 865
+    },
+    {
+      "path": "apps/api/src/routes/clinical.ts",
+      "commitsCount": 48,
+      "insertions": 2490,
+      "deletions": 1462
+    },
+    {
+      "path": "apps/web/src/pages/AnalyticsDashboardView.tsx",
+      "commitsCount": 48,
+      "insertions": 2258,
+      "deletions": 1500
+    },
+    {
+      "path": "apps/web/src/PaymentCapture.tsx",
+      "commitsCount": 47,
+      "insertions": 2468,
+      "deletions": 1257
+    },
+    {
+      "path": "apps/web/src/components/finance/PatientBillingModal.tsx",
+      "commitsCount": 47,
+      "insertions": 3185,
+      "deletions": 1071
+    },
+    {
+      "path": ".agents/handoff.md",
+      "commitsCount": 47,
+      "insertions": 1205,
+      "deletions": 1131
+    },
+    {
+      "path": "apps/web/src/components/visit/VisitDiarySection.tsx",
+      "commitsCount": 47,
+      "insertions": 3113,
+      "deletions": 937
+    },
+    {
+      "path": "apps/web/src/components/VisitDiaryEditor.tsx",
+      "commitsCount": 47,
+      "insertions": 1400,
+      "deletions": 2632
+    },
+    {
+      "path": "apps/web/src/components/patients/PatientOverviewTab.tsx",
+      "commitsCount": 46,
+      "insertions": 453,
+      "deletions": 442
+    },
+    {
+      "path": "apps/api/.data/speech-key-health.json",
+      "commitsCount": 46,
+      "insertions": 715,
+      "deletions": 542
+    },
+    {
+      "path": "apps/api/src/services/tests/egiszCdaGenerator.test.ts.snapshot",
+      "commitsCount": 45,
+      "insertions": 187,
+      "deletions": 187
+    },
+    {
+      "path": "apps/web/src/ImagingView.tsx",
+      "commitsCount": 44,
+      "insertions": 3044,
+      "deletions": 1787
+    },
+    {
+      "path": "apps/api/src/sampleData.ts",
+      "commitsCount": 44,
+      "insertions": 1591,
+      "deletions": 6204
+    },
+    {
+      "path": "package.json",
+      "commitsCount": 44,
+      "insertions": 250,
+      "deletions": 203
+    },
+    {
+      "path": "apps/web/src/components/schedule/AppointmentModal.tsx",
+      "commitsCount": 42,
+      "insertions": 2564,
+      "deletions": 539
+    },
+    {
+      "path": "apps/api/src/routes/patients.ts",
+      "commitsCount": 42,
+      "insertions": 3363,
+      "deletions": 1279
+    },
+    {
+      "path": "apps/web/src/components/imaging/VisiographAnalyzer.tsx",
+      "commitsCount": 41,
+      "insertions": 4246,
+      "deletions": 2389
+    },
+    {
+      "path": "apps/web/src/components/schedule/WaitlistDrawer.tsx",
+      "commitsCount": 41,
+      "insertions": 1011,
+      "deletions": 490
+    },
+    {
+      "path": "apps/web/src/components/settings/SettingsClinicTab.tsx",
+      "commitsCount": 40,
+      "insertions": 3295,
+      "deletions": 2901
+    },
+    {
+      "path": "apps/web/src/components/lab/DentalLabOrderModal.tsx",
+      "commitsCount": 39,
+      "insertions": 2950,
+      "deletions": 1721
+    },
+    {
+      "path": "apps/web/src/components/schedule/QuickBookingDrawer.tsx",
+      "commitsCount": 39,
+      "insertions": 3214,
+      "deletions": 564
+    },
+    {
+      "path": ".agents/ORIGINAL_REQUEST.md",
+      "commitsCount": 39,
+      "insertions": 2082,
+      "deletions": 1269
+    },
+    {
+      "path": "apps/web/src/components/radiology/CbctMprViewer.tsx",
+      "commitsCount": 39,
+      "insertions": 4443,
+      "deletions": 4443
+    },
+    {
+      "path": "apps/web/src/components/radiology/RadiologyViewerModal.tsx",
+      "commitsCount": 39,
+      "insertions": 4024,
+      "deletions": 4024
+    },
+    {
+      "path": "apps/web/src/components/sanpin/SanpinRegisters.tsx",
+      "commitsCount": 38,
+      "insertions": 3127,
+      "deletions": 1205
+    },
+    {
+      "path": "apps/web/src/components/odontogram/OdontogramViewContainer.tsx",
+      "commitsCount": 38,
+      "insertions": 2687,
+      "deletions": 1123
+    },
+    {
+      "path": "apps/web/src/CommunicationsView.tsx",
+      "commitsCount": 38,
+      "insertions": 1601,
+      "deletions": 989
+    },
+    {
+      "path": "apps/api/src/db/visitsQuery.ts",
+      "commitsCount": 38,
+      "insertions": 1731,
+      "deletions": 938
+    },
+    {
+      "path": "apps/api/drizzle/meta/_journal.json",
+      "commitsCount": 38,
+      "insertions": 2025,
+      "deletions": 1668
+    },
+    {
+      "path": "apps/web/src/components/visit/VisitDiagnosticsTab.tsx",
+      "commitsCount": 37,
+      "insertions": 882,
+      "deletions": 190
+    },
+    {
+      "path": "apps/api/.data/dental-crm-state.json",
+      "commitsCount": 37,
+      "insertions": 18537,
+      "deletions": 18289
+    },
+    {
+      "path": "README.md",
+      "commitsCount": 36,
+      "insertions": 2274,
+      "deletions": 1661
+    },
+    {
+      "path": "apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx",
+      "commitsCount": 35,
+      "insertions": 2023,
+      "deletions": 472
+    },
+    {
+      "path": "apps/web/src/components/inventory/useInventoryLogic.ts",
+      "commitsCount": 35,
+      "insertions": 1468,
+      "deletions": 299
+    },
+    {
+      "path": "apps/web/src/components/finance/FiscalReceipt54FzModal.tsx",
+      "commitsCount": 35,
+      "insertions": 5076,
+      "deletions": 1324
+    },
+    {
+      "path": "apps/web/src/components/schedule/LabOrdersPanel.tsx",
+      "commitsCount": 35,
+      "insertions": 589,
+      "deletions": 956
+    },
+    {
+      "path": "apps/web/src/components/telephony/TelephonyFloatingWidget.tsx",
+      "commitsCount": 34,
+      "insertions": 2228,
+      "deletions": 598
+    },
+    {
+      "path": "apps/api/src/documents/renderDocument.ts",
+      "commitsCount": 34,
+      "insertions": 4500,
+      "deletions": 2902
+    },
+    {
+      "path": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx",
+      "commitsCount": 33,
+      "insertions": 5617,
+      "deletions": 3394
+    },
+    {
+      "path": "apps/api/src/routes/inventory.ts",
+      "commitsCount": 33,
+      "insertions": 1131,
+      "deletions": 228
+    },
+    {
+      "path": "apps/web/src/components/odontogram/TreatmentEstimator.tsx",
+      "commitsCount": 33,
+      "insertions": 1260,
+      "deletions": 739
+    },
+    {
+      "path": "apps/web/src/components/finance/CashRegisterModal.tsx",
+      "commitsCount": 33,
+      "insertions": 3304,
+      "deletions": 3304
+    },
+    {
+      "path": "apps/web/src/components/odontogram/odontogram.css",
+      "commitsCount": 33,
+      "insertions": 1893,
+      "deletions": 536
+    },
+    {
+      "path": "packages/shared/src/radiology/index.ts",
+      "commitsCount": 33,
+      "insertions": 497,
+      "deletions": 92
+    },
+    {
+      "path": "apps/api/src/routes/odontogram.ts",
+      "commitsCount": 33,
+      "insertions": 1944,
+      "deletions": 547
+    },
+    {
+      "path": "apps/web/src/components/telephony/IncomingCallPopup.tsx",
+      "commitsCount": 32,
+      "insertions": 3352,
+      "deletions": 1377
+    },
+    {
+      "path": "apps/web/src/components/finance/PaymentModal.tsx",
+      "commitsCount": 32,
+      "insertions": 3173,
+      "deletions": 729
+    },
+    {
+      "path": "apps/web/src/components/settings/SettingsTelegramTab.tsx",
+      "commitsCount": 32,
+      "insertions": 2258,
+      "deletions": 1500
+    },
+    {
+      "path": "apps/web/src/MarketingView.tsx",
+      "commitsCount": 32,
+      "insertions": 1621,
+      "deletions": 1576
+    },
+    {
+      "path": "apps/web/src/components/finance/FamilyWalletPanel.tsx",
+      "commitsCount": 32,
+      "insertions": 1112,
+      "deletions": 418
+    },
+    {
+      "path": "apps/api/src/routes/auth.ts",
+      "commitsCount": 32,
+      "insertions": 3013,
+      "deletions": 1544
+    },
+    {
+      "path": "apps/api/src/routes/schedule.ts",
+      "commitsCount": 32,
+      "insertions": 1970,
+      "deletions": 765
+    },
+    {
+      "path": "apps/web/src/components/settings/SettingsPricesTab.tsx",
+      "commitsCount": 32,
+      "insertions": 1578,
+      "deletions": 735
+    },
+    {
+      "path": "apps/api/src/routes/billing.ts",
+      "commitsCount": 31,
+      "insertions": 1519,
+      "deletions": 490
+    },
+    {
+      "path": ".agents/AGENTS.md",
+      "commitsCount": 31,
+      "insertions": 688,
+      "deletions": 354
+    },
+    {
+      "path": "apps/web/src/hooks/domains/useDocumentWorkflowModule.ts",
+      "commitsCount": 31,
+      "insertions": 8266,
+      "deletions": 4402
+    },
+    {
+      "path": "apps/api/src/db/settingsQuery.ts",
+      "commitsCount": 31,
+      "insertions": 1671,
+      "deletions": 703
+    },
+    {
+      "path": "apps/api/src/routes/imaging.ts",
+      "commitsCount": 31,
+      "insertions": 25980,
+      "deletions": 22749
+    },
+    {
+      "path": "apps/api/src/pricelist/analyzer.ts",
+      "commitsCount": 31,
+      "insertions": 3385,
+      "deletions": 1468
+    },
+    {
+      "path": "apps/web/src/components/patients/PatientFamilyCard.tsx",
+      "commitsCount": 30,
+      "insertions": 574,
+      "deletions": 349
+    },
+    {
+      "path": "apps/web/src/components/schedule/UrgentScheduleRequestsWidget.tsx",
+      "commitsCount": 30,
+      "insertions": 733,
+      "deletions": 506
+    },
+    {
+      "path": "apps/web/src/hooks/domains/usePatientLogic.ts",
+      "commitsCount": 30,
+      "insertions": 477,
+      "deletions": 209
+    },
+    {
+      "path": "apps/web/src/components/communications/MessageDeliveryConsole.tsx",
+      "commitsCount": 30,
+      "insertions": 2223,
+      "deletions": 833
+    }
+  ],
+  "hourlyBucketsCount": 636
+}
