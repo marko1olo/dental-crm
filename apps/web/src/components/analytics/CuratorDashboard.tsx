@@ -11,11 +11,9 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import {
-	type CuratorConversionMetrics,
 	type CuratorFunnelStage,
 	type CuratorPatientQueueItem,
 	type CuratorPlanAssignmentPayload,
-	type CuratorQueueFilterOptions,
 	advancePatientFunnelStage,
 	calculateCuratorMetrics,
 	CURATOR_STAGE_DEFINITIONS,
@@ -26,22 +24,17 @@ import {
 	Award,
 	CheckCircle,
 	CheckCircle2,
-	ChevronRight,
 	Clock,
 	Coins,
 	DollarSign,
-	Filter,
 	Layers,
-	MessageCircle,
 	MoreVertical,
 	Phone,
-	RefreshCw,
 	Search,
 	TrendingUp,
 	UserCheck,
 	UserPlus,
 	Users,
-	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -61,7 +54,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 	onOpenPatientCard,
 	className = "",
 }) => {
-	const { dashboard, auth } = useAppLogicContext();
+	const { dashboard } = useAppLogicContext();
 
 	const [selectedCuratorId, setSelectedCuratorId] = useState<string>("all");
 	const [selectedStage, setSelectedStage] = useState<CuratorFunnelStage | "all">("all");
@@ -81,7 +74,6 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 
 	// Local queue state (can be advanced interactively)
 	const [queueItems, setQueueItems] = useState<CuratorPatientQueueItem[]>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [openMenuPlanId, setOpenMenuPlanId] = useState<string | null>(null);
 
 	// Extract staff curators from dashboard

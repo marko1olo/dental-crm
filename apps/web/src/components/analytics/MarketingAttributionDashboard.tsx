@@ -9,20 +9,12 @@
 
 import React, { useState } from "react";
 import {
-	BarChart3,
 	Bot,
-	CheckCircle2,
 	DollarSign,
-	FileSpreadsheet,
-	HelpCircle,
 	Megaphone,
 	RotateCcw,
 	Save,
 	Settings,
-	ShieldCheck,
-	Sparkles,
-	TrendingUp,
-	Users,
 } from "lucide-react";
 import { OnlineBookingConversionPanel } from "./OnlineBookingConversionPanel";
 import { MarketingRomiTable } from "../marketing/MarketingRomiTable";

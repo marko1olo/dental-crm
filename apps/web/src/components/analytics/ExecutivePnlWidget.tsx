@@ -12,7 +12,7 @@
 
 import React from "react";
 import type { ExecutiveDepartmentItem, DepartmentPerformanceStatus } from "@dental/shared";
-import { Stethoscope, Activity, ArrowUpRight, ArrowDownRight, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, AlertCircle, CheckCircle } from "lucide-react";
 
 export interface ExecutivePnlWidgetProps {
 	readonly departments: readonly ExecutiveDepartmentItem[];

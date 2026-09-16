@@ -30,17 +30,14 @@ import {
 	calculateDepartmentBreakdown,
 	calculateExecutiveFunnel,
 	calculateExecutiveKpisSummary,
-	DEFAULT_DENTAL_ADVERTISING_CHANNELS,
 } from "@dental/shared";
 import {
 	Activity,
 	AlertTriangle,
-	Calendar,
 	Coins,
 	Filter,
 	Layers,
 	RefreshCw,
-	Sparkles,
 	TrendingUp,
 	Users,
 } from "lucide-react";
@@ -303,6 +300,45 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				</header>
 			)}
 
+			{/* Честное пустое состояние без синтетических синусоид и процедурных фальшивок (Мандат 8s & 8k) */}
+			{payload.isEmpty && (
+				<div
+					className="executive-panel"
+					role="status"
+					style={{
+						padding: "1rem 1.25rem",
+						marginBottom: "1rem",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "1rem",
+						borderLeft: "4px solid var(--teal, #0d9488)",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+						<AlertTriangle size={20} style={{ color: "var(--teal, #0d9488)", flexShrink: 0 }} aria-hidden="true" />
+						<div>
+							<div style={{ fontWeight: 600, fontSize: "0.875rem" }}>
+								За выбранный период записей и оплат пока нет
+							</div>
+							<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+								Выберите другой период или оформите приём в расписании для расчёта сквозной воронки
+							</div>
+						</div>
+					</div>
+					{period !== "month" && (
+						<button
+							type="button"
+							className="executive-refresh-btn"
+							onClick={() => handlePeriodSelect("month")}
+							style={{ flexShrink: 0 }}
+						>
+							Показать за месяц
+						</button>
+					)}
+				</div>
+			)}
+
 			{/* ─── 4 ДОМИНАНТНЫХ KPI КАРТОЧКИ (TIER 1) ──────────────────────────────── */}
 			<section className="executive-kpi-grid" aria-label="Ключевые показатели эффективности клиники">
 				{/* 1. Выручка клиники План / Факт */}
@@ -333,7 +369,15 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				</div>
 
 				{/* 2. Сквозная конверсия воронки */}
-				<div className="executive-kpi-card" style={{ "--card-accent": "var(--accent, #6366f1)" } as React.CSSProperties}>
+				<div
+					className="executive-kpi-card"
+					style={{
+						"--card-accent": "var(--accent, #6366f1)",
+						cursor: onNavigateToSection ? "pointer" : "default",
+					} as React.CSSProperties}
+					onClick={onNavigateToSection ? () => onNavigateToSection("curators") : undefined}
+					title={onNavigateToSection ? "Перейти в рабочее место куратора пациентов" : undefined}
+				>
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">Сквозная конверсия (Лид → Санация)</span>
@@ -352,7 +396,15 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				</div>
 
 				{/* 3. Unit-экономика (LTV vs CAC) */}
-				<div className="executive-kpi-card" style={{ "--card-accent": "var(--ok-fg, #10b981)" } as React.CSSProperties}>
+				<div
+					className="executive-kpi-card"
+					style={{
+						"--card-accent": "var(--ok-fg, #10b981)",
+						cursor: onNavigateToSection ? "pointer" : "default",
+					} as React.CSSProperties}
+					onClick={onNavigateToSection ? () => onNavigateToSection("marketing") : undefined}
+					title={onNavigateToSection ? "Перейти в сквозную аналитику маркетинга" : undefined}
+				>
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">LTV / CAC (Unit-экономика)</span>
@@ -379,7 +431,15 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				</div>
 
 				{/* 4. Загрузка кресел клиники */}
-				<div className="executive-kpi-card" style={{ "--card-accent": "var(--warn-fg, #f59e0b)" } as React.CSSProperties}>
+				<div
+					className="executive-kpi-card"
+					style={{
+						"--card-accent": "var(--warn-fg, #f59e0b)",
+						cursor: onNavigateToSection ? "pointer" : "default",
+					} as React.CSSProperties}
+					onClick={onNavigateToSection ? () => onNavigateToSection("freed_slots") : undefined}
+					title={onNavigateToSection ? "Перейти к анализу слотов и утилизации кресел" : undefined}
+				>
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">Загрузка кресел клиники</span>

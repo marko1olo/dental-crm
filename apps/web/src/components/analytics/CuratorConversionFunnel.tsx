@@ -13,17 +13,12 @@ import React from "react";
 import {
 	type CuratorConversionMetrics,
 	type CuratorFunnelStage,
-	type CuratorStageStats,
 	CURATOR_STAGE_DEFINITIONS,
 } from "@dental/shared";
 import {
-	ArrowRight,
-	CheckCircle2,
 	Clock,
-	DollarSign,
 	Layers,
 	TrendingUp,
-	Users,
 } from "lucide-react";
 
 export interface CuratorConversionFunnelProps {

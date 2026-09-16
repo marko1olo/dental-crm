@@ -15,7 +15,7 @@
 
 import React, { useState } from "react";
 import type { ExecutiveFunnelStageItem, ExecutiveFunnelStage } from "@dental/shared";
-import { Sparkles, TrendingDown, Users, ChevronRight, CheckCircle2 } from "lucide-react";
+import { Sparkles, TrendingDown, CheckCircle2 } from "lucide-react";
 
 export interface ExecutiveFunnelMetricsProps {
 	readonly stages: readonly ExecutiveFunnelStageItem[];
@@ -35,7 +35,6 @@ export const ExecutiveFunnelMetrics: React.FC<ExecutiveFunnelMetricsProps> = ({
 		}
 	};
 
-	const firstStageCount = stages.length > 0 ? (stages[0]?.count ?? 1) : 1;
 	const maxCount = Math.max(...stages.map((s) => s.count), 1);
 
 	return (

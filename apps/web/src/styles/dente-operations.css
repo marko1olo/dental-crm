@@ -82,9 +82,10 @@
 .ops-toolbar {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: flex-end;
+	align-items: center;
 	gap: 12px;
 	margin: 0 0 16px;
+	min-height: 36px;
 }
 
 .ops-field {
@@ -96,7 +97,24 @@
 }
 
 .ops-toolbar .ops-field {
+	flex-direction: row;
+	align-items: center;
+	gap: 6px;
 	margin-bottom: 0;
+}
+
+.ops-toolbar .ops-field > input,
+.ops-toolbar .ops-field > select {
+	min-height: 34px;
+	padding: 4px 8px;
+	font-size: 13px;
+}
+
+.ops-toolbar button,
+.ops-toolbar .secondary-button {
+	min-height: 34px;
+	padding: 4px 12px;
+	align-self: center;
 }
 
 .ops-field > label {

@@ -12,29 +12,7 @@
  * 3. Расчет экономии времени администраторов, конверсии в явку и выручки.
  */
 
-import { formatKopecksRu, type Kopecks, parseKopecks } from "@dental/shared";
-import {
-	Activity,
-	ArrowRight,
-	BarChart3,
-	Bot,
-	Building2,
-	Calendar,
-	CheckCircle2,
-	Clock,
-	DollarSign,
-	Globe,
-	HelpCircle,
-	MapPin,
-	MessageSquare,
-	PhoneCall,
-	Send,
-	Sparkles,
-	TrendingUp,
-	UserCheck,
-	Users,
-	XCircle,
-} from "lucide-react";
+import { formatKopecksRu, type Kopecks } from "@dental/shared";
 import React, { useEffect, useMemo, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import "./executiveDashboard.css";
@@ -177,13 +155,11 @@ export function OnlineBookingConversionPanel() {
 	const [adminFunnel, setAdminFunnel] = useState<AdminPhoneFunnelMetric>(
 		DEFAULT_ADMIN_PHONE_FUNNEL,
 	);
-	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
 		let isMounted = true;
 		async function loadLiveAttribution() {
 			try {
-				setLoading(true);
 				const res = await fetch("/api/marketing/attribution", {
 					headers: denteAdminSecretRequestHeaders(),
 				});
@@ -886,7 +862,7 @@ export function OnlineBookingConversionPanel() {
 								color:
 									"bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold",
 							},
-						].map((item, idx) => (
+						].map((item) => (
 							<div
 								key={item.step}
 								className={`p-2.5 rounded-lg border border-[var(--line)] space-y-1 ${item.color}`}

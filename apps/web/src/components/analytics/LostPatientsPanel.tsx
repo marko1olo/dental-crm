@@ -25,10 +25,8 @@ import {
 	MessageSquare,
 	MoreHorizontal,
 	Phone,
-	PhoneCall,
 	RefreshCw,
 	Search,
-	Send,
 	ShieldCheck,
 	Sparkles,
 	TrendingUp,
@@ -80,7 +78,6 @@ export interface LostPatientsPanelProps {
 
 export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 	recallCohorts = [],
-	chairConfigs = [],
 }) => {
 	const { auth, setSelectedPatientId, clinicName, dashboard } =
 		useAppLogicContext();
