@@ -295,6 +295,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		});
 
 		const [activeTab, setActiveTab] = useState<Form043PrintConfig["activeTab"]>("overview");
+		const [zoomScale, setZoomScale] = useState<number>(1.0);
 		const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
 

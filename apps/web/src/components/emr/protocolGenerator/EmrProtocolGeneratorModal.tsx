@@ -8,6 +8,7 @@ import {
 	X,
 	Activity,
 	ShieldCheck,
+	Layers,
 	ChevronRight,
 	Zap,
 	Scissors,
