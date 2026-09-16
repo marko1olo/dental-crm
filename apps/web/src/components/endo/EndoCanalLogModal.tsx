@@ -1,124 +1,160 @@
 import {
+	ALL_ISO_ENDO_OPTIONS,
+	applyAnatomicalWorkingLengths,
+	applyCaOh2EndoProtocol,
+	applyExpressApicalEndoProtocol,
+	applyObturationPermanentProtocol,
+	applyPeriodontitisDestructiveProtocol,
+	applyPeriodontitisTempProtocol,
+	applyPrimaryEndoProtocol,
+	applyPulpitisObturationProtocol,
+	applyPulpitisProtocol,
+	applyPulpitisVisit1Protocol,
+	applyRetreatmentEndoProtocol,
+	applyStandardEndoProtocol,
+	CANAL_NAME_OPTIONS,
+	CAOH2_ENDO_PRESET,
+	type EndoCanalData,
+	type EndoPatientMemoParams,
+	type EndoProtocolPreset,
+	type EndoToothClinicalData,
+	EXPRESS_APICAL_OBTURATION_PRESET,
+	EXTENDED_MAF_ISO_OPTIONS,
+	formatEndoCanalsTable043,
+	formatEndoPatientMemo,
+	generateEndoCanalsTable043,
+	generateEndoProtocol043,
+	getAnatomicalWorkingLength,
+	getDefaultCanalsForTooth,
+	getIsoEndoColorInfo,
+	ISO_ENDO_COLORS,
+	ISO_ENDO_COLORS_MAP,
+	type IsoEndoColorInfo,
+	type IsoEndoSize,
+	MAF_ISO_OPTIONS,
+	OBTURATION_PERMANENT_PRESET,
+	OBTURATION_TECHNIQUE_OPTIONS,
+	PERIODONTITIS_DESTRUCTIVE_PRESET,
+	PERIODONTITIS_TEMP_PRESET,
+	PRIMARY_ENDO_PRESET,
+	PULPITIS_COMPLETE_PRESET,
+	PULPITIS_OBTURATION_PRESET,
+	PULPITIS_VISIT1_PRESET,
+	QUICK_LENGTH_PRESETS,
+	REFERENCE_POINT_OPTIONS,
+	RETREATMENT_ENDO_PRESET,
+	STANDARD_ENDO_PRESET,
+	TAPER_OPTIONS,
+} from "@dental/shared";
+import {
 	Activity,
 	Check,
+	ChevronDown,
 	Clipboard,
 	Copy,
 	FileText,
+	MoreHorizontal,
 	Plus,
 	Printer,
 	RotateCcw,
 	ShieldCheck,
 	Sparkles,
-	Stethoscope,
 	Trash2,
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-	type EndoCanalData,
-	type EndoToothClinicalData,
-	type EndoProtocolPreset,
-	type EndoPatientMemoParams,
-	formatEndoPatientMemo,
-	type IsoEndoSize,
-	type IsoEndoColorInfo,
-	ISO_ENDO_COLORS,
-	ISO_ENDO_COLORS_MAP,
-	getIsoEndoColorInfo,
-	ALL_ISO_ENDO_OPTIONS,
-	EXTENDED_MAF_ISO_OPTIONS,
-	CANAL_NAME_OPTIONS,
-	REFERENCE_POINT_OPTIONS,
-	MAF_ISO_OPTIONS,
-	TAPER_OPTIONS,
-	OBTURATION_TECHNIQUE_OPTIONS,
-	QUICK_LENGTH_PRESETS,
-	PRIMARY_ENDO_PRESET,
-	RETREATMENT_ENDO_PRESET,
-	OBTURATION_PERMANENT_PRESET,
-	EXPRESS_APICAL_OBTURATION_PRESET,
-	PULPITIS_VISIT1_PRESET,
-	PULPITIS_OBTURATION_PRESET,
-	PERIODONTITIS_DESTRUCTIVE_PRESET,
-	PULPITIS_COMPLETE_PRESET,
-	PERIODONTITIS_TEMP_PRESET,
-	STANDARD_ENDO_PRESET,
-	CAOH2_ENDO_PRESET,
-	getAnatomicalWorkingLength,
-	getDefaultCanalsForTooth,
-	applyAnatomicalWorkingLengths,
-	applyPrimaryEndoProtocol,
-	applyRetreatmentEndoProtocol,
-	applyObturationPermanentProtocol,
-	applyExpressApicalEndoProtocol,
-	applyPulpitisVisit1Protocol,
-	applyPulpitisObturationProtocol,
-	applyPeriodontitisDestructiveProtocol,
-	applyPulpitisProtocol,
-	applyPeriodontitisTempProtocol,
-	applyStandardEndoProtocol,
-	applyCaOh2EndoProtocol,
-	generateEndoCanalsTable043,
-	generateEndoProtocol043,
-	formatEndoCanalsTable043,
-} from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
-import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { useVisitStore } from "../../store/visitStore";
+import { showToast } from "../GlobalToast";
+
+/**
+ * Расширенная практическая линейка MAF файлов ISO (ISO 3630-1),
+ * включающая малые ручные патфайндинг-номера (06, 08, 10) и основные мастер-файлы (15..60).
+ */
+export const CURATED_ISO_MAF_OPTIONS = [
+	"ISO 06 (#06 розовый)",
+	"ISO 08 (#08 серый)",
+	"ISO 10 (#10 фиолетовый)",
+	"ISO 15 (#15 белый)",
+	"ISO 20 (#20 жёлтый)",
+	"ISO 25 (#25 красный)",
+	"ISO 30 (#30 синий)",
+	"ISO 35 (#35 зелёный)",
+	"ISO 40 (#40 чёрный)",
+	"ISO 45 (#45 белый)",
+	"ISO 50 (#50 жёлтый)",
+	"ISO 55 (#55 красный)",
+	"ISO 60 (#60 синий)",
+] as const;
+
+/** Клинический штамп этапа эндодонтического лечения (Мандат 8e) */
+export type EndoStageStamp = "COMPLETED" | "TEMP_CAOH2" | "DRAFT";
+
+/**
+ * Безопасное форматирование рабочей длины корневого канала:
+ * Гарантирует точность до 0.5 мм (Мандат 8b) и 100% исключает утечки NaN/undefined.
+ */
+export function formatWorkingLengthDisplay(wl: unknown): string {
+	if (wl === null || wl === undefined || wl === "" || wl === 0) return "—";
+	const num = typeof wl === "number" ? wl : Number.parseFloat(String(wl));
+	if (Number.isNaN(num) || !Number.isFinite(num) || num <= 0) return "—";
+	const rounded = Math.round(num * 2) / 2;
+	return `${rounded.toFixed(1)} мм`;
+}
 
 // Re-export for complete backward compatibility across existing views & tests
 export type {
 	EndoCanalData,
-	EndoToothClinicalData,
-	EndoProtocolPreset,
 	EndoPatientMemoParams,
-	IsoEndoSize,
+	EndoProtocolPreset,
+	EndoToothClinicalData,
 	IsoEndoColorInfo,
+	IsoEndoSize,
 };
 export {
-	formatEndoPatientMemo,
-	ISO_ENDO_COLORS,
-	ISO_ENDO_COLORS_MAP,
-	getIsoEndoColorInfo,
 	ALL_ISO_ENDO_OPTIONS,
-	EXTENDED_MAF_ISO_OPTIONS,
-	CANAL_NAME_OPTIONS,
-	REFERENCE_POINT_OPTIONS,
-	MAF_ISO_OPTIONS,
-	TAPER_OPTIONS,
-	OBTURATION_TECHNIQUE_OPTIONS,
-	QUICK_LENGTH_PRESETS,
-	PRIMARY_ENDO_PRESET,
-	RETREATMENT_ENDO_PRESET,
-	OBTURATION_PERMANENT_PRESET,
-	EXPRESS_APICAL_OBTURATION_PRESET,
-	PULPITIS_VISIT1_PRESET,
-	PULPITIS_OBTURATION_PRESET,
-	PERIODONTITIS_DESTRUCTIVE_PRESET,
-	PULPITIS_COMPLETE_PRESET,
-	PERIODONTITIS_TEMP_PRESET,
-	STANDARD_ENDO_PRESET,
-	CAOH2_ENDO_PRESET,
-	getAnatomicalWorkingLength,
-	getDefaultCanalsForTooth,
 	applyAnatomicalWorkingLengths,
-	applyPrimaryEndoProtocol,
-	applyRetreatmentEndoProtocol,
-	applyObturationPermanentProtocol,
-	applyExpressApicalEndoProtocol,
-	applyPulpitisVisit1Protocol,
-	applyPulpitisObturationProtocol,
-	applyPeriodontitisDestructiveProtocol,
-	applyPulpitisProtocol,
-	applyPeriodontitisTempProtocol,
-	applyStandardEndoProtocol,
 	applyCaOh2EndoProtocol,
+	applyExpressApicalEndoProtocol,
+	applyObturationPermanentProtocol,
+	applyPeriodontitisDestructiveProtocol,
+	applyPeriodontitisTempProtocol,
+	applyPrimaryEndoProtocol,
+	applyPulpitisObturationProtocol,
+	applyPulpitisProtocol,
+	applyPulpitisVisit1Protocol,
+	applyRetreatmentEndoProtocol,
+	applyStandardEndoProtocol,
+	CANAL_NAME_OPTIONS,
+	CAOH2_ENDO_PRESET,
+	EXPRESS_APICAL_OBTURATION_PRESET,
+	EXTENDED_MAF_ISO_OPTIONS,
+	formatEndoCanalsTable043,
+	formatEndoPatientMemo,
 	generateEndoCanalsTable043,
 	generateEndoProtocol043,
-	formatEndoCanalsTable043,
+	getAnatomicalWorkingLength,
+	getDefaultCanalsForTooth,
+	getIsoEndoColorInfo,
+	ISO_ENDO_COLORS,
+	ISO_ENDO_COLORS_MAP,
+	MAF_ISO_OPTIONS,
+	OBTURATION_PERMANENT_PRESET,
+	OBTURATION_TECHNIQUE_OPTIONS,
+	PERIODONTITIS_DESTRUCTIVE_PRESET,
+	PERIODONTITIS_TEMP_PRESET,
+	PRIMARY_ENDO_PRESET,
+	PULPITIS_COMPLETE_PRESET,
+	PULPITIS_OBTURATION_PRESET,
+	PULPITIS_VISIT1_PRESET,
+	QUICK_LENGTH_PRESETS,
+	REFERENCE_POINT_OPTIONS,
+	RETREATMENT_ENDO_PRESET,
+	STANDARD_ENDO_PRESET,
+	TAPER_OPTIONS,
 };
 
 export interface EndoCanalLogModalProps {
@@ -139,10 +175,7 @@ export interface EndoCanalLogModalProps {
 		canals: EndoCanalData[],
 		clinicalData: EndoToothClinicalData,
 	) => Promise<void> | void;
-	readonly onSave?: (
-		savedCanals: EndoCanalData[],
-		noteText?: string,
-	) => void;
+	readonly onSave?: (savedCanals: EndoCanalData[], noteText?: string) => void;
 	readonly clinicName?: string | undefined;
 	readonly clinicPhone?: string | undefined;
 	readonly doctorName?: string | undefined;
@@ -187,6 +220,21 @@ export function EndoCanalLogModal({
 	const [isSaving, setIsSaving] = useState(false);
 	const [, setIsLoadingFromDb] = useState(false);
 
+	// Clinical Stage Stamp (Мандат 8e п. 3 — свобода сохранения на любом этапе)
+	const [stageStamp, setStageStamp] = useState<EndoStageStamp>(() => {
+		if (
+			initialIrrigation?.toLowerCase().includes("ca(oh)2") ||
+			initialRotarySystem?.toLowerCase().includes("ca(oh)2")
+		) {
+			return "TEMP_CAOH2";
+		}
+		return "COMPLETED";
+	});
+
+	// UI menus state (Мандаты 8c, 8d)
+	const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
+	const [isFooterMenuOpen, setIsFooterMenuOpen] = useState(false);
+
 	// При смене номера зуба, переоткрытии окна или передаче initialCanals
 	useEffect(() => {
 		if (!isOpen) return;
@@ -215,7 +263,9 @@ export function EndoCanalLogModal({
 						Array.isArray(data.clinicalData.canals) &&
 						data.clinicalData.canals.length > 0
 					) {
-						setCanals(data.clinicalData.canals.map((c: EndoCanalData) => ({ ...c })));
+						setCanals(
+							data.clinicalData.canals.map((c: EndoCanalData) => ({ ...c })),
+						);
 						if (data.clinicalData.irrigation) {
 							setIrrigation(data.clinicalData.irrigation);
 						}
@@ -262,7 +312,10 @@ export function EndoCanalLogModal({
 		if (!isOpen) return;
 
 		const handleMeasuredWl = (e: Event) => {
-			const customEvent = e as CustomEvent<{ toothCode?: string; lengthMm: number }>;
+			const customEvent = e as CustomEvent<{
+				toothCode?: string;
+				lengthMm: number;
+			}>;
 			const { toothCode, lengthMm } = customEvent.detail || {};
 			if (toothCode && Number(toothCode) !== toothNumber) return;
 
@@ -271,18 +324,27 @@ export function EndoCanalLogModal({
 				if (prev.length === 0) return prev;
 				const updated = [...prev];
 				// Update first unmeasured canal or first canal
-				const targetIdx = updated.findIndex((c) => !c.workingLengthMm || Number(c.workingLengthMm) === 0);
+				const targetIdx = updated.findIndex(
+					(c) => !c.workingLengthMm || Number(c.workingLengthMm) === 0,
+				);
 				const applyIdx = targetIdx >= 0 ? targetIdx : 0;
 				if (updated[applyIdx]) {
-					updated[applyIdx] = { ...updated[applyIdx], workingLengthMm: Math.round(lengthMm * 2) / 2 };
+					updated[applyIdx] = {
+						...updated[applyIdx],
+						workingLengthMm: Math.round(lengthMm * 2) / 2,
+					};
 				}
 				return updated;
 			});
-			showToast(`Длина ${lengthMm.toFixed(1)} мм перенесена с визиографа в канал!`, "success");
+			showToast(
+				`Длина ${lengthMm.toFixed(1)} мм перенесена с визиографа в канал!`,
+				"success",
+			);
 		};
 
 		window.addEventListener("dente-endo-wl-measured", handleMeasuredWl);
-		return () => window.removeEventListener("dente-endo-wl-measured", handleMeasuredWl);
+		return () =>
+			window.removeEventListener("dente-endo-wl-measured", handleMeasuredWl);
 	}, [isOpen, toothNumber]);
 
 	// ESC to close
@@ -305,34 +367,99 @@ export function EndoCanalLogModal({
 		);
 	};
 
+	const handleCanalLengthInputChange = (id: string, rawVal: string) => {
+		const trimmed = rawVal.trim();
+		if (!trimmed) {
+			setCanals((prev) =>
+				prev.map((c) => (c.id === id ? { ...c, workingLengthMm: "" } : c)),
+			);
+			return;
+		}
+		const num = Number.parseFloat(trimmed);
+		if (Number.isNaN(num) || !Number.isFinite(num)) {
+			return;
+		}
+		const clamped = Math.max(0, Math.min(35, Math.round(num * 2) / 2));
+		setCanals((prev) =>
+			prev.map((c) => (c.id === id ? { ...c, workingLengthMm: clamped } : c)),
+		);
+	};
+
 	const handleAdjustCanalLength = (id: string, delta: number) => {
 		setCanals((prev) =>
 			prev.map((c) => {
 				if (c.id !== id) return c;
 				const curr =
-					typeof c.workingLengthMm === "number"
+					typeof c.workingLengthMm === "number" &&
+					!Number.isNaN(c.workingLengthMm)
 						? c.workingLengthMm
 						: Number.parseFloat(String(c.workingLengthMm)) || 21.0;
-				const next = Math.max(10, Math.min(35, Math.round((curr + delta) * 2) / 2));
+				const next = Math.max(
+					10,
+					Math.min(35, Math.round((curr + delta) * 2) / 2),
+				);
 				return { ...c, workingLengthMm: next };
 			}),
 		);
 	};
 
-	const handleSetCanalLength = (id: string, length: number | string) => {
+	const handleSetCanalLength = (id: string, length: number) => {
 		setCanals((prev) =>
 			prev.map((c) => (c.id === id ? { ...c, workingLengthMm: length } : c)),
 		);
 	};
 
-	// 1-клик протоколы (Мандаты 8e, 8k, 8n)
+	// ─── 1-КЛИК ПРЕСЕТЫ (МАНДАТЫ 8e п. 3, 8k, 8n) ──────────────────────────────
+	const handleApplyExpressApicalPreset = () => {
+		const preset = applyExpressApicalEndoProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		setStageStamp("COMPLETED");
+		showToast(
+			"Применен 1-клик протокол: Каналы пройдены и обтурированы до апекса",
+			"success",
+		);
+	};
+
+	const handleApplyCaOh2Protocol = () => {
+		const preset = applyCaOh2EndoProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		setStageStamp("TEMP_CAOH2");
+		showToast(
+			"Применен 1-клик протокол: Временная повязка Ca(OH)2 (Каласепт)",
+			"info",
+		);
+	};
+
+	const handleApplyPulpitisPreset = () => {
+		const preset = applyPulpitisProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		setStageStamp("COMPLETED");
+		showToast(
+			"Применен 1-клик протокол: Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)",
+			"success",
+		);
+	};
+
 	const handleApplyPrimaryEndoPreset = () => {
 		const preset = applyPrimaryEndoProtocol(canals, toothNumber);
 		setCanals(preset.canals);
 		setIrrigation(preset.irrigation);
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен 1-клик протокол: Первичное эндо (ProTaper Gold + Metapex/Calcept)", "success");
+		setStageStamp("TEMP_CAOH2");
+		showToast(
+			"Применен 1-клик протокол: Первичное эндо (ProTaper Gold + Metapex)",
+			"success",
+		);
 	};
 
 	const handleApplyRetreatmentPreset = () => {
@@ -341,7 +468,11 @@ export function EndoCanalLogModal({
 		setIrrigation(preset.irrigation);
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен 1-клик протокол: Повторное эндо (D-RaCe/Retreatment + Metapex)", "info");
+		setStageStamp("TEMP_CAOH2");
+		showToast(
+			"Применен 1-клик протокол: Повторное эндо (D-RaCe + ревизия)",
+			"info",
+		);
 	};
 
 	const handleApplyObturationPreset = () => {
@@ -350,17 +481,9 @@ export function EndoCanalLogModal({
 		setIrrigation(preset.irrigation);
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен 1-клик протокол: Постоянная обтурация (латеральная/горячая гуттаперча + AH Plus)", "success");
-	};
-
-	const handleApplyExpressApicalPreset = () => {
-		const preset = applyExpressApicalEndoProtocol(canals, toothNumber);
-		setCanals(preset.canals);
-		setIrrigation(preset.irrigation);
-		setRotarySystem(preset.rotarySystem);
-		setRadiologyControl(preset.radiologyControl);
+		setStageStamp("COMPLETED");
 		showToast(
-			"Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)",
+			"Применен 1-клик протокол: Постоянная обтурация (GuttaCore / AH Plus)",
 			"success",
 		);
 	};
@@ -371,7 +494,8 @@ export function EndoCanalLogModal({
 		setIrrigation(preset.irrigation);
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен 1-клик протокол: Пульпит 2-е посещение / Обтурация (AH Plus)", "success");
+		setStageStamp("COMPLETED");
+		showToast("Применен протокол: Пульпит 2-е посещение (AH Plus)", "success");
 	};
 
 	const handleApplyPeriodontitisDestructivePreset = () => {
@@ -380,16 +504,11 @@ export function EndoCanalLogModal({
 		setIrrigation(preset.irrigation);
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен 1-клик протокол: Периодонтит деструктивный (Metapex/Calcept)", "info");
-	};
-
-	const handleApplyPulpitisPreset = () => {
-		const preset = applyPulpitisProtocol(canals, toothNumber);
-		setCanals(preset.canals);
-		setIrrigation(preset.irrigation);
-		setRotarySystem(preset.rotarySystem);
-		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен 1-клик протокол: Пульпит (ProTaper F2 + AH Plus)", "success");
+		setStageStamp("TEMP_CAOH2");
+		showToast(
+			"Применен протокол: Периодонтит деструктивный (Metapex 14 дн)",
+			"info",
+		);
 	};
 
 	const handleApplyStandardProtocol = () => {
@@ -398,33 +517,57 @@ export function EndoCanalLogModal({
 		setIrrigation(preset.irrigation);
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен стандартный протокол обтурации (ProTaper + AH Plus)", "success");
+		setStageStamp("COMPLETED");
+		showToast(
+			"Применен стандартный протокол обтурации (ProTaper + AH Plus)",
+			"success",
+		);
 	};
 
-	const handleApplyCaOh2Protocol = () => {
-		const preset = applyCaOh2EndoProtocol(canals, toothNumber);
-		setCanals(preset.canals);
-		setIrrigation(preset.irrigation);
-		setRotarySystem(preset.rotarySystem);
-		setRadiologyControl(preset.radiologyControl);
-		showToast("Применен протокол временной повязки Ca(OH)2 (Каласепт)", "info");
-	};
+	const sanitizeCanalsForSubmission = (
+		inputCanals: EndoCanalData[],
+	): EndoCanalData[] => {
+		return inputCanals.map((c) => {
+			let safeWl: number | string = c.workingLengthMm;
+			if (typeof safeWl === "number") {
+				if (Number.isNaN(safeWl) || !Number.isFinite(safeWl) || safeWl <= 0) {
+					safeWl = getAnatomicalWorkingLength(toothNumber, c.canalName);
+				} else {
+					safeWl = Math.round(safeWl * 2) / 2;
+				}
+			} else if (typeof safeWl === "string" && safeWl.trim()) {
+				const parsed = Number.parseFloat(safeWl);
+				if (!Number.isNaN(parsed) && Number.isFinite(parsed) && parsed > 0) {
+					safeWl = Math.round(parsed * 2) / 2;
+				} else {
+					safeWl = getAnatomicalWorkingLength(toothNumber, c.canalName);
+				}
+			} else {
+				safeWl = getAnatomicalWorkingLength(toothNumber, c.canalName);
+			}
 
-	const sanitizeCanalsForSubmission = (inputCanals: EndoCanalData[]): EndoCanalData[] => {
-		return inputCanals.map((c) => ({
-			...c,
-			workingLengthMm: c.workingLengthMm || getAnatomicalWorkingLength(toothNumber, c.canalName),
-			masterApicalFile: c.masterApicalFile || "ISO 25 (#25 красный)",
-			taper: c.taper || ".06 (Конусность 6%)",
-			referencePoint: c.referencePoint || "Реперный ориентир",
-			obturationTechnique: c.obturationTechnique || "Гуттаперча + Силер (AH Plus)",
-		}));
+			return {
+				...c,
+				workingLengthMm: safeWl,
+				masterApicalFile: c.masterApicalFile || "ISO 25 (#25 красный)",
+				taper: c.taper || ".06 (Конусность 6%)",
+				referencePoint: c.referencePoint || "Реперный ориентир",
+				obturationTechnique:
+					c.obturationTechnique ||
+					(stageStamp === "TEMP_CAOH2"
+						? "Временная обтурация Ca(OH)2 (Metapex / Calcept)"
+						: "Гуттаперча + Силер (AH Plus)"),
+			};
+		});
 	};
 
 	const handleApplyAnatomicalLengths = () => {
 		const updated = applyAnatomicalWorkingLengths(canals, toothNumber);
 		setCanals(updated);
-		showToast(`Анатомическая длина каналов автозаполнена для зуба #${toothNumber}`, "info");
+		showToast(
+			`Анатомическая длина каналов автозаполнена для зуба #${toothNumber}`,
+			"info",
+		);
 	};
 
 	const handleAddCanal = () => {
@@ -434,9 +577,12 @@ export function EndoCanalLogModal({
 			canalName: `Canal ${canals.length + 1}`,
 			referencePoint: REFERENCE_POINT_OPTIONS[0],
 			workingLengthMm: 21.0,
-			masterApicalFile: MAF_ISO_OPTIONS[2],
+			masterApicalFile: "ISO 25 (#25 красный)",
 			taper: TAPER_OPTIONS[2],
-			obturationTechnique: OBTURATION_TECHNIQUE_OPTIONS[0],
+			obturationTechnique:
+				stageStamp === "TEMP_CAOH2"
+					? "Временная обтурация Ca(OH)2 (Metapex / Calcept)"
+					: OBTURATION_TECHNIQUE_OPTIONS[0],
 		};
 		setCanals((prev) => [...prev, newCanal]);
 	};
@@ -457,15 +603,39 @@ export function EndoCanalLogModal({
 	const toothAnatomicalName = getToothAnatomicalNameRu(toothNumber);
 
 	const generatedProtocolText = useMemo(() => {
+		let stampedTitle = toothAnatomicalName;
+		if (stageStamp === "DRAFT") {
+			stampedTitle = `${toothAnatomicalName} [ЧЕРНОВИК — КАНАЛЫ В ОБРАБОТКЕ]`;
+		} else if (stageStamp === "TEMP_CAOH2") {
+			stampedTitle = `${toothAnatomicalName} [ВРЕМЕННАЯ ОБТУРАЦИЯ Ca(OH)2]`;
+		} else {
+			stampedTitle = `${toothAnatomicalName} [ПОЛНАЯ ОБТУРАЦИЯ ДО АПЕКСА]`;
+		}
+
 		return generateEndoProtocol043({
 			toothNumber,
-			toothTitle: toothAnatomicalName,
-			canals,
+			toothTitle: stampedTitle,
+			canals: canals.map((c) => ({
+				...c,
+				workingLengthMm:
+					typeof c.workingLengthMm === "number" &&
+					!Number.isNaN(c.workingLengthMm)
+						? Math.round(c.workingLengthMm * 2) / 2
+						: c.workingLengthMm,
+			})),
 			irrigation,
 			rotarySystem,
 			radiologyControl,
 		});
-	}, [toothNumber, toothAnatomicalName, canals, irrigation, rotarySystem, radiologyControl]);
+	}, [
+		toothNumber,
+		toothAnatomicalName,
+		canals,
+		irrigation,
+		rotarySystem,
+		radiologyControl,
+		stageStamp,
+	]);
 
 	const persistCanalsToBackend = async (
 		clinicalData: EndoToothClinicalData,
@@ -534,9 +704,15 @@ export function EndoCanalLogModal({
 	const handleInsertToProtocol = async () => {
 		setIsSaving(true);
 		const effectiveCanals = sanitizeCanalsForSubmission(canals);
+		const stampedTitle =
+			stageStamp === "DRAFT"
+				? `${toothAnatomicalName} [ЧЕРНОВИК — КАНАЛЫ В ОБРАБОТКЕ]`
+				: stageStamp === "TEMP_CAOH2"
+					? `${toothAnatomicalName} [ВРЕМЕННАЯ ОБТУРАЦИЯ Ca(OH)2]`
+					: `${toothAnatomicalName} [ПОЛНАЯ ОБТУРАЦИЯ ДО АПЕКСА]`;
 		const protocolTextToInsert = generateEndoProtocol043({
 			toothNumber,
-			toothTitle: toothAnatomicalName,
+			toothTitle: stampedTitle,
 			canals: effectiveCanals,
 			irrigation,
 			rotarySystem,
@@ -553,7 +729,10 @@ export function EndoCanalLogModal({
 		try {
 			await persistCanalsToBackend(clinicalData);
 		} catch (err) {
-			console.warn("Background persistence failed, proceeding with protocol insertion", err);
+			console.warn(
+				"Background persistence failed, proceeding with protocol insertion",
+				err,
+			);
 		} finally {
 			setIsSaving(false);
 		}
@@ -619,15 +798,19 @@ export function EndoCanalLogModal({
 	const handleCopyPatientMemo = async () => {
 		try {
 			const isPermanent = Boolean(
-				canals.some((c) => c.obturationTechnique && c.obturationTechnique !== "none") ||
-				radiologyControl.toLowerCase().includes("обтурирован"),
+				stageStamp === "COMPLETED" ||
+					canals.some(
+						(c) => c.obturationTechnique && c.obturationTechnique !== "none",
+					) ||
+					radiologyControl.toLowerCase().includes("обтурирован"),
 			);
 
 			const isTemporaryCaOh2 = Boolean(
-				!isPermanent ||
-				irrigation.toLowerCase().includes("ca(oh)2") ||
-				rotarySystem.toLowerCase().includes("ca(oh)2") ||
-				canals.some((c) => c.notes && c.notes.toLowerCase().includes("ca(oh)2")),
+				stageStamp === "TEMP_CAOH2" ||
+					!isPermanent ||
+					irrigation.toLowerCase().includes("ca(oh)2") ||
+					rotarySystem.toLowerCase().includes("ca(oh)2") ||
+					canals.some((c) => c.notes?.toLowerCase().includes("ca(oh)2")),
 			);
 
 			const text = formatEndoPatientMemo({
@@ -655,6 +838,38 @@ export function EndoCanalLogModal({
 	const handlePrintWorksheet = () => {
 		showToast("Отправка эндо-карты на печать...", "info");
 		window.print();
+	};
+
+	// ISO 3630-1 color swatch badge with high-contrast light/dark theme borders
+	const renderIsoColorBadge = (fileVal: string | undefined) => {
+		const isoColor = getIsoEndoColorInfo(fileVal);
+		const hex = isoColor?.hex || "#94a3b8";
+		const isWhite =
+			isoColor?.size === 15 || isoColor?.size === 45 || isoColor?.size === 90;
+		const isBlack =
+			isoColor?.size === 40 || isoColor?.size === 80 || isoColor?.size === 140;
+
+		return (
+			<span
+				className="inline-flex items-center justify-center shrink-0 w-3.5 h-3.5 rounded-full border shadow-xs transition-transform"
+				style={{
+					backgroundColor: hex,
+					borderColor: isWhite
+						? "#94a3b8"
+						: isBlack
+							? "#64748b"
+							: "rgba(0,0,0,0.25)",
+					boxShadow: isBlack ? "0 0 0 1px rgba(255,255,255,0.3)" : undefined,
+				}}
+				title={
+					isoColor
+						? `${isoColor.labelRu} (${isoColor.colorRu})`
+						: "ISO цвет инструмента"
+				}
+			>
+				{isWhite && <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />}
+			</span>
+		);
 	};
 
 	if (!isOpen) return null;
@@ -703,172 +918,218 @@ export function EndoCanalLogModal({
 				</header>
 
 				{/* Scrollable Content Body */}
-				<div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
-					{/* 1-Click Fast Clinical Protocols & Actions Bar (Мандаты 8e, 8k, 8n) */}
-					<div className="flex flex-col gap-3 p-4 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
-						<div className="flex items-center justify-between gap-2 flex-wrap">
-							<div className="text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-								<Sparkles size={16} />
-								<span>Быстрые 1-клик протоколы эндодонтии (30 сек у кресла):</span>
+				<div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+					{/* 1-Click Fast Clinical Protocols & Actions Bar (Мандаты 8c, 8d п. 2, 8e, 8p, 8n) — EXACTLY 1 ROW (h-8 sm:h-9, 32–36px) */}
+					<div className="flex items-center justify-between gap-1.5 px-3 py-1 rounded-xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-800 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] max-h-[36px] overflow-visible shrink-0 relative">
+						<div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar flex-nowrap shrink">
+							<div className="hidden lg:flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 shrink-0 mr-1">
+								<Sparkles size={14} className="shrink-0" />
+								<span>1-клик:</span>
 							</div>
 
-							<button
-								type="button"
-								data-testid="btn-endo-anatomical-autofill"
-								onClick={handleApplyAnatomicalLengths}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-2 transition-all cursor-pointer active:scale-98"
-								title="Автозаполнение анатомической рабочей длины по номеру зуба в 1 клик (резцы 22 мм, клыки 25 мм, премоляры 21 мм, моляры щечные 20 мм / нёбный 22 мм)"
-							>
-								<Zap size={15} className="text-indigo-600 dark:text-indigo-400" />
-								<span>Авто-РД по анатомии (FDI)</span>
-							</button>
-						</div>
-
-						{/* Primary Mandate Protocols */}
-						<div className="flex items-center gap-2 flex-wrap">
-							<button
-								type="button"
-								data-testid="btn-endo-preset-primary"
-								onClick={handleApplyPrimaryEndoPreset}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-2 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98"
-								title="1-клик: Первичное эндо (ProTaper Gold SX-F2, 3% NaOCl + 17% EDTA с УЗ, Ca(OH)2 Metapex/Calcept на 7–14 дней)"
-							>
-								<Zap size={16} />
-								<span>Первичное эндо (ProTaper Gold + Metapex)</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="btn-endo-preset-retreatment"
-								onClick={handleApplyRetreatmentPreset}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-2 shadow-sm shadow-amber-600/20 transition-all cursor-pointer active:scale-98"
-								title="1-клик: Повторное эндо (распломбировка D-RaCe/Retreatment, ревизия устьев, временное пломбирование Metapex)"
-							>
-								<RotateCcw size={16} />
-								<span>Повторное эндо (D-RaCe + ревизия)</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="btn-endo-preset-obturation"
-								onClick={handleApplyObturationPreset}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
-								title="1-клик: Постоянная обтурация (латеральная компакция / горячая гуттаперча GuttaCore/System B + AH Plus)"
-							>
-								<Check size={16} />
-								<span>Постоянная обтурация (GuttaCore / AH Plus)</span>
-							</button>
-
+							{/* Preset 1: Каналы пройдены и обтурированы */}
 							<button
 								type="button"
 								data-testid="btn-express-apical-endo-protocol"
 								onClick={handleApplyExpressApicalPreset}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-2 shadow-sm shadow-teal-600/20 transition-all cursor-pointer active:scale-98"
-								title="1-клик: Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором Apex 0.0 и снимком)"
+								className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+								title="1-клик: Каналы обработаны и обтурированы до апекса (Apex 0.0 + RVG + AH Plus)"
 							>
-								<Check size={16} />
-								<span>Обтурированы до апекса (Apex 0.0 + RVG)</span>
+								<Check size={13} className="shrink-0" />
+								<span className="truncate">Пройдены и обтурированы</span>
 							</button>
 
-							<button
-								type="button"
-								data-testid="btn-endo-preset-pulpitis-obturation"
-								onClick={handleApplyPulpitisObturationPreset}
-								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
-								title="1-клик: Пульпит 2-е посещение (распломбирование, AH Plus / BioRoot, RVG контроль)"
-							>
-								<Check size={14} />
-								<span>Пульпит 2 эт. (AH Plus)</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="btn-endo-preset-periodontitis-destructive"
-								onClick={handleApplyPeriodontitisDestructivePreset}
-								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
-								title="1-клик: Периодонтит деструктивный (УЗ дезинфекция + Metapex на 14 дней)"
-							>
-								<ShieldCheck size={14} />
-								<span>Периодонтит (Metapex 14 дн)</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="btn-endo-preset-pulpitis-complete"
-								onClick={handleApplyPulpitisPreset}
-								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
-								title="1-клик: Пульпит полный цикл (ProTaper F2 + AH Plus)"
-							>
-								<Zap size={14} />
-								<span>Пульпит: ProTaper F2</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="btn-standard-endo-protocol"
-								onClick={handleApplyStandardProtocol}
-								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
-								title="Стандартный эндо-протокол (ProTaper + AH Plus)"
-							>
-								<Sparkles size={14} />
-								<span>Стандарт (AH Plus)</span>
-							</button>
-
+							{/* Preset 2: Временная пломбировка Ca(OH)2 */}
 							<button
 								type="button"
 								data-testid="btn-caoh2-endo-protocol"
 								onClick={handleApplyCaOh2Protocol}
-								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
-								title="Временная лечебная повязка Ca(OH)2 (Каласепт)"
+								className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+								title="1-клик: Временная повязка Ca(OH)2 (Каласепт / Metapex) на 7–14 дней"
 							>
-								<ShieldCheck size={14} />
-								<span>Повязка Ca(OH)2</span>
+								<ShieldCheck size={13} className="shrink-0" />
+								<span className="truncate">Временная Ca(OH)2</span>
 							</button>
+
+							{/* Preset 3: Эндодонтия пульпита в 1 визит */}
+							<button
+								type="button"
+								data-testid="btn-endo-preset-pulpitis-complete"
+								onClick={handleApplyPulpitisPreset}
+								className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+								title="1-клик: Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)"
+							>
+								<Zap size={13} className="shrink-0" />
+								<span className="truncate">Пульпит в 1 визит</span>
+							</button>
+
+							{/* Secondary Presets Popover Menu */}
+							<div className="relative shrink-0">
+								<button
+									type="button"
+									onClick={() => setIsPresetsMenuOpen((v) => !v)}
+									className="h-6 sm:h-7 px-1.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 border border-[var(--line,#cbd5e1)] dark:border-slate-600 flex items-center gap-1 transition-all cursor-pointer shrink-0"
+									title="Другие протоколы эндодонтии (Первичное, Повторное D-RaCe, Периодонтит деструктивный...)"
+								>
+									<span className="text-[11px]">Другие</span>
+									<ChevronDown size={12} />
+								</button>
+
+								{isPresetsMenuOpen && (
+									<div
+										className="absolute left-0 top-full mt-1.5 z-50 w-64 bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl shadow-xl p-1.5 space-y-1 text-xs"
+										role="menu"
+									>
+										<button
+											type="button"
+											data-testid="btn-endo-preset-primary"
+											onClick={() => {
+												handleApplyPrimaryEndoPreset();
+												setIsPresetsMenuOpen(false);
+											}}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
+										>
+											<Zap size={14} className="text-rose-500 shrink-0" />
+											<span className="truncate">
+												Первичное эндо (ProTaper + Metapex)
+											</span>
+										</button>
+										<button
+											type="button"
+											data-testid="btn-endo-preset-retreatment"
+											onClick={() => {
+												handleApplyRetreatmentPreset();
+												setIsPresetsMenuOpen(false);
+											}}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
+										>
+											<RotateCcw
+												size={14}
+												className="text-amber-500 shrink-0"
+											/>
+											<span className="truncate">
+												Повторное эндо (D-RaCe + ревизия)
+											</span>
+										</button>
+										<button
+											type="button"
+											data-testid="btn-endo-preset-obturation"
+											onClick={() => {
+												handleApplyObturationPreset();
+												setIsPresetsMenuOpen(false);
+											}}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
+										>
+											<Check size={14} className="text-emerald-500 shrink-0" />
+											<span className="truncate">
+												Постоянная обтурация (GuttaCore / AH Plus)
+											</span>
+										</button>
+										<button
+											type="button"
+											data-testid="btn-endo-preset-pulpitis-obturation"
+											onClick={() => {
+												handleApplyPulpitisObturationPreset();
+												setIsPresetsMenuOpen(false);
+											}}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
+										>
+											<Check size={14} className="text-slate-500 shrink-0" />
+											<span className="truncate">Пульпит 2 эт. (AH Plus)</span>
+										</button>
+										<button
+											type="button"
+											data-testid="btn-endo-preset-periodontitis-destructive"
+											onClick={() => {
+												handleApplyPeriodontitisDestructivePreset();
+												setIsPresetsMenuOpen(false);
+											}}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
+										>
+											<ShieldCheck
+												size={14}
+												className="text-purple-500 shrink-0"
+											/>
+											<span className="truncate">
+												Периодонтит (Metapex 14 дн)
+											</span>
+										</button>
+										<button
+											type="button"
+											data-testid="btn-standard-endo-protocol"
+											onClick={() => {
+												handleApplyStandardProtocol();
+												setIsPresetsMenuOpen(false);
+											}}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
+										>
+											<Sparkles
+												size={14}
+												className="text-indigo-500 shrink-0"
+											/>
+											<span className="truncate">Стандарт (AH Plus)</span>
+										</button>
+										<div className="border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 my-1" />
+										<button
+											type="button"
+											onClick={() => {
+												handleResetToDefaults();
+												setIsPresetsMenuOpen(false);
+											}}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium flex items-center gap-2 cursor-pointer"
+										>
+											<RotateCcw size={14} className="shrink-0" />
+											<span>Сброс к анатомическому стандарту</span>
+										</button>
+									</div>
+								)}
+							</div>
 						</div>
 
-						{/* Bottom helper row: status + reset + add canal */}
-						<div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800/80 flex-wrap">
-							<div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-								<Stethoscope size={16} className="text-rose-600 dark:text-rose-400" />
-								<span>Корневые каналы ({canals.length}):</span>
-							</div>
+						{/* Right toolbar controls: Autofill WL + Add Canal */}
+						<div className="flex items-center gap-1.5 shrink-0">
+							<button
+								type="button"
+								data-testid="btn-endo-anatomical-autofill"
+								onClick={handleApplyAnatomicalLengths}
+								className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1 transition-all cursor-pointer shrink-0 active:scale-98"
+								title="Автозаполнение анатомической рабочей длины по FDI в 1 клик"
+							>
+								<Zap
+									size={13}
+									className="text-indigo-600 dark:text-indigo-400 shrink-0"
+								/>
+								<span className="hidden sm:inline">Авто-РД (FDI)</span>
+								<span className="sm:hidden">РД</span>
+							</button>
 
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={handleResetToDefaults}
-									className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation"
-									title="Сбросить каналы к анатомическому стандарту FDI для этого зуба"
-								>
-									<RotateCcw size={14} />
-									<span>Анатомический стандарт FDI</span>
-								</button>
-
-								<button
-									type="button"
-									onClick={handleAddCanal}
-									className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer touch-manipulation"
-								>
-									<Plus size={15} />
-									<span>Добавить канал</span>
-								</button>
-							</div>
+							<button
+								type="button"
+								onClick={handleAddCanal}
+								className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+								title="Добавить дополнительный корневой канал"
+							>
+								<Plus size={13} className="shrink-0" />
+								<span className="hidden sm:inline">Канал</span>
+							</button>
 						</div>
 					</div>
 
-					{/* Multi-canal Table / Matrix */}
+					{/* Multi-canal Table / Matrix (Dense desktop ergonomics h-8/h-9, Mandate 8c) */}
 					<div className="border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm bg-[var(--paper,#ffffff)] dark:bg-slate-900/60">
 						<div className="overflow-x-auto">
 							<table className="w-full text-left border-collapse text-xs">
-								<thead className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 text-[var(--muted,#64748b)] text-xs font-bold border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<thead className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 text-[var(--muted,#64748b)] text-[11px] font-bold border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 									<tr>
-										<th className="py-3 px-3">Канал</th>
-										<th className="py-3 px-3">Реперный ориентир</th>
-										<th className="py-3 px-3">Длина (WL)</th>
-										<th className="py-3 px-3">MAF (ISO)</th>
-										<th className="py-3 px-3">Конусность</th>
-										<th className="py-3 px-3">Метод обтурации</th>
-										<th className="py-3 px-2 text-center w-12" />
+										<th className="py-2 px-3">Канал</th>
+										<th className="py-2 px-3">Реперный ориентир</th>
+										<th className="py-2 px-3 min-w-[200px]">
+											Длина (WL, 0.5 мм)
+										</th>
+										<th className="py-2 px-3">MAF (ISO 3630-1)</th>
+										<th className="py-2 px-3">Конусность</th>
+										<th className="py-2 px-3">Метод обтурации</th>
+										<th className="py-2 px-2 text-center w-10" />
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800/60">
@@ -878,7 +1139,7 @@ export function EndoCanalLogModal({
 											className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
 										>
 											{/* Canal Name */}
-											<td className="py-2.5 px-3">
+											<td className="py-1.5 px-3">
 												<input
 													type="text"
 													aria-label={`Название канала ${index + 1}`}
@@ -886,12 +1147,12 @@ export function EndoCanalLogModal({
 													onChange={(e) =>
 														handleCanalChange(c.id, "canalName", e.target.value)
 													}
-													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+													className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 												/>
 											</td>
 
 											{/* Reference Point */}
-											<td className="py-2.5 px-3">
+											<td className="py-1.5 px-3">
 												<select
 													aria-label={`Реперный ориентир канала ${c.canalName}`}
 													value={c.referencePoint}
@@ -902,7 +1163,7 @@ export function EndoCanalLogModal({
 															e.target.value,
 														)
 													}
-													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+													className="w-full h-8 sm:h-8.5 px-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 												>
 													{REFERENCE_POINT_OPTIONS.map((opt) => (
 														<option key={opt} value={opt}>
@@ -912,14 +1173,16 @@ export function EndoCanalLogModal({
 												</select>
 											</td>
 
-											{/* Working Length in mm (со степперами >=44px и быстрыми пресетами) */}
-											<td className="py-2.5 px-3 min-w-[220px]">
-												<div className="space-y-1.5">
+											{/* Working Length in mm (степперы 0.5 мм и быстрые пресеты) */}
+											<td className="py-1.5 px-3 min-w-[200px]">
+												<div className="space-y-1">
 													<div className="relative flex items-center gap-1">
 														<button
 															type="button"
-															onClick={() => handleAdjustCanalLength(c.id, -0.5)}
-															className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
+															onClick={() =>
+																handleAdjustCanalLength(c.id, -0.5)
+															}
+															className="h-7 w-7 rounded-lg bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
 															title="-0.5 мм"
 														>
 															-0.5
@@ -931,38 +1194,43 @@ export function EndoCanalLogModal({
 																min="10"
 																max="35"
 																aria-label={`Рабочая длина в мм для канала ${c.canalName}`}
-																value={c.workingLengthMm}
+																value={
+																	c.workingLengthMm === 0
+																		? ""
+																		: c.workingLengthMm
+																}
 																placeholder="—"
 																onChange={(e) =>
-																	handleCanalChange(
+																	handleCanalLengthInputChange(
 																		c.id,
-																		"workingLengthMm",
-																		Number.parseFloat(e.target.value) || e.target.value,
+																		e.target.value,
 																	)
 																}
-																className="w-full min-h-[44px] pl-2 pr-7 py-1 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none text-center"
+																className="w-full h-7 pl-1.5 pr-6 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none text-center"
 															/>
-															<span className="absolute right-2 text-xs text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
+															<span className="absolute right-1.5 text-[10px] text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
 																мм
 															</span>
 														</div>
 														<button
 															type="button"
 															onClick={() => handleAdjustCanalLength(c.id, 0.5)}
-															className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
+															className="h-7 w-7 rounded-lg bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
 															title="+0.5 мм"
 														>
 															+0.5
 														</button>
 													</div>
-													{/* Quick Length Chips (1-tap fast input) */}
-													<div className="flex items-center gap-1.5 flex-wrap">
+													{/* Quick Length Chips */}
+													<div className="flex items-center gap-1 flex-wrap">
 														{QUICK_LENGTH_PRESETS.map((presetLen) => (
 															<button
 																key={presetLen}
 																type="button"
-																onClick={() => handleSetCanalLength(c.id, presetLen)}
-																className={`min-h-[44px] min-w-[40px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+																onClick={() =>
+																	handleSetCanalLength(c.id, presetLen)
+																}
+																className={`h-5 px-1.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 																	Number(c.workingLengthMm) === presetLen
 																		? "bg-rose-600 text-white shadow-xs"
 																		: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
@@ -976,25 +1244,10 @@ export function EndoCanalLogModal({
 												</div>
 											</td>
 
-											{/* Master Apical File (MAF) */}
-											<td className="py-2.5 px-3">
-												<div className="flex items-center gap-2">
-													{(() => {
-														const isoColor = getIsoEndoColorInfo(c.masterApicalFile);
-														return (
-															<span
-																className={`inline-block h-4 w-4 rounded-full shrink-0 border ${
-																	isoColor?.borderClass || "border-slate-300 dark:border-slate-600"
-																}`}
-																style={{ backgroundColor: isoColor?.hex || "#94a3b8" }}
-																title={
-																	isoColor
-																		? `${isoColor.labelRu} (${isoColor.colorRu})`
-																		: "ISO цвет не определён"
-																}
-															/>
-														);
-													})()}
+											{/* Master Apical File (MAF) with ISO 3630-1 color swatch */}
+											<td className="py-1.5 px-3">
+												<div className="flex items-center gap-1.5">
+													{renderIsoColorBadge(c.masterApicalFile)}
 													<select
 														aria-label={`Мастер-апикальный файл для канала ${c.canalName}`}
 														value={c.masterApicalFile}
@@ -1005,9 +1258,9 @@ export function EndoCanalLogModal({
 																e.target.value,
 															)
 														}
-														className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-semibold"
+														className="w-full h-8 sm:h-8.5 px-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-semibold"
 													>
-														{MAF_ISO_OPTIONS.map((opt) => (
+														{CURATED_ISO_MAF_OPTIONS.map((opt) => (
 															<option key={opt} value={opt}>
 																{opt}
 															</option>
@@ -1017,14 +1270,14 @@ export function EndoCanalLogModal({
 											</td>
 
 											{/* Taper */}
-											<td className="py-2.5 px-3">
+											<td className="py-1.5 px-3">
 												<select
 													aria-label={`Конусность для канала ${c.canalName}`}
 													value={c.taper}
 													onChange={(e) =>
 														handleCanalChange(c.id, "taper", e.target.value)
 													}
-													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+													className="w-full h-8 sm:h-8.5 px-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 												>
 													{TAPER_OPTIONS.map((opt) => (
 														<option key={opt} value={opt}>
@@ -1035,7 +1288,7 @@ export function EndoCanalLogModal({
 											</td>
 
 											{/* Obturation Technique */}
-											<td className="py-2.5 px-3">
+											<td className="py-1.5 px-3">
 												<select
 													aria-label={`Метод обтурации для канала ${c.canalName}`}
 													value={c.obturationTechnique}
@@ -1046,7 +1299,7 @@ export function EndoCanalLogModal({
 															e.target.value,
 														)
 													}
-													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-medium"
+													className="w-full h-8 sm:h-8.5 px-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-medium"
 												>
 													{OBTURATION_TECHNIQUE_OPTIONS.map((opt) => (
 														<option key={opt} value={opt}>
@@ -1057,14 +1310,14 @@ export function EndoCanalLogModal({
 											</td>
 
 											{/* Remove Canal */}
-											<td className="py-2.5 px-2 text-center">
+											<td className="py-1.5 px-2 text-center">
 												<button
 													type="button"
 													onClick={() => handleRemoveCanal(c.id)}
-													className="min-h-[48px] min-w-[48px] rounded-xl text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
+													className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
 													title={`Удалить канал ${c.canalName}`}
 												>
-													<Trash2 size={18} />
+													<Trash2 size={16} />
 												</button>
 											</td>
 										</tr>
@@ -1075,11 +1328,11 @@ export function EndoCanalLogModal({
 					</div>
 
 					{/* Additional Clinical Details: Rotary, Irrigation & X-Ray */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
 							<label
 								htmlFor="endo-rotary-input"
-								className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5"
+								className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"
 							>
 								Инструментальная система (NiTi):
 							</label>
@@ -1088,7 +1341,7 @@ export function EndoCanalLogModal({
 								type="text"
 								value={rotarySystem}
 								onChange={(e) => setRotarySystem(e.target.value)}
-								className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs sm:text-sm outline-none focus:ring-2 focus:ring-rose-500 font-medium"
+								className="w-full h-8 sm:h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500 font-medium"
 								placeholder="Машинная обработка NiTi ProTaper Gold (SX, S1, S2, F1, F2)"
 							/>
 						</div>
@@ -1096,7 +1349,7 @@ export function EndoCanalLogModal({
 						<div>
 							<label
 								htmlFor="endo-irrigation-input"
-								className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5"
+								className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"
 							>
 								Растворы и протокол ирригации:
 							</label>
@@ -1105,7 +1358,7 @@ export function EndoCanalLogModal({
 								type="text"
 								value={irrigation}
 								onChange={(e) => setIrrigation(e.target.value)}
-								className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs sm:text-sm outline-none focus:ring-2 focus:ring-rose-500 font-medium"
+								className="w-full h-8 sm:h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500 font-medium"
 								placeholder="3% NaOCl + 17% EDTA с ультразвуковой активацией"
 							/>
 						</div>
@@ -1113,7 +1366,7 @@ export function EndoCanalLogModal({
 						<div>
 							<label
 								htmlFor="endo-radiology-input"
-								className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5"
+								className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"
 							>
 								Рентген-контроль (визиография):
 							</label>
@@ -1122,95 +1375,183 @@ export function EndoCanalLogModal({
 								type="text"
 								value={radiologyControl}
 								onChange={(e) => setRadiologyControl(e.target.value)}
-								className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs sm:text-sm outline-none focus:ring-2 focus:ring-rose-500 font-medium"
+								className="w-full h-8 sm:h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500 font-medium"
 								placeholder="Контрольная визиография: каналы обтурированы до апекса."
 							/>
 						</div>
 					</div>
 
 					{/* Live Structured Protocol Preview for Form 043/y (Zero Emojis) */}
-					<div className="p-4 bg-[var(--surface,#f8fafc)] dark:bg-slate-950/60 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-2xl">
-						<div className="flex items-center justify-between mb-2">
-							<div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
-								<FileText size={16} />
+					<div className="p-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-950/60 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-2xl">
+						<div className="flex items-center justify-between mb-1.5">
+							<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
+								<FileText size={15} />
 								<span>Форма 043/у · Предпросмотр протокола лечения:</span>
 							</div>
 
 							<button
 								type="button"
 								onClick={handleCopyText}
-								className="min-h-[48px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
 							>
-								{copied ? <Check size={16} className="text-emerald-500" /> : <Clipboard size={16} />}
+								{copied ? (
+									<Check size={14} className="text-emerald-500" />
+								) : (
+									<Clipboard size={14} />
+								)}
 								<span>{copied ? "Скопировано!" : "Копировать текст"}</span>
 							</button>
 						</div>
 
 						<pre
 							data-testid="endo-protocol-preview-text"
-							className="text-xs text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap leading-relaxed m-0 p-3 bg-[var(--paper,#ffffff)] rounded-xl border border-[var(--line,#e2e8f0)] max-h-48 overflow-y-auto select-text"
+							className="text-xs text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap leading-relaxed m-0 p-2.5 bg-[var(--paper,#ffffff)] rounded-xl border border-[var(--line,#e2e8f0)] max-h-36 overflow-y-auto select-text"
 						>
 							{generatedProtocolText}
 						</pre>
 					</div>
 				</div>
 
-				{/* Bottom Action Footer */}
-				<footer className="flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90">
-					<div className="flex items-center gap-2.5 flex-wrap">
-						<button
-							type="button"
-							onClick={handleCopyPatientMemo}
-							data-testid="endo-copy-patient-memo-btn"
-							className="min-h-[50px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
-							title="Скопировать памятку по уходу после лечения каналов для отправки пациенту в WhatsApp/Telegram"
-						>
-							<Copy size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
-							<span>Скопировать для пациента</span>
-						</button>
-
+				{/* Bottom Action Footer (Miller's Law: strictly <= 2 direct action buttons, secondary in menu '...') */}
+				<footer className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90 shrink-0">
+					{/* Left Group: Print A4 + Secondary actions menu '...' + Clinical Stage Stamp */}
+					<div className="flex items-center gap-2 flex-wrap">
+						{/* Print A4 Worksheet Button (Wave 54 / Mandate 8e: Печать в любой момент) */}
 						<button
 							type="button"
 							onClick={handlePrintWorksheet}
 							data-testid="endo-print-worksheet-btn"
-							className="min-h-[50px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+							className="min-h-[50px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
 							title="Распечатать эндодонтическую карту (А4) для истории болезни"
 						>
-							<Printer size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+							<Printer
+								size={16}
+								className="text-rose-600 dark:text-rose-400 shrink-0"
+							/>
 							<span>Печать эндо-карты (А4)</span>
 						</button>
-					</div>
 
-					<div className="flex items-center gap-3 flex-wrap">
+						{/* Menu '...' for secondary actions (Draft save, Copy 043, Reset) */}
+						<div className="relative">
+							<button
+								type="button"
+								onClick={() => setIsFooterMenuOpen((v) => !v)}
+								className="min-h-[44px] px-3 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer"
+								title="Дополнительные действия (сохранение черновика, сброс параметров)"
+								aria-label="Дополнительные действия"
+							>
+								<MoreHorizontal size={18} />
+								<span className="hidden sm:inline">Действия</span>
+							</button>
+
+							{isFooterMenuOpen && (
+								<div
+									className="absolute left-0 bottom-full mb-1.5 z-50 w-64 bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl shadow-xl p-1.5 space-y-1 text-xs"
+									role="menu"
+								>
+									<button
+										type="button"
+										data-testid="save-endo-canals-btn"
+										onClick={() => {
+											handleSaveCanalsOnly();
+											setIsFooterMenuOpen(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold flex items-center gap-2 transition-colors cursor-pointer"
+										title="Сохранить параметры каналов в БД без вставки в дневник визита"
+									>
+										<Check
+											size={15}
+											className="text-emerald-600 dark:text-emerald-400 shrink-0"
+										/>
+										<span>Сохранить только каналы</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											handleCopyText();
+											setIsFooterMenuOpen(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										<Clipboard size={15} className="text-slate-500 shrink-0" />
+										<span>Копировать текст 043/у</span>
+									</button>
+
+									<div className="border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 my-1" />
+
+									<button
+										type="button"
+										onClick={() => {
+											handleResetToDefaults();
+											setIsFooterMenuOpen(false);
+										}}
+										className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold flex items-center gap-2 transition-colors cursor-pointer"
+									>
+										<RotateCcw size={15} className="shrink-0" />
+										<span>Сбросить к стандарту FDI</span>
+									</button>
+								</div>
+							)}
+						</div>
+
+						{/* Clinical Stage Stamp Selector (Мандат 8e п. 3: черновик / временная / полная) */}
+						<div className="flex items-center gap-1.5">
+							<span className="text-xs font-bold text-slate-500 dark:text-slate-400 hidden sm:inline">
+								Штамп:
+							</span>
+							<select
+								value={stageStamp}
+								onChange={(e) =>
+									setStageStamp(e.target.value as EndoStageStamp)
+								}
+								aria-label="Клинический штамп этапа лечения"
+								className="h-9 px-2 rounded-xl text-xs font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#cbd5e1)] dark:border-slate-700 outline-none cursor-pointer"
+							>
+								<option value="COMPLETED">ОБТУРИРОВАНО</option>
+								<option value="TEMP_CAOH2">ВРЕМЕННАЯ ОБТУРАЦИЯ</option>
+								<option value="DRAFT">ЧЕРНОВИК</option>
+							</select>
+						</div>
+
 						<button
 							type="button"
 							onClick={onClose}
-							disabled={isSaving}
-							className="min-h-[50px] px-5 py-2.5 rounded-xl text-sm font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer"
+							className="h-9 px-3 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
 						>
 							Отмена
 						</button>
+					</div>
 
+					{/* Right Group (Miller's Law: strictly <= 2 direct action buttons) */}
+					<div className="flex items-center gap-2.5 flex-wrap">
+						{/* Primary Action 1: Памятка пациенту */}
 						<button
 							type="button"
-							data-testid="save-endo-canals-btn"
-							disabled={isSaving}
-							onClick={handleSaveCanalsOnly}
-							className="min-h-[50px] px-5 py-2.5 rounded-xl text-sm font-bold bg-rose-100 hover:bg-rose-200 dark:bg-rose-950/80 dark:hover:bg-rose-900 text-rose-900 dark:text-rose-200 border border-rose-400/50 flex items-center gap-2 transition-all active:scale-98 cursor-pointer"
+							onClick={handleCopyPatientMemo}
+							data-testid="endo-copy-patient-memo-btn"
+							className="min-h-[50px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-colors cursor-pointer active:scale-98"
+							title="Скопировать памятку по уходу после лечения каналов для отправки пациенту в WhatsApp/Telegram"
 						>
-							<Check size={18} className="text-rose-600 dark:text-rose-400" />
-							<span>Сохранить в карту</span>
+							<Copy
+								size={16}
+								className="text-rose-600 dark:text-rose-400 shrink-0"
+							/>
+							<span>Скопировать для пациента</span>
 						</button>
 
+						{/* Primary Action 2: Сохранить в карту 043/у (0 disabled buttons, Mandate 8e) */}
 						<button
 							type="button"
 							data-testid="insert-endo-protocol-btn"
-							disabled={isSaving}
 							onClick={handleInsertToProtocol}
-							className="min-h-[50px] px-6 py-2.5 rounded-xl text-sm font-black bg-rose-600 hover:bg-rose-500 active:scale-98 text-white flex items-center gap-2.5 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
+							className="min-h-[50px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-rose-600 hover:bg-rose-500 active:scale-98 text-white flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
+							title="Сохранить параметры каналов и вставить официальный протокол в карту 043/у"
 						>
-							<Sparkles size={18} />
-							<span>Вставить в протокол Формы 043/у</span>
+							<Check size={18} />
+							<span>
+								{isSaving ? "Сохранение..." : "Сохранить в карту 043/у"}
+							</span>
 						</button>
 					</div>
 				</footer>
