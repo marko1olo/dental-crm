@@ -8,20 +8,27 @@
 
 import React, { useMemo, useState } from "react";
 import {
-	BarChart3,
-	CalendarCheck,
-	CheckCircle2,
-	Coins,
-	CreditCard,
-	FileSpreadsheet,
-	Globe,
-	Layers,
-	PhoneCall,
-	Search,
-	Tag,
 	TrendingUp,
+	BarChart3,
+	Filter,
+	Download,
+	PhoneCall,
+	CalendarCheck,
 	UserCheck,
+	Coins,
+	Sparkles,
 	X,
+	Search,
+	ArrowUpRight,
+	CheckCircle2,
+	Layers,
+	Globe,
+	RefreshCw,
+	FileSpreadsheet,
+	Copy,
+	Check,
+	CreditCard,
+	Tag,
 } from "lucide-react";
 import {
 	calculateMarketingChannelsPerformance,
@@ -29,6 +36,7 @@ import {
 	SAMPLE_PATIENT_ATTRIBUTIONS,
 	type AdvertisingChannelPerformanceInput,
 	type PatientAttributionRecord,
+	type FunnelStage,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import "./marketingRoi.css";
@@ -55,6 +63,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 	const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>("current_month");
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
 	const channelsData = useMemo(() => {
 		return customChannels ?? DEFAULT_DENTAL_MARKETING_CHANNELS;
