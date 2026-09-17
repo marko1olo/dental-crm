@@ -195,6 +195,8 @@
   - **Печать типового договора со строками `_______` без 403-ошибок (Мандаты 8e п. 8, 8n / Волна 228)**: В `DocumentsView.tsx` и `consentTemplates.ts` верифицирована печать чистого бланка договора оказания платных медицинских услуг и пакета первичного приёма со строками `_______` для ручного заполнения пациентом на стойке регистрации; регистратор и соло-врач формируют и распечатывают документ в 1 клик даже при неполном профиле пациента без 403-ошибок.
   - **Легальная автономия печати Формы 043/у, штампы черновика и 300мс autosave (Мандаты 8c, 8d, 8e пп. 3, 5, 6, 8n / Волна 240)**: В `DentalMedicalCard043uForm.tsx`, `VisitView.tsx`, `VisitEmkTab.tsx` и `VisitSoapEditor.tsx` подтверждена неблокирующая печать амбулаторной карты стоматологического больного 043/у и смет в любой момент приёма: открытый приём выводится на печать со штампом «ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП», закрытый — «ПОДПИСАНО ВРАЧОМ»; 1-клик фиксация физиологической нормы Z01.2 («Соматически здоров / зубные ряды интактны»); непрерывный 300мс debounced autosave с гарантией от потери клинического текста при смене вкладок и входящих звонках.
 
+  - **Асинхронный кабинет подписания УКЭП и шлюз ЕГИСЗ РЭМД CDA R3 (Мандаты 8c, 8d пп. 1, 5, 7, 8e п. 1, 8k, 8n, 8p, 8s / Волна 248)**: В `EgiszRemdHubModal.tsx`, `cdaR2XmlBuilder.ts`, `egiszRemdEngine.ts`, `egiszJournalData.ts`, `EgiszMonitor.tsx`, `egiszAvailability.ts`, `packages/shared/src/cda/`, `apps/api/src/routes/egisz.ts`, `apps/api/src/services/cda/index.ts`: генерация структурированных электронных медицинских документов (СЭМД) по стандарту HL7 CDA R3 / CDA R2 (СЭМД 101 «Протокол консультации», СЭМД 104 «Протокол инструментального исследования», СЭМД 105 «Протокол лабораторного исследования», СЭМД 108 «Стоматологическая карта Форма 043/у») с валидацией XSD-схем Минздрава РФ и OID-идентификаторов; асинхронное формирование открепленной УКЭП по ГОСТ Р 34.10-2012 через КриптоПро CSP без блокировки вьюпорта врача и задержек у кресла; локальная буферизация в отказоустойчивой очереди PostgreSQL 18.4 (`egisz_documents`/outbox) с режимом «Автономный режим шлюза РЭМД ЕГИСЗ» при сбоях федерального контура; 0 заблокированных серых кнопок (`disabled={false}` со структурированным тост-руководством); полное искоренение мультяшных эмодзи в медицинских документах.
+
 ### 2.6. Омниканальные Коммуникации, Чаты и Телефония
 - **Фронтенд**: `apps/web/src/CommunicationsView.tsx`, `apps/web/src/components/telephony/IncomingCallPopup.tsx`, `TelephonyFloatingWidget.tsx`, `CallAudioPlayer.tsx`, `apps/web/src/store/telephonyStore.ts`.
 - **Бэкенд**: `apps/api/src/routes/communications.ts`, `telegram.ts`, `whatsapp.ts`, `vk.ts`, `telephony.ts`, `telegramTransport.ts`.
@@ -245,6 +247,14 @@
   - **Суверенитет кассы 54-ФЗ соло-врача и 1-клик сплит 50/50 (Мандаты 8b, 8c, 8d, 8e п. 9, 8n, 8p, 8s / Волна 240)**: В `PaymentCapture.tsx`, `PaymentModal.tsx` и `FastCheckoutModal.tsx` подтвержден полный суверенитет кассовых операций: нулевое требование ИНН с физлиц (по 54-ФЗ ИНН нужен только юрлицам и ИП), мгновенный 1-клик сплит 50% Нал + 50% Карта с авто-выравниванием копеек без float-дрифта, комбинированная оплата (нал + карта + аванс/бонусы/семейный депозит), 0 заблокированных disabled кнопок без причины, свободные 100% скидки врача на гарантийные переделки (0 ₽) без мастер-паролей, тач-таргеты $\ge 44\text{px}$ и полная токенизация Dark Mode без слепящих белых пятен.
   - **Автономия скидок врача до 100% и 30-дневная свобода планов лечения (Мандаты 8b, 8c, 8d пп. 2, 3, 7, 8e п. 7, 8n, 8p / Волна 241)**: В `TreatmentPlanModule.tsx`, `TreatmentPlanStageCard.tsx`, `TreatmentPlanPresenterModal.tsx`, `TreatmentPlan3TierComparison.tsx`, `planPricing.ts` и `billingQuery.ts` обеспечена 100% автономия врача в предоставлении скидок (до 100% на гарантийные переделки и персонал с выпуском нулевого акта 804н без мастер-паролей); 30-дневный срок давности сметы является мягким информационным предупреждением и никогда не блокирует создание нарядов ЗТЛ или расчеты; карточки этапов приведены к Закону Миллера ($\le 2$ кнопок прямого действия) со скрытием вторичных функций в меню «...»; шапка плана лечения сжата до $<166\text{px}$ с аккордеонами `<details>`; строгий запрет мультяшных эмодзи в печатных сметах.
 
+  - **Разделение счетов ДМС, реестр гарантийных писем и сооплата пациента (Мандаты 8b, 8c, 8d пп. 1, 4, 7, 8e п. 9, 8k, 8n, 8p, 8s / Волна 248)**: В `DmsGuaranteeLetterModal.tsx`, `DmsRegistryExportModal.tsx`, `dmsSplitEngine.ts`, `dmsInsuranceEngine.ts`, `insuranceCatalogs.ts`, `FastCheckoutModal.tsx`, `FiscalReceipt54FzModal.tsx` и `PaymentCapture.tsx`:
+    - Математическое ядро расчета сооплаты `dmsSplitEngine.ts`: строгое копеечно-точное разделение стоимости стоматологических услуг между страховой компанией (ДМС) и пациентом с инвариантом сохранения баланса без IEEE-754 артефактов (`insuranceCoveredKopecks + patientOutOfPocketKopecks === totalBillKopecks`);
+    - Электронный реестр гарантийных писем страховых компаний (`DmsGuaranteeLetterModal.tsx`) с фиксацией лимитов, франшиз, согласованных кодов номенклатуры Приказа 804н и номеров зубов FDI;
+    - Автоматическое выявление превышений лимитов страховой компании и отнесение дельты на сооплату пациента (Co-payment / Out-of-pocket);
+    - Интеграция с кассой 54-ФЗ: сооплата пациента вносится через 1-клик пресеты («Без сдачи», карта, наличные, семейный депозит) без требования ИНН с физлиц по Мандату 8e п. 9;
+    - 1-клик экспорт сводного реестра оказанных услуг ДМС в форматах Excel / XML для страховых организаций (`DmsRegistryExportModal.tsx`);
+    - Полная токенизация Dark/Light Mode по WCAG AAA, 0 сырых эмодзи, глубина модалок строго 1 (Закон Анти-Матрёшки).
+
 ### 2.8. Склад, Стерилизация и Лабораторный портал
 - **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`, `SanpinRegisters.tsx`, `AnesthesiaPkuDisposalModal.tsx`, `DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`.
 - **Бэкенд / Shared**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`, `kraftPackageEngine.ts`, `pkuDisposal.ts`, `labMath.ts`, `dentalLabFinancialGateEngine.ts`.
@@ -288,6 +298,16 @@
     - *Единоличная утилизация карпул медсестрой без комиссии*: В `NurseCarpuleDisposalModal.tsx` медсестра в 1 клик списывает пустые карпулы анестетиков по СанПиН 3.3686-21 без комиссии из 3 человек (Мандат 8e п. 10);
     - *Мягкий овердрафт ТМЦ*: В `WarehouseTransferModal.tsx` и `inventoryReorderEngine.ts` функция `evaluateWarehouseOverdraft` гарантирует непрерывность клинической помощи: нулевой остаток на складе выводит предупреждающий тост с фиксацией отрицательного баланса вместо блокировки транзакции.
 
+
+  - **Ортопедические наряды ЗТЛ-1 и автономия оттенков VITA (Мандаты 8b, 8c, 8d пп. 1, 2, 3, 7, 8e п. 7, 8k, 8n, 8p, 8s / Волна 248)**:
+    - В `DentalLabOrderModal.tsx`, `DentalLabOrdersHubModal.tsx`, `DentalLabShadeSelector.tsx`, `DentalLabPrintBlank.tsx`, `labMath.ts`, `dentalLabFinancialGateEngine.ts` и `packages/shared/src/index.ts`:
+    - 8 типов ортопедических конструкций (коронки диоксид циркония ZrO2, металлокерамика PFM, безметалловая керамика e.max, виниры, бюгельные протезы, временные PMMA, Ti-Base абатменты, капы);
+    - Безусловное снятие 30-дневной блокировки планов лечения по Мандату 8e п. 7 в `dentalLabFinancialGateEngine.ts`: давность плана > 30 дней не блокирует создание нарядов ЗТЛ;
+    - Авто-нормализация кириллических гомоглифов оттенков зубов (`normalizeVitaShade` в `packages/shared/src/index.ts`): буквы А->A, В->B, С->C, Д->D, М->M, Р->R, Л->L предотвращают ошибки 400 Bad Request при русской раскладке;
+    - Полная палитра 20 оттенков VITA (Classical A1..D4, 3D-Master, Bleach BL1..BL4) с визуальными чипами в `DentalLabShadeSelector.tsx` и фиксацией оттенка культи;
+    - Регламентный печатный бланк ЗТЛ-1 А4 со штрихкодом Code128, схемой одонтограммы FDI и параметрами препарирования (зазор цемента 30 мкм) без мультяшных эмодзи (Мандат 8d п. 7);
+    - 1-клик генерация текста для курьера и зубного техника в мессенджеры WhatsApp/Telegram (`buildLabOrderMessengerSummary`);
+    - Плотная эргономика: шапка нарядов $\le 120\text{px}$, 1-строчный тулбар канбана 32–36px по Закону Хика, карточки заказов приведены к Закону Миллера ($\le 2$ кнопок прямого действия), тач-таргеты $\ge 44\text{px}$.
 
 ### 2.9. Умная миграция данных с конкурентов (Smart Imports)
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
@@ -5008,3 +5028,38 @@
      - Пинпад с клавишами набора $\ge 48\times 48\text{px}$, моментальное определение карты пациента, аллерго-алерты, адаптивные токены Dark/Light Mode по WCAG AAA.
   4. *Железный закон защиты хост-машины и Single-Compiler Gate (Мандат 8t)*:
      - Вся документация, реестры и маппинги синхронизированы без запуска конкурирующих компиляторов `tsc` и сборщиков `npm run build`; Single-Compiler Gate соблюден на 100%.
+
+### 2.10.340. Wave 248: Dental Lab ZTL-1 Orders & VITA Shade Autonomy, DMS Insurance Split & Guarantee Letters, EGISZ REMD CDA R3 Asynchronous UKEP Signing (Мандаты 8b, 8c, 8d, 8e п. 7, 8k, 8n, 8p, 8s, 8t)
+
+- **Цель**: Комплексная реализация триады клинической автономии и снижения трения: (1) ортопедические заказ-наряды ЗТЛ-1 со снятием 30-дневных ограничений планов лечения и нормализацией оттенков VITA; (2) копеечно-точный расчет сооплаты ДМС (dmsSplitEngine) с реестром гарантийных писем страховых организаций и 1-клик экспортом отчетов; (3) асинхронный кабинет подписания УКЭП по ГОСТ Р 34.10-2012 для интеграции с ЕГИСЗ РЭМД по схеме HL7 CDA R3 / CDA R2 с локальной буферизацией в PostgreSQL 18.4 без блокировок приёма врача у кресла.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - *Зуботехническая лаборатория и оттенки VITA*: `apps/web/src/components/lab/DentalLabOrderModal.tsx`, `DentalLabOrdersHubModal.tsx`, `DentalLabShadeSelector.tsx`, `DentalLabPrintBlank.tsx`, `DentalLabRestorationTab.tsx`, `dentalLabFinancialGateEngine.ts`, `labMath.ts`, `packages/shared/src/lab/labOrdersEngine.ts`, `packages/shared/src/index.ts` (`normalizeVitaShade`, `ALL_VALID_VITA_SHADES`).
+  - *ДМС разделение счетов и гарантийные письма*: `apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx`, `DmsRegistryExportModal.tsx`, `insurance.css`, `packages/shared/src/insurance/dmsSplitEngine.ts`, `insuranceCatalogs.ts`, `dmsClaimRegistryExport.ts`, `apps/web/src/components/finance/FastCheckoutModal.tsx`, `PaymentCapture.tsx`.
+  - *ЕГИСЗ РЭМД CDA R3 и асинхронный УКЭП*: `apps/web/src/components/egisz/EgiszRemdHubModal.tsx`, `egiszRemdEngine.ts`, `egiszRemd.css`, `cdaR2XmlBuilder.ts`, `packages/shared/src/cda/`, `apps/api/src/routes/egisz.ts`, `apps/api/src/services/cda/index.ts`.
+- **Ключевые результаты**:
+  1. *Ортопедические наряды ЗТЛ-1 и автономия расцветок VITA (Мандаты 8c, 8d, 8e п. 7, 8k, 8n, 8p)*:
+     - В `DentalLabOrderModal.tsx`, `DentalLabOrdersHubModal.tsx`, `DentalLabShadeSelector.tsx` и `dentalLabFinancialGateEngine.ts`:
+     - 8 типов ортопедических конструкций у кресла с пресетами материалов и параметров уступа;
+     - Безусловное снятие блокировок по 30-дневному сроку давности плана лечения по Мандату 8e п. 7;
+     - Нормализация кириллических гомоглифов `normalizeVitaShade` для предотвращения ошибок ввода расцветок на русской раскладке;
+     - 20 канонических оттенков VITA (Classical A1–D4, 3D-Master, Bleach BL1–BL4) с визуальными чипами;
+     - Регламентный печатный бланк ЗТЛ-1 А4 с одонтограммой FDI, штрихкодом Code128, полями культи и указаниями без эмодзи;
+     - 1-клик функция `buildLabOrderMessengerSummary` для отправки структурированного наряда курьеру и зубному технику в WhatsApp/Telegram;
+     - Тулбар канбана в 1 строку 32–36px (Закон Хика), Закон Миллера $\le 2$ кнопок на карточках заказов, тач-таргеты $\ge 44\text{px}$.
+  2. *Разделение счетов ДМС, реестр гарантийных писем и сооплата пациента (Мандаты 8b, 8c, 8d, 8e п. 9, 8k, 8n, 8p)*:
+     - В `DmsGuaranteeLetterModal.tsx`, `DmsRegistryExportModal.tsx`, `dmsSplitEngine.ts` и `FastCheckoutModal.tsx`:
+     - Математическое ядро `dmsSplitEngine.ts`: целочисленный копеечный расчет сооплаты с инвариантом сохранения баланса без IEEE-754 артефактов;
+     - Реестр гарантийных писем страховых организаций: лимиты, франшизы, согласованные номенклатурные коды Приказа 804н и номера зубов FDI;
+     - Автоматическое отнесение несогласованных услуг на пациента (Co-payment) с 1-клик сооплатой в кассе 54-ФЗ без требования ИНН с физлиц;
+     - 1-клик экспорт реестра оказанных услуг ДМС в форматах Excel / XML для страховых компаний;
+     - Векторная гигиена: чистые иконки Lucide, семантические токены Dark/Light Mode по WCAG AAA, глубина модалок строго 1.
+  3. *Асинхронный кабинет подписания УКЭП и шлюз ЕГИСЗ РЭМД CDA R3 (Мандаты 8c, 8d, 8e п. 1, 8k, 8n, 8p)*:
+     - В `EgiszRemdHubModal.tsx`, `egiszRemdEngine.ts` и `packages/shared/src/cda/`:
+     - Генерация СЭМД по стандартам HL7 CDA R3 / CDA R2 (СЭМД 101, 104, 105, 108 «Стоматологическая карта Форма 043/у») с валидацией XSD-схем Минздрава РФ;
+     - Асинхронное формирование открепленной УКЭП по ГОСТ Р 34.10-2012 через КриптоПро CSP без заморозки экрана и задержек у кресла;
+     - Отказоустойчивая локальная буферизация в PostgreSQL 18.4 (`egisz_documents`) со статусом «Автономный режим шлюза РЭМД ЕГИСЗ» при сбоях федерального контура;
+     - 0 disabled кнопок без объяснения (`disabled={false}` со структурированным тост-руководством);
+     - Полный запрет мультяшных эмодзи в медицинских документах.
+  4. *Железный закон защиты хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - Документация синхронизирована без запуска конкурирующих компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
