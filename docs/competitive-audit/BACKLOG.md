@@ -7759,3 +7759,61 @@
     * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
     * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
 
+### 403. Section 403: Red Team Wave 244 — Endodontic Canal Log & Lateral Condensation Presets, Pediatric Frankl Behavior Autonomy & Primary Dentition Norm, Prescription Form 107-1/u & Express Dental Pharmacotherapy (Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `packages/shared/src/clinical/endoProtocolEngine.ts`
+  - `packages/shared/src/clinical/endoProtocolEngine.test.ts`
+  - `apps/web/src/components/endo/EndoCanalLogModal.tsx`
+  - `apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx`
+  - `apps/web/src/components/visit/endo/index.ts`
+  - `apps/web/src/components/visit/endo/__tests__/VisitEndoProtocolWidget.test.tsx`
+  - `apps/web/src/components/endo/__tests__/endoCanalPatientMemoAutonomyWave54.test.tsx`
+  - `packages/shared/src/clinical/pediatricDentition.ts`
+  - `apps/web/src/components/odontogram/pediatricDentitionEngine.ts`
+  - `apps/web/src/components/pediatric/FranklBehaviorBadge.tsx`
+  - `apps/web/src/components/odontogram/PediatricMixedDentitionModal.tsx`
+  - `apps/web/src/components/diagnostics/ToothPediatricContext.tsx`
+  - `apps/web/src/components/pediatric/PediatricParentMemoModal.tsx`
+  - `apps/web/src/components/diagnostics/__tests__/ToothContextDrawer.test.tsx`
+  - `apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx`
+  - `apps/web/src/components/visit/PrescriptionModal.tsx`
+  - `apps/web/src/components/prescriptions/generator/prescriptionEngine.ts`
+  - `apps/web/src/components/prescriptions/generator/prescriptionPresets.ts`
+  - `apps/web/src/components/prescriptions/__tests__/medicalPrescriptionAutonomyWave52.test.tsx`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Клинический журнал корневых каналов и 1-клик пресеты латеральной конденсации (Endodontic Canal Log & Lateral Condensation Presets) (Мандаты 8c, 8d пп. 1, 2, 4, 6, 7, 8e пп. 1, 3, 6, 8i, 8k, 8n, 8p, 8s)**:
+    * В `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `endoProtocolEngine.ts` и фасаде `visit/endo/index.ts`:
+    * Полное уничтожение рутинного клинического трения при эндодонтическом приеме (Мандат 8k Friction-Killer Law, Мандат 8i): ликвидация симулятора пошагового ручного вбивания десятых долей миллиметра для каждого канала;
+    * 1-клик клинические пресеты обтурации корневых каналов постоянных и молочных зубов FDI (11..48, 51..85): постоянная трехмерная обтурация методом латеральной (холодной боковой) конденсации гуттаперчевых штифтов (Lateral Condensation) и горячей гуттаперчи с эпоксидным/биокерамическим силером AH Plus (`applyObturationPermanentProtocol`, `OBTURATION_PERMANENT_PRESET`), первичное эндо с ProTaper Gold и временной антисептической повязкой Ca(OH)2 Metapex/Calcept на 7–14 дней, распломбировка и ретритмент D-RaCe, экспресс-апекс с подтверждением апекслокатором Apex 0.0 и радиовизиографией;
+    * Международная стандартизация инструментов по ISO 3630-1: каноническая цветовая кодировка верхушечных файлов MAF (Master Apical File) от ISO 06 (розовый), 08 (серый), 10 (фиолетовый) до 15 (белый), 20 (желтый), 25 (красный), 30 (синий), 35 (зеленый), 40 (черный) с циклическим повторением для диаметров 45..80 и расширенным рядом до 140;
+    * 1-клик анатомическое автозаполнение каналов по анатомии зуба FDI с фиксацией реперных ориентиров бугров (MB cusp, DB cusp, P cusp, ML cusp, Incisal edge) без модальных барьеров;
+    * Автономия врача (Мандат 8e пп. 3, 6): 1-клик перенос структурированного протокола эндодонтии в дневник Формы 043/у («В полость зуба наложен коффердам, раскрыта пульпарная камера, найдены устья...») без прерывания визита и с надежной защитой autosave;
+    * 1-клик функция `formatEndoPatientMemo` («Скопировать для пациента», `endo-copy-patient-memo-btn`) для моментальной отправки понятной структурированной памятки по уходу после лечения каналов в мессенджеры WhatsApp/Telegram;
+    * Официальная полиграфическая печать эндодонтической карты А4 (`endo-print-worksheet-btn`) со схемой каналов строго без мультяшных эмодзи (Мандат 8d п. 7);
+    * Плотная десктопная эргономика 32–36px по Закону Хика, глубина модального окна строго 1 (Закон Анти-Матрёшки), тач-таргеты $\ge 44\text{px}$ для планшета у кресла.
+  - **Автономия детского приема по шкале Франкла и физиологическая норма молочного прикуса (Pediatric Frankl Behavior Autonomy & Primary Dentition Norm) (Мандаты 8c, 8d пп. 1, 2, 4, 5, 7, 8e пп. 1, 2, 3, 6, 8i, 8k, 8n, 8p, 8s)**:
+    * В `FranklBehaviorBadge.tsx`, `PediatricMixedDentitionModal.tsx`, `ToothPediatricContext.tsx`, `PediatricParentMemoModal.tsx`, `pediatricDentition.ts` и `pediatricDentitionEngine.ts`:
+    * Шкала психоэмоционального поведения ребенка по Франклу (Frankl Behavioral Rating Scale): рейтинг 1 (`--` абсолютно негативное), 2 (`-` негативное), 3 (`+` позитивное), 4 (`++` абсолютно позитивное);
+    * Автономия детского стоматолога (Мандат 8e п. 3, Мандат 8k): 1-клик кнопка «★ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания» моментально фиксирует статус контакта и автоматически подставляет техники психологической адаптации Tell-Show-Do («Сказать-Показать-Сделать») в карту 043/у без бюрократических опросников;
+    * Физиологическая норма временного прикуса (FDI 51..85): поддержка физиологической смены зубов и стадий физиологической резорбции корней молочных зубов (стадии I, II, III) без ошибочного трактования нормы как патологии;
+    * Экспресс-оценка риска детского кариеса (Cariogram) с расчетом вероятности избежать кариеса (%) и генерацией индивидуальной программы профилактики (реминерализация, фторлак, герметизация фиссур);
+    * Памятка родителям маленького пациента `PediatricParentMemoModal.tsx` с 1-клик копированием рекомендаций в WhatsApp и регламентной печатью А4 строго без эмодзи;
+    * 0 заблокированных (`disabled`) кнопок: детский приём завершается и сохраняется свободно без принудительного заполнения второстепенных полей.
+  - **Экспресс-фармакотерапия у кресла и регламентный рецептурный бланк Формы 107-1/у (Prescription Form 107-1/u & Express Dental Pharmacotherapy) (Мандаты 8c, 8d пп. 1, 2, 4, 7, 8e пп. 1, 5, 8i, 8k, 8n, 8p, 8s)**:
+    * В `PrescriptionPrintModal.tsx` (единый канонический SSOT с прозрачным фасадом `PrescriptionModal.tsx` по Мандату 8s), расчетных модулях `prescriptionEngine.ts`, `prescriptionPresets.ts` и `@dental/shared`:
+    * Регламентный рецептурный бланк Минздрава РФ по форме № 107-1/у (Приказ Минздрава России от 24.11.2021 № 1094н) со сроком действия 60 дней / до 1 года и бланк № 148-1/у-88 (15 дней для ПКУ);
+    * Стандартизированная пропись на латинском языке `Rp:` (МНН, лекарственная форма, дозировка, фасовка `D.t.d. N... in tab./gran.`) и русскоязычная сигнатура `S:` (режим дозирования, кратность, связь с приемом пищи, длительность курса);
+    * Экспресс-пакеты профильной стоматологической фармакотерапии первой линии и резерва `DENTAL_FAST_PRESCRIPTION_SETS`: Амоксиклав 875+125 мг (антибиотик первого ряда), Цифран СТ 500+600 мг (резерв при аллергии на пенициллиновый ряд и перикороните), Нимесил 100 мг и Кетанов 10 мг (купирование острого болевого синдрома), Ибупрофен 400 мг (умеренная боль), Хлоргексидин 0.05%, Холисал, Метрогил Дента (местные антисептики и противовоспалительные гели);
+    * Юридическая значимость и безопасность: подписание рецепта усиленной квалифицированной электронной подписью врача (УКЭП) через КриптоПро ЭЦП Browser plug-in, формирование защищенного QR-кода верификации подлинности бланка;
+    * 1-клик экспорт понятной памятки для пациента `formatPatientPrescriptionMemo` («Скопировать для пациента», `med-rx-copy-patient-btn`) для мессенджеров WhatsApp/Telegram с правилами приема, телефоном клиники и памяткой о недопустимости ранней отмены антибиотиков;
+    * Официальная типографика формата А5/А4 строго без эмодзи по Закону чистоты медицинских документов (Мандат 8d п. 7);
+    * Сжатие служебных тулбаров в строгую 1 строку 32–36px по Закону Хика, полезная высота шапки <160–180px по Мандату 8p.
+  - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
+    * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
+    * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
+
+
