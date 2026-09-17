@@ -7648,3 +7648,55 @@
   - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
     * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
     * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
+
+### 401. Section 401: Red Team Wave 242 — Frictionless Periodontogram & 1-Click Physiological Norm, Anesthesia Rapid Presets & Soft Overdraft Autonomy, Visiograph 1-Row Compact Studio & Fast Radiology Referrals (Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx`
+  - `apps/web/src/components/perio/perioHeatmap.ts`
+  - `apps/web/src/components/perio/perioMath.ts`
+  - `apps/web/src/components/perio/PerioProfileStrip.tsx`
+  - `apps/web/src/components/perio/PerioArchGrid.tsx`
+  - `packages/shared/src/clinical/perioIndicesEngine.ts`
+  - `apps/web/src/components/anesthesia/anesthesiaEngine.ts`
+  - `apps/web/src/components/anesthesia/anesthesiaSafetyEngine.ts`
+  - `apps/web/src/components/anesthesia/anesthesiaCatalog.ts`
+  - `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx`
+  - `apps/web/src/components/visit/anesthesia/anesthesiaExpressPresets.ts`
+  - `apps/web/src/components/visit/anesthesia/anesthesiaTechniqueMath.ts`
+  - `apps/web/src/components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`
+  - `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`
+  - `apps/web/src/components/warehouse/WarehouseTransferModal.tsx`
+  - `apps/web/src/components/inventory/WarehousePackageWriteOffBar.tsx`
+  - `apps/api/src/routes/inventory.ts`
+  - `apps/web/src/components/visiograph/VisiographStudioCanvas.tsx`
+  - `apps/web/src/components/imaging/VisiographAnalyzer.tsx`
+  - `apps/web/src/components/radiology/RadiologyReferralModal.tsx`
+  - `apps/web/src/utils/documentPackages.ts`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **1-клик физиологическая норма пародонтограммы и экспресс-скрининг PSR (Frictionless Periodontogram & 1-Click Physiological Norm) (Мандаты 8c, 8d пп. 1, 2, 4, 7, 8e пп. 1, 3, 8k, 8n, 8p, 8s)**:
+    * В `PeriodontogramChart.tsx`, `perioHeatmap.ts`, `perioMath.ts`, `PerioProfileStrip.tsx`, `PerioArchGrid.tsx` и `perioIndicesEngine.ts`:
+    * Полная ликвидация клинического трения (Friction-Killer Law, Мандат 8k): 1-клик кнопка заполнения физиологической нормы («Вся десна здорова (Норма 1-клик)» / «Десна здорова (Норма)») мгновенно проставляет физиологические параметры для всех 32 зубов и 192 точек зондирования (глубина 1–2 мм, 0% BOP, 0% налёта, CAL = 0, PSR 0 по всем 6 секстантам S1..S6);
+    * Дискретная спокойная тепловая карта AAP/EFP (DentalPin паритет): дискретные пороги глубин карманов (<= 3 мм здоровый изумруд, 4 мм мягкий янтарь, 5–6 мм умеренный оранжевый, >= 7 мм спокойная роза) с токенизацией тем DENTE без слепящих пятен в Dark Mode;
+    * Экспресс-пресеты клинических состояний пародонта (`handleApplyExpressPreset`): норма пародонта (`perio_norm_express`), профгигиена (`pro_hygiene_express`), гингивит (`gingivitis_express`), пародонтит лёгкой, средней и тяжёлой степени без ручного поквартирного ввода каждой точки;
+    * 1-клик экспорт в мессенджеры пациента и строгая печать карты обследования А4 по Форме 043/у без мультяшных эмодзи (Мандат 8d п. 7);
+    * Закрепление `PeriodontogramChart.tsx` как единого неделимого SSOT с ликвидацией параллельных дубликатов по Закону Единого Неделимого Авторитета (Мандат 8s).
+  - **Экспресс-пресеты анестезии у кресла и мягкий овердрафт склада медсестры (Anesthesia Rapid Presets & Soft Overdraft Autonomy) (Мандаты 8c, 8d, 8e пп. 1, 3, 10, 8k, 8n, 8p, 8s)**:
+    * В `anesthesiaExpressPresets.ts`, `anesthesiaTechniqueMath.ts`, `anesthesiaEngine.ts`, `AnesthesiaQuickBar.tsx`, `AnesthesiaAspirationJournalModal.tsx`, `NurseCarpuleDisposalModal.tsx`, `WarehouseTransferModal.tsx`, `WarehousePackageWriteOffBar.tsx` и `apps/api/src/routes/inventory.ts`:
+    * 1-клик экспресс-пресеты анестезиологического пособия у кресла врача: инфильтрационная (артикаин 1:200 000 1.7 мл, игла 30G), мандибулярная по Вайсбрему (артикаин 1:100 000 1.7 мл, игла 27G), торусальная, интралигаментарная и кардио-пресет (Скандонест/мепивакаин 3% без вазоконстриктора для пациентов с гипертонией и ИБС) с мгновенным экспортом протокола в дневник Формы 043/у;
+    * Печать протокола анестезии А4 и 1-клик копирование структурированной памятки для пациента (WhatsApp/Telegram) с правилами безопасности и временем онемения;
+    * Автономия медсестры и мягкий технологический овердрафт склада (Мандат 8e п. 10, 8n п. 1): 1-клик пакетное списание пустых карпул анестетиков и расходных материалов без созыва комиссии из 3 человек;
+    * При нулевом остатке на складе операция списания расходников у кресла НЕ блокируется, формируя мягкое информационное предупреждение (`allowSoftOverdraft: true`, `isOverdraft: true`), исключая остановку лечебного процесса.
+  - **Компактная 1-строчная студия визиографа и быстрые направления на лучевую диагностику (Visiograph 1-Row Compact Studio & Fast Radiology Referrals) (Мандаты 8c, 8d пп. 2, 4, 6, 7, 8e пп. 1, 11, 8k, 8n, 8p, 8s)**:
+    * В `VisiographStudioCanvas.tsx`, `VisiographAnalyzer.tsx`, `RadiologyReferralModal.tsx` и `documentPackages.ts`:
+    * Высокопроизводительная 2D-студия радиовизиографа: мгновенный рендеринг <50мс, калиброванные линейки по размеру пикселя датчика (RVG 20 мкм, RVG 25 мкм, ОПТГ 50 мкм), транспортир углов осей зубов/имплантатов, оконтуривание периапикальных очагов деструкции по формуле Гаусса (Shoelace) и медицинский экспорт DICOM Secondary Capture Part 10;
+    * 1-строчный тулбар 32–36px по Закону Хика, компактный оверхед шапки студии <160–180px по Мандату 8p, токенизация Dark Mode по WCAG AAA без слепящих белых рамок;
+    * Экспресс-направление на лучевую диагностику `RadiologyReferralModal.tsx`: стоматологический специализированный бланк (КЛКТ челюстей 8x8, КЛКТ сегмента 5x5, ЧЛО 15x15, ОПТГ, ТРГ, RVG) с автоматическим расчетом эффективной дозы в мкЗв (Мандат 8i — ноль больничного блоата Формы 025/у);
+    * 1-клик автозаполнение показаний из SOAP-дневника визита (`generateRadiologyReferralPayloadFromSoap`) и мгновенная печать бланка А4 со штампом;
+    * Глубина модальных окон строго 1 (Закон Анти-Матрёшки, Мандат 8d п. 6), ноль мультяшных эмодзи (Мандат 8d п. 7).
+  - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
+    * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
+    * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
