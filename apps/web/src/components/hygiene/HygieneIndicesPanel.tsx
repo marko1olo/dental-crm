@@ -338,31 +338,55 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			if (readOnly) return;
 			setAssessments((prev) => {
 				const current = prev[toothNumber] ?? { toothNumber };
-				const updated: ExtendedToothAssessment = {
-					...current,
-					[field]: value,
-				};
-				// Automatically keep mapped scores in sync across index modes:
+				let debrisScore = current.debrisScore;
+				let calculusScore = current.calculusScore;
+				let pmaScore = current.pmaScore;
+				let kpiScore = current.kpiScore;
+				let silnessScore = current.silnessScore;
+				let fedorovScore = current.fedorovScore;
+				let phpScore = current.phpScore;
+
 				if (field === "debrisScore") {
-					updated.silnessScore = value;
-					updated.fedorovScore = value === 0 ? 1 : Math.min(5, value + 1);
-					updated.phpScore = Math.min(5, Math.round(value * 1.67));
+					debrisScore = value;
+					silnessScore = value;
+					fedorovScore = value === 0 ? 1 : Math.min(5, value + 1);
+					phpScore = Math.min(5, Math.round(value * 1.67));
+				} else if (field === "calculusScore") {
+					calculusScore = value;
+				} else if (field === "pmaScore") {
+					pmaScore = value;
+				} else if (field === "kpiScore") {
+					kpiScore = value;
 				} else if (field === "silnessScore") {
-					updated.debrisScore = value;
-					updated.fedorovScore = value === 0 ? 1 : Math.min(5, value + 1);
-					updated.phpScore = Math.min(5, Math.round(value * 1.67));
+					silnessScore = value;
+					debrisScore = value;
+					fedorovScore = value === 0 ? 1 : Math.min(5, value + 1);
+					phpScore = Math.min(5, Math.round(value * 1.67));
 				} else if (field === "fedorovScore") {
+					fedorovScore = value;
 					const mappedDebris = value === 1 ? 0 : Math.min(3, value - 1);
-					updated.debrisScore = mappedDebris;
-					updated.silnessScore = mappedDebris;
-					updated.phpScore = Math.min(5, Math.round(mappedDebris * 1.67));
+					debrisScore = mappedDebris;
+					silnessScore = mappedDebris;
+					phpScore = Math.min(5, Math.round(mappedDebris * 1.67));
 				} else if (field === "phpScore") {
+					phpScore = value;
 					const mappedDebris =
 						value === 0 ? 0 : value <= 2 ? 1 : value <= 4 ? 2 : 3;
-					updated.debrisScore = mappedDebris;
-					updated.silnessScore = mappedDebris;
-					updated.fedorovScore = mappedDebris === 0 ? 1 : mappedDebris + 1;
+					debrisScore = mappedDebris;
+					silnessScore = mappedDebris;
+					fedorovScore = mappedDebris === 0 ? 1 : mappedDebris + 1;
 				}
+
+				const updated: ExtendedToothAssessment = {
+					...current,
+					debrisScore,
+					calculusScore,
+					pmaScore,
+					kpiScore,
+					silnessScore,
+					fedorovScore,
+					phpScore,
+				};
 				return {
 					...prev,
 					[toothNumber]: updated,
