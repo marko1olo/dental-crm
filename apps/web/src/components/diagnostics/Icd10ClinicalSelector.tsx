@@ -311,14 +311,14 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 								<button
 									key={preset.code}
 									type="button"
-									className={`icd10-preset-chip ${isSelected ? "is-selected" : ""}`}
+									className={`min-w-0 icd10-preset-chip ${isSelected ? "is-selected" : ""}`}
 									onClick={() => handleSelectDiagnosis(preset)}
 									data-testid={`top12-preset-${preset.code}`}
 									title={`1 клик: ${preset.code} — ${preset.titleRu}`}
 								>
-									<span className="icd10-chip-code">{preset.code}</span>
-									<span className="icd10-chip-title">{preset.shortTitleRu}</span>
-									{isSelected && <Check size={16} color="var(--teal)" aria-hidden="true" />}
+									<span className="icd10-chip-code shrink-0">{preset.code}</span>
+									<span className="icd10-chip-title truncate min-w-0">{preset.shortTitleRu}</span>
+									{isSelected && <Check size={16} color="var(--teal)" aria-hidden="true" className="shrink-0 ml-1" />}
 								</button>
 							);
 						})}
@@ -349,18 +349,18 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 								onClick={() => handleSelectDiagnosis(item)}
 								onMouseEnter={() => setFocusedIndex(idx)}
 							>
-								<div className="icd10-result-main">
-									<div className="icd10-result-header">
-										<span className="icd10-result-code">{item.code}</span>
-										<span className="icd10-result-title">{item.titleRu}</span>
+								<div className="icd10-result-main min-w-0">
+									<div className="icd10-result-header min-w-0">
+										<span className="icd10-result-code shrink-0">{item.code}</span>
+										<span className="icd10-result-title truncate min-w-0" title={item.titleRu}>{item.titleRu}</span>
 										{renderSeverityBadge(item.severity)}
 									</div>
-									<div className="icd10-result-desc">{item.description}</div>
+									<div className="icd10-result-desc truncate min-w-0" title={item.description}>{item.description}</div>
 								</div>
 								{isSelected ? (
-									<Check size={20} color="var(--teal)" />
+									<Check size={20} color="var(--teal)" className="shrink-0 ml-2" />
 								) : (
-									<ChevronRight size={18} color="var(--muted)" />
+									<ChevronRight size={18} color="var(--muted)" className="shrink-0 ml-2" />
 								)}
 							</div>
 						);
@@ -379,10 +379,10 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 			{currentSelectedItem && (
 				<div className="icd10-selected-preview-card">
 					<div className="icd10-preview-header">
-						<div className="icd10-preview-code-block">
-							<span className="icd10-preview-code">{currentSelectedItem.code}</span>
-							<div>
-								<div className="icd10-preview-title">{currentSelectedItem.titleRu}</div>
+						<div className="icd10-preview-code-block min-w-0">
+							<span className="icd10-preview-code shrink-0">{currentSelectedItem.code}</span>
+							<div className="min-w-0">
+								<div className="icd10-preview-title truncate min-w-0" title={currentSelectedItem.titleRu}>{currentSelectedItem.titleRu}</div>
 								{renderSeverityBadge(currentSelectedItem.severity)}
 							</div>
 						</div>

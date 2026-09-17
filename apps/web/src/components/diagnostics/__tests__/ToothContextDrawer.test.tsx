@@ -189,5 +189,66 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("2. Экспресс-анестезия (1 клик)"), "1-click express title should be present");
 		assert.ok(html.includes("Артикаин • Ультракаин • Скандонест • Септанест"), "Preset drugs summary should be present");
 	});
+
+	it("ToothContextDrawer renders 1-click somatic norm strip and button for healthy patient (Mandate 8e)", () => {
+		const html = renderToString(
+			<ToothContextDrawer
+				isOpen={true}
+				onClose={() => {}}
+				toothNumber={16}
+				initialSection="anesthesia"
+				patient={{
+					id: "pat-norm",
+					fullName: "Петров Петр Петрович",
+					hasCardioRisk: false,
+					hasSulfiteAllergy: false,
+					hasAsthma: false,
+					isPregnant: false,
+				}}
+			/>,
+		);
+
+		assert.ok(html.includes("tooth-somatic-norm-strip"), "Somatic norm strip should render for healthy patient");
+		assert.ok(html.includes("tooth-somatic-norm-btn"), "1-click somatic norm button should be present");
+		assert.ok(html.includes("Соматически здоров (ASA I) • Норма"), "Should display physiological norm label");
+	});
+
+	it("ToothContextDrawer renders somatic risk warning alert when patient has cardiovascular risk", () => {
+		const html = renderToString(
+			<ToothContextDrawer
+				isOpen={true}
+				onClose={() => {}}
+				toothNumber={16}
+				initialSection="anesthesia"
+				patient={{
+					id: "pat-cardio",
+					fullName: "Сидоров Сидор Сидорович",
+					hasCardioRisk: true,
+				}}
+			/>,
+		);
+
+		assert.ok(html.includes("tooth-somatic-risk-alert"), "Somatic risk alert should render for cardio patient");
+		assert.ok(html.includes("Отягощенный соматический статус"), "Alert title should be present");
+		assert.ok(html.includes("Кардио-риск"), "Cardio risk label should be present");
+		assert.ok(html.includes("Рекомендован Скандонест 3%"), "Should recommend plain mepivacaine");
+	});
+
+	it("ToothSurfacesAndEndoMatrix renders permanent obturation preset and anatomical length button", () => {
+		const html = renderToString(
+			<ToothSurfacesAndEndoMatrix
+				toothNumber={21}
+				toothData={{
+					toothNumber: 21,
+					state: "Pulpitis",
+				}}
+			/>,
+		);
+
+		assert.ok(html.includes("endo-preset-obturation"), "Permanent obturation preset button should render");
+		assert.ok(html.includes("Обтурация до апекса (AH Plus)"), "Permanent obturation label should be present");
+		assert.ok(html.includes("btn-endo-anatomical-lengths"), "Anatomical length button should render");
+		assert.ok(html.includes("Авто-длина по FDI"), "Anatomical length label should be present");
+	});
 });
 

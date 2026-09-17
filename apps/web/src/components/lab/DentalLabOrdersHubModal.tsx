@@ -229,8 +229,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			if (selectedWorkType !== "ALL" && ord.workTypeId !== selectedWorkType) {
 				return false;
 			}
-			if (selectedStage !== "ALL" && ord.currentStage !== selectedStage) {
-				return false;
+			if (selectedStage !== "ALL") {
+				if (selectedStage === "in_work") {
+					if (ord.currentStage !== "sent_to_lab") return false;
+				} else if (ord.currentStage !== selectedStage) {
+					return false;
+				}
 			}
 			if (selectedDateRange === "today") {
 				const isToday = ord.expectedLabDateIso === todayIso || ord.fittingDate === todayIso;
@@ -598,7 +602,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 						style={{
 							background: "rgba(16, 185, 129, 0.08)",
 							border: "1px solid rgba(16, 185, 129, 0.3)",
-							color: "#065f46",
+							color: "var(--ok-fg, #059669)",
 							padding: "6px 14px",
 							borderRadius: "6px",
 							fontSize: "12px",
@@ -609,7 +613,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 						}}
 						role="note"
 					>
-						<CheckCircle2 size={15} style={{ color: "#10b981", flexShrink: 0 }} />
+						<CheckCircle2 size={15} style={{ color: "var(--ok-fg, #10b981)", flexShrink: 0 }} />
 						<span>
 							<strong>Клинический регламент:</strong> Срок плана лечения{treatmentPlanAgeDays !== undefined ? ` (${treatmentPlanAgeDays} дн.)` : ""} превысил 30 дней, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты.
 						</span>
@@ -629,7 +633,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 						<button
 							type="button"
 							className="ztl-btn-secondary min-h-[36px] sm:min-h-[32px] px-3 py-1.5 text-xs font-semibold"
-							style={{ borderColor: "#fca5a5", color: "#991b1b" }}
+							style={{ borderColor: "var(--bad-fg, #fca5a5)", color: "var(--bad-fg, #e11d48)" }}
 							onClick={() => setOnlyDelayedFilter((prev) => !prev)}
 						>
 							{onlyDelayedFilter ? "Показать все заказы" : "Показать проблемные наряды"}
@@ -637,7 +641,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					</div>
 				)}
 
-				{/* ─── 3. ПАНЕЛЬ ФИЛЬТРОВ И ПОИСКА ──────────────────────────────── */}
+				{/* ─── 3. ПАНЕЛЬ ФИЛЬТРОВ И ПОИСКА (ЗАКОН ХИКА: 1 СТРОКА 32-36PX) ──────────────────────────────── */}
 				{orders.length > 0 && (
 					<section className="ztl-filter-bar" aria-label="Фильтры наряд-заказов">
 						<div className="ztl-search-input-wrap">
@@ -684,12 +688,14 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							value={selectedStage}
 							onChange={(e) => setSelectedStage(e.target.value)}
 							aria-label="Фильтр по этапу"
+							title="Фильтр заказов по статусу (Закон Хика)"
 						>
 							<option value="ALL">Все этапы</option>
-							<option value="draft">Черновик</option>
-							<option value="sent_to_lab">В работе ЗТЛ</option>
-							<option value="fitting_scheduled">Примерка назначена</option>
-							<option value="installed_completed">Сдано пациенту</option>
+							<option value="sent_to_lab">Отправлен</option>
+							<option value="in_work">В работе</option>
+							<option value="draft">Принят</option>
+							<option value="fitting_scheduled">Готов</option>
+							<option value="installed_completed">Припасован</option>
 							<option value="warranty_rework">Рекламация (0 ₽)</option>
 						</select>
 
@@ -703,6 +709,29 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							<option value="today">Готовность сегодня</option>
 							<option value="week">Ближайшие 7 дней</option>
 						</select>
+
+						<div className="ztl-stage-chips-group" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+							{[
+								{ id: "ALL", label: "Все" },
+								{ id: "sent_to_lab", label: "Отправлен" },
+								{ id: "in_work", label: "В работе" },
+								{ id: "draft", label: "Принят" },
+								{ id: "fitting_scheduled", label: "Готов" },
+								{ id: "installed_completed", label: "Припасован" },
+							].map((st) => (
+								<button
+									key={st.id}
+									type="button"
+									className={`ztl-chip ${selectedStage === st.id ? "active" : ""}`}
+									style={{ height: "26px", padding: "0 8px", fontSize: "11px" }}
+									onClick={() => setSelectedStage(st.id)}
+									data-testid={`ztl-filter-stage-${st.id}`}
+									title={`Фильтр статуса: ${st.label}`}
+								>
+									<span>{st.label}</span>
+								</button>
+							))}
+						</div>
 
 						<div className="ztl-filter-chips">
 							<button
@@ -844,17 +873,17 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 													{(order.implantPlatform || order.abutmentType || order.fixationType) && (
 														<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px", fontSize: "10px" }}>
 															{order.implantPlatform && (
-																<span style={{ background: "#e0f2fe", color: "#0369a1", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
+																<span style={{ background: "var(--paper-soft, #e0f2fe)", color: "var(--teal, #0369a1)", border: "1px solid var(--line, #bae6fd)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
 																	{order.implantPlatform === "conical" ? "Конус Морзе" : "Hex"}
 																</span>
 															)}
 															{order.abutmentType && (
-																<span style={{ background: "#f3e8ff", color: "#6b21a8", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
+																<span style={{ background: "var(--paper-soft, #f3e8ff)", color: "var(--ink, #6b21a8)", border: "1px solid var(--line, #e9d5ff)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
 																	{ABUTMENT_TYPE_OPTIONS.find((a) => a.id === order.abutmentType)?.nameRu.split(" ")[0] || order.abutmentType}
 																</span>
 															)}
 															{order.fixationType && (
-																<span style={{ background: "#fef3c7", color: "#92400e", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
+																<span style={{ background: "var(--paper-soft, #fef3c7)", color: "var(--amber-fg, #92400e)", border: "1px solid var(--line, #fde68a)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
 																	{order.fixationType === "screw_retained" ? "Винтовая" : "Цементная"}
 																</span>
 															)}
@@ -1596,8 +1625,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 							<div className="ztl-detail-body">
 								{inspectingOrder.isWarrantyRework && (
-									<div style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#9f1239", padding: "8px 12px", borderRadius: "6px", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-										<RotateCcw size={16} color="#e11d48" />
+									<div style={{ background: "rgba(225, 29, 72, 0.08)", border: "1px solid rgba(225, 29, 72, 0.3)", color: "var(--bad-fg, #e11d48)", padding: "8px 12px", borderRadius: "6px", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+										<RotateCcw size={16} color="var(--bad-fg, #e11d48)" />
 										<div>
 											<strong>Гарантийная рекламация!</strong> Исходный наряд: <strong>№ {inspectingOrder.originalOrderNumber || inspectingOrder.originalOrderId}</strong>
 											{inspectingOrder.reworkReason && <div style={{ fontSize: "11px", marginTop: "2px" }}>Причина: {inspectingOrder.reworkReason}</div>}
@@ -1693,8 +1722,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 														padding: "6px",
 														borderRadius: "6px",
 														border: isCurrent ? "2px solid var(--teal, #0d9488)" : "1px solid var(--line, #e2e8f0)",
-														background: isCurrent ? "#f0fdfa" : isDone ? "#f8fafc" : "var(--paper, #fff)",
-														color: isCurrent ? "#0f766e" : isDone ? "#64748b" : "#0f172a",
+														background: isCurrent ? "var(--teal-surface, #f0fdfa)" : isDone ? "var(--paper-soft, #f8fafc)" : "var(--paper, #fff)",
+														color: isCurrent ? "var(--teal, #0f766e)" : isDone ? "var(--muted, #64748b)" : "var(--ink, #0f172a)",
 														textAlign: "left",
 														cursor: "pointer",
 														fontSize: "10.5px",

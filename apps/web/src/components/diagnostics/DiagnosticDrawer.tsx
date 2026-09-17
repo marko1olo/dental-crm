@@ -403,19 +403,19 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 													onClick={() => hasDetails && toggleExpandLog(log.id)}
 												>
 													<div className="dente-diagnostic-card-header">
-														<div className="dente-diagnostic-card-left">
-															<span className={`dente-diagnostic-pill ${levelClass}`}>
+														<div className="dente-diagnostic-card-left min-w-0">
+															<span className={`dente-diagnostic-pill shrink-0 ${levelClass}`}>
 																{log.level}
 															</span>
-															<span className="dente-diagnostic-module">{log.module}</span>
-															<span className="dente-diagnostic-time">
+															<span className="dente-diagnostic-module truncate min-w-0" title={log.module}>{log.module}</span>
+															<span className="dente-diagnostic-time shrink-0">
 																{log.timestamp.slice(11, 23)}
 															</span>
 														</div>
 														{log.correlationId && (
 															<button
 																type="button"
-																className="dente-diagnostic-action-btn"
+																className="dente-diagnostic-action-btn shrink-0"
 																style={{ minHeight: 44, padding: "4px 10px", fontSize: 12 }}
 																onClick={(e) => {
 																	e.stopPropagation();
@@ -433,7 +433,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 														)}
 													</div>
 
-													<div className="dente-diagnostic-message">{log.message}</div>
+													<div className="dente-diagnostic-message break-words min-w-0">{log.message}</div>
 
 													{isExpanded && hasDetails && (
 														<div
@@ -488,29 +488,29 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 													onClick={() => hasDetails && toggleExpandLog(net.id)}
 												>
 													<div className="dente-diagnostic-card-header">
-														<div className="dente-diagnostic-card-left">
+														<div className="dente-diagnostic-card-left min-w-0">
 															<span
-																className="dente-diagnostic-pill"
-																style={{ background: "var(--teal)", color: "var(--on-teal, #fff)" }}
+																className="dente-diagnostic-pill shrink-0"
+																style={{ background: "var(--teal)", color: "var(--on-teal, #ffffff)" }}
 															>
 																{net.method}
 															</span>
-															<span className={`dente-diagnostic-pill ${statusClass}`}>
+															<span className={`dente-diagnostic-pill shrink-0 ${statusClass}`}>
 																{net.statusCode || "ERR"}
 															</span>
 															{net.latencyMs !== undefined && (
-																<span className="dente-diagnostic-time">
+																<span className="dente-diagnostic-time shrink-0">
 																	<Clock size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />
 																	{net.latencyMs}ms
 																</span>
 															)}
-															<span className="dente-diagnostic-time">
+															<span className="dente-diagnostic-time shrink-0">
 																{net.timestamp.slice(11, 23)}
 															</span>
 														</div>
 														<button
 															type="button"
-															className="dente-diagnostic-action-btn"
+															className="dente-diagnostic-action-btn shrink-0"
 															style={{ minHeight: 44, padding: "4px 10px", fontSize: 12 }}
 															onClick={(e) => {
 																e.stopPropagation();
@@ -528,8 +528,9 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 													</div>
 
 													<div
-														className="dente-diagnostic-message"
+														className="dente-diagnostic-message truncate min-w-0"
 														style={{ fontFamily: "monospace", fontSize: 12 }}
+														title={net.url}
 													>
 														{net.url}
 													</div>

@@ -66,13 +66,13 @@ export const RESTORATIVE_MATERIALS: ReadonlyArray<{ id: RestorativeMaterialKey; 
 
 export const TOOTH_STATES: ReadonlyArray<{ id: ToothState; label: string; color: string }> = [
 	{ id: "Healthy", label: "Здоров", color: "var(--brand-primary, var(--teal))" },
-	{ id: "Caries", label: "Кариес", color: "#ef4444" },
-	{ id: "Pulpitis", label: "Пульпит", color: "#dc2626" },
-	{ id: "Periodontitis", label: "Периодонтит", color: "#ea580c" },
+	{ id: "Caries", label: "Кариес", color: "var(--bad-fg, #ef4444)" },
+	{ id: "Pulpitis", label: "Пульпит", color: "var(--bad-fg, #dc2626)" },
+	{ id: "Periodontitis", label: "Периодонтит", color: "var(--warn-fg, #ea580c)" },
 	{ id: "Filled", label: "Пломба", color: "var(--brand-primary, var(--teal))" },
-	{ id: "Crown", label: "Коронка", color: "#2563eb" },
-	{ id: "Implant", label: "Имплантат", color: "#64748b" },
-	{ id: "Missing", label: "Удален", color: "#e11d48" },
+	{ id: "Crown", label: "Коронка", color: "var(--info-fg, #2563eb)" },
+	{ id: "Implant", label: "Имплантат", color: "var(--muted, #64748b)" },
+	{ id: "Missing", label: "Удален", color: "var(--bad-fg, #e11d48)" },
 ];
 
 export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProps> = ({
@@ -355,87 +355,9 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Анатомическая длина каналов автозаполнена для зуба #${toothNumber}`, "info", 3000);
 	};
 
-	// [Экспресс ProTaper: алиас для обратной совместимости]
-	const handleApplyExpressProTaper = () => {
-		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
-		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
-		const updated: EndoCanalData[] = baseCanals.map((c, idx) => {
-			const def = defaultCanals[idx] || defaultCanals[0];
-			return {
-				...c,
-				workingLengthMm: c.workingLengthMm ? Number(c.workingLengthMm) : (def?.workingLengthMm || 21.0),
-				masterApicalFile: "ISO 25 (#25 красный)",
-				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
-				sealer: "AH Plus",
-				notes: "ProTaper Gold 25.06, NaOCl 3% + EDTA, AH Plus + гуттаперча",
-			};
-		});
-		const rotary = "Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF 25.06";
-		const irri = "3% NaOCl + 17% EDTA с УЗ-активацией";
-		const rad = "Контрольная визиография: корневые каналы обтурированы плотно, гомогенно до верхушки.";
-
-		setCanals(updated);
-		setEndoRotarySystem(rotary);
-		setEndoIrrigation(irri);
-		setEndoRadiologyControl(rad);
-		setShowEndoTable(true);
-
-		onUpdateTooth?.({
-			state: toothData?.state === "Healthy" || toothData?.state === "Caries" ? "Pulpitis" : (toothData?.state ?? "Pulpitis"),
-			canalCount: updated.length,
-			canalObturation: "gutta_percha",
-			clinicalData: {
-				canals: updated,
-				rotarySystem: rotary,
-				irrigation: irri,
-				radiologyControl: rad,
-				updatedAt: new Date().toISOString(),
-			},
-		});
-		showToast(`Зуб #${toothNumber}: применён протокол ProTaper 25.06 + AH Plus (1 клик)`, "success", 3000);
-	};
-
-	// 2. [Временная лечебная обтурация: Каласепт (Ca(OH)2)]
-	const handleApplyCalaseptCaOh2 = () => {
-		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
-		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
-		const updated: EndoCanalData[] = baseCanals.map((c, idx) => {
-			const def = defaultCanals[idx] || defaultCanals[0];
-			return {
-				...c,
-				workingLengthMm: c.workingLengthMm ? Number(c.workingLengthMm) : (def?.workingLengthMm || 21.0),
-				masterApicalFile: "ISO 25 (#25 красный)",
-				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Временная обтурация Ca(OH)2 (Каласепт / Metapex)",
-				sealer: "Каласепт (гидроксид кальция)",
-				notes: "Временная лечебная повязка пастой Ca(OH)2 на 14 дней, герметичная пломба",
-			};
-		});
-		const rotary = "Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF";
-		const irri = "3% NaOCl + 17% EDTA с УЗ-активацией, обильное промывание 0.9% NaCl";
-		const rad = "Контрольная радиовизиография: лечебная паста Ca(OH)2 выведена до апекса, герметичная повязка.";
-
-		setCanals(updated);
-		setEndoRotarySystem(rotary);
-		setEndoIrrigation(irri);
-		setEndoRadiologyControl(rad);
-		setShowEndoTable(true);
-
-		onUpdateTooth?.({
-			state: "Periodontitis",
-			canalCount: updated.length,
-			canalObturation: "calcium_hydroxide",
-			clinicalData: {
-				canals: updated,
-				rotarySystem: rotary,
-				irrigation: irri,
-				radiologyControl: rad,
-				updatedAt: new Date().toISOString(),
-			},
-		});
-		showToast(`Зуб #${toothNumber}: применён протокол Каласепт Ca(OH)2 (1 клик)`, "info", 3000);
-	};
+	// Экспресс-алиасы обратной совместимости (вызывают выверенные протоколы из EndoCanalLogModal)
+	const handleApplyExpressProTaper = handleApplyPulpitisPreset;
+	const handleApplyCalaseptCaOh2 = handleApplyPeriodontitisTempPreset;
 
 	// 3. [Распломбировка / Ревизия (D1-D3, Сольвент)]
 	const handleApplyRetreatmentRevision = () => {
@@ -761,7 +683,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 									<span>Экспресс-протоколы эндодонтии (1 клик):</span>
 								</span>
 							</div>
-							<div className="dente-endo-presets-actions">
+							<div className="dente-endo-presets-actions min-w-0">
 								<button
 									type="button"
 									onClick={handleApplyExpressProTaper}
@@ -769,8 +691,8 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 									title="Заполнить все каналы: ProTaper Gold 25.06, NaOCl 3% + EDTA, обтурация AH Plus + гуттаперча"
 									data-testid="endo-preset-protaper"
 								>
-									<Zap size={14} />
-									<span>Экспресс ProTaper: 25.06 + NaOCl + AH Plus</span>
+									<Zap size={14} className="shrink-0" />
+									<span className="truncate min-w-0">Экспресс ProTaper: 25.06 + NaOCl + AH Plus</span>
 								</button>
 								<button
 									type="button"
@@ -779,8 +701,8 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 									title="Временная лечебная повязка гидроксидом кальция Ca(OH)2 при деструктивных периодонтитах"
 									data-testid="endo-preset-calasept"
 								>
-									<ShieldAlert size={14} />
-									<span>Временная лечебная обтурация: Каласепт (Ca(OH)2)</span>
+									<ShieldAlert size={14} className="shrink-0" />
+									<span className="truncate min-w-0">Временная обтурация: Каласепт (Ca(OH)2)</span>
 								</button>
 								<button
 									type="button"
@@ -789,8 +711,18 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 									title="Распломбировка каналов ProTaper Retreatment D1-D3 с сольвентом"
 									data-testid="endo-preset-revision"
 								>
-									<RotateCcw size={14} />
-									<span>Распломбировка / Ревизия (D1-D3, Сольвент)</span>
+									<RotateCcw size={14} className="shrink-0" />
+									<span className="truncate min-w-0">Распломбировка / Ревизия (D1-D3, Сольвент)</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleApplyObturationPermanentPreset}
+									className="dente-endo-preset-btn obturation"
+									title="Постоянная обтурация каналов гуттаперчей до апекса (AH Plus)"
+									data-testid="endo-preset-obturation"
+								>
+									<Check size={14} className="shrink-0" />
+									<span className="truncate min-w-0">Обтурация до апекса (AH Plus)</span>
 								</button>
 							</div>
 						</div>
@@ -798,11 +730,22 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 						<div className="dente-endo-controls-row">
 							<button
 								type="button"
+								onClick={handleApplyAnatomicalLengths}
+								className="dente-secondary-btn"
+								title="Автоматический расчет рабочей длины каналов по формуле FDI (мм)"
+								data-testid="btn-endo-anatomical-lengths"
+							>
+								<Sparkles size={14} className="shrink-0" />
+								<span>Авто-длина по FDI</span>
+							</button>
+
+							<button
+								type="button"
 								onClick={handleResetCanals}
 								className="dente-secondary-btn"
 								title="Сбросить к стандарту FDI"
 							>
-								<RotateCcw size={14} />
+								<RotateCcw size={14} className="shrink-0" />
 								<span>Анатомический стандарт FDI</span>
 							</button>
 
@@ -811,7 +754,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 								onClick={handleAddCanal}
 								className="dente-secondary-btn"
 							>
-								<Plus size={14} />
+								<Plus size={14} className="shrink-0" />
 								<span>Добавить канал</span>
 							</button>
 						</div>

@@ -6,11 +6,13 @@ import {
 	Layers,
 	PackageCheck,
 	Scan,
+	ShieldAlert,
+	ShieldCheck,
 	Syringe,
 	Wallet,
 	X,
 } from "lucide-react";
-import type { ToothData, ToothState } from "../odontogram/ToothChart";
+import type { ToothData } from "../odontogram/ToothChart";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { ToothSurfacesAndEndoMatrix } from "./ToothSurfacesAndEndoMatrix";
 import { ToothSanpinKraftBinding } from "./ToothSanpinKraftBinding";
@@ -45,6 +47,7 @@ export interface ToothContextDrawerProps {
 	readonly onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenParentMemo?: (() => void) | undefined;
+	readonly initialSection?: WarmAccordionSection | undefined;
 }
 
 export type WarmAccordionSection =
@@ -126,11 +129,12 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	onOpenFullRadiology,
 	onOpenFamilyBilling,
 	onOpenParentMemo,
+	initialSection,
 }) => {
 	const isPediatricTooth = (toothNumber >= 51 && toothNumber <= 85) || (patient?.ageYears !== undefined && patient.ageYears < 14);
 
-	// Default open section
-	const [activeSection, setActiveSection] = useState<WarmAccordionSection>("surfaces_endo");
+	// Default open section (or initialSection if specified)
+	const [activeSection, setActiveSection] = useState<WarmAccordionSection>(initialSection ?? "surfaces_endo");
 
 	// Auto-expand pediatric tab for primary teeth
 	useEffect(() => {
@@ -181,14 +185,14 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							<span className="fdi-label">FDI</span>
 							<span className="fdi-num">{toothNumber}</span>
 						</div>
-						<div className="dente-tooth-title-block">
-							<div className="dente-tooth-title-row">
-								<h2 className="dente-tooth-title">{anatomicalName}</h2>
-								<span className={`dente-tooth-state-pill state-${(toothData?.state ?? "Healthy").toLowerCase()}`}>
+						<div className="dente-tooth-title-block min-w-0">
+							<div className="dente-tooth-title-row min-w-0">
+								<h2 className="dente-tooth-title truncate min-w-0" title={anatomicalName}>{anatomicalName}</h2>
+								<span className={`dente-tooth-state-pill shrink-0 state-${(toothData?.state ?? "Healthy").toLowerCase()}`}>
 									{toothData?.state ?? "Healthy"}
 								</span>
 							</div>
-							<p className="dente-tooth-folk-name">{folkAndAnatomical}</p>
+							<p className="dente-tooth-folk-name truncate min-w-0" title={folkAndAnatomical}>{folkAndAnatomical}</p>
 						</div>
 					</div>
 
@@ -317,6 +321,42 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 
 						{activeSection === "anesthesia" && (
 							<div className="dente-accordion-content animate-in p-3 flex flex-col gap-2">
+								{/* Somatic Risk Alert or 1-Click Physiological Norm Strip */}
+								{Boolean(patient?.hasCardioRisk || patient?.hasSulfiteAllergy || patient?.hasAsthma || patient?.isPregnant) ? (
+									<div className="dente-somatic-alert-strip" data-testid="tooth-somatic-risk-alert">
+										<ShieldAlert size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+										<div className="min-w-0">
+											<div className="font-bold text-xs">Отягощенный соматический статус (ASA II–III)</div>
+											<div className="text-[11px] mt-0.5">
+												{patient?.hasCardioRisk && "Кардио-риск • "}
+												{patient?.hasSulfiteAllergy && "Аллергия на сульфиты • "}
+												{patient?.hasAsthma && "Бронхиальная астма • "}
+												{patient?.isPregnant && "Беременность • "}
+												Рекомендован Скандонест 3% (без адреналина)
+											</div>
+										</div>
+									</div>
+								) : (
+									<div className="flex items-center justify-between text-xs p-2 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]" data-testid="tooth-somatic-norm-strip">
+										<div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold min-w-0 truncate">
+											<ShieldCheck size={14} className="shrink-0" />
+											<span className="truncate min-w-0">Соматически здоров (ASA I) • Норма</span>
+										</div>
+										<button
+											type="button"
+											onClick={() => {
+												onInsertToProtocol?.("Соматический статус: Соматически здоров / физиологическая норма. Аллергологический анамнез не отягощен.");
+												showToast("Соматическая норма внесена в протокол 043/у", "success", 2000);
+											}}
+											className="px-2 py-1 text-[11px] font-bold rounded-md bg-[var(--teal-surface)] text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white transition-colors shrink-0 ml-2 cursor-pointer"
+											title="Вставить соматическую норму в протокол 043/у (1 клик)"
+											data-testid="tooth-somatic-norm-btn"
+										>
+											В протокол (1 клик)
+										</button>
+									</div>
+								)}
+
 								<div className="flex items-center justify-between text-xs text-[var(--muted)] px-0.5">
 									<span>Быстрый выбор анестетика в 1 клик (без ввода веса и калькуляторов):</span>
 									<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">1 клик • норма</span>
@@ -358,10 +398,10 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 													<Syringe className="w-4 h-4" />
 												</div>
 												<div className="min-w-0">
-													<div className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)] transition-colors truncate">
+													<div className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)] transition-colors truncate min-w-0">
 														{preset.title}
 													</div>
-													<div className="text-[11px] text-[var(--muted)] truncate mt-0.5">
+													<div className="text-[11px] text-[var(--muted)] truncate min-w-0 mt-0.5">
 														{preset.subtitle}
 													</div>
 												</div>

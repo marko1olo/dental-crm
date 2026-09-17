@@ -122,8 +122,9 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-height: 44px;
-	padding: 8px 16px;
+	min-height: 34px;
+	height: 34px;
+	padding: 0 14px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 8px;
@@ -147,12 +148,18 @@
 
 .icd10-rubric-tab.is-active {
 	background: var(--teal);
-	color: #ffffff;
+	color: var(--on-teal, #ffffff);
 	border-color: var(--teal-dark, var(--teal));
 }
 
 .icd10-rubric-tab:focus-visible {
 	outline: 2px solid var(--teal);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.icd10-rubric-tab {
+		min-height: 44px;
+	}
 }
 
 /* ================= Быстрые пресеты диагнозов (1-клик) ================= */
@@ -184,8 +191,9 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	min-height: 44px;
-	padding: 8px 12px;
+	min-height: 36px;
+	min-width: 0;
+	padding: 6px 12px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 8px;
@@ -198,6 +206,12 @@
 		background-color var(--transition-fast),
 		border-color var(--transition-fast),
 		transform var(--transition-fast);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.icd10-preset-chip {
+		min-height: 44px;
+	}
 }
 
 .icd10-preset-chip:hover {
@@ -228,6 +242,7 @@
 	color: var(--ink);
 	margin-left: 8px;
 	flex: 1;
+	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -287,6 +302,7 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	min-width: 0;
 }
 
 .icd10-result-code {
@@ -301,6 +317,7 @@
 	font-size: 14px;
 	font-weight: 600;
 	color: var(--ink);
+	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -309,6 +326,7 @@
 .icd10-result-desc {
 	font-size: 13px;
 	color: var(--muted);
+	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -376,6 +394,7 @@
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	min-width: 0;
 }
 
 .icd10-preview-code {
@@ -387,18 +406,24 @@
 	border: 1px solid var(--line);
 	padding: 4px 10px;
 	border-radius: 6px;
+	flex-shrink: 0;
 }
 
 .icd10-preview-title {
 	font-size: 16px;
 	font-weight: 700;
 	color: var(--ink);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .icd10-preview-actions {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	flex-shrink: 0;
 }
 
 .icd10-preview-btn {
@@ -433,7 +458,7 @@
 
 .icd10-preview-btn.primary {
 	background: var(--teal);
-	color: #ffffff;
+	color: var(--on-teal, #ffffff);
 	border-color: var(--teal-dark, var(--teal));
 }
 
@@ -503,7 +528,7 @@
 
 .icd10-tooth-quick-btn.is-selected {
 	background: var(--teal);
-	color: #ffffff;
+	color: var(--on-teal, #ffffff);
 	border-color: var(--teal-dark, var(--teal));
 }
 

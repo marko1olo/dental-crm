@@ -1,4 +1,3 @@
-import React from "react";
 import { Check, Palette } from "lucide-react";
 import {
 	VITA_CLASSICAL_SHADES,
