@@ -1,0 +1,255 @@
+/* ==========================================================================
+   LOW-SPEC HARDWARE & CSS GPU OPTIMIZATION PROFILE (Wave 252-Perf2)
+   Target: Guaranteed 60 FPS on integrated GPUs (Intel HD Graphics / UHD / Older APUs)
+
+   Addresses:
+   1. Elimination of GPU-choking backdrop-filter: blur(...)
+   2. Simplification of multi-layer diffuse box-shadows to crisp 1px borders
+   3. Termination of continuous GPU-draining animations (shimmers, pulses, waves)
+   4. DOM layout containment & content-visibility for heavy repeating lists
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design Token Overrides for Low-Spec Profile
+   -------------------------------------------------------------------------- */
+:root[data-low-spec="true"],
+html[data-low-spec="true"],
+[data-low-spec="true"],
+html.low-spec-mode,
+.low-spec-mode {
+	--glass-blur: none !important;
+	--glass-panel: var(--paper-strong) !important;
+	--glass-bg: var(--paper-strong) !important;
+	--glass-border: var(--line) !important;
+	--glass-shadow: none !important;
+	--shadow-premium: none !important;
+	--teal-glow: transparent !important;
+	--transition-smooth: 0.05s ease !important;
+	--transition-fast: 0.05s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--glass-blur: none !important;
+		--glass-panel: var(--paper-strong) !important;
+		--glass-bg: var(--paper-strong) !important;
+		--glass-border: var(--line) !important;
+		--glass-shadow: none !important;
+		--shadow-premium: none !important;
+		--teal-glow: transparent !important;
+		--transition-smooth: 0s !important;
+		--transition-fast: 0s !important;
+	}
+}
+
+/* --------------------------------------------------------------------------
+   2. Elimination of backdrop-filter (Anti-Blur GPU Saver)
+   -------------------------------------------------------------------------- */
+html[data-low-spec="true"] *,
+html[data-low-spec="true"] *::before,
+html[data-low-spec="true"] *::after,
+html.low-spec-mode *,
+html.low-spec-mode *::before,
+html.low-spec-mode *::after,
+[data-low-spec="true"] *,
+[data-low-spec="true"] *::before,
+[data-low-spec="true"] *::after,
+.low-spec-mode *,
+.low-spec-mode *::before,
+.low-spec-mode *::after {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+}
+
+/* --------------------------------------------------------------------------
+   3. Solid Opaque Backgrounds for Glass Surfaces
+   -------------------------------------------------------------------------- */
+html[data-low-spec="true"] .finance-zone,
+html[data-low-spec="true"] .patients-zone,
+html[data-low-spec="true"] .schedule-zone,
+html[data-low-spec="true"] .documents-zone,
+html[data-low-spec="true"] .workspace-section,
+html[data-low-spec="true"] .protocol-settings,
+html[data-low-spec="true"] .rule-form,
+html[data-low-spec="true"] .glass-panel,
+html[data-low-spec="true"] .glass-card,
+html[data-low-spec="true"] .card-glass,
+html[data-low-spec="true"] .modal-window,
+html[data-low-spec="true"] .modal-content,
+html[data-low-spec="true"] .imaging-modal-container,
+html[data-low-spec="true"] .inventory-confirm-window,
+html[data-low-spec="true"] .patient-card-modal,
+html.low-spec-mode .finance-zone,
+html.low-spec-mode .patients-zone,
+html.low-spec-mode .schedule-zone,
+html.low-spec-mode .documents-zone,
+html.low-spec-mode .workspace-section,
+html.low-spec-mode .protocol-settings,
+html.low-spec-mode .rule-form,
+html.low-spec-mode .glass-panel,
+html.low-spec-mode .glass-card,
+html.low-spec-mode .card-glass,
+html.low-spec-mode .modal-window,
+html.low-spec-mode .modal-content,
+html.low-spec-mode .imaging-modal-container,
+html.low-spec-mode .inventory-confirm-window,
+html.low-spec-mode .patient-card-modal {
+	background-color: var(--paper-strong) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: none !important;
+}
+
+/* Modal and dialog backdrop overlays without expensive blur */
+html[data-low-spec="true"] .modal-backdrop,
+html[data-low-spec="true"] .dialog-backdrop,
+html[data-low-spec="true"] .imaging-modal-overlay,
+html[data-low-spec="true"] .inventory-confirm-backdrop,
+html[data-low-spec="true"] [class*="backdrop"],
+html.low-spec-mode .modal-backdrop,
+html.low-spec-mode .dialog-backdrop,
+html.low-spec-mode .imaging-modal-overlay,
+html.low-spec-mode .inventory-confirm-backdrop,
+html.low-spec-mode [class*="backdrop"] {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	background-color: rgba(2, 6, 23, 0.75) !important;
+}
+
+/* Header, topbar, toolbar solid background */
+html[data-low-spec="true"] .app-header,
+html[data-low-spec="true"] .topbar,
+html[data-low-spec="true"] .patients-header,
+html[data-low-spec="true"] .schedule-header,
+html[data-low-spec="true"] .toolbar,
+html.low-spec-mode .app-header,
+html.low-spec-mode .topbar,
+html.low-spec-mode .patients-header,
+html.low-spec-mode .schedule-header,
+html.low-spec-mode .toolbar {
+	background: var(--paper) !important;
+	border-bottom: 1px solid var(--line) !important;
+	box-shadow: none !important;
+}
+
+/* Dropdowns, popovers and hover huds */
+html[data-low-spec="true"] .dropdown-menu,
+html[data-low-spec="true"] .popover-panel,
+html[data-low-spec="true"] .hover-hud,
+html[data-low-spec="true"] .context-menu,
+html.low-spec-mode .dropdown-menu,
+html.low-spec-mode .popover-panel,
+html.low-spec-mode .hover-hud,
+html.low-spec-mode .context-menu {
+	background: var(--paper-strong) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Shadow Simplification (1px Border Over Heavy Multi-Layer Shadows)
+   -------------------------------------------------------------------------- */
+html[data-low-spec="true"] .card,
+html[data-low-spec="true"] .panel,
+html[data-low-spec="true"] .today-schedule-item,
+html[data-low-spec="true"] .appointment-card,
+html[data-low-spec="true"] .patient-row,
+html[data-low-spec="true"] .patient-card,
+html[data-low-spec="true"] .shadow-lg,
+html[data-low-spec="true"] .shadow-xl,
+html[data-low-spec="true"] .shadow-2xl,
+html[data-low-spec="true"] .shadow-premium,
+html.low-spec-mode .card,
+html.low-spec-mode .panel,
+html.low-spec-mode .today-schedule-item,
+html.low-spec-mode .appointment-card,
+html.low-spec-mode .patient-row,
+html.low-spec-mode .patient-card,
+html.low-spec-mode .shadow-lg,
+html.low-spec-mode .shadow-xl,
+html.low-spec-mode .shadow-2xl,
+html.low-spec-mode .shadow-premium {
+	box-shadow: none !important;
+	border: 1px solid var(--line) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Disabling GPU-Draining Infinite Animations and Shimmers
+   -------------------------------------------------------------------------- */
+html[data-low-spec="true"] .animate-pulse,
+html[data-low-spec="true"] .animate-shimmer,
+html[data-low-spec="true"] .shimmer,
+html[data-low-spec="true"] .skeleton,
+html[data-low-spec="true"] .skeleton-wave,
+html[data-low-spec="true"] .ops-shimmer,
+html[data-low-spec="true"] .dntWave,
+html[data-low-spec="true"] [class*="shimmer"],
+html[data-low-spec="true"] [class*="skeleton"],
+html[data-low-spec="true"] [class*="pulse"],
+html.low-spec-mode .animate-pulse,
+html.low-spec-mode .animate-shimmer,
+html.low-spec-mode .shimmer,
+html.low-spec-mode .skeleton,
+html.low-spec-mode .skeleton-wave,
+html.low-spec-mode .ops-shimmer,
+html.low-spec-mode .dntWave,
+html.low-spec-mode [class*="shimmer"],
+html.low-spec-mode [class*="skeleton"],
+html.low-spec-mode [class*="pulse"] {
+	animation: none !important;
+	background-image: none !important;
+	background-color: var(--paper-soft) !important;
+}
+
+/* Disable non-essential transitions on low-spec devices */
+html[data-low-spec="true"] .transition-all,
+html.low-spec-mode .transition-all {
+	transition-duration: 0.05s !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Content Visibility & Layout Containment for Heavy Lists and Workspaces
+   -------------------------------------------------------------------------- */
+.patient-row,
+.patient-card,
+.curator-patient-card,
+.marketing-roi-patient-card,
+.today-schedule-item,
+.appointment-card,
+.appointment-block,
+.pricelist-item,
+.pricelist-row,
+.catalog-item-row,
+.audit-log-item,
+.operations-list-item,
+.call-list-row,
+.message-item,
+.inventory-item-row,
+.treatment-plan-stage-card,
+.plan-procedure-row,
+.visit-history-entry,
+.diary-timeline-item {
+	contain: layout style;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 56px;
+}
+
+/* Heavy offscreen sections and tabs */
+.workspace-section,
+.documents-archive-list,
+.patient-admin-panel,
+.analytics-chart-container,
+.service-pricelist-table-container,
+.warehouse-table-container {
+	contain: content;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 240px;
+}

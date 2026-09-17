@@ -10,6 +10,7 @@
 @import "../components/payments/checkout/fastCheckout.css";
 @import "../components/inventory/writeoff/clinicalWriteoff.css";
 @import "../components/telephony/telephonyFloatingWidget.css";
+@import "./low-spec-hardware.css";
 
 :root {
 	/* LIGHT THEME (Premium Aesthetics) */
