@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import type { InventoryItem } from "./useInventoryLogic";
 import {
-	CLINICAL_WRITEOFF_PACKAGES,
 	type ClinicalPackageId,
 	handleOneClickPackageWriteOff,
 	type OneClickPackageWriteOffResult,
@@ -126,12 +125,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					type="button"
 					onClick={() => handlePackageClick("carpule_quick")}
 					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-anesthetic-carpule min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					className="btn-writeoff-anesthetic-carpule min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-anesthetic-carpule"
 					title="1-клик списание пустых карпул анестетика (Септанест/Убистезин) медсестрой без комиссии из 3 человек"
 				>
-					<Syringe size={16} className="text-teal-600 shrink-0" />
-					<span>
+					<Syringe size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span className="truncate min-w-0">
 						{submittingPackageId === "carpule_quick"
 							? "Списание..."
 							: "Списать карпулу анестетика (Септанест/Убистезин)"}
@@ -143,12 +142,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					type="button"
 					onClick={() => handlePackageClick("sterilization_kit")}
 					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-sterilization-kit min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-indigo-500/30 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					className="btn-writeoff-sterilization-kit min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-indigo-500/30 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-sterilization-kit"
 					title="1-клик списание набора стерилизации: 1 лоток со смотровым инструментом в крафт-пакете + 2 пары перчаток"
 				>
-					<PackageCheck size={16} className="text-indigo-600 shrink-0" />
-					<span>
+					<PackageCheck size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+					<span className="truncate min-w-0">
 						{submittingPackageId === "sterilization_kit"
 							? "Списание..."
 							: "Набор стерилизации: 1 лоток + перчатки"}
@@ -160,12 +159,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					type="button"
 					onClick={() => handlePackageClick("anesthesia")}
 					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-anesthesia-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					className="btn-writeoff-anesthesia-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-anesthesia-packet"
 					title="1-клик списание пакета: Артикаин 1.7 мл + карпульная игла 30G + ватные валики (4 шт.)"
 				>
-					<Syringe size={16} className="text-teal-600 shrink-0" />
-					<span>
+					<Syringe size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span className="truncate min-w-0">
 						{submittingPackageId === "anesthesia" ? "Списание..." : "Стандартная анестезия"}
 					</span>
 				</button>
@@ -175,12 +174,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					type="button"
 					onClick={() => handlePackageClick("hygiene")}
 					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-hygiene-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					className="btn-writeoff-hygiene-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-hygiene-packet"
 					title="1-клик списание пакета: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка + валики"
 				>
-					<PackageCheck size={16} className="text-blue-600 shrink-0" />
-					<span>
+					<PackageCheck size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+					<span className="truncate min-w-0">
 						{submittingPackageId === "hygiene" ? "Списание..." : "Профгигиена"}
 					</span>
 				</button>
@@ -190,12 +189,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					type="button"
 					onClick={() => handlePackageClick("filling")}
 					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-filling-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					className="btn-writeoff-filling-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-filling-packet"
 					title="1-клик списание пакета: СИЗ + анестетик + нанокомпозит + адгезив + матрица"
 				>
-					<Sparkles size={16} className="text-emerald-600 shrink-0" />
-					<span>
+					<Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<span className="truncate min-w-0">
 						{submittingPackageId === "filling" ? "Списание..." : "Пломба световая"}
 					</span>
 				</button>
@@ -205,12 +204,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					type="button"
 					onClick={() => handlePackageClick("surgery")}
 					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-surgery-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/30 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+					className="btn-writeoff-surgery-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/30 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-surgery-packet"
 					title="1-клик списание пакета: Анестетик + игла 27G + скальпель + шовник + губка"
 				>
-					<ShieldCheck size={16} className="text-purple-600 shrink-0" />
-					<span>
+					<ShieldCheck size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
+					<span className="truncate min-w-0">
 						{submittingPackageId === "surgery" ? "Списание..." : "Хирургический пакет"}
 					</span>
 				</button>
@@ -219,7 +218,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 			{/* LAST WRITE-OFF STATUS TOAST / BADGE */}
 			{lastResult && !compact && (
 				<div
-					className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 ${
+					className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 min-w-0 ${
 						lastResult.isOverdraft
 							? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
 							: "bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200"
@@ -227,11 +226,11 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					data-testid="warehouse-writeoff-last-result"
 				>
 					{lastResult.isOverdraft ? (
-						<AlertTriangle size={15} className="text-amber-600 shrink-0" />
+						<AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
 					) : (
-						<CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+						<CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 					)}
-					<span className="font-semibold truncate">{lastResult.toastMessage}</span>
+					<span className="font-semibold truncate min-w-0">{lastResult.toastMessage}</span>
 				</div>
 			)}
 		</div>

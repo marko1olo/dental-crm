@@ -563,3 +563,98 @@
 	background: rgba(239, 68, 68, 0.15);
 	color: #f87171;
 }
+
+/* 11. 1-Click Package Write-Off & Nurse Carpule Disposal (Mandates 8e, 8k, 8n) */
+.warehouse-package-writeoff-bar {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* Hick's Law Compact 1-Row Filter Toolbar (32–36px) */
+.nurse-carpule-filter-toolbar {
+	height: 34px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.nurse-carpule-filter-toolbar::-webkit-scrollbar {
+	display: none;
+}
+
+.nurse-carpule-filter-chip {
+	height: 34px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.nurse-carpule-filter-chip:hover {
+	border-color: #0d9488;
+}
+
+/* Soft Overdraft Amber & Teal Notice Banners */
+.warehouse-soft-overdraft-banner {
+	border-radius: 10px;
+	padding: 10px 14px;
+	font-size: 0.75rem;
+	line-height: 1.4;
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	border: 1px solid;
+}
+
+.warehouse-soft-overdraft-banner.overdraft {
+	background: rgba(245, 158, 11, 0.1);
+	border-color: rgba(245, 158, 11, 0.3);
+	color: #78350f;
+}
+
+.warehouse-soft-overdraft-banner.normal {
+	background: rgba(13, 148, 136, 0.1);
+	border-color: rgba(13, 148, 136, 0.3);
+	color: #134e4a;
+}
+
+/* 12. Dark Theme Overrides for Write-Off & Disposal */
+[data-theme="dark"] .warehouse-package-writeoff-bar {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .nurse-carpule-filter-chip:not(.bg-teal-600) {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .nurse-carpule-filter-chip:not(.bg-teal-600):hover {
+	border-color: #14b8a6;
+	background: var(--paper-strong, #1e293b);
+}
+
+[data-theme="dark"] .warehouse-soft-overdraft-banner.overdraft {
+	background: rgba(245, 158, 11, 0.15);
+	border-color: rgba(245, 158, 11, 0.4);
+	color: #fde68a;
+}
+
+[data-theme="dark"] .warehouse-soft-overdraft-banner.normal {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: rgba(13, 148, 136, 0.4);
+	color: #99f6e4;
+}
+
