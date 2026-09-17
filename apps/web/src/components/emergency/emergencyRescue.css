@@ -51,7 +51,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 1rem 1.25rem;
+	padding: 0.75rem 1.25rem;
 	background: var(--paper-soft);
 	border-bottom: 2px solid var(--line-strong, var(--line));
 	gap: 1rem;
@@ -62,6 +62,23 @@
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
+}
+
+.emergency-header-alert-icon {
+	color: var(--bad-fg);
+	animation: emergencyPulseIcon 2s infinite ease-in-out;
+	flex-shrink: 0;
+}
+
+@keyframes emergencyPulseIcon {
+	0%, 100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.08);
+		opacity: 0.85;
+	}
 }
 
 .emergency-header-title {
@@ -150,30 +167,41 @@
 	background: var(--paper-soft);
 }
 
-/* Scenario Selector Strip & Cards */
+/* Scenario Selector Strip & Cards (1 Row Hick's Density 32–36px) */
 .emergency-scenarios-strip {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 0.5rem;
-	padding: 0.75rem 1.25rem;
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 1.25rem;
 	background: var(--paper-soft);
 	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
+	overflow-x: auto;
+	scrollbar-width: thin;
+	min-height: 44px;
+	height: 44px;
+	box-sizing: border-box;
 }
 
 .emergency-scenario-card {
 	background: var(--paper);
 	border: 1.5px solid var(--line-strong, var(--line));
-	border-radius: 10px;
-	padding: 0.625rem 0.75rem;
+	border-radius: 8px;
+	padding: 0 0.65rem;
 	cursor: pointer;
 	text-align: left;
-	display: flex;
-	flex-direction: column;
+	display: inline-flex;
+	flex-direction: row;
+	align-items: center;
 	gap: 0.35rem;
 	transition: all var(--transition-fast, 0.15s ease);
-	min-height: 52px;
+	height: 34px;
+	min-height: 32px;
+	max-height: 36px;
 	color: var(--ink);
+	white-space: nowrap;
+	flex-shrink: 0;
+	box-sizing: border-box;
 }
 
 .emergency-scenario-card:hover {
@@ -190,13 +218,21 @@
 }
 
 .emergency-scenario-name {
-	font-size: 0.875rem;
+	font-size: 0.8125rem;
 	font-weight: 700;
 	color: var(--ink);
-	display: flex;
+	display: inline-flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.emergency-scenario-name > span:first-child {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+	max-width: 170px;
 }
 
 .emergency-scenario-card.active .emergency-scenario-name {
@@ -205,10 +241,10 @@
 }
 
 .emergency-scenario-icd {
-	font-size: 0.7rem;
-	font-weight: 700;
-	padding: 0.15rem 0.45rem;
-	border-radius: 5px;
+	font-size: 0.6875rem;
+	font-weight: 800;
+	padding: 0.1rem 0.35rem;
+	border-radius: 4px;
 	background: var(--paper-soft);
 	color: var(--ink);
 	border: 1px solid var(--line-strong, var(--line));
@@ -224,17 +260,7 @@
 }
 
 .emergency-scenario-subtitle {
-	font-size: 0.75rem;
-	color: var(--ink-2, var(--muted));
-	line-height: 1.3;
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
-}
-
-.emergency-scenario-card.active .emergency-scenario-subtitle {
-	color: var(--ink);
+	display: none;
 }
 
 /* Modal Body Grid */
@@ -791,7 +817,15 @@
 
 .emergency-protocol-actions {
 	display: flex;
+	flex-direction: column;
 	gap: 0.5rem;
+}
+
+.emergency-protocol-action-row {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 0.5rem;
+	width: 100%;
 }
 
 .emergency-copy-act-btn {
@@ -810,10 +844,22 @@
 	gap: 0.4rem;
 	min-height: 44px;
 	transition: all 0.15s ease;
+	box-sizing: border-box;
 }
 
 .emergency-copy-act-btn:hover {
 	filter: brightness(1.1);
+}
+
+.emergency-copy-act-btn.secondary {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1.5px solid var(--line-strong, var(--line));
+}
+
+.emergency-copy-act-btn.secondary:hover {
+	background: var(--paper);
+	border-color: var(--ink);
 }
 
 .emergency-smp-info-banner {
@@ -828,8 +874,12 @@
 
 @media (max-width: 640px) {
 	.emergency-scenarios-strip {
-		grid-template-columns: repeat(2, 1fr);
-		padding: 0.5rem;
+		padding: 0.375rem 0.5rem;
+		gap: 0.25rem;
+	}
+
+	.emergency-scenario-name > span:first-child {
+		max-width: 120px;
 	}
 
 	.emergency-dosage-cards-grid {
@@ -838,6 +888,10 @@
 
 	.emergency-modal-body {
 		padding: 0.75rem;
+	}
+
+	.emergency-protocol-action-row {
+		grid-template-columns: 1fr;
 	}
 }
 

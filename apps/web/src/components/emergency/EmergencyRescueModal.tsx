@@ -5,26 +5,20 @@
  * Adrenaline Timer, Weight-Adjusted Dosage, and Statutory Form 043/u Protocol Generation.
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
 	AlertOctagon,
 	Heart,
 	Activity,
 	PhoneCall,
 	Clock,
-	Volume2,
-	VolumeX,
 	Copy,
 	Check,
 	X,
 	ShieldAlert,
-	Play,
-	Pause,
 	RotateCcw,
-	Flame,
 	Syringe,
 	FileText,
-	Stethoscope,
 	User,
 	Printer,
 	AlertTriangle,
@@ -42,7 +36,6 @@ import {
 	ExecutedEmergencyStep,
 	EmergencyIncidentInput,
 	STATUTORY_EMERGENCY_KIT_MEMO,
-	calculateWeightAdjustedDose,
 	calculateAllEmergencyDosages,
 	calculateLipidRescueDoses,
 	formatTimerSeconds,
@@ -344,7 +337,7 @@ export function EmergencyRescueModal({
 				{/* Top Emergency Header */}
 				<header className="emergency-modal-header">
 					<div className="emergency-header-title-area">
-						<AlertOctagon size={28} className="text-red-500 animate-pulse" />
+						<AlertOctagon size={28} className="emergency-header-alert-icon" />
 						<div>
 							<h2 className="emergency-header-title">
 								ЭКСТРЕННЫЙ РЕАНИМАЦИОННЫЙ HUD
@@ -377,8 +370,8 @@ export function EmergencyRescueModal({
 					</div>
 				</header>
 
-				{/* Horizontal Scenario Selector Bar */}
-				<div className="emergency-scenarios-strip">
+				{/* Horizontal Scenario Selector Bar (1 Row Hick's Density 32–36px) */}
+				<div className="emergency-scenarios-strip" role="tablist" aria-label="Категории укладок неотложной помощи">
 					{(Object.keys(EMERGENCY_SCENARIOS) as EmergencyScenarioId[]).map((scId) => {
 						const scenario = EMERGENCY_SCENARIOS[scId];
 						const isActive = scenario.id === activeScenarioId;
@@ -386,11 +379,14 @@ export function EmergencyRescueModal({
 							<button
 								key={scenario.id}
 								type="button"
+								role="tab"
+								aria-selected={isActive}
 								className={`emergency-scenario-card ${isActive ? 'active' : ''}`}
 								onClick={() => setActiveScenarioId(scenario.id)}
+								title={`${scenario.nameRu} (${scenario.icd10Code}) — ${scenario.subtitleRu}`}
 							>
-								<div className="emergency-scenario-name">
-									<span>{scenario.nameRu}</span>
+								<div className="emergency-scenario-name min-w-0">
+									<span className="truncate min-w-0">{scenario.nameRu}</span>
 									<span className="emergency-scenario-icd">{scenario.icd10Code}</span>
 								</div>
 								<div className="emergency-scenario-subtitle">{scenario.subtitleRu}</div>
@@ -803,18 +799,19 @@ export function EmergencyRescueModal({
 													</div>
 													{isCompleted && (
 														<span className="emergency-step-time-badge">
-															✓ {timeCompleted}
+															<Check size={11} className="inline mr-0.5" />
+															{timeCompleted}
 														</span>
 													)}
 												</div>
 
-												<div className="emergency-step-description">
+												<div className="emergency-step-description min-w-0">
 													{step.descriptionRu}
 												</div>
 
 												{step.dosageHintRu && (
-													<div className="emergency-step-dosage-hint">
-														<Syringe size={13} className="inline mr-1 text-emerald-500" /> {step.dosageHintRu}
+													<div className="emergency-step-dosage-hint min-w-0">
+														<Syringe size={13} className="inline mr-1" style={{ color: 'var(--ok-fg, #10b981)' }} /> {step.dosageHintRu}
 													</div>
 												)}
 											</div>
@@ -829,9 +826,9 @@ export function EmergencyRescueModal({
 					<div className="emergency-column-right">
 						{/* Adrenaline Countdown Timer */}
 						<div className="emergency-timer-box">
-							<div className="emergency-timer-title">
+							<div className="emergency-timer-title min-w-0">
 								<Clock size={20} />
-								<span>ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА</span>
+								<span className="truncate min-w-0">ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА</span>
 							</div>
 
 							<div className={`emergency-timer-display ${isAdrenalineDue ? 'due' : ''}`}>
@@ -839,7 +836,7 @@ export function EmergencyRescueModal({
 							</div>
 
 							{isAdrenalineDue && (
-								<div className="emergency-timer-alert flex items-center justify-center gap-1.5">
+								<div className="emergency-timer-alert">
 									<AlertTriangle className="w-4 h-4 shrink-0" />
 									<span>ВРЕМЯ ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА (0.3–0.5 МЛ В/М)!</span>
 								</div>
@@ -848,22 +845,18 @@ export function EmergencyRescueModal({
 							<div className="emergency-timer-buttons">
 								<button
 									type="button"
-									className={`emergency-timer-btn ${isAdrenalineTimerRunning && adrenalineTimerSeconds === 300 ? 'active' : ''}`}
+									className={`emergency-timer-btn ${isAdrenalineTimerRunning ? 'active' : ''}`}
 									onClick={() => handleStartAdrenalineTimer(300)}
+									title="Запустить таймер повторного введения адреналина (5 минут по стандарту МЗ РФ № 1079н)"
 								>
-									Старт 5 мин
-								</button>
-								<button
-									type="button"
-									className={`emergency-timer-btn ${isAdrenalineTimerRunning && adrenalineTimerSeconds === 180 ? 'active' : ''}`}
-									onClick={() => handleStartAdrenalineTimer(180)}
-								>
-									Старт 3 мин
+									<Clock size={14} />
+									<span>Старт 5 мин</span>
 								</button>
 								<button
 									type="button"
 									className="emergency-timer-btn"
 									onClick={handleResetAdrenalineTimer}
+									title="Сбросить таймер адреналина"
 								>
 									<RotateCcw size={14} />
 									<span>Сброс</span>
@@ -874,20 +867,20 @@ export function EmergencyRescueModal({
 						{/* Statutory Emergency Kit Quick Reference (1-Click Static Memo) */}
 						<div className="emergency-cpr-box">
 							<div className="emergency-cpr-header">
-								<div className="emergency-cpr-title">
+								<div className="emergency-cpr-title min-w-0">
 									<Syringe size={18} style={{ color: 'var(--primary, #0ea5e9)' }} />
-									<span>УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)</span>
+									<span className="truncate min-w-0">УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)</span>
 								</div>
 							</div>
 
 							<div className="emergency-cpr-guidelines-list">
 								{STATUTORY_EMERGENCY_KIT_MEMO.map((kit) => (
 									<div key={kit.drugId} className="emergency-cpr-guideline-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '6px 0', borderBottom: '1px solid var(--border-subtle, rgba(255,255,255,0.08))' }}>
-										<div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-											<span style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--ink)' }}>{kit.tradeNameRu}</span>
-											<span className="emergency-cpr-val highlight-ok" style={{ fontSize: '0.75rem' }}>{kit.dosageStandardRu.split(';')[0]}</span>
+										<div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', minWidth: 0, gap: '6px' }}>
+											<span className="truncate min-w-0" style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--ink)' }} title={kit.tradeNameRu}>{kit.tradeNameRu}</span>
+											<span className="emergency-cpr-val highlight-ok shrink-0" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{kit.dosageStandardRu.split(';')[0]}</span>
 										</div>
-										<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{kit.routeRu}</span>
+										<span className="truncate min-w-0 w-full" style={{ fontSize: '0.75rem', color: 'var(--muted)' }} title={kit.routeRu}>{kit.routeRu}</span>
 									</div>
 								))}
 							</div>
@@ -896,35 +889,35 @@ export function EmergencyRescueModal({
 						{/* Statutory Resuscitation Guidelines Card */}
 						<div className="emergency-cpr-box">
 							<div className="emergency-cpr-header">
-								<div className="emergency-cpr-title">
+								<div className="emergency-cpr-title min-w-0">
 									<Heart size={18} style={{ color: 'var(--bad-fg)' }} />
-									<span>СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)</span>
+									<span className="truncate min-w-0">СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)</span>
 								</div>
 							</div>
 
 							<div className="emergency-cpr-guidelines-list">
 								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label">Соотношение:</span>
-									<span className="emergency-cpr-val highlight-bad">30 компрессий : 2 вдоха</span>
+									<span className="emergency-cpr-label truncate min-w-0">Соотношение:</span>
+									<span className="emergency-cpr-val highlight-bad shrink-0">30 компрессий : 2 вдоха</span>
 								</div>
 								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label">Частота нажатий:</span>
-									<span className="emergency-cpr-val">100–120 в минуту</span>
+									<span className="emergency-cpr-label truncate min-w-0">Частота нажатий:</span>
+									<span className="emergency-cpr-val shrink-0">100–120 в минуту</span>
 								</div>
 								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label">Глубина компрессий:</span>
-									<span className="emergency-cpr-val">5–6 см (1/3 грудной клетки)</span>
+									<span className="emergency-cpr-label truncate min-w-0">Глубина компрессий:</span>
+									<span className="emergency-cpr-val shrink-0">5–6 см (1/3 грудной клетки)</span>
 								</div>
 								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label">Положение:</span>
-									<span className="emergency-cpr-val highlight-ok">Твердая горизонтальная поверхность</span>
+									<span className="emergency-cpr-label truncate min-w-0">Положение:</span>
+									<span className="emergency-cpr-val highlight-ok shrink-0">Твердая горизонтальная поверхность</span>
 								</div>
 							</div>
 						</div>
 
 						{/* Emergency Incident Protocol Preview & Handover Box */}
 						<div className="emergency-protocol-box">
-							<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+							<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', minWidth: 0 }}>
 								<div style={{ display: 'flex', gap: '0.5rem' }}>
 									<button
 										type="button"
@@ -942,7 +935,7 @@ export function EmergencyRescueModal({
 									</button>
 								</div>
 
-								<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+								<span className="truncate min-w-0 text-right" style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
 									Шагов выполнено: {completedStepsList.length} из {activeScenario.actionSteps.length}
 								</span>
 							</div>
@@ -961,50 +954,71 @@ export function EmergencyRescueModal({
 								/>
 							)}
 
+							{/* Actions: <= 2 buttons per row by Miller Law */}
 							<div className="emergency-protocol-actions">
 								{activeProtocolTab === 'act' ? (
 									<>
-										<button
-											type="button"
-											className="emergency-copy-act-btn"
-											onClick={handleCopyAct}
-										>
-											{isCopiedAct ? <Check size={16} /> : <Copy size={16} />}
-											{isCopiedAct ? 'Скопировано!' : 'Копировать Акт'}
-										</button>
-										<button
-											type="button"
-											className="emergency-copy-act-btn"
-											style={{ background: 'var(--primary, #0ea5e9)', color: '#ffffff' }}
-											onClick={handlePrintEmergencyAct}
-											data-testid="emergency-print-act-btn"
-											title="Распечатать Акт оказания экстренной помощи для передачи бригаде СМП (А4)"
-										>
-											<Printer size={16} />
-											<span>Печать Акта (СМП)</span>
-										</button>
-										<button
-											type="button"
-											className="emergency-copy-act-btn"
-											style={{ background: 'var(--surface-strong, #334155)', color: '#ffffff' }}
-											onClick={handleCopyRelativeNotice}
-											data-testid="emergency-copy-relative-notice-btn"
-											title="Скопировать экстренное извещение для родственников в WhatsApp/Telegram"
-										>
-											<Copy size={16} />
-											<span>Извещение родственникам</span>
-										</button>
-										{onApplyToDiary && (
+										{/* Row 1: Primary Clinical Action (043/у or Copy) & Ambulance Print (Mandate 8e, Miller Law <= 2) */}
+										<div className="emergency-protocol-action-row primary-actions">
+											{onApplyToDiary ? (
+												<button
+													type="button"
+													className="emergency-copy-act-btn"
+													style={{ background: 'var(--teal, #0d9488)', color: 'var(--on-teal, #ffffff)' }}
+													onClick={handleApplyToForm043}
+													title="Вставить протокол оказания экстренной помощи в дневник карты 043/у"
+												>
+													<FileText size={16} />
+													<span>Вставить в карту 043/у</span>
+												</button>
+											) : (
+												<button
+													type="button"
+													className="emergency-copy-act-btn"
+													onClick={handleCopyAct}
+												>
+													{isCopiedAct ? <Check size={16} /> : <Copy size={16} />}
+													<span>{isCopiedAct ? 'Скопировано!' : 'Копировать Акт'}</span>
+												</button>
+											)}
 											<button
 												type="button"
 												className="emergency-copy-act-btn"
-												style={{ background: 'var(--teal, #0d9488)', color: 'var(--on-teal, #ffffff)' }}
-												onClick={handleApplyToForm043}
+												style={{ background: 'var(--primary, #0ea5e9)', color: '#ffffff' }}
+												onClick={handlePrintEmergencyAct}
+												data-testid="emergency-print-act-btn"
+												title="Распечатать Акт оказания экстренной помощи для передачи бригаде СМП (А4)"
 											>
-												<FileText size={16} />
-												Вставить в карту 043/у
+												<Printer size={16} />
+												<span>Печать Акта (СМП)</span>
 											</button>
-										)}
+										</div>
+
+										{/* Row 2: Secondary Handover & Messenger Notification (Miller Law <= 2) */}
+										<div className="emergency-protocol-action-row secondary-actions">
+											{onApplyToDiary && (
+												<button
+													type="button"
+													className="emergency-copy-act-btn secondary"
+													onClick={handleCopyAct}
+													title="Скопировать текст Акта в буфер обмена"
+												>
+													{isCopiedAct ? <Check size={16} /> : <Copy size={16} />}
+													<span>{isCopiedAct ? 'Скопировано!' : 'Копировать Акт'}</span>
+												</button>
+											)}
+											<button
+												type="button"
+												className="emergency-copy-act-btn secondary"
+												style={{ background: 'var(--surface-strong, #334155)', color: '#ffffff' }}
+												onClick={handleCopyRelativeNotice}
+												data-testid="emergency-copy-relative-notice-btn"
+												title="Скопировать экстренное извещение для родственников в WhatsApp/Telegram"
+											>
+												<Copy size={16} />
+												<span>Извещение родственникам</span>
+											</button>
+										</div>
 									</>
 								) : (
 									<button
@@ -1014,7 +1028,7 @@ export function EmergencyRescueModal({
 										onClick={handleCopyCheatSheet}
 									>
 										{isCopiedCheatSheet ? <Check size={16} /> : <Copy size={16} />}
-										{isCopiedCheatSheet ? 'Скопировано для звонка!' : 'Копировать шпаргалку 112'}
+										<span>{isCopiedCheatSheet ? 'Скопировано для звонка!' : 'Копировать шпаргалку 112'}</span>
 									</button>
 								)}
 							</div>
