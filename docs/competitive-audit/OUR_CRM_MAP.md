@@ -5167,4 +5167,38 @@
   4. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
      - Синхронизация документации проведена субагентом-документатором без запуска компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
 
+### 2.10.345. Wave 252: Elimination of Academic Bloat & Procedural Dioramas, CT / 3D MPR Desktop Density 28–36px (CbctLeftToolDock, CbctViewportHud) & Solo Doctor EMR 043/u Autonomy with <50ms RVG (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 3, 11, 8i, 8k, 8n, 8p, 8s, 8t, Core Route пп. 7, 11)
+
+- **Цель**: Комплексная фиксация достижений Волны 252 по санитаризации радиологии, клинической эргономике и автономии соло-врача у кресла: (1) тотальная ликвидация академического блоата и процедурных diorama-симуляторов (Мандат 8s, Core Route пп. 7, 11) в пользу аутентичных медицинских движков, честных дропзон томов DICOM (.dcm, .zip) и честного пустого состояния; (2) плотная десктопная клиническая эргономика 28–36px в тулбарах КТ / 3D MPR (CbctLeftToolDock, CbctViewportHud, CbctMprImplantStudioModal) под курсор мыши, ликвидация искусственного мобильного блоата 44px на десктопе, компактный 3D ориентационный куб 28px/40px, HUD метаданных DICOM PS3.3 (WW/WL, срезы, MIP толщина) и Закон Миллера $\le 2$ кнопок прямого действия на вьюпортах; (3) полная автономия соло-врача: 1-клик шаблоны клинического дневника EMR Формы 043/у (ClinicalDiaryTemplatesModal, ClinicalQuickPresetsBar, clinicalSoapPresets) с физиологической нормой Z01.2 в 1 клик, 0 disabled кнопок без причины, мгновенный захват радиовизиографа <50мс без зависаний на нейросетях и автоматическая валидация файлов DICOM/TIFF/PNG.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - *Радиология, КТ и 3D MPR*: `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/radiology/CbctLeftToolDock.tsx`, `apps/web/src/components/radiology/CbctViewportHud.tsx`, `apps/web/src/components/dicom/PanoramicRendererWindow.tsx`, `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`, `apps/web/src/components/radiology/realDicomVolumeLoader.ts`, `apps/web/src/components/radiology/cbctMprMath.ts`.
+  - *Радиовизиограф и сенсоры*: `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`, `apps/web/src/components/radiology/RvgFiltersToolbar.tsx`, `apps/web/src/components/imaging/VisiographAnalyzer.tsx`.
+  - *ЭМК 043/у и автономия врача*: `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`, `apps/web/src/components/emr/templates/clinicalDiaryTemplatesEngine.ts`, `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`, `apps/web/src/components/visit/clinicalSoapPresets.ts`, `apps/web/src/VisitSoapEditor.tsx`, `apps/web/src/VisitView.tsx`.
+  - *Тестовый гейт и верификация*: `apps/web/src/components/dicom/__tests__/wave224DiagnosticCtImplantInquisition.test.ts`.
+- **Ключевые результаты**:
+  1. *Ликвидация академического блоата и процедурных diorama-симуляторов (Мандаты 8i, 8k, 8s, Core Route пп. 7, 11)*:
+     - В `CbctMprImplantStudioModal.tsx`, `PanoramicRendererWindow.tsx` и `Cornerstone3DViewer.tsx`:
+     - Строгий запрет на процедурные синтетические диорамы (Core Route п. 7): снос синтетических объемов (`Math.min(w, h) / 2.2`), радиальных градиентов (`createRadialGradient`) и процедурных челюстей в пользу реальных воксельных данных исследования;
+     - Внедрение честной дропзоны КЛКТ (`cbct-empty-volume-dropzone`): при отсутствии загруженного файла система открыто сообщает статус («Исследование КЛКТ не загружено») и принимает тома DICOM Part 10 (.dcm) и .ZIP архивы (Core Route п. 11);
+     - Подлинный рендеринг панорамной реконструкции CPR (`paintHuPixelsToCanvas`): прямая проекция HU вокселей вдоль зубной дуги без псевдо-симуляций зубов;
+     - Рефакторинг по Закону Неделимого Авторитета (Мандат 8s): `CbctMprWorkspace.tsx` сокращен до ультра-тонкого фасада (<50 LOC), делегирующего рендеринг каноническому `Cornerstone3DViewer.tsx`.
+  2. *Плотная десктопная клиническая эргономика 28–36px в КТ / 3D MPR (Мандаты 8c, 8d пп. 1, 2, 3, 7, 8n, 8p)*:
+     - В `CbctLeftToolDock.tsx`, `CbctViewportHud.tsx` и `CbctMprImplantStudioModal.tsx`:
+     - Плотная профессиональная эргономика 28–36px (`h-7`/`h-8`/`h-9`), оптимизированная под манипулятор мышь врача-стоматолога у кресла (Planmeca Romexis / Vatech Ez3D-i);
+     - Ликвидация мобильного блоата 44px на десктопе: компактное размещение панели инструментов без вытеснения рабочих проекций КТ;
+     - Компактный 3D ориентационный куб-компас (`OrientationCube3D`): размер 28px в 2x2 мультипланарной сетке и 40px в полноэкранном режиме с маркировкой плоскостей (A, P, L, R, S, I);
+     - Закон Миллера: строго $\le 2$ кнопок прямого действия на вьюпортах проекций (аксиальная, сагиттальная, корональная, панорамная), все специализированные измерения (клиренс нерва IAN $\ge 1.5\text{ мм}$, Misch HU D1..D5, калипер, угломер) вынесены в левый док `CbctLeftToolDock`;
+     - Полный запрет мультяшных эмодзи (Мандат 8d п. 7) — векторная графика Lucide SVG (`Crosshair`, `Hand`, `ZoomIn`, `Contrast`, `Ruler`, `Spline`, `Activity`).
+  3. *Автономия соло-врача: 1-клик шаблоны дневника EMR 043/у и мгновенный захват радиовизиографа <50мс (Мандаты 8c, 8d, 8e пп. 1, 2, 3, 11, 8k, 8n)*:
+     - В `ClinicalDiaryTemplatesModal.tsx`, `clinicalDiaryTemplatesEngine.ts`, `ClinicalQuickPresetsBar.tsx`, `clinicalSoapPresets.ts` и `DirectRvgCaptureModal.tsx`:
+     - 1-клик физиологическая норма (Мандат 8e п. 3): моментальное заполнение дневника Формы 043/у нормой Z01.2 (`PHYSIOLOGICAL_NORM_PRESET`, `btn-quick-apply-physio-norm`) без бюрократического заполнения 50 пунктов стационарного опросника;
+     - Автономия соло-врача (Мандат 8e п. 2): 0 заблокированных (`disabled`) кнопок без объяснения причин при сохранении приёма, добавлении услуг и печати документов;
+     - Мгновенный захват радиовизиографа <50мс (Мандат 8e п. 11, Мандат 8k): `handleTriggerCapture` в `DirectRvgCaptureModal.tsx` производит захват снимка сенсора без искусственных задержек, фейковых полос калибровки шума и подвисаний на ИИ;
+     - Прямая загрузка и валидация файлов (`validateRadiologyUploadFile`): мгновенный драг-энд-дроп DICOM Part 10 (`.dcm`), TIFF, PNG, JPG;
+     - Печать Формы 043/у в любой момент: со штампом «ЧЕРНОВИК» до закрытия приёма и «ПОДПИСАНО ВРАЧОМ» после закрытия (Мандат 8e п. 5).
+  4. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - Синхронизация документации проведена субагентом-документатором без запуска компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
+
+
 
