@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -160,5 +160,68 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 			"Must render Lucide AlertTriangle vector icon",
 		);
 		assert.ok(html.includes("мягкий овердрафт склада"), "Must display soft overdraft notice");
+	});
+
+	it("9. ImplantPassportModal renders compact brand toolbar per Hick's Law (1 row 32-36px)", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("implant-brand-toolbar"), "Must render 1-row brand toolbar");
+		assert.ok(html.includes("implant-system-pill"), "Must use compact system pills");
+		assert.ok(html.includes('role="toolbar"'), "Must have accessible role toolbar");
+	});
+
+	it("10. ImplantPassportModal enforces Miller's Law (<= 2 action buttons in footer)", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("implant-passport-actions"), "Must render footer action bar");
+		assert.ok(html.includes("Печать паспорта"), "Must render primary Print passport button");
+		assert.ok(html.includes("В карту 043/у"), "Must render primary Insert into 043/u button");
+
+		// Count direct action buttons in footer
+		const footerMatch = html.match(/<footer class="implant-passport-actions"[^>]*>([\s\S]*?)<\/footer>/);
+		assert.ok(footerMatch, "Must have footer");
+		const buttonCount = (footerMatch[1].match(/<button/g) || []).length;
+		assert.ok(buttonCount <= 2, `Footer must have at most 2 action buttons (Miller's Law), found ${buttonCount}`);
+	});
+
+	it("11. ImplantPassportCard renders QR-code verification and min-w-0 truncation", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 21,
+			brand: "Nobel Biocare",
+			patientName: "Константинопольский-Длиннофамильный Александр Владимирович",
+			doctorId: "DOC-SURG-77",
+		});
+
+		const html = renderToString(<ImplantPassportCard data={record} />);
+
+		assert.ok(html.includes("passport-qr-verification"), "Must render QR-code verification block");
+		assert.ok(html.includes("QR VERIFIED"), "Must show QR VERIFIED indicator");
+		assert.ok(html.includes("truncate"), "Must use truncate class for safe overflow");
+		assert.ok(html.includes("min-w-0"), "Must use min-w-0 class for grid child containment");
+	});
+
+	it("12. createDefaultPassportRecord supports doctorId and custom articles", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 14,
+			brand: "Dentium",
+			doctorId: "DOC-IMPL-007",
+			catalogArticle: "FX4010",
+		});
+
+		assert.equal(record.doctorId, "DOC-IMPL-007");
+		assert.equal(record.catalogArticle, "FX4010");
+		assert.equal(record.toothFdi, 14);
 	});
 });

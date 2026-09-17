@@ -1,82 +1,92 @@
 /* ==========================================================================
    SURGERY COCKPIT & SURGICAL PROTOCOL STYLES (DENTE Dental CRM Standards)
-   Touch-First Ergonomics for Surgical Theaters (>= 48px targets, sterile mode)
+   Tier 2 Warm Context Surgical Protocol Engine (Mandates 8c, 8d, 8e, 8k, 8s)
    ========================================================================== */
 
-.surgery-cockpit-backdrop {
-	position: fixed;
-	inset: 0;
-	z-index: 1050;
-	background: rgba(15, 23, 42, 0.75);
-	backdrop-filter: blur(8px);
+/* ==========================================================================
+   SURGERY TOOLBAR & QUICK OPERATIONS (Mandate 8d Hick's Law: 1 row 32-36px)
+   ========================================================================== */
+
+.surgery-toolbar-row {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	padding: 12px;
+	gap: 6px;
+	min-height: 32px;
+	max-height: 36px;
+	height: 34px;
+	padding: 0 4px;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: thin;
+	flex-wrap: nowrap;
+	white-space: nowrap;
 	box-sizing: border-box;
 }
 
-.surgery-cockpit-modal {
-	background: var(--paper);
-	color: var(--ink);
-	border: 1px solid var(--line);
-	border-radius: var(--radius-xl, 20px);
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
-	width: 100%;
-	max-width: 960px;
-	max-height: 94vh;
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-	box-sizing: border-box;
-}
-
-.surgery-cockpit-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 16px 20px;
-	background: var(--paper-soft);
-	border-bottom: 1px solid var(--line);
-	gap: 12px;
-	flex-shrink: 0;
-}
-
-.surgery-cockpit-body {
-	padding: 20px;
-	overflow-y: auto;
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-
-.surgery-cockpit-footer {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 14px 20px;
-	background: var(--paper-soft);
-	border-top: 1px solid var(--line);
-	gap: 12px;
-	flex-shrink: 0;
-}
-
-/* Standard Clinical Surgical Buttons (Touch-first >=48px, Mandate 8d & 8e for sterile gloves) */
-.surgery-btn {
-	min-height: 48px;
-	padding: 10px 18px;
-	border-radius: 12px;
-	font-size: 13px;
+.surgery-toolbar-btn {
+	min-height: 32px;
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 12px;
 	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 6px;
+	cursor: pointer;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	transition: all 0.15s ease-in-out;
+	touch-action: manipulation;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.surgery-toolbar-btn:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper);
+}
+
+.surgery-toolbar-btn.active {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal, #0d9488);
+}
+
+/* Sterile Glove Mode (Toolbar expansion for chairside) */
+.sterile-glove-active .surgery-toolbar-row {
+	min-height: 48px;
+	max-height: 52px;
+	height: 48px;
+}
+
+.sterile-glove-active .surgery-toolbar-btn {
+	min-height: 48px;
+	height: 48px;
+	padding: 0 14px;
+	font-size: 13px;
+	border-radius: 10px;
+}
+
+/* Standard Clinical Surgical Buttons (Desktop Density 32-36px vs Sterile Glove >=48px) */
+.surgery-btn {
+	min-height: 34px;
+	height: 34px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
 	cursor: pointer;
 	transition: all 0.15s ease-in-out;
 	border: 1px solid transparent;
 	touch-action: manipulation;
+	white-space: nowrap;
 }
 
 .surgery-btn:active {
@@ -102,7 +112,18 @@
 	background: var(--paper-soft);
 }
 
-/* Sterile Glove Mode (Enlarged Touch Targets >= 52px for Chairside) */
+/* Sterile Glove Mode (Enlarged Touch Targets >= 48px for Chairside) */
+.sterile-glove-active .surgery-btn,
+@media (pointer: coarse) {
+	.surgery-btn {
+		min-height: 48px;
+		height: auto;
+		padding: 10px 18px;
+		border-radius: 12px;
+		font-size: 13px;
+	}
+}
+
 .sterile-glove-active .surgery-btn {
 	min-height: 52px;
 	padding: 12px 20px;
@@ -110,52 +131,72 @@
 	font-weight: 800;
 }
 
-/* Overdraft Alert Banner (Non-blocking Soft Notice) */
+/* ==========================================================================
+   MILLER'S LAW ACTIONS (Mandate 8d: <= 2 primary direct actions per block)
+   ========================================================================== */
+
+.surgery-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.surgery-card-actions > .surgery-btn-primary:nth-child(n+3) {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+/* ==========================================================================
+   SURGICAL MANIPULATIONS TEXT HYGIENE (min-w-0, truncate, text overflow)
+   ========================================================================== */
+
+.surgery-manipulation-item {
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.surgery-badge-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: inline-block;
+}
+
+.visit-surgery-touch-card .truncate {
+	min-width: 0;
+}
+
+/* ==========================================================================
+   OVERDRAFT ALERT BANNER (Non-blocking Soft Notice, Mandate 8e)
+   ========================================================================== */
+
 .surgery-overdraft-banner {
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
 	padding: 14px 16px;
 	border-radius: 14px;
-	background: var(--amber-soft);
-	border: 1px solid var(--amber);
+	background: var(--amber-soft, rgba(245, 158, 11, 0.1));
+	border: 1px solid var(--amber, #f59e0b);
 	color: var(--ink);
 }
 
 .surgery-overdraft-icon {
-	color: var(--amber);
+	color: var(--amber, #f59e0b);
 	flex-shrink: 0;
 	margin-top: 2px;
 }
 
-/* 1-Click Norm Cards */
-.surgery-norm-card {
-	min-height: 52px;
-	padding: 12px 16px;
-	border-radius: 14px;
-	border: 1px solid var(--line);
-	background: var(--paper);
-	color: var(--ink);
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	cursor: pointer;
-	text-align: left;
-	transition: all 0.15s ease-in-out;
-	touch-action: manipulation;
-}
+/* ==========================================================================
+   PROTOCOL TEXTAREA & EDITOR (Form 043/u Clean Typography)
+   ========================================================================== */
 
-.surgery-norm-card:hover {
-	border-color: var(--teal, #0d9488);
-	background: var(--paper-soft);
-}
-
-.surgery-norm-card.selected {
-	border-color: var(--teal, #0d9488);
-	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
-}
-
-/* Protocol Textarea */
 .surgery-protocol-textarea {
 	width: 100%;
 	min-height: 140px;
@@ -177,8 +218,7 @@
 }
 
 /* ==========================================================================
-   VISIT SURGERY COCKPIT STYLES (DENTE CRM)
-   Tier 1 Hot-Path Surgical Protocol & Implantology Controls
+   VISIT SURGERY CONTAINER & TOUCH CARDS (Tier 2 Warm Context, Mandate 8c)
    ========================================================================== */
 
 .visit-surgery-container {
@@ -203,8 +243,8 @@
 }
 
 .visit-surgery-touch-card {
-	min-height: 52px;
-	padding: 12px 14px;
+	min-height: 44px;
+	padding: 10px 14px;
 	border-radius: 12px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
@@ -216,6 +256,7 @@
 	text-align: left;
 	transition: all 0.15s ease-in-out;
 	touch-action: manipulation;
+	min-width: 0;
 }
 
 .visit-surgery-touch-card:hover {
@@ -227,34 +268,97 @@
 	border-color: var(--teal, #0d9488);
 }
 
+/* Alias for backward compatibility */
+.surgery-norm-card {
+	min-height: 44px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease-in-out;
+	touch-action: manipulation;
+	min-width: 0;
+}
+
+.surgery-norm-card:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft);
+}
+
+.surgery-norm-card.selected {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
+}
+
 /* Sterile Glove Mode (Extra Large Touch Targets) */
-.sterile-glove-active .visit-surgery-touch-card {
+.sterile-glove-active .visit-surgery-touch-card,
+.sterile-glove-active .surgery-norm-card {
 	min-height: 60px;
 	padding: 14px 18px;
 }
 
 .visit-surgery-btn-action {
-	min-height: 44px;
-	padding: 8px 16px;
-	border-radius: 10px;
-	font-size: 13px;
+	min-height: 36px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	font-size: 12px;
 	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 6px;
 	cursor: pointer;
 	touch-action: manipulation;
 	transition: all 0.15s ease-in-out;
+	white-space: nowrap;
 }
 
 .visit-surgery-btn-action:active {
 	transform: scale(0.98);
 }
 
-.sterile-glove-active .visit-surgery-btn-action {
-	min-height: 48px;
-	padding: 10px 18px;
-	font-size: 14px;
+.sterile-glove-active .visit-surgery-btn-action,
+@media (pointer: coarse) {
+	.visit-surgery-btn-action {
+		min-height: 48px;
+		padding: 10px 18px;
+		font-size: 14px;
+		border-radius: 10px;
+	}
+}
+
+/* ==========================================================================
+   PATIENT POST-OP MEMO (Mandates 8k & 8d: Clean print typography, zero emojis)
+   ========================================================================== */
+
+.surgery-postop-memo-container {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-xl, 14px);
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	color: var(--ink);
+}
+
+.surgery-postop-memo-text {
+	font-family: var(--font-mono, monospace);
+	font-size: 12px;
+	line-height: 1.6;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px 14px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	user-select: text;
 }
 

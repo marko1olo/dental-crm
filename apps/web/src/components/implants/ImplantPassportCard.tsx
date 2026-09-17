@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Copy, Printer, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Copy, Printer, AlertTriangle, QrCode } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { FastImplantPassportData } from "./implantQuickPresets";
 import "./implants.css";
@@ -64,21 +64,21 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			data-testid="implant-passport-card"
 		>
 			<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-				<div className="flex items-center gap-2">
-					<div className="w-8 h-8 rounded-lg bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center">
+				<div className="flex items-center gap-2 min-w-0">
+					<div className="w-8 h-8 rounded-lg bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
 						<ShieldCheck size={20} />
 					</div>
-					<div>
-						<h4 className="text-sm font-black text-[var(--ink)]">
+					<div className="min-w-0">
+						<h4 className="text-sm font-black text-[var(--ink)] truncate">
 							Паспорт имплантата DENTE
 						</h4>
-						<span className="text-[11px] font-mono text-[var(--muted)]">
+						<span className="text-[11px] font-mono text-[var(--muted)] truncate block">
 							{data.passportId || "IMP-PASSPORT-BLANK"}
 						</span>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 shrink-0">
 					<span className="px-2.5 py-1 rounded-lg text-xs font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]">
 						{data.toothFdi ? `Зуб FDI #${data.toothFdi}` : "Зуб FDI #____"}
 					</span>
@@ -105,28 +105,28 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			</div>
 
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Пациент:</span>
-					<strong className="font-extrabold text-[var(--ink)]">{displayPatientName}</strong>
+					<strong className="font-extrabold text-[var(--ink)] block truncate" title={displayPatientName}>{displayPatientName}</strong>
 				</div>
 
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Имплантационная система:</span>
-					<strong className="font-extrabold text-[var(--teal,#0d9488)]">
+					<strong className="font-extrabold text-[var(--teal,#0d9488)] block truncate" title={`${data.brand} ${data.model}`}>
 						{data.brand} {data.model}
 					</strong>
 				</div>
 
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Размер платформы:</span>
-					<strong className="font-mono font-extrabold text-[var(--ink)]">
+					<strong className="font-mono font-extrabold text-[var(--ink)] block truncate">
 						{`Ø ${data.diameterMm} × ${data.lengthMm} мм`}
 					</strong>
 				</div>
 
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Торк / Стабильность:</span>
-					<strong className="font-mono font-extrabold text-[var(--teal-dark,#0f766e)]">
+					<strong className="font-mono font-extrabold text-[var(--teal,#0d9488)] block truncate">
 						{`${data.torqueNcm || 35} Н·см`}
 						{data.isqDay0 ? ` · ${data.isqDay0} ISQ` : ""}
 					</strong>
@@ -134,52 +134,66 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			</div>
 
 			<div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs pt-2 border-t border-[var(--line)]">
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">REF / Артикул:</span>
-					<span className="font-mono font-bold text-[var(--ink)]" data-testid="passport-catalog-article">{data.catalogArticle || "TS3S4010S"}</span>
+					<span className="font-mono font-bold text-[var(--ink)] block truncate" data-testid="passport-catalog-article">{data.catalogArticle || "TS3S4010S"}</span>
 				</div>
 
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">LOT / Партия:</span>
-					<span className="font-mono font-bold text-[var(--ink)]">{displayLot}</span>
+					<span className="font-mono font-bold text-[var(--ink)] block truncate" title={displayLot}>{displayLot}</span>
 				</div>
 
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Серийный номер:</span>
-					<span className="font-mono font-bold text-[var(--ink)]">{displaySn}</span>
+					<span className="font-mono font-bold text-[var(--ink)] block truncate" title={displaySn}>{displaySn}</span>
 				</div>
 
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Формирователь / Заглушка:</span>
-					<span className="font-bold text-[var(--ink)]">
+					<span className="font-bold text-[var(--ink)] block truncate" title={data.capType === "plug" ? "Винт-заглушка (2 этапа)" : "ФДМ (формирователь десны)"}>
 						{data.capType === "plug" ? "Винт-заглушка (2 этапа)" : "ФДМ (формирователь десны)"}
 					</span>
 				</div>
 
-				<div>
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Дата операции:</span>
-					<span className="font-bold text-[var(--ink)]">{formattedDate}</span>
+					<span className="font-bold text-[var(--ink)] block truncate">{formattedDate}</span>
 				</div>
 			</div>
 
-			{/* Врач и подпись для сертификата */}
+			{/* Врач, подпись и QR-код верификации для сертификата А4 */}
 			<div className="pt-3 border-t border-dashed border-[var(--line)] flex items-center justify-between gap-4 text-xs text-[var(--muted)] flex-wrap">
-				<div>
-					<span>Врач: </span>
-					<strong className="text-[var(--ink)]">{displayDoctor}</strong>
+				<div className="flex items-center gap-4 flex-wrap min-w-0">
+					<div className="min-w-0">
+						<span>Врач: </span>
+						<strong className="text-[var(--ink)] truncate">{displayDoctor}</strong>
+					</div>
+					<div className="min-w-0">
+						<span>Плотность кости: </span>
+						<strong className="text-[var(--ink)]">{data.boneDensity || "D2"} (Misch)</strong>
+					</div>
+					<div>
+						<span>Подпись: ______________________ </span>
+						<span className="font-bold text-[var(--ink)] ml-2">М.П.</span>
+					</div>
 				</div>
-				<div>
-					<span>Плотность кости: </span>
-					<strong className="text-[var(--ink)]">{data.boneDensity || "D2"} (Misch)</strong>
-				</div>
-				<div>
-					<span>Подпись: ______________________ </span>
-					<span className="font-bold text-[var(--ink)] ml-2">М.П.</span>
+
+				<div
+					className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shrink-0"
+					title="QR-код верификации подлинности паспорта имплантата"
+					data-testid="passport-qr-verification"
+				>
+					<QrCode size={26} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<div className="text-[10px] leading-tight font-mono">
+						<span className="font-bold text-[var(--ink)] block">QR VERIFIED</span>
+						<span className="text-[var(--muted)] truncate block max-w-[120px]">{data.passportId || "PASSPORT"}</span>
+					</div>
 				</div>
 			</div>
 
 			{data.isWarehouseOverdraft && (
-				<div className="p-2.5 rounded-lg bg-[var(--amber-surface,rgba(245,158,11,0.1))] text-xs text-[var(--amber-dark,#b45309)] flex items-center gap-2">
+				<div className="p-2.5 rounded-lg bg-[var(--amber-surface,rgba(245,158,11,0.1))] text-xs text-[var(--ink)] flex items-center gap-2">
 					<AlertTriangle size={15} className="shrink-0 text-[var(--amber,#f59e0b)]" />
 					<span>Списание зафиксировано в мягкий овердрафт склада до проведения накладной.</span>
 				</div>

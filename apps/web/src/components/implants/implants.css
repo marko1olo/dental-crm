@@ -82,16 +82,35 @@
 	transform: scale(0.98);
 }
 
+/* Компактный тулбар брендов по Закону Хика (ровно 1 строка 32-36px) */
+.implant-brand-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	padding: 2px 0;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	scrollbar-width: thin;
+}
+
 .implant-system-pill {
-	min-height: 48px;
-	padding: 8px 14px;
-	border-radius: 12px;
+	height: 34px;
+	min-height: 34px;
+	max-height: 36px;
+	padding: 0 12px;
+	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
 	font-size: 12px;
-	font-weight: 800;
-	text-align: left;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
 	cursor: pointer;
 	transition: all 0.15s ease;
 	touch-action: manipulation;
@@ -113,4 +132,45 @@
 	background: linear-gradient(135deg, var(--paper-soft), var(--paper));
 	border: 1px solid var(--line);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ==========================================================================
+   A4 PRINT MEDIA RULES (Patient Implant Passport & Warranty Certificate)
+   ========================================================================== */
+@media print {
+	.implant-passport-modal-backdrop {
+		position: static !important;
+		background: none !important;
+		padding: 0 !important;
+		backdrop-filter: none !important;
+		display: block !important;
+	}
+
+	.implant-passport-card-container {
+		max-width: 100% !important;
+		max-height: none !important;
+		box-shadow: none !important;
+		border: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+
+	.implant-passport-header-bar,
+	.implant-passport-actions,
+	nav[role="tablist"] {
+		display: none !important;
+	}
+
+	.implant-passport-content {
+		padding: 0 !important;
+		overflow: visible !important;
+	}
+
+	.implant-passport-display-card {
+		border: 1px solid #1e293b !important;
+		box-shadow: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		page-break-inside: avoid !important;
+	}
 }

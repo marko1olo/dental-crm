@@ -19,6 +19,11 @@ import {
 	SURGICAL_OPERATION_NORMS,
 	evaluateWarehouseOverdraft,
 	buildSurgicalDiaryEntry,
+	EXTRACTION_804N_CODES,
+	SURGICAL_HEMOSTASIS_OPTIONS,
+	EXTRACTION_COMPLEXITY_OPTIONS,
+	buildStandardExtractionProtocolText,
+	buildPostExtractionMemoText,
 } from "../surgeryProtocols";
 import {
 	CLINICAL_SOAP_PRESETS,
@@ -309,5 +314,90 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 			false,
 			"Form 043/u diary entry contains forbidden emojis",
 		);
+	});
+
+	it("8. Mandate 8e: 804n Extraction codes & 1-click complexity presets (simple, complex, impacted)", () => {
+		assert.equal(EXTRACTION_804N_CODES.SIMPLE, "A16.07.001.001");
+		assert.equal(EXTRACTION_804N_CODES.COMPLEX_SEPARATION, "A16.07.001.002");
+		assert.equal(EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC, "A16.07.001.003");
+		assert.equal(EXTRACTION_804N_CODES.CURETTAGE, "A16.07.026");
+		assert.equal(EXTRACTION_804N_CODES.SUTURE_VICRYL, "A16.07.097");
+
+		assert.equal(EXTRACTION_COMPLEXITY_OPTIONS.length, 3);
+		const simpleOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "simple");
+		assert.ok(simpleOpt);
+		assert.equal(simpleOpt.code804n, "A16.07.001.001");
+		assert.equal(simpleOpt.defaultPriceRub, 3500);
+
+		const complexOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "complex");
+		assert.ok(complexOpt);
+		assert.equal(complexOpt.code804n, "A16.07.001.002");
+		assert.equal(complexOpt.defaultPriceRub, 6000);
+
+		const impactedOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "impacted_dystopic");
+		assert.ok(impactedOpt);
+		assert.equal(impactedOpt.code804n, "A16.07.001.003");
+		assert.equal(impactedOpt.defaultPriceRub, 9500);
+	});
+
+	it("9. Mandate 8e: 1-click hemostasis options & protocol generation (Alvogyl, collagen sponge, Vicryl 4-0)", () => {
+		const hemoIds = SURGICAL_HEMOSTASIS_OPTIONS.map((h) => h.id);
+		assert.ok(hemoIds.includes("alvogyl"), "Must have Alvogyl");
+		assert.ok(hemoIds.includes("hemostatic_sponge"), "Must have sponge");
+		assert.ok(hemoIds.includes("vicryl_suture"), "Must have Vicryl 4-0");
+		assert.ok(hemoIds.includes("tampon"), "Must have tampon 20 min");
+
+		// Test simple extraction protocol generation
+		const simpleText = buildStandardExtractionProtocolText({
+			toothFdi: 36,
+			complexity: "simple",
+			hemostasis: ["alvogyl", "tampon"],
+			postOpXray: true,
+		});
+		assert.ok(simpleText.includes("зуба FDI #36"));
+		assert.ok(simpleText.includes("Круговая связка"));
+		assert.ok(simpleText.includes("щипцы / элеватор"));
+		assert.ok(simpleText.includes("Альвожил"));
+		assert.ok(simpleText.includes("давящий марлевый тампон на 20 минут"));
+		assert.ok(simpleText.includes("контрольный радиовизиографический снимок"));
+
+		// Test complex extraction protocol generation with Lindemann and Vicryl
+		const complexText = buildStandardExtractionProtocolText({
+			toothFdi: 47,
+			complexity: "complex",
+			hemostasis: ["hemostatic_sponge", "vicryl_suture"],
+			sutureMaterial: "Викрил 4-0",
+		});
+		assert.ok(complexText.includes("зуба FDI #47"));
+		assert.ok(complexText.includes("Сепарация корней твердосплавным бором Lindemann"));
+		assert.ok(complexText.includes("гемостатической коллагеновой губкой"));
+		assert.ok(complexText.includes("швы (Викрил 4-0)"));
+	});
+
+	it("10. Mandate 8k: 1-click patient post-op memo for WhatsApp/Telegram has all key points & ZERO emojis", () => {
+		const memo = buildPostExtractionMemoText({
+			patientName: "Сидорова Анна",
+			toothFdi: 38,
+			doctorName: "Др. Иванов",
+			complexity: "complex",
+			hasSutures: true,
+			sutureRemovalDays: 8,
+			clinicPhone: "+7 (495) 123-45-67",
+		});
+
+		// Check clinical mandatory guidance
+		assert.ok(memo.includes("ПАМЯТКА ПАЦИЕНТУ ПОСЛЕ УДАЛЕНИЯ ЗУБА (зуб #38)"));
+		assert.ok(memo.includes("Сидорова Анна"));
+		assert.ok(memo.includes("МАРЛЕВЫЙ ТАМПОН: Сплюнуть через 20 минут"));
+		assert.ok(memo.includes("ХОЛОД: Прикладывать сухой холод к щеке на 15 минут"));
+		assert.ok(memo.includes("НЕ ГРЕТЬ"));
+		assert.ok(memo.includes("НЕ ПОЛОСКАТЬ"));
+		assert.ok(memo.includes("через 2 часа после операции"));
+		assert.ok(memo.includes("ШВЫ: Наложены швы. Снятие швов через 8 дней"));
+		assert.ok(memo.includes("+7 (495) 123-45-67"));
+
+		// Strict zero emojis check
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		assert.equal(emojiRegex.test(memo), false, "Post-op memo must strictly have zero emojis");
 	});
 });

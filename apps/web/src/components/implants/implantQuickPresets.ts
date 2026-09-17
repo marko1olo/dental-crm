@@ -122,6 +122,7 @@ export interface FastImplantPassportData {
 	readonly patientName?: string;
 	readonly patientId?: string;
 	readonly doctorName?: string;
+	readonly doctorId?: string;
 	readonly dateIso: string;
 	readonly isWarehouseOverdraft?: boolean;
 }
@@ -141,6 +142,7 @@ export function createDefaultPassportRecord(params: {
 	patientName?: string;
 	patientId?: string;
 	doctorName?: string;
+	doctorId?: string;
 }): FastImplantPassportData {
 	const preset = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === params.brand) ?? FAST_IMPLANT_SYSTEM_PRESETS[0]!;
 	const tooth = params.toothFdi || 46;
@@ -171,6 +173,7 @@ export function createDefaultPassportRecord(params: {
 		patientName: params.patientName ?? "Пациент",
 		patientId: params.patientId ?? "PAT-01",
 		doctorName: params.doctorName ?? "Хирург-имплантолог",
+		doctorId: params.doctorId ?? "DOC-01",
 		dateIso: new Date().toISOString(),
 		isWarehouseOverdraft: false,
 	};
