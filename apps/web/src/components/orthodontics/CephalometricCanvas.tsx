@@ -1,10 +1,7 @@
 import {
-	CheckCircle2,
 	Crosshair,
 	Eye,
 	Layers,
-	Maximize2,
-	Move,
 	RotateCcw,
 	Ruler,
 	Sliders,
@@ -380,9 +377,9 @@ export function CephalometricCanvas({
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
 			style={{
-				backgroundColor: "#020617",
-				borderColor: "#334155",
-				color: "#f8fafc",
+				backgroundColor: "var(--paper-canvas, #020617)",
+				borderColor: "var(--line, #334155)",
+				color: "var(--ink, #f8fafc)",
 				cursor: isPanning ? "grabbing" : (activeTargetKey && imageUrl) ? "crosshair" : "default",
 			}}
 		>
@@ -620,9 +617,9 @@ export function CephalometricCanvas({
 							: "border-slate-700 hover:border-teal-500 bg-slate-900 text-slate-100"
 					}`}
 					style={{
-						backgroundColor: isDragOver ? "rgba(4, 47, 46, 0.85)" : "#0f172a",
-						borderColor: isDragOver ? "#2dd4bf" : "#334155",
-						color: "#f8fafc",
+						backgroundColor: isDragOver ? "rgba(4, 47, 46, 0.85)" : "var(--paper-panel, #0f172a)",
+						borderColor: isDragOver ? "var(--teal, #2dd4bf)" : "var(--line, #334155)",
+						color: "var(--ink, #f8fafc)",
 					}}
 				>
 					<input
@@ -640,13 +637,13 @@ export function CephalometricCanvas({
 					<div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-teal-400 mb-3 sm:mb-4 shadow-lg shrink-0">
 						<UploadCloud size={30} />
 					</div>
-					<h3 className="text-sm sm:text-lg font-black text-white m-0 mb-1.5" style={{ color: "#ffffff" }}>
+					<h3 className="text-sm sm:text-lg font-black text-white m-0 mb-1.5" style={{ color: "var(--ink, #ffffff)" }}>
 						Боковая телерентгенограмма черепа (ТРГ)
 					</h3>
-					<p className="text-xs sm:text-sm text-slate-200 font-medium max-w-md mb-2 leading-relaxed" style={{ color: "#e2e8f0" }}>
+					<p className="text-xs sm:text-sm text-slate-200 font-medium max-w-md mb-2 leading-relaxed" style={{ color: "var(--muted, #e2e8f0)" }}>
 						Для проведения цефалометрического анализа требуется реальный рентгеновский снимок пациента.
 					</p>
-					<p className="text-[11px] sm:text-xs text-slate-300 mb-4 sm:mb-5 font-mono font-medium" style={{ color: "#cbd5e1" }}>
+					<p className="text-[11px] sm:text-xs text-slate-300 mb-4 sm:mb-5 font-mono font-medium" style={{ color: "var(--muted, #cbd5e1)" }}>
 						Drag & Drop боковой ТРГ / DICOM / JPG / PNG
 					</p>
 
@@ -1003,6 +1000,11 @@ export function CephalometricCanvas({
 									e.stopPropagation();
 									setDraggingKey(lm.key);
 									onSelectTargetKey(lm.key);
+								}}
+								onContextMenu={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									onRemoveLandmark?.(lm.key);
 								}}
 							>
 								{/* Leader Line to avoid label collision */}

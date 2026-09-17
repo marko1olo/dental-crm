@@ -8,6 +8,7 @@ import {
 	Layers,
 	Mic,
 	MicOff,
+	Printer,
 	Save,
 	Sparkles,
 	Trash2,
@@ -392,12 +393,12 @@ export function CephalometricAnalysisModal({
 		>
 			<div
 				className="relative w-full max-w-7xl max-h-[96vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100"
-				style={{ backgroundColor: "#020617", color: "#f8fafc", borderColor: "#1e293b" }}
+				style={{ backgroundColor: "var(--paper, #020617)", color: "var(--ink, #f8fafc)", borderColor: "var(--line, #1e293b)" }}
 			>
 				{/* ── Modal Header ────────────────────────────────────────────── */}
 				<header
 					className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-900/95 shrink-0"
-					style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
+					style={{ backgroundColor: "var(--paper-panel, #0f172a)", borderColor: "var(--line, #1e293b)" }}
 				>
 					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
 						<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-teal-950/80 border border-teal-500/50 flex items-center justify-center text-teal-400 shadow-sm shrink-0">
@@ -407,12 +408,12 @@ export function CephalometricAnalysisModal({
 							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
 								<h2
 									className="text-sm sm:text-base md:text-lg font-black tracking-tight text-white m-0 truncate"
-									style={{ color: "#ffffff", margin: 0 }}
+									style={{ color: "var(--ink, #ffffff)", margin: 0 }}
 								>
 									Цефалометрический анализ ТРГ (Телерентгенография)
 								</h2>
 								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-teal-950/80 text-teal-300 border border-teal-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg shrink-0">
-									Steiner / Tweed / Downs / Ricketts
+									Steiner / Tweed / Downs / Ricketts / McNamara
 								</span>
 								<span className="text-xs text-teal-400 font-semibold hidden md:inline">
 									· Цефалометрический трекер ТРГ
@@ -420,7 +421,7 @@ export function CephalometricAnalysisModal({
 							</div>
 							<p
 								className="text-xs sm:text-sm text-slate-400 m-0 mt-0.5 truncate"
-								style={{ color: "#94a3b8", margin: 0 }}
+								style={{ color: "var(--muted, #94a3b8)", margin: 0 }}
 							>
 								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Форма 043/у (Приказ МЗ РФ №834н)
 							</p>
@@ -431,7 +432,7 @@ export function CephalometricAnalysisModal({
 					<div
 						className="hidden md:flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800 shrink-0 mr-1"
 						data-testid="header-ceph-presets-bar"
-						style={{ backgroundColor: "#020617", borderColor: "#1e293b" }}
+						style={{ backgroundColor: "var(--paper, #020617)", borderColor: "var(--line, #1e293b)" }}
 					>
 						<span className="text-[11px] font-bold text-slate-400 px-1.5 whitespace-nowrap">
 							Пресеты:
@@ -544,7 +545,7 @@ export function CephalometricAnalysisModal({
 							data-testid="ceph-modal-close-btn"
 							aria-label="Закрыть окно цефалометрического анализа"
 							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700"
-							style={{ backgroundColor: "#1e293b", color: "#f8fafc", borderColor: "#334155" }}
+							style={{ backgroundColor: "var(--paper-subtle, #1e293b)", color: "var(--ink, #f8fafc)", borderColor: "var(--line, #334155)" }}
 						>
 							<X size={20} />
 						</button>
@@ -631,7 +632,7 @@ export function CephalometricAnalysisModal({
 						className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden ${
 							mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"
 						}`}
-						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
+						style={{ backgroundColor: "var(--paper, #020617)", color: "var(--ink, #f8fafc)" }}
 					>
 						{/* X-ray Canvas Component with Unified 36px HUD Strip & Maximum Vertical Screen Utilization */}
 						<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
@@ -671,7 +672,7 @@ export function CephalometricAnalysisModal({
 							<summary className="px-3.5 py-2.5 bg-slate-800/90 font-bold text-xs flex items-center justify-between cursor-pointer select-none text-slate-200 hover:text-white transition-colors">
 								<div className="flex items-center gap-2">
 									<Activity size={14} className="text-teal-400" />
-									<span>Таблица расчетов углов (Steiner, Tweed, Downs) & 16 точек</span>
+									<span>Таблица расчетов углов (Steiner, Tweed, Downs, McNamara) & 16 точек</span>
 								</div>
 								<span className="text-[11px] font-mono font-bold text-teal-400 group-open:rotate-180 transition-transform duration-200">
 									▼
@@ -780,7 +781,7 @@ export function CephalometricAnalysisModal({
 						className={`lg:col-span-5 flex-col bg-slate-950 border-l border-slate-800 text-slate-100 overflow-hidden ${
 							mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"
 						}`}
-						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
+						style={{ backgroundColor: "var(--paper, #020617)", color: "var(--ink, #f8fafc)" }}
 					>
 						{/* Tab Navigation with Symmetric 3-Column Grid (Zero Truncation) */}
 						<div className="grid grid-cols-3 border-b border-slate-800 bg-slate-900 px-2 pt-1.5 shrink-0 gap-1 w-full">
@@ -816,7 +817,7 @@ export function CephalometricAnalysisModal({
 										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
 										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
 								} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
-								title="Расчет углов (Steiner, Tweed, Downs)"
+								title="Расчет углов (Steiner, Tweed, Downs, McNamara)"
 							>
 								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов (Анализ)</span>
 								<span className="sm:hidden whitespace-nowrap">2. Анализ</span>
@@ -850,7 +851,7 @@ export function CephalometricAnalysisModal({
 								{/* ── Тулбар клинических пресетов вкладки «1. Ориентиры» (Мандаты 8e, 8k) ── */}
 								<div
 									className="mb-3.5 p-3 rounded-xl bg-slate-900/95 border border-slate-800 shrink-0 flex flex-col gap-2"
-									style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
+									style={{ backgroundColor: "var(--paper-panel, #0f172a)", borderColor: "var(--line, #1e293b)" }}
 									data-testid="tab1-ceph-presets-toolbar"
 								>
 									<div className="flex items-center justify-between gap-2">
@@ -911,9 +912,9 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Progress Bar */}
-								<div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#334155" }}>
+								<div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 shrink-0" style={{ backgroundColor: "var(--paper-panel, #0f172a)", borderColor: "var(--line, #334155)" }}>
 									<div className="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
-										<span className="text-slate-200" style={{ color: "#f8fafc" }}>
+										<span className="text-slate-200" style={{ color: "var(--ink, #f8fafc)" }}>
 											Прогресс разметки ТРГ
 										</span>
 										<span className="text-teal-400 font-extrabold">{placedPercent}%</span>
@@ -958,22 +959,22 @@ export function CephalometricAnalysisModal({
 															: "bg-slate-900/90 border-slate-700 opacity-90 hover:opacity-100"
 												}`}
 												style={{
-													backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "#0f172a",
-													borderColor: isTarget ? "#2dd4bf" : "#334155",
+													backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "var(--paper-panel, #0f172a)",
+													borderColor: isTarget ? "var(--teal, #2dd4bf)" : "var(--line, #334155)",
 												}}
 											>
 												<div className="flex items-center gap-3 min-w-0">
 													<div
 														className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 text-white shadow-sm"
-														style={{ backgroundColor: isImageLoaded ? lm.color : "#475569" }}
+														style={{ backgroundColor: isImageLoaded ? lm.color : "var(--muted, #475569)" }}
 													>
 														{lm.code}
 													</div>
 													<div className="min-w-0">
-														<div className="text-sm font-bold min-w-0 break-words" style={{ color: "#ffffff" }}>
+														<div className="text-sm font-bold min-w-0 break-words" style={{ color: "var(--ink, #ffffff)" }}>
 															{lm.nameRu}
 														</div>
-														<div className="text-xs font-medium min-w-0 break-words leading-snug" style={{ color: "#cbd5e1" }}>
+														<div className="text-xs font-medium min-w-0 break-words leading-snug" style={{ color: "var(--muted, #cbd5e1)" }}>
 															{lm.anatomicalDescription}
 														</div>
 													</div>
@@ -1017,14 +1018,14 @@ export function CephalometricAnalysisModal({
 										className="w-full min-h-[44px] py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all bg-[var(--teal)] hover:opacity-90 text-white cursor-pointer"
 										data-testid="tab1-to-metrics-btn"
 									>
-										<span>Перейти к расчету углов (Steiner, Tweed, Downs)</span>
+										<span>Перейти к расчету углов (Steiner, Tweed, Downs, McNamara)</span>
 										<ArrowRight size={16} />
 									</button>
 								</div>
 							</div>
 						)}
 
-						{/* Tab 2: Cephalometric Measurements Table & Cards (Steiner, Tweed, Downs, Jacobson, Ricketts) */}
+						{/* Tab 2: Cephalometric Measurements Table & Cards (Steiner, Tweed, Downs, Jacobson, Ricketts, McNamara) */}
 						{activeTab === "metrics" && (
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
 								{/* Quick Clinical Presets for Lab protocols (Mandate 8e) */}
@@ -1090,10 +1091,10 @@ export function CephalometricAnalysisModal({
 
 								{/* Measurements Grouped by Category */}
 								<div className="space-y-4 flex-1 overflow-y-auto pr-1">
-									{/* Category 1: Sagittal (Steiner, Downs, Jacobson Wits) */}
+									{/* Category 1: Sagittal (Steiner, Downs, Jacobson Wits, McNamara) */}
 									<div>
 										<div className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">
-											1. Сагиттальные параметры (Steiner, Downs, Jacobson)
+											1. Сагиттальные параметры (Steiner, Downs, Jacobson, McNamara)
 										</div>
 										<div className="space-y-2">
 											{analysis.measurements
@@ -1298,14 +1299,30 @@ export function CephalometricAnalysisModal({
 											Предпросмотр протокола для карты 043/у
 										</span>
 									</div>
-									<button
-										type="button"
-										onClick={handleCopyText}
-										className="min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2 transition-colors border border-slate-700 cursor-pointer shadow-sm"
-									>
-										{copied ? <Check size={15} className="text-emerald-400" /> : <Clipboard size={15} />}
-										<span>{copied ? "Скопировано" : "Копировать"}</span>
-									</button>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => {
+												if (typeof window !== "undefined") {
+													window.print();
+												}
+											}}
+											data-testid="btn-print-ceph-protocol"
+											className="min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2 transition-colors border border-slate-700 cursor-pointer shadow-sm"
+											title="Распечатать протокол ТРГ для карты Формы 043/у"
+										>
+											<Printer size={15} />
+											<span>Печать заключения</span>
+										</button>
+										<button
+											type="button"
+											onClick={handleCopyText}
+											className="min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2 transition-colors border border-slate-700 cursor-pointer shadow-sm"
+										>
+											{copied ? <Check size={15} className="text-emerald-400" /> : <Clipboard size={15} />}
+											<span>{copied ? "Скопировано" : "Копировать"}</span>
+										</button>
+									</div>
 								</div>
 
 								{/* Protocol Text Area */}

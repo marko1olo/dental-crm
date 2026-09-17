@@ -2,15 +2,12 @@ import {
 	Activity,
 	Check,
 	CheckCircle2,
-	Clipboard,
 	Copy,
 	FileText,
 	Layers,
-	MessageSquare,
 	Plus,
 	Receipt,
 	RotateCcw,
-	Share2,
 	Sparkles,
 	X,
 	Zap,
@@ -1773,15 +1770,15 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 													type="button"
 													onClick={() => handleSelectWorkhorseArchwire(wire)}
 													data-testid={`quick-wire-${wire.id}-btn`}
-													className={`min-h-[44px] px-2 py-1 rounded-lg border text-left flex flex-col justify-center transition-all cursor-pointer ${
+													className={`min-h-[44px] px-2 py-1 rounded-lg border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-700 font-black shadow-xs ring-1 ring-teal-400"
 															: "bg-white dark:bg-slate-900 border-teal-300/60 dark:border-teal-800 hover:border-teal-500 text-slate-800 dark:text-slate-100"
 													}`}
 													title={wire.desc}
 												>
-													<span className="text-xs font-bold leading-tight">{wire.label}</span>
-													<span className={`text-[10px] truncate ${isSelected ? "text-teal-100" : "text-slate-500 dark:text-slate-400"}`}>
+													<span className="text-xs font-bold leading-tight truncate w-full">{wire.label}</span>
+													<span className={`text-[10px] truncate w-full ${isSelected ? "text-teal-100" : "text-slate-500 dark:text-slate-400"}`}>
 														{wire.material === "SS" ? "Рабочая сталь" : "Нивелирование"}
 													</span>
 												</button>

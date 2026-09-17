@@ -205,7 +205,7 @@ export interface CephalometricMeasurement {
 	normText: string;
 	status: "normal" | "increased" | "decreased" | "pending";
 	clinicalInterpretation: string;
-	method: "Steiner" | "Tweed" | "Ricketts" | "Jacobson" | "Downs";
+	method: "Steiner" | "Tweed" | "Ricketts" | "Jacobson" | "Downs" | "McNamara";
 }
 
 export interface CephalometricDiagnosis {
@@ -223,6 +223,7 @@ export interface CephalometricDiagnosis {
 	lowerIncisorInclinationRu: string;
 	witsRelationshipRu: string;
 	downsConvexityRu: string;
+	mcnamaraRelationshipRu: string;
 	u1NaRelationshipRu: string;
 	l1NbRelationshipRu: string;
 	summaryRu: string;
@@ -1099,6 +1100,100 @@ export function calculateCephalometrics(
 		method: "Ricketts",
 	});
 
+	// 16. McNamara A to N-Perpendicular (A to N-perp) - Norm: 0 ± 2 mm (-2 to +2 mm)
+	let mcnamaraAVal: number | null = null;
+	let mcnamaraAStatus: CephalometricMeasurement["status"] = "pending";
+	let mcnamaraAInterp = "Требуется установка точек N, A, Po, Or";
+	if (N && A && fhStart && fhEnd) {
+		const fhDx = fhEnd.x - fhStart.x;
+		const fhDy = fhEnd.y - fhStart.y;
+		const fhLen = Math.sqrt(fhDx * fhDx + fhDy * fhDy);
+		if (fhLen > 0) {
+			const perpX = -fhDy / fhLen;
+			const perpY = fhDx / fhLen;
+			const naX = A.x - N.x;
+			const naY = A.y - N.y;
+			const projLen = naX * perpX + naY * perpY;
+			const projAx = N.x + projLen * perpX;
+			const unitFhX = fhDx / fhLen;
+			const unitFhY = fhDy / fhLen;
+			const distPx = (A.x - projAx) * unitFhX + (A.y - (N.y + projLen * perpY)) * unitFhY;
+			mcnamaraAVal = Number((distPx * scaleMmPerPixel).toFixed(1));
+			if (mcnamaraAVal > 2.0) {
+				mcnamaraAStatus = "increased";
+				mcnamaraAInterp = "Верхнечелюстная прогнатия (переднее положение базиса по McNamara)";
+			} else if (mcnamaraAVal < -2.0) {
+				mcnamaraAStatus = "decreased";
+				mcnamaraAInterp = "Верхнечелюстная ретрогнатия (дистальное положение базиса по McNamara)";
+			} else {
+				mcnamaraAStatus = "normal";
+				mcnamaraAInterp = "Ортогнатическое положение апикального базиса ВЧ (McNamara)";
+			}
+		}
+	}
+	measurements.push({
+		id: "McNamara-A-Nperp",
+		name: "Точка A к N-Perp (McNamara / A to N-perp)",
+		symbol: "A to N-perp",
+		category: "linear",
+		value: mcnamaraAVal,
+		unit: "mm",
+		normMin: -2,
+		normMax: 2,
+		normMean: 0,
+		normText: "0 ± 2 мм",
+		status: mcnamaraAStatus,
+		clinicalInterpretation: mcnamaraAInterp,
+		method: "McNamara",
+	});
+
+	// 17. McNamara Pog to N-Perpendicular (Pog to N-perp) - Norm: -2 ± 2 mm (-4 to 0 mm)
+	let mcnamaraPogVal: number | null = null;
+	let mcnamaraPogStatus: CephalometricMeasurement["status"] = "pending";
+	let mcnamaraPogInterp = "Требуется установка точек N, Pog, Po, Or";
+	if (N && Pog && fhStart && fhEnd) {
+		const fhDx = fhEnd.x - fhStart.x;
+		const fhDy = fhEnd.y - fhStart.y;
+		const fhLen = Math.sqrt(fhDx * fhDx + fhDy * fhDy);
+		if (fhLen > 0) {
+			const perpX = -fhDy / fhLen;
+			const perpY = fhDx / fhLen;
+			const npogX = Pog.x - N.x;
+			const npogY = Pog.y - N.y;
+			const projLen = npogX * perpX + npogY * perpY;
+			const projPogX = N.x + projLen * perpX;
+			const unitFhX = fhDx / fhLen;
+			const unitFhY = fhDy / fhLen;
+			const distPx = (Pog.x - projPogX) * unitFhX + (Pog.y - (N.y + projLen * perpY)) * unitFhY;
+			mcnamaraPogVal = Number((distPx * scaleMmPerPixel).toFixed(1));
+			if (mcnamaraPogVal > 0.0) {
+				mcnamaraPogStatus = "increased";
+				mcnamaraPogInterp = "Прогения подбородка (переднее положение по McNamara)";
+			} else if (mcnamaraPogVal < -4.0) {
+				mcnamaraPogStatus = "decreased";
+				mcnamaraPogInterp = "Ретрогения подбородка (дистальное положение по McNamara)";
+			} else {
+				mcnamaraPogStatus = "normal";
+				mcnamaraPogInterp = "Гармоничное положение подбородочного выступа (Норма McNamara)";
+			}
+		}
+	}
+	measurements.push({
+		id: "McNamara-Pog-Nperp",
+		name: "Погонион к N-Perp (McNamara / Pog to N-perp)",
+		symbol: "Pog to N-perp",
+		category: "linear",
+		value: mcnamaraPogVal,
+		unit: "mm",
+		normMin: -4,
+		normMax: 0,
+		normMean: -2,
+		normText: "-2 ± 2 мм",
+		status: mcnamaraPogStatus,
+		clinicalInterpretation: mcnamaraPogInterp,
+		method: "McNamara",
+	});
+
 	// ── Diagnosis Synthesis ───────────────────────────────────────────────────
 
 	const skeletalClass = anbVal === null
@@ -1213,6 +1308,10 @@ export function calculateCephalometrics(
 				? `Вогнутый профиль (${convexityVal}° по Downs)`
 				: `Прямой профиль (${convexityVal >= 0 ? "+" : ""}${convexityVal}° по Downs)`;
 
+	const mcnamaraRelationshipRu = mcnamaraAVal === null || mcnamaraPogVal === null
+		? "Параметры McNamara не рассчитаны"
+		: `McNamara: A to N-perp = ${mcnamaraAVal >= 0 ? "+" : ""}${mcnamaraAVal} мм (${mcnamaraAInterp}), Pog to N-perp = ${mcnamaraPogVal >= 0 ? "+" : ""}${mcnamaraPogVal} мм (${mcnamaraPogInterp})`;
+
 	const u1NaRelationshipRu = u1NaAngleVal === null
 		? "Соотношение 1-NA не оценено"
 		: `1-NA = ${u1NaAngleVal}° (${u1NaDistVal !== null ? `${u1NaDistVal} мм, ` : ""}${u1NaAngleInterp})`;
@@ -1223,16 +1322,16 @@ export function calculateCephalometrics(
 
 	const summaryRu = skeletalClass === "Undefined"
 		? "Для построения ортодонтического заключения расставьте все анатомические реперные точки на снимке ТРГ."
-		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}. ${witsRelationshipRu}. ${downsConvexityRu}. ${u1NaRelationshipRu}. ${l1NbRelationshipRu}.`;
+		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}. ${witsRelationshipRu}. ${downsConvexityRu}. ${mcnamaraRelationshipRu}. ${u1NaRelationshipRu}. ${l1NbRelationshipRu}.`;
 
 	// ── Generation of Structured Form 043/y Text ──────────────────────────────
 
 	const dateStr = new Date().toLocaleDateString("ru-RU");
 	const protocol043Text = `ПРОТОКОЛ ТЕЛЕРЕНТГЕНОГРАФИЧЕСКОГО (ТРГ) ИССЛЕДОВАНИЯ В БОКОВОЙ ПРОЕКЦИИ
-(Форма 043/у · Приказ МЗ РФ №834н · Анализ по Steiner, Tweed, Downs, Jacobson, Ricketts)
+(Форма 043/у · Приказ МЗ РФ №834н · Анализ по Steiner, Tweed, Downs, Jacobson, Ricketts, McNamara)
 Дата расчета: ${dateStr}
 
-1. Сагиттальные скелетные взаимоотношения (Steiner, Downs, Jacobson):
+1. Сагиттальные скелетные взаимоотношения (Steiner, Downs, Jacobson, McNamara):
 • Угол SNA: ${snaVal !== null ? `${snaVal}° (Норма 82°±2°)` : "—"} — ${snaInterp}
 • Угол SNB: ${snbVal !== null ? `${snbVal}° (Норма 80°±2°)` : "—"} — ${snbInterp}
 • Угол ANB: ${anbVal !== null ? `${anbVal}° (Норма 2°±2°)` : "—"} — ${anbInterp}
@@ -1240,6 +1339,8 @@ export function calculateCephalometrics(
 • Угол выпуклости (Downs / N-A-Pog): ${convexityVal !== null ? `${convexityVal >= 0 ? "+" : ""}${convexityVal}° (Норма 0°±5°)` : "—"} — ${convexityInterp}
 • Угол плоскости A-B (Downs): ${abPlaneVal !== null ? `${abPlaneVal}° (Норма -4.6°±3.2°)` : "—"} — ${abPlaneInterp}
 • Wits-число (Jacobson): ${witsVal !== null ? `${witsVal >= 0 ? "+" : ""}${witsVal} мм (Норма 0±1 мм)` : "—"} — ${witsInterp}
+• Точка A к N-Perp (McNamara): ${mcnamaraAVal !== null ? `${mcnamaraAVal >= 0 ? "+" : ""}${mcnamaraAVal} мм (Норма 0±2 мм)` : "—"} — ${mcnamaraAInterp}
+• Погонион к N-Perp (McNamara): ${mcnamaraPogVal !== null ? `${mcnamaraPogVal >= 0 ? "+" : ""}${mcnamaraPogVal} мм (Норма -2±2 мм)` : "—"} — ${mcnamaraPogInterp}
 
 2. Вертикальные параметры и тип лицевого роста (Tweed, Steiner, Downs, Ricketts):
 • Угол SN-GoGn: ${snGognVal !== null ? `${snGognVal}° (Норма 32°±3°)` : "—"} — ${snGognInterp}
@@ -1286,6 +1387,7 @@ ${summaryRu}
 			lowerIncisorInclinationRu,
 			witsRelationshipRu,
 			downsConvexityRu,
+			mcnamaraRelationshipRu,
 			u1NaRelationshipRu,
 			l1NbRelationshipRu,
 			summaryRu,
@@ -1327,18 +1429,22 @@ export function generateForm043OrthodonticProtocolText(
 	const u1naDist = analysis.measurements.find((m) => m.id === "1-NA-Dist");
 	const l1nbAngle = analysis.measurements.find((m) => m.id === "1-NB-Angle");
 	const l1nbDist = analysis.measurements.find((m) => m.id === "1-NB-Dist");
+	const mcnamaraA = analysis.measurements.find((m) => m.id === "McNamara-A-Nperp");
+	const mcnamaraPog = analysis.measurements.find((m) => m.id === "McNamara-Pog-Nperp");
 
 	return `ПРОТОКОЛ ЦЕФАЛОМЕТРИЧЕСКОГО АНАЛИЗА ТРГ В БОКОВОЙ ПРОЕКЦИИ
-(Медицинская карта 043/у · Приказ МЗ РФ №834н · Штайнер, Твид, Даунс, Якобсон)
+(Медицинская карта 043/у · Приказ МЗ РФ №834н · Штайнер, Твид, Даунс, Якобсон, Макнамара)
 Пациент: ${pName}
 Врач: ${docName}
 Дата исследования: ${dateStr}
 
-1. САГИТТАЛЬНЫЕ СКЕЛЕТНЫЕ СООТНОШЕНИЯ (Steiner, Jacobson):
+1. САГИТТАЛЬНЫЕ СКЕЛЕТНЫЕ СООТНОШЕНИЯ (Steiner, Jacobson, McNamara):
 • SNA: ${sna?.value !== null && sna?.value !== undefined ? `${sna.value.toFixed(1)}° (Норма 82°±2°)` : "—"} — ${sna?.clinicalInterpretation || "—"}
 • SNB: ${snb?.value !== null && snb?.value !== undefined ? `${snb.value.toFixed(1)}° (Норма 80°±2°)` : "—"} — ${snb?.clinicalInterpretation || "—"}
 • ANB: ${anb?.value !== null && anb?.value !== undefined ? `${anb.value.toFixed(1)}° (Норма 2°±2°)` : "—"} — ${anb?.clinicalInterpretation || "—"}
 • Wits-число (Wits Appraisal): ${wits?.value !== null && wits?.value !== undefined ? `${wits.value >= 0 ? "+" : ""}${wits.value.toFixed(1)} мм (Норма 0±1 мм)` : "—"} — ${wits?.clinicalInterpretation || "—"}
+• A to N-perp (McNamara): ${mcnamaraA?.value !== null && mcnamaraA?.value !== undefined ? `${mcnamaraA.value >= 0 ? "+" : ""}${mcnamaraA.value.toFixed(1)} мм (Норма 0±2 мм)` : "—"} — ${mcnamaraA?.clinicalInterpretation || "—"}
+• Pog to N-perp (McNamara): ${mcnamaraPog?.value !== null && mcnamaraPog?.value !== undefined ? `${mcnamaraPog.value >= 0 ? "+" : ""}${mcnamaraPog.value.toFixed(1)} мм (Норма -2±2 мм)` : "—"} — ${mcnamaraPog?.clinicalInterpretation || "—"}
 • Скелетный класс: ${analysis.diagnosis.skeletalClassRu}
 
 2. ВЕРТИКАЛЬНЫЕ ПАРАМЕТРЫ И ТИП РОСТА (Tweed, Steiner):
