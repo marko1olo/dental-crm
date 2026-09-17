@@ -7873,5 +7873,59 @@
     * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
     * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
 
+### 405. Section 405: Red Team Wave 246 — Oral Surgery & Extraction 1-Click Hemostasis, Implant Passport & Torque ISQ Protocols, Emergency Chairside Rescue & Anaphylaxis Checklist (Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx`
+  - `apps/web/src/components/surgery/surgeryProtocols.ts`
+  - `apps/web/src/components/surgery/SurgeryCockpitModal.tsx`
+  - `apps/web/src/components/surgery/surgery.css`
+  - `apps/web/src/components/surgery/__tests__/surgeryProtocols.test.ts`
+  - `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx`
+  - `apps/web/src/components/implants/ImplantPassportModal.tsx`
+  - `apps/web/src/components/implants/ImplantPassportCard.tsx`
+  - `apps/web/src/components/implants/implantQuickPresets.ts`
+  - `apps/web/src/components/implants/__tests__/implantPassport.test.tsx`
+  - `apps/web/src/components/emergency/EmergencyRescueModal.tsx`
+  - `apps/web/src/components/emergency/emergencyRescueEngine.ts`
+  - `apps/web/src/components/emergency/emergencyRescuePresets.ts`
+  - `apps/web/src/components/emergency/emergencyRescue.css`
+  - `apps/web/src/components/emergency/__tests__/emergencyRescuePrintAutonomyWave53.test.tsx`
+  - `apps/web/src/components/anesthesia/emergencyProtocols.ts`
+  - `apps/web/src/components/anesthesia/__tests__/emergencyAnaphylaxisProtocol.test.ts`
+  - `apps/web/src/components/anesthesia/__tests__/anesthesiaSafetyEngine.test.ts`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Амбулаторная хирургия и удаление зубов с 1-клик гемостазом (Oral Surgery & Extraction 1-Click Hemostasis) (Мандаты 8c, 8d пп. 1, 2, 5, 7, 8e пп. 1, 2, 3, 10, 8k, 8n, 8s)**:
+    * В `VisitSurgeryProtocolTab.tsx`, `surgeryProtocols.ts`, `SurgeryCockpitModal.tsx` и `surgery.css`:
+    * Полная автономия врача-хирурга у стоматологического кресла по каноническим протоколам Номенклатуры 804н и СтАР: простое удаление (A16.07.001), сложное удаление зуба/корня с разъединением бором Lindemann и ушиванием Викрил 4-0 (A16.07.002), атипичное удаление ретинированного зуба мудрости (A16.07.024), неотложная периостотомия при остром гнойном периостите с резиновым ленточным дренажом (A16.07.011, K10.2), резекция верхушки корня/апикоэктомия с ретроградным пломбированием МТА (A16.07.007) и иссечение капюшона при перикороните (A16.07.058);
+    * 1-клик местный гемостаз: мгновенная фиксация остановки луночкового кровотечения (внесение Альвожиль, коллагеновая гемостатическая губка, ушивание лунки ПГА/Викрил 4-0, давящий марлевый тампон);
+    * Автоматическая трансляция хирургического протокола в дневник Формы 043/у с debounced autosave и 1-клик подстановкой физиологической нормы заживления лунки;
+    * Мягкий овердрафт склада расходных материалов (`evaluateWarehouseOverdraft`): задержка оприходования накладных анестетиков, шовного материала или губок Альвожиль никогда не блокирует экстренную или плановую операцию (Мандат 8e п. 10);
+    * Полиграфическая печать хирургического протокола Формы 043/у А4 строго без эмодзи по Закону чистоты официальных бланков (Мандат 8d п. 7).
+  - **Паспорт имплантата СтАР, торк и ISQ протоколы (Implant Passport & Torque ISQ Protocols) (Мандаты 8c, 8d пп. 1, 2, 3, 7, 8e пп. 1, 2, 7, 10, 8k, 8n, 8s)**:
+    * В `ImplantPassportModal.tsx`, `ImplantPassportCard.tsx`, `implantQuickPresets.ts` и `surgeryProtocols.ts`:
+    * Канонический Паспорт имплантата пациента по стандартам СтАР и производителя для ключевых систем (Dentium SuperLine/SimpleLine, Osstem TS III/MS, Straumann BLX/SLA, Nobel Biocare, MIS Seven/C1/V3, Astra Tech OsseoSpeed EV);
+    * Фиксация хирургических параметров: диаметр и длина (Ø 3.5–5.0 x 8–13 мм), первичный торк затяжки (35–45 Н·см), магнитно-резонансный анализ RFA стабильности Osstell/Penguin (ISQ 70–75 на Day 0), плотность костной ткани по Мишу (D1–D4);
+    * Экспресс-переключатель протокола: двухэтапный протокол с винтом-заглушкой и ушиванием наглухо либо одноэтапный с формирователем десны (ФДМ);
+    * Учет серийного номера (SN) и номера партии (LOT) для гарантийного паспорта;
+    * 1-клик копирование структурированной выжимки паспорта пациенту в мессенджеры WhatsApp/Telegram и официальная печать бланка Паспорта имплантата с защитным QR-кодом строго без эмодзи;
+    * Соблюдение Закона Миллера: не более 1–2 кнопок прямого действия на карточке имплантата, тач-таргеты Sterile Glove Mode $\ge 48\text{px}$.
+  - **Экстренная помощь у кресла и чек-лист анафилаксии (Emergency Chairside Rescue & Anaphylaxis Checklist) (Мандаты 8c, 8d пп. 1, 2, 4, 7, 8e пп. 1, 5, 8i, 8k, 8n, 8s)**:
+    * В `EmergencyRescueModal.tsx`, `emergencyRescueEngine.ts`, `emergencyRescuePresets.ts`, `emergencyProtocols.ts` и `anesthesiaSafetyEngine.ts`:
+    * Экспресс-протокол купирования Анафилактического шока по клиническим рекомендациям Минздрава РФ и ФАР: первый шаг — немедленное в/м введение Адреналина 0.1% (Эпинефрин) 0.5 мг (0.5 мл) в среднюю треть переднелатеральной поверхности бедра с автоматическим весовым пересчетом для детей и взрослых (`calculateWeightAdjustedDose`); таймер повторного введения через 5–15 минут;
+    * Протокол Липидной реанимации (Lipid Rescue 20%) при системной токсичности местных анестетиков (LAST): болюс 20% липидной эмульсии (Интралипид/Липофундин) 1.5 мл/кг за 1 минуту с последующей инфузией 0.25 мл/кг/мин;
+    * Протоколы при вазовагальном обмороке, гипертоническом кризе, судорожном синдроме и бронхоспазме;
+    * Чек-лист спасения у кресла SBAR (Situation, Background, Assessment, Recommendation) для диспетчера скорой помощи 112;
+    * 1-клик кнопка `emergency-print-act-btn`: регламентная печать Акта передачи пациента бригаде скорой медицинской помощи (СМП) на листе А4 (Приказы Минздрава РФ № 786н и № 1144н) со штампом времени, витальными показателями (АД, ЧСС, SpO2) и введенными препаратами;
+    * 1-клик кнопка `emergency-copy-relative-notice-btn`: моментальное копирование деликатного и структурированного извещения для родственников в WhatsApp/Telegram без эмодзи;
+    * Автоматический экспорт записи об оказанной неотложной помощи в медицинскую карту Формы 043/у.
+  - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
+    * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
+    * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
+
+
 
 
