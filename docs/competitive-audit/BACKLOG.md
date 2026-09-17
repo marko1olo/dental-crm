@@ -8356,7 +8356,7 @@
     * Грех 7 (Святость официальных бланков): ноль мультяшных эмодзи, строгие векторные иконки Lucide;
     * Машинные гейты: кодировка UTF-8 чистая, Single-Compiler Gate защищен (компиляция централизована).
 
-### 413. Red Team Wave 254 — Full Architectural Consolidation & Hardening for Low-Spec HDD 5400 RPM & 4GB RAM, Fastify In-Memory ETag 304 Caching, Direct RVG Doctor Autonomy <50ms, Unblocking 30-Day Treatment Plans & 28–36px CBCT Density (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 11, 8k, 8n, 8p, 8s, 8t, Core Route пп. 6, 7, 11)
+### 413. Red Team Wave 254 — Full Architectural Consolidation & Hardening for Low-Spec HDD 5400 RPM & 4GB RAM, Fastify In-Memory ETag 304 Caching, Direct RVG Doctor Autonomy <50ms, Unblocking 30-Day Treatment Plans, 54-FZ Cashier Autonomy, Memory Leak Guard & 28–36px CBCT Density (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 9, 11, 8k, 8n, 8p, 8s, 8t, Core Route пп. 6, 7, 11)
 
 * **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18)
 * **Затронутые модули и файлы**:
@@ -8364,6 +8364,16 @@
   - `apps/api/src/plugins/cacheHeaders.ts`
   - `apps/api/src/server.ts`
   - `apps/api/src/tests/hddPerformanceConfig.test.ts`
+  - `apps/web/src/hooks/useMemoryLeakGuard.ts`
+  - `apps/web/src/hooks/useMemoryLeakGuard.test.ts`
+  - `apps/web/src/utils/domVirtualizationHelper.ts`
+  - `apps/web/src/utils/domVirtualizationHelper.test.ts`
+  - `apps/web/src/components/billing/InvoicesView.tsx`
+  - `apps/web/src/lib/hardwareCapabilities.ts`
+  - `apps/web/src/styles/low-spec-hardware.css`
+  - `apps/web/src/utils/rafThrottler.ts`
+  - `apps/web/src/components/odontogram/canvasOptimizer.ts`
+  - `apps/web/src/components/perio/perioRafOptimizer.ts`
   - `apps/web/src/utils/lowSpecHddOptimizer.ts`
   - `apps/web/src/lib/apiCacheEngine.ts`
   - `apps/web/src/lib/apiAuthFetch.ts`
@@ -8385,7 +8395,20 @@
   - **Комплексная оптимизация бэкенда и фронтенда под медленные HDD 5400 RPM и 4GB RAM (Low-Spec HDD & Low RAM Hardening) (Мандаты 8n, 8e, Core Route п. 6)**:
     * Серверный пул PostgreSQL: калибровка размера пула до 5..10 соединений при `DENTE_LOW_SPEC=1` вместо 30 тяжелых соединений, снижающая нагрузку на дисковые головки HDD 5400 RPM и предотвращающая исчерпание ОЗУ на машинах с 4–8 ГБ RAM (`apps/api/src/lib/hddPerformanceConfig.ts`);
     * Асинхронный логгер Pino SonicBoom: неблокирующий вывод в буфер 4096 байт с периодическим фоновым сбросом каждые 5000мс через `unref` таймер и синхронным `flushSync` при аварийном или штатном завершении процесса (`apps/api/src/server.ts`);
-    * Клиентский кэш и idle-очередь: `MemoryLruCache` с опциональным индивидуальным TTL, защита `safeLocalStorage` от квот диска и троттлинг запросов в `apps/web/src/utils/lowSpecHddOptimizer.ts`.
+    * Клиентский кэш и idle-очередь: `MemoryLruCache` с опциональным индивидуальным TTL, защита `safeLocalStorage` от квот диска и троттлинг запросов в `apps/web/src/utils/lowSpecHddOptimizer.ts`;
+    * Аппаратный CSS-профиль слабого ПК: `hardwareCapabilities.ts` и `low-spec-hardware.css` активируют `data-hardware-tier="low"` на медленных процессорах и слабых GPU, отключая дорогостоящие эффекты `backdrop-filter: blur()`, тяжелые тени `box-shadow` и ускоряя отрисовку;
+    * Адаптивный RAF-троттлер и Zero-GC: `rafThrottler.ts`, `canvasOptimizer.ts` и `perioRafOptimizer.ts` устраняют лаги и аллокации памяти на горячих путях холстов зубной формулы и пародонтограммы.
+  - **Предотвращение утечек памяти и DOM-виртуализация списков (Memory Leak Guard & DOM Virtualization) (Frontend Route п. 2, Engineering Route п. 4)**:
+    * Универсальный хук защиты от утечек памяти `useMemoryLeakGuard.ts`: автоматическая регистрация, трекинг и гарантированное освобождение при unmount всех типов системных ресурсов (таймеры `setTimeout`/`setInterval`, слушатели событий DOM `addEventListener`, экземпляры `AbortController`, WebSocket-подписки, анимационные фреймы `requestAnimationFrame`, контексты WebGL/Three.js/Cornerstone3D);
+    * Легковесная виртуализация DOM `domVirtualizationHelper.ts`: постраничный и оконный рендеринг больших наборов данных без сторонних тяжелых библиотек;
+    * Виртуализация реестра счетов в `InvoicesView.tsx`: оптимизация отображения сотен счетов пациентов с ограничением количества одновременных DOM-узлов, снижающая потребление оперативной памяти на ПК с 4 ГБ RAM и устраняющая зависания интерфейса.
+  - **Автономия кассы 54-ФЗ и счетов без бюрократических барьеров (54-FZ Cashier Autonomy & Friction-Killer) (Мандаты 8c, 8d, 8e п. 9, 8n)**:
+    * В `apps/web/src/components/billing/InvoicesView.tsx`, `PaymentCapture.tsx`, `PaymentModal.tsx`, `FastCheckoutModal.tsx`:
+    * Полный запрет требования ИНН с физических лиц при приеме наличных и карт по 54-ФЗ;
+    * 1-клик комбинированная оплата (нал + карта 50/50, карта + семейный баланс);
+    * 1-клик скидка 100% на гарантийные переделки врача (`handleApplyWarranty100`) без ввода мастер-паролей администратора;
+    * Мгновенная печать акта выполненных работ по номенклатуре 804н и справки об оплате медицинских услуг для налогового вычета в ФНС (КНД 1151156);
+    * Персистенция кассовой смены `dente_cash_shift_active` и плотная клиническая эргономика 28–36px (`h-8 min-h-[32px]`) на десктопе с тач-адаптацией 44px на сенсорных экранах (`@media(pointer:coarse)`).
   - **Сквозной Fastify ETag in-memory перехватчик 304 Not Modified (Fastify In-Memory ETag 304 Caching) (Мандаты 8e, 8n, Engineering Route п. 5)**:
     * В `apps/api/src/plugins/cacheHeaders.ts` и `apps/web/src/lib/apiCacheEngine.ts`:
     * Fast-path preHandler: при повторных запросах с заголовком `If-None-Match` сервер мгновенно возвращает `304 Not Modified` прямо из ОЗУ без запуска обработчиков и без SQL-запросов к PostgreSQL;
