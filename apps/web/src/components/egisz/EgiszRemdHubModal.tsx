@@ -660,21 +660,39 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 
 	// Mandate 8e: Doctor & Clinic Autonomy — deferred queue for async UKEP signing & EGISZ REMD sending
 	const handleQueueDeferred = useCallback(() => {
+		const nowIso = new Date().toISOString();
 		const deferredRecord: RemdDocumentRecord = {
 			id: `REMD-DEF-${Date.now()}`,
+			documentUuid: `UUID-DEF-${Date.now()}`,
 			docTypeCode: activeDocType === "cda_semd" ? semdDocCode : "1151156",
-			encounterDate: new Date().toISOString().slice(0, 10),
+			docTypeName:
+				activeDocType === "cda_semd"
+					? "Стоматологический протокол (СЭМД)"
+					: "Справка об оплате мед. услуг для ФНС",
+			createdAt: nowIso,
+			updatedAt: nowIso,
+			encounterDate: nowIso.slice(0, 10),
 			status: "draft",
 			patient: {
+				id: patient.patientId || `PAT-${Date.now()}`,
 				fullName: activeDocType === "cda_semd" ? patient.patientFullName : taxPatientName,
 				snils: activeDocType === "cda_semd" ? patient.patientSnils : taxPatientSnils,
-				birthDate: patient.birthDate,
-				gender: patient.gender,
+				birthDate: patient.patientBirthDate || "1990-01-01",
+				cardNumber: patient.cardNumber || "043/у",
+				polisOms: patient.patientPolisOms,
 			},
 			doctor: {
+				id: `DOC-${doctor.doctorSnils || Date.now()}`,
 				fullName: doctor.doctorFullName,
 				snils: doctor.doctorSnils,
 				position: doctor.doctorPosition,
+				specialty: "Стоматолог",
+			},
+			clinic: {
+				name: clinic.clinicName,
+				oid: clinic.clinicOid,
+				ogrn: clinic.clinicOgrn,
+				inn: clinic.clinicInn,
 			},
 			cdaPayload: semdPayload,
 		};
@@ -690,7 +708,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 				timestamp: new Date().toISOString(),
 			});
 		}
-	}, [activeDocType, semdDocCode, patient, doctor, semdPayload, taxPatientName, taxPatientSnils, onSentSuccess]);
+	}, [activeDocType, semdDocCode, patient, doctor, clinic, semdPayload, taxPatientName, taxPatientSnils, onSentSuccess]);
 
 	// Mandate 8k: 1-Click CDA XML validation
 	const handleValidateCdaXml = useCallback(() => {
