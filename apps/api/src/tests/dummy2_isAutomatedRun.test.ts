@@ -1,1 +1,0 @@
-import { isAutomatedRun } from '../env/requiredEnv.js'; console.log('CHILD2:', isAutomatedRun());
