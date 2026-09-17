@@ -23,12 +23,33 @@ import {
 	ShieldCheck,
 	Smile,
 	Sparkles,
+	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
 import type { FranklRating } from "../odontogram/pediatricDentitionEngine";
 import { PediatricParentMemoModal } from "./PediatricParentMemoModal";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1-CLICK PHYSIOLOGICAL NORM (MANDATE 8e: DECIDUOUS DENTITION NORM)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION = {
+	titleRu: "Временный прикус интактен (физиологическая норма)",
+	statusLocalisRu:
+		"Временный прикус интактен. Зубные ряды правильной формы, симметричны. Все временные зубы интактны, кариозных полостей и пятен деминерализации не выявлено (индекс кп=0). Физиологическая стираемость бугров временных зубов выражена соответственно возрасту. Присутствуют физиологические тремы и диастемы, свидетельствующие о нормальном росте челюстей. Слизистая оболочка полости рта бледно-розовая, влажная. Уздечки губ и языка анатомически правильного прикрепления. Носовое дыхание свободное. Вредные привычки отсутствуют.",
+	treatmentRu:
+		"Профилактический осмотр и оценка прикуса. Контролируемая гигиена: очищение зубов циркулярной щеточкой с бесфтористой пастой. Аппликация защитного реминерализующего фторлака на зубы. Мотивационная беседа с ребенком в игровой форме («считаем зубки»). Обучение правильной технике чистки зубов.",
+	recommendationsRu:
+		"1. Контролируемая родителями чистка зубов 2 раза в день фторидной пастой (1000 ppm) до 8–9 лет. 2. Рациональное питание: ограничение сладостей и сладких напитков между приемами пищи. 3. Твердая пища (яблоки, морковь) для стимуляции жевания и роста челюстей. 4. Плановый профосмотр через 3–4 месяца.",
+	diagnosisIcd10: "Z01.2",
+	diagnosisNameRu:
+		"Стоматологическое обследование / физиологическая норма временного прикуса (Z01.2)",
+	serviceCode804n: "A01.07.001",
+	serviceName804n:
+		"Прием (осмотр, консультация) врача-стоматолога детского первичный",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FRANKL BEHAVIOR SCALE EXPRESS DEFINITIONS (ZERO EMOJIS — LUCIDE ICONS ONLY)
@@ -386,6 +407,8 @@ export interface VisitPediatricProtocolWidgetProps {
 	readonly onFranklChange?: (rating: FranklRating) => void;
 	/** Имя юного пациента */
 	readonly patientName?: string | undefined;
+	/** Телефон пациента / представителя для отправки памятки */
+	readonly patientPhone?: string | undefined;
 	/** Возраст пациента в годах */
 	readonly patientAgeYears?: number | undefined;
 	/** ФИО врача */
@@ -407,6 +430,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 	initialFranklRating = 3,
 	onFranklChange,
 	patientName = "Юный пациент",
+	patientPhone,
 	patientAgeYears = 6,
 	doctorName = "Детский врач-стоматолог",
 	clinicName = "Детское отделение DENTE",
@@ -748,59 +772,151 @@ export const VisitPediatricProtocolWidget: React.FC<
 		);
 	}, [clinicalCalculation, currentTooth, onAddToInvoice]);
 
+	// 12. 1-Клик физиологическая норма временного прикуса (Мандат 8e)
+	const handleApplyPhysiologicalNorm = useCallback(() => {
+		setFranklRating(4);
+		onFranklChange?.(4);
+		setOrthoFrenulumNormal(true);
+		setOrthoNasalBreathing(true);
+		setOrthoNoHarmfulHabits(true);
+
+		const fullText = [
+			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)",
+			"────────────────────────────────────────────────────────────",
+			"1. Психоэмоциональный статус (Шкала Франкла): Рейтинг 4 (++) — 4 (++) Определенно позитивное",
+			"   Поведение: Восторжен, искренний интерес, улыбка, абсолютное доверие",
+			"   Тактика адаптации: Партнерство, обучение самостоятельной чистке зубов, диплом храброго пациента",
+			"",
+			"2. Первичный осмотр и ортодонтический скрининг:",
+			"   • Уздечки губ и языка: норма (анатомически правильное прикрепление)",
+			"   • Носовое дыхание: сохранено (свободное через нос)",
+			"   • Вредные привычки: отсутствуют",
+			"",
+			"3. Объект осмотра: Временный прикус (зубы 51..85)",
+			`   Диагноз (МКБ-10): ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisIcd10} — ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisNameRu}`,
+			`   Услуги (Номенклатура 804н): ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode804n} ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName804n}`,
+			"",
+			"4. Status localis:",
+			`   ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.statusLocalisRu}`,
+			"",
+			"5. Протокол профилактического приема:",
+			`   ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.treatmentRu}`,
+			"",
+			"6. Назначения и рекомендации родителям:",
+			`   ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.recommendationsRu}`,
+			"────────────────────────────────────────────────────────────",
+			"Документ оформлен в соответствии с Приказами МЗ РФ №804н и №834н.",
+		].join("\n");
+
+		onApplyProtocolText?.(fullText);
+
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existing = prev.objectiveStatus?.trim() || "";
+				return {
+					...prev,
+					objectiveStatus: existing ? `${existing}\n\n${fullText}` : fullText,
+				};
+			});
+		} catch (err) {
+			console.warn("useVisitStore update fallback:", err);
+		}
+
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							diagnosisIcd10: PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisIcd10,
+							treatmentDescription: PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.treatmentRu,
+							statusLocalis: PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.statusLocalisRu,
+							recommendations: PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.recommendationsRu,
+						},
+						finding: {
+							toothNumber: currentTooth,
+							state: "Healthy",
+							surfaces: [],
+						},
+						mode: "smart_append",
+						immediate: true,
+					},
+				}),
+			);
+		} catch (err) {
+			console.warn("dente-apply-soap-protocol dispatch fallback:", err);
+		}
+
+		showToast(
+			"1-клик: Физиологическая норма временного прикуса (интактен, тремы, диастемы) внесена в 043/у!",
+			"success",
+			3500,
+		);
+	}, [currentTooth, onApplyProtocolText, onFranklChange]);
+
 	return (
 		<section
 			aria-label="Канонический протокол детского приема 043/у"
-			className={`pediatric-protocol-widget rounded-2xl border border-slate-200 bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 shadow-xs transition dark:border-slate-800 dark:bg-slate-900 ${className}`.trim()}
+			className={`pediatric-protocol-widget rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 shadow-xs transition ${className}`.trim()}
 			data-testid="pediatric-protocol-widget"
 		>
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			{/* ВЕРХНЯЯ ШАПКА: АКТИВНЫЙ ЗУБ + ТАКТИКА ФРАНКЛА + КНОПКА ПАРАМЕТРОВ */}
+			{/* ВЕРХНЯЯ ШАПКА: АКТИВНЫЙ ЗУБ + 1-КЛИК НОРМА + ТАКТИКА ФРАНКЛА + КНОПКА ПАРАМЕТРОВ */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-100 pb-3 dark:border-slate-800">
-				<div className="flex items-center gap-2.5">
-					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-						<Baby className="h-5 w-5 shrink-0" />
+			<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5 min-h-[36px]">
+				<div className="flex items-center gap-2 min-w-0">
+					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+						<Baby className="h-4 w-4" />
 					</div>
-					<div>
-						<div className="flex items-center gap-2">
-							<span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-								Детский приём у кресла (30 сек)
-							</span>
-							<span className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 text-xs font-mono font-bold text-teal-700 dark:bg-teal-950/60 dark:text-teal-300">
-								Зуб {currentTooth}
-							</span>
-						</div>
-						<h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<span className="text-[11px] font-black uppercase tracking-wider text-[var(--muted,#64748b)] hidden sm:inline shrink-0">
+							Детский приём у кресла:
+						</span>
+						<span className="inline-flex items-center gap-1 rounded-md bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 text-xs font-mono font-bold text-teal-700 dark:text-teal-300 shrink-0">
+							Зуб {currentTooth}
+						</span>
+						<h2 className="text-xs sm:text-base font-extrabold text-[var(--ink,#0f172a)] truncate">
 							{anatomicalToothName}
 						</h2>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5 shrink-0">
+					{/* 1-Клик физиологическая норма временного прикуса (Мандат 8e) */}
+					<button
+						type="button"
+						onClick={handleApplyPhysiologicalNorm}
+						className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
+						title="1-клик: Временный прикус интактен / физиологическая стираемость / тремы и диастемы"
+						data-testid="pediatric-one-click-norm-btn"
+					>
+						<Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span className="hidden sm:inline">1-клик Норма прикуса</span>
+						<span className="sm:hidden">Норма</span>
+					</button>
+
 					{/* Индикатор выбранного поведения по Франклу */}
 					<div
-						className={`inline-flex min-h-[48px] items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold ${activeFrankl.badgeClass}`}
+						className={`inline-flex min-h-[48px] sm:min-h-0 sm:h-8 items-center gap-1 rounded-lg border px-2 text-xs font-bold ${activeFrankl.badgeClass} shrink-0`}
 						title={activeFrankl.descriptionRu}
 						data-testid="frankl-status-indicator"
 					>
-						<activeFrankl.icon className="h-4 w-4 shrink-0" />
-						<span>Франкл {activeFrankl.symbol}</span>
+						<activeFrankl.icon className="h-3.5 w-3.5 shrink-0" />
+						<span className="font-mono">Франкл {activeFrankl.symbol}</span>
 					</div>
 
 					{/* Кнопка спойлера расширенных параметров */}
 					<button
 						type="button"
 						onClick={() => setShowDetailsAccordion((prev) => !prev)}
-						className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 active:scale-95 cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+						className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] text-xs font-semibold transition flex items-center gap-1 cursor-pointer shrink-0 touch-manipulation"
 						title="Показать / скрыть подробности протокола"
 						data-testid="pediatric-details-accordion-btn"
 					>
-						<span>Параметры</span>
+						<span className="hidden md:inline">Параметры</span>
 						{showDetailsAccordion ? (
-							<ChevronUp className="h-4 w-4" />
+							<ChevronUp className="h-3.5 w-3.5" />
 						) : (
-							<ChevronDown className="h-4 w-4" />
+							<ChevronDown className="h-3.5 w-3.5" />
 						)}
 					</button>
 				</div>
@@ -811,10 +927,10 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div className="mb-4">
 				<div className="mb-2 flex items-center justify-between">
-					<span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 						Шкала поведения Франкла (экспресс-выбор в 1 клик):
 					</span>
-					<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+					<span className="text-xs font-medium text-[var(--muted,#64748b)]">
 						{activeFrankl.clinicalTacticRu}
 					</span>
 				</div>
@@ -833,20 +949,20 @@ export const VisitPediatricProtocolWidget: React.FC<
 								className={`flex min-h-[52px] items-center justify-between rounded-xl border p-2.5 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
 									isCurrent
 										? item.activeClass
-										: "border-slate-200 bg-[var(--paper,#ffffff)] hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
+										: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								title={`${item.titleRu}: ${item.descriptionRu}`}
 								data-testid={`frankl-express-btn-${item.rating}`}
 							>
 								<div className="flex items-center gap-2">
-									<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 shrink-0">
+									<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] shrink-0">
 										<ItemIcon className="h-4 w-4" />
 									</div>
 									<div className="min-w-0">
 										<div className="text-xs font-extrabold truncate font-mono">
 											Рейтинг {item.symbol}
 										</div>
-										<div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+										<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
 											{item.rating === 1
 												? "Негативное (--)"
 												: item.rating === 2
@@ -870,7 +986,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* 6 КАНОНИЧЕСКИХ 1-КЛИК ПРОТОКОЛОВ (ФОРМА 043/у + НОМЕНКЛАТУРА 804н) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div className="mb-4">
-				<div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+				<div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 					1-Клик клинические протоколы у кресла:
 				</div>
 				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -885,7 +1001,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 								className={`flex min-h-[52px] flex-col justify-center rounded-xl border p-2.5 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
 									isCurrent
 										? `${preset.colorTheme} shadow-sm ring-2 ring-teal-500/20`
-										: "border-slate-200 bg-[var(--paper,#ffffff)] hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
+										: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid={`pediatric-preset-btn-${preset.id}`}
 								title={`${preset.titleRu} • ${preset.serviceCode804n}`}
@@ -894,7 +1010,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 									<PresetIcon className="h-4 w-4 shrink-0" />
 									<span className="truncate">{preset.shortLabelRu}</span>
 								</div>
-								<div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+								<div className="mt-0.5 text-[11px] text-[var(--muted,#64748b)] truncate">
 									{preset.subtitleRu}
 								</div>
 							</button>
@@ -906,9 +1022,9 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{/* ПЕРВИЧНЫЙ ОСМОТР: ЧЕКБОКСЫ ОРТОДОНТИЧЕСКОЙ НОРМЫ (НОРМА В 1 КЛИК, ТАЧ-ТАРГЕТЫ >= 48px) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			<div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-800/40">
+			<div className="mb-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3">
 				<div className="mb-2 flex items-center justify-between">
-					<span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#0f172a)]">
 						Первичный осмотр — ортодонтическая норма (СтАР):
 					</span>
 					<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-400">
@@ -1002,9 +1118,9 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* ПОВЕРХНОСТИ ЗУБА (ДЛЯ КАРИЕСА И ПУЛЬПОТОМИИ, ТАЧ-ТАРГЕТЫ >= 48px) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{activePreset.allowsSurfaces && (
-				<div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-800/40">
+				<div className="mb-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3">
 					<div className="mb-2 flex items-center justify-between">
-						<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+						<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 							Поверхности зуба в 1 клик:
 						</span>
 						<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
@@ -1026,7 +1142,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 									className={`min-h-[48px] px-3 rounded-xl text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 										isMatch
 											? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-											: "bg-[var(--paper,#ffffff)] text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700"
+											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 									}`}
 									title={preset.descriptionRu}
 									data-testid={`pediatric-surf-preset-${preset.id}`}
@@ -1038,8 +1154,8 @@ export const VisitPediatricProtocolWidget: React.FC<
 					</div>
 
 					{/* По отдельности */}
-					<div className="flex flex-wrap items-center gap-1.5 border-t border-slate-200/60 pt-2 dark:border-slate-700/60">
-						<span className="text-[11px] text-slate-500 dark:text-slate-400 mr-1">
+					<div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--line,#e2e8f0)] pt-2">
+						<span className="text-[11px] text-[var(--muted,#64748b)] mr-1">
 							По отдельности:
 						</span>
 						{(["O", "V", "L", "M", "D"] as const).map((surf) => {
@@ -1052,7 +1168,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 									className={`min-h-[48px] min-w-[48px] px-2.5 rounded-xl text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 										isActive
 											? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-											: "bg-[var(--paper,#ffffff)] text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700"
+											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 									}`}
 									title={`Поверхность ${surf}`}
 									data-testid={`pediatric-surf-btn-${surf}`}
@@ -1070,10 +1186,10 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div className="mb-4">
 				<div className="mb-1.5 flex items-center justify-between">
-					<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 						Препарат / Материал протокола:
 					</span>
-					<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">
+					<span className="text-xs font-semibold text-[var(--muted,#64748b)] truncate">
 						{selectedMaterial}
 					</span>
 				</div>
@@ -1088,7 +1204,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 								className={`min-h-[48px] px-3 py-2 rounded-xl text-xs font-medium border text-left transition truncate cursor-pointer flex items-center justify-between gap-2 ${
 									isSelected
 										? "border-teal-600 bg-teal-50 font-bold text-teal-900 dark:border-teal-400 dark:bg-teal-950/50 dark:text-teal-200 ring-1 ring-teal-500/20"
-										: "border-slate-200 bg-[var(--paper,#ffffff)] text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+										: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid={`pediatric-material-btn-${mat.replace(/\s+/g, "_")}`}
 							>
@@ -1107,12 +1223,12 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{showDetailsAccordion && (
 				<div
-					className="mb-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/50"
+					className="mb-4 space-y-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3.5"
 					data-testid="pediatric-details-accordion-content"
 				>
 					{/* Быстрый выбор зуба */}
 					<div>
-						<div className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
+						<div className="mb-1.5 block text-xs font-bold text-[var(--ink,#0f172a)]">
 							Быстро сменить зуб FDI (молочные моляры / резцы / постоянные 16,
 							26, 36, 46):
 						</div>
@@ -1134,7 +1250,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 										className={`min-h-[48px] min-w-[48px] px-2.5 rounded-xl font-mono text-xs font-bold border transition cursor-pointer select-none flex items-center justify-center ${
 											isSelected
 												? "bg-amber-600 text-white border-amber-600 shadow-xs scale-105"
-												: "bg-[var(--paper,#ffffff)] text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 										}`}
 										data-testid={`pediatric-tooth-chip-${t}`}
 									>
@@ -1147,10 +1263,10 @@ export const VisitPediatricProtocolWidget: React.FC<
 
 					{/* Превью протокола Формы 043/у */}
 					<div>
-						<div className="mb-1 text-xs font-bold text-slate-700 dark:text-slate-300">
+						<div className="mb-1 text-xs font-bold text-[var(--ink,#0f172a)]">
 							Превью готовой записи Формы 043/у (автогенерация):
 						</div>
-						<pre className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-[var(--paper,#ffffff)] p-3 text-[11px] leading-relaxed text-slate-800 font-mono whitespace-pre-wrap dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+						<pre className="max-h-48 overflow-y-auto rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 text-[11px] leading-relaxed text-[var(--ink,#0f172a)] font-mono whitespace-pre-wrap">
 							{clinicalCalculation.fullProtocolText043}
 						</pre>
 					</div>
@@ -1160,7 +1276,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{/* НИЖНИЙ ПЛАНШЕТ ДЕЙСТВИЙ: 1-КЛИК В КАРТУ, В СМЕТУ, ПАМЯТКА РОДИТЕЛЯМ */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			<div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+			<div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)]">
 				<div className="flex flex-wrap items-center gap-2">
 					{/* Кнопка 1-клик в 043/у */}
 					<button
@@ -1197,10 +1313,10 @@ export const VisitPediatricProtocolWidget: React.FC<
 				</div>
 
 				<div className="text-right">
-					<div className="text-xs font-mono font-bold text-slate-900 dark:text-slate-100">
+					<div className="text-xs font-mono font-bold text-[var(--ink,#0f172a)]">
 						{clinicalCalculation.diagnosisIcd10}
 					</div>
-					<div className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
+					<div className="text-[11px] text-[var(--muted,#64748b)] truncate max-w-[220px]">
 						{clinicalCalculation.services804n[0]?.code} •{" "}
 						{clinicalCalculation.services804n[0]?.nameRu}
 					</div>
@@ -1215,6 +1331,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 					isOpen={isMemoModalOpen}
 					onClose={() => setIsMemoModalOpen(false)}
 					patientName={patientName}
+					patientPhone={patientPhone}
 					patientAgeYears={patientAgeYears}
 					doctorName={doctorName}
 					clinicName={clinicName}

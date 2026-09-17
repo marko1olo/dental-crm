@@ -5,11 +5,10 @@ import {
 	ArrowLeft,
 	Check,
 	Copy,
-	FileText,
 	Heart,
-	Info,
+	MessageCircle,
 	Printer,
-	ShieldCheck,
+	Send,
 	Sparkles,
 	X,
 	Zap,
@@ -20,9 +19,6 @@ import {
 	type PediatricFissureSealingOptions,
 	type PediatricPulpotomyOptions,
 	generatePediatricParentRecommendations,
-	calculatePediatricSilveringProtocol,
-	calculatePediatricFissureSealingProtocol,
-	calculatePediatricPulpotomyProtocol,
 	FRANKL_SCALE_DEFINITIONS,
 	getFranklDefinition,
 } from "../odontogram/pediatricDentitionEngine";
@@ -32,6 +28,7 @@ export interface PediatricParentMemoModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	patientName?: string | undefined;
+	patientPhone?: string | undefined;
 	patientAgeYears?: number | undefined;
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
@@ -47,6 +44,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	isOpen,
 	onClose,
 	patientName = "Юный пациент",
+	patientPhone,
 	patientAgeYears = 7,
 	doctorName = "Врач-стоматолог детский",
 	clinicName = "Детское отделение DENTE",
@@ -163,6 +161,23 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 		}
 	};
 
+	const handleSendWhatsApp = () => {
+		const cleanPhone = (patientPhone || "").replace(/\D/g, "");
+		const encoded = encodeURIComponent(generatedMemoText);
+		const url = cleanPhone
+			? `https://wa.me/${cleanPhone}?text=${encoded}`
+			: `https://wa.me/?text=${encoded}`;
+		window.open(url, "_blank", "noopener,noreferrer");
+		showToast("Памятка открыта для отправки в WhatsApp!", "success");
+	};
+
+	const handleSendTelegram = () => {
+		const encoded = encodeURIComponent(generatedMemoText);
+		const url = `https://t.me/share/url?url=&text=${encoded}`;
+		window.open(url, "_blank", "noopener,noreferrer");
+		showToast("Памятка подготовлена для отправки в Telegram!", "success");
+	};
+
 	const handlePrint = () => {
 		const printWindow = window.open("", "_blank");
 		if (!printWindow) {
@@ -176,6 +191,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 				<meta charset="UTF-8">
 				<title>Памятка для родителей — ${patientName}</title>
 				<style>
+					@page { size: A4; margin: 15mm; }
 					body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 24px; color: #0f172a; line-height: 1.6; max-width: 800px; margin: 0 auto; }
 					.header { border-bottom: 2px solid #0d9488; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
 					.title { font-size: 18px; font-weight: 800; color: #0f172a; text-transform: uppercase; }
@@ -567,11 +583,12 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 						Печать памятки доступна в 1 клик в любой момент приема
 					</div>
 
-					<div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
+					<div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+							className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+							title="Скопировать текст памятки в буфер обмена"
 						>
 							<Copy className="w-4 h-4" />
 							<span>Копировать</span>
@@ -579,12 +596,35 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 
 						<button
 							type="button"
+							onClick={handleSendWhatsApp}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+							title="Отправить памятку родителям в WhatsApp в 1 клик"
+							data-testid="pediatric-memo-whatsapp-btn"
+						>
+							<MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+							<span>WhatsApp</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleSendTelegram}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl border border-sky-500/40 bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/25 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+							title="Отправить памятку в Telegram"
+							data-testid="pediatric-memo-telegram-btn"
+						>
+							<Send className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+							<span>Telegram</span>
+						</button>
+
+						<button
+							type="button"
 							onClick={handlePrint}
-							className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+							className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-teal-600/20 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
 							title="Печать памятки родителям (анестезия, не кусать губу, гигиена молочных зубов)"
+							data-testid="pediatric-memo-print-btn"
 						>
 							<Printer className="w-4 h-4" />
-							<span>Печать памятки родителям</span>
+							<span>Печать памятки</span>
 						</button>
 					</div>
 				</div>

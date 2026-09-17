@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import {
-	AlertCircle,
 	Check,
 	ChevronDown,
 	ChevronUp,
+	Frown,
 	Heart,
 	Info,
+	Meh,
+	Smile,
 	Sparkles,
 	Zap,
 } from "lucide-react";
@@ -28,6 +30,23 @@ export interface FranklBehaviorBadgeProps {
 
 const FRANKL_RATINGS: readonly FranklRating[] = [1, 2, 3, 4];
 
+export function getFranklVectorIcon(
+	rating: FranklRating,
+): React.ComponentType<{ className?: string }> {
+	switch (rating) {
+		case 1:
+			return Frown;
+		case 2:
+			return Meh;
+		case 3:
+			return Smile;
+		case 4:
+			return Sparkles;
+		default:
+			return Smile;
+	}
+}
+
 export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 	rating = 3,
 	onChange,
@@ -39,11 +58,12 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 }) => {
 	const [expanded, setExpanded] = useState<boolean>(false);
 	const activeDef: FranklRatingDefinition = getFranklDefinition(rating);
+	const ActiveIcon = getFranklVectorIcon(rating);
 
 	if (compact) {
 		return (
 			<div
-				className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black select-none border transition-all ${className}`.trim()}
+				className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black select-none border transition-all ${className}`.trim()}
 				style={{
 					backgroundColor: activeDef.badgeBg,
 					color: activeDef.badgeColor,
@@ -51,7 +71,7 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 				}}
 				title={`${activeDef.nameRu}: ${activeDef.descriptionRu}`}
 			>
-				<span className="text-base leading-none">{activeDef.emoji}</span>
+				<ActiveIcon className="w-3.5 h-3.5 shrink-0" />
 				<span>Франкл {activeDef.symbol}</span>
 			</div>
 		);
@@ -85,31 +105,31 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 						borderColor: activeDef.badgeBorder,
 					}}
 				>
-					<span className="text-lg leading-none">{activeDef.emoji}</span>
+					<ActiveIcon className="w-4 h-4 shrink-0" />
 					<span>{activeDef.nameRu}</span>
 				</div>
 			</div>
 
-			{/* ⚡ 1-клик быстрое заполнение: Поведение позитивное (Frankl 4/4) */}
+			{/* 1-клик быстрое заполнение: Поведение позитивное (Frankl 4/4) */}
 			{!readOnly && (
 				<button
 					type="button"
 					onClick={() => {
 						onChange?.(4);
-						onQuickSelect?.(4, "⚡ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания");
+						onQuickSelect?.(4, "1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания");
 					}}
 					className={`w-full min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl border flex items-center justify-between gap-2 font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-[0.99] select-none ${
 						rating === 4
 							? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs ring-2 ring-emerald-500/20"
 							: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] hover:bg-emerald-500/10 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] hover:border-emerald-500/40"
 					}`}
-					title="⚡ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания"
+					title="1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания"
 					data-testid="frankl-one-click-btn"
 				>
 					<span className="flex items-center gap-2 text-left">
 						<Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span className="truncate sm:whitespace-normal">
-							⚡ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания
+							1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания
 						</span>
 					</span>
 					{rating === 4 ? (
@@ -131,6 +151,7 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 					{FRANKL_RATINGS.map((r) => {
 						const def = FRANKL_SCALE_DEFINITIONS[r];
 						const isSelected = rating === r;
+						const RatingIcon = getFranklVectorIcon(r);
 						return (
 							<button
 								key={r}
@@ -150,7 +171,7 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 								data-testid={`frankl-btn-${r}`}
 							>
 								<div className="flex items-center gap-1.5">
-									<span className="text-xl leading-none">{def.emoji}</span>
+									<RatingIcon className="w-4 h-4 shrink-0" />
 									<span className="font-mono font-black text-sm sm:text-base">{def.symbol}</span>
 									{isSelected && <Check className="w-4 h-4 shrink-0" />}
 								</div>
