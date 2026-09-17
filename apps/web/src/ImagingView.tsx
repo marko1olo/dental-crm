@@ -1663,14 +1663,14 @@ export function ImagingView(props: ImagingViewProps) {
 									</span>
 								)}
 							</div>
-							<div>
-								<h3>{study.title}</h3>
-								<p>
+							<div style={{ minWidth: 0, flex: 1 }}>
+								<h3 className="truncate" title={study.title}>{study.title}</h3>
+								<p className="truncate">
 									{imagingKindLabels[study.kind]} ·{" "}
 									{study.toothCode ?? study.region ?? "область не указана"} ·{" "}
 									{formatShortDate(study.capturedAt)}
 								</p>
-								<span>
+								<span className="truncate block">
 									{imagingSourceLabels[study.sourceKind]} · {study.sourceName}
 								</span>
 								{/*

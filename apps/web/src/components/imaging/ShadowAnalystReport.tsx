@@ -42,11 +42,15 @@ export function ShadowAnalystReport({
 						<span className="sa-badge-critical">{criticalCount} крит.</span>
 					)}
 				</div>
-				<div className="sa-panel-actions">
-					{studyTitle && <span className="sa-study-label">{studyTitle}</span>}
+				<div className="sa-panel-actions min-w-0">
+					{studyTitle && (
+						<span className="sa-study-label truncate min-w-0" title={studyTitle}>
+							{studyTitle}
+						</span>
+					)}
 					{onPrint && (
 						<button
-							className="sa-icon-btn"
+							className="sa-icon-btn shrink-0"
 							onClick={onPrint}
 							title="Распечатать отчёт"
 							type="button"
@@ -90,8 +94,8 @@ export function ShadowAnalystReport({
 										key={`tooth-${update.code}-${update.diagnosisOrFinding}`}
 										className={`sa-tooth-row ${isCritical ? "sa-tooth-row--critical" : ""} ${isDone ? "sa-tooth-row--done" : ""}`}
 									>
-										<span className="sa-tooth-num">{update.code}</span>
-										<span className="sa-tooth-text">
+										<span className="sa-tooth-num shrink-0">{update.code}</span>
+										<span className="sa-tooth-text truncate min-w-0" title={update.diagnosisOrFinding}>
 											{update.diagnosisOrFinding}
 										</span>
 										{isCritical && (

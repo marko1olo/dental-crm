@@ -7,13 +7,9 @@ import {
 	AlertTriangle,
 	Camera,
 	CheckCircle2,
-	ChevronDown,
-	Contrast,
 	Download,
 	FileText,
-	Layers,
 	Loader2,
-	Maximize2,
 	MoreHorizontal,
 	Ruler,
 	ShieldAlert,
@@ -27,13 +23,9 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { DicomArchiveUploader } from "./DicomArchiveUploader";
 import {
 	calculateCaliperRidgeDimensions,
-	evaluateAlveolarRidgeFeasibility,
 	calculatePointToNerveDistance3D,
-	calculatePointToNerveDistance2D,
 	evaluateNerveClearance,
-	MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
 	type AlveolarRidgeCaliperMeasurement,
-	type MandibularNerveSpline,
 } from "../radiology/radiologyMath";
 import {
 	calculateImplantBoneDensity,
@@ -43,9 +35,6 @@ import {
 	toTransferableScalarData,
 } from "../../utils/math/mprMath";
 import {
-	classifyMisch,
-	extractHUZones,
-	mischDescription,
 	type MischClass,
 } from "../../utils/dicom/boneQualityEngine";
 import { mapCtCoordinatesToFdiNumber } from "../../utils/dicom/fdiMapper";
@@ -2187,8 +2176,9 @@ export function Cornerstone3DViewer({
 								setActiveTool("Crosshairs");
 							}}
 							title="Закрыть панель трассировки"
+							aria-label="Закрыть панель трассировки"
 						>
-							✕
+							<X className="w-3.5 h-3.5" />
 						</button>
 					</div>
 				</div>
@@ -2526,9 +2516,9 @@ export function Cornerstone3DViewer({
 									justifyContent: "space-between",
 								}}
 							>
-								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-									<Activity className="w-4 h-4 text-teal-400" />
-									<span>Протокол имплантации (Зуб №{latestImplant?.fdiCode})</span>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
+									<Activity className="w-4 h-4 text-teal-400 shrink-0" />
+									<span className="truncate min-w-0">Протокол имплантации (Зуб №{latestImplant?.fdiCode})</span>
 								</div>
 								<span
 									style={{

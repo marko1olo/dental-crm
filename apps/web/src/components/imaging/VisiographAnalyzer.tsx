@@ -5,7 +5,6 @@ import {
 	Bot,
 	CheckCircle2,
 	ChevronDown,
-	Compass,
 	FileText,
 	History,
 	Loader2,
@@ -1527,7 +1526,7 @@ export function VisiographAnalyzer({
 												)}
 											</button>
 
-											{/* ⚡ 1-Клик действие: Норма в 043/у */}
+											{/* 1-Клик действие: Норма в 043/у */}
 											<button
 												type="button"
 												data-testid="btn-visiograph-norma-043"
@@ -1551,7 +1550,7 @@ export function VisiographAnalyzer({
 												title="1-клик в карту 043/у: Норма, патологии на снимке не выявлено (периодонтальная щель равномерная, кортикальная пластинка альвеолы сохранена)"
 											>
 												<CheckCircle2 size={14} style={{ color: "#10b981" }} />
-												<span>{isNormaApplied ? "✓ Норма внесена в 043/у" : "Норма: патологии на снимке не выявлено (в 043/у)"}</span>
+												<span>{isNormaApplied ? "Норма внесена в 043/у" : "Норма: патологии на снимке не выявлено (в 043/у)"}</span>
 											</button>
 
 											{isAnalyzing && (
@@ -1622,7 +1621,7 @@ export function VisiographAnalyzer({
 										</span>
 									</div>
 
-									{/* ⚡ 1-Клик у кресла (Hot Path пресеты фильтрации и эндо-линейка) */}
+									{/* 1-Клик у кресла (Hot Path пресеты фильтрации и эндо-линейка) */}
 									<div
 										style={{
 											display: "flex",
@@ -2515,15 +2514,18 @@ export function VisiographAnalyzer({
 												</div>
 												<div style={{ flex: 1, minWidth: 0 }}>
 													<div
+														className="truncate min-w-0"
 														style={{
 															fontWeight: 600,
 															fontSize: "0.85rem",
 															color: "var(--ink)",
 														}}
+														title={scan.originalFilename ?? "Снимок"}
 													>
 														{scan.originalFilename ?? "Снимок"}
 													</div>
 													<div
+														className="truncate min-w-0"
 														style={{
 															fontSize: "0.78rem",
 															color: "var(--muted)",

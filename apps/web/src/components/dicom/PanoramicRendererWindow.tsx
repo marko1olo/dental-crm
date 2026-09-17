@@ -9,11 +9,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Download,
-	Layers,
 	Loader2,
-	Maximize2,
-	RefreshCw,
-	Sliders,
 	Sparkles,
 	X,
 } from "lucide-react";
@@ -44,10 +40,8 @@ import {
 	type CrossSectionSlicePlane,
 	classifyMischBoneDensity,
 	createAnatomicalJawControlPoints,
-	type ExtendedMischClass,
 	generateCatmullRomArch,
 	generateCrossSectionSlicePlanes,
-	synchronizeMprCoordinates,
 } from "./panoramicMprMath";
 import "./panoramicMpr.css";
 
@@ -620,14 +614,14 @@ export function PanoramicRendererWindow({
 		>
 			{/* CLINICAL HEADER */}
 			<div className="mpr-toolbar bg-neutral-900 border-b border-neutral-800 px-3 py-1.5 flex flex-nowrap justify-between items-center cursor-move handle gap-2 overflow-x-auto no-scrollbar min-h-[36px]">
-				<div className="flex items-center gap-2 shrink-0">
-					<div className="flex items-center gap-1.5">
+				<div className="flex items-center gap-2 shrink-0 min-w-0">
+					<div className="flex items-center gap-1.5 min-w-0">
 						<Activity className="w-4 h-4 text-[var(--teal)] shrink-0" />
-						<h3 className="text-white font-bold text-xs sm:text-sm tracking-tight truncate max-w-[180px] sm:max-w-none">
+						<h3 className="text-white font-bold text-xs sm:text-sm tracking-tight truncate max-w-[180px] sm:max-w-none min-w-0">
 							3D MPR & ОПТГ
 						</h3>
 					</div>
-					<span className="text-[11px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-lg border border-neutral-700 whitespace-nowrap hidden sm:inline-flex">
+					<span className="text-[11px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-lg border border-neutral-700 whitespace-nowrap hidden sm:inline-flex shrink-0">
 						{sliceThicknessMm > 0
 							? `Слой: ${sliceThicknessMm} мм (${blendMode.toUpperCase()})`
 							: "Тонкий луч (Ray)"}

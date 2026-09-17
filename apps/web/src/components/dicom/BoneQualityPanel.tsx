@@ -5,7 +5,6 @@ import {
 	extractHUZones,
 	generateDrillProtocol,
 	type ImplantSystem,
-	mischDescription,
 } from "../../utils/dicom/boneQualityEngine";
 import {
 	classifyMischBoneDensity,
