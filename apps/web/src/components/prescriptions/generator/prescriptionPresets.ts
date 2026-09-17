@@ -2,10 +2,6 @@
  * DENTE Dental CRM — Russian Dental Pharmacopeia & Form 107-1/u Presets
  */
 
-import {
-	DENTAL_PRESCRIPTION_DRUG_CATALOG,
-	type DentalPrescriptionDrugPreset,
-} from "@dental/shared";
 
 export interface DentalMedicationPreset {
 	readonly id: string;
@@ -234,22 +230,8 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 		validityDays: 60,
 	},
 	{
-		id: "amoxiclav_875_125",
-		tradeNameRu: "Амоксиклав (Аугментин 875/125 мг)",
-		activeSubstanceRu: "Амоксициллин + Клавулановая кислота",
-		category: "antibiotic",
-		categoryLabelRu: "Антибиотик (Пенициллины)",
-		latinRp: "Rp.: Tab. Amoxicillini et Acidi clavulanici 875/125 mg",
-		formRu: "таблетки, покрытые оболочкой",
-		dosageRu: "875/125 мг",
-		quantityLabel: "N. 14",
-		dispenseLatin: "D.t.d. N 14 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки во время еды через каждые 12 часов, курс 7 дней.",
-		validityDays: 60,
-	},
-	{
 		id: "ketorolac_10",
-		tradeNameRu: "Кетанов (Кеторолак 10 мг)",
+		tradeNameRu: "Кеторол Экспресс / Кетанов (Кеторолак 10 мг)",
 		activeSubstanceRu: "Кеторолак",
 		category: "nsaid",
 		categoryLabelRu: "НПВП / Анальгетик (Острая боль)",

@@ -1,19 +1,13 @@
 import {
 	CONTROLLED_DRUG_PRESETS,
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
-	PRESCRIPTION_ADMINISTRATION_ROUTES_CATALOG,
-	PRESCRIPTION_DOSAGE_FORMS_CATALOG,
 	type DentalPrescriptionDrugPreset,
 	type Form107_1uPayload,
 	type Form148_1u88Payload,
 	type PrescriptionDoctorUkep,
 	type PrescriptionDrugItem,
-	calculatePrescriptionExpiration,
-	generateForm148_1u88Payload,
-	generatePrescriptionPayloadFromSoap,
 	renderForm107_1uHtml,
 	renderForm148_1u88Html,
-	renderPrescriptionUniversalHtml,
 	verifyPrescriptionStatutoryValidity,
 } from "@dental/shared";
 import {
@@ -22,14 +16,9 @@ import {
 	Calendar,
 	Check,
 	CheckCircle2,
-	Clock,
 	Copy,
-	FileCheck,
 	FileText,
-	Filter,
 	Key,
-	Lock,
-	MapPin,
 	Pill,
 	Plus,
 	Printer,
@@ -40,7 +29,6 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Trash2,
-	User,
 	X,
 } from "lucide-react";
 import type React from "react";
@@ -110,9 +98,9 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 	},
 	{
 		id: "solcoseryl_asepta_mucosa",
-		label: "«Солкосерил / Асепта (Заживление десен и слизистой)»",
-		desc: "Rp: Pastae 'Solcoseryl' 5.0 + Balsami 'Asepta' 10.0, D.S. Аппликации на область поражения слизистой и десен 2-3 раза в день.",
-		drugIds: ["solcoseryl_dental_paste", "asepta_balm"],
+		label: "«Стоматологические гели (Холисал / Метрогил Дента)»",
+		desc: "Rp: Gel. 'Cholisal' 10.0 + Gel. 'Metrogyl Denta' 20.0, D.S. Аппликации на область поражения слизистой и десен 2 раза в день.",
+		drugIds: ["cholisal_gel", "metrogyl_denta"],
 	},
 	{
 		id: "standard_anti_inflammatory_course",
@@ -1278,7 +1266,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</div>
 
 							{activeForm === "107-1u" && (
-								<div className="flex items-center gap-1 overflow-x-auto pb-0.5 [scrollbar-width:none]">
+								<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] min-h-[34px]">
 									{[
 										{ id: "all", label: "Все" },
 										{ id: "nsaid", label: "НПВС" },
@@ -1292,7 +1280,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											key={cat.id}
 											type="button"
 											onClick={() => setCategoryFilter(cat.id)}
-											className={`h-7 px-2.5 text-xs font-bold rounded-lg border whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+											className={`h-8 min-h-[32px] px-3 text-xs font-bold rounded-lg border whitespace-nowrap shrink-0 transition-all cursor-pointer ${
 												categoryFilter === cat.id
 													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] shadow-xs"
 													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--ink)]"

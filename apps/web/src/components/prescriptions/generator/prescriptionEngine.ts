@@ -5,7 +5,6 @@
 import {
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
 	calculatePrescriptionExpiration,
-	verifyPrescriptionStatutoryValidity,
 } from "@dental/shared";
 import { DENTAL_MEDICATIONS_CATALOG, type DentalMedicationPreset } from "./prescriptionPresets";
 
