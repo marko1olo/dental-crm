@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	AlertTriangle,
 	Calendar,
@@ -61,6 +61,16 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 	// Модальные окна действий
 	const [activeScriptLead, setActiveScriptLead] = useState<CrmLeakLeadItem | null>(null);
 	const [copiedScript, setCopiedScript] = useState(false);
+	const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (copyTimerRef.current) {
+				clearTimeout(copyTimerRef.current);
+				copyTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	const [contactModalLead, setContactModalLead] = useState<CrmLeakLeadItem | null>(null);
 	const [contactChannel, setContactChannel] = useState<"call" | "whatsapp" | "telegram" | "sms">("call");
@@ -183,7 +193,13 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 		navigator.clipboard.writeText(text);
 		setCopiedScript(true);
 		showToast("Скрипт скопирован в буфер обмена", "success");
-		setTimeout(() => setCopiedScript(false), 2000);
+		if (copyTimerRef.current) {
+			clearTimeout(copyTimerRef.current);
+		}
+		copyTimerRef.current = setTimeout(() => {
+			setCopiedScript(false);
+			copyTimerRef.current = null;
+		}, 2000);
 	};
 
 	const handleOpenWhatsApp = (lead: CrmLeakLeadItem) => {

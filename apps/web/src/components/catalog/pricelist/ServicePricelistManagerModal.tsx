@@ -10,7 +10,7 @@
  * - 1-Click Official Printable A4 Clinic Pricelist (ст. 149 НК РФ, НДС 0%).
  */
 
-import React, { useEffect, useId, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
 	AlertCircle,
 	ArrowUpDown,
@@ -127,12 +127,25 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 
 	// Notification Toast
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
+	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const importTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const searchInputId = useId();
 
+	useEffect(() => {
+		return () => {
+			if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+			if (importTimerRef.current) clearTimeout(importTimerRef.current);
+		};
+	}, []);
+
 	const showToast = (msg: string) => {
+		if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
 		setToastMessage(msg);
-		setTimeout(() => setToastMessage(null), 3000);
+		toastTimerRef.current = setTimeout(() => {
+			toastTimerRef.current = null;
+			setToastMessage(null);
+		}, 3000);
 	};
 
 	const openAddModal = () => {
@@ -380,7 +393,9 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			setItems(merged);
 			setImportSuccessCount(result.validItems.length);
 			showToast(`Импортировано ${result.validItems.length} позиций прейскуранта`);
-			setTimeout(() => {
+			if (importTimerRef.current) clearTimeout(importTimerRef.current);
+			importTimerRef.current = setTimeout(() => {
+				importTimerRef.current = null;
 				setIsImportModalOpen(false);
 				setCsvInputText('');
 			}, 1200);

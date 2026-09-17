@@ -43,7 +43,7 @@ import { logger } from "../utils/logger";
  * <p role="alert"> под кнопкой, но не причину отказа.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { denteAdminSecretRequestHeaders } from "../AppHelpers";
 import { actionFailureToast, type PanelSubject } from "../lib/panelStateText";
@@ -309,6 +309,16 @@ export function useMaxSettings() {
 	const [statusUnknown, setStatusUnknown] = useState(false);
 	const [saveState, setSaveState] = useState<SaveState>("idle");
 	const [saveError, setSaveError] = useState<string | null>(null);
+	const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (saveTimerRef.current) {
+				clearTimeout(saveTimerRef.current);
+				saveTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	const [botIdDraft, setBotIdDraft] = useState("");
 	const [apiTokenDraft, setApiTokenDraft] = useState("");
@@ -430,7 +440,13 @@ export function useMaxSettings() {
 				setApiTokenDraft("");
 				await load();
 				await checkStatus();
-				setTimeout(() => setSaveState("idle"), 2000);
+				if (saveTimerRef.current) {
+					clearTimeout(saveTimerRef.current);
+				}
+				saveTimerRef.current = setTimeout(() => {
+					saveTimerRef.current = null;
+					setSaveState("idle");
+				}, 2000);
 			} else {
 				setSaveError(await maxSaveFailureMessage(res));
 				setSaveState("error");

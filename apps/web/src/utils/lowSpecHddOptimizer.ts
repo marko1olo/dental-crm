@@ -162,8 +162,8 @@ export function getOptimizedTiming(): OptimizedTimingConfig {
 			backgroundSyncIntervalMs: 120_000,
 			// Компактный размер кэша для сохранения RAM при 2-4 ГБ
 			maxLruCacheEntries: 300,
-			// Максимальный размер кэша в RAM (40 МБ — жестко меньше 50 МБ для low-spec ПК)
-			maxLruCacheBytes: 40 * 1024 * 1024,
+			// Максимальный размер кэша в RAM (35 МБ — строго < 40 МБ для low-spec ПК с 4GB RAM)
+			maxLruCacheBytes: 35 * 1024 * 1024,
 			// 5 минут TTL по умолчанию
 			defaultCacheTtlMs: 300_000,
 			// Отключение агрессивной предзагрузки

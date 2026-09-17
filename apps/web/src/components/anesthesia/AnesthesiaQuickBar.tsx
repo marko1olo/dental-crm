@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
 	Syringe,
 	AlertTriangle,
@@ -118,6 +118,28 @@ export function AnesthesiaQuickBar({
 	});
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(null);
+	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const showQuickToast = (msg: string, durationMs = 3500) => {
+		if (toastTimerRef.current) {
+			clearTimeout(toastTimerRef.current);
+		}
+		setActiveToastMessage(msg);
+		toastTimerRef.current = setTimeout(() => {
+			toastTimerRef.current = null;
+			setActiveToastMessage(null);
+		}, durationMs);
+	};
+
+	useEffect(() => {
+		return () => {
+			if (toastTimerRef.current) {
+				clearTimeout(toastTimerRef.current);
+				toastTimerRef.current = null;
+			}
+		};
+	}, []);
+
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 	const [safetyWarning, setSafetyWarning] = useState<{
 		title: string;
@@ -208,18 +230,18 @@ export function AnesthesiaQuickBar({
 			: result.diaryEntryRu;
 
 		onApplyAnesthesia?.(diaryEntry, result);
-		setActiveToastMessage(
+		showQuickToast(
 			`Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
+			3500,
 		);
-		setTimeout(() => setActiveToastMessage(null), 3500);
 	};
 
 	const handleNurseQuickDisposal = (carpulesCount = 1.0) => {
 		if (disabled) return;
-		setActiveToastMessage(
+		showQuickToast(
 			`Списана пустая карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б / ПКУ зафиксированы медсестрой в 1 клик (без комиссии)`,
+			4000,
 		);
-		setTimeout(() => setActiveToastMessage(null), 4000);
 		if (onDisposalCarpules) {
 			onDisposalCarpules(carpulesCount, selectedDrugId);
 		}
@@ -227,10 +249,10 @@ export function AnesthesiaQuickBar({
 
 	const handleNursePacketDisposal = () => {
 		if (disabled) return;
-		setActiveToastMessage(
+		showQuickToast(
 			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: пакет списан медсестрой в 1 клик (Класс Б / ПКУ, без комиссии из 3 человек, мягкий овердрафт)",
+			4000,
 		);
-		setTimeout(() => setActiveToastMessage(null), 4000);
 		if (onDisposalCarpules) {
 			onDisposalCarpules(1.0, "articaine_1_100k");
 		}
@@ -261,8 +283,7 @@ export function AnesthesiaQuickBar({
 
 		const normDiaryText = `Инфильтрационная/проводниковая анестезия: ${STANDARD_ANESTHESIA_NORM_PRESET_RU}`;
 		onApplyAnesthesia?.(normDiaryText, result);
-		setActiveToastMessage("Норма анестезии внесена в протокол в 1 клик!");
-		setTimeout(() => setActiveToastMessage(null), 3500);
+		showQuickToast("Норма анестезии внесена в протокол в 1 клик!", 3500);
 	};
 
 	const handleApplyUltracainForteCombined = () => {
@@ -293,8 +314,7 @@ export function AnesthesiaQuickBar({
 		const diaryText =
 			"Комбинированная мандибулярная проводниковая и инфильтрационная анестезия: Ультракаин Д-С Форте 1:100 000 (1.7 мл). Двухплоскостная аспирация отрицательная. Обезболивание глубокое, онемение половины нижней губы и языка.";
 		onApplyAnesthesia?.(diaryText, result);
-		setActiveToastMessage("Мандибулярная + инфильтрационная (Ультракаин Форте 1.7 мл) внесена в 1 клик!");
-		setTimeout(() => setActiveToastMessage(null), 3500);
+		showQuickToast("Мандибулярная + инфильтрационная (Ультракаин Форте 1.7 мл) внесена в 1 клик!", 3500);
 	};
 
 	const handleApplySeptanestInfiltration = () => {
@@ -325,16 +345,15 @@ export function AnesthesiaQuickBar({
 		const diaryText =
 			"Инфильтрационная наднадкостничная анестезия: Септанест 1:100 000 (1.7 мл). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.";
 		onApplyAnesthesia?.(diaryText, result);
-		setActiveToastMessage("Инфильтрационная анестезия Септанест (1.7 мл) внесена в 1 клик!");
-		setTimeout(() => setActiveToastMessage(null), 3500);
+		showQuickToast("Инфильтрационная анестезия Септанест (1.7 мл) внесена в 1 клик!", 3500);
 	};
 
 	const handleNurseSeptanestDisposal = () => {
 		if (disabled) return;
-		setActiveToastMessage(
+		showQuickToast(
 			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б / ПКУ списаны медсестрой в 1 клик без комиссии из 3 человек",
+			4000,
 		);
-		setTimeout(() => setActiveToastMessage(null), 4000);
 		if (onDisposalCarpules) {
 			onDisposalCarpules(1.0, "articaine_1_100k");
 		}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useId } from "react";
+import React, { useState, useCallback, useId, useEffect, useRef } from "react";
 import {
 	Crown,
 	Sparkles,
@@ -133,6 +133,15 @@ export function OrthopedicsChairsidePanel({
 	const [selectedMaterial, setSelectedMaterial] = useState<string>("ZrO2 Multi-Layer");
 	const [selectedShade, setSelectedShade] = useState<string>("A2");
 	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
+	const labOrderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const appliedProtocolTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (labOrderTimerRef.current) clearTimeout(labOrderTimerRef.current);
+			if (appliedProtocolTimerRef.current) clearTimeout(appliedProtocolTimerRef.current);
+		};
+	}, []);
 
 	// Стандартные наряды ЗТЛ и шкала VITA (Мандат 8i, 8k)
 	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master">("classical");
@@ -211,7 +220,9 @@ export function OrthopedicsChairsidePanel({
 			);
 		}
 
-		setTimeout(() => {
+		if (labOrderTimerRef.current) clearTimeout(labOrderTimerRef.current);
+		labOrderTimerRef.current = setTimeout(() => {
+			labOrderTimerRef.current = null;
 			setIsLabOrderSending(false);
 			setLabOrderSentNumber(orderNumber);
 			showToast(
@@ -277,7 +288,9 @@ export function OrthopedicsChairsidePanel({
 			});
 
 			setAppliedProtocolId(protocol.id);
-			setTimeout(() => {
+			if (appliedProtocolTimerRef.current) clearTimeout(appliedProtocolTimerRef.current);
+			appliedProtocolTimerRef.current = setTimeout(() => {
+				appliedProtocolTimerRef.current = null;
 				setAppliedProtocolId(null);
 			}, 3000);
 

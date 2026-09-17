@@ -469,6 +469,16 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const newPatientFullNameInputRef = useRef<HTMLInputElement>(null);
+	const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (focusTimerRef.current) {
+				clearTimeout(focusTimerRef.current);
+				focusTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	// Inline new patient creation
 	const [showInlineNewPatient, setShowInlineNewPatient] = useState<boolean>(() => {
@@ -775,9 +785,20 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		setIsSubmitting(false);
 
 		// Focus search input next frame
-		setTimeout(() => {
+		if (focusTimerRef.current) {
+			clearTimeout(focusTimerRef.current);
+		}
+		focusTimerRef.current = setTimeout(() => {
 			searchInputRef.current?.focus();
+			focusTimerRef.current = null;
 		}, 100);
+
+		return () => {
+			if (focusTimerRef.current) {
+				clearTimeout(focusTimerRef.current);
+				focusTimerRef.current = null;
+			}
+		};
 	}, [
 		isOpen,
 		initialSlot,
@@ -1664,7 +1685,13 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											setSelectedPatient(null);
 											setPatientId("");
 											setSearchQuery("");
-											setTimeout(() => searchInputRef.current?.focus(), 50);
+											if (focusTimerRef.current) {
+												clearTimeout(focusTimerRef.current);
+											}
+											focusTimerRef.current = setTimeout(() => {
+												searchInputRef.current?.focus();
+												focusTimerRef.current = null;
+											}, 50);
 										}}
 										className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs text-[var(--muted)] hover:text-rose-600 rounded-lg hover:bg-[var(--paper)] transition-colors cursor-pointer"
 										title="Выбрать другого пациента"

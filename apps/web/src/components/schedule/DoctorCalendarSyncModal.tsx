@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
 	Calendar,
 	Copy,
@@ -60,6 +60,16 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 	const [copiedKey, setCopiedKey] = useState<"feed" | "webcal" | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [showRotationWarning, setShowRotationWarning] = useState<boolean>(false);
+	const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (copyTimerRef.current) {
+				clearTimeout(copyTimerRef.current);
+				copyTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	useEffect(() => {
 		if (initialDoctorId) {
@@ -115,7 +125,13 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 			await navigator.clipboard.writeText(text);
 			setCopiedKey(key);
 			showToast("Ссылка скопирована в буфер обмена", "success");
-			setTimeout(() => setCopiedKey(null), 2500);
+			if (copyTimerRef.current) {
+				clearTimeout(copyTimerRef.current);
+			}
+			copyTimerRef.current = setTimeout(() => {
+				setCopiedKey(null);
+				copyTimerRef.current = null;
+			}, 2500);
 		} catch {
 			showToast("Ошибка копирования в буфер обмена", "error");
 		}

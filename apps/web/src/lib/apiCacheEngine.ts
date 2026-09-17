@@ -377,9 +377,10 @@ export function setCachedApiResponse<T = unknown>(
 			? meta.ttlMs
 			: (rule?.defaultTtlMs ?? getOptimizedTiming().defaultCacheTtlMs);
 
-	// Защита от раздувания кучи гигантскими ответами на слабом ПК (> 10 МБ)
+	// Защита от раздувания кучи гигантскими ответами на слабом ПК (не более 25% от maxLruCacheBytes)
+	const maxSingleEntryBytes = Math.min(10 * 1024 * 1024, getOptimizedTiming().maxLruCacheBytes / 4);
 	const estimatedBytes = estimateObjectByteSize(data);
-	if (estimatedBytes > 10 * 1024 * 1024) {
+	if (estimatedBytes > maxSingleEntryBytes) {
 		return;
 	}
 

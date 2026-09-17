@@ -83,6 +83,16 @@ export function PatientSearchModal({
 	const [quickPhone, setQuickPhone] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const quickNameRef = useRef<HTMLInputElement>(null);
+	const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (focusTimerRef.current) {
+				clearTimeout(focusTimerRef.current);
+				focusTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	// 150ms Debounce for lightning responsiveness without stutter
 	useEffect(() => {
@@ -102,10 +112,20 @@ export function PatientSearchModal({
 			setIsInlineQuickCreate(false);
 			setQuickFullName("");
 			setQuickPhone("");
-			setTimeout(() => {
+			if (focusTimerRef.current) {
+				clearTimeout(focusTimerRef.current);
+			}
+			focusTimerRef.current = setTimeout(() => {
 				inputRef.current?.focus();
+				focusTimerRef.current = null;
 			}, 50);
 		}
+		return () => {
+			if (focusTimerRef.current) {
+				clearTimeout(focusTimerRef.current);
+				focusTimerRef.current = null;
+			}
+		};
 	}, [isOpen]);
 
 	const searchResults = useMemo(() => {
@@ -122,8 +142,12 @@ export function PatientSearchModal({
 		if (onQuickCreatePatient) {
 			onQuickCreatePatient(prefilled);
 		}
-		setTimeout(() => {
+		if (focusTimerRef.current) {
+			clearTimeout(focusTimerRef.current);
+		}
+		focusTimerRef.current = setTimeout(() => {
 			quickNameRef.current?.focus();
+			focusTimerRef.current = null;
 		}, 50);
 	};
 
