@@ -453,7 +453,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 											{index + 1}.
 										</span>
 										<span
-											className="font-bold text-sm text-[var(--ink)] truncate max-w-[240px] sm:max-w-[320px]"
+											className="font-bold text-sm text-[var(--ink)] truncate min-w-0 max-w-[240px] sm:max-w-[320px]"
 											title={match.patientName}
 										>
 											{match.patientName}
@@ -506,7 +506,10 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 								</div>
 
 								{match.reason && (
-									<p className="text-xs text-[var(--muted)] break-words m-0">
+									<p
+										className="text-xs text-[var(--muted)] truncate min-w-0 m-0"
+										title={match.reason}
+									>
 										{match.reason}
 									</p>
 								)}

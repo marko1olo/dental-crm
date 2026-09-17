@@ -3641,9 +3641,9 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														>
 															<div className="flex-1 min-w-0">
 																{/* Фокус 1: ФИО */}
-																<div className="font-bold flex items-center gap-1 leading-snug break-words text-xs min-w-0">
+																<div className="font-bold flex items-center gap-1 leading-snug text-xs min-w-0">
 																	<User size={12} className="shrink-0 text-[var(--teal)]" />
-																	<span className="break-words truncate min-w-0" title={pName}>{formatPatientDisplayFio(pName)}</span>
+																	<span className="truncate min-w-0" title={pName}>{formatPatientDisplayFio(pName)}</span>
 																</div>
 																{/* Фокус 2: Процедура и время */}
 																<div className="text-xs opacity-75 font-normal truncate min-w-0">

@@ -17,6 +17,7 @@ import {
 import {
 	AlertTriangle,
 	Calendar,
+	Check,
 	EyeOff,
 	FileText,
 	Megaphone,
@@ -135,6 +136,7 @@ export function PatientCreationModal({
 	const [showHints, setShowHints] = useState(false);
 	const [showDocFields, setShowDocFields] = useState(false);
 	const [isEmergencyOrPrimary, setIsEmergencyOrPrimary] = useState(true);
+	const [isSomaticNorm, setIsSomaticNorm] = useState(true);
 
 	// Minor (< 14 years old) check for dynamic document labeling (birth certificate vs passport)
 	const patientAge = useMemo(() => {
@@ -245,7 +247,7 @@ export function PatientCreationModal({
 					}
 				: undefined,
 			doctorFullName: null,
-			intakeNormApplied: true,
+			intakeNormApplied: isSomaticNorm,
 		});
 		showToast(
 			"Бланк договора со строками «________» отправлен на печать для зоны ожидания (без 403-ошибок)",
@@ -798,7 +800,10 @@ export function PatientCreationModal({
 											}}
 											className="w-full text-left p-2 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 transition-colors flex items-center justify-between gap-2 cursor-pointer"
 										>
-											<span className="font-bold text-[var(--ink)]">
+											<span
+												className="font-bold text-[var(--ink)] truncate min-w-0 flex-1"
+												title={`${item.patient.fullName}${item.patient.phone ? ` · ${item.patient.phone}` : ""}${item.patient.birthDate ? ` · д.р. ${item.patient.birthDate}` : ""}`}
+											>
 												{item.patient.fullName}
 												{item.patient.phone ? ` · ${item.patient.phone}` : ""}
 												{item.patient.birthDate
@@ -1079,6 +1084,51 @@ export function PatientCreationModal({
 								</div>
 							</div>
 						)}
+					</div>
+
+					{/* 1-Click Somatic Physiological Norm Fast Action (Mandate 8e) */}
+					<div className="mt-3 pt-3 border-t border-[var(--line)]">
+						<div
+							className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all ${
+								isSomaticNorm
+									? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)]"
+							}`}
+							data-testid="patient-creation-somatic-norm-banner"
+						>
+							<div className="flex items-center gap-2 min-w-0">
+								<ShieldCheck
+									size={16}
+									className={isSomaticNorm ? "text-emerald-600 shrink-0" : "text-[var(--muted)] shrink-0"}
+								/>
+								<div className="text-xs font-medium truncate min-w-0">
+									<span className="font-bold">Соматический статус:</span>{" "}
+									{isSomaticNorm
+										? "Физиологическая норма по умолчанию (соматически здоров)"
+										: "Требуется ручное заполнение анкеты"}
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									const nextVal = !isSomaticNorm;
+									setIsSomaticNorm(nextVal);
+									if (nextVal) {
+										showToast("Применена физиологическая норма: соматически здоров (Мандат 8e)", "success");
+									}
+								}}
+								data-testid="btn-somatic-healthy-norm"
+								className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 ${
+									isSomaticNorm
+										? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+										: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
+								}`}
+								title="Мандат 8e: 1 клик для переключения физиологической нормы"
+							>
+								<Check size={13} className="shrink-0" />
+								<span>{isSomaticNorm ? "Норма (1 клик)" : "Применить норму"}</span>
+							</button>
+						</div>
 					</div>
 				</div>
 

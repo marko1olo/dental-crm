@@ -93,7 +93,7 @@ export function AppointmentHoverHud({
 			<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
 				<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 min-w-0 flex-1">
 					<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-					<span className="break-words leading-tight" title={appointmentPatientName || "Пациент"}>
+					<span className="truncate min-w-0 leading-tight" title={appointmentPatientName || "Пациент"}>
 						{appointmentPatientName || "Пациент"}
 					</span>
 				</span>
@@ -205,9 +205,17 @@ export function AppointmentHoverHud({
 
 			{/* 4. Процедура и список зубов */}
 			<div className="pt-2 border-t border-[var(--line)] space-y-1.5">
-				<div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
+				<div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 min-w-0">
 					<Clock size={13} className="text-[var(--teal)] shrink-0" />
-					<span className="font-semibold">
+					<span
+						className="font-semibold truncate min-w-0"
+						title={
+							appointment?.reason ||
+							(appointment as Record<string, any>)?.notes ||
+							(appointment as Record<string, any>)?.comment ||
+							"Консультация стоматолога"
+						}
+					>
 						{appointment?.reason ||
 							(appointment as Record<string, any>)?.notes ||
 							(appointment as Record<string, any>)?.comment ||

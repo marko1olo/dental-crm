@@ -1445,7 +1445,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 					<div className="appointment-card-body min-w-0 max-w-full">
 						<h3
-							className="text-base font-semibold break-words leading-snug whitespace-normal cursor-pointer hover:text-[var(--teal)] transition-colors"
+							className="text-base font-semibold truncate min-w-0 max-w-full leading-snug cursor-pointer hover:text-[var(--teal)] transition-colors"
 							style={{ color: "var(--ink)", minWidth: 0, maxWidth: "100%" }}
 							title={`Пациент: ${appointmentPatientName}${appointmentDoctor?.fullName ? ` · Врач: ${appointmentDoctor.fullName}` : ""}${appointmentChair?.name ? ` · Кресло: ${appointmentChair.name}` : ""}`}
 							onDoubleClick={(e) => {
@@ -2194,7 +2194,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									<div className="text-lg font-black text-[var(--ink)] truncate" title={appointmentPatientName}>
 										{appointmentPatientName}
 									</div>
-									<div className="text-xs text-[var(--muted)] font-medium">
+									<div
+										className="text-xs text-[var(--muted)] font-medium truncate min-w-0"
+										title={`${formatTime(appointment.startsAt)} – ${formatTime(appointment.endsAt)} · ${appointment.reason || "Прием"}`}
+									>
 										{formatTime(appointment.startsAt)} – {formatTime(appointment.endsAt)} · {appointment.reason || "Прием"}
 									</div>
 								</div>
