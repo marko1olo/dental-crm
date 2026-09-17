@@ -92,10 +92,10 @@ export interface PeriodontogramChartProps {
 }
 
 export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
-	patientId,
-	patientName,
-	organizationId,
-	doctorId,
+	patientId: _patientId,
+	patientName: _patientName,
+	organizationId: _organizationId,
+	doctorId: _doctorId,
 	doctorName,
 	initialTeeth,
 	onChange,
@@ -147,8 +147,10 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 	const [isProbeKeyboardEnabled, setIsProbeKeyboardEnabled] = useState<boolean>(
 		initialProbeKeyboardEnabled,
 	);
-	// Compact jaw filter (All / Upper / Lower) per Hick's Law & Mandate 8d
-	const [archFilter, setArchFilter] = useState<"all" | "upper" | "lower">("all");
+	// Compact jaw and sextant filter (All / Upper / Lower / S1..S6) per Hick's Law & Mandate 8d
+	const [archFilter, setArchFilter] = useState<
+		"all" | "upper" | "lower" | "S1" | "S2" | "S3" | "S4" | "S5" | "S6"
+	>("all");
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -1148,7 +1150,9 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			ref={containerRef}
 			tabIndex={isProbeKeyboardEnabled ? 0 : -1}
 			onKeyDown={handleKeyDown}
-			className="perio-chart-root w-full flex flex-col gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] shadow-sm outline-none focus:ring-1 focus:ring-teal-500/50 select-none transition-all"
+			className={`perio-chart-root w-full flex flex-col ${
+				compactMode ? "gap-2.5 p-3 sm:p-4" : "gap-4 p-4 sm:p-5"
+			} rounded-2xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] shadow-sm outline-none focus:ring-1 focus:ring-teal-500/50 select-none transition-all`}
 			data-testid="interactive-periodontogram"
 		>
 			{/* ═══════════════════════════════════════════════════════════════════
@@ -1216,11 +1220,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							type="button"
 							onClick={handleSetAllIntact}
 							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
-							title="Установить все 32 зуба в физиологическую норму (PD 2мм, рецессия 0мм, BOP 0%)"
+							title="Пародонт интактен / норма (все 32 зуба: глубина 2 мм, рецессия 0 мм, BOP 0%)"
 							data-testid="perio-healthy-norm-btn"
 						>
 							<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-							<span>Десна здорова (Норма 1-клик)</span>
+							<span>Пародонт интактен / норма</span>
 						</button>
 
 						<button
@@ -1393,20 +1397,24 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyExpressPreset("perio_norm_express")}
-						className="min-h-[50px] p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
-						title="Норма пародонта: PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0, десна плотная бледно-розовая, подвижность 0"
+						className="min-h-[50px] p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Норма пародонта: PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0, десна плотная бледно-розовая, подвижность 0"
+						}
 						data-testid="perio-preset-norm-card"
 					>
-						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
-							<span className="flex items-center gap-1.5 text-emerald-300">
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
+							<span className="flex items-center gap-1.5 text-emerald-300 min-w-0 truncate">
 								<ShieldCheck size={16} className="text-emerald-400 shrink-0" />
-								Норма (PSR 0)
+								<span className="truncate">Норма (PSR 0)</span>
 							</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
 								Z01.2
 							</span>
 						</div>
-						<span className="text-[11px] text-emerald-200/80 leading-tight mt-1">
+						<span className="text-[11px] text-emerald-200/80 leading-tight mt-1 line-clamp-2">
 							PSR 0, глубина &le; 2 мм, BOP 0, десна плотная
 						</span>
 					</button>
@@ -1416,20 +1424,24 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyExpressPreset("pro_hygiene_express")}
-						className="min-h-[50px] p-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
-						title="Профгигиена: УЗ-скейлинг + Air-Flow глицин + полировка Detartrine + глубокое фторирование Bifluorid 12"
+						className="min-h-[50px] p-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Профгигиена: УЗ-скейлинг + Air-Flow глицин + полировка Detartrine + глубокое фторирование Bifluorid 12"
+						}
 						data-testid="perio-preset-prophy-card"
 					>
-						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
-							<span className="flex items-center gap-1.5 text-cyan-300">
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
+							<span className="flex items-center gap-1.5 text-cyan-300 min-w-0 truncate">
 								<Sparkles size={16} className="text-cyan-400 shrink-0" />
-								Профгигиена
+								<span className="truncate">Профгигиена</span>
 							</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
 								A16.07.051
 							</span>
 						</div>
-						<span className="text-[11px] text-cyan-200/80 leading-tight mt-1">
+						<span className="text-[11px] text-cyan-200/80 leading-tight mt-1 line-clamp-2">
 							УЗ + Air-Flow глицин + полировка + фторирование
 						</span>
 					</button>
@@ -1439,20 +1451,24 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyExpressPreset("gingivitis_express")}
-						className="min-h-[50px] p-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
-						title="Гингивит: PSR 1-2, карманы < 3.5 мм, диффузная кровоточивость при зондировании, наддесневой камень"
+						className="min-h-[50px] p-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Гингивит: PSR 1-2, карманы < 3.5 мм, диффузная кровоточивость при зондировании, наддесневой камень"
+						}
 						data-testid="perio-preset-gingivitis-card"
 					>
-						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
-							<span className="flex items-center gap-1.5 text-amber-300">
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
+							<span className="flex items-center gap-1.5 text-amber-300 min-w-0 truncate">
 								<Activity size={16} className="text-amber-400 shrink-0" />
-								Гингивит (PSR 1-2)
+								<span className="truncate">Гингивит (PSR 1-2)</span>
 							</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
 								K05.1
 							</span>
 						</div>
-						<span className="text-[11px] text-amber-200/80 leading-tight mt-1">
+						<span className="text-[11px] text-amber-200/80 leading-tight mt-1 line-clamp-2">
 							карманы &lt; 3.5 мм, BOP+, отек сосочков
 						</span>
 					</button>
@@ -1464,20 +1480,24 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						onClick={() =>
 							handleApplyExpressPreset("periodontitis_mild_express")
 						}
-						className="min-h-[50px] p-3 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
-						title="Пародонтит лёгкой степени: PSR 2-3, карманы 3.5-4 мм, BOP+, над/поддесневой камень, подвижность 0"
+						className="min-h-[50px] p-3 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Пародонтит лёгкой степени: PSR 2-3, карманы 3.5-4 мм, BOP+, над/поддесневой камень, подвижность 0"
+						}
 						data-testid="perio-preset-mild-periodontitis-card"
 					>
-						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
-							<span className="flex items-center gap-1.5 text-rose-300">
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
+							<span className="flex items-center gap-1.5 text-rose-300 min-w-0 truncate">
 								<AlertTriangle size={16} className="text-rose-400 shrink-0" />
-								Пародонтит легкий
+								<span className="truncate">Пародонтит легкий</span>
 							</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 shrink-0">
 								K05.30
 							</span>
 						</div>
-						<span className="text-[11px] text-rose-200/80 leading-tight mt-1">
+						<span className="text-[11px] text-rose-200/80 leading-tight mt-1 line-clamp-2">
 							карманы 3.5–4 мм, BOP+, зубной камень
 						</span>
 					</button>
@@ -1489,20 +1509,24 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						onClick={() =>
 							handleApplyExpressPreset("periodontitis_moderate_express")
 						}
-						className="min-h-[50px] p-3 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
-						title="Пародонтит средней степени: PSR 3, карманы 3.5 - 5.5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
+						className="min-h-[50px] p-3 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Пародонтит средней степени: PSR 3, карманы 3.5 - 5.5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
+						}
 						data-testid="perio-preset-periodontitis-card"
 					>
-						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
-							<span className="flex items-center gap-1.5 text-orange-300">
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
+							<span className="flex items-center gap-1.5 text-orange-300 min-w-0 truncate">
 								<ShieldAlert size={16} className="text-orange-400 shrink-0" />
-								Пародонтит средний
+								<span className="truncate">Пародонтит средний</span>
 							</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30 shrink-0">
 								K05.31
 							</span>
 						</div>
-						<span className="text-[11px] text-orange-200/80 leading-tight mt-1">
+						<span className="text-[11px] text-orange-200/80 leading-tight mt-1 line-clamp-2">
 							карманы 4–5 мм, рецессия 1–2 мм, подвижность I
 						</span>
 					</button>
@@ -1514,21 +1538,25 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						onClick={() =>
 							handleApplyExpressPreset("periodontitis_severe_express")
 						}
-						className="min-h-[50px] p-3 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-200 border border-red-600/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
-						title="Пародонтит тяжёлой степени: PSR 4*, карманы >= 6 мм, гноетечение, рецессия, подвижность II-III ст."
+						className="min-h-[50px] p-3 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-200 border border-red-600/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Пародонтит тяжёлой степени: PSR 4*, карманы >= 6 мм, гноетечение, рецессия, подвижность II-III ст."
+						}
 						data-testid="perio-preset-severe-periodontitis-card"
 						data-preset-action="perio-preset-severe-btn"
 					>
-						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
-							<span className="flex items-center gap-1.5 text-red-300">
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
+							<span className="flex items-center gap-1.5 text-red-300 min-w-0 truncate">
 								<ShieldAlert size={16} className="text-red-400 shrink-0" />
-								Пародонтит тяжелый
+								<span className="truncate">Пародонтит тяжелый</span>
 							</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30 shrink-0">
 								K05.32
 							</span>
 						</div>
-						<span className="text-[11px] text-red-200/80 leading-tight mt-1">
+						<span className="text-[11px] text-red-200/80 leading-tight mt-1 line-clamp-2">
 							карманы &ge;6 мм, гноетечение, подвижность II-III
 						</span>
 					</button>
@@ -1555,16 +1583,16 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							return (
 								<div
 									key={sextant.name}
-									className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-2 shadow-2xs"
+									className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-2 shadow-2xs min-w-0"
 									data-testid={`psr-sextant-card-${sextant.name}`}
 								>
-									<div className="flex items-center justify-between">
-										<span className="font-bold text-xs text-[var(--ink)]">
+									<div className="flex items-center justify-between min-w-0 gap-1">
+										<span className="font-bold text-xs text-[var(--ink)] truncate">
 											{sextant.name} ({sextant.teeth[0]}-
 											{sextant.teeth[sextant.teeth.length - 1]})
 										</span>
 										<span
-											className={`font-mono font-black text-xs px-1.5 py-0.5 rounded border ${
+											className={`font-mono font-black text-xs px-1.5 py-0.5 rounded border shrink-0 ${
 												currentCode === 0
 													? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
 													: currentCode === 1
@@ -1604,7 +1632,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 																" ring-1 ring-white/50 scale-105"
 															: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-white border-[var(--line)]"
 													}`}
-													title={`${def.labelRu}: ${def.descriptionRu}`}
+													title={
+														readOnly
+															? "Режим только для чтения (закрытый визит / архив)"
+															: `${def.labelRu}: ${def.descriptionRu}`
+													}
 													data-testid={`psr-${sextant.name}-code-${codeVal}`}
 												>
 													{codeVal}
@@ -1628,7 +1660,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 													? "bg-rose-500 text-white border-rose-400 ring-1 ring-white/50"
 													: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-rose-400 border-[var(--line)]"
 											}`}
-											title="Астериск (*): патологическая подвижность >= II ст. или поражение фуркации"
+											title={
+												readOnly
+													? "Режим только для чтения (закрытый визит / архив)"
+													: "Астериск (*): патологическая подвижность >= II ст. или поражение фуркации"
+											}
 											data-testid={`psr-${sextant.name}-code-asterisk`}
 										>
 											*
@@ -1646,7 +1682,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 				{/* Secondary Granular Presets Row */}
 				<div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[var(--line)]/50">
-					<span className="text-[11px] text-[var(--muted)] font-semibold mr-1">
+					<span className="text-[11px] text-[var(--muted)] font-semibold mr-1 shrink-0">
 						Дополнительные шаблоны:
 					</span>
 					<button
@@ -1655,8 +1691,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						onClick={() =>
 							handleApplyExpressPreset("pro_hygiene_express")
 						}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-cyan-500/15 text-cyan-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center gap-1"
-						title="Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-cyan-500/15 text-cyan-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center gap-1 shrink-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12"
+						}
 						data-testid="perio-preset-pro-hygiene-card"
 					>
 						<Sparkles size={12} className="text-cyan-400" />
@@ -1666,8 +1706,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("gingivitis_localized")}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center"
-						title="Гингивит локализованный: отек и кровоточивость межзубных сосочков во фронтальном отделе (BOP+)"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Гингивит локализованный: отек и кровоточивость межзубных сосочков во фронтальном отделе (BOP+)"
+						}
 					>
 						Гингивит лок.
 					</button>
@@ -1675,8 +1719,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("gingivitis_generalized")}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-200 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center"
-						title="Гингивит генерализованный: диффузный отек и кровоточивость десен обеих челюстей (BOP > 30%)"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-200 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Гингивит генерализованный: диффузный отек и кровоточивость десен обеих челюстей (BOP > 30%)"
+						}
 					>
 						Гингивит генер.
 					</button>
@@ -1684,8 +1732,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("periodontitis_mild")}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-orange-500/15 text-orange-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center"
-						title="Хронический пародонтит лёгкой степени: карманы 3.5–4 мм, BOP+, над/поддесневой камень"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-orange-500/15 text-orange-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Хронический пародонтит лёгкой степени: карманы 3.5–4 мм, BOP+, над/поддесневой камень"
+						}
 					>
 						Пародонтит I ст.
 					</button>
@@ -1693,8 +1745,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("periodontitis_severe")}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-rose-500/15 text-rose-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center"
-						title="Хронический пародонтит тяжёлой степени: карманы >6 мм, гноетечение, подвижность II-III"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-rose-500/15 text-rose-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Хронический пародонтит тяжёлой степени: карманы >6 мм, гноетечение, подвижность II-III"
+						}
 					>
 						Пародонтит III ст.
 					</button>
@@ -1702,8 +1758,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("dental_calculus")}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-sky-500/15 text-sky-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center"
-						title="Зубные отложения: массивный над- и поддесневой зубной камень на резцах и молярах (K03.6)"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-sky-500/15 text-sky-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+						title={
+							readOnly
+								? "Режим только для чтения (закрытый визит / архив)"
+								: "Зубные отложения: массивный над- и поддесневой зубной камень на резцах и молярах (K03.6)"
+						}
 					>
 						Зубные отложения
 					</button>
@@ -1715,14 +1775,14 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
 				{/* 1. FMBS (BOP %) */}
-				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)] font-semibold flex items-center gap-1">
-						<span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
-						FMBS (BOP %)
+				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5 min-w-0">
+					<span className="text-[11px] text-[var(--muted)] font-semibold flex items-center gap-1 min-w-0 truncate">
+						<span className="w-2 h-2 rounded-full bg-rose-500 inline-block shrink-0" />
+						<span className="truncate">FMBS (BOP %)</span>
 					</span>
-					<div className="flex items-baseline gap-1.5">
+					<div className="flex items-baseline gap-1.5 min-w-0">
 						<span
-							className={`text-lg font-black ${
+							className={`text-lg font-black shrink-0 ${
 								summary.fmbsPercent <= 10
 									? "text-emerald-400"
 									: summary.fmbsPercent <= 25
@@ -1732,21 +1792,21 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						>
 							{summary.fmbsPercent}%
 						</span>
-						<span className="text-[10px] text-[var(--muted)]">
+						<span className="text-[10px] text-[var(--muted)] truncate">
 							{summary.fmbsPercent <= 10 ? "Норма ≤10%" : "Воспаление"}
 						</span>
 					</div>
 				</div>
 
 				{/* 2. FMPS (Plaque %) / O'Leary PCR */}
-				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)] font-semibold flex items-center gap-1">
-						<span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-						FMPS / O&apos;Leary
+				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5 min-w-0">
+					<span className="text-[11px] text-[var(--muted)] font-semibold flex items-center gap-1 min-w-0 truncate">
+						<span className="w-2 h-2 rounded-full bg-amber-400 inline-block shrink-0" />
+						<span className="truncate">FMPS / O&apos;Leary</span>
 					</span>
-					<div className="flex items-baseline gap-1.5">
+					<div className="flex items-baseline gap-1.5 min-w-0">
 						<span
-							className={`text-lg font-black ${
+							className={`text-lg font-black shrink-0 ${
 								olearyPcr.pcrPercent <= 15
 									? "text-emerald-400"
 									: olearyPcr.pcrPercent <= 30
@@ -1756,7 +1816,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						>
 							{olearyPcr.pcrPercent}%
 						</span>
-						<span className="text-[10px] text-[var(--muted)]">
+						<span className="text-[10px] text-[var(--muted)] truncate">
 							{olearyPcr.isSurgicalClearanceMet
 								? "Допуск к оп."
 								: "Тренинг гиг."}
@@ -1765,14 +1825,14 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 				</div>
 
 				{/* 3. Deep Pockets (PD >= 5 mm) */}
-				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)] font-semibold flex items-center gap-1">
-						<AlertCircle size={12} className="text-rose-400" />
-						Карманы ≥ 5 мм
+				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5 min-w-0">
+					<span className="text-[11px] text-[var(--muted)] font-semibold flex items-center gap-1 min-w-0 truncate">
+						<AlertCircle size={12} className="text-rose-400 shrink-0" />
+						<span className="truncate">Карманы ≥ 5 мм</span>
 					</span>
-					<div className="flex items-baseline gap-1.5">
+					<div className="flex items-baseline gap-1.5 min-w-0">
 						<span
-							className={`text-lg font-black ${
+							className={`text-lg font-black shrink-0 ${
 								summary.deepPocketsCount === 0
 									? "text-emerald-400"
 									: "text-rose-400"
@@ -1780,36 +1840,36 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						>
 							{summary.deepPocketsCount}
 						</span>
-						<span className="text-[10px] text-[var(--muted)]">
+						<span className="text-[10px] text-[var(--muted)] truncate">
 							умеренных 4мм: {summary.moderatePocketsCount}
 						</span>
 					</div>
 				</div>
 
 				{/* 4. Max PD & Max CAL */}
-				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)] font-semibold">
+				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5 min-w-0">
+					<span className="text-[11px] text-[var(--muted)] font-semibold truncate">
 						Макс. PD / CAL
 					</span>
-					<div className="flex items-baseline gap-1.5">
-						<span className="text-lg font-black text-[var(--ink)]">
+					<div className="flex items-baseline gap-1.5 min-w-0">
+						<span className="text-lg font-black text-[var(--ink)] shrink-0">
 							{summary.maxPocketDepthMm} / {summary.maxCalMm}
 						</span>
-						<span className="text-[10px] text-[var(--muted)]">мм</span>
+						<span className="text-[10px] text-[var(--muted)] truncate">мм</span>
 					</div>
 				</div>
 
 				{/* 5. Mobility & Furcations */}
-				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)] font-semibold">
+				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-0.5 min-w-0">
+					<span className="text-[11px] text-[var(--muted)] font-semibold truncate">
 						Подвижность / Фуркации
 					</span>
-					<div className="flex items-baseline gap-1.5">
-						<span className="text-lg font-black text-amber-400">
+					<div className="flex items-baseline gap-1.5 min-w-0">
+						<span className="text-lg font-black text-amber-400 shrink-0">
 							{summary.teethWithMobilityCount} /{" "}
 							{summary.teethWithFurcationCount}
 						</span>
-						<span className="text-[10px] text-[var(--muted)]">
+						<span className="text-[10px] text-[var(--muted)] truncate">
 							зубов
 						</span>
 					</div>
@@ -1818,15 +1878,15 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 				{/* 6. WHO PSR / CPITN Sextants Summary */}
 				<div
 					onClick={() => setIsDiagnosticsExpanded((prev) => !prev)}
-					className="p-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] flex flex-col gap-0.5 cursor-pointer transition-all"
+					className="p-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] flex flex-col gap-0.5 cursor-pointer transition-all min-w-0"
 					title="Нажмите для открытия подробного отчета по секстантам PSR и матрице O'Leary"
 				>
-					<div className="flex items-center justify-between text-[11px] text-[var(--muted)] font-semibold">
-						<span>Скрининг PSR</span>
+					<div className="flex items-center justify-between text-[11px] text-[var(--muted)] font-semibold min-w-0 gap-1">
+						<span className="truncate">Скрининг PSR</span>
 						{isDiagnosticsExpanded ? (
-							<ChevronUp size={12} />
+							<ChevronUp size={12} className="shrink-0" />
 						) : (
-							<ChevronDown size={12} />
+							<ChevronDown size={12} className="shrink-0" />
 						)}
 					</div>
 					<div className="font-mono text-xs font-bold text-teal-400 truncate">
@@ -2112,13 +2172,13 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			    MAIN FLORIDA PROBE 6-POINT INTERACTIVE DENTITION GRIDS
 			    ═══════════════════════════════════════════════════════════════════ */}
 					<div className="flex flex-col gap-4 overflow-x-auto pb-2">
-						{/* Compact Jaw Switcher (Mandates 8d, 8e, Hick's Law) */}
-						<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
-							<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold">
+						{/* Compact Jaw & Sextant Switcher (Mandates 8d, 8e, Hick's Law: Strictly 1 Row 32-36px) */}
+						<div className="flex items-center justify-between gap-2 overflow-x-auto h-9 min-h-[36px] max-h-9 py-0.5 px-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold shrink-0 select-none">
+							<div className="flex items-center gap-1 shrink-0">
 								<button
 									type="button"
 									onClick={() => setArchFilter("all")}
-									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer h-7 flex items-center ${
 										archFilter === "all"
 											? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
 											: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -2130,7 +2190,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								<button
 									type="button"
 									onClick={() => setArchFilter("upper")}
-									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer h-7 flex items-center ${
 										archFilter === "upper"
 											? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
 											: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -2142,7 +2202,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								<button
 									type="button"
 									onClick={() => setArchFilter("lower")}
-									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer h-7 flex items-center ${
 										archFilter === "lower"
 											? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
 											: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -2153,13 +2213,48 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								</button>
 							</div>
 
-							<div className="text-[11px] text-[var(--muted)] flex items-center gap-2">
-								<span>Показано: {archFilter === "all" ? "32 зуба (192 точки)" : "16 зубов (96 точек)"}</span>
+							<div className="h-4 w-[1px] bg-[var(--line)] mx-0.5 shrink-0 hidden sm:block" />
+
+							{/* Rapid Sextant Jump Chips (S1..S6 per Hick's Law) */}
+							<div className="flex items-center gap-1 shrink-0">
+								{(["S1", "S2", "S3", "S4", "S5", "S6"] as const).map((sName) => (
+									<button
+										key={sName}
+										type="button"
+										onClick={() =>
+											setArchFilter(archFilter === sName ? "all" : sName)
+										}
+										className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition-all cursor-pointer h-7 flex items-center ${
+											archFilter === sName
+												? "bg-teal-600 text-white shadow-xs"
+												: "bg-[var(--paper)] text-[var(--muted)] hover:text-teal-300 border border-[var(--line)]"
+										}`}
+										title={`Секстант ${sName}: быстрый фокус на участке зубного ряда`}
+									>
+										{sName}
+									</button>
+								))}
+							</div>
+
+							<div className="text-[11px] text-[var(--muted)] flex items-center gap-2 shrink-0 ml-auto pl-2">
+								<span className="truncate">
+									{archFilter === "all"
+										? "32 зуба (192 точки)"
+										: archFilter === "upper"
+											? "Верхняя челюсть (96 точек)"
+											: archFilter === "lower"
+												? "Нижняя челюсть (96 точек)"
+												: `Секстант ${archFilter}`}
+								</span>
 							</div>
 						</div>
 
 						{/* ─── UPPER ARCH (18..11 | 21..28) ────────────────────────────── */}
-						{(archFilter === "all" || archFilter === "upper") && (
+						{(archFilter === "all" ||
+							archFilter === "upper" ||
+							archFilter === "S1" ||
+							archFilter === "S2" ||
+							archFilter === "S3") && (
 							<div className="flex flex-col gap-1 min-w-[760px]">
 								<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
 									<span>ВЕРХНЯЯ ЧЕЛЮСТЬ (МАКСИЛЛА) • 18–11 | 21–28</span>
@@ -2224,7 +2319,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						)}
 
 						{/* ─── LOWER ARCH (48..41 | 31..38) ────────────────────────────── */}
-						{(archFilter === "all" || archFilter === "lower") && (
+						{(archFilter === "all" ||
+							archFilter === "lower" ||
+							archFilter === "S4" ||
+							archFilter === "S5" ||
+							archFilter === "S6") && (
 							<div className="flex flex-col gap-1 min-w-[760px]">
 								<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
 									<span>НИЖНЯЯ ЧЕЛЮСТЬ (МАНДИБУЛА) • 48–41 | 31–38</span>
@@ -2323,17 +2422,17 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			    TIER 2: SELECTED TOOTH GRANULAR INSPECTOR (WARM CONTEXT DRAWER)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{selectedTooth && (
-				<div className="p-3 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-3">
+				<div className="p-3 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-3 min-w-0">
 					<div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-[var(--line)]">
-						<div className="flex items-center gap-2">
-							<span className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 font-black text-sm flex items-center justify-center border border-teal-500/30">
+						<div className="flex items-center gap-2 min-w-0">
+							<span className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 font-black text-sm flex items-center justify-center border border-teal-500/30 shrink-0">
 								{selectedTooth.toothNumber}
 							</span>
-							<div>
-								<h4 className="text-xs sm:text-sm font-bold text-[var(--ink)]">
+							<div className="min-w-0">
+								<h4 className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">
 									{getToothFolkAndAnatomicalNameRu(selectedTooth.toothNumber)}
 								</h4>
-								<span className="text-[10px] text-[var(--muted)]">
+								<span className="text-[10px] text-[var(--muted)] truncate block">
 									{selectedTooth.isMissing
 										? "Зуб отсутствует (адентия/удален)"
 										: selectedTooth.isImplant
@@ -2858,9 +2957,9 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 			}`}
 		>
 			{/* Tooth Number Header & 1-Click Mobility / Furcation Chips */}
-			<div className="w-full flex items-center justify-between text-[10px] font-bold px-0.5 mb-0.5">
+			<div className="w-full flex items-center justify-between text-[10px] font-bold px-0.5 mb-0.5 min-w-0">
 				<span
-					className={`${
+					className={`truncate ${
 						isSelected
 							? "text-teal-300 font-black scale-105"
 							: "text-[var(--ink)]"
@@ -2868,7 +2967,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 				>
 					{tooth.toothNumber}
 				</span>
-				<div className="flex items-center gap-0.5">
+				<div className="flex items-center gap-0.5 shrink-0">
 					{isImplant && (
 						<span
 							className="text-[8px] font-bold text-amber-400 font-mono px-0.5 rounded bg-amber-500/10 border border-amber-500/30"
@@ -3305,7 +3404,7 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 				y1={isUpper ? 20 : 14}
 				x2="25"
 				y2={isUpper ? 20 : 14}
-				stroke="#38bdf8"
+				stroke="var(--sky, #38bdf8)"
 				strokeWidth="1.5"
 				strokeDasharray="2 1"
 			/>
