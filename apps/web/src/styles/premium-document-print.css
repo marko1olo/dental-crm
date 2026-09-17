@@ -491,6 +491,21 @@
 		display: none !important;
 	}
 
+	.doc-sign-zone,
+	.doc-signature-block,
+	.doc-stamp-box,
+	.doc-qr-stamp {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.doc-soap-section,
+	.doc-odontogram-box,
+	.doc-radiology-grid {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
 	/* Ensure background colors and borders print faithfully */
 	* {
 		-webkit-print-color-adjust: exact !important;

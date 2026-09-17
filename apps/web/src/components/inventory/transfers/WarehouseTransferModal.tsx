@@ -410,11 +410,11 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 				<header className="wh-transfer-header">
 					<div className="wh-transfer-title" id="wh-modal-title">
 						<Truck size={24} className="text-teal-600" />
-						<div>
-							<div className="font-bold text-lg leading-tight">
+						<div className="min-w-0">
+							<div className="font-bold text-lg leading-tight truncate">
 								Межфилиальное Перемещение ТМЦ (ТОРГ-13)
 							</div>
-							<div className="text-xs font-normal text-muted">
+							<div className="text-xs font-normal text-muted truncate">
 								Централизованная складская логистика • Партионный учет • Акты расхождений ТОРГ-2
 							</div>
 						</div>
@@ -530,8 +530,8 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 						<div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
 							<AlertCircle size={16} className="shrink-0 text-amber-600 mt-0.5" />
 							<div className="flex-1">
-								<div className="font-bold text-amber-900 dark:text-amber-100 flex items-center gap-1.5">
-									<span>Внимание: списание в овердрафт склада</span>
+								<div className="font-bold text-amber-900 dark:text-amber-100 flex items-center gap-1.5 flex-wrap">
+									<span>Внимание: остаток отрицательный, требуется оприходование накладной</span>
 									<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200">
 										Мандат 8e п. 10
 									</span>
@@ -589,8 +589,8 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 
 										return (
 											<tr key={item.itemId}>
-												<td>
-													<div className="font-semibold text-ink leading-tight">{item.nameRu}</div>
+												<td className="min-w-0 max-w-xs">
+													<div className="font-semibold text-ink leading-tight truncate" title={item.nameRu}>{item.nameRu}</div>
 													<div className="flex items-center gap-2 mt-0.5 flex-wrap">
 														<span className="text-xs text-muted font-mono">{item.sku}</span>
 														<span className="text-[11px] text-muted">

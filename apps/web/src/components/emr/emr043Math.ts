@@ -9,7 +9,6 @@ import type {
 	MedicalCardForm043uData,
 	Form043PrintConfig,
 	Form043ValidationResult,
-	VisitDiaryEntry043,
 } from "./emr043Types";
 import {
 	type FdiToothRecord,
@@ -678,14 +677,15 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
     @media print {
       body { font-size: ${cfg.fontSizePt}pt; color: #000 !important; background: #fff !important; }
       .watermark-draft { color: rgba(0, 0, 0, 0.08) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .section-title { background: #f1f5f9 !important; color: #0f172a !important; border-left-color: #0f172a !important; }
+      .section-title { background: #f1f5f9 !important; color: #0f172a !important; border-left-color: #0f172a !important; page-break-after: avoid; break-after: avoid; }
       table.data-table th, table.data-table-dense th { background: #f1f5f9 !important; color: #0f172a !important; }
       table.data-table td, table.data-table th, table.data-table-dense td, table.data-table-dense th { border-color: #000 !important; color: #000 !important; }
       table.data-table tr:nth-child(even) td, table.data-table-dense tr:nth-child(even) td { background: transparent !important; }
       .header-grid { border-bottom-color: #000 !important; }
       .sig-line { border-bottom-color: #000 !important; }
       .form-badge { border-color: #000 !important; color: #000 !important; background: #fff !important; }
-      .soap-diary-card { border-color: #000 !important; background: #fff !important; }
+      .soap-diary-card { border-color: #000 !important; background: #fff !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .signature-row, .sig-box, .ukep-stamp-card, .stamp-seal { page-break-inside: avoid !important; break-inside: avoid !important; }
     }
   </style>
 </head>

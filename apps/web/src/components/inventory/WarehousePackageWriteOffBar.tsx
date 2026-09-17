@@ -105,13 +105,13 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 		>
 			{/* HEADER & GUARANTEE LABEL */}
 			<div className="flex items-center justify-between flex-wrap gap-2">
-				<div className="flex items-center gap-2 text-xs font-bold text-[var(--ink,#0f172a)]">
+				<div className="flex items-center gap-2 text-xs font-bold text-[var(--ink,#0f172a)] min-w-0">
 					<Zap size={16} className="text-teal-600 shrink-0" />
-					<span>1-Клик пакетное списание расходников:</span>
+					<span className="truncate">1-Клик пакетное списание расходников:</span>
 				</div>
 
 				<div
-					className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
+					className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shrink-0"
 					title="Задержка накладной не блокирует прием врача (мягкий овердрафт)"
 				>
 					<ShieldCheck size={14} className="shrink-0 text-teal-600" />
@@ -231,7 +231,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					) : (
 						<CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
 					)}
-					<span className="font-semibold">{lastResult.toastMessage}</span>
+					<span className="font-semibold truncate">{lastResult.toastMessage}</span>
 				</div>
 			)}
 		</div>

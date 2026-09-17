@@ -1,10 +1,8 @@
 import type React from "react";
 import { useMemo, useState } from "react";
 import {
-	AlertCircle,
 	CheckCircle2,
 	Clock,
-	FileCheck,
 	FileCode2,
 	FileText,
 	FolderArchive,
@@ -15,7 +13,7 @@ import {
 	Sparkles,
 	Zap,
 } from "lucide-react";
-import type { GeneratedDocument, DocumentKind } from "@dental/shared";
+import type { GeneratedDocument } from "@dental/shared";
 import { renderForm043uHtml } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";

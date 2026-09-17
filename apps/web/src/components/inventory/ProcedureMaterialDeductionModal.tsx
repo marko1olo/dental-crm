@@ -622,11 +622,11 @@ export function ProcedureMaterialDeductionModal({
 						<div className="inventory-deduction-icon-badge">
 							<Package size={26} />
 						</div>
-						<div>
-							<h2 className="inventory-deduction-title">
+						<div className="min-w-0">
+							<h2 className="inventory-deduction-title truncate">
 								Списание материалов по техкартам
 							</h2>
-							<p className="inventory-deduction-subtitle">
+							<p className="inventory-deduction-subtitle truncate">
 								{serviceName ? `Услуга: ${serviceName}` : "Клинический прием"}
 								{toothNumber ? ` • Зуб №${toothNumber}` : ""}
 								{patientName ? ` • Пациент: ${patientName}` : ""}
@@ -777,7 +777,7 @@ export function ProcedureMaterialDeductionModal({
 							)}
 							<span className="text-xs font-bold leading-tight">
 								{summary.hasDeficit
-									? `Дефицит материалов: ${summary.criticalCount} поз. (Мягкий овердрафт: остаток 0, списано в овердрафт — задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача)`
+									? `Внимание: остаток отрицательный, требуется оприходование накладной (дефицит: ${summary.criticalCount} поз.). Задержка оприходования накладной не блокирует операцию!`
 									: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
 							</span>
 						</div>

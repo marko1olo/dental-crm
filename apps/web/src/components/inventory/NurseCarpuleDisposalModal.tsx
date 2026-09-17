@@ -8,7 +8,6 @@
 
 import React, { useState, useMemo } from "react";
 import {
-	Check,
 	CheckCircle2,
 	Copy,
 	Download,
@@ -270,11 +269,11 @@ export function NurseCarpuleDisposalModal({
 						<div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
 							<Syringe size={22} />
 						</div>
-						<div>
-							<h2 id="nurse-disposal-title" className="text-base font-bold text-[var(--ink,#0f172a)] leading-tight">
+						<div className="min-w-0">
+							<h2 id="nurse-disposal-title" className="text-base font-bold text-[var(--ink,#0f172a)] leading-tight truncate">
 								1-клик пакеты: Учет карпул (1-Клик списание)
 							</h2>
-							<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
+							<p className="text-xs text-[var(--muted,#64748b)] mt-0.5 truncate">
 								СанПиН 3.3686-21 Единоличная утилизация (без комиссии из 3 человек)
 							</p>
 						</div>
@@ -282,7 +281,7 @@ export function NurseCarpuleDisposalModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-2 rounded-lg text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors"
+						className="p-2 rounded-lg text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors shrink-0"
 						aria-label="Закрыть"
 					>
 						<X size={18} />
@@ -300,15 +299,15 @@ export function NurseCarpuleDisposalModal({
 						}`}
 					>
 						<ShieldCheck size={20} className="shrink-0 text-teal-600 mt-0.5" />
-						<div>
-							<div className="font-bold mb-0.5">
+						<div className="min-w-0 flex-1">
+							<div className="font-bold mb-0.5 truncate">
 								{isOverdraft
 									? "Мягкий овердрафт склада активен (СанПиН / Спасение зуба)"
 									: "Закон свободы медсестры (СанПиН 3.3686-21)"}
 							</div>
 							<p className="text-opacity-90">
 								{isOverdraft
-									? `Задержка оприходования накладной поставщика не блокирует операцию! На складе числится ${currentStockAvailable} шт., списывается ${carpulesCount} шт. Будет зафиксирован мягкий минус без фатальных ошибок 400/409.`
+									? `Внимание: остаток отрицательный, требуется оприходование накладной. Задержка оприходования накладной поставщика не блокирует операцию! На складе числится ${currentStockAvailable} шт., списывается ${carpulesCount} шт.`
 									: "Списание использованных карпул и расходников проводится медсестрой в 1 клик. Никаких согласований начмедов, ожидания главврача или создания комиссии из 3 человек!"}
 							</p>
 						</div>

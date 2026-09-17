@@ -384,11 +384,11 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 				<header className="cw-modal-header">
 					<div className="cw-modal-title" id="cw-modal-title">
 						<PackageCheck size={26} className="text-teal-600 shrink-0" />
-						<div>
-							<div className="font-bold text-lg leading-tight">
+						<div className="min-w-0">
+							<div className="font-bold text-lg leading-tight truncate">
 								Клиническое автосписание материалов (Приказ № 804н)
 							</div>
-							<div className="text-xs font-normal text-muted flex items-center gap-2 mt-0.5">
+							<div className="text-xs font-normal text-muted flex items-center gap-2 mt-0.5 truncate">
 								<span>Нормы Минздрава РФ</span> • <span>Партии FEFO</span> •{" "}
 								<span>Акты 0504230 / М-11 / ТОРГ-16</span>
 							</div>
@@ -546,7 +546,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						<div className="cw-warning-banner cw-warning-amber">
 							<AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
 							<div>
-								<strong>Мягкий овердрафт склада ({totals.deficitItemsCount} поз.):</strong>
+								<strong>Внимание: остаток отрицательный, требуется оприходование накладной (мягкий овердрафт: {totals.deficitItemsCount} поз.):</strong>
 								<div className="mt-0.5">
 									Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Клинический регламент, режим соло-практики). Задержка накладной не блокирует прием.
 								</div>
@@ -625,11 +625,11 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 
 													return (
 														<tr key={line.id}>
-															<td>
-																<div className="font-semibold text-ink leading-snug">
+															<td className="min-w-0 max-w-xs">
+																<div className="font-semibold text-ink leading-snug truncate" title={line.nameRu}>
 																	{line.nameRu}
 																</div>
-																<div className="text-xs text-muted font-mono">{line.sku}</div>
+																<div className="text-xs text-muted font-mono truncate">{line.sku}</div>
 																{line.requiresSerialNumber && (
 																	<div className="mt-1 flex items-center gap-1">
 																		<span className="text-[11px] font-bold text-teal-dark">SN:</span>

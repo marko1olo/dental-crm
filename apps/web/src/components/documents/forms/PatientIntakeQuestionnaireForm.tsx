@@ -1,5 +1,5 @@
 import React from "react";
-import { FileEdit, ShieldCheck, Zap } from "lucide-react";
+import { FileEdit, Zap } from "lucide-react";
 import { AnamnesisField } from "../AnamnesisField";
 import { useDocumentStore } from "../../../store/documentStore";
 import { showToast } from "../../GlobalToast";

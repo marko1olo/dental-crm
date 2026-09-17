@@ -14,7 +14,6 @@
 
 import {
 	ArrowLeft,
-	Check,
 	CheckCircle2,
 	FileText,
 	Minus,
@@ -345,11 +344,11 @@ export function WarehouseManagerModal({
 						<div className="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0">
 							<Package size={20} />
 						</div>
-						<div>
-							<h2 className="text-base font-bold leading-tight">
+						<div className="min-w-0">
+							<h2 className="text-base font-bold leading-tight truncate">
 								{activeView === "inventory" ? "Складской учет и списание расходников" : "Акт списания материалов (Единолично)"}
 							</h2>
-							<p className="text-xs text-[var(--muted,#64748b)]">
+							<p className="text-xs text-[var(--muted,#64748b)] truncate">
 								{cabinetName} • {nurseName} • {doctorName}
 							</p>
 						</div>
@@ -478,8 +477,8 @@ export function WarehouseManagerModal({
 						data-testid="soft-overdraft-banner"
 					>
 						<ShieldAlert size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
-						<div className="flex-1 leading-snug">
-							<strong>Мягкий овердрафт склада активен:</strong> позиция с остатком 0 списана в минус. Задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача.
+						<div className="flex-1 leading-snug min-w-0">
+							<strong>Внимание: остаток отрицательный, требуется оприходование накладной.</strong> Задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача (мягкий овердрафт).
 						</div>
 					</div>
 				)}
@@ -508,9 +507,9 @@ export function WarehouseManagerModal({
 
 										return (
 											<tr key={item.id} className="hover:bg-[var(--paper-strong,#f8fafc)] transition-colors">
-												<td className="py-2.5 px-3">
-													<div className="font-semibold">{item.name}</div>
-													<div className="text-[11px] text-[var(--muted,#94a3b8)] font-mono">
+												<td className="py-2.5 px-3 min-w-0 max-w-xs">
+													<div className="font-semibold truncate" title={item.name}>{item.name}</div>
+													<div className="text-[11px] text-[var(--muted,#94a3b8)] font-mono truncate">
 														{item.sku ? `SKU: ${item.sku}` : ""}
 														{item.lotNumber ? ` • Серия: ${item.lotNumber}` : ""}
 													</div>
@@ -532,9 +531,12 @@ export function WarehouseManagerModal({
 													>
 														{item.stockQuantity} {item.unit}
 													</span>
-													{isZeroStock && (
-														<span className="block text-[10px] text-amber-600 dark:text-amber-400">
-															Остаток 0 (Овердрафт)
+													{isOverdrafted && (
+														<span
+															className="block text-[10px] text-amber-600 dark:text-amber-400 font-semibold truncate max-w-[160px]"
+															title="Внимание: остаток отрицательный, требуется оприходование накладной"
+														>
+															{isZeroStock ? "Остаток 0 (Овердрафт)" : "Внимание: дефицит (Овердрафт)"}
 														</span>
 													)}
 												</td>

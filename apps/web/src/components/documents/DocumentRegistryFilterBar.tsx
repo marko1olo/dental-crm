@@ -1,5 +1,5 @@
 import type React from "react";
-import { Search, X, Filter, FileSignature, ShieldCheck } from "lucide-react";
+import { Search, X } from "lucide-react";
 import type { DocumentCategoryTab } from "./DocumentNavTabs";
 
 export type DocumentStatusFilter = "all" | "draft" | "issued" | "voided";

@@ -7,8 +7,6 @@
  */
 
 import type {
-	ToothClinicalStatusCode,
-	ToothSurface,
 	FdiToothRecord,
 	DmftIndex,
 	CpitnIndex,

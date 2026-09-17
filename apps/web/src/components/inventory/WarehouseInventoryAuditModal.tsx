@@ -15,7 +15,6 @@ import {
 	Download,
 	FileCode,
 	FileSpreadsheet,
-	Filter,
 	Layers,
 	PackageCheck,
 	PackageX,
@@ -454,9 +453,9 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 						<div className="warehouse-inventory-icon-box">
 							<Boxes size={20} />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-								<h2 className="warehouse-inventory-title">Складская инвентаризация и FEFO</h2>
+								<h2 className="warehouse-inventory-title truncate">Складская инвентаризация и FEFO</h2>
 								<span
 									style={{
 										fontSize: "0.75rem",
@@ -466,6 +465,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 										background: status === "applied" ? "var(--ok-bg, #ecfdf5)" : "var(--info-bg, #eff6ff)",
 										color: status === "applied" ? "var(--ok-fg, #047857)" : "var(--info-fg, #1d4ed8)",
 										border: `1px solid ${status === "applied" ? "var(--ok-border, #a7f3d0)" : "var(--info-border, #bfdbfe)"}`,
+										flexShrink: 0,
 									}}
 								>
 									{status === "applied"
@@ -477,7 +477,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 												: "Черновик"}
 								</span>
 							</div>
-							<p className="warehouse-inventory-subtitle">
+							<p className="warehouse-inventory-subtitle truncate">
 								Опись № {docNumber} • Приказ № {orderNumber} от {orderDate} • {warehouseNameRu}
 							</p>
 						</div>
@@ -969,9 +969,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 										>
 											<td style={{ textAlign: "center", color: "var(--muted)" }}>{idx + 1}</td>
 
-											<td>
-												<div style={{ fontWeight: 600, color: "var(--ink)" }}>{it.nameRu}</div>
-												<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+											<td style={{ minWidth: 0, maxWidth: 260 }}>
+												<div className="truncate" style={{ fontWeight: 600, color: "var(--ink)" }} title={it.nameRu}>
+													{it.nameRu}
+												</div>
+												<div className="truncate" style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 													SKU: {it.sku} • {it.storageLocationRu}
 												</div>
 											</td>

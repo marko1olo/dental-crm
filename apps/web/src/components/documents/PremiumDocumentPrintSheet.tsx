@@ -1,17 +1,11 @@
 import React from "react";
 import {
-	Activity,
-	AlertTriangle,
 	CheckCircle2,
-	Clock,
 	FileText,
 	QrCode,
-	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
 import {
 	BRAND_COLOR_PALETTES,
-	type DocumentBrandColor,
 	useDocumentBrandingStore,
 } from "../../store/documentBrandingStore";
 import type { RadiologySnapshotItem } from "../visit/VisitSummaryModal";

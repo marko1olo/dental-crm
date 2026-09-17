@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useAppStore } from "../../store/appStore";
 import {
 	Printer,
@@ -16,11 +16,14 @@ import {
 	Maximize2,
 	Minimize2,
 	Sparkles,
+	ZoomIn,
+	ZoomOut,
+	RotateCcw,
+	MoreHorizontal,
 } from "lucide-react";
 import type {
 	MedicalCardForm043uData,
 	Form043PrintConfig,
-	VisitDiaryEntry043,
 } from "./emr043Types";
 import {
 	validateForm043uCompleteness,
@@ -298,6 +301,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		const [zoomScale, setZoomScale] = useState<number>(1.0);
 		const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
+		const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 
 		// Состояние генератора клинических протоколов 043/у
 		const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState<boolean>(false);
@@ -389,6 +393,27 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 			});
 		}, [formData]);
 
+		const moreMenuRef = useRef<HTMLDivElement>(null);
+		useEffect(() => {
+			if (!isMoreMenuOpen) return;
+			const handleClickOutside = (event: MouseEvent) => {
+				if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+					setIsMoreMenuOpen(false);
+				}
+			};
+			const handleKeyDown = (event: KeyboardEvent) => {
+				if (event.key === "Escape") {
+					setIsMoreMenuOpen(false);
+				}
+			};
+			document.addEventListener("mousedown", handleClickOutside);
+			document.addEventListener("keydown", handleKeyDown);
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+				document.removeEventListener("keydown", handleKeyDown);
+			};
+		}, [isMoreMenuOpen]);
+
 		if (!isOpen) return null;
 
 		// Anti-Matryoshka (Sin 6, Mandate 8d): Render child modals sequentially (depth strictly 1).
@@ -473,7 +498,96 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						</div>
 
 						<div className="emr043-header-actions">
-							{/* Кнопка печати (>= 44x44px) */}
+							{/* Управление масштабом A4 листа (Мандат 8d) */}
+							{activeTab === "overview" && (
+								<div
+									className="emr043-zoom-toolbar"
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "3px",
+										border: "1px solid var(--glass-border, #cbd5e1)",
+										borderRadius: "6px",
+										padding: "2px 6px",
+										background: "var(--paper, #f8fafc)",
+										height: "32px",
+									}}
+									title="Масштаб предварительного просмотра листа Формы 043/у"
+								>
+									<button
+										type="button"
+										onClick={() => setZoomScale((prev) => Math.max(0.5, Number((prev - 0.1).toFixed(1))))}
+										disabled={zoomScale <= 0.5}
+										title="Уменьшить масштаб (–10%)"
+										style={{
+											background: "transparent",
+											border: "none",
+											cursor: zoomScale <= 0.5 ? "not-allowed" : "pointer",
+											display: "inline-flex",
+											alignItems: "center",
+											padding: "2px",
+											color: "var(--ink, #0f172a)",
+											opacity: zoomScale <= 0.5 ? 0.35 : 1,
+										}}
+										aria-label="Уменьшить масштаб"
+									>
+										<ZoomOut className="w-3.5 h-3.5" />
+									</button>
+									<span
+										style={{
+											fontSize: "11px",
+											fontWeight: 700,
+											fontVariantNumeric: "tabular-nums",
+											minWidth: "36px",
+											textAlign: "center",
+											color: "var(--ink, #0f172a)",
+											userSelect: "none",
+										}}
+									>
+										{Math.round(zoomScale * 100)}%
+									</span>
+									<button
+										type="button"
+										onClick={() => setZoomScale((prev) => Math.min(1.5, Number((prev + 0.1).toFixed(1))))}
+										disabled={zoomScale >= 1.5}
+										title="Увеличить масштаб (+10%)"
+										style={{
+											background: "transparent",
+											border: "none",
+											cursor: zoomScale >= 1.5 ? "not-allowed" : "pointer",
+											display: "inline-flex",
+											alignItems: "center",
+											padding: "2px",
+											color: "var(--ink, #0f172a)",
+											opacity: zoomScale >= 1.5 ? 0.35 : 1,
+										}}
+										aria-label="Увеличить масштаб"
+									>
+										<ZoomIn className="w-3.5 h-3.5" />
+									</button>
+									{zoomScale !== 1.0 && (
+										<button
+											type="button"
+											onClick={() => setZoomScale(1.0)}
+											title="Сбросить масштаб к 100%"
+											style={{
+												background: "transparent",
+												border: "none",
+												cursor: "pointer",
+												display: "inline-flex",
+												alignItems: "center",
+												padding: "2px",
+												color: "var(--muted, #64748b)",
+											}}
+											aria-label="Сбросить масштаб"
+										>
+											<RotateCcw className="w-3 h-3" />
+										</button>
+									)}
+								</div>
+							)}
+
+							{/* Кнопка печати (Мандат 8e: печать в любой момент, 0 disabled) */}
 							<button
 								type="button"
 								className="emr043-btn emr043-btn-primary"
@@ -486,39 +600,62 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								<span>Печать / PDF (A4)</span>
 							</button>
 
-							{/* Экспорт в CDA R2 XML */}
-							<button
-								type="button"
-								className="emr043-btn emr043-btn-secondary"
-								onClick={handleExportXml}
-								title="Экспорт в HL7 CDA R2 XML для ЕГИСЗ"
-							>
-								<Download className="w-4 h-4" />
-								<span>ЕГИСЗ (XML)</span>
-							</button>
-
-							{/* Экспорт JSON */}
-							<button
-								type="button"
-								className="emr043-btn emr043-btn-secondary"
-								onClick={handleExportJson}
-								title="Экспорт в структурированный JSON"
-							>
-								<Download className="w-4 h-4" />
-								<span>JSON</span>
-							</button>
-
-							{/* Копировать текст карты */}
-							<button
-								type="button"
-								className="emr043-btn emr043-btn-secondary"
-								onClick={handleCopyText}
-								title="Копировать структурированный текст карты"
-							>
-								{copiedToast ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-								<span>{copiedToast ? "Скопировано!" : "Копировать"}</span>
-							</button>
-
+							{/* Вторичные действия: ЕГИСЗ XML, JSON, Копирование (Закон Миллера, Мандат 8d) */}
+							<div className="relative inline-flex items-center" ref={moreMenuRef}>
+								<button
+									type="button"
+									className="emr043-btn emr043-btn-secondary emr043-btn-icon-only"
+									onClick={() => setIsMoreMenuOpen((v) => !v)}
+									title="Дополнительные форматы (ЕГИСЗ XML, JSON, буфер)"
+									aria-label="Дополнительные форматы экспорта"
+									data-testid="btn-043-more-actions"
+								>
+									<MoreHorizontal className="w-4 h-4" />
+								</button>
+								{isMoreMenuOpen && (
+									<div
+										className="absolute right-0 top-full mt-1 w-56 bg-[var(--paper-strong,#ffffff)] dark:bg-slate-900 border border-[var(--glass-border,#cbd5e1)] dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-xs text-[var(--ink,#0f172a)] dark:text-slate-100 animate-in fade-in duration-100"
+										style={{ minWidth: "210px" }}
+									>
+										<button
+											type="button"
+											className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors cursor-pointer"
+											onClick={() => {
+												handleExportXml();
+												setIsMoreMenuOpen(false);
+											}}
+											title="Экспорт в HL7 CDA R2 XML для ЕГИСЗ (СЭМД 834н)"
+										>
+											<Download className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+											<span>ЕГИСЗ СЭМД (XML)</span>
+										</button>
+										<button
+											type="button"
+											className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors cursor-pointer"
+											onClick={() => {
+												handleExportJson();
+												setIsMoreMenuOpen(false);
+											}}
+											title="Экспорт в структурированный JSON"
+										>
+											<Download className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+											<span>Экспорт в JSON</span>
+										</button>
+										<button
+											type="button"
+											className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800"
+											onClick={() => {
+												handleCopyText();
+												setIsMoreMenuOpen(false);
+											}}
+											title="Копировать структурированный текст карты"
+										>
+											{copiedToast ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />}
+											<span>{copiedToast ? "Скопировано!" : "Копировать текст карты"}</span>
+										</button>
+									</div>
+								)}
+							</div>
 
 							{/* Полноэкранный режим */}
 							<button

@@ -6,4 +6,4 @@
  */
 
 export * from "../inventory/index.js";
-export { InventoryView as WarehouseView } from "../InventoryView.js";
+export { InventoryView, InventoryView as WarehouseView } from "../InventoryView.js";

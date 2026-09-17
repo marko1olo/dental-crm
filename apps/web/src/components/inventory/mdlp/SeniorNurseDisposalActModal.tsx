@@ -5,7 +5,6 @@ import {
 	generateSeniorNurseDisposalActHtml,
 } from "@dental/shared";
 import {
-	AlertTriangle,
 	Check,
 	CheckCircle2,
 	Copy,
@@ -13,10 +12,7 @@ import {
 	FileText,
 	MoreVertical,
 	Printer,
-	ShieldAlert,
-	ShieldCheck,
 	ShoppingCart,
-	UserCheck,
 	X,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -396,11 +392,11 @@ export const SeniorNurseDisposalActModal: React.FC<
 				<header className="mdlp-modal-header">
 					<div className="mdlp-modal-title" id="mdlp-act-title">
 						<FileText size={24} className="text-[var(--teal,#0d9488)] shrink-0" />
-						<div>
-							<div className="font-bold text-lg leading-tight">
+						<div className="min-w-0">
+							<div className="font-bold text-lg leading-tight truncate">
 								Акт списания медикаментов и анестетиков (Старшая медсестра)
 							</div>
-							<div className="text-xs text-muted mt-0.5">
+							<div className="text-xs text-muted mt-0.5 truncate">
 								СанПиН 3.3686-21 • Честный ЗНАК (Схема 10560) •
 								Позиций: {items.length}
 							</div>

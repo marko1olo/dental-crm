@@ -9,7 +9,6 @@ import {
 	CheckCircle2,
 	Clock,
 	PlusCircle,
-	Receipt,
 	Building,
 	FileCode2,
 	Zap,

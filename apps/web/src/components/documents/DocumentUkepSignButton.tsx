@@ -1,7 +1,6 @@
 import { AlertCircle, CheckCircle2, FileSignature, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
-	operatorReadableErrorDetailFromUnknown,
 	responseErrorMessage,
 } from "../../AppHelpers";
 import {

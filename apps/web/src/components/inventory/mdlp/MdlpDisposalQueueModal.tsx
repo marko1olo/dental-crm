@@ -1,5 +1,4 @@
 import {
-	DENTAL_PKU_MEDICATIONS,
 	MDLP_OPERATION_CODES,
 	MDLP_OPERATION_CONFIGS,
 	type Gs1DataMatrixParseResult,
@@ -13,7 +12,6 @@ import {
 	generateMdlpSchema10560Payload,
 	isGs1DataMatrixCandidate,
 	parseGs1DataMatrixWithPku,
-	parseMdlpDataMatrix,
 	processScannerInput,
 	sortQueueByFefo,
 	validateQueueForDisposal,
@@ -21,16 +19,13 @@ import {
 import {
 	AlertTriangle,
 	ArrowUpDown,
-	Barcode,
 	Check,
 	CheckCircle2,
 	Clock,
 	Download,
-	FileSpreadsheet,
 	FileText,
 	Layers,
 	PackageCheck,
-	Pill,
 	Plus,
 	Printer,
 	QrCode,
@@ -435,12 +430,12 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 				<header className="mdlp-modal-header">
 					<div className="mdlp-modal-title" id="mdlp-queue-title">
 						<PackageCheck size={26} className="text-[var(--teal,#0d9488)] shrink-0" />
-						<div>
-							<div className="font-bold text-lg leading-tight">
+						<div className="min-w-0">
+							<div className="font-bold text-lg leading-tight truncate">
 								Списание анестетиков и медикаментов в Честный ЗНАК (МДЛП
 								Схема 10560)
 							</div>
-							<div className="text-xs text-muted mt-0.5 flex items-center gap-2">
+							<div className="text-xs text-muted mt-0.5 flex items-center gap-2 truncate">
 								<span>Вывод из оборота (код 13)</span> •{" "}
 								<span>Контроль сроков годности FEFO</span> •{" "}
 								<span>Акт старшей медсестры</span>
@@ -799,11 +794,11 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 												>
 													{idx + 1}
 												</td>
-												<td>
-													<div className="font-bold text-ink">
+												<td className="min-w-0 max-w-xs">
+													<div className="font-bold text-ink truncate" title={it.drugInfo?.tradeName ?? it.gtin}>
 														{it.drugInfo?.tradeName ?? it.gtin}
 													</div>
-													<div className="text-[11px] text-muted">
+													<div className="text-[11px] text-muted truncate">
 														{it.drugInfo?.inn ?? "Анестетик"}
 													</div>
 												</td>

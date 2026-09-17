@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { formatSnils, isValidSnils, normalizeSnils } from "@dental/shared";
+import { formatSnils, isValidSnils } from "@dental/shared";
 
 /** Поддерживаемые налоговые периоды (текущий и до 3 предыдущих лет). */
 export const SUPPORTED_TAX_YEARS = [2026, 2025, 2024, 2023] as const;

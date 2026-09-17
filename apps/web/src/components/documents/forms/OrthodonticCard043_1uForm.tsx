@@ -3,7 +3,6 @@ import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
 	calculateTonnIndex,
 	calculatePontIndex,
-	calculateBoltonIndex,
 	type OrthodonticCard043_1uPayload,
 } from "@dental/shared";
 
