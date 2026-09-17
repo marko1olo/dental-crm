@@ -105,10 +105,16 @@ export function TelephonyFloatingWidget({
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
 	const crmCurrentView = useAppStore((s) => s.currentView);
-	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
+	const setNewAppointmentDraft = useScheduleStore(
+		(s) => s.setNewAppointmentDraft,
+	);
 
-	const [isExpanded, setIsExpanded] = useState(defaultExpanded || showDialerDefault);
-	const [isOpen, setIsOpen] = useState(defaultExpanded || showDialerDefault || Boolean(activeCall));
+	const [isExpanded, setIsExpanded] = useState(
+		defaultExpanded || showDialerDefault,
+	);
+	const [isOpen, setIsOpen] = useState(
+		defaultExpanded || showDialerDefault || Boolean(activeCall),
+	);
 	const [activeTab, setActiveTab] = useState<"call" | "dialer" | "history">(
 		showDialerDefault ? "dialer" : "call",
 	);
@@ -121,7 +127,9 @@ export function TelephonyFloatingWidget({
 	const [showTranscript, setShowTranscript] = useState(false);
 	const [copiedTranscript, setCopiedTranscript] = useState(false);
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
-	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
+	const [transferType, setTransferType] = useState<"blind" | "attended">(
+		"blind",
+	);
 	const [showWidgetMoreMenu, setShowWidgetMoreMenu] = useState(false);
 	const [isCreatingPatient, setIsCreatingPatient] = useState(false);
 
@@ -176,7 +184,9 @@ export function TelephonyFloatingWidget({
 	const resolvedPatient = useMemo(() => {
 		if (!activeCall || !dashboard?.patients) return null;
 		if (activeCall.patientId) {
-			const found = dashboard.patients.find((p) => p.id === activeCall.patientId);
+			const found = dashboard.patients.find(
+				(p) => p.id === activeCall.patientId,
+			);
 			if (found) return found;
 		}
 		return resolvePatientFromPhone(dashboard.patients, activeCall.phone);
@@ -185,8 +195,9 @@ export function TelephonyFloatingWidget({
 	const patientInsight = useMemo(() => {
 		if (!resolvedPatient || !dashboard?.patientInsights) return null;
 		return (
-			dashboard.patientInsights.find((pi) => pi.patientId === resolvedPatient.id) ||
-			null
+			dashboard.patientInsights.find(
+				(pi) => pi.patientId === resolvedPatient.id,
+			) || null
 		);
 	}, [resolvedPatient, dashboard?.patientInsights]);
 
@@ -221,10 +232,14 @@ export function TelephonyFloatingWidget({
 	const formattedPhone = formatPhoneDisplay(activeCall?.phone || dialNumber);
 	const initials = formatPatientInitials(callerName);
 	const avatarColors = getAvatarColor(callerName);
-	const isCallAnswered = activeCall?.status === "answered" || activeCall?.status === "connected";
+	const isCallAnswered =
+		activeCall?.status === "answered" || activeCall?.status === "connected";
 
 	const waveformBars = useMemo(() => {
-		return generateWaveformBars(activeCall?.callId || activeCall?.phone || "sample-rec", 36);
+		return generateWaveformBars(
+			activeCall?.callId || activeCall?.phone || "sample-rec",
+			36,
+		);
 	}, [activeCall?.callId, activeCall?.phone]);
 
 	const transcriptUtterances = useMemo(() => {
@@ -282,7 +297,10 @@ export function TelephonyFloatingWidget({
 	const handleAudioTimeUpdate = () => {
 		if (audioRef.current) {
 			setAudioCurrentTime(audioRef.current.currentTime);
-			if (audioRef.current.duration && !Number.isNaN(audioRef.current.duration)) {
+			if (
+				audioRef.current.duration &&
+				!Number.isNaN(audioRef.current.duration)
+			) {
 				setAudioDuration(audioRef.current.duration);
 			}
 		}
@@ -290,7 +308,10 @@ export function TelephonyFloatingWidget({
 
 	const handleSkipAudio = (deltaSeconds: number) => {
 		if (!audioRef.current) return;
-		const next = Math.max(0, Math.min(audioDuration, audioCurrentTime + deltaSeconds));
+		const next = Math.max(
+			0,
+			Math.min(audioDuration, audioCurrentTime + deltaSeconds),
+		);
 		audioRef.current.currentTime = next;
 		setAudioCurrentTime(next);
 	};
@@ -300,7 +321,10 @@ export function TelephonyFloatingWidget({
 		if (audioRef.current) {
 			audioRef.current.currentTime = startSec;
 			if (!isPlayingAudio) {
-				audioRef.current.play().then(() => setIsPlayingAudio(true)).catch(() => setIsPlayingAudio(true));
+				audioRef.current
+					.play()
+					.then(() => setIsPlayingAudio(true))
+					.catch(() => setIsPlayingAudio(true));
 			}
 		}
 	};
@@ -366,7 +390,10 @@ export function TelephonyFloatingWidget({
 			callStartedAt: Date.now(),
 		});
 
-		showToast(`Исходящий вызов на номер ${formatPhoneDisplay(e164)}`, "success");
+		showToast(
+			`Исходящий вызов на номер ${formatPhoneDisplay(e164)}`,
+			"success",
+		);
 		setActiveTab("call");
 	};
 
@@ -388,11 +415,15 @@ export function TelephonyFloatingWidget({
 	};
 
 	// Quick Booking Trigger
-	const handleQuickBook = (slotType: "urgent" | "consultation" | "tomorrow") => {
+	const handleQuickBook = (
+		slotType: "urgent" | "consultation" | "tomorrow",
+	) => {
 		if (!activeCall) return;
-		const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
+		const todayIso =
+			dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
 		const defaultDoctorId =
-			dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id || "";
+			dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id ||
+			"";
 		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
 
 		let targetDate = todayIso;
@@ -448,7 +479,10 @@ export function TelephonyFloatingWidget({
 		}
 
 		acceptCall();
-		showToast(`Создан черновик записи: ${reason} (сохранён в расписании)`, "info");
+		showToast(
+			`Создан черновик записи: ${reason} (сохранён в расписании)`,
+			"info",
+		);
 	};
 
 	// 1-Click Quick Patient Creation (Mandate 8e p. 8 & 8n: Solo doctor & Reception Autonomy without 20 secondary fields)
@@ -511,7 +545,10 @@ export function TelephonyFloatingWidget({
 
 			showToast(`Пациент создан: ${createdPatient.fullName}`, "success");
 		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Сетевая ошибка при создании пациента";
+			const msg =
+				err instanceof Error
+					? err.message
+					: "Сетевая ошибка при создании пациента";
 			showToast(msg, "error");
 		} finally {
 			setIsCreatingPatient(false);
@@ -522,7 +559,8 @@ export function TelephonyFloatingWidget({
 
 	// Doctor sterile zone immunity: on visit view or for doctor role, telephony never invades chairside
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
-	const isDoctorChairsideMode = selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
+	const isDoctorChairsideMode =
+		selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
 	if (isDoctorChairsideMode) {
 		return null;
 	}
@@ -540,15 +578,16 @@ export function TelephonyFloatingWidget({
 		>
 			{/* 1. COMPACT DYNAMIC ISLAND CALL BANNER (Top Capsule) */}
 			{!isExpanded && (
-				<div
+				<section
 					className="dnt-telephony-island-pill"
-					role="region"
 					aria-label="Верхняя статусная капсула вызова (Dynamic Island)"
 				>
 					{/* Status Icon */}
 					<div
 						className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-							activeCall ? "bg-emerald-500 text-white" : "bg-[var(--teal-surface)] text-[var(--teal)]"
+							activeCall
+								? "bg-emerald-500 text-white"
+								: "bg-[var(--teal-surface)] text-[var(--teal)]"
 						}`}
 					>
 						{activeCall ? (
@@ -561,11 +600,14 @@ export function TelephonyFloatingWidget({
 					{/* Caller & Call Info */}
 					<div className="flex items-center gap-2 min-w-0 pr-1">
 						<div className="min-w-0 flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
-							<span className="truncate max-w-[140px] sm:max-w-[200px]">
+							<span
+								className="truncate max-w-[140px] sm:max-w-[200px]"
+								title={activeCall ? callerName : "SIP Софтфон"}
+							>
 								{activeCall ? callerName : "SIP Софтфон"}
 							</span>
 							{activeCall && (
-								<span className="font-mono text-[10px] text-[var(--teal)] font-bold">
+								<span className="font-mono text-[10px] text-[var(--teal)] font-bold shrink-0">
 									{formatDurationTimer(elapsedSeconds)}
 								</span>
 							)}
@@ -632,7 +674,7 @@ export function TelephonyFloatingWidget({
 							<X size={15} />
 						</button>
 					</div>
-				</div>
+				</section>
 			)}
 
 			{/* 2. EXPANDED DYNAMIC ISLAND / SOFTPHONE SHEET */}
@@ -646,7 +688,11 @@ export function TelephonyFloatingWidget({
 					<div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))]">
 						<div className="flex items-center gap-2 min-w-0">
 							<div className="w-8 h-8 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] flex-shrink-0">
-								{activeCall ? <PhoneCall size={15} /> : <Headphones size={15} />}
+								{activeCall ? (
+									<PhoneCall size={15} />
+								) : (
+									<Headphones size={15} />
+								)}
 							</div>
 							<div className="min-w-0">
 								<div className="flex items-center gap-2">
@@ -686,8 +732,8 @@ export function TelephonyFloatingWidget({
 
 						<div className="flex items-center gap-1">
 							{/* Compact Answer / Hangup in header when activeCall is present */}
-							{activeCall && (
-								!isCallAnswered ? (
+							{activeCall &&
+								(!isCallAnswered ? (
 									<>
 										<button
 											type="button"
@@ -729,16 +775,19 @@ export function TelephonyFloatingWidget({
 										<PhoneOff size={13} />
 										<span>Завершить</span>
 									</button>
-								)
-							)}
+								))}
 
 							{/* Mute toggle >= 44x44px */}
 							<button
 								type="button"
 								onClick={toggleMute}
 								className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
-								title={isMuted ? "Включить звук звонка" : "Выключить звук звонка"}
-								aria-label={isMuted ? "Включить звук звонка" : "Выключить звук звонка"}
+								title={
+									isMuted ? "Включить звук звонка" : "Выключить звук звонка"
+								}
+								aria-label={
+									isMuted ? "Включить звук звонка" : "Выключить звук звонка"
+								}
 							>
 								{isMuted ? (
 									<VolumeX size={16} className="text-rose-500" />
@@ -839,7 +888,9 @@ export function TelephonyFloatingWidget({
 											? "bg-amber-500 text-slate-950 border-amber-400 shadow-xs"
 											: "text-amber-500 border-transparent hover:bg-amber-500/10"
 									}`}
-									title={isHeld ? "Снять с удержания" : "Поставить на удержание"}
+									title={
+										isHeld ? "Снять с удержания" : "Поставить на удержание"
+									}
 								>
 									{isHeld ? "Удержание" : "Hold"}
 								</button>
@@ -874,7 +925,9 @@ export function TelephonyFloatingWidget({
 							}`}
 						>
 							<PhoneOutgoing size={14} className="flex-shrink-0" />
-							<span className="whitespace-nowrap flex-shrink-0 min-w-max">Набор</span>
+							<span className="whitespace-nowrap flex-shrink-0 min-w-max">
+								Набор
+							</span>
 						</button>
 
 						<button
@@ -940,7 +993,10 @@ export function TelephonyFloatingWidget({
 												className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 shadow-xs animate-fade-in"
 												data-testid="telephony-widget-allergy-alert"
 											>
-												<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+												<AlertTriangle
+													size={15}
+													className="text-rose-600 dark:text-rose-400 shrink-0"
+												/>
 												<div className="min-w-0 flex-1">
 													<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[9px] tracking-wider block">
 														Внимание: Аллергия в анамнезе
@@ -953,12 +1009,17 @@ export function TelephonyFloatingWidget({
 										)}
 
 										{/* 2. Critical Acute Pain / Emergency Banner */}
-										{(acutePainAlerts.length > 0 || (activeCall as unknown as { acutePain?: boolean })?.acutePain) && (
+										{(acutePainAlerts.length > 0 ||
+											(activeCall as unknown as { acutePain?: boolean })
+												?.acutePain) && (
 											<div
 												className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 shadow-xs animate-fade-in"
 												data-testid="telephony-widget-acute-pain-alert"
 											>
-												<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+												<Zap
+													size={15}
+													className="text-rose-600 dark:text-rose-400 shrink-0"
+												/>
 												<div className="min-w-0 flex-1">
 													<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[9px] tracking-wider block">
 														Экстренно: Острая боль
@@ -977,7 +1038,10 @@ export function TelephonyFloatingWidget({
 											<div className="p-2.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex flex-col gap-2">
 												<div className="flex flex-wrap items-center justify-between text-xs gap-1">
 													<div className="flex items-center gap-1.5 font-bold text-[var(--teal)] min-w-0">
-														<CalendarCheck size={14} className="text-[var(--teal)] flex-shrink-0" />
+														<CalendarCheck
+															size={14}
+															className="text-[var(--teal)] flex-shrink-0"
+														/>
 														<span className="break-words">
 															{upcomingAppointment.isToday
 																? "Запись сегодня"
@@ -999,9 +1063,15 @@ export function TelephonyFloatingWidget({
 													onClick={handleSendWhatsApp}
 													className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-2 shadow-sm cursor-pointer"
 												>
-													{whatsappSent ? <Check size={14} /> : <MessageSquare size={14} />}
+													{whatsappSent ? (
+														<Check size={14} />
+													) : (
+														<MessageSquare size={14} />
+													)}
 													<span>
-														{whatsappSent ? "Отправлено в WhatsApp" : "1-Click WhatsApp"}
+														{whatsappSent
+															? "Отправлено в WhatsApp"
+															: "1-Click WhatsApp"}
 													</span>
 												</button>
 											</div>
@@ -1015,7 +1085,9 @@ export function TelephonyFloatingWidget({
 													src={activeCall.recordingUrl}
 													onTimeUpdate={handleAudioTimeUpdate}
 													onEnded={() => setIsPlayingAudio(false)}
-												/>
+												>
+													<track kind="captions" />
+												</audio>
 
 												<div className="flex flex-wrap items-center justify-between gap-2">
 													<div className="flex items-center gap-2">
@@ -1024,8 +1096,16 @@ export function TelephonyFloatingWidget({
 															type="button"
 															onClick={togglePlayAudio}
 															className="min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
-															title={isPlayingAudio ? "Пауза" : "Воспроизвести запись"}
-															aria-label={isPlayingAudio ? "Пауза" : "Воспроизвести запись"}
+															title={
+																isPlayingAudio
+																	? "Пауза"
+																	: "Воспроизвести запись"
+															}
+															aria-label={
+																isPlayingAudio
+																	? "Пауза"
+																	: "Воспроизвести запись"
+															}
 														>
 															{isPlayingAudio ? (
 																<Pause size={18} />
@@ -1079,7 +1159,17 @@ export function TelephonyFloatingWidget({
 												<div
 													ref={waveformRef}
 													onClick={handleWaveformClick}
-													className="h-9 w-full flex items-center justify-between gap-[2px] px-1.5 py-1 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] cursor-pointer relative overflow-hidden transition-colors"
+													onKeyDown={(e) => {
+														if (e.key === "ArrowLeft") {
+															e.preventDefault();
+															handleSkipAudio(-5);
+														} else if (e.key === "ArrowRight") {
+															e.preventDefault();
+															handleSkipAudio(5);
+														}
+													}}
+													tabIndex={0}
+													className="h-9 w-full flex items-center justify-between gap-[2px] px-1.5 py-1 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] cursor-pointer relative overflow-hidden transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 													role="slider"
 													aria-valuemin={0}
 													aria-valuemax={audioDuration}
@@ -1090,7 +1180,8 @@ export function TelephonyFloatingWidget({
 														const barPct = (idx / waveformBars.length) * 100;
 														const isPast =
 															audioDuration > 0
-																? barPct <= (audioCurrentTime / audioDuration) * 100
+																? barPct <=
+																	(audioCurrentTime / audioDuration) * 100
 																: false;
 														const barHeight = Math.max(3, Math.round(amp * 24));
 														return (
@@ -1129,21 +1220,29 @@ export function TelephonyFloatingWidget({
 														</span>
 													</button>
 
-													{showTranscript && transcriptUtterances.length > 0 && (
-														<button
-															type="button"
-															onClick={handleCopyTranscript}
-															className="text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors"
-															title="Скопировать текст диалога"
-														>
-															{copiedTranscript ? (
-																<Check size={12} className="text-emerald-500" />
-															) : (
-																<Copy size={12} />
-															)}
-															<span>{copiedTranscript ? "Скопировано" : "Копировать"}</span>
-														</button>
-													)}
+													{showTranscript &&
+														transcriptUtterances.length > 0 && (
+															<button
+																type="button"
+																onClick={handleCopyTranscript}
+																className="text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors"
+																title="Скопировать текст диалога"
+															>
+																{copiedTranscript ? (
+																	<Check
+																		size={12}
+																		className="text-emerald-500"
+																	/>
+																) : (
+																	<Copy size={12} />
+																)}
+																<span>
+																	{copiedTranscript
+																		? "Скопировано"
+																		: "Копировать"}
+																</span>
+															</button>
+														)}
 												</div>
 
 												{/* Expanded Speech Transcript Dialogue Utterances */}
@@ -1151,47 +1250,68 @@ export function TelephonyFloatingWidget({
 													<div className="space-y-2 max-h-40 overflow-y-auto pr-1 pt-1 animate-fade-in">
 														{transcriptUtterances.length === 0 ? (
 															<div className="py-6 px-4 text-center rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
-																<FileQuestion size={24} className="text-[var(--muted,#94a3b8)]" />
-																<span className="text-xs font-medium">Транскрипция аудиозаписи отсутствует</span>
+																<FileQuestion
+																	size={24}
+																	className="text-[var(--muted,#94a3b8)]"
+																/>
+																<span className="text-xs font-medium">
+																	Транскрипция аудиозаписи отсутствует
+																</span>
 															</div>
 														) : (
 															transcriptUtterances.map((u) => (
-															<div
-																key={`${u.speaker}-${u.startTimeSeconds}`}
-																onClick={() => handleSeekToUtterance(u.startTimeSeconds)}
-																className={`p-2 rounded-lg cursor-pointer transition-all border ${
-																	audioCurrentTime >= u.startTimeSeconds &&
-																	audioCurrentTime <= u.endTimeSeconds
-																		? "bg-[var(--teal-surface)] border-[var(--teal-soft)] shadow-xs"
-																		: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))]"
-																}`}
-																title="Кликните для перехода к реплике"
-															>
-																<div className="flex items-center justify-between text-[10px] mb-1">
-																	<div className="flex items-center gap-1.5 font-bold">
-																		<span
-																			className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
-																				u.speaker === "operator"
-																					? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]"
-																					: "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border border-[var(--info-fg,rgba(2,132,199,0.3))]"
-																			}`}
-																		>
-																			{u.speaker === "operator" ? "Оператор" : "Пациент"}
-																		</span>
-																		<span className="font-mono text-[var(--muted,#64748b)]">
-																			{formatDurationTimer(u.startTimeSeconds)} -{" "}
-																			{formatDurationTimer(u.endTimeSeconds)}
+																<div
+																	key={`${u.speaker}-${u.startTimeSeconds}`}
+																	role="button"
+																	tabIndex={0}
+																	onClick={() =>
+																		handleSeekToUtterance(u.startTimeSeconds)
+																	}
+																	onKeyDown={(e) => {
+																		if (e.key === "Enter" || e.key === " ") {
+																			e.preventDefault();
+																			handleSeekToUtterance(u.startTimeSeconds);
+																		}
+																	}}
+																	className={`p-2 rounded-lg cursor-pointer transition-all border ${
+																		audioCurrentTime >= u.startTimeSeconds &&
+																		audioCurrentTime <= u.endTimeSeconds
+																			? "bg-[var(--teal-surface)] border-[var(--teal-soft)] shadow-xs"
+																			: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))]"
+																	}`}
+																	title="Кликните для перехода к реплике"
+																>
+																	<div className="flex items-center justify-between text-[10px] mb-1">
+																		<div className="flex items-center gap-1.5 font-bold">
+																			<span
+																				className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
+																					u.speaker === "operator"
+																						? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]"
+																						: "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border border-[var(--info-fg,rgba(2,132,199,0.3))]"
+																				}`}
+																			>
+																				{u.speaker === "operator"
+																					? "Оператор"
+																					: "Пациент"}
+																			</span>
+																			<span className="font-mono text-[var(--muted,#64748b)]">
+																				{formatDurationTimer(
+																					u.startTimeSeconds,
+																				)}{" "}
+																				-{" "}
+																				{formatDurationTimer(u.endTimeSeconds)}
+																			</span>
+																		</div>
+																		<span className="text-[9px] text-[var(--muted,#64748b)]">
+																			{(u.confidence * 100).toFixed(0)}%
 																		</span>
 																	</div>
-																	<span className="text-[9px] text-[var(--muted,#64748b)]">
-																		{(u.confidence * 100).toFixed(0)}%
-																	</span>
+																	<p className="text-[var(--ink,#0f172a)] text-[11px] leading-relaxed">
+																		{u.text}
+																	</p>
 																</div>
-																<p className="text-[var(--ink,#0f172a)] text-[11px] leading-relaxed">
-																	{u.text}
-																</p>
-															</div>
-														)))}
+															))
+														)}
 													</div>
 												)}
 											</div>
@@ -1206,7 +1326,10 @@ export function TelephonyFloatingWidget({
 													className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--teal)] transition-all flex items-center justify-between shadow-xs active:scale-[0.99]"
 												>
 													<div className="flex items-center gap-2">
-														<PhoneForwarded size={16} className="text-[var(--teal)] flex-shrink-0" />
+														<PhoneForwarded
+															size={16}
+															className="text-[var(--teal)] flex-shrink-0"
+														/>
 														<span>
 															{showTransferPanel
 																? "Скрыть перевод звонка"
@@ -1265,7 +1388,9 @@ export function TelephonyFloatingWidget({
 																	}}
 																	className="min-h-[48px] px-1.5 py-1.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[10px] font-bold text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs"
 																>
-																	<span className="font-mono text-[var(--teal)]">{item.ext}</span>
+																	<span className="font-mono text-[var(--teal)]">
+																		{item.ext}
+																	</span>
 																	<span className="text-[9px] font-normal text-[var(--muted,#64748b)] truncate w-full">
 																		{item.label.split(" ")[1]}
 																	</span>
@@ -1305,11 +1430,17 @@ export function TelephonyFloatingWidget({
 														openCallDrawer();
 													}}
 													className="flex-1 min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-													title={resolvedPatient ? "Открыть карточку в боковой шторке (визит 043/у сохранён)" : "Создать пациента в боковой шторке"}
+													title={
+														resolvedPatient
+															? "Открыть карточку в боковой шторке (визит 043/у сохранён)"
+															: "Создать пациента в боковой шторке"
+													}
 													data-testid="widget-action-open-card"
 												>
 													<UserCheck size={16} className="text-[var(--teal)]" />
-													<span>{resolvedPatient ? "Открыть карту" : "Создать"}</span>
+													<span>
+														{resolvedPatient ? "Открыть карту" : "Создать"}
+													</span>
 												</button>
 
 												{/* Action 3: Menu ... (Consolidated Secondary Actions) */}
@@ -1342,7 +1473,10 @@ export function TelephonyFloatingWidget({
 														}}
 														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
 													>
-														<Zap size={13} className="text-amber-500 shrink-0" />
+														<Zap
+															size={13}
+															className="text-amber-500 shrink-0"
+														/>
 														<span>Острая боль (10:00)</span>
 													</button>
 													<button
@@ -1353,7 +1487,10 @@ export function TelephonyFloatingWidget({
 														}}
 														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--teal-surface)] text-[var(--teal)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 													>
-														<Calendar size={13} className="text-[var(--teal)] shrink-0" />
+														<Calendar
+															size={13}
+															className="text-[var(--teal)] shrink-0"
+														/>
 														<span>Консультация (15:00)</span>
 													</button>
 													<button
@@ -1364,21 +1501,26 @@ export function TelephonyFloatingWidget({
 														}}
 														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 													>
-														<CalendarDays size={13} className="text-slate-500 shrink-0" />
+														<CalendarDays
+															size={13}
+															className="text-slate-500 shrink-0"
+														/>
 														<span>Завтра (11:00)</span>
 													</button>
 
 													{!resolvedPatient && activeCall && (
 														<button
 															type="button"
-															disabled={isCreatingPatient}
 															onClick={() => {
 																handleQuickCreatePatient();
 																setShowWidgetMoreMenu(false);
 															}}
 															className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
 														>
-															<UserPlus size={13} className="text-emerald-600 shrink-0" />
+															<UserPlus
+																size={13}
+																className="text-emerald-600 shrink-0"
+															/>
 															<span>
 																{isCreatingPatient
 																	? "Создание пациента..."
@@ -1397,7 +1539,10 @@ export function TelephonyFloatingWidget({
 														}}
 														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
 													>
-														<MessageSquare size={13} className="text-emerald-600 shrink-0" />
+														<MessageSquare
+															size={13}
+															className="text-emerald-600 shrink-0"
+														/>
 														<span>1-Click WhatsApp</span>
 													</button>
 
@@ -1409,7 +1554,10 @@ export function TelephonyFloatingWidget({
 														}}
 														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 													>
-														<PhoneForwarded size={13} className="text-[var(--teal)] shrink-0" />
+														<PhoneForwarded
+															size={13}
+															className="text-[var(--teal)] shrink-0"
+														/>
 														<span>Перевод звонка (SIP)</span>
 													</button>
 
@@ -1421,22 +1569,34 @@ export function TelephonyFloatingWidget({
 														}}
 														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 													>
-														<Pause size={13} className="text-amber-500 shrink-0" />
-														<span>{isHeld ? "Снять с удержания" : "Удержание (Hold)"}</span>
+														<Pause
+															size={13}
+															className="text-amber-500 shrink-0"
+														/>
+														<span>
+															{isHeld
+																? "Снять с удержания"
+																: "Удержание (Hold)"}
+														</span>
 													</button>
 
 													<button
 														type="button"
 														onClick={() => {
 															if (activeCall?.phone) {
-																navigator.clipboard?.writeText(activeCall.phone);
+																navigator.clipboard?.writeText(
+																	activeCall.phone,
+																);
 																showToast("Номер телефона скопирован", "info");
 															}
 															setShowWidgetMoreMenu(false);
 														}}
 														className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 													>
-														<Copy size={13} className="text-[var(--muted,#64748b)] shrink-0" />
+														<Copy
+															size={13}
+															className="text-[var(--muted,#64748b)] shrink-0"
+														/>
 														<span>Копировать номер</span>
 													</button>
 												</div>
@@ -1453,7 +1613,8 @@ export function TelephonyFloatingWidget({
 												Нет активных входящих звонков
 											</h4>
 											<p className="text-xs text-[var(--muted,#64748b)] mt-1">
-												Используйте вкладку «Набор номера» для совершения исходящего вызова.
+												Используйте вкладку «Набор номера» для совершения
+												исходящего вызова.
 											</p>
 										</div>
 										<button
@@ -1516,7 +1677,9 @@ export function TelephonyFloatingWidget({
 											onClick={() => handleDialDigit(k.d)}
 											className="min-h-[48px] min-w-[48px] py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] active:scale-95 border border-[var(--line,#e2e8f0)] hover:border-[var(--teal)] text-[var(--ink,#0f172a)] transition-all flex flex-col items-center justify-center select-none shadow-xs cursor-pointer"
 										>
-											<span className="text-base font-black leading-none">{k.d}</span>
+											<span className="text-base font-black leading-none">
+												{k.d}
+											</span>
 											{k.sub && (
 												<span className="text-[9px] font-semibold text-[var(--muted,#64748b)] mt-0.5">
 													{k.sub}
@@ -1556,14 +1719,16 @@ export function TelephonyFloatingWidget({
 											<div className="flex items-center gap-2.5 min-w-0">
 												<div
 													className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-														item.status === "answered" || item.status === "connected"
+														item.status === "answered" ||
+														item.status === "connected"
 															? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
 															: item.status === "rejected"
 																? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
 																: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
 													}`}
 												>
-													{item.status === "answered" || item.status === "connected" ? (
+													{item.status === "answered" ||
+													item.status === "connected" ? (
 														<PhoneIncoming size={13} />
 													) : item.status === "rejected" ? (
 														<PhoneOff size={13} />
@@ -1573,13 +1738,26 @@ export function TelephonyFloatingWidget({
 												</div>
 
 												<div className="min-w-0 flex-1">
-													<div className="font-bold text-[var(--ink,#0f172a)] break-words line-clamp-1 leading-snug">
+													<div
+														className="font-bold text-[var(--ink,#0f172a)] truncate leading-snug"
+														title={
+															item.patientName || formatPhoneDisplay(item.phone)
+														}
+													>
 														{item.patientName || formatPhoneDisplay(item.phone)}
 													</div>
-													<div className="text-[10px] font-mono text-[var(--muted,#64748b)] flex items-center gap-1.5">
-														<span>{formatPhoneDisplay(item.phone)}</span>
+													<div className="text-[10px] font-mono text-[var(--muted,#64748b)] flex items-center gap-1.5 min-w-0">
+														<span className="truncate">
+															{formatPhoneDisplay(item.phone)}
+														</span>
 														{item.timestamp && (
-															<span>· {new Date(item.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>
+															<span className="shrink-0">
+																·{" "}
+																{new Date(item.timestamp).toLocaleTimeString(
+																	"ru-RU",
+																	{ hour: "2-digit", minute: "2-digit" },
+																)}
+															</span>
 														)}
 													</div>
 												</div>
