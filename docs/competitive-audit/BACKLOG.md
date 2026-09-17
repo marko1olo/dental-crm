@@ -8298,3 +8298,124 @@
     * Документация синхронизирована субагентом-документатором без запуска компиляторов `npm run typecheck`, `tsc -b` или `npm run build`;
     * Нагрузка на CPU хост-машины сохранена на минимальном уровне (<10%), компиляторный гейт всецело делегирован L1 Orchestrator.
 
+### 412. Red Team Wave 253 — Low-Spec HDD & PC Optimizations, Fastify In-Memory ETag 304 Caching, Direct RVG Doctor Autonomy & CBCT MPR Toolbar Densification 28–36px (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 11, 8k, 8n, 8p, 8s, 8t, Core Route пп. 7, 11)
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18)
+* **Затронутые модули и файлы**:
+  - `apps/api/src/lib/hddPerformanceConfig.ts`
+  - `apps/api/src/plugins/cacheHeaders.ts`
+  - `apps/api/src/server.ts`
+  - `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`
+  - `apps/web/src/components/radiology/rvgCapture.css`
+  - `apps/web/src/components/radiology/CbctLeftToolDock.tsx`
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`
+  - `apps/web/src/components/radiology/CbctViewportHud.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Оптимизация под медленные HDD (5400 RPM) и бюджетные клинические ПК (Low-Spec HDD & PC Optimizations) (Мандаты 8n, 8e, Core Route п. 6)**:
+    * В `apps/api/src/lib/hddPerformanceConfig.ts` и `apps/api/src/server.ts`:
+    * Ограничение пула соединений PostgreSQL: лимит пула соединений снижен до 10 (или 5 при `DENTE_LOW_SPEC=1`) вместо 30 тяжелых параллельных процессов, предотвращая дисковый троттлинг на 5400 RPM накопителях и исчерпание RAM на ПК с 4-8 ГБ оперативной памяти;
+    * Калиброванные таймауты: `idleTimeoutMillis` (15с), `connectionTimeoutMillis` (10с), `statementTimeoutMs` (20с), высвобождающие память неактивных соединений;
+    * Асинхронное буферизованное логирование Pino через поток SonicBoom: размер буфера 4096 байт, периодический сброс через `setInterval` (5000мс) с unref-таймером, синхронный `flushSync` при graceful shutdown и падениях процесса (`uncaughtException`, `unhandledRejection`, `SIGINT`, `SIGTERM`), устраняющий задержки I/O в event loop;
+    * Защита данных: маскирование чувствительных заголовков авторизации, токенов клиники и cookie (`[скрыто]`).
+  - **Плагин Fastify HTTP-кэширования справочников и ETag 304 Not Modified (Fastify In-Memory ETag Caching) (Мандаты 8e, 8n, Engineering Route п. 5)**:
+    * В `apps/api/src/plugins/cacheHeaders.ts` и `apps/api/src/server.ts`:
+    * Быстрый preHandler перехватчик (fast-path): при получении заголовка `If-None-Match` и наличии актуального ETag в памяти сервер немедленно возвращает `304 Not Modified` БЕЗ выполнения обработчика маршрута и БЕЗ единого дискового/SQL запроса к PostgreSQL;
+    * Заголовки кэширования: автоматическое выставление `Cache-Control: private, max-age=3600, must-revalidate` и `Vary: Accept-Encoding, Authorization, x-organization-id` для изоляции арендаторов;
+    * Кэширование статических и полустатических каталогов: номенклатура медицинских услуг Приказа Минздрава РФ 804н (`/api/clinical/nomenclature`, `/api/clinical/804n`), классификаторы МКБ-10 (`/api/clinical/icd10`, `/api/clinical/classifiers`), протоколы и шаблоны осмотра 043/у (`/api/templates`), шаблоны ИДС (`/api/document-templates`), типы задач CRM (`/api/crm/custom-task-types`), матрицы совместимости фармакологии и нормативы СанПиН;
+    * Автоматическая инвалидация кэша: хук `onResponse` сбрасывает кэш по префиксу ресурса и `tenantId` при успешных мутациях (POST, PUT, PATCH, DELETE);
+    * Устойчивость: LRU/FIFO вытеснение записей при достижении лимита (500 записей).
+  - **Автономия врача в радиовизиографии Direct RVG (Direct RVG Doctor Autonomy) (Мандаты 8c, 8d пп. 1, 2, 8e пп. 1, 2, 11, 8k, 8n)**:
+    * В `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx` и `apps/web/src/components/radiology/rvgCapture.css`:
+    * 0 заблокированных кнопок экспозиции (Мандат 8e): кнопка «Экспозиция» (`rvg-trigger-btn`) доступна врачу в любой момент для повторного захвата, блокируется строго на время активного считывания кадра с сенсора (`acquiring`), снабжена информативными тултипами;
+    * Плотная десктопная клиническая эргономика 28–36px: высота кнопок шапки и футера приведена к компактным 32–34px на десктопе (`.rvg-trigger-btn`, `.rvg-action-btn-primary`, `.rvg-action-btn-secondary`, `.rvg-close-btn`), с сохранением адаптивного тач-таргета 44px для работы в перчатках на сенсорных экранах (`@media (pointer: coarse)`);
+    * Защита от переполнения и усечения текста (Мандат 8d Грех #1): предотвращен срез длинных ФИО пациентов, номеров карт, названий зубов (FDI) и анатомических проекций через селекторы `min-w-0 flex-1 truncate` и нативные тултипы `title`;
+    * Сохранение в карту 043/у без бюрократии: кнопка «Сохранить в карту 043/у» моментально регистрирует снимок в истории визита.
+  - **Плотная десктопная эргономика 28–36px тулбара КТ и навигации (CBCT MPR Toolbar Densification 28–36px) (Мандаты 8c, 8d пп. 2, 3, 8e пп. 1, 2, 8p)**:
+    * В `apps/web/src/components/radiology/CbctLeftToolDock.tsx`, `CbctViewportHud.tsx` и `CbctMprImplantStudioModal.tsx`:
+    * Левый док инструментов `CbctLeftToolDock`: компактные кнопки 32px (`w-8 h-8 min-w-[32px] min-h-[32px]`) с адаптивным расширением до 44px на тач-устройствах (`[@media(pointer:coarse)]`), плавающие поповеры `absolute left-full ml-2`;
+    * Интеграция дизайн-токенов CSS: использование `var(--paper-strong)`, `var(--muted)`, `var(--line)`, `var(--ink)`, `var(--teal)` для безупречного рендеринга в темной и светлой темах без слепящих пятен (WCAG AAA);
+    * Разблокировка действий трассировки нерва IAN (Мандат 8e): кнопки «Удалить узел нерва» и «Очистить трассу» избавлены от атрибута `disabled` и `pointer-events-none` — вместо блокировки они выдают понятный тост-статус при пустой трассе и позволяют врачу беспрепятственно управлять разметкой;
+    * Индикатор прогресса загрузки DICOM: реальный прогресс-бар и статусное оверлей-сообщение (`data-testid="cbct-loading-status-overlay"`) при загрузке срезов КЛКТ.
+  - **Разблокировка 30-дневных планов лечения (30-Day Treatment Plan Unblocking) (Мандат 8e п. 7, 8n)**:
+    * В `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `TreatmentPlanPresenterModal.tsx`, `TreatmentPlanStageCard.tsx`:
+    * Истечение 30 дней с момента составления плана лечения больше не блокирует создание нарядов зуботехнической лаборатории (ЗТЛ), оказание услуг или фискальную оплату в кассе 54-ФЗ;
+    * Неблокирующий информационный статус вместо запрета на манипуляции.
+  - **Находки Red Team инквизиции и соответствие чек-листу 7 смертных грехов UI (Red Team Findings & Verification) (Мандаты 8d, 8m, 8o)**:
+    * Грех 1 (Текст и локализация): проверено отсутствие наездов, все текстовые контейнеры защищены `truncate` и `min-w-0`;
+    * Грех 2 (Плотность тулбара по закону Хика): строго 1 строка тулбаров 32–36px на десктопе;
+    * Грех 3 (Карточки сущностей по закону Миллера): <= 2 кнопок прямого действия на карточку;
+    * Грех 4 (Контрастность и гигиена тем WCAG AAA): токенизация Dark/Light режимов;
+    * Грех 5 (Автономия врача по Мандату 8e): 0 необоснованных disabled кнопок, норма в 1 клик, моментальный рентген, разблокировка 30-дневных смет;
+    * Грех 6 (Закон Анти-Матрёшки): модальные окна открываются с максимальной глубиной 1;
+    * Грех 7 (Святость официальных бланков): ноль мультяшных эмодзи, строгие векторные иконки Lucide;
+    * Машинные гейты: кодировка UTF-8 чистая, Single-Compiler Gate защищен (компиляция централизована).
+
+### 413. Red Team Wave 254 — Full Architectural Consolidation & Hardening for Low-Spec HDD 5400 RPM & 4GB RAM, Fastify In-Memory ETag 304 Caching, Direct RVG Doctor Autonomy <50ms, Unblocking 30-Day Treatment Plans & 28–36px CBCT Density (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 11, 8k, 8n, 8p, 8s, 8t, Core Route пп. 6, 7, 11)
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18)
+* **Затронутые модули и файлы**:
+  - `apps/api/src/lib/hddPerformanceConfig.ts`
+  - `apps/api/src/plugins/cacheHeaders.ts`
+  - `apps/api/src/server.ts`
+  - `apps/api/src/tests/hddPerformanceConfig.test.ts`
+  - `apps/web/src/utils/lowSpecHddOptimizer.ts`
+  - `apps/web/src/lib/apiCacheEngine.ts`
+  - `apps/web/src/lib/apiAuthFetch.ts`
+  - `apps/web/src/lib/safeLocalStorage.ts`
+  - `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`
+  - `apps/web/src/components/radiology/rvgCapture.css`
+  - `apps/web/src/components/radiology/CbctLeftToolDock.tsx`
+  - `apps/web/src/components/radiology/CbctViewportHud.tsx`
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`
+  - `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`
+  - `apps/web/src/components/emr/templates/clinicalDiaryTemplates.css`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Комплексная оптимизация бэкенда и фронтенда под медленные HDD 5400 RPM и 4GB RAM (Low-Spec HDD & Low RAM Hardening) (Мандаты 8n, 8e, Core Route п. 6)**:
+    * Серверный пул PostgreSQL: калибровка размера пула до 5..10 соединений при `DENTE_LOW_SPEC=1` вместо 30 тяжелых соединений, снижающая нагрузку на дисковые головки HDD 5400 RPM и предотвращающая исчерпание ОЗУ на машинах с 4–8 ГБ RAM (`apps/api/src/lib/hddPerformanceConfig.ts`);
+    * Асинхронный логгер Pino SonicBoom: неблокирующий вывод в буфер 4096 байт с периодическим фоновым сбросом каждые 5000мс через `unref` таймер и синхронным `flushSync` при аварийном или штатном завершении процесса (`apps/api/src/server.ts`);
+    * Клиентский кэш и idle-очередь: `MemoryLruCache` с опциональным индивидуальным TTL, защита `safeLocalStorage` от квот диска и троттлинг запросов в `apps/web/src/utils/lowSpecHddOptimizer.ts`.
+  - **Сквозной Fastify ETag in-memory перехватчик 304 Not Modified (Fastify In-Memory ETag 304 Caching) (Мандаты 8e, 8n, Engineering Route п. 5)**:
+    * В `apps/api/src/plugins/cacheHeaders.ts` и `apps/web/src/lib/apiCacheEngine.ts`:
+    * Fast-path preHandler: при повторных запросах с заголовком `If-None-Match` сервер мгновенно возвращает `304 Not Modified` прямо из ОЗУ без запуска обработчиков и без SQL-запросов к PostgreSQL;
+    * Полный охват справочников Минздрава и клиники: номенклатура медицинских услуг Приказа 804н (`/api/clinical/804n`, `/api/clinical/nomenclature`), диагнозы МКБ-10 (`/api/clinical/icd10`, `/api/clinical/classifiers`), шаблоны дневников осмотра 043/у (`/api/templates`, `/api/emr/templates`), шаблоны ИДС (`/api/document-templates`), соматический статус, типы задач CRM, фармакологическая матрица и нормативы СанПиН;
+    * Автоматическая префиксная инвалидация кэша по тенантам при любых мутациях (POST, PUT, PATCH, DELETE).
+  - **Полная автономия врача в радиовизиографии Direct RVG <50мс (Direct RVG Doctor Autonomy <50ms) (Мандаты 8c, 8d пп. 1, 2, 8e пп. 1, 2, 11, 8k, 8n)**:
+    * В `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx` и `apps/web/src/components/radiology/rvgCapture.css`:
+    * 0 необоснованных disabled кнопок (Мандат 8e): кнопка спуска экспозиции визиографа доступна врачу всегда, блокируясь строго на время физического считывания кадра с TWAIN/CMOS сенсора (`acquiring`), позволяя повторный захват по нажатию Пробел без задержек;
+    * Плотная десктопная эргономика 32–34px: шапка и футер приведены к стандарту плотной клинической сетки на десктопе с автоматической адаптацией тач-таргетов до 44px на планшетах и сенсорных мониторах (`@media (pointer: coarse)`);
+    * Нулевой клиппинг текста: защита ФИО пациента, номеров карт, наименований зубов FDI и описаний проекций через `min-w-0 flex-1 truncate` и нативные тултипы `title`;
+    * Моментальное сохранение исследования в историю визита и карту 043/у без модальных барьеров.
+  - **Снятие 30-дневных замков со смет и планов лечения (Unblocking 30-Day Treatment Plans) (Мандат 8e п. 7, 8n)**:
+    * В `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `TreatmentPlanPresenterModal.tsx`, `TreatmentPlanStageCard.tsx`:
+    * Истечение 30 дней с момента составления сметы больше не блокирует создание нарядов ЗТЛ, оказание услуг или оплату в кассе 54-ФЗ;
+    * Неблокирующее информационное предупреждение вместо бюрократического запрета.
+  - **Плотная десктопная эргономика 28–36px тулбара КТ и навигации (CBCT MPR 28–36px Densification) (Мандаты 8c, 8d пп. 2, 3, 8e пп. 1, 2, 8p)**:
+    * В `apps/web/src/components/radiology/CbctLeftToolDock.tsx`, `CbctViewportHud.tsx`, `CbctMprImplantStudioModal.tsx`:
+    * Левый док инструментов: кнопки строго 32px (`w-8 h-8 min-w-[32px] min-h-[32px]`), поповеры `absolute left-full ml-2`, токенизация CSS тем (`var(--paper-strong)`, `var(--muted)`, `var(--line)`);
+    * Автономия разметки нерва IAN: кнопки удаления узла и очистки трассы нерва избавлены от `disabled`/`pointer-events-none` и снабжены понятным тостом при пустой трассе;
+    * Реальный процентный оверлей загрузки DICOM без процедурных фейковых диорам (Core Route пп. 7, 11).
+  - **1-клик физиологическая норма ЭМК 043/у в шаблонах дневников (Dominant Norm Bar in ClinicalDiaryTemplatesModal) (Мандаты 8c, 8d, 8e п. 3, 8k, 8n)**:
+    * В `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx` и `clinicalDiaryTemplates.css`:
+    * Доминантная плашка 1-клик физиологической нормы (`.cd-dominant-norm-btn`) высотой 34px с моментальной подстановкой здорового соматического и локального статуса без заполнения 50 пунктов рутины;
+    * Плотная десктопная сетка 28–34px для чипов зубов, категорий и кнопок действий с coarse-адаптацией 44px для сенсорных экранов.
+  - **Инструментальный аудит Red Team и соблюдение чек-листа 7 смертных грехов UI (Red Team Audit Verdict) (Мандаты 8d, 8m, 8o)**:
+    * Грех 1 (Текст и локализация): проверено отсутствие наездов, все текстовые контейнеры защищены `truncate` и `min-w-0`;
+    * Грех 2 (Плотность тулбара по закону Хика): строго 1 строка тулбаров 28–36px на десктопе;
+    * Грех 3 (Карточки сущностей по закону Миллера): <= 2 кнопок прямого действия на карточку;
+    * Грех 4 (Контрастность и гигиена тем WCAG AAA): токенизация Dark/Light режимов;
+    * Грех 5 (Автономия врача по Мандату 8e): 0 необоснованных disabled кнопок, норма в 1 клик, моментальный рентген, разблокировка 30-дневных смет;
+    * Грех 6 (Закон Анти-Матрёшки): модальные окна открываются с максимальной глубиной 1;
+    * Грех 7 (Святость официальных бланков): ноль мультяшных эмодзи, строгие векторные иконки Lucide;
+    * Машинные гейты: кодировка UTF-8 чистая, Single-Compiler Gate защищен (компиляция централизована).

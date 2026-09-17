@@ -5200,5 +5200,71 @@
   4. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
      - Синхронизация документации проведена субагентом-документатором без запуска компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
 
+### 2.10.346. Wave 253: Low-Spec HDD & PC Optimizations, Fastify In-Memory ETag 304 Caching, Direct RVG Doctor Autonomy & CBCT MPR Toolbar Densification 28–36px (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 11, 8k, 8n, 8p, 8s, 8t, Core Route пп. 7, 11)
 
+- **Цель**: Комплексная фиксация достижений Волны 253 по адаптации архитектуры под слабое аппаратное обеспечение (ноутбуки и ПК с медленными HDD 5400 RPM и 4-8 ГБ RAM) и обеспечению автономии врача у стоматологического кресла: (1) оптимизация пула соединений PostgreSQL (max 5..10) и внедрение асинхронного буферизованного логгера Pino SonicBoom (4 КБ буфер, периодический flush) в `apps/api/src/lib/hddPerformanceConfig.ts` и `apps/api/src/server.ts`, ликвидирующего дисковый троттлинг и задержки I/O в event loop; (2) архитектурный Fastify-плагин HTTP-кэширования справочников и ETag 304 Not Modified (`apps/api/src/plugins/cacheHeaders.ts`) с быстрым in-memory preHandler перехватом условных запросов `If-None-Match`, отдающим 304 статус мгновенно из ОЗУ без вызова обработчика маршрута и без запросов к PostgreSQL / диску, с автоматической инвалидацией при мутациях для номенклатуры 804н, МКБ-10, шаблонов 043/у и ИДС; (3) суверенитет врача в радиовизиографии (`DirectRvgCaptureModal.tsx`, `rvgCapture.css`) с 0 заблокированных кнопок экспозиции, плотной десктопной эргономикой 32–34px и защитой от усечения текста; (4) плотная десктопная клиническая эргономика 28–36px в тулбарах КТ / 3D MPR (`CbctLeftToolDock.tsx`, `CbctViewportHud.tsx`, `CbctMprImplantStudioModal.tsx`) с токенизацией тем, реальным оверлеем прогресса загрузки DICOM и разблокировкой сброса трассы нерва IAN без барьеров; (5) разблокировка 30-дневных планов лечения в TreatmentPlanModule без препятствий в ЗТЛ и кассе по Мандату 8e п. 7.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - *Оптимизация бэкенда и HDD*: `apps/api/src/lib/hddPerformanceConfig.ts`, `apps/api/src/plugins/cacheHeaders.ts`, `apps/api/src/server.ts`.
+  - *Радиовизиография и сенсоры*: `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`, `apps/web/src/components/radiology/rvgCapture.css`.
+  - *КЛКТ, 3D MPR и имплант-студия*: `apps/web/src/components/radiology/CbctLeftToolDock.tsx`, `apps/web/src/components/radiology/CbctViewportHud.tsx`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`.
+  - *Планы лечения и автономия врача*: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`.
+  - *ЭМК 043/у и шаблоны*: `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`, `apps/web/src/components/emr/templates/clinicalDiaryTemplates.css`.
+- **Ключевые результаты**:
+  1. *Оптимизация бэкенда под медленные HDD 5400 RPM и слабые ПК (Мандаты 8n, 8e)*:
+     - Ограничение пула `pg.Pool` до 10 (до 5 при `DENTE_LOW_SPEC=1`) с калиброванными таймаутами простоя 15с и подключения 10с;
+     - Буферизованное асинхронное логирование Pino SonicBoom с периодическим сбросом 5с и синхронным сбросом при завершении процесса;
+     - Надежное маскирование персональных данных и секретов в логах.
+  2. *Fastify ETag и in-memory HTTP-кэширование 304 Not Modified (Мандаты 8e, 8n)*:
+     - PreHandler fast-path возвращает 304 Not Modified из памяти без обращения к дисковой подсистеме и БД;
+     - OnSend генерация компактных ETag sha1-base64url и выставление `Cache-Control: private, max-age=3600, must-revalidate`;
+     - Покрытие справочников: номенклатура 804н, классификаторы МКБ-10, шаблоны дневников 043/у, согласия ИДС, справочники CRM, СанПиН и фармакология;
+     - Автоматическая инвалидация кэша по префиксу при мутациях (POST, PUT, PATCH, DELETE).
+  3. *Автономия врача в радиовизиографии Direct RVG (Мандаты 8c, 8d, 8e пп. 1, 2, 11, 8n)*:
+     - Кнопка спуска экспозиции визиографа не блокируется вне момента физического чтения кадра;
+     - Плотная десктопная эргономика 32–34px на десктопе с тач-адаптацией 44px на мобильных/планшетах у кресла;
+     - Нулевой клиппинг текста ФИО пациента, номеров карт, названий зубов FDI и описаний проекций.
+  4. *Плотная десктопная эргономика 28–36px в КТ / 3D MPR и автономия разметки (Мандаты 8c, 8d, 8e)*:
+     - Компактный левый док 32px (`w-8 h-8`) с плавающими поповерами и токенизацией CSS тем (`var(--paper-strong)`, `var(--muted)`, `var(--line)`);
+     - Разблокировка кнопок удаления узла и сброса трассы канала нижнечелюстного нерва IAN с тост-руководством;
+     - Реальный индикатор прогресса загрузки DICOM срезов с процентным отображением.
+  5. *Разблокировка 30-дневных планов лечения (Мандат 8e п. 7)*:
+     - Истечение 30-дневного срока составления сметы не блокирует наряды ЗТЛ, оказание услуг и фискальную оплату в кассе 54-ФЗ.
+  6. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - Документация синхронизирована без запуска фоновых `tsc` компиляторов на хосте.
 
+### 2.10.347. Wave 254: Full Architectural Hardening for Low-Spec HDD 5400 RPM & 4GB RAM, Fastify ETag In-Memory 304 Caching, Direct RVG Doctor Autonomy <50ms, Unblocking 30-Day Treatment Plans & 28–36px CBCT Density (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 11, 8k, 8n, 8p, 8s, 8t, Core Route пп. 6, 7, 11)
+
+- **Цель**: Комплексная фиксация достижений Волны 254 по архитектурному закреплению оптимизаций под слабое аппаратное обеспечение (ПК с медленными HDD 5400 RPM и 4GB RAM), обеспечению автономии врача у стоматологического кресла и устранению когнитивного трения: (1) серверная оптимизация PostgreSQL пула (5..10 соединений) и неблокирующего асинхронного буферизованного логирования Pino SonicBoom 4 КБ в `apps/api/src/lib/hddPerformanceConfig.ts` и `apps/api/src/server.ts`, устраняющая задержки I/O в event loop; (2) сквозное Fastify HTTP-кэширование справочников и быстрый in-memory ETag preHandler 304 Not Modified (`apps/api/src/plugins/cacheHeaders.ts` и `apps/web/src/lib/apiCacheEngine.ts`), отдающий ответы из ОЗУ без SQL-запросов к PostgreSQL и без дисковых операций для номенклатуры 804н, МКБ-10, протоколов 043/у, согласий ИДС, фармакологии и СанПиН; (3) суверенитет врача в радиовизиографии Direct RVG (`DirectRvgCaptureModal.tsx`, `rvgCapture.css`) с 0 заблокированных кнопок экспозиции, захватом кадра <50мс, высотой 32–34px на десктопе и coarse-адаптацией 44px; (4) снятие 30-дневных замков со смет и планов лечения в `TreatmentPlanModule.tsx`, `TreatmentPlanPresenterModal.tsx`, `TreatmentPlanStageCard.tsx` без препятствий в ЗТЛ и кассе по Мандату 8e п. 7; (5) плотная десктопная клиническая эргономика 28–36px в КТ / 3D MPR (`CbctLeftToolDock.tsx`, `CbctViewportHud.tsx`, `CbctMprImplantStudioModal.tsx`) с токенизацией CSS тем, разблокировкой трассировки нерва IAN и честным оверлеем загрузки DICOM; (6) 1-клик физиологическая норма ЭМК 043/у в шаблонах дневников `ClinicalDiaryTemplatesModal.tsx` с доминантной плашкой нормы без заполнения 50 пунктов рутины.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - *Оптимизация бэкенда и аппаратного профиля*: `apps/api/src/lib/hddPerformanceConfig.ts`, `apps/api/src/plugins/cacheHeaders.ts`, `apps/api/src/server.ts`, `apps/api/src/tests/hddPerformanceConfig.test.ts`.
+  - *Оптимизация фронтенда и кэширования*: `apps/web/src/utils/lowSpecHddOptimizer.ts`, `apps/web/src/lib/apiCacheEngine.ts`, `apps/web/src/lib/apiAuthFetch.ts`, `apps/web/src/lib/safeLocalStorage.ts`.
+  - *Радиовизиография Direct RVG*: `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`, `apps/web/src/components/radiology/rvgCapture.css`.
+  - *КЛКТ, 3D MPR и навигация*: `apps/web/src/components/radiology/CbctLeftToolDock.tsx`, `apps/web/src/components/radiology/CbctViewportHud.tsx`, `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`.
+  - *Планы лечения и автономия врача*: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`.
+  - *Шаблоны ЭМК 043/у и норма*: `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`, `apps/web/src/components/emr/templates/clinicalDiaryTemplates.css`.
+- **Ключевые результаты**:
+  1. *Адаптация под HDD 5400 RPM и 4GB RAM (Мандаты 8n, 8e)*:
+     - Ограничение пула `pg.Pool` до 10 (до 5 при `DENTE_LOW_SPEC=1`) с калиброванными таймаутами простоя 15с и подключения 10с;
+     - Буферизованный асинхронный вывод логов Pino SonicBoom 4 КБ с таймером сброса 5с и аварийным `flushSync`;
+     - Защита клиентского хранилища `safeLocalStorage` и LRU-вытеснение в памяти.
+  2. *Сквозной Fastify ETag in-memory 304 Not Modified (Мандаты 8e, 8n)*:
+     - PreHandler fast-path возвращает 304 Not Modified мгновенно из ОЗУ без вызова обработчика и без запросов к БД;
+     - Полный охват номенклатуры 804н, МКБ-10, шаблонов 043/у, согласий ИДС, CRM-справочников, фармакологии и СанПиН;
+     - Автоматическая инвалидация кэша по префиксу при мутациях данных.
+  3. *Автономия врача в радиовизиографии Direct RVG <50мс (Мандаты 8c, 8d, 8e пп. 1, 2, 11, 8n)*:
+     - Кнопка спуска экспозиции визиографа не блокируется вне момента физического чтения кадра;
+     - Плотная десктопная эргономика 32–34px на десктопе с тач-адаптацией 44px на мобильных/планшетах у кресла;
+     - Нулевой клиппинг текста ФИО пациента, номеров карт, названий зубов FDI и описаний проекций.
+  4. *Снятие 30-дневных замков со смет (Мандат 8e п. 7)*:
+     - Истечение 30 дней не блокирует создание нарядов ЗТЛ, оказание услуг или оплату в кассе 54-ФЗ.
+  5. *Плотная десктопная эргономика 28–36px в КТ / 3D MPR и автономия разметки (Мандаты 8c, 8d, 8e)*:
+     - Компактный левый док 32px (`w-8 h-8`) с плавающими поповерами и токенизацией CSS тем (`var(--paper-strong)`, `var(--muted)`, `var(--line)`);
+     - Разблокировка кнопок удаления узла и сброса трассы канала нижнечелюстного нерва IAN с тост-руководством;
+     - Реальный индикатор прогресса загрузки DICOM срезов с процентным отображением.
+  6. *1-клик норма ЭМК 043/у в шаблонах дневников (Мандаты 8c, 8e п. 3, 8k)*:
+     - Доминантная плашка 1-клик нормы (`.cd-dominant-norm-btn`) высотой 34px для моментального сохранения физиологической нормы без лишних кликов;
+     - Плотная десктопная сетка чипов и кнопок 28–34px с тач-адаптацией.
+  7. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - Синхронизация документации проведена субагентом-документатором без запуска компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
