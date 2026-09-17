@@ -201,7 +201,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						</span>
 					</div>
 
-					<h3 className="text-base font-extrabold text-[var(--ink,#0f172a)] leading-snug m-0 truncate" title={tier.title}>
+					<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink,#0f172a)] leading-snug m-0 break-words" title={tier.title}>
 						{tier.title}
 					</h3>
 					<p className="text-xs text-[var(--muted,#64748b)] line-clamp-2 m-0">
@@ -494,7 +494,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					</div>
 					<div className="min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate">
+							<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] whitespace-normal sm:whitespace-nowrap shrink-0">
 								3-Tier Сравнение планов (Эконом / Оптимум / Премиум)
 							</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">

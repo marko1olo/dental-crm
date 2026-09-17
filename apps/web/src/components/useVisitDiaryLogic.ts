@@ -572,10 +572,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (doSaveRef.current) {
 				void doSaveRef.current(true);
 			}
-			setDiary(EMPTY_DIARY);
-			setIcdSearch("");
-			setShowPreview(false);
-			useVisitStore.getState().setDraft(null);
 		};
 	}, [visitId, _reloadToken]);
 

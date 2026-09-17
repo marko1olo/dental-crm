@@ -53,7 +53,6 @@ import {
 } from "@dental/shared";
 import type {
 	NdflDeductionResult,
-	TreatmentPlanItem,
 	TreatmentPlanStage,
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
@@ -244,8 +243,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	);
 	const effectiveWatermark =
 		watermarkText ||
-		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
-	const stampColor = isClosedOrSigned ? "#059669" : "#64748b";
+		(!isDraft && isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+	const stampColor = !isDraft && isClosedOrSigned ? "#059669" : "#64748b";
 
 	const planAgeDays = useMemo(() => {
 		if (!planCreatedAtIso) return 0;
@@ -861,7 +860,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								disabled={isCopilotExecuting}
 								onClick={() => handleExecuteCopilot(act.id)}
 								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors disabled:opacity-50"
-								title={act.description}
+								title={isCopilotExecuting ? "AI Copilot выполняет команду..." : act.description}
 								data-testid={`presenter-copilot-btn-${act.id}`}
 							>
 								{act.title}
@@ -886,7 +885,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								}
 							}}
 							placeholder="Команда ассистенту (напр. 'бюджет 120к')"
-							className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] text-[var(--tp-text-main)] outline-none"
+							className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] text-[var(--tp-text-main)] outline-none min-h-[32px] sm:min-h-[28px] sm:h-7"
 							data-testid="presenter-copilot-input"
 						/>
 						<button
@@ -900,8 +899,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
 								}
 							}}
-							className="p-2 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] disabled:opacity-40 cursor-pointer touch-manipulation"
-							title="Отправить команду"
+							className="p-2 min-h-[44px] min-w-[44px] sm:min-h-[28px] sm:min-w-[28px] sm:h-7 sm:w-7 flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] disabled:opacity-40 cursor-pointer touch-manipulation"
+							title={isCopilotExecuting ? "Выполняется команда ассистента..." : "Отправить команду"}
 							data-testid="presenter-copilot-send-btn"
 						>
 							<Send size={14} />
@@ -1064,7 +1063,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 														</span>
 													)}
 												</div>
-												<h3 className="treatment-tier-name truncate">{tier.title}</h3>
+												<h3 className="treatment-tier-name break-words leading-snug">{tier.title}</h3>
 												<p className="treatment-tier-desc line-clamp-2">{tier.subtitle}</p>
 
 												{/* Price Box */}
@@ -2227,6 +2226,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										onClick={handleRunAiAudit}
 										disabled={isAiAuditing}
 										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+										title={isAiAuditing ? "Идёт клинический анализ плана лечения..." : (aiAuditResult ? "Обновить анализ" : "Запустить ИИ-аудит")}
 										data-testid="refresh-ai-audit-btn"
 									>
 										{isAiAuditing ? (

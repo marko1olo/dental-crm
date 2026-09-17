@@ -295,21 +295,21 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 				<div className="cd-templates-modal">
 					{/* ── Header ── */}
 					<header className="cd-templates-header">
-						<div className="cd-templates-title-group">
-							<div className="cd-templates-icon-badge">
+						<div className="cd-templates-title-group min-w-0 flex-1">
+							<div className="cd-templates-icon-badge shrink-0">
 								<Sparkles className="w-6 h-6" />
 							</div>
-							<div>
-								<div className="flex items-center gap-2">
-									<h2 className="cd-templates-title">
+							<div className="min-w-0 flex-1">
+								<div className="flex items-center gap-2 flex-wrap">
+									<h2 className="cd-templates-title truncate">
 										1-Click Клинические протоколы и дневники приёма (043/у)
 									</h2>
-									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#15803d)] border border-[var(--ok-fg,#15803d)]/30">
+									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#15803d)] border border-[var(--ok-fg,#15803d)]/30 shrink-0 whitespace-nowrap">
 										<ShieldCheck className="w-3.5 h-3.5" />
 										Минздрав РФ № 834н / 804н
 									</span>
 								</div>
-								<p className="cd-templates-subtitle">
+								<p className="cd-templates-subtitle truncate">
 									{patientFullName ? `Пациент: ${patientFullName} · ` : ""}
 									{toothNumberInput ? `${getToothAnatomicalDescription(toothNumberInput)} · ` : ""}
 									Мгновенная вставка канонического протокола без лишних кликов
@@ -320,8 +320,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 						<button
 							type="button"
 							onClick={onClose}
-							className="cd-templates-close-btn"
-							style={{ minHeight: "32px", minWidth: "32px", height: "32px", width: "32px" }}
+							className="cd-templates-close-btn shrink-0"
 							aria-label="Закрыть модальное окно"
 							data-testid="cd-templates-close-btn"
 						>
@@ -330,22 +329,10 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 					</header>
 
 					{/* ── Mandate 8e Item 3: Dominant 1-Click Physiological Norm Preset ── */}
-					<div
-						className="cd-templates-dominant-norm-bar"
-						style={{
-							padding: "8px 20px",
-							background: "var(--ok-bg, #f0fdf4)",
-							borderBottom: "1px solid rgba(21, 128, 61, 0.2)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							gap: "12px",
-							flexWrap: "wrap",
-						}}
-					>
-						<div className="flex items-center gap-2">
+					<div className="cd-templates-dominant-norm-bar">
+						<div className="flex items-center gap-2 min-w-0">
 							<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#15803d)] shrink-0" />
-							<span className="text-xs font-bold text-[var(--ok-fg,#15803d)]">
+							<span className="text-xs font-bold text-[var(--ok-fg,#15803d)] truncate">
 								Мандат 8e (п. 3): Физиологическая норма в 1 клик · Врач правит только патологию
 							</span>
 						</div>
@@ -353,49 +340,12 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							type="button"
 							onClick={() => handleSelectTemplate(PHYSIOLOGICAL_NORM_PRESET.id)}
 							className={`cd-dominant-norm-btn ${selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id ? "active" : ""}`}
-							style={{
-								minHeight: "34px",
-								height: "34px",
-								padding: "0 16px",
-								borderRadius: "8px",
-								fontWeight: 800,
-								fontSize: "12px",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "8px",
-								cursor: "pointer",
-								transition: "all 0.15s ease",
-								border: "1px solid var(--ok-fg, #15803d)",
-								background:
-									selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
-										? "var(--ok-fg, #15803d)"
-										: "var(--paper-strong, #ffffff)",
-								color:
-									selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
-										? "#ffffff"
-										: "var(--ok-fg, #15803d)",
-								boxShadow:
-									selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
-										? "0 2px 8px rgba(21, 128, 61, 0.3)"
-										: "none",
-							}}
 							data-testid="cd-dominant-norm-btn"
 							aria-label="Заполнить физиологической нормой по умолчанию"
 						>
 							<Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
 							<span>Соматически здоров / Физиологическая норма</span>
-							<span
-								style={{
-									fontSize: "10px",
-									fontWeight: 900,
-									padding: "2px 6px",
-									borderRadius: "4px",
-									background:
-										selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
-											? "rgba(255,255,255,0.25)"
-											: "rgba(21, 128, 61, 0.1)",
-								}}
-							>
+							<span className="cd-dominant-norm-badge">
 								043/у 1-Click
 							</span>
 							{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id && (
@@ -419,7 +369,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={() => handleSelectTemplate(item.id)}
 										className={`cd-fast-preset-btn ${isSelected ? "active" : ""}`}
-										style={{ minHeight: "32px", height: "32px" }}
 										data-testid={`core-preset-${item.id}`}
 									>
 										{renderTemplateIcon(item.icon, "w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0")}
@@ -446,15 +395,13 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										onChange={(e) => setSearchQuery(e.target.value)}
 										placeholder="Поиск протокола, МКБ-10, услуги..."
 										className="cd-search-input"
-										style={{ minHeight: "32px", height: "32px" }}
 										data-testid="cd-template-search-input"
 									/>
 									{searchQuery && (
 										<button
 											type="button"
 											onClick={() => setSearchQuery("")}
-											className="absolute right-2.5 text-xs text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-											style={{ minHeight: "28px", minWidth: "28px", height: "28px", width: "28px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+											className="absolute right-2.5 text-xs text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center h-6 w-6 rounded"
 											aria-label="Очистить поиск"
 										>
 											<X className="w-3.5 h-3.5" />
@@ -467,8 +414,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 									<button
 										type="button"
 										onClick={() => setSelectedCategory("all")}
-										className={`cd-category-chip ${selectedCategory === "all" ? "active" : ""}`}
-										style={{ minHeight: "28px", height: "28px", display: "inline-flex", alignItems: "center" }}
+										className={`cd-category-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === "all" ? "active" : ""}`}
 									>
 										Все ({allCatalogWithNorm.length})
 									</button>
@@ -477,8 +423,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 											key={cat}
 											type="button"
 											onClick={() => setSelectedCategory(cat)}
-											className={`cd-category-chip ${selectedCategory === cat ? "active" : ""}`}
-											style={{ minHeight: "28px", height: "28px", display: "inline-flex", alignItems: "center" }}
+											className={`cd-category-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === cat ? "active" : ""}`}
 										>
 											{CLINICAL_CATEGORY_LABELS[cat].split(" ")[0]}
 										</button>
@@ -496,17 +441,16 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 											type="button"
 											onClick={() => handleSelectTemplate(tmpl.id)}
 											className={`cd-template-item-card ${isSelected ? "active" : ""}`}
-											style={{ minHeight: "36px" }}
 											data-testid={`catalog-item-${tmpl.id}`}
 										>
 											<div className="cd-card-top-row">
-												<span className="cd-card-title flex items-center gap-1.5">
+												<span className="cd-card-title flex items-center gap-1.5 min-w-0 flex-1">
 													{renderTemplateIcon(tmpl.icon, "w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0")}
-													<span>{tmpl.title}</span>
+													<span className="truncate">{tmpl.title}</span>
 												</span>
-												<span className="cd-card-icd-tag">{tmpl.icd10Code}</span>
+												<span className="cd-card-icd-tag shrink-0">{tmpl.icd10Code}</span>
 											</div>
-											<div className="cd-card-category-tag">
+											<div className="cd-card-category-tag truncate">
 												{CLINICAL_CATEGORY_LABELS[tmpl.category]} · {tmpl.order804nServices.length} услуг 804н
 											</div>
 										</button>
@@ -536,7 +480,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										value={toothNumberInput}
 										onChange={(e) => handleToothChange(e.target.value)}
 										className="cd-tooth-input"
-										style={{ minHeight: "32px", height: "32px" }}
 										placeholder="16"
 										data-testid="cd-tooth-input"
 									/>
@@ -547,7 +490,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 												type="button"
 												onClick={() => handleToothChange(String(num))}
 												className={`cd-tooth-chip ${toothNumberInput === String(num) ? "active" : ""}`}
-												style={{ minHeight: "30px", minWidth: "30px", height: "30px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 											>
 												{num}
 											</button>
@@ -555,10 +497,10 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 									</div>
 								</div>
 
-								<div className="flex items-center gap-2">
-									<span className="text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-1">
-										<Tag className="w-3.5 h-3.5" />
-										{activeTemplate.icd10Code} {activeTemplate.shortTitle}
+								<div className="flex items-center gap-2 min-w-0">
+									<span className="text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-1 min-w-0">
+										<Tag className="w-3.5 h-3.5 shrink-0" />
+										<span className="truncate">{activeTemplate.icd10Code} {activeTemplate.shortTitle}</span>
 									</span>
 								</div>
 							</div>
@@ -567,9 +509,9 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<div className="cd-editor-scroll-body">
 								{/* Statutory Info Banner */}
 								<div className="cd-statutory-summary-card">
-									<div className="flex items-center gap-2 font-medium">
+									<div className="flex items-center gap-2 font-medium min-w-0 flex-1">
 										<CheckCircle2 className="w-4 h-4 shrink-0 text-[var(--ok-fg,#15803d)]" />
-										<span>
+										<span className="truncate">
 											{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id ? (
 												<>
 													Сформирован канонический протокол СтАР / Мандат 8e: <strong>{PHYSIOLOGICAL_NORM_PRESET.title}</strong>
@@ -581,7 +523,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 											)}
 										</span>
 									</div>
-									<span className="font-mono text-xs opacity-90">
+									<span className="font-mono text-xs opacity-90 shrink-0 ml-2">
 										{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
 											? "Физиологическая норма · Врач правит только патологию"
 											: toothNumberInput
@@ -648,7 +590,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={handleCopy}
 										className="cd-btn cd-btn-secondary"
-										style={{ minHeight: "34px", height: "34px" }}
 										data-testid="cd-copy-btn"
 									>
 										{isCopied ? (
@@ -668,7 +609,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={onClose}
 										className="cd-btn cd-btn-secondary"
-										style={{ minHeight: "34px", height: "34px" }}
 										data-testid="cd-cancel-btn"
 									>
 										Отмена
@@ -677,9 +617,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 									<button
 										type="button"
 										onClick={handleApply}
-										disabled={false}
 										className="cd-btn cd-btn-primary"
-										style={{ minHeight: "34px", height: "34px" }}
 										data-testid="cd-apply-btn"
 										title="Мгновенная вставка регламентного протокола в карту 043/у (Мандат 8e)"
 									>
@@ -690,16 +628,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							</footer>
 						</main>
 					</div>
-
-					{/* Scoped Desktop Density Enforcer (28-36px, Mandates 8c & 8e) */}
-					<style>{`
-						.cd-templates-modal .cd-search-input { min-height: 32px; height: 32px; }
-						.cd-templates-modal .cd-fast-preset-btn { min-height: 32px; height: 32px; padding: 4px 10px; font-size: 12px; }
-						.cd-templates-modal .cd-category-chip { min-height: 28px; height: 28px; padding: 2px 10px; font-size: 11px; }
-						.cd-templates-modal .cd-tooth-chip { min-height: 30px; height: 30px; min-width: 30px; }
-						.cd-templates-modal .cd-tooth-input { min-height: 32px; height: 32px; }
-						.cd-templates-modal .cd-btn { min-height: 34px; height: 34px; padding: 6px 14px; font-size: 12px; }
-					`}</style>
 				</div>
 			</div>,
 			document.body,

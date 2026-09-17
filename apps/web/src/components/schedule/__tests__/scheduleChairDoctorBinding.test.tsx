@@ -15,7 +15,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach } from "vitest";
 
 type MockFn = {
 	(...args: any[]): any;
@@ -1741,7 +1741,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		// Verify duty doctor badge exists
 		const dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
 		expect(dutyBadge).not.toBeNull();
-		expect(dutyBadge?.textContent).toContain("Дежурный врач: Иванов И.И.");
+		expect(dutyBadge?.textContent).toContain("Дежурный: Иванов И.И.");
 
 		// Switch doctor to doc-2 (override duty doctor)
 		const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-appointment-doctor");

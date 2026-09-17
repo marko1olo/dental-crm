@@ -537,6 +537,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	// Action: Save Plan to Database
 	const handleSavePlanToDatabase = async () => {
+		if (isSaving) {
+			showToast("Сохранение плана уже выполняется...", "info");
+			return;
+		}
+
 		if (totalItemsCount === 0) {
 			showToast("План пуст: добавьте или отметьте зубы на схеме", "warning");
 			return;
@@ -636,24 +641,24 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		>
 			{/* Top Bar: Title & Global Quick Actions */}
 			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--line,var(--border,#cbd5e1))]">
-				<div className="flex items-center gap-3">
-					<div className="p-3 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20">
+				<div className="flex items-center gap-3 min-w-0 max-w-full">
+					<div className="p-3 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
 						<Layers size={22} />
 					</div>
-					<div>
+					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2 flex-wrap">
-							<h2 className="text-lg font-black text-[var(--ink,#0f172a)]">
+							<h2 className="text-lg font-black text-[var(--ink,#0f172a)] truncate">
 								Комплексный план лечения
 							</h2>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20">
+							<span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20 shrink-0">
 								Приказ МЗ РФ №804н
 							</span>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20">
+							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20 shrink-0">
 								СтАР
 							</span>
 							{planAgeDays > 30 && (
 								<span
-									className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs"
+									className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs shrink-0"
 									title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
 								>
 									<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
@@ -661,7 +666,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								</span>
 							)}
 						</div>
-						<p className="text-xs text-[var(--muted,#64748b)]">
+						<p
+							className="text-xs text-[var(--muted,#64748b)] truncate"
+							title={`Пациент: ${patientName} · ${totalItemsCount} процедур · 3 клинических этапа`}
+						>
 							Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong> ·{" "}
 							{totalItemsCount} процедур · 3 клинических этапа
 						</p>
@@ -909,10 +917,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={handleSavePlanToDatabase}
-						disabled={isSaving}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
+						data-testid="treatment-plan-save-btn"
 					>
-						<Save size={15} />
+						<Save size={15} className={isSaving ? "animate-spin" : ""} />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
 					</button>
 				</div>

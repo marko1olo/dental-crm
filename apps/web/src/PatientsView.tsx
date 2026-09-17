@@ -55,6 +55,7 @@ import { useAppStore } from "./store/appStore";
 import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
+import { useDomListPagination } from "./hooks/useMemoryLeakGuard";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -464,6 +465,16 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		return (filteredPatients ?? []).filter((p) => lostPatientIds.has(p.id));
 	}, [filteredPatients, showLostPatientsOnly, lostPatientIds]);
 
+	const patientPagination = useDomListPagination(displayPatients, {
+		initialLimit: 50,
+		step: 50,
+	});
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limit on filter change
+	useEffect(() => {
+		patientPagination.resetLimit();
+	}, [query, showLostPatientsOnly]);
+
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
 			if (
@@ -550,6 +561,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				}
 				const nextPatient = displayPatients[nextIndex];
 				if (nextPatient) {
+					if (nextIndex >= patientPagination.limit) {
+						patientPagination.loadMore(
+							Math.max(50, nextIndex - patientPagination.limit + 10),
+						);
+					}
 					handleSelectPatient(nextPatient.id);
 					const el = document.querySelector(
 						`[data-patient-id="${nextPatient.id}"]`,
@@ -570,6 +586,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		displayPatients,
 		selectedPatientId,
 		handleSelectPatient,
+		patientPagination.limit,
+		patientPagination.loadMore,
 	]);
 
 	useEffect(() => {
@@ -778,7 +796,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			>
 				{/* Left Column: Patient List */}
 				<div className="patient-list max-md:gap-2 max-md:flex-1 max-md:h-full">
-					{(displayPatients ?? []).map((patient) => {
+					{patientPagination.visibleItems.map((patient) => {
 						const insight = patientInsightById?.get(patient.id);
 						const patientIsSelected = selectedPatient?.id === patient.id;
 						/*
@@ -1052,6 +1070,29 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							</article>
 						);
 					})}
+					{patientPagination.hasMore && (
+						<div className="patient-list-pagination flex items-center justify-between p-2.5 my-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]">
+							<span>
+								Показано {patientPagination.displayedCount} из {patientPagination.totalCount} пациентов
+							</span>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg"
+									onClick={() => patientPagination.loadMore(50)}
+								>
+									Загрузить ещё 50
+								</button>
+								<button
+									type="button"
+									className="text-button min-h-[32px] px-2 text-xs text-[var(--teal)] font-medium hover:underline"
+									onClick={patientPagination.loadAll}
+								>
+									Все ({patientPagination.totalCount})
+								</button>
+							</div>
+						</div>
+					)}
 					{(displayPatients ?? []).length === 0 ? (
 						<EmptyState
 							className="patient-empty-state"

@@ -13,7 +13,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,6 +74,12 @@ function expect(actual: any) {
 			assert.ok(
 				actual?.includes?.(expected),
 				`Expected "${actual}" to contain "${expected}"`,
+			);
+		},
+		toMatch: (expected: RegExp) => {
+			assert.ok(
+				expected.test(String(actual)),
+				`Expected "${actual}" to match "${expected}"`,
 			);
 		},
 		toHaveBeenCalled: () => {
@@ -227,7 +233,9 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		const telephonyPopupPath = path.resolve(__dirname, "../../telephony/IncomingCallPopup.tsx");
 		const telephonyPopupSource = fs.readFileSync(telephonyPopupPath, "utf8");
 
-		expect(telephonyPopupSource).toContain('const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";');
+		expect(telephonyPopupSource).toMatch(
+			/const isDoctorMode\s*=\s*selectedWorkspaceRole === "doctor" \|\| currentView === "visit";/,
+		);
 		expect(telephonyPopupSource).toContain("if (!activeCall || isDoctorMode || isDndActive) return null;");
 	});
 
