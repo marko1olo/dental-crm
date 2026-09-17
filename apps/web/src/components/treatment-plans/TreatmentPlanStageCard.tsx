@@ -10,6 +10,7 @@ import {
 	MoreVertical,
 	Package,
 	Percent,
+	Play,
 	Printer,
 	Trash2,
 	TrendingUp,
@@ -31,6 +32,7 @@ interface TreatmentPlanStageCardProps {
 	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
 	readonly onRemoveItem?: ((itemId: string) => void) | undefined;
+	readonly onStartStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onExecuteWriteOffStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
@@ -50,6 +52,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	onUpdateItemPrice,
 	onUpdateItem,
 	onRemoveItem,
+	onStartStage,
 	onExecuteWriteOffStage,
 	onPayStage,
 	onOpenLabOrder,
@@ -96,12 +99,31 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 				/коронк|мост|протез|винир|вкладк|абатмент|бюгел/i.test(it.name),
 		);
 
+	const isAction1Start = Boolean(onStartStage);
+	const isAction1WriteOff = !isAction1Start && Boolean(onExecuteWriteOffStage && stage.items.length > 0);
+
+	const isAction2Estimate = Boolean(onExportStageEstimate);
+	const isAction2Pay = !isAction2Estimate && Boolean(onPayStage && (stage.totalRub || 0) > 0);
+	const isAction2WriteOff =
+		!isAction2Estimate &&
+		!isAction2Pay &&
+		!isAction1WriteOff &&
+		Boolean(onExecuteWriteOffStage && stage.items.length > 0);
+
+	const showWriteOffInMenu = Boolean(
+		onExecuteWriteOffStage && stage.items.length > 0 && !isAction1WriteOff && !isAction2WriteOff,
+	);
+	const showPayInMenu = Boolean(onPayStage && (stage.totalRub || 0) > 0 && !isAction2Pay);
+	const showEstimateInMenu = Boolean(onExportStageEstimate && !isAction2Estimate);
+
 	const hasSecondaryActions = Boolean(
+		showWriteOffInMenu ||
+		showPayInMenu ||
+		showEstimateInMenu ||
 		(onOpenLabOrder && isLabOrderEligible) ||
 		(onOneClickLabOrder && isLabOrderEligible) ||
 		(onOpenInstallment && stage.totalRub > 0) ||
 		onApplyStageDiscount ||
-		onExportStageEstimate ||
 		onDeleteStage,
 	);
 
@@ -259,12 +281,18 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 															</span>
 														</div>
 
-														<span className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-snug">
+														<span
+															className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-snug truncate min-w-0 block"
+															title={item.name}
+														>
 															{item.name}
 														</span>
 
 														{item.materials && (
-															<p className="text-[11px] text-[var(--muted,#64748b)] italic m-0">
+															<p
+																className="text-[11px] text-[var(--muted,#64748b)] italic m-0 truncate min-w-0"
+																title={item.materials}
+															>
 																Материал: {item.materials}
 															</p>
 														)}
@@ -481,11 +509,22 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 
 						{/* Action Buttons: Max 1-2 Direct Actions + More Menu '...' (Mandate 8d Sin 3, Miller's Law) */}
 						<div className="flex items-center justify-end gap-2 flex-wrap">
-							{/* Primary Direct Action 1: 'Акт и списание' */}
-							{onExecuteWriteOffStage && stage.items.length > 0 && (
+							{/* Primary Direct Action 1: 'В работу' or 'Акт и списание' */}
+							{isAction1Start ? (
 								<button
 									type="button"
-									onClick={() => onExecuteWriteOffStage(stage)}
+									onClick={() => onStartStage!(stage)}
+									className="h-8 px-3 rounded-lg text-xs font-bold text-sky-800 dark:text-sky-200 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									title={`Взять этап №${stage.stageNumber} «${stage.title}» в работу`}
+									data-testid={`stage-${stage.stageNumber}-start-btn`}
+								>
+									<Play size={13} className="text-sky-600 dark:text-sky-400 shrink-0 fill-current" />
+									<span>В работу</span>
+								</button>
+							) : isAction1WriteOff ? (
+								<button
+									type="button"
+									onClick={() => onExecuteWriteOffStage!(stage)}
 									className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 									data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
@@ -493,13 +532,24 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<Package size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<span>Акт и списание</span>
 								</button>
-							)}
+							) : null}
 
-							{/* Primary Direct Action 2: 'Оплатить этап' */}
-							{onPayStage && (stage.totalRub || 0) > 0 && (
+							{/* Primary Direct Action 2: 'Смета' or 'Оплатить этап' or 'Акт и списание' */}
+							{isAction2Estimate ? (
 								<button
 									type="button"
-									onClick={() => onPayStage(stage)}
+									onClick={() => onExportStageEstimate!(stage)}
+									className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									title={`Печать сметы и спецификации по этапу №${stage.stageNumber}`}
+									data-testid={`stage-${stage.stageNumber}-estimate-btn`}
+								>
+									<Printer size={14} className="text-[var(--muted,#64748b)] shrink-0" />
+									<span>Смета</span>
+								</button>
+							) : isAction2Pay ? (
+								<button
+									type="button"
+									onClick={() => onPayStage!(stage)}
 									className="h-8 px-3 rounded-lg text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title={`Принять оплату за этап №${stage.stageNumber} (${(stage.totalRub || 0).toLocaleString("ru-RU")} ₽)`}
 									data-testid={`stage-${stage.stageNumber}-pay-btn`}
@@ -507,7 +557,18 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 									<span>Оплатить этап</span>
 								</button>
-							)}
+							) : isAction2WriteOff ? (
+								<button
+									type="button"
+									onClick={() => onExecuteWriteOffStage!(stage)}
+									className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
+									data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
+								>
+									<Package size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<span>Акт и списание</span>
+								</button>
+							) : null}
 
 							{/* Secondary Stage Operations Overflow Popover Menu [...] (Miller's Law, Mandate 8d Sin 3) */}
 							{hasSecondaryActions && (
@@ -529,7 +590,61 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											className="absolute right-0 bottom-full mb-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] rounded-xl shadow-xl min-w-[220px] text-xs animate-in fade-in zoom-in-95 duration-100"
 											role="menu"
 										>
-											{/* 1. Наряд-заказ в ЗТЛ */}
+											{/* 1. Акт и списание (если не вынесен на карточку) */}
+											{showWriteOffInMenu && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														onExecuteWriteOffStage!(stage);
+													}}
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+													title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
+													data-testid={`stage-${stage.stageNumber}-writeoff-menu-btn`}
+													role="menuitem"
+												>
+													<Package size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+													<span>Акт и списание</span>
+												</button>
+											)}
+
+											{/* 2. Оплатить этап (если не вынесен на карточку) */}
+											{showPayInMenu && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														onPayStage!(stage);
+													}}
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+													title={`Принять оплату за этап №${stage.stageNumber} (${(stage.totalRub || 0).toLocaleString("ru-RU")} ₽)`}
+													data-testid={`stage-${stage.stageNumber}-pay-menu-btn`}
+													role="menuitem"
+												>
+													<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+													<span>Оплатить этап</span>
+												</button>
+											)}
+
+											{/* 3. Экспорт сметы этапа (если не вынесен на карточку) */}
+											{showEstimateInMenu && (
+												<button
+													type="button"
+													onClick={() => {
+														setIsStageMenuOpen(false);
+														onExportStageEstimate!(stage);
+													}}
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+													title="Печать или экспорт сметы по данному этапу"
+													data-testid={`stage-${stage.stageNumber}-export-btn`}
+													role="menuitem"
+												>
+													<Printer size={14} className="text-[var(--muted,#64748b)] shrink-0" />
+													<span>Экспорт сметы этапа</span>
+												</button>
+											)}
+
+											{/* 4. Наряд-заказ в ЗТЛ */}
 											{onOpenLabOrder && isLabOrderEligible && (
 												<button
 													type="button"
@@ -550,7 +665,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												</button>
 											)}
 
-											{/* 2. 1-клик ЗТЛ */}
+											{/* 5. 1-клик ЗТЛ */}
 											{onOneClickLabOrder && isLabOrderEligible && (
 												<button
 													type="button"
@@ -571,7 +686,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												</button>
 											)}
 
-											{/* 3. Скидка на этап */}
+											{/* 6. Скидка на этап */}
 											{onApplyStageDiscount && (
 												<button
 													type="button"
@@ -589,7 +704,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												</button>
 											)}
 
-											{/* 4. Рассрочка на этап */}
+											{/* 7. Рассрочка на этап */}
 											{onOpenInstallment && stage.totalRub > 0 && (
 												<button
 													type="button"
@@ -607,25 +722,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												</button>
 											)}
 
-											{/* 5. Экспорт сметы этапа */}
-											{onExportStageEstimate && (
-												<button
-													type="button"
-													onClick={() => {
-														setIsStageMenuOpen(false);
-														onExportStageEstimate(stage);
-													}}
-													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
-													title="Печать или экспорт сметы по данному этапу"
-													data-testid={`stage-${stage.stageNumber}-export-btn`}
-													role="menuitem"
-												>
-													<Printer size={14} className="text-[var(--muted,#64748b)] shrink-0" />
-													<span>Экспорт сметы этапа</span>
-												</button>
-											)}
-
-											{/* 6. Удалить этап */}
+											{/* 8. Удалить этап */}
 											{onDeleteStage && (
 												<>
 													<div className="my-1 border-t border-[var(--line,var(--border,#cbd5e1))]" />

@@ -8,7 +8,6 @@ import {
 	ChevronDown,
 	Clock,
 	Coins,
-	CreditCard,
 	FileCheck,
 	FileText,
 	FlaskConical,
@@ -44,13 +43,11 @@ import {
 	type InventoryItemLookup,
 	generateCompletedWorksActAndWriteOff,
 } from "./treatmentPlanMaterialEngine";
-import { MissingPriceAlert } from "./MissingPriceAlert";
 import {
 	applyCopilotCommandToPlan,
 	COPILOT_PRESET_ACTIONS,
 	type CopilotCommandType,
 } from "../../services/ai/treatmentPlanCopilot";
-import { parseKopecks } from "@dental/shared";
 import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
 import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
@@ -78,13 +75,13 @@ import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { CuratorPlanAssignmentModal } from "./CuratorPlanAssignmentModal";
 import type {
 	CashierInvoiceExportData,
-	CompletedWorksActAndWriteOffData,
 	DigitalSignatureAgreementData,
 	TreatmentPlanStage,
-	TreatmentPlanTier,
 	TreatmentPlanTierId,
 } from "./types";
 import type { TreatmentPlanValidationPayload } from "./validation/planPriceValidationPresets";
+
+export type TreatmentPlanStatusFilter = "all" | "draft" | "agreed" | "in_progress" | "completed";
 
 export interface TreatmentPlanModuleProps {
 	readonly patientId: string;
