@@ -6,15 +6,18 @@ import {
 	ALIGNER_804N_SERVICES,
 	ALIGNER_ATTACHMENT_PRESETS,
 	ANGLE_CLASS_OPTIONS,
+	ANGULATION_PRESETS,
 	ARCHWIRE_MATERIALS,
 	BRACKET_SYSTEMS,
 	CLINICAL_ACTIONS,
 	ELASTIC_SCHEMES,
 	ELASTIC_SIZES,
+	ORTHODONTIC_STAGE_TABS,
 	ORTHO_804N_ACTIONS_MAP,
 	OrthodonticVisitProtocolWidget,
 	RECT_SECTIONS,
 	ROUND_SECTIONS,
+	TORQUE_PRESETS,
 	WORKHORSE_ARCHWIRES,
 	calculateOrthodonticServices804n,
 	type OrthodonticService804n,
@@ -460,6 +463,79 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			} finally {
 				eventTarget.removeEventListener("dente-add-services-to-invoice", mockListener as EventListener);
 			}
+		});
+	});
+
+	describe("Wave 249 Orthodontic Inquisitor & Friction-Killer Mandates", () => {
+		it("renders 32-36px stages toolbar per Hick's Law with 6 stages", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+			assert.ok(html.includes("data-testid=\"ortho-stages-toolbar\""));
+			assert.equal(ORTHODONTIC_STAGE_TABS.length, 6);
+			assert.ok(html.includes("Все этапы"));
+			assert.ok(html.includes("1. Нивелирование"));
+			assert.ok(html.includes("2. Рабочий / Юстировка"));
+			assert.ok(html.includes("3. Детализация &amp; Торк") || html.includes("3. Детализация & Торк"));
+			assert.ok(html.includes("4. Элайнеры &amp; Каппы") || html.includes("4. Элайнеры & Каппы"));
+			assert.ok(html.includes("5. Снятие &amp; Ретенция") || html.includes("5. Снятие & Ретенция"));
+		});
+
+		it("renders Doctor Autonomy badge for optional photo protocol without blocking", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+			assert.ok(html.includes("data-testid=\"photo-protocol-optional-badge\""));
+			assert.ok(html.includes("фотопротокол опционален"));
+		});
+
+		it("renders 1-click aligner tray tracker with step controls and messenger reminder", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget
+					isOpen={true}
+					onClose={() => {}}
+					currentAligner={5}
+					totalAligners={20}
+				/>,
+			);
+			assert.ok(html.includes("data-testid=\"aligner-tray-tracker\""));
+			assert.ok(html.includes("data-testid=\"aligner-tray-badge\""));
+			assert.ok(html.includes("data-testid=\"aligner-prev-tray-btn\""));
+			assert.ok(html.includes("data-testid=\"aligner-next-tray-btn\""));
+			assert.ok(html.includes("data-testid=\"aligner-send-reminder-btn\""));
+			assert.ok(html.includes("Трекер смены капп элайнеров"));
+			assert.ok(html.includes("Напомнить о смене"));
+		});
+
+		it("renders 1-click torque and angulation calculation panel with 4 presets", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+			assert.ok(html.includes("data-testid=\"ortho-torque-angulation-panel\""));
+			assert.equal(TORQUE_PRESETS.length, 4);
+			assert.ok(html.includes("data-testid=\"torque-preset-mbt-btn\""));
+			assert.ok(html.includes("data-testid=\"torque-preset-damon_high-btn\""));
+			assert.ok(html.includes("data-testid=\"torque-preset-damon_low-btn\""));
+			assert.ok(html.includes("data-testid=\"torque-preset-roth-btn\""));
+			assert.ok(html.includes("data-testid=\"angulation-preset-norm-btn\""));
+			assert.ok(html.includes("data-testid=\"angulation-preset-canine_upright-btn\""));
+		});
+
+		it("renders Form 043/u print buttons conforming to Mandate 8e Doctor Autonomy", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+			assert.ok(html.includes("data-testid=\"top-print-ortho-protocol-btn\""));
+			assert.ok(html.includes("data-testid=\"print-ortho-protocol-btn\""));
+			assert.ok(html.includes("data-testid=\"bottom-print-protocol-btn\""));
+			assert.ok(html.includes("Печать 043/у"));
+		});
+
+		it("maps separation elastics to nomenclature 804n code A16.07.048.003", () => {
+			assert.ok(CLINICAL_ACTIONS.some((a) => a.id === "separation"));
+			assert.ok("separation" in ORTHO_804N_ACTIONS_MAP);
+			const sepServices = ORTHO_804N_ACTIONS_MAP.separation;
+			assert.ok(sepServices.some((s) => s.code === "A16.07.048.003"));
 		});
 	});
 });

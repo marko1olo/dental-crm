@@ -1,13 +1,17 @@
 import {
 	Activity,
+	Calendar,
 	Check,
 	CheckCircle2,
 	Copy,
 	FileText,
 	Layers,
 	Plus,
+	Printer,
 	Receipt,
 	RotateCcw,
+	Send,
+	Sliders,
 	Sparkles,
 	X,
 	Zap,
@@ -25,6 +29,49 @@ import {
 
 export { ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
 export type { AngleClass, AngleClassOption, WorkhorseArchwireOption };
+
+export type OrthodonticStageFilter =
+	| "all"
+	| "leveling"
+	| "working"
+	| "finishing"
+	| "aligners"
+	| "retention";
+
+export const ORTHODONTIC_STAGE_TABS: Array<{
+	id: OrthodonticStageFilter;
+	label: string;
+	shortLabel: string;
+	desc: string;
+}> = [
+	{ id: "all", label: "Все этапы", shortLabel: "Все", desc: "Полный клинический арсенал" },
+	{ id: "leveling", label: "1. Нивелирование", shortLabel: "Нивелирование", desc: "NiTi .012–.016, фиксация аппаратуры" },
+	{ id: "working", label: "2. Рабочий / Юстировка", shortLabel: "Рабочий", desc: "Сталь SS, чейн, эластики, закрытие промежутков" },
+	{ id: "finishing", label: "3. Детализация & Торк", shortLabel: "Торк & Детализация", desc: "ТМА, расчет торка резцов и ангуляции" },
+	{ id: "aligners", label: "4. Элайнеры & Каппы", shortLabel: "Элайнеры", desc: "Трекер капп 1..N, аттачменты, выдача сетов" },
+	{ id: "retention", label: "5. Снятие & Ретенция", shortLabel: "Ретенция", desc: "Снятие брекетов, ретейнеры, ретенционные каппы" },
+];
+
+export interface TorquePresetOption {
+	id: string;
+	label: string;
+	shortLabel: string;
+	u1Torque: string;
+	l1Torque: string;
+	desc: string;
+}
+
+export const TORQUE_PRESETS: TorquePresetOption[] = [
+	{ id: "mbt", label: "Стандарт MBT (+17° / -6°)", shortLabel: "MBT (+17°/-6°)", u1Torque: "+17°", l1Torque: "-6°", desc: "Универсальный стандарт прописи MBT" },
+	{ id: "damon_high", label: "Высокий High (+17° / +7°)", shortLabel: "High (+17°/+7°)", u1Torque: "+17°", l1Torque: "+7°", desc: "Компенсация ретрузии и потери торка" },
+	{ id: "damon_low", label: "Низкий Low (+2° / -6°)", shortLabel: "Low (+2°/-6°)", u1Torque: "+2°", l1Torque: "-6°", desc: "Предотвращение протрузии при скученности" },
+	{ id: "roth", label: "Классический Roth (+12° / -1°)", shortLabel: "Roth (+12°/-1°)", u1Torque: "+12°", l1Torque: "-1°", desc: "Классическая пропись Рота" },
+];
+
+export const ANGULATION_PRESETS = [
+	{ id: "norm", label: "Норма (резцы 5°, клыки 9°)", shortLabel: "Норма" },
+	{ id: "canine_upright", label: "Вертикализация клыков (7°)", shortLabel: "Вертикализация" },
+];
 
 export type BracketSlot = "0.018" | "0.022";
 export type ArchwireMaterial = "NiTi" | "CuNiTi" | "SS" | "TMA";
@@ -83,6 +130,13 @@ export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticServic
 		{
 			code: "A16.07.048.003",
 			nameRu: "Сепарация зубов",
+			priceRub: 800,
+		},
+	],
+	separation: [
+		{
+			code: "A16.07.048.003",
+			nameRu: "Установка сепарационных эластиков / сепарация",
 			priceRub: 800,
 		},
 	],
@@ -259,6 +313,7 @@ export const CLINICAL_ACTIONS = [
 	{ id: "power_chain", label: "Установка цепочки Power Chain" },
 	{ id: "rebracket", label: "Переклейка отклеившегося брекета" },
 	{ id: "ipr", label: "Сепарация эмали (IPR)" },
+	{ id: "separation", label: "Сепарационные эластики (сепараторы)" },
 	{ id: "plate_activation", label: "Активация дуги и кламмеров пластинки" },
 	{ id: "expansion_screw_activation", label: "Раскрутка расширяющего винта (1/4 об. = 0.25 мм)" },
 	{ id: "debonding", label: "Снятие аппаратуры + ретейнер" },
@@ -447,6 +502,58 @@ export function OrthodonticVisitProtocolWidget({
 	const [angleClass, setAngleClass] = useState<AngleClass>("class_1");
 	const [plateActivationTurns, setPlateActivationTurns] = useState<number>(1);
 
+	// Hick's Law: Orthodontic Stages Filter Bar State (32–36px)
+	const [stageFilter, setStageFilter] = useState<OrthodonticStageFilter>("all");
+
+	// Torque & Angulation 1-Click Calculation State (Mandate 8k)
+	const [torquePreset, setTorquePreset] = useState<string>("mbt");
+	const [angulationPreset, setAngulationPreset] = useState<string>("norm");
+
+	// Aligner Tray Tracker 1..N State (Mandates 8e, 8k, 8n)
+	const [alignerStep, setAlignerStep] = useState<number>(currentAligner || 1);
+	const [alignerTotal, setAlignerTotal] = useState<number>(totalAligners || 36);
+	const [alignerDaysPerStep, setAlignerDaysPerStep] = useState<number>(14);
+
+	useEffect(() => {
+		if (currentAligner !== undefined && currentAligner > 0) {
+			setAlignerStep(currentAligner);
+		}
+	}, [currentAligner]);
+
+	useEffect(() => {
+		if (totalAligners !== undefined && totalAligners > 0) {
+			setAlignerTotal(totalAligners);
+		}
+	}, [totalAligners]);
+
+	const nextAlignerDateStr = useMemo(() => {
+		const d = new Date();
+		d.setDate(d.getDate() + alignerDaysPerStep);
+		return getRuDateString(d);
+	}, [alignerDaysPerStep]);
+
+	const alignerProgressPercent = useMemo(() => {
+		if (alignerTotal <= 0) return 0;
+		return Math.min(100, Math.round((alignerStep / alignerTotal) * 100));
+	}, [alignerStep, alignerTotal]);
+
+	const handleSendAlignerReminder = useCallback(() => {
+		const nextStep = Math.min(alignerTotal, alignerStep + 1);
+		const reminderText = `Здравствуйте, ${patientName}! Напоминание из клиники «${clinicName}»: плановая смена элайнера на каппу №${nextStep} из ${alignerTotal} запланирована на ${nextAlignerDateStr}. Режим ношения: 22 часа в сутки, чистка прохладной водой, фиксация с чувисами. При любых вопросах звоните${clinicPhone ? `: ${clinicPhone}` : ""}. Ваш лечащий врач: ${doctorName}.`;
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				navigator.clipboard.writeText(reminderText).catch(() => {});
+			}
+			showToast(
+				`Напоминание о смене на каппу №${nextStep} (${nextAlignerDateStr}) скопировано для мессенджера`,
+				"success",
+				4000,
+			);
+		} catch {
+			showToast("Напоминание скопировано", "success");
+		}
+	}, [patientName, clinicName, alignerStep, alignerTotal, nextAlignerDateStr, clinicPhone, doctorName]);
+
 	// Debounced autosave (Mandate 8e: protection against data loss without modal prompts)
 	const isWidgetMountedRef = useRef(false);
 	useEffect(() => {
@@ -634,6 +741,7 @@ export function OrthodonticVisitProtocolWidget({
 
 	const handleIssueAlignerSetFromWidget = (count: number, days: number) => {
 		setAlignerSetIssued({ count, days });
+		setAlignerStep((prev) => Math.min(alignerTotal, prev + count));
 		onIssueAlignerSet?.(count, days);
 		const issueSummary = `Сдан сет элайнеров (${count} каппы на ${days} дн., режим 22 ч/сутки)`;
 		showToast(`${issueSummary}`, "success");
@@ -824,6 +932,23 @@ export function OrthodonticVisitProtocolWidget({
 			archwireText = `• Текущие дуги: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}" (дуги сохранены без деформаций, активация замков).`;
 		}
 
+		let torqueAngulationText = "";
+		const torqueObj = TORQUE_PRESETS.find((t) => t.id === torquePreset);
+		const angulationObj = ANGULATION_PRESETS.find((a) => a.id === angulationPreset);
+		if (torqueObj) {
+			torqueAngulationText = `• Торк и ангуляция: пропись ${torqueObj.label}, ангуляция резцов/клыков: ${angulationObj?.label || "норма"}. Контроль мезио-дистального наклона и инклинации выполнен.`;
+		}
+
+		let alignerTrackerText = "";
+		if (bracketSystem === "aligners" || activeAttachmentPreset) {
+			alignerTrackerText = `• Трекер элайнеров: Каппа №${alignerStep} из ${alignerTotal} (${alignerProgressPercent}% курса завершено). Режим ношения: 22 ч/сутки. Следующая смена: ${nextAlignerDateStr} (каждые ${alignerDaysPerStep} дн.).`;
+		}
+
+		let separationText = "";
+		if (selectedActions.includes("separation")) {
+			separationText = "\n• Сепарационные эластики: установлены эластические сепараторы в межзубные промежутки для создания межпроксимального пространства.";
+		}
+
 		return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)
 Дата приёма: ${dateStr}
 Пациент: ${patientName}
@@ -840,8 +965,9 @@ ${angleText}• Аппаратура: ${
 			: `${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}")`
 }.
 • Зона фиксации/активации (зубы): ${teethListStr}.
-${attachmentText ? `${attachmentText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}
-• Фиксация аппаратуры стабильна, окклюзионных контактов с замками/каппами не выявлено.
+${attachmentText ? `${attachmentText}\n` : ""}${alignerTrackerText ? `${alignerTrackerText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}${separationText}
+${torqueAngulationText ? `${torqueAngulationText}\n` : ""}• Фиксация аппаратуры стабильна, окклюзионных контактов с замками/каппами не выявлено.
+• Фотопротокол: опционален (Мандат 8e: отсутствие фото не блокирует приём).
 
 3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:
 • Выполненные манипуляции: ${actionsListStr || (activeAttachmentPreset ? currentAttachmentObj?.shortLabel : "Активация аппаратуры")}.${powerChainText}
@@ -884,12 +1010,20 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		alignerSetIssued,
 		angleClass,
 		plateActivationTurns,
+		torquePreset,
+		angulationPreset,
+		alignerStep,
+		alignerTotal,
+		alignerProgressPercent,
+		nextAlignerDateStr,
+		alignerDaysPerStep,
 	]);
 
 	// Apply to Form 043/u and auto-dispatch to invoice
 	const handleApplyToVisitNote = useCallback(() => {
 		const currentAttachmentObj = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset);
 		const servicesToDispatch = calculatedServices804n;
+		const torqueObj = TORQUE_PRESETS.find((t) => t.id === torquePreset);
 
 		try {
 			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
@@ -903,8 +1037,8 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						? `${prev.objectiveStatus}\n\n${generatedProtocol}`
 						: generatedProtocol,
 					treatmentPlan: prev.treatmentPlan
-						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: ${currentAttachmentObj?.shortLabel || "аттачменты"}` : bracketSystem === "removable_plate" ? `Пластинка с винтом (активация ${plateActivationTurns}/4 об.)` : `Дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
-						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `пластинка с расширяющим винтом (${plateActivationTurns}/4 об.)` : `дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
+						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: Каппа №${alignerStep}/${alignerTotal} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `Пластинка с винтом (активация ${plateActivationTurns}/4 об.)` : `Дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "MBT"}, ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
+						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры: Каппа №${alignerStep}/${alignerTotal} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `пластинка с расширяющим винтом (${plateActivationTurns}/4 об.)` : `дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "MBT"}, ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
 				}));
 			}
 
@@ -969,9 +1103,33 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		elasticScheme,
 		angleClass,
 		selectedTooth,
+		torquePreset,
+		alignerStep,
+		alignerTotal,
 		onAddToInvoice,
 		onClose,
 	]);
+
+	// 1-Click Print Form 043/u (Mandates 8e, 8k)
+	const handlePrintOrthodonticCard = useCallback(() => {
+		try {
+			if (typeof window !== "undefined") {
+				const printWindow = window.open("", "_blank");
+				if (printWindow) {
+					printWindow.document.write(`<!DOCTYPE html><html><head><title>Ортодонтическая карта 043/у — ${patientName}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.5;font-size:13px}h1{font-size:16px;margin:0 0 4px;text-transform:uppercase;font-weight:800}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.stamp{display:inline-block;padding:4px 10px;border:2px solid #059669;color:#059669;font-weight:800;font-size:11px;text-transform:uppercase;border-radius:4px;margin-bottom:12px}pre{white-space:pre-wrap;font-family:inherit;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.footer{margin-top:24px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:8px;display:flex;justify-content:space-between}@media print{body{padding:0}}</style></head><body><div class="stamp">ПОДПИСАНО ВРАЧОМ / ФОРМА 043/у</div><h1>Дневник ортодонтического приёма (Карта 043/у)</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><pre>${generatedProtocol.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>М.П.</span></div><script>window.onload=function(){window.print();};<\/script></body></html>`);
+					printWindow.document.close();
+				} else if (typeof window.print === "function") {
+					window.print();
+				}
+			}
+			showToast("Отправлено на печать: Ортодонтическая карта 043/у", "info");
+		} catch (err) {
+			console.warn("Print error:", err);
+			if (typeof window !== "undefined" && typeof window.print === "function") {
+				window.print();
+			}
+		}
+	}, [clinicName, doctorName, patientName, generatedProtocol]);
 
 	const handleCopyClipboard = () => {
 		if (navigator?.clipboard?.writeText) {
@@ -1063,6 +1221,17 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
+							onClick={handlePrintOrthodonticCard}
+							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 shadow-xs transition-all cursor-pointer"
+							data-testid="top-print-ortho-protocol-btn"
+							title="Распечатать карту 043/у (Мандат 8e: печать со штампом в любой момент)"
+						>
+							<Printer size={16} />
+							<span className="hidden sm:inline">Печать 043/у</span>
+						</button>
+
+						<button
+							type="button"
 							onClick={handleAddServicesToInvoice}
 							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
 							data-testid="add-ortho-services-to-invoice-btn"
@@ -1105,6 +1274,64 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto">
 					{/* Left Column: 1-Click Fast Ortho Controls */}
 					<div className="lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line,#e2e8f0)] dark:border-slate-800 overflow-y-auto">
+						{/* 0. Hick's Law: Orthodontic Stages Filter Bar (32–36px) */}
+						<div
+							data-testid="ortho-stages-toolbar"
+							className="min-h-[36px] h-9 p-0.5 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700/60 flex items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0"
+						>
+							{ORTHODONTIC_STAGE_TABS.map((stage) => {
+								const isSelected = stageFilter === stage.id;
+								return (
+									<button
+										key={stage.id}
+										type="button"
+										onClick={() => {
+											setStageFilter(stage.id);
+											if (stage.id === "aligners") {
+												setBracketSystem("aligners");
+											} else if (stage.id === "leveling") {
+												setArchwireMaterial("NiTi");
+												setArchwireSection(".014");
+											} else if (stage.id === "working") {
+												setArchwireMaterial("SS");
+												setArchwireSection(".019x.025");
+											} else if (stage.id === "finishing") {
+												setArchwireMaterial("TMA");
+												setArchwireSection(".017x.025");
+											} else if (stage.id === "retention") {
+												if (!selectedActions.includes("debonding")) {
+													setSelectedActions((prev) => [...prev, "debonding"]);
+												}
+											}
+										}}
+										data-testid={`ortho-stage-tab-${stage.id}`}
+										className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 ${
+											isSelected
+												? "bg-blue-600 text-white font-black shadow-xs ring-1 ring-blue-400"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-transparent"
+										}`}
+										title={stage.desc}
+									>
+										<span>{stage.label}</span>
+									</button>
+								);
+							})}
+						</div>
+
+						{/* Mandate 8e: Doctor Autonomy & Photo Protocol Optionality Banner */}
+						<div
+							data-testid="photo-protocol-optional-badge"
+							className="flex items-center justify-between p-2 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs flex-wrap gap-1"
+						>
+							<div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-200 font-bold text-[11px]">
+								<CheckCircle2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Автономия врача: фотопротокол опционален (отсутствие фото не блокирует приём)</span>
+							</div>
+							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-mono font-medium">
+								Мандат 8e / 0 disabled кнопок
+							</span>
+						</div>
+
 						{/* 0. Autonomous 1-Click Clinical Presets Panel */}
 						<div
 							data-testid="ortho-quick-presets-panel"
@@ -1284,7 +1511,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							<div className="flex items-center gap-2 p-2.5 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs">
 								<CheckCircle2 size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="text-[11px] font-bold text-teal-900 dark:text-teal-200">
-									Истечение 30 дней плана НЕ БЛОКИРУЕТ ортодонтические манипуляции, заказ капп/элайнеров в ЗТЛ или оплату.
+									Мандат 8e: Истечение 30 дней плана НЕ БЛОКИРУЕТ ортодонтические манипуляции, заказ капп/элайнеров в ЗТЛ или оплату.
 								</span>
 							</div>
 						</div>
@@ -1346,6 +1573,80 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 										</button>
 									);
 								})}
+							</div>
+
+							{/* 1-Click Aligner Tray Tracker 1..N with Patient Reminder (Mandates 8e, 8k) */}
+							<div
+								data-testid="aligner-tray-tracker"
+								className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/90 border border-indigo-200 dark:border-indigo-800 flex flex-col gap-2"
+							>
+								<div className="flex items-center justify-between flex-wrap gap-1.5">
+									<span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+										<Calendar size={14} className="text-indigo-600 dark:text-indigo-400" />
+										Трекер смены капп элайнеров (1..{alignerTotal})
+									</span>
+									<div className="flex items-center gap-1.5">
+										<span
+											className="px-2 py-0.5 rounded-md text-[11px] font-black bg-indigo-600 text-white shadow-xs"
+											data-testid="aligner-tray-badge"
+										>
+											Каппа №{alignerStep} из {alignerTotal}
+										</span>
+										<span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
+											({alignerProgressPercent}%)
+										</span>
+									</div>
+								</div>
+
+								{/* Progress bar */}
+								<div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+									<div
+										data-testid="aligner-tray-progress-bar"
+										className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+										style={{ width: `${alignerProgressPercent}%` }}
+									/>
+								</div>
+
+								{/* Stepper, date, reminder (Miller's Law: 1-2 direct actions) */}
+								<div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+									<div className="flex items-center gap-1 flex-wrap">
+										<button
+											type="button"
+											onClick={() => setAlignerStep((prev) => Math.max(1, prev - 1))}
+											data-testid="aligner-prev-tray-btn"
+											className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
+											title="Предыдущая каппа (-1)"
+										>
+											-1
+										</button>
+										<span className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[56px] text-center">
+											№ {alignerStep}
+										</span>
+										<button
+											type="button"
+											onClick={() => setAlignerStep((prev) => Math.min(alignerTotal, prev + 1))}
+											data-testid="aligner-next-tray-btn"
+											className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
+											title="Следующая каппа (+1)"
+										>
+											+1
+										</button>
+										<span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 ml-1">
+											Смена: {nextAlignerDateStr} (+{alignerDaysPerStep} дн.)
+										</span>
+									</div>
+
+									<button
+										type="button"
+										onClick={handleSendAlignerReminder}
+										data-testid="aligner-send-reminder-btn"
+										className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										title="Скопировать напоминание о смене каппы для отправки пациенту в WhatsApp/Telegram"
+									>
+										<Send size={13} />
+										<span>Напомнить о смене</span>
+									</button>
+								</div>
 							</div>
 
 							{/* Quick Set Delivery & Append Button */}
@@ -1789,6 +2090,78 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							</div>
 						</div>
 
+						{/* 4.5 1-Click Torque and Angulation Calculation Panel (Mandate 8k) */}
+						<div
+							data-testid="ortho-torque-angulation-panel"
+							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
+						>
+							<div className="flex items-center justify-between flex-wrap gap-1.5">
+								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+									<Sliders size={14} className="text-blue-500" />
+									Расчет торка и ангуляции (1 клик)
+								</span>
+								<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+									{TORQUE_PRESETS.find((t) => t.id === torquePreset)?.shortLabel}
+								</span>
+							</div>
+
+							{/* 4 Torque Presets with 1-click selection (Miller's Law <= 2 per group) */}
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+								{TORQUE_PRESETS.map((tOpt) => {
+									const isSelected = torquePreset === tOpt.id;
+									return (
+										<button
+											key={tOpt.id}
+											type="button"
+											onClick={() => {
+												setTorquePreset(tOpt.id);
+												showToast(`Выбран торк: ${tOpt.label}`, "info");
+											}}
+											data-testid={`torque-preset-${tOpt.id}-btn`}
+											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
+												isSelected
+													? "bg-blue-600 text-white border-blue-700 font-black shadow-xs ring-1 ring-blue-400"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+											}`}
+											title={tOpt.desc}
+										>
+											<span className="text-xs font-bold leading-tight truncate w-full">{tOpt.shortLabel}</span>
+											<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+												ВЧ {tOpt.u1Torque} / НЧ {tOpt.l1Torque}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+
+							{/* Angulation selector */}
+							<div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800/60">
+								<span className="text-[11px] font-bold text-slate-500">
+									Ангуляция резцов/клыков:
+								</span>
+								<div className="flex items-center gap-1.5">
+									{ANGULATION_PRESETS.map((aOpt) => {
+										const isSelected = angulationPreset === aOpt.id;
+										return (
+											<button
+												key={aOpt.id}
+												type="button"
+												onClick={() => setAngulationPreset(aOpt.id)}
+												data-testid={`angulation-preset-${aOpt.id}-btn`}
+												className={`h-7 px-2 py-0.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+													isSelected
+														? "bg-blue-600 text-white border-blue-700 font-black shadow-xs"
+														: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
+												}`}
+											>
+												{aOpt.shortLabel}
+											</button>
+										);
+									})}
+								</div>
+							</div>
+						</div>
+
 						{/* 5. Intermaxillary Elastics */}
 						<div className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5">
 							<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
@@ -1882,15 +2255,27 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								</span>
 							</div>
 
-							<button
-								type="button"
-								onClick={handleCopyClipboard}
-								className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-								title="Скопировать протокол в буфер"
-							>
-								<Copy size={13} />
-								<span>Копировать</span>
-							</button>
+							<div className="flex items-center gap-1.5">
+								<button
+									type="button"
+									onClick={handlePrintOrthodonticCard}
+									className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+									data-testid="print-ortho-protocol-btn"
+									title="Распечатать карту 043/у"
+								>
+									<Printer size={13} />
+									<span>Печать 043/у</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleCopyClipboard}
+									className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+									title="Скопировать протокол в буфер"
+								>
+									<Copy size={13} />
+									<span>Копировать</span>
+								</button>
+							</div>
 						</div>
 
 						{/* Preformatted Protocol Text Box */}
@@ -1910,6 +2295,17 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								<Copy size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="hidden sm:inline">Скопировать для пациента</span>
 								<span className="sm:hidden">Памятка</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={handlePrintOrthodonticCard}
+								className="min-h-[48px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+								data-testid="bottom-print-protocol-btn"
+								title="Распечатать карту 043/у"
+							>
+								<Printer size={16} />
+								<span className="hidden sm:inline">Печать</span>
 							</button>
 
 							<button

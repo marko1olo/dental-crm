@@ -1100,7 +1100,7 @@ export function CephalometricCanvas({
 
 			{/* Precision Magnifier Loupe (Zoom Window during point drag or hovering) */}
 			{(draggingKey || hoveredKey) && cursorImgPos && (
-				<div className="absolute bottom-4 right-4 z-40 w-36 h-36 rounded-full overflow-hidden border-2 border-[var(--teal)] bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
+				<div className="absolute bottom-4 right-4 z-40 w-36 h-36 rounded-full overflow-hidden border-2 border-[var(--teal,#0d9488)] bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
 					<div
 						className="relative w-full h-full"
 						style={{
@@ -1110,17 +1110,17 @@ export function CephalometricCanvas({
 					>
 						{/* Replicated vector crosshair in magnifier */}
 						<div
-							className="absolute w-2.5 h-2.5 rounded-full bg-[var(--teal)] border border-white"
+							className="absolute w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] border border-white"
 							style={{ left: cursorImgPos.x - 5, top: cursorImgPos.y - 5 }}
 						/>
 					</div>
 					{/* Fixed Center Crosshair */}
 					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-						<div className="w-full h-[1px] bg-[var(--teal-soft)]" />
-						<div className="h-full w-[1px] bg-[var(--teal-soft)] absolute" />
-						<div className="w-4 h-4 rounded-full border border-[var(--teal)]" />
+						<div className="w-full h-[1px] bg-[var(--teal-soft,rgba(13,148,136,0.3))]" />
+						<div className="h-full w-[1px] bg-[var(--teal-soft,rgba(13,148,136,0.3))] absolute" />
+						<div className="w-4 h-4 rounded-full border border-[var(--teal,#0d9488)]" />
 					</div>
-					<div className="absolute bottom-1.5 bg-slate-900/95 text-xs text-[var(--teal)] px-2.5 py-0.5 rounded-full font-mono font-bold border border-[var(--teal-soft)]">
+					<div className="absolute bottom-1.5 bg-slate-900/95 text-xs text-[var(--teal,#0d9488)] px-2.5 py-0.5 rounded-full font-mono font-bold border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
 						{draggingKey ?? hoveredKey} ({Math.round(cursorImgPos.x)}, {Math.round(cursorImgPos.y)})
 					</div>
 				</div>
