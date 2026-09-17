@@ -19,7 +19,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	parseAndValidateKraftBarcode,
 	type ParsedKraftBarcode,
@@ -51,6 +51,16 @@ export function KraftPackageQuickScanner({
 }: KraftPackageQuickScannerProps) {
 	const [barcodeInput, setBarcodeInput] = useState<string>(initialBarcode || "");
 	const [selectedTrayType, setSelectedTrayType] = useState<StandardTrayType>("therapy");
+
+	useEffect(() => {
+		if (isOpen) {
+			setBarcodeInput(initialBarcode || "");
+		}
+	}, [isOpen, initialBarcode]);
+
+	const selectedTrayDef = useMemo(() => {
+		return STANDARD_TRAY_OPTIONS.find((t) => t.id === selectedTrayType) || STANDARD_TRAY_OPTIONS[0];
+	}, [selectedTrayType]);
 
 	const parsed = useMemo<ParsedKraftBarcode | null>(() => {
 		if (!barcodeInput.trim()) return null;
@@ -190,15 +200,15 @@ export function KraftPackageQuickScanner({
 			<div className="sterilization-studio-modal" style={{ maxWidth: "720px" }}>
 				{/* Header */}
 				<div className="sterilization-header">
-					<div className="sterilization-title-wrap">
+					<div className="sterilization-title-wrap min-w-0">
 						<div className="sterilization-badge-icon">
-							<ShieldCheck size={24} />
+							<ShieldCheck size={22} />
 						</div>
-						<div>
-							<h3 className="sterilization-title">
+						<div className="min-w-0">
+							<h3 className="sterilization-title truncate">
 								Сканер крафт-пакетов стерилизации (СанПиН 3.3686-21)
 							</h3>
-							<div className="sterilization-subtitle">
+							<div className="sterilization-subtitle truncate">
 								1-клик привязка штрихкода автоклавирования к протоколу приема (Форма № 043/у) • Без блокировок врача
 							</div>
 						</div>
@@ -209,28 +219,25 @@ export function KraftPackageQuickScanner({
 						className="sterilization-close-btn"
 						aria-label="Закрыть сканер"
 					>
-						<X size={20} />
+						<X size={18} />
 					</button>
 				</div>
 
 				{/* Body */}
 				<div className="sterilization-body">
-					{/* 1-Click Fast Standard Tray Express Bar */}
-					<div
-						className="sterilization-presets-bar"
-						style={{ border: "1.5px solid var(--teal-soft, #bae6fd)" }}
-					>
-						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-							<span className="sterilization-presets-title">
-								<Zap size={16} /> 1-Клик: Готовые стерильные лотки на сегодня (без сканирования):
+					{/* 1-Click Fast Standard Tray Express Bar (Hick's Law: 1 compact 32-36px toolbar row) */}
+					<div className="sterilization-presets-bar">
+						<div className="sterilization-presets-row min-w-0">
+							<span className="sterilization-presets-title truncate">
+								<Zap size={15} /> 1-Клик лотки:
 							</span>
-							<div className="sterilization-tray-selector">
+							<div className="sterilization-tray-selector min-w-0">
 								{STANDARD_TRAY_OPTIONS.map((t) => (
 									<button
 										key={t.id}
 										type="button"
 										onClick={() => setSelectedTrayType(t.id)}
-										className={`sterilization-tray-btn ${selectedTrayType === t.id ? "active" : ""}`}
+										className={`sterilization-tray-btn truncate ${selectedTrayType === t.id ? "active" : ""}`}
 										title={t.descriptionRu}
 									>
 										{t.shortLabelRu}
@@ -242,26 +249,25 @@ export function KraftPackageQuickScanner({
 						<button
 							type="button"
 							onClick={() => handleApplyStandardTray(selectedTrayType)}
-							className="sterilization-action-btn primary"
-							style={{ minHeight: "44px", width: "100%", fontSize: "0.85rem" }}
-							title="Мгновенно привязать стандартный валидный лоток с сегодняшней датой стерилизации"
+							className="sterilization-action-btn primary sterilization-quick-attach-btn"
+							title={`Мгновенно привязать ${selectedTrayDef.shortLabelRu.toLowerCase()} с сегодняшней датой`}
 							data-testid="btn-kraft-quick-standard-attach"
 						>
-							<Sparkles size={18} />
-							<span>Вскрыть стандартный стерильный смотровой лоток (1 клик)</span>
+							<Sparkles size={15} />
+							<span className="truncate">Вскрыть {selectedTrayDef.shortLabelRu.toLowerCase()} (1 клик)</span>
 						</button>
 					</div>
 
 					{/* Scanner Box */}
 					<div className="sterilization-scanner-box">
-						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-							<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--muted)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-								<Scan size={16} color="var(--brand-primary, #0284c7)" />
-								Или отсканируйте ШК крафт-пакета (1D Code128 / 2D DataMatrix):
+						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.4rem" }} className="min-w-0">
+							<span style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--muted, #64748b)", display: "flex", alignItems: "center", gap: "0.4rem" }} className="truncate">
+								<Scan size={15} color="var(--teal, #0284c7)" />
+								ШК крафт-пакета (1D Code128 / 2D DataMatrix):
 							</span>
 							{currentDiaryBarcode && (
-								<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-									Текущий в дневнике: <strong style={{ fontFamily: "monospace" }}>{currentDiaryBarcode}</strong>
+								<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }} className="truncate">
+									В дневнике: <strong style={{ fontFamily: "monospace" }}>{currentDiaryBarcode}</strong>
 								</span>
 							)}
 						</div>
@@ -275,7 +281,7 @@ export function KraftPackageQuickScanner({
 								value={barcodeInput}
 								onChange={(e) => setBarcodeInput(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === "Enter" && parsed) {
+									if (e.key === "Enter") {
 										e.preventDefault();
 										handleApply();
 									}
@@ -287,17 +293,17 @@ export function KraftPackageQuickScanner({
 									type="button"
 									onClick={() => setBarcodeInput("")}
 									className="sterilization-action-btn secondary"
-									style={{ minWidth: "48px", padding: "0 0.75rem" }}
+									style={{ minWidth: "38px", height: "36px", minHeight: "36px", padding: "0 0.5rem" }}
 									title="Очистить ввод"
 								>
-									<X size={18} />
+									<X size={16} />
 								</button>
 							)}
 						</div>
 
 						{/* Sample Quick Chips */}
-						<div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-							<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)" }}>
+						<div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)" }}>
 								Быстрые эталонные образцы из журнала (1 клик):
 							</span>
 							<div className="sterilization-chips-wrap">
@@ -306,11 +312,12 @@ export function KraftPackageQuickScanner({
 										key={s.barcode}
 										type="button"
 										onClick={() => setBarcodeInput(s.barcode)}
-										className="sterilization-quick-chip"
-										title={s.label}
+										className="sterilization-quick-chip truncate"
+										title={`${s.label} (${s.barcode})`}
 										data-testid={`chip-sample-${s.badge}`}
 									>
-										<span style={{ color: "var(--brand-primary)" }}>•</span> {s.label}
+										<span style={{ color: "var(--teal, #0284c7)" }}>•</span>{" "}
+										<span className="truncate">{s.label}</span>
 									</button>
 								))}
 							</div>
@@ -329,8 +336,8 @@ export function KraftPackageQuickScanner({
 							}`}
 							data-testid="kraft-decoded-result-card"
 						>
-							<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+							<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }} className="min-w-0">
+								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }} className="min-w-0">
 									{parsed.isExpired ? (
 										<span className="sterilization-tag expired">
 											<AlertOctagon size={14} /> СРОК ИСТЕК ({Math.abs(parsed.daysRemaining)} дн. назад)
@@ -344,12 +351,12 @@ export function KraftPackageQuickScanner({
 											<CheckCircle2 size={14} /> СТЕРИЛЬНО (Годен до {parsed.expDateIso})
 										</span>
 									)}
-									<span style={{ fontSize: "0.8rem", fontFamily: "monospace", color: "var(--muted)", fontWeight: 700 }}>
+									<span className="truncate" style={{ fontSize: "0.775rem", fontFamily: "monospace", color: "var(--muted, #64748b)", fontWeight: 700 }}>
 										{parsed.barcodeType === "datamatrix_2d" ? "2D DataMatrix" : "1D Code128"}
 									</span>
 								</div>
 
-								<span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+								<span className="truncate" style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)", maxWidth: "320px" }} title={parsed.sanpinClauseRu}>
 									{parsed.sanpinClauseRu}
 								</span>
 							</div>
@@ -368,37 +375,39 @@ export function KraftPackageQuickScanner({
 								</div>
 							)}
 
-							<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem", fontSize: "0.85rem" }}>
-								<div>
-									<div style={{ color: "var(--muted)", fontSize: "0.75rem" }}>Набор инструментария:</div>
-									<div style={{ fontWeight: 700, color: "var(--ink)" }}>{parsed.toolSetNameRu}</div>
+							<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.65rem", fontSize: "0.825rem" }}>
+								<div className="min-w-0">
+									<div style={{ color: "var(--muted, #64748b)", fontSize: "0.725rem" }}>Набор инструментария:</div>
+									<div className="truncate" style={{ fontWeight: 700, color: "var(--ink)" }} title={parsed.toolSetNameRu}>
+										{parsed.toolSetNameRu}
+									</div>
 								</div>
-								<div>
-									<div style={{ color: "var(--muted)", fontSize: "0.75rem" }}>Стерилизатор и цикл:</div>
-									<div style={{ fontWeight: 700, color: "var(--ink)" }}>
+								<div className="min-w-0">
+									<div style={{ color: "var(--muted, #64748b)", fontSize: "0.725rem" }}>Стерилизатор и цикл:</div>
+									<div className="truncate" style={{ fontWeight: 700, color: "var(--ink)" }} title={`${parsed.autoclaveId} • Цикл №${parsed.cycleNumber}`}>
 										{parsed.autoclaveId} • Цикл №{parsed.cycleNumber}
 									</div>
 								</div>
-								<div>
-									<div style={{ color: "var(--muted)", fontSize: "0.75rem" }}>Дата упаковки / Срок:</div>
-									<div style={{ fontWeight: 700, color: "var(--ink)" }}>
+								<div className="min-w-0">
+									<div style={{ color: "var(--muted, #64748b)", fontSize: "0.725rem" }}>Дата упаковки / Срок:</div>
+									<div className="truncate" style={{ fontWeight: 700, color: "var(--ink)" }} title={`${parsed.packDateIso} (${parsed.daysLifespan} сут.)`}>
 										{parsed.packDateIso} ({parsed.daysLifespan} сут.)
 									</div>
 								</div>
-								<div>
-									<div style={{ color: "var(--muted)", fontSize: "0.75rem" }}>Химический индикатор:</div>
-									<div style={{ fontWeight: 700, color: parsed.indicatorPassed ? "var(--ok-fg, #059669)" : "var(--bad-fg, #dc2626)" }}>
+								<div className="min-w-0">
+									<div style={{ color: "var(--muted, #64748b)", fontSize: "0.725rem" }}>Химический индикатор:</div>
+									<div className="truncate" style={{ fontWeight: 700, color: parsed.indicatorPassed ? "var(--ok-fg, #059669)" : "var(--bad-fg, #dc2626)" }} title={parsed.indicatorClassRu}>
 										{parsed.indicatorClassRu}
 									</div>
 								</div>
 							</div>
 
 							{/* Formatted Protocol 043 Record Preview */}
-							<div style={{ marginTop: "0.25rem", padding: "0.75rem", borderRadius: "8px", background: "var(--paper-soft, #f1f5f9)", border: "1px solid var(--border, #e2e8f0)", fontSize: "0.8rem", color: "var(--ink)", lineHeight: 1.45 }}>
-								<div style={{ fontWeight: 700, marginBottom: "0.25rem", color: "var(--muted)", fontSize: "0.75rem" }}>
+							<div className="min-w-0" style={{ marginTop: "0.25rem", padding: "0.65rem 0.85rem", borderRadius: "8px", background: "var(--paper-soft, #f1f5f9)", border: "1px solid var(--line, #e2e8f0)", fontSize: "0.775rem", color: "var(--ink)", lineHeight: 1.45 }}>
+								<div style={{ fontWeight: 700, marginBottom: "0.25rem", color: "var(--muted, #64748b)", fontSize: "0.725rem" }}>
 									Запись для формы № 043/у (Приказ 834н):
 								</div>
-								<div style={{ fontFamily: "ui-sans-serif, system-ui", fontStyle: "italic" }}>
+								<div style={{ fontFamily: "ui-sans-serif, system-ui", fontStyle: "italic", wordBreak: "break-word" }}>
 									{parsed.isExpired
 										? `${parsed.formattedProtocolRecord043} [Допуск по решению врача / острая боль: индикатор 5 класса норма, упаковка герметична]`
 										: parsed.formattedProtocolRecord043}
@@ -406,28 +415,20 @@ export function KraftPackageQuickScanner({
 							</div>
 						</div>
 					) : (
-						<div style={{ padding: "1.75rem", textAlign: "center", color: "var(--muted)", fontSize: "0.9rem", border: "1px dashed var(--border, #e2e8f0)", borderRadius: "12px" }}>
-							Отсканируйте штрихкод крафт-пакета или нажмите верхнюю кнопку «Привязать стандартный стерильный лоток» для работы в 1 клик.
+						<div style={{ padding: "1.5rem", textAlign: "center", color: "var(--muted, #64748b)", fontSize: "0.85rem", border: "1px dashed var(--line, #e2e8f0)", borderRadius: "10px" }}>
+							Отсканируйте штрихкод крафт-пакета или нажмите верхнюю кнопку «Вскрыть лоток (1 клик)» для мгновенной привязки к протоколу.
 						</div>
 					)}
 				</div>
 
-				{/* Footer Actions */}
+				{/* Footer Actions (Miller's Law: <=2 actions per side) */}
 				<div className="sterilization-footer">
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
 						<button
 							type="button"
 							onClick={onClose}
 							className="sterilization-action-btn secondary"
-							style={{ minHeight: "44px" }}
-						>
-							Отмена
-						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="sterilization-action-btn secondary"
-							style={{ minHeight: "44px", color: "var(--muted)" }}
+							style={{ minHeight: "36px", height: "36px" }}
 							title="Продолжить прием без штрихкода (не блокировать сохранение визита)"
 							data-testid="btn-skip-kraft-barcode"
 						>
@@ -436,40 +437,43 @@ export function KraftPackageQuickScanner({
 					</div>
 
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-						<button
-							type="button"
-							onClick={() => handleApplyStandardTray("therapy")}
-							className="sterilization-action-btn secondary"
-							style={{ minHeight: "44px", color: "var(--brand-primary, #0284c7)", fontWeight: 700 }}
-							title="1-клик СанПиН: внести стандартный терапевтический лоток без ручного сканирования"
-							data-testid="btn-attach-default-tray"
-						>
-							<CheckCircle2 size={18} />
-							<span>Лоток терапевта (1 клик)</span>
-						</button>
+						{!parsed && (
+							<button
+								type="button"
+								onClick={() => handleApplyStandardTray("therapy")}
+								className="sterilization-action-btn secondary"
+								style={{ minHeight: "36px", height: "36px", color: "var(--teal, #0284c7)", fontWeight: 700 }}
+								title="1-клик СанПиН: внести стандартный терапевтический лоток без ручного сканирования"
+								data-testid="btn-attach-default-tray"
+							>
+								<CheckCircle2 size={16} />
+								<span>Лоток терапевта (1 клик)</span>
+							</button>
+						)}
 
 						<button
 							type="button"
 							onClick={handleApply}
 							className={`sterilization-action-btn ${parsed?.isExpired ? "warning" : "success"}`}
 							style={{
-								minHeight: "44px",
-								padding: "0.6rem 1.4rem",
+								minHeight: "36px",
+								height: "36px",
+								padding: "0 1.25rem",
 								background: parsed?.isExpired ? "var(--warn-fg, #d97706)" : undefined,
 							}}
 							title={
 								!parsed
-									? "1 Клик: внести стандартный лоток в протокол приема (Форма 043/у)"
+									? `1 Клик: внести ${selectedTrayDef.shortLabelRu.toLowerCase()} в протокол приема (Форма 043/у)`
 									: parsed.isExpired
 										? "Пакет просрочен по расчетной дате — вскрыть по экстренным показаниям под личную ответственность врача"
 										: "1 Клик: внести запись стерилизации в протокол приема"
 							}
 							data-testid="btn-attach-kraft-to-043"
 						>
-							<Sparkles size={18} />
+							<Sparkles size={16} />
 							<span>
 								{!parsed
-									? "Вскрыть стандартный стерильный смотровой лоток (1 клик)"
+									? `Вскрыть ${selectedTrayDef.shortLabelRu.toLowerCase()} (1 клик)`
 									: parsed.isExpired
 										? "Допустить и вскрыть по острой боли (043/у)"
 										: "Вскрыть и привязать к протоколу 043/у (1 клик)"}
@@ -483,3 +487,4 @@ export function KraftPackageQuickScanner({
 }
 
 export default KraftPackageQuickScanner;
+

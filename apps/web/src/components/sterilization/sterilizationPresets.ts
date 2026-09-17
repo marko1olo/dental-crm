@@ -625,7 +625,8 @@ export function createStandardSterileTrayBarcode(
 	operatorName = "Смирнова А.В. (медсестра ЦСО)"
 ): ParsedKraftBarcode {
 	const packDateIso = packDate.toISOString().slice(0, 10);
-	const expDate = new Date(packDate.getTime() + 50 * 24 * 3600 * 1000);
+	const daysLifespan = trayType === "surgery" ? 60 : 50;
+	const expDate = new Date(packDate.getTime() + daysLifespan * 24 * 3600 * 1000);
 	const expDateIso = expDate.toISOString().slice(0, 10);
 	const fallbackTray: StandardTrayDefinition = STANDARD_TRAY_OPTIONS[0] ?? {
 		id: "therapy",
@@ -641,14 +642,17 @@ export function createStandardSterileTrayBarcode(
 
 	const formattedProtocolRecord043 = `Инструменты стерильны. Крафт-пакет №${rawInput} (Стерилизация инструментария: АК-01, цикл №1 от ${packDateIso}, годен до ${expDateIso}, ${trayDef.labelRu}), индикатор 5 класса (ИнтеТЕСТ 134°C) — норма. ${operatorName} [СанПиН 3.3686-21] вскрыт при пациенте.`;
 
+	const packageMaterialId = trayType === "surgery" ? "paper_self_seal_double" : "paper_self_seal_single";
+	const packageSizeId = trayType === "surgery" ? "size_150x250" : trayType === "endo" ? "size_75x150" : "size_100x200";
+
 	return {
 		rawInput,
 		barcodeType: "datamatrix_2d",
 		isValid: true,
 		isExpired: false,
 		isExpiringSoon: false,
-		daysRemaining: 50,
-		daysLifespan: 50,
+		daysRemaining: daysLifespan,
+		daysLifespan,
 		batchId: `KB-${dateDigits}-01`,
 		serialNumber: 1,
 		autoclaveId: "АК-01 (Melag 23B+)",
@@ -659,8 +663,8 @@ export function createStandardSterileTrayBarcode(
 		operatorName,
 		toolSetId: trayDef.toolSetCode,
 		toolSetNameRu: trayDef.labelRu,
-		packageMaterialId: "paper_self_seal_single",
-		packageSizeId: "size_100x200",
+		packageMaterialId,
+		packageSizeId,
 		indicatorId: "vinar_intetest_5",
 		indicatorClassRu: "Химический интегратор 5 класса (пар 134°C / норма)",
 		indicatorPassed: true,
