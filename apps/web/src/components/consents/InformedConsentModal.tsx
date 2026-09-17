@@ -1,9 +1,7 @@
 import {
 	AlertTriangle,
 	Check,
-	CheckCircle2,
 	Copy,
-	FileCheck,
 	FileText,
 	Layers,
 	Lock,
@@ -19,9 +17,6 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-	CONSENT_PACKAGES,
-	CONSENT_TEMPLATES,
-	type ConsentPackageDefinition,
 	type ConsentPackageKey,
 	type ConsentSubstitutionContext,
 	type ConsentTemplate,
@@ -239,7 +234,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(true);
 	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
 
-	const isClosedOrSigned = Boolean(
+	const isClosedOrSigned = !isDraft && Boolean(
 		isSigned ||
 		isLocked ||
 		status === "signed" ||
@@ -251,7 +246,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const effectiveWatermark =
 		watermarkText ||
 		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ" : "ЧЕРНОВИК");
-	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
+	const stampColor = effectiveWatermark.includes("ПОДПИСАНО")
+		? "var(--ok-fg, #059669)"
+		: "var(--muted, #64748b)";
 
 	// Редактирование контекста плейсхолдеров
 	const [customDiagnosis, setCustomDiagnosis] = useState<string>(diagnosisIcd || "");
@@ -596,17 +593,17 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			<div className="consent-modal-container" onClick={(e) => e.stopPropagation()}>
 				{/* Header */}
 				<header className="consent-header">
-					<div className="consent-header-titles">
+					<div className="consent-header-titles min-w-0 flex-1">
 						<div className="consent-header-badge-row">
-							<span className="consent-statutory-badge">
+							<span className="consent-statutory-badge shrink-0">
 								<ShieldCheck size={14} />
 								323-ФЗ • 1051н
 							</span>
-							<span className="consent-code-badge">
+							<span className="consent-code-badge shrink-0">
 								{activeMode === "packages" ? currentPackage.key : currentTemplate.code}
 							</span>
 						</div>
-						<h2 id="consent-modal-title" className="consent-title">
+						<h2 id="consent-modal-title" className="consent-title truncate">
 							{activeMode === "packages"
 								? "Пакет информированных добровольных согласий (ИДС)"
 								: "Информированное добровольное согласие (ИДС)"}
@@ -663,7 +660,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					</div>
 
 					<nav
-						className="consent-tabs-scroll"
+						className="consent-tabs-scroll min-w-0"
 						style={{
 							height: "36px",
 							padding: "0",
@@ -678,11 +675,12 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						{activeMode === "packages"
 							? allPackages.map((pkg) => {
 									const isActive = pkg.key === activePackageKey;
+									const titleText = PACKAGE_SHORT_TITLES[pkg.key] || pkg.title;
 									return (
 										<button
 											key={pkg.key}
 											type="button"
-											className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
+											className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-0 ${isActive ? "active" : ""}`}
 											style={{
 												minHeight: "26px",
 												height: "26px",
@@ -696,19 +694,21 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											}}
 											aria-selected={isActive}
 											data-testid={`pkg-tab-${pkg.key}`}
+											title={titleText}
 										>
-											<Sparkles size={13} />
-											<span>{PACKAGE_SHORT_TITLES[pkg.key] || pkg.title}</span>
+											<Sparkles size={13} className="shrink-0" />
+											<span className="truncate max-w-[200px]">{titleText}</span>
 										</button>
 									);
 							  })
 							: allTemplates.map((tpl) => {
 									const isActive = tpl.key === activeKey;
+									const titleText = TEMPLATE_SHORT_TITLES[tpl.key] || tpl.title;
 									return (
 										<button
 											key={tpl.key}
 											type="button"
-											className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
+											className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-0 ${isActive ? "active" : ""}`}
 											style={{
 												minHeight: "26px",
 												height: "26px",
@@ -719,8 +719,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											onClick={() => setActiveKey(tpl.key)}
 											aria-selected={isActive}
 											data-testid={`tpl-tab-${tpl.key}`}
+											title={titleText}
 										>
-											<span>{TEMPLATE_SHORT_TITLES[tpl.key] || tpl.title}</span>
+											<span className="truncate max-w-[200px]">{titleText}</span>
 										</button>
 									);
 							  })}
@@ -732,13 +733,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					{/* Баннер активного пакета с чипами быстрого предпросмотра документов */}
 					{activeMode === "packages" && (
 						<div className="consent-package-banner">
-							<div className="consent-package-banner-title">
+							<div className="consent-package-banner-title min-w-0 flex-1">
 								<Package size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
-								<div>
-									<div className="font-bold text-sm text-[var(--teal-dark,#0f766e)]">
+								<div className="min-w-0 flex-1">
+									<div className="font-bold text-sm text-[var(--teal-dark,#0f766e)] truncate">
 										{currentPackage.title} ({currentPackage.templateKeys.length} документа в пакете)
 									</div>
-									<div className="text-xs text-muted">
+									<div className="text-xs text-muted truncate">
 										{currentPackage.description} • 1 клик подтверждает подписание всех {currentPackage.templateKeys.length} документов на бумаге
 									</div>
 								</div>
@@ -752,12 +753,12 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 										<button
 											key={k}
 											type="button"
-											className={`consent-subdoc-chip ${isSelected ? "active" : ""}`}
+											className={`consent-subdoc-chip min-w-0 ${isSelected ? "active" : ""}`}
 											onClick={() => setPreviewTemplateKey(k)}
 											title={`Просмотреть ${t.title}`}
 										>
-											<span>{t.code}</span>
-											<span>{TEMPLATE_SHORT_TITLES[k] || t.title}</span>
+											<span className="font-mono shrink-0">{t.code}</span>
+											<span className="truncate max-w-[180px]">{TEMPLATE_SHORT_TITLES[k] || t.title}</span>
 										</button>
 									);
 								})}
@@ -767,27 +768,35 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 					{/* Информационная панель метаданных */}
 					<div className="consent-meta-grid">
-						<div className="consent-meta-item">
+						<div className="consent-meta-item min-w-0">
 							<span className="consent-meta-label">Пациент</span>
-							<span className="consent-meta-value">{substitutionContext.patientName}</span>
+							<span className="consent-meta-value truncate" title={substitutionContext.patientName || ""}>
+								{substitutionContext.patientName}
+							</span>
 							{substitutionContext.birthDate && (
-								<span className="consent-meta-label">Д.Р.: {substitutionContext.birthDate}</span>
+								<span className="consent-meta-label truncate">Д.Р.: {substitutionContext.birthDate}</span>
 							)}
 						</div>
 
-						<div className="consent-meta-item">
+						<div className="consent-meta-item min-w-0">
 							<span className="consent-meta-label">Лечащий врач</span>
-							<span className="consent-meta-value">{substitutionContext.doctorName}</span>
+							<span className="consent-meta-value truncate" title={substitutionContext.doctorName || ""}>
+								{substitutionContext.doctorName}
+							</span>
 						</div>
 
-						<div className="consent-meta-item">
+						<div className="consent-meta-item min-w-0">
 							<span className="consent-meta-label">Диагноз (МКБ-10)</span>
-							<span className="consent-meta-value">{substitutionContext.diagnosisIcd}</span>
+							<span className="consent-meta-value truncate" title={substitutionContext.diagnosisIcd || ""}>
+								{substitutionContext.diagnosisIcd}
+							</span>
 						</div>
 
-						<div className="consent-meta-item">
+						<div className="consent-meta-item min-w-0">
 							<span className="consent-meta-label">Зубы / Зона</span>
-							<span className="consent-meta-value">{substitutionContext.toothNumbers}</span>
+							<span className="consent-meta-value truncate" title={substitutionContext.toothNumbers || ""}>
+								{substitutionContext.toothNumbers}
+							</span>
 							{substitutionContext.toothNumbers && (
 								<div className="consent-teeth-badges">
 									{substitutionContext.toothNumbers.split(/[,;\s]+/).map((t) => (
@@ -892,7 +901,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							style={{
 								marginTop: "1.5rem",
 								paddingTop: "1rem",
-								borderTop: "1px solid var(--line, #cbd5e1)",
+								borderTop: "1px solid var(--line)",
 								display: "flex",
 								flexDirection: "column",
 								gap: "0.85rem",
@@ -960,7 +969,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							flexDirection: "column",
 							gap: "0.85rem",
 							background: "var(--paper-soft)",
-							border: "1px solid var(--teal, #0d9488)",
+							border: "1px solid var(--line-strong, var(--teal))",
 							borderRadius: "var(--radius-lg, 12px)",
 							padding: "1.25rem",
 						}}
@@ -1007,9 +1016,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 									minHeight: "44px",
 									fontSize: "14px",
 									fontWeight: "bold",
-									background: "var(--teal, #0d9488)",
-									color: "#ffffff",
-									boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)",
+									background: "var(--teal)",
+									color: "var(--on-teal, #ffffff)",
+									boxShadow: "var(--shadow-1)",
 								}}
 							>
 								<Zap size={18} />
@@ -1113,7 +1122,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								className={`absolute left-0 bottom-full mb-2 w-72 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl z-40 py-1.5 ${
 									isMoreMenuOpen ? "block" : "hidden"
 								}`}
-								style={{ background: "var(--paper, #ffffff)", border: "1px solid var(--line, #e2e8f0)" }}
+								style={{ background: "var(--paper)", border: "1px solid var(--line)" }}
 								data-testid="consent-modal-more-menu"
 							>
 								<button

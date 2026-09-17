@@ -15,14 +15,29 @@
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty
  */
 
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
 import {
 	InformedConsentModal,
 	type SignedConsentPayload,
 } from "../InformedConsentModal.js";
+
+function createMockFn<T extends (...args: any[]) => any>(impl?: T) {
+	const calls: any[][] = [];
+	const fn = Object.assign(
+		(...args: any[]) => {
+			calls.push(args);
+			return impl ? impl(...args) : undefined;
+		},
+		{
+			mock: { calls },
+		},
+	);
+	return fn;
+}
 
 interface MockDomNode {
 	nodeType: number;
@@ -158,7 +173,7 @@ function setupMockDom() {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
-		print: vi.fn(),
+		print: createMockFn(),
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
 		Element: class {},
@@ -240,22 +255,22 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 		);
 
 		// Zero touchscreen canvas simulator
-		expect(html).not.toContain("<canvas");
-		expect(html).not.toContain("consent-canvas-element");
-		expect(html).not.toContain("Распишитесь стилусом");
+		assert.ok(!html.includes("<canvas"));
+		assert.ok(!html.includes("consent-canvas-element"));
+		assert.ok(!html.includes("Распишитесь стилусом"));
 
 		// Zero SMS OTP inputs
-		expect(html).not.toContain("consent-otp-digit");
-		expect(html).not.toContain("otp-digit-0");
-		expect(html).not.toContain("Отправить код по SMS");
+		assert.ok(!html.includes("consent-otp-digit"));
+		assert.ok(!html.includes("otp-digit-0"));
+		assert.ok(!html.includes("Отправить код по SMS"));
 
 		// Print and statutory elements are prominent
-		expect(html).toContain("323-ФЗ • 1051н");
-		expect(html).toContain("Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)");
-		expect(html).toContain('data-testid="checkbox-paper-original-stored"');
-		expect(html).toContain('data-testid="btn-confirm-sign"');
+		assert.ok(html.includes("323-ФЗ • 1051н"));
+		assert.ok(html.includes("Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)"));
+		assert.ok(html.includes('data-testid="checkbox-paper-original-stored"'));
+		assert.ok(html.includes('data-testid="btn-confirm-sign"'));
 		// Mandate 8e: Confirm button is NEVER disabled
-		expect(html).not.toContain('data-testid="btn-confirm-sign" disabled');
+		assert.ok(!html.includes('data-testid="btn-confirm-sign" disabled'));
 	});
 
 	it("renders prominent print actions: filled A4 print and blank («________») print buttons", () => {
@@ -270,17 +285,17 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 			/>,
 		);
 
-		expect(html).toContain("Печать пакета (А4)");
-		expect(html).toContain('data-testid="btn-print-blank-consent"');
-		expect(html).toContain("Печать чистых бланков пакета («________»)");
-		expect(html).toContain('data-testid="btn-print-blank-consent-inline"');
+		assert.ok(html.includes("Печать пакета (А4)"));
+		assert.ok(html.includes('data-testid="btn-print-blank-consent"'));
+		assert.ok(html.includes("Печать чистых бланков пакета («________»)"));
+		assert.ok(html.includes('data-testid="btn-print-blank-consent-inline"'));
 	});
 
 	it("clicking btn-confirm-paper-signed confirms in 1 click with verificationMethod: paper_physical", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
-		const onConsentSigned = vi.fn();
-		const onClose = vi.fn();
+		const onConsentSigned = createMockFn();
+		const onClose = createMockFn();
 
 		await act(async () => {
 			root.render(
@@ -301,18 +316,18 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 			doc.body,
 			"btn-confirm-paper-signed",
 		);
-		expect(confirmPaperBtn).not.toBeNull();
+		assert.ok(confirmPaperBtn !== null);
 
 		await clickNode(confirmPaperBtn!);
 
-		expect(onConsentSigned).toHaveBeenCalledTimes(1);
-		const payload: SignedConsentPayload = onConsentSigned.mock.calls[0][0];
-		expect(payload.verificationMethod).toBe("paper_physical");
-		expect(payload.paperOriginalStored).toBe(true);
-		expect(payload.attachedToForm043u).toBe(true);
-		expect(payload.patientName).toBe("Сидоров Алексей Петрович");
-		expect(payload.signatureSvg).toContain("ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ");
-		expect(onClose).toHaveBeenCalledTimes(1);
+		assert.strictEqual(onConsentSigned.mock.calls.length, 1);
+		const payload: SignedConsentPayload = onConsentSigned.mock.calls[0]![0];
+		assert.strictEqual(payload.verificationMethod, "paper_physical");
+		assert.strictEqual(payload.paperOriginalStored, true);
+		assert.strictEqual(payload.attachedToForm043u, true);
+		assert.strictEqual(payload.patientName, "Сидоров Алексей Петрович");
+		assert.ok(payload.signatureSvg.includes("ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ"));
+		assert.strictEqual(onClose.mock.calls.length, 1);
 
 		await act(async () => {
 			root.unmount();
@@ -322,9 +337,9 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 	it("clicking primary btn-confirm-sign confirms in 1 click without disabling blockers", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
-		const onConsentSigned = vi.fn();
-		const onConsentConfirmed = vi.fn();
-		const onClose = vi.fn();
+		const onConsentSigned = createMockFn();
+		const onConsentConfirmed = createMockFn();
+		const onClose = createMockFn();
 
 		await act(async () => {
 			root.render(
@@ -343,17 +358,17 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 		});
 
 		const mainConfirmBtn = findNodeByTestId(doc.body, "btn-confirm-sign");
-		expect(mainConfirmBtn).not.toBeNull();
+		assert.ok(mainConfirmBtn !== null);
 
 		await clickNode(mainConfirmBtn!);
 
-		expect(onConsentSigned).toHaveBeenCalledTimes(1);
+		assert.strictEqual(onConsentSigned.mock.calls.length, 1);
 		const payload: SignedConsentPayload = onConsentSigned.mock.calls[0]![0];
-		expect(payload.verificationMethod).toBe("paper_physical");
-		expect(payload.paperOriginalStored).toBe(true);
-		expect(payload.attachedToForm043u).toBe(true);
-		expect(onConsentConfirmed).toHaveBeenCalledTimes(1);
-		expect(onClose).toHaveBeenCalledTimes(1);
+		assert.strictEqual(payload.verificationMethod, "paper_physical");
+		assert.strictEqual(payload.paperOriginalStored, true);
+		assert.strictEqual(payload.attachedToForm043u, true);
+		assert.strictEqual(onConsentConfirmed.mock.calls.length, 1);
+		assert.strictEqual(onClose.mock.calls.length, 1);
 
 		await act(async () => {
 			root.unmount();
@@ -363,9 +378,9 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 	it("in package batch mode: confirms all 4 documents in 1 click with paper_physical", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
-		const onConsentSigned = vi.fn();
-		const onPackageSigned = vi.fn();
-		const onClose = vi.fn();
+		const onConsentSigned = createMockFn();
+		const onPackageSigned = createMockFn();
+		const onClose = createMockFn();
 
 		await act(async () => {
 			root.render(
@@ -383,24 +398,24 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 		});
 
 		const confirmBtn = findNodeByTestId(doc.body, "btn-confirm-sign");
-		expect(confirmBtn).not.toBeNull();
+		assert.ok(confirmBtn !== null);
 
 		await clickNode(confirmBtn!);
 
 		// PACKAGE_PRIMARY_VISIT has 4 documents (152-FZ, 1051n, Anesthesia, Therapy)
-		expect(onConsentSigned).toHaveBeenCalledTimes(4);
-		expect(onPackageSigned).toHaveBeenCalledTimes(1);
+		assert.strictEqual(onConsentSigned.mock.calls.length, 4);
+		assert.strictEqual(onPackageSigned.mock.calls.length, 1);
 
 		const packagePayloads: SignedConsentPayload[] =
 			onPackageSigned.mock.calls[0]![0];
-		expect(packagePayloads.length).toBe(4);
+		assert.strictEqual(packagePayloads.length, 4);
 		for (const p of packagePayloads) {
-			expect(p.verificationMethod).toBe("paper_physical");
-			expect(p.paperOriginalStored).toBe(true);
-			expect(p.attachedToForm043u).toBe(true);
-			expect(p.statusText).toContain("Бумажный оригинал пакета подписан");
+			assert.strictEqual(p.verificationMethod, "paper_physical");
+			assert.strictEqual(p.paperOriginalStored, true);
+			assert.strictEqual(p.attachedToForm043u, true);
+			assert.ok(p.statusText?.includes("Бумажный оригинал пакета подписан"));
 		}
-		expect(onClose).toHaveBeenCalledTimes(1);
+		assert.strictEqual(onClose.mock.calls.length, 1);
 
 		await act(async () => {
 			root.unmount();
