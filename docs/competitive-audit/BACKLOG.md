@@ -8204,5 +8204,48 @@
     * Синхронизация документации проведена строго субагентом-документатором без запуска компиляторов `npm run typecheck`, `tsc -b` или `npm run build`;
     * Нагрузка на CPU хост-машины сохранена на минимальном уровне (<10%), компиляторный гейт всецело делегирован L1 Orchestrator.
 
+### 410. Red Team Wave 251 — Treatment Plan Doctor Autonomy & 30-Day Unblock, CT / 3D DICOM MPR Desktop Density & Treatment Stage Clinical Bundles 804n (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 4, 7, 8i, 8k, 8n, 8p, 8s, 8t, Core Route пп. 7, 11)
 
-
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18)
+* **Затронутые модули и файлы**:
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanRoadmap.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`
+  - `apps/web/src/components/treatment-plans/ClinicalBundlesPanel.tsx`
+  - `apps/web/src/components/treatment-plans/stagePayment/stagePaymentPresets.ts`
+  - `apps/web/src/components/lab/DentalLabOrderModal.tsx`
+  - `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`
+  - `apps/web/src/components/radiology/realDicomVolumeLoader.ts`
+  - `apps/web/src/components/radiology/CbctLeftToolDock.tsx`
+  - `apps/web/src/components/radiology/CbctViewportHud.tsx`
+  - `apps/web/src/components/radiology/cbctMprMath.ts`
+  - `packages/shared/src/clinical/clinicalBundles804n.ts`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Планы лечения и автономия врача: ликвидация 30-дневных блокировок нарядов ЗТЛ и оплат (Treatment Plan Doctor Autonomy & 30-Day Unblock) (Мандаты 8b, 8c, 8d пп. 1, 2, 8e пп. 1, 2, 7, 8n, 8p)**:
+    * В `TreatmentPlanModule.tsx`, `TreatmentPlan3TierComparison.tsx`, `TreatmentPlanPresenterModal.tsx` и `DentalLabOrderModal.tsx`:
+    * Железная реализация Мандата 8e п. 7 («Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату»): при возрасте сметы более 30 дней система отображает деликатный информационный бейдж с предупреждением («Смета составлена >30 дней назад (актуальна / продлена)»), подтверждая врачебную актуализацию;
+    * Создание заказ-нарядов в зуботехническую лабораторию (ЗТЛ), оказание клинических услуг и фискализация оплат в кассе 54-ФЗ категорически НЕ БЛОКИРУЮТСЯ, обеспечивая непрерывность лечебного процесса и автономию соло-врача;
+    * Ультра-компактный 1-строчный тулбар высотой 32–36px (`min-h-[32px] sm:h-8`) по Закону Хика: мгновенный переключатель видов «3 Варианта» / «Поэтапный (I, II, III)», статус цифровой подписи ПЭП («Подписать» / «ПОДПИСАНО»), 1-клик кнопка прямого действия «В кассу» (`tp-quick-cashier-btn`) и выпадающее меню «Опции» (`MoreVertical`), аккуратно агрегирующее специализированные студии (наряд на оплату, чек 54-ФЗ, куратор лечения, валидатор цен);
+    * Автономия врача (Мандат 8e п. 2): 0 заблокированных (`disabled`) кнопок без причины при редактировании плана, согласовании скидок до 100% и направлении нарядов в зуботехническую лабораторию;
+    * Полное соответствие приказу Минздрава РФ №804н и клиническим рекомендациям Стоматологической Ассоциации России (СтАР).
+  - **КТ / 3D DICOM MPR: профессиональная десктопная плотность и честное состояние без процедурных диорам (CT / 3D DICOM MPR Desktop Density & Anti-Mock Fidelity) (Мандаты 8c, 8d пп. 1, 2, 3, 7, 8i, 8k, 8n, 8p, 8s, Core Route пп. 7, 11)**:
+    * В `CbctMprImplantStudioModal.tsx`, `realDicomVolumeLoader.ts`, `CbctLeftToolDock.tsx`, `CbctViewportHud.tsx` и `cbctMprMath.ts`:
+    * Профессиональная десктопная эргономика плотности 28–36px (`h-7`/`h-8`/`h-9`), оптимизированная под работу врача-стоматолога с манипулятором «мышь» на мониторах Full HD / 2K / 4K (аналог Planmeca Romexis / StomX), исключающая искусственное раздувание элементов до 44x44px на десктопе (Мандат 8c);
+    * Категорический запрет на procedural toy diorama mocks (Core Route пп. 7, 11, Вселенский анти-блоат догмат Мандата 8s): полное искоренение процедурных синтетических шаров, симуляторов деформаций и фейковых срезов в пользу честного пустого состояния с выделенной дропзоной томов DICOM и .ZIP архивов (`cbct-empty-volume-dropzone`);
+    * Закон Миллера: не более 1–2 кнопок прямого действия на карточках и вьюпортах срезов (аксиальный, сагиттальный, корональный, CPR-панорама), все вторичные измерительные инструменты (калипер расстояний, угол, денситометрия Misch HU D1..D5, безопасный клиренс нижнечелюстного нерва IAN $\ge 1.5\text{ мм}$, регулировка окна Hounsfield) сгруппированы в компактный левый док `CbctLeftToolDock` и статус-бар горячих клавиш `CbctHotkeysStatusBar`;
+    * Святость официальных протоколов (Мандат 8d п. 7): нулевое присутствие эмодзи в медицинских заключениях и на рентгенологических проекциях — строгая векторная графика Lucide SVG (`Activity`, `Ruler`, `Crosshair`, `Camera`, `Sliders`, `Download`, `Box`, `Spline`).
+  - **Карточки этапов лечения и клинические пакеты 804н: автономия врача и эргономика Миллера/Хика (Treatment Stage Cards & Clinical Bundles 804n) (Мандаты 8c, 8d пп. 1, 3, 4, 8e пп. 1, 4, 8i, 8k, 8n, 8p)**:
+    * В `TreatmentPlanStageCard.tsx`, `ClinicalBundlesPanel.tsx`, `stagePaymentPresets.ts` и `clinicalBundles804n.ts`:
+    * 1-клик смена клинических статусов этапов («К выполнению» -> «В работе» -> «Завершен») без бюрократии начмедов и комиссионных блокировок (Мандат 8e п. 4);
+    * Законы Хика и Миллера: строгие 1–2 кнопки прямого действия на заголовке карточки этапа (`isAction1Start` / `isAction1WriteOff`, `isAction2Estimate` / `isAction2Pay`), все второстепенные функции (списание пустых карпул анестетиков, рассрочка, скидка до 100%, 1-клик заказ-наряд ЗТЛ, удаление) убраны в выпадающее меню `MoreVertical` с поддержкой клавиши Escape и закрытием при клике вне зоны;
+    * Клинические пакеты по номенклатуре МЗ РФ №804н: 1-клик добавление утвержденных пакетов манипуляций (санация полости рта, эндодонтическое лечение пульпита/периодонтита, ортопедическое протезирование, дентальная имплантация) без ручного перебора справочников;
+    * Токены тем оформления WCAG AAA: строгая токенизация `var(--paper)`, `var(--paper-soft)`, `var(--paper-strong)`, `var(--ink)`, `var(--teal)`, отсутствие слепящих белых пятен и вывороток в Dark Mode;
+    * 0 disabled кнопок без объяснения причин.
+  - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
+    * Синхронизация документации проведена строго субагентом-документатором без запуска компиляторов `npm run typecheck`, `tsc -b` или `npm run build`;
+    * Нагрузка на CPU хост-машины сохранена на минимальном уровне (<10%), компиляторный гейт всецело делегирован L1 Orchestrator.

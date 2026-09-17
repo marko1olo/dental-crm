@@ -5137,4 +5137,34 @@
   4. *Железный закон защиты хост-машины и Single-Compiler Gate (Мандат 8t)*:
      - Синхронизация документации проведена субагентом-документатором без запуска компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
 
+### 2.10.344. Wave 251: Treatment Plan Doctor Autonomy & 30-Day Unblock, CT / 3D DICOM MPR Desktop Density & Treatment Stage Clinical Bundles 804n (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 4, 7, 8i, 8k, 8n, 8p, 8s, 8t, Core Route пп. 7, 11)
+
+- **Цель**: Всесторонняя синхронизация клинических достижений Волны 251: (1) комплексные планы лечения и автономия врача у кресла — ликвидация 30-дневных блокировок нарядов ЗТЛ и оплат (Мандат 8e п. 7), ультра-компактный 1-строчный тулбар 32–36px по Закону Хика, 0 disabled кнопок и 1-клик экспорт счета в кассу (`TreatmentPlanModule.tsx`, `TreatmentPlan3TierComparison.tsx`, `DentalLabOrderModal.tsx`); (2) модуль КТ / 3D DICOM MPR — профессиональная десктопная плотность 28–36px (`h-7`/`h-8`/`h-9`) под манипулятор мышь, жесткий запрет на procedural toy diorama mocks (Core Route пп. 7, 11) в пользу честной пустой дропзоны реальных томов DICOM/ZIP (`cbct-empty-volume-dropzone`), Закон Миллера $\le 2$ кнопок на вьюпортах срезов, ноль эмодзи (`CbctMprImplantStudioModal.tsx`, `realDicomVolumeLoader.ts`, `CbctLeftToolDock.tsx`); (3) карточки этапов лечения и клинические пакеты 804н — 1-клик смена клинических статусов этапов без бюрократии начмедов (Мандат 8e п. 4), Закон Хика и Миллера ($\le 2$ кнопок на карточке этапа с меню `...`), пакеты номенклатуры 804н и токены тем WCAG AAA (`TreatmentPlanStageCard.tsx`, `ClinicalBundlesPanel.tsx`).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - *Планы лечения и автономия врача*: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanRoadmap.tsx`, `apps/web/src/components/lab/DentalLabOrderModal.tsx`.
+  - *КТ / 3D DICOM MPR и радиология*: `apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`, `apps/web/src/components/radiology/realDicomVolumeLoader.ts`, `apps/web/src/components/radiology/CbctLeftToolDock.tsx`, `apps/web/src/components/radiology/CbctViewportHud.tsx`, `apps/web/src/components/radiology/cbctMprMath.ts`, `packages/shared/src/radiology/`.
+  - *Карточки этапов лечения и клинические пакеты*: `apps/web/src/components/treatment-plans/TreatmentPlanStageCard.tsx`, `apps/web/src/components/treatment-plans/ClinicalBundlesPanel.tsx`, `apps/web/src/components/treatment-plans/stagePayment/stagePaymentPresets.ts`, `packages/shared/src/clinical/clinicalBundles804n.ts`.
+- **Ключевые результаты**:
+  1. *Планы лечения и автономия врача: разблокировка 30 дней и тулбар Хика (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 8n, 8p)*:
+     - В `TreatmentPlanModule.tsx`, `TreatmentPlan3TierComparison.tsx` и `DentalLabOrderModal.tsx`:
+     - Полное соблюдение Мандата 8e п. 7: истечение 30 дней с момента составления сметы выводится как информационный статус («Смета составлена >30 дней назад (актуальна / продлена)»), но ни при каких условиях не блокирует создание нарядов зуботехнической лаборатории (ЗТЛ), оказание услуг или оплату в кассе 54-ФЗ;
+     - Компактный 1-строчный тулбар высотой 32–36px (`min-h-[32px] sm:h-8`) по Закону Хика: переключатель «3 Варианта» / «Поэтапный (I, II, III)», статус цифровой подписи ПЭП 63-ФЗ, 1-клик кнопка «В кассу» (`tp-quick-cashier-btn`) и меню `MoreVertical` с дополнительными студиями (счет на оплату, чек 54-ФЗ, куратор лечения, валидатор цен);
+     - 0 disabled кнопок без причины (Мандат 8e п. 2), автономия скидок врача до 100% на гарантийные случаи;
+     - Полная интеграция с номенклатурой услуг 804н и клиническими стандартами СтАР.
+  2. *КТ / 3D DICOM MPR: десктопная плотность и ликвидация процедурных моков (Мандаты 8c, 8d, 8i, 8k, 8n, 8s, Core Route пп. 7, 11)*:
+     - В `CbctMprImplantStudioModal.tsx`, `realDicomVolumeLoader.ts`, `CbctLeftToolDock.tsx` и `CbctViewportHud.tsx`:
+     - Плотная профессиональная клиническая сетка 28–36px (`h-7`/`h-8`/`h-9`), оптимизированная под курсор мыши на мониторах врачей-стоматологов у кресла (Romexis/StomX benchmark);
+     - Ликвидация процедурных toy diorama mocks (Core Route пп. 7, 11, Мандат 8s): отказ от рисования процедурных синтетических объемов и фейковых срезов в пользу честного пустого состояния с выделенной дропзоной загрузки реальных томов DICOM и .ZIP архивов (`cbct-empty-volume-dropzone`);
+     - Закон Миллера: строго $\le 2$ кнопок прямого действия на вьюпортах проекций (аксиал, сагиттал, коронал, панорамная кривая), все профильные измерения (клиренс нерва IAN $\ge 1.5\text{ мм}$, Misch HU D1..D5, калипер, угломер) вынесены в левый док `CbctLeftToolDock` и статусную панель шорткатов;
+     - Исключение эмодзи из рентгенологических протоколов (Мандат 8d п. 7) в пользу векторных Lucide SVG.
+  3. *Карточки этапов лечения и клинические пакеты 804н (Мандаты 8c, 8d, 8e пп. 1, 4, 8i, 8k, 8n, 8p)*:
+     - В `TreatmentPlanStageCard.tsx`, `ClinicalBundlesPanel.tsx` и `stagePaymentPresets.ts`:
+     - 1-клик управление жизненным циклом этапов без бюрократических согласований начмедов (Мандат 8e п. 4);
+     - Закон Миллера и Хика: не более 1–2 кнопок прямого действия на карточке этапа (`isAction1Start` / `isAction1WriteOff`, `isAction2Estimate` / `isAction2Pay`), все вторичные действия (списание карпул, рассрочка, скидка до 100%, 1-клик ЗТЛ, удаление) убраны в выпадающее меню `MoreVertical` с клик-аутсайдом;
+     - 1-клик добавление клинических пакетов по номенклатуре МЗ РФ №804н (санация, терапия, хирургия, ортопедия, имплантация);
+     - Дизайн-токены тем WCAG AAA: гармонизация `var(--paper)`, `var(--paper-soft)`, `var(--paper-strong)`, `var(--ink)`, `var(--teal)` с нулевым количеством слепящих белых пятен в Dark Mode.
+  4. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - Синхронизация документации проведена субагентом-документатором без запуска компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
+
 
