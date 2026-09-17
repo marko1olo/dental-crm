@@ -370,6 +370,150 @@
 	color: var(--muted, #64748b);
 }
 
+/* Компактный 1-строчный тулбар по Закону Хика (32–36px) */
+.dms-quick-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 32px;
+	height: 34px;
+	max-height: 36px;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: 1px 0;
+	box-sizing: border-box;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.dms-quick-toolbar::-webkit-scrollbar {
+	display: none;
+}
+
+.dms-quick-chip {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-sizing: border-box;
+	user-select: none;
+}
+
+.dms-quick-chip:hover {
+	background: var(--surface, #f8fafc);
+	border-color: var(--teal, #0d9488);
+}
+
+.dms-quick-chip.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+}
+
+/* WCAG AAA Dark Mode поддержка через токены */
+[data-theme="dark"] .dms-modal-window,
+.dark .dms-modal-window {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] .dms-modal-header,
+[data-theme="dark"] .dms-modal-footer,
+.dark .dms-modal-header,
+.dark .dms-modal-footer {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-card,
+.dark .dms-card {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-input,
+[data-theme="dark"] .dms-select,
+[data-theme="dark"] .dms-textarea,
+.dark .dms-input,
+.dark .dms-select,
+.dark .dms-textarea {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-stat-card,
+.dark .dms-stat-card {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-stat-value,
+.dark .dms-stat-value {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .dms-table-container,
+.dark .dms-table-container {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-table th,
+[data-theme="dark"] .dms-table-totals,
+.dark .dms-table th,
+.dark .dms-table-totals {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .dms-table td,
+.dark .dms-table td {
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .dms-service-item,
+.dark .dms-service-item {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-service-item:hover,
+.dark .dms-service-item:hover {
+	background: var(--surface, #1e293b);
+}
+
+[data-theme="dark"] .dms-checkbox-pill,
+.dark .dms-checkbox-pill {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .dms-quick-chip,
+.dark .dms-quick-chip {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
 /* Стили печати для документов */
 @media print {
 	.dms-modal-backdrop,

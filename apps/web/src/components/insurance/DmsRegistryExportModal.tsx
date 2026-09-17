@@ -4,22 +4,15 @@
  */
 
 import {
-	AlertCircle,
-	ArrowDownToLine,
-	Calendar,
 	CheckCircle2,
 	Download,
-	Eye,
 	FileSpreadsheet,
 	FileText,
-	Filter,
 	Printer,
 	Search,
-	Shield,
-	Users,
 	X,
 } from "lucide-react";
-import React, { useId, useMemo, useState } from "react";
+import React, { useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import "./insurance.css";
@@ -79,8 +72,7 @@ export function DmsRegistryExportModal({
 	const [periodFilter, setPeriodFilter] = useState<string>("current_month");
 	const [searchFilter, setSearchFilter] = useState<string>("");
 
-	// Режим предпросмотра печатного акта
-	const [isPreviewActOpen, setIsPreviewActOpen] = useState<boolean>(false);
+	// Параметры двустороннего акта сдачи-приемки
 	const [actNumber, setActNumber] = useState<string>(`АКТ-${new Date().getFullYear()}-08/1`);
 	const [actDate, setActDate] = useState<string>(new Date().toLocaleDateString("ru-RU"));
 	const [contractNumber, setContractNumber] = useState<string>("ДМС-2026/01");
@@ -204,6 +196,32 @@ export function DmsRegistryExportModal({
 				<div className="dms-modal-body">
 					{/* Фильтры и панель управления */}
 					<div className="dms-card">
+						{/* Быстрый 1-клик фильтр страховых компаний по Закону Хика (32–36px) */}
+						<div className="dms-quick-toolbar" style={{ marginBottom: "14px" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)", whiteSpace: "nowrap", flexShrink: 0 }}>
+								1-Клик фильтр:
+							</span>
+							<button
+								type="button"
+								className={`dms-quick-chip ${selectedInsurer === "all" ? "active" : ""}`}
+								onClick={() => setSelectedInsurer("all")}
+								title="Сводный отчет по всем страховым компаниям"
+							>
+								Все компании
+							</button>
+							{RUSSIAN_DMS_INSURERS.map((ins) => (
+								<button
+									key={ins.key}
+									type="button"
+									className={`dms-quick-chip ${selectedInsurer === ins.shortName ? "active" : ""}`}
+									onClick={() => setSelectedInsurer(ins.shortName)}
+									title={`Отфильтровать реестр по компании ${ins.shortName}`}
+								>
+									{ins.shortName}
+								</button>
+							))}
+						</div>
+
 						<div className="dms-grid-3">
 							<div className="dms-field-group">
 								<label htmlFor={filterInsurerSelectId} className="dms-label">Страховая компания (ДМС)</label>
@@ -272,32 +290,32 @@ export function DmsRegistryExportModal({
 							</span>
 						</div>
 
-						<div className="dms-stat-card" style={{ borderColor: "#10b981", background: "rgba(16, 185, 129, 0.04)" }}>
+						<div className="dms-stat-card" style={{ borderColor: "var(--ok-fg, #10b981)", background: "var(--ok-bg, rgba(16, 185, 129, 0.04))" }}>
 							<span className="dms-stat-label">К оплате страховой (ДМС)</span>
 							<span className="dms-stat-value text-[var(--ok-fg,#059669)]">
 								{formatRubKopecks(summary.totalDmsCoveredRub)}
 							</span>
-							<span style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: 600 }}>
+							<span style={{ fontSize: "0.75rem", color: "var(--ok-fg, #10b981)", fontWeight: 600 }}>
 								Покрыто по договорам ДМС
 							</span>
 						</div>
 
-						<div className="dms-stat-card" style={{ borderColor: "#f59e0b", background: "rgba(245, 158, 11, 0.04)" }}>
+						<div className="dms-stat-card" style={{ borderColor: "var(--warn-fg, #f59e0b)", background: "var(--warn-bg, rgba(245, 158, 11, 0.04))" }}>
 							<span className="dms-stat-label">Оплачено пациентами (Copay)</span>
 							<span className="dms-stat-value text-[var(--warn-fg,#d97706)]">
 								{formatRubKopecks(summary.totalPatientPaidRub)}
 							</span>
-							<span style={{ fontSize: "0.75rem", color: "#f59e0b", fontWeight: 600 }}>
+							<span style={{ fontSize: "0.75rem", color: "var(--warn-fg, #f59e0b)", fontWeight: 600 }}>
 								Франшизы и исключения
 							</span>
 						</div>
 					</div>
 
 					{/* Балансовая проверка */}
-					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderRadius: "12px", background: summary.isBalanced ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)", border: `1px solid ${summary.isBalanced ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}` }}>
+					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderRadius: "12px", background: summary.isBalanced ? "var(--ok-bg, rgba(16, 185, 129, 0.08))" : "var(--bad-bg, rgba(239, 68, 68, 0.08))", border: `1px solid ${summary.isBalanced ? "var(--ok-fg, rgba(16, 185, 129, 0.3))" : "var(--bad-fg, rgba(239, 68, 68, 0.3))"}` }}>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 							<CheckCircle2 size={18} className={summary.isBalanced ? "text-[var(--ok-fg,#059669)]" : "text-[var(--bad-fg,#dc2626)]"} />
-							<span style={{ fontSize: "0.875rem", fontWeight: 700, color: summary.isBalanced ? "#059669" : "#dc2626" }}>
+							<span style={{ fontSize: "0.875rem", fontWeight: 700, color: summary.isBalanced ? "var(--ok-fg, #059669)" : "var(--bad-fg, #dc2626)" }}>
 								{summary.isBalanced
 									? `Копеечный баланс сошелся на 100%: ${formatRubKopecks(summary.totalDmsCoveredRub)} (ДМС) + ${formatRubKopecks(summary.totalPatientPaidRub)} (Пациенты) = ${formatRubKopecks(summary.totalAmountRub)} (Итого)`
 									: "Внимание: Обнаружено расхождение в распределении копеек!"}
@@ -338,19 +356,19 @@ export function DmsRegistryExportModal({
 									<tr key={r.id}>
 										<td>{i + 1}</td>
 										<td style={{ whiteSpace: "nowrap" }}>{r.visitDate}</td>
-										<td style={{ fontWeight: 600 }}>{r.patientFullName}</td>
-										<td>
-											<div style={{ fontSize: "0.8125rem" }}>{r.policyNumber}</div>
+										<td style={{ fontWeight: 600, maxWidth: "160px" }} className="truncate min-w-0" title={r.patientFullName}>{r.patientFullName}</td>
+										<td style={{ maxWidth: "140px" }} className="min-w-0">
+											<div style={{ fontSize: "0.8125rem" }} className="truncate font-mono" title={r.policyNumber}>{r.policyNumber}</div>
 											{r.letterNumber && (
-												<div style={{ fontSize: "0.6875rem", color: "var(--muted, #64748b)" }}>{r.letterNumber}</div>
+												<div style={{ fontSize: "0.6875rem", color: "var(--muted, #64748b)" }} className="truncate" title={r.letterNumber}>{r.letterNumber}</div>
 											)}
 										</td>
-										<td style={{ fontSize: "0.8125rem" }}>{r.insurerName}</td>
-										<td style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--primary, #0284c7)" }}>
+										<td style={{ fontSize: "0.8125rem", maxWidth: "130px" }} className="truncate min-w-0" title={r.insurerName}>{r.insurerName}</td>
+										<td style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--primary, #0284c7)", whiteSpace: "nowrap" }}>
 											{r.serviceCode804n}
 										</td>
-										<td>
-											<div>{r.serviceName}</div>
+										<td style={{ maxWidth: "200px" }} className="min-w-0">
+											<div className="truncate" title={r.serviceName}>{r.serviceName}</div>
 											{r.toothNumber && (
 												<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Зуб {r.toothNumber}</span>
 											)}
@@ -358,10 +376,10 @@ export function DmsRegistryExportModal({
 										<td style={{ textAlign: "right", fontWeight: 600 }}>
 											{formatRubKopecks(r.totalPriceRub)}
 										</td>
-										<td style={{ textAlign: "right", fontWeight: 700, color: "#10b981" }}>
+										<td style={{ textAlign: "right", fontWeight: 700, color: "var(--ok-fg, #10b981)" }}>
 											{formatRubKopecks(r.dmsCoveredRub)}
 										</td>
-										<td style={{ textAlign: "right", fontWeight: 600, color: r.patientPaidRub > 0 ? "#f59e0b" : "var(--muted, #64748b)" }}>
+										<td style={{ textAlign: "right", fontWeight: 600, color: r.patientPaidRub > 0 ? "var(--warn-fg, #f59e0b)" : "var(--muted, #64748b)" }}>
 											{formatRubKopecks(r.patientPaidRub)}
 										</td>
 										<td>
@@ -383,10 +401,10 @@ export function DmsRegistryExportModal({
 								<tr className="dms-table-totals">
 									<td colSpan={7} style={{ textAlign: "right", fontWeight: 700 }}>ИТОГО К ВЗАИМОРАСЧЕТАМ:</td>
 									<td style={{ textAlign: "right", fontWeight: 800 }}>{formatRubKopecks(summary.totalAmountRub)}</td>
-									<td style={{ textAlign: "right", fontWeight: 800, color: "#10b981", fontSize: "0.9375rem" }}>
+									<td style={{ textAlign: "right", fontWeight: 800, color: "var(--ok-fg, #10b981)", fontSize: "0.9375rem" }}>
 										{formatRubKopecks(summary.totalDmsCoveredRub)}
 									</td>
-									<td style={{ textAlign: "right", fontWeight: 800, color: "#f59e0b" }}>
+									<td style={{ textAlign: "right", fontWeight: 800, color: "var(--warn-fg, #f59e0b)" }}>
 										{formatRubKopecks(summary.totalPatientPaidRub)}
 									</td>
 									<td></td>
@@ -481,7 +499,7 @@ export function DmsRegistryExportModal({
 							title="1-клик экспорт в CSV/Excel (с кодировкой UTF-8 BOM и точкой с запятой)"
 						>
 							<Download size={18} />
-							Экспорт в Excel (CSV)
+							Экспорт реестра XLS/CSV
 						</button>
 
 						<button
@@ -491,7 +509,7 @@ export function DmsRegistryExportModal({
 							title="Сформировать печатный двусторонний акт сдачи-приемки оказанных услуг"
 						>
 							<Printer size={18} />
-							Печать Двустороннего Акта
+							Печать двустороннего акта
 						</button>
 					</div>
 				</div>

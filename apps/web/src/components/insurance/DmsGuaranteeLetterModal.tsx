@@ -4,22 +4,14 @@
  */
 
 import {
-	AlertCircle,
 	AlertTriangle,
 	Calculator,
-	Calendar,
 	Check,
 	CheckCircle2,
-	ChevronDown,
-	Clock,
 	FileCheck,
-	FileText,
-	Info,
-	Percent,
 	Plus,
 	Search,
 	Shield,
-	Trash2,
 	X,
 	Zap,
 } from "lucide-react";
@@ -30,8 +22,6 @@ import "./insurance.css";
 import {
 	DMS_STANDARD_EXCLUSIONS,
 	formatRubKopecks,
-	NOMENCLATURE_804N_CATALOG,
-	Nomenclature804nItem,
 	RUSSIAN_DMS_INSURERS,
 	search804nServices,
 	type DmsGuaranteeLetter,
@@ -92,15 +82,15 @@ export interface DmsGuaranteeLetterModalProps {
 
 /** Типовые диагнозы МКБ-10 в стоматологии */
 export const COMMON_DENTAL_ICD10_DIAGNOSES = [
-	{ code: "K02.1", title: "Кариес дентина" },
-	{ code: "K02.2", title: "Кариес цемента" },
-	{ code: "K04.0", title: "Пульпит (острый/хронический)" },
-	{ code: "K04.4", title: "Острый апикальный периодонтит" },
-	{ code: "K04.5", title: "Хронический апикальный периодонтит" },
-	{ code: "K05.1", title: "Хронический гингивит" },
-	{ code: "K05.3", title: "Хронический пародонтит" },
-	{ code: "K01.1", title: "Дистопия/ретенция зуба мудрости" },
-	{ code: "K08.1", title: "Потеря зубов вследствие удаления/травмы" },
+	{ code: "K02.1", title: "Кариес дентина", name: "Кариес дентина" },
+	{ code: "K02.2", title: "Кариес цемента", name: "Кариес цемента" },
+	{ code: "K04.0", title: "Пульпит (острый/хронический)", name: "Пульпит (острый/хронический)" },
+	{ code: "K04.4", title: "Острый апикальный периодонтит", name: "Острый апикальный периодонтит" },
+	{ code: "K04.5", title: "Хронический апикальный периодонтит", name: "Хронический апикальный периодонтит" },
+	{ code: "K05.1", title: "Хронический гингивит", name: "Хронический гингивит" },
+	{ code: "K05.3", title: "Хронический пародонтит", name: "Хронический пародонтит" },
+	{ code: "K01.1", title: "Дистопия/ретенция зуба мудрости", name: "Дистопия/ретенция зуба мудрости" },
+	{ code: "K08.1", title: "Потеря зубов вследствие удаления/травмы", name: "Потеря зубов вследствие удаления/травмы" },
 ];
 
 /** Зубная формула FDI: Взрослый прикус 18..11, 21..28 (верхняя челюсть), 48..41, 31..38 (нижняя челюсть) */
@@ -178,17 +168,6 @@ export function mapBackendLetterToPatientGuaranteeLetter(item: any): PatientGuar
 		status: (item.status as PatientGuaranteeLetter["status"]) || "active",
 	};
 }
-
-const COMMON_ICD10_DENTAL_DIAGNOSES = [
-	{ code: "K02.1", name: "Кариес дентина" },
-	{ code: "K02.2", name: "Кариес цемента" },
-	{ code: "K04.0", name: "Пульпит (острый/хронический)" },
-	{ code: "K04.4", name: "Острый апикальный периодонтит" },
-	{ code: "K04.5", name: "Хронический апикальный периодонтит" },
-	{ code: "K05.1", name: "Хронический гингивит" },
-	{ code: "K05.3", name: "Хронический пародонтит" },
-	{ code: "K08.1", name: "Потеря зубов вследствие удаления/травмы" },
-];
 
 export function DmsGuaranteeLetterModal({
 	isOpen,
@@ -440,14 +419,14 @@ export function DmsGuaranteeLetterModal({
 					{/* Patient Header Card */}
 					{patient && (
 						<div className="dms-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-							<div>
+							<div style={{ minWidth: 0, flex: 1 }}>
 								<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)" }}>Застрахованное лицо (Пациент)</div>
-								<div style={{ fontSize: "1.05rem", fontWeight: 700 }}>{patient.fullName}</div>
+								<div style={{ fontSize: "1.05rem", fontWeight: 700 }} className="truncate" title={patient.fullName}>{patient.fullName}</div>
 								{patient.birthDate && (
 									<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>Дата рождения: {patient.birthDate}</div>
 								)}
 							</div>
-							<div style={{ display: "flex", gap: "8px" }}>
+							<div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
 								<span className={`dms-badge dms-badge-${status}`}>
 									<CheckCircle2 size={12} />
 									{status === "active" ? "Активно" : status === "expired" ? "Истекло" : status === "exhausted" ? "Исчерпано" : "Отозвано"}
@@ -462,9 +441,9 @@ export function DmsGuaranteeLetterModal({
 							padding: "12px 16px",
 							borderRadius: "14px",
 							background: isEmergencyCare
-								? "linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(16, 185, 129, 0.12))"
-								: "rgba(245, 158, 11, 0.08)",
-							border: isEmergencyCare ? "2px solid #f59e0b" : "1px solid rgba(245, 158, 11, 0.35)",
+								? "linear-gradient(135deg, var(--warn-bg, rgba(245, 158, 11, 0.18)), var(--ok-bg, rgba(16, 185, 129, 0.12)))"
+								: "var(--warn-bg, rgba(245, 158, 11, 0.08))",
+							border: isEmergencyCare ? "2px solid var(--warn-fg, #f59e0b)" : "1px solid var(--line, rgba(245, 158, 11, 0.35))",
 							display: "flex",
 							justifyContent: "space-between",
 							alignItems: "center",
@@ -487,7 +466,7 @@ export function DmsGuaranteeLetterModal({
 											fontWeight: 800,
 											padding: "2px 8px",
 											borderRadius: "6px",
-											background: "#10b981",
+											background: "var(--ok-fg, #10b981)",
 											color: "#ffffff",
 										}}
 									>
@@ -508,7 +487,7 @@ export function DmsGuaranteeLetterModal({
 								padding: "8px 16px",
 								borderRadius: "10px",
 								border: "none",
-								background: isEmergencyCare ? "#10b981" : "#f59e0b",
+								background: isEmergencyCare ? "var(--ok-fg, #10b981)" : "var(--warn-fg, #f59e0b)",
 								color: "#ffffff",
 								fontWeight: 700,
 								fontSize: "0.8125rem",
@@ -585,9 +564,9 @@ export function DmsGuaranteeLetterModal({
 							</div>
 						)}
 
-						{/* 1-клик быстрый выбор топ-4 страховщиков РФ */}
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginBottom: "14px" }}>
-							<span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)" }}>
+						{/* 1-клик быстрый выбор топ-страховщиков РФ по Закону Хика (32–36px) */}
+						<div className="dms-quick-toolbar" style={{ marginBottom: "14px" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)", whiteSpace: "nowrap", flexShrink: 0 }}>
 								1-Клик выбор:
 							</span>
 							{[
@@ -595,27 +574,18 @@ export function DmsGuaranteeLetterModal({
 								{ key: "ingosstrakh", name: "Ингосстрах" },
 								{ key: "reso", name: "РЕСО-Гарантия" },
 								{ key: "alfastrakh", name: "АльфаСтрахование" },
+								{ key: "vsk", name: "ВСК" },
+								{ key: "soglasie", name: "Согласие" },
 							].map((ins) => (
 								<button
 									key={ins.key}
 									type="button"
 									onClick={() => setInsurerKey(ins.key)}
-									style={{
-										padding: "4px 10px",
-										borderRadius: "6px",
-										border: insurerKey === ins.key ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line, #e2e8f0)",
-										background: insurerKey === ins.key ? "var(--teal, #0d9488)" : "var(--paper, #ffffff)",
-										color: insurerKey === ins.key ? "#ffffff" : "inherit",
-										fontWeight: 600,
-										fontSize: "0.75rem",
-										cursor: "pointer",
-										display: "flex",
-										alignItems: "center",
-										gap: "4px",
-									}}
+									className={`dms-quick-chip ${insurerKey === ins.key ? "active" : ""}`}
+									title={`Выбрать страховую компанию ${ins.name}`}
 								>
 									{insurerKey === ins.key && <Check size={12} />}
-									{ins.name}
+									<span>{ins.name}</span>
 								</button>
 							))}
 						</div>
@@ -864,7 +834,7 @@ export function DmsGuaranteeLetterModal({
 						<div style={{ marginBottom: "16px" }}>
 							<div className="dms-label" style={{ marginBottom: "8px" }}>Разрешенные диагнозы (МКБ-10):</div>
 							<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-								{COMMON_ICD10_DENTAL_DIAGNOSES.map((diag) => {
+								{COMMON_DENTAL_ICD10_DIAGNOSES.map((diag) => {
 									const isApproved = approvedDiagnosisCodes.includes(diag.code);
 									return (
 										<button
@@ -872,7 +842,7 @@ export function DmsGuaranteeLetterModal({
 											type="button"
 											className={`dms-btn ${isApproved ? "dms-btn-primary" : "dms-btn-secondary"}`}
 											onClick={() => toggleDiagnosis(diag.code)}
-											style={{ padding: "6px 12px", fontSize: "0.75rem", minHeight: "44px" }}
+											style={{ padding: "6px 12px", fontSize: "0.75rem", minHeight: "36px" }}
 										>
 											{isApproved && <Check size={14} />}
 											<strong>{diag.code}</strong> — {diag.name}
@@ -880,6 +850,27 @@ export function DmsGuaranteeLetterModal({
 									);
 								})}
 							</div>
+						</div>
+
+						{/* Быстрые фильтры категорий 804н (Закон Хика, 32–36px) */}
+						<div className="dms-quick-toolbar" style={{ marginBottom: "10px" }}>
+							{[
+								{ key: "all", label: "Все категории" },
+								{ key: "therapy", label: "Терапия" },
+								{ key: "surgery", label: "Хирургия" },
+								{ key: "diagnostics", label: "Диагностика" },
+								{ key: "hygiene", label: "Профгигиена" },
+								{ key: "xray", label: "Рентген" },
+							].map((cat) => (
+								<button
+									key={cat.key}
+									type="button"
+									className={`dms-quick-chip ${selectedCategoryTab === cat.key ? "active" : ""}`}
+									onClick={() => setSelectedCategoryTab(cat.key)}
+								>
+									{cat.label}
+								</button>
+							))}
 						</div>
 
 						{/* Поиск услуг 804н */}
@@ -908,16 +899,16 @@ export function DmsGuaranteeLetterModal({
 										key={item.code}
 										className={`dms-service-item ${isSelected ? "selected" : ""}`}
 									>
-										<div style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1, paddingRight: "12px" }}>
-											<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-												<span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--primary, #0284c7)" }}>
+										<div style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1, minWidth: 0, paddingRight: "12px" }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+												<span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--primary, #0284c7)" }} className="shrink-0">
 													{item.code}
 												</span>
-												<span className="dms-badge dms-badge-active" style={{ fontSize: "0.6875rem", padding: "2px 8px" }}>
+												<span className="dms-badge dms-badge-active truncate" style={{ fontSize: "0.6875rem", padding: "2px 8px" }}>
 													{item.categoryTitleRu}
 												</span>
 											</div>
-											<div style={{ fontSize: "0.8125rem", fontWeight: 500 }}>{item.name}</div>
+											<div style={{ fontSize: "0.8125rem", fontWeight: 500 }} className="truncate" title={item.name}>{item.name}</div>
 											<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
 												Тариф: {formatRubKopecks(item.defaultPriceRub)} {item.uet ? `(${item.uet} УЕТ)` : ""}
 											</div>
@@ -951,7 +942,7 @@ export function DmsGuaranteeLetterModal({
 						<textarea
 							id={notesTextareaId}
 							rows={2}
-							placeholder="Например: Согласовано депульпирование 16 зуба по острой боли куратором Ивановой Е.В."
+							placeholder="Например: Согласовано депульпирование зуба 1.6 по острой боли куратором страховой компании"
 							value={notes}
 							onChange={(e) => setNotes(e.target.value)}
 							className="dms-textarea"
@@ -959,7 +950,7 @@ export function DmsGuaranteeLetterModal({
 					</div>
 				</div>
 
-				{/* Footer */}
+				{/* Footer — Закон Миллера: ровно 2 кнопки прямого действия */}
 				<div className="dms-modal-footer">
 					<button
 						type="button"
@@ -968,26 +959,28 @@ export function DmsGuaranteeLetterModal({
 					>
 						Отмена
 					</button>
-					{isEmergencyCare && (
+					{isEmergencyCare ? (
 						<button
 							type="button"
 							className="dms-btn dms-btn-primary"
-							style={{ background: "#059669", borderColor: "#059669", fontWeight: 700 }}
+							style={{ background: "var(--ok-fg, #059669)", borderColor: "var(--ok-fg, #059669)", fontWeight: 700 }}
 							onClick={handleSave}
-							title="1-клик: Применить временное согласование по острой боли и разблокировать прием"
+							title="1-клик: Применить экстренное согласование по острой боли и разблокировать приём"
 						>
 							<Zap size={18} />
 							1-Клик: Сохранить экстренное согласование
 						</button>
+					) : (
+						<button
+							type="button"
+							className="dms-btn dms-btn-primary"
+							onClick={handleSave}
+							title="Сохранить параметры гарантийного письма ДМС"
+						>
+							<FileCheck size={18} />
+							Сохранить гарантийное письмо
+						</button>
 					)}
-					<button
-						type="button"
-						className="dms-btn dms-btn-primary"
-						onClick={handleSave}
-					>
-						<FileCheck size={18} />
-						Сохранить гарантийное письмо
-					</button>
 				</div>
 			</div>
 		</div>
