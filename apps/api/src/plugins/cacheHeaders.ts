@@ -66,11 +66,11 @@ export const DEFAULT_STATIC_CATALOG_PATTERNS: RegExp[] = [
 	// Номенклатура медицинских услуг Приказа Минздрава РФ 804н
 	/^\/api\/(?:clinical\/)?(?:nomenclature|804n)(?:[/?#]|$)/i,
 	// Международный классификатор болезней МКБ-10 (ICD-10) и справочники диагнозов
-	/^\/api\/(?:clinical\/)?(?:icd10|icd-10|mkb10|mkb-10|classifiers)(?:[/?#]|$)/i,
+	/^\/api\/(?:catalogs?\/|clinical\/)?(?:icd10|icd-10|mkb|mkb10|mkb-10|classifiers)(?:[/?#]|$)/i,
 	// Клинические протоколы, шаблоны приёма EMR (Форма 043/у) и соматические статусы
 	/^\/api\/(?:templates|document-templates|documents\/templates|outpatient\/templates|emr\/templates|somatic(?:-status|-templates)?)(?:[/?#]|$)/i,
 	// Прайс-листы и каталог стоматологических услуг
-	/^\/api\/(?:catalog|price-lists|settings\/price)(?:[/?#]|$)/i,
+	/^\/api\/(?:catalogs?|settings\/catalog|price-lists|settings\/price)(?:[/?#]|$)/i,
 	// Сотрудники и врачи клиники
 	/^\/api\/(?:settings\/staff|hr\/doctors)(?:[/?#]|$)/i,
 	// Структура клиники, кресла и филиалы

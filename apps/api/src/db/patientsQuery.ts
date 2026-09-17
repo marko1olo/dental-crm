@@ -5,7 +5,7 @@ import {
 	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
 } from "@dental/shared";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { canonicalizeHomoglyphs } from "../services/patients/duplicateDetection.js";
 import {
 	buildPatientLedgers,
@@ -306,25 +306,73 @@ export async function getPatientByIdFromDb(
 	}
 }
 
+export interface GetPatientsOptions {
+	includeMerged?: boolean;
+	search?: string;
+	limit?: number;
+	offset?: number;
+}
+
 export async function getPatientsFromDb(
 	organizationId: string,
-	options: { includeMerged?: boolean } = {},
+	options: GetPatientsOptions = {},
 ): Promise<Patient[]> {
 	if (useInMemory()) {
-		const list = inMemoryPatients as unknown as Patient[];
-		return options.includeMerged
-			? list
-			: list.filter((p) => !p.mergedIntoPatientId);
+		let list = inMemoryPatients as unknown as Patient[];
+		if (!options.includeMerged) {
+			list = list.filter((p) => !p.mergedIntoPatientId);
+		}
+		if (options.search && options.search.trim().length > 0) {
+			const qLower = options.search.trim().toLowerCase();
+			list = list.filter((p) => {
+				const nameMatch = p.fullName?.toLowerCase().includes(qLower);
+				const phoneMatch = p.phone?.toLowerCase().includes(qLower);
+				const emailMatch = p.email?.toLowerCase().includes(qLower);
+				return nameMatch || phoneMatch || emailMatch;
+			});
+		}
+		if (options.offset !== undefined && options.offset > 0) {
+			list = list.slice(options.offset);
+		}
+		if (options.limit !== undefined && options.limit > 0) {
+			list = list.slice(0, options.limit);
+		}
+		return list;
 	}
 	try {
 		const baseFilter = eq(schema.patients.organizationId, organizationId);
-		const whereClause = options.includeMerged
-			? baseFilter
-			: and(baseFilter, isNull(schema.patients.mergedIntoPatientId));
-		const pts = await db
+		const conditions = [baseFilter];
+		if (!options.includeMerged) {
+			conditions.push(isNull(schema.patients.mergedIntoPatientId));
+		}
+		if (options.search && options.search.trim().length > 0) {
+			const s = `%${options.search.trim()}%`;
+			conditions.push(
+				or(
+					ilike(schema.patients.fullName, s),
+					ilike(schema.patients.phone, s),
+					ilike(schema.patients.email, s),
+				)!,
+			);
+		}
+		const whereClause = and(...conditions);
+		let ptsQuery: any = db
 			.select()
 			.from(schema.patients)
 			.where(whereClause);
+
+		if (typeof ptsQuery.orderBy === "function" && (options.limit !== undefined || options.search)) {
+			ptsQuery = ptsQuery.orderBy(desc(schema.patients.createdAt));
+		}
+		if (options.limit !== undefined && options.limit > 0 && typeof ptsQuery.limit === "function") {
+			ptsQuery = ptsQuery.limit(options.limit);
+		}
+		if (options.offset !== undefined && options.offset > 0 && typeof ptsQuery.offset === "function") {
+			ptsQuery = ptsQuery.offset(options.offset);
+		}
+
+		const pts = await ptsQuery;
+
 		const balances = await patientAccountBalancesRub(
 			organizationId,
 			pts.map((p) => p.id),

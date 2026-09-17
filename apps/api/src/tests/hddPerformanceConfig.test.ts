@@ -201,6 +201,22 @@ describe("cacheHeadersPlugin — Генерация ETag, сверка If-None-M
 			isRouteCacheable(mockRequest("/api/settings/price"), DEFAULT_STATIC_CATALOG_PATTERNS).cacheable,
 			true,
 		);
+		assert.strictEqual(
+			isRouteCacheable(mockRequest("/api/catalogs/mkb/categories/tree"), DEFAULT_STATIC_CATALOG_PATTERNS).cacheable,
+			true,
+		);
+		assert.strictEqual(
+			isRouteCacheable(mockRequest("/api/catalogs/teeth"), DEFAULT_STATIC_CATALOG_PATTERNS).cacheable,
+			true,
+		);
+		assert.strictEqual(
+			isRouteCacheable(mockRequest("/api/catalogs/tooth-defects"), DEFAULT_STATIC_CATALOG_PATTERNS).cacheable,
+			true,
+		);
+		assert.strictEqual(
+			isRouteCacheable(mockRequest("/api/settings/catalog"), DEFAULT_STATIC_CATALOG_PATTERNS).cacheable,
+			true,
+		);
 
 		// Небезопасные методы
 		assert.strictEqual(
@@ -213,3 +229,29 @@ describe("cacheHeadersPlugin — Генерация ETag, сверка If-None-M
 		);
 	});
 });
+
+describe("hddPerformanceConfig — Защита от Seq Scan в запросах пациентов", () => {
+	it("getPatientsFromDb уважает limit и search параметры для предотвращения дискового троттлинга", async () => {
+		const { getPatientsFromDb } = await import("../db/patientsQuery.js");
+		const prev = process.env.DENTAL_STATE_PERSISTENCE;
+		process.env.DENTAL_STATE_PERSISTENCE = "off";
+
+		try {
+			const all = await getPatientsFromDb("test-org");
+			assert.ok(all.length > 0);
+
+			const limited = await getPatientsFromDb("test-org", { limit: 1 });
+			assert.strictEqual(limited.length, 1);
+
+			const offset = await getPatientsFromDb("test-org", { offset: 1, limit: 1 });
+			assert.strictEqual(offset.length, 1);
+			if (all.length > 1) {
+				assert.notStrictEqual(limited[0].id, offset[0].id);
+			}
+		} finally {
+			if (prev !== undefined) process.env.DENTAL_STATE_PERSISTENCE = prev;
+			else delete process.env.DENTAL_STATE_PERSISTENCE;
+		}
+	});
+});
+

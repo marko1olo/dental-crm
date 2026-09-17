@@ -592,6 +592,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			search?: string;
 			q?: string;
 			includeMerged?: string | boolean;
+			limit?: string | number;
+			offset?: string | number;
 		};
 		const searchRaw = (query.search ?? query.q ?? "").trim();
 
@@ -615,9 +617,30 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			}
 		}
 
+		const rawLimit =
+			query.limit !== undefined
+				? Number.parseInt(String(query.limit), 10)
+				: undefined;
+		const limit =
+			Number.isFinite(rawLimit) && rawLimit! > 0
+				? Math.min(rawLimit!, 500)
+				: searchRaw
+					? 50
+					: undefined;
+		const rawOffset =
+			query.offset !== undefined
+				? Number.parseInt(String(query.offset), 10)
+				: undefined;
+		const offset =
+			Number.isFinite(rawOffset) && rawOffset! >= 0 ? rawOffset : undefined;
+
 		try {
 			let dbPatients = await getPatientsFromDb(orgId, {
-				includeMerged: query.includeMerged === true || query.includeMerged === "true",
+				includeMerged:
+					query.includeMerged === true || query.includeMerged === "true",
+				search: searchRaw || undefined,
+				limit,
+				offset,
 			});
 
 			if (searchRaw) {
