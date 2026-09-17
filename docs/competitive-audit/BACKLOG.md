@@ -7816,4 +7816,62 @@
     * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
     * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
 
+### 404. Section 404: Red Team Wave 245 — Informed Consent Express Presets & Signature Autonomy, Hygiene Indices OHI-S 1-Click Physiological Norm, Dental Warranty Passport & 100% Rework Autonomy (Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/consents/InformedConsentModal.tsx`
+  - `apps/web/src/components/consents/consentTemplates.ts`
+  - `apps/web/src/components/consents/chairsideConsentEngine.ts`
+  - `apps/web/src/components/consents/signaturePadMath.ts`
+  - `packages/shared/src/legal/stomxConsentPresets.ts`
+  - `apps/web/src/components/consents/__tests__/informedConsentAutonomyWave51.test.tsx`
+  - `apps/web/src/components/consents/__tests__/informedConsentFallbackAutonomy.test.tsx`
+  - `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx`
+  - `packages/shared/src/perio/hygieneIndices.ts`
+  - `packages/shared/src/clinical/perioIndicesEngine.ts`
+  - `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`
+  - `apps/web/src/components/perio/__tests__/periodontogramHeatmapAndNormAutonomy.test.tsx`
+  - `apps/web/src/components/warranty/WarrantyPassportModal.tsx`
+  - `apps/web/src/components/warranty/warrantyEngine.ts`
+  - `apps/web/src/components/warranty/warrantyPresets.ts`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/finance/PatientBillingModal.tsx`
+  - `apps/api/src/db/billingQuery.ts`
+  - `apps/web/src/components/finance/__tests__/warrantyAndOverdraftBillingAutonomy.test.tsx`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Экспресс-пресеты информированных согласий (ИДС) и автономия бумажной подписи (Informed Consent Express Presets & Signature Autonomy) (Мандаты 8c, 8d пп. 1, 2, 5, 7, 8e пп. 1, 5, 8i, 8k, 8n, 8p, 8s)**:
+    * В `InformedConsentModal.tsx`, `consentTemplates.ts`, `chairsideConsentEngine.ts`, `signaturePadMath.ts` и `packages/shared/src/legal/stomxConsentPresets.ts`:
+    * Полное искоренение рутинного юридического трения (Мандат 8k Friction-Killer Law, Мандат 8i): ликвидация симулятора пошаговой ручной стилус-подписи на экране или обязательного ввода SMS OTP кодов при очном приеме у кресла;
+    * Режим автономии врача и пациента «ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАГЕ» в 1 клик с формированием юридически значимого аудиторного следа (SHA-256 хэш, временная метка, ФИО врача и пациента) и автоматической фиксацией в карте Формы 043/у Минздрава РФ;
+    * Пакетные пресеты ИДС по 6 клиническим стоматологическим профилям: Терапия (кариес/эндодонтия/реставрация), Хирургия (простое и сложное удаление зубов), Имплантация (установка имплантата и синус-лифтинг), Ортопедия (несъемное и съемное протезирование), Ортодонтия (брекеты и элайнеры), Профгигиена и отбеливание по ст. 20 Федерального закона № 323-ФЗ и Приказу Минздрава России № 1051н;
+    * 1-клик функция `buildPatientConsentSummary` («Скопировать для пациента», `consent-copy-patient-text-btn`) для моментальной отправки краткой и понятной памятки о согласованных вмешательствах и противопоказаниях в WhatsApp/Telegram;
+    * Неблокирующая печать любого согласия и сводного пакета А4 в любой момент со штампом «ЧЕРНОВИК» (до подписания) и «ПОДПИСАНО ПАЦИЕНТОМ НА БУМАГЕ» (Мандат 8e п. 5, Мандат 8d п. 7);
+    * Плотный тулбар 32–36px по Закону Хика, полезная высота шапки <160–180px по Мандату 8p, глубина модалки строго 1 (Закон Анти-Матрёшки), touch-target $\ge 44\text{px}$ для планшетов у кресла.
+  - **Индексы гигиены OHI-S / PMA / KPI и 1-клик физиологическая норма полости рта (Hygiene Indices OHI-S 1-Click Physiological Norm) (Мандаты 8c, 8d пп. 1, 2, 4, 5, 7, 8e пп. 1, 2, 3, 6, 8i, 8k, 8n, 8p, 8s)**:
+    * В `HygieneIndicesPanel.tsx`, `PeriodontogramChart.tsx`, `packages/shared/src/perio/hygieneIndices.ts`, `packages/shared/src/clinical/perioIndicesEngine.ts` и `DentalMedicalCard043uForm.tsx`:
+    * Ликвидация академического оверинжиниринга и процедурного симулятора ручного обследования зубных камешков и налета (Мандат 8k, Мандат 8s);
+    * 1-клик кнопка «★ 1-клик: Физиологическая норма (OHI-S 0.0 — Хорошая, РМА 0%, КПИ 0.0)» моментально заполняет клинический статус идеальной гигиены для всех 6 индексных зубов по Грину-Вермиллиону (FDI 16, 11, 26, 36, 31, 46) без ручного кликанья поверхностей;
+    * Мгновенный расчет индексов зубного налета DI-S, зубного камня CI-S и общего индекса OHI-S с клинической интерпретацией (Хорошая 0.0–1.2, Удовлетворительная 1.3–3.0, Плохая >3.0);
+    * Папиллярно-маргинально-альвеолярный индекс PMA (%) с оценкой степени гингивита и комплексный периодонтальный индекс КПИ (Леус П.А.);
+    * Автоматическая трансляция гигиенического статуса в раздел объективного осмотра Формы 043/у Минздрава РФ с сохранением в debounced autosave (300мс);
+    * 1-клик генерация индивидуального плана профилактики (подбор паст, ершиков, монопучковой щетки, нити) и экспорт понятной памятки пациенту для мессенджеров;
+    * Полиграфическая печать гигиенической карты пациента А4 строго без эмодзи (Мандат 8d п. 7).
+  - **Гарантийный паспорт стоматологического лечения и 100% автономия переделок врача (Dental Warranty Passport & 100% Rework Autonomy) (Мандаты 8b, 8c, 8d пп. 1, 2, 3, 7, 8e пп. 1, 2, 7, 8n, 8p, 8s)**:
+    * В `WarrantyPassportModal.tsx`, `warrantyEngine.ts`, `warrantyPresets.ts`, `PaymentModal.tsx`, `PatientBillingModal.tsx` и `apps/api/src/db/billingQuery.ts`:
+    * Реализация Гарантийного паспорта стоматологического лечения пациента по клиническим рекомендациям Стоматологической Ассоциации России (СтАР) и Закону РФ «О защите прав потребителей» № 2300-1;
+    * Дифференцированные сроки гарантии и службы: пломбы светового отверждения (12–24 мес.), коронки ZrO2 и E.max (24–36 мес.), металлокерамика (12 мес.), съемные протезы (12 мес.), дентальные имплантаты (пожизненная гарантия производителя при регулярной профгигиене каждые 6 мес.);
+    * Автономия врача при гарантийных переделках (Мандат 8e п. 7, Мандат 8n): право применения 100% скидки (0 ₽ к оплате) без ввода мастер-паролей администратора или согласований начмеда;
+    * Бэкенд-поддержка в `apps/api/src/db/billingQuery.ts` (функция `createPaymentInDb`): разблокирована регистрация оплат с `totalAmountRub: 0` для гарантийных переделок и персонала с автоматической выдачей фискального акта выполненных работ со статусом `issued`;
+    * Автоматическое мягкое списание расходных материалов по гарантийным работам без блокировки закрытия визита (Мандат 8e п. 10);
+    * Официальный печатный бланк «Гарантийный паспорт и условия сохранения гарантии» А4 с защитным QR-кодом верификации, графиком контрольных профосмотров и строгим медицинским дизайном без эмодзи;
+    * Эргономика по Закону Миллера: не более 1–2 кнопок прямого действия на карточке гарантийного случая, вторичные операции вынесены в выпадающее меню `...`.
+  - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
+    * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
+    * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
+
+
 
