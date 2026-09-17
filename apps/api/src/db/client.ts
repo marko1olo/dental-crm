@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { loadAdditionalServerEnv } from "../env/loadServerEnv.js";
 import { isAutomatedRun } from "../env/requiredEnv.js";
+import { getHddDbPoolConfig } from "../lib/hddPerformanceConfig.js";
 import { registerMoneyTypeParsers } from "./moneyTypeParsers.js";
 import * as schema from "./schema.js";
 
@@ -41,9 +42,7 @@ export function requireDatabaseUrl(): string {
  */
 registerMoneyTypeParsers();
 
-const parsedPoolMax = Number.parseInt(process.env.PG_POOL_MAX ?? "30", 10);
-const poolMax =
-	Number.isFinite(parsedPoolMax) && parsedPoolMax > 0 ? parsedPoolMax : 30;
+const hddPoolConfig = getHddDbPoolConfig();
 
 /*
  * ПОЧЕМУ allowExitOnIdle ТОЛЬКО В АВТОМАТИЧЕСКИХ ПРОГОНАХ: каждый простаивающий
@@ -64,10 +63,10 @@ const poolMax =
  */
 export const pool = new pg.Pool({
 	connectionString: requireDatabaseUrl(),
-	max: poolMax,
-	idleTimeoutMillis: 30000,
-	connectionTimeoutMillis: 5000,
-	allowExitOnIdle: isAutomatedRun(),
+	max: hddPoolConfig.max,
+	idleTimeoutMillis: hddPoolConfig.idleTimeoutMillis,
+	connectionTimeoutMillis: hddPoolConfig.connectionTimeoutMillis,
+	allowExitOnIdle: hddPoolConfig.allowExitOnIdle,
 });
 
 pool.on("error", (err) => {

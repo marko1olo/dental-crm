@@ -244,6 +244,7 @@
 	border: none;
 	box-shadow: none;
 	position: relative;
+	contain: layout style;
 }
 
 @media (max-width: 1024px) {
@@ -402,6 +403,7 @@
 	scrollbar-width: thin;
 	touch-action: pan-x pan-y;
 	overscroll-behavior-x: contain;
+	contain: layout paint;
 }
 
 @media (max-width: 768px) {
@@ -567,6 +569,10 @@
 	background: transparent;
 	border: none;
 	outline: none;
+	contain: layout style;
+	will-change: transform;
+	transform: translateZ(0);
+	backface-visibility: hidden;
 }
 
 .tooth-svg-wrapper::before {
@@ -584,7 +590,7 @@
 
 .tooth-svg-wrapper:hover {
 	background-color: var(--odontogram-surface-hover);
-	transform: translateY(-4px) scale(1.06);
+	transform: translateY(-4px) scale(1.06) translateZ(0);
 	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
 	z-index: 10;
 }
@@ -594,17 +600,28 @@
 	outline: 2px solid var(--teal) !important;
 	outline-offset: 2px;
 	box-shadow: 0 0 20px -2px rgba(16, 185, 129, 0.45);
-	transform: translateY(-2px) scale(1.07);
+	transform: translateY(-2px) scale(1.07) translateZ(0);
 	z-index: 20;
 }
 
 .tooth-svg-element {
 	filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.12));
 	transition: filter 0.2s ease, transform 0.2s ease;
+	will-change: transform;
+	transform: translateZ(0);
+	backface-visibility: hidden;
 }
 
 .tooth-svg-wrapper:hover .tooth-svg-element {
 	filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.22));
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tooth-svg-wrapper,
+	.tooth-svg-element {
+		transition: none !important;
+		will-change: auto !important;
+	}
 }
 
 .tooth-number-badge {

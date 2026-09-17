@@ -931,6 +931,9 @@ export class UnifiedAudioClient {
 
 		if (this.browserRecognition) {
 			try {
+				this.browserRecognition.onresult = null;
+				this.browserRecognition.onerror = null;
+				this.browserRecognition.onend = null;
 				this.browserRecognition.stop();
 			} catch {}
 			this.browserRecognition = null;
@@ -971,6 +974,7 @@ export class UnifiedAudioClient {
 		}
 
 		this.cleanupCurrentModeBackend();
+		this.clearBufferedPcmChunks();
 		this.interimText = "";
 		this.emitInterimText("");
 		this.setState("idle");
@@ -987,6 +991,7 @@ export class UnifiedAudioClient {
 			this.streamManager = null;
 		}
 		this.cleanupCurrentModeBackend();
+		this.clearBufferedPcmChunks();
 		this.interimText = "";
 		this.emitInterimText("");
 		this.setState("idle");

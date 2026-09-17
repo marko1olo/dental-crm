@@ -155,6 +155,12 @@ import { getProxyAgent } from "./speech/keyPool.js";
 import { ensureSshTunnel } from "./speech/tunnel.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import { requestLoggingPlugin } from "./observability/index.js";
+import {
+	applyHddPerformanceDefaults,
+	flushHddLogger,
+	getHddFastifyLoggerConfig,
+} from "./lib/hddPerformanceConfig.js";
+import { cacheHeadersPlugin } from "./plugins/cacheHeaders.js";
 import { registerRouteNotFoundHandler } from "./utils/routeNotFound.js";
 import { startWatchdog } from "./watchdog.js";
 
@@ -202,6 +208,7 @@ declare module "fastify" {
 }
 
 loadAdditionalServerEnv();
+applyHddPerformanceDefaults();
 startWatchdog();
 
 /**
@@ -418,22 +425,7 @@ export async function createDenteApiApp(
 	} = {},
 ) {
 	const app = Fastify({
-		logger: {
-			level: process.env.NODE_ENV === "production" ? "info" : "debug",
-			redact: {
-				// Не пишем в логи секреты и токены — иначе они утекают в файлы логов
-				// и в системы сбора логов вместе с обычной отладкой.
-				paths: [
-					"req.headers.authorization",
-					'req.headers["x-dente-clinic-token"]',
-					'req.headers["x-dente-staff-token"]',
-					'req.headers["x-dente-admin-secret"]',
-					"req.headers.cookie",
-					'res.headers["set-cookie"]',
-				],
-				censor: "[скрыто]",
-			},
-		},
+		logger: getHddFastifyLoggerConfig() as any,
 		// За обратным прокси (nginx) реальный IP приходит в X-Forwarded-For.
 		// Без trustProxy rate-limit видит один и тот же адрес контейнера у всех
 		// клиентов. Включается явно, чтобы напрямую доступный API не доверял
@@ -493,12 +485,16 @@ export async function createDenteApiApp(
 			"x-ratelimit-remaining",
 			"x-correlation-id",
 			"x-request-id",
+			"etag",
 		],
 		maxAge: 600,
 	});
 
 	// Сквозное структурированное логирование, Correlation ID и замер латентности
 	await app.register(requestLoggingPlugin);
+
+	// HTTP кэширование справочников (ETag, Cache-Control, 304 Not Modified) для медленных HDD
+	await app.register(cacheHeadersPlugin);
 
 	await app.register(helmet, {
 		contentSecurityPolicy: false,
@@ -635,7 +631,9 @@ export async function createDenteApiApp(
 		const contentSecurityPolicy = contentType.includes("text/html")
 			? "default-src 'none'; style-src 'unsafe-inline'; img-src data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 			: "default-src 'none'; frame-ancestors 'none'";
-		reply.header("Cache-Control", "no-store");
+		if (!reply.hasHeader("cache-control") && !reply.hasHeader("Cache-Control")) {
+			reply.header("Cache-Control", "no-store");
+		}
 		reply.header("X-Content-Type-Options", "nosniff");
 		reply.header("X-Frame-Options", "DENY");
 		reply.header("Referrer-Policy", "no-referrer");
@@ -916,6 +914,7 @@ export async function startDenteApiServer() {
 
 	process.on("uncaughtException", (err) => {
 		app.log.fatal(err, "Uncaught Exception detected. Shutting down...");
+		flushHddLogger();
 		process.exit(1);
 	});
 	process.on("unhandledRejection", (reason, promise) => {
@@ -923,6 +922,7 @@ export async function startDenteApiServer() {
 			{ reason, promise },
 			"Unhandled Rejection detected. Shutting down...",
 		);
+		flushHddLogger();
 		process.exit(1);
 	});
 
@@ -940,6 +940,7 @@ export async function startDenteApiServer() {
 				app.log.error(
 					`[Shutdown] Force killing process after 10s timeout. Pending connections or workers hung.`,
 				);
+				flushHddLogger();
 				process.exit(1);
 			}, 10000);
 			try {
@@ -956,10 +957,12 @@ export async function startDenteApiServer() {
 				const { endPool } = await import("./db/client.js");
 				await endPool();
 				app.log.info("[Shutdown] Dente API server closed cleanly.");
+				flushHddLogger();
 				clearTimeout(forceKillTimeout);
 				process.exit(0);
 			} catch (err) {
 				app.log.error(err, "[Shutdown] Error during server shutdown:");
+				flushHddLogger();
 				clearTimeout(forceKillTimeout);
 				process.exit(1);
 			}

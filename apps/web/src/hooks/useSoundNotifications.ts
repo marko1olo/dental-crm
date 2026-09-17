@@ -79,6 +79,17 @@ export function useSoundNotifications({
 		const now = Date.now();
 		if (now - lastSlotWarningAt.current < COOLDOWN_MS) return;
 
+		// Регулярная очистка устаревших слотов из памяти для предотвращения утечек на круглосуточных терминалах
+		if (warnedSlots.current.size > 50) {
+			const oneHourAgo = now - 3_600_000;
+			for (const key of warnedSlots.current) {
+				const time = Number(key);
+				if (!Number.isNaN(time) && time < oneHourAgo) {
+					warnedSlots.current.delete(key);
+				}
+			}
+		}
+
 		for (const slot of doctorTodaySlots) {
 			const endsAt = typeof slot.endsAt === "string"
 				? new Date(slot.endsAt).getTime()

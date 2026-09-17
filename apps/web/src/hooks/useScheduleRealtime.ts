@@ -44,15 +44,29 @@ export function useScheduleRealtime(
 
 	useEffect(() => {
 		if (!lastMessage?.type || !SCHEDULE_EVENTS.has(lastMessage.type)) return;
-		if (timerRef.current) clearTimeout(timerRef.current);
+		if (timerRef.current) {
+			clearTimeout(timerRef.current);
+			timerRef.current = null;
+		}
 		timerRef.current = setTimeout(() => {
+			timerRef.current = null;
 			handlerRef.current?.();
 		}, REFRESH_DEBOUNCE_MS);
+
+		return () => {
+			if (timerRef.current) {
+				clearTimeout(timerRef.current);
+				timerRef.current = null;
+			}
+		};
 	}, [lastMessage]);
 
 	useEffect(
 		() => () => {
-			if (timerRef.current) clearTimeout(timerRef.current);
+			if (timerRef.current) {
+				clearTimeout(timerRef.current);
+				timerRef.current = null;
+			}
 		},
 		[],
 	);

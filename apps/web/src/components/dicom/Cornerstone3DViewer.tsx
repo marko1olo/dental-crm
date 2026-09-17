@@ -538,10 +538,17 @@ export function Cornerstone3DViewer({
 			cornerstone.getRenderingEngine("my-engine")?.destroy();
 			cornerstoneTools.ToolGroupManager.destroyToolGroup("mpr-tool-group");
 			try {
+				cornerstoneTools.annotation.state.removeAllAnnotations();
+			} catch {
+				// Ignore
+			}
+			try {
 				cornerstone.cache.purgeCache();
 			} catch {
 				// Ignore
 			}
+			setPanorexVolume(null);
+			setSplinePoints([]);
 		};
 	}, [isInitialized, effectiveImageIds]);
 
@@ -1844,7 +1851,7 @@ export function Cornerstone3DViewer({
 											activeTool === "Implant"
 												? "rgba(79,70,229,0.3)"
 												: "transparent",
-										color: "#fff",
+										color: "var(--ink, #fff)",
 										display: "flex",
 										alignItems: "center",
 										justifyContent: "space-between",
@@ -1873,7 +1880,7 @@ export function Cornerstone3DViewer({
 											activeTool === "NerveTracer"
 												? "rgba(217,119,6,0.3)"
 												: "transparent",
-										color: "#fff",
+										color: "var(--ink, #fff)",
 										display: "flex",
 										alignItems: "center",
 										justifyContent: "space-between",
@@ -1889,7 +1896,7 @@ export function Cornerstone3DViewer({
 									}
 								>
 									<span>Нерв (2.0мм)</span>
-									<span style={{ fontSize: "10px", color: "#fbbf24" }}>
+									<span style={{ fontSize: "10px", color: "var(--amber-400, #fbbf24)" }}>
 										{(restoredMarkup?.nervePoints?.length ?? 0) > 0
 											? `[${restoredMarkup?.nervePoints?.length}]`
 											: "Трассировка"}
@@ -1911,7 +1918,7 @@ export function Cornerstone3DViewer({
 											activeTool === cornerstoneTools.ProbeTool.toolName
 												? "rgba(37,99,235,0.3)"
 												: "transparent",
-										color: "#fff",
+										color: "var(--ink, #fff)",
 									}}
 									onClick={() => {
 										setIsSecondaryMenuOpen(false);
@@ -1951,6 +1958,57 @@ export function Cornerstone3DViewer({
 									</div>
 								</div>
 
+								{/* Режим проекции среза MIP / Average */}
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "space-between",
+										padding: "4px 10px",
+										fontSize: "12px",
+										borderBottom: "1px solid rgba(255,255,255,0.08)",
+										marginBottom: "2px",
+									}}
+								>
+									<span style={{ color: "var(--muted, #a1a1aa)" }}>Проекция:</span>
+									<div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+										<button
+											type="button"
+											onClick={() => setBlendMode("mip")}
+											style={{
+												padding: "2px 6px",
+												fontSize: "11px",
+												fontWeight: blendMode === "mip" ? 600 : 400,
+												borderRadius: "4px",
+												border: "1px solid " + (blendMode === "mip" ? "var(--brand-primary, #06b6d4)" : "rgba(255,255,255,0.15)"),
+												backgroundColor: blendMode === "mip" ? "rgba(6,182,212,0.25)" : "transparent",
+												color: blendMode === "mip" ? "var(--cyan-400, #22d3ee)" : "var(--muted, #a1a1aa)",
+												cursor: "pointer",
+											}}
+											title="Максимальная интенсивность (MIP)"
+										>
+											MIP
+										</button>
+										<button
+											type="button"
+											onClick={() => setBlendMode("average")}
+											style={{
+												padding: "2px 6px",
+												fontSize: "11px",
+												fontWeight: blendMode === "average" ? 600 : 400,
+												borderRadius: "4px",
+												border: "1px solid " + (blendMode === "average" ? "var(--brand-primary, #06b6d4)" : "rgba(255,255,255,0.15)"),
+												backgroundColor: blendMode === "average" ? "rgba(6,182,212,0.25)" : "transparent",
+												color: blendMode === "average" ? "var(--cyan-400, #22d3ee)" : "var(--muted, #a1a1aa)",
+												cursor: "pointer",
+											}}
+											title="Усреднение интенсивности (Average)"
+										>
+											Ср.
+										</button>
+									</div>
+								</div>
+
 								<button
 									type="button"
 									style={{
@@ -1963,7 +2021,7 @@ export function Cornerstone3DViewer({
 										border: "none",
 										textAlign: "left",
 										backgroundColor: "transparent",
-										color: "#34d399",
+										color: "var(--emerald-400, #34d399)",
 										display: "flex",
 										alignItems: "center",
 										gap: "6px",
@@ -2036,7 +2094,7 @@ export function Cornerstone3DViewer({
 							cursor: "pointer",
 							border: "1px solid var(--brand-primary, #2563eb)",
 							backgroundColor: "var(--brand-primary, #2563eb)",
-							color: "#fff",
+							color: "var(--ink, #fff)",
 							display: "inline-flex",
 							alignItems: "center",
 							gap: "5px",
@@ -2060,7 +2118,7 @@ export function Cornerstone3DViewer({
 								width: "28px",
 								flexShrink: 0,
 								backgroundColor: "rgba(239,68,68,0.15)",
-								color: "#fca5a5",
+								color: "var(--rose-300, #fca5a5)",
 								padding: 0,
 								borderRadius: "6px",
 								border: "1px solid rgba(239,68,68,0.3)",
@@ -2103,7 +2161,7 @@ export function Cornerstone3DViewer({
 						boxShadow: "0 12px 32px -8px rgba(0, 0, 0, 0.75)",
 						padding: "6px 12px",
 						borderRadius: "10px",
-						color: "#f4f4f5",
+						color: "var(--ink, #f4f4f5)",
 						fontSize: "12px",
 					}}
 				>
@@ -2131,8 +2189,8 @@ export function Cornerstone3DViewer({
 										: "rgba(217, 119, 6, 0.2)",
 								color:
 									(restoredMarkup?.nervePoints?.length ?? 0) > 0
-										? "#34d399"
-										: "#fbbf24",
+										? "var(--emerald-400, #34d399)"
+										: "var(--amber-400, #fbbf24)",
 								fontWeight: "bold",
 								fontSize: "11px",
 							}}
@@ -2172,7 +2230,7 @@ export function Cornerstone3DViewer({
 								cursor: "pointer",
 								border: "1px solid rgba(255,255,255,0.15)",
 								backgroundColor: "rgba(255,255,255,0.08)",
-								color: "#e4e4e7",
+								color: "var(--ink-muted, #e4e4e7)",
 								transition: "all 0.15s",
 								display: "flex",
 								alignItems: "center",
@@ -2201,8 +2259,8 @@ export function Cornerstone3DViewer({
 										: "rgba(255,255,255,0.06)",
 								color:
 									(restoredMarkup?.nervePoints?.length ?? 0) >= 2
-										? "#fff"
-										: "#71717a",
+										? "var(--ink, #fff)"
+										: "var(--muted, #71717a)",
 								transition: "all 0.15s",
 								display: "flex",
 								alignItems: "center",
@@ -2226,7 +2284,7 @@ export function Cornerstone3DViewer({
 								cursor: "pointer",
 								border: "1px solid rgba(239,68,68,0.3)",
 								backgroundColor: "rgba(239,68,68,0.12)",
-								color: "#fca5a5",
+								color: "var(--rose-300, #fca5a5)",
 								transition: "all 0.15s",
 								display: "flex",
 								alignItems: "center",
@@ -2251,7 +2309,7 @@ export function Cornerstone3DViewer({
 								cursor: "pointer",
 								border: "none",
 								backgroundColor: "rgba(255,255,255,0.06)",
-								color: "#a1a1aa",
+								color: "var(--muted, #a1a1aa)",
 								transition: "all 0.15s",
 								display: "flex",
 								alignItems: "center",
@@ -2319,7 +2377,7 @@ export function Cornerstone3DViewer({
 						WebkitBackdropFilter: "blur(12px)",
 						borderRadius: "14px",
 						padding: "10px 14px",
-						border: `1.5px solid ${isNerveCollisionDanger ? "#ef4444" : isNerveUnmapped ? "#f59e0b" : "#10b981"}`,
+						border: `1.5px solid ${isNerveCollisionDanger ? "var(--rose-500, #ef4444)" : isNerveUnmapped ? "var(--amber-500, #f59e0b)" : "var(--emerald-500, #10b981)"}`,
 						boxShadow: isNerveCollisionDanger
 							? "0 0 20px rgba(239,68,68,0.4)"
 							: isNerveUnmapped
@@ -2336,10 +2394,10 @@ export function Cornerstone3DViewer({
 									alignItems: "center",
 									gap: "8px",
 									color: isNerveCollisionDanger
-										? "#fca5a5"
+										? "var(--rose-300, #fca5a5)"
 										: isNerveUnmapped
-											? "#fcd34d"
-											: "#6ee7b7",
+											? "var(--amber-300, #fcd34d)"
+											: "var(--emerald-300, #6ee7b7)",
 									fontSize: "12px",
 									fontWeight: "bold",
 								}}
@@ -2374,8 +2432,8 @@ export function Cornerstone3DViewer({
 							>
 								<span
 									style={{
-										backgroundColor: "#3b82f6",
-										color: "#fff",
+										backgroundColor: "var(--brand-primary, #3b82f6)",
+										color: "var(--ink, #fff)",
 										padding: "2px 6px",
 										borderRadius: "4px",
 										fontWeight: "bold",
@@ -2419,6 +2477,8 @@ export function Cornerstone3DViewer({
 					splinePoints={splinePoints}
 					onClose={() => {
 						setShowPanorex(false);
+						setPanorexVolume(null);
+						setSplinePoints([]);
 						setArchSummary(null);
 					}}
 					thickness={panorexThickness}
@@ -2436,12 +2496,12 @@ export function Cornerstone3DViewer({
 					gridTemplateColumns: "1fr 1fr",
 					gridTemplateRows: "1fr 1fr",
 					gap: "2px",
-					backgroundColor: "#262626",
+					backgroundColor: "var(--line, #262626)",
 					padding: "2px",
 				}}
 			>
 				{/* AXIAL */}
-				<div style={{ position: "relative", backgroundColor: "#000" }}>
+				<div style={{ position: "relative", backgroundColor: "var(--paper-contrast, #000)" }}>
 					<div
 						style={{
 							position: "absolute",
@@ -2451,7 +2511,7 @@ export function Cornerstone3DViewer({
 							borderRadius: "4px",
 							backgroundColor: "rgba(0,0,0,0.6)",
 							backdropFilter: "blur(4px)",
-							color: "#f87171",
+							color: "var(--rose-400, #f87171)",
 							fontSize: "11px",
 							fontWeight: "bold",
 							letterSpacing: "0.05em",
@@ -2477,7 +2537,7 @@ export function Cornerstone3DViewer({
 				</div>
 
 				{/* SAGITTAL */}
-				<div style={{ position: "relative", backgroundColor: "#000" }}>
+				<div style={{ position: "relative", backgroundColor: "var(--paper-contrast, #000)" }}>
 					<div
 						style={{
 							position: "absolute",
@@ -2487,7 +2547,7 @@ export function Cornerstone3DViewer({
 							borderRadius: "4px",
 							backgroundColor: "rgba(0,0,0,0.6)",
 							backdropFilter: "blur(4px)",
-							color: "#4ade80",
+							color: "var(--emerald-400, #4ade80)",
 							fontSize: "11px",
 							fontWeight: "bold",
 							letterSpacing: "0.05em",
@@ -2517,7 +2577,7 @@ export function Cornerstone3DViewer({
 				</div>
 
 				{/* CORONAL */}
-				<div style={{ position: "relative", backgroundColor: "#000" }}>
+				<div style={{ position: "relative", backgroundColor: "var(--paper-contrast, #000)" }}>
 					<div
 						style={{
 							position: "absolute",
@@ -2527,7 +2587,7 @@ export function Cornerstone3DViewer({
 							borderRadius: "4px",
 							backgroundColor: "rgba(0,0,0,0.6)",
 							backdropFilter: "blur(4px)",
-							color: "#60a5fa",
+							color: "var(--brand-primary, #60a5fa)",
 							fontSize: "11px",
 							fontWeight: "bold",
 							letterSpacing: "0.05em",
@@ -2586,7 +2646,7 @@ export function Cornerstone3DViewer({
 							style={{
 								padding: "16px",
 								textAlign: "center",
-								color: "#71717a",
+								color: "var(--muted, #71717a)",
 								fontSize: "12px",
 								maxWidth: "320px",
 								lineHeight: 1.5,
@@ -2633,9 +2693,9 @@ export function Cornerstone3DViewer({
 								<span
 									style={{
 										backgroundColor: isNerveCollisionDanger
-											? "#ef4444"
-											: "#10b981",
-										color: "#fff",
+											? "var(--rose-600, #ef4444)"
+											: "var(--emerald-600, #10b981)",
+										color: "var(--ink, #fff)",
 										padding: "2px 8px",
 										borderRadius: "6px",
 										fontSize: "11px",
@@ -2659,11 +2719,11 @@ export function Cornerstone3DViewer({
 										backgroundColor: "rgba(0,0,0,0.35)",
 										border: "1px solid rgba(255,255,255,0.1)",
 										fontSize: "11px",
-										color: "#e4e4e7",
+										color: "var(--ink-muted, #e4e4e7)",
 										lineHeight: 1.4,
 									}}
 								>
-									<span style={{ fontWeight: "bold", color: "#60a5fa" }}>
+									<span style={{ fontWeight: "bold", color: "var(--brand-primary, #60a5fa)" }}>
 										Рекомендация по сверлению:{" "}
 									</span>
 									{latestImplant.boneDensity.drillingAdvice}
@@ -2677,10 +2737,10 @@ export function Cornerstone3DViewer({
 										padding: "8px 10px",
 										borderRadius: "8px",
 										backgroundColor: "rgba(239,68,68,0.3)",
-										border: "1px solid #ef4444",
+										border: "1px solid var(--rose-500, #ef4444)",
 										fontSize: "12px",
 										fontWeight: "bold",
-										color: "#fca5a5",
+										color: "var(--rose-300, #fca5a5)",
 										display: "flex",
 										alignItems: "center",
 										gap: "6px",

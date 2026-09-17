@@ -528,8 +528,8 @@ export class AudioStreamManager {
 	}
 
 	public stop(): Int16Array {
-		this.flushCurrentSpeechSegment("manual_stop");
 		const combined = this.exportCombinedInt16Array();
+		this.flushCurrentSpeechSegment("manual_stop");
 		this.dispose();
 		return combined;
 	}
@@ -553,6 +553,7 @@ export class AudioStreamManager {
 
 		if (this.workletNode) {
 			try {
+				this.workletNode.port.onmessage = null;
 				this.workletNode.disconnect();
 			} catch {}
 			this.workletNode = null;
@@ -560,6 +561,7 @@ export class AudioStreamManager {
 
 		if (this.scriptProcessorNode) {
 			try {
+				this.scriptProcessorNode.onaudioprocess = null;
 				this.scriptProcessorNode.disconnect();
 			} catch {}
 			this.scriptProcessorNode = null;
@@ -623,9 +625,13 @@ export class AudioStreamManager {
 			this.mediaStream = null;
 		}
 
+		// Очищаем накопленные многомегабайтные буферы PCM в оперативной памяти
+		this.sessionPcmChunks = [];
+		this.totalSessionSamples = 0;
+
 		if (this.audioContext && this.audioContext.state !== "closed") {
 			try {
-				this.audioContext.close();
+				void this.audioContext.close().catch(() => {});
 			} catch {}
 			this.audioContext = null;
 		}

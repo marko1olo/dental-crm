@@ -24,6 +24,7 @@
 
 import {
 	createMemoryLruCache,
+	estimateObjectByteSize,
 	getOptimizedTiming,
 	MemoryLruCache,
 } from "../utils/lowSpecHddOptimizer";
@@ -35,7 +36,7 @@ export interface CachedApiResponse<T = unknown> {
 	readonly headers: Record<string, string>;
 	readonly url: string;
 	readonly timestamp: number;
-	readonly ttlMs: number;
+	readonly ttlMs: number | null;
 }
 
 export interface CatalogCacheRule {
@@ -51,8 +52,8 @@ export interface MutationInvalidationRule {
 }
 
 export interface CachedFetchOptions {
-	/** Индивидуальное время жизни записи в миллисекундах */
-	readonly ttlMs?: number;
+	/** Индивидуальное время жизни записи в миллисекундах (null = бессрочно) */
+	readonly ttlMs?: number | null;
 	/** Принудительное обновление кэша (игнорирует существующую запись) */
 	readonly forceRefresh?: boolean;
 	/** Полный обход кэша без сохранения результата */
@@ -74,6 +75,10 @@ export interface ApiCacheStats {
 	readonly inFlightCount: number;
 	/** Текущее количество записей в оперативной памяти */
 	readonly cachedEntriesCount: number;
+	/** Текущий объем кэша в оперативной памяти (в байтах) */
+	readonly cachedBytesCount: number;
+	/** Максимальный лимит размера кэша в байтах (не более 50 МБ на слабом ПК) */
+	readonly maxCacheBytes: number;
 }
 
 /**
@@ -82,15 +87,21 @@ export interface ApiCacheStats {
 export const STATUTORY_CATALOG_RULES: readonly CatalogCacheRule[] = [
 	{
 		id: "nomenclature-804n",
-		pattern: /^\/api\/nomenclature(?:\/|\?|$)/i,
+		pattern: /^\/api\/(?:clinical\/)?(?:nomenclature|804n)(?:\/|\?|$)/i,
 		defaultTtlMs: 30 * 60 * 1000, // 30 минут — эталон Минздрава меняется крайне редко
 		description: "Номенклатура медицинских услуг Минздрава 804н",
 	},
 	{
 		id: "icd10-diagnosis",
-		pattern: /^\/api\/icd10(?:\/|\?|$)/i,
+		pattern: /^\/api\/(?:clinical\/)?(?:icd10|icd-10|mkb10|mkb-10|classifiers)(?:\/|\?|$)/i,
 		defaultTtlMs: 30 * 60 * 1000, // 30 минут — справочник МКБ-10
 		description: "Справочник диагнозов МКБ-10",
+	},
+	{
+		id: "clinical-somatic-templates",
+		pattern: /^\/api\/(?:templates|document-templates|emr\/templates|somatic(?:-status|-templates)?)(?:\/|\?|$)/i,
+		defaultTtlMs: 20 * 60 * 1000, // 20 минут — клинические протоколы, шаблоны 043/у и соматические статусы
+		description: "Клинические протоколы, шаблоны 043/у, соматические статусы и ИДС",
 	},
 	{
 		id: "catalog-services-pricelists",
@@ -128,6 +139,18 @@ export const STATUTORY_CATALOG_RULES: readonly CatalogCacheRule[] = [
 		defaultTtlMs: 5 * 60 * 1000, // 5 минут
 		description: "Справочник завершений клинических фаз",
 	},
+	{
+		id: "pharmacology-references",
+		pattern: /^\/api\/pharmacology\/(?:references|interactions-matrix)(?:\/|\?|$)/i,
+		defaultTtlMs: 30 * 60 * 1000, // 30 минут
+		description: "Справочники фармакологии и матрица совместимости препаратов",
+	},
+	{
+		id: "sanpin-references",
+		pattern: /^\/api\/sanpin\/references(?:\/|\?|$)/i,
+		defaultTtlMs: 30 * 60 * 1000, // 30 минут
+		description: "Нормативы СанПиН и справочники стерилизации",
+	},
 ] as const;
 
 /**
@@ -152,6 +175,15 @@ export const DEFAULT_MUTATION_RULES: readonly MutationInvalidationRule[] = [
 			/^\/api\/settings\/price/i,
 			/^\/api\/catalog/i,
 			/^\/api\/price-lists/i,
+		],
+	},
+	{
+		mutationPattern: /^\/api\/(?:templates|document-templates|emr\/templates|somatic)(?:\/|\?|$)/i,
+		invalidatePatterns: [
+			/^\/api\/templates/i,
+			/^\/api\/document-templates/i,
+			/^\/api\/emr\/templates/i,
+			/^\/api\/somatic/i,
 		],
 	},
 	{
@@ -181,6 +213,50 @@ let statsMisses = 0;
 let statsCoalesced = 0;
 let statsInvalidations = 0;
 
+let ttlPruneInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Запускает периодическую фоновую очистку просроченных записей по TTL.
+ */
+export function startApiCacheTtlPruning(): void {
+	if (ttlPruneInterval || typeof setInterval === "undefined") return;
+	const timing = getOptimizedTiming();
+	ttlPruneInterval = setInterval(() => {
+		if (apiCacheInstance) {
+			const pruned = apiCacheInstance.pruneExpired();
+			if (pruned > 0) {
+				statsInvalidations += pruned;
+			}
+		}
+	}, timing.cachePruneIntervalMs);
+
+	if (
+		ttlPruneInterval &&
+		typeof ttlPruneInterval === "object" &&
+		"unref" in ttlPruneInterval &&
+		typeof (ttlPruneInterval as { unref: () => void }).unref === "function"
+	) {
+		(ttlPruneInterval as { unref: () => void }).unref();
+	}
+
+	if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+		const cleanup = () => {
+			stopApiCacheTtlPruning();
+		};
+		window.addEventListener("beforeunload", cleanup, { once: true });
+	}
+}
+
+/**
+ * Останавливает фоновую очистку просроченных записей.
+ */
+export function stopApiCacheTtlPruning(): void {
+	if (ttlPruneInterval) {
+		clearInterval(ttlPruneInterval);
+		ttlPruneInterval = null;
+	}
+}
+
 /**
  * Возвращает синглтон In-Memory LRU кэша для API.
  */
@@ -189,8 +265,14 @@ export function getApiCache(): MemoryLruCache<string, CachedApiResponse<unknown>
 		const timing = getOptimizedTiming();
 		apiCacheInstance = createMemoryLruCache<string, CachedApiResponse<unknown>>({
 			maxEntries: timing.maxLruCacheEntries,
+			maxBytes: timing.maxLruCacheBytes,
 			defaultTtlMs: timing.defaultCacheTtlMs,
+			sizeCalculator: (entry) => {
+				const dataBytes = estimateObjectByteSize(entry.data);
+				return dataBytes + (entry.url ? entry.url.length * 2 : 64) + 256;
+			},
 		});
+		startApiCacheTtlPruning();
 	}
 	return apiCacheInstance;
 }
@@ -286,11 +368,20 @@ export function getCachedApiResponse<T = unknown>(url: string): CachedApiRespons
 export function setCachedApiResponse<T = unknown>(
 	url: string,
 	data: T,
-	meta?: { status?: number; statusText?: string; headers?: Record<string, string>; ttlMs?: number },
+	meta?: { status?: number; statusText?: string; headers?: Record<string, string>; ttlMs?: number | null },
 ): void {
 	const key = normalizeApiUrl(url);
 	const rule = matchCatalogRule(key);
-	const ttlMs = meta?.ttlMs ?? rule?.defaultTtlMs ?? getOptimizedTiming().defaultCacheTtlMs;
+	const ttlMs: number | null =
+		meta?.ttlMs !== undefined
+			? meta.ttlMs
+			: (rule?.defaultTtlMs ?? getOptimizedTiming().defaultCacheTtlMs);
+
+	// Защита от раздувания кучи гигантскими ответами на слабом ПК (> 10 МБ)
+	const estimatedBytes = estimateObjectByteSize(data);
+	if (estimatedBytes > 10 * 1024 * 1024) {
+		return;
+	}
 
 	const entry: CachedApiResponse<T> = {
 		data,
@@ -436,7 +527,7 @@ export async function cachedApiFetch<T = unknown>(
 				status: response.status,
 				statusText: response.statusText,
 				headers: headersToRecord(response.headers),
-				ttlMs: options?.ttlMs,
+				...(options?.ttlMs !== undefined ? { ttlMs: options.ttlMs } : {}),
 			});
 		}
 
@@ -496,13 +587,17 @@ export async function cachedApiFetchResponse(
  * Возвращает статистику использования кэша.
  */
 export function getApiCacheStats(): ApiCacheStats {
+	const cache = getApiCache();
+	const stats = cache.getStats();
 	return {
 		hits: statsHits,
 		misses: statsMisses,
 		coalescedRequests: statsCoalesced,
 		invalidations: statsInvalidations,
 		inFlightCount: inFlightRequests.size,
-		cachedEntriesCount: getApiCache().size,
+		cachedEntriesCount: cache.size,
+		cachedBytesCount: stats.currentBytes,
+		maxCacheBytes: stats.maxBytes,
 	};
 }
 

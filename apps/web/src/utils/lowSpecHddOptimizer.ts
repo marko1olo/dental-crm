@@ -45,10 +45,14 @@ export interface OptimizedTimingConfig {
 	readonly backgroundSyncIntervalMs: number;
 	/** Максимальное количество записей в in-memory LRU кэше */
 	readonly maxLruCacheEntries: number;
+	/** Максимальный размер LRU кэша в байтах (не более 50 МБ на слабом ПК) */
+	readonly maxLruCacheBytes: number;
 	/** Время жизни кэша по умолчанию (мс) */
 	readonly defaultCacheTtlMs: number;
 	/** Отключение агрессивной предзагрузки для экономии дисковых и сетевых ресурсов */
 	readonly disableAggressivePrefetch: boolean;
+	/** Интервал периодической очистки устаревших записей по TTL (мс) */
+	readonly cachePruneIntervalMs: number;
 }
 
 /** Внутренний переключатель для принудительного включения/отключения оптимизации (тесты, настройки) */
@@ -158,10 +162,14 @@ export function getOptimizedTiming(): OptimizedTimingConfig {
 			backgroundSyncIntervalMs: 120_000,
 			// Компактный размер кэша для сохранения RAM при 2-4 ГБ
 			maxLruCacheEntries: 300,
+			// Максимальный размер кэша в RAM (40 МБ — жестко меньше 50 МБ для low-spec ПК)
+			maxLruCacheBytes: 40 * 1024 * 1024,
 			// 5 минут TTL по умолчанию
 			defaultCacheTtlMs: 300_000,
 			// Отключение агрессивной предзагрузки
 			disableAggressivePrefetch: true,
+			// Фоновая очистка устаревших по TTL записей каждую минуту
+			cachePruneIntervalMs: 60_000,
 		};
 	}
 
@@ -171,8 +179,10 @@ export function getOptimizedTiming(): OptimizedTimingConfig {
 		batchFlushDelayMs: 500,
 		backgroundSyncIntervalMs: 30_000,
 		maxLruCacheEntries: 1200,
+		maxLruCacheBytes: 100 * 1024 * 1024,
 		defaultCacheTtlMs: 300_000,
 		disableAggressivePrefetch: false,
+		cachePruneIntervalMs: 60_000,
 	};
 }
 
@@ -180,36 +190,68 @@ export function getOptimizedTiming(): OptimizedTimingConfig {
 // IN-MEMORY LRU CACHE (ZERO-DISK, 0 MS ACCESS)
 // ---------------------------------------------------------------------------
 
-export interface MemoryLruCacheOptions {
+/**
+ * Оценивает приблизительный размер JavaScript значения в байтах для защиты кучи (heap memory).
+ */
+export function estimateObjectByteSize(val: unknown): number {
+	if (val === null || val === undefined) return 8;
+	if (typeof val === "boolean") return 4;
+	if (typeof val === "number") return 8;
+	if (typeof val === "string") return val.length * 2;
+	if (val instanceof ArrayBuffer) return val.byteLength;
+	if (ArrayBuffer.isView(val)) return val.byteLength;
+	if (typeof val === "object") {
+		try {
+			const json = JSON.stringify(val);
+			return json ? json.length * 2 : 128;
+		} catch {
+			return 256;
+		}
+	}
+	return 64;
+}
+
+export interface MemoryLruCacheOptions<V = unknown> {
 	/** Максимальное количество элементов до срабатывания вытеснения */
 	readonly maxEntries?: number;
 	/** Время жизни записей по умолчанию в миллисекундах (null = бессрочно до вытеснения) */
-	readonly defaultTtlMs?: number | null;
+	readonly defaultTtlMs?: number | null | undefined;
+	/** Максимальный суммарный размер кэша в байтах (на слабом ПК <= 50 МБ) */
+	readonly maxBytes?: number | undefined;
+	/** Пользовательская функция расчета размера значения в байтах */
+	readonly sizeCalculator?: ((value: V) => number) | undefined;
 }
 
 interface CacheEntry<V> {
 	readonly value: V;
 	readonly expiresAt: number | null;
+	readonly byteSize: number;
 }
 
 /**
- * Быстрый In-Memory LRU кэш на основе Map.
+ * Быстрый In-Memory LRU кэш на основе Map с контролем TTL и потолка памяти (байтов).
  *
  * Преимущества:
  * - O(1) доступ и O(1) вытеснение благодаря порядку ключей JavaScript Map.
  * - При вызове get() запись перемещается в конец очереди (самая свежая).
  * - Нулевое обращение к диску (HDD не дергается).
+ * - Двойной контроль: вытеснение по числу записей И по объему байтов в RAM (потолок 50 МБ).
  * - Поддержка индивидуального и глобального TTL.
  */
 export class MemoryLruCache<K extends string | number, V> {
 	private readonly map = new Map<K, CacheEntry<V>>();
 	private readonly maxEntries: number;
 	private readonly defaultTtlMs: number | null;
+	private readonly maxBytes: number;
+	private readonly sizeCalculator?: ((value: V) => number) | undefined;
+	private currentBytes = 0;
 
-	constructor(options?: MemoryLruCacheOptions) {
+	constructor(options?: MemoryLruCacheOptions<V>) {
 		const timing = getOptimizedTiming();
 		this.maxEntries = options?.maxEntries ?? timing.maxLruCacheEntries;
 		this.defaultTtlMs = options?.defaultTtlMs !== undefined ? options.defaultTtlMs : timing.defaultCacheTtlMs;
+		this.maxBytes = options?.maxBytes ?? timing.maxLruCacheBytes;
+		this.sizeCalculator = options?.sizeCalculator;
 	}
 
 	/**
@@ -224,6 +266,7 @@ export class MemoryLruCache<K extends string | number, V> {
 		}
 
 		if (entry.expiresAt !== null && Date.now() > entry.expiresAt) {
+			this.currentBytes = Math.max(0, this.currentBytes - entry.byteSize);
 			this.map.delete(key);
 			return undefined;
 		}
@@ -235,23 +278,49 @@ export class MemoryLruCache<K extends string | number, V> {
 	}
 
 	/**
-	 * Сохраняет значение в кэш с опциональным индивидуальным TTL.
+	 * Сохраняет значение в кэш с опциональным индивидуальным TTL и контролем размера памяти.
 	 */
-	set(key: K, value: V, customTtlMs?: number | null): void {
+	set(key: K, value: V, customTtlMs?: number | null | undefined): void {
+		const byteSize = this.sizeCalculator
+			? this.sizeCalculator(value)
+			: estimateObjectByteSize(value);
+
 		if (this.map.has(key)) {
-			this.map.delete(key);
-		} else if (this.map.size >= this.maxEntries) {
-			// Вытесняем наименее используемый элемент (первый ключ в Map)
-			const oldestKey = this.map.keys().next().value;
-			if (oldestKey !== undefined) {
-				this.map.delete(oldestKey);
+			const existing = this.map.get(key);
+			if (existing) {
+				this.currentBytes = Math.max(0, this.currentBytes - existing.byteSize);
 			}
+			this.map.delete(key);
+		}
+
+		// Если превышен лимит записей или байтов — сначала удаляем просроченные по TTL
+		if (
+			this.map.size >= this.maxEntries ||
+			(this.currentBytes + byteSize > this.maxBytes && this.map.size > 0)
+		) {
+			this.pruneExpired();
+		}
+
+		// Вытесняем старейшие записи (LRU) до освобождения достаточного объема
+		while (
+			this.map.size > 0 &&
+			(this.map.size >= this.maxEntries ||
+				(this.currentBytes + byteSize > this.maxBytes && this.map.size > 0))
+		) {
+			const oldestKey = this.map.keys().next().value;
+			if (oldestKey === undefined) break;
+			const oldestEntry = this.map.get(oldestKey);
+			if (oldestEntry) {
+				this.currentBytes = Math.max(0, this.currentBytes - oldestEntry.byteSize);
+			}
+			this.map.delete(oldestKey);
 		}
 
 		const ttl = customTtlMs !== undefined ? customTtlMs : this.defaultTtlMs;
 		const expiresAt = ttl !== null && ttl > 0 ? Date.now() + ttl : null;
 
-		this.map.set(key, { value, expiresAt });
+		this.map.set(key, { value, expiresAt, byteSize });
+		this.currentBytes += byteSize;
 	}
 
 	/**
@@ -265,7 +334,12 @@ export class MemoryLruCache<K extends string | number, V> {
 	 * Удаляет запись по ключу.
 	 */
 	delete(key: K): boolean {
-		return this.map.delete(key);
+		const entry = this.map.get(key);
+		if (entry) {
+			this.currentBytes = Math.max(0, this.currentBytes - entry.byteSize);
+			return this.map.delete(key);
+		}
+		return false;
 	}
 
 	/**
@@ -273,6 +347,7 @@ export class MemoryLruCache<K extends string | number, V> {
 	 */
 	clear(): void {
 		this.map.clear();
+		this.currentBytes = 0;
 	}
 
 	/**
@@ -280,6 +355,13 @@ export class MemoryLruCache<K extends string | number, V> {
 	 */
 	get size(): number {
 		return this.map.size;
+	}
+
+	/**
+	 * Текущий объем данных в оперативной памяти (в байтах).
+	 */
+	get currentByteSize(): number {
+		return this.currentBytes;
 	}
 
 	/**
@@ -297,6 +379,7 @@ export class MemoryLruCache<K extends string | number, V> {
 		const now = Date.now();
 		for (const [key, entry] of this.map.entries()) {
 			if (entry.expiresAt !== null && now > entry.expiresAt) {
+				this.currentBytes = Math.max(0, this.currentBytes - entry.byteSize);
 				this.map.delete(key);
 			} else {
 				result.push(entry.value);
@@ -313,6 +396,7 @@ export class MemoryLruCache<K extends string | number, V> {
 		const now = Date.now();
 		for (const [key, entry] of this.map.entries()) {
 			if (entry.expiresAt !== null && now > entry.expiresAt) {
+				this.currentBytes = Math.max(0, this.currentBytes - entry.byteSize);
 				this.map.delete(key);
 			} else {
 				result.push([key, entry.value]);
@@ -330,6 +414,7 @@ export class MemoryLruCache<K extends string | number, V> {
 		let prunedCount = 0;
 		for (const [key, entry] of this.map.entries()) {
 			if (entry.expiresAt !== null && now > entry.expiresAt) {
+				this.currentBytes = Math.max(0, this.currentBytes - entry.byteSize);
 				this.map.delete(key);
 				prunedCount++;
 			}
@@ -340,11 +425,19 @@ export class MemoryLruCache<K extends string | number, V> {
 	/**
 	 * Возвращает статистику использования кэша.
 	 */
-	getStats(): { size: number; maxEntries: number; defaultTtlMs: number | null } {
+	getStats(): {
+		size: number;
+		maxEntries: number;
+		defaultTtlMs: number | null;
+		currentBytes: number;
+		maxBytes: number;
+	} {
 		return {
 			size: this.map.size,
 			maxEntries: this.maxEntries,
 			defaultTtlMs: this.defaultTtlMs,
+			currentBytes: this.currentBytes,
+			maxBytes: this.maxBytes,
 		};
 	}
 }
@@ -353,7 +446,7 @@ export class MemoryLruCache<K extends string | number, V> {
  * Фабричная функция для создания In-Memory LRU кэша.
  */
 export function createMemoryLruCache<K extends string | number, V>(
-	options?: MemoryLruCacheOptions,
+	options?: MemoryLruCacheOptions<V>,
 ): MemoryLruCache<K, V> {
 	return new MemoryLruCache<K, V>(options);
 }

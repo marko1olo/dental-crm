@@ -47,6 +47,18 @@ export function useWebsocket(url: string) {
 		if (ws.current?.readyState === WebSocket.OPEN) return;
 		if (ws.current?.readyState === WebSocket.CONNECTING) return;
 
+		// Полная очистка предыдущего сокета (включая состояние CLOSING) перед созданием нового
+		if (ws.current) {
+			ws.current.onopen = null;
+			ws.current.onmessage = null;
+			ws.current.onerror = null;
+			ws.current.onclose = null;
+			try {
+				ws.current.close();
+			} catch {}
+			ws.current = null;
+		}
+
 		const socket = new WebSocket(url);
 		ws.current = socket;
 
@@ -83,12 +95,19 @@ export function useWebsocket(url: string) {
 		socket.onclose = () => {
 			setIsConnected(false);
 			if (closedByUs.current) return;
+			if (reconnectTimeout.current) {
+				clearTimeout(reconnectTimeout.current);
+				reconnectTimeout.current = null;
+			}
 			const delay = Math.min(
 				RECONNECT_BASE_MS * 2 ** attempts.current,
 				RECONNECT_MAX_MS,
 			);
 			attempts.current += 1;
-			reconnectTimeout.current = setTimeout(connect, delay);
+			// Случайный джиттер ±20% для исключения thundering herd при одновременном реконнекте вкладок
+			const jitter = delay * 0.2 * (Math.random() - 0.5);
+			const effectiveDelay = Math.max(RECONNECT_BASE_MS, Math.round(delay + jitter));
+			reconnectTimeout.current = setTimeout(connect, effectiveDelay);
 		};
 
 		socket.onerror = () => {

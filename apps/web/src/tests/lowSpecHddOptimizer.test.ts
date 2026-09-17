@@ -122,6 +122,26 @@ describe("lowSpecHddOptimizer — In-Memory LRU Cache (RAM, 0 ms)", () => {
 		assert.strictEqual(cache.size, 0);
 		assert.strictEqual(cache.get("k1"), undefined);
 	});
+
+	it("вытесняет элементы по превышению лимита байтов (RAM byte budget)", () => {
+		const cache = new MemoryLruCache<string, string>({
+			maxEntries: 100,
+			maxBytes: 100, // 100 байт лимит
+			sizeCalculator: (str) => str.length,
+		});
+
+		cache.set("item1", "1234567890123456789012345678901234567890"); // 40 bytes
+		cache.set("item2", "1234567890123456789012345678901234567890"); // 40 bytes
+		assert.strictEqual(cache.size, 2);
+		assert.strictEqual(cache.currentByteSize, 80);
+
+		// Добавляем item3 (40 bytes): 80 + 40 = 120 > 100 -> item1 должен быть вытеснен
+		cache.set("item3", "1234567890123456789012345678901234567890");
+		assert.strictEqual(cache.has("item1"), false, "item1 должен быть вытеснен по превышению maxBytes");
+		assert.strictEqual(cache.has("item2"), true);
+		assert.strictEqual(cache.has("item3"), true);
+		assert.ok(cache.currentByteSize <= 100);
+	});
 });
 
 describe("lowSpecHddOptimizer — DebouncedBatchFlusher (пакетная отложенная запись)", () => {
@@ -228,16 +248,24 @@ describe("lowSpecHddOptimizer — createDebouncedAction", () => {
 describe("apiCacheEngine — Кэширование справочников в RAM и инвалидация", () => {
 	it("распознает канонические пути стоматологических справочников", () => {
 		assert.strictEqual(isCacheableCatalogUrl("/api/nomenclature"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/clinical/804n"), true);
 		assert.strictEqual(isCacheableCatalogUrl("/api/nomenclature?query=caries"), true);
 		assert.strictEqual(isCacheableCatalogUrl("/api/icd10"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/clinical/icd10"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/templates"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/document-templates"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/somatic-status"), true);
 		assert.strictEqual(isCacheableCatalogUrl("/api/settings/price"), true);
 		assert.strictEqual(isCacheableCatalogUrl("/api/catalog/services"), true);
 		assert.strictEqual(isCacheableCatalogUrl("/api/settings/staff"), true);
 		assert.strictEqual(isCacheableCatalogUrl("/api/settings/clinic"), true);
 		assert.strictEqual(isCacheableCatalogUrl("/api/clinical/rules"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/references"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/sanpin/references"), true);
 
 		// Небезопасные методы или транзакционные маршруты НЕ должны кэшироваться
 		assert.strictEqual(isCacheableCatalogUrl("/api/nomenclature", "POST"), false);
+		assert.strictEqual(isCacheableCatalogUrl("/api/templates", "POST"), false);
 		assert.strictEqual(isCacheableCatalogUrl("/api/visits/quick"), false);
 		assert.strictEqual(isCacheableCatalogUrl("/api/auth/login"), false);
 		assert.strictEqual(isCacheableCatalogUrl("/api/invoices/pay"), false);
@@ -282,6 +310,25 @@ describe("apiCacheEngine — Кэширование справочников в 
 		// Мутация прайс-листа: PUT /api/settings/price
 		notifyApiMutation("/api/settings/price", "PUT");
 		assert.strictEqual(getCachedApiResponse("/api/settings/price"), undefined);
+
+		// Кэширование и инвалидация шаблонов 043/у и соматических статусов
+		setCachedApiResponse("/api/templates", [{ id: "tmpl-1", title: "Лечение кариеса" }]);
+		setCachedApiResponse("/api/somatic-status", [{ id: "som-1", label: "Аллергоанамнез" }]);
+		assert.ok(getCachedApiResponse("/api/templates"));
+		assert.ok(getCachedApiResponse("/api/somatic-status"));
+
+		notifyApiMutation("/api/templates/update", "POST");
+		assert.strictEqual(getCachedApiResponse("/api/templates"), undefined);
+		assert.strictEqual(getCachedApiResponse("/api/somatic-status"), undefined);
+	});
+
+	it("поддерживает строгое типизирование ttlMs и бессрочное хранение (null)", () => {
+		clearApiCache();
+		setCachedApiResponse("/api/clinical/804n", { count: 3500 }, { ttlMs: null });
+		const entry = getCachedApiResponse<{ count: number }>("/api/clinical/804n");
+		assert.ok(entry);
+		assert.strictEqual(entry?.data.count, 3500);
+		assert.strictEqual(entry?.ttlMs, null);
 	});
 });
 

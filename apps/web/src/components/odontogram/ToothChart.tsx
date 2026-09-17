@@ -1,6 +1,6 @@
 import { Settings, Sparkles, Trash2, Zap } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, memo, useRef, useState } from "react";
 import { getToothConfig, getToothPath } from "../../utils/math/toothGeometry";
 import {
 	getNextFocusedTooth,
@@ -1140,34 +1140,7 @@ export const DenteToothSvgDefs: React.FC = () => (
 	</svg>
 );
 
-const ToothSVG = ({
-	number,
-	state,
-	scale,
-	material,
-	canalObturation,
-	hasPost,
-	postType,
-	boneLossLevel,
-	boneLossType,
-	rootResorptionStage,
-	periapicalLesion,
-	pocketDepth,
-	pocketDepthMm,
-	maxPocketDepth,
-	isSelected,
-	selectedTeeth,
-	activeStamp,
-	onClick,
-	onQuickStateChange,
-	onResorptionChange,
-	pediatricMode,
-	surfaces,
-	useSurfaces,
-	showPulpAndCanals,
-	showPeriapicalHalos = true,
-	showPeriodontalBoneLoss = true,
-}: {
+export interface ToothSvgProps {
 	number: number;
 	state: ToothState;
 	scale: number;
@@ -1194,7 +1167,95 @@ const ToothSVG = ({
 	showPulpAndCanals?: boolean | undefined;
 	showPeriapicalHalos?: boolean | undefined;
 	showPeriodontalBoneLoss?: boolean | undefined;
-}) => {
+}
+
+function areSurfacesEqual(
+	a?: readonly string[] | string[] | undefined,
+	b?: readonly string[] | string[] | undefined,
+): boolean {
+	if (a === b) return true;
+	if (!a || !b) return !a && !b;
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		if (a[i] !== b[i]) return false;
+	}
+	return true;
+}
+
+function areToothSvgPropsEqual(
+	prev: ToothSvgProps,
+	next: ToothSvgProps,
+): boolean {
+	if (prev.number !== next.number) return false;
+	if (prev.state !== next.state) return false;
+	if (prev.scale !== next.scale) return false;
+	if (prev.material !== next.material) return false;
+	if (prev.canalObturation !== next.canalObturation) return false;
+	if (prev.hasPost !== next.hasPost) return false;
+	if (prev.postType !== next.postType) return false;
+	if (prev.boneLossLevel !== next.boneLossLevel) return false;
+	if (prev.boneLossType !== next.boneLossType) return false;
+	if (prev.rootResorptionStage !== next.rootResorptionStage) return false;
+	if (prev.periapicalLesion !== next.periapicalLesion) return false;
+	if (prev.pocketDepth !== next.pocketDepth) return false;
+	if (prev.pocketDepthMm !== next.pocketDepthMm) return false;
+	if (prev.maxPocketDepth !== next.maxPocketDepth) return false;
+	if (prev.isSelected !== next.isSelected) return false;
+	if (prev.activeStamp !== next.activeStamp) return false;
+	if (prev.pediatricMode !== next.pediatricMode) return false;
+	if (prev.useSurfaces !== next.useSurfaces) return false;
+	if (prev.showPulpAndCanals !== next.showPulpAndCanals) return false;
+	if (prev.showPeriapicalHalos !== next.showPeriapicalHalos) return false;
+	if (prev.showPeriodontalBoneLoss !== next.showPeriodontalBoneLoss) return false;
+	if (prev.onClick !== next.onClick) return false;
+	if (prev.onQuickStateChange !== next.onQuickStateChange) return false;
+	if (prev.onResorptionChange !== next.onResorptionChange) return false;
+	if (!areSurfacesEqual(prev.surfaces, next.surfaces)) return false;
+
+	if (
+		(prev.isSelected || next.isSelected) &&
+		prev.selectedTeeth !== next.selectedTeeth
+	) {
+		const prevLen = prev.selectedTeeth?.length ?? 0;
+		const nextLen = next.selectedTeeth?.length ?? 0;
+		if (prevLen !== nextLen) return false;
+		if (prevLen > 0) {
+			for (let i = 0; i < prevLen; i++) {
+				if (prev.selectedTeeth![i] !== next.selectedTeeth![i]) return false;
+			}
+		}
+	}
+	return true;
+}
+
+const ToothSVG: React.FC<ToothSvgProps> = memo(({
+	number,
+	state,
+	scale,
+	material,
+	canalObturation,
+	hasPost,
+	postType,
+	boneLossLevel,
+	boneLossType,
+	rootResorptionStage,
+	periapicalLesion,
+	pocketDepth,
+	pocketDepthMm,
+	maxPocketDepth,
+	isSelected,
+	selectedTeeth,
+	activeStamp,
+	onClick,
+	onQuickStateChange,
+	onResorptionChange,
+	pediatricMode,
+	surfaces,
+	useSurfaces,
+	showPulpAndCanals,
+	showPeriapicalHalos = true,
+	showPeriodontalBoneLoss = true,
+}: ToothSvgProps) => {
 	const effectivePocketDepth = pocketDepth ?? pocketDepthMm ?? maxPocketDepth;
 	const isTop = number < 30 || (number >= 51 && number <= 65);
 	const isPrimary = isPrimaryTooth(number);
@@ -2303,7 +2364,7 @@ const ToothSVG = ({
 			{!isTop && renderNumberBadge()}
 		</button>
 	);
-};
+}, areToothSvgPropsEqual);
 
 export const SurfaceSelector = ({
 	selected,
@@ -3118,18 +3179,21 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		};
 	}, [selectedTeeth, onQuickStateChange, pediatricMode, teethData, currentQuadrant]);
 
-	const handleToothClick = (
-		e: React.MouseEvent,
-		num: number,
-		surface?: string,
-	) => {
-		if (activeStamp && onQuickStateChange) {
-			onQuickStateChange([num], activeStamp);
-			return;
-		}
-		const rect = e.currentTarget.getBoundingClientRect();
-		onToothClick(num, rect, surface);
-	};
+	const handleToothClick = useCallback(
+		(
+			e: React.MouseEvent,
+			num: number,
+			surface?: string,
+		) => {
+			if (activeStamp && onQuickStateChange) {
+				onQuickStateChange([num], activeStamp);
+				return;
+			}
+			const rect = e.currentTarget.getBoundingClientRect();
+			onToothClick(num, rect, surface);
+		},
+		[activeStamp, onQuickStateChange, onToothClick],
+	);
 
 	const topSplit = splitArchAtMidline(topTeethList);
 	const bottomSplit = splitArchAtMidline(bottomTeethList);

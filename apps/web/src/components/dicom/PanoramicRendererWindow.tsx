@@ -117,6 +117,7 @@ export function PanoramicRendererWindow({
 }: PanoramicRendererWindowProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const crossSectionCanvasRef = useRef<HTMLCanvasElement>(null);
+	const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const workerRef = useRef<Worker | null>(null);
 
 	const rawPixelsRef = useRef<{
@@ -309,7 +310,10 @@ export function PanoramicRendererWindow({
 		});
 
 		if (csResult && csResult.width > 0 && csResult.height > 0) {
-			const offscreen = document.createElement("canvas");
+			if (!offscreenCanvasRef.current) {
+				offscreenCanvasRef.current = document.createElement("canvas");
+			}
+			const offscreen = offscreenCanvasRef.current;
 			paintHuPixelsToCanvas(
 				offscreen,
 				csResult.width,
@@ -446,6 +450,8 @@ export function PanoramicRendererWindow({
 		worker.postMessage(req);
 
 		return () => {
+			worker.onmessage = null;
+			worker.onerror = null;
 			worker.terminate();
 			if (workerRef.current === worker) workerRef.current = null;
 		};
@@ -465,6 +471,8 @@ export function PanoramicRendererWindow({
 	useEffect(() => {
 		return () => {
 			if (workerRef.current) {
+				workerRef.current.onmessage = null;
+				workerRef.current.onerror = null;
 				workerRef.current.terminate();
 				workerRef.current = null;
 			}
@@ -478,6 +486,9 @@ export function PanoramicRendererWindow({
 						canvasRef.current.width,
 						canvasRef.current.height,
 					);
+				// Освобождаем GPU backing store холста панорамы
+				canvasRef.current.width = 0;
+				canvasRef.current.height = 0;
 			}
 			if (crossSectionCanvasRef.current) {
 				const ctx = crossSectionCanvasRef.current.getContext("2d");
@@ -488,6 +499,14 @@ export function PanoramicRendererWindow({
 						crossSectionCanvasRef.current.width,
 						crossSectionCanvasRef.current.height,
 					);
+				// Освобождаем GPU backing store холста кросс-секции
+				crossSectionCanvasRef.current.width = 0;
+				crossSectionCanvasRef.current.height = 0;
+			}
+			if (offscreenCanvasRef.current) {
+				offscreenCanvasRef.current.width = 0;
+				offscreenCanvasRef.current.height = 0;
+				offscreenCanvasRef.current = null;
 			}
 		};
 	}, []);
