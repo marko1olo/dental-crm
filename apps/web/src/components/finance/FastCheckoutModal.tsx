@@ -1353,57 +1353,57 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						)}
 					</div>
 
-					{/* 1-Click Method Tiles (Elevated to 56px / 64px) */}
-					<div className="space-y-2">
+					{/* 1-Click Method Toolbar — Strictly 1 Row 32–36px per Hick's Law */}
+					<div className="space-y-1.5">
 						<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
 							Способ оплаты:
 						</span>
 						{isSimpleCashierMode ? (
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="simple-cashier-methods">
+							<div className="grid grid-cols-3 gap-2" data-testid="simple-cashier-methods">
 								<button
 									type="button"
 									onClick={() => handleSingle100Percent("bank_card")}
-									className={`min-h-[64px] p-3 rounded-2xl border-2 flex items-center justify-center gap-3 font-extrabold text-base transition-all cursor-pointer select-none active:scale-95 ${
+									className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
 										activeMethod === "bank_card"
-											? "border-blue-600 bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-md ring-2 ring-blue-500/30"
+											? "border-blue-600 bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-blue-500/30"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
 									}`}
 									data-testid="simple-card-btn"
 								>
-									<CreditCard size={24} className="text-blue-600 dark:text-blue-400 shrink-0" />
-									<span>Картой</span>
+									<CreditCard size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+									<span className="truncate">Картой</span>
 								</button>
 
 								<button
 									type="button"
 									onClick={() => handleSingle100Percent("cash")}
-									className={`min-h-[64px] p-3 rounded-2xl border-2 flex items-center justify-center gap-3 font-extrabold text-base transition-all cursor-pointer select-none active:scale-95 ${
+									className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
 										activeMethod === "cash"
-											? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-md ring-2 ring-emerald-500/30"
+											? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-xs ring-1 ring-emerald-500/30"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
 									}`}
 									data-testid="simple-cash-btn"
 								>
-									<Banknote size={24} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Наличными</span>
+									<Banknote size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span className="truncate">Наличными</span>
 								</button>
 
 								<button
 									type="button"
 									onClick={() => handleSingle100Percent("sbp_qr")}
-									className={`min-h-[64px] p-3 rounded-2xl border-2 flex items-center justify-center gap-3 font-extrabold text-base transition-all cursor-pointer select-none active:scale-95 ${
+									className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
 										activeMethod === "sbp_qr"
-											? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-md ring-2 ring-teal-500/30"
+											? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-xs ring-1 ring-teal-500/30"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 									}`}
 									data-testid="simple-sbp-btn"
 								>
-									<QrCode size={24} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>По QR-коду СБП</span>
+									<QrCode size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span className="truncate">СБП QR</span>
 								</button>
 							</div>
 						) : (
-							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+							<div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] overflow-x-auto">
 								{CHECKOUT_PAYMENT_METHODS.map((m) => {
 									const isSelected = activeMethod === m.id;
 									return (
@@ -1411,19 +1411,19 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											key={m.id}
 											type="button"
 											onClick={() => handleSingle100Percent(m.id)}
-											className={"min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 " + (
+											className={"h-8 sm:h-8.5 px-3 rounded-lg border flex items-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 whitespace-nowrap shrink-0 " + (
 												isSelected
-													? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-md ring-2 ring-teal-500/30"
-													: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+													? "border-teal-600 bg-teal-600 text-white shadow-xs"
+													: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 											)}
 										>
-											{m.id === "sbp_qr" && <QrCode size={16} className="text-teal-600 dark:text-teal-400" />}
-											{m.id === "bank_card" && <CreditCard size={16} className="text-blue-600 dark:text-blue-400" />}
-											{m.id === "cash" && <Banknote size={16} className="text-emerald-600 dark:text-emerald-400" />}
-											{m.id === "patient_deposit" && <Coins size={16} className="text-amber-600 dark:text-amber-400" />}
-											{m.id === "dms_insurance" && <ShieldCheck size={16} className="text-purple-600 dark:text-purple-400" />}
-											{m.id === "loyalty_points" && <Sparkles size={16} className="text-indigo-600 dark:text-indigo-400" />}
-											<span className="text-xs font-bold whitespace-nowrap">{m.titleRu.split(" ")[0]}</span>
+											{m.id === "sbp_qr" && <QrCode size={14} className={isSelected ? "text-white" : "text-teal-600 dark:text-teal-400"} />}
+											{m.id === "bank_card" && <CreditCard size={14} className={isSelected ? "text-white" : "text-blue-600 dark:text-blue-400"} />}
+											{m.id === "cash" && <Banknote size={14} className={isSelected ? "text-white" : "text-emerald-600 dark:text-emerald-400"} />}
+											{m.id === "patient_deposit" && <Coins size={14} className={isSelected ? "text-white" : "text-amber-600 dark:text-amber-400"} />}
+											{m.id === "dms_insurance" && <ShieldCheck size={14} className={isSelected ? "text-white" : "text-purple-600 dark:text-purple-400"} />}
+											{m.id === "loyalty_points" && <Sparkles size={14} className={isSelected ? "text-white" : "text-indigo-600 dark:text-indigo-400"} />}
+											<span>{m.titleRu.split(" ")[0]}</span>
 										</button>
 									);
 								})}
@@ -1890,7 +1890,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								type="button"
 								data-testid="btn-fast-checkout-more-actions"
 								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-hover)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer select-none"
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer select-none"
 								title="Дополнительные действия с чеком"
 								aria-label="Дополнительные действия с чеком"
 							>
@@ -1919,7 +1919,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 												"info",
 											);
 										}}
-										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-hover)] text-[var(--ink)] flex items-center justify-between cursor-pointer"
+										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center justify-between cursor-pointer"
 									>
 										<span>Только электронный чек</span>
 										<span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isElectronicReceiptOnly ? "bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold" : "bg-[var(--line)] text-[var(--muted)]"}`}>
@@ -1937,7 +1937,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 													"success",
 												);
 											}}
-											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-hover)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
+											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
 										>
 											<Send className="w-3.5 h-3.5 text-teal-600" />
 											<span>Отправить копию по SMS</span>
@@ -1951,7 +1951,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											void handleExecutePayment(true);
 										}}
 										disabled={isPrinting}
-										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-hover)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
+										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
 									>
 										<WifiOff className="w-3.5 h-3.5 text-amber-600" />
 										<span>Отложить в офлайн-буфер</span>
@@ -1959,6 +1959,15 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</div>
 							)}
 						</div>
+
+						<button
+							type="button"
+							onClick={onClose}
+							data-testid="btn-close-fast-checkout"
+							className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors select-none"
+						>
+							Закрыть
+						</button>
 
 						<button
 							type="button"

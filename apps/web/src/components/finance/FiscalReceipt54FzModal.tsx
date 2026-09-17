@@ -49,7 +49,6 @@ import {
 import type { TreatmentPlanItem, TreatmentPlanStageKind } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
 import {
-	calculateProportionalRefundAllocation,
 	calculateSplitPaymentAllocation,
 	calculateTaxDeductionBreakdown,
 	generateFiscalCorrectionReceipt54Fz,
@@ -1879,10 +1878,10 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								</div>
 
 								{/* 1-Click Fast Combined Payment Presets (Мандаты 8e, 8k, 8n) */}
-								<div className="flex items-center gap-1.5 flex-wrap p-2.5 rounded-2xl bg-teal-500/5 border border-teal-500/20" data-testid="fiscal-presets-strip">
+								<div className="flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-teal-500/5 border border-teal-500/20" data-testid="fiscal-presets-strip">
 									<span className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1 shrink-0">
-										<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
-										<span>1-клик пресеты:</span>
+										<Sparkles size={13} className="text-teal-600 dark:text-teal-400" />
+										<span>Пресеты:</span>
 									</span>
 									<button
 										type="button"
@@ -1896,31 +1895,31 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											setInsuranceAmount(0);
 											showToast("Применен пресет: Гарантия 100% (0 ₽, без фискального чека ККТ)", "info", 2500);
 										}}
-										className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
+										className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
 											selectedDiscountPreset === "warranty_100"
 												? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-												: "bg-[var(--paper,#ffffff)] border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500"
+												: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500"
 										}`}
 										data-testid="preset-warranty-100"
 										title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
 									>
 										<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-white shrink-0" : "text-purple-600 dark:text-purple-400 shrink-0"} />
-										<span>Гарантия 100% (0 ₽)</span>
+										<span>Гарантия (0 ₽)</span>
 									</button>
 									<button
 										type="button"
 										onClick={() => applyCombinedPaymentPreset("exact_cash")}
-										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
 										data-testid="preset-exact-cash"
 										title="Оплатить наличными ровно в сумме чека (без сдачи)"
 									>
 										<Zap size={13} className="text-amber-500 fill-amber-500 shrink-0" />
-										<span>Без сдачи (нал)</span>
+										<span>Без сдачи</span>
 									</button>
 									<button
 										type="button"
 										onClick={() => applyCombinedPaymentPreset("full_card")}
-										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
 										data-testid="preset-full-card"
 										title="Оплатить 100% картой через терминал"
 									>
@@ -1931,7 +1930,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applyCombinedPaymentPreset("advance_card")}
-											className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-50 hover:border-teal-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-50 hover:border-teal-500 cursor-pointer transition-all shadow-2xs active:scale-95"
 											title="Зачесть доступный депозит, а остаток списать с карты"
 										>
 											Аванс + Карта
@@ -1941,17 +1940,17 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										<button
 											type="button"
 											onClick={() => applyCombinedPaymentPreset("advance_cash")}
-											className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
 											title="Зачесть доступный депозит, а остаток принять наличными"
 										>
-											Аванс + Наличные
+											Аванс + Нал
 										</button>
 									)}
 									{patientDepositRub > 0 && (
 										<button
 											type="button"
 											onClick={() => applyCombinedPaymentPreset("advance_cash_card")}
-											className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500 cursor-pointer transition-all shadow-2xs active:scale-95"
 											title="Зачесть доступный депозит, а остаток разделить 50% наличными и 50% картой"
 										>
 											Аванс + Нал + Карта
@@ -1960,7 +1959,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									<button
 										type="button"
 										onClick={() => applyCombinedPaymentPreset("split_cash_card")}
-										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-2xs active:scale-95"
+										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-2xs active:scale-95"
 										data-testid="preset-50-50-cash-card"
 										title="Разделить оплату ровно пополам: 50% наличные + 50% карта"
 									>
@@ -1968,90 +1967,90 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</button>
 								</div>
 
-								{/* 6 Tactile Payment Method Tiles with DMS & Guarantee Letter support */}
-								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+								{/* Payment Methods Toolbar — Strictly 1 row 32–36px per Hick's Law */}
+								<div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] overflow-x-auto" data-testid="fiscal-payment-methods-toolbar">
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("card")}
-										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
+										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
 											cardAmount === (totalSumRub - insuranceAmount) && cardAmount > 0
-												? "border-blue-600 bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-md ring-2 ring-blue-500/30"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
+												? "border-blue-600 bg-blue-600 text-white shadow-xs"
+												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-blue-400 text-[var(--ink,#0f172a)]"
 										}`}
+										data-testid="method-btn-card"
 									>
-										<CreditCard size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
-										<span className="text-xs font-bold whitespace-nowrap">Карта</span>
-										<span className="text-xs opacity-75 font-normal leading-none">Безнал</span>
+										<CreditCard size={14} className={cardAmount === (totalSumRub - insuranceAmount) && cardAmount > 0 ? "text-white" : "text-blue-600 dark:text-blue-400"} />
+										<span>Карта (Безнал)</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("sbp")}
-										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
+										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
 											sbpAmount === (totalSumRub - insuranceAmount) && sbpAmount > 0
-												? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-md ring-2 ring-teal-500/30"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+												? "border-teal-600 bg-teal-600 text-white shadow-xs"
+												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 										}`}
+										data-testid="method-btn-sbp"
 									>
-										<QrCode size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-										<span className="text-xs font-bold whitespace-nowrap">СБП QR</span>
-										<span className="text-xs opacity-75 font-normal leading-none">Плати QR</span>
+										<QrCode size={14} className={sbpAmount === (totalSumRub - insuranceAmount) && sbpAmount > 0 ? "text-white" : "text-teal-600 dark:text-teal-400"} />
+										<span>СБП QR</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("cash")}
-										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
+										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
 											cashAmount === (totalSumRub - insuranceAmount) && cashAmount > 0
-												? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-md ring-2 ring-emerald-500/30"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
+												? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
+												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
 										}`}
+										data-testid="method-btn-cash"
 									>
-										<Banknote size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-										<span className="text-xs font-bold whitespace-nowrap">Наличные</span>
-										<span className="text-xs opacity-75 font-normal leading-none">Касса</span>
+										<Banknote size={14} className={cashAmount === (totalSumRub - insuranceAmount) && cashAmount > 0 ? "text-white" : "text-emerald-600 dark:text-emerald-400"} />
+										<span>Наличные (Касса)</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("deposit")}
-										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
+										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
 											depositAmount > 0
-												? "border-amber-600 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-md ring-2 ring-amber-500/30"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+												? "border-amber-600 bg-amber-600 text-white shadow-xs"
+												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-amber-400 text-[var(--ink,#0f172a)]"
 										}`}
+										data-testid="method-btn-deposit"
 									>
-										<Coins size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
-										<span className="text-xs font-bold whitespace-nowrap">Зачет аванса</span>
-										<span className="text-xs opacity-75 font-normal leading-none">Депозит</span>
+										<Coins size={14} className={depositAmount > 0 ? "text-white" : "text-amber-600 dark:text-amber-400"} />
+										<span>Зачет аванса</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("certificate")}
-										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
+										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
 											certificateAmount === (totalSumRub - insuranceAmount) && certificateAmount > 0
-												? "border-purple-600 bg-purple-500/15 text-purple-700 dark:text-purple-300 shadow-md ring-2 ring-purple-500/30"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+												? "border-purple-600 bg-purple-600 text-white shadow-xs"
+												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-purple-400 text-[var(--ink,#0f172a)]"
 										}`}
+										data-testid="method-btn-certificate"
 									>
-										<Gift size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
-										<span className="text-xs font-bold whitespace-nowrap">Сертификат</span>
-										<span className="text-xs opacity-75 font-normal leading-none">Подарок</span>
+										<Gift size={14} className={certificateAmount === (totalSumRub - insuranceAmount) && certificateAmount > 0 ? "text-white" : "text-purple-600 dark:text-purple-400"} />
+										<span>Сертификат</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("insurance")}
-										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
+										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
 											insuranceAmount > 0
-												? "border-indigo-600 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 shadow-md ring-2 ring-indigo-500/30"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
+												? "border-indigo-600 bg-indigo-600 text-white shadow-xs"
+												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
 										}`}
+										data-testid="method-btn-insurance"
 									>
-										<ShieldCheck size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-										<span className="text-xs font-bold whitespace-nowrap">ДМС / ГП</span>
-										<span className="text-xs opacity-75 font-normal leading-none">Страховая</span>
+										<ShieldCheck size={14} className={insuranceAmount > 0 ? "text-white" : "text-indigo-600 dark:text-indigo-400"} />
+										<span>ДМС / ГП</span>
 									</button>
 								</div>
 
@@ -2081,13 +2080,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												value={cardAmount || ""}
 												onChange={(e) => setCardAmount(Math.max(0, Number(e.target.value) || 0))}
 												placeholder="0"
-												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
 											{remainingRub > 0 && (
 												<button
 													type="button"
 													onClick={() => handleFillRemaining("card")}
-													className="min-h-[48px] px-3 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
+													className="h-9 px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
 													title={`Добавить остаток ${formatMoneyRu(remainingRub)} на карту`}
 													data-testid="btn-fill-remaining-card"
 												>
@@ -2099,7 +2098,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<button
 													type="button"
 													onClick={() => selectSingleMethod("card")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 cursor-pointer transition-colors flex items-center justify-center"
+													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 cursor-pointer transition-colors flex items-center justify-center"
 													title="Внести всю сумму на карту"
 												>
 													Вся сумма
@@ -2109,7 +2108,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</div>
 
 									{/* SBP Dynamic QR */}
-									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
+									<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
 										<div className="flex items-center gap-3">
 											<div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
 												<QrCode size={18} />
@@ -2132,13 +2131,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												value={sbpAmount || ""}
 												onChange={(e) => setSbpAmount(Math.max(0, Number(e.target.value) || 0))}
 												placeholder="0"
-												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
 											{remainingRub > 0 && (
 												<button
 													type="button"
 													onClick={() => handleFillRemaining("sbp")}
-													className="min-h-[48px] px-3 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
+													className="h-9 px-3 py-1.5 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
 													title={`Добавить остаток ${formatMoneyRu(remainingRub)} в СБП`}
 													data-testid="btn-fill-remaining-sbp"
 												>
@@ -2150,7 +2149,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<button
 													type="button"
 													onClick={() => selectSingleMethod("sbp")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-teal-500/10 text-teal-600 hover:bg-teal-500/20 cursor-pointer transition-colors flex items-center justify-center"
+													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-teal-500/10 text-teal-600 hover:bg-teal-500/20 cursor-pointer transition-colors flex items-center justify-center"
 												>
 													Вся сумма
 												</button>
@@ -2159,7 +2158,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</div>
 
 									{/* Cash */}
-									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
+									<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
 										<div className="flex items-center gap-3">
 											<div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
 												<Banknote size={18} />
@@ -2186,13 +2185,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													if (receivedCashRub < val) setReceivedCashRub(val);
 												}}
 												placeholder="0"
-												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
 											{remainingRub > 0 && (
 												<button
 													type="button"
 													onClick={() => handleFillRemaining("cash")}
-													className="min-h-[48px] px-3 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
+													className="h-9 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
 													title={`Добавить остаток ${formatMoneyRu(remainingRub)} наличными`}
 													data-testid="btn-fill-remaining-cash"
 												>
@@ -2204,7 +2203,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<button
 													type="button"
 													onClick={() => selectSingleMethod("cash")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 cursor-pointer transition-colors flex items-center justify-center"
+													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 cursor-pointer transition-colors flex items-center justify-center"
 												>
 													Вся сумма
 												</button>
@@ -2213,7 +2212,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</div>
 
 									{/* Patient Deposit / Prepaid */}
-									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
+									<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
 										<div className="flex items-center gap-3">
 											<div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
 												<Coins size={18} />
@@ -2240,13 +2239,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													)
 												}
 												placeholder="0"
-												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
 											{patientDepositRub > 0 && (
 												<button
 													type="button"
 													onClick={() => selectSingleMethod("deposit")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 cursor-pointer transition-colors flex items-center justify-center"
+													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 cursor-pointer transition-colors flex items-center justify-center"
 												>
 													Зачесть
 												</button>
@@ -3515,24 +3514,24 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								<button
 									type="button"
 									onClick={handlePrintSalesSlip}
-									className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+									className="h-9 px-3 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 									data-testid="btn-print-sales-slip-modal"
 									title="Напечатать товарный чек с номенклатурой 804н без фискализации в ОФД"
 								>
 									<FileText size={14} className="text-teal-600" />
-									<span>Товарный чек (без кассы)</span>
+									<span>Товарный чек</span>
 								</button>
 								<button
 									type="button"
 									onClick={onClose}
-									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 								>
 									Закрыть
 								</button>
 								<button
 									type="button"
 									onClick={() => handleExecuteFiscalization()}
-									disabled={isFiscalizing || allocation.isOverallocated}
+									disabled={isFiscalizing}
 									className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 								>
 									<ShieldCheck size={16} />
