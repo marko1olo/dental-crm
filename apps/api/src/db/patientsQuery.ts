@@ -307,10 +307,10 @@ export async function getPatientByIdFromDb(
 }
 
 export interface GetPatientsOptions {
-	includeMerged?: boolean;
-	search?: string;
-	limit?: number;
-	offset?: number;
+	includeMerged?: boolean | undefined;
+	search?: string | undefined;
+	limit?: number | undefined;
+	offset?: number | undefined;
 }
 
 export async function getPatientsFromDb(
