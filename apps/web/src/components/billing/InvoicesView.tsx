@@ -13,27 +13,37 @@
  * - Zero emojis (strict Lucide vector icons).
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import { rubToKopecks } from "@dental/shared";
 import {
-	Search,
+	CheckCircle2,
+	ChevronDown,
+	ChevronsDown,
+	Clock,
+	Cpu,
+	CreditCard,
+	FileCheck,
+	FileText,
+	MoreVertical,
 	Plus,
 	Printer,
-	FileText,
-	CreditCard,
-	CheckCircle2,
-	Clock,
-	ShieldCheck,
-	MoreVertical,
 	Receipt,
-	X,
-	FileCheck,
+	Search,
+	ShieldCheck,
 	Sparkles,
+	X,
 } from "lucide-react";
-import { rubToKopecks } from "@dental/shared";
-import { PaymentModal } from "../finance/PaymentModal.js";
-import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
-import { showToast } from "../GlobalToast.js";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemoryLeakGuard } from "../../hooks/useMemoryLeakGuard.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
+import {
+	DEFAULT_DOM_CHUNK_STEP,
+	DEFAULT_DOM_PAGE_SIZE,
+	sliceDomList,
+} from "../../utils/domVirtualizationHelper.js";
+import { PaymentModal } from "../finance/PaymentModal.js";
+import { showToast } from "../GlobalToast.js";
 
 export interface InvoiceLineItem {
 	id: string;
@@ -116,12 +126,24 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	});
 	const [filterTab, setFilterTab] = useState<InvoiceFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
-	const [activePaymentInvoice, setActivePaymentInvoice] = useState<BillingInvoice | null>(null);
-	const [activeMenuInvoiceId, setActiveMenuInvoiceId] = useState<string | null>(null);
+	const [activePaymentInvoice, setActivePaymentInvoice] =
+		useState<BillingInvoice | null>(null);
+	const [activeMenuInvoiceId, setActiveMenuInvoiceId] = useState<string | null>(
+		null,
+	);
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 
+	// Memory leak protection & DOM virtualization (Wave 252-Perf2 / Low-RAM Laptop Protection)
+	const memoryGuard = useMemoryLeakGuard({ debugName: "InvoicesView" });
+	const [displayLimit, setDisplayLimit] = useState<number>(
+		DEFAULT_DOM_PAGE_SIZE,
+	);
+	const sentinelRef = useRef<HTMLDivElement | null>(null);
+
 	// Quick Invoice Create form state (Solo Doctor friction-killer)
-	const [newPatientName, setNewPatientName] = useState<string>(patientName || "");
+	const [newPatientName, setNewPatientName] = useState<string>(
+		patientName || "",
+	);
 	const [newServiceName, setNewServiceName] = useState<string>("");
 	const [newServicePriceRub, setNewServicePriceRub] = useState<number>(5000);
 	const [newIsWarranty100, setNewIsWarranty100] = useState<boolean>(false);
@@ -132,72 +154,112 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		}
 	}, [patientName]);
 
-	// Server synchronization (Mandates 8e, 8n)
+	// Reset limit to default page size whenever tab or search filter changes to prevent memory blow-up
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limit when filters change
 	useEffect(() => {
-		let isMounted = true;
+		setDisplayLimit(DEFAULT_DOM_PAGE_SIZE);
+	}, [filterTab, searchQuery]);
+
+	// Server synchronization (Mandates 8e, 8n) with AbortController memory protection
+	useEffect(() => {
+		const abortController = memoryGuard.createAbortController();
 		const syncInvoices = async () => {
 			try {
 				const url = `/api/invoices${patientId ? `?patientId=${encodeURIComponent(patientId)}` : ""}`;
 				const res = await fetch(url, {
+					signal: abortController.signal,
 					headers: {
 						...denteAdminSecretRequestHeaders(),
 					},
 				});
 				if (!res.ok) return;
-				const data = await res.json();
-				const rawList: any[] = Array.isArray(data)
-					? data
-					: Array.isArray(data?.items)
-						? data.items
-						: Array.isArray(data?.invoices)
-							? data.invoices
+				const data = (await res.json()) as unknown;
+				const rawList: Record<string, unknown>[] = Array.isArray(data)
+					? (data as Record<string, unknown>[])
+					: Array.isArray((data as { items?: unknown[] })?.items)
+						? (data as { items: Record<string, unknown>[] }).items
+						: Array.isArray((data as { invoices?: unknown[] })?.invoices)
+							? (data as { invoices: Record<string, unknown>[] }).invoices
 							: [];
 
 				if (rawList.length === 0) return;
 
-				const mapped: BillingInvoice[] = rawList.map((raw: any, idx: number) => {
+				const mapped: BillingInvoice[] = rawList.map((raw, idx) => {
 					if (raw.number && raw.status && Array.isArray(raw.items)) {
-						return raw as BillingInvoice;
+						return raw as unknown as BillingInvoice;
 					}
 
-					const numMatch = typeof raw.notes === "string" ? raw.notes.match(/(?:Наряд|Счет|СЧТ|НРД|АКТ)[\s-]*([A-ZА-Я0-9-]+)/i) : null;
-					const invoiceNumber = raw.number || (numMatch ? numMatch[1] : `СЧ-${(raw.id || idx).toString().slice(-6)}`);
-					const total = typeof raw.totalAmountRub === "number"
-						? raw.totalAmountRub
-						: typeof raw.priceRub === "number"
-							? raw.priceRub
-							: 0;
+					const numMatch =
+						typeof raw.notes === "string"
+							? raw.notes.match(
+									/(?:Наряд|Счет|СЧТ|НРД|АКТ)[\s-]*([A-ZА-Я0-9-]+)/i,
+								)
+							: null;
+					const invoiceNumber = String(
+						raw.number ||
+							(numMatch
+								? numMatch[1]
+								: `СЧ-${(raw.id || idx).toString().slice(-6)}`),
+					);
+					const total =
+						typeof raw.totalAmountRub === "number"
+							? raw.totalAmountRub
+							: typeof raw.priceRub === "number"
+								? raw.priceRub
+								: 0;
 
 					return {
 						id: String(raw.id || `inv-${Date.now()}-${idx}`),
 						number: invoiceNumber,
 						patientId: String(raw.patientId || patientId || ""),
 						patientName: String(raw.patientName || patientName || "Пациент"),
-						patientPhone: raw.patientPhone,
+						patientPhone:
+							typeof raw.patientPhone === "string"
+								? raw.patientPhone
+								: undefined,
 						doctorName: String(raw.doctorName || currentDoctorName),
-						date: raw.date || (raw.createdAt ? new Date(raw.createdAt).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU")),
+						date:
+							typeof raw.date === "string"
+								? raw.date
+								: typeof raw.createdAt === "string"
+									? new Date(raw.createdAt).toLocaleDateString("ru-RU")
+									: new Date().toLocaleDateString("ru-RU"),
 						totalAmountRub: total,
-						paidAmountRub: typeof raw.paidAmountRub === "number" ? raw.paidAmountRub : (raw.status === "paid" ? total : 0),
+						paidAmountRub:
+							typeof raw.paidAmountRub === "number"
+								? raw.paidAmountRub
+								: raw.status === "paid"
+									? total
+									: 0,
 						status: (raw.status as BillingInvoice["status"]) || "issued",
-						items: Array.isArray(raw.items) && raw.items.length > 0
-							? raw.items
-							: [
-									{
-										id: `li-${raw.id || idx}`,
-										code: raw.code || raw.serviceCode || "A16.07.002",
-										name: raw.title || raw.name || "Стоматологический прием",
-										quantity: Number(raw.quantity) || 1,
-										priceRub: total,
-									},
-								],
-						createdAt: raw.createdAt || new Date().toISOString(),
-						paidAt: raw.paidAt,
-						paymentMethod: raw.paymentMethod,
-						notes: raw.notes,
+						items:
+							Array.isArray(raw.items) && raw.items.length > 0
+								? (raw.items as InvoiceLineItem[])
+								: [
+										{
+											id: `li-${String(raw.id || idx)}`,
+											code: String(raw.code || raw.serviceCode || "A16.07.002"),
+											name: String(
+												raw.title || raw.name || "Стоматологический прием",
+											),
+											quantity: Number(raw.quantity) || 1,
+											priceRub: total,
+										},
+									],
+						createdAt:
+							typeof raw.createdAt === "string"
+								? raw.createdAt
+								: new Date().toISOString(),
+						paidAt: typeof raw.paidAt === "string" ? raw.paidAt : undefined,
+						paymentMethod:
+							typeof raw.paymentMethod === "string"
+								? raw.paymentMethod
+								: undefined,
+						notes: typeof raw.notes === "string" ? raw.notes : undefined,
 					};
 				});
 
-				if (!isMounted) return;
+				if (!memoryGuard.isMounted()) return;
 
 				setInvoices((prev) => {
 					const map = new Map<string, BillingInvoice>();
@@ -213,16 +275,16 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					saveStoredInvoices(merged);
 					return merged;
 				});
-			} catch {
+			} catch (err: unknown) {
+				if ((err as Error)?.name === "AbortError") {
+					return;
+				}
 				// Soft fallback: continue working with local data (Mandates 8e, 8n)
 			}
 		};
 
 		void syncInvoices();
-		return () => {
-			isMounted = false;
-		};
-	}, [patientId, patientName, currentDoctorName]);
+	}, [patientId, patientName, currentDoctorName, memoryGuard]);
 
 	// Real-time reactive synchronization across tabs and modules (Treatment Plans -> Invoices)
 	useEffect(() => {
@@ -250,20 +312,63 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 			});
 		};
 
-		window.addEventListener("dente-invoices-updated", handleExternalInvoiceUpdate);
-		window.addEventListener("storage", handleExternalInvoiceUpdate);
+		const unlisten1 = memoryGuard.safeAddEventListener(
+			window,
+			"dente-invoices-updated",
+			handleExternalInvoiceUpdate,
+		);
+		const unlisten2 = memoryGuard.safeAddEventListener(
+			window,
+			"storage",
+			handleExternalInvoiceUpdate,
+		);
 		return () => {
-			window.removeEventListener("dente-invoices-updated", handleExternalInvoiceUpdate);
-			window.removeEventListener("storage", handleExternalInvoiceUpdate);
+			unlisten1();
+			unlisten2();
 		};
-	}, []);
+	}, [memoryGuard]);
+
+	// Auto-dismiss active invoice context menu on click-outside or Escape (Wave 252-Perf2)
+	useEffect(() => {
+		if (!activeMenuInvoiceId) return;
+		const handleDocumentClick = (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (!target?.closest(`[data-testid^="btn-invoice-menu-"]`)) {
+				setActiveMenuInvoiceId(null);
+			}
+		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setActiveMenuInvoiceId(null);
+			}
+		};
+		const removeClick = memoryGuard.safeAddEventListener(
+			document,
+			"click",
+			handleDocumentClick,
+		);
+		const removeKey = memoryGuard.safeAddEventListener(
+			document,
+			"keydown",
+			handleKeyDown,
+		);
+		return () => {
+			removeClick();
+			removeKey();
+		};
+	}, [activeMenuInvoiceId, memoryGuard]);
 
 	// Filtered list
 	const filteredInvoices = useMemo(() => {
 		return invoices.filter((inv) => {
-			if (filterTab === "pending" && (inv.status === "paid" || inv.status === "warranty_100")) return false;
+			if (
+				filterTab === "pending" &&
+				(inv.status === "paid" || inv.status === "warranty_100")
+			)
+				return false;
 			if (filterTab === "paid" && inv.status !== "paid") return false;
-			if (filterTab === "warranty" && inv.status !== "warranty_100") return false;
+			if (filterTab === "warranty" && inv.status !== "warranty_100")
+				return false;
 
 			if (searchQuery.trim()) {
 				const q = searchQuery.toLowerCase().trim();
@@ -275,6 +380,35 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 			return true;
 		});
 	}, [invoices, filterTab, searchQuery]);
+
+	// Memory-bounded slice of filtered invoices (prevents DOM bloat and pagefile.sys swap thrashing)
+	const listSlice = useMemo(() => {
+		return sliceDomList(filteredInvoices, displayLimit, 0);
+	}, [filteredInvoices, displayLimit]);
+
+	// Progressive lazy auto-load on scroll via IntersectionObserver (Wave 252-Perf2)
+	useEffect(() => {
+		if (!listSlice.hasMore || typeof IntersectionObserver === "undefined")
+			return;
+		const sentinel = sentinelRef.current;
+		if (!sentinel) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const first = entries[0];
+				if (first?.isIntersecting) {
+					setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP);
+				}
+			},
+			{ rootMargin: "250px" },
+		);
+
+		memoryGuard.registerObserver(observer);
+		observer.observe(sentinel);
+		return () => {
+			observer.disconnect();
+		};
+	}, [listSlice.hasMore, memoryGuard]);
 
 	// Fast Print Invoice
 	const handlePrintInvoice = (inv: BillingInvoice) => {
@@ -327,14 +461,17 @@ th { background: #f8fafc; font-weight: 700; }
 </body>
 </html>`;
 
-		void hardwarePrinter.printHtmlWithPopupFallback(html, {
-			title: `Счет № ${inv.number}`,
-			downloadFilename: `Schet_${inv.number}.html`,
-		}).then(() => {
-			showToast(`Счет ${inv.number} отправлен на печать`, "success");
-		}).catch(() => {
-			showToast("Ошибка отправки счета на принтер", "error");
-		});
+		void hardwarePrinter
+			.printHtmlWithPopupFallback(html, {
+				title: `Счет № ${inv.number}`,
+				downloadFilename: `Schet_${inv.number}.html`,
+			})
+			.then(() => {
+				showToast(`Счет ${inv.number} отправлен на печать`, "success");
+			})
+			.catch(() => {
+				showToast("Ошибка отправки счета на принтер", "error");
+			});
 	};
 
 	// Fast Print Act 804n
@@ -389,14 +526,17 @@ th { background: #f8fafc; font-weight: 700; }
 </body>
 </html>`;
 
-		void hardwarePrinter.printHtmlWithPopupFallback(html, {
-			title: `Акт № ${actNumber}`,
-			downloadFilename: `Akt_${actNumber}.html`,
-		}).then(() => {
-			showToast(`Акт по счету ${inv.number} отправлен на печать`, "success");
-		}).catch(() => {
-			showToast("Ошибка отправки акта на принтер", "error");
-		});
+		void hardwarePrinter
+			.printHtmlWithPopupFallback(html, {
+				title: `Акт № ${actNumber}`,
+				downloadFilename: `Akt_${actNumber}.html`,
+			})
+			.then(() => {
+				showToast(`Акт по счету ${inv.number} отправлен на печать`, "success");
+			})
+			.catch(() => {
+				showToast("Ошибка отправки акта на принтер", "error");
+			});
 	};
 
 	// 100% Warranty discount application (Doctor Autonomy Mandate 8e)
@@ -410,7 +550,9 @@ th { background: #f8fafc; font-weight: 700; }
 							paidAmountRub: 0,
 							status: "warranty_100" as const,
 							paymentMethod: "warranty_discount_100",
-							notes: (item.notes ? `${item.notes}; ` : "") + "Гарантия 100% (без чека ККТ)",
+							notes:
+								(item.notes ? `${item.notes}; ` : "") +
+								"Гарантия 100% (без чека ККТ)",
 						}
 					: item,
 			);
@@ -418,7 +560,10 @@ th { background: #f8fafc; font-weight: 700; }
 			return updated;
 		});
 		setActiveMenuInvoiceId(null);
-		showToast(`Счет ${inv.number} переведен в статус: Гарантия 100% (0 ₽)`, "info");
+		showToast(
+			`Счет ${inv.number} переведен в статус: Гарантия 100% (0 ₽)`,
+			"info",
+		);
 	};
 
 	// Create new invoice (1-click preset)
@@ -474,7 +619,8 @@ th { background: #f8fafc; font-weight: 700; }
 					items: [
 						{
 							code804n: "A16.07.002",
-							nameRu: newServiceName.trim() || "Стоматологический прием и лечение",
+							nameRu:
+								newServiceName.trim() || "Стоматологический прием и лечение",
 							quantity: 1,
 							planUnitPriceRub: finalAmount,
 						},
@@ -504,7 +650,10 @@ th { background: #f8fafc; font-weight: 700; }
 				{/* Left: Section Identity & Filter Tabs */}
 				<div className="flex items-center gap-1.5 overflow-x-auto">
 					<div className="flex items-center gap-1.5 font-bold text-xs mr-2 text-[var(--ink,#0f172a)] shrink-0">
-						<Receipt size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Receipt
+							size={16}
+							className="text-teal-600 dark:text-teal-400 shrink-0"
+						/>
 						<span>Счета и Акты</span>
 					</div>
 
@@ -520,7 +669,9 @@ th { background: #f8fafc; font-weight: 700; }
 							data-testid="filter-invoices-all"
 						>
 							<span>Все</span>
-							<span className="text-[10px] opacity-70">({invoices.length})</span>
+							<span className="text-[10px] opacity-70">
+								({invoices.length})
+							</span>
 						</button>
 						<button
 							type="button"
@@ -534,7 +685,16 @@ th { background: #f8fafc; font-weight: 700; }
 						>
 							<span>К оплате</span>
 							<span className="text-[10px] opacity-70">
-								({invoices.filter((i) => i.status === "issued" || i.status === "draft" || i.status === "partially_paid").length})
+								(
+								{
+									invoices.filter(
+										(i) =>
+											i.status === "issued" ||
+											i.status === "draft" ||
+											i.status === "partially_paid",
+									).length
+								}
+								)
 							</span>
 						</button>
 						<button
@@ -571,7 +731,10 @@ th { background: #f8fafc; font-weight: 700; }
 
 					{/* Search box & fast actions (Mandate 8c: >=44px on mobile, compact on desktop) */}
 					<div className="relative flex items-center">
-						<Search size={14} className="absolute left-2.5 text-[var(--muted,#64748b)] pointer-events-none" />
+						<Search
+							size={14}
+							className="absolute left-2.5 text-[var(--muted,#64748b)] pointer-events-none"
+						/>
 						<input
 							type="text"
 							value={searchQuery}
@@ -621,8 +784,13 @@ th { background: #f8fafc; font-weight: 700; }
 			<div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5">
 				{filteredInvoices.length === 0 ? (
 					<div className="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-[var(--line,#e2e8f0)] rounded-2xl bg-[var(--paper,#ffffff)]">
-						<Receipt size={36} className="text-[var(--muted,#64748b)] mb-2 opacity-50" />
-						<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] mb-1">Счета не найдены</h3>
+						<Receipt
+							size={36}
+							className="text-[var(--muted,#64748b)] mb-2 opacity-50"
+						/>
+						<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] mb-1">
+							Счета не найдены
+						</h3>
 						<p className="text-xs text-[var(--muted,#64748b)] max-w-sm mb-4">
 							{searchQuery
 								? `По запросу «${searchQuery}» ничего не найдено.`
@@ -638,184 +806,305 @@ th { background: #f8fafc; font-weight: 700; }
 						</button>
 					</div>
 				) : (
-					filteredInvoices.map((inv) => {
-						const isPaid = inv.status === "paid";
-						const isWarranty = inv.status === "warranty_100";
-						const isPending = !isPaid && !isWarranty;
-						const isMenuOpen = activeMenuInvoiceId === inv.id;
+					<>
+						{listSlice.visibleItems.map((inv) => {
+							const isPaid = inv.status === "paid";
+							const isWarranty = inv.status === "warranty_100";
+							const isPending = !isPaid && !isWarranty;
+							const isMenuOpen = activeMenuInvoiceId === inv.id;
 
-						return (
-							<div
-								key={inv.id}
-								className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 sm:p-3.5 shadow-2xs hover:border-teal-500/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative"
-								data-testid={`invoice-card-${inv.id}`}
-							>
-								{/* Left: Invoice Identity & Details */}
-								<div className="flex items-start gap-3 min-w-0 flex-1">
-									<div
-										className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-											isPaid
-												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-												: isWarranty
-													? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"
-													: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-										}`}
-									>
-										{isPaid ? <CheckCircle2 size={20} /> : isWarranty ? <ShieldCheck size={20} /> : <Clock size={20} />}
-									</div>
-
-									<div className="min-w-0 flex-1">
-										<div className="flex items-center gap-2 flex-wrap">
-											<span className="font-mono text-xs font-extrabold text-[var(--ink,#0f172a)]">
-												{inv.number}
-											</span>
-											<span className="text-xs text-[var(--muted,#64748b)]">• {inv.date}</span>
-											<span
-												className={`px-2 py-0.5 rounded-full text-[11px] font-bold border inline-flex items-center gap-1 ${
-													isPaid
-														? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-														: isWarranty
-															? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800"
-															: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-												}`}
-											>
-												{isPaid
-													? "Оплачено"
+							return (
+								<div
+									key={inv.id}
+									className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 sm:p-3.5 shadow-2xs hover:border-teal-500/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative"
+									data-testid={`invoice-card-${inv.id}`}
+								>
+									{/* Left: Invoice Identity & Details */}
+									<div className="flex items-start gap-3 min-w-0 flex-1">
+										<div
+											className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+												isPaid
+													? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
 													: isWarranty
-														? "Гарантия 100% (0 ₽)"
-														: "К оплате"}
-											</span>
+														? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"
+														: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+											}`}
+										>
+											{isPaid ? (
+												<CheckCircle2 size={20} />
+											) : isWarranty ? (
+												<ShieldCheck size={20} />
+											) : (
+												<Clock size={20} />
+											)}
 										</div>
 
-										<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] mt-0.5 truncate" title={inv.patientName}>
-											{inv.patientName}
-										</h4>
+										<div className="min-w-0 flex-1">
+											<div className="flex items-center gap-2 flex-wrap">
+												<span className="font-mono text-xs font-extrabold text-[var(--ink,#0f172a)]">
+													{inv.number}
+												</span>
+												<span className="text-xs text-[var(--muted,#64748b)]">
+													• {inv.date}
+												</span>
+												<span
+													className={`px-2 py-0.5 rounded-full text-[11px] font-bold border inline-flex items-center gap-1 ${
+														isPaid
+															? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+															: isWarranty
+																? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+																: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+													}`}
+												>
+													{isPaid
+														? "Оплачено"
+														: isWarranty
+															? "Гарантия 100% (0 ₽)"
+															: "К оплате"}
+												</span>
+											</div>
 
-										<div className="flex items-center gap-2 text-xs text-[var(--muted,#64748b)] mt-0.5 flex-wrap">
-											<span>Врач: <strong className="text-[var(--ink,#0f172a)] font-medium">{inv.doctorName}</strong></span>
-											<span>•</span>
-											<span>Услуг: {inv.items.length}</span>
-											{inv.paymentMethod && (
-												<>
-													<span>•</span>
-													<span className="text-teal-700 dark:text-teal-400 font-medium">
-														{inv.paymentMethod === "card_terminal"
-															? "Карта"
-															: inv.paymentMethod === "cash"
-																? "Наличные"
-																: inv.paymentMethod === "sbp"
-																	? "СБП QR"
-																	: "Сплит"}
-													</span>
-												</>
+											<h4
+												className="text-sm font-bold text-[var(--ink,#0f172a)] mt-0.5 truncate"
+												title={inv.patientName}
+											>
+												{inv.patientName}
+											</h4>
+
+											<div className="flex items-center gap-2 text-xs text-[var(--muted,#64748b)] mt-0.5 flex-wrap">
+												<span>
+													Врач:{" "}
+													<strong className="text-[var(--ink,#0f172a)] font-medium">
+														{inv.doctorName}
+													</strong>
+												</span>
+												<span>•</span>
+												<span>Услуг: {inv.items.length}</span>
+												{inv.paymentMethod && (
+													<>
+														<span>•</span>
+														<span className="text-teal-700 dark:text-teal-400 font-medium">
+															{inv.paymentMethod === "card_terminal"
+																? "Карта"
+																: inv.paymentMethod === "cash"
+																	? "Наличные"
+																	: inv.paymentMethod === "sbp"
+																		? "СБП QR"
+																		: "Сплит"}
+														</span>
+													</>
+												)}
+											</div>
+										</div>
+									</div>
+
+									{/* Middle: Amount in Roubles */}
+									<div className="text-left sm:text-right shrink-0 px-2 sm:px-4">
+										<div className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">
+											{isWarranty
+												? "0 ₽"
+												: `${inv.totalAmountRub.toLocaleString("ru-RU")} ₽`}
+										</div>
+										<div className="text-[11px] text-[var(--muted,#64748b)]">
+											{isPaid
+												? "Оплачено полностью"
+												: isWarranty
+													? "Гарантийная скидка 100%"
+													: "Остаток к оплате"}
+										</div>
+									</div>
+
+									{/* Right: Actions (Mandate 8d: <=2 primary buttons, secondary in ..., >=44px) */}
+									<div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+										{isPending && (
+											<button
+												type="button"
+												onClick={() => setActivePaymentInvoice(inv)}
+												className="h-11 min-h-[44px] px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+												data-testid={`btn-pay-invoice-${inv.id}`}
+												title="Принять оплату (касса 54-ФЗ / карта / сплит)"
+												style={{ minHeight: "44px" }}
+											>
+												<CreditCard size={14} />
+												<span>Оплатить</span>
+											</button>
+										)}
+
+										<button
+											type="button"
+											onClick={() => handlePrintInvoice(inv)}
+											className="h-11 min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors"
+											data-testid={`btn-print-invoice-${inv.id}`}
+											title="Печать счета на оплату"
+											style={{ minHeight: "44px" }}
+										>
+											<Printer size={14} className="text-slate-500" />
+											<span className="hidden md:inline">Счет</span>
+										</button>
+
+										{/* Context Menu Trigger for secondary options (Mandate 8c: >=44x44px) */}
+										<div className="relative">
+											<button
+												type="button"
+												onClick={() =>
+													setActiveMenuInvoiceId(isMenuOpen ? null : inv.id)
+												}
+												className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+												aria-label="Дополнительные действия"
+												data-testid={`btn-invoice-menu-${inv.id}`}
+												style={{ minWidth: "44px", minHeight: "44px" }}
+											>
+												<MoreVertical size={16} />
+											</button>
+
+											{isMenuOpen && (
+												<div
+													className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xl z-20 py-1 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
+													role="menu"
+												>
+													<button
+														type="button"
+														onClick={() => {
+															handlePrintAct(inv);
+															setActiveMenuInvoiceId(null);
+														}}
+														className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+														role="menuitem"
+														style={{ minHeight: "44px" }}
+													>
+														<FileText size={14} className="text-teal-600" />
+														<span>Печать акта 804н</span>
+													</button>
+
+													{isPending && (
+														<button
+															type="button"
+															onClick={() => handleApplyWarranty100(inv)}
+															className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
+															role="menuitem"
+															style={{ minHeight: "44px" }}
+														>
+															<ShieldCheck
+																size={14}
+																className="text-purple-600"
+															/>
+															<span>Гарантия 100% (0 ₽)</span>
+														</button>
+													)}
+
+													<button
+														type="button"
+														onClick={() => {
+															showToast(
+																`Справка для налоговой (ФНС 1151156) по счету ${inv.number} подготовлена`,
+																"info",
+															);
+															setActiveMenuInvoiceId(null);
+														}}
+														className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+														role="menuitem"
+														style={{ minHeight: "44px" }}
+													>
+														<FileCheck size={14} className="text-blue-600" />
+														<span>Справка ФНС (1151156)</span>
+													</button>
+												</div>
 											)}
 										</div>
 									</div>
 								</div>
+							);
+						})}
 
-								{/* Middle: Amount in Roubles */}
-								<div className="text-left sm:text-right shrink-0 px-2 sm:px-4">
-									<div className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">
-										{isWarranty ? "0 ₽" : `${inv.totalAmountRub.toLocaleString("ru-RU")} ₽`}
-									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)]">
-										{isPaid ? "Оплачено полностью" : isWarranty ? "Гарантийная скидка 100%" : "Остаток к оплате"}
-									</div>
+						{/* Virtualization & DOM Memory Guard controls (Wave 252-Perf2) */}
+						{filteredInvoices.length > DEFAULT_DOM_PAGE_SIZE && (
+							<div
+								className="mt-4 p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs"
+								data-testid="invoices-dom-virtualization-bar"
+							>
+								<div className="flex items-center gap-2 text-[var(--muted,#64748b)]">
+									<Cpu
+										size={15}
+										className="text-teal-600 dark:text-teal-400 shrink-0"
+									/>
+									<span>
+										Отображено{" "}
+										<strong className="text-[var(--ink,#0f172a)] font-bold">
+											{listSlice.displayedCount}
+										</strong>{" "}
+										из{" "}
+										<strong className="text-[var(--ink,#0f172a)] font-bold">
+											{listSlice.totalCount}
+										</strong>{" "}
+										счетов
+										{listSlice.hasMore && (
+											<span className="hidden md:inline text-[11px] opacity-75">
+												{" "}
+												(осталось {listSlice.remainingCount} • защита RAM
+												ноутбука)
+											</span>
+										)}
+									</span>
 								</div>
 
-								{/* Right: Actions (Mandate 8d: <=2 primary buttons, secondary in ..., >=44px) */}
-								<div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-									{isPending && (
-										<button
-											type="button"
-											onClick={() => setActivePaymentInvoice(inv)}
-											className="h-11 min-h-[44px] px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
-											data-testid={`btn-pay-invoice-${inv.id}`}
-											title="Принять оплату (касса 54-ФЗ / карта / сплит)"
-											style={{ minHeight: "44px" }}
-										>
-											<CreditCard size={14} />
-											<span>Оплатить</span>
-										</button>
-									)}
-
-									<button
-										type="button"
-										onClick={() => handlePrintInvoice(inv)}
-										className="h-11 min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors"
-										data-testid={`btn-print-invoice-${inv.id}`}
-										title="Печать счета на оплату"
-										style={{ minHeight: "44px" }}
-									>
-										<Printer size={14} className="text-slate-500" />
-										<span className="hidden md:inline">Счет</span>
-									</button>
-
-									{/* Context Menu Trigger for secondary options (Mandate 8c: >=44x44px) */}
-									<div className="relative">
-										<button
-											type="button"
-											onClick={() => setActiveMenuInvoiceId(isMenuOpen ? null : inv.id)}
-											className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-											aria-label="Дополнительные действия"
-											data-testid={`btn-invoice-menu-${inv.id}`}
-											style={{ minWidth: "44px", minHeight: "44px" }}
-										>
-											<MoreVertical size={16} />
-										</button>
-
-										{isMenuOpen && (
-											<div
-												className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xl z-20 py-1 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
-												role="menu"
+								<div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+									{listSlice.hasMore ? (
+										<>
+											<button
+												type="button"
+												onClick={() =>
+													setDisplayLimit(
+														(prev) => prev + DEFAULT_DOM_CHUNK_STEP,
+													)
+												}
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98"
+												data-testid="btn-invoices-load-more"
 											>
-												<button
-													type="button"
-													onClick={() => {
-														handlePrintAct(inv);
-														setActiveMenuInvoiceId(null);
-													}}
-													className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
-													role="menuitem"
-													style={{ minHeight: "44px" }}
-												>
-													<FileText size={14} className="text-teal-600" />
-													<span>Печать акта 804н</span>
-												</button>
+												<ChevronDown size={14} />
+												<span>
+													Показать ещё (+
+													{Math.min(
+														DEFAULT_DOM_CHUNK_STEP,
+														listSlice.remainingCount,
+													)}
+													)
+												</span>
+											</button>
 
-												{isPending && (
-													<button
-														type="button"
-														onClick={() => handleApplyWarranty100(inv)}
-														className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
-														role="menuitem"
-														style={{ minHeight: "44px" }}
-													>
-														<ShieldCheck size={14} className="text-purple-600" />
-														<span>Гарантия 100% (0 ₽)</span>
-													</button>
-												)}
-
-												<button
-													type="button"
-													onClick={() => {
-														showToast(`Справка для налоговой (ФНС 1151156) по счету ${inv.number} подготовлена`, "info");
-														setActiveMenuInvoiceId(null);
-													}}
-													className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
-													role="menuitem"
-													style={{ minHeight: "44px" }}
-												>
-													<FileCheck size={14} className="text-blue-600" />
-													<span>Справка ФНС (1151156)</span>
-												</button>
-											</div>
-										)}
-									</div>
+											<button
+												type="button"
+												onClick={() => setDisplayLimit(filteredInvoices.length)}
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+												data-testid="btn-invoices-load-all"
+											>
+												<ChevronsDown size={14} />
+												<span>Показать все ({listSlice.totalCount})</span>
+											</button>
+										</>
+									) : (
+										listSlice.displayedCount > DEFAULT_DOM_PAGE_SIZE && (
+											<button
+												type="button"
+												onClick={() => setDisplayLimit(DEFAULT_DOM_PAGE_SIZE)}
+												className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+												data-testid="btn-invoices-collapse-limit"
+											>
+												<span>Свернуть до {DEFAULT_DOM_PAGE_SIZE}</span>
+											</button>
+										)
+									)}
 								</div>
 							</div>
-						);
-					})
+						)}
+						{/* Scroll sentinel for seamless auto-load on scroll if hasMore */}
+						{listSlice.hasMore && (
+							<div
+								ref={sentinelRef}
+								className="h-1 w-full pointer-events-none opacity-0"
+								aria-hidden="true"
+							/>
+						)}
+					</>
 				)}
 			</div>
 
@@ -837,8 +1126,13 @@ th { background: #f8fafc; font-weight: 700; }
 								item.id === activePaymentInvoice.id
 									? {
 											...item,
-											status: (res.method === "warranty_discount_100" ? "warranty_100" : "paid") as BillingInvoice["status"],
-											paidAmountRub: res.method === "warranty_discount_100" ? 0 : item.totalAmountRub,
+											status: (res.method === "warranty_discount_100"
+												? "warranty_100"
+												: "paid") as BillingInvoice["status"],
+											paidAmountRub:
+												res.method === "warranty_discount_100"
+													? 0
+													: item.totalAmountRub,
 											paidAt: new Date().toISOString(),
 											paymentMethod: res.method,
 										}
@@ -848,7 +1142,10 @@ th { background: #f8fafc; font-weight: 700; }
 							return updated;
 						});
 						setActivePaymentInvoice(null);
-						showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");
+						showToast(
+							`Счет ${activePaymentInvoice.number} успешно закрыт`,
+							"success",
+						);
 					}}
 				/>
 			)}
@@ -864,7 +1161,10 @@ th { background: #f8fafc; font-weight: 700; }
 					<div className="w-full max-w-lg rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col">
 						{/* Header */}
 						<div className="p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
-							<h3 id="create-invoice-title" className="text-base font-bold flex items-center gap-2 m-0">
+							<h3
+								id="create-invoice-title"
+								className="text-base font-bold flex items-center gap-2 m-0"
+							>
 								<Receipt size={18} className="text-teal-600" />
 								<span>Быстрое создание счета (1 клик)</span>
 							</h3>
@@ -882,15 +1182,17 @@ th { background: #f8fafc; font-weight: 700; }
 						<form onSubmit={handleCreateInvoice} className="p-4 space-y-4">
 							{/* 1-Click Fast Presets (Mandate 8e: Doctor Autonomy) */}
 							<div className="space-y-1.5">
-								<label className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
+								<div className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
 									<Sparkles size={13} className="text-amber-500" />
 									<span>Быстрые пресеты услуг:</span>
-								</label>
+								</div>
 								<div className="flex items-center gap-1.5 flex-wrap">
 									<button
 										type="button"
 										onClick={() => {
-											setNewServiceName("Первичный осмотр + Компьютерная томография (КЛКТ)");
+											setNewServiceName(
+												"Первичный осмотр + Компьютерная томография (КЛКТ)",
+											);
 											setNewServicePriceRub(3500);
 											setNewIsWarranty100(false);
 										}}
@@ -901,7 +1203,9 @@ th { background: #f8fafc; font-weight: 700; }
 									<button
 										type="button"
 										onClick={() => {
-											setNewServiceName("Профессиональная гигиена полости рта (GBT)");
+											setNewServiceName(
+												"Профессиональная гигиена полости рта (GBT)",
+											);
 											setNewServicePriceRub(10000);
 											setNewIsWarranty100(false);
 										}}
@@ -935,10 +1239,14 @@ th { background: #f8fafc; font-weight: 700; }
 							</div>
 
 							<div className="space-y-1.5">
-								<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+								<label
+									htmlFor="input-new-invoice-patient"
+									className="text-xs font-semibold text-[var(--muted,#64748b)]"
+								>
 									ФИО Пациента <span className="text-red-500">*</span>
 								</label>
 								<input
+									id="input-new-invoice-patient"
 									type="text"
 									required
 									value={newPatientName}
@@ -950,10 +1258,14 @@ th { background: #f8fafc; font-weight: 700; }
 							</div>
 
 							<div className="space-y-1.5">
-								<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+								<label
+									htmlFor="input-new-invoice-service"
+									className="text-xs font-semibold text-[var(--muted,#64748b)]"
+								>
 									Наименование услуги
 								</label>
 								<input
+									id="input-new-invoice-service"
 									type="text"
 									value={newServiceName}
 									onChange={(e) => setNewServiceName(e.target.value)}
@@ -965,26 +1277,38 @@ th { background: #f8fafc; font-weight: 700; }
 
 							<div className="grid grid-cols-2 gap-3">
 								<div className="space-y-1.5">
-									<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+									<label
+										htmlFor="input-new-invoice-price"
+										className="text-xs font-semibold text-[var(--muted,#64748b)]"
+									>
 										Сумма к оплате, ₽
 									</label>
 									<input
+										id="input-new-invoice-price"
 										type="number"
 										min={0}
 										step="1"
 										disabled={newIsWarranty100}
 										value={newIsWarranty100 ? 0 : newServicePriceRub}
-										onChange={(e) => setNewServicePriceRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										onChange={(e) =>
+											setNewServicePriceRub(
+												Math.max(0, parseFloat(e.target.value) || 0),
+											)
+										}
 										data-testid="input-new-invoice-price"
 										className="h-10 w-full px-3 font-mono font-bold text-sm rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500 disabled:opacity-50"
 									/>
 								</div>
 
 								<div className="space-y-1.5">
-									<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+									<label
+										htmlFor="input-new-invoice-doctor"
+										className="text-xs font-semibold text-[var(--muted,#64748b)]"
+									>
 										Лечащий врач
 									</label>
 									<input
+										id="input-new-invoice-doctor"
 										type="text"
 										readOnly
 										value={currentDoctorName}
