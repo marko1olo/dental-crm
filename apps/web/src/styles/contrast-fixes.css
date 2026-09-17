@@ -265,3 +265,16 @@ html.dark .document-package-item-sub {
 	color: var(--muted, #94a3b8);
 }
 
+/* --- 10. Автоматическая контрастность текста на бирюзовых заливках (WCAG AAA) ---
+ * В темах с ярким/неоновым фоном заливки (--teal в cyber_xray, emerald, night, contrast)
+ * класс .text-white даёт нечитаемый белый текст на ярком бирюзовом/циановом фоне.
+ * Использование var(--on-teal) гарантирует идеальный контраст >= 7:1 во всех 10 темах.
+ */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
+	:is([class*="bg-[var(--teal"], [class*="bg-teal-"], .primary-button, .quick-chip.active):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *)
+	:is(.text-white, [class*="text-white"]),
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
+	:is([class*="bg-[var(--teal"].text-white, [class*="bg-teal-"].text-white, .primary-button.text-white):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *) {
+	color: var(--on-teal) !important;
+}
+

@@ -187,9 +187,63 @@
 
 	.document-row p,
 	.patient-row p,
-	.appointment-card p {
+	.appointment-card p,
+	.curator-patient-card p,
+	.curator-patient-card h3,
+	.curator-patient-card span,
+	.lab-order-card h3,
+	.lab-order-card span,
+	.clinical-tasks-toolbar span {
 		overflow-wrap: anywhere;
 		word-break: break-word;
+	}
+}
+
+/* --- 7. Защита длинных русских слов и тулбаров 32-36px (Мандаты 8d, 8e, 8p) --- */
+.patient-row h3,
+.patient-row p,
+.appointment-card h3,
+.appointment-card p,
+.document-row h3,
+.document-row p,
+.curator-patient-card h3,
+.curator-patient-card p {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+@media (min-width: 641px) {
+	/* Тулбар очереди куратора — строго 1 строка 32-36px на десктопе */
+	.curator-queue-toolbar {
+		flex-wrap: nowrap !important;
+		min-height: 36px !important;
+		height: 36px !important;
+		gap: 8px !important;
+	}
+
+	.curator-search-input {
+		min-height: 32px !important;
+		height: 32px !important;
+		font-size: 12px !important;
+		padding: 4px 10px 4px 34px !important;
+	}
+
+	.curator-pill-btn {
+		min-height: 32px !important;
+		height: 32px !important;
+		padding: 4px 10px !important;
+		font-size: 12px !important;
+		white-space: nowrap !important;
+	}
+
+	/* Тулбар архива документов — строго 1 строка 32-36px */
+	.archive-quick-toolbar {
+		min-height: 36px !important;
+		height: 36px !important;
+		padding: 2px 12px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		gap: 8px !important;
 	}
 }
 

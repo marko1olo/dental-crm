@@ -885,7 +885,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 										: "var(--paper-soft, #f1f5f9)",
 								color:
 									filterStatus === "open"
-										? "#ffffff"
+										? "var(--on-teal, #ffffff)"
 										: "var(--ink, #1e293b)",
 								border: "1px solid var(--line, #e2e8f0)",
 								fontWeight: filterStatus === "open" ? 600 : 400,
@@ -909,7 +909,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 										: "var(--paper-soft, #f1f5f9)",
 								color:
 									filterStatus === "completed"
-										? "#ffffff"
+										? "var(--on-teal, #ffffff)"
 										: "var(--ink, #1e293b)",
 								border: "1px solid var(--line, #e2e8f0)",
 								fontWeight: filterStatus === "completed" ? 600 : 400,
@@ -933,7 +933,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 										: "var(--paper-soft, #f1f5f9)",
 								color:
 									filterStatus === "all"
-										? "#ffffff"
+										? "var(--on-teal, #ffffff)"
 										: "var(--ink, #1e293b)",
 								border: "1px solid var(--line, #e2e8f0)",
 								fontWeight: filterStatus === "all" ? 600 : 400,

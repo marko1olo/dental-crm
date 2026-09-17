@@ -575,14 +575,14 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					</div>
 				</header>
 
-				{/* 2. Toolbar & Stage Switcher (Mandate 8d: 1 row, touch target >= 44px) */}
-				<div className="ortho-modal-toolbar min-h-[44px] py-1 px-4 flex items-center justify-between gap-2 overflow-x-auto whitespace-nowrap shrink-0 flex-nowrap">
+				{/* 2. Toolbar & Stage Switcher (Mandate 8d/8p: 1 row, desktop 32-36px, mobile touch target >= 44px) */}
+				<div className="ortho-modal-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 py-1 px-4 flex items-center justify-between gap-2 overflow-x-auto whitespace-nowrap shrink-0 flex-nowrap">
 					{/* Stage buttons */}
 					<div className="ortho-stage-selector" role="group" aria-label="Этап фотопротокола">
 						<button
 							type="button"
 							onClick={() => handleStageChange("pre_treatment")}
-							className={`ortho-stage-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "pre_treatment" ? "active-stage-pre" : ""}`}
+							className={`ortho-stage-btn min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "pre_treatment" ? "active-stage-pre" : ""}`}
 							data-testid="stage-pre-btn"
 						>
 							<span>До лечения</span>
@@ -590,7 +590,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => handleStageChange("active_monitoring")}
-							className={`ortho-stage-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "active_monitoring" ? "active-stage-active" : ""}`}
+							className={`ortho-stage-btn min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "active_monitoring" ? "active-stage-active" : ""}`}
 							data-testid="stage-active-btn"
 						>
 							<span>Контроль</span>
@@ -598,7 +598,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => handleStageChange("post_treatment")}
-							className={`ortho-stage-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "post_treatment" ? "active-stage-post" : ""}`}
+							className={`ortho-stage-btn min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "post_treatment" ? "active-stage-post" : ""}`}
 							data-testid="stage-post-btn"
 						>
 							<span>После лечения</span>
@@ -611,9 +611,9 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setActiveCategoryFilter("all")}
-								className={`px-3 py-2 min-h-[44px] text-xs font-semibold rounded inline-flex items-center justify-center ${
+								className={`px-3 py-2 min-h-[44px] sm:min-h-[28px] sm:h-7 sm:py-0.5 text-xs font-semibold rounded inline-flex items-center justify-center ${
 									activeCategoryFilter === "all"
-										? "bg-[var(--teal)] text-white"
+										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)]"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -622,9 +622,9 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setActiveCategoryFilter("extraoral")}
-								className={`px-3 py-2 min-h-[44px] text-xs font-semibold rounded inline-flex items-center justify-center ${
+								className={`px-3 py-2 min-h-[44px] sm:min-h-[28px] sm:h-7 sm:py-0.5 text-xs font-semibold rounded inline-flex items-center justify-center ${
 									activeCategoryFilter === "extraoral"
-										? "bg-[var(--teal)] text-white"
+										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)]"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -633,9 +633,9 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setActiveCategoryFilter("intraoral")}
-								className={`px-3 py-2 min-h-[44px] text-xs font-semibold rounded inline-flex items-center justify-center ${
+								className={`px-3 py-2 min-h-[44px] sm:min-h-[28px] sm:h-7 sm:py-0.5 text-xs font-semibold rounded inline-flex items-center justify-center ${
 									activeCategoryFilter === "intraoral"
-										? "bg-[var(--teal)] text-white"
+										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)]"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -647,7 +647,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => setGlobalGuidelinesEnabled(!globalGuidelinesEnabled)}
-							className={`ortho-tool-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2 ${globalGuidelinesEnabled ? "active" : ""}`}
+							className={`ortho-tool-btn min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3.5 py-2 inline-flex items-center gap-2 ${globalGuidelinesEnabled ? "active" : ""}`}
 							title="Показать/скрыть сетку наложения (центральная линия и окклюзия)"
 							data-testid="toggle-guidelines-btn"
 						>

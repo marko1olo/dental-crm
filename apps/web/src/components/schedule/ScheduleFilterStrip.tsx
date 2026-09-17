@@ -397,7 +397,7 @@ export function ScheduleFilterStrip({
 					return (
 						<button
 							type="button"
-							className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
+							className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
 							onClick={handleSelectMyChair}
 							title={`Моё дежурное кресло: ${cleanChairName}. Нажмите для быстрой фильтрации (1 клик)`}
 							aria-label={`Моё дежурное кресло: ${cleanChairName}`}
@@ -505,7 +505,7 @@ export function ScheduleFilterStrip({
 							onClick={() => setScheduleViewMode("timeline")}
 							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[28px] sm:min-w-0 px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "timeline"
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+									? "bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Лента приемов по дням"
@@ -521,7 +521,7 @@ export function ScheduleFilterStrip({
 							onClick={() => setScheduleViewMode("grid")}
 							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[28px] sm:min-w-0 px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "grid"
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+									? "bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Сетка по кабинетам и креслам"
@@ -537,7 +537,7 @@ export function ScheduleFilterStrip({
 							onClick={() => setScheduleViewMode("chairs")}
 							className={`min-h-[44px] sm:min-h-0 sm:h-7 min-w-[28px] sm:min-w-0 px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "chairs"
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+									? "bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] shadow-2xs"
 									: "bg-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							title="Режим расписания по креслам (StomX паритет)"
@@ -588,7 +588,7 @@ export function ScheduleFilterStrip({
 											}}
 											className={`flex-1 min-h-[44px] px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all ${
 												scheduleViewMode === "timeline"
-													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													? "bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] shadow-2xs"
 													: "bg-transparent text-[var(--ink)]"
 											}`}
 										>
@@ -603,7 +603,7 @@ export function ScheduleFilterStrip({
 											}}
 											className={`flex-1 min-h-[44px] px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all ${
 												scheduleViewMode === "grid"
-													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													? "bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] shadow-2xs"
 													: "bg-transparent text-[var(--ink)]"
 											}`}
 										>
@@ -618,7 +618,7 @@ export function ScheduleFilterStrip({
 											}}
 											className={`flex-1 min-h-[44px] px-2 py-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all ${
 												scheduleViewMode === "chairs"
-													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													? "bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] shadow-2xs"
 													: "bg-transparent text-[var(--ink)]"
 											}`}
 										>

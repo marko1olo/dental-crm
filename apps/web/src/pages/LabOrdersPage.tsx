@@ -434,10 +434,10 @@ export function LabOrdersPage() {
 							>
 								<div className="space-y-3">
 									{/* Card Top */}
-									<div className="flex items-start justify-between gap-2">
-										<div className="flex items-center gap-2">
+									<div className="flex items-start justify-between gap-2 min-w-0">
+										<div className="flex items-center gap-2 min-w-0 flex-1">
 											<span
-												className={`min-h-[36px] px-2.5 py-1 rounded-xl font-extrabold text-xs flex items-center justify-center text-center ${
+												className={`min-h-[36px] px-2.5 py-1 rounded-xl font-extrabold text-xs flex items-center justify-center text-center shrink-0 ${
 													order.jawScope ||
 													isJawWideConstruction(order.constructionType) ||
 													Boolean(
@@ -453,17 +453,17 @@ export function LabOrdersPage() {
 											>
 												{formatLabOrderTeethOrJaw(order)}
 											</span>
-											<div>
-												<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0">
+											<div className="min-w-0 flex-1">
+												<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0 truncate">
 													{order.patientName || "Пациент"}
 												</h3>
-												<span className="text-xs text-[var(--muted)] block">
+												<span className="text-xs text-[var(--muted)] block truncate">
 													Врач: {order.doctorName || "Не указан"}
 												</span>
 											</div>
 										</div>
 
-										{getStatusBadge(order.status)}
+										<div className="shrink-0">{getStatusBadge(order.status)}</div>
 									</div>
 
 									{/* Tech Details */}
@@ -508,7 +508,7 @@ export function LabOrdersPage() {
 										<button
 											type="button"
 											onClick={() => handleOpenPrintOrder(order)}
-											className="h-9 min-h-[36px] px-3 rounded-xl bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+											className="h-9 min-h-[36px] px-3 rounded-xl bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 											title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
 											data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 										>

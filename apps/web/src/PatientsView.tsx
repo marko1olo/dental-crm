@@ -1190,7 +1190,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									onClick={() =>
 										executeOpenPatientVisitAutonomy({ selectedPatient })
 									}
-									className="min-h-[40px] px-3 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									className="min-h-[40px] px-3 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 									title="Открыть амбулаторный приём 043/у"
 									data-testid="patient-mobile-header-open-visit-btn"
 								>
