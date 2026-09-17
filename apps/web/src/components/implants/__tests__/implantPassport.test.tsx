@@ -192,7 +192,8 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		// Count direct action buttons in footer
 		const footerMatch = html.match(/<footer class="implant-passport-actions"[^>]*>([\s\S]*?)<\/footer>/);
 		assert.ok(footerMatch, "Must have footer");
-		const buttonCount = (footerMatch[1].match(/<button/g) || []).length;
+		const footerHtml = String(footerMatch?.[1] ?? "");
+		const buttonCount = (footerHtml.match(/<button/g) || []).length;
 		assert.ok(buttonCount <= 2, `Footer must have at most 2 action buttons (Miller's Law), found ${buttonCount}`);
 	});
 
