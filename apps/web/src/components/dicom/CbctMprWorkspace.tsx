@@ -15,10 +15,7 @@ export interface CbctMprWorkspaceProps {
 }
 
 export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
-	isOpen,
-	onClose,
-	patientId = null,
-	authHeaders = {},
+	isOpen, onClose, patientId = null, patientName, studyDate, voxelSpacing, authHeaders = {},
 }) => {
 	useEffect(() => {
 		if (!isOpen) return;
@@ -30,7 +27,15 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	if (!isOpen) return null;
 	return (
 		<div className="cbct-mpr-workspace-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-			<Cornerstone3DViewer imageIds={[]} patientId={patientId} authHeaders={authHeaders} onClose={onClose} />
+			<Cornerstone3DViewer
+				imageIds={[]}
+				patientId={patientId}
+				patientName={patientName}
+				studyDate={studyDate}
+				voxelSpacing={voxelSpacing}
+				authHeaders={authHeaders}
+				onClose={onClose}
+			/>
 		</div>
 	);
 };

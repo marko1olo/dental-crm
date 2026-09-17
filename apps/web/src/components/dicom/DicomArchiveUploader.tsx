@@ -406,13 +406,15 @@ export function DicomArchiveUploader({
 			<div className="flex flex-wrap items-center justify-center gap-3 mt-3">
 				<button
 					type="button"
-					disabled={loading}
-					onClick={() => fileInputRef.current?.click()}
-					className="px-4 py-2 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+					onClick={() => {
+						if (!loading) fileInputRef.current?.click();
+					}}
+					className="px-3.5 py-1.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer"
 					style={{
 						background: "var(--surface-50, #f8fafc)",
 						borderColor: "var(--line, #cbd5e1)",
 						color: "var(--ink, #0f172a)",
+						opacity: loading ? 0.7 : 1,
 					}}
 				>
 					<Archive size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -420,13 +422,15 @@ export function DicomArchiveUploader({
 				</button>
 				<button
 					type="button"
-					disabled={loading}
-					onClick={() => folderInputRef.current?.click()}
-					className="px-4 py-2 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+					onClick={() => {
+						if (!loading) folderInputRef.current?.click();
+					}}
+					className="px-3.5 py-1.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer"
 					style={{
 						background: "var(--surface-50, #f8fafc)",
 						borderColor: "var(--line, #cbd5e1)",
 						color: "var(--ink, #0f172a)",
+						opacity: loading ? 0.7 : 1,
 					}}
 				>
 					<Folder size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
