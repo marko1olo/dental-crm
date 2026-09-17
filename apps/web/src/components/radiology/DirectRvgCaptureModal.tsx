@@ -1038,6 +1038,11 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								onSelectPreset={(p) => setActivePresetId(p.id)}
 								isSplitCompare={isSplitCompare}
 								onToggleSplitCompare={setIsSplitCompare}
+								onRotate={() => setRotation((prev) => (prev + 90) % 360)}
+								onReset={() => {
+									setFilters(DEFAULT_RVG_FILTERS);
+									setActivePresetId("standard");
+								}}
 							/>
 						</div>
 

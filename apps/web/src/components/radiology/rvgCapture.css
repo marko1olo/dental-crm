@@ -342,16 +342,25 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 44px;
-	height: 44px;
-	min-width: 44px;
-	min-height: 44px;
+	width: 32px;
+	height: 32px;
+	min-width: 32px;
+	min-height: 32px;
 	border-radius: 0.375rem;
 	background: transparent;
 	border: 1px solid transparent;
-	color: #94a3b8;
+	color: var(--muted, #94a3b8);
 	cursor: pointer;
 	transition: all 0.15s ease;
+}
+
+@media (pointer: coarse) {
+	.rvg-tool-btn {
+		width: 44px;
+		height: 44px;
+		min-width: 44px;
+		min-height: 44px;
+	}
 }
 
 .rvg-tool-btn:hover {
@@ -596,8 +605,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	min-height: 44px;
-	padding: 0.5rem 0.75rem;
+	min-height: 34px;
+	padding: 0.375rem 0.75rem;
 	border-radius: 0.5rem;
 	font-size: 0.8125rem;
 	font-weight: 600;
@@ -607,6 +616,13 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 	text-align: left;
+}
+
+@media (pointer: coarse) {
+	.rvg-projection-btn {
+		min-height: 44px;
+		padding: 0.5rem 0.75rem;
+	}
 }
 
 .rvg-projection-btn:hover {
@@ -640,8 +656,8 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.375rem;
-	min-height: 44px;
-	padding: 0.5rem 0.625rem;
+	min-height: 32px;
+	padding: 0.375rem 0.625rem;
 	border-radius: 0.5rem;
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -651,6 +667,13 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 	white-space: nowrap;
+}
+
+@media (pointer: coarse) {
+	.rvg-preset-chip {
+		min-height: 44px;
+		padding: 0.5rem 0.625rem;
+	}
 }
 
 .rvg-preset-chip:hover {

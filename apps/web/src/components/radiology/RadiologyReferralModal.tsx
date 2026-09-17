@@ -9,7 +9,6 @@ import {
 import {
 	Activity,
 	Check,
-	FileText,
 	Info,
 	Printer,
 	Scan,
@@ -143,10 +142,51 @@ const CLINICAL_GOALS_CATALOG: readonly {
 
 const EMPTY_TEETH_LIST: readonly string[] = [];
 
+const ZONE_PRESETS = [
+	{
+		label: "Обе челюсти (Все)",
+		teeth: [
+			...ADULT_FDI_TEETH.quadrant1,
+			...ADULT_FDI_TEETH.quadrant2,
+			...ADULT_FDI_TEETH.quadrant4,
+			...ADULT_FDI_TEETH.quadrant3,
+		],
+	},
+	{
+		label: "Верхняя челюсть",
+		teeth: [...ADULT_FDI_TEETH.quadrant1, ...ADULT_FDI_TEETH.quadrant2],
+	},
+	{
+		label: "Нижняя челюсть",
+		teeth: [...ADULT_FDI_TEETH.quadrant4, ...ADULT_FDI_TEETH.quadrant3],
+	},
+	{
+		label: "Фронт (13–23, 33–43)",
+		teeth: ["13", "12", "11", "21", "22", "23", "33", "32", "31", "41", "42", "43"],
+	},
+	{
+		label: "Сегмент 1 (18–11)",
+		teeth: [...ADULT_FDI_TEETH.quadrant1],
+	},
+	{
+		label: "Сегмент 2 (21–28)",
+		teeth: [...ADULT_FDI_TEETH.quadrant2],
+	},
+	{
+		label: "Сегмент 3 (31–38)",
+		teeth: [...ADULT_FDI_TEETH.quadrant3],
+	},
+	{
+		label: "Сегмент 4 (48–41)",
+		teeth: [...ADULT_FDI_TEETH.quadrant4],
+	},
+] as const;
+
 export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	isOpen,
 	onClose,
 	patient,
+	diary,
 	doctorName,
 	doctorSpecialty,
 	clinicName,
@@ -165,8 +205,10 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	const [customTeethInput, setCustomTeethInput] = useState<string>(
 		initialTeeth.join(", "),
 	);
-	const [diagnosisIcd10, setDiagnosisIcd10] = useState<string>(initialDiagnosisIcd10);
-	const [clinicalNotes, setClinicalNotes] = useState<string>("");
+	const [diagnosisIcd10, setDiagnosisIcd10] = useState<string>(
+		diary?.diagnosisIcd10 || initialDiagnosisIcd10,
+	);
+	const [clinicalNotes, setClinicalNotes] = useState<string>(diary?.statusLocalis || "");
 	const [customReferralNumber, setCustomReferralNumber] = useState<string>("");
 	const [activeTab, setActiveTab] = useState<"form" | "preview">("form");
 
@@ -183,6 +225,19 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		if (initialTeeth.length > 0) {
 			setSelectedTeeth(initialTeeth);
 			setCustomTeethInput(initialTeeth.join(", "));
+		} else if (diary?.diagnosisTooth) {
+			const teethFromDiary = diary.diagnosisTooth.split(/[,;\s]+/).filter(Boolean);
+			if (teethFromDiary.length > 0) {
+				setSelectedTeeth(teethFromDiary);
+				setCustomTeethInput(teethFromDiary.join(", "));
+			}
+		}
+
+		if (diary?.diagnosisIcd10) {
+			setDiagnosisIcd10(diary.diagnosisIcd10);
+		}
+		if (diary?.statusLocalis) {
+			setClinicalNotes(diary.statusLocalis);
 		}
 
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -190,7 +245,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, initialTeethKey, onClose]);
+	}, [isOpen, initialTeethKey, diary, onClose]);
 
 	if (!isOpen || typeof document === "undefined") return null;
 
@@ -212,6 +267,33 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		}
 		setSelectedTeeth(updated);
 		setCustomTeethInput(updated.join(", "));
+	};
+
+	// 1-Click Zone of Interest Preset (Mandates 8e, 8k)
+	const handleApplyZonePreset = (teeth: readonly string[]) => {
+		const sorted = [...teeth];
+		setSelectedTeeth(sorted);
+		setCustomTeethInput(sorted.join(", "));
+	};
+
+	// Smart Study Type selection with 1-click zone auto-population
+	const handleSelectStudyType = (id: DentalRadiologyStudyType) => {
+		setStudyType(id);
+		if (
+			(id === "optg_digital_panoramic" ||
+				id === "cbct_jaw_8x8" ||
+				id === "cbct_full_maxillofacial_15x15") &&
+			selectedTeeth.length <= 1
+		) {
+			const allTeeth = [
+				...ADULT_FDI_TEETH.quadrant1,
+				...ADULT_FDI_TEETH.quadrant2,
+				...ADULT_FDI_TEETH.quadrant4,
+				...ADULT_FDI_TEETH.quadrant3,
+			];
+			setSelectedTeeth(allTeeth);
+			setCustomTeethInput("Все зубные ряды");
+		}
 	};
 
 	// Selected Study Catalog Item
@@ -375,7 +457,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 										<button
 											key={item.id}
 											type="button"
-											onClick={() => setStudyType(item.id)}
+											onClick={() => handleSelectStudyType(item.id)}
 											className={`flex flex-col p-3 rounded-2xl border text-left transition-all min-h-[44px] ${
 												isSelected
 													? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--ink)] shadow-sm ring-1 ring-[var(--teal-soft)]"
@@ -439,7 +521,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							</div>
 						</div>
 
-						{/* 3. FDI Tooth Selector Matrix (>= 44x44px touch targets) */}
+						{/* 3. FDI Tooth Selector Matrix & 1-Click Zone Presets (Mandates 8e, 8k) */}
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
@@ -459,6 +541,29 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								)}
 							</div>
 
+							{/* 1-Click Zone Presets (Doctor Autonomy, Mandates 8e, 8k) */}
+							<div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-thin">
+								{ZONE_PRESETS.map((preset) => {
+									const isCurrent =
+										preset.teeth.length === selectedTeeth.length &&
+										preset.teeth.every((t) => selectedTeeth.includes(t));
+									return (
+										<button
+											key={preset.label}
+											type="button"
+											onClick={() => handleApplyZonePreset(preset.teeth)}
+											className={`px-2.5 py-1 text-xs font-semibold rounded-lg border whitespace-nowrap transition-all ${
+												isCurrent
+													? "bg-[var(--teal)] border-[var(--teal)] text-white shadow-sm font-bold"
+													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)]"
+											}`}
+										>
+											{preset.label}
+										</button>
+									);
+								})}
+							</div>
+
 							<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
 								{/* Upper jaw */}
 								<div className="flex justify-between gap-1 overflow-x-auto pb-1 scrollbar-thin">
@@ -469,7 +574,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
+												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -487,7 +592,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
+												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -508,7 +613,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
+												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -526,7 +631,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
+												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"

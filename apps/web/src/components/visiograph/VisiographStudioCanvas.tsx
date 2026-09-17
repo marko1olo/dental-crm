@@ -14,24 +14,17 @@ import {
 	AlertTriangle,
 	CheckCircle2,
 	Compass,
-	CornerDownLeft,
+	Contrast,
 	Download,
 	FileDown,
-	FileText,
-	Maximize2,
 	MousePointer,
-	Move,
-	Plus,
+	Printer,
 	RotateCcw,
 	RotateCw,
 	Ruler,
-	Save,
 	Scale,
 	Sliders,
-	Sparkles,
-	Trash2,
 	X,
-	Zap,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
@@ -582,28 +575,121 @@ export function VisiographStudioCanvas({
 		setActiveClinicalFilter(filter.id);
 	};
 
-	// Apply Preset
-	const handleApplyPreset = (presetName: string) => {
-		setActiveClinicalFilter(null);
-		switch (presetName) {
-			case "endo":
-				setParams({ brightness: -5, contrast: 45, gamma: 0.85, sharpness: 55, invert: false });
-				break;
-			case "bone":
-				setParams({ brightness: 5, contrast: 25, gamma: 0.9, sharpness: 35, invert: false });
-				break;
-			case "enamel":
-				setParams({ brightness: -10, contrast: 45, gamma: 1.1, sharpness: 50, invert: false });
-				break;
-			case "soft":
-				setParams({ brightness: 15, contrast: 15, gamma: 0.7, sharpness: 10, invert: false });
-				break;
-			case "invert":
-				setParams((prev) => ({ ...prev, invert: !prev.invert }));
-				break;
-			default:
-				handleResetParams();
-		}
+	// 1-Click Fast Legal Protocol Printout with Clinic Stamp (Mandate 8e, Doctor Autonomy)
+	const handlePrintProtocol = () => {
+		const canvas = canvasRef.current;
+		if (!canvas || typeof document === "undefined") return;
+
+		const legalCanvas = buildLegalExportCanvas(canvas, {
+			patient: {
+				id: patientId || "pat_001",
+				fullName: patientFullName || "Пациент",
+			},
+			clinic: DEFAULT_CLINIC_CREDENTIALS,
+			doctor: {
+				...DEFAULT_DOCTOR_SIGNATURE,
+				doctorFullName: doctorName || DEFAULT_DOCTOR_SIGNATURE.doctorFullName,
+			},
+			study: {
+				id: studyId,
+				toothCode: toothCode || undefined,
+				capturedAt: new Date().toISOString(),
+			},
+			calibration: isCalibrated ? calibration : undefined,
+			rulers,
+			angles,
+			lesions,
+		});
+
+		const imageUri = exportCanvasToPng(legalCanvas);
+
+		const printFrame = document.createElement("iframe");
+		printFrame.style.position = "fixed";
+		printFrame.style.right = "0";
+		printFrame.style.bottom = "0";
+		printFrame.style.width = "0";
+		printFrame.style.height = "0";
+		printFrame.style.border = "0";
+		document.body.appendChild(printFrame);
+
+		const printDoc = printFrame.contentWindow?.document || printFrame.contentDocument;
+		if (!printDoc) return;
+
+		const measurementsRows = [
+			...rulers.map((r, i) => `<tr><td>Линейка #${i + 1} (${r.label})</td><td>${r.lengthMm.toFixed(1)} мм</td><td>Калибр: 1 px = ${calibration.scaleMmPerPixel.toFixed(4)} мм</td></tr>`),
+			...angles.map((a, i) => `<tr><td>Угломер #${i + 1} (${a.label})</td><td>${a.angleDeg.toFixed(1)}°</td><td>Ось зуба / коронки</td></tr>`),
+			...lesions.map((les, i) => `<tr><td>Очаг #${i + 1} (${les.classificationLabel})</td><td>${les.areaMm2.toFixed(1)} мм² (Ø ${les.equivalentDiameterMm.toFixed(1)} мм)</td><td>${les.treatmentRecommendation}</td></tr>`),
+		].join("");
+
+		const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Протокол рентгенограммы — ${patientFullName}</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111; margin: 0; padding: 0; font-size: 10pt; line-height: 1.35; }
+  .clinic-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #14b8a6; padding-bottom: 8px; margin-bottom: 10px; }
+  .clinic-title { font-size: 13pt; font-weight: 800; text-transform: uppercase; color: #0f172a; }
+  .clinic-sub { font-size: 8.5pt; color: #64748b; }
+  .protocol-badge { text-align: right; font-weight: 800; font-size: 11pt; color: #0d9488; }
+  .patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 9pt; }
+  .image-wrapper { text-align: center; margin: 10px 0; }
+  .image-wrapper img { max-width: 100%; max-height: 140mm; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .table-title { font-weight: 700; font-size: 9.5pt; margin: 10px 0 4px 0; color: #0f172a; }
+  table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 12px; }
+  th, td { border: 1px solid #cbd5e1; padding: 4px 8px; text-align: left; }
+  th { background: #f1f5f9; font-weight: 700; color: #334155; }
+  .stamp-footer { margin-top: 16px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8.5pt; color: #475569; }
+  .stamp-box { width: 70px; height: 70px; border: 1px dashed #94a3b8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8pt; font-weight: 700; color: #64748b; }
+</style>
+</head>
+<body>
+  <div class="clinic-header">
+    <div>
+      <div class="clinic-title">${DEFAULT_CLINIC_CREDENTIALS.clinicName}</div>
+      <div class="clinic-sub">Лицензия № ЛО-77-01-018942 · Рентген-кабинет радиовизиографии</div>
+    </div>
+    <div class="protocol-badge">
+      ПРОТОКОЛ РВГ<br>
+      <span style="font-size: 8.5pt; font-weight: normal; color: #64748b;">${new Date().toLocaleDateString("ru-RU")}</span>
+    </div>
+  </div>
+  <div class="patient-grid">
+    <div><strong>Пациент:</strong> ${patientFullName} (ID: ${patientId})</div>
+    <div><strong>Зуб (FDI):</strong> ${toothCode ? `Зуб ${toothCode}` : "Прицельный снимок"}</div>
+    <div><strong>Врач:</strong> ${doctorName}</div>
+    <div><strong>Калибровка:</strong> 1 px = ${calibration.scaleMmPerPixel.toFixed(4)} мм</div>
+  </div>
+  <div class="image-wrapper">
+    <img src="${imageUri}" alt="Радиовизиограмма" />
+  </div>
+  ${measurementsRows.length > 0 ? `
+  <div class="table-title">Клинические измерения и периапикальные очаги:</div>
+  <table>
+    <thead><tr><th>Параметр / Метка</th><th>Значение</th><th>Примечание</th></tr></thead>
+    <tbody>${measurementsRows}</tbody>
+  </table>` : ""}
+  <div class="stamp-footer">
+    <div>
+      <div>Заключение: Рентгенологический контроль завершен. Данные внесены в медицинскую карту (043/у).</div>
+      <div style="margin-top: 6px;">Врач: ${doctorName} ___________________ / Подпись</div>
+    </div>
+    <div class="stamp-box">М.П.</div>
+  </div>
+</body>
+</html>`;
+
+		printDoc.open();
+		printDoc.write(html);
+		printDoc.close();
+		setTimeout(() => {
+			printFrame.contentWindow?.focus();
+			printFrame.contentWindow?.print();
+			setTimeout(() => {
+				document.body.removeChild(printFrame);
+			}, 1000);
+		}, 250);
 	};
 
 	// Perform Export
@@ -702,22 +788,25 @@ export function VisiographStudioCanvas({
 		>
 			{/* Top Bar with Tools and Preset Buttons (Strict 1-Row Toolbar, Mandate 8d) */}
 			<div
+				className="visiograph-top-toolbar"
 				style={{
 					display: "flex",
 					flexWrap: "nowrap",
 					alignItems: "center",
 					justifyContent: "space-between",
-					padding: "4px 12px",
-					minHeight: "44px",
-					background: "var(--paper-soft)",
-					borderBottom: "1px solid var(--line)",
-					gap: "8px",
+					padding: "2px 8px",
+					height: "36px",
+					minHeight: "36px",
+					maxHeight: "36px",
+					background: "var(--paper-soft, #161b22)",
+					borderBottom: "1px solid var(--line, #30363d)",
+					gap: "6px",
 					overflowX: "auto",
 					whiteSpace: "nowrap",
 				}}
 			>
-				{/* Primary Tools: Pointer, Ruler, Apex + Secondary Tools Dropdown */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+				{/* Primary Tools: Pointer, Ruler, Apex + Invert + Rotate + Secondary Tools Dropdown */}
+				<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
 					<button
 						type="button"
 						data-testid="btn-tool-pointer"
@@ -726,22 +815,23 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
-							minHeight: "44px",
-							background: activeTool === "pointer" ? "var(--primary)" : "var(--paper-strong)",
-							color: activeTool === "pointer" ? "#ffffff" : "var(--ink)",
-							border: "1px solid var(--line)",
-							borderRadius: "6px",
-							padding: "6px 12px",
+							height: "30px",
+							background: activeTool === "pointer" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #0d1117)",
+							color: activeTool === "pointer" ? "#ffffff" : "var(--ink, #c9d1d9)",
+							border: "1px solid var(--line, #30363d)",
+							borderRadius: "5px",
+							padding: "2px 8px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "6px",
-							fontSize: "0.84rem",
+							gap: "4px",
+							fontSize: "0.78rem",
+							fontWeight: 500,
 						}}
 						title="Указатель (Просмотр)"
 					>
-						<MousePointer size={15} /> Указатель
+						<MousePointer size={14} /> <span>Указатель</span>
 					</button>
 
 					<button
@@ -752,23 +842,23 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
-							minHeight: "44px",
-							background: activeTool === "ruler" ? "var(--primary)" : "var(--paper-strong)",
-							color: activeTool === "ruler" ? "#ffffff" : "var(--primary)",
-							border: "1px solid var(--line)",
-							borderRadius: "6px",
-							padding: "6px 12px",
+							height: "30px",
+							background: activeTool === "ruler" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #0d1117)",
+							color: activeTool === "ruler" ? "#ffffff" : "var(--primary, #58a6ff)",
+							border: "1px solid var(--line, #30363d)",
+							borderRadius: "5px",
+							padding: "2px 8px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "6px",
-							fontSize: "0.84rem",
+							gap: "4px",
+							fontSize: "0.78rem",
 							fontWeight: 600,
 						}}
 						title="Измерить расстояние между двумя точками (мм)"
 					>
-						<Ruler size={15} /> Линейка (мм)
+						<Ruler size={14} /> <span>Линейка</span>
 					</button>
 
 					<button
@@ -779,57 +869,106 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
-							minHeight: "44px",
-							background: activeTool === "root_canal" ? "var(--success)" : "var(--paper-strong)",
-							color: activeTool === "root_canal" ? "#ffffff" : "var(--success)",
-							border: `1px solid ${activeTool === "root_canal" ? "var(--success)" : "var(--line)"}`,
-							borderRadius: "6px",
-							padding: "6px 12px",
+							height: "30px",
+							background: activeTool === "root_canal" ? "var(--success, #238636)" : "var(--paper-strong, #0d1117)",
+							color: activeTool === "root_canal" ? "#ffffff" : "var(--success, #3fb950)",
+							border: `1px solid ${activeTool === "root_canal" ? "var(--success, #238636)" : "var(--line, #30363d)"}`,
+							borderRadius: "5px",
+							padding: "2px 8px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "6px",
-							fontSize: "0.84rem",
+							gap: "4px",
+							fontSize: "0.78rem",
 							fontWeight: 700,
 						}}
 						title="Эндо-линейка (Apex Locator / WL): измерение рабочей длины канала в мм"
 					>
-						<Activity size={15} /> Апекс / WL (мм)
+						<Activity size={14} /> <span>Апекс WL</span>
 					</button>
 
-					{/* Secondary Tools Dropdown: Calibrate, Angle, Lesion, Invert, Rotate 90/180 */}
+					{/* Direct 1-Click Invert (Negative/Positive) — Hick's Law */}
+					<button
+						type="button"
+						data-testid="btn-tool-invert"
+						onClick={() => setParams((prev) => ({ ...prev, invert: !prev.invert }))}
+						style={{
+							height: "30px",
+							background: params.invert ? "var(--teal, #0d9488)" : "var(--paper-strong, #0d1117)",
+							color: params.invert ? "#ffffff" : "var(--ink, #c9d1d9)",
+							border: `1px solid ${params.invert ? "var(--teal, #0d9488)" : "var(--line, #30363d)"}`,
+							borderRadius: "5px",
+							padding: "2px 8px",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "4px",
+							fontSize: "0.78rem",
+							fontWeight: 600,
+						}}
+						title="Инверсия (Негатив / Позитив) для оценки микротрещин"
+					>
+						<Contrast size={14} /> <span>Негатив</span>
+					</button>
+
+					{/* Direct 1-Click Rotate 90° */}
+					<button
+						type="button"
+						data-testid="btn-tool-rotate"
+						onClick={() => setCanvasRotationDeg((r) => (r + 90) % 360)}
+						style={{
+							height: "30px",
+							background: "var(--paper-strong, #0d1117)",
+							color: "var(--ink, #c9d1d9)",
+							border: "1px solid var(--line, #30363d)",
+							borderRadius: "5px",
+							padding: "2px 8px",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "4px",
+							fontSize: "0.78rem",
+						}}
+						title="Повернуть снимок на 90°"
+					>
+						<RotateCw size={14} /> <span>90°</span>
+					</button>
+
+					{/* Secondary Tools Dropdown: Calibrate, Angle, Lesion, Rotate 180 */}
 					<div style={{ position: "relative", display: "inline-block" }}>
 						<button
 							type="button"
 							data-testid="btn-tools-dropdown"
 							onClick={() => setIsToolsMenuOpen((prev) => !prev)}
 							style={{
-								minHeight: "44px",
-								background: ["calibrate", "angle", "lesion"].includes(activeTool) ? "var(--primary)" : "var(--paper-strong)",
-								color: ["calibrate", "angle", "lesion"].includes(activeTool) ? "#ffffff" : "var(--ink)",
-								border: "1px solid var(--line)",
-								borderRadius: "6px",
-								padding: "6px 12px",
+								height: "30px",
+								background: ["calibrate", "angle", "lesion"].includes(activeTool) ? "var(--primary, #1f6feb)" : "var(--paper-strong, #0d1117)",
+								color: ["calibrate", "angle", "lesion"].includes(activeTool) ? "#ffffff" : "var(--ink, #c9d1d9)",
+								border: "1px solid var(--line, #30363d)",
+								borderRadius: "5px",
+								padding: "2px 8px",
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
-								gap: "6px",
-								fontSize: "0.84rem",
-								fontWeight: 600,
+								gap: "4px",
+								fontSize: "0.78rem",
+								fontWeight: 500,
 							}}
-							title="Дополнительные инструменты: калибровка, угломер, очаг, негатив, поворот"
+							title="Дополнительные инструменты: калибровка, угломер, очаг деструкции"
 						>
-							<Sliders size={15} />
+							<Sliders size={13} />
 							<span>
 								{activeTool === "calibrate"
-									? "Калибровка"
+									? "Калибр."
 									: activeTool === "angle"
 										? "Угломер"
 										: activeTool === "lesion"
 											? "Очаг"
-											: "Инструменты ▾"}
+											: "Ещё ▾"}
 							</span>
 						</button>
 						{isToolsMenuOpen && (
@@ -838,12 +977,12 @@ export function VisiographStudioCanvas({
 									position: "absolute",
 									top: "calc(100% + 4px)",
 									left: 0,
-									background: "var(--paper-strong)",
-									border: "1px solid var(--line)",
+									background: "var(--paper-strong, #0d1117)",
+									border: "1px solid var(--line, #30363d)",
 									borderRadius: "8px",
-									boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+									boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5)",
 									zIndex: 60,
-									minWidth: "220px",
+									minWidth: "210px",
 									display: "flex",
 									flexDirection: "column",
 									padding: "4px",
@@ -858,21 +997,21 @@ export function VisiographStudioCanvas({
 										setIsToolsMenuOpen(false);
 									}}
 									style={{
-										minHeight: "44px",
-										background: activeTool === "calibrate" ? "var(--primary)" : "transparent",
-										color: activeTool === "calibrate" ? "#ffffff" : "var(--ink)",
+										height: "32px",
+										background: activeTool === "calibrate" ? "var(--primary, #1f6feb)" : "transparent",
+										color: activeTool === "calibrate" ? "#ffffff" : "var(--ink, #c9d1d9)",
 										border: "none",
-										borderRadius: "6px",
-										padding: "8px 12px",
+										borderRadius: "5px",
+										padding: "4px 10px",
 										cursor: "pointer",
 										display: "flex",
 										alignItems: "center",
 										gap: "8px",
-										fontSize: "0.84rem",
+										fontSize: "0.8rem",
 										textAlign: "left",
 									}}
 								>
-									<Scale size={16} />
+									<Scale size={14} />
 									<span>Калибровка по эталону</span>
 								</button>
 								<button
@@ -883,22 +1022,22 @@ export function VisiographStudioCanvas({
 										setIsToolsMenuOpen(false);
 									}}
 									style={{
-										minHeight: "44px",
-										background: activeTool === "angle" ? "var(--primary)" : "transparent",
-										color: activeTool === "angle" ? "#ffffff" : "var(--ink)",
+										height: "32px",
+										background: activeTool === "angle" ? "var(--primary, #1f6feb)" : "transparent",
+										color: activeTool === "angle" ? "#ffffff" : "var(--ink, #c9d1d9)",
 										border: "none",
-										borderRadius: "6px",
-										padding: "8px 12px",
+										borderRadius: "5px",
+										padding: "4px 10px",
 										cursor: "pointer",
 										display: "flex",
 										alignItems: "center",
 										gap: "8px",
-										fontSize: "0.84rem",
+										fontSize: "0.8rem",
 										textAlign: "left",
 									}}
 								>
-									<Compass size={16} />
-									<span>Угломер</span>
+									<Compass size={14} />
+									<span>Угломер оси зуба</span>
 								</button>
 								<button
 									type="button"
@@ -908,71 +1047,24 @@ export function VisiographStudioCanvas({
 										setIsToolsMenuOpen(false);
 									}}
 									style={{
-										minHeight: "44px",
-										background: activeTool === "lesion" ? "var(--primary)" : "transparent",
-										color: activeTool === "lesion" ? "#ffffff" : "var(--ink)",
+										height: "32px",
+										background: activeTool === "lesion" ? "var(--primary, #1f6feb)" : "transparent",
+										color: activeTool === "lesion" ? "#ffffff" : "var(--ink, #c9d1d9)",
 										border: "none",
-										borderRadius: "6px",
-										padding: "8px 12px",
+										borderRadius: "5px",
+										padding: "4px 10px",
 										cursor: "pointer",
 										display: "flex",
 										alignItems: "center",
 										gap: "8px",
-										fontSize: "0.84rem",
+										fontSize: "0.8rem",
 										textAlign: "left",
 									}}
 								>
-									<AlertTriangle size={16} />
+									<AlertTriangle size={14} />
 									<span>Очаг деструкции (мм²)</span>
 								</button>
-								<div style={{ height: "1px", background: "var(--line)", margin: "2px 0" }} />
-								<button
-									type="button"
-									onClick={() => {
-										setParams((prev) => ({ ...prev, invert: !prev.invert }));
-										setIsToolsMenuOpen(false);
-									}}
-									style={{
-										minHeight: "44px",
-										background: params.invert ? "var(--success)" : "transparent",
-										color: params.invert ? "#ffffff" : "var(--ink)",
-										border: "none",
-										borderRadius: "6px",
-										padding: "8px 12px",
-										cursor: "pointer",
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										fontSize: "0.84rem",
-										textAlign: "left",
-									}}
-								>
-									<span>Негатив / Позитив</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setCanvasRotationDeg((r) => (r + 90) % 360);
-										setIsToolsMenuOpen(false);
-									}}
-									style={{
-										minHeight: "44px",
-										background: "transparent",
-										color: "var(--ink)",
-										border: "none",
-										borderRadius: "6px",
-										padding: "8px 12px",
-										cursor: "pointer",
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										fontSize: "0.84rem",
-										textAlign: "left",
-									}}
-								>
-									<RotateCw size={16} />
-									<span>Повернуть на 90°</span>
-								</button>
+								<div style={{ height: "1px", background: "var(--line, #30363d)", margin: "2px 0" }} />
 								<button
 									type="button"
 									onClick={() => {
@@ -980,20 +1072,21 @@ export function VisiographStudioCanvas({
 										setIsToolsMenuOpen(false);
 									}}
 									style={{
-										minHeight: "44px",
+										height: "32px",
 										background: "transparent",
-										color: "var(--ink)",
+										color: "var(--ink, #c9d1d9)",
 										border: "none",
-										borderRadius: "6px",
-										padding: "8px 12px",
+										borderRadius: "5px",
+										padding: "4px 10px",
 										cursor: "pointer",
 										display: "flex",
 										alignItems: "center",
 										gap: "8px",
-										fontSize: "0.84rem",
+										fontSize: "0.8rem",
 										textAlign: "left",
 									}}
 								>
+									<RotateCw size={14} />
 									<span>Повернуть на 180°</span>
 								</button>
 							</div>
@@ -1001,11 +1094,11 @@ export function VisiographStudioCanvas({
 					</div>
 				</div>
 
-				{/* Center/Right: Sensor preset + Clinical filter select + Zoom + Export */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+				{/* Center/Right: Sensor preset + Clinical filter select + Zoom + Reset + Print + Export */}
+				<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
 					{/* 1-Click Sensor Calibration Presets */}
-					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-						<span style={{ fontSize: "0.82rem", color: "var(--muted)", whiteSpace: "nowrap" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+						<span style={{ fontSize: "0.75rem", color: "var(--muted, #8b949e)", whiteSpace: "nowrap" }}>
 							Датчик:
 						</span>
 						<select
@@ -1024,13 +1117,13 @@ export function VisiographStudioCanvas({
 								}
 							}}
 							style={{
-								minHeight: "44px",
-								background: "var(--paper-strong)",
-								color: "var(--ink)",
-								border: "1px solid var(--line)",
-								borderRadius: "6px",
-								padding: "8px 10px",
-								fontSize: "0.82rem",
+								height: "30px",
+								background: "var(--paper-strong, #0d1117)",
+								color: "var(--ink, #c9d1d9)",
+								border: "1px solid var(--line, #30363d)",
+								borderRadius: "5px",
+								padding: "2px 6px",
+								fontSize: "0.78rem",
 								cursor: "pointer",
 							}}
 							title="1-клик калибровка по стандартным датчикам RVG / ОПТГ"
@@ -1043,13 +1136,13 @@ export function VisiographStudioCanvas({
 									{p.label}
 								</option>
 							))}
-							<option value="manual">Ручная калибровка (шарик / резьба)</option>
+							<option value="manual">Ручная калибровка (шарик 5 мм)</option>
 						</select>
 					</div>
 
 					{/* 1-Click Clinical Filters Selector */}
-					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-						<span style={{ fontSize: "0.82rem", color: "var(--muted)", whiteSpace: "nowrap" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+						<span style={{ fontSize: "0.75rem", color: "var(--muted, #8b949e)", whiteSpace: "nowrap" }}>
 							Фильтр:
 						</span>
 						<select
@@ -1067,16 +1160,16 @@ export function VisiographStudioCanvas({
 								}
 							}}
 							style={{
-								minHeight: "44px",
-								background: "var(--paper-strong)",
-								color: "var(--ink)",
-								border: "1px solid var(--line)",
-								borderRadius: "6px",
-								padding: "8px 10px",
-								fontSize: "0.82rem",
+								height: "30px",
+								background: "var(--paper-strong, #0d1117)",
+								color: "var(--ink, #c9d1d9)",
+								border: "1px solid var(--line, #30363d)",
+								borderRadius: "5px",
+								padding: "2px 6px",
+								fontSize: "0.78rem",
 								cursor: "pointer",
 							}}
-							title="Клинические фильтры радиовизиографа"
+							title="Клинические фильтры радиовизиографа (Контраст, Резкость, Эндо, Кость)"
 						>
 							<option value="">Без фильтра (Стандарт)</option>
 							{CLINICAL_VISIOGRAPH_FILTERS.map((f) => (
@@ -1088,19 +1181,19 @@ export function VisiographStudioCanvas({
 					</div>
 
 					{/* Zoom Controls */}
-					<div style={{ display: "flex", alignItems: "center", gap: "2px", marginLeft: "4px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "1px" }}>
 						<button
 							type="button"
 							onClick={() => setCanvasZoom((z) => Math.max(0.4, Number((z - 0.2).toFixed(2))))}
 							style={{
-								minHeight: "44px",
-								minWidth: "44px",
-								background: "var(--paper-strong)",
-								color: "var(--ink)",
-								border: "1px solid var(--line)",
-								borderRadius: "6px 0 0 6px",
-								padding: "8px 10px",
-								fontSize: "0.82rem",
+								height: "30px",
+								minWidth: "30px",
+								background: "var(--paper-strong, #0d1117)",
+								color: "var(--ink, #c9d1d9)",
+								border: "1px solid var(--line, #30363d)",
+								borderRadius: "5px 0 0 5px",
+								padding: "2px 6px",
+								fontSize: "0.78rem",
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
@@ -1108,7 +1201,7 @@ export function VisiographStudioCanvas({
 							}}
 							title="Уменьшить масштаб"
 						>
-							<ZoomOut size={15} />
+							<ZoomOut size={13} />
 						</button>
 						<button
 							type="button"
@@ -1117,23 +1210,23 @@ export function VisiographStudioCanvas({
 								setCanvasRotationDeg(0);
 							}}
 							style={{
-								minHeight: "44px",
-								minWidth: "48px",
-								background: "var(--paper-strong)",
-								color: "var(--primary)",
-								borderTop: "1px solid var(--line)",
-								borderBottom: "1px solid var(--line)",
+								height: "30px",
+								minWidth: "40px",
+								background: "var(--paper-strong, #0d1117)",
+								color: "var(--primary, #58a6ff)",
+								borderTop: "1px solid var(--line, #30363d)",
+								borderBottom: "1px solid var(--line, #30363d)",
 								borderLeft: "none",
 								borderRight: "none",
-								padding: "8px 10px",
-								fontSize: "0.82rem",
+								padding: "2px 6px",
+								fontSize: "0.76rem",
 								cursor: "pointer",
 								fontFamily: "monospace",
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
 							}}
-							title="Сброс масштаба и поворота (колесо мыши также масштабирует снимок)"
+							title="Сброс масштаба и поворота к 100%"
 						>
 							{Math.round(canvasZoom * 100)}%
 						</button>
@@ -1141,14 +1234,14 @@ export function VisiographStudioCanvas({
 							type="button"
 							onClick={() => setCanvasZoom((z) => Math.min(3.5, Number((z + 0.2).toFixed(2))))}
 							style={{
-								minHeight: "44px",
-								minWidth: "44px",
-								background: "var(--paper-strong)",
-								color: "var(--ink)",
-								border: "1px solid var(--line)",
-								borderRadius: "0 6px 6px 0",
-								padding: "8px 10px",
-								fontSize: "0.82rem",
+								height: "30px",
+								minWidth: "30px",
+								background: "var(--paper-strong, #0d1117)",
+								color: "var(--ink, #c9d1d9)",
+								border: "1px solid var(--line, #30363d)",
+								borderRadius: "0 5px 5px 0",
+								padding: "2px 6px",
+								fontSize: "0.78rem",
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
@@ -1156,31 +1249,85 @@ export function VisiographStudioCanvas({
 							}}
 							title="Увеличить масштаб"
 						>
-							<ZoomIn size={15} />
+							<ZoomIn size={13} />
 						</button>
 					</div>
 
-					{/* Export & Close */}
+					{/* 1-Click Reset — Hick's Law */}
 					<button
 						type="button"
-						onClick={() => setShowExportModal(true)}
+						onClick={() => {
+							handleResetParams();
+							setCanvasZoom(1.0);
+							setCanvasRotationDeg(0);
+						}}
 						style={{
-							minHeight: "44px",
-							background: "var(--success)",
+							height: "30px",
+							background: "var(--paper-strong, #0d1117)",
+							color: "var(--muted, #8b949e)",
+							border: "1px solid var(--line, #30363d)",
+							borderRadius: "5px",
+							padding: "2px 8px",
+							fontSize: "0.78rem",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "4px",
+						}}
+						title="Сбросить все фильтры, масштаб и поворот"
+					>
+						<RotateCcw size={13} /> <span>Сброс</span>
+					</button>
+
+					{/* 1-Click Legal Protocol Printout — Doctor Autonomy (Mandate 8e) */}
+					<button
+						type="button"
+						data-testid="btn-visiograph-print-protocol"
+						onClick={handlePrintProtocol}
+						style={{
+							height: "30px",
+							background: "var(--teal, #0d9488)",
 							color: "#ffffff",
 							border: "none",
-							borderRadius: "6px",
-							padding: "8px 14px",
-							fontSize: "0.84rem",
+							borderRadius: "5px",
+							padding: "2px 10px",
+							fontSize: "0.78rem",
 							fontWeight: 600,
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "6px",
+							gap: "5px",
 						}}
+						title="Быстрая печать протокола РВГ с юридическим штампом и таблицей измерений"
 					>
-						<FileDown size={15} /> Экспорт и ЭЦП
+						<Printer size={13} /> <span>Печать</span>
+					</button>
+
+					{/* Export & Legal Watermark */}
+					<button
+						type="button"
+						data-testid="btn-visiograph-export-modal"
+						onClick={() => setShowExportModal(true)}
+						style={{
+							height: "30px",
+							background: "var(--success, #238636)",
+							color: "#ffffff",
+							border: "none",
+							borderRadius: "5px",
+							padding: "2px 10px",
+							fontSize: "0.78rem",
+							fontWeight: 600,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "5px",
+						}}
+						title="Юридический экспорт (JPEG, PNG, DICOM Part 10)"
+					>
+						<FileDown size={13} /> <span>Экспорт</span>
 					</button>
 
 					{onClose && (
@@ -1188,20 +1335,21 @@ export function VisiographStudioCanvas({
 							type="button"
 							onClick={onClose}
 							style={{
-								minHeight: "44px",
-								minWidth: "44px",
+								height: "30px",
+								width: "30px",
 								background: "transparent",
-								color: "var(--muted)",
+								color: "var(--muted, #8b949e)",
 								border: "none",
 								cursor: "pointer",
-								padding: "8px",
+								padding: "4px",
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
+								borderRadius: "5px",
 							}}
 							title="Закрыть студию"
 						>
-							<X size={18} />
+							<X size={16} />
 						</button>
 					)}
 				</div>
@@ -1695,6 +1843,28 @@ export function VisiographStudioCanvas({
 								}}
 							>
 								Отмена
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowExportModal(false);
+									handlePrintProtocol();
+								}}
+								style={{
+									padding: "8px 14px",
+									background: "var(--teal, #0d9488)",
+									color: "#ffffff",
+									border: "none",
+									borderRadius: "6px",
+									fontWeight: 600,
+									cursor: "pointer",
+									display: "flex",
+									alignItems: "center",
+									gap: "6px",
+								}}
+								title="Распечатать протокол с юридическим штампом и таблицей измерений"
+							>
+								<Printer size={15} /> Печать протокола
 							</button>
 							<button
 								type="button"
