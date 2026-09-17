@@ -44,6 +44,12 @@ import {
 } from "./scheduleShiftHelpers";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageGetJson,
+	safeLocalStorageSetJson,
+} from "../../lib/safeLocalStorage";
 
 export {
 	resolveChairDutyDoctor,
@@ -131,16 +137,11 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		if (externalChairAssignments && Object.keys(externalChairAssignments).length > 0) {
 			return;
 		}
-		try {
-			const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
-			const raw = localStorage.getItem(storageKey);
-			if (raw) {
-				const parsed = JSON.parse(raw);
-				if (parsed && typeof parsed === "object") {
-					setLocalAssignments((prev) => (JSON.stringify(prev) === raw ? prev : parsed));
-				}
-			}
-		} catch {}
+		const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+		const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment> | null>(storageKey, null);
+		if (parsed && typeof parsed === "object") {
+			setLocalAssignments((prev) => (JSON.stringify(prev) === JSON.stringify(parsed) ? prev : parsed));
+		}
 	}, [dateKey, externalChairAssignments]);
 
 	const effectiveChairDoctorAssignments = useMemo(() => {
@@ -170,16 +171,11 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 				effectiveChairDoctorAssignments[chair.id] || null;
 
 			if (!existingAssignment && typeof window !== "undefined" && dateKey) {
-				try {
-					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
-					const raw = localStorage.getItem(storageKey);
-					if (raw) {
-						const parsed = JSON.parse(raw);
-						if (parsed?.[chair.id]) {
-							existingAssignment = parsed[chair.id];
-						}
-					}
-				} catch {}
+				const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+				const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment> | null>(storageKey, null);
+				if (parsed?.[chair.id]) {
+					existingAssignment = parsed[chair.id];
+				}
 			}
 
 			const assignment = computeShiftAssignment({
@@ -196,34 +192,29 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 
 			let updatedTodayAssignments: Record<string, ChairDoctorShiftAssignment> = {};
 			if (typeof window !== "undefined" && dateKey) {
-				try {
-					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
-					const existing = JSON.parse(localStorage.getItem(storageKey) || "{}");
-					existing[chair.id] = assignment;
-					updatedTodayAssignments = existing;
-					localStorage.setItem(storageKey, JSON.stringify(existing));
-					setLocalAssignments(existing);
-				} catch {}
+				const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+				const existing = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment>>(storageKey, {});
+				existing[chair.id] = assignment;
+				updatedTodayAssignments = existing;
+				safeLocalStorageSetJson(storageKey, existing);
+				setLocalAssignments(existing);
 
 				if (preset === "even_odd" || preset === "2x2") {
-					try {
-						const rawShifts = localStorage.getItem("dente_doctor_shifts");
-						const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-						const mondayIso = getMondayOfWeekIso(dateKey);
-						const templateId =
-							preset === "even_odd" ? "even_odd_month" : "two_two_full";
-						const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
-							weekStartDateIso: mondayIso,
-							templateId,
-							doctorId: targetDoc.id,
-							chairId: chair.id,
-							staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
-						});
-						localStorage.setItem(
-							"dente_doctor_shifts",
-							JSON.stringify(updatedShifts),
-						);
-					} catch {}
+					const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+					const mondayIso = getMondayOfWeekIso(dateKey);
+					const templateId =
+						preset === "even_odd" ? "even_odd_month" : "two_two_full";
+					const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
+						weekStartDateIso: mondayIso,
+						templateId,
+						doctorId: targetDoc.id,
+						chairId: chair.id,
+						staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+					});
+					safeLocalStorageSetJson(
+						"dente_doctor_shifts",
+						updatedShifts,
+					);
 				}
 			}
 
@@ -266,23 +257,20 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 			const chairObj = chairs.find((c) => c.id === chairId) || DEFAULT_SOLO_CHAIR;
 
 			if (typeof window !== "undefined") {
-				try {
-					const rawShifts = localStorage.getItem("dente_doctor_shifts");
-					const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-					const updatedShifts = applyDoctorChairDateRange(currentShifts, {
-						startDateIso,
-						endDateIso,
-						doctorId,
-						chairId,
-						shiftPreset,
-						staffList:
-							(dashboard?.clinicSettings?.staff as any) || (doctors as any),
-					});
-					localStorage.setItem(
-						"dente_doctor_shifts",
-						JSON.stringify(updatedShifts),
-					);
-				} catch {}
+				const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+				const updatedShifts = applyDoctorChairDateRange(currentShifts, {
+					startDateIso,
+					endDateIso,
+					doctorId,
+					chairId,
+					shiftPreset,
+					staffList:
+						(dashboard?.clinicSettings?.staff as any) || (doctors as any),
+				});
+				safeLocalStorageSetJson(
+					"dente_doctor_shifts",
+					updatedShifts,
+				);
 
 				if (dateKey && dateKey >= startDateIso && dateKey <= endDateIso) {
 					const isMorn = shiftPreset === "morning" || shiftPreset === "morning_9";
@@ -331,16 +319,12 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 						endHour: endH,
 					};
 
-					try {
-						const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
-						const existing = JSON.parse(
-							localStorage.getItem(storageKey) || "{}",
-						);
-						existing[chairId] = assignment;
-						localStorage.setItem(storageKey, JSON.stringify(existing));
-						setLocalAssignments(existing);
-						syncShiftsWithServer(dateKey, existing, chairs).catch(() => {});
-					} catch {}
+					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+					const existing = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment>>(storageKey, {});
+					existing[chairId] = assignment;
+					safeLocalStorageSetJson(storageKey, existing);
+					setLocalAssignments(existing);
+					syncShiftsWithServer(dateKey, existing, chairs).catch(() => {});
 
 					if (onAssignChairDoctor) {
 						onAssignChairDoctor(chairId, assignment);
@@ -391,16 +375,12 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 			};
 
 			if (typeof window !== "undefined" && dateKey) {
-				try {
-					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
-					const existing = JSON.parse(
-						localStorage.getItem(storageKey) || "{}",
-					);
-					existing[chair.id] = updatedAssignment;
-					localStorage.setItem(storageKey, JSON.stringify(existing));
-					setLocalAssignments(existing);
-					syncShiftsWithServer(dateKey, existing, chairs).catch(() => {});
-				} catch {}
+				const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+				const existing = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment>>(storageKey, {});
+				existing[chair.id] = updatedAssignment;
+				safeLocalStorageSetJson(storageKey, existing);
+				setLocalAssignments(existing);
+				syncShiftsWithServer(dateKey, existing, chairs).catch(() => {});
 			}
 
 			if (onAssignChairDoctor) {
@@ -429,46 +409,41 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		const nextMondayIso = addDaysToDateIso(mondayIso, 7);
 
 		if (typeof window !== "undefined") {
-			try {
-				for (let i = 0; i < 7; i++) {
-					const srcDay = addDaysToDateIso(mondayIso, i);
-					const targetDay = addDaysToDateIso(nextMondayIso, i);
-					const srcKey = `dente_chair_doctor_assignments_${srcDay}`;
-					const targetKey = `dente_chair_doctor_assignments_${targetDay}`;
-					const raw = localStorage.getItem(srcKey);
-					if (raw) {
-						localStorage.setItem(targetKey, raw);
-						try {
-							const parsed = JSON.parse(raw);
-							syncShiftsWithServer(targetDay, parsed, chairs).catch(() => {});
-						} catch {}
-					} else if (srcDay === dateKey && effectiveChairDoctorAssignments) {
-						localStorage.setItem(
-							targetKey,
-							JSON.stringify(effectiveChairDoctorAssignments),
-						);
-						syncShiftsWithServer(
-							targetDay,
-							effectiveChairDoctorAssignments,
-							chairs,
-						).catch(() => {});
-					}
+			for (let i = 0; i < 7; i++) {
+				const srcDay = addDaysToDateIso(mondayIso, i);
+				const targetDay = addDaysToDateIso(nextMondayIso, i);
+				const srcKey = `dente_chair_doctor_assignments_${srcDay}`;
+				const targetKey = `dente_chair_doctor_assignments_${targetDay}`;
+				const raw = safeLocalStorageGetItem(srcKey);
+				if (raw) {
+					safeLocalStorageSetItem(targetKey, raw);
+					try {
+						const parsed = JSON.parse(raw);
+						syncShiftsWithServer(targetDay, parsed, chairs).catch(() => {});
+					} catch {}
+				} else if (srcDay === dateKey && effectiveChairDoctorAssignments) {
+					safeLocalStorageSetJson(
+						targetKey,
+						effectiveChairDoctorAssignments,
+					);
+					syncShiftsWithServer(
+						targetDay,
+						effectiveChairDoctorAssignments,
+						chairs,
+					).catch(() => {});
 				}
-			} catch {}
+			}
 
-			try {
-				const rawShifts = localStorage.getItem("dente_doctor_shifts");
-				const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-				const updatedShifts = copyWeekShiftsToTargetWeek(
-					currentShifts,
-					mondayIso,
-					nextMondayIso,
-				);
-				localStorage.setItem(
-					"dente_doctor_shifts",
-					JSON.stringify(updatedShifts),
-				);
-			} catch {}
+			const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+			const updatedShifts = copyWeekShiftsToTargetWeek(
+				currentShifts,
+				mondayIso,
+				nextMondayIso,
+			);
+			safeLocalStorageSetJson(
+				"dente_doctor_shifts",
+				updatedShifts,
+			);
 		}
 
 		showToast(
@@ -491,28 +466,26 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 					: {};
 
 			if (typeof window !== "undefined" && dateKey) {
-				try {
-					const raw = localStorage.getItem(
-						`dente_chair_doctor_assignments_${dateKey}`,
-					);
-					if (raw) {
+				const raw = safeLocalStorageGetItem(
+					`dente_chair_doctor_assignments_${dateKey}`,
+				);
+				if (raw) {
+					try {
 						const parsed = JSON.parse(raw);
 						todayAssignments = { ...parsed, ...todayAssignments };
-					}
-				} catch {}
+					} catch {}
+				}
 
-				try {
-					for (let i = 0; i < daysCount; i++) {
-						const targetDay = addDaysToDateIso(mondayIso, i);
-						localStorage.setItem(
-							`dente_chair_doctor_assignments_${targetDay}`,
-							JSON.stringify(todayAssignments),
-						);
-						syncShiftsWithServer(targetDay, todayAssignments, chairs).catch(
-							() => {},
-						);
-					}
-				} catch {}
+				for (let i = 0; i < daysCount; i++) {
+					const targetDay = addDaysToDateIso(mondayIso, i);
+					safeLocalStorageSetJson(
+						`dente_chair_doctor_assignments_${targetDay}`,
+						todayAssignments,
+					);
+					syncShiftsWithServer(targetDay, todayAssignments, chairs).catch(
+						() => {},
+					);
+				}
 			}
 
 			showToast(
@@ -553,39 +526,34 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 				: {};
 
 		if (typeof window !== "undefined" && dateKey) {
-			try {
-				const raw = localStorage.getItem(
-					`dente_chair_doctor_assignments_${dateKey}`,
-				);
-				if (raw) {
+			const raw = safeLocalStorageGetItem(
+				`dente_chair_doctor_assignments_${dateKey}`,
+			);
+			if (raw) {
+				try {
 					const parsed = JSON.parse(raw);
 					todayAssignments = { ...parsed, ...todayAssignments };
-				}
-			} catch {}
+				} catch {}
+			}
 
-			try {
-				for (let d = 1; d <= daysInMonth; d++) {
-					const targetDayIso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-					localStorage.setItem(
-						`dente_chair_doctor_assignments_${targetDayIso}`,
-						JSON.stringify(todayAssignments),
-					);
-					syncShiftsWithServer(targetDayIso, todayAssignments, chairs).catch(
-						() => {},
-					);
-				}
-			} catch {}
-
-			try {
-				const rawShifts = localStorage.getItem("dente_doctor_shifts");
-				const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-				const mondayIso = getMondayOfWeekIso(dateKey);
-				const updatedShifts = copyWeekShiftsToMonth(currentShifts, mondayIso, 4);
-				localStorage.setItem(
-					"dente_doctor_shifts",
-					JSON.stringify(updatedShifts),
+			for (let d = 1; d <= daysInMonth; d++) {
+				const targetDayIso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+				safeLocalStorageSetJson(
+					`dente_chair_doctor_assignments_${targetDayIso}`,
+					todayAssignments,
 				);
-			} catch {}
+				syncShiftsWithServer(targetDayIso, todayAssignments, chairs).catch(
+					() => {},
+				);
+			}
+
+			const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+			const mondayIso = getMondayOfWeekIso(dateKey);
+			const updatedShifts = copyWeekShiftsToMonth(currentShifts, mondayIso, 4);
+			safeLocalStorageSetJson(
+				"dente_doctor_shifts",
+				updatedShifts,
+			);
 		}
 
 		showToast(

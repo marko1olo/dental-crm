@@ -318,9 +318,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 													<ItemIcon size={12} />
 													<span>{cfg.label}</span>
 													{isCurrent && (
-														<span className="ml-auto text-[10px] text-[var(--teal-dark,var(--teal))]">
-															✓
-														</span>
+														<Check size={12} className="ml-auto text-[var(--teal-dark,var(--teal))] shrink-0" />
 													)}
 												</button>
 											);
@@ -335,7 +333,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								</span>
 							)}
 						</div>
-						<p className="text-xs text-[var(--muted,#64748b)] truncate max-w-xl">
+						<p className="text-xs text-[var(--muted,#64748b)] truncate max-w-xl min-w-0">
 							{stage.subtitle}
 						</p>
 					</div>
@@ -385,7 +383,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<button
 										type="button"
 										onClick={() => onAddItem(stage)}
-										className="mt-2 h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
+										className="mt-2 h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
 										data-testid={`stage-${stage.stageNumber}-empty-add-item-btn`}
 									>
 										<Plus size={13} />
@@ -459,7 +457,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																				item.toothNumber ? [item.toothNumber] : undefined,
 																			)
 																		}
-																		className="min-h-[44px] sm:min-h-[28px] sm:min-w-0 sm:py-1 sm:px-2.5 sm:text-[11px] px-3 py-2 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5"
+																		className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2.5 py-1 rounded-md text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5"
 																		title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 																		data-testid={`item-lab-order-btn-${item.id}`}
 																	>
@@ -474,7 +472,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																					item.toothNumber ? [item.toothNumber] : undefined,
 																				)
 																			}
-																			className="min-h-[44px] sm:min-h-[28px] sm:min-w-0 sm:py-1 sm:px-2 sm:text-[11px] px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs flex items-center gap-1"
+																			className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-1 rounded-md text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs flex items-center gap-1"
 																			title={`1-клик наряд ЗТЛ: Коронка цирконий VITA A2 (+7 раб. дн.) для ${item.name}`}
 																			data-testid={`item-lab-order-one-click-btn-${item.id}`}
 																		>
@@ -546,7 +544,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 															<button
 																type="button"
 																onClick={() => onRemoveItem(item.id)}
-																className="p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+																className="h-7 w-7 min-h-[28px] min-w-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 flex items-center justify-center p-1 rounded-md text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
 																title={`Удалить процедуру «${item.name}» из этапа`}
 																data-testid={`remove-item-${item.id}`}
 															>
@@ -576,7 +574,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												<button
 													type="button"
 													onClick={() => onAddItem(stage)}
-													className="h-7 px-2.5 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1 transition-colors"
+													className="h-7 sm:h-8 min-h-[28px] sm:min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-2.5 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1 transition-colors"
 													data-testid={`stage-${stage.stageNumber}-add-item-btn`}
 												>
 													<Plus size={13} />
@@ -609,16 +607,16 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						<button
 							type="button"
 							onClick={() => setShowMaterials((prev) => !prev)}
-							className="w-full min-h-[44px] sm:min-h-[32px] sm:py-1.5 flex items-center justify-between px-4 py-3 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
+							className="w-full h-8 min-h-[32px] max-h-[34px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] flex items-center justify-between px-4 py-1.5 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] transition-colors cursor-pointer"
 						>
-							<div className="flex items-center gap-2">
-								<Package size={15} className="text-[var(--teal,var(--brand-primary))]" />
-								<span>
+							<div className="flex items-center gap-2 min-w-0">
+								<Package size={15} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span className="truncate">
 									Нормы расхода ТМЦ и себестоимость этапа ({presentationMaterials.length} поз.)
 								</span>
 							</div>
 
-							<div className="flex items-center gap-3">
+							<div className="flex items-center gap-2 sm:gap-3 shrink-0">
 								<span className="font-mono text-[var(--muted,#64748b)] text-[11px] hidden sm:inline">
 									Себестоимость:{" "}
 									<strong className="text-[var(--ink,#0f172a)]">
@@ -628,7 +626,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<span className="font-mono text-emerald-600 dark:text-emerald-400 text-[11px]">
 									Маржа: <strong>{materialSummary.marginPercent || 0}%</strong>
 								</span>
-								{showMaterials ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+								{showMaterials ? <ChevronUp size={15} className="shrink-0" /> : <ChevronDown size={15} className="shrink-0" />}
 							</div>
 						</button>
 
@@ -649,8 +647,8 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											{presentationMaterials.map((mat) => (
 												<tr key={mat.id} className="text-[var(--ink,#0f172a)]">
 													<td className="py-1.5 pr-2">
-														<span className="font-medium">{mat.materialName}</span>
-														<span className="block text-[9px] text-[var(--muted,#64748b)]">
+														<span className="font-medium truncate block max-w-xs">{mat.materialName}</span>
+														<span className="block text-[9px] text-[var(--muted,#64748b)] truncate max-w-xs">
 															{mat.procedureName} {mat.toothNumber ? `(№${mat.toothNumber})` : ""}
 														</span>
 													</td>
@@ -725,7 +723,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={handleStartStageClick}
-									className="h-8 px-3 rounded-lg text-xs font-bold text-sky-800 dark:text-sky-200 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-sky-800 dark:text-sky-200 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title={`Взять этап №${stage.stageNumber} «${stage.title}» в работу`}
 									data-testid={`stage-${stage.stageNumber}-start-btn`}
 								>
@@ -736,7 +734,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={() => onExecuteWriteOffStage!(stage)}
-									className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 									data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
 								>
@@ -750,7 +748,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={() => onExportStageEstimate!(stage)}
-									className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title={`Печать сметы и спецификации по этапу №${stage.stageNumber}`}
 									data-testid={`stage-${stage.stageNumber}-estimate-btn`}
 								>
@@ -761,7 +759,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={() => onPayStage!(stage)}
-									className="h-8 px-3 rounded-lg text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title={`Принять оплату за этап №${stage.stageNumber} (${(stage.totalRub || 0).toLocaleString("ru-RU")} ₽)`}
 									data-testid={`stage-${stage.stageNumber}-pay-btn`}
 								>
@@ -772,7 +770,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={() => onExecuteWriteOffStage!(stage)}
-									className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+									className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 									data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
 								>
@@ -787,7 +785,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<button
 										type="button"
 										onClick={() => setIsStageMenuOpen((prev) => !prev)}
-										className="h-8 w-8 rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer flex items-center justify-center shrink-0 shadow-2xs transition-colors touch-manipulation"
+										className="h-8 w-8 min-h-[32px] min-w-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:min-w-[44px] rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer flex items-center justify-center shrink-0 shadow-2xs transition-colors touch-manipulation"
 										title="Дополнительные действия этапа"
 										aria-label="Дополнительные действия этапа"
 										aria-expanded={isStageMenuOpen}
@@ -827,9 +825,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 														<ItemIcon size={12} />
 														<span>{cfg.label}</span>
 														{isCurrent && (
-															<span className="ml-auto text-[10px] text-[var(--teal-dark,var(--teal))]">
-																✓
-															</span>
+															<Check size={12} className="ml-auto text-[var(--teal-dark,var(--teal))] shrink-0" />
 														)}
 													</button>
 												);

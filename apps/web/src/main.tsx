@@ -12,6 +12,7 @@ import {
 	safeSessionStorageSetItem,
 } from "./lib/safeLocalStorage";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
+import { initHardwareCapabilities } from "./lib/hardwareCapabilities";
 import { logger } from "./utils/logger";
 
 const PublicBookingWidget = React.lazy(() =>
@@ -44,9 +45,13 @@ import "./styles/contrast-fixes.css";
 // Рабочие панели: обзвон, отправка сообщений, рассылки, отчёты. Всё на
 // переменных темы — без зашитых цветов, ломающихся в тёмной и ночной.
 import "./styles/dente-operations.css";
+// Оптимизация под слабые ПК (<=4GB RAM, <=4 ядра, медленный HDD): отключение размытия и тяжелых теней
+import "./styles/low-spec-hardware.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те
 // зашивали светлую палитру и ломали тёмную тему.
 import "./styles/onboarding-wizard.css";
+
+initHardwareCapabilities();
 
 /**
  * РАЗВИЛКА ПУБЛИЧНОГО КОНТУРА. Решается ДО подстановки токенов и до рендера.

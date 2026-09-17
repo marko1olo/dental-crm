@@ -33,7 +33,6 @@ import {
 	transitionAppointmentStatus,
 	DOCTOR_APPOINTMENT_STATUS_META,
 	EMR_043_STATUS_META,
-	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	type DoctorShiftAppointment,
 	type DoctorAppointmentStatus,
 	type EmrBatchSigningSession,

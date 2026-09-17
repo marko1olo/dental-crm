@@ -823,6 +823,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								className={`patient-row ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
 								key={patient.id}
 								data-patient-id={patient.id}
+								style={{
+									contentVisibility: "auto",
+									containIntrinsicSize: "1px 48px",
+								}}
 								tabIndex={0}
 								aria-label={`Карточка пациента: ${patient.fullName}`}
 								onClick={() => handleSelectPatient(patient.id)}

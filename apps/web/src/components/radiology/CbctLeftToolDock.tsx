@@ -1,10 +1,10 @@
 /**
- * DENTE CRM — Planmeca Romexis & Ez3D-i Left Tool Dock (44px Vertical Toolbar)
+ * DENTE CRM — Planmeca Romexis & Ez3D-i Left Tool Dock (Compact Vertical Dock)
  * Standards: DICOM Part 3 / PS 3.3, Misch CE, Buser, Planmeca Romexis 6.x
  *
  * Capabilities:
- * 1. 44px matte dark vertical column (bg-[#0f1219] border-r border-[#242a35]) along left modal edge.
- * 2. WCAG 2.1 touch-targets with high-contrast active state (bg-cyan-500/20 text-cyan-400 border-cyan-500/50).
+ * 1. Compact matte dark vertical column along left modal edge with dense 32px desktop buttons.
+ * 2. WCAG 2.1 touch-targets on coarse pointers with high-contrast active state.
  * 3. Group 1: Cursor / Mouse Navigation Modes (Crosshair, Pan, Zoom, Window W/L, Oblique Rotate).
  * 4. Group 2: Measurements & Densitometry (Distance Caliper Ruler, Point HU Probe, Mandibular Nerve IAN).
  * 5. Group 3: Slice Thickness & Slab Projection Flyout (Single 1mm, Slab MIP, Avg IP, Min IP, 1..30 mm slider).
@@ -209,7 +209,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			role="toolbar"
 			aria-label="Панель инструментов Romexis"
 			data-testid="cbct-left-tool-dock"
-			className={`w-[48px] min-w-[48px] max-w-[48px] h-full bg-[#09090b] border-r border-zinc-800 flex flex-col items-center py-2 px-0.5 shrink-0 select-none z-30 relative overflow-visible ${className}`}
+			className={`w-10 min-w-[40px] max-w-[40px] [@media(pointer:coarse)]:w-[48px] [@media(pointer:coarse)]:min-w-[48px] [@media(pointer:coarse)]:max-w-[48px] h-full bg-[var(--paper-strong,#09090b)] border-r border-[var(--line,#27272a)] flex flex-col items-center py-1.5 px-1 [@media(pointer:coarse)]:py-2 [@media(pointer:coarse)]:px-0.5 shrink-0 select-none z-30 relative overflow-visible ${className}`}
 		>
 			{/* Hidden file inputs as fallback triggers */}
 			<input
@@ -236,24 +236,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("crosshair")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "crosshair"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Перекрестие (Синхронная 3D навигация) [C]"
 						aria-label="Перекрестие"
 						data-testid="cbct-tool-crosshair"
 					>
-						<Crosshair className="w-5 h-5" />
+						<Crosshair className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Перекрестие</span>
-						<span className="text-zinc-400 text-[11px]">Навигация по срезам</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Навигация по срезам</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							C
 						</kbd>
 					</div>
@@ -264,24 +264,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("pan")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "pan"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Панорама (Перемещение среза) [P]"
 						aria-label="Панорама"
 						data-testid="cbct-tool-pan"
 					>
-						<Hand className="w-5 h-5" />
+						<Hand className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Панорама</span>
-						<span className="text-zinc-400 text-[11px]">Сдвиг проекции</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Сдвиг проекции</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							P
 						</kbd>
 					</div>
@@ -292,24 +292,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("zoom")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "zoom"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Лупа / Зум (Масштабирование) [Z]"
 						aria-label="Лупа / Зум"
 						data-testid="cbct-tool-zoom"
 					>
-						<ZoomIn className="w-5 h-5" />
+						<ZoomIn className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Зум</span>
-						<span className="text-zinc-400 text-[11px]">Приближение / Отдаление</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Приближение / Отдаление</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							Z
 						</kbd>
 					</div>
@@ -320,24 +320,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("window_level")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "window_level"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Окно W/L (Яркость и Контраст) [W]"
 						aria-label="Окно W/L"
 						data-testid="cbct-tool-window_level"
 					>
-						<Contrast className="w-5 h-5" />
+						<Contrast className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Окно W/L</span>
-						<span className="text-zinc-400 text-[11px]">Яркость / Контраст HU</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Яркость / Контраст HU</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							W
 						</kbd>
 					</div>
@@ -348,10 +348,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("rotate")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "rotate"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Вращение осей (Oblique MPR) [R]"
 						aria-label="Вращение осей"
@@ -359,15 +359,15 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						data-testid-oblique="cbct-toggle-oblique-btn"
 						id="cbct-toggle-oblique-btn"
 					>
-						<RotateCw className="w-5 h-5" />
+						<RotateCw className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Вращение осей</span>
-						<span className="text-zinc-400 text-[11px]">Косой наклон срезов</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Косой наклон срезов</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							R
 						</kbd>
 					</div>
@@ -375,7 +375,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			</div>
 
 			{/* ─── DIVIDER ─────────────────────────────────────────────────── */}
-			<div className="w-7 h-px bg-zinc-800 my-2 shrink-0" role="separator" />
+			<div className="w-5 [@media(pointer:coarse)]:w-7 h-px bg-[var(--line,#27272a)] my-1.5 shrink-0" role="separator" />
 
 			{/* ─── GROUP 2: MEASUREMENTS & DENSITOMETRY ────────────────────── */}
 			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
@@ -384,24 +384,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("ruler")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "ruler"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Линейка (Калипер расстояния в мм) [M]"
 						aria-label="Линейка"
 						data-testid="cbct-tool-ruler"
 					>
-						<Ruler className="w-5 h-5" />
+						<Ruler className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Линейка</span>
-						<span className="text-zinc-400 text-[11px]">Калипер расстояния (мм)</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Калипер расстояния (мм)</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							M
 						</kbd>
 					</div>
@@ -412,24 +412,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("angle")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "angle"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Угломер (Замер угла в градусах) [A]"
 						aria-label="Угломер"
 						data-testid="cbct-tool-angle"
 					>
-						<Compass className="w-5 h-5" />
+						<Compass className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Угломер</span>
-						<span className="text-zinc-400 text-[11px]">Измерение угла (°)</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Измерение угла (°)</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							A
 						</kbd>
 					</div>
@@ -440,24 +440,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("probe")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "probe"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Плотность HU (Денситометрия Misch) [H]"
 						aria-label="Плотность HU"
 						data-testid="cbct-tool-probe"
 					>
-						<Activity className="w-5 h-5" />
+						<Activity className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Плотность HU</span>
-						<span className="text-zinc-400 text-[11px]">Замер плотности кости</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Замер плотности кости</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							H
 						</kbd>
 					</div>
@@ -468,24 +468,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("nerve")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "nerve"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Канал IAN (Трассировка нерва) [N]"
 						aria-label="Канал IAN"
 						data-testid="cbct-tool-nerve"
 					>
-						<Zap className="w-5 h-5" />
+						<Zap className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Канал IAN</span>
-						<span className="text-zinc-400 text-[11px]">Трассировка нерва (2мм)</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Трассировка нерва (2мм)</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							N
 						</kbd>
 					</div>
@@ -497,23 +497,23 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onToggleDentalArch}
-							className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+							className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 								showDentalArch
 									? "bg-purple-500/20 text-purple-300 border border-purple-500/60 shadow-xs shadow-purple-950/40"
-									: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-purple-500/40"
+									: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-purple-500/40"
 							}`}
 							title="Дуга ОПТГ (Отображение зубной дуги)"
 							aria-label="Дуга ОПТГ"
 							data-testid="cbct-left-dock-toggle-arch"
 						>
-							<Spline className="w-5 h-5 text-purple-400" />
+							<Spline className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
 						</button>
 						<div
 							role="tooltip"
-							className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 						>
 							<span className="font-semibold">Дуга ОПТГ</span>
-							<span className="text-zinc-400 text-[11px]">{showDentalArch ? "Включена" : "Выключена"}</span>
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{showDentalArch ? "Включена" : "Выключена"}</span>
 						</div>
 					</div>
 				)}
@@ -524,19 +524,19 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onAutoDetectArch}
-							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 bg-[#09090b] text-purple-300 hover:text-white hover:bg-purple-950/40 border border-zinc-800 hover:border-purple-500/80 shadow-xs"
+							className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 bg-[var(--paper-strong,#09090b)] text-purple-300 hover:text-white hover:bg-purple-950/40 border border-[var(--line,#27272a)] hover:border-purple-500/80 shadow-xs"
 							title="Сгенерировать дугу автоматически (по плотности эмали/кости)"
 							aria-label="Сгенерировать дугу автоматически"
 							data-testid="cbct-tool-auto-arch"
 						>
-							<Sliders className="w-5 h-5 text-purple-400" />
+							<Sliders className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
 						</button>
 						<div
 							role="tooltip"
-							className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 						>
 							<span className="font-semibold text-purple-300">Авто-дуга</span>
-							<span className="text-zinc-400 text-[11px]">Сгенерировать автоматически</span>
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Сгенерировать автоматически</span>
 						</div>
 					</div>
 				)}
@@ -547,30 +547,30 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={() => onSelectStudioMode(studioMode === "implant" ? "diagnostic" : "implant")}
-							className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+							className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 								studioMode === "implant"
 									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
-									: "bg-[#09090b] text-zinc-400 hover:text-amber-300 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/40"
+									: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-amber-300 hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-amber-500/40"
 							}`}
 							title="Имплантация (Планирование имплантата) [I]"
 							aria-label="Имплантация"
 							data-testid="cbct-left-dock-toggle-implant"
 						>
-							<CircleDot className="w-5 h-5 text-amber-400" />
+							<CircleDot className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-amber-400 shrink-0" />
 						</button>
 						<div
 							role="tooltip"
-							className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 						>
 							<span className="font-semibold text-amber-300">Имплантация</span>
-							<span className="text-zinc-400 text-[11px]">{studioMode === "implant" ? "Режим активен" : "Планирование"}</span>
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{studioMode === "implant" ? "Режим активен" : "Планирование"}</span>
 						</div>
 					</div>
 				)}
 			</div>
 
 			{/* ─── DIVIDER ─────────────────────────────────────────────────── */}
-			<div className="w-7 h-px bg-zinc-800 my-2 shrink-0" role="separator" />
+			<div className="w-5 [@media(pointer:coarse)]:w-7 h-px bg-[var(--line,#27272a)] my-1.5 shrink-0" role="separator" />
 
 			{/* ─── GROUP 3 & 4: SLAB THICKNESS / MIP & HU PRESETS ─────────── */}
 			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
@@ -579,18 +579,18 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("slab")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "slab" || isSlabActive
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Толщина среза & Режимы MIP"
 						aria-label="Толщина среза и MIP"
 						aria-expanded={openMenu === "slab"}
 						data-testid="cbct-tool-slab"
 					>
-						<Layers className="w-4 h-4" />
-						<span className="text-[8px] font-mono font-bold leading-none mt-0.5">
+						<Layers className="w-3.5 h-3.5 [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4 shrink-0" />
+						<span className="text-[7.5px] [@media(pointer:coarse)]:text-[8px] font-mono font-bold leading-none mt-0.5">
 							{normalizedSlabMode === "single"
 								? `${slabThicknessMm.toFixed(0)}мм`
 								: normalizedSlabMode === "mip"
@@ -607,19 +607,19 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Настройки толщины среза и проекции MIP"
 							data-testid="cbct-slab-flyout"
-							className="absolute left-[48px] top-0 z-50 w-64 bg-[#09090b] border border-zinc-800 shadow-2xl rounded-xl p-3 text-zinc-100"
+							className="absolute left-full ml-2 top-0 z-50 w-64 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)]"
 						>
-							<div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2.5">
+							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2.5">
 								<div className="flex items-center gap-1.5">
 									<Layers className="w-4 h-4 text-cyan-400" />
-									<span className="text-xs font-bold text-zinc-100">
+									<span className="text-xs font-bold text-[var(--ink,#f4f4f5)]">
 										Толщина среза & MIP
 									</span>
 								</div>
 								<button
 									type="button"
 									onClick={() => setOpenMenu("none")}
-									className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+									className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] transition-colors cursor-pointer"
 									aria-label="Закрыть меню"
 								>
 									<X className="w-4 h-4" />
@@ -628,17 +628,17 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 
 							{/* Projection Modes */}
 							<div className="space-y-1.5 mb-3">
-								<span className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">
+								<span className="text-[10px] text-[var(--muted,#a1a1aa)] uppercase font-mono tracking-wider font-semibold">
 									Режим проекции
 								</span>
 								<div className="grid grid-cols-2 gap-1">
 									<button
 										type="button"
 										onClick={() => handleSlabModeSelect("single")}
-										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "single"
-												? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 font-bold"
-												: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
+												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
+												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
 										}`}
 										data-testid="cbct-slab-mode-single"
 									>
@@ -647,10 +647,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 									<button
 										type="button"
 										onClick={() => handleSlabModeSelect("mip")}
-										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "mip"
-												? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 font-bold"
-												: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
+												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
+												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
 										}`}
 										data-testid="cbct-slab-mode-mip"
 									>
@@ -659,10 +659,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 									<button
 										type="button"
 										onClick={() => handleSlabModeSelect("average")}
-										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "average"
-												? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 font-bold"
-												: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
+												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
+												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
 										}`}
 										data-testid="cbct-slab-mode-average"
 									>
@@ -671,10 +671,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 									<button
 										type="button"
 										onClick={() => handleSlabModeSelect("minip")}
-										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "minip"
-												? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 font-bold"
-												: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
+												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
+												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
 										}`}
 										data-testid="cbct-slab-mode-minip"
 									>
@@ -686,10 +686,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							{/* Slab Thickness Presets & Continuous Range Slider */}
 							<div className="space-y-2">
 								<div className="flex items-center justify-between text-xs">
-									<span className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">
+									<span className="text-[10px] text-[var(--muted,#a1a1aa)] uppercase font-mono tracking-wider font-semibold">
 										Толщина сляба
 									</span>
-									<span className="font-mono text-cyan-300 font-bold text-xs bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+									<span className="font-mono text-cyan-300 font-bold text-xs bg-[var(--paper-soft,#18181b)] px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 										{slabThicknessMm.toFixed(1)} мм
 									</span>
 								</div>
@@ -702,10 +702,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 											type="button"
 											onClick={() => onChangeSlabThicknessMm?.(t)}
 											data-testid={t === 15 ? "cbct-tool-slab-15mm" : `cbct-slab-thickness-${t}`}
-											className={`px-2 py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
+											className={`px-2 py-0.5 [@media(pointer:coarse)]:py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
 												Math.abs(slabThicknessMm - t) < 0.2
-													? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 font-bold"
-													: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
+													? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
+													: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
 											}`}
 										>
 											<span data-testid={`cbct-slab-thickness-${t}`}>{t}мм</span>
@@ -735,18 +735,18 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("hu")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "hu"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Пресеты контраста HU (Зубы, Эндо, Кортикал, Мягкие ткани, Пазухи)"
 						aria-label="HU Пресеты контраста"
 						aria-expanded={openMenu === "hu"}
 						data-testid="cbct-tool-hu-presets"
 					>
-						<Sliders className="w-4 h-4" />
-						<span className="text-[8px] font-mono font-bold leading-none mt-0.5">
+						<Sliders className="w-3.5 h-3.5 [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4 shrink-0" />
+						<span className="text-[7.5px] [@media(pointer:coarse)]:text-[8px] font-mono font-bold leading-none mt-0.5">
 							HU
 						</span>
 					</button>
@@ -757,19 +757,19 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Клинические пресеты плотности HU"
 							data-testid="cbct-hu-flyout"
-							className="absolute left-[48px] top-0 z-50 w-72 bg-[#09090b] border border-zinc-800 shadow-2xl rounded-xl p-3 text-zinc-100"
+							className="absolute left-full ml-2 top-0 z-50 w-72 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)]"
 						>
-							<div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
+							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2">
 								<div className="flex items-center gap-1.5">
 									<Sliders className="w-4 h-4 text-cyan-400" />
-									<span className="text-xs font-bold text-zinc-100">
+									<span className="text-xs font-bold text-[var(--ink,#f4f4f5)]">
 										Пресеты контраста (HU)
 									</span>
 								</div>
 								<button
 									type="button"
 									onClick={() => setOpenMenu("none")}
-									className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+									className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] transition-colors cursor-pointer"
 									aria-label="Закрыть меню"
 								>
 									<X className="w-4 h-4" />
@@ -784,18 +784,18 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 											key={p.id}
 											type="button"
 											onClick={() => handlePresetSelect(p.id)}
-											className={`w-full px-2.5 py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
+											className={`w-full px-2.5 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
 												isActive
-													? "bg-zinc-900 text-cyan-300 border-cyan-500/60 shadow-xs"
-													: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border-zinc-800"
+													? "bg-[var(--paper-soft,#18181b)] text-cyan-300 border-cyan-500/60 shadow-xs"
+													: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border-[var(--line,#27272a)]"
 											}`}
 											data-testid={`cbct-hu-preset-option-${p.id}`}
 										>
 											<div className="flex flex-col min-w-0">
-												<span className="text-xs font-semibold truncate text-zinc-100">
+												<span className="text-xs font-semibold truncate text-[var(--ink,#f4f4f5)]">
 													{p.label}
 												</span>
-												<span className="text-[10px] text-zinc-400 font-mono">
+												<span className="text-[10px] text-[var(--muted,#a1a1aa)] font-mono truncate">
 													W: {p.windowWidth} / L: {p.windowLevel}
 												</span>
 											</div>
@@ -813,7 +813,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 
 			{/* ─── BOTTOM ACTIONS (PINNED TO BOTTOM) ───────────────────────── */}
 			<div className="mt-auto flex flex-col items-center gap-1.5 w-full shrink-0">
-				<div className="w-7 h-px bg-zinc-800 my-1 shrink-0" role="separator" />
+				<div className="w-5 [@media(pointer:coarse)]:w-7 h-px bg-[var(--line,#27272a)] my-1 shrink-0" role="separator" />
 
 				{/* 10. Clear View (Hide Overlays for Fracture Inspection) */}
 				{onToggleClearView && (
@@ -821,24 +821,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onToggleClearView}
-							className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+							className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 								isClearView
 									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
-									: "bg-[#09090b] text-zinc-400 hover:text-white hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+									: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-white hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 							}`}
 							title="Режим «Clear View» (Скрыть все оверлеи) [H]"
 							aria-label="Режим Clear View"
 							data-testid="cbct-tool-clear-view"
 						>
-							{isClearView ? <EyeOff className="w-5 h-5 text-amber-400" /> : <Eye className="w-5 h-5" />}
+							{isClearView ? <EyeOff className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-amber-400 shrink-0" /> : <Eye className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />}
 						</button>
 						<div
 							role="tooltip"
-							className="pointer-events-none absolute left-[48px] bottom-20 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+							className="pointer-events-none absolute left-full ml-2 bottom-16 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 						>
 							<span className="font-semibold">Clear View</span>
-							<span className="text-zinc-400 text-[11px]">{isClearView ? "Оверлеи скрыты" : "Осмотр трещин"}</span>
-							<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{isClearView ? "Оверлеи скрыты" : "Осмотр трещин"}</span>
+							<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 								H
 							</kbd>
 						</div>
@@ -850,24 +850,24 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={onToggleInvertColors}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							invertColors
 								? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-white hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-white hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="◑ Инвертировать цвета (Негатив/Позитив) [I]"
+						title="Инвертировать цвета (Негатив/Позитив) [I]"
 						aria-label="Инвертировать цвета"
 						data-testid="cbct-tool-invert-lut"
 					>
-						<SunMoon className="w-5 h-5" />
+						<SunMoon className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] bottom-12 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 bottom-10 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Инверсия LUT</span>
-						<span className="text-zinc-400 text-[11px]">{invertColors ? "Негатив активен" : "Позитив (Romexis)"}</span>
-						<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{invertColors ? "Негатив активен" : "Позитив (Romexis)"}</span>
+						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 							I
 						</kbd>
 					</div>
@@ -878,19 +878,19 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={onResetAll}
-						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center bg-[#09090b] text-zinc-400 hover:text-amber-300 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 transition-all duration-150"
-						title="↺ Сброс осей, зума и панорамы"
+						className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-amber-300 hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-amber-500/40 transition-all duration-150"
+						title="Сброс осей, зума и панорамы"
 						aria-label="Сбросить оси и зум"
 						data-testid="cbct-tool-reset-all"
 					>
-						<RotateCcw className="w-5 h-5" />
+						<RotateCcw className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[48px] bottom-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-full ml-2 bottom-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold text-amber-300">Сброс осей и зума</span>
-						<span className="text-zinc-400 text-[11px]">Возврат в исходное 0°</span>
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Возврат в исходное 0°</span>
 					</div>
 				</div>
 
@@ -899,17 +899,17 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("dicom")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							openMenu === "dicom"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-[#09090b] text-zinc-400 hover:text-cyan-300 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-cyan-300 hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Загрузить КТ / DICOM"
 						aria-label="Загрузить КТ / DICOM"
 						aria-expanded={openMenu === "dicom"}
 						data-testid="cbct-tool-dicom"
 					>
-						<FolderOpen className="w-5 h-5" />
+						<FolderOpen className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 
 					{/* DICOM Ingestion Flyout Menu */}
@@ -918,17 +918,17 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Загрузка файлов DICOM"
 							data-testid="cbct-dicom-flyout"
-							className="absolute left-[48px] bottom-0 z-50 w-60 bg-[#09090b] border border-zinc-800 shadow-2xl rounded-xl p-3 text-zinc-100"
+							className="absolute left-full ml-2 bottom-0 z-50 w-60 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)]"
 						>
-							<div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
-								<span className="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2">
+								<span className="text-xs font-bold text-[var(--ink,#f4f4f5)] flex items-center gap-1.5">
 									<FolderOpen className="w-4 h-4 text-cyan-400" />
 									Загрузить КТ / DICOM
 								</span>
 								<button
 									type="button"
 									onClick={() => setOpenMenu("none")}
-									className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+									className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] transition-colors cursor-pointer"
 									aria-label="Закрыть меню"
 								>
 									<X className="w-4 h-4" />
@@ -939,13 +939,13 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={handleFolderUploadClick}
-									className="w-full px-3 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-900 text-zinc-100 border border-zinc-800 text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs"
+									className="w-full px-3 py-2 [@media(pointer:coarse)]:py-2.5 rounded-lg bg-[var(--paper-strong,#09090b)] hover:bg-[var(--paper-soft,#18181b)] text-[var(--ink,#f4f4f5)] border border-[var(--line,#27272a)] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
 									data-testid="cbct-dicom-folder-opt"
 								>
 									<FolderOpen className="w-4 h-4 text-cyan-400 shrink-0" />
-									<div className="flex flex-col text-left">
-										<span className="font-bold">Папка DICOM</span>
-										<span className="text-[10px] text-zinc-400">
+									<div className="flex flex-col text-left min-w-0">
+										<span className="font-bold truncate text-[var(--ink,#f4f4f5)]">Папка DICOM</span>
+										<span className="text-[10px] text-[var(--muted,#a1a1aa)] truncate">
 											Серия срезов .dcm
 										</span>
 									</div>
@@ -954,13 +954,13 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={handleZipUploadClick}
-									className="w-full px-3 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-900 text-zinc-100 border border-zinc-800 text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs"
+									className="w-full px-3 py-2 [@media(pointer:coarse)]:py-2.5 rounded-lg bg-[var(--paper-strong,#09090b)] hover:bg-[var(--paper-soft,#18181b)] text-[var(--ink,#f4f4f5)] border border-[var(--line,#27272a)] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
 									data-testid="cbct-dicom-zip-opt"
 								>
 									<FileArchive className="w-4 h-4 text-amber-400 shrink-0" />
-									<div className="flex flex-col text-left">
-										<span className="font-bold">ZIP-архив КТ</span>
-										<span className="text-[10px] text-zinc-400">
+									<div className="flex flex-col text-left min-w-0">
+										<span className="font-bold truncate text-[var(--ink,#f4f4f5)]">ZIP-архив КТ</span>
+										<span className="text-[10px] text-[var(--muted,#a1a1aa)] truncate">
 											Архив исследования .zip
 										</span>
 									</div>

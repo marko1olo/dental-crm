@@ -16,11 +16,9 @@ import {
 	STOMX_MARKETING_SOURCES_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
 } from "@dental/shared";
-import { showToast } from "../../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,
 	DEFAULT_SOMATIC_HEALTHY_NORM,
-	createHealthySomaticNormProfile,
 	evaluatePatientSafetyFlags,
 } from "../safetyMath";
 
@@ -80,22 +78,6 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 				) ?? null
 			);
 		}, [patient?.representativeType]);
-
-		const handleApplyNorm = useCallback(() => {
-			const cleanProfile = createHealthySomaticNormProfile();
-			if (onUpdateSafetyProfile) {
-				onUpdateSafetyProfile(cleanProfile);
-			}
-			if (onApplySomaticNorm) {
-				onApplySomaticNorm();
-			}
-			showToast(
-				"Установлена физиологическая норма: соматически здоров (1 клик)",
-				"success",
-				4000,
-			);
-		}, [onUpdateSafetyProfile, onApplySomaticNorm]);
-
 		const handleToggleAllergy = useCallback(
 			(field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => {
 				if (disabled) return;
@@ -112,37 +94,6 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 
 		return (
 			<div className="patient-general-info-tab flex flex-col gap-5 p-4 bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#0f172a)] rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
-				{/* 1-Click Physiological Norm Action Banner (Mandate 8e item 3) */}
-				<div className="flex items-center justify-between gap-3 p-3.5 bg-[var(--teal-surface,rgba(13,148,136,0.08))] dark:bg-teal-950/40 rounded-xl border border-[var(--teal-line,rgba(13,148,136,0.25))] flex-wrap">
-					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-[var(--brand-primary,#0d9488)] text-white flex items-center justify-center shrink-0">
-							<ShieldCheck className="w-5 h-5" />
-						</div>
-						<div>
-							<div className="text-sm font-bold text-[var(--ink,#1e293b)] dark:text-slate-100 flex items-center gap-1.5">
-								<span>Клинический статус</span>
-								<span className="text-[11px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
-									1 клик
-								</span>
-							</div>
-							<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
-								Физиологическая норма по умолчанию: соматически здоров, анамнез не отягощен. Врач правит только патологию!
-							</div>
-						</div>
-					</div>
-
-					<button
-						type="button"
-						data-testid="btn-somatic-healthy-norm"
-						className="min-h-[44px] sm:min-h-[32px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
-						onClick={handleApplyNorm}
-						title="Установить физиологическую норму в 1 клик"
-					>
-						<CheckCircle2 className="w-4 h-4 shrink-0" />
-						<span>Соматически здоров / Физиологическая норма</span>
-					</button>
-				</div>
-
 				{/* Patient Identity & Contacts */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="flex flex-col gap-1.5">

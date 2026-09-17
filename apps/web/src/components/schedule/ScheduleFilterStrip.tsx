@@ -5,6 +5,7 @@ import { specialtyLabels } from "../../workspaceUiLabels";
 import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 import { type ChairDoctorShiftAssignment, formatDoctorShortName } from "./ScheduleGrid";
+import { safeLocalStorageGetJson } from "../../lib/safeLocalStorage";
 
 export { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 
@@ -181,24 +182,24 @@ export function ScheduleFilterStrip({
 
 		// 2. Fallback to localStorage assignments for this date if present
 		if (typeof window !== "undefined" && effectiveDoctorIdForMyChair) {
-			try {
-				const raw = localStorage.getItem(`dente_chair_doctor_assignments_${currentDateIso}`);
-				if (raw) {
-					const parsed = JSON.parse(raw);
-					const assignedChairId = Object.keys(parsed).find(
-						(cId) =>
-							parsed[cId]?.doctorId === effectiveDoctorIdForMyChair ||
-							parsed[cId]?.subShifts?.some(
-								// biome-ignore lint/suspicious/noExplicitAny: sub-shift check
-								(s: any) => s.doctorId === effectiveDoctorIdForMyChair,
-							),
-					);
-					if (assignedChairId) {
-						const matching = displayChairs.find((c) => c.id === assignedChairId);
-						if (matching) return matching;
-					}
+			const parsed = safeLocalStorageGetJson<Record<string, any> | null>(
+				`dente_chair_doctor_assignments_${currentDateIso}`,
+				null,
+			);
+			if (parsed) {
+				const assignedChairId = Object.keys(parsed).find(
+					(cId) =>
+						parsed[cId]?.doctorId === effectiveDoctorIdForMyChair ||
+						parsed[cId]?.subShifts?.some(
+							// biome-ignore lint/suspicious/noExplicitAny: sub-shift check
+							(s: any) => s.doctorId === effectiveDoctorIdForMyChair,
+						),
+				);
+				if (assignedChairId) {
+					const matching = displayChairs.find((c) => c.id === assignedChairId);
+					if (matching) return matching;
 				}
-			} catch {}
+			}
 		}
 
 		// 3. Solo doctor or single chair: first chair is always their chair

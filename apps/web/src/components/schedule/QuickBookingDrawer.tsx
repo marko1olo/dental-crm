@@ -44,6 +44,11 @@ import {
 } from "./patientReliabilityScore";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
+import {
+	safeLocalStorageGetJson,
+	safeLocalStorageSetJson,
+	safeLocalStorageRemoveItem,
+} from "../../lib/safeLocalStorage";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { SlotConflictModal } from "./SlotConflictModal";
 import {
@@ -83,27 +88,19 @@ export function resolveChairDutyDoctor(
 	// 1. Check passed chairDoctorAssignments
 	let assignment = chairDoctorAssignments?.[chairId];
 
-	// 2. Fallback to localStorage
+	// 2. Fallback to in-memory safeLocalStorage
 	const targetDateKey =
 		startsAtIsoOrLocal && startsAtIsoOrLocal.length >= 10
 			? startsAtIsoOrLocal.slice(0, 10)
 			: (dateKeyFallback || "");
-	const hasStorage =
-		typeof window !== "undefined"
-			? window.localStorage
-			: typeof localStorage !== "undefined"
-				? localStorage
-				: null;
-	if (!assignment && hasStorage && targetDateKey) {
-		try {
-			const raw = hasStorage.getItem(`dente_chair_doctor_assignments_${targetDateKey}`);
-			if (raw) {
-				const parsed = JSON.parse(raw);
-				if (parsed?.[chairId]) {
-					assignment = parsed[chairId];
-				}
-			}
-		} catch {}
+	if (!assignment && targetDateKey) {
+		const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment> | null>(
+			`dente_chair_doctor_assignments_${targetDateKey}`,
+			null,
+		);
+		if (parsed?.[chairId]) {
+			assignment = parsed[chairId];
+		}
 	}
 
 	if (assignment) {
@@ -757,11 +754,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 			// Restore saved draft if opening a blank booking
 			if (!initialSlot?.patientId && !initialSlot?.reason) {
-				try {
-					const rawDraft = localStorage.getItem("dente_quick_booking_draft");
-					if (rawDraft) {
-						const saved = JSON.parse(rawDraft);
-						if (saved && typeof saved === "object") {
+				const saved = safeLocalStorageGetJson<Record<string, any> | null>("dente_quick_booking_draft", null);
+				if (saved && typeof saved === "object") {
 							if (saved.appointmentType) setAppointmentType(saved.appointmentType);
 							if (saved.comment) setComment(saved.comment);
 							if (saved.reason) setReason(saved.reason);
@@ -777,7 +771,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							}
 						}
 					}
-				} catch {}
 			}
 		}
 
@@ -1243,9 +1236,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			}
 
 			// Clear saved draft on successful booking creation
-			try {
-				localStorage.removeItem("dente_quick_booking_draft");
-			} catch {}
+			safeLocalStorageRemoveItem("dente_quick_booking_draft");
 
 			onClose();
 		} catch (err) {
@@ -1351,7 +1342,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				comment,
 				savedAt: new Date().toISOString(),
 			};
-			localStorage.setItem("dente_quick_booking_draft", JSON.stringify(draftData));
+			safeLocalStorageSetJson("dente_quick_booking_draft", draftData);
 			showToast("Черновик записи сохранен", "info");
 		} catch {}
 		onClose();
@@ -1371,9 +1362,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 	// Discard draft and close
 	const handleDiscardDraftAndClose = useCallback(() => {
-		try {
-			localStorage.removeItem("dente_quick_booking_draft");
-		} catch {}
+		safeLocalStorageRemoveItem("dente_quick_booking_draft");
 		onClose();
 	}, [onClose]);
 
@@ -2256,15 +2245,14 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											if (pref) targetChairId = pref.id;
 										}
 										if (!targetChairId && typeof window !== "undefined") {
-											try {
-												const storedPref = JSON.parse(
-													localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
-												);
-												if (storedPref[newDocId]) {
-													const pref = chairs.find((c) => c.id === storedPref[newDocId]);
-													if (pref) targetChairId = pref.id;
-												}
-											} catch {}
+											const storedPref = safeLocalStorageGetJson<Record<string, string>>(
+												"dente_doctor_preferred_chairs",
+												{},
+											);
+											if (storedPref[newDocId]) {
+												const pref = chairs.find((c) => c.id === storedPref[newDocId]);
+												if (pref) targetChairId = pref.id;
+											}
 										}
 
 										// 2. Chair default doctor
@@ -2273,20 +2261,19 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											if (def) targetChairId = def.id;
 										}
 										if (!targetChairId && typeof window !== "undefined") {
-											try {
-												const storedChairDef = JSON.parse(
-													localStorage.getItem("dente_chair_default_doctors") || "{}",
-												);
-												for (const [cId, dId] of Object.entries(storedChairDef)) {
-													if (dId === newDocId) {
-														const def = chairs.find((c) => c.id === cId);
-														if (def) {
-															targetChairId = def.id;
-															break;
-														}
+											const storedChairDef = safeLocalStorageGetJson<Record<string, string>>(
+												"dente_chair_default_doctors",
+												{},
+											);
+											for (const [cId, dId] of Object.entries(storedChairDef)) {
+												if (dId === newDocId) {
+													const def = chairs.find((c) => c.id === cId);
+													if (def) {
+														targetChairId = def.id;
+														break;
 													}
 												}
-											} catch {}
+											}
 										}
 
 										// 3. Auto-switch to chair where this doctor is on duty at scheduled time

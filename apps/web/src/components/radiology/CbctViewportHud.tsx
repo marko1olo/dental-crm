@@ -7,11 +7,11 @@
  * - 3D Orientation Compass / Cube in corner with A, P, L, R, S, I labels & colored axes.
  * - 4-Edge Anatomical Direction Indicators (Strict Radiological Rule: Patient's Right on Left).
  * - Top-Left Clinical Metadata Badge (Plane, Coordinates, Slab Mode, Thickness).
- * - Top-Right Maximization Toggle Button [ ⛶ ] / [ 🗗 ] & Double-click maximize trigger.
+ * - Top-Right Maximization Toggle Button [ Maximize ] / [ Minimize ] & Double-click maximize trigger.
  * - True 10 mm Millimeter Physical Scale Calibration Bar.
  */
 
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import React, { useMemo } from "react";
 import {
 	type CbctViewportType,
@@ -54,7 +54,7 @@ const OrientationCube3D: React.FC<OrientationCube3DProps> = ({ viewportType, siz
 
 	return (
 		<div
-			className="relative flex flex-col items-center justify-center p-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm border border-slate-800 select-none pointer-events-auto shadow-md"
+			className="relative flex flex-col items-center justify-center p-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm border border-[var(--line,#1e293b)] select-none pointer-events-auto shadow-md"
 			title={`3D Ориентационный компас: ${labels.planeNameRu}`}
 			data-testid={`cbct-orientation-cube-${viewportType}`}
 		>
@@ -191,23 +191,23 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 
 			{/* 1. TOP-LEFT CLINICAL HEADER BADGE */}
 			<div
-				className="absolute top-2 left-2 flex items-center gap-1 pointer-events-auto flex-nowrap min-w-0 max-w-[calc(100%-80px)] z-20"
+				className="absolute top-1.5 left-1.5 flex items-center gap-1 pointer-events-auto flex-nowrap min-w-0 max-w-[calc(100%-72px)] z-20"
 				onDoubleClick={(e) => {
 					e.stopPropagation();
 					onToggleMaximize?.();
 				}}
 			>
 				<div
-					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm border border-slate-800 shadow-md text-xs font-semibold whitespace-nowrap min-w-0 shrink"
+					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm border border-[var(--line,#334155)] shadow-md text-xs font-semibold whitespace-nowrap min-w-0 shrink"
 					style={{ borderLeftColor: labels.planeColor, borderLeftWidth: 3 }}
 				>
 					<span
 						className="w-1.5 h-1.5 rounded-full shrink-0"
 						style={{ backgroundColor: labels.planeColor }}
 					/>
-					<span className="text-slate-100 tracking-wide font-semibold text-[11.5px] truncate">{labels.planeNameRu}</span>
+					<span className="text-[var(--ink,#f8fafc)] tracking-wide font-semibold text-[11.5px] truncate">{labels.planeNameRu}</span>
 					{coordText && (
-						<span className="font-mono text-slate-300 text-[10px] font-medium ml-1 whitespace-nowrap shrink-0">
+						<span className="font-mono text-[var(--muted,#cbd5e1)] text-[10px] font-medium ml-1 whitespace-nowrap shrink-0">
 							({coordText})
 						</span>
 					)}
@@ -215,7 +215,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 
 				{zoomFactor !== undefined && Math.abs(zoomFactor - 1.0) > 0.01 && (
 					<span
-						className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm text-cyan-400 text-[10px] font-mono font-semibold border border-slate-800 shadow-xs"
+						className="px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm text-[var(--teal,#22d3ee)] text-[10px] font-mono font-semibold border border-[var(--line,#334155)] shadow-xs"
 						title={`Масштаб зума: ${(zoomFactor * 100).toFixed(0)}%`}
 					>
 						{zoomFactor.toFixed(1)}x
@@ -224,7 +224,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 
 				{viewportType !== "panoramic" && slabMode !== "single" && slabThicknessMm > 1 && (
 					<span
-						className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm text-[10px] font-mono font-semibold border border-slate-800 shadow-xs"
+						className="px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm text-[10px] font-mono font-semibold border border-[var(--line,#334155)] shadow-xs"
 						style={{ color: labels.planeColor }}
 					>
 						MIP {slabThicknessMm} мм
@@ -232,13 +232,13 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 
 				{sliceIndex !== undefined && totalSlices !== undefined && (
-					<span className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm text-slate-400 text-[10px] font-mono border border-slate-800 shadow-xs">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm text-[var(--muted,#94a3b8)] text-[10px] font-mono border border-[var(--line,#334155)] shadow-xs">
 						{sliceIndex + 1}/{totalSlices}
 					</span>
 				)}
 			</div>
 
-			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE & VIEWPORT MAXIMIZE BUTTON (Fixed top-2 right-2 placement) */}
+			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE & VIEWPORT MAXIMIZE BUTTON (Fixed top-1.5 right-1.5 placement) */}
 			<div className="absolute top-1.5 right-1.5 pointer-events-auto flex items-center gap-1 z-30">
 				{obliqueAngleDeg !== undefined && Math.abs(obliqueAngleDeg) > 0.05 && (
 					<button
@@ -247,12 +247,13 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onResetAngle?.();
 						}}
-						className="min-h-[44px] px-2.5 py-1.5 rounded-lg bg-[#0f172a]/95 hover:bg-slate-900 backdrop-blur-sm text-xs font-mono font-bold border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
+						className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md bg-[var(--paper-strong,#0f172a)]/95 hover:bg-[var(--paper-soft,#1e293b)] backdrop-blur-sm text-xs font-mono font-bold border border-[var(--teal,rgba(6,182,212,0.5))]/50 hover:border-cyan-400 text-[var(--teal,#22d3ee)] hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
 						title={`Угол наклона: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}° (Нажмите для сброса в 0.0°)`}
 						data-testid={`cbct-reset-angle-badge-${viewportType}`}
 					>
 						<span>∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°</span>
-						<span className="text-[10px] text-slate-400 hover:text-white font-bold ml-0.5">↺ 0°</span>
+						<RotateCcw size={10} className="inline text-slate-400 hover:text-white shrink-0 ml-0.5" />
+						<span className="text-[10px] text-slate-400 hover:text-white font-bold">0°</span>
 					</button>
 				)}
 
@@ -263,40 +264,44 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onToggleMaximize();
 						}}
-						className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg bg-[#0f172a]/92 backdrop-blur-sm hover:bg-slate-900 text-slate-400 hover:text-slate-100 border border-slate-800 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
+						className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm hover:bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] shadow-xs transition-colors flex items-center justify-center cursor-pointer"
 						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
 						data-testid={`cbct-maximize-${viewportType}-btn`}
 						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
 					>
-						{isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+						{isMaximized ? (
+							<Minimize2 size={13} className="[@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+						) : (
+							<Maximize2 size={13} className="[@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+						)}
 					</button>
 				)}
 			</div>
 
 			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (High-contrast dark underlay pad with 1px border) */}
 			<div
-				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
+				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] font-mono font-bold text-xs shadow-md pointer-events-none z-10"
 				title={labels.topTooltipRu}
 			>
 				{labels.top}
 			</div>
 
 			<div
-				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
+				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] font-mono font-bold text-xs shadow-md pointer-events-none z-10"
 				title={labels.bottomTooltipRu}
 			>
 				{labels.bottom}
 			</div>
 
 			<div
-				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10`}
+				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] font-mono font-bold text-xs shadow-md pointer-events-none z-10`}
 				title={labels.leftTooltipRu}
 			>
 				{labels.left}
 			</div>
 
 			<div
-				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
+				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] font-mono font-bold text-xs shadow-md pointer-events-none z-10"
 				title={labels.rightTooltipRu}
 			>
 				{labels.right}
@@ -305,12 +310,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			{/* 4. BOTTOM-LEFT DICOM WW/WL BADGE (DICOM PS3.3 Standard) */}
 			<div className="absolute bottom-1.5 left-1.5 pointer-events-auto flex items-center gap-1.5 z-20">
 				<div
-					className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm border border-slate-800 shadow-xs text-[9px] font-mono text-slate-400 select-none"
+					className="px-1.5 py-0.5 rounded bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm border border-[var(--line,#334155)] shadow-xs text-[9px] font-mono text-[var(--muted,#94a3b8)] select-none"
 					title={`DICOM WW/WL: W=${windowWidth ?? 4400}, L=${windowLevel ?? 1300}`}
 					data-testid={`cbct-hud-wl-${viewportType}`}
 				>
-					W: <span className="text-slate-100 font-bold">{windowWidth ?? 4400}</span> L:{" "}
-					<span className="text-slate-100 font-bold">{windowLevel ?? 1300}</span>
+					W: <span className="text-[var(--ink,#f8fafc)] font-bold">{windowWidth ?? 4400}</span> L:{" "}
+					<span className="text-[var(--ink,#f8fafc)] font-bold">{windowLevel ?? 1300}</span>
 				</div>
 			</div>
 

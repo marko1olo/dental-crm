@@ -12,6 +12,7 @@ import {
 import type { DentalSpecialty, StaffRole } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../lib/safeLocalStorage";
 
 export interface DoctorSpecialtyOption {
 	id: DentalSpecialty;
@@ -183,25 +184,19 @@ export function QuickAddDoctorModal({
 
 			// Save preferred chair binding in localStorage for resilient offline/mock parity
 			if (typeof window !== "undefined" && finalPreferredChairId) {
-				try {
-					const storedMap = JSON.parse(
-						localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
-					);
-					storedMap[docId] = finalPreferredChairId;
-					localStorage.setItem(
-						"dente_doctor_preferred_chairs",
-						JSON.stringify(storedMap),
-					);
+				const storedMap = safeLocalStorageGetJson<Record<string, string>>(
+					"dente_doctor_preferred_chairs",
+					{},
+				);
+				storedMap[docId] = finalPreferredChairId;
+				safeLocalStorageSetJson("dente_doctor_preferred_chairs", storedMap);
 
-					const chairDefaultMap = JSON.parse(
-						localStorage.getItem("dente_chair_default_doctors") || "{}",
-					);
-					chairDefaultMap[finalPreferredChairId] = docId;
-					localStorage.setItem(
-						"dente_chair_default_doctors",
-						JSON.stringify(chairDefaultMap),
-					);
-				} catch {}
+				const chairDefaultMap = safeLocalStorageGetJson<Record<string, string>>(
+					"dente_chair_default_doctors",
+					{},
+				);
+				chairDefaultMap[finalPreferredChairId] = docId;
+				safeLocalStorageSetJson("dente_chair_default_doctors", chairDefaultMap);
 			}
 
 			const addDoctorFn = onAddDoctor || onDoctorAdded;

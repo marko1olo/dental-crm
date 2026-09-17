@@ -198,7 +198,18 @@ async function run() {
 		}
 
 		const stat = statSync(outPath);
-		console.log(`[CBCT-E2E] Saved ${filename} (${(stat.size / 1024).toFixed(1)} KB) - ${description}`);
+		console.log(`[CBCT-E2E] Saved ${filename} (${statSync(outPath).size} B) — ${description}`);
+	}
+
+	async function ensureStudioMenuElement(selector) {
+		const target = page.locator(selector).first();
+		if (await target.isVisible()) return target;
+		const moreBtn = page.locator('[data-testid="cbct-more-options-btn"]').first();
+		if (await moreBtn.isVisible()) {
+			await moreBtn.click();
+			await sleep(200);
+		}
+		return page.locator(selector).first();
 	}
 
 	async function restoreGrid() {
@@ -347,7 +358,7 @@ async function run() {
 
 	// ─── 09: AUTO-DETECT DENTAL ARCH ──────────────────────────────────────────
 	console.log("[CBCT-E2E] 09: Auto-detect Dental Arch...");
-	const autoArchBtn = page.locator('[data-testid="cbct-btn-auto-arch"]').first();
+	const autoArchBtn = await ensureStudioMenuElement('[data-testid="cbct-btn-auto-arch"]');
 	await autoArchBtn.click();
 	await flushCanvasRender(page, 800);
 	await saveShot("09_auto_arch_detected.png", "Analytical auto-detected dental arch spline and 16 FDI tooth landmarks", { keepToast: true });
@@ -420,14 +431,14 @@ async function run() {
 
 	// ─── 14: LAYOUT 1+3 (DOMINANT VIEW + 3 SIDE SLICES) ───────────────────────
 	console.log("[CBCT-E2E] 14: Layout 1+3...");
-	const layout1Plus3Btn = page.locator('[data-testid="cbct-layout-1plus3-btn"]').first();
+	const layout1Plus3Btn = await ensureStudioMenuElement('[data-testid="cbct-layout-1plus3-btn"]');
 	await layout1Plus3Btn.click();
 	await flushCanvasRender(page, 1000);
 	await saveShot("14_layout_1_plus_3.png", "1+3 asymmetric layout with dominant panoramic OPG reconstruction and 3 side MPR slices");
 
 	// ─── 15: EXPORT TO EMR / FORM 043/U & TREATMENT PLAN REPORT ──────────────
 	console.log("[CBCT-E2E] 15: Export to EMR & PDF Report...");
-	const quadLayoutBtn = page.locator('[data-testid="cbct-layout-quad-btn"]').first();
+	const quadLayoutBtn = await ensureStudioMenuElement('[data-testid="cbct-layout-quad-btn"]');
 	if (await quadLayoutBtn.isVisible()) {
 		await quadLayoutBtn.click();
 	}
@@ -518,7 +529,7 @@ async function run() {
 	// ─── 19: PRINTABLE PDF REPORT (WHITE BACKGROUND A4 PROTOCOL) ──────────────
 	console.log("[CBCT-E2E] 19: Printable PDF Planning Protocol (White Background)...");
 	// In implant mode, extract the rendered printable HTML report
-	const exportPdfBtn = page.locator('[data-testid="cbct-btn-export-pdf"]').first();
+	const exportPdfBtn = await ensureStudioMenuElement('[data-testid="cbct-btn-export-pdf"]');
 	await exportPdfBtn.waitFor({ state: "visible", timeout: 5000 });
 
 	// Capture report preview by opening report HTML in a new tab/page

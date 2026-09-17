@@ -44,6 +44,10 @@ import {
 } from "../../utils/domVirtualizationHelper.js";
 import { PaymentModal } from "../finance/PaymentModal.js";
 import { showToast } from "../GlobalToast.js";
+import {
+	safeLocalStorageGetJson,
+	safeLocalStorageSetJson,
+} from "../../lib/safeLocalStorage.js";
 
 export interface InvoiceLineItem {
 	id: string;
@@ -85,28 +89,17 @@ type InvoiceFilterTab = "all" | "pending" | "paid" | "warranty";
 export const INVOICES_STORAGE_KEY = "dente_billing_invoices";
 
 export function loadStoredInvoices(): BillingInvoice[] {
-	if (typeof window === "undefined" || !window.localStorage) {
+	if (typeof window === "undefined") {
 		return [];
 	}
-	try {
-		const raw = window.localStorage.getItem(INVOICES_STORAGE_KEY);
-		if (!raw) return [];
-		const parsed = JSON.parse(raw);
-		return Array.isArray(parsed) ? (parsed as BillingInvoice[]) : [];
-	} catch {
-		return [];
-	}
+	return safeLocalStorageGetJson<BillingInvoice[]>(INVOICES_STORAGE_KEY, []);
 }
 
 export function saveStoredInvoices(invoices: BillingInvoice[]): void {
-	if (typeof window === "undefined" || !window.localStorage) {
+	if (typeof window === "undefined") {
 		return;
 	}
-	try {
-		window.localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(invoices));
-	} catch {
-		// Ignore storage write errors (quota exceeded or private browsing)
-	}
+	safeLocalStorageSetJson(INVOICES_STORAGE_KEY, invoices);
 }
 
 export const InvoicesView: React.FC<InvoicesViewProps> = ({
@@ -648,20 +641,20 @@ th { background: #f8fafc; font-weight: 700; }
 				aria-label="Панель счетов и актов"
 			>
 				{/* Left: Section Identity & Filter Tabs */}
-				<div className="flex items-center gap-1.5 overflow-x-auto">
+				<div className="flex items-center gap-1.5 shrink-0">
 					<div className="flex items-center gap-1.5 font-bold text-xs mr-2 text-[var(--ink,#0f172a)] shrink-0">
 						<Receipt
 							size={16}
 							className="text-teal-600 dark:text-teal-400 shrink-0"
 						/>
-						<span>Счета и Акты</span>
+						<span className="whitespace-nowrap">Счета и Акты</span>
 					</div>
 
-					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 sm:p-1 rounded-lg border border-[var(--line,#e2e8f0)]">
+					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 sm:p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
 						<button
 							type="button"
 							onClick={() => setFilterTab("all")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 								filterTab === "all"
 									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -676,7 +669,7 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={() => setFilterTab("pending")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 								filterTab === "pending"
 									? "bg-[var(--paper,#ffffff)] text-amber-700 dark:text-amber-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -700,7 +693,7 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={() => setFilterTab("paid")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 								filterTab === "paid"
 									? "bg-[var(--paper,#ffffff)] text-emerald-700 dark:text-emerald-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -715,7 +708,7 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={() => setFilterTab("warranty")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 								filterTab === "warranty"
 									? "bg-[var(--paper,#ffffff)] text-purple-700 dark:text-purple-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -728,8 +721,10 @@ th { background: #f8fafc; font-weight: 700; }
 							</span>
 						</button>
 					</div>
+				</div>
 
-					{/* Search box & fast actions (Mandate 8c: >=44px on mobile, compact on desktop) */}
+				{/* Right: Search box & fast actions (Mandate 8c: >=44px on mobile, compact on desktop) */}
+				<div className="flex items-center gap-2 shrink-0">
 					<div className="relative flex items-center">
 						<Search
 							size={14}
@@ -740,14 +735,14 @@ th { background: #f8fafc; font-weight: 700; }
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по пациенту или № счета..."
-							className="h-11 min-h-[44px] sm:h-7 sm:min-h-0 w-48 sm:w-60 pl-8 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
+							className="h-11 min-h-[44px] sm:h-7 sm:min-h-[28px] w-48 sm:w-60 pl-8 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
 							data-testid="input-search-invoices"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-0 sm:min-w-0 absolute right-0 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer flex items-center justify-center"
+								className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-[28px] sm:min-w-[28px] absolute right-0 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer flex items-center justify-center"
 								aria-label="Очистить поиск"
 							>
 								<X size={14} />
@@ -758,7 +753,7 @@ th { background: #f8fafc; font-weight: 700; }
 					<button
 						type="button"
 						onClick={() => setIsCreateModalOpen(true)}
-						className="min-h-[44px] h-11 sm:h-7 sm:min-h-0 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98"
+						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98 shrink-0 whitespace-nowrap"
 						data-testid="btn-create-invoice-open"
 						title="Создать счет (1 клик)"
 					>
@@ -770,7 +765,7 @@ th { background: #f8fafc; font-weight: 700; }
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-0 sm:min-w-0 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
+							className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-[28px] sm:min-w-[28px] rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors shrink-0"
 							aria-label="Закрыть реестр счетов"
 							data-testid="btn-invoices-close"
 						>
@@ -816,8 +811,12 @@ th { background: #f8fafc; font-weight: 700; }
 							return (
 								<div
 									key={inv.id}
-									className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 sm:p-3.5 shadow-2xs hover:border-teal-500/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative"
+									className="invoice-card rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 sm:p-3.5 shadow-2xs hover:border-teal-500/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative"
 									data-testid={`invoice-card-${inv.id}`}
+									style={{
+										contentVisibility: "auto",
+										containIntrinsicSize: "1px 48px",
+									}}
 								>
 									{/* Left: Invoice Identity & Details */}
 									<div className="flex items-start gap-3 min-w-0 flex-1">
@@ -914,16 +913,15 @@ th { background: #f8fafc; font-weight: 700; }
 										</div>
 									</div>
 
-									{/* Right: Actions (Mandate 8d: <=2 primary buttons, secondary in ..., >=44px) */}
+									{/* Right: Actions (Mandate 8d: <=2 primary buttons, secondary in ..., Mandate 8c: 32px desktop / 44px touch) */}
 									<div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
 										{isPending && (
 											<button
 												type="button"
 												onClick={() => setActivePaymentInvoice(inv)}
-												className="h-11 min-h-[44px] px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+												className="h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3.5 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
 												data-testid={`btn-pay-invoice-${inv.id}`}
 												title="Принять оплату (касса 54-ФЗ / карта / сплит)"
-												style={{ minHeight: "44px" }}
 											>
 												<CreditCard size={14} />
 												<span>Оплатить</span>
@@ -933,26 +931,24 @@ th { background: #f8fafc; font-weight: 700; }
 										<button
 											type="button"
 											onClick={() => handlePrintInvoice(inv)}
-											className="h-11 min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors"
+											className="h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
 											data-testid={`btn-print-invoice-${inv.id}`}
 											title="Печать счета на оплату"
-											style={{ minHeight: "44px" }}
 										>
-											<Printer size={14} className="text-slate-500" />
-											<span className="hidden md:inline">Счет</span>
+											<Printer size={14} className="text-slate-500 shrink-0" />
+											<span className="hidden md:inline whitespace-nowrap shrink-0">Счет</span>
 										</button>
 
-										{/* Context Menu Trigger for secondary options (Mandate 8c: >=44x44px) */}
+										{/* Context Menu Trigger for secondary options (Mandate 8c: 32px desktop / 44px touch) */}
 										<div className="relative">
 											<button
 												type="button"
 												onClick={() =>
 													setActiveMenuInvoiceId(isMenuOpen ? null : inv.id)
 												}
-												className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+												className="w-8 h-8 min-h-[32px] min-w-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:min-w-[44px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 												aria-label="Дополнительные действия"
 												data-testid={`btn-invoice-menu-${inv.id}`}
-												style={{ minWidth: "44px", minHeight: "44px" }}
 											>
 												<MoreVertical size={16} />
 											</button>
@@ -968,9 +964,8 @@ th { background: #f8fafc; font-weight: 700; }
 															handlePrintAct(inv);
 															setActiveMenuInvoiceId(null);
 														}}
-														className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+														className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
 														role="menuitem"
-														style={{ minHeight: "44px" }}
 													>
 														<FileText size={14} className="text-teal-600" />
 														<span>Печать акта 804н</span>
@@ -980,9 +975,8 @@ th { background: #f8fafc; font-weight: 700; }
 														<button
 															type="button"
 															onClick={() => handleApplyWarranty100(inv)}
-															className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
+															className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
 															role="menuitem"
-															style={{ minHeight: "44px" }}
 														>
 															<ShieldCheck
 																size={14}
@@ -1001,9 +995,8 @@ th { background: #f8fafc; font-weight: 700; }
 															);
 															setActiveMenuInvoiceId(null);
 														}}
-														className="w-full min-h-[44px] px-3 py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+														className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
 														role="menuitem"
-														style={{ minHeight: "44px" }}
 													>
 														<FileCheck size={14} className="text-blue-600" />
 														<span>Справка ФНС (1151156)</span>

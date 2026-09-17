@@ -13,7 +13,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -143,15 +143,15 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 			"VisitEmkTab must have label 'Заполнить нормой в 1 клик'",
 		);
 
-		// PatientGeneralInfoTab contains 1-click somatic healthy norm
-		const generalInfoTabPath = path.resolve(
+		// PatientCardModal contains 1-click somatic healthy norm in toolbar (Mandate 8p §206)
+		const patientCardModalPath = path.resolve(
 			__dirname,
-			"../../patients/tabs/PatientGeneralInfoTab.tsx",
+			"../../patients/PatientCardModal.tsx",
 		);
-		const generalInfoTabSource = fs.readFileSync(generalInfoTabPath, "utf8");
+		const patientCardModalSource = fs.readFileSync(patientCardModalPath, "utf8");
 		assert.ok(
-			generalInfoTabSource.includes("data-testid=\"btn-somatic-healthy-norm\""),
-			"PatientGeneralInfoTab must have btn-somatic-healthy-norm",
+			patientCardModalSource.includes("data-testid=\"btn-somatic-healthy-norm\""),
+			"PatientCardModal must have btn-somatic-healthy-norm in toolbar",
 		);
 	});
 

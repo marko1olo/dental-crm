@@ -68,6 +68,12 @@ import {
 	copyWeekShiftsToMonth,
 	applyDoctorChairWeeklyTemplate,
 } from "./roster/DoctorShiftRosterModal";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageGetJson,
+	safeLocalStorageSetJson,
+} from "../../lib/safeLocalStorage";
 import "./chairSchedule.css";
 
 export interface ChairDoctorSubShift {
@@ -333,23 +339,14 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(props.gridStepMinutes || 60);
 	const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>([]);
 	const [showRevenue, setShowRevenue] = useState<boolean>(() => {
-		if (typeof window === "undefined" || typeof localStorage === "undefined") return false;
-		try {
-			return localStorage.getItem("dente_schedule_show_revenue") === "true";
-		} catch {
-			return false;
-		}
+		return safeLocalStorageGetItem("dente_schedule_show_revenue") === "true";
 	});
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const handleToggleShowRevenue = useCallback(() => {
 		setShowRevenue((prev) => {
 			const next = !prev;
-			if (typeof localStorage !== "undefined") {
-				try {
-					localStorage.setItem("dente_schedule_show_revenue", String(next));
-				} catch {}
-			}
+			safeLocalStorageSetItem("dente_schedule_show_revenue", String(next));
 			return next;
 		});
 	}, []);
@@ -699,13 +696,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		Record<string, ChairDoctorShiftAssignment>
 	>(() => {
 		if (props.chairDoctorAssignments) return props.chairDoctorAssignments;
-		if (typeof window !== "undefined") {
-			try {
-				const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
-				if (raw) return JSON.parse(raw);
-			} catch {}
-		}
-		return {};
+		return safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment>>(
+			`dente_chair_doctor_assignments_${dateKey}`,
+			{},
+		);
 	});
 
 	useEffect(() => {
@@ -719,13 +713,14 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			return;
 		}
 		if (typeof window !== "undefined") {
-			try {
-				const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
-				if (raw) {
-					setLocalChairAssignments(JSON.parse(raw));
-					return;
-				}
-			} catch {}
+			const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment> | null>(
+				`dente_chair_doctor_assignments_${dateKey}`,
+				null,
+			);
+			if (parsed) {
+				setLocalChairAssignments(parsed);
+				return;
+			}
 		}
 		setLocalChairAssignments({});
 	}, [dateKey, props.chairDoctorAssignments]);
@@ -1235,9 +1230,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			setLocalChairAssignments((prev) => {
 				const next = { ...prev, [chairId]: assignment };
 				if (typeof window !== "undefined") {
-					try {
-						localStorage.setItem(`dente_chair_doctor_assignments_${dateKey}`, JSON.stringify(next));
-					} catch {}
+					safeLocalStorageSetJson(`dente_chair_doctor_assignments_${dateKey}`, next);
 				}
 				return next;
 			});
@@ -1271,25 +1264,19 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			const doctorName = targetDoc ? formatDoctorShortName(targetDoc.fullName) : doctorId;
 
 			if (typeof window !== "undefined") {
-				try {
-					const storedPref = JSON.parse(
-						localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
-					);
-					storedPref[doctorId] = chairId;
-					localStorage.setItem(
-						"dente_doctor_preferred_chairs",
-						JSON.stringify(storedPref),
-					);
+				const storedPref = safeLocalStorageGetJson<Record<string, string>>(
+					"dente_doctor_preferred_chairs",
+					{},
+				);
+				storedPref[doctorId] = chairId;
+				safeLocalStorageSetJson("dente_doctor_preferred_chairs", storedPref);
 
-					const storedChairDef = JSON.parse(
-						localStorage.getItem("dente_chair_default_doctors") || "{}",
-					);
-					storedChairDef[chairId] = doctorId;
-					localStorage.setItem(
-						"dente_chair_default_doctors",
-						JSON.stringify(storedChairDef),
-					);
-				} catch {}
+				const storedChairDef = safeLocalStorageGetJson<Record<string, string>>(
+					"dente_chair_default_doctors",
+					{},
+				);
+				storedChairDef[chairId] = doctorId;
+				safeLocalStorageSetJson("dente_chair_default_doctors", storedChairDef);
 			}
 
 			if (targetDoc) {
@@ -1324,9 +1311,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			setLocalChairAssignments((prev) => {
 				const next = { ...prev, [chairId]: emptyAssignment };
 				if (typeof window !== "undefined") {
-					try {
-						localStorage.setItem(`dente_chair_doctor_assignments_${dateKey}`, JSON.stringify(next));
-					} catch {}
+					safeLocalStorageSetJson(`dente_chair_doctor_assignments_${dateKey}`, next);
 				}
 				return next;
 			});
@@ -1381,28 +1366,22 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			const weekDays = dayOffsets.map((offset) => addDaysToDateIso(mondayIso, offset));
 
 			if (typeof window !== "undefined") {
-				try {
-					for (const dayIso of weekDays) {
-						const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
-						const raw = localStorage.getItem(existingKey);
-						const parsed = raw ? JSON.parse(raw) : {};
-						parsed[chairId] = assignment;
-						localStorage.setItem(existingKey, JSON.stringify(parsed));
-					}
-				} catch {}
+				for (const dayIso of weekDays) {
+					const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
+					const parsed = safeLocalStorageGetJson<Record<string, any>>(existingKey, {});
+					parsed[chairId] = assignment;
+					safeLocalStorageSetJson(existingKey, parsed);
+				}
 
-				try {
-					const rawShifts = localStorage.getItem("dente_doctor_shifts");
-					const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-					const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
-						weekStartDateIso: mondayIso,
-						templateId: fullWeek ? "seven_day_full" : "five_day_standard",
-						doctorId: doc.id,
-						chairId,
-						staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
-					});
-					localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
-				} catch {}
+				const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+				const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
+					weekStartDateIso: mondayIso,
+					templateId: fullWeek ? "seven_day_full" : "five_day_standard",
+					doctorId: doc.id,
+					chairId,
+					staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+				});
+				safeLocalStorageSetJson("dente_doctor_shifts", updatedShifts);
 			}
 
 			setLocalChairAssignments((prev) => ({
@@ -1480,24 +1459,18 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			const monthName = monthNamesRu[month - 1] || "текущий месяц";
 
 			if (typeof window !== "undefined") {
-				try {
-					for (let d = 1; d <= daysInMonth; d++) {
-						const dayIso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-						const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
-						const raw = localStorage.getItem(existingKey);
-						const parsed = raw ? JSON.parse(raw) : {};
-						parsed[chairId] = assignment;
-						localStorage.setItem(existingKey, JSON.stringify(parsed));
-					}
-				} catch {}
+				for (let d = 1; d <= daysInMonth; d++) {
+					const dayIso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+					const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
+					const parsed = safeLocalStorageGetJson<Record<string, any>>(existingKey, {});
+					parsed[chairId] = assignment;
+					safeLocalStorageSetJson(existingKey, parsed);
+				}
 
-				try {
-					const mondayIso = getMondayOfWeekIso(dateKey);
-					const rawShifts = localStorage.getItem("dente_doctor_shifts");
-					const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-					const updatedShifts = copyWeekShiftsToMonth(currentShifts, mondayIso, 4);
-					localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
-				} catch {}
+				const mondayIso = getMondayOfWeekIso(dateKey);
+				const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+				const updatedShifts = copyWeekShiftsToMonth(currentShifts, mondayIso, 4);
+				safeLocalStorageSetJson("dente_doctor_shifts", updatedShifts);
 			}
 
 			setLocalChairAssignments((prev) => ({
@@ -1566,12 +1539,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			};
 
 			if (typeof window !== "undefined" && dateKey) {
-				try {
-					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
-					const existingStorage = JSON.parse(localStorage.getItem(storageKey) || "{}");
-					existingStorage[chairId] = updatedAssignment;
-					localStorage.setItem(storageKey, JSON.stringify(existingStorage));
-				} catch {}
+				const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+				const existingStorage = safeLocalStorageGetJson<Record<string, any>>(storageKey, {});
+				existingStorage[chairId] = updatedAssignment;
+				safeLocalStorageSetJson(storageKey, existingStorage);
 			}
 
 			setLocalChairAssignments((prev) => ({
@@ -1596,27 +1567,22 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		const nextMondayIso = addDaysToDateIso(mondayIso, 7);
 
 		if (typeof window !== "undefined") {
-			try {
-				for (let i = 0; i < 7; i++) {
-					const srcDay = addDaysToDateIso(mondayIso, i);
-					const targetDay = addDaysToDateIso(nextMondayIso, i);
-					const srcKey = `dente_chair_doctor_assignments_${srcDay}`;
-					const targetKey = `dente_chair_doctor_assignments_${targetDay}`;
-					const raw = localStorage.getItem(srcKey);
-					if (raw) {
-						localStorage.setItem(targetKey, raw);
-					} else if (srcDay === dateKey && effectiveChairAssignments) {
-						localStorage.setItem(targetKey, JSON.stringify(effectiveChairAssignments));
-					}
+			for (let i = 0; i < 7; i++) {
+				const srcDay = addDaysToDateIso(mondayIso, i);
+				const targetDay = addDaysToDateIso(nextMondayIso, i);
+				const srcKey = `dente_chair_doctor_assignments_${srcDay}`;
+				const targetKey = `dente_chair_doctor_assignments_${targetDay}`;
+				const raw = safeLocalStorageGetItem(srcKey);
+				if (raw) {
+					safeLocalStorageSetItem(targetKey, raw);
+				} else if (srcDay === dateKey && effectiveChairAssignments) {
+					safeLocalStorageSetJson(targetKey, effectiveChairAssignments);
 				}
-			} catch {}
+			}
 
-			try {
-				const rawShifts = localStorage.getItem("dente_doctor_shifts");
-				const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-				const updatedShifts = copyWeekShiftsToTargetWeek(currentShifts, mondayIso, nextMondayIso);
-				localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
-			} catch {}
+			const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+			const updatedShifts = copyWeekShiftsToTargetWeek(currentShifts, mondayIso, nextMondayIso);
+			safeLocalStorageSetJson("dente_doctor_shifts", updatedShifts);
 		}
 
 		showToast(
@@ -2395,18 +2361,15 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															if (targetDocId) {
 																const mondayIso = getMondayOfWeekIso(dateKey);
 																if (typeof window !== "undefined") {
-																	try {
-																		const rawShifts = localStorage.getItem("dente_doctor_shifts");
-																		const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-																		const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
-																			weekStartDateIso: mondayIso,
-																			templateId: "two_two_full",
-																			doctorId: targetDocId,
-																			chairId: chair.id,
-																			staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
-																		});
-																		localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
-																	} catch {}
+																	const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+																	const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
+																		weekStartDateIso: mondayIso,
+																		templateId: "two_two_full",
+																		doctorId: targetDocId,
+																		chairId: chair.id,
+																		staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+																	});
+																	safeLocalStorageSetJson("dente_doctor_shifts", updatedShifts);
 																}
 																handleConfirmAssignDoctor(chair.id, targetDocId, "two_shifts");
 															}
@@ -2428,18 +2391,15 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															if (targetDocId) {
 																const mondayIso = getMondayOfWeekIso(dateKey);
 																if (typeof window !== "undefined") {
-																	try {
-																		const rawShifts = localStorage.getItem("dente_doctor_shifts");
-																		const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
-																		const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
-																			weekStartDateIso: mondayIso,
-																			templateId: "even_odd_month",
-																			doctorId: targetDocId,
-																			chairId: chair.id,
-																			staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
-																		});
-																		localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
-																	} catch {}
+																	const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+																	const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
+																		weekStartDateIso: mondayIso,
+																		templateId: "even_odd_month",
+																		doctorId: targetDocId,
+																		chairId: chair.id,
+																		staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+																	});
+																	safeLocalStorageSetJson("dente_doctor_shifts", updatedShifts);
 																}
 																const dayOfMonth = Number.parseInt(dateKey ? dateKey.slice(8, 10) : "1", 10) || 1;
 																const isEven = dayOfMonth % 2 === 0;

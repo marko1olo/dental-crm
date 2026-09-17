@@ -1141,9 +1141,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			aria-modal="true"
 			aria-labelledby="payment-modal-title"
 		>
-			<div className="w-full max-w-xl rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+			<div className="w-full max-w-xl rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] min-h-0">
 				{/* Modal Header */}
-				<div className="p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
+				<div className="p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)] shrink-0">
 					<div>
 						<h2 id="payment-modal-title" className="text-base sm:text-lg font-bold m-0 flex items-center gap-2 flex-wrap">
 							<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
@@ -1167,28 +1167,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						</p>
 					</div>
 
-					<div className="flex items-center gap-1.5 relative">
+					<div className="flex items-center gap-1.5 relative shrink-0">
 						<button
 							type="button"
 							onClick={handleQuickPrintInvoice}
-							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 							title="Быстрая печать счета"
 							aria-label="Печать счета"
 							data-testid="btn-payment-modal-print-invoice"
 						>
 							<Printer size={14} className="text-slate-500 shrink-0" />
-							<span className="hidden sm:inline">Счет</span>
+							<span className="hidden sm:inline whitespace-nowrap shrink-0">Счет</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleQuickPrintAct}
-							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 							title="Быстрая печать акта сдачи-приемки (804н)"
 							aria-label="Печать акта 804н"
 							data-testid="btn-payment-modal-print-act"
 						>
 							<FileText size={14} className="text-slate-500 shrink-0" />
-							<span className="hidden sm:inline">Акт 804н</span>
+							<span className="hidden sm:inline whitespace-nowrap shrink-0">Акт 804н</span>
 						</button>
 						<button
 							type="button"
@@ -1477,37 +1477,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				)}
 
 				{/* Method Selector Tabs */}
-				<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto">
+				<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto shrink-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<button
 						type="button"
 						onClick={() => setActiveMethod("card_terminal")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "card_terminal"
 								? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<CreditCard size={16} className="text-emerald-600" />
-						<span>POS Терминал Сбербанк</span>
+						<CreditCard size={16} className="text-emerald-600 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">POS Терминал Сбербанк</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveMethod("sberpay_qr")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "sberpay_qr"
 								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<QrCode size={16} className="text-teal-600" />
-						<span>SberPay QR (СБП)</span>
+						<QrCode size={16} className="text-teal-600 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">SberPay QR (СБП)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveMethod("sbp_qr")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "sbp_qr"
 								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
@@ -1515,53 +1515,53 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						data-testid="tab-payment-sbp-qr"
 						title="Оплата СБП по QR (НСПК / ГОСТ Р 56042-2014)"
 					>
-						<QrCode size={16} className="text-teal-600" />
-						<span>Оплата СБП по QR</span>
+						<QrCode size={16} className="text-teal-600 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Оплата СБП по QR</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveMethod("cash")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "cash"
 								? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<Banknote size={16} className="text-emerald-600" />
-						<span>Наличные</span>
+						<Banknote size={16} className="text-emerald-600 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Наличные</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveMethod("family_deposit")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "family_deposit"
 								? "border-pink-500 bg-pink-500/10 text-pink-700 dark:text-pink-300 ring-2 ring-pink-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid="tab-payment-family-deposit"
 					>
-						<Users size={16} className="text-pink-600" />
-						<span>Депозит / Семья</span>
+						<Users size={16} className="text-pink-600 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Депозит / Семья</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveMethod("split")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "split"
 								? "border-purple-500 bg-purple-500/10 text-purple-700 dark:text-purple-300 ring-2 ring-purple-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<Wallet size={16} className="text-purple-600" />
-						<span>Комбинированная (Сплит)</span>
+						<Wallet size={16} className="text-purple-600 shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Комбинированная (Сплит)</span>
 					</button>
 				</div>
 
 				{/* Modal Body */}
-				<div className="p-4 overflow-y-auto flex-1 space-y-4">
+				<div className="p-4 overflow-y-auto flex-1 min-h-0 space-y-4">
 					{/* StomX 6 Cash Boxes & Cash Flow Category (ДДС) Selector (Mandates 8e, 8n) */}
 					<div
 						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs"

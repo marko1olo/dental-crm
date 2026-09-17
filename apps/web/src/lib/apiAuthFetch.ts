@@ -40,7 +40,11 @@ import {
 import {
 	DENTE_CLINIC_TOKEN_KEY,
 	DENTE_STAFF_TOKEN_KEY,
+	readDenteClinicToken,
+	readDenteStaffToken,
 	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
 } from "./safeLocalStorage";
 
 const CLINIC_TOKEN_STORAGE_KEY = DENTE_CLINIC_TOKEN_KEY;
@@ -102,10 +106,10 @@ function initTokenCache(): void {
 function readToken(key: string): string | null {
 	initTokenCache();
 	if (key === CLINIC_TOKEN_STORAGE_KEY) {
-		return cachedClinicToken;
+		return cachedClinicToken ?? (readDenteClinicToken() || null);
 	}
 	if (key === STAFF_TOKEN_STORAGE_KEY) {
-		return cachedStaffToken;
+		return cachedStaffToken ?? (readDenteStaffToken() || null);
 	}
 	const value = safeLocalStorageGetItem(key);
 	return value?.trim() ? value : null;
@@ -121,9 +125,19 @@ export function setCachedAuthTokens(tokens: {
 	initTokenCache();
 	if (tokens.clinicToken !== undefined) {
 		cachedClinicToken = tokens.clinicToken?.trim() || null;
+		if (tokens.clinicToken) {
+			safeLocalStorageSetItem(CLINIC_TOKEN_STORAGE_KEY, tokens.clinicToken);
+		} else {
+			safeLocalStorageRemoveItem(CLINIC_TOKEN_STORAGE_KEY);
+		}
 	}
 	if (tokens.staffToken !== undefined) {
 		cachedStaffToken = tokens.staffToken?.trim() || null;
+		if (tokens.staffToken) {
+			safeLocalStorageSetItem(STAFF_TOKEN_STORAGE_KEY, tokens.staffToken);
+		} else {
+			safeLocalStorageRemoveItem(STAFF_TOKEN_STORAGE_KEY);
+		}
 	}
 }
 
@@ -134,6 +148,8 @@ export function clearCachedAuthTokens(): void {
 	initTokenCache();
 	cachedClinicToken = null;
 	cachedStaffToken = null;
+	safeLocalStorageRemoveItem(CLINIC_TOKEN_STORAGE_KEY);
+	safeLocalStorageRemoveItem(STAFF_TOKEN_STORAGE_KEY);
 }
 
 /**

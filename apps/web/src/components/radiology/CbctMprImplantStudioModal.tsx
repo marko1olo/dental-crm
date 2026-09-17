@@ -10,13 +10,13 @@ import {
 	Columns2,
 	Compass,
 	Crosshair,
-	Download,
 	FileText,
 	FolderOpen,
 	Grid2X2,
 	Info,
 	Maximize2,
 	Minimize2,
+	MoreHorizontal,
 	RotateCcw,
 	Ruler,
 	Save,
@@ -42,15 +42,12 @@ import {
 	type ObliqueRotationAngles,
 	type RotationHandlePosition,
 	type ViewportTransform,
-	type CbctActiveMouseTool,
 	type CbctMeasurementRuler,
 	type CbctAngleMeasurement,
 	type CbctProbeMarker,
-	type MeasurementHandleHit,
 	DEFAULT_OBLIQUE_ROTATION,
 	DEFAULT_VIEWPORT_TRANSFORM,
 	applyCursorZoom,
-	applyWindowLevelDrag,
 	calculateCrosshairDragWorldMm,
 	ROMEXIS_COLORS,
 	disposeCbctVolume,
@@ -63,11 +60,8 @@ import {
 	calculateAngleBetween3Points3D,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
-	getCbctToolCursor,
 	worldMmToSlicePx,
-	slicePxToWorldMm,
 	slicePxToScreenPx,
-	worldMmToScreenPx,
 	extractObliqueMprSlice,
 	getRotationHandles,
 	hitTestRotationHandle,
@@ -91,14 +85,11 @@ import {
 	type CrossSectionSliceData,
 	type DentalArchCurve,
 	type PanoramicReconstructionResult,
-	type PanoramicSliceFanTick,
 	type PanoClickSyncResult,
 	buildDentalArchCurve,
-	findNearestCrossSectionIndexByPanoX,
 	findCrossSectionAndPositionByFdi,
 	hitTestPanoramicToothMarker,
 	generateCrossSectionSlices,
-	getFocalTroughBoundaryCurves,
 	getPanoramicSliceFanTicks,
 	mapPanoPointerToCrosshairAndSlice,
 	mapSliceToPanoramicX,
@@ -150,7 +141,6 @@ import {
 	buildCbctReportData,
 	exportCleanViewportSnapshot,
 	openCbctReportPrintWindow,
-	type CbctReportData,
 } from "./cbctExportEngine";
 import {
 	interpolateNerveSpline3D,
@@ -361,6 +351,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, [patientName, study?.patientName]);
 	const [loadedSliceCount, setLoadedSliceCount] = useState<number>(0);
 	const [isDragOverWindow, setIsDragOverWindow] = useState<boolean>(false);
+	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false);
+	const studioMenuRef = useRef<HTMLDivElement>(null);
 
 	const folderInputRef = useRef<HTMLInputElement>(null);
 	const zipInputRef = useRef<HTMLInputElement>(null);
@@ -464,13 +456,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	} | null>(null);
 	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]);
 	const [activeProbe, setActiveProbe] = useState<CbctProbeMarker | null>(null);
-
-	// Zoom dragging state (vertical drag)
-	const [isDraggingZoom, setIsDraggingZoom] = useState<{
-		plane: CbctViewportType;
-		startY: number;
-		startZoom: number;
-	} | null>(null);
 
 	// Real-Time Crosshair, Panorama & Oblique Rotation Synchronization (rAF Coalescing)
 	const pendingCrosshairMmRef = useRef<Point3D | null>(null);
@@ -581,6 +566,26 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			document.removeEventListener("fullscreenchange", handleFullscreenChange);
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!isStudioMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (studioMenuRef.current && !studioMenuRef.current.contains(e.target as Node)) {
+				setIsStudioMenuOpen(false);
+			}
+		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setIsStudioMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isStudioMenuOpen]);
 
 	// ─── KEYBOARD NAVIGATION ENGINE HANDLERS ─────────────────────────────────
 	const handleScrollSlice = useCallback((direction: "prev" | "next", stepCount: number) => {
@@ -4957,7 +4962,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-200 overflow-x-auto min-w-0 w-full max-w-full"
 			>
 				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
-				<div className="flex items-center gap-2 shrink-0 min-w-max">
+				<div className="flex items-center gap-2 min-w-0 max-w-[260px] lg:max-w-[340px] shrink">
 					<div className="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
 						<Box className="w-3.5 h-3.5" />
 					</div>
@@ -4974,9 +4979,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</h2>
 						</div>
 						<p
-							className="text-[10px] text-zinc-400 whitespace-nowrap leading-none"
+							className="text-[10px] text-zinc-400 truncate leading-none min-w-0"
 							data-testid="cbct-patient-metadata-badge"
 							id="cbct-patient-metadata-badge"
+							title={`${patientDisplayName || resolvedPatientName} • ${loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • ${volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}`}
 						>
 							{patientDisplayName || resolvedPatientName} • {loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • {volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}
 						</p>
@@ -5043,53 +5049,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</button>
 				</div>
 
-				{/* Right: Layout Switcher, Sidebar Toggle with Indicator, Maximize, Close */}
+				{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls */}
 				<div className="flex items-center gap-1.5 shrink-0">
-					{/* 1-Click Reset View (Zoom 100%, Pan center, Oblique 0°, Contrast Bone, clear rulers) */}
-					<button
-						type="button"
-						onClick={handleResetAll}
-						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
-						data-testid="cbct-btn-reset-view"
-						title="Сбросить масштаб (100%), панораму (центр), наклон осей (0°) и контраст"
-					>
-						<RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-						<span>Сброс</span>
-					</button>
-
-					{/* 1-Click Auto Dental Arch Extraction Button */}
-					<button
-						type="button"
-						onClick={handleAutoDetectArch}
-						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors cursor-pointer"
-						data-testid="cbct-btn-auto-arch"
-						title="Сгенерировать дугу автоматически по плотности эмали и кортикального гребня"
-					>
-						<Sliders className="w-3.5 h-3.5 text-purple-400" />
-						<span>Автодуга</span>
-					</button>
-
-					{/* 1-Click Toggle Dental Arch Spline on All Viewports */}
-					<button
-						type="button"
-						onClick={() => setShowDentalArch((prev) => !prev)}
-						className={`px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border shadow-xs transition-colors cursor-pointer ${
-							showDentalArch
-								? "bg-purple-950/60 text-purple-200 border-purple-500/80 shadow-purple-950/40"
-								: "bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border-zinc-800"
-						}`}
-						data-testid="cbct-toggle-dental-arch"
-						title="Показать / скрыть анатомическую дугу ОПТГ"
-					>
-						<Spline className="w-3.5 h-3.5 text-purple-400" />
-						<span>Дуга ОПТГ</span>
-					</button>
-
-					{/* 1-Click Clinical EMR Snapshot Export Button */}
+					{/* Primary Action 1: Clinical EMR Snapshot Export Button */}
 					<button
 						type="button"
 						onClick={handleExportToEmr}
-						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 hover:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400 shadow-xs transition-colors cursor-pointer"
+						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-export-emr"
 						title="Сохранить снимок и протокол планирования в карту 043/у"
 					>
@@ -5097,66 +5063,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<span>В ЭМК</span>
 					</button>
 
-					{/* 1-Click Printable PDF Report Export Button */}
-					<button
-						type="button"
-						onClick={handleExportPdfReport}
-						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
-						data-testid="cbct-btn-export-pdf"
-						title="Сформировать печатный A4 протокол планирования / PDF"
-					>
-						<FileText className="w-3.5 h-3.5" />
-						<span>PDF</span>
-					</button>
-
-					{/* Layout Switcher */}
-					<div className="flex items-center bg-zinc-950 p-0.5 rounded border border-zinc-800 shrink-0 gap-0.5">
-						{maximizedViewport !== null ? (
-							<button
-								type="button"
-								onClick={() => setMaximizedViewport(null)}
-								className="whitespace-nowrap shrink-0 px-2 py-1 rounded text-xs font-bold h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs transition-colors cursor-pointer"
-								data-testid="cbct-restore-grid-btn"
-								title="Восстановить сетку окон (2x2)"
-							>
-								<Minimize2 className="w-3.5 h-3.5 shrink-0" />
-								<span className="whitespace-nowrap">2x2</span>
-							</button>
-						) : (
-							<>
-								<button
-									type="button"
-									onClick={() => setViewLayout("quad_view")}
-									className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-										viewLayout === "quad_view"
-											? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
-											: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
-									}`}
-									data-testid="cbct-layout-quad-btn"
-									title="Сетка 4 окна (2x2)"
-								>
-									<Grid2X2 className="w-3.5 h-3.5" />
-									<span>4 окна</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => setViewLayout("layout_1_plus_3")}
-									className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-										viewLayout === "layout_1_plus_3"
-											? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
-											: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
-									}`}
-									data-testid="cbct-layout-1plus3-btn"
-									title="Раскладка 1+3 (Доминантный аксиал)"
-								>
-									<Columns2 className="w-3.5 h-3.5" />
-									<span>1+3</span>
-								</button>
-							</>
-						)}
-					</div>
-
-					{/* Sidebar Toggle Button with Colored Indicator */}
+					{/* Primary Action 2: Sidebar Toggle Button with Colored Indicator */}
 					<button
 						type="button"
 						onClick={() => setIsSidebarOpen((prev) => !prev)}
@@ -5172,6 +5079,156 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<Columns2 className="w-3.5 h-3.5" />
 						<span>Панель</span>
 					</button>
+
+					{/* Secondary Actions: Popover Menu (Miller's Law <= 2 Primary Toolbar Actions) */}
+					<div className="relative shrink-0" ref={studioMenuRef}>
+						<button
+							type="button"
+							onClick={() => setIsStudioMenuOpen((prev) => !prev)}
+							className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border transition-colors cursor-pointer ${
+								isStudioMenuOpen
+									? "bg-zinc-800 text-cyan-400 border-cyan-500/60"
+									: "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700 hover:border-zinc-600"
+							}`}
+							data-testid="cbct-more-options-btn"
+							title="Дополнительные операции (Сброс, дуга, PDF, раскладка)"
+							aria-haspopup="true"
+							aria-expanded={isStudioMenuOpen}
+						>
+							<MoreHorizontal className="w-3.5 h-3.5" />
+							<span>Опции</span>
+						</button>
+
+						{isStudioMenuOpen && (
+							<div
+								className="absolute right-0 top-full mt-1.5 w-60 bg-zinc-900/98 border border-zinc-700/90 rounded-lg shadow-2xl p-1.5 z-50 flex flex-col gap-1 backdrop-blur-md"
+								data-testid="cbct-more-options-popover"
+							>
+								{/* 1-Click Reset View */}
+								<button
+									type="button"
+									onClick={() => {
+										handleResetAll();
+										setIsStudioMenuOpen(false);
+									}}
+									className="w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 text-amber-300 hover:text-amber-200 hover:bg-zinc-800 transition-colors cursor-pointer"
+									data-testid="cbct-btn-reset-view"
+									title="Сбросить масштаб (100%), панораму (центр), наклон осей (0°) и контраст"
+								>
+									<RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+									<span>Сброс вида</span>
+								</button>
+
+								{/* 1-Click Auto Dental Arch Extraction */}
+								<button
+									type="button"
+									onClick={() => {
+										handleAutoDetectArch();
+										setIsStudioMenuOpen(false);
+									}}
+									className="w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 text-purple-300 hover:text-purple-200 hover:bg-zinc-800 transition-colors cursor-pointer"
+									data-testid="cbct-btn-auto-arch"
+									title="Сгенерировать дугу автоматически по плотности эмали и кортикального гребня"
+								>
+									<Sliders className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+									<span>Автодуга зубов</span>
+								</button>
+
+								{/* 1-Click Toggle Dental Arch Spline */}
+								<button
+									type="button"
+									onClick={() => {
+										setShowDentalArch((prev) => !prev);
+										setIsStudioMenuOpen(false);
+									}}
+									className={`w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 transition-colors cursor-pointer ${
+										showDentalArch
+											? "text-purple-300 bg-purple-950/40 hover:bg-purple-950/60"
+											: "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+									}`}
+									data-testid="cbct-toggle-dental-arch"
+									title="Показать / скрыть анатомическую дугу ОПТГ"
+								>
+									<Spline className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+									<span>{showDentalArch ? "Скрыть дугу ОПТГ" : "Показать дугу ОПТГ"}</span>
+								</button>
+
+								{/* 1-Click Printable PDF Report Export */}
+								<button
+									type="button"
+									onClick={() => {
+										handleExportPdfReport();
+										setIsStudioMenuOpen(false);
+									}}
+									className="w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 text-amber-300 hover:text-amber-200 hover:bg-zinc-800 transition-colors cursor-pointer"
+									data-testid="cbct-btn-export-pdf"
+									title="Сформировать печатный A4 протокол планирования / PDF"
+								>
+									<FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+									<span>Печатный PDF протокол</span>
+								</button>
+
+								<div className="h-px bg-zinc-800 my-0.5" />
+
+								{/* Viewport Layout Options */}
+								<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+									Раскладка окон
+								</div>
+								{maximizedViewport !== null ? (
+									<button
+										type="button"
+										onClick={() => {
+											setMaximizedViewport(null);
+											setIsStudioMenuOpen(false);
+										}}
+										className="w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 text-cyan-400 hover:bg-zinc-800 transition-colors cursor-pointer"
+										data-testid="cbct-restore-grid-btn"
+										title="Восстановить сетку окон (2x2)"
+									>
+										<Minimize2 className="w-3.5 h-3.5 shrink-0" />
+										<span>Сетка окон 2x2</span>
+									</button>
+								) : (
+									<div className="flex flex-col gap-0.5">
+										<button
+											type="button"
+											onClick={() => {
+												setViewLayout("quad_view");
+												setIsStudioMenuOpen(false);
+											}}
+											className={`w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 transition-colors cursor-pointer ${
+												viewLayout === "quad_view"
+													? "text-cyan-400 bg-cyan-950/30"
+													: "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+											}`}
+											data-testid="cbct-layout-quad-btn"
+											title="Сетка 4 окна (2x2)"
+										>
+											<Grid2X2 className="w-3.5 h-3.5 shrink-0" />
+											<span>Сетка 4 окна (2x2)</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setViewLayout("layout_1_plus_3");
+												setIsStudioMenuOpen(false);
+											}}
+											className={`w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 transition-colors cursor-pointer ${
+												viewLayout === "layout_1_plus_3"
+													? "text-cyan-400 bg-cyan-950/30"
+													: "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+											}`}
+											data-testid="cbct-layout-1plus3-btn"
+											title="Раскладка 1+3 (Доминантный аксиал)"
+										>
+											<Columns2 className="w-3.5 h-3.5 shrink-0" />
+											<span>Раскладка 1+3 (Аксиал + MPR)</span>
+										</button>
+									</div>
+								)}
+							</div>
+						)}
+					</div>
 
 					{/* Window Control Actions: Maximize & Close */}
 					<div className="flex items-center gap-1 pl-1.5 border-l border-zinc-800 shrink-0">
@@ -5303,7 +5360,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				{/* ─── VIEWPORTS & SIDEBAR GRID (COLS 1..12) ───────────────────── */}
 				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-zinc-950 min-h-0 min-w-0 w-full max-w-full overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
-				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all`}>
+				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
 					{!volume ? (
 						<div
 							className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950 border border-dashed border-zinc-800 rounded-lg m-1 select-none"
@@ -5316,35 +5373,55 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								}
 							}}
 						>
-							<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
-								<Box className="w-6 h-6" />
-							</div>
-							<h3 className="text-sm font-bold text-zinc-100 mb-1">
-								Исследование КЛКТ не загружено
-							</h3>
-							<p className="text-xs text-zinc-400 max-w-md mb-4">
-								Перетащите папку со срезами DICOM (.dcm) или архив .zip сюда, либо выберите файлы для построения мультипланарной реконструкции (MPR) и имплантологического планирования.
-							</p>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => folderInputRef.current?.click()}
-									className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
-									data-testid="cbct-btn-select-folder-empty"
-								>
-									<FolderOpen className="w-4 h-4" />
-									<span>Выбрать папку DICOM</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => zipInputRef.current?.click()}
-									className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
-									data-testid="cbct-btn-select-zip-empty"
-								>
-									<UploadCloud className="w-4 h-4" />
-									<span>Загрузить .ZIP</span>
-								</button>
-							</div>
+							{dicomLoadingStatus ? (
+								<div className="flex flex-col items-center justify-center gap-3">
+									<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-cyan-400 shadow-inner">
+										<RotateCcw className="w-6 h-6 animate-spin text-cyan-400" />
+									</div>
+									<h3 className="text-sm font-bold text-zinc-100 mb-1">
+										{dicomLoadingStatus}
+									</h3>
+									<div className="w-64 h-2 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
+										<div
+											className="h-full bg-cyan-500 transition-all duration-200"
+											style={{ width: `${Math.max(5, Math.min(100, dicomProgress))}%` }}
+										/>
+									</div>
+									<span className="text-xs font-mono text-zinc-400">{dicomProgress}%</span>
+								</div>
+							) : (
+								<>
+									<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
+										<Box className="w-6 h-6" />
+									</div>
+									<h3 className="text-sm font-bold text-zinc-100 mb-1">
+										Исследование КЛКТ не загружено
+									</h3>
+									<p className="text-xs text-zinc-400 max-w-md mb-4">
+										Перетащите папку со срезами DICOM (.dcm) или архив .zip сюда, либо выберите файлы для построения мультипланарной реконструкции (MPR) и имплантологического планирования.
+									</p>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => folderInputRef.current?.click()}
+											className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+											data-testid="cbct-btn-select-folder-empty"
+										>
+											<FolderOpen className="w-4 h-4" />
+											<span>Выбрать папку DICOM</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => zipInputRef.current?.click()}
+											className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+											data-testid="cbct-btn-select-zip-empty"
+										>
+											<UploadCloud className="w-4 h-4" />
+											<span>Загрузить .ZIP</span>
+										</button>
+									</div>
+								</>
+							)}
 						</div>
 					) : maximizedViewport !== null ? (
 						<div className="flex-1 flex flex-col min-h-0 w-full h-full">
@@ -5371,6 +5448,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
 							{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
 							{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+						</div>
+					)}
+					{dicomLoadingStatus && volume && (
+						<div
+							className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-zinc-900/95 border border-cyan-500/50 text-cyan-300 text-xs font-bold flex items-center gap-2 shadow-2xl backdrop-blur-md pointer-events-none"
+							data-testid="cbct-loading-status-overlay"
+						>
+							<RotateCcw className="w-4 h-4 animate-spin text-cyan-400" />
+							<span>{dicomLoadingStatus} ({dicomProgress}%)</span>
 						</div>
 					)}
 				</div>
@@ -5706,6 +5792,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									<button
 										type="button"
 										onClick={() => {
+											if (nervePoints.length === 0) {
+												showToast("Трасса канала IAN пока не содержит узлов", "info");
+												return;
+											}
 											if (selectedNerveNodeIdx !== null && selectedNerveNodeIdx >= 0 && selectedNerveNodeIdx < nervePoints.length) {
 												setNervePoints((prev) => prev.filter((_, idx) => idx !== selectedNerveNodeIdx));
 												setSelectedNerveNodeIdx(null);
@@ -5715,8 +5805,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 												showToast("Удален последний узел нерва", "info");
 											}
 										}}
-										disabled={nervePoints.length === 0}
-										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 										data-testid="cbct-delete-nerve-node-btn"
 										title="Удалить выбранный или последний узел (Backspace)"
 									>
@@ -5727,12 +5816,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									<button
 										type="button"
 										onClick={() => {
+											if (nervePoints.length === 0) {
+												showToast("Трасса канала IAN уже пуста", "info");
+												return;
+											}
 											setNervePoints([]);
 											setSelectedNerveNodeIdx(null);
 											showToast("Трасса канала IAN сброшена", "info");
 										}}
-										disabled={nervePoints.length === 0}
-										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 										data-testid="cbct-reset-nerve-trace-btn"
 										title="Очистить все точки канала нерва"
 									>

@@ -572,7 +572,7 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--ink, #0f172a);
-  font-family: "Golos Text", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   letter-spacing: -0.01em;
 }
 

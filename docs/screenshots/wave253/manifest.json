@@ -1,0 +1,102 @@
+[
+  {
+    "id": "01_schedule",
+    "screen": "Schedule / Reception",
+    "theme": "light",
+    "filename": "01_schedule_pc_light.png",
+    "size": 228410,
+    "md5": "d4cbfdc4dddbcc23cf9d4374df5980fd",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\01_schedule_pc_light.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\01_schedule_pc_light.png"
+  },
+  {
+    "id": "01_schedule",
+    "screen": "Schedule / Reception",
+    "theme": "dark",
+    "filename": "01_schedule_pc_dark.png",
+    "size": 228711,
+    "md5": "73975598b80cf199a7e06d4b04c2c7a1",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\01_schedule_pc_dark.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\01_schedule_pc_dark.png"
+  },
+  {
+    "id": "02_patient_card_emr",
+    "screen": "Patient Card / EMR 043/u",
+    "theme": "light",
+    "filename": "02_patient_card_emr_pc_light.png",
+    "size": 231863,
+    "md5": "9c6b726ead3ca921708626ac1241f0ff",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\02_patient_card_emr_pc_light.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\02_patient_card_emr_pc_light.png"
+  },
+  {
+    "id": "02_patient_card_emr",
+    "screen": "Patient Card / EMR 043/u",
+    "theme": "dark",
+    "filename": "02_patient_card_emr_pc_dark.png",
+    "size": 231644,
+    "md5": "8c5b81b1457181925ac274f4173d5af7",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\02_patient_card_emr_pc_dark.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\02_patient_card_emr_pc_dark.png"
+  },
+  {
+    "id": "03_treatment_plans",
+    "screen": "Treatment Plans Module",
+    "theme": "light",
+    "filename": "03_treatment_plans_pc_light.png",
+    "size": 217569,
+    "md5": "b64c5e92b885c513104022583255ea66",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\03_treatment_plans_pc_light.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\03_treatment_plans_pc_light.png"
+  },
+  {
+    "id": "03_treatment_plans",
+    "screen": "Treatment Plans Module",
+    "theme": "dark",
+    "filename": "03_treatment_plans_pc_dark.png",
+    "size": 221183,
+    "md5": "267ea7cf835a39a9bc187431bae1c8a6",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\03_treatment_plans_pc_dark.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\03_treatment_plans_pc_dark.png"
+  },
+  {
+    "id": "04_radiology_cbct",
+    "screen": "Radiology / CBCT Viewer",
+    "theme": "light",
+    "filename": "04_radiology_cbct_pc_light.png",
+    "size": 156695,
+    "md5": "c9f47cf6ca8f8079385e76311d6878ba",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\04_radiology_cbct_pc_light.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\04_radiology_cbct_pc_light.png"
+  },
+  {
+    "id": "04_radiology_cbct",
+    "screen": "Radiology / CBCT Viewer",
+    "theme": "dark",
+    "filename": "04_radiology_cbct_pc_dark.png",
+    "size": 159232,
+    "md5": "c810461aa3989b2ccd5392dbd15e6a5d",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\04_radiology_cbct_pc_dark.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\04_radiology_cbct_pc_dark.png"
+  },
+  {
+    "id": "05_finance_cashier",
+    "screen": "Finance / Cashier 54-FZ",
+    "theme": "light",
+    "filename": "05_finance_cashier_pc_light.png",
+    "size": 194668,
+    "md5": "1199f33a5f0da7a60fba5a6e4ee9c017",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\05_finance_cashier_pc_light.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\05_finance_cashier_pc_light.png"
+  },
+  {
+    "id": "05_finance_cashier",
+    "screen": "Finance / Cashier 54-FZ",
+    "theme": "dark",
+    "filename": "05_finance_cashier_pc_dark.png",
+    "size": 197863,
+    "md5": "0dbf0efff312b82e9d6020c6d5ac843b",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b70c701a-be88-467f-941f-ad17036cbe7f\\05_finance_cashier_pc_dark.png",
+    "docsPath": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\wave253\\05_finance_cashier_pc_dark.png"
+  }
+]

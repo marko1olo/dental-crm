@@ -81,15 +81,18 @@ const preloadedViewCache = new Set<AppView>();
 export function isLowSpecDevice(): boolean {
 	if (typeof navigator === "undefined") return false;
 	const nav = navigator as NetworkAwareNavigator;
-	// Двухъядерный или одноядерный процессор врача
+	// Двухъядерный процессор врача (<= 2 физических ядер или <= 4 виртуальных потоков)
 	if (
 		typeof nav.hardwareConcurrency === "number" &&
-		nav.hardwareConcurrency <= 2
+		nav.hardwareConcurrency <= 4
 	) {
-		return true;
+		if (nav.hardwareConcurrency <= 2) return true;
+		if (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4) {
+			return true;
+		}
 	}
-	// Малый объем ОЗУ (<= 2 ГБ)
-	if (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 2) {
+	// Малый объем ОЗУ (<= 4 ГБ) — типичный 10-летний ноутбук с 5400 RPM HDD
+	if (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4) {
 		return true;
 	}
 	return false;
@@ -115,17 +118,10 @@ function shouldPreloadWorkspaceRoutes(intent: WorkspacePreloadIntent): boolean {
 		}
 	}
 
-	// На машинах с 1 ядром или критически малым объемом памяти (<= 1 ГБ) фоновый idle-прелоад отключается
-	if (intent === "idle") {
-		if (
-			typeof nav.hardwareConcurrency === "number" &&
-			nav.hardwareConcurrency <= 1
-		) {
-			return false;
-		}
-		if (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 1) {
-			return false;
-		}
+	// На слабых машинах (<=4GB RAM, <=4 ядра, медленный 5400 RPM HDD) фоновый idle-прелоад отключается,
+	// чтобы не занимать диск фоновым парсингом тяжелых бандлов во время приёма пациента
+	if (intent === "idle" && isLowSpecDevice()) {
+		return false;
 	}
 
 	return true;
@@ -196,12 +192,13 @@ export function scheduleIdleWorkspacePreload(
 		if (cancelled || queueIndex >= preloadViews.length) return;
 		const view = preloadViews[queueIndex];
 		queueIndex++;
+		if (!view) return;
 
 		preloadWorkspaceView(view, "idle");
 
 		if (queueIndex < preloadViews.length && !cancelled) {
 			// Дозируем нагрузку на диск: даем HDD время на спокойное чтение первого раздела
-			scheduleStep(lowSpec ? 2500 : 1800);
+			scheduleStep(lowSpec ? 4000 : 1800);
 		}
 	};
 
@@ -213,24 +210,24 @@ export function scheduleIdleWorkspacePreload(
 			currentIdleHandle = idleWindow.requestIdleCallback(
 				(deadline) => {
 					// Предотвращаем фризы UI: выполняем только если есть время в текущем кадре
-					// (> 8 мс) или если браузер уведомил о таймауте
-					if (deadline.timeRemaining() > 8 || deadline.didTimeout) {
+					// (> 10 мс на слабых двухъядерных ПК) или если браузер уведомил о таймауте
+					if (deadline.timeRemaining() > 10 || deadline.didTimeout) {
 						processNextView();
 					} else {
 						// CPU или рендер занят — переносим на следующий квант покоя
-						scheduleStep(1000);
+						scheduleStep(1200);
 					}
 				},
-				{ timeout: lowSpec ? 3500 : 2500 },
+				{ timeout: lowSpec ? 5000 : 2500 },
 			);
 		} else {
-			// Мягкий fallback для браузеров без requestIdleCallback (1500 мс)
+			// Мягкий fallback для браузеров без requestIdleCallback
 			currentTimerHandle = window.setTimeout(processNextView, delayMs);
 		}
 	};
 
-	// Начальный старт: даем активному экрану врача полностью отрисоваться и стабилизироваться
-	scheduleStep(lowSpec ? 2500 : 1500);
+	// Начальный старт: даем активному экрану врача полностью отрисоваться и диску 5400 RPM успокоиться (5 сек на lowSpec)
+	scheduleStep(lowSpec ? 5000 : 1500);
 
 	return () => {
 		cancelled = true;

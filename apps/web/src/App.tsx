@@ -74,9 +74,18 @@ import {
 	WorkspaceSidebar,
 	WorkspaceTopbar,
 } from "./workspaceShell";
-import { TreatmentPlanModule } from "./components/treatment-plans/TreatmentPlanModule";
-import { OrthodonticPerspectiveView } from "./components/perspectives/OrthodonticPerspectiveView";
 import { usePerspectiveStore } from "./store/perspectiveStore";
+
+const TreatmentPlanModule = lazy(() =>
+	import("./components/treatment-plans/TreatmentPlanModule").then((module) => ({
+		default: module.TreatmentPlanModule,
+	})),
+);
+const OrthodonticPerspectiveView = lazy(() =>
+	import("./components/perspectives/OrthodonticPerspectiveView").then((module) => ({
+		default: module.OrthodonticPerspectiveView,
+	})),
+);
 
 const ImagingView = lazy(() =>
 	import("./ImagingView").then((module) => ({ default: module.ImagingView })),

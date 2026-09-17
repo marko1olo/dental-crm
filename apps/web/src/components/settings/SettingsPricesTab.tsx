@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import "./SettingsPricesTab.css";
 import type { ChangeEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
@@ -139,6 +139,12 @@ export function SettingsPricesTab() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isServicePricelistModalOpen, setIsServicePricelistModalOpen] =
 		useState(false);
+	const [categoryLimits, setCategoryLimits] = useState<Record<string, number>>({});
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset pagination when searching
+	useEffect(() => {
+		setCategoryLimits({});
+	}, [searchQuery]);
 
 	const [editServiceId, setEditServiceId] = useState<string | null>(null);
 	const [editServiceForm, setEditServiceForm] = useState(NEW_SERVICE_TEMPLATE);
@@ -526,14 +532,19 @@ export function SettingsPricesTab() {
 					</div>
 
 					<div className="catalog-groups">
-						{Object.entries(groupedCatalog).map(([category, items]) => (
+						{Object.entries(groupedCatalog).map(([category, items]) => {
+							const currentLimit = categoryLimits[category] ?? 30;
+							const visibleItems = items.slice(0, currentLimit);
+							const hasMore = items.length > currentLimit;
+
+							return (
 							<div key={category} className="catalog-group">
 								<h4 className="catalog-group-title">
 									{serviceCategoryLabels[category] || category}
 									<span className="catalog-group-count">{items.length}</span>
 								</h4>
 								<div className="catalog-items-grid">
-									{items.map((item) => (
+									{visibleItems.map((item) => (
 										<div className="catalog-item-card" key={item.id}>
 											<div className="catalog-item-info">
 												<div className="catalog-item-code">
@@ -629,8 +640,40 @@ export function SettingsPricesTab() {
 										</div>
 									))}
 								</div>
+								{hasMore && (
+									<div className="flex items-center justify-between p-2.5 my-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]">
+										<span>Показано {visibleItems.length} из {items.length} услуг</span>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg cursor-pointer"
+												onClick={() =>
+													setCategoryLimits((prev) => ({
+														...prev,
+														[category]: (prev[category] ?? 30) + 30,
+													}))
+												}
+											>
+												Загрузить ещё 30
+											</button>
+											<button
+												type="button"
+												className="text-button min-h-[32px] px-2 text-xs text-[var(--teal)] font-medium hover:underline cursor-pointer"
+												onClick={() =>
+													setCategoryLimits((prev) => ({
+														...prev,
+														[category]: items.length,
+													}))
+												}
+											>
+												Все ({items.length})
+											</button>
+										</div>
+									</div>
+								)}
 							</div>
-						))}
+							);
+						})}
 						{Object.keys(groupedCatalog).length === 0 && (
 							<div className="empty-catalog-state">
 								{/* БЫЛО: color="var(--border)". Имени --border нет ни в одном файле

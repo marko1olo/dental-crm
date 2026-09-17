@@ -231,7 +231,7 @@ export function detectHardwareCapabilities(batteryState?: {
 }
 
 /**
- * Applies or removes data-low-spec attribute and .low-spec-mode class on root element.
+ * Applies or removes data-low-spec attribute, data-hardware-tier, and .low-spec-mode class on root element.
  */
 export function applyLowSpecToRoot(isLowSpec: boolean, root?: HTMLElement | null): void {
 	const el = root ?? (typeof document !== "undefined" ? document.documentElement : null);
@@ -239,9 +239,11 @@ export function applyLowSpecToRoot(isLowSpec: boolean, root?: HTMLElement | null
 
 	if (isLowSpec) {
 		el.setAttribute("data-low-spec", "true");
+		el.setAttribute("data-hardware-tier", "low");
 		el.classList.add("low-spec-mode");
 	} else {
 		el.removeAttribute("data-low-spec");
+		el.setAttribute("data-hardware-tier", "high");
 		el.classList.remove("low-spec-mode");
 	}
 }
@@ -251,7 +253,10 @@ export function applyLowSpecToRoot(isLowSpec: boolean, root?: HTMLElement | null
  */
 export function isLowSpecDevice(): boolean {
 	if (typeof document !== "undefined") {
-		return document.documentElement.getAttribute("data-low-spec") === "true";
+		return (
+			document.documentElement.getAttribute("data-low-spec") === "true" ||
+			document.documentElement.getAttribute("data-hardware-tier") === "low"
+		);
 	}
 	return detectHardwareCapabilities().isLowSpec;
 }

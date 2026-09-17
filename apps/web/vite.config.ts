@@ -68,7 +68,13 @@ export default defineConfig({
 	optimizeDeps: {
 		include: ["react", "react-dom"],
 	},
+	esbuild: {
+		drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
+	},
 	build: {
+		target: "es2022",
+		minify: "esbuild",
+		cssMinify: true,
 		rollupOptions: {
 			output: {
 				manualChunks(id) {
@@ -358,6 +364,41 @@ export default defineConfig({
 						return "query-vendor";
 					if (normalizedId.includes("/node_modules/zod"))
 						return "schema-vendor";
+					if (
+						normalizedId.includes("/node_modules/three/") ||
+						normalizedId.includes("/node_modules/three") ||
+						normalizedId.includes("/node_modules/@types/three")
+					)
+						return "three-vendor";
+					if (
+						normalizedId.includes("/node_modules/date-fns") ||
+						normalizedId.includes("/node_modules/dayjs")
+					)
+						return "date-vendor";
+					if (normalizedId.includes("/node_modules/fflate"))
+						return "zip-vendor";
+					if (normalizedId.includes("/node_modules/zustand"))
+						return "store-vendor";
+					if (normalizedId.includes("/node_modules/decimal.js"))
+						return "math-vendor";
+					if (normalizedId.includes("/node_modules/fuse.js"))
+						return "search-vendor";
+					// Recharts и связанные библиотеки графиков для аналитики
+					if (
+						normalizedId.includes("/node_modules/recharts") ||
+						normalizedId.includes("/node_modules/victory-vendor")
+					)
+						return "charts-vendor";
+					if (normalizedId.includes("/node_modules/react-rnd"))
+						return "rnd-vendor";
+					if (normalizedId.includes("/apps/web/src/components/lab/"))
+						return "dental-lab";
+					if (normalizedId.includes("/apps/web/src/components/inventory/"))
+						return "inventory-components";
+					if (normalizedId.includes("/apps/web/src/components/treatment-plans/"))
+						return "treatment-plans";
+					if (normalizedId.includes("/apps/web/src/components/perspectives/"))
+						return "perspectives";
 					if (
 						normalizedId.includes("/packages/shared") ||
 						normalizedId.includes("/node_modules/@dental/shared/")

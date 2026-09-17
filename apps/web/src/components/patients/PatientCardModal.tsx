@@ -160,34 +160,34 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					onClick={(e) => e.stopPropagation()}
 				>
 					{/* Modal Header */}
-					<div className="flex items-center justify-between p-4 border-b border-[var(--line)] flex-wrap gap-2">
-						<div className="flex items-center gap-3">
-							<div className="w-10 h-10 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shrink-0">
-								<User className="w-5 h-5" />
+					<div className="flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--line)] gap-2 min-w-0">
+						<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+							<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shrink-0">
+								<User className="w-4 h-4 sm:w-5 sm:h-5" />
 							</div>
-							<div>
+							<div className="min-w-0 flex-1">
 								<h2
 									id="patient-card-modal-title"
-									className="text-base font-black text-[var(--ink)] m-0"
+									className="text-sm sm:text-base font-black text-[var(--ink)] m-0 truncate"
 								>
 									{patientData.fullName || "Медицинская карта пациента"}
 								</h2>
-								<p className="text-xs text-[var(--muted)] m-0">
+								<p className="text-xs text-[var(--muted)] m-0 truncate">
 									{patientData.phone ? `Тел: ${patientData.phone}` : "Общие сведения и соматический статус"}
 									{patientData.id ? ` • ID: ${patientData.id.slice(0, 8)}` : ""}
 								</p>
 							</div>
 						</div>
 
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 							<button
 								type="button"
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
-								className="min-h-[44px] sm:min-h-[32px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer"
+								className="min-h-[36px] sm:min-h-[32px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
 								title="Печать карты пациента"
 							>
-								<Printer className="w-4 h-4" />
+								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать</span>
 							</button>
 
@@ -195,7 +195,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-close-patient-card-modal"
 								onClick={onClose}
-								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+								className="min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[44px] flex items-center justify-center p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0"
 								aria-label="Закрыть окно"
 							>
 								<X className="w-5 h-5" />
@@ -204,34 +204,34 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					</div>
 
 					{/* Navigation Tabs */}
-					<div className="flex items-center justify-between px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-nowrap overflow-x-auto gap-2">
+					<div className="flex items-center justify-between px-3.5 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-nowrap overflow-x-auto gap-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
 						<div className="flex items-center gap-2 shrink-0">
 							<button
 								type="button"
 								data-testid="tab-patient-general"
-								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
+								className={`min-h-[36px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 									activeTab === "general"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								onClick={() => setActiveTab("general")}
 							>
-								<FileText className="w-3.5 h-3.5" />
-								<span>Общие сведения</span>
+								<FileText className="w-3.5 h-3.5 shrink-0" />
+								<span className="shrink-0 whitespace-nowrap">Общие сведения</span>
 							</button>
 
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
-								className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
+								className={`min-h-[36px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 									activeTab === "anamnesis"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								onClick={() => setActiveTab("anamnesis")}
 							>
-								<HeartPulse className="w-3.5 h-3.5" />
-								<span>Анкета здоровья</span>
+								<HeartPulse className="w-3.5 h-3.5 shrink-0" />
+								<span className="shrink-0 whitespace-nowrap">Анкета здоровья</span>
 							</button>
 						</div>
 
@@ -239,12 +239,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap"
+							className="min-h-[36px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap"
 							onClick={handleApplyNorm}
 							title="1-клик: Применить физиологическую норму (соматически здоров)"
 						>
 							<ShieldCheck className="w-4 h-4 shrink-0" />
-							<span>Соматически здоров / норма (1-клик)</span>
+							<span className="shrink-0 whitespace-nowrap">Соматически здоров / норма (1-клик)</span>
 						</button>
 					</div>
 

@@ -9,7 +9,7 @@ import {
 	Clock,
 	Plus,
 } from "lucide-react";
-import React, { Fragment, useCallback, useEffect, useRef } from "react";
+import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { AppointmentCard } from "./AppointmentCard";
 import {
 	type ScheduleDayGroup,
@@ -117,6 +117,12 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 	} = props;
 
 	const timelineContainerRef = useRef<HTMLDivElement>(null);
+	const [dayRowLimits, setDayRowLimits] = useState<Record<string, number>>({});
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limits when date filter changes
+	useEffect(() => {
+		setDayRowLimits({});
+	}, [scheduleDateFilter]);
 
 	// Global keyboard shortcuts for timeline
 	const handleGlobalKeyDown = useCallback(
@@ -258,7 +264,15 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 					</div>
 
 					{/* Rows: gaps, overlaps, appointments */}
-					{(group?.rows ?? []).map((row) => {
+					{(() => {
+						const rowLimit = dayRowLimits[group.dateKey] ?? 30;
+						const allRows = group?.rows ?? [];
+						const visibleRows = allRows.slice(0, rowLimit);
+						const hasMoreRows = allRows.length > rowLimit;
+
+						return (
+							<>
+								{visibleRows.map((row) => {
 						// 1. Free Slot / Gap
 						if (row.kind === "gap") {
 							const gapStartLabel = row.startsAt
@@ -424,8 +438,42 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 							</div>
 						);
 					})}
-				</Fragment>
-			))}
+						{hasMoreRows && (
+							<div className="schedule-day-more my-2 ml-3 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
+								<span>Показано {visibleRows.length} из {allRows.length} записей и окон</span>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg cursor-pointer"
+										onClick={() =>
+											setDayRowLimits((prev) => ({
+												...prev,
+												[group.dateKey]: (prev[group.dateKey] ?? 30) + 30,
+											}))
+										}
+									>
+										Загрузить ещё 30
+									</button>
+									<button
+										type="button"
+										className="text-button min-h-[32px] px-2 text-xs text-[var(--teal)] font-medium hover:underline cursor-pointer"
+										onClick={() =>
+											setDayRowLimits((prev) => ({
+												...prev,
+												[group.dateKey]: allRows.length,
+											}))
+										}
+									>
+										Все ({allRows.length})
+									</button>
+								</div>
+							</div>
+						)}
+					</>
+				);
+			})()}
+		</Fragment>
+	))}
 
 			{/* Empty State when no appointments found */}
 			{visibleAppointmentCount === 0 && (

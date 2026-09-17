@@ -42,6 +42,7 @@ import { DEFAULT_SOLO_CHAIR, formatDoctorShortName, type ChairDoctorShiftAssignm
 import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
 export { resolveChairDutyDoctor };
 import { showToast } from "../GlobalToast";
+import { safeLocalStorageGetJson } from "../../lib/safeLocalStorage";
 
 export const QUICK_APPOINTMENT_REASONS = [
 	{
@@ -1506,15 +1507,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											if (pref) targetChairId = pref.id;
 										}
 										if (!targetChairId && typeof window !== "undefined") {
-											try {
-												const storedPref = JSON.parse(
-													localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
-												);
-												if (storedPref[newDocId]) {
-													const pref = chairs.find((c) => c.id === storedPref[newDocId]);
-													if (pref) targetChairId = pref.id;
-												}
-											} catch {}
+											const storedPref = safeLocalStorageGetJson<Record<string, string>>(
+												"dente_doctor_preferred_chairs",
+												{},
+											);
+											if (storedPref[newDocId]) {
+												const pref = chairs.find((c) => c.id === storedPref[newDocId]);
+												if (pref) targetChairId = pref.id;
+											}
 										}
 
 										// 2. Chair default doctor
@@ -1523,20 +1523,19 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											if (def) targetChairId = def.id;
 										}
 										if (!targetChairId && typeof window !== "undefined") {
-											try {
-												const storedChairDef = JSON.parse(
-													localStorage.getItem("dente_chair_default_doctors") || "{}",
-												);
-												for (const [cId, dId] of Object.entries(storedChairDef)) {
-													if (dId === newDocId) {
-														const def = chairs.find((c) => c.id === cId);
-														if (def) {
-															targetChairId = def.id;
-															break;
-														}
+											const storedChairDef = safeLocalStorageGetJson<Record<string, string>>(
+												"dente_chair_default_doctors",
+												{},
+											);
+											for (const [cId, dId] of Object.entries(storedChairDef)) {
+												if (dId === newDocId) {
+													const def = chairs.find((c) => c.id === cId);
+													if (def) {
+														targetChairId = def.id;
+														break;
 													}
 												}
-											} catch {}
+											}
 										}
 
 										// 3. Duty chair on scheduled time

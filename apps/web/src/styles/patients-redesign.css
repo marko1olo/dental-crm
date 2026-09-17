@@ -414,6 +414,8 @@
 }
 
 .patient-row {
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 48px;
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 12px;

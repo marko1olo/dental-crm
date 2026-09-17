@@ -623,18 +623,21 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			<div className="rvg-capture-modal" data-testid="direct-rvg-capture-modal">
 				{/* ─── MODAL HEADER ─── */}
 				<div className="rvg-capture-header">
-					<div className="rvg-header-title-group">
+					<div className="rvg-header-title-group min-w-0 flex-1">
 						<div className="rvg-sensor-icon-box">
 							<Camera className="w-5 h-5 animate-pulse" />
 						</div>
-						<div className="rvg-header-titles">
-							<h2 id={`${modalId}-title`} className="rvg-header-title">
-								<span>Прямой захват RVG и студия фильтрации</span>
-								<span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono font-normal">
+						<div className="rvg-header-titles min-w-0 flex-1">
+							<h2 id={`${modalId}-title`} className="rvg-header-title min-w-0">
+								<span className="truncate">Прямой захват RVG и студия фильтрации</span>
+								<span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono font-normal shrink-0">
 									USB 3.0 CMOS Direct
 								</span>
 							</h2>
-							<p className="rvg-header-subtitle">
+							<p
+								className="rvg-header-subtitle truncate"
+								title={`${patientName} · Карта: ${patientCardNumber} · Врач: ${doctorName}`}
+							>
 								{patientName} · Карта: {patientCardNumber} · Врач: {doctorName}
 							</p>
 						</div>
@@ -674,7 +677,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							<select
 								value={selectedSensorModel}
 								onChange={(e) => setSelectedSensorModel(e.target.value)}
-								className="bg-transparent text-slate-200 border-none outline-none font-sans text-xs cursor-pointer"
+								className="bg-transparent text-slate-200 border-none outline-none font-sans text-xs cursor-pointer max-w-[180px] truncate"
 								data-testid="rvg-sensor-device-select"
 							>
 								{SENSOR_MODELS.map((sensor) => (
@@ -697,6 +700,13 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							disabled={sensorStatus === "acquiring"}
 							className="rvg-trigger-btn"
 							data-testid="rvg-trigger-exposure-btn"
+							title={
+								sensorStatus === "acquiring"
+									? "Идет захват и передача кадра с датчика визиографа..."
+									: sensorStatus === "captured"
+										? "Повторный захват кадра с визиографа (Space)"
+										: "Запустить экспозицию и захват кадра с датчика (Space)"
+							}
 						>
 							<Zap className="w-3.5 h-3.5 fill-current" />
 							<span>
@@ -936,9 +946,9 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								</div>
 
 								{/* Selected Tooth Description */}
-								<div className="rvg-selected-tooth-badge">
-									<span>{primaryToothName}</span>
-									<span className="font-mono text-[11px] opacity-80">
+								<div className="rvg-selected-tooth-badge min-w-0">
+									<span className="truncate">{primaryToothName}</span>
+									<span className="font-mono text-[11px] opacity-80 shrink-0">
 										FDI #{primaryTooth}
 									</span>
 								</div>
@@ -968,11 +978,11 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 											className={`rvg-projection-btn ${isActive ? "active" : ""}`}
 											data-testid={`rvg-projection-${proj.id}`}
 										>
-											<div className="flex flex-col">
-												<span className="text-xs font-bold text-slate-100">
+											<div className="flex flex-col min-w-0 flex-1 text-left">
+												<span className="text-xs font-bold text-slate-100 truncate">
 													{proj.label}
 												</span>
-												<span className="text-[11px] text-slate-400 font-normal">
+												<span className="text-[11px] text-slate-400 font-normal truncate">
 													{proj.description}
 												</span>
 											</div>
@@ -1105,11 +1115,15 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							onClick={handleSaveToEmr}
 							disabled={isSaving}
 							className="rvg-action-btn-primary"
-							title="Сохранить исследование в медицинскую карту пациента 043/у"
+							title={
+								isSaving
+									? "Сохранение снимка и протокола исследования в карту 043/у..."
+									: "Сохранить исследование в медицинскую карту пациента 043/у"
+							}
 							data-testid="rvg-save-emr-btn"
 						>
 							<CheckCircle2 className="w-4 h-4" />
-							<span>Сохранить в карту 043/у</span>
+							<span>{isSaving ? "Сохранение..." : "Сохранить в карту 043/у"}</span>
 						</button>
 					</div>
 				</div>

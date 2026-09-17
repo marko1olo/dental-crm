@@ -1,5 +1,7 @@
 import type { Dashboard } from "@dental/shared";
 import { ClipboardList, CreditCard, FileText } from "lucide-react";
+import { useMemo, useState } from "react";
+import { sliceDomList } from "./utils/domVirtualizationHelper";
 
 type TreatmentPlanItem = Dashboard["treatmentPlanItems"][number];
 type Payment = Dashboard["payments"][number];
@@ -59,6 +61,17 @@ export function FinanceLedger({
 	const safeCatalog = serviceCatalog || [];
 	const safeDocuments = documents || [];
 
+	const [treatmentLimit, setTreatmentLimit] = useState(30);
+	const [paymentsLimit, setPaymentsLimit] = useState(30);
+
+	const paginatedTreatment = useMemo(() => {
+		return sliceDomList(safeTreatmentItems, treatmentLimit, 0);
+	}, [safeTreatmentItems, treatmentLimit]);
+
+	const paginatedPayments = useMemo(() => {
+		return sliceDomList(safePayments, paymentsLimit, 0);
+	}, [safePayments, paymentsLimit]);
+
 	return (
 		<div className="finance-split">
 			<section className="finance-list" aria-label="План лечения">
@@ -69,7 +82,8 @@ export function FinanceLedger({
 					</span>
 				</div>
 				{safeTreatmentItems.length ? (
-					safeTreatmentItems.map((item) => {
+					<>
+						{paginatedTreatment.visibleItems.map((item) => {
 						const service = safeCatalog.find(
 							(catalogItem) => catalogItem.id === item.serviceId,
 						);
@@ -128,7 +142,20 @@ export function FinanceLedger({
 								<strong>{money(total)}</strong>
 							</article>
 						);
-					})
+					})}
+					{paginatedTreatment.hasMore && (
+						<div style={{ textAlign: "center", padding: "8px 0" }}>
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={() => setTreatmentLimit((prev) => prev + 30)}
+								style={{ padding: "4px 12px", fontSize: "0.85rem" }}
+							>
+								Показать ещё ({paginatedTreatment.remainingCount})
+							</button>
+						</div>
+					)}
+					</>
 				) : (
 					<article className="finance-empty-state">
 						<ClipboardList aria-hidden="true" />
@@ -176,28 +203,42 @@ export function FinanceLedger({
 					)}
 				</div>
 				{safePayments.length ? (
-					safePayments.map((payment) => (
-						<article className="finance-row" key={payment.id}>
-							<CreditCard aria-hidden="true" />
-							<div>
-								<h3>{paymentMethodLabels[payment.method]}</h3>
-								<p className="finance-payment-link">
-									{payment.documentId
-										? `Документ: ${safeDocuments.find((document) => document.id === payment.documentId)?.title ?? "документ не найден"}`
-										: "Документ оплаты не привязан"}
-								</p>
-								<p>
-									{payment.paidAt
-										? formatDateTime(payment.paidAt)
-										: "ожидает оплаты"}{" "}
-									· чек {paymentFiscalReceiptLabel(payment)} · код{" "}
-									{payment.taxDeductionCode ?? "не выбран"} ·{" "}
-									{payment.note ?? "без примечания"}
-								</p>
+					<>
+						{paginatedPayments.visibleItems.map((payment) => (
+							<article className="finance-row" key={payment.id}>
+								<CreditCard aria-hidden="true" />
+								<div>
+									<h3>{paymentMethodLabels[payment.method]}</h3>
+									<p className="finance-payment-link">
+										{payment.documentId
+											? `Документ: ${safeDocuments.find((document) => document.id === payment.documentId)?.title ?? "документ не найден"}`
+											: "Документ оплаты не привязан"}
+									</p>
+									<p>
+										{payment.paidAt
+											? formatDateTime(payment.paidAt)
+											: "ожидает оплаты"}{" "}
+										· чек {paymentFiscalReceiptLabel(payment)} · код{" "}
+										{payment.taxDeductionCode ?? "не выбран"} ·{" "}
+										{payment.note ?? "без примечания"}
+									</p>
+								</div>
+								<strong>{money(payment.amountRub)}</strong>
+							</article>
+						))}
+						{paginatedPayments.hasMore && (
+							<div style={{ textAlign: "center", padding: "8px 0" }}>
+								<button
+									className="secondary-button"
+									type="button"
+									onClick={() => setPaymentsLimit((prev) => prev + 30)}
+									style={{ padding: "4px 12px", fontSize: "0.85rem" }}
+								>
+									Показать ещё ({paginatedPayments.remainingCount})
+								</button>
 							</div>
-							<strong>{money(payment.amountRub)}</strong>
-						</article>
-					))
+						)}
+					</>
 				) : (
 					<article className="finance-empty-state">
 						<CreditCard aria-hidden="true" />

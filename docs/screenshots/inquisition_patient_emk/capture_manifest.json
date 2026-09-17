@@ -1,0 +1,82 @@
+[
+  {
+    "fileName": "01_patient_card_pc_light.png",
+    "title": "Patient Card Modal (PC Light)",
+    "bytes": 386012,
+    "sizeKb": "377.0",
+    "md5": "c5f06985a28071b6d80525e5e9c93d2b",
+    "pass": true
+  },
+  {
+    "fileName": "02_patient_card_pc_dark.png",
+    "title": "Patient Card Modal (PC Dark)",
+    "bytes": 385698,
+    "sizeKb": "376.7",
+    "md5": "ddfa5566a25e6c5d5a40df432a81d601",
+    "pass": true
+  },
+  {
+    "fileName": "03_patient_card_pc_night.png",
+    "title": "Patient Card Modal (PC Night)",
+    "bytes": 380141,
+    "sizeKb": "371.2",
+    "md5": "3ab47b00bd892d2eac768341dae89448",
+    "pass": true
+  },
+  {
+    "fileName": "04_patient_card_pc_contrast.png",
+    "title": "Patient Card Modal (PC Contrast)",
+    "bytes": 380213,
+    "sizeKb": "371.3",
+    "md5": "a369a7ecc99336bc67e82ed30577033f",
+    "pass": true
+  },
+  {
+    "fileName": "05_visit_emk_pc_light.png",
+    "title": "Visit EMK Tab (PC Light)",
+    "bytes": 451193,
+    "sizeKb": "440.6",
+    "md5": "aea2e50d5953377d851bc6f15ab6ea00",
+    "pass": true
+  },
+  {
+    "fileName": "06_visit_emk_pc_dark.png",
+    "title": "Visit EMK Tab (PC Dark)",
+    "bytes": 448161,
+    "sizeKb": "437.7",
+    "md5": "720a13b0d76ec6009bbf8e35f0239fd5",
+    "pass": true
+  },
+  {
+    "fileName": "07_visit_emk_pc_night.png",
+    "title": "Visit EMK Tab (PC Night)",
+    "bytes": 429051,
+    "sizeKb": "419.0",
+    "md5": "5e8c750deb716e5343921acd5e69d032",
+    "pass": true
+  },
+  {
+    "fileName": "08_visit_emk_pc_contrast.png",
+    "title": "Visit EMK Tab (PC Contrast)",
+    "bytes": 434350,
+    "sizeKb": "424.2",
+    "md5": "dc51cbb7153db3af10d0889b523caf94",
+    "pass": true
+  },
+  {
+    "fileName": "09_form043_print_draft_watermark.png",
+    "title": "Form043 Print Modal - ЧЕРНОВИК Watermark (Light)",
+    "bytes": 390185,
+    "sizeKb": "381.0",
+    "md5": "5926f20fe258ddc270320cade90b3ad9",
+    "pass": true
+  },
+  {
+    "fileName": "10_form043_print_signed_watermark.png",
+    "title": "Form043 Print Modal - ПОДПИСАНО ВРАЧОМ Watermark",
+    "bytes": 390185,
+    "sizeKb": "381.0",
+    "md5": "5926f20fe258ddc270320cade90b3ad9",
+    "pass": true
+  }
+]

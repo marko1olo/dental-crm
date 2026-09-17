@@ -2165,7 +2165,9 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 					onQuickAdd={(item) => {
 						const newItem: GlobalTreatmentItem = {
 							...item,
-							id: `gt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+							id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+								? `gt-${crypto.randomUUID()}`
+								: `gt-${Date.now()}-${currentGlobals.length + 1}`,
 						};
 						const next = [...currentGlobals, newItem];
 						setInternalGlobals(next);

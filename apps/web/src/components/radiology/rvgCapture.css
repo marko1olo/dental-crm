@@ -116,16 +116,25 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 44px;
-	height: 44px;
-	min-width: 44px;
-	min-height: 44px;
-	border-radius: 0.5rem;
+	width: 32px;
+	height: 32px;
+	min-width: 32px;
+	min-height: 32px;
+	border-radius: 0.375rem;
 	background: transparent;
 	border: 1px solid var(--line, #334155);
 	color: var(--muted, #94a3b8);
 	cursor: pointer;
 	transition: all 0.15s ease;
+}
+
+@media (pointer: coarse) {
+	.rvg-close-btn {
+		width: 44px;
+		height: 44px;
+		min-width: 44px;
+		min-height: 44px;
+	}
 }
 
 .rvg-close-btn:hover {
@@ -255,9 +264,10 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 0.375rem;
-	min-height: 44px;
-	padding: 0.5rem 1rem;
-	border-radius: 0.5rem;
+	min-height: 32px;
+	height: 32px;
+	padding: 0.25rem 0.75rem;
+	border-radius: 0.375rem;
 	font-size: 0.75rem;
 	font-weight: 700;
 	background: var(--teal, #0d9488);
@@ -266,6 +276,15 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+}
+
+@media (pointer: coarse) {
+	.rvg-trigger-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 0.5rem 1rem;
+		border-radius: 0.5rem;
+	}
 }
 
 .rvg-trigger-btn:hover {
@@ -743,9 +762,10 @@
 }
 
 .rvg-action-btn-primary {
-	min-height: 44px;
-	padding: 0.5rem 1.25rem;
-	border-radius: 0.75rem;
+	min-height: 34px;
+	height: 34px;
+	padding: 0.375rem 1rem;
+	border-radius: 0.5rem;
 	font-size: 0.8125rem;
 	font-weight: 700;
 	background: var(--teal, #0d9488);
@@ -760,6 +780,15 @@
 	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
 }
 
+@media (pointer: coarse) {
+	.rvg-action-btn-primary {
+		min-height: 44px;
+		height: 44px;
+		padding: 0.5rem 1.25rem;
+		border-radius: 0.75rem;
+	}
+}
+
 .rvg-action-btn-primary:hover {
 	opacity: 0.92;
 	transform: translateY(-1px);
@@ -770,9 +799,10 @@
 }
 
 .rvg-action-btn-secondary {
-	min-height: 44px;
-	padding: 0.5rem 1rem;
-	border-radius: 0.75rem;
+	min-height: 34px;
+	height: 34px;
+	padding: 0.375rem 0.875rem;
+	border-radius: 0.5rem;
 	font-size: 0.8125rem;
 	font-weight: 600;
 	background: rgba(255, 255, 255, 0.06);
@@ -784,6 +814,15 @@
 	justify-content: center;
 	gap: 0.5rem;
 	transition: all 0.15s ease;
+}
+
+@media (pointer: coarse) {
+	.rvg-action-btn-secondary {
+		min-height: 44px;
+		height: 44px;
+		padding: 0.5rem 1rem;
+		border-radius: 0.75rem;
+	}
 }
 
 .rvg-action-btn-secondary:hover {

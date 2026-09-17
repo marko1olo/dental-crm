@@ -16,7 +16,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -149,14 +149,10 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		);
 	});
 
-	it("5. PatientCardModal & PatientGeneralInfoTab: expose 1-click somatic norm button (btn-somatic-healthy-norm)", () => {
-		assert.ok(
-			generalInfoTabSource.includes('data-testid="btn-somatic-healthy-norm"'),
-			"PatientGeneralInfoTab must include btn-somatic-healthy-norm",
-		);
+	it("5. PatientCardModal exposes 1-click somatic norm button (btn-somatic-healthy-norm) in toolbar (Mandate 8p §206)", () => {
 		assert.ok(
 			patientModalSource.includes('data-testid="btn-somatic-healthy-norm"'),
-			"PatientCardModal must include btn-somatic-healthy-norm in header",
+			"PatientCardModal must include btn-somatic-healthy-norm in toolbar",
 		);
 		assert.ok(
 			patientModalSource.includes('data-testid="btn-print-patient-card"'),

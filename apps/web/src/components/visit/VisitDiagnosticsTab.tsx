@@ -5,16 +5,53 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
 import { EMPTY_DIARY } from "../useVisitDiaryLogic";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
-import { EndoCanalLogModal } from "../endo/EndoCanalLogModal";
-import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { LabOrdersPanel } from "../patients/LabOrdersPanel";
-import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
-import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
-import { ImplantPassportModal } from "../implants/ImplantPassportModal";
-import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
-import { DirectRvgCaptureModal } from "../radiology/DirectRvgCaptureModal";
-import { DicomViewerModal } from "../imaging/DicomViewerModal";
-import { HotFolderIntakeModal } from "../radiology/HotFolderIntakeModal";
+
+const EndoCanalLogModal = React.lazy(() =>
+	import("../endo/EndoCanalLogModal").then((m) => ({
+		default: m.EndoCanalLogModal,
+	})),
+);
+const ClinicalPhotoProtocolModal = React.lazy(() =>
+	import("../photography/ClinicalPhotoProtocolModal").then((m) => ({
+		default: m.ClinicalPhotoProtocolModal,
+	})),
+);
+const CbctMprImplantStudioModal = React.lazy(() =>
+	import("../radiology/CbctMprImplantStudioModal").then((m) => ({
+		default: m.CbctMprImplantStudioModal,
+	})),
+);
+const ImplantPassportModal = React.lazy(() =>
+	import("../implants/ImplantPassportModal").then((m) => ({
+		default: m.ImplantPassportModal,
+	})),
+);
+const RadiologyReferralModal = React.lazy(() =>
+	import("../radiology/RadiologyReferralModal").then((m) => ({
+		default: m.RadiologyReferralModal,
+	})),
+);
+const DirectRvgCaptureModal = React.lazy(() =>
+	import("../radiology/DirectRvgCaptureModal").then((m) => ({
+		default: m.DirectRvgCaptureModal,
+	})),
+);
+const DicomViewerModal = React.lazy(() =>
+	import("../imaging/DicomViewerModal").then((m) => ({
+		default: m.DicomViewerModal,
+	})),
+);
+const HotFolderIntakeModal = React.lazy(() =>
+	import("../radiology/HotFolderIntakeModal").then((m) => ({
+		default: m.HotFolderIntakeModal,
+	})),
+);
+const CephalometricAnalysisModal = React.lazy(() =>
+	import("../radiology/CephalometricAnalysisModal").then((m) => ({
+		default: m.CephalometricAnalysisModal,
+	})),
+);
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
 	type ClinicalPhotoAttachment,
@@ -521,75 +558,82 @@ export function VisitDiagnosticsTab(props?: {
 				}}
 			/>
 
+		<React.Suspense fallback={null}>
 			{/* Endodontic Root Canal Working Length Log Modal */}
-			<EndoCanalLogModal
-				isOpen={isEndoLogModalOpen}
-				onClose={() => setIsEndoLogModalOpen(false)}
-				toothNumber={selectedToothForPhoto || initialToothNumber || 16}
-				patientId={visitPatientId ?? activePatient?.id}
-				onInsertToProtocol={(text) => {
-					if (props?.onInsertToProtocol) {
-						props.onInsertToProtocol(text);
-					} else if (typeof ctx?.appendToTranscript === "function") {
-						ctx.appendToTranscript(`\n\n${text}`);
-					}
-				}}
-			/>
+			{isEndoLogModalOpen && (
+				<EndoCanalLogModal
+					isOpen={isEndoLogModalOpen}
+					onClose={() => setIsEndoLogModalOpen(false)}
+					toothNumber={selectedToothForPhoto || initialToothNumber || 16}
+					patientId={visitPatientId ?? activePatient?.id}
+					onInsertToProtocol={(text) => {
+						if (props?.onInsertToProtocol) {
+							props.onInsertToProtocol(text);
+						} else if (typeof ctx?.appendToTranscript === "function") {
+							ctx.appendToTranscript(`\n\n${text}`);
+						}
+					}}
+				/>
+			)}
 
 			{/* Dental Radiology Referral Printable Modal */}
-			<RadiologyReferralModal
-				isOpen={isRadiologyModalOpen}
-				onClose={() => setIsRadiologyModalOpen(false)}
-				patient={activePatient}
-				diary={EMPTY_DIARY}
-				doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
-				clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
-			/>
+			{isRadiologyModalOpen && (
+				<RadiologyReferralModal
+					isOpen={isRadiologyModalOpen}
+					onClose={() => setIsRadiologyModalOpen(false)}
+					patient={activePatient}
+					diary={EMPTY_DIARY}
+					doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+				/>
+			)}
 
 			{/* Clinical 12/8/6/3-Slot Photo Protocol Studio Modal (Tier 2 on-demand) */}
-			<ClinicalPhotoProtocolModal
-				isOpen={isPhotoProtocolModalOpen}
-				onClose={() => setIsPhotoProtocolModalOpen(false)}
-				patientId={visitPatientId ?? activePatient?.id}
-				patientName={visitPatientName ?? activePatient?.fullName}
-				doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
-				clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
-				onSaveProtocol={(slots) => {
-					const newAttachments: ClinicalPhotoAttachment[] = Object.entries(slots)
-						.filter(([_, rec]) => typeof rec.imageUrl === "string" && rec.imageUrl.length > 0)
-						.map(([slotId, rec]) => ({
-							id: `photo-slot-${slotId}-${Date.now()}`,
-							photoType: rec.stage === "after" ? "after" : "before",
-							photoUrl: rec.imageUrl || "",
-							description: `Слот: ${slotId}`,
-							capturedAtIso: rec.uploadedAt ?? new Date().toISOString(),
-						}));
-					if (newAttachments.length > 0) {
-						const updated = [...photoAttachments, ...newAttachments];
-						setPhotoAttachments(updated);
-						const statement = generatePhotoProtocolAttachmentsStatement(updated);
-						if (props?.onInsertToProtocol) {
-							props.onInsertToProtocol(statement);
-						} else {
-							try {
-								window.dispatchEvent(
-									new CustomEvent("dente-apply-soap-protocol", {
-										detail: {
-											soap: {
-												treatmentDescription: statement,
+			{isPhotoProtocolModalOpen && (
+				<ClinicalPhotoProtocolModal
+					isOpen={isPhotoProtocolModalOpen}
+					onClose={() => setIsPhotoProtocolModalOpen(false)}
+					patientId={visitPatientId ?? activePatient?.id}
+					patientName={visitPatientName ?? activePatient?.fullName}
+					doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+					onSaveProtocol={(slots) => {
+						const newAttachments: ClinicalPhotoAttachment[] = Object.entries(slots)
+							.filter(([_, rec]) => typeof rec.imageUrl === "string" && rec.imageUrl.length > 0)
+							.map(([slotId, rec]) => ({
+								id: `photo-slot-${slotId}-${Date.now()}`,
+								photoType: rec.stage === "after" ? "after" : "before",
+								photoUrl: rec.imageUrl || "",
+								description: `Слот: ${slotId}`,
+								capturedAtIso: rec.uploadedAt ?? new Date().toISOString(),
+							}));
+						if (newAttachments.length > 0) {
+							const updated = [...photoAttachments, ...newAttachments];
+							setPhotoAttachments(updated);
+							const statement = generatePhotoProtocolAttachmentsStatement(updated);
+							if (props?.onInsertToProtocol) {
+								props.onInsertToProtocol(statement);
+							} else {
+								try {
+									window.dispatchEvent(
+										new CustomEvent("dente-apply-soap-protocol", {
+											detail: {
+												soap: {
+													treatmentDescription: statement,
+												},
+												mode: "smart_append",
 											},
-											mode: "smart_append",
-										},
-									}),
-								);
-							} catch {
-								// ignore
+										}),
+									);
+								} catch {
+									// ignore
+								}
 							}
 						}
-					}
-					setIsPhotoProtocolModalOpen(false);
-				}}
-			/>
+						setIsPhotoProtocolModalOpen(false);
+					}}
+				/>
+			)}
 
 			{/* 3D CBCT / MPR Fullscreen Studio Modal (Tier 3 on-demand) */}
 			{isCbctModalOpen && (
@@ -705,6 +749,7 @@ export function VisitDiagnosticsTab(props?: {
 					}}
 				/>
 			)}
-		</div>
-	);
+		</React.Suspense>
+	</div>
+);
 }

@@ -1,17 +1,22 @@
 /* ==========================================================================
    LOW-SPEC HARDWARE & CSS GPU OPTIMIZATION PROFILE (Wave 252-Perf2)
    Target: Guaranteed 60 FPS on integrated GPUs (Intel HD Graphics / UHD / Older APUs)
+   Compliance: Mandates 8e, 8k, 8n (Solo Doctor & Low-Spec Hardware Support)
 
    Addresses:
    1. Elimination of GPU-choking backdrop-filter: blur(...)
    2. Simplification of multi-layer diffuse box-shadows to crisp 1px borders
-   3. Termination of continuous GPU-draining animations (shimmers, pulses, waves)
-   4. DOM layout containment & content-visibility for heavy repeating lists
+   3. Disabling of complex 3D-transformations and perspective computations
+   4. Termination of continuous GPU-draining animations (shimmers, pulses, waves)
+   5. DOM layout containment & content-visibility for heavy repeating lists & tabs
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. Design Token Overrides for Low-Spec Profile
+   1. Design Token Overrides for Low-Spec Profile (data-hardware-tier="low")
    -------------------------------------------------------------------------- */
+:root[data-hardware-tier="low"],
+html[data-hardware-tier="low"],
+[data-hardware-tier="low"],
 :root[data-low-spec="true"],
 html[data-low-spec="true"],
 [data-low-spec="true"],
@@ -45,6 +50,12 @@ html.low-spec-mode,
 /* --------------------------------------------------------------------------
    2. Elimination of backdrop-filter (Anti-Blur GPU Saver)
    -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] *,
+html[data-hardware-tier="low"] *::before,
+html[data-hardware-tier="low"] *::after,
+[data-hardware-tier="low"] *,
+[data-hardware-tier="low"] *::before,
+[data-hardware-tier="low"] *::after,
 html[data-low-spec="true"] *,
 html[data-low-spec="true"] *::before,
 html[data-low-spec="true"] *::after,
@@ -73,6 +84,36 @@ html.low-spec-mode *::after,
 /* --------------------------------------------------------------------------
    3. Solid Opaque Backgrounds for Glass Surfaces
    -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] .finance-zone,
+html[data-hardware-tier="low"] .patients-zone,
+html[data-hardware-tier="low"] .schedule-zone,
+html[data-hardware-tier="low"] .documents-zone,
+html[data-hardware-tier="low"] .workspace-section,
+html[data-hardware-tier="low"] .protocol-settings,
+html[data-hardware-tier="low"] .rule-form,
+html[data-hardware-tier="low"] .glass-panel,
+html[data-hardware-tier="low"] .glass-card,
+html[data-hardware-tier="low"] .card-glass,
+html[data-hardware-tier="low"] .modal-window,
+html[data-hardware-tier="low"] .modal-content,
+html[data-hardware-tier="low"] .imaging-modal-container,
+html[data-hardware-tier="low"] .inventory-confirm-window,
+html[data-hardware-tier="low"] .patient-card-modal,
+[data-hardware-tier="low"] .finance-zone,
+[data-hardware-tier="low"] .patients-zone,
+[data-hardware-tier="low"] .schedule-zone,
+[data-hardware-tier="low"] .documents-zone,
+[data-hardware-tier="low"] .workspace-section,
+[data-hardware-tier="low"] .protocol-settings,
+[data-hardware-tier="low"] .rule-form,
+[data-hardware-tier="low"] .glass-panel,
+[data-hardware-tier="low"] .glass-card,
+[data-hardware-tier="low"] .card-glass,
+[data-hardware-tier="low"] .modal-window,
+[data-hardware-tier="low"] .modal-content,
+[data-hardware-tier="low"] .imaging-modal-container,
+[data-hardware-tier="low"] .inventory-confirm-window,
+[data-hardware-tier="low"] .patient-card-modal,
 html[data-low-spec="true"] .finance-zone,
 html[data-low-spec="true"] .patients-zone,
 html[data-low-spec="true"] .schedule-zone,
@@ -109,6 +150,16 @@ html.low-spec-mode .patient-card-modal {
 }
 
 /* Modal and dialog backdrop overlays without expensive blur */
+html[data-hardware-tier="low"] .modal-backdrop,
+html[data-hardware-tier="low"] .dialog-backdrop,
+html[data-hardware-tier="low"] .imaging-modal-overlay,
+html[data-hardware-tier="low"] .inventory-confirm-backdrop,
+html[data-hardware-tier="low"] [class*="backdrop"],
+[data-hardware-tier="low"] .modal-backdrop,
+[data-hardware-tier="low"] .dialog-backdrop,
+[data-hardware-tier="low"] .imaging-modal-overlay,
+[data-hardware-tier="low"] .inventory-confirm-backdrop,
+[data-hardware-tier="low"] [class*="backdrop"],
 html[data-low-spec="true"] .modal-backdrop,
 html[data-low-spec="true"] .dialog-backdrop,
 html[data-low-spec="true"] .imaging-modal-overlay,
@@ -125,6 +176,16 @@ html.low-spec-mode [class*="backdrop"] {
 }
 
 /* Header, topbar, toolbar solid background */
+html[data-hardware-tier="low"] .app-header,
+html[data-hardware-tier="low"] .topbar,
+html[data-hardware-tier="low"] .patients-header,
+html[data-hardware-tier="low"] .schedule-header,
+html[data-hardware-tier="low"] .toolbar,
+[data-hardware-tier="low"] .app-header,
+[data-hardware-tier="low"] .topbar,
+[data-hardware-tier="low"] .patients-header,
+[data-hardware-tier="low"] .schedule-header,
+[data-hardware-tier="low"] .toolbar,
 html[data-low-spec="true"] .app-header,
 html[data-low-spec="true"] .topbar,
 html[data-low-spec="true"] .patients-header,
@@ -141,6 +202,14 @@ html.low-spec-mode .toolbar {
 }
 
 /* Dropdowns, popovers and hover huds */
+html[data-hardware-tier="low"] .dropdown-menu,
+html[data-hardware-tier="low"] .popover-panel,
+html[data-hardware-tier="low"] .hover-hud,
+html[data-hardware-tier="low"] .context-menu,
+[data-hardware-tier="low"] .dropdown-menu,
+[data-hardware-tier="low"] .popover-panel,
+[data-hardware-tier="low"] .hover-hud,
+[data-hardware-tier="low"] .context-menu,
 html[data-low-spec="true"] .dropdown-menu,
 html[data-low-spec="true"] .popover-panel,
 html[data-low-spec="true"] .hover-hud,
@@ -157,6 +226,36 @@ html.low-spec-mode .context-menu {
 /* --------------------------------------------------------------------------
    4. Shadow Simplification (1px Border Over Heavy Multi-Layer Shadows)
    -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] .card,
+html[data-hardware-tier="low"] .panel,
+html[data-hardware-tier="low"] .today-schedule-item,
+html[data-hardware-tier="low"] .appointment-card,
+html[data-hardware-tier="low"] .patient-row,
+html[data-hardware-tier="low"] .patient-card,
+html[data-hardware-tier="low"] .finance-row,
+html[data-hardware-tier="low"] .invoice-card,
+html[data-hardware-tier="low"] .shadow-sm,
+html[data-hardware-tier="low"] .shadow,
+html[data-hardware-tier="low"] .shadow-md,
+html[data-hardware-tier="low"] .shadow-lg,
+html[data-hardware-tier="low"] .shadow-xl,
+html[data-hardware-tier="low"] .shadow-2xl,
+html[data-hardware-tier="low"] .shadow-premium,
+[data-hardware-tier="low"] .card,
+[data-hardware-tier="low"] .panel,
+[data-hardware-tier="low"] .today-schedule-item,
+[data-hardware-tier="low"] .appointment-card,
+[data-hardware-tier="low"] .patient-row,
+[data-hardware-tier="low"] .patient-card,
+[data-hardware-tier="low"] .finance-row,
+[data-hardware-tier="low"] .invoice-card,
+[data-hardware-tier="low"] .shadow-sm,
+[data-hardware-tier="low"] .shadow,
+[data-hardware-tier="low"] .shadow-md,
+[data-hardware-tier="low"] .shadow-lg,
+[data-hardware-tier="low"] .shadow-xl,
+[data-hardware-tier="low"] .shadow-2xl,
+[data-hardware-tier="low"] .shadow-premium,
 html[data-low-spec="true"] .card,
 html[data-low-spec="true"] .panel,
 html[data-low-spec="true"] .today-schedule-item,
@@ -182,8 +281,54 @@ html.low-spec-mode .shadow-premium {
 }
 
 /* --------------------------------------------------------------------------
-   5. Disabling GPU-Draining Infinite Animations and Shimmers
+   5. Elimination of Complex 3D Transforms on Low Hardware Tier
    -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] *,
+html[data-hardware-tier="low"] *::before,
+html[data-hardware-tier="low"] *::after,
+[data-hardware-tier="low"] *,
+[data-hardware-tier="low"] *::before,
+[data-hardware-tier="low"] *::after,
+html[data-low-spec="true"] *,
+[data-low-spec="true"] * {
+	perspective: none !important;
+	transform-style: flat !important;
+}
+
+/* Strip GPU-heavy 3D tilts and matrix transforms on hover */
+html[data-hardware-tier="low"] .card:hover,
+html[data-hardware-tier="low"] .panel:hover,
+html[data-hardware-tier="low"] .patient-row:hover,
+html[data-hardware-tier="low"] .finance-row:hover,
+html[data-hardware-tier="low"] .invoice-card:hover,
+[data-hardware-tier="low"] .card:hover,
+[data-hardware-tier="low"] .panel:hover {
+	transform: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Disabling GPU-Draining Infinite Animations and Shimmers
+   -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] .animate-pulse,
+html[data-hardware-tier="low"] .animate-shimmer,
+html[data-hardware-tier="low"] .shimmer,
+html[data-hardware-tier="low"] .skeleton,
+html[data-hardware-tier="low"] .skeleton-wave,
+html[data-hardware-tier="low"] .ops-shimmer,
+html[data-hardware-tier="low"] .dntWave,
+html[data-hardware-tier="low"] [class*="shimmer"],
+html[data-hardware-tier="low"] [class*="skeleton"],
+html[data-hardware-tier="low"] [class*="pulse"],
+[data-hardware-tier="low"] .animate-pulse,
+[data-hardware-tier="low"] .animate-shimmer,
+[data-hardware-tier="low"] .shimmer,
+[data-hardware-tier="low"] .skeleton,
+[data-hardware-tier="low"] .skeleton-wave,
+[data-hardware-tier="low"] .ops-shimmer,
+[data-hardware-tier="low"] .dntWave,
+[data-hardware-tier="low"] [class*="shimmer"],
+[data-hardware-tier="low"] [class*="skeleton"],
+[data-hardware-tier="low"] [class*="pulse"],
 html[data-low-spec="true"] .animate-pulse,
 html[data-low-spec="true"] .animate-shimmer,
 html[data-low-spec="true"] .shimmer,
@@ -210,14 +355,17 @@ html.low-spec-mode [class*="pulse"] {
 }
 
 /* Disable non-essential transitions on low-spec devices */
+html[data-hardware-tier="low"] .transition-all,
+[data-hardware-tier="low"] .transition-all,
 html[data-low-spec="true"] .transition-all,
 html.low-spec-mode .transition-all {
 	transition-duration: 0.05s !important;
 }
 
 /* --------------------------------------------------------------------------
-   6. Content Visibility & Layout Containment for Heavy Lists and Workspaces
+   7. Content Visibility & Contain: Paint Layout for Heavy Tabs & Lists
    -------------------------------------------------------------------------- */
+/* Heavy repeating list rows and cards */
 .patient-row,
 .patient-card,
 .curator-patient-card,
@@ -236,20 +384,35 @@ html.low-spec-mode .transition-all {
 .treatment-plan-stage-card,
 .plan-procedure-row,
 .visit-history-entry,
-.diary-timeline-item {
-	contain: layout style;
+.diary-timeline-item,
+.finance-row,
+.patient-row,
+.invoice-card {
+	contain: paint layout;
 	content-visibility: auto;
-	contain-intrinsic-size: auto 56px;
+	contain-intrinsic-size: 1px 48px;
 }
 
-/* Heavy offscreen sections and tabs */
+/* Heavy offscreen sections, workspaces and tabs (paint + layout containment) */
 .workspace-section,
 .documents-archive-list,
 .patient-admin-panel,
 .analytics-chart-container,
 .service-pricelist-table-container,
-.warehouse-table-container {
-	contain: content;
+.warehouse-table-container,
+.patients-zone,
+.finance-zone,
+.schedule-zone,
+.documents-zone,
+.tab-content,
+.tab-pane,
+.invoices-table-container,
+.billing-history-container,
+.treatment-plan-view,
+.odontogram-module-container,
+.finance-split,
+.finance-list {
+	contain: paint layout;
 	content-visibility: auto;
-	contain-intrinsic-size: auto 240px;
+	contain-intrinsic-size: auto 300px;
 }
