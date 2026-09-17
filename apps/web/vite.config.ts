@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -14,8 +15,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Always point to root node_modules to prevent React duplication
 const rootNodeModules = path.resolve(__dirname, "../../node_modules");
-
-import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
 	plugins: [
@@ -85,6 +84,8 @@ export default defineConfig({
 						return "browser-continuity";
 					if (normalizedId.endsWith("/apps/web/src/workspacePreload.ts"))
 						return "workspace-preload";
+					if (normalizedId.endsWith("/apps/web/src/lib/lazyWithRetry.ts"))
+						return "lazy-with-retry";
 					if (normalizedId.endsWith("/apps/web/src/workspaceShell.tsx"))
 						return "workspace-shell";
 					if (
@@ -281,6 +282,18 @@ export default defineConfig({
 						return "features-selector";
 					if (normalizedId.includes("/apps/web/src/components/settings/"))
 						return "settings-components";
+					// Cornerstone3D и DICOM-парсеры: тяжелейшие библиотеки 3D/MPR визуализации.
+					// Захватываются ДО компонентов dicom/imaging, чтобы Rollup не утаскивал их
+					// внутрь компонентов и не раздувал чанки до 4+ МБ на медленном HDD.
+					if (
+						normalizedId.includes("/node_modules/@cornerstonejs/") ||
+						normalizedId.includes("/node_modules/dcmjs") ||
+						normalizedId.includes("/node_modules/dicom-parser") ||
+						normalizedId.includes("/node_modules/@kitware/vtk.js") ||
+						normalizedId.includes("/node_modules/gl-matrix") ||
+						normalizedId.includes("/node_modules/hammerjs")
+					)
+						return "cornerstone-vendor";
 					if (normalizedId.includes("/apps/web/src/components/dicom/"))
 						return "dicom-components";
 					if (normalizedId.includes("/apps/web/src/components/imaging/"))
@@ -326,17 +339,23 @@ export default defineConfig({
 					if (normalizedId.endsWith("/apps/web/src/App.tsx"))
 						return "workspace";
 					// d3 объявляют сразу двое: recharts (через victory-vendor) в аналитике и
-					// @kitware/vtk.js в просмотрщике DICOM. Кто первым занял модуль, тот его и
-					// унёс — все 80 модулей d3 оказались внутри dicom-components (4 268 136 Б),
-					// и «Аналитика» получила статическое ребро на весь просмотрщик ради шкал.
-					if (normalizedId.includes("/node_modules/d3-")) return "d3-vendor";
+					// @kitware/vtk.js в просмотрщике DICOM. Вынесено в изолированный vendor-чанк.
+					if (
+						normalizedId.includes("/node_modules/d3-") ||
+						normalizedId.includes("/node_modules/d3/")
+					)
+						return "d3-vendor";
 					if (
 						normalizedId.includes("/node_modules/react") ||
 						normalizedId.includes("/node_modules/react-dom")
 					)
 						return "react-vendor";
 					if (normalizedId.includes("/node_modules/lucide-react"))
-						return "icons";
+						return "lucide-vendor";
+					if (normalizedId.includes("/node_modules/framer-motion"))
+						return "motion-vendor";
+					if (normalizedId.includes("/node_modules/@tanstack/react-query"))
+						return "query-vendor";
 					if (normalizedId.includes("/node_modules/zod"))
 						return "schema-vendor";
 					if (
