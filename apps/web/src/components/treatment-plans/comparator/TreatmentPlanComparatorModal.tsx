@@ -18,10 +18,7 @@ import {
 	CheckCircle2,
 	Clock,
 	CreditCard,
-	FileText,
-	Percent,
 	Printer,
-	Shield,
 	Sparkles,
 	Wallet,
 	X,
@@ -32,10 +29,7 @@ import {
 	type PlanTierCode,
 } from "./planPresentationPresets";
 import {
-	calculatePlanDifferential,
-	generate3TierComparisonSummary,
 	generatePaymentSchedules,
-	getPlanCategoryBreakdown,
 } from "./planComparatorEngine";
 import "./planComparator.css";
 
@@ -45,6 +39,8 @@ export interface TreatmentPlanComparatorModalProps {
 	readonly patientName?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly clinicName?: string | undefined;
+	readonly planAgeDays?: number | undefined;
+	readonly planCreatedAtIso?: string | undefined;
 	readonly customVariants?: Readonly<Record<PlanTierCode, ComprehensivePlanVariant>> | undefined;
 	readonly onPlanSelected?: ((tierCode: PlanTierCode, variant: ComprehensivePlanVariant) => void) | undefined;
 	readonly onApproveAndSign?: ((tierCode: PlanTierCode, variant: ComprehensivePlanVariant) => void) | undefined;
@@ -58,6 +54,8 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 	patientName = "Пациент",
 	doctorName = "Лечащий врач",
 	clinicName = "Стоматологическая клиника",
+	planAgeDays,
+	planCreatedAtIso,
 	customVariants,
 	onPlanSelected,
 	onApproveAndSign,
@@ -70,26 +68,17 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 	const [activePaymentTab, setActivePaymentTab] = useState<"staged" | "discount" | "installments" | "ndfl">("staged");
 	const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
-	// Сводный 3-Tier анализ
-	const summary = useMemo(() => {
-		return generate3TierComparisonSummary(variants);
-	}, [variants]);
+	const effectivePlanAgeDays =
+		typeof planAgeDays === "number"
+			? planAgeDays
+			: planCreatedAtIso
+				? Math.floor((Date.now() - new Date(planCreatedAtIso).getTime()) / (1000 * 60 * 60 * 24))
+				: 0;
 
 	const currentVariant = variants[selectedTier];
-	const currentBreakdown = useMemo(() => getPlanCategoryBreakdown(currentVariant), [currentVariant]);
 	const currentPayments = useMemo(
 		() => generatePaymentSchedules(currentVariant.totalCostRub, currentVariant.isCode02HighCostSurgery),
 		[currentVariant],
-	);
-
-	// Дифференциалы относительно выбранного плана
-	const diffAgainstOptimum = useMemo(
-		() => calculatePlanDifferential(currentVariant, variants.optimum_vip),
-		[currentVariant, variants.optimum_vip],
-	);
-	const diffAgainstEconomy = useMemo(
-		() => calculatePlanDifferential(currentVariant, variants.economy_basic),
-		[currentVariant, variants.economy_basic],
 	);
 
 	const handleSelectPlan = (tier: PlanTierCode) => {
@@ -171,6 +160,29 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 						) : null}
 					</div>
 				</header>
+
+				{/* 30-Day Plan Age Unblocked Notice (Mandate 8e item 7) */}
+				{effectivePlanAgeDays > 30 && (
+					<div
+						style={{
+							background: "rgba(245, 158, 11, 0.12)",
+							borderBottom: "1px solid rgba(245, 158, 11, 0.3)",
+							color: "var(--amber, #d97706)",
+							padding: "8px 20px",
+							fontSize: "0.8125rem",
+							fontWeight: 600,
+							display: "flex",
+							alignItems: "center",
+							gap: "8px",
+						}}
+						data-testid="comparator-expired-unblocked-badge"
+					>
+						<Clock size={15} style={{ color: "var(--amber, #d97706)", flexShrink: 0 }} />
+						<span>
+							Смета составлена {effectivePlanAgeDays} дн. назад. Стоимость зафиксирована врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений (Мандат 8e п. 7).
+						</span>
+					</div>
+				)}
 
 				{/* Notice Banner */}
 				{statusNotice ? (
@@ -317,9 +329,9 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 										</p>
 									</div>
 
-									<div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "2px", overflowY: "auto", maxHeight: "110px" }}>
+									<div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "2px", overflowY: "auto", maxHeight: "110px", minWidth: 0 }}>
 										{stage.keyProcedures.map((proc, pIdx) => (
-											<span key={pIdx} className="plan-proc-tag">
+											<span key={pIdx} className="plan-proc-tag" title={proc}>
 												&bull; {proc}
 											</span>
 										))}

@@ -2,6 +2,8 @@ import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
 	Activity,
 	AlertTriangle,
+	Check,
+	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Clock,
@@ -11,6 +13,7 @@ import {
 	Package,
 	Percent,
 	Play,
+	Plus,
 	Printer,
 	Trash2,
 	TrendingUp,
@@ -20,9 +23,37 @@ import {
 	type InventoryItemLookup,
 	calculateStageMaterialRequirements,
 } from "./treatmentPlanMaterialEngine";
-import type { TreatmentPlanItem, TreatmentPlanStage } from "./types";
+import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageStatus } from "./types";
 import { MissingPriceAlert } from "./MissingPriceAlert";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+
+export type { TreatmentPlanStageStatus };
+
+const STAGE_STATUS_CONFIG: Record<
+	TreatmentPlanStageStatus,
+	{ label: string; badge: string; icon: React.ComponentType<{ size?: number; className?: string }> }
+> = {
+	draft: {
+		label: "Черновик",
+		badge: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30",
+		icon: Clock,
+	},
+	agreed: {
+		label: "Согласован",
+		badge: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30",
+		icon: CheckCircle2,
+	},
+	in_progress: {
+		label: "В работе",
+		badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+		icon: Play,
+	},
+	completed: {
+		label: "Завершен",
+		badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+		icon: Check,
+	},
+};
 
 interface TreatmentPlanStageCardProps {
 	readonly stage: TreatmentPlanStage;
@@ -32,6 +63,8 @@ interface TreatmentPlanStageCardProps {
 	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
 	readonly onRemoveItem?: ((itemId: string) => void) | undefined;
+	readonly onAddItem?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onChangeStageStatus?: ((stage: TreatmentPlanStage, newStatus: TreatmentPlanStageStatus) => void) | undefined;
 	readonly onStartStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onExecuteWriteOffStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
@@ -52,6 +85,8 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	onUpdateItemPrice,
 	onUpdateItem,
 	onRemoveItem,
+	onAddItem,
+	onChangeStageStatus,
 	onStartStage,
 	onExecuteWriteOffStage,
 	onPayStage,
@@ -67,18 +102,52 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	const [showMaterials, setShowMaterials] = useState<boolean>(false);
 	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
 	const [isStageMenuOpen, setIsStageMenuOpen] = useState<boolean>(false);
+	const [isStatusMenuOpen, setIsStatusMenuOpen] = useState<boolean>(false);
 	const stageMenuRef = useRef<HTMLDivElement>(null);
+	const statusMenuRef = useRef<HTMLDivElement>(null);
+
+	const [localStatus, setLocalStatus] = useState<TreatmentPlanStageStatus>(
+		stage.status || (stage.items.some((it) => it.isDraft) ? "draft" : "agreed"),
+	);
 
 	useEffect(() => {
-		if (!isStageMenuOpen) return;
+		if (stage.status) {
+			setLocalStatus(stage.status);
+		}
+	}, [stage.status]);
+
+	const currentStatus: TreatmentPlanStageStatus = stage.status || localStatus;
+	const statusConfig = STAGE_STATUS_CONFIG[currentStatus] || STAGE_STATUS_CONFIG.agreed;
+	const StatusIcon = statusConfig.icon;
+
+	const handleSelectStatus = (newStatus: TreatmentPlanStageStatus, e?: React.MouseEvent) => {
+		e?.stopPropagation();
+		setLocalStatus(newStatus);
+		setIsStatusMenuOpen(false);
+		onChangeStageStatus?.(stage, newStatus);
+	};
+
+	const handleStartStageClick = (e?: React.MouseEvent) => {
+		e?.stopPropagation();
+		setLocalStatus("in_progress");
+		onChangeStageStatus?.(stage, "in_progress");
+		onStartStage?.(stage);
+	};
+
+	useEffect(() => {
+		if (!isStageMenuOpen && !isStatusMenuOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
 				setIsStageMenuOpen(false);
+				setIsStatusMenuOpen(false);
 			}
 		};
 		const handleClickOutside = (e: MouseEvent) => {
 			if (stageMenuRef.current && !stageMenuRef.current.contains(e.target as Node)) {
 				setIsStageMenuOpen(false);
+			}
+			if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+				setIsStatusMenuOpen(false);
 			}
 		};
 		document.addEventListener("keydown", handleKeyDown);
@@ -87,7 +156,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 			document.removeEventListener("keydown", handleKeyDown);
 			document.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, [isStageMenuOpen]);
+	}, [isStageMenuOpen, isStatusMenuOpen]);
 
 	const isLabOrderEligible =
 		stage.stageKind === "stage_3_orthopedics" ||
@@ -199,6 +268,67 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							>
 								{stage.items.length} {stage.items.length === 1 ? "процедура" : "процедур"}
 							</span>
+
+							{/* 1-Click Stage Status Switcher Badge (Mandate 8e: Doctor Autonomy) */}
+							<div
+								className="relative inline-flex items-center"
+								ref={statusMenuRef}
+								onClick={(e) => e.stopPropagation()}
+							>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setIsStatusMenuOpen((prev) => !prev);
+									}}
+									className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusConfig.badge} flex items-center gap-1 cursor-pointer hover:opacity-90 transition-opacity touch-manipulation`}
+									title="1-клик смена статуса этапа (Черновик -> Согласован -> В работе -> Завершен)"
+									data-testid={`stage-${stage.stageNumber}-status-badge`}
+									aria-expanded={isStatusMenuOpen}
+								>
+									<StatusIcon size={11} />
+									<span>{statusConfig.label}</span>
+									<ChevronDown
+										size={10}
+										className={`transition-transform ${isStatusMenuOpen ? "rotate-180" : ""}`}
+									/>
+								</button>
+
+								{isStatusMenuOpen && (
+									<div
+										className="absolute left-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] rounded-xl shadow-xl min-w-[140px] text-xs animate-in fade-in zoom-in-95 duration-100"
+										role="menu"
+									>
+										{(["draft", "agreed", "in_progress", "completed"] as const).map((st) => {
+											const cfg = STAGE_STATUS_CONFIG[st];
+											const ItemIcon = cfg.icon;
+											const isCurrent = currentStatus === st;
+											return (
+												<button
+													key={st}
+													type="button"
+													onClick={(e) => handleSelectStatus(st, e)}
+													className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors ${
+														isCurrent
+															? "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] font-bold"
+															: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
+													}`}
+													role="menuitem"
+												>
+													<ItemIcon size={12} />
+													<span>{cfg.label}</span>
+													{isCurrent && (
+														<span className="ml-auto text-[10px] text-[var(--teal-dark,var(--teal))]">
+															✓
+														</span>
+													)}
+												</button>
+											);
+										})}
+									</div>
+								)}
+							</div>
+
 							{materialSummary.hasDeficit && (
 								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1">
 									<AlertTriangle size={11} /> Дефицит ТМЦ ({materialSummary.deficitCount})
@@ -251,6 +381,17 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<span className="text-[11px] text-[var(--muted,#64748b)] max-w-sm">
 									Назначьте процедуры из каталога 804н или примените готовый клинический пакет СтАР
 								</span>
+								{onAddItem && (
+									<button
+										type="button"
+										onClick={() => onAddItem(stage)}
+										className="mt-2 h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
+										data-testid={`stage-${stage.stageNumber}-empty-add-item-btn`}
+									>
+										<Plus size={13} />
+										<span>Добавить услугу в этап</span>
+									</button>
+								)}
 							</div>
 						) : (
 							(() => {
@@ -273,7 +414,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																	#{item.toothNumber}
 																</span>
 															)}
-															<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-[var(--line,#e2e8f0)] whitespace-nowrap">
+															<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft)] border border-[var(--line,#e2e8f0)] whitespace-nowrap">
 																{item.code804n}
 															</span>
 															<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
@@ -298,7 +439,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 														)}
 													</div>
 
-													<div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-1 sm:pt-0">
+													<div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-1 sm:pt-0 flex-wrap sm:flex-nowrap">
 														{onOpenLabOrder &&
 															(item.category === "Ортопедия" ||
 																item.category === "Детская ортопедия" ||
@@ -344,6 +485,47 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																</div>
 															)}
 
+														{/* Quantity Controls (Mandate 8e: Doctor Autonomy) */}
+														{onUpdateItemQuantity ? (
+															<div className="flex items-center border border-[var(--line,#e2e8f0)] rounded-lg bg-[var(--paper-soft,#f8fafc)] p-0.5">
+																<button
+																	type="button"
+																	onClick={() =>
+																		onUpdateItemQuantity(
+																			item.id,
+																			Math.max(1, (item.quantity || 1) - 1),
+																		)
+																	}
+																	className="w-5 h-5 flex items-center justify-center rounded text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#ffffff)] cursor-pointer text-xs font-bold transition-colors"
+																	title="Уменьшить количество"
+																	data-testid={`dec-qty-${item.id}`}
+																>
+																	-
+																</button>
+																<span className="text-[11px] font-mono font-bold px-1.5 text-[var(--ink,#0f172a)] min-w-[18px] text-center">
+																	{item.quantity || 1}
+																</span>
+																<button
+																	type="button"
+																	onClick={() =>
+																		onUpdateItemQuantity(
+																			item.id,
+																			(item.quantity || 1) + 1,
+																		)
+																	}
+																	className="w-5 h-5 flex items-center justify-center rounded text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#ffffff)] cursor-pointer text-xs font-bold transition-colors"
+																	title="Увеличить количество"
+																	data-testid={`inc-qty-${item.id}`}
+																>
+																	+
+																</button>
+															</div>
+														) : (item.quantity || 1) > 1 ? (
+															<span className="text-[11px] font-mono font-bold text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+																×{item.quantity}
+															</span>
+														) : null}
+
 														<div className="text-right">
 															<span className={`text-xs font-bold font-mono ${
 																item.requiresManualPricing || (item.priceRub || 0) === 0
@@ -358,6 +540,19 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																</div>
 															)}
 														</div>
+
+														{/* Remove Item Action (Mandate 8e: Doctor Autonomy) */}
+														{onRemoveItem && (
+															<button
+																type="button"
+																onClick={() => onRemoveItem(item.id)}
+																className="p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+																title={`Удалить процедуру «${item.name}» из этапа`}
+																data-testid={`remove-item-${item.id}`}
+															>
+																<Trash2 size={13} />
+															</button>
+														)}
 													</div>
 												</div>
 
@@ -373,6 +568,22 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												)}
 											</div>
 										))}
+										{onAddItem && (
+											<div className="px-4 py-2 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs">
+												<span className="text-[11px] text-[var(--muted,#64748b)] font-medium">
+													Добавить процедуру или пакет в этот этап:
+												</span>
+												<button
+													type="button"
+													onClick={() => onAddItem(stage)}
+													className="h-7 px-2.5 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1 transition-colors"
+													data-testid={`stage-${stage.stageNumber}-add-item-btn`}
+												>
+													<Plus size={13} />
+													<span>Добавить услугу</span>
+												</button>
+											</div>
+										)}
 										{microConsumables.length > 0 && (
 											<div className="px-4 py-2 bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-xs text-[var(--muted,#64748b)] border-t border-[var(--line,#e2e8f0)]">
 												<span>
@@ -408,9 +619,9 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							</div>
 
 							<div className="flex items-center gap-3">
-								<span className="font-mono text-slate-500 text-[11px] hidden sm:inline">
+								<span className="font-mono text-[var(--muted,#64748b)] text-[11px] hidden sm:inline">
 									Себестоимость:{" "}
-									<strong className="text-slate-800 dark:text-slate-200">
+									<strong className="text-[var(--ink,#0f172a)]">
 										{(materialSummary.totalMaterialsCostRub || 0).toLocaleString("ru-RU")} ₽
 									</strong>
 								</span>
@@ -449,7 +660,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 													<td className="py-1.5 text-right font-mono text-[var(--muted,#64748b)]">
 														{(mat.unitCostRub || 0).toLocaleString("ru-RU")} ₽
 													</td>
-													<td className="py-1.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+													<td className="py-1.5 text-right font-mono font-bold text-[var(--ink,#0f172a)]">
 														{(mat.totalCostRub || 0).toLocaleString("ru-RU")} ₽
 													</td>
 													<td className="py-1.5 text-center font-mono">
@@ -464,7 +675,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																</span>
 															)
 														) : (
-															<span className="text-slate-400">—</span>
+															<span className="text-[var(--muted,#94a3b8)]">—</span>
 														)}
 													</td>
 												</tr>
@@ -483,7 +694,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									</div>
 									<div>
 										<span className="text-[var(--muted,#64748b)]">Себестоимость ТМЦ: </span>
-										<strong className="font-mono text-slate-700 dark:text-slate-300">
+										<strong className="font-mono text-[var(--ink,#0f172a)]">
 											{(materialSummary.totalMaterialsCostRub || 0).toLocaleString("ru-RU")} ₽
 										</strong>
 									</div>
@@ -513,7 +724,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							{isAction1Start ? (
 								<button
 									type="button"
-									onClick={() => onStartStage!(stage)}
+									onClick={handleStartStageClick}
 									className="h-8 px-3 rounded-lg text-xs font-bold text-sky-800 dark:text-sky-200 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 									title={`Взять этап №${stage.stageNumber} «${stage.title}» в работу`}
 									data-testid={`stage-${stage.stageNumber}-start-btn`}
@@ -590,6 +801,42 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											className="absolute right-0 bottom-full mb-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] rounded-xl shadow-xl min-w-[220px] text-xs animate-in fade-in zoom-in-95 duration-100"
 											role="menu"
 										>
+											{/* 0. Смена статуса этапа (Mandate 8e: Doctor Autonomy) */}
+											<div className="px-2.5 py-1 text-[10px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+												Статус этапа:
+											</div>
+											{(["draft", "agreed", "in_progress", "completed"] as const).map((st) => {
+												const cfg = STAGE_STATUS_CONFIG[st];
+												const ItemIcon = cfg.icon;
+												const isCurrent = currentStatus === st;
+												return (
+													<button
+														key={st}
+														type="button"
+														onClick={(e) => {
+															setIsStageMenuOpen(false);
+															handleSelectStatus(st, e);
+														}}
+														className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 cursor-pointer transition-colors h-7 ${
+															isCurrent
+																? "font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))]"
+																: "font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
+														}`}
+														role="menuitem"
+													>
+														<ItemIcon size={12} />
+														<span>{cfg.label}</span>
+														{isCurrent && (
+															<span className="ml-auto text-[10px] text-[var(--teal-dark,var(--teal))]">
+																✓
+															</span>
+														)}
+													</button>
+												);
+											})}
+
+											<div className="my-1 border-t border-[var(--line,var(--border,#cbd5e1))]" />
+
 											{/* 1. Акт и списание (если не вынесен на карточку) */}
 											{showWriteOffInMenu && (
 												<button

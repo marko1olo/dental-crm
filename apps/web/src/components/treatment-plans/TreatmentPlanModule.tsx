@@ -631,11 +631,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	return (
 		<div
-			className={`treatment-plan-module flex flex-col gap-5 w-full bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--border,#cbd5e1)] p-5 shadow-xl ${className}`.trim()}
+			className={`treatment-plan-module flex flex-col gap-5 w-full bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,var(--border,#cbd5e1))] p-5 shadow-xl ${className}`.trim()}
 			data-testid="treatment-plan-module"
 		>
 			{/* Top Bar: Title & Global Quick Actions */}
-			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--border,#cbd5e1)]">
+			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--line,var(--border,#cbd5e1))]">
 				<div className="flex items-center gap-3">
 					<div className="p-3 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20">
 						<Layers size={22} />
@@ -671,7 +671,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				{/* Global Buttons: View Toggles, Clean Hick's/Miller's Toolbar & Actions */}
 				<div className="flex flex-wrap items-center gap-2">
 					{/* Tab Switcher: 3 Tiers vs Stages vs 4 Phases */}
-					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] max-w-full overflow-x-auto">
+					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] max-w-full overflow-x-auto">
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
@@ -710,7 +710,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSignModalOpen(true)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors touch-manipulation shadow-xs"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors touch-manipulation shadow-xs"
 							title="Открыть окно цифровой подписи согласия"
 							data-testid="tp-sign-btn"
 						>
@@ -736,7 +736,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
 							title="Дополнительные студии, валидация и печать"
 							aria-label="Опции плана лечения"
 							aria-expanded={isOptionsMenuOpen}
@@ -747,7 +747,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						</button>
 
 						<div
-							className={`absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[260px] text-xs ${
+							className={`absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] rounded-2xl shadow-2xl min-w-[260px] text-xs ${
 								isOptionsMenuOpen ? "animate-in fade-in zoom-in-95 duration-100" : "hidden"
 							}`}
 							role="menu"
@@ -861,7 +861,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									<span>Валидатор СтАР & 804н</span>
 								</button>
 
-								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] border-t border-[var(--border,#cbd5e1)] mt-1 pt-1.5">
+								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] border-t border-[var(--line,var(--border,#cbd5e1))] mt-1 pt-1.5">
 									Документы и производство
 								</div>
 								<button
@@ -921,7 +921,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			{/* Service Area: Collapsible Toolbars (Mandates 8p, 8d — Screen Height Budget <= 160-180px) */}
 			<div className="flex flex-col gap-2">
 				{/* Financial Adjustments Bar: Discounts & Loyalty Bonus Points */}
-				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs overflow-hidden transition-all">
+				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] text-xs overflow-hidden transition-all">
 					<summary className="cursor-pointer text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
 						<div className="flex items-center gap-2 flex-wrap">
 							<Percent size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -943,7 +943,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							<ChevronDown size={14} className="transition-transform group-open:rotate-180" />
 						</div>
 					</summary>
-					<div className="p-3.5 pt-1.5 border-t border-[var(--border,#cbd5e1)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+					<div className="p-3.5 pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 						{/* Quick Discounts */}
 						<div className="flex items-center gap-2">
 							<span className="font-semibold text-[var(--muted,#64748b)]">Скидка:</span>
@@ -965,7 +965,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 													: "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 												: pct === 100
 													? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 border border-emerald-500/30"
-													: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
+													: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
 										}`}
 									>
 										{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
@@ -1003,7 +1003,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 											setBonusPointsToUseRub(val);
 										}}
 										placeholder="Списать ₽"
-										className="w-24 min-h-[44px] sm:min-h-[32px] px-2 py-1 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										className="w-24 min-h-[44px] sm:min-h-[32px] px-2 py-1 text-xs font-mono rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
 									/>
 									{bonusPointsToUseRub > 0 && (
 										<button
@@ -1021,7 +1021,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				</details>
 
 				{/* AI Copilot Clinical Assistant Bar */}
-				<details className="group rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs shadow-xs overflow-hidden transition-all">
+				<details className="group rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs shadow-xs overflow-hidden transition-all">
 					<summary className="cursor-pointer text-xs font-bold text-[var(--teal-dark,var(--teal))] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
 						<div className="flex items-center gap-2 flex-wrap">
 							<Sparkles size={15} className="text-amber-500 shrink-0" />
@@ -1042,7 +1042,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							<ChevronDown size={14} className="transition-transform group-open:rotate-180 text-[var(--ink,#0f172a)]" />
 						</div>
 					</summary>
-					<div className="p-3.5 pt-1.5 border-t border-[var(--border,#cbd5e1)] flex flex-col gap-2.5">
+					<div className="p-3.5 pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))] flex flex-col gap-2.5">
 						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
 							<div className="flex items-center gap-2 flex-wrap">
 								{COPILOT_PRESET_ACTIONS.map((action) => (
@@ -1051,7 +1051,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										type="button"
 										disabled={isCopilotExecuting}
 										onClick={() => handleExecuteCopilot(action.id)}
-										className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px] inline-flex items-center justify-center touch-manipulation"
+										className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px] inline-flex items-center justify-center touch-manipulation"
 										title={action.description}
 										data-testid={`module-copilot-btn-${action.id}`}
 									>
@@ -1112,7 +1112,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				</details>
 
 				{/* Turnkey Clinical Packages 1-Click Panel (Mandate 8e, 8p) */}
-				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs overflow-hidden transition-all">
+				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] text-xs overflow-hidden transition-all">
 					<summary className="cursor-pointer text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
 						<div className="flex items-center gap-2">
 							<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -1126,7 +1126,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							<ChevronDown size={14} className="transition-transform group-open:rotate-180" />
 						</div>
 					</summary>
-					<div className="p-2 border-t border-[var(--border,#cbd5e1)]">
+					<div className="p-2 border-t border-[var(--line,var(--border,#cbd5e1))]">
 						<ClinicalBundlesPanel
 							compact={true}
 							onApplyBundle={handleApplyClinicalBundle}
@@ -1165,7 +1165,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					}}
 				/>
 			) : stages.length === 0 ? (
-				<div className="p-8 rounded-2xl border border-dashed border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)] space-y-3">
+				<div className="p-8 rounded-2xl border border-dashed border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)] space-y-3">
 					<Layers className="w-10 h-10 mx-auto text-[var(--muted,#64748b)] opacity-40" />
 					<div className="font-bold text-sm text-[var(--ink,#0f172a)]">
 						В плане лечения пока нет сформированных этапов
@@ -1185,7 +1185,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
-							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
 						>
 							<span>3 Варианта лечения</span>
 						</button>
@@ -1230,6 +1230,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					patientName={patientName}
 					doctorName={auth?.currentUser?.name || "Лечащий врач"}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+					planAgeDays={planAgeDays}
+					planCreatedAtIso={planCreatedAtIso}
 					onPlanSelected={(tierCode) => {
 						const mappedTierId =
 							tierCode === "economy_basic"

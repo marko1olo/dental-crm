@@ -171,10 +171,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			<div
 				key={tier.tierId}
 				onClick={() => handleCardClick(tier)}
-				className={`relative flex flex-col justify-between rounded-3xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full flex-1 ${
+				className={`relative flex flex-col justify-between rounded-3xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full flex-1 min-w-0 ${
 					isSelected
 						? `${tier.borderClass} shadow-xl ring-2 ring-[var(--teal,var(--brand-primary))]/20 z-10`
-						: "border-[var(--border,#cbd5e1)] opacity-95 hover:opacity-100 hover:border-slate-400 shadow-md"
+						: "border-[var(--line,var(--border,#cbd5e1))] opacity-95 hover:opacity-100 hover:border-[var(--line-strong)] shadow-md"
 				}`}
 				data-testid={isMobile ? `tier-card-mobile-${tier.tierId}` : `tier-card-${tier.tierId}`}
 			>
@@ -187,20 +187,21 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				)}
 
 				{/* Card Header */}
-				<div className="space-y-1.5 pt-1">
-					<div className="flex items-center justify-between gap-2">
+				<div className="space-y-1.5 pt-1 min-w-0">
+					<div className="flex items-center justify-between gap-2 min-w-0">
 						<span
-							className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${tier.badgeClass}`}
+							className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border truncate max-w-[160px] whitespace-nowrap ${tier.badgeClass}`}
+							title={tier.title.split("(")[0]?.trim()}
 						>
 							{tier.title.split("(")[0]?.trim()}
 						</span>
 
-						<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1 whitespace-nowrap">
+						<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1 whitespace-nowrap shrink-0">
 							<Clock size={12} /> {tier.durationWeeks} нед. · {tier.durationVisits} виз.
 						</span>
 					</div>
 
-					<h3 className="text-base font-extrabold text-[var(--ink,#0f172a)] leading-snug m-0">
+					<h3 className="text-base font-extrabold text-[var(--ink,#0f172a)] leading-snug m-0 truncate" title={tier.title}>
 						{tier.title}
 					</h3>
 					<p className="text-xs text-[var(--muted,#64748b)] line-clamp-2 m-0">
@@ -330,49 +331,49 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					</div>
 
 					{/* Stages Breakdown Accordion Toggle */}
-					<div className="pt-1.5 border-t border-[var(--border,#cbd5e1)]/60">
+					<div className="pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/60">
 						<button
 							type="button"
 							onClick={(e) => toggleStagesExpand(e, tier.tierId)}
-							className="w-full min-h-[44px] sm:min-h-[36px] flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] hover:text-[var(--teal,var(--brand-primary))] cursor-pointer py-1.5"
+							className="w-full min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] hover:text-[var(--teal,var(--brand-primary))] cursor-pointer py-1.5"
 						>
-							<span className="flex items-center gap-1.5">
-								<Layers size={14} className="text-[var(--teal,var(--brand-primary))]" />
-								<span>Клинические этапы I, II, III ({tier.stages.length})</span>
+							<span className="flex items-center gap-1.5 min-w-0">
+								<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span className="truncate">Клинические этапы I, II, III ({tier.stages.length})</span>
 							</span>
-							{isExpandedStages ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+							{isExpandedStages ? <ChevronUp size={14} className="shrink-0" /> : <ChevronDown size={14} className="shrink-0" />}
 						</button>
 
 						{/* Expanded Stages Content - Flat Monolithic List without nested card box */}
 						{isExpandedStages && (
-							<div className="mt-1.5 max-h-56 overflow-y-auto min-h-0 divide-y divide-[var(--border,#cbd5e1)]/40 text-[11px] px-1 py-1">
+							<div className="mt-1.5 max-h-56 overflow-y-auto min-h-0 divide-y divide-[var(--line,var(--border,#cbd5e1))]/40 text-[11px] px-1 py-1">
 								{tier.stages.map((stg) => (
 									<div
 										key={stg.stageNumber}
-										className="py-1.5 first:pt-0 last:pb-0 space-y-0.5"
+										className="py-1.5 first:pt-0 last:pb-0 space-y-0.5 min-w-0"
 									>
-										<div className="flex justify-between items-center font-bold gap-2">
-											<span className="text-[var(--teal-dark,var(--teal))] truncate">
+										<div className="flex justify-between items-center font-bold gap-2 min-w-0">
+											<span className="text-[var(--teal-dark,var(--teal))] truncate min-w-0" title={stg.title}>
 												Этап {stg.stageNumber}: {stg.title.split(":")[1]?.trim() || stg.title}
 											</span>
-											<span className="font-mono text-slate-900 dark:text-slate-100 whitespace-nowrap">
+											<span className="font-mono text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0">
 												{stg.totalRub.toLocaleString("ru-RU")} ₽
 											</span>
 										</div>
-										<p className="text-[10px] text-[var(--muted,#64748b)] m-0">
+										<p className="text-[10px] text-[var(--muted,#64748b)] m-0 truncate" title={stg.clinicalGoal}>
 											{stg.clinicalGoal} · ~{stg.estimatedWeeks} нед. ({stg.estimatedVisits} виз.)
 										</p>
 										{(() => {
 											const displayItems = stg.items.filter((it) => !isMicroConsumable(it));
 											return displayItems.length > 0 ? (
-												<ul className="max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1">
+												<ul className="max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1 min-w-0">
 													{displayItems.slice(0, 4).map((it) => (
-														<li key={it.id} className="truncate">
+														<li key={it.id} className="truncate min-w-0" title={it.name}>
 															• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
 														</li>
 													))}
 													{displayItems.length > 4 && (
-														<li className="italic text-[var(--teal,var(--brand-primary))]">
+														<li className="italic text-[var(--teal,var(--brand-primary))] truncate min-w-0">
 															+ еще {displayItems.length - 4} процедур
 														</li>
 													)}
@@ -421,15 +422,15 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					</div>
 				</div>
 
-				{/* Actions Bottom: Sticky Fixed Footer on Desktop & Mobile */}
-				<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3.5 sm:p-4 pb-4 sm:pb-4 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 rounded-b-3xl mt-auto z-10 space-y-2 shadow-xs shrink-0">
+				{/* Actions Bottom: Sticky Fixed Footer on Desktop & Mobile (Miller's Law: <= 2 Action Buttons) */}
+				<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--line,var(--border,#cbd5e1))] p-3 sm:p-3.5 pb-3.5 sm:pb-3.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 rounded-b-3xl mt-auto z-10 space-y-1.5 shadow-xs shrink-0">
 					<button
 						type="button"
 						onClick={(e) => handleSignClick(e, tier)}
-						className={`w-full min-h-[44px] sm:min-h-[38px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-extrabold shadow-sm cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-98 ${
+						className={`w-full min-h-[44px] sm:min-h-[34px] sm:h-[34px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-extrabold shadow-sm cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-98 ${
 							isSelected
 								? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-emerald-600/20"
-								: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
+								: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
 						}`}
 						data-testid={`approve-tier-btn-${tier.tierId}`}
 					>
@@ -437,37 +438,28 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<span>Утвердить и подписать план</span>
 					</button>
 
-					{/* Secondary Action Strip with Touch Targets >= 44px on Mobile */}
-					<div className="grid grid-cols-2 gap-1.5">
+					{/* Secondary Action Strip: 1 unified action line (Installment + optional Print contract) */}
+					<div className="flex items-center gap-1.5">
 						<button
 							type="button"
 							onClick={(e) => handleInstallmentClick(e, tier)}
-							className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors whitespace-nowrap min-w-0"
+							className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
 							title="Оформить рассрочку 0% по данному варианту"
 						>
 							<CreditCard size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-							<span className="whitespace-nowrap min-w-0">Рассрочка 0%</span>
+							<span className="truncate">Рассрочка 0%</span>
 						</button>
 
-						{onPrintContract ? (
+						{onPrintContract && (
 							<button
 								type="button"
 								onClick={(e) => handlePrintClick(e, tier)}
-								className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors whitespace-nowrap min-w-0"
+								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1"
 								title="Распечатать договор и смету"
+								aria-label="Договор и смета (QR)"
 							>
 								<Printer size={13} className="shrink-0" />
-								<span className="whitespace-nowrap min-w-0">Договор (QR)</span>
-							</button>
-						) : (
-							<button
-								type="button"
-								onClick={() => handleCardClick(tier)}
-								className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors whitespace-nowrap min-w-0"
-								title="Выбрать данный вариант"
-							>
-								<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-								<span className="whitespace-nowrap min-w-0">{isSelected ? "Выбран" : "Выбрать"}</span>
+								<span className="hidden sm:inline text-[11px]">Договор</span>
 							</button>
 						)}
 					</div>
@@ -494,34 +486,34 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				</div>
 			)}
 
-			{/* Top Control Bar: Installments, Modes & Studio Triggers */}
-			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-3xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs text-[var(--ink,#0f172a)] shadow-xs">
-				<div className="flex items-center gap-3 min-w-0">
-					<div className="p-2 sm:p-2.5 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
-						<Sparkles size={18} />
+			{/* Top Control Bar: Installments, Modes & Studio Triggers (Hick's Law: 1 Compact 32-36px Row) */}
+			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-3xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)] shadow-xs">
+				<div className="flex items-center gap-2.5 min-w-0">
+					<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
+						<Sparkles size={16} />
 					</div>
 					<div className="min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] break-words">
+							<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate">
 								3-Tier Сравнение планов (Эконом / Оптимум / Премиум)
 							</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">
 								СтАР / 804н
 							</span>
 						</div>
-						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 break-words max-w-xl">
+						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 truncate max-w-xl">
 							Интерактивное сравнение клинических этапов, сроков, гарантий и программ оплаты 0%
 						</p>
 					</div>
 				</div>
 
-				<div className="flex flex-wrap items-center gap-2">
-					{/* Payment Mode Selector with Touch-First buttons */}
-					<div className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)]">
+				<div className="flex flex-wrap items-center gap-1.5 shrink-0">
+					{/* Payment Mode Selector with 32px standard height */}
+					<div className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))]">
 						<button
 							type="button"
 							onClick={() => setActivePaymentMode("installment")}
-							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg font-bold text-xs transition-all cursor-pointer ${
 								activePaymentMode === "installment"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -532,7 +524,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={() => setActivePaymentMode("staged")}
-							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg font-bold text-xs transition-all cursor-pointer ${
 								activePaymentMode === "staged"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -543,25 +535,25 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={() => setActivePaymentMode("discount")}
-							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg font-bold text-xs transition-all cursor-pointer ${
 								activePaymentMode === "discount"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							Скидка 5% (100%)
+							Скидка 5%
 						</button>
 					</div>
 
 					{/* Term Selector (when in installment mode) */}
 					{activePaymentMode === "installment" && (
-						<div className="flex items-center gap-1 bg-[var(--paper-strong,var(--paper,#ffffff))] p-0.5 rounded-xl border border-[var(--border,#cbd5e1)]">
+						<div className="flex items-center gap-0.5 bg-[var(--paper-strong,var(--paper,#ffffff))] p-0.5 rounded-xl border border-[var(--line,var(--border,#cbd5e1))]">
 							{[3, 6, 12, 24].map((m) => (
 								<button
 									key={m}
 									type="button"
 									onClick={() => setInstallmentMonths(m as 3 | 6 | 12 | 24)}
-									className={`min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-3 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+									className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 px-2 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 										installmentMonths === m
 											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -577,15 +569,15 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					<button
 						type="button"
 						onClick={() => setShowNdflBreakdown((prev) => !prev)}
-						className={`min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 sm:px-3.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 sm:px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
 							showNdflBreakdown
 								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] border-[var(--border,#cbd5e1)]"
+								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] border-[var(--line,var(--border,#cbd5e1))]"
 						}`}
 						title="Показать расчет налогового вычета 13% по НК РФ"
 					>
 						<ShieldCheck size={14} />
-						<span>Вычет 13% НДФЛ</span>
+						<span>Вычет 13%</span>
 					</button>
 
 					{/* Comparator Studio Modal Button */}
@@ -593,11 +585,11 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={onOpenComparatorStudio}
-							className="min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors"
 							title="Открыть полноэкранную презентационную студию сравнения"
 						>
-							<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
-							<span>Студия 3-Tier</span>
+							<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))]" />
+							<span className="hidden sm:inline">Студия</span>
 						</button>
 					)}
 
@@ -606,11 +598,11 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={onOpenStagePaymentStudio}
-							className="min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors"
 							title="Открыть студию поэтапной оплаты и эскроу-депозитов"
 						>
-							<Coins size={14} className="text-amber-500" />
-							<span>Эскроу и этапы</span>
+							<Coins size={13} className="text-amber-500" />
+							<span className="hidden sm:inline">Эскроу</span>
 						</button>
 					)}
 
@@ -619,11 +611,11 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={onOpenPriceValidatorStudio}
-							className="min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors"
 							title="Проверить цены по прайсу и протоколам СтАР"
 						>
-							<FileCheck size={14} className="text-emerald-600" />
-							<span>Валидация СтАР</span>
+							<FileCheck size={13} className="text-emerald-600" />
+							<span className="hidden sm:inline">Валидация</span>
 						</button>
 					)}
 				</div>
@@ -634,7 +626,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			{/* Заменяет 2500px вертикальный скролл-туннель на переключатель тарифов         */}
 			{/* ========================================================================= */}
 			<div
-				className="sm:hidden w-full p-1 rounded-2xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--border,#cbd5e1)] shadow-inner flex items-stretch gap-1"
+				className="sm:hidden w-full p-1 rounded-2xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,var(--border,#cbd5e1))] shadow-inner flex items-stretch gap-1"
 				data-testid="treatment-3tier-segmented-control"
 			>
 				{tiers.map((tier) => {
@@ -652,11 +644,11 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							}`}
 							data-testid={`segmented-tab-${tier.tierId}`}
 						>
-							<span className="text-xs truncate flex items-center justify-center gap-1 max-w-full">
+							<span className="text-xs truncate flex items-center justify-center gap-1 max-w-full min-w-0">
 								{tier.isRecommended && (
 									<Star size={11} className="text-amber-500 fill-amber-500 shrink-0" />
 								)}
-								<span className="truncate">{shortLabel}</span>
+								<span className="truncate min-w-0">{shortLabel}</span>
 							</span>
 							<span className="text-[11px] font-mono font-bold text-[var(--teal,var(--brand-primary))] whitespace-nowrap mt-0.5">
 								{tier.totalRub.toLocaleString("ru-RU")} ₽
@@ -669,7 +661,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			{/* ========================================================================= */}
 			{/* Mobile Single Card View: только активный тариф (<= 640px / sm:hidden)      */}
 			{/* ========================================================================= */}
-			<div className="sm:hidden flex flex-col w-full">
+			<div className="sm:hidden flex flex-col w-full min-w-0">
 				{renderTierCard(activeTier, true)}
 			</div>
 
@@ -682,8 +674,8 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 			{/* Bottom Block: Clinical Treatment Roadmap (Anti-Matryoshka Seamless Flat 4-Column Grid) */}
 			{activeTier && activeTier.stages && activeTier.stages.length > 0 && (
-				<section className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs overflow-hidden">
-					<div className="flex items-center justify-between gap-3 flex-wrap p-3.5 sm:p-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)]">
+				<section className="rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs overflow-hidden">
+					<div className="flex items-center justify-between gap-3 flex-wrap p-3.5 sm:p-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,var(--border,#cbd5e1))]">
 						<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2 m-0">
 							<Clock size={16} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>
@@ -695,31 +687,31 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						</span>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-700 bg-[var(--paper-strong,var(--paper,#ffffff))]">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))]">
 						{activeTier.stages.map((stg) => (
-							<div key={stg.stageNumber} className="p-3 sm:p-3.5 space-y-2">
-								<div className="flex items-center justify-between gap-2">
-									<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
+							<div key={stg.stageNumber} className="p-3 sm:p-3.5 space-y-2 min-w-0">
+								<div className="flex items-center justify-between gap-2 min-w-0">
+									<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
 										Этап {stg.stageNumber}
 									</span>
-									<span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+									<span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0">
 										{stg.totalRub.toLocaleString("ru-RU")} ₽
 									</span>
 								</div>
 
-								<div>
-									<h5 className="font-bold text-xs text-[var(--ink,#0f172a)] m-0 leading-snug">
+								<div className="min-w-0">
+									<h5 className="font-bold text-xs text-[var(--ink,#0f172a)] m-0 leading-snug truncate" title={stg.title}>
 										{stg.title.split(":")[1]?.trim() || stg.title}
 									</h5>
-									<p className="text-[10px] text-[var(--muted,#64748b)] m-0 mt-0.5">
+									<p className="text-[10px] text-[var(--muted,#64748b)] m-0 mt-0.5 truncate" title={stg.clinicalGoal}>
 										{stg.clinicalGoal} · ~{stg.estimatedWeeks} нед. ({stg.estimatedVisits} виз.)
 									</p>
 								</div>
 
 								{stg.items && stg.items.length > 0 && (
-									<ul className="max-h-28 overflow-y-auto min-h-0 text-[10px] text-[var(--muted,#64748b)] space-y-1 pl-1.5 border-l-2 border-[var(--teal,var(--brand-primary))]/30 m-0 list-none">
+									<ul className="max-h-28 overflow-y-auto min-h-0 text-[10px] text-[var(--muted,#64748b)] space-y-1 pl-1.5 border-l-2 border-[var(--teal,var(--brand-primary))]/30 m-0 list-none min-w-0">
 										{stg.items.filter((it) => !isMicroConsumable(it)).map((it) => (
-											<li key={it.id} className="truncate" title={it.name}>
+											<li key={it.id} className="truncate min-w-0" title={it.name}>
 												• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
 											</li>
 										))}

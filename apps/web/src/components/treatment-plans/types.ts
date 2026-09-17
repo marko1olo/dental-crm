@@ -49,6 +49,8 @@ export interface TreatmentPlanItem {
 	readonly warrantyPriceRub?: number | undefined;
 }
 
+export type TreatmentPlanStageStatus = "draft" | "agreed" | "in_progress" | "completed";
+
 export interface TreatmentPlanStage {
 	readonly stageNumber: number; // 1, 2, 3
 	readonly stageKind: TreatmentPlanStageKind;
@@ -61,6 +63,7 @@ export interface TreatmentPlanStage {
 	readonly estimatedVisits: number;
 	readonly estimatedWeeks: number;
 	readonly order804nCodes: readonly string[];
+	readonly status?: TreatmentPlanStageStatus | undefined;
 }
 
 export interface TierInstallmentPlan {
