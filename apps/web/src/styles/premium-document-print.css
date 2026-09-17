@@ -468,9 +468,9 @@
 
 	.print-layer {
 		display: block !important;
-		position: absolute !important;
-		left: 0 !important;
-		top: 0 !important;
+		position: relative !important;
+		left: auto !important;
+		top: auto !important;
 		width: 100% !important;
 		background: #ffffff !important;
 		color: #000000 !important;
@@ -504,6 +504,13 @@
 	.doc-radiology-grid {
 		page-break-inside: avoid !important;
 		break-inside: avoid !important;
+	}
+
+	.doc-soap-heading,
+	.doc-official-title-box,
+	.section-title {
+		page-break-after: avoid !important;
+		break-after: avoid !important;
 	}
 
 	/* Ensure background colors and borders print faithfully */
