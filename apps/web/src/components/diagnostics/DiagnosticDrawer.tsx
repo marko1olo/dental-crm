@@ -307,11 +307,11 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 										<button
 											type="button"
 											className="dente-diagnostic-close-btn"
-											style={{ minWidth: 44, minHeight: 44, padding: 0 }}
+											style={{ minWidth: 24, minHeight: 24, width: 24, height: 24, padding: 0 }}
 											onClick={() => setSearchQuery("")}
 											aria-label="Очистить поиск"
 										>
-											<X size={16} />
+											<X size={14} />
 										</button>
 									)}
 								</div>
@@ -416,7 +416,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 															<button
 																type="button"
 																className="dente-diagnostic-action-btn shrink-0"
-																style={{ minHeight: 44, padding: "4px 10px", fontSize: 12 }}
+																style={{ minHeight: 26, height: 26, padding: "2px 8px", fontSize: 11 }}
 																onClick={(e) => {
 																	e.stopPropagation();
 																	handleCopyCorrelationId(log.correlationId!);
@@ -511,7 +511,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 														<button
 															type="button"
 															className="dente-diagnostic-action-btn shrink-0"
-															style={{ minHeight: 44, padding: "4px 10px", fontSize: 12 }}
+															style={{ minHeight: 26, height: 26, padding: "2px 8px", fontSize: 11 }}
 															onClick={(e) => {
 																e.stopPropagation();
 																handleCopyCorrelationId(net.correlationId);
@@ -630,8 +630,12 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 										<button
 											type="button"
 											className="dente-diagnostic-action-btn dente-diagnostic-primary-btn"
-											disabled={offlineStore.isSyncing}
-											onClick={() => offlineStore.syncOutbox()}
+											aria-busy={offlineStore.isSyncing}
+											onClick={() => {
+												if (!offlineStore.isSyncing) {
+													offlineStore.syncOutbox();
+												}
+											}}
 										>
 											<RefreshCw
 												size={15}
@@ -662,18 +666,18 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 												{offlineStore.pendingMutations.map((mut) => (
 													<div key={mut.mutationId} className="dente-diagnostic-card">
 														<div className="dente-diagnostic-card-header">
-															<div className="dente-diagnostic-card-left">
-																<span className="dente-diagnostic-pill dente-diagnostic-pill-info">
+															<div className="dente-diagnostic-card-left min-w-0">
+																<span className="dente-diagnostic-pill dente-diagnostic-pill-info shrink-0">
 																	{mut.action}
 																</span>
-																<span className="dente-diagnostic-module">
+																<span className="dente-diagnostic-module truncate min-w-0" title={mut.entityType}>
 																	{mut.entityType}
 																</span>
-																<span className="dente-diagnostic-time">
+																<span className="dente-diagnostic-time shrink-0">
 																	{mut.timestamp.slice(11, 23)}
 																</span>
 															</div>
-															<span style={{ fontSize: 11, color: "var(--muted, #64748b)" }}>
+															<span style={{ fontSize: 11, color: "var(--muted, #64748b)" }} className="shrink-0">
 																ID: {mut.entityId.slice(0, 12)}…
 															</span>
 														</div>
@@ -752,10 +756,10 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 											<button
 												type="button"
 												className="dente-diagnostic-action-btn dente-diagnostic-primary-btn"
-												style={{ minHeight: 48, padding: "0 20px", fontSize: 14, fontWeight: 600 }}
+												style={{ minHeight: 36, height: 36, padding: "0 16px", fontSize: 13, fontWeight: 600 }}
 												onClick={handleExportReport}
 											>
-												<Download size={18} />
+												<Download size={16} />
 												<span>Выгрузить диагностический отчет (.json)</span>
 											</button>
 										</div>

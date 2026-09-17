@@ -134,7 +134,9 @@
 	display: flex;
 	align-items: center;
 	gap: 4px;
-	padding: 4px 16px;
+	min-height: 36px;
+	height: 36px;
+	padding: 0 16px;
 	background: var(--paper-strong);
 	border-bottom: 1px solid var(--glass-border);
 	overflow-x: auto;
@@ -146,8 +148,9 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-height: 34px;
-	padding: 6px 12px;
+	min-height: 32px;
+	height: 32px;
+	padding: 0 12px;
 	border-radius: 6px;
 	border: none;
 	background: transparent;
@@ -170,15 +173,17 @@
 	color: var(--paper-strong);
 }
 
-/* Toolbar & Filters */
+/* Toolbar & Filters — Strictly 1 row (32-36px) on desktop (Hick's Law) */
 .dente-diagnostic-toolbar {
 	display: flex;
 	flex-wrap: nowrap;
 	overflow-x: auto;
 	align-items: center;
 	justify-content: space-between;
-	gap: 10px;
-	padding: 6px 16px;
+	gap: 8px;
+	min-height: 36px;
+	height: 36px;
+	padding: 0 16px;
 	background: var(--paper-strong);
 	border-bottom: 1px solid var(--glass-border);
 	scrollbar-width: thin;
@@ -188,12 +193,13 @@
 .dente-diagnostic-search-box {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	flex: 1;
-	min-width: 180px;
-	min-height: 34px;
-	padding: 0 12px;
-	border-radius: 8px;
+	min-width: 160px;
+	min-height: 28px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
 	background: var(--paper-soft);
 	border: 1px solid var(--glass-border);
 }
@@ -202,7 +208,7 @@
 	flex: 1;
 	border: none;
 	background: transparent;
-	font-size: 13px;
+	font-size: 12px;
 	color: var(--ink);
 	outline: none;
 }
@@ -210,19 +216,20 @@
 .dente-diagnostic-filter-group {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	flex-shrink: 0;
 	flex-wrap: nowrap;
 }
 
 .dente-diagnostic-select {
-	min-height: 34px;
-	padding: 0 10px;
-	border-radius: 8px;
+	min-height: 28px;
+	height: 28px;
+	padding: 0 8px;
+	border-radius: 6px;
 	background: var(--paper-soft);
 	border: 1px solid var(--glass-border);
 	color: var(--ink);
-	font-size: 13px;
+	font-size: 12px;
 	outline: none;
 	cursor: pointer;
 }
@@ -230,14 +237,15 @@
 .dente-diagnostic-action-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	min-height: 34px;
-	padding: 5px 12px;
-	border-radius: 8px;
+	gap: 5px;
+	min-height: 28px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
 	border: 1px solid var(--glass-border);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 600;
 	cursor: pointer;
 	transition: background 0.15s ease;
@@ -246,14 +254,24 @@
 }
 
 @media (pointer: coarse), (max-width: 768px) {
+	.dente-diagnostic-toolbar {
+		min-height: 48px;
+		height: auto;
+		padding: 6px 12px;
+		flex-wrap: wrap;
+	}
 	.dente-diagnostic-close-btn,
 	.dente-diagnostic-tab-btn,
 	.dente-diagnostic-search-box,
 	.dente-diagnostic-select,
 	.dente-diagnostic-action-btn {
 		min-height: 44px;
+		height: auto;
 	}
 	.dente-diagnostic-close-btn {
+		min-width: 44px;
+	}
+	.dente-diagnostic-tab-btn {
 		min-width: 44px;
 	}
 }
@@ -311,6 +329,7 @@
 	justify-content: space-between;
 	gap: 8px;
 	flex-wrap: wrap;
+	min-width: 0;
 }
 
 .dente-diagnostic-card-left {
@@ -318,6 +337,7 @@
 	align-items: center;
 	gap: 8px;
 	flex-wrap: wrap;
+	min-width: 0;
 }
 
 .dente-diagnostic-time {

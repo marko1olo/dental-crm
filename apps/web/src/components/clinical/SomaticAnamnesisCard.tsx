@@ -32,7 +32,6 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { showToast } from "../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,
-	type PregnancyTrimester,
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
 	evaluatePatientSafetyFlags,
@@ -145,6 +144,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 		<div
 			className={`somatic-anamnesis-card flex flex-col gap-4 w-full p-4 sm:p-5 rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 shadow-sm ${className}`}
 			data-testid="somatic-anamnesis-card"
+			data-patient-id={patientId ?? undefined}
 		>
 			{/* Top Bar: Title & 1-Click Norm Button */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 pb-3">
@@ -217,15 +217,16 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							Обнаружено клинических факторов риска: {evaluation.activeFlags.length}
 						</span>
 					</div>
-					<div className="flex flex-wrap gap-1.5">
+					<div className="flex flex-wrap gap-1.5 min-w-0">
 						{evaluation.activeFlags.map((flag) => (
 							<span
 								key={flag.id}
-								className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+								className={`text-[11px] font-bold px-2 py-0.5 rounded-md border truncate max-w-full ${
 									flag.severity === "critical"
 										? "bg-[#ef4444] text-white border-[#ef4444]"
 										: "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-700"
 								}`}
+								title={flag.titleRu}
 							>
 								{flag.titleRu}
 							</span>
@@ -247,11 +248,12 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-allergy-articaine"
 							onClick={() => toggleFlag("hasArticaineAllergy")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasArticaineAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
+							title="Артикаин (Ультракаин, Септанест, Убистезин)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -262,18 +264,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasArticaineAllergy ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Артикаин (Ультракаин)</span>
+							<span className="truncate min-w-0">Артикаин (Ультракаин)</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-allergy-lidocaine"
 							onClick={() => toggleFlag("hasLidocaineAllergy")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasLidocaineAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
+							title="Лидокаин"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -284,18 +287,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasLidocaineAllergy ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Лидокаин</span>
+							<span className="truncate min-w-0">Лидокаин</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-allergy-mepivacaine"
 							onClick={() => toggleFlag("hasMepivacaineAllergy")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasMepivacaineAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
+							title="Мепивакаин (Скандонест, без вазоконстриктора)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -306,18 +310,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasMepivacaineAllergy ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Мепивакаин (Скандонест)</span>
+							<span className="truncate min-w-0">Мепивакаин (Скандонест)</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-allergy-sulfites"
 							onClick={() => toggleFlag("hasSulfiteAllergy")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasSulfiteAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
+							title="Сульфиты / консерванты в анестетиках с адреналином"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -328,18 +333,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasSulfiteAllergy ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Сульфиты / консервант</span>
+							<span className="truncate min-w-0">Сульфиты / консервант</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-allergy-penicillin"
 							onClick={() => toggleFlag("hasPenicillinAllergy")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasPenicillinAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
+							title="Антибиотики пенициллинового ряда (Амоксиклав, Аугментин)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -350,18 +356,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasPenicillinAllergy ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Пенициллины</span>
+							<span className="truncate min-w-0">Пенициллины</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-allergy-latex"
 							onClick={() => toggleFlag("hasLatexAllergy")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasLatexAllergy
 									? "bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-900 dark:text-rose-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
+							title="Латекс (перчатки, платки коффердама)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -372,7 +379,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasLatexAllergy ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Латекс (коффердам)</span>
+							<span className="truncate min-w-0">Латекс (коффердам)</span>
 						</button>
 					</div>
 				</div>
@@ -388,11 +395,12 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-hypertension"
 							onClick={() => toggleFlag("hasHypertension")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasHypertension
 									? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
 							}`}
+							title="Гипертоническая болезнь / нестабильное АД"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -403,18 +411,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasHypertension ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Гипертоническая болезнь</span>
+							<span className="truncate min-w-0">Гипертоническая болезнь</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-anticoagulants"
 							onClick={() => toggleFlag("takesAnticoagulants")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.takesAnticoagulants
 									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
 							}`}
+							title="Антикоагулянты (Ксарелто, Эликвис, Варфарин) — риск кровотечения"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -425,18 +434,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.takesAnticoagulants ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Антикоагулянты (Ксарелто)</span>
+							<span className="truncate min-w-0">Антикоагулянты (Ксарелто)</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-bisphosphonates"
 							onClick={() => toggleFlag("takesBisphosphonates")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.takesBisphosphonates
 									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-purple-50/50"
 							}`}
+							title="Бисфосфонаты / деносумаб — риск остеонекроза челюсти (MRONJ)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -447,18 +457,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.takesBisphosphonates ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Бисфосфонаты (MRONJ)</span>
+							<span className="truncate min-w-0">Бисфосфонаты (MRONJ)</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-pacemaker"
 							onClick={() => toggleFlag("hasPacemakerExs")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasPacemakerExs
 									? "bg-rose-50 dark:bg-rose-950/50 border-[#ef4444] text-rose-900 dark:text-rose-200 shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-rose-50/50"
 							}`}
+							title="Электрокардиостимулятор (ЭКС) — абсолютный запрет ультразвуковых скейлеров"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -469,7 +480,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasPacemakerExs ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">ЭКС (Запрет УЗ)</span>
+							<span className="truncate min-w-0">ЭКС (Запрет УЗ)</span>
 						</button>
 					</div>
 
@@ -537,11 +548,12 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							type="button"
 							data-testid="toggle-diabetes"
 							onClick={() => toggleFlag("hasDiabetesMellitus")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasDiabetesMellitus
 									? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
 							}`}
+							title="Сахарный диабет (риск замедленной эпителизации и инфекций)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -552,18 +564,19 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasDiabetesMellitus ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Сахарный диабет</span>
+							<span className="truncate min-w-0">Сахарный диабет</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="toggle-asthma"
 							onClick={() => toggleFlag("hasBronchialAsthma")}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.hasBronchialAsthma
 									? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
 							}`}
+							title="Бронхиальная астма (наличие ингалятора у пациента обязательно)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -574,7 +587,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 							>
 								{profile.hasBronchialAsthma ? <Check className="w-3 h-3" /> : null}
 							</div>
-							<span className="truncate">Бронхиальная астма</span>
+							<span className="truncate min-w-0">Бронхиальная астма</span>
 						</button>
 
 						<button
@@ -587,11 +600,12 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 										prev.pregnancyTrimester === "none" ? "trimester_2" : "none",
 								}));
 							}}
-							className={`flex items-center gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+							className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 								profile.pregnancyTrimester !== "none"
 									? "bg-pink-50 dark:bg-pink-950/50 border-pink-400 text-pink-900 dark:text-pink-200"
 									: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-pink-50/50"
 							}`}
+							title="Беременность (ограничения рентгенографии, местная анестезия без адреналина)"
 						>
 							<div
 								className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
@@ -604,7 +618,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 									<Check className="w-3 h-3" />
 								) : null}
 							</div>
-							<span className="truncate">Беременность (2-й триместр)</span>
+							<span className="truncate min-w-0">Беременность (2-й триместр)</span>
 						</button>
 					</div>
 				</div>
