@@ -5063,3 +5063,43 @@
      - Полный запрет мультяшных эмодзи в медицинских документах.
   4. *Железный закон защиты хост-машины и Single-Compiler Gate (Мандат 8t)*:
      - Документация синхронизирована без запуска конкурирующих компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
+
+### 2.10.341. Wave 249: Prescription Form 107-1/u & Drug Interaction Autonomy, Orthodontic Wire Activation & Aligner Tracker, Pediatric Frankl Scale & Parent Anesthesia Memo (Мандаты 8b, 8c, 8d, 8e, 8k, 8n, 8p, 8s, 8t)
+
+- **Цель**: Комплексная реализация триады клинической автономии и снижения трения: (1) электронный рецептурный бланк Формы 107-1/у (Приказ 1094н) с автоматической проверкой непереносимости пенициллинов и НПВП, выводом предупреждающего баннера без блокировки печати по Мандату 8e, вставкой в дневник 043/у и выгрузкой понятной памятки для пациента formatPatientPrescriptionMemo в WhatsApp/Telegram; (2) ортодонтический протокол визита в OrthodonticVisitProtocolWidget.tsx и orthoEngine.ts с сеткой дуг WORKHORSE_ARCHWIRES (CuNiTi 27°/35°, NiTi, SS, TMA), эластическими цепочками, калькулятором расширения пластинок 0.25 мм, трекером элайнеров ALIGNER_ATTACHMENT_PRESETS и генерацией памятки formatOrthodonticPatientMemo; (3) педиатрическая шкала поведения Франкла 1..4 (FranklBehaviorBadge.tsx) с векторными SVG-иконками без эмодзи, техники адаптации Tell-Show-Do, памятка родителям после анестезии «НЕ КУСАТЬ ГУБУ!» в PediatricParentMemoModal.tsx и пресеты нормы молочного прикуса FDI 51..85.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - *Рецепты 107-1/у и аллерго-безопасность*: `apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx` (канонический неделимый SSOT рецептов; `PrescriptionModal.tsx` выступает прозрачным фасадом по Мандату 8s), `apps/web/src/components/prescriptions/generator/prescriptionPresets.ts`, `apps/web/src/components/prescriptions/generator/prescriptionEngine.ts`, `apps/web/src/components/patients/safetyMath.ts`, `apps/web/src/components/patients/PatientAllergySafetyBanner.tsx`, `apps/web/src/components/patients/PatientAnamnesisModal.tsx`, `apps/web/src/components/prescriptions/__tests__/medicalPrescriptionAutonomyWave52.test.tsx`.
+  - *Ортодонтия и трекер элайнеров*: `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`, `packages/shared/src/orthodontics/orthoEngine.ts`, `packages/shared/src/orthodontics/types.ts`, `apps/web/src/components/orthodontics/__tests__/orthodonticPatientMemoAutonomyWave53.test.tsx`.
+  - *Детская стоматология и шкала Франкла*: `apps/web/src/components/pediatric/FranklBehaviorBadge.tsx`, `apps/web/src/components/pediatric/PediatricParentMemoModal.tsx`, `apps/web/src/components/pediatric/VisitPediatricProtocolWidget.tsx`, `apps/web/src/components/pediatric/ToothPediatricContext.tsx`, `apps/web/src/components/odontogram/PediatricMixedDentitionModal.tsx`, `apps/web/src/components/pediatric/__tests__/pediatricBehaviorAndMemoAutonomyWave54.test.tsx`.
+  - *Портал пациента и ЛК*: `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`.
+- **Ключевые результаты**:
+  1. *Электронные рецепты 107-1/у и клиническая фармакопея врача (Мандаты 8c, 8d, 8e пп. 1, 2, 8i, 8k, 8n)*:
+     - В `PrescriptionPrintModal.tsx`, `prescriptionPresets.ts` и `prescriptionEngine.ts`:
+     - Полное соответствие регламенту Приказа Минздрава РФ 1094н: генерация бланков Формы 107-1/у со всеми реквизитами клиники и врача;
+     - Профильный стоматологический каталог `DENTAL_MEDICATIONS_CATALOG` (22 позиции) и 11 быстрых наборов `DENTAL_FAST_PRESCRIPTION_SETS` (Амоксиклав, Цифран СТ, Нимесил, Ибупрофен, Кеторолак, Хлоргексидин, Холисал);
+     - Клиническая безопасность без палок в колёса врачу (Мандат 8e): автоматическая проверка непереносимости пенициллинов и НПВП (`safetyMath.ts`) выводит янтарный предупреждающий баннер с рекомендацией безопасных аналогов (Парацетамол), но никогда не блокирует кнопку печати (`disabled={false}`);
+     - 1-клик вставка схемы фармакотерапии в дневник Формы 043/у («В карту» / `btn-insert-rx-to-diary`);
+     - 1-клик генерация структурированной памятки пациенту `formatPatientPrescriptionMemo` («Скопировать для пациента» / `med-rx-copy-patient-btn`): очищенный от латыни русский текст с дозировками, графиком приёма, предупреждением о недопустимости ранней отмены антибиотиков и прямым телефоном клиники для отправки в WhatsApp/Telegram;
+     - Поддержка квалифицированной электронной подписи УКЭП КриптоПро и защитного 2D QR-кода верификации;
+     - 0 эмодзи в медицинских документах (Мандат 8d п. 7), тулбар 32–36px (Закон Хика), тач-таргеты $\ge 44\text{px}$.
+  2. *Ортодонтическая активация дуг и трекер элайнеров (Мандаты 8c, 8d, 8e п. 1, 8i, 8k, 8n)*:
+     - В `OrthodonticVisitProtocolWidget.tsx`, `packages/shared/src/orthodontics/orthoEngine.ts` и `types.ts`:
+     - Матрица рабочих дуг `WORKHORSE_ARCHWIRES`: термоактивные CuNiTi 27°C/35°C, сверхэластичные NiTi (0.012–0.019x0.025), стальные дуги Stainless Steel (SS) и титан-молибденовые TMA;
+     - Учет состояния дуги, челюсти, эластических цепочек (Power Chain), пружин и торковых изгибов;
+     - Калькулятор активации пластиночных аппаратов `calculatePlateExpansionMm`: точный расчет расширения по поворотам винта (0.25 мм за шаг);
+     - Трекер элайнеров `ALIGNER_ATTACHMENT_PRESETS`: контроль номеров капп (шаг N из M), плановая дата смены (22 ч/сут, смена каждые 10–14 дней), композитные аттачменты и сепарация (IPR);
+     - 1-клик перенос SOAP-протокола Формы 043/у в медкарту («В карту»);
+     - 1-клик памятка пациенту `formatOrthodonticPatientMemo` («Скопировать для пациента» / `ortho-copy-patient-memo-btn`): структурированный текст для WhatsApp/Telegram с аппаратурой, схемой эластиков (Кенгуру, Медведь 1/4"), защитным воском и контактами клиники;
+     - Тулбар 32–36px, тач-таргеты $\ge 44\text{px}$ (min-h-[48px]).
+  3. *Педиатрическая шкала Франкла и памятка родителям по анестезии (Мандаты 8c, 8d, 8e п. 1, 8i, 8k, 8n)*:
+     - В `FranklBehaviorBadge.tsx`, `PediatricParentMemoModal.tsx`, `VisitPediatricProtocolWidget.tsx`, `ToothPediatricContext.tsx`:
+     - Шкала оценки поведения ребенка Франкла (Frankl Behavioral Rating Scale 1..4): 1 — Определенно отрицательный, 2 — Отрицательный, 3 — Положительный, 4 — Определенно положительный;
+     - Строго векторные SVG-индикаторы Lucide (`AlertTriangle`, `Frown`, `Smile`, `HeartHandshake`) с клиническими дизайн-токенами без мультяшных эмодзи (Мандат 8d п. 7);
+     - Психоэмоциональная адаптация: техники «Tell-Show-Do», позитивное подкрепление, моделирование поведения, N2O седация;
+     - Памятка родителям после анестезии `PediatricParentMemoModal.tsx`: критический предупреждающий блок **«ВНИМАНИЕ: НЕ КУСАТЬ ГУБУ И ЩЁКУ!»**, длительность онемения 1.5–3 часа, холодный компресс, мягкая пища, дозировки Нурофена/Парацетамола по весу и экстренный телефон клиники;
+     - Экспорт памятки в WhatsApp/Telegram и чистая печать А4;
+     - 1-клик норма молочного прикуса FDI 51..85 без заполнения взрослой стационарной соматики (Мандаты 8e п. 3, 8i, 8k).
+  4. *Железный закон защиты хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - Документация синхронизирована без запуска конкурирующих компиляторов `tsc` и `npm run build`; Single-Compiler Gate L1 Оркестратора соблюден на 100%.
+
