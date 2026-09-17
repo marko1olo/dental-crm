@@ -3,6 +3,9 @@ import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+	calculateFedorovVolodkinaScore,
+	calculatePhpScore,
+	calculateSilnessLoeScore,
 	CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
 	CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU,
 	CLINICAL_TOOTH_MOUSSE_SUMMARY_RU,
@@ -266,5 +269,75 @@ describe("HygieneIndicesPanel — Chairside Express Protocols & Invoice Services
 			"Must use pure text-[var(--ink)] token",
 		);
 	});
-});
 
+	it("verifies Hick's Law toolbar for 4 indices, Miller's Law print action and truncate classes", () => {
+		const html = renderToStaticMarkup(
+			createElement(HygieneIndicesPanel, {
+				readOnly: false,
+			}),
+		);
+
+		// Hick's Law 32-36px toolbar for switching indices
+		assert.ok(html.includes("OHI-S (Грин-Вермиллион)"));
+		assert.ok(html.includes("Silness-Löe (Сиднесс-Лоэ)"));
+		assert.ok(html.includes("Федорова-Володкина"));
+		assert.ok(html.includes("PHP (Подошадлей-Хейли)"));
+
+		// Miller's Law print protocol button
+		assert.ok(html.includes("data-testid=\"hygiene-print-protocol-btn\""));
+		assert.ok(html.includes("Печать протокола"));
+
+		// Truncate safeguards for long Russian text
+		assert.ok(html.includes("truncate"));
+		assert.ok(html.includes("min-w-0"));
+	});
+
+	it("verifies mathematical accuracy of Silness-Löe, Fedorov-Volodkina and PHP pure index calculators", () => {
+		// 1. Healthy norm: all teeth 0
+		const normAssessments = {
+			16: { toothNumber: 16, debrisScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+			11: { toothNumber: 11, debrisScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+			26: { toothNumber: 26, debrisScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+			36: { toothNumber: 36, debrisScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+			31: { toothNumber: 31, debrisScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+			46: { toothNumber: 46, debrisScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+		};
+
+		const silnessNorm = calculateSilnessLoeScore(normAssessments);
+		assert.equal(silnessNorm.score, 0);
+		assert.equal(silnessNorm.isOptimal, true);
+		assert.equal(silnessNorm.evaluation, "excellent");
+
+		const fedorovNorm = calculateFedorovVolodkinaScore(normAssessments);
+		assert.equal(fedorovNorm.score, 1.0);
+		assert.equal(fedorovNorm.isOptimal, true);
+		assert.equal(fedorovNorm.evaluation, "good");
+
+		const phpNorm = calculatePhpScore(normAssessments);
+		assert.equal(phpNorm.score, 0);
+		assert.equal(phpNorm.isOptimal, true);
+		assert.equal(phpNorm.evaluation, "excellent");
+
+		// 2. Moderate pathology
+		const pathoAssessments = {
+			16: { toothNumber: 16, debrisScore: 2, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
+			11: { toothNumber: 11, debrisScore: 1, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+			26: { toothNumber: 26, debrisScore: 2, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
+			36: { toothNumber: 36, debrisScore: 2, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
+			31: { toothNumber: 31, debrisScore: 1, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+			46: { toothNumber: 46, debrisScore: 2, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
+		};
+
+		const silnessPatho = calculateSilnessLoeScore(pathoAssessments);
+		assert.equal(silnessPatho.score, 1.7);
+		assert.equal(silnessPatho.evaluation, "moderate");
+
+		const fedorovPatho = calculateFedorovVolodkinaScore(pathoAssessments);
+		assert.equal(fedorovPatho.score, 2.7);
+		assert.equal(fedorovPatho.evaluation, "bad");
+
+		const phpPatho = calculatePhpScore(pathoAssessments);
+		assert.equal(phpPatho.score, 2.7);
+		assert.equal(phpPatho.evaluation, "poor");
+	});
+});

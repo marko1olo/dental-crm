@@ -1,6 +1,14 @@
 export {
 	HygieneIndicesPanel,
 	type HygieneIndicesPanelProps,
+	type ActiveHygieneIndexTab,
+	type ExtendedToothAssessment,
+	type SilnessLoeResult,
+	type FedorovVolodkinaResult,
+	type PhpResult,
+	calculateSilnessLoeScore,
+	calculateFedorovVolodkinaScore,
+	calculatePhpScore,
 	CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
 	CLINICAL_TOOTH_MOUSSE_SUMMARY_RU,
 	CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU,
@@ -9,4 +17,3 @@ export {
 	createToothMousseProtocolText,
 	createPerioAntisepticProtocolText,
 } from "./HygieneIndicesPanel";
-
