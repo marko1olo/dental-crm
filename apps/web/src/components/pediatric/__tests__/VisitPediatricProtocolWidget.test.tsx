@@ -9,6 +9,7 @@ import {
 	QUICK_PEDIATRIC_TEETH,
 	VisitPediatricProtocolWidget,
 } from "../VisitPediatricProtocolWidget";
+import { FranklBehaviorBadge } from "../FranklBehaviorBadge";
 
 describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Workspace)", () => {
 	it("renders pediatric protocol widget for primary upper molar 54 with Caries preset", () => {
@@ -283,5 +284,46 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 			QUICK_PEDIATRIC_TEETH.includes(16),
 			"Contains first permanent molar 16",
 		);
+	});
+
+	it("renders 1-click adaptation visit button in top header (Mandate 8e, 8k)", () => {
+		const html = renderToStaticMarkup(
+			createElement(VisitPediatricProtocolWidget, {
+				activeTooth: 54,
+				initialFranklRating: 3,
+			}),
+		);
+
+		assert.ok(
+			html.includes("1-клик Адаптация") || html.includes("Адаптация"),
+			"Has 1-click adaptation visit button",
+		);
+		assert.ok(
+			html.includes("pediatric-one-click-adaptation-btn"),
+			"Has testid for 1-click adaptation visit button",
+		);
+		assert.ok(
+			html.includes("pediatric-one-click-norm-btn"),
+			"Has testid for 1-click physiological norm button",
+		);
+	});
+
+	it("renders FranklBehaviorBadge in compact toolbar mode per Hick's Law (32-36px)", () => {
+		const html = renderToStaticMarkup(
+			createElement(FranklBehaviorBadge, {
+				rating: 3,
+				toolbar: true,
+			}),
+		);
+
+		assert.ok(
+			html.includes("frankl-compact-toolbar"),
+			"Renders compact toolbar with data-testid frankl-compact-toolbar",
+		);
+		assert.ok(html.includes("Франкл:"), "Toolbar has label");
+		assert.ok(html.includes("frankl-toolbar-btn-1"), "Toolbar has button 1");
+		assert.ok(html.includes("frankl-toolbar-btn-2"), "Toolbar has button 2");
+		assert.ok(html.includes("frankl-toolbar-btn-3"), "Toolbar has button 3");
+		assert.ok(html.includes("frankl-toolbar-btn-4"), "Toolbar has button 4");
 	});
 });
