@@ -7700,3 +7700,62 @@
   - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
     * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
     * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
+
+### 402. Section 402: Red Team Wave 243 — Orthodontic Cephalometrics & 1-Click Steiner Norms, Express ICD-10 Diagnostics & Somatic Norm Autonomy, Dental Lab ZTL Frictionless Orders & VITA Shade Presets (Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8s, 8t)
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`
+* **Файлы**:
+  - `apps/web/src/components/radiology/CephalometricAnalysisModal.tsx`
+  - `apps/web/src/components/orthodontics/CephalometricCanvas.tsx`
+  - `apps/web/src/components/orthodontics/CephalometricAnalysisModal.css`
+  - `apps/web/src/components/orthodontics/cephalometricMath.ts`
+  - `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`
+  - `apps/web/src/components/orthodontics/__tests__/cephalometricMath.test.ts`
+  - `apps/web/src/components/orthodontics/__tests__/cephalometricPresetsAutonomy.test.tsx`
+  - `apps/web/src/components/orthodontics/__tests__/CephalometricAnalysisModal.test.tsx`
+  - `apps/web/src/components/diagnostics/Icd10ClinicalSelector.tsx`
+  - `apps/web/src/components/diagnostics/icd10DentalCatalog.ts`
+  - `apps/web/src/components/diagnostics/icd10MatchingEngine.ts`
+  - `apps/web/src/components/diagnostics/DiagnosticDrawer.tsx`
+  - `apps/web/src/components/clinical/SomaticAnamnesisCard.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/VisitNoteDraftPanel.tsx`
+  - `apps/api/src/services/clinical/Icd10ClinicalValidator.ts`
+  - `apps/web/src/components/lab/DentalLabOrderModal.tsx`
+  - `apps/web/src/components/lab/DentalLabOrdersHubModal.tsx`
+  - `apps/web/src/components/lab/DentalLabPrintBlank.tsx`
+  - `apps/web/src/components/lab/DentalLabRestorationTab.tsx`
+  - `apps/web/src/components/lab/DentalLabShadeSelector.tsx`
+  - `apps/web/src/components/lab/LabTrackingDrawer.tsx`
+  - `apps/web/src/components/lab/dentalLabFinancialGateEngine.ts`
+  - `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`
+  - `apps/web/src/components/lab/orders/labWorkOrderPresets.ts`
+  - `packages/shared/src/lab/labOrdersEngine.ts`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Ортодонтическая цефалометрия ТРГ и 1-клик нормы Штайнера/Твида (Orthodontic Cephalometrics & 1-Click Steiner Norms) (Мандаты 8c, 8d пп. 1, 2, 4, 6, 7, 8e пп. 1, 3, 8k, 8n, 8p, 8s)**:
+    * В `CephalometricAnalysisModal.tsx`, `CephalometricCanvas.tsx`, `cephalometricMath.ts`, `OrthodonticVisitProtocolWidget.tsx` и тестах цефалометрии:
+    * Полное уничтожение рутинного клинического трения (Friction-Killer Law, Мандат 8k): 1-клик скелетные пресеты цефалометрии («★ I Класс (Норма)», «II Класс (Дистальный)», «III Класс (Мезиальный)», «Очистить разметку») с мгновенным синтезом всех 16 анатомических ориентиров (S, N, A, B, Pog, Gn, Me, Go, Ba, Pt, Po, Or, U1T, U1A, L1T, L1A) без изнурительного ручного расставления 16 точек у кресла;
+    * Аналитический расчет канонических цефалометрических параметров Штайнера (SNA 82°, SNB 80°, ANB 2°, 1 to NA 22°/4 мм, 1 to NB 25°/4 мм, GoGn-SN 32°), Твида (FMA 25°, FMIA 65°, IMPA 90°), Даунса и Риккетса с автоматическим сопоставлением с клиническими нормами и подсветкой отклонений;
+    * Плотный 1-строчный тулбар 32–36px по Закону Хика, оверхед шапки студии <160–180px по Мандату 8p, токенизация Dark Mode по WCAG AAA без ослепляющих белых пятен;
+    * 1-клик перенос цефалометрического заключения в дневник Формы 043/у и печать протокола А4 строго с векторной графикой и без эмодзи (Мандат 8d п. 7);
+    * Глубина модального окна строго 1 (Закон Анти-Матрёшки, Мандат 8d п. 6), мобильная адаптивность для планшета у кресла (`pointer: coarse`).
+  - **Экспресс-диагностика МКБ-10 и суверенитет соматической нормы врача (Express ICD-10 Diagnostics & Somatic Norm Autonomy) (Мандаты 8c, 8d пп. 1, 3, 5, 8e пп. 1, 2, 3, 6, 8i, 8k, 8n, 8p, 8s)**:
+    * В `Icd10ClinicalSelector.tsx`, `icd10DentalCatalog.ts`, `icd10MatchingEngine.ts`, `DiagnosticDrawer.tsx`, `SomaticAnamnesisCard.tsx`, `VisitView.tsx`, `VisitNoteDraftPanel.tsx` и `Icd10ClinicalValidator.ts`:
+    * 1-клик полоса ТОП-12 амбулаторных стоматологических диагнозов МКБ-10 (K02.0, K02.1, K04.0, K04.5, K05.0, K05.1, K05.3, K08.1, K07.4, K01.1, K03.1, K08.8) с мгновенной фильтрацией и привязкой к зубной формуле;
+    * Разрешение стоматологических Z-кодов (Z01.2 профосмотр, Z00.0 диспансеризация, Z13.84 скрининг, Z46.3/4 ортодонтия и протезирование, Z96.5 имплантация) для подписания Формы 043/у без искусственного принуждения к выбору зуба;
+    * Автономия соматической нормы врача (Мандат 8e п. 3): 1-клик кнопка «Соматически здоров / норма» во всех точках входа (карточка пациента, SOAP-дневник, прием, экспресс-панель) мгновенно проставляет физиологическую норму без прохождения 50 госпитальных опросников стационара (Мандат 8i);
+    * Полный запрет заблокированных (`disabled`) кнопок «Сохранить», «Завершить приём», «Печать» из-за незаполненных второстепенных полей;
+    * Защита автосохранения (debounced autosave) с гарантией сохранения черновика при входящем звонке, переключении табов или свёртывании панелей.
+  - **Бесшовные наряды ЗТЛ у кресла и экспресс-пресеты расцветок VITA (Dental Lab ZTL Frictionless Orders & VITA Shade Presets) (Мандаты 8c, 8d пп. 2, 3, 6, 7, 8e п. 7, 8k, 8n, 8p, 8s)**:
+    * В `DentalLabOrderModal.tsx`, `DentalLabOrdersHubModal.tsx`, `DentalLabPrintBlank.tsx`, `DentalLabRestorationTab.tsx`, `DentalLabShadeSelector.tsx`, `LabTrackingDrawer.tsx`, `dentalLabFinancialGateEngine.ts`, `dentalLabWorkflowEngine.ts`, `labWorkOrderPresets.ts` и `labOrdersEngine.ts`:
+    * Полный цикл зуботехнических нарядов у кресла ортопеда: 8 канонических типов конструкций (коронки ZrO2, металлокерамика PFM, безметалловая керамика e.max, виниры, бюгельные и съемные протезы, временные PMMA, Ti-Base абатменты);
+    * Палитра VITA Classical (A1..D4) + Bleach (BL1..BL4) с 1-клик быстрым селектором и автоматической нормализацией кириллических гомоглифов («А2» -> «A2», «В1» -> «B1», «С1» -> «C1», «Д3» -> «D3») для устранения ошибок ввода и 400 Bad Request;
+    * Автономия врача при авансе < 50% и гарантийных переделках: автоматический клинический оверрайд врача без блокирующих модалок начмеда и без остановки клинического процесса; истечение 30 дней с момента создания плана лечения НЕ блокирует создание наряда ЗТЛ (Мандат 8e п. 7, Мандат 8n);
+    * 1-клик копирование структурированного наряда для курьера и зубного техника в мессенджеры (WhatsApp / Telegram) и печать официального бланка А4 с одонтограммой строго без эмодзи;
+    * Сжатие навигации и списков по Закону Хика и Миллера: не более 1–2 кнопок прямого действия на карточке наряда, вторичные действия в меню `...`.
+  - **Железный закон защиты хост-машины и однопоточного гейта компиляции (Single-Compiler Gate & Host Protection) (Мандат 8t)**:
+    * Субагенты Red Team строго изолированы от запуска тяжелых компиляторов `npm run typecheck`, `tsc -b` и `npm run build`;
+    * Централизованный компиляторный гейт выполняется строго L1 Orchestrator в однопоточном режиме с предварительным контролем нагрузки CPU (<50%).
+
