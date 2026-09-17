@@ -4,7 +4,6 @@ import {
 	Syringe,
 	AlertTriangle,
 	Heart,
-	Sparkles,
 	Plus,
 	CheckCircle2,
 	ShieldAlert,
@@ -17,7 +16,6 @@ import {
 	type AnestheticDrugId,
 	DENTAL_ANESTHETICS,
 	type InjectionTechniqueId,
-	INJECTION_TECHNIQUES,
 } from "./anesthesiaCatalog";
 import {
 	calculateAnesthesiaSafety,
@@ -110,7 +108,9 @@ export function AnesthesiaQuickBar({
 		patientAgeYears,
 		patientAgeYears < 18,
 	);
-	const [patientWeightKg, setPatientWeightKg] = useState<number>(defaultWeight);
+	const [customWeightKg, setCustomWeightKg] = useState<number | null>(null);
+	const patientWeightKg = customWeightKg ?? defaultWeight;
+	const setPatientWeightKg = (w: number) => setCustomWeightKg(w);
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(() => {
 		if (hasSulfiteAllergy || hasBronchialAsthma) return "mepivacaine_plain";
 		if (hasCardiovascularRisk) return "mepivacaine_plain";
@@ -390,7 +390,7 @@ export function AnesthesiaQuickBar({
 				</div>
 			</div>
 
-			{/* ── Drug Selection Chips (3 Primary Drugs) ── */}
+			{/* ── Drug Selection Chips (3 Primary Drugs, Hick's Law 36px density) ── */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 				{PRIMARY_ANESTHETIC_DRUGS.map((drug) => {
 					const isSelected = selectedDrugId === drug.id;
@@ -406,34 +406,40 @@ export function AnesthesiaQuickBar({
 								setSelectedDrugId(drug.id);
 								setSafetyWarning(null);
 							}}
-							className={`flex flex-col items-start p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+							className={`flex items-center justify-between px-3 py-2 min-h-[36px] sm:h-9 rounded-lg border text-left transition-all cursor-pointer ${
 								isSelected
-									? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-xs"
-									: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]"
-							} ${isSulfiteRisky ? "opacity-60 border-red-300 dark:border-red-900" : ""}`}
+									? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-xs font-bold text-[var(--ink)]"
+									: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)]"
+							} ${isSulfiteRisky ? "opacity-75 border-amber-400 dark:border-amber-600" : ""}`}
+							title={drug.subLabelRu}
 						>
-							<div className="flex items-center justify-between w-full gap-1">
-								<span className="font-bold text-xs sm:text-sm text-[var(--ink)] truncate">
-									{drug.labelRu}
-								</span>
+							<span className="text-xs sm:text-sm truncate font-bold">
+								{drug.labelRu}
+							</span>
+							<div className="flex items-center gap-1 shrink-0 ml-1.5">
 								{isCardioSuggested && (
-									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 shrink-0">
+									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
 										ССЗ выбор
 									</span>
 								)}
 								{isSulfiteRisky && (
-									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-red-500/20 text-red-700 dark:text-red-300 shrink-0">
+									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-700 dark:text-amber-300">
 										Сульфиты!
 									</span>
 								)}
 							</div>
-							<span className="text-[11px] text-[var(--muted)] mt-0.5 line-clamp-1">
-								{drug.subLabelRu}
-							</span>
 						</button>
 					);
 				})}
 			</div>
+
+			{/* ── Soft Ambient Warning for Somatic Risks (Mandate 8e: Non-blocking doctor autonomy) ── */}
+			{((hasSulfiteAllergy || hasBronchialAsthma) && !selectedDrugInfo.isAdrenalineFree) && (
+				<div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-800 dark:text-amber-200 text-xs font-medium" role="status">
+					<AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+					<span>Внимание: выбранный препарат содержит сульфиты (E223). Рекомендован Скандонест 3% (без адреналина). Введение разрешено по клиническому решению врача (Мандат 8e).</span>
+				</div>
+			)}
 
 			{/* ── 1-Click Dose Selection Row & MRD Gauge ── */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[var(--line)]/50">
@@ -626,11 +632,11 @@ export function AnesthesiaQuickBar({
 				</div>
 			)}
 
-			{/* Safety Alert Stopper */}
+			{/* Safety Alert Stopper / Confirmation Banner (Mandate 8e: 0 disabled buttons, soft confirmation) */}
 			{safetyWarning && (
-				<div className="anesthesia-safety-stopper-alert">
+				<div className="anesthesia-safety-stopper-alert" role="alert">
 					<div className="stopper-alert-content">
-						<ShieldAlert size={20} className="stopper-icon shrink-0" />
+						<ShieldAlert size={20} className="stopper-icon text-amber-500 shrink-0" />
 						<div>
 							<div className="stopper-title">{safetyWarning.title}</div>
 							<div className="stopper-text">{safetyWarning.text}</div>
@@ -643,20 +649,23 @@ export function AnesthesiaQuickBar({
 							onClick={() => {
 								setSafetyWarning(null);
 								setSelectedDrugId("mepivacaine_plain");
-								handleApplyCarpules(1.0, true);
+								handleApplyCarpules(1.0, true, "mepivacaine_plain");
 							}}
+							title="Быстро переключиться на безопасный Мепивакаин 3% без вазоконстриктора"
 						>
 							Ввести Скандонест 3% (безопасно)
 						</button>
 						<button
 							type="button"
-							className="px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+							disabled={false}
+							data-testid="btn-anesthesia-confirm-override"
+							className="px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors cursor-pointer active:scale-98 shadow-xs"
 							onClick={() => {
 								const count = safetyWarning.carpulesCount ?? 1.0;
 								setSafetyWarning(null);
 								handleApplyCarpules(count, true);
 							}}
-							title="Применить клиническое суждение врача и внести препарат в протокол 043/у"
+							title="Применить клиническое суждение врача и внести препарат в протокол 043/у (Мандат 8e: автономия врача)"
 						>
 							Всё равно внести (врачебное решение)
 						</button>

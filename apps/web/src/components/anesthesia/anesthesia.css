@@ -472,9 +472,9 @@
 	gap: 0.625rem;
 	padding: 0.75rem 1rem;
 	border-radius: 8px;
-	background: rgba(239, 68, 68, 0.1);
-	border: 1px solid rgba(239, 68, 68, 0.3);
-	color: var(--bad-fg, #ef4444);
+	background: var(--warn-bg, rgba(245, 158, 11, 0.12));
+	border: 1px solid var(--warn-fg, rgba(245, 158, 11, 0.35));
+	color: var(--warn-fg, #d97706);
 }
 
 .stopper-alert-content {
@@ -486,6 +486,7 @@
 .stopper-title {
 	font-size: 0.875rem;
 	font-weight: 700;
+	color: var(--warn-fg, #d97706);
 }
 
 .stopper-text {
