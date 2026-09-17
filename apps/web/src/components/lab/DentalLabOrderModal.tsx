@@ -415,14 +415,9 @@ export function DentalLabOrderModal({
 		return parsed != null && parsed >= 0 ? parsed : 0;
 	}, [priceRubInput]);
 
-	const { clinicAmountRub, doctorAmountRub, isBalanced } = useMemo(() => {
+	const { doctorAmountRub } = useMemo(() => {
 		return calculateLabFinancialSplit(totalLabPriceRub, doctorSharePct);
 	}, [totalLabPriceRub, doctorSharePct]);
-
-	const handleSharePreset = (clinic: number, doctor: number) => {
-		setClinicSharePct(clinic);
-		setDoctorSharePct(doctor);
-	};
 
 	const handleApplyOneClickDefaults = () => {
 		setConstructionType(ONE_CLICK_LAB_DEFAULTS.restorationTypeSingle);
@@ -504,7 +499,7 @@ export function DentalLabOrderModal({
 		let effectiveOverride = gateOverride;
 		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed && !isWarrantyOrder && !effectiveOverride) {
 			effectiveOverride = createDoctorClinicalOverride(
-				formDoctorName || "Лечащий врач",
+				formDoctorName || chiefDoctorName || "Лечащий врач",
 				"Отправка наряда в ЗТЛ — клиническое решение лечащего врача (Автономия врача)",
 			);
 			setGateOverride(effectiveOverride);
@@ -902,7 +897,7 @@ export function DentalLabOrderModal({
 								type="button"
 								onClick={() => {
 									const override = createDoctorClinicalOverride(
-										formDoctorName || "Лечащий врач",
+										formDoctorName || chiefDoctorName || "Лечащий врач",
 										"Отправить наряд в ЗТЛ — клиническое решение лечащего врача",
 									);
 									setGateOverride(override);
@@ -945,12 +940,12 @@ export function DentalLabOrderModal({
 											key={preset.id}
 											type="button"
 											onClick={() => handleApplyExpressPreset(preset)}
-											className="min-h-[36px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation"
+											className="min-h-[36px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation min-w-0"
 											title={preset.shortDesc}
 											data-testid={`lab-preset-btn-${preset.id}`}
 										>
 											<Zap size={13} className="text-amber-500 shrink-0" />
-											<span>{preset.title}</span>
+											<span className="truncate">{preset.title}</span>
 										</button>
 									))}
 								</div>

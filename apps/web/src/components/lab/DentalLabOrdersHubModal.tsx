@@ -528,15 +528,15 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 				)}
 				{/* ─── 1. ШАПКА ХАБА ────────────────────────────────────────────── */}
 				<header className="ztl-hub-header">
-					<div className="ztl-hub-title-group">
-						<div className="ztl-hub-icon-wrap">
+					<div className="ztl-hub-title-group min-w-0 flex-1">
+						<div className="ztl-hub-icon-wrap shrink-0">
 							<FlaskConical size={20} />
 						</div>
-						<div>
-							<h2 id="ztl-hub-title" className="ztl-hub-title">
+						<div className="min-w-0 flex-1">
+							<h2 id="ztl-hub-title" className="ztl-hub-title truncate">
 								Центр наряд-заказов зуботехнической лаборатории (ЗТЛ)
 							</h2>
-							<p className="ztl-hub-subtitle">
+							<p className="ztl-hub-subtitle truncate">
 								4 клинических статуса, сверка даты примерки с расписанием и целочисленный учет себестоимости
 							</p>
 						</div>
@@ -825,26 +825,26 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 													</div>
 
 													{order.isWarrantyRework && (
-														<div style={{ marginTop: "4px", fontSize: "10.5px", color: "#e11d48", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+														<div style={{ marginTop: "4px", fontSize: "10.5px", color: "var(--bad-fg, #e11d48)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
 															<RotateCcw size={11} />
-															<span>ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽){order.originalOrderNumber ? ` • исх. № ${order.originalOrderNumber}` : ""}</span>
+															<span className="truncate">ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽){order.originalOrderNumber ? ` • исх. № ${order.originalOrderNumber}` : ""}</span>
 														</div>
 													)}
 
-													<h4 className="ztl-card-patient-name" title={order.patientName}>
+													<h4 className="ztl-card-patient-name truncate min-w-0" title={order.patientName}>
 														{order.patientName}
 													</h4>
 
-													<p className="ztl-card-doctor">
+													<p className="ztl-card-doctor truncate min-w-0" title={order.doctorName}>
 														{order.doctorName}
 													</p>
 
-													<div className="ztl-card-work-type">
+													<div className="ztl-card-work-type truncate min-w-0" title={`${preset.shortNameRu} (${order.shadeCode})`}>
 														{preset.shortNameRu} ({order.shadeCode})
 													</div>
 
-													<div className="ztl-card-lab-name">
-														<Building2 size={11} />
+													<div className="ztl-card-lab-name min-w-0" title={order.labName}>
+														<Building2 size={11} className="shrink-0" />
 														<span className="truncate">{order.labName}</span>
 													</div>
 
@@ -854,18 +854,19 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 															style={{
 																fontSize: "10.5px",
 																fontWeight: 700,
-																color: LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.colorToken || "#3b82f6",
-																background: "rgba(59, 130, 246, 0.08)",
+																color: LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.colorToken || "var(--teal, #3b82f6)",
+																background: "var(--teal-surface, rgba(59, 130, 246, 0.08))",
 																padding: "2px 6px",
 																borderRadius: "4px",
 																display: "inline-flex",
 																alignItems: "center",
 																gap: "4px",
 															}}
+															className="truncate min-w-0"
 															title={`Этап ${LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1} из 8: ${LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.departmentRu || ""}`}
 														>
-															<span>Этап {LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1}/8:</span>
-															<span>{LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.shortTitleRu || order.techStage}</span>
+															<span className="shrink-0">Этап {LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1}/8:</span>
+															<span className="truncate">{LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.shortTitleRu || order.techStage}</span>
 														</span>
 													</div>
 
@@ -909,7 +910,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 													{/* Финансы: цена / себестоимость в копейках */}
 													<div className="ztl-card-price-row">
-														<span title="Стоимость для пациента" style={order.isWarrantyRework ? { color: "#10b981", fontWeight: 700 } : undefined}>
+														<span title="Стоимость для пациента" style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined}>
 															{order.isWarrantyRework ? "0 ₽ (Гарантия)" : `${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽`}
 														</span>
 														<span style={{ color: "var(--muted, #64748b)", fontSize: "10px" }} title="Себестоимость ЗТЛ">
@@ -933,7 +934,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 															<button
 																type="button"
 																className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
-																style={{ color: "#059669", borderColor: "#a7f3d0", background: "rgba(16, 185, 129, 0.08)", fontWeight: 700 }}
+																style={{ color: "var(--teal, #059669)", borderColor: "var(--teal-soft, #a7f3d0)", background: "var(--teal-surface, rgba(16, 185, 129, 0.08))", fontWeight: 700 }}
 																onClick={() => setInspectingOrder(order)}
 																title="Работа зафиксирована и сдана пациенту"
 																data-testid={`ztl-card-status-${order.id}`}
@@ -1223,7 +1224,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 																			borderRadius: "6px",
 																			border: "none",
 																			background: "transparent",
-																			color: "#e11d48",
+																			color: "var(--bad-fg, #e11d48)",
 																			fontSize: "12px",
 																			fontWeight: 500,
 																			cursor: "pointer",
@@ -1635,24 +1636,24 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 								)}
 
 								<div className="ztl-form-grid-2">
-									<div>
+									<div className="min-w-0">
 										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Пациент:</p>
-										<p style={{ margin: 0, fontWeight: 700 }}>{inspectingOrder.patientName}</p>
+										<p style={{ margin: 0, fontWeight: 700 }} className="truncate" title={inspectingOrder.patientName}>{inspectingOrder.patientName}</p>
 									</div>
-									<div>
+									<div className="min-w-0">
 										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Врач-ортопед:</p>
-										<p style={{ margin: 0, fontWeight: 700 }}>{inspectingOrder.doctorName}</p>
+										<p style={{ margin: 0, fontWeight: 700 }} className="truncate" title={inspectingOrder.doctorName}>{inspectingOrder.doctorName}</p>
 									</div>
 								</div>
 
 								<div className="ztl-form-grid-2">
-									<div>
+									<div className="min-w-0">
 										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Лаборатория:</p>
-										<p style={{ margin: 0, fontWeight: 600 }}>{inspectingOrder.labName}</p>
+										<p style={{ margin: 0, fontWeight: 600 }} className="truncate" title={inspectingOrder.labName}>{inspectingOrder.labName}</p>
 									</div>
-									<div>
+									<div className="min-w-0">
 										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Конструкция:</p>
-										<p style={{ margin: 0, fontWeight: 600 }}>{inspectingOrder.materialName}</p>
+										<p style={{ margin: 0, fontWeight: 600 }} className="truncate" title={inspectingOrder.materialName}>{inspectingOrder.materialName}</p>
 									</div>
 								</div>
 
@@ -1722,7 +1723,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 														padding: "6px",
 														borderRadius: "6px",
 														border: isCurrent ? "2px solid var(--teal, #0d9488)" : "1px solid var(--line, #e2e8f0)",
-														background: isCurrent ? "var(--teal-surface, #f0fdfa)" : isDone ? "var(--paper-soft, #f8fafc)" : "var(--paper, #fff)",
+														background: isCurrent ? "var(--teal-surface, #f0fdfa)" : isDone ? "var(--paper-soft, #f8fafc)" : "var(--paper, #ffffff)",
 														color: isCurrent ? "var(--teal, #0f766e)" : isDone ? "var(--muted, #64748b)" : "var(--ink, #0f172a)",
 														textAlign: "left",
 														cursor: "pointer",
@@ -1732,7 +1733,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 												>
 													<div style={{ fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
 														<span>№{sDef.stepNumber}</span>
-														<span style={{ fontSize: "9.5px", color: isDone ? "#059669" : isCurrent ? "#0d9488" : "#94a3b8" }}>
+														<span style={{ fontSize: "9.5px", color: isDone ? "var(--teal, #059669)" : isCurrent ? "var(--teal, #0d9488)" : "var(--muted, #94a3b8)" }}>
 															{isDone ? "✓" : isCurrent ? "В РАБОТЕ" : "ОЖИДАНИЕ"}
 														</span>
 													</div>
@@ -1781,7 +1782,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 									<button
 										type="button"
 										className="ztl-btn-secondary"
-										style={{ color: "#e11d48", borderColor: "#fecdd3", fontWeight: 700 }}
+										style={{ color: "var(--bad-fg, #e11d48)", borderColor: "var(--bad-line, #fecdd3)", fontWeight: 700 }}
 										onClick={() => {
 											const target = inspectingOrder;
 											setInspectingOrder(null);
@@ -1820,10 +1821,10 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 				{warrantyReworkOrder && (
 					<div className="ztl-detail-overlay">
 						<div className="ztl-detail-card" style={{ maxWidth: "480px" }}>
-							<header className="ztl-detail-header" style={{ borderBottom: "2px solid #e11d48" }}>
+							<header className="ztl-detail-header" style={{ borderBottom: "2px solid var(--bad-fg, #e11d48)" }}>
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-									<RotateCcw size={18} color="#e11d48" />
-									<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#e11d48" }}>
+									<RotateCcw size={18} color="var(--bad-fg, #e11d48)" />
+									<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--bad-fg, #e11d48)" }}>
 										Гарантийная рекламация наряда № {warrantyReworkOrder.orderNumber}
 									</h3>
 								</div>
@@ -1880,10 +1881,87 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 									<button
 										type="submit"
 										className="ztl-btn-primary"
-										style={{ background: "#e11d48", borderColor: "#be123c", color: "#ffffff" }}
+										style={{ background: "var(--bad-fg, #e11d48)", borderColor: "var(--bad-border, #be123c)", color: "var(--paper-strong, #ffffff)" }}
 									>
 										<RotateCcw size={14} />
 										<span>Отправить на рекламацию</span>
+									</button>
+								</footer>
+							</form>
+						</div>
+					</div>
+				)}
+
+				{/* ─── 8. НЕБЛОКИРУЮЩИЙ ДИАЛОГ ВВОДА (ФОТО ПРИКУСА / КОММЕНТАРИЙ ТЕХНИКУ) ─── */}
+				{actionPrompt && (
+					<div className="ztl-detail-overlay" data-testid="ztl-action-prompt-modal">
+						<div className="ztl-detail-card" style={{ maxWidth: "480px" }}>
+							<header className="ztl-detail-header">
+								<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>
+									{actionPrompt.title}
+								</h3>
+								<button
+									type="button"
+									className="ztl-btn-icon"
+									onClick={() => {
+										setActionPrompt(null);
+										setActionPromptValue("");
+									}}
+									aria-label="Закрыть"
+								>
+									<X size={16} />
+								</button>
+							</header>
+
+							<form onSubmit={handleActionPromptSubmit}>
+								<div className="ztl-detail-body">
+									<div className="ztl-form-group">
+										<label className="ztl-form-label">{actionPrompt.label}</label>
+										{actionPrompt.type === "bite_photo" ? (
+											<input
+												type="text"
+												className="ztl-form-input"
+												placeholder={actionPrompt.placeholder}
+												value={actionPromptValue}
+												onChange={(e) => setActionPromptValue(e.target.value)}
+												data-testid="ztl-action-prompt-input"
+												autoFocus
+												required
+											/>
+										) : (
+											<textarea
+												className="ztl-form-input"
+												style={{ height: "80px", padding: "8px 10px", resize: "none" }}
+												placeholder={actionPrompt.placeholder}
+												value={actionPromptValue}
+												onChange={(e) => setActionPromptValue(e.target.value)}
+												data-testid="ztl-action-prompt-input"
+												autoFocus
+												required
+											/>
+										)}
+									</div>
+								</div>
+
+								<footer className="ztl-detail-footer">
+									<button
+										type="button"
+										className="ztl-btn-secondary"
+										onClick={() => {
+											setActionPrompt(null);
+											setActionPromptValue("");
+										}}
+										data-testid="ztl-action-prompt-cancel"
+									>
+										Отмена
+									</button>
+									<button
+										type="submit"
+										className="ztl-btn-primary"
+										data-testid="ztl-action-prompt-submit"
+									>
+										<CheckCircle2 size={14} />
+										<span>Сохранить</span>
 									</button>
 								</footer>
 							</form>
