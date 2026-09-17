@@ -111,11 +111,13 @@
 	border-color: var(--line-strong, var(--line));
 }
 
-/* Tabs */
+/* Tabs (Hick's Law 32-36px compact desktop bar) */
 .warranty-tabs-bar {
 	display: flex;
+	align-items: center;
 	gap: 4px;
-	padding: 8px 16px;
+	padding: 4px 16px;
+	min-height: 40px;
 	background: var(--paper-soft, var(--paper));
 	border-bottom: 1px solid var(--line);
 	overflow-x: auto;
@@ -124,14 +126,16 @@
 .warranty-tab-btn {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 8px 14px;
-	min-height: 40px;
+	gap: 6px;
+	padding: 6px 12px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 34px;
 	border-radius: 6px;
 	border: 1px solid transparent;
 	background: transparent;
 	color: var(--ink-2, var(--ink));
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 600;
 	cursor: pointer;
 	white-space: nowrap;
@@ -248,6 +252,72 @@
 	border-color: var(--ok-fg);
 	background: var(--ok-bg);
 	color: var(--ok-fg);
+}
+
+/* 1-Click StAR Quick Presets Bar (Mandate 8k & 8e) */
+.warranty-star-presets-bar {
+	margin-bottom: 12px;
+	padding: 10px 12px;
+	background: var(--paper);
+	border: 1px dashed var(--line-strong, var(--line));
+	border-radius: 8px;
+}
+
+.warranty-star-presets-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+	margin-bottom: 8px;
+}
+
+.warranty-star-presets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+	gap: 8px;
+}
+
+.warranty-star-chip {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 8px 10px;
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease;
+}
+
+.warranty-star-chip:hover {
+	border-color: var(--teal);
+	background: var(--surface-100, var(--paper));
+}
+
+.warranty-star-chip.active {
+	border-color: var(--teal);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.2);
+}
+
+.warranty-star-chip strong {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+	display: block;
+	width: 100%;
+}
+
+.warranty-star-chip span {
+	font-size: 11px;
+	color: var(--teal);
+	font-weight: 600;
+	margin-top: 2px;
+	display: block;
+	width: 100%;
 }
 
 /* Category presets grid */
@@ -567,18 +637,19 @@
 }
 
 .warranty-btn-secondary {
-	min-height: 40px;
-	padding: 0 16px;
+	height: 34px;
+	min-height: 34px;
+	padding: 0 14px;
 	border-radius: 6px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 600;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	transition: all 0.15s ease;
 }
 
@@ -588,18 +659,19 @@
 }
 
 .warranty-btn-primary {
-	min-height: 40px;
-	padding: 0 18px;
+	height: 34px;
+	min-height: 34px;
+	padding: 0 16px;
 	border-radius: 6px;
 	border: 1px solid var(--teal);
 	background: var(--teal);
 	color: var(--paper-strong);
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 700;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	transition: all 0.15s ease;
 	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
 }
@@ -610,6 +682,74 @@
 
 .warranty-btn-primary:active {
 	transform: translateY(1px);
+}
+
+/* Share Dropdown Popover (WhatsApp / Telegram / Copy) */
+.warranty-share-dropdown-wrap {
+	position: relative;
+	display: inline-block;
+}
+
+.warranty-share-popover {
+	position: absolute;
+	bottom: calc(100% + 8px);
+	right: 0;
+	z-index: 10000;
+	min-width: 260px;
+	background: var(--paper-strong, var(--paper));
+	border: 1px solid var(--line-strong, var(--line));
+	border-radius: 8px;
+	box-shadow: var(--shadow-2, 0 10px 25px -5px rgba(0, 0, 0, 0.3));
+	padding: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	animation: warrantyFadeIn 0.15s ease-out;
+}
+
+.warranty-share-menu-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 8px 10px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--ink);
+	cursor: pointer;
+	text-align: left;
+	font-size: 12px;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.warranty-share-menu-item:hover {
+	background: var(--surface-100, var(--paper-soft));
+	border-color: var(--line);
+}
+
+.warranty-share-menu-item strong {
+	display: block;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.warranty-share-menu-item .sub {
+	display: block;
+	font-size: 11px;
+	color: var(--ink-2);
+}
+
+/* Common text helpers */
+.truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.min-w-0 {
+	min-width: 0;
 }
 
 /* ============================================================================
@@ -654,13 +794,14 @@
 }
 
 .warranty-btn-remediation-quick {
-	min-height: 44px;
-	padding: 0 16px;
+	height: 34px;
+	min-height: 34px;
+	padding: 0 14px;
 	border-radius: 6px;
 	background: var(--ok-fg, #059669);
 	color: #ffffff;
 	border: none;
-	font-size: 12.5px;
+	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
 	display: flex;
@@ -677,6 +818,37 @@
 
 .warranty-btn-remediation-quick:active {
 	transform: translateY(1px);
+}
+
+/* 1-Click Completed Stages Import Banner (Mandate 8e & 8k) */
+.warranty-stages-import-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 10px 14px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
+	border: 1px solid var(--teal, #0d9488);
+	border-radius: 8px;
+	margin-bottom: 12px;
+}
+
+.warranty-stages-banner-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.warranty-stages-import-banner strong {
+	font-size: 13px;
+	color: var(--ink);
+	display: block;
+}
+
+.warranty-stages-import-banner p {
+	font-size: 11.5px;
+	color: var(--ink-2);
+	margin: 2px 0 0 0;
 }
 
 /* Remediation Tab in Header */
@@ -945,18 +1117,19 @@
 }
 
 .warranty-btn-remediation-submit {
-	min-height: 44px;
-	padding: 0 20px;
+	height: 36px;
+	min-height: 36px;
+	padding: 0 18px;
 	border-radius: 6px;
 	border: 1px solid var(--ok-fg, #059669);
 	background: var(--ok-fg, #059669);
 	color: #ffffff;
-	font-size: 13.5px;
+	font-size: 13px;
 	font-weight: 700;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	transition: all 0.15s ease;
 	box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
 }

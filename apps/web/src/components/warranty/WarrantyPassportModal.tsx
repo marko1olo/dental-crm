@@ -7,45 +7,41 @@
  */
 
 import {
-	AlertTriangle,
 	Award,
 	Calendar,
 	Check,
 	CheckCircle2,
-	ChevronRight,
 	Copy,
-	Download,
 	Eye,
 	FileCheck,
 	FileText,
 	Layers,
+	MessageSquare,
 	Plus,
 	Printer,
 	QrCode,
-	RefreshCw,
+	Send,
+	Share2,
 	ShieldAlert,
 	ShieldCheck,
 	Sliders,
 	Sparkles,
 	Trash2,
-	User,
 	X,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-	addMonthsToDate,
 	calculateMultiItemWarrantyTerms,
-	calculateWarrantyTerms,
 	createWarrantyRemediationOrder,
-	formatRussianDate,
 	formatShortDate,
 	generateCertificateId,
 	generateQrCodeSvg,
 	generateSha256,
 	generateUuidV7,
 	generateWarrantyCertificateHtml,
+	generateWarrantyPatientMemo,
 	generateWarrantyRemediationActHtml,
 	type WarrantyCalculationResult,
 	type WarrantyCertificateData,
@@ -61,14 +57,26 @@ import {
 	getWarrantyDefectTemplate,
 	getWarrantyPreset,
 	MANDATORY_WARRANTY_CONDITIONS,
+	STAR_QUICK_PRESETS,
+	type StarQuickPreset,
 	VITA_SHADES,
 	type WarrantyCategory,
-	type WarrantyDefectTemplate,
 	type WarrantyDefectType,
-	WARRANTY_DEFECT_TEMPLATES,
-	type WarrantyPreset,
 	type WarrantyRemediationMaterialItem,
 } from "./warrantyPresets.js";
+
+export interface CompletedTreatmentStage {
+	readonly id?: string | undefined;
+	readonly toothNumber?: string | undefined;
+	readonly serviceTitle: string;
+	readonly category?: WarrantyCategory | undefined;
+	readonly materialName?: string | undefined;
+	readonly manufacturer?: string | undefined;
+	readonly serviceCode804n?: string | undefined;
+	readonly labOrderNumber?: string | undefined;
+	readonly price?: number | undefined;
+	readonly completedAt?: string | undefined;
+}
 
 export interface WarrantyPassportModalProps {
 	isOpen: boolean;
@@ -91,6 +99,7 @@ export interface WarrantyPassportModalProps {
 	clinicWebsite?: string | null | undefined;
 	initialCategory?: WarrantyCategory | undefined;
 	initialTeeth?: string[] | undefined;
+	completedStages?: CompletedTreatmentStage[] | undefined;
 	onCertificateIssued?: ((certificate: WarrantyCertificateData) => void) | undefined;
 	onAttachToForm043u?: ((payload: {
 		certificateId: string;
@@ -108,6 +117,98 @@ const UPPER_LEFT_TEETH = ["21", "22", "23", "24", "25", "26", "27", "28"];
 const LOWER_RIGHT_TEETH = ["48", "47", "46", "45", "44", "43", "42", "41"];
 const LOWER_LEFT_TEETH = ["31", "32", "33", "34", "35", "36", "37", "38"];
 
+/**
+ * Автоопределение категории стоматологической помощи по названию услуги плана лечения (Мандат 8e/8k)
+ */
+export const detectCategoryFromServiceTitle = (title: string): WarrantyCategory => {
+	const lower = title.toLowerCase();
+	if (lower.includes("имплант") || lower.includes("implant")) return "implant_fixture";
+	if (lower.includes("временн") || lower.includes("провизор"))
+		return "temporary_prosthesis";
+	if (lower.includes("циркон") || lower.includes("zircon")) return "ceramic_crown_veneer";
+	if (
+		lower.includes("e.max") ||
+		lower.includes("emax") ||
+		lower.includes("керамич") ||
+		lower.includes("коронк") ||
+		lower.includes("винир") ||
+		lower.includes("вкладк")
+	)
+		return "ceramic_crown_veneer";
+	if (
+		lower.includes("элайнер") ||
+		lower.includes("брекет") ||
+		lower.includes("ретейнер") ||
+		lower.includes("ортодонт")
+	)
+		return "orthodontic_aligners";
+	if (
+		lower.includes("канал") ||
+		lower.includes("пульпит") ||
+		lower.includes("периодонтит") ||
+		lower.includes("эндодонт")
+	)
+		return "endodontic_treatment";
+	if (lower.includes("протез") || lower.includes("бюгель") || lower.includes("съемн"))
+		return "removable_prosthesis";
+	if (lower.includes("шин")) return "periodontal_splinting";
+	return "composite_restoration";
+};
+
+/**
+ * 1-Клик конвертация завершенных этапов лечения в позиции гарантийного паспорта
+ */
+export const mapCompletedStagesToWarrantyItems = (stages: CompletedTreatmentStage[]): WarrantyItem[] => {
+	return stages.map((st) => {
+		const cat = st.category || detectCategoryFromServiceTitle(st.serviceTitle);
+		const preset = getWarrantyPreset(cat);
+		const mat = DENTAL_MATERIALS_CATALOG.find((m) => m.category === cat);
+		const rawTooth = st.toothNumber ? String(st.toothNumber).trim() : "1.6";
+		const tooth =
+			rawTooth.length === 2 && !rawTooth.includes(".")
+				? `${rawTooth[0]}.${rawTooth[1]}`
+				: rawTooth || "1.6";
+
+		let matName = st.materialName || mat?.name || preset.recommendedMaterials[0] || "Стоматологический материал";
+		let manufacturer = st.manufacturer || mat?.manufacturer || preset.popularManufacturers[0] || "Производитель";
+		let country = mat?.country || "Германия";
+		let warrantyMonths = preset.baseWarrantyMonths;
+
+		const lower = st.serviceTitle.toLowerCase();
+		if (lower.includes("e.max") || lower.includes("emax")) {
+			if (!st.materialName) matName = "IPS e.max Press (дисиликат лития)";
+			if (!st.manufacturer) manufacturer = "Ivoclar Vivadent";
+			country = "Лихтенштейн";
+			warrantyMonths = 24;
+		} else if (lower.includes("циркон") || lower.includes("zircon")) {
+			if (!st.materialName) matName = "Katana Zirconia HTML/UTML";
+			if (!st.manufacturer) manufacturer = "Kuraray Noritake";
+			country = "Япония";
+			warrantyMonths = 36;
+		} else if (lower.includes("straumann")) {
+			if (!st.materialName) matName = "Straumann BLX / BLT SLActive Roxolid";
+			if (!st.manufacturer) manufacturer = "Straumann";
+			country = "Швейцария";
+			warrantyMonths = 24;
+		}
+
+		return {
+			id: generateUuidV7(),
+			toothNumber: tooth,
+			category: cat,
+			clinicalWorkTitle: st.serviceTitle || preset.title,
+			materialName: matName,
+			manufacturer,
+			country,
+			vitaShade: "A2",
+			serviceCode804n: st.serviceCode804n || preset.serviceCode804n,
+			labOrderNumber: st.labOrderNumber,
+			baseWarrantyMonths: warrantyMonths,
+			baseServiceLifeMonths: preset.baseServiceLifeMonths,
+		};
+	});
+};
+
 export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	isOpen,
 	onClose,
@@ -122,6 +223,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	clinicWebsite = "",
 	initialCategory = "composite_restoration",
 	initialTeeth = [],
+	completedStages = [],
 	onCertificateIssued,
 	onAttachToForm043u,
 	onRemediationCreated,
@@ -174,9 +276,14 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	const [certificateId, setCertificateId] = useState<string>("");
 	const [issueDate, setIssueDate] = useState<string>("");
 	const [copiedLink, setCopiedLink] = useState(false);
+	const [copiedMemo, setCopiedMemo] = useState(false);
+	const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
 	const [attachedStatus, setAttachedStatus] = useState(false);
 
 	const initialTeethKey = initialTeeth ? initialTeeth.join(",") : "";
+	const completedStagesKey = completedStages
+		? completedStages.map((s) => `${s.toothNumber ?? ""}-${s.serviceTitle}`).join(",")
+		: "";
 
 	// Инициализация при открытии модального окна
 	useEffect(() => {
@@ -187,6 +294,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 			setIssueDate(nowIso);
 			setAttachedStatus(false);
 			setCopiedLink(false);
+			setCopiedMemo(false);
+			setIsShareMenuOpen(false);
 
 			const preset = getWarrantyPreset(initialCategory);
 			setActiveCategory(initialCategory);
@@ -202,8 +311,14 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 				setCurrentShade(mat.popularShades?.[0] ?? "A2");
 			}
 
-			// Если переданы начальные зубы, создаем первичную позицию
-			if (initialTeeth && initialTeeth.length > 0) {
+			// 1-Клик автозаполнение из завершенных этапов плана лечения (Мандат 8e & 8k)
+			if (completedStages && completedStages.length > 0) {
+				const stageItems = mapCompletedStagesToWarrantyItems(completedStages);
+				setItems(stageItems);
+				if (stageItems[0]) {
+					setSelectedRemediationTooth(stageItems[0].toothNumber);
+				}
+			} else if (initialTeeth && initialTeeth.length > 0) {
 				const initialItems: WarrantyItem[] = initialTeeth.map((tooth) => ({
 					id: generateUuidV7(),
 					toothNumber: tooth,
@@ -243,13 +358,15 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 			setCustomRemediationAction(defTmpl.recommendedAction);
 			setRemediationMaterials([...defTmpl.defaultMaterials]);
 			setRemediationSuccessNotice(null);
-			if (initialTeeth && initialTeeth.length > 0) {
+			if (completedStages && completedStages.length > 0 && completedStages[0]?.toothNumber) {
+				setSelectedRemediationTooth(completedStages[0].toothNumber);
+			} else if (initialTeeth && initialTeeth.length > 0) {
 				setSelectedRemediationTooth(initialTeeth[0] || "1.6");
 			} else {
 				setSelectedRemediationTooth("1.6");
 			}
 		}
-	}, [isOpen, initialCategory, initialTeethKey]);
+	}, [isOpen, initialCategory, initialTeethKey, completedStagesKey]);
 
 	// Обработчик выбора категории
 	const handleSelectCategory = (cat: WarrantyCategory) => {
@@ -494,6 +611,54 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 		}
 	};
 
+	// 1-Клик формирование и отправка памятки пациенту в WhatsApp (Мандат 8k)
+	const handleShareWhatsApp = () => {
+		const memo = generateWarrantyPatientMemo(certificateData);
+		const phoneDigits = patient?.phone ? patient.phone.replace(/\D/g, "") : "";
+		const waUrl = phoneDigits
+			? `https://api.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(memo)}`
+			: `https://api.whatsapp.com/send?text=${encodeURIComponent(memo)}`;
+		window.open(waUrl, "_blank");
+		setIsShareMenuOpen(false);
+	};
+
+	// 1-Клик отправка памятки пациенту в Telegram (Мандат 8k)
+	const handleShareTelegram = () => {
+		const memo = generateWarrantyPatientMemo(certificateData);
+		const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(certificateData.verificationUrl)}&text=${encodeURIComponent(memo)}`;
+		window.open(tgUrl, "_blank");
+		setIsShareMenuOpen(false);
+	};
+
+	// Копирование официальной памятки в буфер обмена для любых мессенджеров
+	const handleCopyMemo = () => {
+		const memo = generateWarrantyPatientMemo(certificateData);
+		if (navigator.clipboard) {
+			navigator.clipboard.writeText(memo);
+			setCopiedMemo(true);
+			setTimeout(() => setCopiedMemo(false), 2500);
+		}
+	};
+
+	// 1-Клик импорт из завершенных этапов плана лечения (Мандат 8e)
+	const handleImportCompletedStages = () => {
+		if (completedStages && completedStages.length > 0) {
+			const imported = mapCompletedStagesToWarrantyItems(completedStages);
+			setItems(imported);
+		}
+	};
+
+	// 1-Клик применение клинического норматива СтАР
+	const handleApplyStarQuickPreset = (qp: StarQuickPreset) => {
+		setActiveCategory(qp.category);
+		setCurrentWorkTitle(qp.title);
+		setCurrentMaterial(qp.materialName);
+		setCurrentManufacturer(qp.manufacturer);
+		setCurrentCountry(qp.country);
+		setCurrentServiceCode804n(qp.serviceCode804n);
+		setCustomWarrantyMonths(qp.warrantyMonths);
+	};
+
 	if (!isOpen) return null;
 
 	const modalContent = (
@@ -600,6 +765,28 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 									</button>
 								</div>
 
+								{/* 1-клик импорт из завершенных этапов плана лечения (Мандат 8e & 8k) */}
+								{completedStages && completedStages.length > 0 && (
+									<div className="warranty-stages-import-banner">
+										<div className="warranty-stages-banner-left">
+											<FileCheck size={18} style={{ color: "var(--teal)", flexShrink: 0 }} />
+											<div>
+												<strong>Завершенные этапы плана лечения ({completedStages.length} поз.)</strong>
+												<p>1-клик генерация гарантийного паспорта по всем выполненным манипуляциям</p>
+											</div>
+										</div>
+										<button
+											type="button"
+											className="warranty-btn-secondary"
+											onClick={handleImportCompletedStages}
+											title="Сформировать позиции паспорта из завершенного плана лечения"
+										>
+											<CheckCircle2 size={14} style={{ color: "var(--ok-fg)" }} />
+											Заполнить из плана ({completedStages.length})
+										</button>
+									</div>
+								)}
+
 								{/* Зубная формула */}
 								<div className="warranty-card-section">
 									<div className="warranty-section-header">
@@ -607,7 +794,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 											<Award size={16} />
 											1. Выберите зубы для включения в сертификат:
 										</h4>
-										<span className="warranty-label">
+										<span className="warranty-label truncate min-w-0">
 											Выбрано: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "нет"}
 										</span>
 									</div>
@@ -692,6 +879,28 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 											<Layers size={16} />
 											2. Нормативная категория стоматологической помощи:
 										</h4>
+									</div>
+
+									{/* 1-Клик нормативные пресеты СтАР (Мандат 8k) */}
+									<div className="warranty-star-presets-bar">
+										<div className="warranty-star-presets-title">
+											<Award size={14} style={{ color: "var(--teal)" }} />
+											<span>1-Клик нормативные пресеты СтАР (Мандат 8k & 8e):</span>
+										</div>
+										<div className="warranty-star-presets-grid">
+											{STAR_QUICK_PRESETS.map((qp) => (
+												<button
+													key={qp.id}
+													type="button"
+													className={`warranty-star-chip ${activeCategory === qp.category && currentWorkTitle === qp.title ? "active" : ""}`}
+													onClick={() => handleApplyStarQuickPreset(qp)}
+													title={`${qp.title} (${qp.statutoryNote})`}
+												>
+													<strong className="truncate min-w-0">{qp.title}</strong>
+													<span className="truncate min-w-0">{qp.subtitle}</span>
+												</button>
+											))}
+										</div>
 									</div>
 
 									<div className="warranty-presets-grid">
@@ -840,16 +1049,16 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 														<td>
 															<strong>{it.toothNumber}</strong>
 														</td>
-														<td>
-															<div>{it.clinicalWorkTitle}</div>
+														<td style={{ maxWidth: "200px" }}>
+															<div className="truncate min-w-0" title={it.clinicalWorkTitle}>{it.clinicalWorkTitle}</div>
 															{it.serviceCode804n && (
 																<div className="warranty-804n-badge" title="Код Номенклатуры 804н">
 																	804н: {it.serviceCode804n}
 																</div>
 															)}
 														</td>
-														<td>
-															<div>{it.materialName}</div>
+														<td style={{ maxWidth: "220px" }}>
+															<div className="truncate min-w-0" title={it.materialName}>{it.materialName}</div>
 															{it.labOrderNumber && (
 																<div className="warranty-ztl-badge" title="Номер наряда зуботехнической лаборатории">
 																	ЗТЛ: {it.labOrderNumber}
@@ -1178,15 +1387,15 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 								</div>
 								<div className="warranty-statutory-features">
 									<div className="statutory-feat-pill">
-										<Check size={14} className="text-emerald-500" />
+										<Check size={14} style={{ color: "var(--ok-fg)" }} />
 										<span>Пациент платит: <strong>0 ₽ (Скидка 100%)</strong></span>
 									</div>
 									<div className="statutory-feat-pill">
-										<Check size={14} className="text-emerald-500" />
+										<Check size={14} style={{ color: "var(--ok-fg)" }} />
 										<span>Материалы: <strong>Списание со склада по факту</strong></span>
 									</div>
 									<div className="statutory-feat-pill">
-										<Check size={14} className="text-emerald-500" />
+										<Check size={14} style={{ color: "var(--ok-fg)" }} />
 										<span>Свобода врача: <strong>Без мастер-паролей начмеда</strong></span>
 									</div>
 								</div>
@@ -1371,21 +1580,57 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 				<div className="warranty-modal-footer">
 					<div className="warranty-footer-left">
 						<QrCode size={16} />
-						<span>Сертификат: {certificateId}</span>
+						<span className="truncate min-w-0">Сертификат: {certificateId}</span>
 						<span>•</span>
-						<span>ЭЦП: {certificateData.integrityHash.slice(0, 16)}...</span>
+						<span className="truncate min-w-0">ЭЦП: {certificateData.integrityHash.slice(0, 16)}...</span>
 					</div>
 
 					<div className="warranty-footer-right">
-						<button
-							type="button"
-							className="warranty-btn-secondary"
-							onClick={handleCopyLink}
-							title="Скопировать ссылку для пациента"
-						>
-							{copiedLink ? <Check size={16} /> : <Copy size={16} />}
-							{copiedLink ? "Ссылка скопирована!" : "Ссылка для пациента"}
-						</button>
+						{/* Памятка в WhatsApp / Telegram (Мандат 8k) */}
+						<div className="warranty-share-dropdown-wrap">
+							<button
+								type="button"
+								className="warranty-btn-secondary"
+								onClick={() => setIsShareMenuOpen(!isShareMenuOpen)}
+								title="Отправить памятку пациенту в WhatsApp или Telegram"
+							>
+								<MessageSquare size={16} />
+								<span>Памятка в WhatsApp / TG</span>
+							</button>
+
+							{isShareMenuOpen && (
+								<div className="warranty-share-popover">
+									<button type="button" className="warranty-share-menu-item" onClick={handleShareWhatsApp}>
+										<Send size={14} style={{ color: "var(--teal)" }} />
+										<div className="min-w-0">
+											<strong>Отправить в WhatsApp</strong>
+											<span className="sub truncate">{patient?.phone || "Без номера (выбор чата)"}</span>
+										</div>
+									</button>
+									<button type="button" className="warranty-share-menu-item" onClick={handleShareTelegram}>
+										<Share2 size={14} style={{ color: "var(--teal)" }} />
+										<div className="min-w-0">
+											<strong>Поделиться в Telegram</strong>
+											<span className="sub truncate">В личный чат пациента</span>
+										</div>
+									</button>
+									<button type="button" className="warranty-share-menu-item" onClick={handleCopyMemo}>
+										{copiedMemo ? <Check size={14} style={{ color: "var(--ok-fg)" }} /> : <Copy size={14} />}
+										<div className="min-w-0">
+											<strong>{copiedMemo ? "Текст скопирован!" : "Скопировать памятку"}</strong>
+											<span className="sub truncate">Для любого мессенджера</span>
+										</div>
+									</button>
+									<button type="button" className="warranty-share-menu-item" onClick={handleCopyLink}>
+										{copiedLink ? <Check size={14} style={{ color: "var(--ok-fg)" }} /> : <Copy size={14} />}
+										<div className="min-w-0">
+											<strong>{copiedLink ? "Ссылка скопирована!" : "Скопировать онлайн-ссылку"}</strong>
+											<span className="sub truncate">Портал проверки гарантии</span>
+										</div>
+									</button>
+								</div>
+							)}
+						</div>
 
 						<button type="button" className="warranty-btn-secondary" onClick={handlePrint}>
 							<Printer size={16} />
@@ -1396,10 +1641,10 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 							type="button"
 							className="warranty-btn-primary"
 							onClick={handleAttachTo043u}
-							disabled={attachedStatus}
+							title="Внести гарантийный паспорт в электронную медкарту 043/у"
 						>
 							{attachedStatus ? <CheckCircle2 size={16} /> : <FileCheck size={16} />}
-							{attachedStatus ? "Прикреплено к 043/у" : "Выдать паспорт & В карту 043/у"}
+							{attachedStatus ? "Обновить в карте 043/у" : "Выдать паспорт & В карту 043/у"}
 						</button>
 					</div>
 				</div>

@@ -20,13 +20,19 @@ import {
 	generateSha256,
 	generateUuidV7,
 	generateWarrantyCertificateHtml,
+	generateWarrantyPatientMemo,
 	generateWarrantyRemediationActHtml,
 	type WarrantyCertificateData,
 	type WarrantyItem,
 	type WarrantyRemediationOrder,
 	type WarrantyRiskFactors,
 } from "../components/warranty/warrantyEngine.js";
-import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal.js";
+import {
+	WarrantyPassportModal,
+	detectCategoryFromServiceTitle,
+	mapCompletedStagesToWarrantyItems,
+	type CompletedTreatmentStage,
+} from "../components/warranty/WarrantyPassportModal.js";
 import {
 	DENTAL_MATERIALS_CATALOG,
 	getAllWarrantyDefectTemplates,
@@ -34,6 +40,7 @@ import {
 	getWarrantyDefectTemplate,
 	getWarrantyPreset,
 	MANDATORY_WARRANTY_CONDITIONS,
+	STAR_QUICK_PRESETS,
 	VITA_SHADES,
 	WARRANTY_DEFECT_TEMPLATES,
 	type WarrantyCategory,
@@ -632,3 +639,181 @@ test("Statutory Warranty Item UUIDv7 Generation & Clinical Data Linkage (804n, V
 	assert.ok(VITA_SHADES.includes("BL3"));
 	assert.ok(VITA_SHADES.includes("BL4"));
 });
+
+test("Mandate 8k: 1-Click StAR Quick Presets Integrity (Composite, E.max, Zirconia, Straumann)", () => {
+	assert.equal(STAR_QUICK_PRESETS.length, 4, "Must contain exactly 4 core quick presets");
+
+	const composite = STAR_QUICK_PRESETS.find((p) => p.id === "star_composite_1y");
+	assert.ok(composite);
+	assert.equal(composite.warrantyMonths, 12, "Composite warranty must be 12 months (1 yr) per StAR");
+	assert.equal(composite.serviceLifeMonths, 36, "Composite service life must be 36 months (3 yrs)");
+	assert.equal(composite.serviceCode804n, "A16.07.002.010");
+	assert.equal(composite.category, "composite_restoration");
+
+	const emax = STAR_QUICK_PRESETS.find((p) => p.id === "star_emax_2y");
+	assert.ok(emax);
+	assert.equal(emax.warrantyMonths, 24, "E.max warranty must be 24 months (2 yrs) per StAR");
+	assert.equal(emax.serviceLifeMonths, 120, "E.max service life must be 120 months (10 yrs)");
+	assert.equal(emax.serviceCode804n, "A16.07.004.002");
+	assert.equal(emax.category, "ceramic_crown_veneer");
+
+	const zirconia = STAR_QUICK_PRESETS.find((p) => p.id === "star_zirconia_3y");
+	assert.ok(zirconia);
+	assert.equal(zirconia.warrantyMonths, 36, "Zirconia warranty must be 36 months (3 yrs) per StAR");
+	assert.equal(zirconia.serviceLifeMonths, 180, "Zirconia service life must be 180 months (15 yrs)");
+	assert.equal(zirconia.serviceCode804n, "A16.07.004.002");
+	assert.equal(zirconia.category, "ceramic_crown_veneer");
+
+	const straumann = STAR_QUICK_PRESETS.find((p) => p.id === "star_implant_lifetime");
+	assert.ok(straumann);
+	assert.equal(straumann.warrantyMonths, 24, "Clinic osseointegration warranty is 24 months");
+	assert.equal(straumann.serviceLifeMonths, 240, "Implant fixture service life is 240 months (20 yrs)");
+	assert.equal(straumann.serviceCode804n, "A16.07.006.002");
+	assert.equal(straumann.category, "implant_fixture");
+
+	for (const p of STAR_QUICK_PRESETS) {
+		assert.ok(p.title.length > 0);
+		assert.ok(p.materialName.length > 0);
+		assert.ok(p.manufacturer.length > 0);
+		assert.ok(p.statutoryNote.includes("СтАР") || p.statutoryNote.includes("2300-1"));
+	}
+});
+
+test("Mandate 8k & 8d: generateWarrantyPatientMemo produces official text for messengers with ZERO cartoon emojis", () => {
+	const certId = "WAR-2026-9812";
+	const certData: WarrantyCertificateData = {
+		certificateId: certId,
+		issueDate: "2026-08-22",
+		patient: {
+			fullName: "Иванова Екатерина Сергеевна",
+			cardNumber: "043-5591",
+		},
+		doctor: {
+			fullName: "Д-р Кузнецов Андрей Игоревич",
+			specialty: "Врач-стоматолог ортопед",
+		},
+		clinic: {
+			name: "ООО «ДЕНТЕ»",
+			legalName: "ООО «ДЕНТЕ КЛИНИК»",
+			licenseNumber: "ЛО-77-01-000000",
+			address: "г. Москва, ул. Арбат, д. 10",
+			phone: "+7 (495) 777-22-11",
+		},
+		items: [
+			{
+				id: "w-1",
+				toothNumber: "1.1",
+				category: "ceramic_crown_veneer",
+				clinicalWorkTitle: "Керамический винир E.max",
+				materialName: "IPS e.max Press",
+				manufacturer: "Ivoclar Vivadent",
+				country: "Лихтенштейн",
+				baseWarrantyMonths: 24,
+				baseServiceLifeMonths: 120,
+			},
+			{
+				id: "w-2",
+				toothNumber: "1.6",
+				category: "implant_fixture",
+				clinicalWorkTitle: "Установка дентального имплантата",
+				materialName: "Straumann SLActive",
+				manufacturer: "Straumann",
+				country: "Швейцария",
+				baseWarrantyMonths: 24,
+				baseServiceLifeMonths: 240,
+			},
+		],
+		calculation: {
+			baseWarrantyMonths: 24,
+			adjustedWarrantyMonths: 24,
+			baseServiceLifeMonths: 180,
+			adjustedServiceLifeMonths: 180,
+			totalRiskMultiplier: 1.0,
+			riskLevel: "low",
+			warrantyStatus: "full",
+			checkupIntervalMonths: 6,
+			issueDate: "2026-08-22",
+			warrantyExpirationDate: "2028-08-22",
+			serviceLifeExpirationDate: "2041-08-22",
+			nextCheckupDueDate: "2027-02-22",
+			checkupSchedule: [],
+			riskFactorsApplied: [],
+			clinicalRationale: [],
+			specialProvisions: [],
+		},
+		verificationUrl: "https://dente-clinic.ru/portal/warranty?cert=WAR-2026-9812",
+		qrCodeSvg: "",
+		integrityHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		signedByDoctor: true,
+		signedByChief: true,
+		attachedToForm043u: false,
+	};
+
+	const memo = generateWarrantyPatientMemo(certData);
+
+	// Mandate 8d: ZERO cartoon emojis in official documents & memos
+	const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+	assert.equal(emojiRegex.test(memo), false, "Memo must have strictly 0 cartoon emojis per Mandate 8d");
+
+	// Content verification
+	assert.ok(memo.includes("ГАРАНТИЙНЫЙ ПАСПОРТ СТОМАТОЛОГИЧЕСКОГО ЛЕЧЕНИЯ"));
+	assert.ok(memo.includes("ООО «ДЕНТЕ»"));
+	assert.ok(memo.includes("+7 (495) 777-22-11"));
+	assert.ok(memo.includes("Иванова Екатерина Сергеевна"));
+	assert.ok(memo.includes("043-5591"));
+	assert.ok(memo.includes("Д-р Кузнецов Андрей Игоревич"));
+	assert.ok(memo.includes("WAR-2026-9812"));
+	assert.ok(memo.includes("Зуб 1.1"));
+	assert.ok(memo.includes("Зуб 1.6"));
+	assert.ok(memo.includes("IPS e.max Press"));
+	assert.ok(memo.includes("Straumann SLActive"));
+	assert.ok(memo.includes("22 февраля 2027 г."));
+	assert.ok(memo.includes("https://dente-clinic.ru/portal/warranty?cert=WAR-2026-9812"));
+	assert.ok(memo.includes("Контрольный хеш ЭЦП: e3b0c44298fc1c14..."));
+});
+
+test("Mandate 8e & 8k: 1-Click Auto-population from Completed Treatment Stages", () => {
+	// 1. Проверка правил определения категории по услуге
+	assert.equal(detectCategoryFromServiceTitle("Установка титанового имплантата Osstem"), "implant_fixture");
+	assert.equal(detectCategoryFromServiceTitle("Коронка из диоксида циркония Katana"), "ceramic_crown_veneer");
+	assert.equal(detectCategoryFromServiceTitle("Керамический винир E.max Press"), "ceramic_crown_veneer");
+	assert.equal(detectCategoryFromServiceTitle("Эндодонтическое лечение 3-х канального зуба"), "endodontic_treatment");
+	assert.equal(detectCategoryFromServiceTitle("Светоотверждаемая пломба Filtek"), "composite_restoration");
+	assert.equal(detectCategoryFromServiceTitle("Бюгельный протез на замках"), "removable_prosthesis");
+	assert.equal(detectCategoryFromServiceTitle("Шинирование зубов Ribbond"), "periodontal_splinting");
+	assert.equal(detectCategoryFromServiceTitle("Временная коронка Protemp"), "temporary_prosthesis");
+
+	// 2. 1-клик маппинг завершенных этапов в позиции гарантийного паспорта
+	const completedStages: CompletedTreatmentStage[] = [
+		{
+			id: "stage-1",
+			toothNumber: "2.1",
+			serviceTitle: "Керамический винир E.max",
+			materialName: "IPS e.max Press",
+			manufacturer: "Ivoclar Vivadent",
+			serviceCode804n: "A16.07.004.002",
+			labOrderNumber: "ЗТЛ-1029",
+		},
+		{
+			id: "stage-2",
+			toothNumber: "4.6",
+			serviceTitle: "Установка дентального имплантата Straumann",
+		},
+	];
+
+	const items = mapCompletedStagesToWarrantyItems(completedStages);
+	assert.equal(items.length, 2, "Must map all completed stages");
+
+	assert.equal(items[0]!.toothNumber, "2.1");
+	assert.equal(items[0]!.category, "ceramic_crown_veneer");
+	assert.equal(items[0]!.materialName, "IPS e.max Press");
+	assert.equal(items[0]!.labOrderNumber, "ЗТЛ-1029");
+	assert.equal(items[0]!.serviceCode804n, "A16.07.004.002");
+	assert.ok(items[0]!.id.length > 0);
+
+	assert.equal(items[1]!.toothNumber, "4.6");
+	assert.equal(items[1]!.category, "implant_fixture");
+	assert.ok(items[1]!.materialName.length > 0);
+	assert.ok(items[1]!.baseWarrantyMonths >= 12);
+});
+

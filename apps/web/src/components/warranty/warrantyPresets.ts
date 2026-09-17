@@ -499,7 +499,7 @@ export const DENTAL_MATERIALS_CATALOG: DentalMaterialMeta[] = [
 		manufacturer: "Ivoclar Vivadent",
 		country: "Лихтенштейн",
 		type: "Стеклокерамика на основе дисиликата лития",
-		warrantyMonthsDefault: 36,
+		warrantyMonthsDefault: 24,
 		serviceLifeMonthsDefault: 120,
 		requiresLotNumber: true,
 		popularShades: ["BL1", "BL2", "A1", "A2", "A3", "B1"],
@@ -511,7 +511,7 @@ export const DENTAL_MATERIALS_CATALOG: DentalMaterialMeta[] = [
 		manufacturer: "Kuraray Noritake",
 		country: "Япония",
 		type: "Многослойный высокотранслюцентный диоксид циркония",
-		warrantyMonthsDefault: 60,
+		warrantyMonthsDefault: 36,
 		serviceLifeMonthsDefault: 180,
 		requiresLotNumber: true,
 		popularShades: ["A1", "A2", "A3", "B1", "NW"],
@@ -523,8 +523,8 @@ export const DENTAL_MATERIALS_CATALOG: DentalMaterialMeta[] = [
 		manufacturer: "Straumann",
 		country: "Швейцария",
 		type: "Титано-циркониевый имплантат с гидрофильной поверхностью",
-		warrantyMonthsDefault: 36,
-		serviceLifeMonthsDefault: 300,
+		warrantyMonthsDefault: 24,
+		serviceLifeMonthsDefault: 240,
 		requiresLotNumber: true,
 	},
 	{
@@ -586,6 +586,83 @@ export function getWarrantyPreset(category: WarrantyCategory): WarrantyPreset {
 export function getAllWarrantyPresets(): WarrantyPreset[] {
 	return Object.values(WARRANTY_PRESETS);
 }
+
+/**
+ * 1-Клик нормативные пресеты гарантийных обязательств по СтАР (Мандат 8k & 8e)
+ * - Световая пломба: 1 год (12 мес.)
+ * - Керамика E.max: 2 года (24 мес.)
+ * - Коронка диоксид циркония: 3 года (36 мес.)
+ * - Дентальная имплантация: пожизненная производителя / 10–20 лет срок службы
+ */
+export interface StarQuickPreset {
+	readonly id: string;
+	readonly title: string;
+	readonly subtitle: string;
+	readonly category: WarrantyCategory;
+	readonly materialName: string;
+	readonly manufacturer: string;
+	readonly country: string;
+	readonly warrantyMonths: number;
+	readonly serviceLifeMonths: number;
+	readonly serviceCode804n: string;
+	readonly statutoryNote: string;
+}
+
+export const STAR_QUICK_PRESETS: readonly StarQuickPreset[] = [
+	{
+		id: "star_composite_1y",
+		title: "Световая пломба",
+		subtitle: "1 год (12 мес.) • Срок сл. 3 г.",
+		category: "composite_restoration",
+		materialName: "Filtek Ultimate (3M ESPE)",
+		manufacturer: "3M ESPE",
+		country: "США",
+		warrantyMonths: 12,
+		serviceLifeMonths: 36,
+		serviceCode804n: "A16.07.002.010",
+		statutoryNote: "Положение СтАР разд. 2, Закон РФ № 2300-1 ст. 5",
+	},
+	{
+		id: "star_emax_2y",
+		title: "Керамика E.max",
+		subtitle: "2 года (24 мес.) • Срок сл. 10 лет",
+		category: "ceramic_crown_veneer",
+		materialName: "IPS e.max Press (дисиликат лития)",
+		manufacturer: "Ivoclar Vivadent",
+		country: "Лихтенштейн",
+		warrantyMonths: 24,
+		serviceLifeMonths: 120,
+		serviceCode804n: "A16.07.004.002",
+		statutoryNote: "Положение СтАР разд. 3 (безметалловая керамика E.max)",
+	},
+	{
+		id: "star_zirconia_3y",
+		title: "Диоксид циркония",
+		subtitle: "3 года (36 мес.) • Срок сл. 15 лет",
+		category: "ceramic_crown_veneer",
+		materialName: "Katana Zirconia HTML/UTML",
+		manufacturer: "Kuraray Noritake",
+		country: "Япония",
+		warrantyMonths: 36,
+		serviceLifeMonths: 180,
+		serviceCode804n: "A16.07.004.002",
+		statutoryNote: "Положение СтАР разд. 3, ГК РФ ст. 720–724",
+	},
+	{
+		id: "star_implant_lifetime",
+		title: "Имплантация",
+		subtitle: "Пожизненная завода • 10–20 лет",
+		category: "implant_fixture",
+		materialName: "Straumann BLX / BLT SLActive Roxolid",
+		manufacturer: "Straumann",
+		country: "Швейцария",
+		warrantyMonths: 24,
+		serviceLifeMonths: 240,
+		serviceCode804n: "A16.07.006.002",
+		statutoryNote: "Пожизненная гарантия завода на винт + 24 мес по Регламенту СтАР на остеоинтеграцию",
+	},
+] as const;
+
 
 /**
  * 1-клик шаблоны гарантийного устранения дефектов (0 ₽)
