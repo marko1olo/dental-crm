@@ -4,3 +4,4 @@ export {
 } from "./PeriodontogramChart";
 export * from "./perioMath";
 export * from "./perioHeatmap";
+export * from "./perioRafOptimizer";
