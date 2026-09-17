@@ -1,6 +1,8 @@
 import {
+	auditClinicalDrugSafety,
 	CONTROLLED_DRUG_PRESETS,
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
+	type ClinicalDdiInteraction,
 	type DentalPrescriptionDrugPreset,
 	type Form107_1uPayload,
 	type Form148_1u88Payload,
@@ -13,11 +15,13 @@ import {
 import {
 	AlertCircle,
 	AlertTriangle,
+	Calculator,
 	Calendar,
 	Check,
 	CheckCircle2,
 	Copy,
 	FileText,
+	Info,
 	Key,
 	Pill,
 	Plus,
@@ -31,11 +35,15 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
-import { formatPatientPrescriptionMemo, normalizeDrugId } from "./generator/prescriptionEngine";
+import {
+	calculateMedicationDosage,
+	formatPatientPrescriptionMemo,
+	normalizeDrugId,
+	type DosageCalculationResult,
+} from "./generator/prescriptionEngine";
 import { DENTAL_MEDICATIONS_CATALOG, type DentalMedicationPreset } from "./generator/prescriptionPresets";
 import type { DiaryState } from "../useVisitDiaryLogic";
 import {
@@ -149,6 +157,12 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		label: "«Противовоспалительный гель (Холисал / Метрогил Дента)»",
 		desc: "Rp: Gel dentalis, D.S. Аппликации на область десен 2-3 раза в день после чистки зубов 7-10 дней.",
 		drugIds: ["cholisal_gel"],
+	},
+	{
+		id: "suprastin_antiallergic",
+		label: "«Супрастин 25 мг (Противоотечное)»",
+		desc: "Rp: Tab. Chloropyramini 25mg, D.t.d. N 20 in tab., S. По 1 таблетке 2-3 раза в день во время еды 3-5 дней.",
+		drugIds: ["suprastin_25"],
 	},
 ];
 
@@ -361,6 +375,7 @@ export interface PrescriptionPrintModalProps {
 		readonly snils?: string | null | undefined;
 		readonly omsPolicy?: string | null | undefined;
 		readonly allergies?: readonly string[] | string[] | string | null | undefined;
+		readonly weightKg?: number | null | undefined;
 	} | null | undefined;
 	readonly allergies?: readonly string[] | string[] | string | null | undefined;
 	readonly diary?: DiaryState | {
@@ -419,9 +434,11 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const [isAddingCustom, setIsAddingCustom] = useState<boolean>(false);
 	const [withStampAndSignature, setWithStampAndSignature] = useState<boolean>(true);
 
-	// Patient identity state
+	// Patient identity & biometric state (Mandate 8k: Dosage auto-calc)
 	const [patientSnils, setPatientSnils] = useState<string>("");
 	const [patientOmsPolicy, setPatientOmsPolicy] = useState<string>("");
+	const [patientWeightKg, setPatientWeightKg] = useState<number | undefined>(undefined);
+	const [showDosageAssistant, setShowDosageAssistant] = useState<boolean>(false);
 
 	// Doctor UKEP state
 	const [isUkepSigned, setIsUkepSigned] = useState<boolean>(false);
@@ -469,6 +486,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		setPatientAddress(patient?.address || "");
 		setPatientSnils(patient?.snils || "");
 		setPatientOmsPolicy(patient?.omsPolicy || "");
+		setPatientWeightKg(patient?.weightKg ?? undefined);
 		setIsUkepSigned(false);
 		setUkepSignature(null);
 
@@ -477,7 +495,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, initialSelectedDrugIds, onClose]);
+	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, patient?.weightKg, initialSelectedDrugIds, onClose]);
 
 	const patientName = patient?.fullName || patientNameProp || "";
 	const patientBirth = patient?.birthDate || "";
@@ -616,6 +634,53 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 	const penicillinConflict = allergyConflicts.find((c) => c.type === "penicillin");
 	const nsaidConflict = allergyConflicts.find((c) => c.type === "nsaid");
+
+	const patientAgeYears = useMemo(() => {
+		if (!patientBirth) return undefined;
+		const birth = new Date(patientBirth);
+		if (Number.isNaN(birth.getTime())) return undefined;
+		const now = new Date();
+		let age = now.getFullYear() - birth.getFullYear();
+		const m = now.getMonth() - birth.getMonth();
+		if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+			age--;
+		}
+		return age >= 0 ? age : undefined;
+	}, [patientBirth]);
+
+	const isPediatricPatient = patientAgeYears !== undefined && patientAgeYears < 18;
+
+	// Clinical Drug-Drug Interactions (DDI) & Somatic Safety Audit (Mandates 8e & 8i)
+	const ddiSafetyAudit = useMemo(() => {
+		if (activeItems.length === 0) return null;
+		const proposedNames = activeItems.map((item) => item.tradeName || item.latinName);
+		const rawAllergies = Array.isArray(resolvedPatientAllergies)
+			? resolvedPatientAllergies
+			: typeof resolvedPatientAllergies === "string"
+				? [resolvedPatientAllergies]
+				: [];
+		return auditClinicalDrugSafety({
+			proposedMedications: proposedNames,
+			existingMedications: [],
+			knownAllergies: rawAllergies,
+			patientAgeYears,
+			patientWeightKg,
+		});
+	}, [activeItems, resolvedPatientAllergies, patientAgeYears, patientWeightKg]);
+
+	// Live dosage calculations and pediatric checks (Mandate 8k)
+	const dosageCalculations = useMemo(() => {
+		return activeItems
+			.map((item) => {
+				const rawId = item.id.replace(/^item-\d+-/, "");
+				return calculateMedicationDosage({
+					drugId: rawId,
+					patientAgeYears,
+					patientWeightKg,
+				});
+			})
+			.filter((res): res is DosageCalculationResult => Boolean(res));
+	}, [activeItems, patientAgeYears, patientWeightKg]);
 
 	const generatePrintHtml = useCallback((): string => {
 		if (activeForm === "107-1u") {
@@ -979,11 +1044,11 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			<div className="flex flex-col w-full max-w-6xl max-h-[94vh] rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
 				{/* ── Modal Header ── */}
 				<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-3 min-w-0">
 						<div className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-subtle,var(--line))] text-[var(--teal)] shrink-0 shadow-sm">
 							<Pill className="w-6 h-6" />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">
 									Рецептурный модуль Минздрава РФ
@@ -1165,6 +1230,48 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											</span>
 											<span className="text-[10px] italic text-[var(--muted)]">
 												Рекомендуется оценить степень сенсибилизации или применить альтернативное обезболивание (Парацетамол при отсутствии противопоказаний).
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{/* ── Drug-Drug Interaction (DDI) Soft Warning Banner (Mandate 8e: Doctor Autonomy) ── */}
+						{ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0 && (
+							<div
+								className="flex flex-col gap-2 p-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/15 to-yellow-500/15 border-2 border-amber-500 text-amber-950 dark:text-amber-100 shadow-sm animate-in fade-in duration-200"
+								data-testid="ddi-interactions-warning"
+							>
+								<div className="flex items-start gap-2.5">
+									<AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+									<div className="flex flex-col gap-1.5 min-w-0 w-full">
+										<div className="flex items-center gap-2 flex-wrap">
+											<span className="text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
+												ПРЕДОСТЕРЕЖЕНИЕ: МЕЖЛЕКАРСТВЕННОЕ ВЗАИМОДЕЙСТВИЕ (DDI)
+											</span>
+											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shadow-xs">
+												{ddiSafetyAudit.drugInteractions.length}{" "}
+												{ddiSafetyAudit.drugInteractions.length === 1 ? "конфликт" : "конфликта"}
+											</span>
+										</div>
+										{ddiSafetyAudit.drugInteractions.map((inter, idx) => (
+											<div key={idx} className="flex flex-col gap-0.5 text-xs bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+												<div className="font-bold text-amber-900 dark:text-amber-200">
+													{inter.primaryDrug} + {inter.interactingDrug}
+												</div>
+												<p className="text-[11px] leading-relaxed text-[var(--ink)]">
+													{inter.effectDescriptionRu}
+												</p>
+												<div className="text-[10px] text-amber-800 dark:text-amber-300 italic">
+													Клиническая рекомендация: {inter.clinicalRecommendationRu}
+												</div>
+											</div>
+										))}
+										<div className="text-[11px] text-[var(--muted)] border-t border-amber-300/40 dark:border-amber-900/40 pt-1.5 mt-0.5 flex items-center gap-1.5">
+											<Scale className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+											<span>
+												<strong>Автономия врача (Мандат 8e):</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность врача.
 											</span>
 										</div>
 									</div>
@@ -1413,6 +1520,68 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</div>
 						</div>
 
+						{/* ── Dosage Calculation & Safety Assistant (Mandate 8k: Friction-Killer) ── */}
+						{dosageCalculations.length > 0 && (
+							<div
+								className="flex flex-col gap-2 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/40 shadow-xs"
+								data-testid="dosage-calculator-card"
+							>
+								<div className="flex items-center justify-between flex-wrap gap-1">
+									<span className="text-xs font-bold text-[var(--teal)] flex items-center gap-1.5">
+										<Calculator className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+										<span>Расчёт дозировок (Минздрав 1094н / ГРЛС):</span>
+									</span>
+									<div className="flex items-center gap-1.5">
+										{patientAgeYears !== undefined && (
+											<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]">
+												{patientAgeYears} лет{isPediatricPatient ? " (Педиатрия)" : " (Взрослый)"}
+											</span>
+										)}
+										<button
+											type="button"
+											onClick={() => setShowDosageAssistant(!showDosageAssistant)}
+											className="text-[10px] font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+										>
+											{showDosageAssistant ? "Свернуть" : "Подробнее"}
+										</button>
+									</div>
+								</div>
+
+								{/* Primary dosage summary for selected medications */}
+								<div className="flex flex-col gap-1.5">
+									{dosageCalculations.map((calc, idx) => (
+										<div
+											key={idx}
+											className={`p-2.5 rounded-lg text-xs flex flex-col gap-0.5 border ${
+												calc.warningRu
+													? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100"
+													: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
+											}`}
+										>
+											<div className="flex items-center justify-between font-bold text-[11px] flex-wrap gap-1">
+												<span className="truncate">{calc.drugNameRu}</span>
+												<span className="text-[10px] font-mono text-[var(--muted)] shrink-0">Макс: {calc.maxDailyDoseRu}</span>
+											</div>
+											<div className="text-[11px] text-[var(--teal)] font-medium">
+												{calc.recommendedDosageRu}
+											</div>
+											{showDosageAssistant && (
+												<div className="text-[10px] text-[var(--muted)]">
+													Режим: {calc.standardFrequencyRu}
+												</div>
+											)}
+											{calc.warningRu && (
+												<div className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 mt-0.5 flex items-center gap-1">
+													<AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+													<span>{calc.warningRu}</span>
+												</div>
+											)}
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+
 						{/* Custom Drugs List Display */}
 						{customDrugsList.length > 0 && (
 							<div className="flex flex-col gap-1.5 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
@@ -1495,22 +1664,15 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								</label>
 								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 									{[
-										{ days: "15", label: "15 дней", disabled: activeForm === "107-1u" },
-										{ days: "30", label: "30 дней", disabled: activeForm === "148-1u-88" },
-										{ days: "60", label: "60 дней", disabled: activeForm === "148-1u-88" },
-										{ days: "365", label: "1 год (Хроники)", disabled: activeForm === "148-1u-88" },
+										{ days: "15", label: "15 дней", note: activeForm === "148-1u-88" ? "ПКУ (Стандарт)" : "Срочный" },
+										{ days: "30", label: "30 дней", note: "Льготный" },
+										{ days: "60", label: "60 дней", note: activeForm === "107-1u" ? "Стандарт 107-1/у" : "Продленный" },
+										{ days: "365", label: "1 год", note: "Хронические" },
 									].map((opt) => (
 										<button
 											key={opt.days}
 											type="button"
-											disabled={opt.disabled}
-											title={
-												opt.disabled
-													? activeForm === "148-1u-88"
-														? "Для формы 148-1/у-88 (ПКУ) срок строго 15 дней по Приказу Минздрава 1094н"
-														: "Срок 15 дней применим только для бланков ПКУ (№ 148-1/у-88)"
-													: `Выбрать срок действия: ${opt.label}`
-											}
+											title={`Выбрать срок действия: ${opt.label} (${opt.note})`}
 											onClick={() => {
 												setValidityDays(opt.days as any);
 												if (opt.days === "365") {
@@ -1519,18 +1681,23 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 													setIsChronicSpecialCare(false);
 												}
 											}}
-											className={`min-h-[44px] px-2 py-1 text-xs font-semibold rounded-xl border text-center transition-all touch-manipulation ${
-												opt.disabled
-													? "opacity-40 cursor-not-allowed bg-[var(--paper)]"
-													: validityDays === opt.days
-														? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] font-bold shadow-sm cursor-pointer"
-														: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] cursor-pointer"
+											className={`min-h-[44px] px-2 py-1 text-xs font-semibold rounded-xl border text-center transition-all touch-manipulation cursor-pointer ${
+												validityDays === opt.days
+													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] font-bold shadow-sm"
+													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--ink)]"
 											}`}
 										>
-											{opt.label}
+											<div className="font-bold">{opt.label}</div>
+											<div className="text-[9px] opacity-80">{opt.note}</div>
 										</button>
 									))}
 								</div>
+
+								{activeForm === "148-1u-88" && validityDays !== "15" && (
+									<div className="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20 mt-1">
+										По Приказу № 1094н для бланков ПКУ (№ 148-1/у-88) срок действия составляет 15 дней. Врач автономен в выборе срока.
+									</div>
+								)}
 
 								{validityDays === "365" && (
 									<div className="p-2.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal)] flex flex-col gap-2 mt-1">
@@ -1639,6 +1806,21 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								</div>
 								<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
 									Печать доступна
+								</span>
+							</div>
+						)}
+
+						{/* DDI Warning Preview Strip (Soft Amber) */}
+						{ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0 && (
+							<div className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex items-center justify-between gap-2">
+								<div className="flex items-center gap-2 min-w-0">
+									<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+									<span className="font-bold truncate">
+										Предостережение: обнаружено {ddiSafetyAudit.drugInteractions.length} {ddiSafetyAudit.drugInteractions.length === 1 ? "взаимодействие" : "взаимодействия"} (DDI)
+									</span>
+								</div>
+								<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0">
+									Печать разрешена
 								</span>
 							</div>
 						)}
@@ -1836,10 +2018,14 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						Соответствует Приказу Минздрава России от 24.11.2021 г. № 1094н.
 					</span>
 					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-						{(penicillinConflict || nsaidConflict) && (
+						{((penicillinConflict || nsaidConflict) || (ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0)) && (
 							<span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1">
 								<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-								<span>Аллергия в анамнезе (печать разрешена)</span>
+								<span>
+									{penicillinConflict || nsaidConflict
+										? "Аллергия / DDI в анамнезе (печать разрешена)"
+										: "DDI предостережение (печать разрешена)"}
+								</span>
 							</span>
 						)}
 						<button
@@ -1875,7 +2061,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							data-testid="print-prescription-btn"
 						>
 							<Printer className="w-4 h-4 shrink-0" />
-							<span>Печать рецепта ({activeForm === "107-1u" ? "107-1/у" : activeForm === "148-1u-88" ? "148-1/у-88" : "148-1/у-04(л)"})</span>
+							<span>Печать рецепта ({activeForm === "107-1u" ? "107-1/у" : "148-1/у-88"})</span>
 						</button>
 					</div>
 				</div>

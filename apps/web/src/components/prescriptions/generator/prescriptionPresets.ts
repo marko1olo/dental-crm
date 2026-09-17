@@ -90,6 +90,20 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 		validityDays: 60,
 	},
 	{
+		id: "nimesulide_100",
+		tradeNameRu: "Нимесил (Нимесулид 100 мг)",
+		activeSubstanceRu: "Нимесулид",
+		category: "nsaid",
+		categoryLabelRu: "НПВП / Анальгетик",
+		latinRp: "Rp.: Nimesulidi 100 mg",
+		formRu: "гранулы для суспензии",
+		dosageRu: "100 мг",
+		quantityLabel: "N. 9 (пакетики)",
+		dispenseLatin: "D.t.d. N 9 in gran.",
+		signaRu: "S. Внутрь по 1 пакетику (100 мг) 2 раза в день после еды, растворив в 100 мл воды, при болях (3–5 дней).",
+		validityDays: 60,
+	},
+	{
 		id: "chlorhexidine_005",
 		tradeNameRu: "Хлоргексидин 0.05%",
 		activeSubstanceRu: "Хлоргексидина биглюконат",
@@ -372,5 +386,12 @@ export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionP
 		desc: "Кетанов (Кеторолак) 10 мг №10 (быстрое купирование выраженного болевого синдрома)",
 		drugIds: ["ketorolac_10"],
 		badge: "Острая боль",
+	},
+	{
+		id: "suprastin_antiallergic",
+		label: "«Супрастин 25 мг (Противоотечное / Антигистаминное)»",
+		desc: "Rp: Tab. Chloropyramini 25mg, D.t.d. N 20 in tab., S. По 1 таблетке 2-3 раза в день во время еды 3-5 дней.",
+		drugIds: ["suprastin_25"],
+		badge: "Противоотечное",
 	},
 ];
