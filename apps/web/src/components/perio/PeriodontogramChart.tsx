@@ -1,5 +1,4 @@
 import {
-	ALL_PERIO_TEETH,
 	calculateAapEfpStagingAndGrading,
 	calculateClinicalAttachmentLevel,
 	calculateOlearyFromPerioTeeth,
@@ -26,8 +25,6 @@ import {
 	Activity,
 	AlertCircle,
 	AlertTriangle,
-	ArrowDown,
-	ArrowUp,
 	Check,
 	ChevronDown,
 	ChevronUp,
@@ -40,7 +37,6 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
-	Trash2,
 	X,
 	Zap,
 } from "lucide-react";
@@ -151,6 +147,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 	const [isProbeKeyboardEnabled, setIsProbeKeyboardEnabled] = useState<boolean>(
 		initialProbeKeyboardEnabled,
 	);
+	// Compact jaw filter (All / Upper / Lower) per Hick's Law & Mandate 8d
+	const [archFilter, setArchFilter] = useState<"all" | "upper" | "lower">("all");
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -1157,17 +1155,17 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			    TIER 1: TOP DIAGNOSTICS & TELEMETRY COCKPIT (0-CLICK OVERVIEW)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-3 min-w-0">
 					<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 shrink-0">
 						<Activity size={22} />
 					</div>
-					<div>
-						<div className="flex items-center gap-2 flex-wrap">
-							<h3 className="text-base font-bold text-[var(--ink)]">
+					<div className="min-w-0">
+						<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
+							<h3 className="text-base font-bold text-[var(--ink)] truncate">
 								Интерактивная пародонтограмма (Florida Probe 6-Point)
 							</h3>
 							<span
-								className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+								className={`px-2.5 py-0.5 rounded-full text-xs font-bold border truncate max-w-xs shrink-0 ${
 									aapDiagnosis.severity === "intact"
 										? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
 										: aapDiagnosis.severity === "gingivitis"
@@ -1181,7 +1179,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								{aapDiagnosis.diagnosisNameRu.split("(")[0]}
 							</span>
 						</div>
-						<p className="text-xs text-[var(--muted)] mt-0.5">
+						<p className="text-xs text-[var(--muted)] mt-0.5 truncate">
 							{aapDiagnosis.stageDescriptionRu}
 						</p>
 					</div>
@@ -1189,16 +1187,16 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 				{/* 1-Click Fast Action Presets (1 Row 32-36px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
 				{!readOnly && (
-					<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 min-h-[36px]">
+					<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 h-9 min-h-[36px]">
 						{/* 1-Click Norm Express: Instant PSR 0, Healthy Tissues & Form 043/u Protocol */}
 						<button
 							type="button"
 							onClick={() => handleApplyExpressPreset("perio_norm_express")}
-							className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
 							title="1-клик: Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
 							data-testid="perio-toolbar-norm-1click-btn"
 						>
-							<ShieldCheck size={16} />
+							<ShieldCheck size={16} className="shrink-0" />
 							<span>1-клик: Здоровый пародонт (Норма)</span>
 						</button>
 
@@ -1206,65 +1204,65 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => handleApplyExpressPreset("pro_hygiene_express")}
-							className="h-9 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
 							title="Профгигиена в 1 клик (УЗ + Air-Flow глицин + полировка + фторирование + услуга A16.07.051)"
 							data-testid="perio-toolbar-prophy-1click-btn"
 						>
-							<Sparkles size={16} />
+							<Sparkles size={16} className="shrink-0" />
 							<span>Профгигиена</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleSetAllIntact}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
 							title="Установить все 32 зуба в физиологическую норму (PD 2мм, рецессия 0мм, BOP 0%)"
 							data-testid="perio-healthy-norm-btn"
 						>
-							<ShieldCheck size={14} className="text-emerald-400" />
+							<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
 							<span>Десна здорова (Норма 1-клик)</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => handleMarkSelectedToothPathology(5, true)}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
 							title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для выбранного зуба #${selectedToothNumber}`}
 							data-testid="perio-preset-tooth-pathology"
 						>
-							<Droplets size={14} className="text-rose-400" />
+							<Droplets size={14} className="text-rose-400 shrink-0" />
 							<span>#{selectedToothNumber} 5мм+BOP</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleMarkBopOnDeepPockets}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
 							title="Автоматически проставить кровоточивость на всех карманах глубиной ≥ 4 мм"
 							data-testid="perio-preset-bop-pockets"
 						>
-							<Droplets size={14} className="text-rose-400" />
+							<Droplets size={14} className="text-rose-400 shrink-0" />
 							<span>BOP ≥ 4мм</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleClearPlaque}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
 							title="Очистить весь зубной налет"
 							data-testid="perio-preset-clear-plaque"
 						>
-							<RotateCcw size={14} className="text-teal-400" />
+							<RotateCcw size={14} className="text-teal-400 shrink-0" />
 							<span>Очистить налет</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setIsHygieneExpanded((prev) => !prev)}
-							className={`h-9 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] ${
+							className={`h-9 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0 ${
 								isHygieneExpanded
 									? "bg-teal-600 text-white border-teal-500 shadow-xs"
-									: "bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-300 border-[var(--line)] text-[var(--ink)]"
+									: "bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-400 border-[var(--line)] text-[var(--ink)]"
 							}`}
 							title="Открыть экспресс-расчет индексов гигиены (OHI-S, PMA, КПИ)"
 							data-testid="perio-hygiene-indices-btn"
@@ -1285,7 +1283,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertToProtocol}
-							className="h-9 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
 							title="Сформировать и вставить протокол пародонтограммы в дневник 043/у"
 							data-testid="perio-insert-protocol-btn"
 						>
@@ -1298,7 +1296,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyProtocol}
-							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px] shrink-0"
 							title="Копировать текст протокола в буфер"
 							aria-label="Копировать текст протокола"
 						>
@@ -1312,7 +1310,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsHelpOpen((prev) => !prev)}
-							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px] shrink-0"
 							title="Справка по горячим клавишам Florida Probe"
 							aria-label="Справка по горячим клавишам"
 						>
@@ -1327,9 +1325,9 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="flex flex-col gap-3.5 p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--ink)] shadow-xs">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-teal-500/20">
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 min-w-0">
 						<Activity size={18} className="text-teal-400 shrink-0" />
-						<h4 className="text-sm font-black text-teal-300">
+						<h4 className="text-sm font-black text-teal-300 truncate">
 							Экспресс-скрининг пародонта PSR / CPITN (ВОЗ / СтАР) и 1-клик
 							пресеты
 						</h4>
@@ -1518,7 +1516,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						}
 						className="min-h-[50px] p-3 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-200 border border-red-600/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
 						title="Пародонтит тяжёлой степени: PSR 4*, карманы >= 6 мм, гноетечение, рецессия, подвижность II-III ст."
-						data-testid="perio-preset-severe-periodontitis-card perio-preset-severe-btn"
+						data-testid="perio-preset-severe-periodontitis-card"
 						data-preset-action="perio-preset-severe-btn"
 					>
 						<div className="flex items-center justify-between gap-1.5 font-black text-xs">
@@ -1841,8 +1839,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			    KEYBOARD SHORTCUTS ACCORDION / HELP
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{isHelpOpen && (
-				<div className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/30 text-xs text-slate-300 flex flex-col gap-2 animate-in fade-in duration-150">
-					<div className="flex items-center justify-between font-bold text-teal-400">
+				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-teal-500/30 text-xs text-[var(--ink)] flex flex-col gap-2.5 animate-in fade-in duration-150 shadow-xs">
+					<div className="flex items-center justify-between font-bold text-teal-400 pb-1 border-b border-[var(--line)]/50">
 						<span className="flex items-center gap-1.5">
 							<Zap size={14} />
 							Быстрый ввод в стандарте Florida Probe:
@@ -1850,7 +1848,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsHelpOpen(false)}
-							className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white cursor-pointer touch-manipulation"
+							className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer touch-manipulation"
 							aria-label="Закрыть справку"
 						>
 							<X size={16} />
@@ -1858,52 +1856,52 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-teal-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-teal-400 font-bold">
 								1..9, 0
 							</kbd>{" "}
-							— ввод глубины кармана (мм) + авто-переход к след. точке
+							<span className="text-[var(--muted)]">— ввод глубины кармана (мм) + авто-переход</span>
 						</div>
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-rose-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-rose-400 font-bold">
 								B
 							</kbd>{" "}
-							— вкл/выкл кровоточивость (BOP)
+							<span className="text-[var(--muted)]">— вкл/выкл кровоточивость (BOP)</span>
 						</div>
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-amber-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-amber-400 font-bold">
 								P
 							</kbd>{" "}
-							— вкл/выкл зубной налет (Plaque)
+							<span className="text-[var(--muted)]">— вкл/выкл зубной налет (Plaque)</span>
 						</div>
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-indigo-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-indigo-400 font-bold">
 								S
 							</kbd>{" "}
-							— нагноение (Suppuration)
+							<span className="text-[var(--muted)]">— нагноение (Suppuration)</span>
 						</div>
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-emerald-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-emerald-400 font-bold">
 								M
 							</kbd>{" "}
-							— переключение степени подвижности (0..III)
+							<span className="text-[var(--muted)]">— подвижность зуба (0..III по Энтину)</span>
 						</div>
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-emerald-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-emerald-400 font-bold">
 								F
 							</kbd>{" "}
-							— степень поражения фуркации (0..IV)
+							<span className="text-[var(--muted)]">— фуркационный дефект (0..IV)</span>
 						</div>
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-slate-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-[var(--ink)] font-bold">
 								Стрелки / Tab
 							</kbd>{" "}
-							— навигация по зубному ряду
+							<span className="text-[var(--muted)]">— навигация по точкам</span>
 						</div>
 						<div>
-							<kbd className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-slate-300">
+							<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-[var(--ink)] font-bold">
 								Esc
 							</kbd>{" "}
-							— снять фокус с точки
+							<span className="text-[var(--muted)]">— снять фокус с точки</span>
 						</div>
 					</div>
 				</div>
@@ -1937,7 +1935,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 									{focusedSite ? (
 										<>
 											Зуб{" "}
-											<strong className="text-white text-sm">
+											<strong className="text-[var(--ink)] text-sm">
 												{focusedSite.toothNumber}
 											</strong>{" "}
 											•{" "}
@@ -1960,7 +1958,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								</span>
 							</div>
 							{focusedSite && (
-								<span className="text-xs font-mono font-bold text-slate-300">
+								<span className="text-xs font-mono font-bold text-[var(--ink)]">
 									Глубина:{" "}
 									<strong
 										className={`text-sm ${
@@ -2094,7 +2092,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							<button
 								type="button"
 								onClick={moveToPreviousSite}
-								className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-9 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-slate-300 border border-[var(--line)] font-bold text-xs flex items-center justify-center cursor-pointer"
+								className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-9 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs flex items-center justify-center cursor-pointer"
 								title="Предыдущая точка (хоткей: Стрелка влево / Shift+Tab)"
 							>
 								←
@@ -2113,132 +2111,182 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					{/* ═══════════════════════════════════════════════════════════════════
 			    MAIN FLORIDA PROBE 6-POINT INTERACTIVE DENTITION GRIDS
 			    ═══════════════════════════════════════════════════════════════════ */}
-					<div className="flex flex-col gap-6 overflow-x-auto pb-2">
-						{/* ─── UPPER ARCH (18..11 | 21..28) ────────────────────────────── */}
-						<div className="flex flex-col gap-1 min-w-[760px]">
-							<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
-								<span>ВЕРХНЯЯ ЧЕЛЮСТЬ (МАКСИЛЛА) • 18–11 | 21–28</span>
-								<span className="text-[10px] text-[var(--muted)]">
-									Вестибулярно (DB • B • MB) / Небно (DL • L • ML)
-								</span>
+					<div className="flex flex-col gap-4 overflow-x-auto pb-2">
+						{/* Compact Jaw Switcher (Mandates 8d, 8e, Hick's Law) */}
+						<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
+							<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold">
+								<button
+									type="button"
+									onClick={() => setArchFilter("all")}
+									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+										archFilter === "all"
+											? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
+											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									}`}
+									data-testid="perio-arch-filter-all"
+								>
+									Обе челюсти (18–48)
+								</button>
+								<button
+									type="button"
+									onClick={() => setArchFilter("upper")}
+									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+										archFilter === "upper"
+											? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
+											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									}`}
+									data-testid="perio-arch-filter-upper"
+								>
+									Верхняя (18–28)
+								</button>
+								<button
+									type="button"
+									onClick={() => setArchFilter("lower")}
+									className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+										archFilter === "lower"
+											? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
+											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									}`}
+									data-testid="perio-arch-filter-lower"
+								>
+									Нижняя (48–38)
+								</button>
 							</div>
 
-							<div className="grid grid-cols-16 gap-1 bg-[var(--paper-soft)]/40 p-2 rounded-b-xl border border-[var(--line)]">
-								{PERIO_UPPER_ARCH_TEETH.map((toothNumber) => {
-									const tooth = toothMap.get(toothNumber);
-									if (!tooth) return null;
-									return (
-										<PerioToothCard
-											key={toothNumber}
-											tooth={tooth}
-											isUpper={true}
-											isSelected={selectedToothNumber === toothNumber}
-											focusedSiteKey={
-												focusedSite?.toothNumber === toothNumber
-													? focusedSite.siteKey
-													: null
-											}
-											readOnly={readOnly}
-											onSelectTooth={() => setSelectedToothNumber(toothNumber)}
-											onFocusSite={(siteKey) => {
-												setFocusedSite({ toothNumber, siteKey });
-												setSelectedToothNumber(toothNumber);
-											}}
-											onCycleMobility={() => handleCycleMobility(toothNumber)}
-											onCycleFurcation={() => handleCycleFurcation(toothNumber)}
-											onToggleBop={(siteKey) => {
-												updateToothSite(toothNumber, siteKey, (prev) => ({
-													bleedingOnProbing: !prev.bleedingOnProbing,
-												}));
-											}}
-											onTogglePlaque={(siteKey) => {
-												updateToothSite(toothNumber, siteKey, (prev) => ({
-													plaque: !prev.plaque,
-												}));
-											}}
-											onToggleSuppuration={(siteKey) => {
-												updateToothSite(toothNumber, siteKey, (prev) => ({
-													suppuration: !prev.suppuration,
-												}));
-											}}
-											onSetProbingDepth={(siteKey, depth) => {
-												updateToothSite(toothNumber, siteKey, () => ({
-													probingDepthMm: depth,
-												}));
-											}}
-											onSetGingivalMargin={(siteKey, gm) => {
-												updateToothSite(toothNumber, siteKey, () => ({
-													gingivalMarginMm: gm,
-												}));
-											}}
-										/>
-									);
-								})}
+							<div className="text-[11px] text-[var(--muted)] flex items-center gap-2">
+								<span>Показано: {archFilter === "all" ? "32 зуба (192 точки)" : "16 зубов (96 точек)"}</span>
 							</div>
 						</div>
+
+						{/* ─── UPPER ARCH (18..11 | 21..28) ────────────────────────────── */}
+						{(archFilter === "all" || archFilter === "upper") && (
+							<div className="flex flex-col gap-1 min-w-[760px]">
+								<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
+									<span>ВЕРХНЯЯ ЧЕЛЮСТЬ (МАКСИЛЛА) • 18–11 | 21–28</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Вестибулярно (DB • B • MB) / Небно (DL • L • ML)
+									</span>
+								</div>
+
+								<div className="grid grid-cols-16 gap-1 bg-[var(--paper-soft)]/40 p-2 rounded-b-xl border border-[var(--line)]">
+									{PERIO_UPPER_ARCH_TEETH.map((toothNumber) => {
+										const tooth = toothMap.get(toothNumber);
+										if (!tooth) return null;
+										return (
+											<PerioToothCard
+												key={toothNumber}
+												tooth={tooth}
+												isUpper={true}
+												isSelected={selectedToothNumber === toothNumber}
+												focusedSiteKey={
+													focusedSite?.toothNumber === toothNumber
+														? focusedSite.siteKey
+														: null
+												}
+												readOnly={readOnly}
+												onSelectTooth={() => setSelectedToothNumber(toothNumber)}
+												onFocusSite={(siteKey) => {
+													setFocusedSite({ toothNumber, siteKey });
+													setSelectedToothNumber(toothNumber);
+												}}
+												onCycleMobility={() => handleCycleMobility(toothNumber)}
+												onCycleFurcation={() => handleCycleFurcation(toothNumber)}
+												onToggleBop={(siteKey) => {
+													updateToothSite(toothNumber, siteKey, (prev) => ({
+														bleedingOnProbing: !prev.bleedingOnProbing,
+													}));
+												}}
+												onTogglePlaque={(siteKey) => {
+													updateToothSite(toothNumber, siteKey, (prev) => ({
+														plaque: !prev.plaque,
+													}));
+												}}
+												onToggleSuppuration={(siteKey) => {
+													updateToothSite(toothNumber, siteKey, (prev) => ({
+														suppuration: !prev.suppuration,
+													}));
+												}}
+												onSetProbingDepth={(siteKey, depth) => {
+													updateToothSite(toothNumber, siteKey, () => ({
+														probingDepthMm: depth,
+													}));
+												}}
+												onSetGingivalMargin={(siteKey, gm) => {
+													updateToothSite(toothNumber, siteKey, () => ({
+														gingivalMarginMm: gm,
+													}));
+												}}
+											/>
+										);
+									})}
+								</div>
+							</div>
+						)}
 
 						{/* ─── LOWER ARCH (48..41 | 31..38) ────────────────────────────── */}
-						<div className="flex flex-col gap-1 min-w-[760px]">
-							<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
-								<span>НИЖНЯЯ ЧЕЛЮСТЬ (МАНДИБУЛА) • 48–41 | 31–38</span>
-								<span className="text-[10px] text-[var(--muted)]">
-									Вестибулярно (DB • B • MB) / Язычно (DL • L • ML)
-								</span>
-							</div>
+						{(archFilter === "all" || archFilter === "lower") && (
+							<div className="flex flex-col gap-1 min-w-[760px]">
+								<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
+									<span>НИЖНЯЯ ЧЕЛЮСТЬ (МАНДИБУЛА) • 48–41 | 31–38</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Вестибулярно (DB • B • MB) / Язычно (DL • L • ML)
+									</span>
+								</div>
 
-							<div className="grid grid-cols-16 gap-1 bg-[var(--paper-soft)]/40 p-2 rounded-b-xl border border-[var(--line)]">
-								{PERIO_LOWER_ARCH_TEETH.map((toothNumber) => {
-									const tooth = toothMap.get(toothNumber);
-									if (!tooth) return null;
-									return (
-										<PerioToothCard
-											key={toothNumber}
-											tooth={tooth}
-											isUpper={false}
-											isSelected={selectedToothNumber === toothNumber}
-											focusedSiteKey={
-												focusedSite?.toothNumber === toothNumber
-													? focusedSite.siteKey
-													: null
-											}
-											readOnly={readOnly}
-											onSelectTooth={() => setSelectedToothNumber(toothNumber)}
-											onFocusSite={(siteKey) => {
-												setFocusedSite({ toothNumber, siteKey });
-												setSelectedToothNumber(toothNumber);
-											}}
-											onCycleMobility={() => handleCycleMobility(toothNumber)}
-											onCycleFurcation={() => handleCycleFurcation(toothNumber)}
-											onToggleBop={(siteKey) => {
-												updateToothSite(toothNumber, siteKey, (prev) => ({
-													bleedingOnProbing: !prev.bleedingOnProbing,
-												}));
-											}}
-											onTogglePlaque={(siteKey) => {
-												updateToothSite(toothNumber, siteKey, (prev) => ({
-													plaque: !prev.plaque,
-												}));
-											}}
-											onToggleSuppuration={(siteKey) => {
-												updateToothSite(toothNumber, siteKey, (prev) => ({
-													suppuration: !prev.suppuration,
-												}));
-											}}
-											onSetProbingDepth={(siteKey, depth) => {
-												updateToothSite(toothNumber, siteKey, () => ({
-													probingDepthMm: depth,
-												}));
-											}}
-											onSetGingivalMargin={(siteKey, gm) => {
-												updateToothSite(toothNumber, siteKey, () => ({
-													gingivalMarginMm: gm,
-												}));
-											}}
-										/>
-									);
-								})}
+								<div className="grid grid-cols-16 gap-1 bg-[var(--paper-soft)]/40 p-2 rounded-b-xl border border-[var(--line)]">
+									{PERIO_LOWER_ARCH_TEETH.map((toothNumber) => {
+										const tooth = toothMap.get(toothNumber);
+										if (!tooth) return null;
+										return (
+											<PerioToothCard
+												key={toothNumber}
+												tooth={tooth}
+												isUpper={false}
+												isSelected={selectedToothNumber === toothNumber}
+												focusedSiteKey={
+													focusedSite?.toothNumber === toothNumber
+														? focusedSite.siteKey
+														: null
+												}
+												readOnly={readOnly}
+												onSelectTooth={() => setSelectedToothNumber(toothNumber)}
+												onFocusSite={(siteKey) => {
+													setFocusedSite({ toothNumber, siteKey });
+													setSelectedToothNumber(toothNumber);
+												}}
+												onCycleMobility={() => handleCycleMobility(toothNumber)}
+												onCycleFurcation={() => handleCycleFurcation(toothNumber)}
+												onToggleBop={(siteKey) => {
+													updateToothSite(toothNumber, siteKey, (prev) => ({
+														bleedingOnProbing: !prev.bleedingOnProbing,
+													}));
+												}}
+												onTogglePlaque={(siteKey) => {
+													updateToothSite(toothNumber, siteKey, (prev) => ({
+														plaque: !prev.plaque,
+													}));
+												}}
+												onToggleSuppuration={(siteKey) => {
+													updateToothSite(toothNumber, siteKey, (prev) => ({
+														suppuration: !prev.suppuration,
+													}));
+												}}
+												onSetProbingDepth={(siteKey, depth) => {
+													updateToothSite(toothNumber, siteKey, () => ({
+														probingDepthMm: depth,
+													}));
+												}}
+												onSetGingivalMargin={(siteKey, gm) => {
+													updateToothSite(toothNumber, siteKey, () => ({
+														gingivalMarginMm: gm,
+													}));
+												}}
+											/>
+										);
+									})}
+								</div>
 							</div>
-						</div>
+						)}
 					</div>
 				</div>
 			) : (
@@ -2307,12 +2355,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 									}
 									className={`min-h-[44px] px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all touch-manipulation flex items-center gap-1.5 ${
 										selectedTooth.isMissing
-											? "bg-zinc-700 text-zinc-200 border-zinc-600"
-											: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-white"
+											? "bg-[var(--line-strong)] text-[var(--ink)] border-[var(--line)]"
+											: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 									}`}
 								>
 									<span>{selectedTooth.isMissing ? "Отсутствует" : "Отметить отсутствующим"}</span>
-									{selectedTooth.isMissing && <Check size={14} className="text-zinc-200" />}
+									{selectedTooth.isMissing && <Check size={14} className="text-[var(--ink)]" />}
 								</button>
 
 								<button
@@ -2325,7 +2373,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 									className={`min-h-[44px] px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all touch-manipulation flex items-center gap-1.5 ${
 										selectedTooth.isImplant
 											? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-											: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-white"
+											: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 									}`}
 								>
 									<span>Имплантат</span>
@@ -2349,7 +2397,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 											className={`px-1.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-all ${
 												selectedTooth.mobility === grade
 													? "bg-teal-500 text-slate-950 font-black"
-													: "text-[var(--muted)] hover:text-white"
+													: "text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											title={MOBILITY_GRADES[grade]?.nameRu}
 										>
@@ -2376,7 +2424,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 												className={`px-1.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-all ${
 													selectedTooth.furcation === grade
 														? "bg-rose-500 text-white font-black"
-														: "text-[var(--muted)] hover:text-white"
+														: "text-[var(--muted)] hover:text-[var(--ink)]"
 												}`}
 												title={FURCATION_GRADES[grade]?.nameRu}
 											>
@@ -2438,7 +2486,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 																}),
 															)
 														}
-														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs"
+														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)] flex items-center justify-center font-bold text-xs cursor-pointer"
 													>
 														-
 													</button>
@@ -2471,7 +2519,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 																}),
 															)
 														}
-														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs"
+														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)] flex items-center justify-center font-bold text-xs cursor-pointer"
 													>
 														+
 													</button>
@@ -2498,7 +2546,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 																}),
 															)
 														}
-														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs"
+														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)] flex items-center justify-center font-bold text-xs cursor-pointer"
 													>
 														-
 													</button>
@@ -2519,7 +2567,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 																}),
 															)
 														}
-														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs"
+														className="w-5 h-5 rounded bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)] flex items-center justify-center font-bold text-xs cursor-pointer"
 													>
 														+
 													</button>
@@ -2544,7 +2592,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 												className={`flex-1 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-0.5 cursor-pointer transition-all ${
 													site.bleedingOnProbing
 														? "bg-rose-500 text-white"
-														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-white"
+														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"
 												}`}
 												title="Кровоточивость при зондировании (BOP)"
 											>
@@ -2566,7 +2614,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 												className={`flex-1 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-0.5 cursor-pointer transition-all ${
 													site.plaque
 														? "bg-amber-500 text-slate-950 font-black"
-														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-white"
+														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"
 												}`}
 												title="Зубной налет (Plaque / Биопленка)"
 											>
@@ -2588,7 +2636,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 												className={`flex-1 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-0.5 cursor-pointer transition-all ${
 													site.suppuration
 														? "bg-indigo-500 text-white"
-														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-white"
+														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"
 												}`}
 												title="Нагноение из кармана (Suppuration / PUS)"
 											>
@@ -2803,7 +2851,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 			onClick={onSelectTooth}
 			className={`flex flex-col items-center p-1 rounded-lg border transition-all cursor-pointer min-h-[140px] sm:min-h-[150px] ${
 				isMissing
-					? "opacity-35 bg-zinc-900/50 border-zinc-800"
+					? "opacity-40 bg-[var(--paper-soft)] border-[var(--line)]"
 					: isSelected
 						? "bg-teal-500/10 border-teal-500 shadow-md ring-1 ring-teal-500/40"
 						: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] border-[var(--line)]"
@@ -2841,7 +2889,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 							}}
 							className={`px-1 py-0.2 rounded text-[8px] font-black tracking-tight cursor-pointer transition-all border ${
 								tooth.mobility === 0
-									? "bg-slate-800/40 text-slate-400 border-slate-700/50 hover:bg-amber-500/20 hover:text-amber-300"
+									? "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:bg-amber-500/20 hover:text-amber-300"
 									: tooth.mobility === 1
 										? "bg-amber-500/25 text-amber-300 border-amber-500/40 ring-1 ring-amber-400/30"
 										: tooth.mobility === 2
@@ -2868,7 +2916,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 								}}
 								className={`px-1 py-0.2 rounded text-[8px] font-black tracking-tight cursor-pointer transition-all border ${
 									tooth.furcation === 0
-										? "bg-slate-800/40 text-slate-400 border-slate-700/50 hover:bg-rose-500/20 hover:text-rose-300"
+										? "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:bg-rose-500/20 hover:text-rose-300"
 										: tooth.furcation === 1
 											? "bg-amber-500/25 text-amber-300 border-amber-500/40 ring-1 ring-amber-400/30"
 											: tooth.furcation === 2
@@ -2927,7 +2975,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.bleedingOnProbing
 											? "bg-rose-500 border-rose-300 text-white shadow-xs ring-1 ring-rose-300"
-											: "bg-slate-700/60 border-slate-600/40 hover:bg-rose-500/50 hover:border-rose-400"
+											: "bg-[var(--paper-soft)] border-[var(--line)] hover:bg-rose-500/50 hover:border-rose-400"
 									}`}
 									title={
 										site.bleedingOnProbing
@@ -2950,7 +2998,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.plaque
 											? "bg-amber-400 border-amber-200 text-slate-950 shadow-xs ring-1 ring-amber-200"
-											: "bg-slate-700/60 border-slate-600/40 hover:bg-amber-400/50 hover:border-amber-300"
+											: "bg-[var(--paper-soft)] border-[var(--line)] hover:bg-amber-400/50 hover:border-amber-300"
 									}`}
 									title={
 										site.plaque
@@ -3024,7 +3072,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.bleedingOnProbing
 											? "bg-rose-500 border-rose-300 text-white shadow-xs ring-1 ring-rose-300"
-											: "bg-slate-700/60 border-slate-600/40 hover:bg-rose-500/50 hover:border-rose-400"
+											: "bg-[var(--paper-soft)] border-[var(--line)] hover:bg-rose-500/50 hover:border-rose-400"
 									}`}
 									title={
 										site.bleedingOnProbing
@@ -3047,7 +3095,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.plaque
 											? "bg-amber-400 border-amber-200 text-slate-950 shadow-xs ring-1 ring-amber-200"
-											: "bg-slate-700/60 border-slate-600/40 hover:bg-amber-400/50 hover:border-amber-300"
+											: "bg-[var(--paper-soft)] border-[var(--line)] hover:bg-amber-400/50 hover:border-amber-300"
 									}`}
 									title={
 										site.plaque
@@ -3099,7 +3147,7 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 
 	if (isMissing) {
 		return (
-			<svg width="28" height="34" viewBox="0 0 28 34" className="text-zinc-700">
+			<svg width="28" height="34" viewBox="0 0 28 34" className="text-[var(--muted)]">
 				<line
 					x1="4"
 					y1="4"
@@ -3179,8 +3227,7 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 	const pocketFillRatio = Math.min(1, Math.max(0, (maxPd - 2) / 8));
 	const pocketFillHeight = Math.round(pocketFillRatio * 18);
 
-	const pocketColor =
-		maxPd <= 3 ? "#10b981" : maxPd <= 5 ? "#f59e0b" : "#ef4444";
+	const pocketColor = probingDepthHex(maxPd);
 
 	return (
 		<svg width="28" height="34" viewBox="0 0 28 34">
@@ -3191,9 +3238,9 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 				width="18"
 				height="12"
 				rx="3"
-				fill="#64748b"
-				fillOpacity="0.3"
-				stroke="#94a3b8"
+				fill="var(--line-strong, #64748b)"
+				fillOpacity="0.25"
+				stroke="var(--line, #94a3b8)"
 				strokeWidth="1.2"
 			/>
 
@@ -3207,9 +3254,9 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 								? "M7,20 L6,4 A2,2 0 0,1 11,4 L12,20 Z"
 								: "M7,14 L6,30 A2,2 0 0,0 11,30 L12,14 Z"
 						}
-						fill="#64748b"
+						fill="var(--line-strong, #64748b)"
 						fillOpacity="0.2"
-						stroke="#64748b"
+						stroke="var(--line, #64748b)"
 						strokeWidth="1"
 					/>
 					<path
@@ -3218,9 +3265,9 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 								? "M16,20 L17,4 A2,2 0 0,1 22,4 L21,20 Z"
 								: "M16,14 L17,30 A2,2 0 0,0 22,30 L21,14 Z"
 						}
-						fill="#64748b"
+						fill="var(--line-strong, #64748b)"
 						fillOpacity="0.2"
-						stroke="#64748b"
+						stroke="var(--line, #64748b)"
 						strokeWidth="1"
 					/>
 				</>
@@ -3232,9 +3279,9 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 							? "M7,20 L12,3 A2,2 0 0,1 16,3 L21,20 Z"
 							: "M7,14 L12,31 A2,2 0 0,0 16,31 L21,14 Z"
 					}
-					fill="#64748b"
+					fill="var(--line-strong, #64748b)"
 					fillOpacity="0.2"
-					stroke="#64748b"
+					stroke="var(--line, #64748b)"
 					strokeWidth="1"
 				/>
 			)}
