@@ -6,30 +6,22 @@
 
 import React, { useMemo, useState } from "react";
 import {
-	AlertCircle,
 	ArrowRight,
 	Award,
 	Banknote,
 	Check,
 	CheckCircle2,
 	ChevronRight,
-	Clock,
-	Coins,
 	Copy,
 	CreditCard,
-	Download,
-	ExternalLink,
-	FileDown,
 	FileSpreadsheet,
 	FileText,
 	Layers,
 	Printer,
 	QrCode,
-	RefreshCw,
 	ShieldCheck,
 	Sparkles,
 	User,
-	UserCheck,
 	Users,
 	Wallet,
 	X,
@@ -483,7 +475,7 @@ ${certs
 															{item.code804n}
 														</span>
 													</div>
-													<div className="text-xs text-[var(--ink,#0f172a)] font-medium mt-1">
+													<div className="text-xs text-[var(--ink,#0f172a)] font-medium mt-1 truncate min-w-0" title={item.serviceName}>
 														{item.serviceName}
 													</div>
 												</div>

@@ -23,7 +23,6 @@ import {
 	QrCode,
 	Receipt,
 	RotateCcw,
-	Send,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
@@ -50,7 +49,6 @@ import {
 import type { TreatmentPlanItem, TreatmentPlanStageKind } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
 import {
-	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
 	calculateProportionalRefundAllocation,
 	calculateSplitPaymentAllocation,
 	calculateTaxDeductionBreakdown,
@@ -60,8 +58,6 @@ import {
 	generateTaxDeductionCertificate,
 	mapTreatmentItemsToFiscalReceipt,
 	type SplitPaymentInput,
-	TAX_DEDUCTION_RELATIONSHIP_CODES,
-	TAX_DEDUCTION_RELATIONSHIP_LABELS,
 	type TaxDeductionRelationship,
 	TREATMENT_STAGE_LABELS,
 } from "./order804nFiscalEngine";
@@ -73,8 +69,6 @@ import type { FiscalReceiptPrintPayload } from "../../services/hardware/hardware
 import {
 	distributeLoyaltyDiscountAcrossItems,
 	type LoyaltyDiscountPreset,
-	calculateRoundToHundredsDiscountRub,
-	roundToHundredsRub,
 	type FiscalItemDraft,
 } from "./fiscal/fiscal54fzEngine";
 
@@ -3134,7 +3128,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													<tr key={it.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
 														<td className="border border-slate-400 dark:border-slate-600 p-2 text-center">{idx + 1}</td>
 														<td className="border border-slate-400 dark:border-slate-600 p-2 font-mono text-center text-[11px]">{it.code804n || "—"}</td>
-														<td className="border border-slate-400 dark:border-slate-600 p-2">{it.name}</td>
+														<td className="border border-slate-400 dark:border-slate-600 p-2 max-w-[320px]">
+															<div className="truncate min-w-0" title={it.name}>{it.name}</div>
+														</td>
 														<td className="border border-slate-400 dark:border-slate-600 p-2 text-center font-bold">{it.toothNumber || "—"}</td>
 														<td className="border border-slate-400 dark:border-slate-600 p-2 text-center">{qty}</td>
 														<td className="border border-slate-400 dark:border-slate-600 p-2 text-right font-mono">{formatMoneyRu(it.priceRub)}</td>
@@ -3414,13 +3410,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 														<td className="border border-[var(--border,#cbd5e1)] p-2 font-mono text-center text-[11px] font-semibold text-cyan-700 dark:text-cyan-300">
 															{it.code804n || `ART-${idx + 1}`}
 														</td>
-														<td className="border border-[var(--border,#cbd5e1)] p-2 font-medium text-[var(--ink,#0f172a)]">
-															{it.name}
-															{it.toothNumber ? (
-																<span className="ml-1 text-[11px] font-bold text-teal-600 dark:text-teal-400">
-																	[Зуб {it.toothNumber}]
-																</span>
-															) : null}
+														<td className="border border-[var(--border,#cbd5e1)] p-2 font-medium text-[var(--ink,#0f172a)] max-w-[320px]">
+															<div className="truncate min-w-0" title={it.name}>
+																{it.name}
+																{it.toothNumber ? (
+																	<span className="ml-1 text-[11px] font-bold text-teal-600 dark:text-teal-400">
+																		[Зуб {it.toothNumber}]
+																	</span>
+																) : null}
+															</div>
 														</td>
 														<td className="border border-[var(--border,#cbd5e1)] p-2 text-center text-[var(--muted,#64748b)]">796 (шт)</td>
 														<td className="border border-[var(--border,#cbd5e1)] p-2 text-center font-bold">{qty}</td>

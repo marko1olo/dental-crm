@@ -14,33 +14,19 @@ import {
 	type PlanItemForValidation,
 	type PlanToInvoiceValidationReport,
 	type PriceLockResolutionPolicy,
-	sumKopecks,
-	type ValidatedPlanItemResult,
 	validatePlanToInvoice,
 } from "@dental/shared";
 import {
 	AlertCircle,
 	AlertTriangle,
-	Check,
 	CheckCircle2,
-	ChevronDown,
 	Clock,
-	Coins,
-	CreditCard,
-	DollarSign,
-	FileCheck,
 	FileText,
-	Info,
 	Key,
 	Lock,
-	Printer,
-	RefreshCw,
-	Shield,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
-	Unlock,
-	UserCheck,
 	X,
 } from "lucide-react";
 import type React from "react";
@@ -968,12 +954,12 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 												: ""
 										}`}
 									>
-										<td className="py-3 pl-2 max-w-[280px]">
-											<div className="font-semibold text-[var(--ink)]">
+										<td className="py-3 pl-2 max-w-[280px] min-w-0">
+											<div className="font-semibold text-[var(--ink)] truncate min-w-0" title={it.nameRu}>
 												{it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}
 												{it.nameRu}
 											</div>
-											<div className="text-[11px] text-[var(--ink-muted)]">
+											<div className="text-[11px] text-[var(--ink-muted)] truncate min-w-0">
 												{it.categoryRu} • {it.quantity} шт.
 											</div>
 
@@ -994,8 +980,8 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 														</span>
 													</div>
 													{hasAnalogue ? (
-														<div className="mt-1 flex items-center justify-between gap-2">
-															<span className="text-[var(--ink)] font-medium truncate">
+														<div className="mt-1 flex items-center justify-between gap-2 min-w-0">
+															<span className="text-[var(--ink)] font-medium truncate min-w-0" title={it.suggested804nAnalogue ? `${it.suggested804nAnalogue.code804n} ${it.suggested804nAnalogue.title}` : undefined}>
 																<strong>
 																	{it.suggested804nAnalogue?.code804n}
 																</strong>{" "}

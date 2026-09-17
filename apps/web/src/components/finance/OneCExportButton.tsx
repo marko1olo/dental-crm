@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileCode2, Download, Check, AlertCircle } from 'lucide-react';
+import { FileCode2, Check } from 'lucide-react';
 import {
   generateOneCEnterpriseXml,
   type OneCDocumentType,

@@ -1,12 +1,10 @@
 import React, { useMemo, useState } from "react";
 import {
-	AlertCircle,
 	Check,
 	Code2,
 	Copy,
 	Database,
 	Download,
-	FileCode2,
 	FileText,
 	Receipt,
 	X,
@@ -453,15 +451,17 @@ export function Billing1CExportModal({
 													<td className="py-2.5 px-3 text-center font-mono text-[var(--muted,#64748b)]">
 														{idx + 1}
 													</td>
-													<td className="py-2.5 px-3">
-														{it.code804n && (
-															<span className="text-xs text-[var(--muted,#64748b)] font-mono mr-2 shrink-0">
-																{`[${it.code804n}]`}
+													<td className="py-2.5 px-3 max-w-[280px] min-w-0">
+														<div className="flex items-center min-w-0" title={it.name}>
+															{it.code804n && (
+																<span className="text-xs text-[var(--muted,#64748b)] font-mono mr-2 shrink-0">
+																	{`[${it.code804n}]`}
+																</span>
+															)}
+															<span className="font-semibold text-[var(--ink,#0f172a)] truncate min-w-0">
+																{it.name}
 															</span>
-														)}
-														<span className="font-semibold text-[var(--ink,#0f172a)]">
-															{it.name}
-														</span>
+														</div>
 													</td>
 													<td className="py-2.5 px-3 text-center font-mono font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 														{it.toothNumber || "—"}

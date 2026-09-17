@@ -9,7 +9,6 @@ import {
 	CheckCircle2,
 	Coins,
 	Calendar,
-	Building,
 	QrCode,
 	FileCode,
 	ListOrdered,
@@ -17,17 +16,14 @@ import {
 	Check,
 	ShieldCheck,
 	Users,
-	FileStack,
 	Receipt,
 } from "lucide-react";
 import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
-	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
 	amountToWordsRu,
 	calculateTaxDeductionSummary,
-	classifyTaxDeduction804n,
 	downloadFnsNoMedoplXmlFile,
 	downloadFnsTaxXmlFile,
 	downloadFnsBatchTaxXmlFile,
@@ -35,16 +31,11 @@ import {
 	generateFnsNoMedoplXml,
 	generateFnsTaxDeductionXml,
 	generateFamilyTaxDeductionBatch,
-	generateTaxCertificateQrDataUri,
-	generateTaxCertificateQrPayload,
 	generateTaxCertificateQrSvg,
 	renderOfficialTaxCertificateKnd1151156Html,
-	renderTaxDeductionCertificateHtml,
 	renderTaxDeductionBatchCertificateHtml,
 	resolveTaxDeductionCategoryShared,
-	validateInnIndividual,
 	validateRussianInn,
-	validateRussianKpp,
 	validateRussianPassport,
 	type FamilyMemberPayerConfig,
 	type TaxDeductionCertificateParams,
@@ -982,7 +973,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 														<td className="p-3 font-mono text-[11px] text-[var(--muted,#64748b)]">
 															{p.fiscalSign}
 														</td>
-														<td className="p-3 max-w-[220px] truncate">{p.serviceName}</td>
+														<td className="p-3 max-w-[220px] truncate min-w-0" title={p.serviceName}>{p.serviceName}</td>
 														<td className="p-3 font-mono font-bold text-teal-700 dark:text-teal-300">
 															{p.code804n || "—"}
 														</td>

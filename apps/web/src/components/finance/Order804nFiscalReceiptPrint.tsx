@@ -120,7 +120,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 					{receipt.items.map((it, idx) => (
 						<div key={it.id || idx} className="space-y-1 pb-2 border-b border-dotted border-[var(--border,#cbd5e1)] last:border-0 last:pb-0">
 							<div className="flex items-start justify-between gap-2">
-								<div className="font-bold text-xs text-[var(--ink,#0f172a)] leading-snug">
+								<div className="font-bold text-xs text-[var(--ink,#0f172a)] leading-snug break-words min-w-0" title={it.name}>
 									{idx + 1}. {it.name}
 								</div>
 								{it.isMarkedItem && (

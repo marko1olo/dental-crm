@@ -10,23 +10,17 @@
 
 import React, { useMemo, useState } from "react";
 import {
-	AlertTriangle,
 	ArrowLeftRight,
 	Check,
 	CheckCircle2,
 	Clock,
 	Coins,
 	CreditCard,
-	DollarSign,
-	FileText,
 	Info,
 	Printer,
 	QrCode,
-	Receipt,
 	RotateCcw,
 	ShieldAlert,
-	Sparkles,
-	UserCheck,
 	Wallet,
 	X,
 } from "lucide-react";

@@ -14,7 +14,6 @@ import {
 	Coins,
 	Copy,
 	CreditCard,
-	Download,
 	Eye,
 	FileCheck,
 	FileSpreadsheet,
@@ -47,7 +46,6 @@ import {
 import {
 	calculateCashChange,
 	distributeLoyaltyDiscountAcrossItems,
-	LOYALTY_DISCOUNT_PRESETS,
 	type LoyaltyDiscountPreset,
 } from "./fiscal/fiscal54fzEngine";
 import {
@@ -1454,8 +1452,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 															{renderCategoryIcon(grp.categoryGroup)}
 														</div>
 														<div className="min-w-0 flex-1">
-															<div className="flex items-center gap-2 flex-wrap">
-																<strong className="text-[var(--ink)] font-bold text-xs sm:text-sm">
+															<div className="flex items-center gap-2 flex-wrap min-w-0">
+																<strong className="text-[var(--ink)] font-bold text-xs sm:text-sm truncate min-w-0" title={singleItem.friendlyName}>
 																	{singleItem.toothNumber ? `Зуб ${singleItem.toothNumber} • ` : ""}
 																	{singleItem.friendlyName}
 																</strong>
@@ -1560,8 +1558,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 															className="py-2.5 px-1.5 flex items-center justify-between gap-3 text-xs hover:bg-[var(--paper-soft)]/50 rounded-lg transition-colors"
 														>
 															<div className="flex-1 min-w-0">
-																<div className="flex items-center gap-2 flex-wrap">
-																	<strong className="text-[var(--ink)] font-bold">
+																<div className="flex items-center gap-2 flex-wrap min-w-0">
+																	<strong className="text-[var(--ink)] font-bold truncate min-w-0" title={it.friendlyName}>
 																		{it.toothNumber ? `Зуб ${it.toothNumber} • ` : ""}
 																		{it.friendlyName}
 																	</strong>
@@ -1694,16 +1692,18 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 													<td className="border border-[var(--line)] p-1 text-center font-mono">{idx + 1}</td>
 													<td className="border border-[var(--line)] p-1 text-center font-mono text-[10px]">{it.code804n || "—"}</td>
 													<td className="border border-[var(--line)] p-1 text-center font-bold">{it.toothNumber ? `№${it.toothNumber}` : "—"}</td>
-													<td className="border border-[var(--line)] p-1">
-														<span>{it.name}</span>
-														{it.isWarranty && (
-															<span
-																data-testid={`badge-warranty-preview-${it.id}`}
-																className="ml-2 text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-500/30 rounded px-1.5 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
-															>
-																[ГАРАНТИЯ]
-															</span>
-														)}
+													<td className="border border-[var(--line)] p-1 max-w-[280px]">
+														<div className="flex items-center gap-1 min-w-0">
+															<span className="truncate min-w-0" title={it.name}>{it.name}</span>
+															{it.isWarranty && (
+																<span
+																	data-testid={`badge-warranty-preview-${it.id}`}
+																	className="shrink-0 text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-500/30 rounded px-1.5 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+																>
+																	[ГАРАНТИЯ]
+																</span>
+															)}
+														</div>
 													</td>
 													<td className="border border-[var(--line)] p-1 text-center font-mono">{it.quantity}</td>
 													<td className="border border-[var(--line)] p-1 text-right font-mono">{it.priceRub.toFixed(2)}</td>
