@@ -13,15 +13,13 @@ import {
 	AlertTriangle,
 	Archive,
 	Building2,
-	Calculator,
-	Check,
 	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
+	Clock,
 	Code2,
 	Copy,
 	Download,
-	Eye,
 	FileArchive,
 	FileCode2,
 	FileText,
@@ -32,12 +30,8 @@ import {
 	RefreshCcw,
 	Send,
 	Shield,
-	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
 	Trash2,
-	User,
-	Users,
 	X,
 } from "lucide-react";
 import { strToU8, zipSync } from "fflate";
@@ -48,15 +42,9 @@ import {
 	signatureService,
 } from "../../lib/cryptopro";
 import {
-	ALL_FDI_TEETH,
-	COMMON_804N_DENTAL_SERVICES,
-	COMMON_DENTAL_ICD10,
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
-	DENTAL_SURFACES,
 	DENTAL_TOOTH_STATUS_DICTIONARY,
-	EGISZ_DENTAL_SEMD_TYPES,
-	EGISZ_REMD_OIDS,
 	type EgiszClinicInfo,
 	type EgiszDentalCdaPayload,
 	type EgiszDentalSemdCode,
@@ -66,20 +54,15 @@ import {
 	type EgiszPreflightReport,
 	type EgiszProcedureItem,
 	FDI_ADULT_TEETH,
-	FDI_CHILD_TEETH,
 	type FnsTaxCertificatePayload,
 	type FnsTaxPaymentItem,
 	type FnsTaxPreflightReport,
-	FRMR_DOCTOR_POSITIONS,
 	type GostSignatureInfo,
 	SAMPLE_043U_PATIENT_PRESET,
 	SAMPLE_DENTAL_SEMD_105_PRESET,
 	SAMPLE_FNS_TAX_1151156_PRESET,
 	canonicalizeCdaXml,
-	escapeXml,
-	formatHl7DateTime,
 	formatKopecksToRubles,
-	formatRuDate,
 	generateEgiszDentalCdaXml,
 	generateEgiszXmlFilename,
 	generateFnsTaxCertificatePrintHtml,
@@ -87,14 +70,9 @@ import {
 	generateFnsTaxXmlFilename,
 	generateForm043uPrintHtml,
 	generateGostSignatureStampHtml,
-	generateGostXmlSignatureBlock,
 	parseRublesToKopecks,
 	runEgisz043uPreflight,
 	runFnsTaxCertificatePreflight,
-	validateOidFormat,
-	validateRussianInn,
-	validateRussianOgrn,
-	validateRussianSnils,
 	validateXmlStructure,
 } from "./egiszRemdEngine";
 import {
@@ -680,11 +658,59 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		}
 	};
 
+	// Mandate 8e: Doctor & Clinic Autonomy — deferred queue for async UKEP signing & EGISZ REMD sending
+	const handleQueueDeferred = useCallback(() => {
+		const deferredRecord: RemdDocumentRecord = {
+			id: `REMD-DEF-${Date.now()}`,
+			docTypeCode: activeDocType === "cda_semd" ? semdDocCode : "1151156",
+			encounterDate: new Date().toISOString().slice(0, 10),
+			status: "draft",
+			patient: {
+				fullName: activeDocType === "cda_semd" ? patient.patientFullName : taxPatientName,
+				snils: activeDocType === "cda_semd" ? patient.patientSnils : taxPatientSnils,
+				birthDate: patient.birthDate,
+				gender: patient.gender,
+			},
+			doctor: {
+				fullName: doctor.doctorFullName,
+				snils: doctor.doctorSnils,
+				position: doctor.doctorPosition,
+			},
+			cdaPayload: semdPayload,
+		};
+		setRecords((prev) => [deferredRecord, ...prev]);
+		showToast(
+			"Документ помещен в очередь «Отложенная отправка ЕГИСЗ» (будет подписан и отправлен асинхронно). Прием и расчет пациента не заблокированы!",
+			"success",
+		);
+		if (onSentSuccess) {
+			onSentSuccess({
+				type: activeDocType,
+				documentId: deferredRecord.id,
+				timestamp: new Date().toISOString(),
+			});
+		}
+	}, [activeDocType, semdDocCode, patient, doctor, semdPayload, taxPatientName, taxPatientSnils, onSentSuccess]);
+
+	// Mandate 8k: 1-Click CDA XML validation
+	const handleValidateCdaXml = useCallback(() => {
+		const report = activeDocType === "cda_semd" ? cdaPreflightReport : fnsPreflightReport;
+		const struct = validateXmlStructure(generatedXml);
+		showToast(
+			`Валидация CDA XML: ${report.passedCount}/${report.totalChecks} проверок пройдено (${report.scorePercent}%), тегов: ${struct.tagCount}`,
+			report.isValid ? "success" : "warning",
+		);
+	}, [activeDocType, cdaPreflightReport, fnsPreflightReport, generatedXml]);
+
 	// Send to REMD / FNS handler
 	const handleSendToRegistry = async () => {
-		if (!doctorSig) {
-			showToast("Перед отправкой необходимо наложить УКЭП врача", "warning");
-			setActiveTab("signature");
+		if (isSending) return;
+
+		// Mandate 8e: Doctor autonomy. Lack of immediate signature must never block doctor or checkout.
+		// Automatically route to "Отложенная отправка ЕГИСЗ" queue.
+		if (!doctorSig && activeDocType === "cda_semd") {
+			handleQueueDeferred();
+			showToast("УКЭП не наложена. Документ отправлен в очередь «Отложенная отправка ЕГИСЗ» для пакетного подписания!", "info");
 			return;
 		}
 
@@ -695,13 +721,15 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 				const effectiveVisitId = semdPayload.documentUuid?.replace(/^urn:uuid:/, "") || `VISIT-${Date.now()}`;
 				const packageBody = {
 					cdaXml: generatedXml,
-					doctorSignature: {
-						signatureBase64: doctorSig.signatureBase64,
-						certificateSerialNumber: doctorSig.certificateSerialNumber,
-						certificateSubject: doctorSig.certificateSubject,
-						signedAt: doctorSig.signedAt || new Date().toISOString(),
-						algorithmOid: doctorSig.algorithmOid || "1.2.643.7.1.1.1.1",
-					},
+					doctorSignature: doctorSig
+						? {
+								signatureBase64: doctorSig.signatureBase64,
+								certificateSerialNumber: doctorSig.certificateSerialNumber,
+								certificateSubject: doctorSig.certificateSubject,
+								signedAt: doctorSig.signedAt || new Date().toISOString(),
+								algorithmOid: doctorSig.algorithmOid || "1.2.643.7.1.1.1.1",
+							}
+						: undefined,
 					...(moSig
 						? {
 								clinicSignature: {
@@ -803,7 +831,9 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 			}
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
-			showToast(`Сбой при передаче пакета в шлюз: ${msg}`, "error");
+			// Mandate 8e: gateway failure/timeout must NEVER block doctor or patient discharge — auto-queue to deferred outbox
+			handleQueueDeferred();
+			showToast(`Шлюз ЕГИСЗ временно недоступен (${msg}). Документ помещен в очередь «Отложенная отправка ЕГИСЗ».`, "warning");
 		} finally {
 			setIsSending(false);
 		}
@@ -857,42 +887,32 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 				{/* HEADER */}
 				{/* ══════════════════════════════════════════════════════════════════════ */}
 				<header className="egisz-modal-header">
-					<div className="egisz-header-titles">
-						<div className="egisz-header-icon">
+					<div className="egisz-header-titles" style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
+						<div className="egisz-header-icon" style={{ flexShrink: 0 }}>
 							<ShieldCheck size={24} />
 						</div>
-						<div>
-							<div className="egisz-main-title">
+						<div style={{ minWidth: 0 }}>
+							<div className="egisz-main-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
 								СЭМД ЕГИСЗ CDA R2 &bull; РЭМД Минздрава & ФНС КНД 1151156 — Хаб электронных медицинских документов
-								<span className="egisz-moh-badge" style={{ marginLeft: "0.5rem", fontSize: "0.75rem", padding: "0.15rem 0.45rem", borderRadius: "4px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", fontWeight: 700 }}>Минздрав РФ</span>
+								<span className="egisz-moh-badge egisz-badge-teal" style={{ marginLeft: "0.5rem", fontSize: "0.75rem", padding: "0.15rem 0.45rem", borderRadius: "4px", fontWeight: 700 }}>Минздрав РФ</span>
 							</div>
-							<div className="egisz-sub-title">
+							<div className="egisz-sub-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
 								Федеральный реестр медицинских документов (63-ФЗ, 947н) &bull; СЭМД ЕГИСЗ CDA R2 &bull; Налоговый вычет (Приказ ЕД-7-11/755@)
 							</div>
 						</div>
 					</div>
 
-					{/* Document Mode Switcher */}
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-						<div style={{ display: "flex", background: "var(--line, #e2e8f0)", padding: "2px", borderRadius: "8px", flexWrap: "wrap" }}>
+					{/* Document Mode Switcher per Hick's Law: 1 compact row 32-36px */}
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+						<div className="egisz-doc-filter-toolbar" role="toolbar" aria-label="Фильтр видов СЭМД">
 							<button
 								type="button"
 								data-testid="doc-type-btn-302"
+								className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && semdDocCode === "302" ? "active" : ""}`}
 								onClick={() => {
 									setActiveDocType("cda_semd");
 									setSemdDocCode("302");
 									setActiveTab("xml_preview");
-								}}
-								style={{
-									padding: "0.35rem 0.75rem",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-									border: "none",
-									borderRadius: "6px",
-									cursor: "pointer",
-									background: activeDocType === "cda_semd" && semdDocCode === "302" ? "var(--paper, #fff)" : "transparent",
-									color: activeDocType === "cda_semd" && semdDocCode === "302" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
-									boxShadow: activeDocType === "cda_semd" && semdDocCode === "302" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
 								}}
 							>
 								302 &bull; Консультация
@@ -900,41 +920,32 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							<button
 								type="button"
 								data-testid="doc-type-btn-303"
+								className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && semdDocCode === "303" ? "active" : ""}`}
 								onClick={() => {
 									setActiveDocType("cda_semd");
 									setSemdDocCode("303");
 									setActiveTab("xml_preview");
-								}}
-								style={{
-									padding: "0.35rem 0.75rem",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-									border: "none",
-									borderRadius: "6px",
-									cursor: "pointer",
-									background: activeDocType === "cda_semd" && semdDocCode === "303" ? "var(--paper, #fff)" : "transparent",
-									color: activeDocType === "cda_semd" && semdDocCode === "303" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
-									boxShadow: activeDocType === "cda_semd" && semdDocCode === "303" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
 								}}
 							>
 								303 &bull; Вмешательство
 							</button>
 							<button
 								type="button"
+								className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && semdDocCode === "105" ? "active" : ""}`}
+								onClick={() => {
+									setActiveDocType("cda_semd");
+									setSemdDocCode("105");
+									setActiveTab("clinical");
+								}}
+							>
+								105 &bull; 043/у
+							</button>
+							<button
+								type="button"
+								className={`egisz-doc-filter-btn ${activeDocType === "fns_tax" ? "active" : ""}`}
 								onClick={() => {
 									setActiveDocType("fns_tax");
 									setActiveTab("tax_deduction");
-								}}
-								style={{
-									padding: "0.35rem 0.75rem",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-									border: "none",
-									borderRadius: "6px",
-									cursor: "pointer",
-									background: activeDocType === "fns_tax" ? "var(--paper, #fff)" : "transparent",
-									color: activeDocType === "fns_tax" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
-									boxShadow: activeDocType === "fns_tax" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
 								}}
 							>
 								Справка ФНС (КНД 1151156)
@@ -943,7 +954,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 
 						<button
 							type="button"
-							className="egisz-close-btn"
+							className="egisz-close-btn egisz-close-icon-btn"
 							onClick={onClose}
 							aria-label="Закрыть модальное окно"
 						>
@@ -1730,110 +1741,162 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									</button>
 								</div>
 
-								{/* 1-Click Action Buttons */}
-								<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
-									<button
-										type="button"
-										onClick={handleSignDocument}
-										disabled={isSigning}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.4rem",
-											padding: "0.5rem 0.9rem",
-											fontSize: "0.8125rem",
-											fontWeight: 700,
-											borderRadius: "6px",
-											background: "#0056b3",
-											color: "#ffffff",
-											border: "none",
-											cursor: isSigning ? "wait" : "pointer",
-										}}
-									>
-										<Key size={16} />
-										Подписать УКЭП врача
-									</button>
-									<button
-										type="button"
-										onClick={handleSignMoDocument}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.4rem",
-											padding: "0.5rem 0.9rem",
-											fontSize: "0.8125rem",
-											fontWeight: 700,
-											borderRadius: "6px",
-											background: "var(--paper)",
-											color: "var(--ink)",
-											border: "1px solid var(--line)",
-											cursor: "pointer",
-										}}
-									>
-										<Building2 size={16} />
-										Подписать УКЭП организации
-									</button>
-									<button
-										type="button"
-										onClick={handleSendToRegistry}
-										disabled={isSending}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.4rem",
-											padding: "0.5rem 0.9rem",
-											fontSize: "0.8125rem",
-											fontWeight: 700,
-											borderRadius: "6px",
-											background: "var(--primary)",
-											color: "#ffffff",
-											border: "none",
-											cursor: isSending ? "wait" : "pointer",
-										}}
-									>
-										<Send size={16} />
-										Отправить в РЭМД ЕГИСЗ
-									</button>
-									<button
-										type="button"
-										onClick={handlePrint}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.4rem",
-											padding: "0.5rem 0.9rem",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											borderRadius: "6px",
-											background: "var(--paper)",
-											color: "var(--ink)",
-											border: "1px solid var(--line)",
-											cursor: "pointer",
-										}}
-									>
-										<Printer size={16} />
-										Печать со штампом
-									</button>
-									<button
-										type="button"
-										onClick={handleDownloadXml}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.4rem",
-											padding: "0.5rem 0.9rem",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											borderRadius: "6px",
-											background: "var(--paper)",
-											color: "var(--ink)",
-											border: "1px solid var(--line)",
-											cursor: "pointer",
-										}}
-									>
-										<Download size={16} />
-										Скачать XML
-									</button>
+								{/* 1-Click Action Buttons: Primary (Miller <= 2) + Autonomy + Auxiliary */}
+								<div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginBottom: "1rem" }}>
+									{/* Primary Actions (<= 2 buttons per Miller's Law) */}
+									<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+										<button
+											type="button"
+											onClick={handleSignDocument}
+											className="egisz-btn"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.4rem",
+												padding: "0.5rem 0.9rem",
+												fontSize: "0.8125rem",
+												fontWeight: 700,
+												borderRadius: "6px",
+												background: "var(--teal, #0d9488)",
+												color: "#ffffff",
+												border: "none",
+												cursor: isSigning ? "wait" : "pointer",
+											}}
+										>
+											<Key size={16} />
+											Подписать УКЭП врача
+										</button>
+										<button
+											type="button"
+											onClick={handleSendToRegistry}
+											className="egisz-btn egisz-btn-primary"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.4rem",
+												padding: "0.5rem 0.9rem",
+												fontSize: "0.8125rem",
+												fontWeight: 700,
+												borderRadius: "6px",
+												background: "var(--primary, #0ea5e9)",
+												color: "#ffffff",
+												border: "none",
+												cursor: isSending ? "wait" : "pointer",
+											}}
+										>
+											<Send size={16} />
+											Отправить в РЭМД ЕГИСЗ
+										</button>
+										<button
+											type="button"
+											onClick={handleQueueDeferred}
+											className="egisz-btn sm"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.4rem",
+												padding: "0.4rem 0.75rem",
+												fontSize: "0.8125rem",
+												fontWeight: 600,
+												borderRadius: "6px",
+												border: "1px solid var(--line)",
+												background: "var(--paper-strong)",
+												color: "var(--ink)",
+												cursor: "pointer",
+											}}
+										>
+											<Clock size={15} />
+											Отложить в очередь ЕГИСЗ
+										</button>
+									</div>
+
+									{/* Auxiliary Document Actions (Compact row) */}
+									<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
+										<button
+											type="button"
+											onClick={handleSignMoDocument}
+											className="egisz-btn sm"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.35rem",
+												padding: "0.35rem 0.75rem",
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												borderRadius: "6px",
+												background: "var(--paper)",
+												color: "var(--ink)",
+												border: "1px solid var(--line)",
+												cursor: "pointer",
+											}}
+										>
+											<Building2 size={14} />
+											Подписать УКЭП организации
+										</button>
+										<button
+											type="button"
+											onClick={handlePrint}
+											className="egisz-btn sm"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.35rem",
+												padding: "0.35rem 0.75rem",
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												borderRadius: "6px",
+												background: "var(--paper)",
+												color: "var(--ink)",
+												border: "1px solid var(--line)",
+												cursor: "pointer",
+											}}
+										>
+											<Printer size={14} />
+											Печать со штампом
+										</button>
+										<button
+											type="button"
+											onClick={handleDownloadXml}
+											className="egisz-btn sm"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.35rem",
+												padding: "0.35rem 0.75rem",
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												borderRadius: "6px",
+												background: "var(--paper)",
+												color: "var(--ink)",
+												border: "1px solid var(--line)",
+												cursor: "pointer",
+											}}
+										>
+											<Download size={14} />
+											Скачать XML
+										</button>
+										<button
+											type="button"
+											onClick={handleValidateCdaXml}
+											className="egisz-btn sm"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.35rem",
+												padding: "0.35rem 0.75rem",
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												borderRadius: "6px",
+												background: "var(--paper)",
+												color: "var(--teal, #0d9488)",
+												border: "1px solid var(--line)",
+												cursor: "pointer",
+											}}
+										>
+											<CheckCircle2 size={14} />
+											Валидация XML CDA
+										</button>
+									</div>
 								</div>
 
 								{availableCerts.length === 0 ? (
@@ -1849,7 +1912,6 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 											<button
 												type="button"
 												onClick={refreshCerts}
-												disabled={isCheckingCerts}
 												style={{
 													display: "flex",
 													alignItems: "center",
@@ -1866,6 +1928,26 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 											>
 												<RefreshCcw size={14} className={isCheckingCerts ? "animate-spin" : ""} />
 												{isCheckingCerts ? "Проверка..." : "Проверить плагин КриптоПро"}
+											</button>
+											<button
+												type="button"
+												onClick={handleQueueDeferred}
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.4rem",
+													padding: "0.5rem 1rem",
+													fontSize: "0.8125rem",
+													fontWeight: 600,
+													borderRadius: "6px",
+													border: "1px solid rgba(245, 158, 11, 0.4)",
+													background: "rgba(245, 158, 11, 0.1)",
+													color: "var(--ink)",
+													cursor: "pointer",
+												}}
+											>
+												<Clock size={14} />
+												Отложить в очередь ЕГИСЗ (не блокировать прием)
 											</button>
 											<label
 												style={{
@@ -1911,6 +1993,8 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 													borderRadius: "6px",
 													border: "1px solid var(--line)",
 													fontSize: "0.8125rem",
+													background: "var(--paper)",
+													color: "var(--ink)",
 												}}
 											>
 												{availableCerts.map((c) => (
@@ -1920,11 +2004,11 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 												))}
 											</select>
 										</div>
-										<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+										<div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
 											<button
 												type="button"
 												onClick={handleSignDocument}
-												disabled={isSigning}
+												className="egisz-btn"
 												style={{
 													display: "flex",
 													alignItems: "center",
@@ -1933,7 +2017,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 													fontSize: "0.875rem",
 													fontWeight: 700,
 													borderRadius: "6px",
-													background: "#0056b3",
+													background: "var(--teal, #0d9488)",
 													color: "#ffffff",
 													border: "none",
 													cursor: isSigning ? "wait" : "pointer",
@@ -1941,6 +2025,27 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 											>
 												<Key size={18} />
 												{isSigning ? "Выполняется подписание..." : "Подписать документ УКЭП"}
+											</button>
+											<button
+												type="button"
+												onClick={handleQueueDeferred}
+												className="egisz-btn sm"
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.4rem",
+													padding: "0.55rem 0.9rem",
+													fontSize: "0.8125rem",
+													fontWeight: 600,
+													borderRadius: "6px",
+													border: "1px solid var(--line)",
+													background: "var(--paper)",
+													color: "var(--ink)",
+													cursor: "pointer",
+												}}
+											>
+												<Clock size={14} />
+												Отложить в очередь ЕГИСЗ
 											</button>
 											<label
 												style={{
@@ -2018,8 +2123,30 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 								<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 									<button
 										type="button"
+										onClick={handleValidateCdaXml}
+										className="egisz-btn sm"
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.35rem",
+											padding: "0.4rem 0.75rem",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											border: "1px solid var(--line)",
+											background: "var(--paper)",
+											color: "var(--teal, #0d9488)",
+											cursor: "pointer",
+										}}
+									>
+										<CheckCircle2 size={14} />
+										<span>1-Клик Валидация XML</span>
+									</button>
+									<button
+										type="button"
 										onClick={handleDownloadXml}
 										data-testid="btn-export-cda-xml"
+										className="egisz-btn sm"
 										style={{
 											display: "flex",
 											alignItems: "center",
@@ -2040,8 +2167,8 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									<button
 										type="button"
 										onClick={handleSendToRegistry}
-										disabled={isSending}
 										data-testid="btn-submit-egisz-remd"
+										className="egisz-btn egisz-btn-primary sm"
 										style={{
 											display: "flex",
 											alignItems: "center",
@@ -2050,7 +2177,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 											fontSize: "0.8125rem",
 											fontWeight: 700,
 											borderRadius: "6px",
-											background: "var(--primary)",
+											background: "var(--primary, #0ea5e9)",
 											color: "#ffffff",
 											border: "none",
 											cursor: isSending ? "wait" : "pointer",
@@ -2062,6 +2189,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									<button
 										type="button"
 										onClick={handleCopyXml}
+										className="egisz-btn sm"
 										style={{
 											display: "flex",
 											alignItems: "center",
@@ -2357,16 +2485,16 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 
 							{/* Documents Table */}
 							<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
-								<table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem" }}>
+								<table className="egisz-table-fixed" style={{ borderCollapse: "collapse", fontSize: "0.8125rem" }}>
 									<thead>
 										<tr style={{ background: "var(--paper-strong)", borderBottom: "1px solid var(--line)", textAlign: "left" }}>
-											<th style={{ padding: "0.6rem 0.75rem" }}>Статус</th>
-											<th style={{ padding: "0.6rem 0.75rem" }}>СЭМД</th>
-											<th style={{ padding: "0.6rem 0.75rem" }}>Пациент</th>
-											<th style={{ padding: "0.6rem 0.75rem" }}>Врач</th>
-											<th style={{ padding: "0.6rem 0.75rem" }}>Рег. номер РЭМД</th>
-											<th style={{ padding: "0.6rem 0.75rem" }}>Дата</th>
-											<th style={{ padding: "0.6rem 0.75rem", textAlign: "right" }}>Действия</th>
+											<th style={{ width: "130px", padding: "0.6rem 0.75rem" }}>Статус</th>
+											<th style={{ width: "70px", padding: "0.6rem 0.75rem" }}>СЭМД</th>
+											<th style={{ width: "190px", padding: "0.6rem 0.75rem" }}>Пациент</th>
+											<th style={{ width: "190px", padding: "0.6rem 0.75rem" }}>Врач</th>
+											<th style={{ width: "160px", padding: "0.6rem 0.75rem" }}>Рег. номер РЭМД</th>
+											<th style={{ width: "95px", padding: "0.6rem 0.75rem" }}>Дата</th>
+											<th style={{ width: "175px", padding: "0.6rem 0.75rem", textAlign: "right" }}>Действия</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -2413,22 +2541,24 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 													<td style={{ padding: "0.6rem 0.75rem", fontWeight: 600 }}>
 														{rec.docTypeCode}
 													</td>
-													<td style={{ padding: "0.6rem 0.75rem" }}>
-														<div>{rec.patient.fullName}</div>
+													<td style={{ padding: "0.6rem 0.75rem", minWidth: 0 }}>
+														<div className="egisz-cell-truncate" title={rec.patient.fullName}>{rec.patient.fullName}</div>
 														{rec.patient.snils && (
-															<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+															<div className="egisz-cell-truncate font-mono" style={{ fontSize: "0.75rem", color: "var(--muted)" }} title={rec.patient.snils}>
 																{rec.patient.snils}
 															</div>
 														)}
 													</td>
-													<td style={{ padding: "0.6rem 0.75rem" }}>
-														<div>{rec.doctor.fullName}</div>
-														<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+													<td style={{ padding: "0.6rem 0.75rem", minWidth: 0 }}>
+														<div className="egisz-cell-truncate" title={rec.doctor.fullName}>{rec.doctor.fullName}</div>
+														<div className="egisz-cell-truncate" style={{ fontSize: "0.75rem", color: "var(--muted)" }} title={rec.doctor.position}>
 															{rec.doctor.position}
 														</div>
 													</td>
-													<td style={{ padding: "0.6rem 0.75rem", fontFamily: "monospace", fontSize: "0.75rem" }}>
-														{rec.registrationInfo?.regNumber || "—"}
+													<td style={{ padding: "0.6rem 0.75rem", minWidth: 0 }}>
+														<div className="egisz-cell-truncate font-mono" style={{ fontFamily: "monospace", fontSize: "0.75rem" }} title={rec.registrationInfo?.regNumber || "—"}>
+															{rec.registrationInfo?.regNumber || "—"}
+														</div>
 													</td>
 													<td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>
 														{rec.encounterDate}
@@ -2445,12 +2575,13 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 																		setActiveTab("signature");
 																	}
 																}}
+																className="egisz-btn sm"
 																style={{
-																	padding: "0.3rem 0.6rem",
+																	padding: "0.25rem 0.6rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
 																	borderRadius: "4px",
-																	background: "#0056b3",
+																	background: "var(--teal, #0d9488)",
 																	color: "#ffffff",
 																	border: "none",
 																	cursor: "pointer",
@@ -2468,8 +2599,9 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 																		handleSingleZipExport(rec);
 																	}
 																}}
+																className="egisz-btn sm"
 																style={{
-																	padding: "0.3rem 0.6rem",
+																	padding: "0.25rem 0.6rem",
 																	fontSize: "0.75rem",
 																	fontWeight: 600,
 																	borderRadius: "4px",
@@ -2503,18 +2635,21 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "space-between",
+						flexWrap: "wrap",
+						gap: "0.5rem",
 					}}
 				>
-					<div style={{ display: "flex", gap: "0.5rem" }}>
+					<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
 						<button
 							type="button"
 							onClick={handlePrint}
+							className="egisz-btn sm"
 							style={{
 								display: "flex",
 								alignItems: "center",
 								gap: "0.4rem",
-								padding: "0.5rem 1rem",
-								fontSize: "0.875rem",
+								padding: "0.45rem 0.9rem",
+								fontSize: "0.8125rem",
 								fontWeight: 600,
 								borderRadius: "6px",
 								border: "1px solid var(--line)",
@@ -2526,15 +2661,58 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							<Printer size={16} />
 							Печать бланка
 						</button>
+						<button
+							type="button"
+							onClick={handleValidateCdaXml}
+							className="egisz-btn sm"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								padding: "0.45rem 0.9rem",
+								fontSize: "0.8125rem",
+								fontWeight: 600,
+								borderRadius: "6px",
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--teal, #0d9488)",
+								cursor: "pointer",
+							}}
+						>
+							<CheckCircle2 size={16} />
+							1-Клик Валидация
+						</button>
 					</div>
 
-					<div style={{ display: "flex", gap: "0.75rem" }}>
+					<div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+						<button
+							type="button"
+							onClick={handleQueueDeferred}
+							className="egisz-btn sm"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								padding: "0.45rem 0.9rem",
+								fontSize: "0.8125rem",
+								fontWeight: 600,
+								borderRadius: "6px",
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								cursor: "pointer",
+							}}
+						>
+							<Clock size={15} />
+							Отложить отправку
+						</button>
 						<button
 							type="button"
 							onClick={onClose}
+							className="egisz-btn sm"
 							style={{
-								padding: "0.5rem 1.25rem",
-								fontSize: "0.875rem",
+								padding: "0.45rem 1rem",
+								fontSize: "0.8125rem",
 								fontWeight: 600,
 								borderRadius: "6px",
 								border: "1px solid var(--line)",
@@ -2548,16 +2726,16 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						<button
 							type="button"
 							onClick={handleSendToRegistry}
-							disabled={isSending}
+							className="egisz-btn egisz-btn-primary sm"
 							style={{
 								display: "flex",
 								alignItems: "center",
 								gap: "0.5rem",
-								padding: "0.5rem 1.5rem",
-								fontSize: "0.875rem",
+								padding: "0.45rem 1.25rem",
+								fontSize: "0.8125rem",
 								fontWeight: 700,
 								borderRadius: "6px",
-								background: "var(--primary)",
+								background: "var(--primary, #0ea5e9)",
 								color: "#ffffff",
 								border: "none",
 								cursor: isSending ? "wait" : "pointer",
