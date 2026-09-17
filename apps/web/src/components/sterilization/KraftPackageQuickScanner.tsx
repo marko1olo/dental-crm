@@ -28,6 +28,7 @@ import {
 	SAMPLE_TEST_BARCODES,
 	STANDARD_TRAY_OPTIONS,
 	createStandardSterileTrayBarcode,
+	type StandardTrayDefinition,
 	type StandardTrayType,
 } from "./sterilizationPresets";
 import { showToast } from "../GlobalToast";
@@ -38,7 +39,7 @@ export interface KraftPackageQuickScannerProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onAttachToProtocol?: ((parsed: ParsedKraftBarcode) => void | Promise<void>) | undefined;
-	readonly initialBarcode?: string | null | undefined;
+	readonly initialBarcode?: string | undefined;
 	readonly currentDiaryBarcode?: string | null | undefined;
 }
 
@@ -58,8 +59,18 @@ export function KraftPackageQuickScanner({
 		}
 	}, [isOpen, initialBarcode]);
 
-	const selectedTrayDef = useMemo(() => {
-		return STANDARD_TRAY_OPTIONS.find((t) => t.id === selectedTrayType) || STANDARD_TRAY_OPTIONS[0];
+	const selectedTrayDef: StandardTrayDefinition = useMemo(() => {
+		const found = STANDARD_TRAY_OPTIONS.find((t) => t.id === selectedTrayType);
+		if (found) return found;
+		const fallback = STANDARD_TRAY_OPTIONS[0];
+		if (fallback) return fallback;
+		return {
+			id: "therapy",
+			toolSetCode: "set_therapeutic_tray",
+			labelRu: "Стандартный смотровой лоток терапевта (зеркало, зонд, пинцет, гладилка)",
+			shortLabelRu: "Лоток терапевта",
+			descriptionRu: "Базовый набор терапевтического приема в самоклеящемся крафт-пакете (50 сут.)",
+		};
 	}, [selectedTrayType]);
 
 	const parsed = useMemo<ParsedKraftBarcode | null>(() => {
