@@ -953,7 +953,7 @@ export function TelephonyFloatingWidget({
 										)}
 
 										{/* 2. Critical Acute Pain / Emergency Banner */}
-										{(acutePainAlerts.length > 0 || activeCall?.acutePain) && (
+										{(acutePainAlerts.length > 0 || (activeCall as unknown as { acutePain?: boolean })?.acutePain) && (
 											<div
 												className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 shadow-xs animate-fade-in"
 												data-testid="telephony-widget-acute-pain-alert"

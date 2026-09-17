@@ -275,12 +275,12 @@ describe("Wave 239 — Dental Lab & ZTL Orders Hunter Autonomy & Ergonomics", ()
 			labName: "CAD/CAM Центр Дентал-Мастер",
 			workTypeId: "crown_emax",
 			selectedTeeth: [26],
-			shade: "A2",
-			expectedLabDays: 5,
-			patientPriceRub: 24000,
-			labCostRub: 8000,
+			shadeCode: "A2",
+			expectedLabDate: "2026-09-22",
+			pricePerUnitRub: 24000,
+			costPerUnitRub: 8000,
 			doctorPercent: 20,
-			initialStage: "sent_to_lab",
+			initialStatus: "sent_to_lab",
 		});
 
 		let root: Root | null = null;
@@ -337,12 +337,12 @@ describe("Wave 239 — Dental Lab & ZTL Orders Hunter Autonomy & Ergonomics", ()
 			labName: "CAD/CAM Центр Дентал-Мастер",
 			workTypeId: "crown_zirconia",
 			selectedTeeth: [16],
-			shade: "A3",
-			expectedLabDays: 5,
-			patientPriceRub: 28000,
-			labCostRub: 9000,
+			shadeCode: "A3",
+			expectedLabDate: "2026-09-22",
+			pricePerUnitRub: 28000,
+			costPerUnitRub: 9000,
 			doctorPercent: 20,
-			initialStage: "draft",
+			initialStatus: "draft",
 		});
 
 		let root: Root | null = null;

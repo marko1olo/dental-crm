@@ -233,10 +233,10 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 				return false;
 			}
 			if (selectedDateRange === "today") {
-				const isToday = ord.expectedLabDate === todayIso || ord.fittingDate === todayIso;
+				const isToday = ord.expectedLabDateIso === todayIso || ord.fittingDate === todayIso;
 				if (!isToday) return false;
 			} else if (selectedDateRange === "week") {
-				const targetDate = ord.expectedLabDate || ord.fittingDate || "";
+				const targetDate = ord.expectedLabDateIso || ord.fittingDate || "";
 				if (!targetDate || targetDate < todayIso || targetDate > weekAheadIso) {
 					return false;
 				}
